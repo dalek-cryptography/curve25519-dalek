@@ -1,0 +1,17 @@
+[package]
+name = "ed25519"
+version = "0.0.0"
+authors = ["Isis Lovecruft <isis@torproject.org>"]
+readme = "README.md"
+license-file = "LICENSE"
+repository = "https://code.ciph.re/isis/ed25519rs"
+keywords = ["cryptography", "ed25519", "signature", "elliptic", "curve", "ECC"]
+description = "A fast and efficient implementation of ed25519 signing and verification."
+exclude = [ ".gitignore" ]
+
+
+[dependencies]
+arrayref = "0.3.2"
+rust-crypto = "^0.2"
+rand = "^0.3"
+curve25519-dalek = { version = "0.0.0", git = "ssh://gogs@code.ciph.re:22/isis/curve25519-dalek.git" }

@@ -14,4 +14,4 @@ exclude = [ ".gitignore" ]
 arrayref = "0.3.2"
 rust-crypto = "^0.2"
 rand = "^0.3"
-curve25519-dalek = "0.1.0"
+curve25519-dalek = "^0.1"

@@ -22,6 +22,34 @@ Significant portions of this code are ported from
 [Adam Langley's Golang ed25519 library](https://github.com/agl/ed25519), along
 with referencing the ref10 implementation.
 
+## Warning
+
+This code has **not** yet received sufficient peer review by other qualified
+cryptographers to be considered in any way, shape, or form, safe.  Further,
+this library does **not** provide high-level routines such as encryption and
+decryption or signing and verification.  Instead, it is a low-level library,
+intended for other cryptographers who would like to implement their own
+primitives using this curve.  (For an example of how one would implement a
+signature scheme using this library, see
+[ed25519-dalek](https://github.com/isislovecruft/ed25519-dalek).)
+
+**USE AT YOUR OWN RISK**
+
+## Documentation
+
+Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
+
+# Installation
+
+To install, add the following to the dependencies section of your project's
+`Cargo.toml`:
+
+    curve25519-dalek = "^0.1"
+
+Then, in your library or executable source, add:
+
+    extern crate curve25519_dalek
+
 ## TODO
 
  * Implement hashing to a point on the curve.

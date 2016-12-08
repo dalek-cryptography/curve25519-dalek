@@ -5,8 +5,8 @@ authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
 license-file = "LICENSE"
 repository = "https://code.ciph.re/isis/ed25519rs"
-keywords = ["cryptography", "ed25519", "signature", "elliptic", "curve", "ECC"]
-description = "A fast and efficient implementation of ed25519 signing and verification."
+keywords = ["cryptography", "ed25519", "signature", "ECC"]
+description = "Fast and efficient ed25519 signing and verification."
 exclude = [ ".gitignore" ]
 
 

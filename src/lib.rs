@@ -16,7 +16,7 @@
 //! # curve25519-dalek
 //!
 //! **A Rust implementation of field and group operations on an Edwards curve
-//! over F(2^255 - 19).**
+//! over GF(2^255 - 19).**
 //!
 //! **[SPOILER ALERT]** The Twelfth Doctor's first encounter with the Daleks is
 //! in his second full episode, "Into the Dalek".  A beleaguered ship of the

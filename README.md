@@ -1,5 +1,5 @@
 
-# curve25519-dalek [](https://docs.rs/curve25519-dalek/badge.svg)
+# curve25519-dalek ![](https://docs.rs/curve25519-dalek/badge.svg)
 
 **A low-level cryptographic library for point, group, field, and scalar
 operations on a curve isomorphic to the twisted Edwards curve defined by x²+y²

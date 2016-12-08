@@ -36,6 +36,19 @@ faster, one fifth faster, and one eighth faster respectively.  Of course, this
 is just my machine, and these results—nowhere near rigorous—should be taken
 with a fistful of salt.
 
+## Warning
+
+[Our elliptic curve library](https://github.com/isislovecruft/curve25519-dalek)
+(which this code uses) has **not** yet received sufficient peer review by
+other qualified cryptographers to be considered in any way, shape, or form,
+safe.
+
+**USE AT YOUR OWN RISK**
+
+# Documentation
+
+Documentation is available [here](https://docs.rs/ed25519-dalek).
+
 # Installation
 
 To install, add the following to the dependencies section of your project's

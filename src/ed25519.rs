@@ -21,7 +21,6 @@ use curve25519_dalek::curve;
 use curve25519_dalek::curve::CompressedPoint;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::curve::ProjectivePoint;
-use curve25519_dalek::field::FieldElement;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::util::arrays_equal_ct;
 

@@ -1,7 +1,7 @@
-# ed25519: a Rust implementation
+# ed25519-dalek ![](https://img.shields.io/crates/v/ed25519-dalek.svg) ![](https://docs.rs/ed25519-dalek/badge.svg)
 
 Fast and efficient Rust implementation of ed25519 key generation, signing, and
-verification.
+verification in Rust.
 
 # Benchmarks
 

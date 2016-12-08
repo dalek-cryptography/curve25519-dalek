@@ -22,7 +22,6 @@ use curve25519_dalek::curve::CompressedPoint;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::field::FieldElement;
-use curve25519_dalek::curve25519::{Curve25519Public, Curve25519Secret};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::util::arrays_equal_ct;
 
@@ -63,27 +62,6 @@ impl SecretKey {
     #[inline]
     pub fn to_bytes(&self) -> [u8; 64] {
         self.0
-    }
-
-    /// Convert an ed25519 private key into a corresponding curve25519 private key.
-    ///
-    /// # Return
-    ///
-    /// A curve25519 public key, as would result from `PublicKey.to_curve25519()`.
-    pub fn to_curve25519(&self) -> Curve25519Secret {  // PrivateKeyToCurve25519
-        let mut h: Sha512 = Sha512::new();
-        let mut hash: [u8; 64] = [0u8; 64];
-
-        h.input(&self.to_bytes());
-        h.result(&mut hash);
-
-        let digest: &mut [u8; 32] = array_mut_ref!(hash, 0, 32);
-
-        digest[0]  &= 248;
-        digest[31] &= 127;
-        digest[31] |=  64;
-
-        Curve25519Secret(*digest)
     }
 
     /// Sign a message with this keypair's secret key.
@@ -155,21 +133,6 @@ impl PublicKey {
     #[inline]
     fn decompress(&self) -> Option<ExtendedPoint> {
         self.0.decompress()
-    }
-
-    /// Convert this ed25519 public key to a curve25519 public key.
-    pub fn to_curve25519(&self) -> Option<Curve25519Public> { // PublicKeyToCurve25519
-        let a: ExtendedPoint;
-        let x: FieldElement;
-
-        match self.decompress() {
-            Some(element) => a = element,
-            None          => return None,
-        }
-        // a.Z == 1 as a postcondition of from_bytes()
-        x = a.edwards_to_montgomery_x();
-
-        Some(Curve25519Public(x.to_bytes()))
     }
 
     /// Verify a signature on a message with this keypair's public key.

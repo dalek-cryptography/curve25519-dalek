@@ -64,3 +64,7 @@ Then, in your library or executable source, add:
 
  * Maybe add methods to make exporting keys for backup easier.
  * Benchmark in comparison to the ed25519_ref10 code.
+ * We can probably make this go even faster if we implement SHA512,
+   rather than using the rust-crypto implementation whose API requires
+   that we allocate memory and memzero it before mutating to store the
+   digest.

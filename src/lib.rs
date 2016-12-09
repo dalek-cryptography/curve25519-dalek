@@ -67,7 +67,11 @@ extern crate arrayref;
 extern crate crypto;
 extern crate curve25519_dalek;
 extern crate rand;
+
+#[cfg(test)]
 extern crate test;
+#[cfg(test)]
+extern crate rustc_serialize;
 
 mod ed25519;
 

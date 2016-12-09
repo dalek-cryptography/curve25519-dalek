@@ -1,17 +1,20 @@
 [package]
-name = "ed25519"
+name = "ed25519-dalek"
 version = "0.1.0"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
-license-file = "LICENSE"
-repository = "https://code.ciph.re/isis/ed25519rs"
+license = "CC0-1.0"
+repository = "https://code.ciph.re/isis/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "signature", "ECC"]
 description = "Fast and efficient ed25519 signing and verification."
-exclude = [ ".gitignore" ]
+exclude = [ ".gitignore", "TESTVECTORS" ]
 
 
 [dependencies]
 arrayref = "0.3.2"
 rust-crypto = "^0.2"
 rand = "^0.3"
-curve25519-dalek = "0.1.0"
+curve25519-dalek = "^0.1"
+
+[dev-dependencies]
+rustc-serialize = "0.3"

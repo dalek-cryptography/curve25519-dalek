@@ -3,7 +3,7 @@
 
 **A low-level cryptographic library for point, group, field, and scalar
 operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y²
-= 121665/121666 x²y² over GF(2²⁵⁵ - 19).**
+= 1 - 121665/121666 x²y² over GF(2²⁵⁵ - 19).**
 
 **SPOILER ALERT:** *The Twelfth Doctor's first encounter with the Daleks is in
 his second full episode, "Into the Dalek". A beleaguered ship of the "Combined

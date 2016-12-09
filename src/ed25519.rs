@@ -26,6 +26,12 @@ use curve25519_dalek::util::arrays_equal_ct;
 
 
 /// An ed25519 signature.
+///
+/// # Note
+///
+/// These signatures, unlike the ed25519 reference implementation, are
+/// "detached"—that is, they do **not** include a copy of the message which
+/// has been signed.
 #[derive(Copy)]
 pub struct Signature(pub [u8; 64]);
 
@@ -39,11 +45,39 @@ impl Debug for Signature {
     }
 }
 
+impl Eq for Signature {}
+
+impl PartialEq for Signature {
+    /// # Note
+    ///
+    /// This function happens to be constant time, even though that is not
+    /// really necessary.
+    fn eq(&self, other: &Signature) -> bool {
+        let mut equal: u8 = 0;
+
+        for i in 0..64 {
+            equal |= self.0[i] ^ other.0[i];
+        }
+
+        if equal == 0 {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
 impl Signature {
     /// View this signature as an array of 32 bytes.
     #[inline]
     pub fn to_bytes(&self) -> [u8; 64] {
         self.0
+    }
+
+    /// Construct a `Signature` from a slice of bytes.
+    #[inline]
+    pub fn from_bytes(bytes: &[u8]) -> Signature {
+        Signature(*array_ref!(bytes, 0, 64))
     }
 }
 
@@ -61,6 +95,41 @@ impl SecretKey {
     #[inline]
     pub fn to_bytes(&self) -> [u8; 64] {
         self.0
+    }
+
+    /// Construct a `SecretKey` from a slice of bytes.
+    ///
+    /// # Warning
+    ///
+    /// **The caller is responsible for ensuring that the bytes represent a
+    /// *masked* secret key.  If you do not understand what this means, DO NOT
+    /// USE THIS CONSTRUCTOR.**
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use ed25519_dalek::SecretKey;
+    ///
+    /// let secret_key_bytes: [u8; 64] = [
+    ///    157,  97, 177, 157, 239, 253,  90,  96, 186, 132,  74, 244, 146, 236,  44, 196,
+    ///     68,  73, 197, 105, 123,  50, 105,  25, 112,  59, 172,   3,  28, 174, 127,  96,
+    ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
+    ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,  81,  26];
+    /// let public_key_bytes: [u8; 32] = [
+    ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
+    ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
+    ///
+    /// let secret_key: SecretKey = SecretKey::from_bytes(&[&secret_key_bytes[..32],
+    ///                                                     &public_key_bytes[..32]].concat()[..]);
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A `SecretKey`.
+    #[inline]
+    #[allow(dead_code)]
+    fn from_bytes(bytes: &[u8]) -> SecretKey {
+        SecretKey(*array_ref!(bytes, 0, 64))
     }
 
     /// Sign a message with this keypair's secret key.
@@ -87,7 +156,7 @@ impl SecretKey {
         expanded_key_secret[31] |=  64;
 
         h.reset();
-        h.input(public_key);
+        h.input(&hash[32..]);
         h.input(&message);
         h.result(&mut hash);
 
@@ -126,6 +195,36 @@ impl PublicKey {
     #[inline]
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
+    }
+
+    /// Construct a `PublicKey` from a slice of bytes.
+    ///
+    /// # Warning
+    ///
+    /// The caller is responsible for ensuring that the bytes passed into this
+    /// method actually represent a `curve25519_dalek::curve::CompressedPoint`
+    /// and that said compressed point is actually a point on the curve.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use ed25519_dalek::PublicKey;
+    ///
+    /// let public_key_bytes: [u8; 32] = [
+    ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
+    ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
+    ///
+    /// let public_key: PublicKey = PublicKey::from_bytes(&public_key_bytes);
+    ///
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// A `PublicKey`.
+    #[inline]
+    #[allow(dead_code)]
+    fn from_bytes(bytes: &[u8]) -> PublicKey {
+        PublicKey(CompressedPoint(*array_ref!(bytes, 0, 32)))
     }
 
     /// Convert this public key to its underlying extended twisted Edwards coordinate.
@@ -244,10 +343,14 @@ impl Keypair {
 
 #[cfg(test)]
 mod test {
+    use std::io::BufReader;
+    use std::io::BufRead;
+    use std::fs::File;
     use test::Bencher;
     use curve25519_dalek::curve::ExtendedPoint;
     use rand::OsRng;
     use rand::Rng;
+    use rustc_serialize::hex::FromHex;
     use super::*;
 
     /// A fake RNG which simply returns zeroes.
@@ -315,6 +418,56 @@ mod test {
                 "Verification of a signature on a different message passed!");
         assert!(keypair.verify(&bad,  &good_sig) == false,
                 "Verification of a signature on a different message passed!");
+    }
+
+    // TESTVECTORS is taken from sign.input.gz in agl's ed25519 Golang
+    // package. It is a selection of test cases from
+    // http://ed25519.cr.yp.to/python/sign.input
+    #[cfg(test)]
+    #[cfg(not(release))]
+    #[test]
+    fn test_golden() { // TestGolden
+        let mut line: String;
+        let mut lineno: usize = 0;
+
+        let f = File::open("TESTVECTORS");
+        if f.is_err() {
+            println!("This test is only available when the code has been cloned \
+                      from the git repository, since the TESTVECTORS file is large \
+                      and is therefore not included within the distributed crate.");
+            panic!();
+        }
+        let file = BufReader::new(f.unwrap());
+
+        for l in file.lines() {
+            lineno += 1;
+            line = l.unwrap();
+
+            let parts: Vec<&str> = line.split(':').collect();
+            assert_eq!(parts.len(), 5, "wrong number of fields in line {}", lineno);
+
+            let sec_bytes: &[u8] = &parts[0].from_hex().unwrap();
+            let pub_bytes: &[u8] = &parts[1].from_hex().unwrap();
+            let message:   &[u8] = &parts[2].from_hex().unwrap();
+            let sig_bytes: &[u8] = &parts[3].from_hex().unwrap();
+
+		    // The signatures in the test vectors also include the message
+		    // at the end, but we just want R and S.
+            let sig1: Signature = Signature::from_bytes(sig_bytes);
+
+            assert_eq!(pub_bytes.len(), 32);
+
+            let secret_key: SecretKey = SecretKey::from_bytes(&sec_bytes);
+            let public_key: PublicKey = PublicKey::from_bytes(&pub_bytes);
+            let sig2: Signature = secret_key.sign(&message);
+
+            println!("{:?}", sec_bytes);
+            println!("{:?}", pub_bytes);
+
+            assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
+            assert!(public_key.verify(&message, &sig2), "Signature verification failed on line {}", lineno);
+
+        }
     }
 
     #[bench]

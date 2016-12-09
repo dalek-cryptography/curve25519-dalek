@@ -18,9 +18,9 @@ universe's beauty, but also his deep hatred of the Daleks. Rusty destroys the
 other Daleks and departs the ship, determined to track down and bring an end
 to the Dalek race.*
 
-Significant portions of this code are ported from
-[Adam Langley's Golang ed25519 library](https://github.com/agl/ed25519), along
-with referencing the ref10 implementation.
+Significant portions of this code are ported from [Adam Langley's
+Golang ed25519 library](https://github.com/agl/ed25519), which is in
+turn a port of the reference `ref10` implementation.
 
 ## Warning
 
@@ -52,5 +52,12 @@ Then, in your library or executable source, add:
 
 ## TODO
 
- * Implement hashing to a point on the curve.
- * Maybe implement Mike Hamburg's Decaf point compression format.
+* Implement hashing to a point on the curve (Elligator).
+* Maybe implement Mike Hamburg's Decaf point compression format, so that
+  users can be guaranteed to be in a prime-order subgroup and not have to
+  worry about cofactors.
+* Review finite field arithmetic.
+* Review scalar arithmetic.
+* Review addition formulas.
+* Proofread mathematics in documentation.
+* Maybe use serde for serialization.

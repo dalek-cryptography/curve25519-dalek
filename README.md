@@ -53,6 +53,7 @@ Then, in your library or executable source, add:
 ## TODO
 
 * Implement hashing to a point on the curve (Elligator).
+* Add conversion to Montgomery form and rework compressed point types.
 * Maybe implement Mike Hamburg's Decaf point compression format, so that
   users can be guaranteed to be in a prime-order subgroup and not have to
   worry about cofactors.

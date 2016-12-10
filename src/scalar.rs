@@ -29,6 +29,9 @@
 use std::clone::Clone;
 use std::ops::{Index, IndexMut};
 
+use rand::OsRng;
+use rand::Rng;
+
 use field::{load3, load4};
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
@@ -60,6 +63,17 @@ impl IndexMut<usize> for Scalar {
 }
 
 impl Scalar {
+    /// Return a `Scalar` chosen uniformly at random using a CSPRNG.
+    /// Panics if the operating system's CSPRNG is unavailable.
+    pub fn random() -> Self {
+        // XXX is there a more efficient way than building
+        // the rng every time here?
+        let mut rng = OsRng::new().unwrap();
+        let mut scalar_bytes = [0u8; 64];
+        rng.fill_bytes(&mut scalar_bytes);
+        Scalar::reduce(&scalar_bytes)
+    }
+
     /// Construct the additive identity
     pub fn zero() -> Self {
         Scalar([0u8; 32])

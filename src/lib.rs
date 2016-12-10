@@ -37,6 +37,8 @@ extern crate test;
 #[macro_use]
 extern crate arrayref;
 
+extern crate rand;
+
 // Modules for low-level operations directly on field elements and curve points.
 
 pub mod field;

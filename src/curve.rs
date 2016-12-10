@@ -372,15 +372,6 @@ impl ExtendedPoint {
     pub fn compress(&self) -> CompressedPoint {
         self.to_projective().compress()
     }
-
-    /// XXX rewrite
-    /// We only need the x-coordinate of the curve25519 point, which I'll
-    /// call u. The isomorphism is u=(y+1)/(1-y), since y=Y/Z, this gives
-    /// u=(Y+Z)/(Z-Y). We know that Z=1, thus u=(Y+1)/(1-Y).
-    pub fn edwards_to_montgomery_x(&self) -> FieldElement { // edwardsToMontgomeryX
-        let one = FieldElement::one();
-        &((&one - &self.Y).invert()) * &(&self.Y + &one)
-    }
 }
 
 impl CompletedPoint {

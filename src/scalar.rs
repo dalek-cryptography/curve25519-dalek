@@ -432,6 +432,11 @@ mod test {
     use test::Bencher;
 
     #[bench]
+    fn bench_scalar_random(b: &mut Bencher) {
+        b.iter(|| Scalar::random());
+    }
+
+    #[bench]
     fn bench_scalar_multiply_add(b: &mut Bencher) {
         b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
     }

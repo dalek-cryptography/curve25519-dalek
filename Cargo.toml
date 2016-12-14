@@ -15,6 +15,7 @@ exclude = [
 ]
 
 [dependencies]
+rand = "0.3"
 arrayref = "0.3.2"
 
 # The development profile, used for `cargo build`.

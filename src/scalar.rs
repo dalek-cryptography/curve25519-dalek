@@ -29,7 +29,6 @@
 use std::clone::Clone;
 use std::ops::{Index, IndexMut};
 
-use rand::OsRng;
 use rand::Rng;
 
 use field::{load3, load4};
@@ -65,12 +64,18 @@ impl IndexMut<usize> for Scalar {
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a CSPRNG.
     /// Panics if the operating system's CSPRNG is unavailable.
-    pub fn random() -> Self {
-        // XXX is there a more efficient way than building
-        // the rng every time here?
-        let mut rng = OsRng::new().unwrap();
+    ///
+    /// # Inputs
+    ///
+    /// * `cspring`: any cryptographically secure PRNG which
+    ///   implements the `rand::Rng` interface.
+    ///
+    /// # Returns
+    ///
+    /// A random scalar within ℤ/lℤ.
+    pub fn random<T: Rng>(csprng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
+        csprng.fill_bytes(&mut scalar_bytes);
         Scalar::reduce(&scalar_bytes)
     }
 
@@ -428,12 +433,16 @@ impl Scalar {
 
 #[cfg(test)]
 mod test {
+    use rand::Rng;
+    use rand::OsRng;
     use super::*;
     use test::Bencher;
 
     #[bench]
     fn bench_scalar_random(b: &mut Bencher) {
-        b.iter(|| Scalar::random());
+        let mut csprng: OsRng = OsRng::new().unwrap();
+
+        b.iter(|| Scalar::random(&mut csprng));
     }
 
     #[bench]

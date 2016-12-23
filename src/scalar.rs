@@ -31,6 +31,7 @@ use std::ops::{Index, IndexMut};
 
 use rand::Rng;
 
+// XXX should these be in a utility module ?
 use field::{load3, load4};
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where

@@ -483,6 +483,14 @@ mod test {
         b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
     }
 
+    #[bench]
+    fn bench_scalar_unpacked_multiply_add(b: &mut Bencher) {
+        let x = X.unpack();
+        let y = Y.unpack();
+        let z = Z.unpack();
+        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
+    }
+
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     static X: Scalar = Scalar(
         [0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,

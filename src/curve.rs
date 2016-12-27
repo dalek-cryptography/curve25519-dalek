@@ -148,6 +148,56 @@ impl CompressedEdwardsY {
     }
 }
 
+/// In "Montgomery u" format, as used in X25519, a point `(u,v)` on
+/// the Montgomery curve
+///
+///    v^2 = u * (u^2 + 486662*u + 1)
+///
+/// is represented just by `u`.  Note that we use `(u,v)` instead of
+/// `(x,y)` for Montgomery coordinates to avoid confusion with Edwards
+/// coordinates.  For Montgomery curves, it is possible to compute the
+/// `u`-coordinate of `n(u,v)` just from `n` and `u`, so it is not
+/// necessary to use `v` for a Diffie-Hellman key exchange.
+///
+/// XXX add note on monty, twist security, edwards impl of x25519, rfc7748
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub struct CompressedMontgomeryU(pub [u8; 32]);
+
+impl CompressedMontgomeryU {
+    /// View this `CompressedMontgomeryU` as an array of bytes.
+    pub fn to_bytes(&self) -> [u8;32] {
+        self.0
+    }
+
+    /// Attempt to decompress to an `ExtendedPoint`.
+    ///
+    /// Note that since there are two curve points with the same
+    /// `u`-coordinate, the `u`-coordinate does not fully specify a
+    /// point.
+    ///
+    /// XXX match behaviour in Signal specification re: sign choice
+    /// and rewrite this note
+    ///
+    /// XXX check for div by zero: when is u = -1 ?
+    /// XXX exceptional points for the birational map 
+    pub fn decompress(&self) -> Option<ExtendedPoint> {
+        // u = (1 + y) /  (1 - y)
+        // v = sqrt(-486664) * u / x
+        //
+        // so
+        //
+        // y = (u - 1) / (u + 1)
+
+        let u = FieldElement::from_bytes(&self.0);
+        let u_plus_1_inv = (&u + &FieldElement::one()).invert();
+        let y = &(&u - &FieldElement::one()) * &u_plus_1_inv;
+
+        // XXX this does two inversions: the above + one in .decompress()
+        // is it possible to do one?
+        CompressedEdwardsY(y.to_bytes()).decompress()
+    }
+}
+
 // ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------
@@ -376,6 +426,26 @@ impl ProjectivePoint {
         s[31] ^= (x.is_negative_ed25519() << 7) as u8;
         CompressedEdwardsY(s)
     }
+
+    /// Convert this point to a `CompressedMontgomeryU`.
+    /// Note that this discards the sign.
+    ///
+    /// XXX check for div by zero: when is Z = Y ?
+    /// XXX exceptional points for the birational map 
+    pub fn compress_montgomery(&self) -> CompressedMontgomeryU {
+        // u = (1 + y) /  (1 - y)
+        // v = sqrt(-486664) * u / x
+        //
+        // since y = Y/Z, x = X/Z,
+        //
+        // u = (1 + Y/Z) / (1 - Y/Z);
+        //   =   (Z + Y) / (Z - Y);
+        let Z_plus_Y   = &self.Z + &self.Y;
+        let Z_minus_Y  = &self.Z - &self.Y;
+        let u = &Z_plus_Y * &Z_minus_Y.invert();
+
+        CompressedMontgomeryU(u.to_bytes())
+    }
 }
 
 impl ExtendedPoint {
@@ -419,6 +489,11 @@ impl ExtendedPoint {
             y_minus_x: &y - &x,
             xy2d:      xy2d
         }
+    }
+
+    /// Compress this point to `CompressedMontgomeryU` format
+    pub fn compress_montgomery(&self) -> CompressedMontgomeryU {
+        self.to_projective().compress_montgomery()
     }
 }
 
@@ -912,6 +987,13 @@ mod test {
     use super::*;
     use super::select_precomputed_point;
 
+    /// The X25519 basepoint, in compressed Montgomery form.
+    static BASE_CMPRSSD_MONTY: CompressedMontgomeryU =
+        CompressedMontgomeryU([0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
     static BASE_X_COORD_BYTES: [u8; 32] =
@@ -957,6 +1039,33 @@ mod test {
         0xba, 0x20, 0x37, 0x1a, 0x23, 0x64, 0x59, 0xc4,
         0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85,
         0x09, 0x6f, 0xfe, 0x35, 0x4f, 0x13, 0x2b, 0x42]);
+
+    #[test]
+    /// Test that the constant for sqrt(-486664) really is a square
+    /// root of -486664.
+    /// XXX this should be a test in constants.rs ??
+    fn test_sqrt_minus_aplus2() {
+        let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
+        let sqrt = constants::SQRT_MINUS_APLUS2;
+        let sq = &sqrt * &sqrt;
+        assert_eq!(sq, minus_aplus2);
+    }
+
+    /// Test Montgomery conversion against the X25519 basepoint.
+    #[test]
+    fn test_basepoint_to_montgomery() {
+        let bp       =  BASE_CMPRSSD.decompress().unwrap();
+        let bp_monty =  bp.compress_montgomery();
+        assert_eq!(bp_monty, BASE_CMPRSSD_MONTY);
+    }
+
+    /// Test Montgomery conversion against the X25519 basepoint.
+    #[test]
+    fn test_basepoint_from_montgomery() {
+        let bp = BASE_CMPRSSD_MONTY.decompress().unwrap();
+        let bp_compressed_edwards = bp.compress();
+        assert_eq!(bp_compressed_edwards, BASE_CMPRSSD);
+    }
 
     /// Test round-trip decompression for the basepoint.
     #[test]

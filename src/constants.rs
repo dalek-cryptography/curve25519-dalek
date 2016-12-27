@@ -72,6 +72,11 @@ pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
     12222970,    8312128,  11511410,  -9067497,  15300785,
     241793,    -25456130, -14121551,  12187136,  -3972024, ]);
 
+/// SQRT_MINUS_APLUS2 is sqrt(-486664)
+pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
+    -12222970, -8312128, -11511410, 9067497, -15300785,
+    -241793, 25456130, 14121551, -12187136, 3972024]);
+
 /// SQRT_MINUS_HALF is sqrt(-1/2)
 pub const SQRT_MINUS_HALF: FieldElement = FieldElement([ // sqrtMinusHalf
     -17256545,   3971863,  28865457,  -1750208,  27359696,

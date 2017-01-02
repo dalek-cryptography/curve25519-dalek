@@ -1067,6 +1067,21 @@ mod test {
         assert_eq!(bp_compressed_edwards, BASE_CMPRSSD);
     }
 
+    /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
+    /// But 486660 is nonsquare mod p, so this should fail.
+    ///
+    /// XXX what does Signal do here?
+    #[test]
+    #[should_panic]
+    fn test_u_minus_one_monty() {
+        let mut m1 = FieldElement::zero();
+        m1[0] = -1;
+        let m1_bytes = m1.to_bytes();
+        let div_by_zero_u = CompressedMontgomeryU(m1_bytes);
+        let p = div_by_zero_u.decompress().unwrap();
+        println!("{:?}", p);
+    }
+
     /// Test round-trip decompression for the basepoint.
     #[test]
     fn test_basepoint_decompression_compression() {

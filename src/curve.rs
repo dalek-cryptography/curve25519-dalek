@@ -86,6 +86,7 @@ use constants;
 use field::FieldElement;
 use scalar::Scalar;
 use util::bytes_equal_ct;
+use util::CTAssignable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -281,15 +282,6 @@ impl Identity for PreComputedPoint {
 // ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
-
-/// Trait for items which can be conditionally assigned in constant time.
-pub trait CTAssignable {
-    /// If `choice == 1u8`, assign `other` to `self`.
-    /// Otherwise, leave `self` unchanged.  
-    /// Executes in constant time.
-    // XXX this trait should be extracted?
-    fn conditional_assign(&mut self, other: &Self, choice: u8);
-}
 
 impl CTAssignable for CachedPoint {
     fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
@@ -806,6 +798,7 @@ mod test {
     use test::Bencher;
     use field::FieldElement;
     use scalar::Scalar;
+    use util::CTAssignable;
     use constants;
     use super::*;
     use super::select_precomputed_point;

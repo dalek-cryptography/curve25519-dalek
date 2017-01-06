@@ -634,6 +634,14 @@ impl ExtendedPoint {
         h
     }
 
+    /// Multiply by the cofactor: compute `8 * self`.
+    ///
+    /// Convenience wrapper around `mult_by_pow_2`.
+    #[inline]
+    pub fn mult_by_cofactor(&self) -> ExtendedPoint {
+        self.mult_by_pow_2(3)
+    }
+
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
     #[inline]

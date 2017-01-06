@@ -655,6 +655,25 @@ impl ExtendedPoint {
         r = s.double();
         return r.to_extended();
     }
+
+    /// Determine if this point is of small order.
+    ///
+    /// The order of the group of points on the curve Ɛ is |Ɛ| = 8q.  Thus, to
+    /// check if a point P is of small order, we multiply by 8 and then test
+    /// if the result is equal to the identity.
+    ///
+    /// # Return
+    ///
+    /// True if it is of small order; false otherwise.
+    pub fn is_small_order(&self) -> bool {
+        let p8: ExtendedPoint = self.mult_by_pow_2(3);
+
+        if p8.is_identity() {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 /// Given a point `A` and scalars `a` and `b`, compute the point
@@ -1043,6 +1062,15 @@ mod test {
         assert_eq!(p1.y_plus_x,  p2.y_plus_x);
         assert_eq!(p1.y_minus_x, p2.y_minus_x);
         assert_eq!(p1.xy2d,      p2.xy2d);
+    }
+
+    #[test]
+    fn test_is_small_order() {
+        let p1: ExtendedPoint = ExtendedPoint::identity();
+        let p2: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
+
+        assert!(p1.is_small_order() == true);
+        assert!(p2.is_small_order() == false);
     }
 
     #[bench]

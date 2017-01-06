@@ -30,11 +30,13 @@
 //! limbs.
 
 use core::ops::{Index, IndexMut};
+use core::ops::{Neg};
 
 #[cfg(feature = "std")]
 use rand::Rng;
 
 // XXX should these be in a utility module ?
+use constants;
 use field::{load3, load4};
 use util::CTAssignable;
 
@@ -59,6 +61,15 @@ impl IndexMut<usize> for Scalar {
     fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut u8 {
         let ret: &'a mut u8 = &mut(self.0[_index]);
         ret
+    }
+}
+
+impl Neg for Scalar {
+    type Output = Scalar;
+
+    /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
+    fn neg(self) -> Scalar {
+        Scalar::multiply_add(&constants::lminus1, &self, &Scalar::zero())
     }
 }
 
@@ -626,5 +637,14 @@ mod test {
         for i in 0..32 {
             assert!(test_red[i] == reduced[i]);
         }
+    }
+
+    // Negating a scalar twice should result in the original scalar.
+    #[test]
+    fn test_scalar_neg() {
+        let negative_x: Scalar = -X;
+        let orig: Scalar = -negative_x;
+
+        assert!(orig == X);
     }
 }

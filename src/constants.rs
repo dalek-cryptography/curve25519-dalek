@@ -30,8 +30,7 @@ pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
 
-/// When we define the curve according to the form y² = x³+Ax²+Bx,
-/// we get A=486662 and B=1.
+/// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement       = FieldElement([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 

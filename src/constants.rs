@@ -20,8 +20,6 @@
 use field::FieldElement;
 use curve::PreComputedPoint;
 
-pub const a: FieldElement       = FieldElement([
-    121665, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 pub const d: FieldElement       = FieldElement([
     -10913610,  13857413, -15372611,   6949391,    114729,
     -8787816,   -6275908,  -3247719, -18696448, -12055116, ]);

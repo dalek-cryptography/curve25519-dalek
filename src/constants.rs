@@ -1442,3 +1442,17 @@ pub const base: [[PreComputedPoint; 8]; 32] = [
         xy2d:    FieldElement([-20430234, 14955537, -24126347, 8124619, -5369288, -5990470, 30468147, -13900640, 18423289, 4177476]),
     },
 ]];
+
+#[cfg(test)]
+mod test {
+    use field::FieldElement;
+    use constants;
+
+    #[test]
+    /// Test that SQRT_M1 is a square root of -1
+    fn test_sqrt_minus_one() {
+        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
+        assert_eq!(minus_one, sqrt_m1_sq);
+    }
+}

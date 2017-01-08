@@ -35,6 +35,9 @@ pub const A: FieldElement       = FieldElement([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 
 /// SQRT_MINUS_A is sqrt(-486662)
+// XXX I think that this was used in Adam's code for his elligator
+// implementation, but that should maybe be using sqrt(-486664)
+// instead...?  - hdevalence
 pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
         12222970,    8312128,  11511410,  -9067497,  15300785,
     241793,    -25456130, -14121551,  12187136,  -3972024, ]);

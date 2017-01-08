@@ -1455,4 +1455,15 @@ mod test {
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
         assert_eq!(minus_one, sqrt_m1_sq);
     }
+
+    #[test]
+    /// Test that d = -121665/121666
+    fn test_d_vs_ratio() {
+        let a = FieldElement([-121665,0,0,0,0,0,0,0,0,0]);
+        let b = FieldElement([ 121666,0,0,0,0,0,0,0,0,0]);
+        let d = &a * &b.invert();
+        let d2 = &d + &d;
+        assert_eq!(d, constants::d);
+        assert_eq!(d2, constants::d2);
+    }
 }

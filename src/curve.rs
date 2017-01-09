@@ -212,7 +212,8 @@ pub struct CompletedPoint {
 /// A pre-computed point in the affine model for the curve,
 /// represented as (y+x, y-x, 2dxy).  These precomputations
 /// accelerate addition and subtraction.
-#[derive(Copy, Clone)]
+// Safe to derive Eq because affine coordinates.
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub struct PreComputedPoint {
     pub y_plus_x:  FieldElement,

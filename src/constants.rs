@@ -108,6 +108,10 @@ pub const bi: [PreComputedPoint; 8] = [
     },
     ];
 
+/// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.
+///
+/// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
+/// for `0 ≤ i < 32`, `1 ≤ j < 9`.
 pub const base: [[PreComputedPoint; 8]; 32] = [
 [
     PreComputedPoint{
@@ -1457,6 +1461,7 @@ pub const base: [[PreComputedPoint; 8]; 32] = [
 #[cfg(test)]
 mod test {
     use field::FieldElement;
+    use curve::PreComputedPoint;
     use constants;
 
     #[test]
@@ -1476,5 +1481,24 @@ mod test {
         let d2 = &d + &d;
         assert_eq!(d, constants::d);
         assert_eq!(d2, constants::d2);
+    }
+
+    /// Test the values in the lookup table of precomputed multiples
+    /// of the basepoint.
+    #[test]
+    fn test_precomputed_basepoint_multiples() {
+        let bp  =  constants::BASE_CMPRSSD.decompress().unwrap();
+        let mut P = bp;
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P.to_precomputed();
+            for j in 1..9 {
+                // constants::base[i][j-1] is supposed to be
+                // j * (16^2)^i * B
+                assert_eq!(constants::base[i][j-1], jP);
+                jP = (&P + &jP).to_extended().to_precomputed();
+            }
+            P = P.mult_by_pow_2(8);
+        }
     }
 }

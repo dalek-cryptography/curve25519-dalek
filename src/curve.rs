@@ -821,18 +821,9 @@ mod test {
     use field::FieldElement;
     use scalar::Scalar;
     use constants;
+    use constants::BASE_CMPRSSD;
     use super::*;
     use super::select_precomputed_point;
-
-    /// Basepoint has y = 4/5.
-    ///
-    /// Generated with Sage: these are the bytes of 4/5 in 𝔽_p.  The
-    /// sign bit is 0 since the basepoint has x chosen to be positive.
-    static BASE_CMPRSSD: CompressedPoint =
-        CompressedPoint([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202

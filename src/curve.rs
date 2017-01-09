@@ -347,7 +347,8 @@ impl ProjectivePoint {
 }
 
 impl ExtendedPoint {
-    fn to_cached(&self) -> CachedPoint {
+    /// Convert to a CachedPoint
+    pub fn to_cached(&self) -> CachedPoint {
         CachedPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -390,7 +391,8 @@ impl ExtendedPoint {
 }
 
 impl CompletedPoint {
-    fn to_projective(&self) -> ProjectivePoint {
+    /// Convert to a ProjectivePoint
+    pub fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -398,7 +400,8 @@ impl CompletedPoint {
         }
     }
 
-    fn to_extended(&self) -> ExtendedPoint {
+    /// Convert to an ExtendedPoint
+    pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,

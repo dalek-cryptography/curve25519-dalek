@@ -372,6 +372,20 @@ impl ExtendedPoint {
     pub fn compress(&self) -> CompressedPoint {
         self.to_projective().compress()
     }
+
+    /// Dehomogenize to a PreComputedPoint.
+    /// Mainly for testing.
+    pub fn to_precomputed(&self) -> PreComputedPoint {
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let xy2d = &(&x * &y) * &constants::d2;
+        PreComputedPoint{
+            y_plus_x:  &y + &x,
+            y_minus_x: &y - &x,
+            xy2d:      xy2d
+        }
+    }
 }
 
 impl CompletedPoint {
@@ -933,6 +947,17 @@ mod test {
         };
         let bp_added = (&bp + &bp_precomputed).to_extended();
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
+    }
+
+    /// Sanity check for conversion to precomputed points
+    #[test]
+    fn test_convert_to_precomputed() {
+        // construct a point as aB so it has denominators (ie. Z != 1)
+        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB_pc = aB.to_precomputed();
+        let id = ExtendedPoint::identity();
+        let P = &id + &aB_pc;
+        assert_eq!(P.to_extended().compress(), aB.compress())
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py

@@ -32,6 +32,9 @@ pub const d2: FieldElement      = FieldElement([
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
+/// Precomputed value of 1/2 (mod p).
+pub const HALF: FieldElement = FieldElement([
+    10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
 
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement       = FieldElement([
@@ -1479,6 +1482,13 @@ mod test {
     use field::FieldElement;
     use curve::PreComputedPoint;
     use constants;
+
+    #[test]
+    fn test_half() {
+        let one = FieldElement([1,0,0,0,0,0,0,0,0,0]);
+        let two = FieldElement([2,0,0,0,0,0,0,0,0,0]);
+        assert_eq!(one, &two * &constants::HALF);
+    }
 
     #[test]
     /// Test that SQRT_M1 is a square root of -1

@@ -15,14 +15,14 @@
 //! Based on Adam Langley's curve25519-donna and (Golang) ed25519
 //! implementations.
 
-use std::clone::Clone;
-use std::fmt::Debug;
-use std::ops::{Add, AddAssign};
-use std::ops::{Sub, SubAssign};
-use std::ops::{Mul, MulAssign};
-use std::ops::{Index, IndexMut};
-use std::cmp::{Eq, PartialEq};
-use std::ops::Neg;
+use core::clone::Clone;
+use core::fmt::Debug;
+use core::ops::{Add, AddAssign};
+use core::ops::{Sub, SubAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Index, IndexMut};
+use core::cmp::{Eq, PartialEq};
+use core::ops::Neg;
 
 use util::byte_is_nonzero;
 
@@ -65,7 +65,7 @@ impl PartialEq for FieldElement {
 impl Eq for FieldElement {}
 
 impl Debug for FieldElement {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "FieldElement: {:?}", &self.0[..])
     }
 }

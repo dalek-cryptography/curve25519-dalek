@@ -26,9 +26,10 @@
 //! However, in contrast to `FieldElement`s, `Scalar`s are stored in
 //! memory as bytes, allowing easy access to the bits of the `Scalar`.
 
-use std::clone::Clone;
-use std::ops::{Index, IndexMut};
+use core::clone::Clone;
+use core::ops::{Index, IndexMut};
 
+#[cfg(feature = "std")]
 use rand::Rng;
 
 use field::{load3, load4};
@@ -73,6 +74,7 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
+    #[cfg(feature = "std")]
     pub fn random<T: Rng>(csprng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         csprng.fill_bytes(&mut scalar_bytes);

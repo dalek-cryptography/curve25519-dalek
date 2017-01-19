@@ -91,33 +91,34 @@ use util::bytes_equal_ct;
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// An affine point `(x,y)` on the curve is determined by the
-/// `y`-coordinate and the sign of `x`, marshalled into a 32-byte array.
+/// In "Edwards y" format, the point `(x,y)` on the curve is
+/// determined by the `y`-coordinate and the sign of `x`, marshalled
+/// into a 32-byte array.
 ///
-/// The first 255 bits of a CompressedPoint represent the
+/// The first 255 bits of a CompressedEdwardsY represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
 #[derive(Copy, Clone)]
-pub struct CompressedPoint(pub [u8; 32]);
+pub struct CompressedEdwardsY(pub [u8; 32]);
 
-impl Debug for CompressedPoint {
+impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "CompressedPoint: {:?}", &self.0[..])
+        write!(f, "CompressedEdwardsY: {:?}", &self.0[..])
     }
 }
 
-impl Eq for CompressedPoint {}
-impl PartialEq for CompressedPoint {
-    /// Determine if this `CompressedPoint` is equal to another.
+impl Eq for CompressedEdwardsY {}
+impl PartialEq for CompressedEdwardsY {
+    /// Determine if this `CompressedEdwardsY` is equal to another.
     ///
     /// # Warning
     ///
     /// This function is NOT constant time.
-    fn eq(&self, other: &CompressedPoint) -> bool {
+    fn eq(&self, other: &CompressedEdwardsY) -> bool {
         return self.0 == other.0;
     }
 }
 
-impl Index<usize> for CompressedPoint {
+impl Index<usize> for CompressedEdwardsY {
     type Output = u8;
 
     fn index<'a>(&'a self, _index: usize) -> &'a u8 {
@@ -126,8 +127,8 @@ impl Index<usize> for CompressedPoint {
     }
 }
 
-impl CompressedPoint {
-    /// View this `CompressedPoint` as an array of bytes.
+impl CompressedEdwardsY {
+    /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn to_bytes(&self) -> [u8;32] {
         self.0
     }
@@ -332,8 +333,8 @@ impl ProjectivePoint {
         }
     }
 
-    /// Convert this point to a `CompressedPoint`
-    pub fn compress(&self) -> CompressedPoint {
+    /// Convert this point to a `CompressedEdwardsY`
+    pub fn compress(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -341,7 +342,7 @@ impl ProjectivePoint {
 
         s      =  y.to_bytes();
         s[31] ^= (x.is_negative() << 7) as u8;
-        CompressedPoint(s)
+        CompressedEdwardsY(s)
     }
 }
 
@@ -368,8 +369,8 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert this point to a `CompressedPoint`
-    pub fn compress(&self) -> CompressedPoint {
+    /// Compress this point to `CompressedEdwardsY` format
+    pub fn compress(&self) -> CompressedEdwardsY {
         self.to_projective().compress()
     }
 }
@@ -814,11 +815,11 @@ mod test {
     ///
     /// Generated with Sage: these are the bytes of 4/5 in 𝔽_p.  The
     /// sign bit is 0 since the basepoint has x chosen to be positive.
-    static BASE_CMPRSSD: CompressedPoint =
-        CompressedPoint([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
+    static BASE_CMPRSSD: CompressedEdwardsY =
+        CompressedEdwardsY([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -826,17 +827,17 @@ mod test {
         [0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9, 0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c, 0x69,
          0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0, 0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36, 0x69, 0x21];
 
-    static BASE2_CMPRSSD: CompressedPoint =
-        CompressedPoint([0xc9, 0xa3, 0xf8, 0x6a, 0xae, 0x46, 0x5f, 0xe,
-                         0x56, 0x51, 0x38, 0x64, 0x51, 0x0f, 0x39, 0x97,
-                         0x56, 0x1f, 0xa2, 0xc9, 0xe8, 0x5e, 0xa2, 0x1d,
-                         0xc2, 0x29, 0x23, 0x09, 0xf3, 0xcd, 0x60, 0x22]);
+    static BASE2_CMPRSSD: CompressedEdwardsY =
+        CompressedEdwardsY([0xc9, 0xa3, 0xf8, 0x6a, 0xae, 0x46, 0x5f, 0xe,
+                            0x56, 0x51, 0x38, 0x64, 0x51, 0x0f, 0x39, 0x97,
+                            0x56, 0x1f, 0xa2, 0xc9, 0xe8, 0x5e, 0xa2, 0x1d,
+                            0xc2, 0x29, 0x23, 0x09, 0xf3, 0xcd, 0x60, 0x22]);
 
-    static BASE16_CMPRSSD: CompressedPoint =
-        CompressedPoint([0xeb, 0x27, 0x67, 0xc1, 0x37, 0xab, 0x7a, 0xd8,
-                         0x27, 0x9c, 0x07, 0x8e, 0xff, 0x11, 0x6a, 0xb0,
-                         0x78, 0x6e, 0xad, 0x3a, 0x2e, 0x0f, 0x98, 0x9f,
-                         0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
+    static BASE16_CMPRSSD: CompressedEdwardsY =
+        CompressedEdwardsY([0xeb, 0x27, 0x67, 0xc1, 0x37, 0xab, 0x7a, 0xd8,
+                            0x27, 0x9c, 0x07, 0x8e, 0xff, 0x11, 0x6a, 0xb0,
+                            0x78, 0x6e, 0xad, 0x3a, 0x2e, 0x0f, 0x98, 0x9f,
+                            0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
 
     /// 4493907448824000747700850167940867464579944529806937181821189941592931634714
     static A_SCALAR: Scalar = Scalar([
@@ -853,14 +854,14 @@ mod test {
         0x56, 0xa7, 0xd4, 0xaa, 0xb8, 0x60, 0x8a, 0x05]);
 
     /// A_SCALAR * basepoint, computed with ed25519.py
-    static A_TIMES_BASEPOINT: CompressedPoint = CompressedPoint([
+    static A_TIMES_BASEPOINT: CompressedEdwardsY = CompressedEdwardsY([
         0xea, 0x27, 0xe2, 0x60, 0x53, 0xdf, 0x1b, 0x59,
         0x56, 0xf1, 0x4d, 0x5d, 0xec, 0x3c, 0x34, 0xc3,
         0x84, 0xa2, 0x69, 0xb7, 0x4c, 0xc3, 0x80, 0x3e,
         0xa8, 0xe2, 0xe7, 0xc9, 0x42, 0x5e, 0x40, 0xa5]);
 
     /// A_SCALAR * (A_TIMES_BASEPOINT) + B_SCALAR * BASEPOINT
-    static DOUBLE_SCALAR_MULT_RESULT: CompressedPoint = CompressedPoint([
+    static DOUBLE_SCALAR_MULT_RESULT: CompressedEdwardsY = CompressedEdwardsY([
         0x7d, 0xfd, 0x6c, 0x45, 0xaf, 0x6d, 0x6e, 0x0e,
         0xba, 0x20, 0x37, 0x1a, 0x23, 0x64, 0x59, 0xc4,
         0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85,
@@ -886,7 +887,7 @@ mod test {
         let mut m_bp_bytes: [u8;32] = BASE_CMPRSSD.to_bytes().clone();
         // Set the high bit of the last byte to flip the sign
         m_bp_bytes[31] |= 1 << 7;
-        let m_bp = CompressedPoint(m_bp_bytes).decompress().unwrap();
+        let m_bp = CompressedEdwardsY(m_bp_bytes).decompress().unwrap();
         let bp = BASE_CMPRSSD.decompress().unwrap();
         assert_eq!(m_bp.X, -(&bp.X));
         assert_eq!(m_bp.Y,  bp.Y);

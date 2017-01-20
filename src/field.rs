@@ -25,6 +25,7 @@ use std::cmp::{Eq, PartialEq};
 use std::ops::Neg;
 
 use util::byte_is_nonzero;
+use util::CTAssignable;
 
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
@@ -142,6 +143,44 @@ impl<'a> Neg for &'a FieldElement {
     }
 }
 
+impl CTAssignable for FieldElement {
+    /// Conditionally assign another FieldElement to this one.
+    ///
+    /// If `choice == 0`, replace `self` with `self`:
+    ///
+    /// ```
+    /// # use curve25519_dalek::field::FieldElement;
+    /// # use curve25519_dalek::util::CTAssignable;
+    /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
+    /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
+    /// let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
+    /// h.conditional_assign(&g, 0);
+    /// assert!(h == f);
+    /// ```
+    ///
+    /// If `choice == 1`, replace `self` with `f`:
+    ///
+    /// ```
+    /// # use curve25519_dalek::field::FieldElement;
+    /// # use curve25519_dalek::util::CTAssignable;
+    /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
+    /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
+    /// # let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
+    /// h.conditional_assign(&g, 1);
+    /// assert!(h == g);
+    /// ```
+    ///
+    /// # Preconditions
+    ///
+    /// * `choice` in {0,1}
+    fn conditional_assign(&mut self, f: &FieldElement, choice: u8) {
+        let mask = -(choice as Limb);
+        for i in 0..10 {
+            self[i] ^= mask & (self[i] ^ f[i]);
+        }
+    }
+}
+
 /// Convert an array of (at least) three bytes into an i64.
 #[inline]
 #[allow(dead_code)]
@@ -177,82 +216,6 @@ impl FieldElement {
     /// Construct the multiplicative identity
     pub fn one() -> FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
-    }
-
-    /// Overwrite this FieldElement with one of the inputs without branching.
-    /// Like `conditional_assign`, but chooses between two inputs instead of
-    /// one input and the original value.
-    ///
-    /// If `choice == 0`, replace `self` with `f`:
-    ///
-    /// ```
-    /// # use curve25519_dalek::field::FieldElement;
-    /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
-    /// let mut h = FieldElement([0,0,0,0,0,0,0,0,0,0]);
-    /// h.conditional_choose(&f, &g, 0);
-    /// assert!(h == f);
-    /// ```
-    ///
-    /// If `choice == 1`, replace `self` with `g`:
-    ///
-    /// ```
-    /// # use curve25519_dalek::field::FieldElement;
-    /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
-    /// # let mut h = FieldElement([0,0,0,0,0,0,0,0,0,0]);
-    /// h.conditional_choose(&f, &g, 1);
-    /// assert!(h == g);
-    /// ```
-    ///
-    /// # Preconditions
-    ///
-    /// * `b` in {0,1}
-    pub fn conditional_choose(&mut self,
-                              f: &FieldElement,
-                              g: &FieldElement,
-                              choice: u8)
-    {
-        let mask = -(choice as Limb);
-        for i in 0..10 {
-            self[i] = f[i] ^ (mask & (f[i] ^ g[i]));
-        }
-    }
-
-    /// Conditionally assign the Limbs of another FieldElement to this
-    /// one.  Like `conditional_choose`, but choosing between one
-    /// input and the original value.
-    ///
-    /// If `choice == 0`, replace `self` with `self`:
-    ///
-    /// ```
-    /// # use curve25519_dalek::field::FieldElement;
-    /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
-    /// let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// h.conditional_assign(&g, 0);
-    /// assert!(h == f);
-    /// ```
-    ///
-    /// If `choice == 1`, replace `self` with `f`:
-    ///
-    /// ```
-    /// # use curve25519_dalek::field::FieldElement;
-    /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
-    /// # let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
-    /// h.conditional_assign(&g, 1);
-    /// assert!(h == g);
-    /// ```
-    ///
-    /// # Preconditions
-    ///
-    /// * `choice` in {0,1}
-    pub fn conditional_assign(&mut self, f: &FieldElement, choice: u8) {
-        let mask = -(choice as Limb);
-        for i in 0..10 {
-            self[i] ^= mask & (self[i] ^ f[i]);
-        }
     }
 
     fn combine_coeffs(input: &[i64;10]) -> FieldElement { //FeCombine

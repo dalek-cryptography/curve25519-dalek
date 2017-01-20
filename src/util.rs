@@ -11,6 +11,14 @@
 
 //! Utility functions and tools for constant-time comparisons.
 
+/// Trait for items which can be conditionally assigned in constant time.
+pub trait CTAssignable {
+    /// If `choice == 1u8`, assign `other` to `self`.
+    /// Otherwise, leave `self` unchanged.
+    /// Executes in constant time.
+    fn conditional_assign(&mut self, other: &Self, choice: u8);
+}
+
 /// Check equality of two bytes in constant time.
 ///
 /// # Return

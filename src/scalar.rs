@@ -35,6 +35,7 @@ use rand::Rng;
 
 // XXX should these be in a utility module ?
 use field::{load3, load4};
+use util::CTAssignable;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
@@ -57,6 +58,37 @@ impl IndexMut<usize> for Scalar {
     fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut u8 {
         let ret: &'a mut u8 = &mut(self.0[_index]);
         ret
+    }
+}
+
+impl CTAssignable for Scalar {
+    /// Conditionally assign another Scalar to this one.
+    ///
+    /// ```
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// # use curve25519_dalek::util::CTAssignable;
+    /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+    /// let b = Scalar([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+    ///                 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
+    /// let mut t = a;
+    /// t.conditional_assign(&b, 0u8);
+    /// assert!(t[0] == a[0]);
+    /// t.conditional_assign(&b, 1u8);
+    /// assert!(t[0] == b[0]);
+    /// ```
+    ///
+    /// # Preconditions
+    ///
+    /// * `choice` in {0,1}
+    // XXX above test checks first byte because Scalar does not impl Eq
+    fn conditional_assign(&mut self, other: &Scalar, choice: u8) {
+        // if choice = 0u8, mask = (-0i8) as u8 = 00000000
+        // if choice = 1u8, mask = (-1i8) as u8 = 11111111
+        let mask = -(choice as i8) as u8;
+        for i in 0..32 {
+            self[i] ^= mask & (self[i] ^ other[i]);
+        }
     }
 }
 

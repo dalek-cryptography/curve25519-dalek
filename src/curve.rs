@@ -42,7 +42,7 @@
 //!
 //! Up to variable naming, this is exactly the curve model introduced
 //! in ["Twisted Edwards Curves
-//! Revisited"](iacr.org/archive/asiacrypt2008/53500329/53500329.pdf)
+//! Revisited"](https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf)
 //! by Hisil, Wong, Carter, and Dawson.  We can map from 𝗣^3 to 𝗣² by
 //! sending (W₀:W₁:W₂:W₃) to (W₁:W₂:W₃).  Notice that
 //!

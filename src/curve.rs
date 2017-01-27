@@ -101,7 +101,7 @@ use util::CTAssignable;
 #[derive(Copy, Clone)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
-impl Debug for CompressedPoint {
+impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompressedPoint: {:?}", &self.0[..])
     }

@@ -42,7 +42,7 @@
 //!
 //! Up to variable naming, this is exactly the curve model introduced
 //! in ["Twisted Edwards Curves
-//! Revisited"](iacr.org/archive/asiacrypt2008/53500329/53500329.pdf)
+//! Revisited"](https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf)
 //! by Hisil, Wong, Carter, and Dawson.  We can map from 𝗣^3 to 𝗣² by
 //! sending (W₀:W₁:W₂:W₃) to (W₁:W₂:W₃).  Notice that
 //!
@@ -77,47 +77,49 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-use std::fmt::Debug;
-use std::iter::Iterator;
-use std::ops::{Add, Sub, Neg, Index};
-use std::cmp::{PartialEq, Eq};
+use core::fmt::Debug;
+use core::iter::Iterator;
+use core::ops::{Add, Sub, Neg, Index};
+use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
 use util::bytes_equal_ct;
+use util::CTAssignable;
 
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// An affine point `(x,y)` on the curve is determined by the
-/// `y`-coordinate and the sign of `x`, marshalled into a 32-byte array.
+/// In "Edwards y" format, the point `(x,y)` on the curve is
+/// determined by the `y`-coordinate and the sign of `x`, marshalled
+/// into a 32-byte array.
 ///
-/// The first 255 bits of a CompressedPoint represent the
+/// The first 255 bits of a CompressedEdwardsY represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
 #[derive(Copy, Clone)]
-pub struct CompressedPoint(pub [u8; 32]);
+pub struct CompressedEdwardsY(pub [u8; 32]);
 
-impl Debug for CompressedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+impl Debug for CompressedEdwardsY {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompressedPoint: {:?}", &self.0[..])
     }
 }
 
-impl Eq for CompressedPoint {}
-impl PartialEq for CompressedPoint {
-    /// Determine if this `CompressedPoint` is equal to another.
+impl Eq for CompressedEdwardsY {}
+impl PartialEq for CompressedEdwardsY {
+    /// Determine if this `CompressedEdwardsY` is equal to another.
     ///
     /// # Warning
     ///
     /// This function is NOT constant time.
-    fn eq(&self, other: &CompressedPoint) -> bool {
+    fn eq(&self, other: &CompressedEdwardsY) -> bool {
         return self.0 == other.0;
     }
 }
 
-impl Index<usize> for CompressedPoint {
+impl Index<usize> for CompressedEdwardsY {
     type Output = u8;
 
     fn index<'a>(&'a self, _index: usize) -> &'a u8 {
@@ -126,8 +128,8 @@ impl Index<usize> for CompressedPoint {
     }
 }
 
-impl CompressedPoint {
-    /// View this `CompressedPoint` as an array of bytes.
+impl CompressedEdwardsY {
+    /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn to_bytes(&self) -> [u8;32] {
         self.0
     }
@@ -212,7 +214,8 @@ pub struct CompletedPoint {
 /// A pre-computed point in the affine model for the curve,
 /// represented as (y+x, y-x, 2dxy).  These precomputations
 /// accelerate addition and subtraction.
-#[derive(Copy, Clone)]
+// Safe to derive Eq because affine coordinates.
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub struct PreComputedPoint {
     pub y_plus_x:  FieldElement,
@@ -282,15 +285,6 @@ impl Identity for PreComputedPoint {
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
-/// Trait for items which can be conditionally assigned in constant time.
-pub trait CTAssignable {
-    /// If `choice == 1u8`, assign `other` to `self`.
-    /// Otherwise, leave `self` unchanged.  
-    /// Executes in constant time.
-    // XXX this trait should be extracted?
-    fn conditional_assign(&mut self, other: &Self, choice: u8);
-}
-
 impl CTAssignable for CachedPoint {
     fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
         self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
@@ -332,8 +326,8 @@ impl ProjectivePoint {
         }
     }
 
-    /// Convert this point to a `CompressedPoint`
-    pub fn compress(&self) -> CompressedPoint {
+    /// Convert this point to a `CompressedEdwardsY`
+    pub fn compress(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -341,12 +335,13 @@ impl ProjectivePoint {
 
         s      =  y.to_bytes();
         s[31] ^= (x.is_negative() << 7) as u8;
-        CompressedPoint(s)
+        CompressedEdwardsY(s)
     }
 }
 
 impl ExtendedPoint {
-    fn to_cached(&self) -> CachedPoint {
+    /// Convert to a CachedPoint
+    pub fn to_cached(&self) -> CachedPoint {
         CachedPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -368,14 +363,29 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert this point to a `CompressedPoint`
-    pub fn compress(&self) -> CompressedPoint {
+    /// Compress this point to `CompressedEdwardsY` format
+    pub fn compress(&self) -> CompressedEdwardsY {
         self.to_projective().compress()
+    }
+
+    /// Dehomogenize to a PreComputedPoint.
+    /// Mainly for testing.
+    pub fn to_precomputed(&self) -> PreComputedPoint {
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let xy2d = &(&x * &y) * &constants::d2;
+        PreComputedPoint{
+            y_plus_x:  &y + &x,
+            y_minus_x: &y - &x,
+            xy2d:      xy2d
+        }
     }
 }
 
 impl CompletedPoint {
-    fn to_projective(&self) -> ProjectivePoint {
+    /// Convert to a ProjectivePoint
+    pub fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -383,7 +393,8 @@ impl CompletedPoint {
         }
     }
 
-    fn to_extended(&self) -> ExtendedPoint {
+    /// Convert to an ExtendedPoint
+    pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -634,6 +645,14 @@ impl ExtendedPoint {
         h
     }
 
+    /// Multiply by the cofactor: compute `8 * self`.
+    ///
+    /// Convenience wrapper around `mult_by_pow_2`.
+    #[inline]
+    pub fn mult_by_cofactor(&self) -> ExtendedPoint {
+        self.mult_by_pow_2(3)
+    }
+
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
     #[inline]
@@ -763,35 +782,35 @@ impl ExtendedPoint {
 // ------------------------------------------------------------------------
 
 impl Debug for ExtendedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "ExtendedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for ProjectivePoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "ProjectivePoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n)",
                &self.X, &self.Y, &self.Z)
     }
 }
 
 impl Debug for CompletedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompletedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for PreComputedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "PreComputedPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
                &self.y_plus_x, &self.y_minus_x, &self.xy2d)
     }
 }
 
 impl Debug for CachedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CachedPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
                &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }
@@ -806,19 +825,11 @@ mod test {
     use test::Bencher;
     use field::FieldElement;
     use scalar::Scalar;
+    use util::CTAssignable;
     use constants;
+    use constants::BASE_CMPRSSD;
     use super::*;
     use super::select_precomputed_point;
-
-    /// Basepoint has y = 4/5.
-    ///
-    /// Generated with Sage: these are the bytes of 4/5 in 𝔽_p.  The
-    /// sign bit is 0 since the basepoint has x chosen to be positive.
-    static BASE_CMPRSSD: CompressedPoint =
-        CompressedPoint([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -826,17 +837,17 @@ mod test {
         [0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9, 0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c, 0x69,
          0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0, 0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36, 0x69, 0x21];
 
-    static BASE2_CMPRSSD: CompressedPoint =
-        CompressedPoint([0xc9, 0xa3, 0xf8, 0x6a, 0xae, 0x46, 0x5f, 0xe,
-                         0x56, 0x51, 0x38, 0x64, 0x51, 0x0f, 0x39, 0x97,
-                         0x56, 0x1f, 0xa2, 0xc9, 0xe8, 0x5e, 0xa2, 0x1d,
-                         0xc2, 0x29, 0x23, 0x09, 0xf3, 0xcd, 0x60, 0x22]);
+    static BASE2_CMPRSSD: CompressedEdwardsY =
+        CompressedEdwardsY([0xc9, 0xa3, 0xf8, 0x6a, 0xae, 0x46, 0x5f, 0xe,
+                            0x56, 0x51, 0x38, 0x64, 0x51, 0x0f, 0x39, 0x97,
+                            0x56, 0x1f, 0xa2, 0xc9, 0xe8, 0x5e, 0xa2, 0x1d,
+                            0xc2, 0x29, 0x23, 0x09, 0xf3, 0xcd, 0x60, 0x22]);
 
-    static BASE16_CMPRSSD: CompressedPoint =
-        CompressedPoint([0xeb, 0x27, 0x67, 0xc1, 0x37, 0xab, 0x7a, 0xd8,
-                         0x27, 0x9c, 0x07, 0x8e, 0xff, 0x11, 0x6a, 0xb0,
-                         0x78, 0x6e, 0xad, 0x3a, 0x2e, 0x0f, 0x98, 0x9f,
-                         0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
+    static BASE16_CMPRSSD: CompressedEdwardsY =
+        CompressedEdwardsY([0xeb, 0x27, 0x67, 0xc1, 0x37, 0xab, 0x7a, 0xd8,
+                            0x27, 0x9c, 0x07, 0x8e, 0xff, 0x11, 0x6a, 0xb0,
+                            0x78, 0x6e, 0xad, 0x3a, 0x2e, 0x0f, 0x98, 0x9f,
+                            0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
 
     /// 4493907448824000747700850167940867464579944529806937181821189941592931634714
     static A_SCALAR: Scalar = Scalar([
@@ -853,14 +864,14 @@ mod test {
         0x56, 0xa7, 0xd4, 0xaa, 0xb8, 0x60, 0x8a, 0x05]);
 
     /// A_SCALAR * basepoint, computed with ed25519.py
-    static A_TIMES_BASEPOINT: CompressedPoint = CompressedPoint([
+    static A_TIMES_BASEPOINT: CompressedEdwardsY = CompressedEdwardsY([
         0xea, 0x27, 0xe2, 0x60, 0x53, 0xdf, 0x1b, 0x59,
         0x56, 0xf1, 0x4d, 0x5d, 0xec, 0x3c, 0x34, 0xc3,
         0x84, 0xa2, 0x69, 0xb7, 0x4c, 0xc3, 0x80, 0x3e,
         0xa8, 0xe2, 0xe7, 0xc9, 0x42, 0x5e, 0x40, 0xa5]);
 
     /// A_SCALAR * (A_TIMES_BASEPOINT) + B_SCALAR * BASEPOINT
-    static DOUBLE_SCALAR_MULT_RESULT: CompressedPoint = CompressedPoint([
+    static DOUBLE_SCALAR_MULT_RESULT: CompressedEdwardsY = CompressedEdwardsY([
         0x7d, 0xfd, 0x6c, 0x45, 0xaf, 0x6d, 0x6e, 0x0e,
         0xba, 0x20, 0x37, 0x1a, 0x23, 0x64, 0x59, 0xc4,
         0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85,
@@ -886,7 +897,7 @@ mod test {
         let mut m_bp_bytes: [u8;32] = BASE_CMPRSSD.to_bytes().clone();
         // Set the high bit of the last byte to flip the sign
         m_bp_bytes[31] |= 1 << 7;
-        let m_bp = CompressedPoint(m_bp_bytes).decompress().unwrap();
+        let m_bp = CompressedEdwardsY(m_bp_bytes).decompress().unwrap();
         let bp = BASE_CMPRSSD.decompress().unwrap();
         assert_eq!(m_bp.X, -(&bp.X));
         assert_eq!(m_bp.Y,  bp.Y);
@@ -933,6 +944,17 @@ mod test {
         };
         let bp_added = (&bp + &bp_precomputed).to_extended();
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
+    }
+
+    /// Sanity check for conversion to precomputed points
+    #[test]
+    fn test_convert_to_precomputed() {
+        // construct a point as aB so it has denominators (ie. Z != 1)
+        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB_pc = aB.to_precomputed();
+        let id = ExtendedPoint::identity();
+        let P = &id + &aB_pc;
+        assert_eq!(P.to_extended().compress(), aB.compress())
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py

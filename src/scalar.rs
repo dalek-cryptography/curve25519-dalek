@@ -29,8 +29,10 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
-use std::ops::{Index, IndexMut};
+use core::clone::Clone;
+use core::ops::{Index, IndexMut};
 
+#[cfg(feature = "std")]
 use rand::Rng;
 
 // XXX should these be in a utility module ?
@@ -104,6 +106,7 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
+    #[cfg(feature = "std")]
     pub fn random<T: Rng>(csprng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         csprng.fill_bytes(&mut scalar_bytes);

@@ -9,6 +9,7 @@
 //  - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 //  - Henry de Valence <hdevalence@hdevalence.ca>
 
+#![no_std]
 #![allow(unused_features)]
 #![feature(test)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
@@ -37,6 +38,7 @@ extern crate test;
 #[macro_use]
 extern crate arrayref;
 
+#[cfg(feature = "std")]
 extern crate rand;
 
 // Modules for low-level operations directly on field elements and curve points.

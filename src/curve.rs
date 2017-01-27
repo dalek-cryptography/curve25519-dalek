@@ -77,10 +77,10 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-use std::fmt::Debug;
-use std::iter::Iterator;
-use std::ops::{Add, Sub, Neg, Index};
-use std::cmp::{PartialEq, Eq};
+use core::fmt::Debug;
+use core::iter::Iterator;
+use core::ops::{Add, Sub, Neg, Index};
+use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;
@@ -101,9 +101,9 @@ use util::CTAssignable;
 #[derive(Copy, Clone)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
-impl Debug for CompressedEdwardsY {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "CompressedEdwardsY: {:?}", &self.0[..])
+impl Debug for CompressedPoint {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "CompressedPoint: {:?}", &self.0[..])
     }
 }
 
@@ -782,35 +782,35 @@ impl ExtendedPoint {
 // ------------------------------------------------------------------------
 
 impl Debug for ExtendedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "ExtendedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for ProjectivePoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "ProjectivePoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n)",
                &self.X, &self.Y, &self.Z)
     }
 }
 
 impl Debug for CompletedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompletedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for PreComputedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "PreComputedPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
                &self.y_plus_x, &self.y_minus_x, &self.xy2d)
     }
 }
 
 impl Debug for CachedPoint {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CachedPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
                &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }

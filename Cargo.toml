@@ -14,9 +14,16 @@ exclude = [
     ".gitignore"
 ]
 
-[dependencies]
-rand = "0.3"
-arrayref = "0.3.2"
+[dependencies.arrayref]
+version = "0.3.3"
+
+[dependencies.rand]
+optional = true
+version = "0.3"
+
+[features]
+default = ["std"]
+std = ["rand"]
 
 # The development profile, used for `cargo build`.
 [profile.dev]

@@ -214,7 +214,8 @@ pub struct CompletedPoint {
 /// A pre-computed point in the affine model for the curve,
 /// represented as (y+x, y-x, 2dxy).  These precomputations
 /// accelerate addition and subtraction.
-#[derive(Copy, Clone)]
+// Safe to derive Eq because affine coordinates.
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
 pub struct PreComputedPoint {
     pub y_plus_x:  FieldElement,
@@ -339,7 +340,8 @@ impl ProjectivePoint {
 }
 
 impl ExtendedPoint {
-    fn to_cached(&self) -> CachedPoint {
+    /// Convert to a CachedPoint
+    pub fn to_cached(&self) -> CachedPoint {
         CachedPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -365,10 +367,25 @@ impl ExtendedPoint {
     pub fn compress(&self) -> CompressedEdwardsY {
         self.to_projective().compress()
     }
+
+    /// Dehomogenize to a PreComputedPoint.
+    /// Mainly for testing.
+    pub fn to_precomputed(&self) -> PreComputedPoint {
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let xy2d = &(&x * &y) * &constants::d2;
+        PreComputedPoint{
+            y_plus_x:  &y + &x,
+            y_minus_x: &y - &x,
+            xy2d:      xy2d
+        }
+    }
 }
 
 impl CompletedPoint {
-    fn to_projective(&self) -> ProjectivePoint {
+    /// Convert to a ProjectivePoint
+    pub fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -376,7 +393,8 @@ impl CompletedPoint {
         }
     }
 
-    fn to_extended(&self) -> ExtendedPoint {
+    /// Convert to an ExtendedPoint
+    pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -809,18 +827,9 @@ mod test {
     use scalar::Scalar;
     use util::CTAssignable;
     use constants;
+    use constants::BASE_CMPRSSD;
     use super::*;
     use super::select_precomputed_point;
-
-    /// Basepoint has y = 4/5.
-    ///
-    /// Generated with Sage: these are the bytes of 4/5 in 𝔽_p.  The
-    /// sign bit is 0 since the basepoint has x chosen to be positive.
-    static BASE_CMPRSSD: CompressedEdwardsY =
-        CompressedEdwardsY([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-                            0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -935,6 +944,17 @@ mod test {
         };
         let bp_added = (&bp + &bp_precomputed).to_extended();
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
+    }
+
+    /// Sanity check for conversion to precomputed points
+    #[test]
+    fn test_convert_to_precomputed() {
+        // construct a point as aB so it has denominators (ie. Z != 1)
+        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB_pc = aB.to_precomputed();
+        let id = ExtendedPoint::identity();
+        let P = &id + &aB_pc;
+        assert_eq!(P.to_extended().compress(), aB.compress())
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py

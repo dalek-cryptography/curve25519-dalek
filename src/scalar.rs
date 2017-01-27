@@ -29,7 +29,6 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
-use core::clone::Clone;
 use core::ops::{Index, IndexMut};
 
 #[cfg(feature = "std")]

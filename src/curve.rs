@@ -467,7 +467,7 @@ impl CompletedPoint {
 
 impl ProjectivePoint {
     /// Double this point: return self + self
-    fn double(&self) -> CompletedPoint { // Double()
+    pub fn double(&self) -> CompletedPoint { // Double()
         let XX          = self.X.square();
         let YY          = self.Y.square();
         let ZZ2         = self.Z.square2();
@@ -487,7 +487,7 @@ impl ProjectivePoint {
 
 impl ExtendedPoint {
     /// Add this point to itself.
-    fn double(&self) -> ExtendedPoint {
+    pub fn double(&self) -> ExtendedPoint {
         self.to_projective().double().to_extended()
     }
 }

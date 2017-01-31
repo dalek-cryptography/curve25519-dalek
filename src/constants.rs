@@ -29,6 +29,9 @@ pub const d: FieldElement       = FieldElement([
 pub const d2: FieldElement      = FieldElement([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
+pub const d4: FieldElement      = FieldElement([
+    23454405,  -11679213,   5618422,  -5756869,    458917,
+    -1596832,  -25103633, -12990876,  -7676928, -14666033  ]);
 
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement = FieldElement([
@@ -1518,6 +1521,13 @@ mod test {
         let d2 = &d + &d;
         assert_eq!(d, constants::d);
         assert_eq!(d2, constants::d2);
+    }
+
+    #[test]
+    fn test_d4() {
+        let mut four = FieldElement::zero();
+        four[0] = 4;
+        assert_eq!(&constants::d * &four, constants::d4);
     }
 
     /// Test the values in the lookup table of precomputed multiples

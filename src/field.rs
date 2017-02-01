@@ -521,6 +521,15 @@ impl FieldElement {
         (bytes[0] & 1) as i32
     }
 
+    /// Determine if this `FieldElement` is zero.
+    ///
+    /// # Return
+    ///
+    /// If zero, return `1u8`.  Otherwise, return `0u8`.
+    pub fn is_zero(&self) -> u8 {
+        return 1u8 & (!self.is_nonzero());
+    }
+
     /// Determine if this `FieldElement` is non-zero.
     ///
     /// # Return

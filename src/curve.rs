@@ -159,7 +159,7 @@ impl CompressedEdwardsY {
             X *= &constants::SQRT_M1;
         }
 
-        if X.is_negative() != (self[31] >> 7) as i32 {
+        if X.is_negative_ed25519() != (self[31] >> 7) as i32 {
             X = X.neg();
         }
         T = &X * &Y;
@@ -391,7 +391,7 @@ impl ProjectivePoint {
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
-        s[31] ^= (x.is_negative() << 7) as u8;
+        s[31] ^= (x.is_negative_ed25519() << 7) as u8;
         CompressedEdwardsY(s)
     }
 }

@@ -510,13 +510,14 @@ impl FieldElement {
         (!equal_so_far & 1 & greater) as u8
     }
 
-    /// Determine if this `FieldElement` is negative.
+    /// Determine if this `FieldElement` is negative, in the
+    /// sense used in the ed25519 paper.
     ///
     /// # Return
     ///
     /// If negative, return `1i32`.  Otherwise, return `0i32`.
     // XXX should return u8
-    pub fn is_negative(&self) -> i32 { //FeIsNegative
+    pub fn is_negative_ed25519(&self) -> i32 { //FeIsNegative
         let bytes = self.to_bytes();
         (bytes[0] & 1) as i32
     }

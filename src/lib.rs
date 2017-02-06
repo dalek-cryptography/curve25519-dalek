@@ -58,16 +58,22 @@
 //! assert!(verified);
 //! ```
 
+#![no_std]
 #![feature(rand)]
 #![allow(unused_features)]
 #![feature(test)]
 
 #[macro_use]
 extern crate arrayref;
-extern crate crypto;
+extern crate sha2;
 extern crate curve25519_dalek;
+
+#[cfg(feature = "std")]
 extern crate rand;
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
 #[cfg(test)]
 extern crate test;
 #[cfg(test)]

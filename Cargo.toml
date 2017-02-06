@@ -11,10 +11,20 @@ exclude = [ ".gitignore", "TESTVECTORS" ]
 
 
 [dependencies]
-arrayref = "0.3.2"
-rust-crypto = "^0.2"
-rand = "^0.3"
-curve25519-dalek = "^0.3"
+arrayref = "0.3.3"
+sha2 = "^0.4"
+
+[dependencies.curve25519-dalek]
+version = "^0.3"
+default-features = false
+
+[dependencies.rand]
+optional = true
+version = "^0.3"
 
 [dev-dependencies]
 rustc-serialize = "0.3"
+
+[features]
+default = ["std"]
+std = ["rand"]

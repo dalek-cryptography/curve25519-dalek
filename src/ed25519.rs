@@ -10,11 +10,11 @@
 
 //! A Rust implementation of ed25519 key generation, signing, and verification.
 
-use std::fmt::Debug;
+use core::fmt::Debug;
 
-use crypto::digest::Digest;
-use crypto::sha2::Sha512;
+use sha2::{Digest, Sha512};
 
+#[cfg(feature = "std")]
 use rand::Rng;
 
 use curve25519_dalek::curve;
@@ -24,6 +24,7 @@ use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::util::arrays_equal_ct;
 
+pub const SIGNATURE_LENGTH: usize = 64;
 
 /// An ed25519 signature.
 ///
@@ -33,14 +34,14 @@ use curve25519_dalek::util::arrays_equal_ct;
 /// "detached"—that is, they do **not** include a copy of the message which
 /// has been signed.
 #[derive(Copy)]
-pub struct Signature(pub [u8; 64]);
+pub struct Signature(pub [u8; SIGNATURE_LENGTH]);
 
 impl Clone for Signature {
     fn clone(&self) -> Self { *self }
 }
 
 impl Debug for Signature {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Signature: {:?}", &self.0[..])
     }
 }
@@ -68,16 +69,16 @@ impl PartialEq for Signature {
 }
 
 impl Signature {
-    /// View this signature as an array of 32 bytes.
+    /// View this signature as an array of 64 bytes.
     #[inline]
-    pub fn to_bytes(&self) -> [u8; 64] {
+    pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
         self.0
     }
 
     /// Construct a `Signature` from a slice of bytes.
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Signature {
-        Signature(*array_ref!(bytes, 0, 64))
+        Signature(*array_ref!(bytes, 0, SIGNATURE_LENGTH))
     }
 }
 
@@ -85,7 +86,7 @@ impl Signature {
 pub struct SecretKey(pub [u8; 64]);
 
 impl Debug for SecretKey {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "SecretKey: {:?}", &self.0[..])
     }
 }
@@ -136,7 +137,7 @@ impl SecretKey {
     pub fn sign(&self, message: &[u8]) -> Signature {
         let mut h: Sha512 = Sha512::new();
         let mut hash: [u8; 64] = [0u8; 64];
-        let signature_bytes: Vec<u8>;
+        let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
         let mut expanded_key_secret: Scalar;
         let mesg_digest: Scalar;
         let hram_digest: Scalar;
@@ -148,34 +149,35 @@ impl SecretKey {
         let public_key: &[u8; 32] = array_ref!(&self.0, 32, 32);
 
         h.input(secret_key);
-        h.result(&mut hash);
+        hash.copy_from_slice(h.result().as_slice());
 
         expanded_key_secret = Scalar(*array_ref!(&hash, 0, 32));
         expanded_key_secret[0]  &= 248;
         expanded_key_secret[31] &=  63;
         expanded_key_secret[31] |=  64;
 
-        h.reset();
+        h = Sha512::new();
         h.input(&hash[32..]);
         h.input(&message);
-        h.result(&mut hash);
+        hash.copy_from_slice(h.result().as_slice());
 
         mesg_digest = Scalar::reduce(&hash);
 
         r = ExtendedPoint::basepoint_mult(&mesg_digest);
 
-        h.reset();
+        h = Sha512::new();
         h.input(&r.compress().to_bytes()[..]);
         h.input(public_key);
         h.input(&message);
-        h.result(&mut hash);
+        hash.copy_from_slice(h.result().as_slice());
 
         hram_digest = Scalar::reduce(&hash);
 
         s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
         t = r.compress();
 
-        signature_bytes = [t.0, s.0].concat();
+        signature_bytes[..32].copy_from_slice(&t.0);
+        signature_bytes[32..64].copy_from_slice(&s.0);
         Signature(*array_ref!(&signature_bytes, 0, 64))
     }
 }
@@ -185,8 +187,8 @@ impl SecretKey {
 pub struct PublicKey(pub CompressedEdwardsY);
 
 impl Debug for PublicKey {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "PublicKey( CompressedEdwardsY( {:?} ))", self.0)
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "PublicKey( CompressedPoint( {:?} ))", self.0)
     }
 }
 
@@ -267,7 +269,7 @@ impl PublicKey {
         h.input(&bottom_half[..]);
         h.input(&self.to_bytes());
         h.input(&message);
-        h.result(&mut digest);
+        digest.copy_from_slice(h.result().as_slice());
 
         digest_reduced = Scalar::reduce(&digest);
         r = curve::double_scalar_mult_vartime(&digest_reduced, &a, &Scalar(*top_half));
@@ -297,6 +299,7 @@ impl Keypair {
     /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
     /// from `rand::OsRng::new()` (in the `rand` crate).
     // we reassign 0 bytes to the temp variable t to overwrite it
+    #[cfg(feature = "std")]
     #[allow(unused_assignments)]
     pub fn generate<T: Rng>(cspring: &mut T) -> Keypair {
         let mut h: Sha512 = Sha512::new();
@@ -309,7 +312,7 @@ impl Keypair {
         cspring.fill_bytes(&mut t);
 
         h.input(&t);
-        h.result(&mut hash);
+        hash.copy_from_slice(h.result().as_slice());
 
         digest = array_mut_ref!(&mut hash, 0, 32);
         digest[0]  &= 248;
@@ -346,6 +349,8 @@ mod test {
     use std::io::BufReader;
     use std::io::BufRead;
     use std::fs::File;
+    use std::string::String;
+    use std::vec::Vec;
     use test::Bencher;
     use curve25519_dalek::curve::ExtendedPoint;
     use rand::OsRng;

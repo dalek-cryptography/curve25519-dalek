@@ -18,7 +18,7 @@ use crypto::sha2::Sha512;
 use rand::Rng;
 
 use curve25519_dalek::curve;
-use curve25519_dalek::curve::CompressedPoint;
+use curve25519_dalek::curve::CompressedEdwardsY;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
@@ -142,7 +142,7 @@ impl SecretKey {
         let hram_digest: Scalar;
         let r: ExtendedPoint;
         let s: Scalar;
-        let t: CompressedPoint;
+        let t: CompressedEdwardsY;
 
         let secret_key: &[u8; 32] = array_ref!(&self.0,  0, 32);
         let public_key: &[u8; 32] = array_ref!(&self.0, 32, 32);
@@ -182,11 +182,11 @@ impl SecretKey {
 
 /// An ed25519 public key.
 #[derive(Copy, Clone)]
-pub struct PublicKey(pub CompressedPoint);
+pub struct PublicKey(pub CompressedEdwardsY);
 
 impl Debug for PublicKey {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "PublicKey( CompressedPoint( {:?} ))", self.0)
+        write!(f, "PublicKey( CompressedEdwardsY( {:?} ))", self.0)
     }
 }
 
@@ -202,7 +202,7 @@ impl PublicKey {
     /// # Warning
     ///
     /// The caller is responsible for ensuring that the bytes passed into this
-    /// method actually represent a `curve25519_dalek::curve::CompressedPoint`
+    /// method actually represent a `curve25519_dalek::curve::CompressedEdwardsY`
     /// and that said compressed point is actually a point on the curve.
     ///
     /// # Example
@@ -224,7 +224,7 @@ impl PublicKey {
     #[inline]
     #[allow(dead_code)]
     fn from_bytes(bytes: &[u8]) -> PublicKey {
-        PublicKey(CompressedPoint(*array_ref!(bytes, 0, 32)))
+        PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32)))
     }
 
     /// Convert this public key to its underlying extended twisted Edwards coordinate.
@@ -325,7 +325,7 @@ impl Keypair {
         }
 
         Keypair{
-            public: PublicKey(CompressedPoint(pk)),
+            public: PublicKey(CompressedEdwardsY(pk)),
             secret: SecretKey(sk),
         }
     }

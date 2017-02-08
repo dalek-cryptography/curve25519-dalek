@@ -54,7 +54,7 @@ Documentation is available [here](https://docs.rs/ed25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    ed25519-dalek = "0.1.0"
+    ed25519-dalek = "^0.2"
 
 Then, in your library or executable source, add:
 

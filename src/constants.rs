@@ -29,9 +29,18 @@ pub const d: FieldElement       = FieldElement([
 pub const d2: FieldElement      = FieldElement([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
+
+/// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
+
+/// Precomputed value of the other square root of -1 (mod p),
+/// i.e., MSQRT_M1 = -SQRT_M1.
+pub const MSQRT_M1: FieldElement = FieldElement([
+    32595792,    7943725,  -9377950,  -3500415, -12389472,
+    272473,     25146209,   2005654,   -326686, -11406482, ]);
+
 /// Precomputed value of 1/2 (mod p).
 pub const HALF: FieldElement = FieldElement([
     10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
@@ -1491,11 +1500,13 @@ mod test {
     }
 
     #[test]
-    /// Test that SQRT_M1 is a square root of -1
+    /// Test that SQRT_M1 and MSQRT_M1 are square roots of -1
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
-        assert_eq!(minus_one, sqrt_m1_sq);
+        let msqrt_m1_sq = &constants::MSQRT_M1 * &constants::MSQRT_M1;
+        assert_eq!(minus_one,  sqrt_m1_sq);
+        assert_eq!(minus_one, msqrt_m1_sq);
     }
 
     #[test]

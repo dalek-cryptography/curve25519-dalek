@@ -154,6 +154,15 @@ impl DecafPoint {
         s.negate();
         CompressedDecaf(s.abs_decaf().to_bytes())
     }
+
+    /// Return the coset self + E[4], for debugging.
+    fn coset4(&self) -> [ExtendedPoint; 4] {
+        [  self.0
+        , &self.0 + &constants::EIGHT_TORSION[2]
+        , &self.0 + &constants::EIGHT_TORSION[4]
+        , &self.0 + &constants::EIGHT_TORSION[6]
+        ]
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -228,7 +237,9 @@ impl Debug for CompressedDecaf {
 
 impl Debug for DecafPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "DecafPoint: {:?}", &self.0)
+        let coset = self.coset4();
+        write!(f, "DecafPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
+               coset[0], coset[1], coset[2], coset[3])
     }
 }
 
@@ -277,9 +288,9 @@ mod test {
     #[test]
     fn test_decaf_four_torsion_basepoint() {
         let bp = DecafPoint::basepoint();
-        for i in (0..8).filter(|x| x % 2 == 0) {
-            let Q = &bp + &DecafPoint(constants::EIGHT_TORSION[i]);
-            assert_eq!(Q, bp);
+        let bp_coset = bp.coset4();
+        for i in 0..4 {
+            assert_eq!(bp, DecafPoint(bp_coset[i]));
         }
     }
 
@@ -288,9 +299,9 @@ mod test {
         let mut rng = OsRng::new().unwrap();
         let s = Scalar::random(&mut rng);
         let P = DecafPoint::basepoint_mult(&s);
-        for i in (0..8).filter(|x| x % 2 == 0) {
-            let Q = &P + &DecafPoint(constants::EIGHT_TORSION[i]);
-            assert_eq!(Q, P);
+        let P_coset = P.coset4();
+        for i in 0..4 {
+            assert_eq!(P, DecafPoint(P_coset[i]));
         }
     }
 }

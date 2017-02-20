@@ -174,12 +174,16 @@ impl CompressedEdwardsY {
 
 /// An `ExtendedPoint` is a point on the curve in 𝗣³(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to (x:y:1:xy).
+// XXX members should not be public, but that's needed for the
+// constants module. Fix when RFC #1422 lands:
+// https://github.com/rust-lang/rust/issues/32409
 #[derive(Copy, Clone)]
+#[allow(missing_docs)]
 pub struct ExtendedPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
+    pub X: FieldElement,
+    pub Y: FieldElement,
+    pub Z: FieldElement,
+    pub T: FieldElement,
 }
 
 /// A `ProjectivePoint` is a point on the curve in 𝗣²(𝔽ₚ).

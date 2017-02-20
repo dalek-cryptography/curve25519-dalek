@@ -34,10 +34,10 @@ use curve::ExtendedPoint;
 ///
 /// XXX think about how this API should work
 #[derive(Copy, Clone, Eq, PartialEq)]
-pub struct DecafPoint(pub [u8; 32]);
+pub struct CompressedDecaf(pub [u8; 32]);
 
-impl DecafPoint {
-    /// View this `DecafPoint` as an array of bytes.
+impl CompressedDecaf {
+    /// View this `CompressedDecaf` as an array of bytes.
     pub fn to_bytes(&self) -> [u8;32] {
         self.0
     }
@@ -74,7 +74,7 @@ impl DecafPoint {
 
 impl ExtendedPoint {
     /// Compress in Decaf format.
-    pub fn compress_decaf(&self) -> DecafPoint {
+    pub fn compress_decaf(&self) -> CompressedDecaf {
         // Q: Do we want to encode twisted or untwisted?
         //
         // Notes: 
@@ -139,7 +139,7 @@ impl ExtendedPoint {
         let dYT = &constants::d * &(&Y * &XY);
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
         s.negate();
-        DecafPoint(s.abs_decaf().to_bytes())
+        CompressedDecaf(s.abs_decaf().to_bytes())
     }
 }
 
@@ -148,9 +148,9 @@ impl ExtendedPoint {
 // Debug traits
 // ------------------------------------------------------------------------
 
-impl Debug for DecafPoint {
+impl Debug for CompressedDecaf {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "DecafPoint: {:?}", &self.0[..])
+        write!(f, "CompressedDecaf: {:?}", &self.0[..])
     }
 }
 
@@ -173,7 +173,7 @@ mod test {
 
     #[test]
     fn test_decaf_decompress_id() {
-        let compressed_id = DecafPoint([0u8; 32]);
+        let compressed_id = CompressedDecaf([0u8; 32]);
         let id = compressed_id.decompress().unwrap();
         // This should compress (as ed25519) to the following:
         let mut bytes = [0u8; 32]; bytes[0] = 1;
@@ -183,7 +183,7 @@ mod test {
     #[test]
     fn test_decaf_compress_id() {
         let id = ExtendedPoint::identity();
-        assert_eq!(id.compress_decaf(), DecafPoint([0u8; 32]));
+        assert_eq!(id.compress_decaf(), CompressedDecaf([0u8; 32]));
     }
 
     #[test]

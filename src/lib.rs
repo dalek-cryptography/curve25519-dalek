@@ -46,6 +46,9 @@ extern crate rand;
 pub mod field;
 pub mod scalar;
 pub mod curve;
+
+// Feature gate decaf while our implementation is unfinished and probably incorrect.
+#[cfg(feature = "yolocrypto")]
 pub mod decaf;
 
 // Constant-time functions and other miscelaneous utilities.

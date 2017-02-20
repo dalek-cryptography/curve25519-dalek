@@ -94,6 +94,14 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
+/// Basepoint has y = 4/5.
+pub const BASEPOINT: ExtendedPoint = ExtendedPoint{
+        X: FieldElement([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
+        Y: FieldElement([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([28827062, -6116119, -27349572, 244363, 8635006, 11264893, 19351346, 13413597, 16611511, -6414980]),
+};
+
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form
 pub const l: Scalar = Scalar([ 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,

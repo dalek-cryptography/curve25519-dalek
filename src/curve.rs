@@ -636,18 +636,24 @@ impl<'a> Neg for &'a PreComputedPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-impl ExtendedPoint {
-    /// Scalar multiplication: compute `a * self`.
+/// Trait for scalar multiplication of an arbitrary point.
+pub trait ScalarMult<S> {
+    /// Compute `scalar * self`.
+    fn scalar_mult(&self, scalar: &S) -> Self;
+}
+
+impl ScalarMult<Scalar> for ExtendedPoint {
+    /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    pub fn scalar_mult(&self, a: &Scalar) -> ExtendedPoint {
+    fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
         let A = self.to_cached();
         let mut As: [CachedPoint; 8] = [A; 8];
         for i in 0..7 {
             As[i+1] = (self + &As[i]).to_extended().to_cached();
         }
-        let e = a.to_radix_16();
+        let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
         for i in (0..64).rev() {
@@ -657,8 +663,22 @@ impl ExtendedPoint {
         }
         h
     }
+}
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `a`, by
+/// Trait for scalar multiplication of a distinguished basepoint.
+pub trait BasepointMult<S> {
+    /// Return the basepoint `B`.
+    fn basepoint() -> Self;
+    /// Compute `scalar * B`.
+    fn basepoint_mult(scalar: &S) -> Self;
+}
+
+impl BasepointMult<Scalar> for ExtendedPoint {
+    fn basepoint() -> ExtendedPoint {
+        constants::BASEPOINT
+    }
+
+    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
     /// computing the multiple `aB` of the basepoint `B`.
     ///
     /// Precondition: the scalar must be reduced.
@@ -683,8 +703,8 @@ impl ExtendedPoint {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    pub fn basepoint_mult(a: &Scalar) -> ExtendedPoint { //GeScalarMultBase
-        let e = a.to_radix_16();
+    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint { //GeScalarMultBase
+        let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
 
@@ -702,7 +722,9 @@ impl ExtendedPoint {
 
         h
     }
+}
 
+impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
     ///
     /// Convenience wrapper around `mult_by_pow_2`.

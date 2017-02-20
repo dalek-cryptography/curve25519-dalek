@@ -181,6 +181,7 @@ mod test {
     use constants::BASE_CMPRSSD;
     use curve::CompressedEdwardsY;
     use curve::ExtendedPoint;
+    use curve::BasepointMult;
     use curve::Identity;
     use super::*;
 

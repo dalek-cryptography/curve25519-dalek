@@ -285,6 +285,30 @@ impl Scalar {
         // good to check that this really is OK to add.
         UnpackedScalar::reduce_limbs(&mut s).pack()
     }
+
+    /// Determine if this `Scalar` is negative in constant time.
+    ///
+    /// # Returns
+    ///
+    /// If negative, return `-1i32`.  Otherwise, return `0i32`.
+    // XXX there's got to be a more efficient way to do this than unpacking. -- isis
+    pub fn is_negative(&self) -> u8 {
+        self.unpack().is_negative()
+    }
+
+    /// Compute the absolute value of this `Scalar` in constant time.
+    ///
+    /// # Returns
+    ///
+    /// A Scalar whose value is the absolute value of this one, i.e. `|self|`.
+    pub fn abs(&self) -> Scalar {
+        let mask: i32 = self.is_negative();
+        let negative: Scalar = -self;
+        let mut absolute: Scalar = *self;
+
+        absolute.conditional_assign(negative, -mask);
+        absolute
+    }
 }
 
 /// The `UnpackedScalar` struct represents an element in ℤ/lℤ as 12
@@ -496,6 +520,14 @@ impl UnpackedScalar {
         UnpackedScalar(*array_ref!(limbs,0,12))
     }
 
+    /// Determine if this `UnpackedScalar` is negative in constant time.
+    ///
+    /// # Returns
+    ///
+    /// If negative, return `-1i32`.  Otherwise, return `0i32`.
+    pub fn is_negative(&self) -> i32 {
+        (*self[0] as i32) >> 255  // 255 = (sizeof(i32) * CHAR_BIT) - 1
+    }
 }
 
 #[cfg(test)]
@@ -589,6 +621,15 @@ mod test {
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
+    }
+
+    #[test]
+    fn test_scalar_is_negative() {
+        let a: Scalar = Scalar([-1, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0, ])
+        assert!(a.is_negative() == -1);
     }
 
     #[test]

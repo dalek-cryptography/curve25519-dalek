@@ -711,7 +711,7 @@ impl FieldElement {
     /// XXX This returns an extra intermediate to save computation in
     /// finding inverses, at the cost of an extra copy when it's not
     /// used (e.g., when raising to (p-1)/2 or (p-5)/8). Good idea?
-    fn pow22501(&self) -> (FieldElement,FieldElement) {
+    fn pow22501(&self) -> (FieldElement, FieldElement) {
         // Instead of managing which temporary variables are used
         // for what, we define as many as we need and trust the
         // compiler to reuse stack space as appropriate.

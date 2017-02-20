@@ -104,7 +104,7 @@ impl DecafPoint {
 
         let mut X = self.0.X;
         let mut Y = self.0.Y;
-        let mut XY = self.0.T;
+        let mut T = self.0.T;
 
         // If y nonzero and xy nonnegative, continue.
         // Otherwise, add Q_6 = (i,0) = constants::EIGHT_TORSION[6]
@@ -113,14 +113,14 @@ impl DecafPoint {
 
         // XXX it should be possible to avoid this inversion, but
         // let's make sure the code is correct first
-        let xy = &XY * &self.0.Z.invert();
+        let xy = &T * &self.0.Z.invert();
         let is_neg_mask = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
         X.conditional_assign(&iY, is_neg_mask);
         Y.conditional_assign(&iX, is_neg_mask);
-        let minus_XY = -&XY;
-        XY.conditional_assign(&minus_XY, is_neg_mask);
+        let minus_T = -&T;
+        T.conditional_assign(&minus_T, is_neg_mask);
 
         // Step 1: Compute r = 1/sqrt((a-d)(Z+Y)(Z-Y))
         let Z_plus_Y  = &self.0.Z + &Y;
@@ -142,7 +142,7 @@ impl DecafPoint {
 
         // Step 4: Compute s = |u(r(aZX - dYT)+Y)/a|
         let minus_ZX = -&(&self.0.Z * &X);
-        let dYT = &constants::d * &(&Y * &XY);
+        let dYT = &constants::d * &(&Y * &T);
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
         s.negate();
         CompressedDecaf(s.abs_decaf().to_bytes())

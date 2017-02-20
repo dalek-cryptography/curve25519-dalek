@@ -31,6 +31,8 @@ use subtle::CTEq;
 
 use utils::{load3, load4};
 
+use constants;
+
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
@@ -813,6 +815,48 @@ impl FieldElement {
         let t21 = self * &t20;             // 251..2,0
 
         t21
+    }
+
+    /// Try to compute 1/sqrt(self).
+    ///
+    /// # Return
+    ///
+    /// * If `self` is zero, returns zero.
+    /// * If `self` is square, returns 1/sqrt(self).
+    /// * If `self` is nonsquare, returns `None`.
+    pub fn invsqrt(&self) -> Option<FieldElement> {
+        // We are to compute v as:
+        //     / 1/sqrt(self)  if self is square, nonzero;
+        // v = |            0  if self is zero;
+        //     \     [reject]  if self is nonsquare.
+        //
+        // Using the same trick as in ed25519 decoding, we merge the
+        // inversion, the square root, and the square test as follows.
+        //
+        // To compute sqrt(α), we can compute β = α^((p+3)/8).
+        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
+        // gives sqrt(α).
+        //
+        // To compute 1/sqrt(α), we observe that
+        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
+        //                            = α^3 * (α^7)^((p-5)/8).
+        //
+        // If α is square, then (1/β)^2 = ±(1/α), so that (1/β)^2 α = ±1.
+        let a3 = &self.square() * self;        // α^3
+        let a7 =   &a3.square() * self;        // α^7
+        let mut v = &a3 * &a7.pow_p58();       // α^(p-1-(p+3)/8)
+        let check =  self * &v.square();       // ±1 if α is square
+
+        if v.is_zero() == 1u8 {
+            return Some(v);  // α was zero all along
+        } else if check == FieldElement::one() {
+            return Some(v);  // computed the correct sqrt
+        } else if check == -&FieldElement::one() {
+                             // wrong sign, multiply by sqrt(-1)
+            return Some(&v * &constants::SQRT_M1);
+        } else {
+            return None;     // input was nonsquare
+        }
     }
 
     /// chi calculates `self^((p-1)/2)`.

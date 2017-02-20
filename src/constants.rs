@@ -1622,6 +1622,19 @@ mod test {
     }
 
     #[test]
+    fn test_sqrt_constants_sign() {
+        let one       = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
+        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let invsqrt_m1 = minus_one.invsqrt().unwrap();
+        let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
+        let sign_test_msqrt = &invsqrt_m1 * &constants::MSQRT_M1;
+        // XXX it seems we have flipped the sign relative to
+        // the invsqrt function?
+        assert_eq!(sign_test_sqrt, minus_one);
+        assert_eq!(sign_test_msqrt, one);
+    }
+
+    #[test]
     /// Test that d = -121665/121666
     fn test_d_vs_ratio() {
         let a = FieldElement([-121665,0,0,0,0,0,0,0,0,0]);

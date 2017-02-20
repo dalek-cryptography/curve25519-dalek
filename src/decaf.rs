@@ -266,47 +266,31 @@ mod test {
 
     #[test]
     fn test_decaf_basepoint_roundtrip() {
-        // XXX fix up this test
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_decaf = DecafPoint(bp).compress();
-        let bp_recaf = bp_decaf.decompress().unwrap().0;
-        let diff = &bp - &bp_recaf;
-        let diff2 = diff.double();
-        let diff4 = diff2.double();
-        //println!("bp {:?}",       bp);
-        //println!("bp_decaf {:?}", bp_decaf);
-        //println!("bp_recaf {:?}", bp_recaf);
-        //println!("diff {:?}", diff.compress());
-        //println!("diff2 {:?}", diff2.compress());
-        //println!("diff4 {:?}", diff4.compress());
+        let bp_compressed_decaf = DecafPoint::basepoint().compress();
+        let bp_recaf = bp_compressed_decaf.decompress().unwrap().0;
+        // Check that bp_recaf differs from bp by a point of order 4
+        let diff = &ExtendedPoint::basepoint() - &bp_recaf;
+        let diff4 = diff.mult_by_pow_2(4);
         assert_eq!(diff4.compress(), ExtendedPoint::identity().compress());
     }
 
     #[test]
     fn test_decaf_four_torsion_basepoint() {
-        //println!("");
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_decaf = DecafPoint(bp).compress();
-        //println!("orig, {:?}", bp.compress());
+        let bp = DecafPoint::basepoint();
         for i in (0..8).filter(|x| x % 2 == 0) {
-            let Q = &bp + &constants::EIGHT_TORSION[i];
-            //println!("{}, {:?}", i, Q.compress());
-            assert_eq!(DecafPoint(Q).compress(), bp_decaf);
+            let Q = &bp + &DecafPoint(constants::EIGHT_TORSION[i]);
+            assert_eq!(Q, bp);
         }
     }
 
     #[test]
     fn test_decaf_four_torsion_random() {
-        //println!("");
         let mut rng = OsRng::new().unwrap();
         let s = Scalar::random(&mut rng);
-        let P = ExtendedPoint::basepoint_mult(&s);
-        let P_decaf = DecafPoint(P).compress();
-        //println!("orig, {:?}", P.compress());
+        let P = DecafPoint::basepoint_mult(&s);
         for i in (0..8).filter(|x| x % 2 == 0) {
-            let Q = &P + &constants::EIGHT_TORSION[i];
-            //println!("{}, {:?}", i, Q.compress());
-            assert_eq!(DecafPoint(Q).compress(), P_decaf);
+            let Q = &P + &DecafPoint(constants::EIGHT_TORSION[i]);
+            assert_eq!(Q, P);
         }
     }
 }

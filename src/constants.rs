@@ -17,8 +17,10 @@
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 #![allow(missing_docs)]
+#![allow(non_snake_case)]
 
 use field::FieldElement;
+use curve::ExtendedPoint;
 use curve::PreComputedPoint;
 use curve::CompressedEdwardsY;
 use scalar::Scalar;
@@ -105,6 +107,63 @@ pub const lminus1: Scalar = Scalar([ 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0
                                      0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
+/// The 8-torsion subgroup Ɛ[8].
+///
+/// In the case of Curve25519, it is cyclic; the `i`th element of the
+/// array is `i*P`, where `P` is a point of order 8 generating Ɛ[8].
+///
+/// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
+/// indexed by 0,4. 
+pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
+    ExtendedPoint{
+        X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Y: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([21352778, 5345713, 4660180, -8347857, 24143090, 14568123, 30185756, -12247770, -33528939, 8345319]),
+        Y: FieldElement([6952922, 1265500, -6862341, 7057498, 4037696, 5447722, -31680899, 15325402, 19365852, -1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([-25262188, -11972680, 11716002, -5869612, -18193162, 16297739, 20670665, -8559098, 3541543, -5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([32595792, 7943725, -9377950, -3500415, -12389472, 272473, 25146209, 2005654, -326686, -11406482]),
+        Y: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([21352778, 5345713, 4660180, -8347857, 24143090, 14568123, 30185756, -12247770, -33528939, 8345319]),
+        Y: FieldElement([-6952922, -1265500, 6862341, -7057498, -4037696, -5447722, 31680899, -15325402, -19365852, 1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([25262188, 11972680, -11716002, 5869612, 18193162, -16297739, -20670665, 8559098, -3541543, 5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Y: FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([-21352778, -5345713, -4660180, 8347857, -24143090, -14568123, -30185756, 12247770, 33528939, -8345319]),
+        Y: FieldElement([-6952922, -1265500, 6862341, -7057498, -4037696, -5447722, 31680899, -15325402, -19365852, 1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([-25262188, -11972680, 11716002, -5869612, -18193162, 16297739, 20670665, -8559098, 3541543, -5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([-32595792, -7943725, 9377950, 3500415, 12389472, -272473, -25146209, -2005654, 326686, 11406482]),
+        Y: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([-21352778, -5345713, -4660180, 8347857, -24143090, -14568123, -30185756, 12247770, 33528939, -8345319]),
+        Y: FieldElement([6952922, 1265500, -6862341, 7057498, 4037696, 5447722, -31680899, 15325402, 19365852, -1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([25262188, 11972680, -11716002, 5869612, 18193162, -16297739, -20670665, 8559098, -3541543, 5011181])
+    },
+];
 
 pub const bi: [PreComputedPoint; 8] = [
     PreComputedPoint{
@@ -1503,7 +1562,47 @@ pub const base: [[PreComputedPoint; 8]; 32] = [
 mod test {
     use field::FieldElement;
     use curve::PreComputedPoint;
+    use curve::CompressedEdwardsY;
+    use curve::ExtendedPoint;
+    use curve::Identity;
+    use curve::ValidityCheck;
     use constants;
+
+    #[test]
+    fn test_eight_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in 0..8 {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
+            assert!(Q.is_valid());
+            assert!(Q.compress() == compressed_id);
+        }
+    }
+
+    #[test]
+    fn test_four_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in (0..8).filter(|i| i % 2 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
+            assert!(Q.is_valid());
+            assert!(Q.compress() == compressed_id);
+        }
+    }
+
+    #[test]
+    fn test_two_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in (0..8).filter(|i| i % 4 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
+            assert!(Q.is_valid());
+            assert!(Q.compress() == compressed_id);
+        }
+    }
 
     #[test]
     fn test_half() {

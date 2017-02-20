@@ -803,7 +803,7 @@ impl FieldElement {
 mod test {
     use field::*;
     use test::Bencher;
-    use util::conditional_negate;
+    use util::CTNegateable;
 
     #[bench]
     fn bench_fieldelement_a_mul_a(b: &mut Bencher) {
@@ -939,11 +939,11 @@ mod test {
         let       one = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let mut x = one;
-        conditional_negate(&mut x,1u8);
+        x.conditional_negate(1u8);
         assert_eq!(x, minus_one);
-        conditional_negate(&mut x,0u8);
+        x.conditional_negate(0u8);
         assert_eq!(x, minus_one);
-        conditional_negate(&mut x,1u8);
+        x.conditional_negate(1u8);
         assert_eq!(x, one);
     }
 }

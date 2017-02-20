@@ -9,8 +9,9 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! An implementation of Mike Hamburg's Decaf point-compression scheme,
-//! providing a prime-order group.
+//! An implementation of Mike Hamburg's Decaf cofactor-eliminating
+//! point-compression scheme, providing a prime-order group on top of
+//! a non-prime-order elliptic curve.
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -36,6 +37,7 @@ use curve::ExtendedPoint;
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedDecaf(pub [u8; 32]);
 
+/// The result of compressing a `DecafPoint`.
 impl CompressedDecaf {
     /// View this `CompressedDecaf` as an array of bytes.
     pub fn to_bytes(&self) -> [u8;32] {

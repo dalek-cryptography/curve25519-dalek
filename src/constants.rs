@@ -36,6 +36,13 @@ pub const a_minus_d: FieldElement    = FieldElement([
     10913609,  -13857413,  15372611,  -6949391,   -114729,
      8787816,    6275908,   3247719,  18696448,  12055116, ]);
 
+/// (p-1)/2, in little-endian bytes.
+pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
+    [0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
+
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,

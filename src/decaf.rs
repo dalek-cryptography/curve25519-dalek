@@ -28,6 +28,9 @@ use subtle::CTAssignable;
 use core::ops::{Add, Sub, Neg};
 
 use curve::ExtendedPoint;
+use curve::BasepointMult;
+use curve::ScalarMult;
+use scalar::Scalar;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -178,6 +181,22 @@ impl<'a> Neg for &'a DecafPoint {
 
     fn neg(self) -> DecafPoint {
         DecafPoint(-&self.0)
+    }
+}
+
+impl ScalarMult<Scalar> for DecafPoint {
+    fn scalar_mult(&self, scalar: &Scalar) -> DecafPoint {
+        DecafPoint(self.0.scalar_mult(scalar))
+    }
+}
+
+impl BasepointMult<Scalar> for DecafPoint {
+    fn basepoint() -> DecafPoint {
+        DecafPoint(constants::BASEPOINT)
+    }
+
+    fn basepoint_mult(scalar: &Scalar) -> DecafPoint {
+        DecafPoint(ExtendedPoint::basepoint_mult(scalar))
     }
 }
 

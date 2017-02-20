@@ -30,6 +30,7 @@ use core::ops::{Add, Sub, Neg};
 use curve::ExtendedPoint;
 use curve::BasepointMult;
 use curve::ScalarMult;
+use curve::Identity;
 use scalar::Scalar;
 
 // ------------------------------------------------------------------------
@@ -76,6 +77,12 @@ impl CompressedDecaf {
         let T = &w * &X;
 
         Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
+    }
+}
+
+impl Identity for CompressedDecaf {
+    fn identity() -> CompressedDecaf {
+        CompressedDecaf([0u8;32])
     }
 }
 
@@ -162,6 +169,12 @@ impl DecafPoint {
         , &self.0 + &constants::EIGHT_TORSION[4]
         , &self.0 + &constants::EIGHT_TORSION[6]
         ]
+    }
+}
+
+impl Identity for DecafPoint {
+    fn identity() -> DecafPoint {
+        DecafPoint(ExtendedPoint::identity())
     }
 }
 
@@ -262,7 +275,7 @@ mod test {
 
     #[test]
     fn test_decaf_decompress_id() {
-        let compressed_id = CompressedDecaf([0u8; 32]);
+        let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
         // This should compress (as ed25519) to the following:
         let mut bytes = [0u8; 32]; bytes[0] = 1;
@@ -271,8 +284,8 @@ mod test {
 
     #[test]
     fn test_decaf_compress_id() {
-        let id = DecafPoint(ExtendedPoint::identity());
-        assert_eq!(id.compress(), CompressedDecaf([0u8; 32]));
+        let id = DecafPoint::identity();
+        assert_eq!(id.compress(), CompressedDecaf::identity());
     }
 
     #[test]

@@ -98,24 +98,12 @@ use util::CTAssignable;
 ///
 /// The first 255 bits of a CompressedEdwardsY represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompressedPoint: {:?}", &self.0[..])
-    }
-}
-
-impl Eq for CompressedEdwardsY {}
-impl PartialEq for CompressedEdwardsY {
-    /// Determine if this `CompressedEdwardsY` is equal to another.
-    ///
-    /// # Warning
-    ///
-    /// This function is NOT constant time.
-    fn eq(&self, other: &CompressedEdwardsY) -> bool {
-        return self.0 == other.0;
     }
 }
 

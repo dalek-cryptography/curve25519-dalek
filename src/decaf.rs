@@ -24,6 +24,7 @@ use core::fmt::Debug;
 use constants;
 use field::FieldElement;
 use subtle::CTAssignable;
+use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 
@@ -133,8 +134,7 @@ impl DecafPoint {
         let iY = &Y * &constants::SQRT_M1;
         X.conditional_assign(&iY, is_neg_mask);
         Y.conditional_assign(&iX, is_neg_mask);
-        let minus_T = -&T;
-        T.conditional_assign(&minus_T, is_neg_mask);
+        T.conditional_negate(is_neg_mask);
 
         // Step 1: Compute r = 1/sqrt((a-d)(Z+Y)(Z-Y))
         let Z_plus_Y  = &self.0.Z + &Y;
@@ -149,17 +149,19 @@ impl DecafPoint {
 
         // Step 3: Negate r if -2uZ is negative.
         let uZ = &u * &self.0.Z;
-        let minus_r = -&r;
         let m2uZ = -&(&uZ + &uZ);
-        let mask = m2uZ.is_negative_decaf();
-        r.conditional_assign(&minus_r, mask);
+        r.conditional_negate(m2uZ.is_negative_decaf());
 
-        // Step 4: Compute s = |u(r(aZX - dYT)+Y)/a|
+        // Step 4: Compute s = | u(r(aZX - dYT)+Y)/a|
+        //                   = |-u(r(aZX - dYT)+Y)|
         let minus_ZX = -&(&self.0.Z * &X);
         let dYT = &constants::d * &(&Y * &T);
+        // Compute s = u(r(aZX - dYT)+Y)
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
-        s.negate();
-        CompressedDecaf(s.abs_decaf().to_bytes())
+        // Set s <- |-s|
+        let neg = s.is_nonnegative_decaf();
+        s.conditional_negate(neg);
+        CompressedDecaf(s.to_bytes())
     }
 
     /// Return the coset self + E[4], for debugging.

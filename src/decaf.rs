@@ -157,6 +157,22 @@ impl DecafPoint {
 }
 
 // ------------------------------------------------------------------------
+// Equality
+// ------------------------------------------------------------------------
+
+/// XXX check whether there's a simple way to do equality checking
+/// with cofactor 8, not just cofactor 4, and add a CT equality function?
+impl PartialEq for DecafPoint {
+    fn eq(&self, other: &DecafPoint) -> bool {
+        let  self_compressed =  self.compress();
+        let other_compressed = other.compress();
+        self_compressed == other_compressed
+    }
+}
+
+impl Eq for DecafPoint {}
+
+// ------------------------------------------------------------------------
 // Arithmetic
 // ------------------------------------------------------------------------
 

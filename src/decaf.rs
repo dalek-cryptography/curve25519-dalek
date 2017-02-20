@@ -25,6 +25,8 @@ use constants;
 use field::FieldElement;
 use subtle::CTAssignable;
 
+use core::ops::{Add, Sub, Neg};
+
 use curve::ExtendedPoint;
 
 // ------------------------------------------------------------------------
@@ -151,6 +153,33 @@ impl DecafPoint {
     }
 }
 
+// ------------------------------------------------------------------------
+// Arithmetic
+// ------------------------------------------------------------------------
+
+impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
+    type Output = DecafPoint;
+
+    fn add(self, other: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(&self.0 + &other.0)
+    }
+}
+
+impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
+    type Output = DecafPoint;
+
+    fn sub(self, other: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(&self.0 - &other.0)
+    }
+}
+
+impl<'a> Neg for &'a DecafPoint {
+    type Output = DecafPoint;
+
+    fn neg(self) -> DecafPoint {
+        DecafPoint(-&self.0)
+    }
+}
 
 // ------------------------------------------------------------------------
 // Debug traits

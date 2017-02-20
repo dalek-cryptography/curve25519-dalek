@@ -42,8 +42,8 @@ impl CompressedDecaf {
         self.0
     }
 
-    /// Attempt to decompress to an `ExtendedPoint`.
-    pub fn decompress(&self) -> Option<ExtendedPoint> {
+    /// Attempt to decompress to an `DecafPoint`.
+    pub fn decompress(&self) -> Option<DecafPoint> {
         // XXX should decoding be CT ?
         // XXX should reject unless s = |s|
         // XXX need to check that xy is nonnegative and reject otherwise
@@ -68,13 +68,19 @@ impl CompressedDecaf {
         let Y = &w * &Z;
         let T = &w * &X;
 
-        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T })
+        Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
     }
 }
 
-impl ExtendedPoint {
+/// A point in a prime-order group.
+///
+/// XXX think about how this API should work
+#[derive(Copy, Clone)]
+pub struct DecafPoint(pub ExtendedPoint);
+
+impl DecafPoint {
     /// Compress in Decaf format.
-    pub fn compress_decaf(&self) -> CompressedDecaf {
+    pub fn compress(&self) -> CompressedDecaf {
         // Q: Do we want to encode twisted or untwisted?
         //
         // Notes: 
@@ -96,9 +102,9 @@ impl ExtendedPoint {
 
         // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8
 
-        let mut X = self.X;
-        let mut Y = self.Y;
-        let mut XY = self.T;
+        let mut X = self.0.X;
+        let mut Y = self.0.Y;
+        let mut XY = self.0.T;
 
         // If y nonzero and xy nonnegative, continue.
         // Otherwise, add Q_6 = (i,0) = constants::EIGHT_TORSION[6]
@@ -107,7 +113,7 @@ impl ExtendedPoint {
 
         // XXX it should be possible to avoid this inversion, but
         // let's make sure the code is correct first
-        let xy = &XY * &self.Z.invert();
+        let xy = &XY * &self.0.Z.invert();
         let is_neg_mask = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
@@ -117,8 +123,8 @@ impl ExtendedPoint {
         XY.conditional_assign(&minus_XY, is_neg_mask);
 
         // Step 1: Compute r = 1/sqrt((a-d)(Z+Y)(Z-Y))
-        let Z_plus_Y  = &self.Z + &Y;
-        let Z_minus_Y = &self.Z - &Y;
+        let Z_plus_Y  = &self.0.Z + &Y;
+        let Z_minus_Y = &self.0.Z - &Y;
         let t = &constants::a_minus_d * &(&Z_plus_Y * &Z_minus_Y);
         // t should always be square (why?)
         // XXX is it safe to use option types here?
@@ -128,14 +134,14 @@ impl ExtendedPoint {
         let u = &constants::a_minus_d * &r;
 
         // Step 3: Negate r if -2uZ is negative.
-        let uZ = &u * &self.Z;
+        let uZ = &u * &self.0.Z;
         let minus_r = -&r;
         let m2uZ = -&(&uZ + &uZ);
         let mask = m2uZ.is_negative_decaf();
         r.conditional_assign(&minus_r, mask);
 
         // Step 4: Compute s = |u(r(aZX - dYT)+Y)/a|
-        let minus_ZX = -&(&self.Z * &X);
+        let minus_ZX = -&(&self.0.Z * &X);
         let dYT = &constants::d * &(&Y * &XY);
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
         s.negate();
@@ -154,6 +160,11 @@ impl Debug for CompressedDecaf {
     }
 }
 
+impl Debug for DecafPoint {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "DecafPoint: {:?}", &self.0)
+    }
+}
 
 // ------------------------------------------------------------------------
 // Tests
@@ -177,21 +188,21 @@ mod test {
         let id = compressed_id.decompress().unwrap();
         // This should compress (as ed25519) to the following:
         let mut bytes = [0u8; 32]; bytes[0] = 1;
-        assert_eq!(id.compress(), CompressedEdwardsY(bytes));
+        assert_eq!(id.0.compress(), CompressedEdwardsY(bytes));
     }
 
     #[test]
     fn test_decaf_compress_id() {
-        let id = ExtendedPoint::identity();
-        assert_eq!(id.compress_decaf(), CompressedDecaf([0u8; 32]));
+        let id = DecafPoint(ExtendedPoint::identity());
+        assert_eq!(id.compress(), CompressedDecaf([0u8; 32]));
     }
 
     #[test]
     fn test_decaf_basepoint_roundtrip() {
         // XXX fix up this test
         let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_decaf = bp.compress_decaf();
-        let bp_recaf = bp_decaf.decompress().unwrap();
+        let bp_decaf = DecafPoint(bp).compress();
+        let bp_recaf = bp_decaf.decompress().unwrap().0;
         let diff = &bp - &bp_recaf;
         let diff2 = diff.double();
         let diff4 = diff2.double();
@@ -208,12 +219,12 @@ mod test {
     fn test_decaf_four_torsion_basepoint() {
         //println!("");
         let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_decaf = bp.compress_decaf();
-        //println!("orig, {:?}", bp.compress_decaf());
+        let bp_decaf = DecafPoint(bp).compress();
+        //println!("orig, {:?}", bp.compress());
         for i in (0..8).filter(|x| x % 2 == 0) {
             let Q = &bp + &constants::EIGHT_TORSION[i];
-            //println!("{}, {:?}", i, Q.compress_decaf());
-            assert_eq!(Q.compress_decaf(), bp_decaf);
+            //println!("{}, {:?}", i, Q.compress());
+            assert_eq!(DecafPoint(Q).compress(), bp_decaf);
         }
     }
 
@@ -223,12 +234,12 @@ mod test {
         let mut rng = OsRng::new().unwrap();
         let s = Scalar::random(&mut rng);
         let P = ExtendedPoint::basepoint_mult(&s);
-        let P_decaf = P.compress_decaf();
-        //println!("orig, {:?}", P.compress_decaf());
+        let P_decaf = DecafPoint(P).compress();
+        //println!("orig, {:?}", P.compress());
         for i in (0..8).filter(|x| x % 2 == 0) {
             let Q = &P + &constants::EIGHT_TORSION[i];
-            //println!("{}, {:?}", i, Q.compress_decaf());
-            assert_eq!(Q.compress_decaf(), P_decaf);
+            //println!("{}, {:?}", i, Q.compress());
+            assert_eq!(DecafPoint(Q).compress(), P_decaf);
         }
     }
 }

@@ -11,12 +11,34 @@
 
 //! Utility functions and tools for constant-time comparisons.
 
+use core::ops::Neg;
+
 /// Trait for items which can be conditionally assigned in constant time.
 pub trait CTAssignable {
     /// If `choice == 1u8`, assign `other` to `self`.
     /// Otherwise, leave `self` unchanged.
     /// Executes in constant time.
     fn conditional_assign(&mut self, other: &Self, choice: u8);
+}
+
+/// Trait for items which can be conditionally negated in constant time.
+///
+/// Note: it is not necessary to implement this trait, as a generic
+/// implementation is provided.
+pub trait CTNegateable
+{
+    /// Conditionally negate an element if `choice == 1u8`.
+    fn conditional_negate(&mut self, choice: u8);
+}
+
+impl<T> CTNegateable for T
+    where T: CTAssignable, for<'a> &'a T: Neg<Output=T>
+{
+    fn conditional_negate(&mut self, choice: u8) {
+        // Need to cast to eliminate mutability
+        let self_neg: T = -(self as &T);
+        self.conditional_assign(&self_neg, choice);
+    }
 }
 
 /// Check equality of two bytes in constant time.

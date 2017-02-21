@@ -87,6 +87,7 @@ use field::FieldElement;
 use scalar::Scalar;
 use util::bytes_equal_ct;
 use util::CTAssignable;
+use util::CTNegateable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -734,9 +735,8 @@ fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
     }
     // Now t == |x| * P.
 
-    let minus_t = -(&t);
     let neg_mask = (xmask & 1) as u8;
-    t.conditional_assign(&minus_t, neg_mask);
+    t.conditional_negate(neg_mask);
     // Now t == x * P.
 
     t

@@ -83,7 +83,16 @@ impl CompressedDecaf {
         let Y = &w * &Z;
         let T = &w * &X;
 
-        Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
+        // "To decode the point, one must decode it to affine form
+        // instead of projective, and check that xy is non-negative."
+        //
+        // XXX can we merge this inversion with the one above?
+        let xy = &T * &Z.invert();
+        if (Y.is_nonzero() & xy.is_nonnegative_decaf()) == 1u8 {
+            Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
+        } else {
+            None
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
 license = "CC0-1.0"

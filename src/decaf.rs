@@ -361,3 +361,29 @@ mod test {
         }
     }
 }
+
+#[cfg(test)]
+mod bench {
+    use rand::OsRng;
+    use test::Bencher;
+
+    use super::*;
+
+    #[bench]
+    fn decompression(b: &mut Bencher) {
+        let mut rng = OsRng::new().unwrap();
+        let s = Scalar::random(&mut rng);
+        let P = DecafPoint::basepoint_mult(&s);
+        let P_compressed = P.compress();
+        b.iter(|| P_compressed.decompress().unwrap());
+    }
+
+    #[bench]
+    fn compression(b: &mut Bencher) {
+        let mut rng = OsRng::new().unwrap();
+        let s = Scalar::random(&mut rng);
+        let P = DecafPoint::basepoint_mult(&s);
+        b.iter(|| P.compress());
+    }
+}
+

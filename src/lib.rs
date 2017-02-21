@@ -50,6 +50,7 @@ pub mod scalar;
 // Constant-time functions and other miscelaneous utilities.
 
 pub mod subtle;
+pub mod utils;
 
 // Low-level curve and point constants, as well as pre-computed curve group elements.
 

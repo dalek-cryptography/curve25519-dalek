@@ -29,6 +29,8 @@ use subtle::byte_is_nonzero;
 use subtle::CTAssignable;
 use subtle::CTEq;
 
+use utils::{load3, load4};
+
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
@@ -191,25 +193,6 @@ impl CTAssignable for FieldElement {
             self[i] ^= mask & (self[i] ^ f[i]);
         }
     }
-}
-
-/// Convert an array of (at least) three bytes into an i64.
-#[inline]
-#[allow(dead_code)]
-pub fn load3(input: &[u8]) -> i64 {
-       (input[0] as i64)
-    | ((input[1] as i64) << 8)
-    | ((input[2] as i64) << 16)
-}
-
-/// Convert an array of (at least) four bytes into an i64.
-#[inline]
-#[allow(dead_code)]
-pub fn load4(input: &[u8]) -> i64 {
-       (input[0] as i64)
-    | ((input[1] as i64) << 8)
-    | ((input[2] as i64) << 16)
-    | ((input[3] as i64) << 24)
 }
 
 impl FieldElement {

@@ -36,9 +36,8 @@ use core::ops::{Neg};
 #[cfg(feature = "std")]
 use rand::Rng;
 
-// XXX should these be in a utility module ?
 use constants;
-use field::{load3, load4};
+use utils::{load3, load4};
 use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::arrays_equal_ct;

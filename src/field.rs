@@ -803,7 +803,7 @@ impl FieldElement {
 mod test {
     use field::*;
     use test::Bencher;
-    use util::CTNegateable;
+    use util::CTNegatable;
 
     #[bench]
     fn bench_fieldelement_a_mul_a(b: &mut Bencher) {

@@ -87,7 +87,7 @@ use field::FieldElement;
 use scalar::Scalar;
 use util::bytes_equal_ct;
 use util::CTAssignable;
-use util::CTNegateable;
+use util::CTNegatable;
 
 // ------------------------------------------------------------------------
 // Compressed points

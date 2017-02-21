@@ -25,13 +25,13 @@ pub trait CTAssignable {
 ///
 /// Note: it is not necessary to implement this trait, as a generic
 /// implementation is provided.
-pub trait CTNegateable
+pub trait CTNegatable
 {
     /// Conditionally negate an element if `choice == 1u8`.
     fn conditional_negate(&mut self, choice: u8);
 }
 
-impl<T> CTNegateable for T
+impl<T> CTNegatable for T
     where T: CTAssignable, for<'a> &'a T: Neg<Output=T>
 {
     fn conditional_negate(&mut self, choice: u8) {

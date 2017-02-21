@@ -159,15 +159,12 @@ impl DecafPoint {
         r.conditional_negate(m2uZ.is_negative_decaf());
 
         // Step 4: Compute s = | u(r(aZX - dYT)+Y)/a|
-        //                   = |-u(r(aZX - dYT)+Y)|
+        //                   = |u(r(-ZX - dYT)+Y)| since a = -1
         let minus_ZX = -&(&self.0.Z * &X);
         let dYT = &constants::d * &(&Y * &T);
-        // Compute s = u(r(aZX - dYT)+Y)
+        // Compute s = u(r(aZX - dYT)+Y) and cnegate for abs
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
-        // Set s <- |-s|
-        // XXX I think there's a sign error somewhere?
-        // flipping the sign here makes the tests pass
-        let neg = s.is_nonnegative_decaf();
+        let neg = s.is_negative_decaf();
         s.conditional_negate(neg);
         CompressedDecaf(s.to_bytes())
     }

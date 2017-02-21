@@ -12,6 +12,9 @@
 //! An implementation of Mike Hamburg's Decaf cofactor-eliminating
 //! point-compression scheme, providing a prime-order group on top of
 //! a non-prime-order elliptic curve.
+//!
+//! Note: this code is currently feature-gated with the `yolocrypto`
+//! feature flag, because our implementation is still unfinished.
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

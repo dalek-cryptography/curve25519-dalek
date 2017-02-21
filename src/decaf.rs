@@ -165,6 +165,8 @@ impl DecafPoint {
         // Compute s = u(r(aZX - dYT)+Y)
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
         // Set s <- |-s|
+        // XXX I think there's a sign error somewhere?
+        // flipping the sign here makes the tests pass
         let neg = s.is_nonnegative_decaf();
         s.conditional_negate(neg);
         CompressedDecaf(s.to_bytes())
@@ -237,6 +239,8 @@ impl ScalarMult<Scalar> for DecafPoint {
 }
 
 impl BasepointMult<Scalar> for DecafPoint {
+    // XXX is this actually in the image of the isogeny,
+    // or do we need a different basepoint?
     fn basepoint() -> DecafPoint {
         DecafPoint(constants::BASEPOINT)
     }
@@ -331,6 +335,20 @@ mod test {
         let P_coset = P.coset4();
         for i in 0..4 {
             assert_eq!(P, DecafPoint(P_coset[i]));
+        }
+    }
+
+    #[test]
+    fn test_decaf_random_roundtrip() {
+        let mut rng = OsRng::new().unwrap();
+        for j in 0..100 {
+        let s = Scalar::random(&mut rng);
+        let P = DecafPoint::basepoint_mult(&s);
+        let compressed_P = P.compress();
+        let Q = compressed_P.decompress().unwrap();
+        for i in 0..4 {
+            assert_eq!(P, Q);
+        }
         }
     }
 }

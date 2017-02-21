@@ -96,8 +96,6 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-// We don't use this in curve25519-dalek, but it's useful for e.g. an ed25519 implementation.
-#[allow(dead_code)]
 pub fn arrays_equal_ct(a: &[u8; 32], b: &[u8; 32]) -> u8 {
     let mut x: u8 = 0;
 

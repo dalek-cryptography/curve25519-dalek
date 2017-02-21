@@ -7,8 +7,9 @@ license = "CC0-1.0"
 repository = "https://github.com/isislovecruft/ed25519-dalek"
 homepage = "https://code.ciph.re/isis/ed25519-dalek"
 documentation = "https://docs.rs/ed25519-dalek"
-keywords = ["cryptography", "ed25519", "signature", "ECC"]
-description = "Fast and efficient ed25519 signing and verification."
+keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
+categories = ["cryptography", "no-std"]
+description = "Fast and efficient ed25519 signing and verification in pure Rust."
 exclude = [ ".gitignore", "TESTVECTORS" ]
 
 [dependencies]

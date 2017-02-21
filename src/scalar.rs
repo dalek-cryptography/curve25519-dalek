@@ -29,14 +29,19 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
+use core::cmp::{Eq, PartialEq};
 use core::ops::{Index, IndexMut};
+use core::ops::{Neg};
 
 #[cfg(feature = "std")]
 use rand::Rng;
 
 // XXX should these be in a utility module ?
+use constants;
 use field::{load3, load4};
 use util::CTAssignable;
+use util::CTEq;
+use util::arrays_equal_ct;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
@@ -45,6 +50,40 @@ use util::CTAssignable;
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
 #[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
+
+impl Eq for Scalar{}
+impl PartialEq for Scalar {
+    /// Test equality between two `Scalar`s.
+    ///
+    /// # Warning
+    ///
+    /// This function is *not* guaranteed to be constant time and should only be
+    /// used for debugging purposes.
+    ///
+    /// # Returns
+    ///
+    /// True if they are equal, and false otherwise.
+    fn eq(&self, other: &Self) -> bool {
+        let equal: u8 = arrays_equal_ct(&self.0, &other.0);
+
+        if equal == 1u8 {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+impl CTEq for Scalar {
+    /// Test equality between two `Scalar`s in constant time.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if they are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &Self) -> u8 {
+        arrays_equal_ct(&self.0, &other.0)
+    }
+}
 
 impl Index<usize> for Scalar {
     type Output = u8;
@@ -59,6 +98,15 @@ impl IndexMut<usize> for Scalar {
     fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut u8 {
         let ret: &'a mut u8 = &mut(self.0[_index]);
         ret
+    }
+}
+
+impl Neg for Scalar {
+    type Output = Scalar;
+
+    /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
+    fn neg(self) -> Scalar {
+        Scalar::multiply_add(&constants::lminus1, &self, &Scalar::zero())
     }
 }
 
@@ -626,5 +674,14 @@ mod test {
         for i in 0..32 {
             assert!(test_red[i] == reduced[i]);
         }
+    }
+
+    // Negating a scalar twice should result in the original scalar.
+    #[test]
+    fn test_scalar_neg() {
+        let negative_x: Scalar = -X;
+        let orig: Scalar = -negative_x;
+
+        assert!(orig == X);
     }
 }

@@ -43,7 +43,7 @@ use util::CTAssignable;
 /// l = 2^252 + 27742317777372353535851937790883648493
 ///
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
 
 impl Index<usize> for Scalar {

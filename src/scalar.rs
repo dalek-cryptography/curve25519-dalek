@@ -40,6 +40,7 @@ use rand::Rng;
 use constants;
 use field::{load3, load4};
 use util::CTAssignable;
+use util::CTEq;
 use util::arrays_equal_ct;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
@@ -50,22 +51,37 @@ use util::arrays_equal_ct;
 #[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
 
-// XXX make CTEq traits
 impl Eq for Scalar{}
 impl PartialEq for Scalar {
-    /// Test equality between two `Scalar`s in constant time.
+    /// Test equality between two `Scalar`s.
     ///
-    /// Returns
+    /// # Warning
+    ///
+    /// This function is *not* guaranteed to be constant time and should only be
+    /// used for debugging purposes.
+    ///
+    /// # Returns
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
         let equal: u8 = arrays_equal_ct(&self.0, &other.0);
 
-        if equal == 1 {
+        if equal == 1u8 {
             return true;
         } else {
             return false;
         }
+    }
+}
+
+impl CTEq for Scalar {
+    /// Test equality between two `Scalar`s in constant time.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if they are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &Self) -> u8 {
+        arrays_equal_ct(&self.0, &other.0)
     }
 }
 

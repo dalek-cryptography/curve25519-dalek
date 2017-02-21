@@ -21,7 +21,17 @@ pub trait CTAssignable {
     fn conditional_assign(&mut self, other: &Self, choice: u8);
 }
 
-/// Trait for items which can be conditionally negated in constant time.
+/// Trait for items whose equality to another item may be tested in constant time.
+pub trait CTEq {
+    /// Determine if two items are equal in constant time.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if the two items are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &Self) -> u8;
+}
+
+// Trait for items which can be conditionally negated in constant time.
 ///
 /// Note: it is not necessary to implement this trait, as a generic
 /// implementation is provided.

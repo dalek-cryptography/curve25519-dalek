@@ -24,8 +24,10 @@ use core::ops::{Index, IndexMut};
 use core::cmp::{Eq, PartialEq};
 use core::ops::Neg;
 
+use util::arrays_equal_ct;
 use util::byte_is_nonzero;
 use util::CTAssignable;
+use util::CTEq;
 
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
@@ -40,6 +42,7 @@ pub type Limb = i32;
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [Limb; 10]);
 
+impl Eq for FieldElement {}
 impl PartialEq for FieldElement {
     /// Test equality between two FieldElements by converting them to bytes.
     ///
@@ -48,10 +51,10 @@ impl PartialEq for FieldElement {
     /// This comparison is *not* constant time.  It could easily be
     /// made to be, but the main use of an `Eq` implementation is for
     /// branching, so it seems pointless.
-    ///
-    /// XXX it would be good to encode constant-time considerations
-    /// (no data flow from secret information) into Rust's type
-    /// system.
+    //
+    // XXX it would be good to encode constant-time considerations
+    // (no data flow from secret information) into Rust's type
+    // system.
     fn eq(&self, other: &FieldElement) -> bool {
         let  self_bytes =  self.to_bytes();
         let other_bytes = other.to_bytes();
@@ -63,7 +66,16 @@ impl PartialEq for FieldElement {
     }
 }
 
-impl Eq for FieldElement {}
+impl CTEq for FieldElement {
+    /// Test equality between two `FieldElement`s by converting them to bytes.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if the two `FieldElement`s are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &FieldElement) -> u8 {
+        arrays_equal_ct(&self.to_bytes(), &other.to_bytes())
+    }
+}
 
 impl Debug for FieldElement {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {

@@ -24,10 +24,10 @@ use core::ops::{Index, IndexMut};
 use core::cmp::{Eq, PartialEq};
 use core::ops::Neg;
 
-use util::arrays_equal_ct;
-use util::byte_is_nonzero;
-use util::CTAssignable;
-use util::CTEq;
+use subtle::arrays_equal_ct;
+use subtle::byte_is_nonzero;
+use subtle::CTAssignable;
+use subtle::CTEq;
 
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
@@ -162,7 +162,7 @@ impl CTAssignable for FieldElement {
     ///
     /// ```
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
@@ -174,7 +174,7 @@ impl CTAssignable for FieldElement {
     ///
     /// ```
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// # let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
@@ -815,7 +815,7 @@ impl FieldElement {
 mod test {
     use field::*;
     use test::Bencher;
-    use util::CTNegatable;
+    use subtle::CTNegatable;
 
     #[bench]
     fn bench_fieldelement_a_mul_a(b: &mut Bencher) {

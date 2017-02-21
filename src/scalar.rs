@@ -39,9 +39,9 @@ use rand::Rng;
 // XXX should these be in a utility module ?
 use constants;
 use field::{load3, load4};
-use util::CTAssignable;
-use util::CTEq;
-use util::arrays_equal_ct;
+use subtle::CTAssignable;
+use subtle::CTEq;
+use subtle::arrays_equal_ct;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
@@ -115,7 +115,7 @@ impl CTAssignable for Scalar {
     ///
     /// ```
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
     /// let b = Scalar([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,

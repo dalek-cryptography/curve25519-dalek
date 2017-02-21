@@ -9,7 +9,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Utility functions and tools for constant-time comparisons.
+//! Constant-time traits and utility functions.
 
 use core::ops::Neg;
 
@@ -31,7 +31,7 @@ pub trait CTEq {
     fn ct_eq(&self, other: &Self) -> u8;
 }
 
-// Trait for items which can be conditionally negated in constant time.
+/// Trait for items which can be conditionally negated in constant time.
 ///
 /// Note: it is not necessary to implement this trait, as a generic
 /// implementation is provided.
@@ -55,7 +55,7 @@ impl<T> CTNegatable for T
 ///
 /// # Return
 ///
-/// Returns 1 if `a == b` and 0 otherwise.
+/// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
 pub fn bytes_equal_ct(a: u8, b: u8) -> u8 {
     let mut x: u8;
@@ -94,7 +94,7 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// # Return
 ///
-/// Returns 1 if `a == b` and 0 otherwise.
+/// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
 // We don't use this in curve25519-dalek, but it's useful for e.g. an ed25519 implementation.
 #[allow(dead_code)]

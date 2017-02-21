@@ -85,11 +85,11 @@ use core::cmp::{PartialEq, Eq};
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
-use util::arrays_equal_ct;
-use util::bytes_equal_ct;
-use util::CTAssignable;
-use util::CTEq;
-use util::CTNegatable;
+use subtle::arrays_equal_ct;
+use subtle::bytes_equal_ct;
+use subtle::CTAssignable;
+use subtle::CTEq;
+use subtle::CTNegatable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -865,7 +865,7 @@ mod test {
     use test::Bencher;
     use field::FieldElement;
     use scalar::Scalar;
-    use util::CTAssignable;
+    use subtle::CTAssignable;
     use constants;
     use constants::BASE_CMPRSSD;
     use super::*;

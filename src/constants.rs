@@ -1573,6 +1573,7 @@ mod test {
     use curve::CompressedEdwardsY;
     use curve::ExtendedPoint;
     use curve::Identity;
+    use curve::IsIdentity;
     use curve::ValidityCheck;
     use constants;
 
@@ -1584,7 +1585,7 @@ mod test {
         for i in 0..8 {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
             assert!(Q.is_valid());
-            assert!(Q.compress() == compressed_id);
+            assert!(Q.is_identity());
         }
     }
 
@@ -1596,7 +1597,7 @@ mod test {
         for i in (0..8).filter(|i| i % 2 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
             assert!(Q.is_valid());
-            assert!(Q.compress() == compressed_id);
+            assert!(Q.is_identity());
         }
     }
 
@@ -1608,7 +1609,7 @@ mod test {
         for i in (0..8).filter(|i| i % 4 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
             assert!(Q.is_valid());
-            assert!(Q.compress() == compressed_id);
+            assert!(Q.is_identity());
         }
     }
 

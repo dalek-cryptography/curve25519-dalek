@@ -80,13 +80,15 @@
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg, Index};
-use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
-use util::bytes_equal_ct;
-use util::CTAssignable;
+use subtle::arrays_equal_ct;
+use subtle::bytes_equal_ct;
+use subtle::CTAssignable;
+use subtle::CTEq;
+use subtle::CTNegatable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -98,24 +100,12 @@ use util::CTAssignable;
 ///
 /// The first 255 bits of a CompressedEdwardsY represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompressedPoint: {:?}", &self.0[..])
-    }
-}
-
-impl Eq for CompressedEdwardsY {}
-impl PartialEq for CompressedEdwardsY {
-    /// Determine if this `CompressedEdwardsY` is equal to another.
-    ///
-    /// # Warning
-    ///
-    /// This function is NOT constant time.
-    fn eq(&self, other: &CompressedEdwardsY) -> bool {
-        return self.0 == other.0;
     }
 }
 
@@ -238,7 +228,7 @@ pub struct CachedPoint {
 // Constructors
 // ------------------------------------------------------------------------
 
-/// Trait for curve point types that have an identity constructor.
+/// Trait for curve point types which have an identity constructor.
 pub trait Identity {
     /// Returns the identity element of the curve.
     /// Can be used as a constructor.
@@ -300,6 +290,37 @@ impl CTAssignable for PreComputedPoint {
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
         self.xy2d.conditional_assign(&other.xy2d, choice);
+    }
+}
+
+// ------------------------------------------------------------------------
+// Constant-time Equality
+// ------------------------------------------------------------------------
+
+impl CTEq for ExtendedPoint {
+    fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
+        arrays_equal_ct(&self.compress().0, &other.compress().0)
+    }
+}
+
+/// Trait for testing if a curve point is equivalent to the identity point.
+pub trait IsIdentity {
+    /// Return true if this element is the identity element of the curve.
+    fn is_identity(&self) -> bool;
+}
+
+/// Implement generic identity equality testing for a point representations
+/// which have constant-time equality testing and a defined identity
+/// constructor.
+impl<T> IsIdentity for T where T: CTEq + Identity {
+    fn is_identity(&self) -> bool {
+        let identity: T = T::identity();
+
+        if self.ct_eq(&identity) == 1u8 {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -666,6 +687,25 @@ impl ExtendedPoint {
         r = s.double();
         return r.to_extended();
     }
+
+    /// Determine if this point is of small order.
+    ///
+    /// The order of the group of points on the curve Ɛ is |Ɛ| = 8q.  Thus, to
+    /// check if a point P is of small order, we multiply by 8 and then test
+    /// if the result is equal to the identity.
+    ///
+    /// # Return
+    ///
+    /// True if it is of small order; false otherwise.
+    pub fn is_small_order(&self) -> bool {
+        let p8: ExtendedPoint = self.mult_by_pow_2(3);
+
+        if p8.is_identity() {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
 
 /// Given a point `A` and scalars `a` and `b`, compute the point
@@ -746,9 +786,8 @@ fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
     }
     // Now t == |x| * P.
 
-    let minus_t = -(&t);
     let neg_mask = (xmask & 1) as u8;
-    t.conditional_assign(&minus_t, neg_mask);
+    t.conditional_negate(neg_mask);
     // Now t == x * P.
 
     t
@@ -825,7 +864,7 @@ mod test {
     use test::Bencher;
     use field::FieldElement;
     use scalar::Scalar;
-    use util::CTAssignable;
+    use subtle::CTAssignable;
     use constants;
     use constants::BASE_CMPRSSD;
     use super::*;
@@ -946,6 +985,20 @@ mod test {
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
 
+    #[test]
+    fn test_extended_point_equality() {
+        let two = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+        let id1 = ExtendedPoint::identity();
+        let id2 = ExtendedPoint{
+            X: FieldElement::zero(),
+            Y: FieldElement::from_bytes(&two),
+            Z: FieldElement::from_bytes(&two),
+            T: FieldElement::zero()};
+
+        assert!(id1.ct_eq(&id2) == 1u8);
+    }
+
     /// Sanity check for conversion to precomputed points
     #[test]
     fn test_convert_to_precomputed() {
@@ -1055,6 +1108,20 @@ mod test {
         assert_eq!(p1.y_plus_x,  p2.y_plus_x);
         assert_eq!(p1.y_minus_x, p2.y_minus_x);
         assert_eq!(p1.xy2d,      p2.xy2d);
+    }
+
+    #[test]
+    fn test_is_small_order() {
+        let p1: ExtendedPoint = ExtendedPoint::identity();
+        let p2: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
+
+        assert!(p1.is_small_order() == true);
+        assert!(p2.is_small_order() == false);
+    }
+
+    #[test]
+    fn test_is_identity() {
+        assert!(ExtendedPoint::identity().is_identity());
     }
 
     #[bench]

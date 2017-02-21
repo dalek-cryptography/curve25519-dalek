@@ -9,7 +9,9 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Utility functions and tools for constant-time comparisons.
+//! Constant-time traits and utility functions.
+
+use core::ops::Neg;
 
 /// Trait for items which can be conditionally assigned in constant time.
 pub trait CTAssignable {
@@ -19,11 +21,41 @@ pub trait CTAssignable {
     fn conditional_assign(&mut self, other: &Self, choice: u8);
 }
 
+/// Trait for items whose equality to another item may be tested in constant time.
+pub trait CTEq {
+    /// Determine if two items are equal in constant time.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if the two items are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &Self) -> u8;
+}
+
+/// Trait for items which can be conditionally negated in constant time.
+///
+/// Note: it is not necessary to implement this trait, as a generic
+/// implementation is provided.
+pub trait CTNegatable
+{
+    /// Conditionally negate an element if `choice == 1u8`.
+    fn conditional_negate(&mut self, choice: u8);
+}
+
+impl<T> CTNegatable for T
+    where T: CTAssignable, for<'a> &'a T: Neg<Output=T>
+{
+    fn conditional_negate(&mut self, choice: u8) {
+        // Need to cast to eliminate mutability
+        let self_neg: T = -(self as &T);
+        self.conditional_assign(&self_neg, choice);
+    }
+}
+
 /// Check equality of two bytes in constant time.
 ///
 /// # Return
 ///
-/// Returns 1 if `a == b` and 0 otherwise.
+/// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
 pub fn bytes_equal_ct(a: u8, b: u8) -> u8 {
     let mut x: u8;
@@ -62,10 +94,8 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// # Return
 ///
-/// Returns 1 if `a == b` and 0 otherwise.
+/// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-// We don't use this in curve25519-dalek, but it's useful for e.g. an ed25519 implementation.
-#[allow(dead_code)]
 pub fn arrays_equal_ct(a: &[u8; 32], b: &[u8; 32]) -> u8 {
     let mut x: u8 = 0;
 

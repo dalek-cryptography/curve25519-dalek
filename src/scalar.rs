@@ -29,22 +29,60 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
+use core::cmp::{Eq, PartialEq};
 use core::ops::{Index, IndexMut};
+use core::ops::{Neg};
 
 #[cfg(feature = "std")]
 use rand::Rng;
 
-// XXX should these be in a utility module ?
-use field::{load3, load4};
-use util::CTAssignable;
+use constants;
+use utils::{load3, load4};
+use subtle::CTAssignable;
+use subtle::CTEq;
+use subtle::arrays_equal_ct;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
 /// l = 2^252 + 27742317777372353535851937790883648493
 ///
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
+
+impl Eq for Scalar{}
+impl PartialEq for Scalar {
+    /// Test equality between two `Scalar`s.
+    ///
+    /// # Warning
+    ///
+    /// This function is *not* guaranteed to be constant time and should only be
+    /// used for debugging purposes.
+    ///
+    /// # Returns
+    ///
+    /// True if they are equal, and false otherwise.
+    fn eq(&self, other: &Self) -> bool {
+        let equal: u8 = arrays_equal_ct(&self.0, &other.0);
+
+        if equal == 1u8 {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+impl CTEq for Scalar {
+    /// Test equality between two `Scalar`s in constant time.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if they are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &Self) -> u8 {
+        arrays_equal_ct(&self.0, &other.0)
+    }
+}
 
 impl Index<usize> for Scalar {
     type Output = u8;
@@ -62,12 +100,21 @@ impl IndexMut<usize> for Scalar {
     }
 }
 
+impl Neg for Scalar {
+    type Output = Scalar;
+
+    /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
+    fn neg(self) -> Scalar {
+        Scalar::multiply_add(&constants::lminus1, &self, &Scalar::zero())
+    }
+}
+
 impl CTAssignable for Scalar {
     /// Conditionally assign another Scalar to this one.
     ///
     /// ```
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
     /// let b = Scalar([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -626,5 +673,14 @@ mod test {
         for i in 0..32 {
             assert!(test_red[i] == reduced[i]);
         }
+    }
+
+    // Negating a scalar twice should result in the original scalar.
+    #[test]
+    fn test_scalar_neg() {
+        let negative_x: Scalar = -X;
+        let orig: Scalar = -negative_x;
+
+        assert!(orig == X);
     }
 }

@@ -24,8 +24,12 @@ use core::ops::{Index, IndexMut};
 use core::cmp::{Eq, PartialEq};
 use core::ops::Neg;
 
-use util::byte_is_nonzero;
-use util::CTAssignable;
+use subtle::arrays_equal_ct;
+use subtle::byte_is_nonzero;
+use subtle::CTAssignable;
+use subtle::CTEq;
+
+use utils::{load3, load4};
 
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
@@ -40,6 +44,7 @@ pub type Limb = i32;
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [Limb; 10]);
 
+impl Eq for FieldElement {}
 impl PartialEq for FieldElement {
     /// Test equality between two FieldElements by converting them to bytes.
     ///
@@ -48,10 +53,10 @@ impl PartialEq for FieldElement {
     /// This comparison is *not* constant time.  It could easily be
     /// made to be, but the main use of an `Eq` implementation is for
     /// branching, so it seems pointless.
-    ///
-    /// XXX it would be good to encode constant-time considerations
-    /// (no data flow from secret information) into Rust's type
-    /// system.
+    //
+    // XXX it would be good to encode constant-time considerations
+    // (no data flow from secret information) into Rust's type
+    // system.
     fn eq(&self, other: &FieldElement) -> bool {
         let  self_bytes =  self.to_bytes();
         let other_bytes = other.to_bytes();
@@ -63,7 +68,16 @@ impl PartialEq for FieldElement {
     }
 }
 
-impl Eq for FieldElement {}
+impl CTEq for FieldElement {
+    /// Test equality between two `FieldElement`s by converting them to bytes.
+    ///
+    /// # Returns
+    ///
+    /// `1u8` if the two `FieldElement`s are equal, and `0u8` otherwise.
+    fn ct_eq(&self, other: &FieldElement) -> u8 {
+        arrays_equal_ct(&self.to_bytes(), &other.to_bytes())
+    }
+}
 
 impl Debug for FieldElement {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -150,7 +164,7 @@ impl CTAssignable for FieldElement {
     ///
     /// ```
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
@@ -162,7 +176,7 @@ impl CTAssignable for FieldElement {
     ///
     /// ```
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::util::CTAssignable;
+    /// # use curve25519_dalek::subtle::CTAssignable;
     /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// # let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
@@ -179,25 +193,6 @@ impl CTAssignable for FieldElement {
             self[i] ^= mask & (self[i] ^ f[i]);
         }
     }
-}
-
-/// Convert an array of (at least) three bytes into an i64.
-#[inline]
-#[allow(dead_code)]
-pub fn load3(input: &[u8]) -> i64 {
-       (input[0] as i64)
-    | ((input[1] as i64) << 8)
-    | ((input[2] as i64) << 16)
-}
-
-/// Convert an array of (at least) four bytes into an i64.
-#[inline]
-#[allow(dead_code)]
-pub fn load4(input: &[u8]) -> i64 {
-       (input[0] as i64)
-    | ((input[1] as i64) << 8)
-    | ((input[2] as i64) << 16)
-    | ((input[3] as i64) << 24)
 }
 
 impl FieldElement {
@@ -711,7 +706,7 @@ impl FieldElement {
     /// XXX This returns an extra intermediate to save computation in
     /// finding inverses, at the cost of an extra copy when it's not
     /// used (e.g., when raising to (p-1)/2 or (p-5)/8). Good idea?
-    fn pow22501(&self) -> (FieldElement,FieldElement) {
+    fn pow22501(&self) -> (FieldElement, FieldElement) {
         // Instead of managing which temporary variables are used
         // for what, we define as many as we need and trust the
         // compiler to reuse stack space as appropriate.
@@ -803,6 +798,7 @@ impl FieldElement {
 mod test {
     use field::*;
     use test::Bencher;
+    use subtle::CTNegatable;
 
     #[bench]
     fn bench_fieldelement_a_mul_a(b: &mut Bencher) {
@@ -931,5 +927,18 @@ mod test {
         }
         // high bit is set to zero in to_bytes
         assert!(test_bytes[31] == (B_BYTES[31] & 127u8));
+    }
+
+    #[test]
+    fn test_conditional_negate() {
+        let       one = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
+        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let mut x = one;
+        x.conditional_negate(1u8);
+        assert_eq!(x, minus_one);
+        x.conditional_negate(0u8);
+        assert_eq!(x, minus_one);
+        x.conditional_negate(1u8);
+        assert_eq!(x, one);
     }
 }

@@ -986,6 +986,20 @@ mod test {
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
 
+    #[test]
+    fn test_extended_point_equality() {
+        let two = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+        let id1 = ExtendedPoint::identity();
+        let id2 = ExtendedPoint{
+            X: FieldElement::zero(),
+            Y: FieldElement::from_bytes(&two),
+            Z: FieldElement::from_bytes(&two),
+            T: FieldElement::zero()};
+
+        assert!(id1.ct_eq(&id2) == 1u8);
+    }
+
     /// Sanity check for conversion to precomputed points
     #[test]
     fn test_convert_to_precomputed() {

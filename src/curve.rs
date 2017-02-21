@@ -80,7 +80,6 @@
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg, Index};
-use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;

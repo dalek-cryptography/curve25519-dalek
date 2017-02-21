@@ -22,7 +22,7 @@ use curve25519_dalek::curve::CompressedEdwardsY;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::util::arrays_equal_ct;
+use curve25519_dalek::subtle::arrays_equal_ct;
 
 pub const SIGNATURE_LENGTH: usize = 64;
 

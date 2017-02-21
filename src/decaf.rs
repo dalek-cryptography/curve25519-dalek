@@ -54,9 +54,15 @@ impl CompressedDecaf {
     /// Attempt to decompress to an `DecafPoint`.
     pub fn decompress(&self) -> Option<DecafPoint> {
         // XXX should decoding be CT ?
-        // XXX should reject unless s = |s|
         // XXX need to check that xy is nonnegative and reject otherwise
         let s = FieldElement::from_bytes(&self.0);
+
+        // Check that s = |s| and reject otherwise.
+        let mut abs_s = s;
+        let neg = abs_s.is_negative_decaf();
+        abs_s.conditional_negate(neg);
+        if abs_s != s { return None; }
+
         let ss = s.square();
         let X = &s + &s;                    // X = 2s
         let Z = &FieldElement::one() - &ss; // Z = 1+as^2
@@ -274,6 +280,14 @@ mod test {
     use curve::BasepointMult;
     use curve::Identity;
     use super::*;
+
+    #[test]
+    #[should_panic]
+    fn test_decaf_decompress_negative_s_fails() {
+        // constants::d is neg, so decompression should fail as |d| != d.
+        let bad_compressed = CompressedDecaf(constants::d.to_bytes());
+        bad_compressed.decompress().unwrap();
+    }
 
     #[test]
     fn test_decaf_decompress_id() {

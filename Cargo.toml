@@ -25,6 +25,7 @@ version = "0.3"
 [features]
 default = ["std"]
 std = ["rand"]
+yolocrypto = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]

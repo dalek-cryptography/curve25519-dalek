@@ -48,8 +48,12 @@ extern crate rand;
 // Modules for low-level operations directly on field elements and curve points.
 
 pub mod field;
-pub mod curve;
 pub mod scalar;
+pub mod curve;
+
+// Feature gate decaf while our implementation is unfinished and probably incorrect.
+#[cfg(feature = "yolocrypto")]
+pub mod decaf;
 
 // Constant-time functions and other miscelaneous utilities.
 

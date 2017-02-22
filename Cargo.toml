@@ -57,6 +57,7 @@ lto = false
 debug-assertions = true
 codegen-units = 1
 panic = 'unwind'
+required-features = ['yolocrypto']
 
 # The benchmarking profile, used for `cargo bench`.
 [profile.bench]

@@ -33,6 +33,10 @@
 //! ship, determined to track down and bring an end to the Dalek race.
 
 #[cfg(test)]
+#[macro_use]
+extern crate std;
+
+#[cfg(test)]
 extern crate test;
 
 #[macro_use]

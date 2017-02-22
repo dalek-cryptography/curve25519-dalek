@@ -1,11 +1,11 @@
 [package]
 name = "curve25519-dalek"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "CC0-1.0"
-repository = "https://code.ciph.re/isis/curve25519-dalek"
+repository = "https://github.com/isislovecruft/curve25519-dalek"
 homepage = "https://code.ciph.re/isis/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
@@ -25,6 +25,7 @@ version = "0.3"
 [features]
 default = ["std"]
 std = ["rand"]
+yolocrypto = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]

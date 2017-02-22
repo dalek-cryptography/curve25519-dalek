@@ -17,8 +17,10 @@
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 #![allow(missing_docs)]
+#![allow(non_snake_case)]
 
 use field::FieldElement;
+use curve::ExtendedPoint;
 use curve::PreComputedPoint;
 use curve::CompressedEdwardsY;
 use scalar::Scalar;
@@ -29,9 +31,34 @@ pub const d: FieldElement       = FieldElement([
 pub const d2: FieldElement      = FieldElement([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
+pub const d4: FieldElement      = FieldElement([
+    23454405,  -11679213,   5618422,  -5756869,    458917,
+    -1596832,  -25103633, -12990876,  -7676928, -14666033  ]);
+pub const a_minus_d: FieldElement    = FieldElement([
+    10913609,  -13857413,  15372611,  -6949391,   -114729,
+     8787816,    6275908,   3247719,  18696448,  12055116, ]);
+
+/// (p-1)/2, in little-endian bytes.
+pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
+    [0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
+
+/// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
+
+/// Precomputed value of the other square root of -1 (mod p),
+/// i.e., MSQRT_M1 = -SQRT_M1.
+pub const MSQRT_M1: FieldElement = FieldElement([
+    32595792,    7943725,  -9377950,  -3500415, -12389472,
+    272473,     25146209,   2005654,   -326686, -11406482, ]);
+
+/// Precomputed value of 1/2 (mod p).
+pub const HALF: FieldElement = FieldElement([
+    10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
 
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement       = FieldElement([
@@ -67,6 +94,14 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
+/// Basepoint has y = 4/5.
+pub const BASEPOINT: ExtendedPoint = ExtendedPoint{
+        X: FieldElement([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
+        Y: FieldElement([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([28827062, -6116119, -27349572, 244363, 8635006, 11264893, 19351346, 13413597, 16611511, -6414980]),
+};
+
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form
 pub const l: Scalar = Scalar([ 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -80,6 +115,63 @@ pub const lminus1: Scalar = Scalar([ 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0
                                      0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
+/// The 8-torsion subgroup Ɛ[8].
+///
+/// In the case of Curve25519, it is cyclic; the `i`th element of the
+/// array is `i*P`, where `P` is a point of order 8 generating Ɛ[8].
+///
+/// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
+/// indexed by 0,4. 
+pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
+    ExtendedPoint{
+        X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Y: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([21352778, 5345713, 4660180, -8347857, 24143090, 14568123, 30185756, -12247770, -33528939, 8345319]),
+        Y: FieldElement([6952922, 1265500, -6862341, 7057498, 4037696, 5447722, -31680899, 15325402, 19365852, -1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([-25262188, -11972680, 11716002, -5869612, -18193162, 16297739, 20670665, -8559098, 3541543, -5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([32595792, 7943725, -9377950, -3500415, -12389472, 272473, 25146209, 2005654, -326686, -11406482]),
+        Y: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([21352778, 5345713, 4660180, -8347857, 24143090, 14568123, 30185756, -12247770, -33528939, 8345319]),
+        Y: FieldElement([-6952922, -1265500, 6862341, -7057498, -4037696, -5447722, 31680899, -15325402, -19365852, 1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([25262188, 11972680, -11716002, 5869612, 18193162, -16297739, -20670665, 8559098, -3541543, 5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Y: FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([-21352778, -5345713, -4660180, 8347857, -24143090, -14568123, -30185756, 12247770, 33528939, -8345319]),
+        Y: FieldElement([-6952922, -1265500, 6862341, -7057498, -4037696, -5447722, 31680899, -15325402, -19365852, 1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([-25262188, -11972680, 11716002, -5869612, -18193162, 16297739, 20670665, -8559098, 3541543, -5011181])
+    },
+    ExtendedPoint{
+        X: FieldElement([-32595792, -7943725, 9377950, 3500415, 12389472, -272473, -25146209, -2005654, 326686, 11406482]),
+        Y: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    },
+    ExtendedPoint{
+        X: FieldElement([-21352778, -5345713, -4660180, 8347857, -24143090, -14568123, -30185756, 12247770, 33528939, -8345319]),
+        Y: FieldElement([6952922, 1265500, -6862341, 7057498, 4037696, 5447722, -31680899, 15325402, 19365852, -1569102]),
+        Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+        T: FieldElement([25262188, 11972680, -11716002, 5869612, 18193162, -16297739, -20670665, 8559098, -3541543, 5011181])
+    },
+];
 
 pub const bi: [PreComputedPoint; 8] = [
     PreComputedPoint{
@@ -1478,14 +1570,77 @@ pub const base: [[PreComputedPoint; 8]; 32] = [
 mod test {
     use field::FieldElement;
     use curve::PreComputedPoint;
+    use curve::CompressedEdwardsY;
+    use curve::ExtendedPoint;
+    use curve::Identity;
+    use curve::IsIdentity;
+    use curve::ValidityCheck;
     use constants;
 
     #[test]
-    /// Test that SQRT_M1 is a square root of -1
+    fn test_eight_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in 0..8 {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
+
+    #[test]
+    fn test_four_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in (0..8).filter(|i| i % 2 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
+
+    #[test]
+    fn test_two_torsion() {
+        let mut bytes = [0;32];
+        bytes[0] = 1;
+        let compressed_id = CompressedEdwardsY(bytes);
+        for i in (0..8).filter(|i| i % 4 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
+
+    #[test]
+    fn test_half() {
+        let one = FieldElement([1,0,0,0,0,0,0,0,0,0]);
+        let two = FieldElement([2,0,0,0,0,0,0,0,0,0]);
+        assert_eq!(one, &two * &constants::HALF);
+    }
+
+    #[test]
+    /// Test that SQRT_M1 and MSQRT_M1 are square roots of -1
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
-        assert_eq!(minus_one, sqrt_m1_sq);
+        let msqrt_m1_sq = &constants::MSQRT_M1 * &constants::MSQRT_M1;
+        assert_eq!(minus_one,  sqrt_m1_sq);
+        assert_eq!(minus_one, msqrt_m1_sq);
+    }
+
+    #[test]
+    fn test_sqrt_constants_sign() {
+        let one       = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
+        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let invsqrt_m1 = minus_one.invsqrt().unwrap();
+        let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
+        let sign_test_msqrt = &invsqrt_m1 * &constants::MSQRT_M1;
+        // XXX it seems we have flipped the sign relative to
+        // the invsqrt function?
+        assert_eq!(sign_test_sqrt, minus_one);
+        assert_eq!(sign_test_msqrt, one);
     }
 
     #[test]
@@ -1497,6 +1652,20 @@ mod test {
         let d2 = &d + &d;
         assert_eq!(d, constants::d);
         assert_eq!(d2, constants::d2);
+    }
+
+    #[test]
+    fn test_d4() {
+        let mut four = FieldElement::zero();
+        four[0] = 4;
+        assert_eq!(&constants::d * &four, constants::d4);
+    }
+
+    #[test]
+    fn test_a_minus_d() {
+        let a = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let a_minus_d = &a - &constants::d;
+        assert_eq!(a_minus_d, constants::a_minus_d);
     }
 
     /// Test the values in the lookup table of precomputed multiples

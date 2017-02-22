@@ -33,6 +33,10 @@
 //! ship, determined to track down and bring an end to the Dalek race.
 
 #[cfg(test)]
+#[macro_use]
+extern crate std;
+
+#[cfg(test)]
 extern crate test;
 
 #[macro_use]
@@ -44,8 +48,12 @@ extern crate rand;
 // Modules for low-level operations directly on field elements and curve points.
 
 pub mod field;
-pub mod curve;
 pub mod scalar;
+pub mod curve;
+
+// Feature gate decaf while our implementation is unfinished and probably incorrect.
+#[cfg(feature = "yolocrypto")]
+pub mod decaf;
 
 // Constant-time functions and other miscelaneous utilities.
 

@@ -31,6 +31,8 @@ use subtle::CTEq;
 
 use utils::{load3, load4};
 
+use constants;
+
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
@@ -510,15 +512,58 @@ impl FieldElement {
         (!equal_so_far & 1 & greater) as u8
     }
 
-    /// Determine if this `FieldElement` is negative.
+    /// Determine if this `FieldElement` is negative, in the
+    /// sense used in the ed25519 paper.
     ///
     /// # Return
     ///
     /// If negative, return `1i32`.  Otherwise, return `0i32`.
     // XXX should return u8
-    pub fn is_negative(&self) -> i32 { //FeIsNegative
+    pub fn is_negative_ed25519(&self) -> i32 { //FeIsNegative
         let bytes = self.to_bytes();
         (bytes[0] & 1) as i32
+    }
+
+    /// Determine if this `FieldElement` is negative, in the
+    /// sense used by Decaf: `x` is nonnegative if the least
+    /// absolute residue for `x` lies in `[0, (p-1)/2]`, and
+    /// is negative otherwise.
+    ///
+    /// # Return
+    ///
+    /// Returns `1u8` if negative, `0u8` if nonnegative.
+    ///
+    /// # Implementation
+    ///
+    /// Uses a trick borrowed from Mike Hamburg's code.  Let `x \in
+    /// F_p` and let `y \in Z` be the least absolute residue for `x`.
+    /// Suppose `y ≤ (p-1)/2`.  Then `2y < p` so `2y = 2y mod p` and
+    /// `2y mod p` is even.  On the other hand, if `y > (p-1)/2` then
+    /// `2y ≥ p`; since `y < p`, `2y \in [p, 2p)`, so `2y mod p =
+    /// 2y-p`, which is odd.
+    ///
+    /// Thus we can test whether `y ≤ (p-1)/2` by checking whether `2y
+    /// mod p` is even.
+    pub fn is_negative_decaf(&self) -> u8 {
+        let y = self + self;
+        (y.to_bytes()[0] & 1) as u8
+    }
+
+    /// Determine if this `FieldElement` is nonnegative, in the
+    /// sense used by Decaf: `x` is nonnegative if the least
+    /// absolute residue for `x` lies in `[0, (p-1)/2]`, and
+    /// is negative otherwise.
+    pub fn is_nonnegative_decaf(&self) -> u8 {
+        1u8 & (!self.is_negative_decaf())
+    }
+
+    /// Determine if this `FieldElement` is zero.
+    ///
+    /// # Return
+    ///
+    /// If zero, return `1u8`.  Otherwise, return `0u8`.
+    pub fn is_zero(&self) -> u8 {
+        return 1u8 & (!self.is_nonzero());
     }
 
     /// Determine if this `FieldElement` is non-zero.
@@ -770,6 +815,48 @@ impl FieldElement {
         let t21 = self * &t20;             // 251..2,0
 
         t21
+    }
+
+    /// Try to compute 1/sqrt(self).
+    ///
+    /// # Return
+    ///
+    /// * If `self` is zero, returns zero.
+    /// * If `self` is square, returns 1/sqrt(self).
+    /// * If `self` is nonsquare, returns `None`.
+    pub fn invsqrt(&self) -> Option<FieldElement> {
+        // We are to compute v as:
+        //     / 1/sqrt(self)  if self is square, nonzero;
+        // v = |            0  if self is zero;
+        //     \     [reject]  if self is nonsquare.
+        //
+        // Using the same trick as in ed25519 decoding, we merge the
+        // inversion, the square root, and the square test as follows.
+        //
+        // To compute sqrt(α), we can compute β = α^((p+3)/8).
+        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
+        // gives sqrt(α).
+        //
+        // To compute 1/sqrt(α), we observe that
+        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
+        //                            = α^3 * (α^7)^((p-5)/8).
+        //
+        // If α is square, then (1/β)^2 = ±(1/α), so that (1/β)^2 α = ±1.
+        let a3 = &self.square() * self;        // α^3
+        let a7 =   &a3.square() * self;        // α^7
+        let mut v = &a3 * &a7.pow_p58();       // α^(p-1-(p+3)/8)
+        let check =  self * &v.square();       // ±1 if α is square
+
+        if v.is_zero() == 1u8 {
+            return Some(v);  // α was zero all along
+        } else if check == FieldElement::one() {
+            return Some(v);  // computed the correct sqrt
+        } else if check == -&FieldElement::one() {
+                             // wrong sign, multiply by sqrt(-1)
+            return Some(&v * &constants::SQRT_M1);
+        } else {
+            return None;     // input was nonsquare
+        }
     }
 
     /// chi calculates `self^((p-1)/2)`.

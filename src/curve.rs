@@ -80,6 +80,7 @@
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg, Index};
+use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;
@@ -159,7 +160,7 @@ impl CompressedEdwardsY {
             X *= &constants::SQRT_M1;
         }
 
-        if X.is_negative() != (self[31] >> 7) as i32 {
+        if X.is_negative_ed25519() != (self[31] >> 7) as i32 {
             X = X.neg();
         }
         T = &X * &Y;
@@ -174,12 +175,16 @@ impl CompressedEdwardsY {
 
 /// An `ExtendedPoint` is a point on the curve in 𝗣³(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to (x:y:1:xy).
+// XXX members should not be public, but that's needed for the
+// constants module. Fix when RFC #1422 lands:
+// https://github.com/rust-lang/rust/issues/32409
 #[derive(Copy, Clone)]
+#[allow(missing_docs)]
 pub struct ExtendedPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
+    pub X: FieldElement,
+    pub Y: FieldElement,
+    pub Z: FieldElement,
+    pub T: FieldElement,
 }
 
 /// A `ProjectivePoint` is a point on the curve in 𝗣²(𝔽ₚ).
@@ -272,6 +277,38 @@ impl Identity for PreComputedPoint {
 }
 
 // ------------------------------------------------------------------------
+// Validity checks (for debugging, not CT)
+// ------------------------------------------------------------------------
+
+/// Trait for checking whether a point is on the curve
+pub trait ValidityCheck {
+    /// Checks whether the point is on the curve. Not CT.
+    fn is_valid(&self) -> bool;
+}
+
+impl ValidityCheck for ProjectivePoint {
+    fn is_valid(&self) -> bool {
+        // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
+        // homogenized as (-X^2 + Y^2)*Z^2 = Z^4 + d*X^2*Y^2
+        let XX = self.X.square();
+        let YY = self.Y.square();
+        let ZZ = self.Z.square();
+        let ZZZZ = ZZ.square();
+        let lhs = &(&YY - &XX) * &ZZ;
+        let rhs = &ZZZZ + &(&constants::d * &(&XX * &YY));
+
+        lhs == rhs
+    }
+}
+
+impl ValidityCheck for ExtendedPoint {
+    // XXX this should also check that T is correct
+    fn is_valid(&self) -> bool {
+        self.to_projective().is_valid()
+    }
+}
+
+// ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
@@ -355,7 +392,7 @@ impl ProjectivePoint {
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
-        s[31] ^= (x.is_negative() << 7) as u8;
+        s[31] ^= (x.is_negative_ed25519() << 7) as u8;
         CompressedEdwardsY(s)
     }
 }
@@ -431,7 +468,7 @@ impl CompletedPoint {
 
 impl ProjectivePoint {
     /// Double this point: return self + self
-    fn double(&self) -> CompletedPoint { // Double()
+    pub fn double(&self) -> CompletedPoint { // Double()
         let XX          = self.X.square();
         let YY          = self.Y.square();
         let ZZ2         = self.Z.square2();
@@ -451,7 +488,7 @@ impl ProjectivePoint {
 
 impl ExtendedPoint {
     /// Add this point to itself.
-    fn double(&self) -> ExtendedPoint {
+    pub fn double(&self) -> ExtendedPoint {
         self.to_projective().double().to_extended()
     }
 }
@@ -599,18 +636,24 @@ impl<'a> Neg for &'a PreComputedPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-impl ExtendedPoint {
-    /// Scalar multiplication: compute `a * self`.
+/// Trait for scalar multiplication of an arbitrary point.
+pub trait ScalarMult<S> {
+    /// Compute `scalar * self`.
+    fn scalar_mult(&self, scalar: &S) -> Self;
+}
+
+impl ScalarMult<Scalar> for ExtendedPoint {
+    /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    pub fn scalar_mult(&self, a: &Scalar) -> ExtendedPoint {
+    fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
         let A = self.to_cached();
         let mut As: [CachedPoint; 8] = [A; 8];
         for i in 0..7 {
             As[i+1] = (self + &As[i]).to_extended().to_cached();
         }
-        let e = a.to_radix_16();
+        let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
         for i in (0..64).rev() {
@@ -620,8 +663,22 @@ impl ExtendedPoint {
         }
         h
     }
+}
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `a`, by
+/// Trait for scalar multiplication of a distinguished basepoint.
+pub trait BasepointMult<S> {
+    /// Return the basepoint `B`.
+    fn basepoint() -> Self;
+    /// Compute `scalar * B`.
+    fn basepoint_mult(scalar: &S) -> Self;
+}
+
+impl BasepointMult<Scalar> for ExtendedPoint {
+    fn basepoint() -> ExtendedPoint {
+        constants::BASEPOINT
+    }
+
+    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
     /// computing the multiple `aB` of the basepoint `B`.
     ///
     /// Precondition: the scalar must be reduced.
@@ -646,8 +703,8 @@ impl ExtendedPoint {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    pub fn basepoint_mult(a: &Scalar) -> ExtendedPoint { //GeScalarMultBase
-        let e = a.to_radix_16();
+    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint { //GeScalarMultBase
+        let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
 
@@ -665,7 +722,9 @@ impl ExtendedPoint {
 
         h
     }
+}
 
+impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
     ///
     /// Convenience wrapper around `mult_by_pow_2`.
@@ -862,6 +921,8 @@ impl Debug for CachedPoint {
 #[cfg(test)]
 mod test {
     use test::Bencher;
+    use rand::OsRng;
+
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::CTAssignable;
@@ -922,6 +983,8 @@ mod test {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
         let bp  =  BASE_CMPRSSD.decompress().unwrap();
         let bp2 = BASE2_CMPRSSD.decompress().unwrap();
+        assert!( bp.is_valid());
+        assert!(bp2.is_valid());
         let compressed  =  bp.compress();
         let compressed2 = bp2.compress();
         // Check that decompression actually gives the correct X coordinate

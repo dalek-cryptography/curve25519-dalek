@@ -308,9 +308,7 @@ mod test {
     fn test_decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
-        // This should compress (as ed25519) to the following:
-        let mut bytes = [0u8; 32]; bytes[0] = 1;
-        assert_eq!(id.0.compress(), CompressedEdwardsY(bytes));
+        assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]

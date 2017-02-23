@@ -218,6 +218,15 @@ pub trait Identity {
     fn identity() -> Self;
 }
 
+impl Identity for CompressedEdwardsY {
+    fn identity() -> CompressedEdwardsY {
+        CompressedEdwardsY([1, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0])
+    }
+}
+
 impl Identity for ExtendedPoint {
     fn identity() -> ExtendedPoint {
         ExtendedPoint{ X: FieldElement::zero(),
@@ -1159,6 +1168,12 @@ mod test {
 
         assert!(p1.is_small_order() == true);
         assert!(p2.is_small_order() == false);
+    }
+
+    #[test]
+    fn test_compressed_identity() {
+        assert_eq!(ExtendedPoint::identity().compress(),
+                   CompressedEdwardsY::identity());
     }
 
     #[test]

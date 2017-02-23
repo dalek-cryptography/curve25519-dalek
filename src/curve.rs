@@ -127,45 +127,24 @@ impl CompressedEdwardsY {
 
     /// Attempt to decompress to an `ExtendedPoint`.
     ///
-    /// # Warning
-    ///
-    /// This function will fail and return None if both vx²-u=0 and vx²+u=0.
+    /// Returns `None` if the input is not the `y`-coordinate of a
+    /// curve point.
     pub fn decompress(&self) -> Option<ExtendedPoint> { // FromBytes()
-        let mut u:     FieldElement;
-        let mut v:     FieldElement;
-        let     v3:    FieldElement;
-        let     vxx:   FieldElement;
+        let Y = FieldElement::from_bytes(&self.0);
+        let Z = FieldElement::one();
+        let YY = Y.square();
+        let u = &YY - &Z;                    // u =  y²-1
+        let v = &(&YY * &constants::d) + &Z; // v = dy²+1
+        let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
 
-        let mut X: FieldElement;
-        let     Y: FieldElement;
-        let     Z: FieldElement;
-        let     T: FieldElement;
+        if is_nonzero_square != 1u8 { return None; }
 
-        Y = FieldElement::from_bytes(&self.0);
-        Z = FieldElement::one();
+        // Flip the sign of X if it's not correct
+        let compressed_sign_bit = self[31] >> 7;
+        let    current_sign_bit = X.is_negative_ed25519();
+        X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
-        u  = Y.square();
-        v  = &u * &constants::d;
-        u -= &Z;                   // u = y²-1
-        v += &Z;                   // v = dy²+1
-        v3 = &v.square() * &v;     // v3 = v³
-        X  = (&v3.square() * &(&v * &u)).pow_p58(); // x = (uv⁷)^((q-5)/8)
-        X *= &(&u * &v3);                           // x = (uv³)(uv⁷)^((q-5)/8)
-
-        vxx = &v * &X.square();
-        if (&vxx - &u).is_nonzero() == 1 {     // vx²-u
-            if (&vxx + &u).is_nonzero() == 1 { // vx²+u
-                return None;
-            }
-            X *= &constants::SQRT_M1;
-        }
-
-        if X.is_negative_ed25519() != (self[31] >> 7) as i32 {
-            X = X.neg();
-        }
-        T = &X * &Y;
-
-        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T })
+        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
     }
 }
 

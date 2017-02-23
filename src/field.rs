@@ -822,6 +822,61 @@ impl FieldElement {
         t21
     }
 
+    /// Given `FieldElements` `u` and `v`, attempt to compute
+    /// `sqrt(u/v)` in constant time.
+    ///
+    /// It would be much better to use an `Option` type here, but
+    /// doing so forces the caller to branch, which we don't want to
+    /// do.  This seems like the least bad solution.
+    ///
+    /// # Return
+    ///
+    /// - `(1u8, sqrt(u/v))` if `v` is nonzero and `u/v` is square;
+    /// - `(0u8, zero)`      if `v` is zero;
+    /// - `(0u8, garbage)`   if `u/v` is nonsquare.
+    ///
+    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement)
+                      -> (u8, FieldElement) {
+        // Using the same trick as in ed25519 decoding, we merge the
+        // inversion, the square root, and the square test as follows.
+        //
+        // To compute sqrt(α), we can compute β = α^((p+3)/8).
+        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
+        // gives sqrt(α).
+        //
+        // To compute 1/sqrt(α), we observe that
+        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
+        //                            = α^3 * (α^7)^((p-5)/8).
+        //
+        // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
+        // by first computing
+        //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
+        //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
+        //      = (uv^3) (uv^7)^((p-5)/8).
+        //
+        // If v is nonzero and u/v is square, then r^2 = ±u/v,
+        //                                     so vr^2 = ±u.
+        // If vr^2 =  u, then sqrt(u/v) = r.
+        // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
+        //
+        // If v is zero, r is also zero.
+
+        let v3 = &v.square()  * v;
+        let v7 = &v3.square() * v;
+        let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+        let check = v * &r.square();
+
+        let correct_sign_sqrt = check.ct_eq(   u);
+        let flipped_sign_sqrt = check.ct_eq(&(-u));
+
+        let r_prime = &constants::SQRT_M1 * &r;
+        r.conditional_assign(&r_prime, flipped_sign_sqrt);
+        
+        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
+
+        (was_nonzero_square, r)
+    }
+
     /// For `self` a nonzero square, compute 1/sqrt(self) in
     /// constant time.
     ///
@@ -836,35 +891,7 @@ impl FieldElement {
     /// - `(0u8, garbage)`      if `self` is nonsquare.
     ///
     pub fn invsqrt(&self) -> (u8, FieldElement) {
-        //
-        // Using the same trick as in ed25519 decoding, we merge the
-        // inversion, the square root, and the square test as follows.
-        //
-        // To compute sqrt(α), we can compute β = α^((p+3)/8).
-        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
-        // gives sqrt(α).
-        //
-        // To compute 1/sqrt(α), we observe that
-        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
-        //                            = α^3 * (α^7)^((p-5)/8).
-        //
-        // If α is nonzero square, then (1/β)^2   = ±(1/α),
-        //                      so that (1/β)^2 α = ±1.
-        let a3 = &self.square() * self;        // α^3
-        let a7 =   &a3.square() * self;        // α^7
-        let mut v = &a3 * &a7.pow_p58();       // α^(p-1-(p+3)/8)
-        let check =  self * &v.square();       // ±1 if α is nz square
-
-        let correct_sign_sqrt = check.ct_eq(&FieldElement::one());
-        let flipped_sign_sqrt = check.ct_eq(&FieldElement::minus_one());
-
-        // If check = -1, we're off by a factor of sqrt(-1).
-        let v_prime = &constants::SQRT_M1 * &v;
-        v.conditional_assign(&v_prime, flipped_sign_sqrt);
-
-        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
-
-        (was_nonzero_square, v)
+        FieldElement::sqrt_ratio(&FieldElement::one(), self)
     }
 
     /// chi calculates `self^((p-1)/2)`.

@@ -215,6 +215,11 @@ impl FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Construct -1.
+    pub fn minus_one() -> FieldElement {
+        FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+    }
+
     fn combine_coeffs(input: &[i64;10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
         let mut h = input.clone();
@@ -817,18 +822,20 @@ impl FieldElement {
         t21
     }
 
-    /// Try to compute 1/sqrt(self).
+    /// For `self` a nonzero square, compute 1/sqrt(self) in
+    /// constant time.
+    ///
+    /// It would be much better to use an `Option` type here, but
+    /// doing so forces the caller to branch, which we don't want to
+    /// do.  This seems like the least bad solution.
     ///
     /// # Return
     ///
-    /// * If `self` is zero, returns zero.
-    /// * If `self` is square, returns 1/sqrt(self).
-    /// * If `self` is nonsquare, returns `None`.
-    pub fn invsqrt(&self) -> Option<FieldElement> {
-        // We are to compute v as:
-        //     / 1/sqrt(self)  if self is square, nonzero;
-        // v = |            0  if self is zero;
-        //     \     [reject]  if self is nonsquare.
+    /// - `(1u8, 1/sqrt(self))` if `self` is a nonzero square;
+    /// - `(0u8, zero)`         if `self` is zero;
+    /// - `(0u8, garbage)`      if `self` is nonsquare.
+    ///
+    pub fn invsqrt(&self) -> (u8, FieldElement) {
         //
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
@@ -841,22 +848,23 @@ impl FieldElement {
         //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
         //                            = α^3 * (α^7)^((p-5)/8).
         //
-        // If α is square, then (1/β)^2 = ±(1/α), so that (1/β)^2 α = ±1.
+        // If α is nonzero square, then (1/β)^2   = ±(1/α),
+        //                      so that (1/β)^2 α = ±1.
         let a3 = &self.square() * self;        // α^3
         let a7 =   &a3.square() * self;        // α^7
         let mut v = &a3 * &a7.pow_p58();       // α^(p-1-(p+3)/8)
-        let check =  self * &v.square();       // ±1 if α is square
+        let check =  self * &v.square();       // ±1 if α is nz square
 
-        if v.is_zero() == 1u8 {
-            return Some(v);  // α was zero all along
-        } else if check == FieldElement::one() {
-            return Some(v);  // computed the correct sqrt
-        } else if check == -&FieldElement::one() {
-                             // wrong sign, multiply by sqrt(-1)
-            return Some(&v * &constants::SQRT_M1);
-        } else {
-            return None;     // input was nonsquare
-        }
+        let correct_sign_sqrt = check.ct_eq(&FieldElement::one());
+        let flipped_sign_sqrt = check.ct_eq(&FieldElement::minus_one());
+
+        // If check = -1, we're off by a factor of sqrt(-1).
+        let v_prime = &constants::SQRT_M1 * &v;
+        v.conditional_assign(&v_prime, flipped_sign_sqrt);
+
+        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
+
+        (was_nonzero_square, v)
     }
 
     /// chi calculates `self^((p-1)/2)`.

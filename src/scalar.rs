@@ -165,6 +165,11 @@ impl Scalar {
         Scalar::reduce(&scalar_bytes)
     }
 
+    /// View this `Scalar` as a sequence of bytes.
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+        &self.0
+    }
+
     /// Construct the additive identity
     pub fn zero() -> Self {
         Scalar([0u8; 32])

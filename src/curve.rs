@@ -56,8 +56,8 @@
 //! in ["Twisted Edwards Curves"](https://eprint.iacr.org/2008/013).
 //!
 //! Following the implementation strategy in the ref10 reference
-//! implementation for Ed25519, we use several different models for
-//! curve points:
+//! implementation for [Ed25519](https://ed25519.cr.yp.to/ed25519-20110926.pdf),
+//! we use several different models for curve points:
 //!
 //! * CompletedPoint: points in 𝗣^1 x 𝗣^1;
 //! * ExtendedPoint: points in 𝗣^3;
@@ -66,8 +66,8 @@
 //! Finally, to accelerate additions, we use two cached point formats,
 //! one for the affine model and one for the 𝗣^3 model:
 //!
-//! * PreComputedPoint: `(y+x, y-x, 2dxy)`
-//! * CachedPoint: `(Y+X, Y-X, Z, 2dXY)`
+//! * AffineNielsPoint: `(y+x, y-x, 2dxy)`
+//! * ProjectiveNielsPoint: `(Y+X, Y-X, Z, 2dXY)`
 //!
 //! [1]: https://moderncrypto.org/mail-archive/curves/2016/000807.html
 
@@ -206,23 +206,25 @@ pub struct CompletedPoint {
     T: FieldElement,
 }
 
-/// A pre-computed point in the affine model for the curve,
-/// represented as (y+x, y-x, 2dxy).  These precomputations
-/// accelerate addition and subtraction.
+/// A pre-computed point in the affine model for the curve, represented as
+/// (y+x, y-x, 2dxy).  These precomputations accelerate addition and
+/// subtraction, and were introduced by Niels Duif in the ed25519 paper
+/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
 // Safe to derive Eq because affine coordinates.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
-pub struct PreComputedPoint {
+pub struct AffineNielsPoint {
     pub y_plus_x:  FieldElement,
     pub y_minus_x: FieldElement,
     pub xy2d:      FieldElement,
 }
 
-/// A pre-computed point in the P³(𝔽ₚ) model for the curve,
-/// represented as (Y+X, Y-X, Z, 2dXY).  These precomputations
-/// accelerate addition and subtraction.
+/// A pre-computed point in the P³(𝔽ₚ) model for the curve, represented as
+/// (Y+X, Y-X, Z, 2dXY).  These precomputations accelerate addition and
+/// subtraction, and were introduced by Niels Duif in the ed25519 paper
+/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
 #[derive(Copy, Clone)]
-pub struct CachedPoint {
+pub struct ProjectiveNielsPoint {
     Y_plus_X:  FieldElement,
     Y_minus_X: FieldElement,
     Z:         FieldElement,
@@ -257,18 +259,18 @@ impl Identity for ProjectivePoint {
     }
 }
 
-impl Identity for CachedPoint {
-    fn identity() -> CachedPoint {
-        CachedPoint{ Y_plus_X:  FieldElement::one(),
+impl Identity for ProjectiveNielsPoint {
+    fn identity() -> ProjectiveNielsPoint {
+        ProjectiveNielsPoint{ Y_plus_X:  FieldElement::one(),
                      Y_minus_X: FieldElement::one(),
                      Z:         FieldElement::one(),
                      T2d:       FieldElement::zero() }
     }
 }
 
-impl Identity for PreComputedPoint {
-    fn identity() -> PreComputedPoint {
-        PreComputedPoint{
+impl Identity for AffineNielsPoint {
+    fn identity() -> AffineNielsPoint {
+        AffineNielsPoint{
             y_plus_x:  FieldElement::one(),
             y_minus_x: FieldElement::one(),
             xy2d:      FieldElement::zero(),
@@ -312,8 +314,8 @@ impl ValidityCheck for ExtendedPoint {
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
-impl CTAssignable for CachedPoint {
-    fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
+impl CTAssignable for ProjectiveNielsPoint {
+    fn conditional_assign(&mut self, other: &ProjectiveNielsPoint, choice: u8) {
         self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
         self.Y_minus_X.conditional_assign(&other.Y_minus_X, choice);
         self.Z.conditional_assign(&other.Z, choice);
@@ -321,8 +323,8 @@ impl CTAssignable for CachedPoint {
     }
 }
 
-impl CTAssignable for PreComputedPoint {
-    fn conditional_assign(&mut self, other: &PreComputedPoint, choice: u8) {
+impl CTAssignable for AffineNielsPoint {
+    fn conditional_assign(&mut self, other: &AffineNielsPoint, choice: u8) {
         // PreComputedGroupElementCMove()
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
@@ -398,9 +400,9 @@ impl ProjectivePoint {
 }
 
 impl ExtendedPoint {
-    /// Convert to a CachedPoint
-    pub fn to_cached(&self) -> CachedPoint {
-        CachedPoint{
+    /// Convert to a ProjectiveNielsPoint
+    pub fn to_cached(&self) -> ProjectiveNielsPoint {
+        ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
             Z:          self.Z,
@@ -426,14 +428,14 @@ impl ExtendedPoint {
         self.to_projective().compress()
     }
 
-    /// Dehomogenize to a PreComputedPoint.
+    /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub fn to_precomputed(&self) -> PreComputedPoint {
+    pub fn to_precomputed(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
         let xy2d = &(&x * &y) * &constants::d2;
-        PreComputedPoint{
+        AffineNielsPoint{
             y_plus_x:  &y + &x,
             y_minus_x: &y - &x,
             xy2d:      xy2d
@@ -497,10 +499,10 @@ impl ExtendedPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a,'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
+impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b CachedPoint) -> CompletedPoint {
+    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X  = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X  * &other.Y_plus_X;
@@ -518,10 +520,10 @@ impl<'a,'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
+impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b CachedPoint) -> CompletedPoint {
+    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X  = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.Y_minus_X;
@@ -539,10 +541,10 @@ impl<'a,'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Add<&'b PreComputedPoint> for &'a ExtendedPoint {
+impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b PreComputedPoint) -> CompletedPoint {
+    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X  = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP        = &Y_plus_X  * &other.y_plus_x;
@@ -559,10 +561,10 @@ impl<'a,'b> Add<&'b PreComputedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Sub<&'b PreComputedPoint> for &'a ExtendedPoint {
+impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b PreComputedPoint) -> CompletedPoint {
+    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X  = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM        = &Y_plus_X  * &other.y_minus_x;
@@ -606,11 +608,11 @@ impl<'a> Neg for &'a ExtendedPoint {
     }
 }
 
-impl<'a> Neg for &'a CachedPoint {
-    type Output = CachedPoint;
+impl<'a> Neg for &'a ProjectiveNielsPoint {
+    type Output = ProjectiveNielsPoint;
 
-    fn neg(self) -> CachedPoint {
-        CachedPoint{
+    fn neg(self) -> ProjectiveNielsPoint {
+        ProjectiveNielsPoint{
             Y_plus_X:   self.Y_minus_X,
             Y_minus_X:  self.Y_plus_X,
             Z:          self.Z,
@@ -620,11 +622,11 @@ impl<'a> Neg for &'a CachedPoint {
 }
 
 
-impl<'a> Neg for &'a PreComputedPoint {
-    type Output = PreComputedPoint;
+impl<'a> Neg for &'a AffineNielsPoint {
+    type Output = AffineNielsPoint;
 
-    fn neg(self) -> PreComputedPoint {
-        PreComputedPoint{
+    fn neg(self) -> AffineNielsPoint {
+        AffineNielsPoint{
             y_plus_x:   self.y_minus_x,
             y_minus_x:  self.y_plus_x,
             xy2d:       -(&self.xy2d)
@@ -649,7 +651,7 @@ impl ScalarMult<Scalar> for ExtendedPoint {
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
     fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
         let A = self.to_cached();
-        let mut As: [CachedPoint; 8] = [A; 8];
+        let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
         for i in 0..7 {
             As[i+1] = (self + &As[i]).to_extended().to_cached();
         }
@@ -780,7 +782,7 @@ pub fn double_scalar_mult_vartime(a: &Scalar, A: &ExtendedPoint, b: &Scalar) -> 
     let b_naf = b.non_adjacent_form();
 
     // Build a lookup table of odd multiples of A
-    let mut Ai = [CachedPoint::identity(); 8];
+    let mut Ai = [ProjectiveNielsPoint::identity(); 8];
     let A2 = A.double();
     Ai[0]  = A.to_cached();
     for i in 0..7 {
@@ -900,16 +902,16 @@ impl Debug for CompletedPoint {
     }
 }
 
-impl Debug for PreComputedPoint {
+impl Debug for AffineNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "PreComputedPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
+        write!(f, "AffineNielsPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
                &self.y_plus_x, &self.y_minus_x, &self.xy2d)
     }
 }
 
-impl Debug for CachedPoint {
+impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CachedPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
+        write!(f, "ProjectiveNielsPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
                &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }
 }
@@ -1024,7 +1026,7 @@ mod test {
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
 
-    /// Test `impl Add<CachedPoint> for ExtendedPoint`
+    /// Test `impl Add<ProjectiveNielsPoint> for ExtendedPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
     fn test_basepoint_plus_basepoint_cached() {
@@ -1033,13 +1035,13 @@ mod test {
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
 
-    /// Test `impl Add<PreComputedPoint> for ExtendedPoint`
+    /// Test `impl Add<AffineNielsPoint> for ExtendedPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
     fn test_basepoint_plus_basepoint_precomputed() {
         let bp = BASE_CMPRSSD.decompress().unwrap();
         // on decode, Z =1, so x = X/Z = X, y = Y/Z = Y, xy = T
-        let bp_precomputed = PreComputedPoint{
+        let bp_precomputed = AffineNielsPoint{
             y_plus_x:  &bp.Y + &bp.X,
             y_minus_x: &bp.Y - &bp.X,
             xy2d:      &bp.T * &constants::d2,
@@ -1154,10 +1156,10 @@ mod test {
     }
 
     #[test]
-    fn test_PreComputedPoint_conditional_assign() {
-        let id     = PreComputedPoint::identity();
-        let mut p1 = PreComputedPoint::identity();
-        let p2:     PreComputedPoint = PreComputedPoint{
+    fn test_AffineNielsPoint_conditional_assign() {
+        let id     = AffineNielsPoint::identity();
+        let mut p1 = AffineNielsPoint::identity();
+        let p2:     AffineNielsPoint = AffineNielsPoint{
             y_plus_x:  FieldElement([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
             y_minus_x: FieldElement([11, 22, 33, 44, 55, 66, 77, 88, 99, 100]),
             xy2d:    FieldElement([10, 20, 30, 40, 50, 60, 70, 80, 90, 101]),

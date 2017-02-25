@@ -71,10 +71,12 @@ impl CompressedDecaf {
         let Z = &FieldElement::one() - &ss; // Z = 1+as^2
         let u = &(&Z * &Z) - &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
         let uss = &u * &ss;
-        let mut v = match uss.invsqrt() {
-            Some(v) => v,
-            None => return None,
-        };
+
+        let (uss_is_nonzero_square, mut v) = uss.invsqrt();
+        if (uss_is_nonzero_square | uss.is_zero()) == 0u8 {
+            return None; // us^2 is nonzero nonsquare
+        }
+
         // Now v = 1/sqrt(us^2) if us^2 is a nonzero square, 0 if us^2 is zero.
         let uv = &v * &u;
         if uv.is_negative_decaf() == 1u8 {
@@ -158,9 +160,9 @@ impl DecafPoint {
         let Z_plus_Y  = &self.0.Z + &Y;
         let Z_minus_Y = &self.0.Z - &Y;
         let t = &constants::a_minus_d * &(&Z_plus_Y * &Z_minus_Y);
+        let (t_is_nonzero_square, mut r) = t.invsqrt();
         // t should always be square (why?)
-        // XXX is it safe to use option types here?
-        let mut r = t.invsqrt().unwrap();
+        debug_assert_eq!( t_is_nonzero_square | t.is_zero(), 1u8 );
 
         // Step 2: Compute u = (a-d)r
         let u = &constants::a_minus_d * &r;

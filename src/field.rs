@@ -215,6 +215,11 @@ impl FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Construct -1.
+    pub fn minus_one() -> FieldElement {
+        FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+    }
+
     fn combine_coeffs(input: &[i64;10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
         let mut h = input.clone();
@@ -512,16 +517,16 @@ impl FieldElement {
         (!equal_so_far & 1 & greater) as u8
     }
 
-    /// Determine if this `FieldElement` is negative, in the
-    /// sense used in the ed25519 paper.
+    /// Determine if this `FieldElement` is negative, in the sense
+    /// used in the ed25519 paper: `x` is negative if the low bit is
+    /// set.
     ///
     /// # Return
     ///
-    /// If negative, return `1i32`.  Otherwise, return `0i32`.
-    // XXX should return u8
-    pub fn is_negative_ed25519(&self) -> i32 { //FeIsNegative
+    /// If negative, return `1u8`.  Otherwise, return `0u8`.
+    pub fn is_negative_ed25519(&self) -> u8 { //FeIsNegative
         let bytes = self.to_bytes();
-        (bytes[0] & 1) as i32
+        (bytes[0] & 1) as u8
     }
 
     /// Determine if this `FieldElement` is negative, in the
@@ -817,19 +822,21 @@ impl FieldElement {
         t21
     }
 
-    /// Try to compute 1/sqrt(self).
+    /// Given `FieldElements` `u` and `v`, attempt to compute
+    /// `sqrt(u/v)` in constant time.
+    ///
+    /// It would be much better to use an `Option` type here, but
+    /// doing so forces the caller to branch, which we don't want to
+    /// do.  This seems like the least bad solution.
     ///
     /// # Return
     ///
-    /// * If `self` is zero, returns zero.
-    /// * If `self` is square, returns 1/sqrt(self).
-    /// * If `self` is nonsquare, returns `None`.
-    pub fn invsqrt(&self) -> Option<FieldElement> {
-        // We are to compute v as:
-        //     / 1/sqrt(self)  if self is square, nonzero;
-        // v = |            0  if self is zero;
-        //     \     [reject]  if self is nonsquare.
-        //
+    /// - `(1u8, sqrt(u/v))` if `v` is nonzero and `u/v` is square;
+    /// - `(0u8, zero)`      if `v` is zero;
+    /// - `(0u8, garbage)`   if `u/v` is nonsquare.
+    ///
+    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement)
+                      -> (u8, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
         //
@@ -841,22 +848,50 @@ impl FieldElement {
         //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
         //                            = α^3 * (α^7)^((p-5)/8).
         //
-        // If α is square, then (1/β)^2 = ±(1/α), so that (1/β)^2 α = ±1.
-        let a3 = &self.square() * self;        // α^3
-        let a7 =   &a3.square() * self;        // α^7
-        let mut v = &a3 * &a7.pow_p58();       // α^(p-1-(p+3)/8)
-        let check =  self * &v.square();       // ±1 if α is square
+        // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
+        // by first computing
+        //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
+        //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
+        //      = (uv^3) (uv^7)^((p-5)/8).
+        //
+        // If v is nonzero and u/v is square, then r^2 = ±u/v,
+        //                                     so vr^2 = ±u.
+        // If vr^2 =  u, then sqrt(u/v) = r.
+        // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
+        //
+        // If v is zero, r is also zero.
 
-        if v.is_zero() == 1u8 {
-            return Some(v);  // α was zero all along
-        } else if check == FieldElement::one() {
-            return Some(v);  // computed the correct sqrt
-        } else if check == -&FieldElement::one() {
-                             // wrong sign, multiply by sqrt(-1)
-            return Some(&v * &constants::SQRT_M1);
-        } else {
-            return None;     // input was nonsquare
-        }
+        let v3 = &v.square()  * v;
+        let v7 = &v3.square() * v;
+        let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+        let check = v * &r.square();
+
+        let correct_sign_sqrt = check.ct_eq(   u);
+        let flipped_sign_sqrt = check.ct_eq(&(-u));
+
+        let r_prime = &constants::SQRT_M1 * &r;
+        r.conditional_assign(&r_prime, flipped_sign_sqrt);
+        
+        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
+
+        (was_nonzero_square, r)
+    }
+
+    /// For `self` a nonzero square, compute 1/sqrt(self) in
+    /// constant time.
+    ///
+    /// It would be much better to use an `Option` type here, but
+    /// doing so forces the caller to branch, which we don't want to
+    /// do.  This seems like the least bad solution.
+    ///
+    /// # Return
+    ///
+    /// - `(1u8, 1/sqrt(self))` if `self` is a nonzero square;
+    /// - `(0u8, zero)`         if `self` is zero;
+    /// - `(0u8, garbage)`      if `self` is nonsquare.
+    ///
+    pub fn invsqrt(&self) -> (u8, FieldElement) {
+        FieldElement::sqrt_ratio(&FieldElement::one(), self)
     }
 
     /// chi calculates `self^((p-1)/2)`.

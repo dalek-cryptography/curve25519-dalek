@@ -38,9 +38,14 @@ extern crate std;
 
 #[cfg(test)]
 extern crate test;
+#[cfg(test)]
+extern crate sha2;
 
 #[macro_use]
 extern crate arrayref;
+
+extern crate generic_array;
+extern crate digest;
 
 #[cfg(feature = "std")]
 extern crate rand;

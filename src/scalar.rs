@@ -36,6 +36,10 @@ use core::ops::{Neg};
 #[cfg(feature = "std")]
 use rand::Rng;
 
+use digest::Digest;
+use generic_array::GenericArray;
+use generic_array::typenum::U64;
+
 use constants;
 use utils::{load3, load4};
 use subtle::CTAssignable;
@@ -157,6 +161,35 @@ impl Scalar {
         let mut scalar_bytes = [0u8; 64];
         csprng.fill_bytes(&mut scalar_bytes);
         Scalar::reduce(&scalar_bytes)
+    }
+
+    /// Hash a slice of bytes into a scalar.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes (512 bits) of output.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// extern crate sha2;
+    /// use sha2::Sha512;
+    ///
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
+    /// # }
+    /// ```
+    ///
+    pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
+            where D: Digest<OutputSize=U64> + Default {
+        let mut hash = D::default();
+        hash.input(input);
+        // XXX this seems clumsy
+        let mut output = [0u8;64];
+        output.copy_from_slice(hash.result().as_slice());
+        Scalar::reduce(&output)
     }
 
     /// Construct the additive identity

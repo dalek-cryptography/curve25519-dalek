@@ -176,6 +176,8 @@ impl Scalar {
     /// extern crate sha2;
     /// use sha2::Sha512;
     ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let msg = "To really appreciate architecture, you may even need to commit a murder";
     /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());

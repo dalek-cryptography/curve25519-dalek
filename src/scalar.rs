@@ -30,8 +30,8 @@
 //! limbs.
 
 use core::cmp::{Eq, PartialEq};
-use core::ops::{Index, IndexMut};
-use core::ops::{Neg};
+use core::ops::{Neg, Index, IndexMut};
+use core::fmt::Debug;
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -53,6 +53,12 @@ use subtle::arrays_equal_ct;
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
 #[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
+
+impl Debug for Scalar {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "Scalar: {:?}", &self.0[..])
+    }
+}
 
 impl Eq for Scalar{}
 impl PartialEq for Scalar {
@@ -192,6 +198,11 @@ impl Scalar {
         let mut output = [0u8;64];
         output.copy_from_slice(hash.result().as_slice());
         Scalar::reduce(&output)
+    }
+
+    /// View this `Scalar` as a sequence of bytes.
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+        &self.0
     }
 
     /// Construct the additive identity

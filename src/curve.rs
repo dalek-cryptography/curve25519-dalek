@@ -79,7 +79,7 @@
 
 use core::fmt::Debug;
 use core::iter::Iterator;
-use core::ops::{Add, Sub, Neg, Index};
+use core::ops::{Add, Sub, Neg};
 use core::cmp::{PartialEq, Eq};
 
 use constants;
@@ -106,21 +106,18 @@ pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompressedPoint: {:?}", &self.0[..])
-    }
-}
-
-impl Index<usize> for CompressedEdwardsY {
-    type Output = u8;
-
-    fn index<'a>(&'a self, _index: usize) -> &'a u8 {
-        let ret: &'a u8 = &(self.0[_index]);
-        ret
+        write!(f, "CompressedPoint: {:?}", self.as_bytes())
     }
 }
 
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+        &self.0
+    }
+
+    /// Copy this `CompressedEdwardsY` to an array of bytes.
+    /// XXX is this useful?
     pub fn to_bytes(&self) -> [u8;32] {
         self.0
     }
@@ -130,7 +127,7 @@ impl CompressedEdwardsY {
     /// Returns `None` if the input is not the `y`-coordinate of a
     /// curve point.
     pub fn decompress(&self) -> Option<ExtendedPoint> { // FromBytes()
-        let Y = FieldElement::from_bytes(&self.0);
+        let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
         let u = &YY - &Z;                    // u =  y²-1
@@ -140,7 +137,7 @@ impl CompressedEdwardsY {
         if is_nonzero_square != 1u8 { return None; }
 
         // Flip the sign of X if it's not correct
-        let compressed_sign_bit = self[31] >> 7;
+        let compressed_sign_bit = self.as_bytes()[31] >> 7;
         let    current_sign_bit = X.is_negative_ed25519();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
@@ -219,6 +216,15 @@ pub trait Identity {
     /// Returns the identity element of the curve.
     /// Can be used as a constructor.
     fn identity() -> Self;
+}
+
+impl Identity for CompressedEdwardsY {
+    fn identity() -> CompressedEdwardsY {
+        CompressedEdwardsY([1, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0])
+    }
 }
 
 impl Identity for ExtendedPoint {
@@ -317,7 +323,8 @@ impl CTAssignable for AffineNielsPoint {
 
 impl CTEq for ExtendedPoint {
     fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
-        arrays_equal_ct(&self.compress().0, &other.compress().0)
+        arrays_equal_ct( self.compress().as_bytes(),
+                        other.compress().as_bytes())
     }
 }
 
@@ -977,7 +984,7 @@ mod test {
     /// Test sign handling in decompression
     #[test]
     fn test_decompression_sign_handling() {
-        let mut m_bp_bytes: [u8;32] = BASE_CMPRSSD.to_bytes().clone();
+        let mut m_bp_bytes: [u8;32] = BASE_CMPRSSD.as_bytes().clone();
         // Set the high bit of the last byte to flip the sign
         m_bp_bytes[31] |= 1 << 7;
         let m_bp = CompressedEdwardsY(m_bp_bytes).decompress().unwrap();
@@ -1161,6 +1168,12 @@ mod test {
 
         assert!(p1.is_small_order() == true);
         assert!(p2.is_small_order() == false);
+    }
+
+    #[test]
+    fn test_compressed_identity() {
+        assert_eq!(ExtendedPoint::identity().compress(),
+                   CompressedEdwardsY::identity());
     }
 
     #[test]

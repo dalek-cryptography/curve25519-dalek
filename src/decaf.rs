@@ -50,15 +50,15 @@ pub struct CompressedDecaf(pub [u8; 32]);
 /// The result of compressing a `DecafPoint`.
 impl CompressedDecaf {
     /// View this `CompressedDecaf` as an array of bytes.
-    pub fn to_bytes(&self) -> [u8;32] {
-        self.0
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+        &self.0
     }
 
     /// Attempt to decompress to an `DecafPoint`.
     pub fn decompress(&self) -> Option<DecafPoint> {
         // XXX should decoding be CT ?
         // XXX need to check that xy is nonnegative and reject otherwise
-        let s = FieldElement::from_bytes(&self.0);
+        let s = FieldElement::from_bytes(self.as_bytes());
 
         // Check that s = |s| and reject otherwise.
         let mut abs_s = s;
@@ -267,7 +267,7 @@ impl BasepointMult<Scalar> for DecafPoint {
 
 impl Debug for CompressedDecaf {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompressedDecaf: {:?}", &self.0[..])
+        write!(f, "CompressedDecaf: {:?}", self.as_bytes())
     }
 }
 
@@ -308,9 +308,7 @@ mod test {
     fn test_decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
-        // This should compress (as ed25519) to the following:
-        let mut bytes = [0u8; 32]; bytes[0] = 1;
-        assert_eq!(id.0.compress(), CompressedEdwardsY(bytes));
+        assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]

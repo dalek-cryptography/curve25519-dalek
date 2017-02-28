@@ -189,6 +189,18 @@ impl CompressedMontgomeryU {
         // y = (u - 1) / (u + 1)
 
         let u = FieldElement::from_bytes(&self.0);
+
+        // If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
+        // But 486660 is nonsquare mod p, so this is not a curve point.
+        //
+        // XXX what does Signal do here?
+        //
+        // Note: currently, without this check, u = -1 will accidentally
+        // decode to a valid (but incorrect) point, since 0.invert() = 0.
+        if u == FieldElement::minus_one() {
+            return None;
+        }
+
         let u_plus_1_inv = (&u + &FieldElement::one()).invert();
         let y = &(&u - &FieldElement::one()) * &u_plus_1_inv;
 
@@ -430,9 +442,11 @@ impl ProjectivePoint {
     /// Convert this point to a `CompressedMontgomeryU`.
     /// Note that this discards the sign.
     ///
-    /// XXX check for div by zero: when is Z = Y ?
-    /// XXX exceptional points for the birational map 
-    pub fn compress_montgomery(&self) -> CompressedMontgomeryU {
+    /// # Return
+    /// - `None` if `self` is the identity point;
+    /// - `Some(CompressedMontgomeryU)` otherwise.
+    ///
+    pub fn compress_montgomery(&self) -> Option<CompressedMontgomeryU> {
         // u = (1 + y) /  (1 - y)
         // v = sqrt(-486664) * u / x
         //
@@ -440,11 +454,18 @@ impl ProjectivePoint {
         //
         // u = (1 + Y/Z) / (1 - Y/Z);
         //   =   (Z + Y) / (Z - Y);
+        //
+        // exceptional points:
+        // y = 1 <=> Y/Z = 1 <=> Z - Y = 0
         let Z_plus_Y   = &self.Z + &self.Y;
         let Z_minus_Y  = &self.Z - &self.Y;
         let u = &Z_plus_Y * &Z_minus_Y.invert();
 
-        CompressedMontgomeryU(u.to_bytes())
+        if Z_minus_Y.is_zero() == 0u8 {
+            CompressedMontgomeryU(u.to_bytes())
+        } else {
+            None
+        }
     }
 }
 
@@ -1072,14 +1093,20 @@ mod test {
     ///
     /// XXX what does Signal do here?
     #[test]
-    #[should_panic]
     fn test_u_minus_one_monty() {
         let mut m1 = FieldElement::zero();
         m1[0] = -1;
         let m1_bytes = m1.to_bytes();
         let div_by_zero_u = CompressedMontgomeryU(m1_bytes);
-        let p = div_by_zero_u.decompress().unwrap();
-        println!("{:?}", p);
+        assert!(div_by_zero_u.decompress().is_none());
+    }
+
+    /// Montgomery compression of the identity point should
+    /// fail (it's sent to infinity).
+    #[test]
+    fn test_identity_to_monty() {
+        let id = ExtendedPoint::identity();
+        assert!(id.compressed_montgomery().is_none());
     }
 
     /// Test round-trip decompression for the basepoint.

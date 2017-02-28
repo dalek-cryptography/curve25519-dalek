@@ -462,7 +462,7 @@ impl ProjectivePoint {
         let u = &Z_plus_Y * &Z_minus_Y.invert();
 
         if Z_minus_Y.is_zero() == 0u8 {
-            CompressedMontgomeryU(u.to_bytes())
+            Some(CompressedMontgomeryU(u.to_bytes()))
         } else {
             None
         }
@@ -512,8 +512,14 @@ impl ExtendedPoint {
         }
     }
 
-    /// Compress this point to `CompressedMontgomeryU` format
-    pub fn compress_montgomery(&self) -> CompressedMontgomeryU {
+    /// Convert this point to a `CompressedMontgomeryU`.
+    /// Note that this discards the sign.
+    ///
+    /// # Return
+    /// - `None` if `self` is the identity point;
+    /// - `Some(CompressedMontgomeryU)` otherwise.
+    ///
+    pub fn compress_montgomery(&self) -> Option<CompressedMontgomeryU> {
         self.to_projective().compress_montgomery()
     }
 }
@@ -1076,7 +1082,7 @@ mod test {
     #[test]
     fn test_basepoint_to_montgomery() {
         let bp       =  BASE_CMPRSSD.decompress().unwrap();
-        let bp_monty =  bp.compress_montgomery();
+        let bp_monty =  bp.compress_montgomery().unwrap();
         assert_eq!(bp_monty, BASE_CMPRSSD_MONTY);
     }
 
@@ -1106,7 +1112,7 @@ mod test {
     #[test]
     fn test_identity_to_monty() {
         let id = ExtendedPoint::identity();
-        assert!(id.compressed_montgomery().is_none());
+        assert!(id.compress_montgomery().is_none());
     }
 
     /// Test round-trip decompression for the basepoint.

@@ -1443,4 +1443,20 @@ mod test {
 
         b.iter(| | p1.mult_by_pow_2(4) );
     }
+
+    #[bench]
+    fn bench_compress_edwards(b: &mut Bencher) {
+        let mut rng: OsRng = OsRng::new().unwrap();
+        let p1: ExtendedPoint = ExtendedPoint::basepoint_mult(&Scalar::random(&mut rng));
+
+        b.iter(| | p1.compress() );
+    }
+
+    #[bench]
+    fn bench_compress_montgomery(b: &mut Bencher) {
+        let mut rng: OsRng = OsRng::new().unwrap();
+        let p1: ExtendedPoint = ExtendedPoint::basepoint_mult(&Scalar::random(&mut rng));
+
+        b.iter(| | p1.compress_montgomery() );
+    }
 }

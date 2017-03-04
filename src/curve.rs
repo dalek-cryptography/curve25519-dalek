@@ -210,15 +210,11 @@ impl CompressedMontgomeryU {
     /// Given a Montgomery `u` coordinate, compute an Edwards `y` via
     /// `y = (u-1)/(u+1)`.
     ///
-    /// # Note
-    ///
-    /// Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, we can see that
-    /// `y = (u-1)/(u+1)`.
-    ///
     /// # Return
     ///
     /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
     fn to_edwards_y(u: &FieldElement) -> FieldElement {
+        // Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, so `y = (u-1)/(u+1)`.
         &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
     }
 

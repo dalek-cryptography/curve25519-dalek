@@ -243,6 +243,41 @@ impl CompressedMontgomeryU {
 
         (okay, v)
     }
+
+    /// Given Montgomery coordinates `(u, v)`, recover the Edwards `x` coordinate.
+    ///
+    /// # Inputs
+    ///
+    /// * `u` and `v` are both `&FieldElement`s, corresponding the the `(u, v)`
+    ///   coordinates of this `CompressedMontgomeryU`.
+    /// * `sign` is an &u8.
+    ///
+    /// ## Explanation of choice of `sign`
+    ///
+    /// ### Original Signal behaviour:
+    ///
+    /// - `1u8` will leave `x` negative if it is negative, and will negate
+    ///   `x` if it is positive, and
+    /// - `0u8` will leave `x` positive if it is positive, and will negate
+    ///   `x` if it is negative.
+    ///
+    /// Hence, if `sign` is `1u8`, the returned `x` will be negative.
+    /// Otherwise, if `sign` is `0u8`, the returned `x` will be positive.
+    ///
+    /// # Return
+    ///
+    /// A `FieldElement`, the Edwards `x` coordinate, by using `(u, v)` to
+    /// convert from Montgomery to Edwards form via the right-hand side of the
+    /// equation: `x=(u/v)*sqrt(-A-2)`.
+    fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
+        let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
+        let neg_x: FieldElement = -(&x);
+        let current_sign:    u8 = x.is_negative_ed25519();
+
+        // Negate x to match the sign:
+        x.conditional_assign(&neg_x, current_sign ^ sign);
+        x
+    }
 }
 
 // ------------------------------------------------------------------------

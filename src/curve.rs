@@ -171,29 +171,30 @@ impl CompressedMontgomeryU {
 
     /// Attempt to decompress to an `ExtendedPoint`.
     ///
-    /// Note that since there are two curve points with the same
+    /// # Note
+    ///
+    /// Since there are two curve points with the same
     /// `u`-coordinate, the `u`-coordinate does not fully specify a
-    /// point.
+    /// point.  That is, roundtripping between an `ExtendedPoint` and
+    /// a `CompressedMontgomeryU` discards its sign bit.
     ///
-    /// XXX match behaviour in Signal specification re: sign choice
-    /// and rewrite this note
+    /// # Warning
     ///
-    /// XXX check for div by zero: when is u = -1 ?
-    /// XXX exceptional points for the birational map 
+    /// This function is *not* constant time.
+    ///
+    /// # Return
+    ///
+    /// An `Option<ExtendedPoint>`, which will be `None` if either condition holds:
+    ///
+    /// * `u = -1`, or
+    /// * `v` is not square.
+    //
+    // XXX any other exceptional points for the birational map?
     pub fn decompress(&self) -> Option<ExtendedPoint> {
-        // u = (1 + y) /  (1 - y)
-        // v = sqrt(-486664) * u / x
-        //
-        // so
-        //
-        // y = (u - 1) / (u + 1)
-
-        let u = FieldElement::from_bytes(&self.0);
+        let u:   FieldElement = FieldElement::from_bytes(&self.0);
 
         // If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
         // But 486660 is nonsquare mod p, so this is not a curve point.
-        //
-        // XXX what does Signal do here?
         //
         // Note: currently, without this check, u = -1 will accidentally
         // decode to a valid (but incorrect) point, since 0.invert() = 0.
@@ -201,12 +202,46 @@ impl CompressedMontgomeryU {
             return None;
         }
 
-        let u_plus_1_inv = (&u + &FieldElement::one()).invert();
-        let y = &(&u - &FieldElement::one()) * &u_plus_1_inv;
+        let y: FieldElement = CompressedMontgomeryU::to_edwards_y(&u); // y = (u-1)/(u+1)
 
-        // XXX this does two inversions: the above + one in .decompress()
-        // is it possible to do one?
         CompressedEdwardsY(y.to_bytes()).decompress()
+    }
+
+    /// Given a Montgomery `u` coordinate, compute an Edwards `y` via
+    /// `y = (u-1)/(u+1)`.
+    ///
+    /// # Note
+    ///
+    /// Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, we can see that
+    /// `y = (u-1)/(u+1)`.
+    ///
+    /// # Return
+    ///
+    /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
+    fn to_edwards_y(u: &FieldElement) -> FieldElement {
+        &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
+    }
+
+    /// Given a Montgomery `u` coordinate, compute the corresponding
+    /// Montgomery `v` coordinate by computing the right-hand side of
+    /// the Montgomery field equation, `v² = u(u² + Au +1)`.
+    ///
+    /// # Return
+    ///
+    /// A tuple of (`u8`, `FieldElement`), where the `u8` is `1` if the v² was
+    /// actually a square and `0` if otherwise, along with a `FieldElement`: the
+    /// Montgomery `v` corresponding to this `u`.
+    fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
+        let one:       FieldElement = FieldElement::one();
+        let v_squared: FieldElement = u * &(&(&u.square() + &(&(&constants::A * u) + &one)));
+        let v_inv:     FieldElement;
+        let v:         FieldElement;
+        let okay:      u8;
+
+        let (okay, v_inv) = v_squared.invsqrt();
+        let v = &v_inv * &v_squared;
+
+        (okay, v)
     }
 }
 
@@ -1323,6 +1358,15 @@ mod test {
     #[test]
     fn test_is_identity() {
         assert!(ExtendedPoint::identity().is_identity());
+    }
+
+    #[test]
+    fn test_montgomery_u_is_neg_one_rejected() {
+        let fe_u: FieldElement = FieldElement::minus_one();
+        let u: CompressedMontgomeryU = CompressedMontgomeryU(fe_u.to_bytes());
+        let result: Option<ExtendedPoint> = u.decompress();
+
+        assert!(result.is_none());
     }
 
     #[bench]

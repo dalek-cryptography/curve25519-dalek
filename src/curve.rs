@@ -121,7 +121,7 @@ impl Index<usize> for CompressedEdwardsY {
 
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
-    pub fn to_bytes(&self) -> [u8;32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         self.0
     }
 
@@ -165,7 +165,7 @@ pub struct CompressedMontgomeryU(pub [u8; 32]);
 
 impl CompressedMontgomeryU {
     /// View this `CompressedMontgomeryU` as an array of bytes.
-    pub fn to_bytes(&self) -> [u8;32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         self.0
     }
 

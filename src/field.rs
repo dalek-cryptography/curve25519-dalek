@@ -798,6 +798,8 @@ impl FieldElement {
     /// Given a nonzero field element, compute its inverse.
     /// The inverse is computed as self^(p-2), since
     /// x^(p-2)x = x^(p-1) = 1 (mod p).
+    ///
+    /// XXX should we add a debug_assert that self is nonzero?
     pub fn invert(&self) -> FieldElement {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //

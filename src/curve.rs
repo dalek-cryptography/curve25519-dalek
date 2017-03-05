@@ -478,7 +478,7 @@ impl ProjectivePoint {
 
 impl ExtendedPoint {
     /// Convert to a ProjectiveNielsPoint
-    pub fn to_cached(&self) -> ProjectiveNielsPoint {
+    pub fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -507,7 +507,7 @@ impl ExtendedPoint {
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub fn to_precomputed(&self) -> AffineNielsPoint {
+    pub fn to_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -672,14 +672,14 @@ impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
 impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
-        (self + &other.to_cached()).to_extended()
+        (self + &other.to_projective_niels()).to_extended()
     }
 }
 
 impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
-        (self - &other.to_cached()).to_extended()
+        (self - &other.to_projective_niels()).to_extended()
     }
 }
 
@@ -738,10 +738,10 @@ impl ScalarMult<Scalar> for ExtendedPoint {
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
     fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
-        let A = self.to_cached();
+        let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
         for i in 0..7 {
-            As[i+1] = (self + &As[i]).to_extended().to_cached();
+            As[i+1] = (self + &As[i]).to_extended().to_projective_niels();
         }
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
@@ -872,9 +872,9 @@ pub fn double_scalar_mult_vartime(a: &Scalar, A: &ExtendedPoint, b: &Scalar) -> 
     // Build a lookup table of odd multiples of A
     let mut Ai = [ProjectiveNielsPoint::identity(); 8];
     let A2 = A.double();
-    Ai[0]  = A.to_cached();
+    Ai[0]  = A.to_projective_niels();
     for i in 0..7 {
-        Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_cached();
+        Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
     }
     // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
 
@@ -1174,7 +1174,7 @@ mod test {
     #[test]
     fn test_basepoint_plus_basepoint_cached() {
         let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_added = (&bp + &bp.to_cached()).to_extended();
+        let bp_added = (&bp + &bp.to_projective_niels()).to_extended();
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
 
@@ -1209,10 +1209,10 @@ mod test {
 
     /// Sanity check for conversion to precomputed points
     #[test]
-    fn test_convert_to_precomputed() {
+    fn test_convert_to_affine_niels() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
-        let aB_pc = aB.to_precomputed();
+        let aB_pc = aB.to_affine_niels();
         let id = ExtendedPoint::identity();
         let P = &id + &aB_pc;
         assert_eq!(P.to_extended().compress(), aB.compress())
@@ -1283,7 +1283,7 @@ mod test {
     fn test_ge_sub() {
         let p1: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
         let p2: ExtendedPoint = BASE2_CMPRSSD.decompress().unwrap();
-        let p3: ExtendedPoint = (&p2 - &p1.to_cached()).to_extended();
+        let p3: ExtendedPoint = (&p2 - &p1.to_projective_niels()).to_extended();
 
         assert_eq!(p1.compress(), p3.compress());
     }
@@ -1293,7 +1293,7 @@ mod test {
     fn test_ge_add() {
         let p1: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
         let p2: ExtendedPoint = ExtendedPoint::identity();
-        let p3: ExtendedPoint = (&p1 + &p2.to_cached()).to_extended();
+        let p3: ExtendedPoint = (&p1 + &p2.to_projective_niels()).to_extended();
 
         assert_eq!(p1.compress(), p3.compress());
     }
@@ -1363,7 +1363,7 @@ mod test {
     #[bench]
     fn bench_extended_add_cached(b: &mut Bencher) {
         let p1 = BASE_CMPRSSD.decompress().unwrap();
-        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_cached();
+        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_projective_niels();
 
         b.iter(| | &p1 + &p2);
     }
@@ -1371,7 +1371,7 @@ mod test {
     #[bench]
     fn bench_extended_add_cached_to_extended(b: &mut Bencher) {
         let p1 = BASE_CMPRSSD.decompress().unwrap();
-        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_cached();
+        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_projective_niels();
 
         b.iter(| | (&p1 + &p2).to_extended());
     }

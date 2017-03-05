@@ -1682,12 +1682,12 @@ mod test {
         let mut P = bp;
         for i in 0..32 {
             // P = (16^2)^i * B
-            let mut jP = P.to_precomputed();
+            let mut jP = P.to_affine_niels();
             for j in 1..9 {
                 // constants::base[i][j-1] is supposed to be
                 // j * (16^2)^i * B
                 assert_eq!(constants::base[i][j-1], jP);
-                jP = (&P + &jP).to_extended().to_precomputed();
+                jP = (&P + &jP).to_extended().to_affine_niels();
             }
             P = P.mult_by_pow_2(8);
         }

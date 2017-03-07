@@ -1263,8 +1263,9 @@ mod test {
 
     #[test]
     fn is_small_order() {
-        assert!(ExtendedPoint::identity().is_small_order() == true);
+        // The basepoint has large prime order
         assert!(constants::BASEPOINT.is_small_order() == false);
+        // constants::EIGHT_TORSION has all points of small order.
         for torsion_point in &constants::EIGHT_TORSION {
             assert!(torsion_point.is_small_order() == true);
         }

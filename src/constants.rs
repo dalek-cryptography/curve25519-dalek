@@ -23,6 +23,7 @@ use field::FieldElement;
 use curve::ExtendedPoint;
 use curve::AffineNielsPoint;
 use curve::CompressedEdwardsY;
+use curve::BasepointTable;
 use scalar::Scalar;
 
 pub const d: FieldElement       = FieldElement([
@@ -100,7 +101,7 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
 /// Basepoint has y = 4/5.
-pub const BASEPOINT: ExtendedPoint = ExtendedPoint{
+pub const ED25519_BASEPOINT: ExtendedPoint = ExtendedPoint{
         X: FieldElement([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
         Y: FieldElement([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
         Z: FieldElement([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -225,7 +226,7 @@ pub const bi: [AffineNielsPoint; 8] = [
 ///
 /// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
 /// for `0 ≤ i < 32`, `1 ≤ j < 9`.
-pub const base: [[AffineNielsPoint; 8]; 32] = [
+pub const ED25519_BASEPOINT_TABLE: BasepointTable = BasepointTable([
 [
     AffineNielsPoint{
         y_plus_x:  FieldElement([25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605]),
@@ -1569,7 +1570,7 @@ pub const base: [[AffineNielsPoint; 8]; 32] = [
         y_minus_x: FieldElement([29701166, -14373934, -10878120, 9279288, -17568, 13127210, 21382910, 11042292, 25838796, 4642684]),
         xy2d:      FieldElement([-20430234, 14955537, -24126347, 8124619, -5369288, -5990470, 30468147, -13900640, 18423289, 4177476]),
     },
-]];
+]]);
 
 #[cfg(test)]
 mod test {
@@ -1669,24 +1670,5 @@ mod test {
         let a = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let a_minus_d = &a - &constants::d;
         assert_eq!(a_minus_d, constants::a_minus_d);
-    }
-
-    /// Test the values in the lookup table of precomputed multiples
-    /// of the basepoint.
-    #[test]
-    fn test_precomputed_basepoint_multiples() {
-        let bp  =  constants::BASE_CMPRSSD.decompress().unwrap();
-        let mut P = bp;
-        for i in 0..32 {
-            // P = (16^2)^i * B
-            let mut jP = P.to_affine_niels();
-            for j in 1..9 {
-                // constants::base[i][j-1] is supposed to be
-                // j * (16^2)^i * B
-                assert_eq!(constants::base[i][j-1], jP);
-                jP = (&P + &jP).to_extended().to_affine_niels();
-            }
-            P = P.mult_by_pow_2(8);
-        }
     }
 }

@@ -1248,26 +1248,6 @@ mod test {
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 
-    /// The basepoint, doubled, minus the basepoint should equal the basepoint.
-    #[test]
-    fn ge_sub() {
-        let p1: ExtendedPoint = constants::BASE_CMPRSSD.decompress().unwrap();
-        let p2: ExtendedPoint = BASE2_CMPRSSD.decompress().unwrap();
-        let p3: ExtendedPoint = (&p2 - &p1.to_projective_niels()).to_extended();
-
-        assert_eq!(p1.compress(), p3.compress());
-    }
-
-    /// The basepoint plus the identity should equal the basepoint.
-    #[test]
-    fn ge_add() {
-        let p1: ExtendedPoint = constants::BASE_CMPRSSD.decompress().unwrap();
-        let p2: ExtendedPoint = ExtendedPoint::identity();
-        let p3: ExtendedPoint = (&p1 + &p2.to_projective_niels()).to_extended();
-
-        assert_eq!(p1.compress(), p3.compress());
-    }
-
     #[test]
     fn AffineNielsPoint_conditional_assign() {
         let id     = AffineNielsPoint::identity();

@@ -1248,24 +1248,17 @@ mod test {
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 
+    /// Test that the conditional assignment trait works for AffineNielsPoints.
     #[test]
-    fn AffineNielsPoint_conditional_assign() {
+    fn conditional_assign_for_affine_niels_point() {
         let id     = AffineNielsPoint::identity();
         let mut p1 = AffineNielsPoint::identity();
-        let p2:     AffineNielsPoint = AffineNielsPoint{
-            y_plus_x:  FieldElement([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-            y_minus_x: FieldElement([11, 22, 33, 44, 55, 66, 77, 88, 99, 100]),
-            xy2d:    FieldElement([10, 20, 30, 40, 50, 60, 70, 80, 90, 101]),
-        };
+        let bp     = constants::BASEPOINT.to_affine_niels();
 
-        p1.conditional_assign(&p2, 0);
-        assert_eq!(p1.y_plus_x,  id.y_plus_x);
-        assert_eq!(p1.y_minus_x, id.y_minus_x);
-        assert_eq!(p1.xy2d,      id.xy2d);
-        p1.conditional_assign(&p2, 1);
-        assert_eq!(p1.y_plus_x,  p2.y_plus_x);
-        assert_eq!(p1.y_minus_x, p2.y_minus_x);
-        assert_eq!(p1.xy2d,      p2.xy2d);
+        p1.conditional_assign(&bp, 0);
+        assert_eq!(p1, id);
+        p1.conditional_assign(&bp, 1);
+        assert_eq!(p1, bp);
     }
 
     #[test]

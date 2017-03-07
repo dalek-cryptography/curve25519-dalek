@@ -37,7 +37,6 @@ use core::fmt::Debug;
 use rand::Rng;
 
 use digest::Digest;
-use generic_array::GenericArray;
 use generic_array::typenum::U64;
 
 use constants;
@@ -593,7 +592,6 @@ impl UnpackedScalar {
 
 #[cfg(test)]
 mod test {
-    use rand::Rng;
     use rand::OsRng;
     use super::*;
     use test::Bencher;

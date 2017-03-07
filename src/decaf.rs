@@ -289,7 +289,6 @@ mod test {
 
     use scalar::Scalar;
     use constants;
-    use constants::BASE_CMPRSSD;
     use curve::CompressedEdwardsY;
     use curve::ExtendedPoint;
     use curve::BasepointMult;
@@ -349,14 +348,12 @@ mod test {
     #[test]
     fn decaf_random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
-        for j in 0..100 {
+        for _ in 0..100 {
             let s = Scalar::random(&mut rng);
             let P = DecafPoint::basepoint_mult(&s);
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
-            for i in 0..4 {
-                assert_eq!(P, Q);
-            }
+            assert_eq!(P, Q);
         }
     }
 }

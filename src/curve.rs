@@ -80,7 +80,6 @@
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
-use core::cmp::{PartialEq, Eq};
 
 use constants;
 use field::FieldElement;
@@ -1010,9 +1009,6 @@ impl Debug for ProjectiveNielsPoint {
 
 #[cfg(test)]
 mod test {
-    use test::Bencher;
-    use rand::OsRng;
-
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::CTAssignable;

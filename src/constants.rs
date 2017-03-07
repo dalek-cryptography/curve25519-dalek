@@ -1574,19 +1574,12 @@ pub const base: [[AffineNielsPoint; 8]; 32] = [
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use curve::AffineNielsPoint;
-    use curve::CompressedEdwardsY;
-    use curve::ExtendedPoint;
-    use curve::Identity;
     use curve::IsIdentity;
     use curve::ValidityCheck;
     use constants;
 
     #[test]
     fn test_eight_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in 0..8 {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
             assert!(Q.is_valid());
@@ -1596,9 +1589,6 @@ mod test {
 
     #[test]
     fn test_four_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in (0..8).filter(|i| i % 2 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
             assert!(Q.is_valid());
@@ -1608,9 +1598,6 @@ mod test {
 
     #[test]
     fn test_two_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in (0..8).filter(|i| i % 4 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
             assert!(Q.is_valid());

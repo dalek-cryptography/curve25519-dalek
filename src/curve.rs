@@ -1278,7 +1278,8 @@ mod test {
 
     #[test]
     fn is_identity() {
-        assert!(ExtendedPoint::identity().is_identity());
+        assert!(ExtendedPoint::identity().is_identity() == true);
+        assert!(constants::BASEPOINT.is_identity()      == false);
     }
 }
 

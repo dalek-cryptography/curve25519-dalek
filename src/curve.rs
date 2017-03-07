@@ -1017,9 +1017,7 @@ mod test {
     use scalar::Scalar;
     use subtle::CTAssignable;
     use constants;
-    use constants::BASE_CMPRSSD;
     use super::*;
-    use super::select_precomputed_point;
 
     /// The X25519 basepoint, in compressed Montgomery form.
     static BASE_CMPRSSD_MONTY: CompressedMontgomeryU =
@@ -1080,17 +1078,15 @@ mod test {
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_to_montgomery() {
-        let bp       =  BASE_CMPRSSD.decompress().unwrap();
-        let bp_monty =  bp.compress_montgomery().unwrap();
-        assert_eq!(bp_monty, BASE_CMPRSSD_MONTY);
+        assert_eq!(constants::BASEPOINT.compress_montgomery().unwrap(),
+                   BASE_CMPRSSD_MONTY);
     }
 
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_from_montgomery() {
-        let bp = BASE_CMPRSSD_MONTY.decompress().unwrap();
-        let bp_compressed_edwards = bp.compress();
-        assert_eq!(bp_compressed_edwards, BASE_CMPRSSD);
+        assert_eq!(BASE_CMPRSSD_MONTY.decompress().unwrap().compress(),
+                   constants::BASE_CMPRSSD);
     }
 
     /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
@@ -1118,19 +1114,18 @@ mod test {
     #[test]
     fn basepoint_decompression_compression() {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
-        let bp  =  BASE_CMPRSSD.decompress().unwrap();
-        assert!( bp.is_valid());
-        let compressed  =  bp.compress();
+        let bp = constants::BASE_CMPRSSD.decompress().unwrap();
+        assert!(bp.is_valid());
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
-        assert_eq!(compressed,   BASE_CMPRSSD);
+        assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
     }
 
     /// Test sign handling in decompression
     #[test]
     fn decompression_sign_handling() {
         // Manually set the high bit of the last byte to flip the sign
-        let mut minus_basepoint_bytes = BASE_CMPRSSD.as_bytes().clone();
+        let mut minus_basepoint_bytes = constants::BASE_CMPRSSD.as_bytes().clone();
         minus_basepoint_bytes[31] |= 1 << 7;
         let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
                               .decompress().unwrap();
@@ -1147,14 +1142,14 @@ mod test {
     fn basepoint_mult_one_vs_basepoint() {
         let bp = ExtendedPoint::basepoint_mult(&Scalar::one());
         let compressed = bp.compress();
-        assert_eq!(compressed, BASE_CMPRSSD);
+        assert_eq!(compressed, constants::BASE_CMPRSSD);
     }
 
     /// Test `impl Add<ExtendedPoint> for ExtendedPoint`
     /// using basepoint + basepoint versus the 2*basepoint constant.
     #[test]
-    fn basepoint_plus_basepoint() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
+    fn basepoint_plus_basepoint_vs_basepoint2() {
+        let bp = constants::BASEPOINT;
         let bp_added = &bp + &bp;
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
@@ -1162,8 +1157,8 @@ mod test {
     /// Test `impl Add<ProjectiveNielsPoint> for ExtendedPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
-    fn basepoint_plus_basepoint_cached() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
+    fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
+        let bp = constants::BASEPOINT;
         let bp_added = (&bp + &bp.to_projective_niels()).to_extended();
         assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
     }
@@ -1171,55 +1166,49 @@ mod test {
     /// Test `impl Add<AffineNielsPoint> for ExtendedPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
-    fn basepoint_plus_basepoint_precomputed() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        // on decode, Z =1, so x = X/Z = X, y = Y/Z = Y, xy = T
-        let bp_precomputed = AffineNielsPoint{
-            y_plus_x:  &bp.Y + &bp.X,
-            y_minus_x: &bp.Y - &bp.X,
-            xy2d:      &bp.T * &constants::d2,
-        };
-        let bp_added = (&bp + &bp_precomputed).to_extended();
-        assert_eq!(  bp_added.compress(), BASE2_CMPRSSD);
+    fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
+        let bp = constants::BASEPOINT;
+        let bp_affine_niels = bp.to_affine_niels();
+        let bp_added = (&bp + &bp_affine_niels).to_extended();
+        assert_eq!( bp_added.compress(), BASE2_CMPRSSD);
     }
 
+    /// Check that equality of `ExtendedPoints` handles projective
+    /// coordinates correctly.
     #[test]
-    fn extended_point_equality() {
-        let two = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+    fn extended_point_equality_handles_scaling() {
+        let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
         let id1 = ExtendedPoint::identity();
         let id2 = ExtendedPoint{
             X: FieldElement::zero(),
-            Y: FieldElement::from_bytes(&two),
-            Z: FieldElement::from_bytes(&two),
-            T: FieldElement::zero()};
-
+            Y: FieldElement::from_bytes(&two_bytes),
+            Z: FieldElement::from_bytes(&two_bytes),
+            T: FieldElement::zero()
+        };
         assert!(id1.ct_eq(&id2) == 1u8);
     }
 
     /// Sanity check for conversion to precomputed points
     #[test]
-    fn convert_to_affine_niels() {
+    fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
-        let aB_pc = aB.to_affine_niels();
-        let id = ExtendedPoint::identity();
-        let P = &id + &aB_pc;
-        assert_eq!(P.to_extended().compress(), aB.compress())
+        let aB_affine_niels = aB.to_affine_niels();
+        let also_aB = (&ExtendedPoint::identity() + &aB_affine_niels).to_extended();
+        assert_eq!(aB.compress(), also_aB.compress());
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
-    fn basepoint_mult() {
+    fn basepoint_mult_vs_ed25519py() {
         let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
 
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
-    fn scalar_mult() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let aB = bp.scalar_mult(&A_SCALAR);
+    fn scalar_mult_vs_ed25519py() {
+        let aB = constants::BASEPOINT.scalar_mult(&A_SCALAR);
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
 
@@ -1233,45 +1222,36 @@ mod test {
 
     /// Test basepoint.double() versus the 2*basepoint constant.
     #[test]
-    fn basepoint_double() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_doubled = bp.double();
-        assert_eq!(bp_doubled.compress(), BASE2_CMPRSSD);
+    fn basepoint_double_vs_basepoint2() {
+        assert_eq!(constants::BASEPOINT.double().compress(), BASE2_CMPRSSD);
     }
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
-    fn scalar_mult_two_vs_double() {
-        // XXX this seems like a pain point: better way to construct small
-        // scalars?
-        let two = Scalar([ 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]);
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_doubled = bp.double();
-        let bp2 = ExtendedPoint::basepoint_mult(&two);
-        assert_eq!(bp_doubled.compress(), bp2.compress());
+    fn basepoint_mult_two_vs_basepoint2() {
+        let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
+        let bp2 = ExtendedPoint::basepoint_mult(&Scalar(two_bytes));
+        assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
 
+    /// Check that converting to projective and then back to extended round-trips.
     #[test]
     fn basepoint_projective_extended_round_trip() {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        let bp_roundtrip = bp.to_projective().to_extended();
-
-        assert_eq!(BASE_CMPRSSD, bp_roundtrip.compress());
+        assert_eq!(constants::BASEPOINT.to_projective().to_extended().compress(),
+                   constants::BASE_CMPRSSD);
     }
 
-    /// Test computing 16*basepoint vs mult_by_pow_2
+    /// Test computing 16*basepoint vs mult_by_pow_2(4)
     #[test]
-    fn mult_by_pow_2() {
-        let bp   =   BASE_CMPRSSD.decompress().unwrap();
-        let bp16 = bp.mult_by_pow_2(4);
+    fn basepoint16_vs_mult_by_pow_2_4() {
+        let bp16 = constants::BASEPOINT.mult_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 
     /// The basepoint, doubled, minus the basepoint should equal the basepoint.
     #[test]
     fn ge_sub() {
-        let p1: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
+        let p1: ExtendedPoint = constants::BASE_CMPRSSD.decompress().unwrap();
         let p2: ExtendedPoint = BASE2_CMPRSSD.decompress().unwrap();
         let p3: ExtendedPoint = (&p2 - &p1.to_projective_niels()).to_extended();
 
@@ -1281,7 +1261,7 @@ mod test {
     /// The basepoint plus the identity should equal the basepoint.
     #[test]
     fn ge_add() {
-        let p1: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
+        let p1: ExtendedPoint = constants::BASE_CMPRSSD.decompress().unwrap();
         let p2: ExtendedPoint = ExtendedPoint::identity();
         let p3: ExtendedPoint = (&p1 + &p2.to_projective_niels()).to_extended();
 
@@ -1310,11 +1290,11 @@ mod test {
 
     #[test]
     fn is_small_order() {
-        let p1: ExtendedPoint = ExtendedPoint::identity();
-        let p2: ExtendedPoint = BASE_CMPRSSD.decompress().unwrap();
-
-        assert!(p1.is_small_order() == true);
-        assert!(p2.is_small_order() == false);
+        assert!(ExtendedPoint::identity().is_small_order() == true);
+        assert!(constants::BASEPOINT.is_small_order() == false);
+        for torsion_point in &constants::EIGHT_TORSION {
+            assert!(torsion_point.is_small_order() == true);
+        }
     }
 
     #[test]

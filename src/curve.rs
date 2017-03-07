@@ -1074,17 +1074,6 @@ mod test {
         0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85,
         0x09, 0x6f, 0xfe, 0x35, 0x4f, 0x13, 0x2b, 0x42]);
 
-    #[test]
-    /// Test that the constant for sqrt(-486664) really is a square
-    /// root of -486664.
-    /// XXX this should be a test in constants.rs ??
-    fn sqrt_minus_aplus2() {
-        let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
-        let sqrt = constants::SQRT_MINUS_APLUS2;
-        let sq = &sqrt * &sqrt;
-        assert_eq!(sq, minus_aplus2);
-    }
-
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_to_montgomery() {

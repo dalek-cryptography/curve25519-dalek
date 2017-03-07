@@ -1626,6 +1626,16 @@ mod test {
     }
 
     #[test]
+    /// Test that the constant for sqrt(-486664) really is a square
+    /// root of -486664.
+    fn sqrt_minus_aplus2() {
+        let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
+        let sqrt = constants::SQRT_MINUS_APLUS2;
+        let sq = &sqrt * &sqrt;
+        assert_eq!(sq, minus_aplus2);
+    }
+
+    #[test]
     /// Test that SQRT_M1 and MSQRT_M1 are square roots of -1
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);

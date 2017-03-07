@@ -297,28 +297,27 @@ mod test {
     use super::*;
 
     #[test]
-    #[should_panic]
-    fn test_decaf_decompress_negative_s_fails() {
+    fn decaf_decompress_negative_s_fails() {
         // constants::d is neg, so decompression should fail as |d| != d.
         let bad_compressed = CompressedDecaf(constants::d.to_bytes());
-        bad_compressed.decompress().unwrap();
+        assert!(bad_compressed.decompress().is_none());
     }
 
     #[test]
-    fn test_decaf_decompress_id() {
+    fn decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
         assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]
-    fn test_decaf_compress_id() {
+    fn decaf_compress_id() {
         let id = DecafPoint::identity();
         assert_eq!(id.compress(), CompressedDecaf::identity());
     }
 
     #[test]
-    fn test_decaf_basepoint_roundtrip() {
+    fn decaf_basepoint_roundtrip() {
         let bp_compressed_decaf = DecafPoint::basepoint().compress();
         let bp_recaf = bp_compressed_decaf.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
@@ -328,7 +327,7 @@ mod test {
     }
 
     #[test]
-    fn test_decaf_four_torsion_basepoint() {
+    fn decaf_four_torsion_basepoint() {
         let bp = DecafPoint::basepoint();
         let bp_coset = bp.coset4();
         for i in 0..4 {
@@ -337,7 +336,7 @@ mod test {
     }
 
     #[test]
-    fn test_decaf_four_torsion_random() {
+    fn decaf_four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
         let s = Scalar::random(&mut rng);
         let P = DecafPoint::basepoint_mult(&s);
@@ -348,16 +347,16 @@ mod test {
     }
 
     #[test]
-    fn test_decaf_random_roundtrip() {
+    fn decaf_random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
         for j in 0..100 {
-        let s = Scalar::random(&mut rng);
-        let P = DecafPoint::basepoint_mult(&s);
-        let compressed_P = P.compress();
-        let Q = compressed_P.decompress().unwrap();
-        for i in 0..4 {
-            assert_eq!(P, Q);
-        }
+            let s = Scalar::random(&mut rng);
+            let P = DecafPoint::basepoint_mult(&s);
+            let compressed_P = P.compress();
+            let Q = compressed_P.decompress().unwrap();
+            for i in 0..4 {
+                assert_eq!(P, Q);
+            }
         }
     }
 }

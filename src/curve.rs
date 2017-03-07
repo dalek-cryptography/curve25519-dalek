@@ -1119,29 +1119,27 @@ mod test {
     fn basepoint_decompression_compression() {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
         let bp  =  BASE_CMPRSSD.decompress().unwrap();
-        let bp2 = BASE2_CMPRSSD.decompress().unwrap();
         assert!( bp.is_valid());
-        assert!(bp2.is_valid());
         let compressed  =  bp.compress();
-        let compressed2 = bp2.compress();
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
         assert_eq!(compressed,   BASE_CMPRSSD);
-        assert_eq!(compressed2, BASE2_CMPRSSD);
     }
 
     /// Test sign handling in decompression
     #[test]
     fn decompression_sign_handling() {
-        let mut m_bp_bytes: [u8;32] = BASE_CMPRSSD.as_bytes().clone();
-        // Set the high bit of the last byte to flip the sign
-        m_bp_bytes[31] |= 1 << 7;
-        let m_bp = CompressedEdwardsY(m_bp_bytes).decompress().unwrap();
-        let bp = BASE_CMPRSSD.decompress().unwrap();
-        assert_eq!(m_bp.X, -(&bp.X));
-        assert_eq!(m_bp.Y,  bp.Y);
-        assert_eq!(m_bp.Z,  bp.Z);
-        assert_eq!(m_bp.T, -(&bp.T));
+        // Manually set the high bit of the last byte to flip the sign
+        let mut minus_basepoint_bytes = BASE_CMPRSSD.as_bytes().clone();
+        minus_basepoint_bytes[31] |= 1 << 7;
+        let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
+                              .decompress().unwrap();
+        // Test projective coordinates exactly since we know they should
+        // only differ by a flipped sign.
+        assert_eq!(minus_basepoint.X, -(&constants::BASEPOINT.X));
+        assert_eq!(minus_basepoint.Y,    constants::BASEPOINT.Y);
+        assert_eq!(minus_basepoint.Z,    constants::BASEPOINT.Z);
+        assert_eq!(minus_basepoint.T, -(&constants::BASEPOINT.T));
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.

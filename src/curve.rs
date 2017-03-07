@@ -1486,4 +1486,10 @@ mod bench {
 
         b.iter(|| p1.mult_by_cofactor() );
     }
+
+    #[bench]
+    fn create_basepoint_table(b: &mut Bencher) {
+        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        b.iter(|| BasepointTable::create(&aB));
+    }
 }

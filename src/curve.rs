@@ -1395,7 +1395,7 @@ mod test {
 
     #[test]
     fn test_compressed_identity() {
-        assert_eq!(ExtendedPoint::identity().compress(),
+        assert_eq!(ExtendedPoint::identity().compress_edwards(),
                    CompressedEdwardsY::identity());
     }
 

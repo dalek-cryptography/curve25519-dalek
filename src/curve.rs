@@ -81,6 +81,9 @@ use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
 
+#[cfg(feature = "std")]
+use std::boxed::Box;
+
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
@@ -822,6 +825,83 @@ impl ScalarMult<Scalar> for ExtendedPoint {
     }
 }
 
+/// Precomputation
+#[derive(Clone)]
+pub struct BasepointTable(pub [[AffineNielsPoint; 8]; 32]);
+
+impl BasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    pub fn create(basepoint: &ExtendedPoint) -> Box<BasepointTable> {
+        // Create the table storage
+        // XXX this is a dirty hack, does placement new work here?
+        let mut table: Box<[[AffineNielsPoint; 8]; 32]> = unsafe {
+            Box::from_raw(
+                Box::into_raw(             // 8 * 32 = 256
+                    vec![AffineNielsPoint::identity(); 256].into_boxed_slice()
+                ) as *mut [[AffineNielsPoint; 8]; 32]
+            )
+        };
+        let mut P = basepoint.clone();
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P.to_affine_niels();
+            for j in 1..9 {
+                // table[i][j-1] is supposed to be j*(16^2)^i*B
+                table[i][j-1] = jP;
+                jP = (&P + &jP).to_extended().to_affine_niels();
+            }
+            P = P.mult_by_pow_2(8);
+        }
+        // XXX can we do just 1 alloc instead of 2?
+        return Box::new(BasepointTable(*table));
+    }
+
+    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
+    /// computing the multiple `aB` of the basepoint `B`.
+    ///
+    /// Precondition: the scalar must be reduced.
+    ///
+    /// The computation proceeds as follows, as described on page 13
+    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
+    /// coefficients in [-8,8), i.e.,
+    ///
+    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
+    ///
+    /// with -8 ≤ a_i < 8.  Then
+    ///
+    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
+    ///
+    /// Grouping even and odd coefficients gives
+    ///
+    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
+    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
+    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
+    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
+    ///
+    /// We then use the `select_precomputed_point` function, which
+    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
+    /// and returns `x * 16^2i * B` in constant time.
+    fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint { //GeScalarMultBase
+        let e = scalar.to_radix_16();
+        let mut h = ExtendedPoint::identity();
+        let mut t: CompletedPoint;
+
+        for i in (0..64).filter(|x| x % 2 == 1) {
+            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
+            h = t.to_extended();
+        }
+
+        h = h.mult_by_pow_2(4);
+
+        for i in (0..64).filter(|x| x % 2 == 0) {
+            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
+            h = t.to_extended();
+        }
+
+        h
+    }
+}
+
 /// Trait for scalar multiplication of a distinguished basepoint.
 pub trait BasepointMult<S> {
     /// Return the basepoint `B`.
@@ -1275,6 +1355,15 @@ mod test {
     fn basepoint_mult_by_basepoint_order() {
         let should_be_id = ExtendedPoint::basepoint_mult(&constants::l);
         assert!(should_be_id.is_identity());
+    }
+
+    /// Test precomputed basepoint mult
+    #[test]
+    fn test_precomputed_basepoint_mult() {
+        let table = BasepointTable::create(&constants::BASEPOINT);
+        let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB_2 = table.basepoint_mult(&A_SCALAR);
+        assert_eq!(aB_1.compress(), aB_2.compress());
     }
 
     /// Test scalar_mult versus a known scalar multiple from ed25519.py

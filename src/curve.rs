@@ -834,13 +834,7 @@ impl BasepointTable {
     pub fn create(basepoint: &ExtendedPoint) -> Box<BasepointTable> {
         // Create the table storage
         // XXX this is a dirty hack, does placement new work here?
-        let mut table: Box<[[AffineNielsPoint; 8]; 32]> = unsafe {
-            Box::from_raw(
-                Box::into_raw(             // 8 * 32 = 256
-                    vec![AffineNielsPoint::identity(); 256].into_boxed_slice()
-                ) as *mut [[AffineNielsPoint; 8]; 32]
-            )
-        };
+        let mut table = box [[AffineNielsPoint::identity(); 8]; 32];
         let mut P = basepoint.clone();
         for i in 0..32 {
             // P = (16^2)^i * B

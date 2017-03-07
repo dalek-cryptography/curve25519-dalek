@@ -1047,21 +1047,21 @@ mod test {
                             0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
 
     /// 4493907448824000747700850167940867464579944529806937181821189941592931634714
-    static A_SCALAR: Scalar = Scalar([
+    pub static A_SCALAR: Scalar = Scalar([
         0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
         0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
         0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
         0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09]);
 
     /// 2506056684125797857694181776241676200180934651973138769173342316833279714961
-    static B_SCALAR: Scalar = Scalar([
+    pub static B_SCALAR: Scalar = Scalar([
         0x91, 0x26, 0x7a, 0xcf, 0x25, 0xc2, 0x09, 0x1b,
         0xa2, 0x17, 0x74, 0x7b, 0x66, 0xf0, 0xb3, 0x2e,
         0x9d, 0xf2, 0xa5, 0x67, 0x41, 0xcf, 0xda, 0xc4,
         0x56, 0xa7, 0xd4, 0xaa, 0xb8, 0x60, 0x8a, 0x05]);
 
     /// A_SCALAR * basepoint, computed with ed25519.py
-    static A_TIMES_BASEPOINT: CompressedEdwardsY = CompressedEdwardsY([
+    pub static A_TIMES_BASEPOINT: CompressedEdwardsY = CompressedEdwardsY([
         0xea, 0x27, 0xe2, 0x60, 0x53, 0xdf, 0x1b, 0x59,
         0x56, 0xf1, 0x4d, 0x5d, 0xec, 0x3c, 0x34, 0xc3,
         0x84, 0xa2, 0x69, 0xb7, 0x4c, 0xc3, 0x80, 0x3e,
@@ -1337,15 +1337,27 @@ mod test {
     fn test_is_identity() {
         assert!(ExtendedPoint::identity().is_identity());
     }
+}
+
+// ------------------------------------------------------------------------
+// Benchmarks
+// ------------------------------------------------------------------------
+
+#[cfg(test)]
+mod bench {
+    use test::Bencher;
+    use constants;
+    use super::*;
+    use super::test::{A_SCALAR, A_TIMES_BASEPOINT, B_SCALAR};
 
     #[bench]
-    fn bench_basepoint_mult(b: &mut Bencher) {
+    fn basepoint_mult(b: &mut Bencher) {
         b.iter(|| ExtendedPoint::basepoint_mult(&A_SCALAR));
     }
 
     #[bench]
-    fn bench_scalar_mult(b: &mut Bencher) {
-        let bp = BASE_CMPRSSD.decompress().unwrap();
+    fn scalar_mult(b: &mut Bencher) {
+        let bp = constants::BASEPOINT;
         b.iter(|| bp.scalar_mult(&A_SCALAR));
     }
 
@@ -1355,61 +1367,61 @@ mod test {
     }
 
     #[bench]
-    fn bench_double_scalar_mult_vartime(bench: &mut Bencher) {
+    fn bench_double_scalar_mult_vartime(b: &mut Bencher) {
         let A = A_TIMES_BASEPOINT.decompress().unwrap();
-        bench.iter(|| double_scalar_mult_vartime(&A_SCALAR, &A, &B_SCALAR));
+        b.iter(|| double_scalar_mult_vartime(&A_SCALAR, &A, &B_SCALAR));
     }
 
     #[bench]
-    fn bench_extended_add_cached(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap();
-        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_projective_niels();
+    fn add_extended_and_cached_output_completed(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
+        let p2 = constants::BASEPOINT.to_projective_niels();
 
-        b.iter(| | &p1 + &p2);
+        b.iter(|| &p1 + &p2);
     }
 
     #[bench]
-    fn bench_extended_add_cached_to_extended(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap();
-        let p2 = BASE2_CMPRSSD.decompress().unwrap().to_projective_niels();
+    fn add_extended_and_cached_output_extended(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
+        let p2 = constants::BASEPOINT.to_projective_niels();
 
-        b.iter(| | (&p1 + &p2).to_extended());
+        b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
-    fn bench_extended_add_precomputed(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap();
+    fn add_extended_and_precomputed_output_completed(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
         let p2 = select_precomputed_point(6, &constants::base[27]);
 
-        b.iter(| | &p1 + &p2);
+        b.iter(|| &p1 + &p2);
     }
 
     #[bench]
-    fn bench_extended_add_precomputed_to_extended(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap();
+    fn add_extended_and_precomputed_output_extended(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
         let p2 = select_precomputed_point(6, &constants::base[27]);
 
-        b.iter(| | (&p1 + &p2).to_extended());
+        b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
-    fn bench_double(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap().to_projective();
+    fn projective_double_output_completed(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT.to_projective();
 
-        b.iter(| | p1.double() );
+        b.iter(|| p1.double() );
     }
 
     #[bench]
-    fn bench_double_to_extended(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap().to_projective();
+    fn extended_double_output_extended(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
 
-        b.iter(| | p1.double().to_extended() );
+        b.iter(|| p1.double() );
     }
 
     #[bench]
-    fn bench_mult_by_pow2_4(b: &mut Bencher) {
-        let p1 = BASE_CMPRSSD.decompress().unwrap();
+    fn mult_by_cofactor(b: &mut Bencher) {
+        let p1 = constants::BASEPOINT;
 
-        b.iter(| | p1.mult_by_pow_2(4) );
+        b.iter(|| p1.mult_by_cofactor() );
     }
 }

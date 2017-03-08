@@ -1574,19 +1574,12 @@ pub const base: [[AffineNielsPoint; 8]; 32] = [
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use curve::AffineNielsPoint;
-    use curve::CompressedEdwardsY;
-    use curve::ExtendedPoint;
-    use curve::Identity;
     use curve::IsIdentity;
     use curve::ValidityCheck;
     use constants;
 
     #[test]
     fn test_eight_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in 0..8 {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
             assert!(Q.is_valid());
@@ -1596,9 +1589,6 @@ mod test {
 
     #[test]
     fn test_four_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in (0..8).filter(|i| i % 2 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
             assert!(Q.is_valid());
@@ -1608,9 +1598,6 @@ mod test {
 
     #[test]
     fn test_two_torsion() {
-        let mut bytes = [0;32];
-        bytes[0] = 1;
-        let compressed_id = CompressedEdwardsY(bytes);
         for i in (0..8).filter(|i| i % 4 == 0) {
             let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
             assert!(Q.is_valid());
@@ -1623,6 +1610,16 @@ mod test {
         let one = FieldElement([1,0,0,0,0,0,0,0,0,0]);
         let two = FieldElement([2,0,0,0,0,0,0,0,0,0]);
         assert_eq!(one, &two * &constants::HALF);
+    }
+
+    #[test]
+    /// Test that the constant for sqrt(-486664) really is a square
+    /// root of -486664.
+    fn sqrt_minus_aplus2() {
+        let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
+        let sqrt = constants::SQRT_MINUS_APLUS2;
+        let sq = &sqrt * &sqrt;
+        assert_eq!(sq, minus_aplus2);
     }
 
     #[test]
@@ -1682,12 +1679,12 @@ mod test {
         let mut P = bp;
         for i in 0..32 {
             // P = (16^2)^i * B
-            let mut jP = P.to_precomputed();
+            let mut jP = P.to_affine_niels();
             for j in 1..9 {
                 // constants::base[i][j-1] is supposed to be
                 // j * (16^2)^i * B
                 assert_eq!(constants::base[i][j-1], jP);
-                jP = (&P + &jP).to_extended().to_precomputed();
+                jP = (&P + &jP).to_extended().to_affine_niels();
             }
             P = P.mult_by_pow_2(8);
         }

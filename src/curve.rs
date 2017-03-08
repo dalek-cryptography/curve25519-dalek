@@ -211,7 +211,7 @@ impl CompressedMontgomeryU {
     /// # Return
     ///
     /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
-    fn to_edwards_y(u: &FieldElement) -> FieldElement {
+    pub fn to_edwards_y(u: &FieldElement) -> FieldElement {
         // Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, so `y = (u-1)/(u+1)`.
         &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
     }
@@ -225,7 +225,7 @@ impl CompressedMontgomeryU {
     /// A tuple of (`u8`, `FieldElement`), where the `u8` is `1` if the v² was
     /// actually a square and `0` if otherwise, along with a `FieldElement`: the
     /// Montgomery `v` corresponding to this `u`.
-    fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
+    pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
         let one:       FieldElement = FieldElement::one();
         let v_squared: FieldElement = u * &(&(&u.square() + &(&(&constants::A * u) + &one)));
 
@@ -260,7 +260,7 @@ impl CompressedMontgomeryU {
     /// A `FieldElement`, the Edwards `x` coordinate, by using `(u, v)` to
     /// convert from Montgomery to Edwards form via the right-hand side of the
     /// equation: `x=(u/v)*sqrt(-A-2)`.
-    fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
+    pub fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
         let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
         let neg_x: FieldElement = -(&x);
         let current_sign:    u8 = x.is_negative_ed25519();

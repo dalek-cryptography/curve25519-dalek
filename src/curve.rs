@@ -91,6 +91,9 @@ use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
 
+#[cfg(not(feature = "std"))]
+use collections::boxed::Box;
+
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------

@@ -9,7 +9,8 @@
 //  - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 //  - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(collections))]
 #![allow(unused_features)]
 #![feature(test)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
@@ -33,17 +34,19 @@
 //! ship, determined to track down and bring an end to the Dalek race.
 
 #[cfg(test)]
-#[macro_use]
-extern crate std;
-
-#[cfg(test)]
 extern crate test;
 
 #[macro_use]
 extern crate arrayref;
 
 #[cfg(feature = "std")]
+extern crate core;
+
+#[cfg(feature = "std")]
 extern crate rand;
+
+#[cfg(not(feature = "std"))]
+extern crate collections;
 
 // Modules for low-level operations directly on field elements and curve points.
 

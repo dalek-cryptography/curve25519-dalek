@@ -27,6 +27,7 @@
 //! use rand::Rng;
 //! use rand::OsRng;
 //! use ed25519::Keypair;
+//! use ed25519::Signature;
 //!
 //! let mut cspring: OsRng = OsRng::new().unwrap();
 //! let keypair: Keypair = Keypair::generate(&mut cspring);

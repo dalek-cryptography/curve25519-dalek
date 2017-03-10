@@ -9,7 +9,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Miscellaneous common utility function.
+//! Miscellaneous common utility functions.
 
 /// Convert an array of (at least) three bytes into an i64.
 #[inline]

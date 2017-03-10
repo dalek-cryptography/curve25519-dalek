@@ -308,7 +308,7 @@ mod test {
     fn test_decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
-        assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
+        assert_eq!(id.0.compress_edwards(), CompressedEdwardsY::identity());
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod test {
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &ExtendedPoint::basepoint() - &bp_recaf;
         let diff4 = diff.mult_by_pow_2(4);
-        assert_eq!(diff4.compress(), ExtendedPoint::identity().compress());
+        assert_eq!(diff4.compress_edwards(), ExtendedPoint::identity().compress_edwards());
     }
 
     #[test]

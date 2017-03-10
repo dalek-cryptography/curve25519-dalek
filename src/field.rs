@@ -331,7 +331,7 @@ impl FieldElement {
     /// # Return
     ///
     /// Returns a new FieldElement.
-    pub fn from_bytes(data: &[u8;32]) -> FieldElement { //FeFromBytes
+    pub fn from_bytes(data: &[u8; 32]) -> FieldElement { //FeFromBytes
         let mut h = [0i64;10];
         h[0] =  load4(&data[ 0..]);
         h[1] =  load3(&data[ 4..]) << 6;

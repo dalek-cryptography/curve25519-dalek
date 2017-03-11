@@ -23,7 +23,7 @@ use field::FieldElement;
 use curve::ExtendedPoint;
 use curve::AffineNielsPoint;
 use curve::CompressedEdwardsY;
-use curve::BasepointTable;
+use curve::EdwardsBasepointTable;
 use scalar::Scalar;
 
 pub const d: FieldElement       = FieldElement([
@@ -226,7 +226,7 @@ pub const bi: [AffineNielsPoint; 8] = [
 ///
 /// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
 /// for `0 ≤ i < 32`, `1 ≤ j < 9`.
-pub const ED25519_BASEPOINT_TABLE: BasepointTable = BasepointTable([
+pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = EdwardsBasepointTable([
 [
     AffineNielsPoint{
         y_plus_x:  FieldElement([25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605]),

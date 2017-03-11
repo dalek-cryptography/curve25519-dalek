@@ -827,27 +827,27 @@ impl ScalarMult<Scalar> for ExtendedPoint {
 
 /// Precomputation
 #[derive(Clone)]
-pub struct BasepointTable(pub [[AffineNielsPoint; 8]; 32]);
+pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
 
-impl BasepointTable {
+impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
-    pub fn create(basepoint: &ExtendedPoint) -> Box<BasepointTable> {
+    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
         // Create the table storage
-        // XXX this is a dirty hack, does placement new work here?
-        let mut table = box [[AffineNielsPoint::identity(); 8]; 32];
+        // XXX can we be assured that this is not allocated on the stack?
+        // XXX can we skip the initialization without too much unsafety?
+        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
         let mut P = basepoint.clone();
         for i in 0..32 {
             // P = (16^2)^i * B
             let mut jP = P.to_affine_niels();
             for j in 1..9 {
                 // table[i][j-1] is supposed to be j*(16^2)^i*B
-                table[i][j-1] = jP;
+                table.0[i][j-1] = jP;
                 jP = (&P + &jP).to_extended().to_affine_niels();
             }
             P = P.mult_by_pow_2(8);
         }
-        // XXX can we do just 1 alloc instead of 2?
-        return Box::new(BasepointTable(*table));
+        return table
     }
 
     /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
@@ -1313,7 +1313,7 @@ mod test {
     /// Test precomputed basepoint mult
     #[test]
     fn test_precomputed_basepoint_mult() {
-        let table = BasepointTable::create(&constants::ED25519_BASEPOINT);
+        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
         let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
         let aB_2 = table.basepoint_mult(&A_SCALAR);
         assert_eq!(aB_1.compress_edwards(),
@@ -1490,6 +1490,6 @@ mod bench {
     #[bench]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
-        b.iter(|| BasepointTable::create(&aB));
+        b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 }

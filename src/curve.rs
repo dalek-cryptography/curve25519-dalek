@@ -1270,6 +1270,13 @@ mod test {
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
+    /// Test that multiplication by the basepoint order kills the basepoint
+    #[test]
+    fn basepoint_mult_by_basepoint_order() {
+        let should_be_id = ExtendedPoint::basepoint_mult(&constants::l);
+        assert!(should_be_id.is_identity());
+    }
+
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mult_vs_ed25519py() {

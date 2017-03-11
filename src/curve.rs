@@ -875,7 +875,7 @@ impl EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint { //GeScalarMultBase
+    pub fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;

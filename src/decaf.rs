@@ -31,7 +31,11 @@ use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 
+#[cfg(feature = "std")]
+use std::boxed::Box;
+
 use curve::ExtendedPoint;
+use curve::EdwardsBasepointTable;
 use curve::BasepointMult;
 use curve::ScalarMult;
 use curve::Identity;
@@ -261,6 +265,24 @@ impl BasepointMult<Scalar> for DecafPoint {
     }
 }
 
+
+/// Precomputation
+#[derive(Clone)]
+pub struct DecafBasepointTable(EdwardsBasepointTable);
+
+impl DecafBasepointTable {
+    /// Create a precomputed table of multiples of the given `basepoint`.
+    pub fn create(basepoint: &DecafPoint) -> Box<DecafBasepointTable> {
+        let edwards_table = EdwardsBasepointTable::create(&basepoint.0);
+        box DecafBasepointTable(*edwards_table)
+    }
+
+    /// Use the precomputed table to quickly compute `scalar * basepoint`
+    pub fn basepoint_mult(&self, scalar: &Scalar) -> DecafPoint {
+        DecafPoint(self.0.basepoint_mult(scalar))
+    }
+}
+
 // ------------------------------------------------------------------------
 // Debug traits
 // ------------------------------------------------------------------------
@@ -355,6 +377,18 @@ mod test {
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
         }
+    }
+
+    /// Test basepoint_mult versus a newly-generated DecafBasepointTable
+    #[test]
+    fn basepoint_mult_vs_decafbasepointtable() {
+        let table = DecafBasepointTable::create(&DecafPoint::basepoint());
+        let mut rng = OsRng::new().unwrap();
+        let s = Scalar::random(&mut rng);
+        let basepoint_mult_s = DecafPoint::basepoint_mult(&s);
+        let table_basepoint_mult_s = table.basepoint_mult(&s);
+
+        assert_eq!(basepoint_mult_s, table_basepoint_mult_s);
     }
 }
 

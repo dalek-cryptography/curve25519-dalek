@@ -33,6 +33,48 @@ use utils::{load3, load4};
 
 use constants;
 
+/// doc
+pub fn mul64(a: &[u64;5], b: &[u64;5]) -> [u64;5] {
+    #[inline(always)]
+    fn m(a: u64, b: u64) -> u128 { (a as u128) * (b as u128) }
+    // Multiply to get 128-bit coefficients of output
+    let mut c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
+    let mut c1: u128 = m(a[1],b[0]) +   m(a[0],b[1]) + ( m(a[4],b[2]) +   m(a[3],b[3]) +   m(a[2],b[4]) )*19;
+    let mut c2: u128 = m(a[2],b[0]) +   m(a[1],b[1]) +   m(a[0],b[2]) + ( m(a[4],b[3]) +   m(a[3],b[4]) )*19;
+    let mut c3: u128 = m(a[3],b[0]) +   m(a[2],b[1]) +   m(a[1],b[2]) +   m(a[0],b[3]) + ( m(a[4],b[4]) )*19;
+    let mut c4: u128 = m(a[4],b[0]) +   m(a[3],b[1]) +   m(a[2],b[2]) +   m(a[1],b[3]) +   m(a[0],b[4]);
+    // Now c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
+    // where b is the bitlength of the input limbs.
+
+    // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
+    // After the first carry pass, all c[i] fit into u64.
+
+    let low_51_bit_mask = (1u64 << 51) - 1;
+    c1 +=  (c0 >> 51) as u128;
+    let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
+    c2 +=  (c1 >> 51) as u128;
+    let mut c1: u64 = (c1 as u64) & low_51_bit_mask;
+    c3 +=  (c2 >> 51) as u128;
+    let mut c2: u64 = (c2 as u64) & low_51_bit_mask;
+    c4 +=  (c3 >> 51) as u128;
+    let mut c3: u64 = (c3 as u64) & low_51_bit_mask;
+    c0 += ((c4 >> 51) as u64) * 19;
+    let mut c4: u64 = (c4 as u64) & low_51_bit_mask;
+    
+    c1 +=  c0 >> 51;
+    c0 = c0 & low_51_bit_mask;
+    c2 +=  c1 >> 51;
+    c1 = c1 & low_51_bit_mask;
+    c3 +=  c2 >> 51;
+    c2 = c2 & low_51_bit_mask;
+    c4 +=  c3 >> 51;
+    c3 = c3 & low_51_bit_mask;
+    c0 += (c4 >> 51) * 19;
+    c4 = c4 & low_51_bit_mask;
+
+    [c0,c1,c2,c3,c4]
+}
+
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
@@ -923,6 +965,13 @@ mod test {
     use field::*;
     use test::Bencher;
     use subtle::CTNegatable;
+
+    #[bench]
+    fn bench_mul64(b: &mut Bencher) {
+        let x = [1u64; 5];
+        let y = [1u64; 5];
+        b.iter(|| mul64(&x,&y));
+    }
 
     #[bench]
     fn bench_fieldelement_a_mul_a(b: &mut Bencher) {

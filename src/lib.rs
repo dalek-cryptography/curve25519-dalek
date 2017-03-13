@@ -11,7 +11,7 @@
 
 #![no_std]
 #![allow(unused_features)]
-#![feature(test)]
+#![cfg_attr(test, feature(test))]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek

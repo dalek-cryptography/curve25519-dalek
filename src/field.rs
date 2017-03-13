@@ -292,6 +292,24 @@ impl FieldElement {
         FieldElement([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
     }
 
+    /// Given 64-bit limbs, reduce to enforce the bound c_i < 2^51.
+    #[cfg(feature="radix_51")]
+    #[inline(always)]
+    fn reduce(mut limbs: [u64; 5]) -> FieldElement {
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        limbs[1] +=  limbs[0] >> 51;
+        limbs[0] = limbs[0] & low_51_bit_mask;
+        limbs[2] +=  limbs[1] >> 51;
+        limbs[1] = limbs[1] & low_51_bit_mask;
+        limbs[3] +=  limbs[2] >> 51;
+        limbs[2] = limbs[2] & low_51_bit_mask;
+        limbs[4] +=  limbs[3] >> 51;
+        limbs[3] = limbs[3] & low_51_bit_mask;
+        limbs[0] += (limbs[4] >> 51) * 19;
+        limbs[4] = limbs[4] & low_51_bit_mask;
+
+        FieldElement(limbs)
+    }
     #[cfg(feature="radix_25_5")]
     fn reduce(input: &[i64;10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
@@ -818,7 +836,7 @@ impl FieldElement {
         let b: &[u64; 5] = &_rhs.0;
 
         // Multiply to get 128-bit coefficients of output
-        let mut c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
+        let     c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
         let mut c1: u128 = m(a[1],b[0]) +   m(a[0],b[1]) + ( m(a[4],b[2]) +   m(a[3],b[3]) +   m(a[2],b[4]) )*19;
         let mut c2: u128 = m(a[2],b[0]) +   m(a[1],b[1]) +   m(a[0],b[2]) + ( m(a[4],b[3]) +   m(a[3],b[4]) )*19;
         let mut c3: u128 = m(a[3],b[0]) +   m(a[2],b[1]) +   m(a[1],b[2]) +   m(a[0],b[3]) + ( m(a[4],b[4]) )*19;
@@ -836,27 +854,15 @@ impl FieldElement {
         c1 +=  (c0 >> 51) as u128;
         let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
         c2 +=  (c1 >> 51) as u128;
-        let mut c1: u64 = (c1 as u64) & low_51_bit_mask;
+        let c1: u64 = (c1 as u64) & low_51_bit_mask;
         c3 +=  (c2 >> 51) as u128;
-        let mut c2: u64 = (c2 as u64) & low_51_bit_mask;
+        let c2: u64 = (c2 as u64) & low_51_bit_mask;
         c4 +=  (c3 >> 51) as u128;
-        let mut c3: u64 = (c3 as u64) & low_51_bit_mask;
+        let c3: u64 = (c3 as u64) & low_51_bit_mask;
         c0 += ((c4 >> 51) as u64) * 19;
-        let mut c4: u64 = (c4 as u64) & low_51_bit_mask;
+        let c4: u64 = (c4 as u64) & low_51_bit_mask;
 
-        // Second carry pass to enforce 2^51 bound
-        c1 +=  c0 >> 51;
-        c0 = c0 & low_51_bit_mask;
-        c2 +=  c1 >> 51;
-        c1 = c1 & low_51_bit_mask;
-        c3 +=  c2 >> 51;
-        c2 = c2 & low_51_bit_mask;
-        c4 +=  c3 >> 51;
-        c3 = c3 & low_51_bit_mask;
-        c0 += (c4 >> 51) * 19;
-        c4 = c4 & low_51_bit_mask;
-
-        FieldElement([c0,c1,c2,c3,c4])
+        FieldElement::reduce([c0,c1,c2,c3,c4])
     }
 
     #[cfg(feature="radix_25_5")]
@@ -900,8 +906,49 @@ impl FieldElement {
         h
     }
     #[cfg(feature="radix_51")]
-    fn square_inner(&self) -> [u128;5] {
-        unimplemented!();
+    #[inline(always)]
+    fn square_inner(&self) -> [u64; 5] {
+        /// Multiply two 64-bit integers with 128 bits of output.
+        #[inline(always)]
+        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
+
+        // Alias self, _rhs for more readable formulas
+        let a: &[u64; 5] = &self.0;
+
+        // Precomputation: 64-bit multiply by 19
+        let a3_19 = 19 * a[3];
+        let a4_19 = 19 * a[4];
+
+        // Multiply to get 128-bit coefficients of output
+        let     c0: u128 = m(a[0],  a[0]) + 2*( m(a[1], a4_19) + m(a[2], a3_19) );
+        let mut c1: u128 = m(a[3], a3_19) + 2*( m(a[0],  a[1]) + m(a[2], a4_19) );
+        let mut c2: u128 = m(a[1],  a[1]) + 2*( m(a[0],  a[2]) + m(a[4], a3_19) );
+        let mut c3: u128 = m(a[4], a4_19) + 2*( m(a[0],  a[3]) + m(a[1],  a[2]) );
+        let mut c4: u128 = m(a[2],  a[2]) + 2*( m(a[0],  a[4]) + m(a[1],  a[3]) );
+
+        // Same bound as in multiply:
+        //    c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
+        // where b is the bitlength of the input limbs.
+        //
+        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
+        // After the first carry pass, all c[i] fit into u64.
+
+        // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
+        // By rebinding the names after carrying, we free the upper registers for reuse.
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        c1 +=  (c0 >> 51) as u128;
+        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
+        c2 +=  (c1 >> 51) as u128;
+        let c1: u64 = (c1 as u64) & low_51_bit_mask;
+        c3 +=  (c2 >> 51) as u128;
+        let c2: u64 = (c2 as u64) & low_51_bit_mask;
+        c4 +=  (c3 >> 51) as u128;
+        let c3: u64 = (c3 as u64) & low_51_bit_mask;
+        c0 += ((c4 >> 51) as u64) * 19;
+        let c4: u64 = (c4 as u64) & low_51_bit_mask;
+
+        // Now c_i all fit into u64, but are not yet bounded by 2^51.
+        [c0,c1,c2,c3,c4]
     }
 
     /// Calculates h = f*f. Can overlap h with f.
@@ -922,7 +969,7 @@ impl FieldElement {
     /// Compute `self^2`.
     #[cfg(feature="radix_51")]
     pub fn square(&self) -> FieldElement {
-        unimplemented!();
+        FieldElement::reduce( self.square_inner())
     }
 
     /// Square this field element and multiply the result by 2.
@@ -952,7 +999,15 @@ impl FieldElement {
     /// Compute `2 * self^2`.
     #[cfg(feature="radix_51")]
     pub fn square2(&self) -> FieldElement {
-        unimplemented!();
+        let mut limbs = self.square_inner();
+        // For this to work, need to have 1 extra bit of headroom after carry
+        // --> max 53 bit inputs, not 54
+        limbs[0] *= 2;
+        limbs[1] *= 2;
+        limbs[2] *= 2;
+        limbs[3] *= 2;
+        limbs[4] *= 2;
+        FieldElement::reduce(limbs)
     }
 
     #[inline]
@@ -1139,13 +1194,6 @@ mod bench {
     use test::Bencher;
 
     #[bench]
-    fn bench_mul64(b: &mut Bencher) {
-        let x = [1u64; 5];
-        let y = [1u64; 5];
-        b.iter(|| mul64(&x, &y));
-    }
-
-    #[bench]
     fn mul_operator(b: &mut Bencher) {
         let a = FieldElement::from_bytes(&field::test::A_BYTES);
         b.iter(|| &a*&a);
@@ -1278,6 +1326,7 @@ mod test {
         assert_eq!(asq, &a*&a);
     }
 
+    /*
     #[test]
     fn mul64_on_a() {
         let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
@@ -1286,7 +1335,6 @@ mod test {
         assert_eq!(asq, asq_constant_from_sage);
     }
 
-    /*
     #[test]
     fn from_bytes_64_on_a() {
         let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];

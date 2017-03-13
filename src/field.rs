@@ -461,37 +461,6 @@ impl FieldElement {
     ///
     /// XXX eliminate limbs
     ///
-    /// # Preconditions
-    ///
-    /// * `|h[i]|` bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
-    ///
-    /// # Lemma
-    ///
-    /// Write p = 2^255 - 19 and q = floor(h/p).
-    ///
-    /// Basic claim: q = floor(2^(-255)(h + 19 * 2^-25 h9 + 2^-1)).
-    ///
-    /// # Proof
-    ///
-    /// Have |h|<=p so |q|<=1 so |19^2 * 2^-255 * q| < 1/4.
-    ///
-    /// Also have |h-2^230 * h9| < 2^230 so |19 * 2^-255 * (h-2^230 * h9)| < 1/4.
-    ///
-    /// Write y=2^(-1)-19^2 2^(-255)q-19 2^(-255)(h-2^230 h9), then 0<y<1.
-    ///
-    /// Write r = h - pq.
-    ///
-    /// Have 0 <= r< = p-1 = 2^255 - 20.
-    ///
-    /// Thus 0 <= r + 19 * 2^-255 * r < r + 19 * 2^-255 * 2^255 <= 2^255 - 1.
-    ///
-    /// Write x = r + 19 * 2^-255 * r + y.
-    ///
-    /// Then 0 < x < 2^255 so floor(2^(-255)x) = 0 so floor(q+2^(-255)x) = q.
-    ///
-    /// Have q+2^(-255)x = 2^-255 * (h + 19 * 2^-25 * h9 + 2^-1),
-    /// so floor(2^-255 * (h + 19 * 2^-25 * h9 + 2^-1)) = q.
-    ///
     /// # Example
     ///
     /// Continuing from the previous example in `FieldElement::from_bytes`:
@@ -509,6 +478,39 @@ impl FieldElement {
     /// ```
     #[cfg(feature="radix_25_5")]
     pub fn to_bytes(&self) -> [u8;32] { //FeToBytes
+        // Comment preserved from ed25519.go (presumably originally from ref10):
+        //
+        // # Preconditions
+        //
+        // * `|h[i]|` bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
+        //
+        // # Lemma
+        //
+        // Write p = 2^255 - 19 and q = floor(h/p).
+        //
+        // Basic claim: q = floor(2^(-255)(h + 19 * 2^-25 h9 + 2^-1)).
+        //
+        // # Proof
+        //
+        // Have |h|<=p so |q|<=1 so |19^2 * 2^-255 * q| < 1/4.
+        //
+        // Also have |h-2^230 * h9| < 2^230 so |19 * 2^-255 * (h-2^230 * h9)| < 1/4.
+        //
+        // Write y=2^(-1)-19^2 2^(-255)q-19 2^(-255)(h-2^230 h9), then 0<y<1.
+        //
+        // Write r = h - pq.
+        //
+        // Have 0 <= r< = p-1 = 2^255 - 20.
+        //
+        // Thus 0 <= r + 19 * 2^-255 * r < r + 19 * 2^-255 * 2^255 <= 2^255 - 1.
+        //
+        // Write x = r + 19 * 2^-255 * r + y.
+        //
+        // Then 0 < x < 2^255 so floor(2^(-255)x) = 0 so floor(q+2^(-255)x) = q.
+        //
+        // Have q+2^(-255)x = 2^-255 * (h + 19 * 2^-25 * h9 + 2^-1),
+        // so floor(2^-255 * (h + 19 * 2^-25 * h9 + 2^-1)) = q.
+        //
         let mut carry = [0i32; 10];
         let mut h = self.clone();
 
@@ -607,9 +609,42 @@ impl FieldElement {
     /// Serialize this `FieldElement` to bytes.
     #[cfg(feature="radix_51")]
     pub fn to_bytes(&self) -> [u8;32] {
-        // XXX need to do reduction first
         // This reduces to the range [0,2^255), but we need [0,2^255-19)
-        let limbs = FieldElement::reduce(self.0).0;
+        let mut limbs = FieldElement::reduce(self.0).0;
+        // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
+        //
+        // Write h = pq + r with 0 <= r < p.  We want to compute r = h mod p.
+        //
+        // Since h < 2^255, q = 0 or 1, with q = 0 when h < p and q = 1 when h >= p.
+        //
+        // Notice that h >= p <==> h + 19 >= p + 19 <==> h + 19 >= 2^255.
+        // Therefore q can be computed as the carry bit of h + 19.
+
+        let mut q = (limbs[0] + 19) >> 51;
+        q = (limbs[1] + q) >> 51;
+        q = (limbs[2] + q) >> 51;
+        q = (limbs[3] + q) >> 51;
+        q = (limbs[4] + q) >> 51;
+
+        // Now we can compute r as r = h - pq = r - (2^255-19)q = r + 19q - 2^255q
+
+        limbs[0] += 19*q;
+
+        // Now carry the result to compute r + 19q ...
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        limbs[1] +=  limbs[0] >> 51;
+        limbs[0] = limbs[0] & low_51_bit_mask;
+        limbs[2] +=  limbs[1] >> 51;
+        limbs[1] = limbs[1] & low_51_bit_mask;
+        limbs[3] +=  limbs[2] >> 51;
+        limbs[2] = limbs[2] & low_51_bit_mask;
+        limbs[4] +=  limbs[3] >> 51;
+        limbs[3] = limbs[3] & low_51_bit_mask;
+        // ... but instead of carrying (limbs[4] >> 51) = 2^255q
+        // into another limb, discard it, subtracting the value
+        limbs[4] = limbs[4] & low_51_bit_mask;
+
+        // Now arrange the bits of the limbs.
         let mut s = [0u8;32];
         s[ 0] =   limbs[0]        as u8;
         s[ 1] =  (limbs[0] >>  8) as u8;

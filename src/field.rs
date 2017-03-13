@@ -144,28 +144,40 @@ impl<'b> SubAssign<&'b FieldElement> for FieldElement {
     }
     #[cfg(feature="radix_51")]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) {
-        // To avoid underflow, first add p
-        // XXX how many copies should we add to preserve headroom?
-        self.0[0] += 2*constants::p.0[0];
-        self.0[1] += 2*constants::p.0[1];
-        self.0[2] += 2*constants::p.0[2];
-        self.0[3] += 2*constants::p.0[3];
-        self.0[4] += 2*constants::p.0[4];
-        // then subtract _rhs
-        self.0[0] -= _rhs.0[0];
-        self.0[1] -= _rhs.0[1];
-        self.0[2] -= _rhs.0[2];
-        self.0[3] -= _rhs.0[3];
-        self.0[4] -= _rhs.0[4];
+        let result = (self as &FieldElement) - _rhs;
+        for i in 0..5 {
+            self.0[i] = result.0[i];
+        }
     }
 }
 
 impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
+    #[cfg(feature="radix_25_5")]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
         let mut output = self.clone();
         output -= _rhs;
         output
+    }
+    #[cfg(feature="radix_51")]
+    fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
+        // To avoid underflow, first add a multiple of p.
+        // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
+        //
+        // If we could statically track the bitlengths of the limbs
+        // of every FieldElement, we could choose a multiple of p
+        // just bigger than _rhs and avoid having to do a reduction.
+        //
+        // Since we don't yet have type-level integers to do this, we
+        // have to add an explicit reduction call here, which is a
+        // significant cost.
+        FieldElement::reduce([
+            (self.0[0] + 36028797018963664u64) - _rhs.0[0],
+            (self.0[1] + 36028797018963952u64) - _rhs.0[1],
+            (self.0[2] + 36028797018963952u64) - _rhs.0[2],
+            (self.0[3] + 36028797018963952u64) - _rhs.0[3],
+            (self.0[4] + 36028797018963952u64) - _rhs.0[4],
+        ])
     }
 }
 
@@ -251,12 +263,15 @@ impl FieldElement {
     /// Invert the sign of this field element
     #[cfg(feature="radix_51")]
     pub fn negate(&mut self) {
-        // XXX how many copies of p
-        self.0[0] = constants::p.0[0] - self.0[0];
-        self.0[1] = constants::p.0[1] - self.0[1];
-        self.0[2] = constants::p.0[2] - self.0[2];
-        self.0[3] = constants::p.0[3] - self.0[3];
-        self.0[4] = constants::p.0[4] - self.0[4];
+        // See commentary in the Sub impl
+        let neg = FieldElement::reduce([
+            36028797018963664u64 - self.0[0],
+            36028797018963952u64 - self.0[1],
+            36028797018963952u64 - self.0[2],
+            36028797018963952u64 - self.0[3],
+            36028797018963952u64 - self.0[4],
+        ]);
+        self.0 = neg.0;
     }
 
     /// Construct zero.

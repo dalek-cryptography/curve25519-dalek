@@ -183,14 +183,140 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
 
 impl<'b> MulAssign<&'b FieldElement> for FieldElement {
     fn mul_assign(&mut self, _rhs: &'b FieldElement) {
-        self.0 = self.multiply(_rhs).0;
+        let result = (self as &FieldElement) * _rhs;
+        self.0 = result.0;
     }
 }
 
 impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
+    #[cfg(feature="radix_51")]
     fn mul(self, _rhs: &'b FieldElement) -> FieldElement {
-        self.multiply(_rhs)
+        /// Multiply two 64-bit integers with 128 bits of output.
+        #[inline(always)]
+        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
+
+        // Alias self, _rhs for more readable formulas
+        let a: &[u64; 5] = &self.0;
+        let b: &[u64; 5] = &_rhs.0;
+
+        // Multiply to get 128-bit coefficients of output
+        let     c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
+        let mut c1: u128 = m(a[1],b[0]) +   m(a[0],b[1]) + ( m(a[4],b[2]) +   m(a[3],b[3]) +   m(a[2],b[4]) )*19;
+        let mut c2: u128 = m(a[2],b[0]) +   m(a[1],b[1]) +   m(a[0],b[2]) + ( m(a[4],b[3]) +   m(a[3],b[4]) )*19;
+        let mut c3: u128 = m(a[3],b[0]) +   m(a[2],b[1]) +   m(a[1],b[2]) +   m(a[0],b[3]) + ( m(a[4],b[4]) )*19;
+        let mut c4: u128 = m(a[4],b[0]) +   m(a[3],b[1]) +   m(a[2],b[2]) +   m(a[1],b[3]) +   m(a[0],b[4]);
+
+        // Now c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
+        // where b is the bitlength of the input limbs.
+
+        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
+        // After the first carry pass, all c[i] fit into u64.
+        debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
+        debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
+        debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
+        debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
+        debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
+
+        // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
+        // By rebinding the names after carrying, we free the upper registers for reuse.
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        c1 +=  (c0 >> 51) as u128;
+        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
+        c2 +=  (c1 >> 51) as u128;
+        let c1: u64 = (c1 as u64) & low_51_bit_mask;
+        c3 +=  (c2 >> 51) as u128;
+        let c2: u64 = (c2 as u64) & low_51_bit_mask;
+        c4 +=  (c3 >> 51) as u128;
+        let c3: u64 = (c3 as u64) & low_51_bit_mask;
+        c0 += ((c4 >> 51) as u64) * 19;
+        let c4: u64 = (c4 as u64) & low_51_bit_mask;
+
+        FieldElement::reduce([c0,c1,c2,c3,c4])
+    }
+
+    #[cfg(feature="radix_25_5")]
+    fn mul(self, _rhs: &'b FieldElement) -> FieldElement {
+        // Notes preserved from ed25519.go (presumably originally from ref10):
+        //
+        // Calculates h = f * g. Can overlap h with f or g.
+        //
+        // # Preconditions
+        //
+        // * |f[i]| bounded by 1.1*2^26, 1.1*2^25, 1.1*2^26, 1.1*2^25, etc.
+        // * |g[i]| bounded by 1.1*2^26, 1.1*2^25, 1.1*2^26, 1.1*2^25, etc.
+        //
+        // # Postconditions
+        //
+        // * |h| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
+        //
+        // ## Notes on implementation strategy
+        //
+        // * Using schoolbook multiplication.
+        // * Karatsuba would save a little in some cost models.
+        //
+        // * Most multiplications by 2 and 19 are 32-bit precomputations;
+        //   cheaper than 64-bit postcomputations.
+        //
+        // * There is one remaining multiplication by 19 in the carry chain;
+        //   one *19 precomputation can be merged into this,
+        //   but the resulting data flow is considerably less clean.
+        //
+        // * There are 12 carries below.
+        //   10 of them are 2-way parallelizable and vectorizable.
+        //   Can get away with 11 carries, but then data flow is much deeper.
+        //
+        // * With tighter constraints on inputs can squeeze carries into int32.
+        let f0 = self[0] as i64;
+        let f1 = self[1] as i64;
+        let f2 = self[2] as i64;
+        let f3 = self[3] as i64;
+        let f4 = self[4] as i64;
+        let f5 = self[5] as i64;
+        let f6 = self[6] as i64;
+        let f7 = self[7] as i64;
+        let f8 = self[8] as i64;
+        let f9 = self[9] as i64;
+
+        let f1_2 = (2 * self[1]) as i64;
+        let f3_2 = (2 * self[3]) as i64;
+        let f5_2 = (2 * self[5]) as i64;
+        let f7_2 = (2 * self[7]) as i64;
+        let f9_2 = (2 * self[9]) as i64;
+
+        let g0 = _rhs[0] as i64;
+        let g1 = _rhs[1] as i64;
+        let g2 = _rhs[2] as i64;
+        let g3 = _rhs[3] as i64;
+        let g4 = _rhs[4] as i64;
+        let g5 = _rhs[5] as i64;
+        let g6 = _rhs[6] as i64;
+        let g7 = _rhs[7] as i64;
+        let g8 = _rhs[8] as i64;
+        let g9 = _rhs[9] as i64;
+
+        let g1_19 = (19 * _rhs[1]) as i64; /* 1.4*2^29 */
+        let g2_19 = (19 * _rhs[2]) as i64; /* 1.4*2^30; still ok */
+        let g3_19 = (19 * _rhs[3]) as i64;
+        let g4_19 = (19 * _rhs[4]) as i64;
+        let g5_19 = (19 * _rhs[5]) as i64;
+        let g6_19 = (19 * _rhs[6]) as i64;
+        let g7_19 = (19 * _rhs[7]) as i64;
+        let g8_19 = (19 * _rhs[8]) as i64;
+        let g9_19 = (19 * _rhs[9]) as i64;
+
+        let h0 = f0*g0 + f1_2*g9_19 + f2*g8_19 + f3_2*g7_19 + f4*g6_19 + f5_2*g5_19 + f6*g4_19 + f7_2*g3_19 + f8*g2_19 + f9_2*g1_19;
+        let h1 = f0*g1 + f1*g0 + f2*g9_19 + f3*g8_19 + f4*g7_19 + f5*g6_19 + f6*g5_19 + f7*g4_19 + f8*g3_19 + f9*g2_19;
+        let h2 = f0*g2 + f1_2*g1 + f2*g0 + f3_2*g9_19 + f4*g8_19 + f5_2*g7_19 + f6*g6_19 + f7_2*g5_19 + f8*g4_19 + f9_2*g3_19;
+        let h3 = f0*g3 + f1*g2 + f2*g1 + f3*g0 + f4*g9_19 + f5*g8_19 + f6*g7_19 + f7*g6_19 + f8*g5_19 + f9*g4_19;
+        let h4 = f0*g4 + f1_2*g3 + f2*g2 + f3_2*g1 + f4*g0 + f5_2*g9_19 + f6*g8_19 + f7_2*g7_19 + f8*g6_19 + f9_2*g5_19;
+        let h5 = f0*g5 + f1*g4 + f2*g3 + f3*g2 + f4*g1 + f5*g0 + f6*g9_19 + f7*g8_19 + f8*g7_19 + f9*g6_19;
+        let h6 = f0*g6 + f1_2*g5 + f2*g4 + f3_2*g3 + f4*g2 + f5_2*g1 + f6*g0 + f7_2*g9_19 + f8*g8_19 + f9_2*g7_19;
+        let h7 = f0*g7 + f1*g6 + f2*g5 + f3*g4 + f4*g3 + f5*g2 + f6*g1 + f7*g0 + f8*g9_19 + f9*g8_19;
+        let h8 = f0*g8 + f1_2*g7 + f2*g6 + f3_2*g5 + f4*g4 + f5_2*g3 + f6*g2 + f7_2*g1 + f8*g0 + f9_2*g9_19;
+        let h9 = f0*g9 + f1*g8 + f2*g7 + f3*g6 + f4*g5 + f5*g4 + f6*g3 + f7*g2 + f8*g1 + f9*g0;
+
+        FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
 }
 
@@ -793,133 +919,6 @@ impl FieldElement {
             x |= *b;
         }
         return byte_is_nonzero(x);
-    }
-
-    /// Calculates h = f * g. Can overlap h with f or g.
-    ///
-    /// # Preconditions
-    ///
-    /// * |f[i]| bounded by 1.1*2^26, 1.1*2^25, 1.1*2^26, 1.1*2^25, etc.
-    /// * |g[i]| bounded by 1.1*2^26, 1.1*2^25, 1.1*2^26, 1.1*2^25, etc.
-    ///
-    /// # Postconditions
-    ///
-    /// * |h| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
-    ///
-    /// ## Notes on implementation strategy
-    ///
-    /// * Using schoolbook multiplication.
-    /// * Karatsuba would save a little in some cost models.
-    ///
-    /// * Most multiplications by 2 and 19 are 32-bit precomputations;
-    ///   cheaper than 64-bit postcomputations.
-    ///
-    /// * There is one remaining multiplication by 19 in the carry chain;
-    ///   one *19 precomputation can be merged into this,
-    ///   but the resulting data flow is considerably less clean.
-    ///
-    /// * There are 12 carries below.
-    ///   10 of them are 2-way parallelizable and vectorizable.
-    ///   Can get away with 11 carries, but then data flow is much deeper.
-    ///
-    /// * With tighter constraints on inputs can squeeze carries into int32.
-    #[cfg(feature="radix_25_5")]
-    pub fn multiply(&self, _rhs: &FieldElement) -> FieldElement {
-        let f0 = self[0] as i64;
-        let f1 = self[1] as i64;
-        let f2 = self[2] as i64;
-        let f3 = self[3] as i64;
-        let f4 = self[4] as i64;
-        let f5 = self[5] as i64;
-        let f6 = self[6] as i64;
-        let f7 = self[7] as i64;
-        let f8 = self[8] as i64;
-        let f9 = self[9] as i64;
-
-        let f1_2 = (2 * self[1]) as i64;
-        let f3_2 = (2 * self[3]) as i64;
-        let f5_2 = (2 * self[5]) as i64;
-        let f7_2 = (2 * self[7]) as i64;
-        let f9_2 = (2 * self[9]) as i64;
-
-        let g0 = _rhs[0] as i64;
-        let g1 = _rhs[1] as i64;
-        let g2 = _rhs[2] as i64;
-        let g3 = _rhs[3] as i64;
-        let g4 = _rhs[4] as i64;
-        let g5 = _rhs[5] as i64;
-        let g6 = _rhs[6] as i64;
-        let g7 = _rhs[7] as i64;
-        let g8 = _rhs[8] as i64;
-        let g9 = _rhs[9] as i64;
-
-        let g1_19 = (19 * _rhs[1]) as i64; /* 1.4*2^29 */
-        let g2_19 = (19 * _rhs[2]) as i64; /* 1.4*2^30; still ok */
-        let g3_19 = (19 * _rhs[3]) as i64;
-        let g4_19 = (19 * _rhs[4]) as i64;
-        let g5_19 = (19 * _rhs[5]) as i64;
-        let g6_19 = (19 * _rhs[6]) as i64;
-        let g7_19 = (19 * _rhs[7]) as i64;
-        let g8_19 = (19 * _rhs[8]) as i64;
-        let g9_19 = (19 * _rhs[9]) as i64;
-
-        let h0 = f0*g0 + f1_2*g9_19 + f2*g8_19 + f3_2*g7_19 + f4*g6_19 + f5_2*g5_19 + f6*g4_19 + f7_2*g3_19 + f8*g2_19 + f9_2*g1_19;
-        let h1 = f0*g1 + f1*g0 + f2*g9_19 + f3*g8_19 + f4*g7_19 + f5*g6_19 + f6*g5_19 + f7*g4_19 + f8*g3_19 + f9*g2_19;
-        let h2 = f0*g2 + f1_2*g1 + f2*g0 + f3_2*g9_19 + f4*g8_19 + f5_2*g7_19 + f6*g6_19 + f7_2*g5_19 + f8*g4_19 + f9_2*g3_19;
-        let h3 = f0*g3 + f1*g2 + f2*g1 + f3*g0 + f4*g9_19 + f5*g8_19 + f6*g7_19 + f7*g6_19 + f8*g5_19 + f9*g4_19;
-        let h4 = f0*g4 + f1_2*g3 + f2*g2 + f3_2*g1 + f4*g0 + f5_2*g9_19 + f6*g8_19 + f7_2*g7_19 + f8*g6_19 + f9_2*g5_19;
-        let h5 = f0*g5 + f1*g4 + f2*g3 + f3*g2 + f4*g1 + f5*g0 + f6*g9_19 + f7*g8_19 + f8*g7_19 + f9*g6_19;
-        let h6 = f0*g6 + f1_2*g5 + f2*g4 + f3_2*g3 + f4*g2 + f5_2*g1 + f6*g0 + f7_2*g9_19 + f8*g8_19 + f9_2*g7_19;
-        let h7 = f0*g7 + f1*g6 + f2*g5 + f3*g4 + f4*g3 + f5*g2 + f6*g1 + f7*g0 + f8*g9_19 + f9*g8_19;
-        let h8 = f0*g8 + f1_2*g7 + f2*g6 + f3_2*g5 + f4*g4 + f5_2*g3 + f6*g2 + f7_2*g1 + f8*g0 + f9_2*g9_19;
-        let h9 = f0*g9 + f1*g8 + f2*g7 + f3*g6 + f4*g5 + f5*g4 + f6*g3 + f7*g2 + f8*g1 + f9*g0;
-
-        FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
-    }
-    /// Compute `self * _rhs`.
-    #[cfg(feature="radix_51")]
-    pub fn multiply(&self, _rhs: &FieldElement) -> FieldElement {
-        /// Multiply two 64-bit integers with 128 bits of output.
-        #[inline(always)]
-        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
-
-        // Alias self, _rhs for more readable formulas
-        let a: &[u64; 5] = &self.0;
-        let b: &[u64; 5] = &_rhs.0;
-
-        // Multiply to get 128-bit coefficients of output
-        let     c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
-        let mut c1: u128 = m(a[1],b[0]) +   m(a[0],b[1]) + ( m(a[4],b[2]) +   m(a[3],b[3]) +   m(a[2],b[4]) )*19;
-        let mut c2: u128 = m(a[2],b[0]) +   m(a[1],b[1]) +   m(a[0],b[2]) + ( m(a[4],b[3]) +   m(a[3],b[4]) )*19;
-        let mut c3: u128 = m(a[3],b[0]) +   m(a[2],b[1]) +   m(a[1],b[2]) +   m(a[0],b[3]) + ( m(a[4],b[4]) )*19;
-        let mut c4: u128 = m(a[4],b[0]) +   m(a[3],b[1]) +   m(a[2],b[2]) +   m(a[1],b[3]) +   m(a[0],b[4]);
-
-        // Now c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
-        // where b is the bitlength of the input limbs.
-
-        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
-        // After the first carry pass, all c[i] fit into u64.
-        debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
-        debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
-        debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
-        debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
-        debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
-
-        // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
-        // By rebinding the names after carrying, we free the upper registers for reuse.
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        c1 +=  (c0 >> 51) as u128;
-        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
-        c2 +=  (c1 >> 51) as u128;
-        let c1: u64 = (c1 as u64) & low_51_bit_mask;
-        c3 +=  (c2 >> 51) as u128;
-        let c2: u64 = (c2 as u64) & low_51_bit_mask;
-        c4 +=  (c3 >> 51) as u128;
-        let c3: u64 = (c3 as u64) & low_51_bit_mask;
-        c0 += ((c4 >> 51) as u64) * 19;
-        let c4: u64 = (c4 as u64) & low_51_bit_mask;
-
-        FieldElement::reduce([c0,c1,c2,c3,c4])
     }
 
     #[cfg(feature="radix_25_5")]

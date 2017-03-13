@@ -1399,6 +1399,26 @@ mod test {
         assert!(   ExtendedPoint::identity().is_identity() == true);
         assert!(constants::ED25519_BASEPOINT.is_identity() == false);
     }
+
+    /// Rust's debug builds have overflow and underflow trapping,
+    /// and enable `debug_assert!()`.  This performs many scalar
+    /// multiplications to attempt to trigger possible overflows etc.
+    ///
+    /// For instance, the `radix_51` `Mul` implementation for
+    /// `FieldElements` requires the input `Limb`s to be bounded by
+    /// 2^54, but we cannot enforce this dynamically at runtime, or
+    /// statically at compile time (until Rust gets type-level
+    /// integers, at which point we can encode "bits of headroom" into
+    /// the type system and prove correctness).
+    #[test]
+    fn monte_carlo_overflow_underflow_debug_assert_test() {
+        let mut P = ExtendedPoint::basepoint();
+        // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
+        // so this does ~ 1M of each operation.
+        for _ in 0..1_000 {
+            P = P.scalar_mult(&A_SCALAR);
+        }
+    }
 }
 
 // ------------------------------------------------------------------------

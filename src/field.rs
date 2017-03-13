@@ -415,40 +415,6 @@ impl FieldElement {
         output[9] = h[9] as i32;
         output
     }
-    #[cfg(feature="radix_51")]
-    fn reduce(input: &[u128; 5]) -> FieldElement {
-        // After multiplication,
-        // c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
-        // where b is the bitlength of the input limbs.
-
-        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
-        // After the first carry pass, all c[i] fit into u64.
-
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        c1 +=  (c0 >> 51) as u128;
-        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
-        c2 +=  (c1 >> 51) as u128;
-        let mut c1: u64 = (c1 as u64) & low_51_bit_mask;
-        c3 +=  (c2 >> 51) as u128;
-        let mut c2: u64 = (c2 as u64) & low_51_bit_mask;
-        c4 +=  (c3 >> 51) as u128;
-        let mut c3: u64 = (c3 as u64) & low_51_bit_mask;
-        c0 += ((c4 >> 51) as u64) * 19;
-        let mut c4: u64 = (c4 as u64) & low_51_bit_mask;
-
-        c1 +=  c0 >> 51;
-        c0 = c0 & low_51_bit_mask;
-        c2 +=  c1 >> 51;
-        c1 = c1 & low_51_bit_mask;
-        c3 +=  c2 >> 51;
-        c2 = c2 & low_51_bit_mask;
-        c4 +=  c3 >> 51;
-        c3 = c3 & low_51_bit_mask;
-        c0 += (c4 >> 51) * 19;
-        c4 = c4 & low_51_bit_mask;
-
-        FieldElement([c0,c1,c2,c3,c4])
-    }
 
     /// Create a FieldElement by demarshalling an array of 32 bytes.
     ///

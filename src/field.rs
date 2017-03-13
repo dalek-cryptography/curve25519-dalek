@@ -869,6 +869,10 @@ impl FieldElement {
 
         FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
+    #[cfg(feature="radix_51")]
+    pub fn multiply(&self, _rhs: &FieldElement) -> FieldElement {
+        unimplemented!();
+    }
 
     #[cfg(feature="radix_25_5")]
     fn square_inner(&self) -> [i64;10] {
@@ -910,6 +914,10 @@ impl FieldElement {
 
         h
     }
+    #[cfg(feature="radix_51")]
+    fn square_inner(&self) -> [u128;5] {
+        unimplemented!();
+    }
 
     /// Calculates h = f*f. Can overlap h with f.
     ///
@@ -925,6 +933,10 @@ impl FieldElement {
     #[cfg(feature="radix_25_5")]
     pub fn square(&self) -> FieldElement {
         FieldElement::reduce(&self.square_inner())
+    }
+    #[cfg(feature="radix_51")]
+    pub fn square(&self) -> FieldElement {
+        unimplemented!();
     }
 
     /// Square this field element and multiply the result by 2.
@@ -950,6 +962,10 @@ impl FieldElement {
             coeffs[i] += coeffs[i];
         }
         FieldElement::reduce(&coeffs)
+    }
+    #[cfg(feature="radix_51")]
+    pub fn square2(&self) -> FieldElement {
+        unimplemented!();
     }
 
     #[inline]

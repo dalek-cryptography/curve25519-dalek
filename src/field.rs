@@ -884,6 +884,11 @@ impl FieldElement {
 
         // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
         // After the first carry pass, all c[i] fit into u64.
+        debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
+        debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
+        debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
+        debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
+        debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
 
         // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
         // By rebinding the names after carrying, we free the upper registers for reuse.
@@ -969,6 +974,11 @@ impl FieldElement {
         //
         // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
         // After the first carry pass, all c[i] fit into u64.
+        debug_assert!(a[0] < (1 << 54));
+        debug_assert!(a[1] < (1 << 54));
+        debug_assert!(a[2] < (1 << 54));
+        debug_assert!(a[3] < (1 << 54));
+        debug_assert!(a[4] < (1 << 54));
 
         // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
         // By rebinding the names after carrying, we free the upper registers for reuse.

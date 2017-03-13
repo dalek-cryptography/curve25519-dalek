@@ -244,11 +244,11 @@ impl<'b> SubAssign<&'b FieldElement> for FieldElement {
     fn sub_assign(&mut self, _rhs: &'b FieldElement) {
         // To avoid underflow, first add p
         // XXX how many copies should we add to preserve headroom?
-        self.0[0] += 2251799813685229;
-        self.0[1] += 2251799813685247;
-        self.0[2] += 2251799813685247;
-        self.0[3] += 2251799813685247;
-        self.0[4] += 2251799813685247;
+        self.0[0] += constants::p.0[0];
+        self.0[1] += constants::p.0[1];
+        self.0[2] += constants::p.0[2];
+        self.0[3] += constants::p.0[3];
+        self.0[4] += constants::p.0[4];
         // then subtract _rhs
         self.0[0] -= _rhs.0[0];
         self.0[1] -= _rhs.0[1];
@@ -337,6 +337,15 @@ impl FieldElement {
         for i in 0..10 {
             self[i] = -self[i];
         }
+    }
+    #[cfg(feature="radix_51")]
+    pub fn negate(&mut self) {
+        // XXX how many copies of p
+        self.0[0] = constants::p.0[0] - self.0[0];
+        self.0[1] = constants::p.0[1] - self.0[1];
+        self.0[2] = constants::p.0[2] - self.0[2];
+        self.0[3] = constants::p.0[3] - self.0[3];
+        self.0[4] = constants::p.0[4] - self.0[4];
     }
 
     /// Construct the additive identity

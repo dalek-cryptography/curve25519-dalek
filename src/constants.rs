@@ -26,6 +26,9 @@ use curve::CompressedEdwardsY;
 use curve::EdwardsBasepointTable;
 use scalar::Scalar;
 
+#[cfg(feature="radix_51")]
+pub const p: FieldElement = FieldElement([2251799813685229, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]);
+
 #[cfg(feature="radix_25_5")]
 pub const d: FieldElement       = FieldElement([
     -10913610,  13857413, -15372611,   6949391,    114729,

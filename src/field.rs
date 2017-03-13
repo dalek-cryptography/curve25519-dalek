@@ -267,10 +267,18 @@ impl CTAssignable for FieldElement {
     /// # Preconditions
     ///
     /// * `choice` in {0,1}
+    #[cfg(feature="radix_25_5")]
     fn conditional_assign(&mut self, f: &FieldElement, choice: u8) {
         let mask = -(choice as Limb);
         for i in 0..10 {
             self[i] ^= mask & (self[i] ^ f[i]);
+        }
+    }
+    #[cfg(feature="radix_51")]
+    fn conditional_assign(&mut self, f: &FieldElement, choice: u8) {
+        let mask = (-(choice as i64)) as u64;
+        for i in 0..5 {
+            self.0[i] ^= mask & (self.0[i] ^ f.0[i]);
         }
     }
 }
@@ -283,6 +291,7 @@ impl FieldElement {
             self[i] = -self[i];
         }
     }
+    /// Invert the sign of this field element
     #[cfg(feature="radix_51")]
     pub fn negate(&mut self) {
         // XXX how many copies of p
@@ -293,21 +302,23 @@ impl FieldElement {
         self.0[4] = constants::p.0[4] - self.0[4];
     }
 
-    /// Construct the additive identity
+    /// Construct zero.
     #[cfg(feature="radix_25_5")]
     pub fn zero() -> FieldElement {
         FieldElement([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    /// Construct zero.
     #[cfg(feature="radix_51")]
     pub fn zero() -> FieldElement {
         FieldElement([ 0, 0, 0, 0, 0 ])
     }
 
-    /// Construct the multiplicative identity
+    /// Construct one.
     #[cfg(feature="radix_25_5")]
     pub fn one() -> FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    /// Construct one.
     #[cfg(feature="radix_51")]
     pub fn one() -> FieldElement {
         FieldElement([ 1, 0, 0, 0, 0 ])
@@ -318,6 +329,7 @@ impl FieldElement {
     pub fn minus_one() -> FieldElement {
         FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    /// Construct -1.
     #[cfg(feature="radix_51")]
     pub fn minus_one() -> FieldElement {
         FieldElement([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
@@ -452,6 +464,7 @@ impl FieldElement {
 
         FieldElement::reduce(&h)
     }
+    /// Parse a `FieldElement` from 32 bytes.
     #[cfg(feature="radix_51")]
     pub fn from_bytes(bytes: &[u8;32]) -> FieldElement {
         let low_51_bit_mask = (1u64 << 51) - 1;
@@ -616,6 +629,7 @@ impl FieldElement {
 
         s
     }
+    /// Serialize this `FieldElement` to bytes.
     #[cfg(feature="radix_51")]
     pub fn to_bytes(&self) -> [u8;32] {
         // XXX need to do reduction first
@@ -835,6 +849,7 @@ impl FieldElement {
 
         FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
+    /// Compute `self * _rhs`.
     #[cfg(feature="radix_51")]
     pub fn multiply(&self, _rhs: &FieldElement) -> FieldElement {
         unimplemented!();
@@ -900,6 +915,7 @@ impl FieldElement {
     pub fn square(&self) -> FieldElement {
         FieldElement::reduce(&self.square_inner())
     }
+    /// Compute `self^2`.
     #[cfg(feature="radix_51")]
     pub fn square(&self) -> FieldElement {
         unimplemented!();
@@ -929,6 +945,7 @@ impl FieldElement {
         }
         FieldElement::reduce(&coeffs)
     }
+    /// Compute `2 * self^2`.
     #[cfg(feature="radix_51")]
     pub fn square2(&self) -> FieldElement {
         unimplemented!();
@@ -1148,6 +1165,7 @@ mod test {
     use field::*;
     use subtle::CTNegatable;
 
+    /*
     #[test]
     fn print_constants() {
         use curve::*;
@@ -1215,8 +1233,9 @@ mod test {
             }
         }
         
-        panic!();
+        //panic!();
     }
+    */
 
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
@@ -1263,6 +1282,7 @@ mod test {
         assert_eq!(asq, asq_constant_from_sage);
     }
 
+    /*
     #[test]
     fn from_bytes_64_on_a() {
         let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
@@ -1271,6 +1291,7 @@ mod test {
         let should_be_a_bytes = to_bytes_64(&a);
         assert_eq!(&A_BYTES, &should_be_a_bytes);
     }
+    */
 
     #[test]
     fn a_square_vs_a_squared_constant() {

@@ -1192,10 +1192,9 @@ mod test {
     /// XXX what does Signal do here?
     #[test]
     fn u_minus_one_monty() {
-        let mut m1 = FieldElement::zero();
-        m1[0] = -1;
-        let m1_bytes = m1.to_bytes();
-        let div_by_zero_u = CompressedMontgomeryU(m1_bytes);
+        let minus_one = FieldElement::minus_one();
+        let minus_one_bytes = minus_one.to_bytes();
+        let div_by_zero_u = CompressedMontgomeryU(minus_one_bytes);
         assert!(div_by_zero_u.decompress().is_none());
     }
 

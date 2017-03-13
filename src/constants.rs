@@ -3141,14 +3141,26 @@ mod test {
 
     #[test]
     fn test_half() {
-        let one = FieldElement([1,0,0,0,0,0,0,0,0,0]);
-        let two = FieldElement([2,0,0,0,0,0,0,0,0,0]);
+        let one = FieldElement::one();
+        let two = &one + &one;
         assert_eq!(one, &two * &constants::HALF);
     }
 
-    #[test]
     /// Test that the constant for sqrt(-486664) really is a square
     /// root of -486664.
+    #[test]
+    #[cfg(feature="radix_51")]
+    fn sqrt_minus_aplus2() {
+        let minus_aplus2 = -&FieldElement([486664,0,0,0,0]);
+        let sqrt = constants::SQRT_MINUS_APLUS2;
+        let sq = &sqrt * &sqrt;
+        assert_eq!(sq, minus_aplus2);
+    }
+
+    /// Test that the constant for sqrt(-486664) really is a square
+    /// root of -486664.
+    #[test]
+    #[cfg(feature="radix_25_5")]
     fn sqrt_minus_aplus2() {
         let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
@@ -3159,7 +3171,7 @@ mod test {
     #[test]
     /// Test that SQRT_M1 and MSQRT_M1 are square roots of -1
     fn test_sqrt_minus_one() {
-        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let minus_one = FieldElement::minus_one();
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
         let msqrt_m1_sq = &constants::MSQRT_M1 * &constants::MSQRT_M1;
         assert_eq!(minus_one,  sqrt_m1_sq);
@@ -3168,8 +3180,8 @@ mod test {
 
     #[test]
     fn test_sqrt_constants_sign() {
-        let one       = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
-        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let one       = FieldElement::one();
+        let minus_one = FieldElement::minus_one();
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
         assert_eq!(was_nonzero_square, 1u8);
         let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
@@ -3180,11 +3192,24 @@ mod test {
         assert_eq!(sign_test_msqrt, one);
     }
 
-    #[test]
     /// Test that d = -121665/121666
+    #[cfg(feature="radix_25_5")]
+    #[test]
     fn test_d_vs_ratio() {
         let a = FieldElement([-121665,0,0,0,0,0,0,0,0,0]);
         let b = FieldElement([ 121666,0,0,0,0,0,0,0,0,0]);
+        let d = &a * &b.invert();
+        let d2 = &d + &d;
+        assert_eq!(d, constants::d);
+        assert_eq!(d2, constants::d2);
+    }
+
+    /// Test that d = -121665/121666
+    #[cfg(feature="radix_51")]
+    #[test]
+    fn test_d_vs_ratio() {
+        let a = -&FieldElement([121665,0,0,0,0]);
+        let b =   FieldElement([121666,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
         assert_eq!(d, constants::d);
@@ -3200,7 +3225,7 @@ mod test {
 
     #[test]
     fn test_a_minus_d() {
-        let a = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let a = FieldElement::minus_one();
         let a_minus_d = &a - &constants::d;
         assert_eq!(a_minus_d, constants::a_minus_d);
     }

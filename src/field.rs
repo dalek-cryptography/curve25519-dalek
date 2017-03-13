@@ -373,6 +373,10 @@ impl FieldElement {
     pub fn minus_one() -> FieldElement {
         FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    #[cfg(feature="radix_51")]
+    pub fn minus_one() -> FieldElement {
+        FieldElement([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
+    }
 
     #[cfg(feature="radix_25_5")]
     fn combine_coeffs(input: &[i64;10]) -> FieldElement { //FeCombine

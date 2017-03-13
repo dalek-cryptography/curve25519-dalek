@@ -29,7 +29,7 @@ use subtle::byte_is_nonzero;
 use subtle::CTAssignable;
 use subtle::CTEq;
 
-use utils::{load3, load4};
+use utils::{load3, load4, load8};
 
 use constants;
 
@@ -73,6 +73,62 @@ pub fn mul64(a: &[u64;5], b: &[u64;5]) -> [u64;5] {
     c4 = c4 & low_51_bit_mask;
 
     [c0,c1,c2,c3,c4]
+}
+
+fn from_bytes_64(bytes: &[u8;32]) -> [u64; 5] {
+    let low_51_bit_mask = (1u64 << 51) - 1;
+    // load bits [  0, 64), no shift
+    [  load8(&bytes[ 0..])        & low_51_bit_mask
+    // load bits [ 48,112), shift to [ 51,112)
+    , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
+    // load bits [ 96,160), shift to [102,160)
+    , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
+    // load bits [152,216), shift to [153,216)
+    , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
+    // load bits [192,256), shift to [204,112)
+    , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
+    ]
+}
+
+fn to_bytes_64(limbs: &[u64;5]) -> [u8;32] {
+    let mut s = [0u8;32];
+    s[ 0] =   limbs[0]        as u8;
+    s[ 1] =  (limbs[0] >>  8) as u8;
+    s[ 2] =  (limbs[0] >> 16) as u8;
+    s[ 3] =  (limbs[0] >> 24) as u8;
+    s[ 4] =  (limbs[0] >> 32) as u8;
+    s[ 5] =  (limbs[0] >> 40) as u8;
+    s[ 6] = ((limbs[0] >> 48) | (limbs[1] << 3)) as u8;
+    s[ 7] =  (limbs[1] >>  5) as u8;
+    s[ 8] =  (limbs[1] >> 13) as u8;
+    s[ 9] =  (limbs[1] >> 21) as u8;
+    s[10] =  (limbs[1] >> 29) as u8;
+    s[11] =  (limbs[1] >> 37) as u8;
+    s[12] = ((limbs[1] >> 45) | (limbs[2] << 6)) as u8;
+    s[13] =  (limbs[2] >>  2) as u8;
+    s[14] =  (limbs[2] >> 10) as u8;
+    s[15] =  (limbs[2] >> 18) as u8;
+    s[16] =  (limbs[2] >> 26) as u8;
+    s[17] =  (limbs[2] >> 34) as u8;
+    s[18] =  (limbs[2] >> 42) as u8;
+    s[19] = ((limbs[2] >> 50) | (limbs[3] << 1)) as u8;
+    s[20] =  (limbs[3] >>  7) as u8;
+    s[21] =  (limbs[3] >> 15) as u8;
+    s[22] =  (limbs[3] >> 23) as u8;
+    s[23] =  (limbs[3] >> 31) as u8;
+    s[24] =  (limbs[3] >> 39) as u8;
+    s[25] = ((limbs[3] >> 47) | (limbs[4] << 4)) as u8;
+    s[26] =  (limbs[4] >>  4) as u8;
+    s[27] =  (limbs[4] >> 12) as u8;
+    s[28] =  (limbs[4] >> 20) as u8;
+    s[29] =  (limbs[4] >> 28) as u8;
+    s[30] =  (limbs[4] >> 36) as u8;
+    s[31] =  (limbs[4] >> 44) as u8;
+
+    //Clear high bit
+    s[31] &= 127u8;
+
+    return s
 }
 
 /// With the `radix51` feature enabled, `FieldElements` are represented
@@ -1086,6 +1142,15 @@ mod test {
         let asq_constant_from_sage: [u64; 5] = [1696437425706869, 260630435370367, 277335390860868, 1743763050813710, 1739636627710249];
         let asq = mul64(&a, &a.clone());
         assert_eq!(asq, asq_constant_from_sage);
+    }
+
+    #[test]
+    fn from_bytes_64_on_a() {
+        let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
+        let should_be_a = from_bytes_64(&A_BYTES);
+        assert_eq!(a, should_be_a);
+        let should_be_a_bytes = to_bytes_64(&a);
+        assert_eq!(&A_BYTES, &should_be_a_bytes);
     }
 
     #[test]

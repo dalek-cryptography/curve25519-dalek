@@ -1455,7 +1455,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_cached_output_completed(b: &mut Bencher) {
+    fn add_extended_and_projective_niels_output_completed(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
@@ -1463,7 +1463,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_cached_output_extended(b: &mut Bencher) {
+    fn add_extended_and_projective_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
@@ -1471,7 +1471,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_precomputed_output_completed(b: &mut Bencher) {
+    fn add_extended_and_affine_niels_output_completed(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 
@@ -1479,7 +1479,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_precomputed_output_extended(b: &mut Bencher) {
+    fn add_extended_and_affine_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 

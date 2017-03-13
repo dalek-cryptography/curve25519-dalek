@@ -1035,6 +1035,14 @@ mod test {
     }
 
     #[test]
+    fn mul64_on_a() {
+        let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
+        let asq_constant_from_sage: [u64; 5] = [1696437425706869, 260630435370367, 277335390860868, 1743763050813710, 1739636627710249];
+        let asq = mul64(&a, &a.clone());
+        assert_eq!(asq, asq_constant_from_sage);
+    }
+
+    #[test]
     fn a_square_vs_a_squared_constant() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);

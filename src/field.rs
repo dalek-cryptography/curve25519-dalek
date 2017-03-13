@@ -75,18 +75,33 @@ pub fn mul64(a: &[u64;5], b: &[u64;5]) -> [u64;5] {
     [c0,c1,c2,c3,c4]
 }
 
+/// With the `radix51` feature enabled, `FieldElements` are represented
+/// in radix 2^51 as five `u64`s.
+#[cfg(feature="radix_51")]
+pub type Limb = u64;
+
+/// FieldElement represents an element of the field GF(2^255 - 19).  An element
+/// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
+/// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
+/// context.
+#[cfg(feature="radix_51")]
+#[derive(Copy, Clone)]
+pub struct FieldElement(pub [u64; 5]);
+
 /// FieldElements are represented as an array of ten "Limbs", which are radix
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
 /// integer.
+#[cfg(feature="radix_25_5")]
 pub type Limb = i32;
 
 /// FieldElement represents an element of the field GF(2^255 - 19).  An element
 /// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
 /// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
 /// context.
+#[cfg(feature="radix_25_5")]
 #[derive(Copy, Clone)]
-pub struct FieldElement(pub [Limb; 10]);
+pub struct FieldElement(pub [i32; 10]);
 
 impl Eq for FieldElement {}
 impl PartialEq for FieldElement {
@@ -147,7 +162,7 @@ impl IndexMut<usize> for FieldElement {
 
 impl<'b> AddAssign<&'b FieldElement> for FieldElement {
     fn add_assign(&mut self, _rhs: &'b FieldElement) { // fsum()
-        for i in 0..10 {
+        for i in 0..self.0.len() {
             self[i] += _rhs[i];
         }
     }
@@ -163,11 +178,13 @@ impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
 }
 
 impl<'b> SubAssign<&'b FieldElement> for FieldElement {
+    #[cfg(feature="radix_25_5")]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) { // fdifference()
         for i in 0..10 {
             self[i] -= _rhs[i];
         }
     }
+    // XXX_radix_51
 }
 
 impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
@@ -203,6 +220,9 @@ impl<'a> Neg for &'a FieldElement {
 
 impl CTAssignable for FieldElement {
     /// Conditionally assign another FieldElement to this one.
+    ///
+    /// XXX fixup tests to avoid limb specs
+    /// XXX_radix_51
     ///
     /// If `choice == 0`, replace `self` with `self`:
     ///
@@ -241,6 +261,7 @@ impl CTAssignable for FieldElement {
 
 impl FieldElement {
     /// Invert the sign of this field element
+    #[cfg(feature="radix_25_5")]
     pub fn negate(&mut self) {
         for i in 0..10 {
             self[i] = -self[i];
@@ -248,20 +269,32 @@ impl FieldElement {
     }
 
     /// Construct the additive identity
+    #[cfg(feature="radix_25_5")]
     pub fn zero() -> FieldElement {
         FieldElement([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    #[cfg(feature="radix_51")]
+    pub fn zero() -> FieldElement {
+        FieldElement([ 0, 0, 0, 0, 0 ])
+    }
 
     /// Construct the multiplicative identity
+    #[cfg(feature="radix_25_5")]
     pub fn one() -> FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
+    #[cfg(feature="radix_51")]
+    pub fn one() -> FieldElement {
+        FieldElement([ 1, 0, 0, 0, 0 ])
+    }
 
     /// Construct -1.
+    #[cfg(feature="radix_25_5")]
     pub fn minus_one() -> FieldElement {
         FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    #[cfg(feature="radix_25_5")]
     fn combine_coeffs(input: &[i64;10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
         let mut h = input.clone();
@@ -357,6 +390,7 @@ impl FieldElement {
     /// Create a FieldElement by demarshalling an array of 32 bytes.
     ///
     /// # Example
+    /// XXX eliminate limbs
     ///
     /// ```
     /// # use curve25519_dalek::field::FieldElement;
@@ -373,6 +407,7 @@ impl FieldElement {
     /// # Return
     ///
     /// Returns a new FieldElement.
+    #[cfg(feature="radix_25_5")]
     pub fn from_bytes(data: &[u8; 32]) -> FieldElement { //FeFromBytes
         let mut h = [0i64;10];
         h[0] =  load4(&data[ 0..]);
@@ -390,6 +425,8 @@ impl FieldElement {
     }
 
     /// Marshal this FieldElement into a 32-byte array.
+    ///
+    /// XXX eliminate limbs
     ///
     /// # Preconditions
     ///
@@ -437,6 +474,7 @@ impl FieldElement {
     /// let bytes: [u8; 32] = fe.to_bytes();
     /// assert!(data == bytes);
     /// ```
+    #[cfg(feature="radix_25_5")]
     pub fn to_bytes(&self) -> [u8;32] { //FeToBytes
         let mut carry = [0i32; 10];
         let mut h = self.clone();
@@ -655,6 +693,7 @@ impl FieldElement {
     ///   Can get away with 11 carries, but then data flow is much deeper.
     ///
     /// * With tighter constraints on inputs can squeeze carries into int32.
+    #[cfg(feature="radix_25_5")]
     pub fn multiply(&self, _rhs: &FieldElement) -> FieldElement {
         let f0 = self[0] as i64;
         let f1 = self[1] as i64;

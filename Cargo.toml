@@ -34,11 +34,15 @@ version = "0.4"
 
 [features]
 nightly = ["basepoint_table_creation"]
-default = ["std"]
+default = ["std", "radix_25_5"]
 std = ["rand"]
 yolocrypto = []
 # Needs nightly for placement new
 basepoint_table_creation = []
+# Radix-51 arithmetic using u128
+radix_51 = []
+# Radix-25.5 arithmetic using i64
+radix_25_5 = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]

@@ -75,21 +75,6 @@ pub fn mul64(a: &[u64;5], b: &[u64;5]) -> [u64;5] {
     [c0,c1,c2,c3,c4]
 }
 
-fn from_bytes_64(bytes: &[u8;32]) -> [u64; 5] {
-    let low_51_bit_mask = (1u64 << 51) - 1;
-    // load bits [  0, 64), no shift
-    [  load8(&bytes[ 0..])        & low_51_bit_mask
-    // load bits [ 48,112), shift to [ 51,112)
-    , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
-    // load bits [ 96,160), shift to [102,160)
-    , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
-    // load bits [152,216), shift to [153,216)
-    , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
-    // load bits [192,256), shift to [204,112)
-    , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
-    ]
-}
-
 fn to_bytes_64(limbs: &[u64;5]) -> [u8;32] {
     let mut s = [0u8;32];
     s[ 0] =   limbs[0]        as u8;
@@ -506,6 +491,22 @@ impl FieldElement {
         h[9] = (load3(&data[29..]) & 8388607) << 2;
 
         FieldElement::reduce(&h)
+    }
+    #[cfg(feature="radix_51")]
+    pub fn from_bytes(bytes: &[u8;32]) -> FieldElement {
+        let low_51_bit_mask = (1u64 << 51) - 1;
+        FieldElement(
+        // load bits [  0, 64), no shift
+        [  load8(&bytes[ 0..])        & low_51_bit_mask
+        // load bits [ 48,112), shift to [ 51,112)
+        , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
+        // load bits [ 96,160), shift to [102,160)
+        , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
+        // load bits [152,216), shift to [153,216)
+        , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
+        // load bits [192,256), shift to [204,112)
+        , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
+        ])
     }
 
     /// Marshal this FieldElement into a 32-byte array.

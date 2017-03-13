@@ -747,6 +747,7 @@ impl FieldElement {
         FieldElement::combine_coeffs(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
 
+    #[cfg(feature="radix_25_5")]
     fn square_inner(&self) -> [i64;10] {
         let f0     = self[0]       as i64;
         let f1     = self[1]       as i64;
@@ -789,6 +790,8 @@ impl FieldElement {
 
     /// Calculates h = f*f. Can overlap h with f.
     ///
+    /// XXX limbs: better to talk about headroom?
+    ///
     /// # Preconditions
     ///
     /// * |f[i]| bounded by 1.1*2^26, 1.1*2^25, 1.1*2^26, 1.1*2^25, etc.
@@ -796,11 +799,14 @@ impl FieldElement {
     /// # Postconditions
     ///
     /// * |h[i]| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
+    #[cfg(feature="radix_25_5")]
     pub fn square(&self) -> FieldElement {
         FieldElement::combine_coeffs(&self.square_inner())
     }
 
     /// Square this field element and multiply the result by 2.
+    ///
+    /// XXX explain why square2 exists vs square (overflow)
     ///
     /// # Preconditions
     ///
@@ -814,9 +820,10 @@ impl FieldElement {
     ///
     /// See fe_mul.c in ref10 implementation for discussion of implementation
     /// strategy.
+    #[cfg(feature="radix_25_5")]
     pub fn square2(&self) -> FieldElement {
         let mut coeffs = self.square_inner();
-        for i in 0..10 {
+        for i in 0..self.0.len() {
             coeffs[i] += coeffs[i];
         }
         FieldElement::combine_coeffs(&coeffs)
@@ -1138,10 +1145,6 @@ mod test {
            8, 208, 170, 251,  97, 127,  70, 210,
           58,  23, 166,  87, 240, 169, 184, 178];
 
-    static B_LIMBS_RADIX_25_5: FieldElement = FieldElement(
-        [-5652623, 8034020, 8266223, -13556020, -5672552,
-         -5582839, -12603138, 15161929, -16418207, 13296296]);
-
     #[test]
     fn from_bytes_highbit_is_ignored() {
         let mut cleared_bytes = B_BYTES.clone();
@@ -1151,6 +1154,12 @@ mod test {
         assert_eq!(without_highbit_set, with_highbit_set);
     }
 
+    #[cfg(feature="radix_25_5")]
+    static B_LIMBS_RADIX_25_5: FieldElement = FieldElement(
+        [-5652623, 8034020, 8266223, -13556020, -5672552,
+         -5582839, -12603138, 15161929, -16418207, 13296296]);
+
+    #[cfg(feature="radix_25_5")]
     #[test]
     fn from_bytes_vs_radix_25_5_limb_constants() {
         let test_elt = FieldElement::from_bytes(&B_BYTES);
@@ -1159,6 +1168,7 @@ mod test {
         }
     }
 
+    #[cfg(feature="radix_25_5")]
     #[test]
     fn radix_25_5_limb_constants_to_bytes_vs_byte_constants() {
         let test_bytes = B_LIMBS_RADIX_25_5.to_bytes();
@@ -1171,8 +1181,8 @@ mod test {
 
     #[test]
     fn conditional_negate() {
-        let       one = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
-        let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
+        let       one = FieldElement::one();
+        let minus_one = FieldElement::minus_one();
         let mut x = one;
         x.conditional_negate(1u8);
         assert_eq!(x, minus_one);

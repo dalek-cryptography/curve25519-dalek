@@ -26,15 +26,19 @@ use curve::CompressedEdwardsY;
 use curve::EdwardsBasepointTable;
 use scalar::Scalar;
 
+#[cfg(feature="radix_25_5")]
 pub const d: FieldElement       = FieldElement([
     -10913610,  13857413, -15372611,   6949391,    114729,
     -8787816,   -6275908,  -3247719, -18696448, -12055116, ]);
+#[cfg(feature="radix_25_5")]
 pub const d2: FieldElement      = FieldElement([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
+#[cfg(feature="radix_25_5")]
 pub const d4: FieldElement      = FieldElement([
     23454405,  -11679213,   5618422,  -5756869,    458917,
     -1596832,  -25103633, -12990876,  -7676928, -14666033  ]);
+#[cfg(feature="radix_25_5")]
 pub const a_minus_d: FieldElement    = FieldElement([
     10913609,  -13857413,  15372611,  -6949391,   -114729,
      8787816,    6275908,   3247719,  18696448,  12055116, ]);
@@ -47,21 +51,25 @@ pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
 
 /// Precomputed value of one of the square roots of -1 (mod p)
+#[cfg(feature="radix_25_5")]
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
 
 /// Precomputed value of the other square root of -1 (mod p),
 /// i.e., MSQRT_M1 = -SQRT_M1.
+#[cfg(feature="radix_25_5")]
 pub const MSQRT_M1: FieldElement = FieldElement([
     32595792,    7943725,  -9377950,  -3500415, -12389472,
     272473,     25146209,   2005654,   -326686, -11406482, ]);
 
 /// Precomputed value of 1/2 (mod p).
+#[cfg(feature="radix_25_5")]
 pub const HALF: FieldElement = FieldElement([
     10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
 
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
+#[cfg(feature="radix_25_5")]
 pub const A: FieldElement       = FieldElement([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 
@@ -69,21 +77,25 @@ pub const A: FieldElement       = FieldElement([
 // XXX I think that this was used in Adam's code for his elligator
 // implementation, but that should maybe be using sqrt(-486664)
 // instead...?  - hdevalence
+#[cfg(feature="radix_25_5")]
 pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
     12222970,    8312128,  11511410,  -9067497,  15300785,
     241793,    -25456130, -14121551,  12187136,  -3972024, ]);
 
 /// SQRT_MINUS_APLUS2 is sqrt(-486664)
+#[cfg(feature="radix_25_5")]
 pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
     -12222970, -8312128, -11511410, 9067497, -15300785,
     -241793, 25456130, 14121551, -12187136, 3972024]);
 
 /// SQRT_MINUS_HALF is sqrt(-1/2)
+#[cfg(feature="radix_25_5")]
 pub const SQRT_MINUS_HALF: FieldElement = FieldElement([ // sqrtMinusHalf
     -17256545,   3971863,  28865457,  -1750208,  27359696,
     -16640980,  12573105,   1002827,   -163343,  11073975, ]);
 
 /// HALF_Q_MINUS_1_BYTES is (2^255-20)/2 expressed in little endian form.
+#[cfg(feature="radix_25_5")]
 pub const HALF_Q_MINUS_1_BYTES: [u8; 32] = [ // halfQMinus1Bytes
     0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -101,6 +113,7 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
 /// Basepoint has y = 4/5.
+#[cfg(feature="radix_25_5")]
 pub const ED25519_BASEPOINT: ExtendedPoint = ExtendedPoint{
         X: FieldElement([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
         Y: FieldElement([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
@@ -128,6 +141,7 @@ pub const lminus1: Scalar = Scalar([ 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0
 ///
 /// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
 /// indexed by 0,4. 
+#[cfg(feature="radix_25_5")]
 pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     ExtendedPoint{
         X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -179,6 +193,7 @@ pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     },
 ];
 
+#[cfg(feature="radix_25_5")]
 pub const bi: [AffineNielsPoint; 8] = [
     AffineNielsPoint{
         y_plus_x:  FieldElement([25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605]),
@@ -226,6 +241,7 @@ pub const bi: [AffineNielsPoint; 8] = [
 ///
 /// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
 /// for `0 ≤ i < 32`, `1 ≤ j < 9`.
+#[cfg(feature="radix_25_5")]
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = EdwardsBasepointTable([
 [
     AffineNielsPoint{

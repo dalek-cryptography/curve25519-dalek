@@ -75,16 +75,6 @@ pub fn mul64(a: &[u64;5], b: &[u64;5]) -> [u64;5] {
     [c0,c1,c2,c3,c4]
 }
 
-fn subtract(a: &[u64; 5], b: &[u64; 5]) -> [u64; 5] {
-    // add p to avoid underflow
-    [ (a[0] + 2251799813685229) - b[0]
-    , (a[1] + 2251799813685247) - b[1]
-    , (a[2] + 2251799813685247) - b[2]
-    , (a[3] + 2251799813685247) - b[3]
-    , (a[4] + 2251799813685247) - b[4]
-    ]
-}
-
 fn from_bytes_64(bytes: &[u8;32]) -> [u64; 5] {
     let low_51_bit_mask = (1u64 << 51) - 1;
     // load bits [  0, 64), no shift
@@ -250,7 +240,22 @@ impl<'b> SubAssign<&'b FieldElement> for FieldElement {
             self[i] -= _rhs[i];
         }
     }
-    // XXX_radix_51
+    #[cfg(feature="radix_51")]
+    fn sub_assign(&mut self, _rhs: &'b FieldElement) {
+        // To avoid underflow, first add p
+        // XXX how many copies should we add to preserve headroom?
+        self.0[0] += 2251799813685229;
+        self.0[1] += 2251799813685247;
+        self.0[2] += 2251799813685247;
+        self.0[3] += 2251799813685247;
+        self.0[4] += 2251799813685247;
+        // then subtract _rhs
+        self.0[0] -= _rhs.0[0];
+        self.0[1] -= _rhs.0[1];
+        self.0[2] -= _rhs.0[2];
+        self.0[3] -= _rhs.0[3];
+        self.0[4] -= _rhs.0[4];
+    }
 }
 
 impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {

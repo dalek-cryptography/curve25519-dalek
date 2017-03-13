@@ -105,7 +105,7 @@ pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompressedPoint: {:?}", self.as_bytes())
+        write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
     }
 }
 

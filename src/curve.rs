@@ -81,9 +81,6 @@ use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
 
-#[cfg(feature = "std")]
-use std::boxed::Box;
-
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
@@ -95,6 +92,8 @@ use subtle::CTNegatable;
 
 #[cfg(not(feature = "std"))]
 use collections::boxed::Box;
+#[cfg(feature = "std")]
+use std::boxed::Box;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -831,6 +830,7 @@ pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
 
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
+    #[cfg(feature="basepoint_table_creation")]
     pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
         // Create the table storage
         // XXX can we be assured that this is not allocated on the stack?
@@ -1312,6 +1312,7 @@ mod test {
 
     /// Test precomputed basepoint mult
     #[test]
+    #[cfg(feature="basepoint_table_creation")]
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
         let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
@@ -1487,6 +1488,7 @@ mod bench {
         b.iter(|| p1.mult_by_cofactor() );
     }
 
+    #[cfg(feature="basepoint_table_creation")]
     #[bench]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);

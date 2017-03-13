@@ -33,9 +33,12 @@ version = "^0.6"
 version = "0.4"
 
 [features]
+nightly = ["basepoint_table_creation"]
 default = ["std"]
 std = ["rand"]
 yolocrypto = []
+# Needs nightly for placement new
+basepoint_table_creation = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]

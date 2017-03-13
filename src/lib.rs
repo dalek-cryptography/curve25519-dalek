@@ -11,9 +11,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(feature = "nightly", feature(box_syntax))]
 #![allow(unused_features)]
 #![feature(test)]
-#![feature(box_syntax)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek

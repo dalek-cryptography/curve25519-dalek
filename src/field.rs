@@ -1279,78 +1279,6 @@ mod test {
     use field::*;
     use subtle::CTNegatable;
 
-    /*
-    #[test]
-    fn print_constants() {
-        use curve::*;
-        println!("");
-        fn repr_fe(s: &str, fe: &FieldElement, t: &'static str) {
-            let f = from_bytes_64(&fe.to_bytes());
-            println!("{}FieldElement([{}, {}, {}, {}, {}]){}", s, f[0], f[1], f[2], f[3], f[4], t);
-        }
-        fn repr_ext(s: &'static str, P: &ExtendedPoint) {
-            println!("{}ExtendedPoint {{", s);
-            repr_fe("    X: ", &P.X, ",");
-            repr_fe("    Y: ", &P.Y, ",");
-            repr_fe("    Z: ", &P.Z, ",");
-            repr_fe("    T: ", &P.T, ",");
-            println!("}};");
-        }
-        fn repr_aff(s: &'static str, P: &AffineNielsPoint) {
-            println!("{}AffineNielsPoint {{", s);
-            repr_fe("    y_plus_x: ", &P.y_plus_x, ",");
-            repr_fe("    y_minus_x: ", &P.y_minus_x, ",");
-            repr_fe("    xy2d: ", &P.xy2d, ",");
-            println!("}};");
-        }
-        fn print(name: &'static str, f: &FieldElement) {
-            repr_fe(format!("pub const {}: FieldElement = ", name).as_str(), f, ";");
-        }
-
-        print("d", &constants::d);
-        print("d2", &constants::d2);
-        print("d4", &constants::d4);
-        print("a_minus_d", &constants::a_minus_d);
-
-        print("SQRT_M1", &constants::SQRT_M1);
-        print("MSQRT_M1", &constants::MSQRT_M1);
-
-        print("HALF", &constants::HALF);
-        print("A", &constants::A);
-        print("SQRT_MINUS_A", &constants::SQRT_MINUS_A);
-        print("SQRT_MINUS_APLUS2", &constants::SQRT_MINUS_APLUS2);
-        print("SQRT_MINUS_HALF", &constants::SQRT_MINUS_HALF);
-
-        repr_ext("pub const ED25519_BASEPOINT: ExtendedPoint = ", &constants::ED25519_BASEPOINT);
-
-        println!("pub const EIGHT_TORSION: [ExtendedPoint; 8] =");
-
-        for i in 0..8 {
-            repr_ext("", &constants::EIGHT_TORSION[i]);
-            println!(",");
-        }
-
-        println!("pub const bi: [AffineNielsPoint; 8] =");
-
-        for i in 0..8 {
-            repr_aff("", &constants::bi[i]);
-            println!(",");
-        }
-
-        println!("pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = EdwardsBasepointTable([");
-
-        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
-        for i in 0..32 {
-            println!("\n\n");
-            for j in 0..8 {
-                repr_aff("", &table.0[i][j]);
-            }
-        }
-        
-        //panic!();
-    }
-    */
-
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
@@ -1387,25 +1315,6 @@ mod test {
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         assert_eq!(asq, &a*&a);
     }
-
-    /*
-    #[test]
-    fn mul64_on_a() {
-        let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
-        let asq_constant_from_sage: [u64; 5] = [1696437425706869, 260630435370367, 277335390860868, 1743763050813710, 1739636627710249];
-        let asq = mul64(&a, &a.clone());
-        assert_eq!(asq, asq_constant_from_sage);
-    }
-
-    #[test]
-    fn from_bytes_64_on_a() {
-        let a: [u64;5] = [838547684720132, 293808819440897, 1085520638549020, 231251532116217, 416286470530165];
-        let should_be_a = from_bytes_64(&A_BYTES);
-        assert_eq!(a, should_be_a);
-        let should_be_a_bytes = to_bytes_64(&a);
-        assert_eq!(&A_BYTES, &should_be_a_bytes);
-    }
-    */
 
     #[test]
     fn a_square_vs_a_squared_constant() {

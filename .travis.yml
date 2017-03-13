@@ -1,0 +1,22 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+env:
+  - TEST_COMMAND=test
+  - TEST_COMMAND=bench
+
+matrix:
+  # We can probably remove this, as we reasonably expect dalek to work on
+  # stable and beta, but currently we require "test" feature in order to
+  # run benchmarks, which causes dalek not to build on stable.  See
+  # https://github.com/isislovecruft/curve25519-dalek/pull/38#issuecomment-286027562
+  allow_failures:
+    - rust: stable
+    - rust: beta
+
+script:
+  - cargo $TEST_COMMAND --features "yolocrypto"

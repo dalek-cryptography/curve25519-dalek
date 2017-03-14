@@ -14,49 +14,94 @@
 //!
 //! Creating an ed25519 signature on a message is simple.
 //!
-//! First, we need to generate a `Keypair`, which includes both public
-//! and secret halves of an asymmetric key.  To do so, we need a
-//! cryptographically secure random number generator (CSPRING).  For
-//! this example, we'll use the operating system's builtin PRNG to
-//! generate a keypair:
+//! First, we need to generate a `Keypair`, which includes both public and
+//! secret halves of an asymmetric key.  To do so, we need a cryptographically
+//! secure pseudorandom number generator (CSPRING), and a hash function which
+//! has 512 bits of output.  For this example, we'll use the operating
+//! system's builtin PRNG and SHA-512 to generate a keypair:
 //!
-//! ```ignore
+//! ```
 //! extern crate rand;
-//! extern crate ed25519;
+//! extern crate sha2;
+//! extern crate ed25519_dalek;
 //!
+//! # fn main() {
 //! use rand::Rng;
 //! use rand::OsRng;
-//! use ed25519::Keypair;
-//! use ed25519::Signature;
+//! use sha2::Sha512;
+//! use ed25519_dalek::Keypair;
+//! use ed25519_dalek::Signature;
 //!
 //! let mut cspring: OsRng = OsRng::new().unwrap();
-//! let keypair: Keypair = Keypair::generate(&mut cspring);
+//! let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # }
 //! ```
 //!
 //! We can now use this `keypair` to sign a message:
 //!
-//! ```ignore
+//! ```
+//! # extern crate rand;
+//! # extern crate sha2;
+//! # extern crate ed25519_dalek;
+//! # fn main() {
+//! # use rand::Rng;
+//! # use rand::OsRng;
+//! # use sha2::Sha512;
+//! # use ed25519_dalek::Keypair;
+//! # use ed25519_dalek::Signature;
+//! # let mut cspring: OsRng = OsRng::new().unwrap();
+//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! let signature: Signature = keypair.sign(message);
+//! # }
 //! ```
 //!
 //! As well as to verify that this is, indeed, a valid signature on
 //! that `message`:
 //!
-//! ```ignore
+//! ```
+//! # extern crate rand;
+//! # extern crate sha2;
+//! # extern crate ed25519_dalek;
+//! # fn main() {
+//! # use rand::Rng;
+//! # use rand::OsRng;
+//! # use sha2::Sha512;
+//! # use ed25519_dalek::Keypair;
+//! # use ed25519_dalek::Signature;
+//! # let mut cspring: OsRng = OsRng::new().unwrap();
+//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
+//! # let signature: Signature = keypair.sign(message);
 //! let verified: bool = keypair.verify(message, &signature);
 //!
 //! assert!(verified);
+//! # }
 //! ```
 //!
 //! Anyone else, given the `public` half of the `keypair` can also easily
 //! verify this signature:
 //!
-//! ```ignore
+//! ```
+//! # extern crate rand;
+//! # extern crate sha2;
+//! # extern crate ed25519_dalek;
+//! # fn main() {
+//! # use rand::Rng;
+//! # use rand::OsRng;
+//! # use sha2::Sha512;
+//! # use ed25519_dalek::Keypair;
+//! # use ed25519_dalek::Signature;
+//! use ed25519_dalek::PublicKey;
+//! # let mut cspring: OsRng = OsRng::new().unwrap();
+//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
+//! # let signature: Signature = keypair.sign(message);
 //! let public_key: PublicKey = keypair.public;
 //! let verified: bool = public_key.verify(message, &signature);
 //!
 //! assert!(verified);
+//! # }
 //! ```
 
 #![no_std]

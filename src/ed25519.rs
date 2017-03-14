@@ -301,16 +301,16 @@ impl Keypair {
     ///
     /// ```
     /// extern crate rand;
-    /// extern crate ed25519;
     /// extern crate sha2;
+    /// extern crate ed25519_dalek;
     ///
     /// # fn main() {
     ///
     /// use rand::Rng;
     /// use rand::OsRng;
     /// use sha2::Sha512;
-    /// use ed25519::Keypair;
-    /// use ed25519::Signature;
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
     ///
     /// let mut cspring: OsRng = OsRng::new().unwrap();
     /// let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);

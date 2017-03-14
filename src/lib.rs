@@ -12,7 +12,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(collections))]
 #![allow(unused_features)]
-#![feature(test)]
+#![cfg_attr(feature = "bench", feature(test))]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek
@@ -33,8 +33,9 @@
 //! hatred of the Daleks.  Rusty destroys the other Daleks and departs the
 //! ship, determined to track down and bring an end to the Dalek race.
 
-#[cfg(test)]
+#[cfg(all(test, feature = "bench"))]
 extern crate test;
+
 #[cfg(test)]
 extern crate sha2;
 

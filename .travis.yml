@@ -6,8 +6,8 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test
-  - TEST_COMMAND=bench
+  - TEST_COMMAND=test FEATURES='yolocrypto'
+  - TEST_COMMAND=bench FEATURES='yolocrypto bench'
 
 matrix:
   # We can probably remove this, as we reasonably expect dalek to work on
@@ -16,7 +16,9 @@ matrix:
   # https://github.com/isislovecruft/curve25519-dalek/pull/38#issuecomment-286027562
   allow_failures:
     - rust: stable
+      env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
     - rust: beta
+      env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
 
 script:
-  - cargo $TEST_COMMAND --features "yolocrypto"
+  - cargo $TEST_COMMAND --features="$FEATURES"

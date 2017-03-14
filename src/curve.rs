@@ -1354,7 +1354,7 @@ mod test {
 // Benchmarks
 // ------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "bench"))]
 mod bench {
     use test::Bencher;
     use constants;

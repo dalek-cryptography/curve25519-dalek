@@ -921,31 +921,12 @@ impl FieldElement {
 #[cfg(test)]
 mod test {
     use field::*;
-    use test::Bencher;
     use subtle::CTNegatable;
-
-    #[bench]
-    fn bench_fieldelement_a_mul_a(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| &a*&a);
-    }
-
-    #[bench]
-    fn bench_fieldelement_a_sq(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| a.square());
-    }
-
-    #[bench]
-    fn bench_fieldelement_a_inv(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| a.invert());
-    }
 
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
-    static A_BYTES: [u8;32] =
+    pub static A_BYTES: [u8;32] =
         [ 0x04, 0xfe, 0xdf, 0x98, 0xa7, 0xfa, 0x0a, 0x68,
           0x84, 0x92, 0xbd, 0x59, 0x08, 0x07, 0xa7, 0x03,
           0x9e, 0xd1, 0xf6, 0xf2, 0xe1, 0xd9, 0xe2, 0xa4,
@@ -973,7 +954,7 @@ mod test {
          0x15, 0x21, 0xf9, 0xe3, 0xe1, 0x61, 0x21, 0x55];
 
     #[test]
-    fn test_fieldelement_a_mul_a() {
+    fn fieldelement_a_mul_a() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         assert_eq!(asq, &a*&a);
@@ -981,35 +962,35 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_a_square2() {
+    fn fieldelement_a_square2() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         assert_eq!(a.square2(), &asq+&asq);
     }
 
     #[test]
-    fn test_fieldelement_a_inv() {
+    fn fieldelement_a_inv() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
         assert_eq!(ainv, a.invert());
     }
 
     #[test]
-    fn test_fieldelement_a_p58() {
+    fn fieldelement_a_p58() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
         assert_eq!(ap58, a.pow_p58());
     }
 
     #[test]
-    fn test_fieldelement_a_chi() {
+    fn fieldelement_a_chi() {
         let a = FieldElement::from_bytes(&A_BYTES);
         // a is square
         assert_eq!(a.chi(), FieldElement::one());
     }
 
     #[test]
-    fn test_fieldelement_eq() {
+    fn fieldelement_eq() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
         assert!(a == a);
@@ -1025,7 +1006,7 @@ mod test {
         [-5652623, 8034020, 8266223, -13556020, -5672552, -5582839, -12603138, 15161929, -16418207, 13296296]);
 
     #[test]
-    fn test_fieldelement_frombytes_highbit_is_ignored() {
+    fn fieldelement_frombytes_highbit_is_ignored() {
         let mut cleared_bytes = B_BYTES.clone();
         cleared_bytes[31] &= 127u8;
         let orig_elt = FieldElement::from_bytes(&B_BYTES);
@@ -1036,7 +1017,7 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_to_bytes() {
+    fn fieldelement_to_bytes() {
         let test_elt = FieldElement::from_bytes(&B_BYTES);
         for i in 0..10 {
             assert!(test_elt[i] == B_LIMBS[i]);
@@ -1044,7 +1025,7 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_from_bytes() {
+    fn fieldelement_from_bytes() {
         let test_bytes = B_LIMBS.to_bytes();
         for i in 0..31 {
             assert!(test_bytes[i] == B_BYTES[i]);
@@ -1054,7 +1035,7 @@ mod test {
     }
 
     #[test]
-    fn test_conditional_negate() {
+    fn conditional_negate() {
         let       one = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let mut x = one;
@@ -1064,5 +1045,31 @@ mod test {
         assert_eq!(x, minus_one);
         x.conditional_negate(1u8);
         assert_eq!(x, one);
+    }
+}
+
+#[cfg(all(test, feature = "bench"))]
+mod bench {
+    use test::Bencher;
+
+    use super::*;
+    use super::test::A_BYTES;
+
+    #[bench]
+    fn fieldelement_a_mul_a(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| &a*&a);
+    }
+
+    #[bench]
+    fn fieldelement_a_sq(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a.square());
+    }
+
+    #[bench]
+    fn fieldelement_a_inv(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a.invert());
     }
 }

@@ -7,7 +7,7 @@ rust:
 
 env:
   - TEST_COMMAND=test FEATURES='yolocrypto'
-  - TEST_COMMAND=test FEATURES='yolocrypto radix_51'
+  - TEST_COMMAND=test FEATURES='yolocrypto nightly'
   - TEST_COMMAND=bench FEATURES='yolocrypto bench'
 
 matrix:
@@ -20,11 +20,11 @@ matrix:
       env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
     - rust: beta
       env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
-    # radix_51 requires nightly for u128
+    # Test nightly features, such as radix_51, only on nightly.
     - rust: stable
-      env: TEST_COMMAND=test FEATURES='yolocrypto radix_51'
+      env: TEST_COMMAND=test FEATURES='yolocrypto nightly'
     - rust: beta
-      env: TEST_COMMAND=test FEATURES='yolocrypto radix_51'
+      env: TEST_COMMAND=test FEATURES='yolocrypto nightly'
 
 script:
   - cargo $TEST_COMMAND --features="$FEATURES"

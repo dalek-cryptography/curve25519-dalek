@@ -18,6 +18,7 @@ use sha2::{Digest, Sha512};
 use rand::Rng;
 
 use curve25519_dalek::curve;
+use curve25519_dalek::curve::BasepointMult;
 use curve25519_dalek::curve::CompressedEdwardsY;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::curve::ProjectivePoint;
@@ -166,7 +167,7 @@ impl SecretKey {
         r = ExtendedPoint::basepoint_mult(&mesg_digest);
 
         h = Sha512::new();
-        h.input(&r.compress().to_bytes()[..]);
+        h.input(&r.compress_edwards().to_bytes()[..]);
         h.input(public_key);
         h.input(&message);
         hash.copy_from_slice(h.result().as_slice());
@@ -174,7 +175,7 @@ impl SecretKey {
         hram_digest = Scalar::reduce(&hash);
 
         s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
-        t = r.compress();
+        t = r.compress_edwards();
 
         signature_bytes[..32].copy_from_slice(&t.0);
         signature_bytes[32..64].copy_from_slice(&s.0);
@@ -274,7 +275,7 @@ impl PublicKey {
         digest_reduced = Scalar::reduce(&digest);
         r = curve::double_scalar_mult_vartime(&digest_reduced, &a, &Scalar(*top_half));
 
-        if arrays_equal_ct(bottom_half, &r.compress().to_bytes()) == 1 {
+        if arrays_equal_ct(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
             return true
         } else {
             return false
@@ -319,7 +320,7 @@ impl Keypair {
         digest[31] &= 127;
         digest[31] |= 64;
 
-        pk = ExtendedPoint::basepoint_mult(&Scalar(*digest)).compress().to_bytes();
+        pk = ExtendedPoint::basepoint_mult(&Scalar(*digest)).compress_edwards().to_bytes();
 
         for i in  0..32 {
             sk[i]    = t[i];
@@ -397,7 +398,7 @@ mod test {
                 break;
             }
         }
-        public = PublicKey(a.compress());
+        public = PublicKey(a.compress_edwards());
 
         assert!(keypair.public.0 == public.0);
     }

@@ -29,7 +29,10 @@ use subtle::byte_is_nonzero;
 use subtle::CTAssignable;
 use subtle::CTEq;
 
-use utils::{load3, load4, load8};
+#[cfg(not(feature="radix_51"))]
+use utils::{load3, load4};
+#[cfg(feature="radix_51")]
+use utils::load8;
 
 use constants;
 

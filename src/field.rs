@@ -921,31 +921,12 @@ impl FieldElement {
 #[cfg(test)]
 mod test {
     use field::*;
-    use test::Bencher;
     use subtle::CTNegatable;
-
-    #[bench]
-    fn bench_fieldelement_a_mul_a(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| &a*&a);
-    }
-
-    #[bench]
-    fn bench_fieldelement_a_sq(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| a.square());
-    }
-
-    #[bench]
-    fn bench_fieldelement_a_inv(b: &mut Bencher) {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| a.invert());
-    }
 
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
-    static A_BYTES: [u8;32] =
+    pub static A_BYTES: [u8;32] =
         [ 0x04, 0xfe, 0xdf, 0x98, 0xa7, 0xfa, 0x0a, 0x68,
           0x84, 0x92, 0xbd, 0x59, 0x08, 0x07, 0xa7, 0x03,
           0x9e, 0xd1, 0xf6, 0xf2, 0xe1, 0xd9, 0xe2, 0xa4,
@@ -1064,5 +1045,31 @@ mod test {
         assert_eq!(x, minus_one);
         x.conditional_negate(1u8);
         assert_eq!(x, one);
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use test::Bencher;
+
+    use super::*;
+    use super::test::A_BYTES;
+
+    #[bench]
+    fn fieldelement_a_mul_a(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| &a*&a);
+    }
+
+    #[bench]
+    fn fieldelement_a_sq(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a.square());
+    }
+
+    #[bench]
+    fn fieldelement_a_inv(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a.invert());
     }
 }

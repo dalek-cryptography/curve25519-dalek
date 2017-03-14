@@ -498,7 +498,7 @@ mod bench {
     use super::*;
 
     /// A fake RNG which simply returns zeroes.
-    pub struct ZeroRng;
+    struct ZeroRng;
 
     impl ZeroRng {
         pub fn new() -> ZeroRng {

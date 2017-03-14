@@ -133,8 +133,7 @@ impl SecretKey {
     ///
     /// A `SecretKey`.
     #[inline]
-    #[allow(dead_code)]
-    fn from_bytes(bytes: &[u8]) -> SecretKey {
+    pub fn from_bytes(bytes: &[u8]) -> SecretKey {
         SecretKey(*array_ref!(bytes, 0, 64))
     }
 
@@ -229,8 +228,7 @@ impl PublicKey {
     ///
     /// A `PublicKey`.
     #[inline]
-    #[allow(dead_code)]
-    fn from_bytes(bytes: &[u8]) -> PublicKey {
+    pub fn from_bytes(bytes: &[u8]) -> PublicKey {
         PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32)))
     }
 

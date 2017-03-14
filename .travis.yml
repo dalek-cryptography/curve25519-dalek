@@ -6,26 +6,17 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test FEATURES='no-std'
-  - TEST_COMMAND=test FEATURES='std'
-  - TEST_COMMAND=test FEATURES='nightly'
-  - TEST_COMMAND=bench FEATURES='bench'
-  - TEST_COMMAND=bench FEATURES='nightly bench'
+  - TEST_COMMAND=test FEATURES=''
+  - TEST_COMMAND=test FEATURES='--features="no-std"'
 
 matrix:
-  exclude:
-    - rust: stable
-      env: TEST_COMMAND=bench FEATURES='bench'
-    - rust: beta
-      env: TEST_COMMAND=bench FEATURES='bench'
-    - rust: stable
-      env: TEST_COMMAND=test FEATURES='nightly'
-    - rust: beta
-      env: TEST_COMMAND=test FEATURES='nightly'
-    - rust: stable
-      env: TEST_COMMAND=bench FEATURES='nightly bench'
-    - rust: beta
-      env: TEST_COMMAND=bench FEATURES='nightly bench'
+  include:
+    - rust: nightly
+      env: TEST_COMMAND=test FEATURES='--features="nightly"'
+    - rust: nightly
+      env: TEST_COMMAND=bench FEATURES='--features="bench"'
+    - rust: nightly
+      env: TEST_COMMAND=bench FEATURES='--features="nightly bench"'
 
 script:
-  - cargo $TEST_COMMAND --features="$FEATURES"
+  - cargo $TEST_COMMAND $FEATURES

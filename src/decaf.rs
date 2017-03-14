@@ -358,7 +358,7 @@ mod test {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "bench"))]
 mod bench {
     use rand::OsRng;
     use test::Bencher;

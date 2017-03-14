@@ -36,6 +36,7 @@ version = "0.4"
 default = ["std"]
 std = ["rand"]
 yolocrypto = []
+bench = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]

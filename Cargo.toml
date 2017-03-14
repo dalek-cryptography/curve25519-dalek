@@ -15,6 +15,9 @@ exclude = [
     ".gitignore"
 ]
 
+[badges]
+travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
+
 [dependencies.arrayref]
 version = "0.3.3"
 

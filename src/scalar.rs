@@ -592,44 +592,22 @@ impl UnpackedScalar {
 
 #[cfg(test)]
 mod test {
-    use rand::OsRng;
     use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_scalar_random(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-
-        b.iter(|| Scalar::random(&mut csprng));
-    }
-
-    #[bench]
-    fn bench_scalar_multiply_add(b: &mut Bencher) {
-        b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
-    }
-
-    #[bench]
-    fn bench_scalar_unpacked_multiply_add(b: &mut Bencher) {
-        let x = X.unpack();
-        let y = Y.unpack();
-        let z = Z.unpack();
-        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
-    }
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
-    static X: Scalar = Scalar(
+    pub static X: Scalar = Scalar(
         [0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
          0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
          0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
          0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04]);
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
-    static Y: Scalar = Scalar(
+    pub static Y: Scalar = Scalar(
         [0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
          0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
          0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
          0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05]);
     /// z = 5033871415930814945849241457262266927579821285980625165479289807629491019013
-    static Z: Scalar = Scalar(
+    pub static Z: Scalar = Scalar(
         [0x05, 0x9d, 0x3e, 0x0b, 0x09, 0x26, 0x50, 0x3d,
          0xa3, 0x84, 0xa1, 0x3c, 0x92, 0x7a, 0xc2, 0x06,
          0x41, 0x98, 0xcf, 0x34, 0x3a, 0x24, 0xd5, 0xb7,
@@ -721,10 +699,39 @@ mod test {
 
     // Negating a scalar twice should result in the original scalar.
     #[test]
-    fn test_scalar_neg() {
+    fn scalar_neg() {
         let negative_x: Scalar = -X;
         let orig: Scalar = -negative_x;
 
         assert!(orig == X);
+    }
+}
+
+#[cfg(test)]
+mod bench {
+    use rand::OsRng;
+    use test::Bencher;
+
+    use super::*;
+    use super::test::{X, Y, Z};
+
+    #[bench]
+    fn scalar_random(b: &mut Bencher) {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+
+        b.iter(|| Scalar::random(&mut csprng));
+    }
+
+    #[bench]
+    fn scalar_multiply_add(b: &mut Bencher) {
+        b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
+    }
+
+    #[bench]
+    fn scalar_unpacked_multiply_add(b: &mut Bencher) {
+        let x = X.unpack();
+        let y = Y.unpack();
+        let z = Z.unpack();
+        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
     }
 }

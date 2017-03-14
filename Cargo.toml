@@ -38,3 +38,4 @@ rustc-serialize = "0.3"
 default = ["std"]
 std = ["rand"]
 bench = []
+nightly = ["curve25519-dalek/nightly"]

@@ -44,11 +44,15 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.5"
+    curve25519-dalek = "^0.6"
 
 Then, in your library or executable source, add:
 
     extern crate curve25519_dalek
+
+On nightly Rust, using the `nightly` feature enables a radix-51 field
+arithmetic implementation using `u128`s, which is approximately twice as
+fast.
 
 ## TODO
 

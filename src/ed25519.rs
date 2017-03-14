@@ -385,31 +385,10 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use test::Bencher;
     use curve25519_dalek::curve::ExtendedPoint;
     use rand::OsRng;
-    use rand::Rng;
     use rustc_serialize::hex::FromHex;
     use super::*;
-
-    /// A fake RNG which simply returns zeroes.
-    struct ZeroRng;
-
-    impl ZeroRng {
-        fn new() -> ZeroRng {
-            ZeroRng
-        }
-    }
-
-    impl Rng for ZeroRng {
-        fn next_u32(&mut self) -> u32 { 0u32 }
-
-        fn fill_bytes(&mut self, bytes: &mut [u8]) {
-            for i in 0 .. bytes.len() {
-                bytes[i] = 0;
-            }
-        }
-    }
 
     #[test]
     fn test_unmarshal_marshal() {  // TestUnmarshalMarshal
@@ -508,9 +487,35 @@ mod test {
 
         }
     }
+}
+
+#[cfg(all(test, feature = "bench"))]
+mod bench {
+    use test::Bencher;
+    use rand::OsRng;
+    use super::*;
+
+    /// A fake RNG which simply returns zeroes.
+    pub struct ZeroRng;
+
+    impl ZeroRng {
+        pub fn new() -> ZeroRng {
+            ZeroRng
+        }
+    }
+
+    impl Rng for ZeroRng {
+        fn next_u32(&mut self) -> u32 { 0u32 }
+
+        fn fill_bytes(&mut self, bytes: &mut [u8]) {
+            for i in 0 .. bytes.len() {
+                bytes[i] = 0;
+            }
+        }
+    }
 
     #[bench]
-    fn bench_sign(b: &mut Bencher) {
+    fn sign(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "test message".as_bytes();
@@ -519,7 +524,7 @@ mod test {
     }
 
     #[bench]
-    fn bench_verify(b: &mut Bencher) {
+    fn verify(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "test message".as_bytes();
@@ -529,7 +534,7 @@ mod test {
     }
 
     #[bench]
-    fn bench_key_generation(b: &mut Bencher) {
+    fn key_generation(b: &mut Bencher) {
         let mut rng: ZeroRng = ZeroRng::new();
 
         b.iter(| | Keypair::generate::<Sha512>(&mut rng));

@@ -62,7 +62,7 @@
 #![no_std]
 #![feature(rand)]
 #![allow(unused_features)]
-#![feature(test)]
+#![cfg_attr(feature = "bench", feature(test))]
 
 #[macro_use]
 extern crate arrayref;
@@ -78,8 +78,10 @@ extern crate digest;
 #[cfg(test)]
 #[macro_use]
 extern crate std;
-#[cfg(test)]
+
+#[cfg(all(test, feature = "bench"))]
 extern crate test;
+
 #[cfg(test)]
 extern crate rustc_serialize;
 

@@ -29,25 +29,25 @@ use scalar::Scalar;
 #[cfg(feature="radix_51")]
 pub const p: FieldElement = FieldElement([2251799813685229, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]);
 
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const d: FieldElement       = FieldElement([
     -10913610,  13857413, -15372611,   6949391,    114729,
     -8787816,   -6275908,  -3247719, -18696448, -12055116, ]);
 #[cfg(feature="radix_51")]
 pub const d: FieldElement = FieldElement([929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575]);
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const d2: FieldElement      = FieldElement([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
 #[cfg(feature="radix_51")]
 pub const d2: FieldElement = FieldElement([1859910466990425, 932731440258426, 1072319116312658, 1815898335770999, 633789495995903]);
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const d4: FieldElement      = FieldElement([
     23454405,  -11679213,   5618422,  -5756869,    458917,
     -1596832,  -25103633, -12990876,  -7676928, -14666033  ]);
 #[cfg(feature="radix_51")]
 pub const d4: FieldElement = FieldElement([1468021120295602, 1865462880516853, 2144638232625316, 1379996857856750, 1267578991991807]);
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const a_minus_d: FieldElement    = FieldElement([
     10913609,  -13857413,  15372611,  -6949391,   -114729,
      8787816,    6275908,   3247719,  18696448,  12055116, ]);
@@ -62,7 +62,7 @@ pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
 
 /// Precomputed value of one of the square roots of -1 (mod p)
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const SQRT_M1: FieldElement = FieldElement([
     -32595792,  -7943725,   9377950,   3500415,  12389472,
     -272473,   -25146209,  -2005654,    326686,  11406482, ]);
@@ -71,7 +71,7 @@ pub const SQRT_M1: FieldElement = FieldElement([1718705420411056, 23490888355650
 
 /// Precomputed value of the other square root of -1 (mod p),
 /// i.e., MSQRT_M1 = -SQRT_M1.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const MSQRT_M1: FieldElement = FieldElement([
     32595792,    7943725,  -9377950,  -3500415, -12389472,
     272473,     25146209,   2005654,   -326686, -11406482, ]);
@@ -79,14 +79,14 @@ pub const MSQRT_M1: FieldElement = FieldElement([
 pub const MSQRT_M1: FieldElement = FieldElement([533094393274173, 2016890930128738, 18285341111199, 134597186663265, 1486323764102114]);
 
 /// Precomputed value of 1/2 (mod p).
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const HALF: FieldElement = FieldElement([
     10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
 #[cfg(feature="radix_51")]
 pub const HALF: FieldElement = FieldElement([2251799813685239, 2251799813685247, 2251799813685247, 2251799813685247, 1125899906842623]);
 
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const A: FieldElement       = FieldElement([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 #[cfg(feature="radix_51")]
@@ -96,7 +96,7 @@ pub const A: FieldElement = FieldElement([486662, 0, 0, 0, 0]);
 // XXX I think that this was used in Adam's code for his elligator
 // implementation, but that should maybe be using sqrt(-486664)
 // instead...?  - hdevalence
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
     12222970,    8312128,  11511410,  -9067497,  15300785,
     241793,    -25456130, -14121551,  12187136,  -3972024, ]);
@@ -104,7 +104,7 @@ pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
 pub const SQRT_MINUS_A: FieldElement = FieldElement([557817479725543, 1643290402203250, 16226468853936, 1304118542701054, 1985241807451647]);
 
 /// SQRT_MINUS_APLUS2 is sqrt(-486664)
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
     -12222970, -8312128, -11511410, 9067497, -15300785,
     -241793, 25456130, 14121551, -12187136, 3972024]);
@@ -112,7 +112,7 @@ pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
 pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([1693982333959686, 608509411481997, 2235573344831311, 947681270984193, 266558006233600]);
 
 /// SQRT_MINUS_HALF is sqrt(-1/2)
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const SQRT_MINUS_HALF: FieldElement = FieldElement([ // sqrtMinusHalf
     -17256545,   3971863,  28865457,  -1750208,  27359696,
     -16640980,  12573105,   1002827,   -163343,  11073975, ]);
@@ -137,7 +137,7 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
 /// Basepoint has y = 4/5.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const ED25519_BASEPOINT: ExtendedPoint = ExtendedPoint{
         X: FieldElement([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
         Y: FieldElement([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
@@ -172,7 +172,7 @@ pub const lminus1: Scalar = Scalar([ 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0
 ///
 /// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
 /// indexed by 0,4. 
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     ExtendedPoint{
         X: FieldElement([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -282,7 +282,7 @@ pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     }
 ];
 
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const bi: [AffineNielsPoint; 8] = [
     AffineNielsPoint{
         y_plus_x:  FieldElement([25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605]),
@@ -380,7 +380,7 @@ pub const bi: [AffineNielsPoint; 8] = [
 ///
 /// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
 /// for `0 ≤ i < 32`, `1 ≤ j < 9`.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = EdwardsBasepointTable([
 [
     AffineNielsPoint{
@@ -3160,7 +3160,7 @@ mod test {
     /// Test that the constant for sqrt(-486664) really is a square
     /// root of -486664.
     #[test]
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn sqrt_minus_aplus2() {
         let minus_aplus2 = FieldElement([-486664,0,0,0,0,0,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
@@ -3193,7 +3193,7 @@ mod test {
     }
 
     /// Test that d = -121665/121666
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     #[test]
     fn test_d_vs_ratio() {
         let a = FieldElement([-121665,0,0,0,0,0,0,0,0,0]);

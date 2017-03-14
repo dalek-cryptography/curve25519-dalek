@@ -50,14 +50,14 @@ pub struct FieldElement(pub [u64; 5]);
 /// 25.5, that is, each Limb of a FieldElement alternates between being
 /// represented as a factor of 2^25 or 2^26 more than the last corresponding
 /// integer.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 pub type Limb = i32;
 
 /// FieldElement represents an element of the field GF(2^255 - 19).  An element
 /// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
 /// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
 /// context.
-#[cfg(feature="radix_25_5")]
+#[cfg(not(feature="radix_51"))]
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [i32; 10]);
 
@@ -136,7 +136,7 @@ impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
 }
 
 impl<'b> SubAssign<&'b FieldElement> for FieldElement {
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) { // fdifference()
         for i in 0..10 {
             self[i] -= _rhs[i];
@@ -153,7 +153,7 @@ impl<'b> SubAssign<&'b FieldElement> for FieldElement {
 
 impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
         let mut output = self.clone();
         output -= _rhs;
@@ -235,7 +235,7 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
         FieldElement::reduce([c0,c1,c2,c3,c4])
     }
 
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn mul(self, _rhs: &'b FieldElement) -> FieldElement {
         // Notes preserved from ed25519.go (presumably originally from ref10):
         //
@@ -362,7 +362,7 @@ impl CTAssignable for FieldElement {
     /// # Preconditions
     ///
     /// * `choice` in {0,1}
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn conditional_assign(&mut self, f: &FieldElement, choice: u8) {
         let mask = -(choice as Limb);
         for i in 0..10 {
@@ -380,7 +380,7 @@ impl CTAssignable for FieldElement {
 
 impl FieldElement {
     /// Invert the sign of this field element
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn negate(&mut self) {
         for i in 0..10 {
             self[i] = -self[i];
@@ -401,7 +401,7 @@ impl FieldElement {
     }
 
     /// Construct zero.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn zero() -> FieldElement {
         FieldElement([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
@@ -412,7 +412,7 @@ impl FieldElement {
     }
 
     /// Construct one.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn one() -> FieldElement {
         FieldElement([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
@@ -423,7 +423,7 @@ impl FieldElement {
     }
 
     /// Construct -1.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn minus_one() -> FieldElement {
         FieldElement([-1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
@@ -451,7 +451,7 @@ impl FieldElement {
 
         FieldElement(limbs)
     }
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn reduce(input: &[i64;10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
         let mut h = input.clone();
@@ -564,7 +564,7 @@ impl FieldElement {
     /// # Return
     ///
     /// Returns a new FieldElement.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn from_bytes(data: &[u8; 32]) -> FieldElement { //FeFromBytes
         let mut h = [0i64;10];
         h[0] =  load4(&data[ 0..]);
@@ -617,7 +617,7 @@ impl FieldElement {
     /// let bytes: [u8; 32] = fe.to_bytes();
     /// assert!(data == bytes);
     /// ```
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn to_bytes(&self) -> [u8;32] { //FeToBytes
         // Comment preserved from ed25519.go (presumably originally from ref10):
         //
@@ -921,7 +921,7 @@ impl FieldElement {
         return byte_is_nonzero(x);
     }
 
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     fn square_inner(&self) -> [i64;10] {
         let f0     = self[0]       as i64;
         let f1     = self[1]       as i64;
@@ -1023,7 +1023,7 @@ impl FieldElement {
     /// # Postconditions
     ///
     /// * |h[i]| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn square(&self) -> FieldElement {
         FieldElement::reduce(&self.square_inner())
     }
@@ -1049,7 +1049,7 @@ impl FieldElement {
     ///
     /// See fe_mul.c in ref10 implementation for discussion of implementation
     /// strategy.
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     pub fn square2(&self) -> FieldElement {
         let mut coeffs = self.square_inner();
         for i in 0..self.0.len() {
@@ -1381,12 +1381,12 @@ mod test {
         assert_eq!(without_highbit_set, with_highbit_set);
     }
 
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     static B_LIMBS_RADIX_25_5: FieldElement = FieldElement(
         [-5652623, 8034020, 8266223, -13556020, -5672552,
          -5582839, -12603138, 15161929, -16418207, 13296296]);
 
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     #[test]
     fn from_bytes_vs_radix_25_5_limb_constants() {
         let test_elt = FieldElement::from_bytes(&B_BYTES);
@@ -1395,7 +1395,7 @@ mod test {
         }
     }
 
-    #[cfg(feature="radix_25_5")]
+    #[cfg(not(feature="radix_51"))]
     #[test]
     fn radix_25_5_limb_constants_to_bytes_vs_byte_constants() {
         let test_bytes = B_LIMBS_RADIX_25_5.to_bytes();

@@ -244,8 +244,10 @@ impl PublicKey {
     ///
     /// Returns true if the signature was successfully verified, and
     /// false otherwise.
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        let mut h: Sha512 = Sha512::new();
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
         let mut a: ExtendedPoint;
         let ao:  Option<ExtendedPoint>;
         let r: ProjectivePoint;
@@ -372,8 +374,9 @@ impl Keypair {
     }
 
     /// Verify a signature on a message with this keypair's public key.
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        self.public.verify(message, signature)
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+            where D: Digest<OutputSize = U64> + Default {
+        self.public.verify::<D>(message, signature)
     }
 }
 
@@ -429,11 +432,11 @@ mod test {
         good_sig = keypair.sign(&good);
         bad_sig  = keypair.sign(&bad);
 
-        assert!(keypair.verify(&good, &good_sig) == true,
+        assert!(keypair.verify::<Sha512>(&good, &good_sig) == true,
                 "Verification of a valid signature failed!");
-        assert!(keypair.verify(&good, &bad_sig)  == false,
+        assert!(keypair.verify::<Sha512>(&good, &bad_sig)  == false,
                 "Verification of a signature on a different message passed!");
-        assert!(keypair.verify(&bad,  &good_sig) == false,
+        assert!(keypair.verify::<Sha512>(&bad,  &good_sig) == false,
                 "Verification of a signature on a different message passed!");
     }
 
@@ -482,8 +485,8 @@ mod test {
             println!("{:?}", pub_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(public_key.verify(&message, &sig2), "Signature verification failed on line {}", lineno);
-
+            assert!(public_key.verify::<Sha512>(&message, &sig2),
+                    "Signature verification failed on line {}", lineno);
         }
     }
 }
@@ -529,7 +532,7 @@ mod bench {
         let msg: &[u8] = "test message".as_bytes();
         let sig: Signature = keypair.sign(msg);
 
-        b.iter(| | keypair.verify(msg, &sig));
+        b.iter(| | keypair.verify::<Sha512>(msg, &sig));
     }
 
     #[bench]

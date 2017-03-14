@@ -79,7 +79,7 @@
 
 use core::fmt::Debug;
 use core::iter::Iterator;
-use core::ops::{Add, Sub, Neg};
+use core::ops::{Add, Sub, Neg, Index};
 
 use constants;
 use field::FieldElement;
@@ -957,6 +957,30 @@ impl ExtendedPoint {
     }
 }
 
+/// Holds odd multiples 1A, 3A, ..., 15A of a point A.
+struct OddMultiples(pub [ProjectiveNielsPoint; 8]);
+
+impl OddMultiples {
+    fn create(A: &ExtendedPoint) -> OddMultiples {
+        let mut Ai = [ProjectiveNielsPoint::identity(); 8];
+        let A2 = A.double();
+        Ai[0]  = A.to_projective_niels();
+        for i in 0..7 {
+            Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
+        OddMultiples(Ai)
+    }
+}
+
+impl Index<usize> for OddMultiples {
+    type Output = ProjectiveNielsPoint;
+
+    fn index<'a>(&'a self, _index: usize) -> &'a ProjectiveNielsPoint {
+        &(self.0[_index])
+    }
+}
+
 /// Given a point `A` and scalars `a` and `b`, compute the point
 /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
 /// with x positive).
@@ -969,15 +993,6 @@ pub fn double_scalar_mult_vartime(a: &Scalar, A: &ExtendedPoint, b: &Scalar) -> 
     let a_naf = a.non_adjacent_form();
     let b_naf = b.non_adjacent_form();
 
-    // Build a lookup table of odd multiples of A
-    let mut Ai = [ProjectiveNielsPoint::identity(); 8];
-    let A2 = A.double();
-    Ai[0]  = A.to_projective_niels();
-    for i in 0..7 {
-        Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
-    }
-    // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
-
     // Find starting index
     let mut i: usize = 255;
     for j in (0..255).rev() {
@@ -987,14 +1002,16 @@ pub fn double_scalar_mult_vartime(a: &Scalar, A: &ExtendedPoint, b: &Scalar) -> 
         }
     }
 
+    let odd_multiples_of_A = OddMultiples::create(A);
+
     let mut r = ProjectivePoint::identity();
     loop {
         let mut t = r.double();
 
         if a_naf[i] > 0 {
-            t = &t.to_extended() + &Ai[( a_naf[i]/2) as usize];
+            t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
         } else if a_naf[i] < 0 {
-            t = &t.to_extended() - &Ai[(-a_naf[i]/2) as usize];
+            t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
         }
 
         if b_naf[i] > 0 {

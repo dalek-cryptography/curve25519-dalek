@@ -50,6 +50,10 @@ Then, in your library or executable source, add:
 
     extern crate curve25519_dalek
 
+On nightly Rust, using the `nightly` feature enables a radix-51 field
+arithmetic implementation using `u128`s, which is approximately twice as
+fast.
+
 ## TODO
 
 * Implement hashing to a point on the curve (Elligator).

@@ -1192,10 +1192,9 @@ mod test {
     /// XXX what does Signal do here?
     #[test]
     fn u_minus_one_monty() {
-        let mut m1 = FieldElement::zero();
-        m1[0] = -1;
-        let m1_bytes = m1.to_bytes();
-        let div_by_zero_u = CompressedMontgomeryU(m1_bytes);
+        let minus_one = FieldElement::minus_one();
+        let minus_one_bytes = minus_one.to_bytes();
+        let div_by_zero_u = CompressedMontgomeryU(minus_one_bytes);
         assert!(div_by_zero_u.decompress().is_none());
     }
 
@@ -1400,6 +1399,26 @@ mod test {
         assert!(   ExtendedPoint::identity().is_identity() == true);
         assert!(constants::ED25519_BASEPOINT.is_identity() == false);
     }
+
+    /// Rust's debug builds have overflow and underflow trapping,
+    /// and enable `debug_assert!()`.  This performs many scalar
+    /// multiplications to attempt to trigger possible overflows etc.
+    ///
+    /// For instance, the `radix_51` `Mul` implementation for
+    /// `FieldElements` requires the input `Limb`s to be bounded by
+    /// 2^54, but we cannot enforce this dynamically at runtime, or
+    /// statically at compile time (until Rust gets type-level
+    /// integers, at which point we can encode "bits of headroom" into
+    /// the type system and prove correctness).
+    #[test]
+    fn monte_carlo_overflow_underflow_debug_assert_test() {
+        let mut P = ExtendedPoint::basepoint();
+        // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
+        // so this does ~ 1M of each operation.
+        for _ in 0..1_000 {
+            P = P.scalar_mult(&A_SCALAR);
+        }
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1436,7 +1455,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_cached_output_completed(b: &mut Bencher) {
+    fn add_extended_and_projective_niels_output_completed(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
@@ -1444,7 +1463,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_cached_output_extended(b: &mut Bencher) {
+    fn add_extended_and_projective_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
@@ -1452,7 +1471,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_precomputed_output_completed(b: &mut Bencher) {
+    fn add_extended_and_affine_niels_output_completed(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 
@@ -1460,7 +1479,7 @@ mod bench {
     }
 
     #[bench]
-    fn add_extended_and_precomputed_output_extended(b: &mut Bencher) {
+    fn add_extended_and_affine_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 

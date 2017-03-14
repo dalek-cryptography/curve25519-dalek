@@ -138,8 +138,10 @@ impl SecretKey {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        let mut h: Sha512 = Sha512::new();
+    pub fn sign<D>(&self, message: &[u8]) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
         let mut expanded_key_secret: Scalar;
@@ -160,7 +162,7 @@ impl SecretKey {
         expanded_key_secret[31] &=  63;
         expanded_key_secret[31] |=  64;
 
-        h = Sha512::new();
+        h = D::default();
         h.input(&hash[32..]);
         h.input(&message);
         hash.copy_from_slice(h.result().as_slice());
@@ -169,7 +171,7 @@ impl SecretKey {
 
         r = ExtendedPoint::basepoint_mult(&mesg_digest);
 
-        h = Sha512::new();
+        h = D::default();
         h.input(&r.compress_edwards().to_bytes()[..]);
         h.input(public_key);
         h.input(&message);
@@ -369,8 +371,9 @@ impl Keypair {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        self.secret.sign(message)
+    pub fn sign<D>(&self, message: &[u8]) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
+        self.secret.sign::<D>(message)
     }
 
     /// Verify a signature on a message with this keypair's public key.
@@ -429,8 +432,8 @@ mod test {
 
         cspring  = OsRng::new().unwrap();
         keypair  = Keypair::generate::<Sha512>(&mut cspring);
-        good_sig = keypair.sign(&good);
-        bad_sig  = keypair.sign(&bad);
+        good_sig = keypair.sign::<Sha512>(&good);
+        bad_sig  = keypair.sign::<Sha512>(&bad);
 
         assert!(keypair.verify::<Sha512>(&good, &good_sig) == true,
                 "Verification of a valid signature failed!");
@@ -479,7 +482,7 @@ mod test {
 
             let secret_key: SecretKey = SecretKey::from_bytes(&sec_bytes);
             let public_key: PublicKey = PublicKey::from_bytes(&pub_bytes);
-            let sig2: Signature = secret_key.sign(&message);
+            let sig2: Signature = secret_key.sign::<Sha512>(&message);
 
             println!("{:?}", sec_bytes);
             println!("{:?}", pub_bytes);
@@ -545,7 +548,7 @@ mod bench {
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "".as_bytes();
 
-        b.iter(| | keypair.sign(msg));
+        b.iter(| | keypair.sign::<Sha512>(msg));
     }
 
     #[bench]
@@ -553,7 +556,7 @@ mod bench {
         let mut cspring: OsRng = OsRng::new().unwrap();
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "".as_bytes();
-        let sig: Signature = keypair.sign(msg);
+        let sig: Signature = keypair.sign::<Sha512>(msg);
 
         b.iter(| | keypair.verify::<Sha512>(msg, &sig));
     }

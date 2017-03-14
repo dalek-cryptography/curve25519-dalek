@@ -7,10 +7,11 @@ rust:
 
 env:
   - TEST_COMMAND=test FEATURES=''
-  - TEST_COMMAND=test FEATURES='--features="no-std"'
 
 matrix:
   include:
+    - rust: nightly
+      env: TEST_COMMAND=build FEATURES='--no-default-features'
     - rust: nightly
       env: TEST_COMMAND=test FEATURES='--features="nightly"'
     - rust: nightly

@@ -12,6 +12,9 @@ categories = ["cryptography", "no-std"]
 description = "Fast and efficient ed25519 signing and verification in pure Rust."
 exclude = [ ".gitignore", "TESTVECTORS" ]
 
+[badges]
+travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
+
 [dependencies]
 arrayref = "0.3.3"
 sha2 = "^0.4"

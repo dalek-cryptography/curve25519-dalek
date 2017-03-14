@@ -31,7 +31,9 @@ use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 
-#[cfg(feature = "std")]
+#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
+use collections::boxed::Box;
+#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
 use std::boxed::Box;
 
 use curve::ExtendedPoint;
@@ -272,6 +274,7 @@ pub struct DecafBasepointTable(EdwardsBasepointTable);
 
 impl DecafBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
+    #[cfg(feature = "basepoint_table_creation")]
     pub fn create(basepoint: &DecafPoint) -> Box<DecafBasepointTable> {
         let edwards_table = EdwardsBasepointTable::create(&basepoint.0);
         box DecafBasepointTable(*edwards_table)
@@ -381,6 +384,7 @@ mod test {
 
     /// Test basepoint_mult versus a newly-generated DecafBasepointTable
     #[test]
+    #[cfg(feature = "basepoint_table_creation")]
     fn basepoint_mult_vs_decafbasepointtable() {
         let table = DecafBasepointTable::create(&DecafPoint::basepoint());
         let mut rng = OsRng::new().unwrap();

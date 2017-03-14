@@ -90,9 +90,9 @@ use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
 use collections::boxed::Box;
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
 use std::boxed::Box;
 
 // ------------------------------------------------------------------------

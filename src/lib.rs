@@ -63,6 +63,7 @@
 #![feature(rand)]
 #![allow(unused_features)]
 #![cfg_attr(feature = "bench", feature(test))]
+#![deny(missing_docs)] // refuse to compile if documentation is missing
 
 #[macro_use]
 extern crate arrayref;

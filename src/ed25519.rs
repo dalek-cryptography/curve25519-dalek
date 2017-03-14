@@ -28,6 +28,7 @@ use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::subtle::arrays_equal_ct;
 
+/// The length of an ed25519 `Signature`, in bytes.
 pub const SIGNATURE_LENGTH: usize = 64;
 
 /// An ed25519 signature.

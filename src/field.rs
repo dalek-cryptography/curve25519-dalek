@@ -954,7 +954,7 @@ mod test {
          0x15, 0x21, 0xf9, 0xe3, 0xe1, 0x61, 0x21, 0x55];
 
     #[test]
-    fn test_fieldelement_a_mul_a() {
+    fn fieldelement_a_mul_a() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         assert_eq!(asq, &a*&a);
@@ -962,35 +962,35 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_a_square2() {
+    fn fieldelement_a_square2() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         assert_eq!(a.square2(), &asq+&asq);
     }
 
     #[test]
-    fn test_fieldelement_a_inv() {
+    fn fieldelement_a_inv() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
         assert_eq!(ainv, a.invert());
     }
 
     #[test]
-    fn test_fieldelement_a_p58() {
+    fn fieldelement_a_p58() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
         assert_eq!(ap58, a.pow_p58());
     }
 
     #[test]
-    fn test_fieldelement_a_chi() {
+    fn fieldelement_a_chi() {
         let a = FieldElement::from_bytes(&A_BYTES);
         // a is square
         assert_eq!(a.chi(), FieldElement::one());
     }
 
     #[test]
-    fn test_fieldelement_eq() {
+    fn fieldelement_eq() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
         assert!(a == a);
@@ -1006,7 +1006,7 @@ mod test {
         [-5652623, 8034020, 8266223, -13556020, -5672552, -5582839, -12603138, 15161929, -16418207, 13296296]);
 
     #[test]
-    fn test_fieldelement_frombytes_highbit_is_ignored() {
+    fn fieldelement_frombytes_highbit_is_ignored() {
         let mut cleared_bytes = B_BYTES.clone();
         cleared_bytes[31] &= 127u8;
         let orig_elt = FieldElement::from_bytes(&B_BYTES);
@@ -1017,7 +1017,7 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_to_bytes() {
+    fn fieldelement_to_bytes() {
         let test_elt = FieldElement::from_bytes(&B_BYTES);
         for i in 0..10 {
             assert!(test_elt[i] == B_LIMBS[i]);
@@ -1025,7 +1025,7 @@ mod test {
     }
 
     #[test]
-    fn test_fieldelement_from_bytes() {
+    fn fieldelement_from_bytes() {
         let test_bytes = B_LIMBS.to_bytes();
         for i in 0..31 {
             assert!(test_bytes[i] == B_BYTES[i]);
@@ -1035,7 +1035,7 @@ mod test {
     }
 
     #[test]
-    fn test_conditional_negate() {
+    fn conditional_negate() {
         let       one = FieldElement([ 1,0,0,0,0,0,0,0,0,0]);
         let minus_one = FieldElement([-1,0,0,0,0,0,0,0,0,0]);
         let mut x = one;

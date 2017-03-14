@@ -958,7 +958,7 @@ impl ExtendedPoint {
 }
 
 /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
-struct OddMultiples(pub [ProjectiveNielsPoint; 8]);
+struct OddMultiples([ProjectiveNielsPoint; 8]);
 
 impl OddMultiples {
     fn create(A: &ExtendedPoint) -> OddMultiples {
@@ -979,6 +979,48 @@ impl Index<usize> for OddMultiples {
     fn index<'a>(&'a self, _index: usize) -> &'a ProjectiveNielsPoint {
         &(self.0[_index])
     }
+}
+
+
+/// Given a vector of public scalars and a vector of (possibly secret)
+/// points, compute
+///
+///    c_1 P_1 + ... + c_n P_n.
+///
+/// # Warning
+///
+/// This function is *not* constant time: its timing depends on the
+/// input scalars.
+///
+/// # Input
+///
+/// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+/// error to call this function with two vectors of different lengths.
+pub fn k_fold_scalar_mult_vartime(scalars: &Vec<Scalar>,
+                                  points: &Vec<ExtendedPoint>)
+                                  -> ExtendedPoint {
+    assert_eq!(scalars.len(), points.len());
+
+    let nafs: Vec<_> = scalars.iter().map(|c| c.non_adjacent_form()).collect();
+    let odd_multiples: Vec<_> = points.iter().map(|P| OddMultiples::create(&P)).collect();
+
+    let mut r = ProjectivePoint::identity();
+
+    for i in (0..255).rev() {
+        let mut t = r.double();
+
+        for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
+            if naf[i] > 0 {
+                t = &t.to_extended() + &odd_multiple[( naf[i]/2) as usize];
+            } else if naf[i] < 0 {
+                t = &t.to_extended() - &odd_multiple[(-naf[i]/2) as usize];
+            }
+        }
+
+        r = t.to_projective();
+    }
+
+    r.to_extended()
 }
 
 /// Given a point `A` and scalars `a` and `b`, compute the point
@@ -1352,6 +1394,15 @@ mod test {
         assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
     }
 
+    #[test]
+    fn k_fold_scalar_mult_vartime_vs_ed25519py() {
+        let A = A_TIMES_BASEPOINT.decompress().unwrap();
+        let points = vec![A,constants::ED25519_BASEPOINT];
+        let scalars = vec![A_SCALAR, B_SCALAR];
+        let result = k_fold_scalar_mult_vartime(&scalars, &points);
+        assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
+    }
+
     /// Test basepoint.double() versus the 2*basepoint constant.
     #[test]
     fn basepoint_double_vs_basepoint2() {
@@ -1444,6 +1495,7 @@ mod test {
 
 #[cfg(all(test, feature = "bench"))]
 mod bench {
+    use rand::OsRng;
     use test::Bencher;
     use constants;
     use super::*;
@@ -1469,6 +1521,24 @@ mod bench {
     fn bench_double_scalar_mult_vartime(b: &mut Bencher) {
         let A = A_TIMES_BASEPOINT.decompress().unwrap();
         b.iter(|| double_scalar_mult_vartime(&A_SCALAR, &A, &B_SCALAR));
+    }
+
+    #[bench]
+    fn ten_fold_scalar_mult_vartime(b: &mut Bencher) {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        // Create 10 random scalars
+        let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
+        // Create 10 points (by doing scalar mults)
+        let points: Vec<_> = scalars.iter()
+            .map(|s| ExtendedPoint::basepoint_mult(s)).collect();
+
+        // XXX Currently Rust's benchmarking implementation doesn't
+        // allow you to specify a sequence of random inputs, but only
+        // many trials of the same input.
+        //
+        // Since this is a variable-time function, this means the
+        // benchmark is only useful as a ballpark measurement.
+        b.iter(|| k_fold_scalar_mult_vartime(&scalars, &points));
     }
 
     #[bench]

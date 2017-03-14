@@ -493,6 +493,8 @@ mod test {
 
 #[cfg(all(test, feature = "bench"))]
 mod bench {
+    use generic_array::GenericArray;
+    use generic_array::typenum::{U64, U128};
     use test::Bencher;
     use rand::OsRng;
     use super::*;
@@ -514,6 +516,27 @@ mod bench {
                 bytes[i] = 0;
             }
         }
+    }
+
+    /// A fake hash function which simply returns zeroes.
+    struct ZeroDigest;
+
+    impl ZeroDigest {
+        pub fn new() -> ZeroDigest {
+            ZeroDigest
+        }
+    }
+
+    impl Digest for ZeroDigest {
+        type OutputSize = U64;
+        type BlockSize = U128;
+
+        fn input(&mut self, _input: &[u8]) { }
+        fn result(self) -> GenericArray<u8, Self::OutputSize> { GenericArray::default() }
+    }
+
+    impl Default for ZeroDigest {
+        fn default() -> Self { Self::new() }
     }
 
     #[bench]

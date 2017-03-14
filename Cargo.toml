@@ -24,6 +24,13 @@ default-features = false
 optional = true
 version = "^0.3"
 
+[dependencies.digest]
+version = "0.4"
+
+[dependencies.generic-array]
+# same version that digest depends on
+version = "^0.6"
+
 [dev-dependencies]
 rustc-serialize = "0.3"
 

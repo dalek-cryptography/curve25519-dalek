@@ -72,6 +72,9 @@ extern crate curve25519_dalek;
 #[cfg(feature = "std")]
 extern crate rand;
 
+extern crate generic_array;
+extern crate digest;
+
 #[cfg(test)]
 #[macro_use]
 extern crate std;

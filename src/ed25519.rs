@@ -12,10 +12,13 @@
 
 use core::fmt::Debug;
 
-use sha2::{Digest, Sha512};
+use sha2::Sha512;
 
 #[cfg(feature = "std")]
 use rand::Rng;
+
+use digest::Digest;
+use generic_array::typenum::U64;
 
 use curve25519_dalek::curve;
 use curve25519_dalek::curve::BasepointMult;
@@ -295,15 +298,45 @@ pub struct Keypair {
 impl Keypair {
     /// Generate an ed25519 keypair.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate rand;
+    /// extern crate ed25519;
+    /// extern crate sha2;
+    ///
+    /// # fn main() {
+    ///
+    /// use rand::Rng;
+    /// use rand::OsRng;
+    /// use sha2::Sha512;
+    /// use ed25519::Keypair;
+    /// use ed25519::Signature;
+    ///
+    /// let mut cspring: OsRng = OsRng::new().unwrap();
+    /// let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+    ///
+    /// # }
+    /// ```
+    ///
     /// # Input
     ///
     /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
     /// from `rand::OsRng::new()` (in the `rand` crate).
+    ///
+    /// The caller must also supply a hash function which implements the
+    /// `Digest` and `Default` traits, and which returns 512 bits of output.
+    /// The standard hash function used for most ed25519 libraries is SHA-512,
+    /// which is available with `use sha2::Sha512` as in the example above.
+    /// Other suitable hash functions include Keccak-512 and Blake2b-512.
+    ///
     // we reassign 0 bytes to the temp variable t to overwrite it
     #[cfg(feature = "std")]
     #[allow(unused_assignments)]
-    pub fn generate<T: Rng>(cspring: &mut T) -> Keypair {
-        let mut h: Sha512 = Sha512::new();
+    pub fn generate<D>(cspring: &mut Rng) -> Keypair
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h:           D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let mut t:    [u8; 32] = [0u8; 32];
         let mut sk:   [u8; 64] = [0u8; 64];
@@ -390,7 +423,7 @@ mod test {
 
         // from_bytes() fails if vx²-u=0 and vx²+u=0
         loop {
-            keypair = Keypair::generate(&mut cspring);
+            keypair = Keypair::generate::<Sha512>(&mut cspring);
             x = keypair.public.decompress();
 
             if x.is_some() {
@@ -414,7 +447,7 @@ mod test {
         let bad:  &[u8] = "wrong message".as_bytes();
 
         cspring  = OsRng::new().unwrap();
-        keypair  = Keypair::generate(&mut cspring);
+        keypair  = Keypair::generate::<Sha512>(&mut cspring);
         good_sig = keypair.sign(&good);
         bad_sig  = keypair.sign(&bad);
 
@@ -479,7 +512,7 @@ mod test {
     #[bench]
     fn bench_sign(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate(&mut cspring);
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "test message".as_bytes();
 
         b.iter(| | keypair.sign(msg));
@@ -488,7 +521,7 @@ mod test {
     #[bench]
     fn bench_verify(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate(&mut cspring);
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
         let msg: &[u8] = "test message".as_bytes();
         let sig: Signature = keypair.sign(msg);
 
@@ -499,6 +532,6 @@ mod test {
     fn bench_key_generation(b: &mut Bencher) {
         let mut rng: ZeroRng = ZeroRng::new();
 
-        b.iter(| | Keypair::generate(&mut rng));
+        b.iter(| | Keypair::generate::<Sha512>(&mut rng));
     }
 }

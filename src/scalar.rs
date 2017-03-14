@@ -643,7 +643,7 @@ mod test {
          0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
 
     #[test]
-    fn test_non_adjacent_form() {
+    fn non_adjacent_form() {
         let naf = A_SCALAR.non_adjacent_form();
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
@@ -651,7 +651,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_by_one() {
+    fn scalar_multiply_by_one() {
         let one = Scalar::one();
         let zero = Scalar::zero();
         let test_scalar = Scalar::multiply_add(&X, &one, &zero);
@@ -661,7 +661,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_only() {
+    fn scalar_multiply_only() {
         let zero = Scalar::zero();
         let test_scalar = Scalar::multiply_add(&X, &Y, &zero);
         for i in 0..32 {
@@ -670,7 +670,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_add() {
+    fn scalar_multiply_add() {
         let test_scalar = Scalar::multiply_add(&X, &Y, &Z);
         for i in 0..32 {
             assert!(test_scalar[i] == W[i]);
@@ -678,7 +678,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_reduce() {
+    fn scalar_reduce() {
         let mut bignum = [0u8;64];
         // set bignum = x + 2^256x
         for i in 0..32 {

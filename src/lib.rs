@@ -9,9 +9,12 @@
 //  - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 //  - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(feature = "nightly", feature(box_syntax))]
+#![cfg_attr(feature = "nightly", feature(i128_type))]
 #![allow(unused_features)]
-#![feature(test)]
+#![cfg_attr(feature = "bench", feature(test))]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek
@@ -32,18 +35,26 @@
 //! hatred of the Daleks.  Rusty destroys the other Daleks and departs the
 //! ship, determined to track down and bring an end to the Dalek race.
 
-#[cfg(test)]
-#[macro_use]
-extern crate std;
+#[cfg(all(test, feature = "bench"))]
+extern crate test;
 
 #[cfg(test)]
-extern crate test;
+extern crate sha2;
 
 #[macro_use]
 extern crate arrayref;
 
+extern crate generic_array;
+extern crate digest;
+
+#[cfg(feature = "std")]
+extern crate core;
+
 #[cfg(feature = "std")]
 extern crate rand;
+
+#[cfg(not(feature = "std"))]
+extern crate collections;
 
 // Modules for low-level operations directly on field elements and curve points.
 

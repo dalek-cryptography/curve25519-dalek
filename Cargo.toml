@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -15,6 +15,9 @@ exclude = [
     ".gitignore"
 ]
 
+[badges]
+travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
+
 [dependencies.arrayref]
 version = "0.3.3"
 
@@ -22,10 +25,26 @@ version = "0.3.3"
 optional = true
 version = "0.3"
 
+[dependencies.digest]
+version = "0.4"
+
+[dependencies.generic-array]
+# same version that digest depends on
+version = "^0.6"
+
+[dev-dependencies.sha2]
+version = "0.4"
+
 [features]
+nightly = ["basepoint_table_creation", "radix_51"]
 default = ["std"]
 std = ["rand"]
 yolocrypto = []
+# Needs nightly for placement new
+basepoint_table_creation = []
+bench = []
+# Radix-51 arithmetic using u128
+radix_51 = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]
@@ -57,6 +76,7 @@ lto = false
 debug-assertions = true
 codegen-units = 1
 panic = 'unwind'
+required-features = ['yolocrypto']
 
 # The benchmarking profile, used for `cargo bench`.
 [profile.bench]

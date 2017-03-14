@@ -1,0 +1,35 @@
+language: rust
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+env:
+  - TEST_COMMAND=test FEATURES='yolocrypto'
+  - TEST_COMMAND=test FEATURES='yolocrypto nightly'
+  - TEST_COMMAND=bench FEATURES='yolocrypto bench'
+  - TEST_COMMAND=bench FEATURES='yolocrypto nightly bench'
+
+matrix:
+  exclude:
+    # We can probably remove this, as we reasonably expect dalek to work on
+    # stable and beta, but currently we require "test" feature in order to
+    # run benchmarks, which causes dalek not to build on stable.  See
+    # https://github.com/isislovecruft/curve25519-dalek/pull/38#issuecomment-286027562
+    - rust: stable
+      env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
+    - rust: beta
+      env: TEST_COMMAND=bench FEATURES='yolocrypto bench'
+    - rust: stable
+      env: TEST_COMMAND=bench FEATURES='yolocrypto nightly bench'
+    - rust: beta
+      env: TEST_COMMAND=bench FEATURES='yolocrypto nightly bench'
+    # Test nightly features, such as radix_51, only on nightly.
+    - rust: stable
+      env: TEST_COMMAND=test FEATURES='yolocrypto nightly'
+    - rust: beta
+      env: TEST_COMMAND=test FEATURES='yolocrypto nightly'
+
+script:
+  - cargo $TEST_COMMAND --features="$FEATURES"

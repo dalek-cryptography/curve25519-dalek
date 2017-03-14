@@ -30,11 +30,14 @@
 //! limbs.
 
 use core::cmp::{Eq, PartialEq};
-use core::ops::{Index, IndexMut};
-use core::ops::{Neg};
+use core::ops::{Neg, Index, IndexMut};
+use core::fmt::Debug;
 
 #[cfg(feature = "std")]
 use rand::Rng;
+
+use digest::Digest;
+use generic_array::typenum::U64;
 
 use constants;
 use utils::{load3, load4};
@@ -49,6 +52,12 @@ use subtle::arrays_equal_ct;
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
 #[derive(Copy, Clone)]
 pub struct Scalar(pub [u8; 32]);
+
+impl Debug for Scalar {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "Scalar: {:?}", &self.0[..])
+    }
+}
 
 impl Eq for Scalar{}
 impl PartialEq for Scalar {
@@ -157,6 +166,42 @@ impl Scalar {
         let mut scalar_bytes = [0u8; 64];
         csprng.fill_bytes(&mut scalar_bytes);
         Scalar::reduce(&scalar_bytes)
+    }
+
+    /// Hash a slice of bytes into a scalar.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes (512 bits) of output.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// extern crate sha2;
+    /// use sha2::Sha512;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
+    /// # }
+    /// ```
+    ///
+    pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
+            where D: Digest<OutputSize=U64> + Default {
+        let mut hash = D::default();
+        hash.input(input);
+        // XXX this seems clumsy
+        let mut output = [0u8;64];
+        output.copy_from_slice(hash.result().as_slice());
+        Scalar::reduce(&output)
+    }
+
+    /// View this `Scalar` as a sequence of bytes.
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+        &self.0
     }
 
     /// Construct the additive identity
@@ -547,45 +592,22 @@ impl UnpackedScalar {
 
 #[cfg(test)]
 mod test {
-    use rand::Rng;
-    use rand::OsRng;
     use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_scalar_random(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-
-        b.iter(|| Scalar::random(&mut csprng));
-    }
-
-    #[bench]
-    fn bench_scalar_multiply_add(b: &mut Bencher) {
-        b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
-    }
-
-    #[bench]
-    fn bench_scalar_unpacked_multiply_add(b: &mut Bencher) {
-        let x = X.unpack();
-        let y = Y.unpack();
-        let z = Z.unpack();
-        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
-    }
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
-    static X: Scalar = Scalar(
+    pub static X: Scalar = Scalar(
         [0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
          0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
          0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
          0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04]);
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
-    static Y: Scalar = Scalar(
+    pub static Y: Scalar = Scalar(
         [0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
          0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
          0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
          0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05]);
     /// z = 5033871415930814945849241457262266927579821285980625165479289807629491019013
-    static Z: Scalar = Scalar(
+    pub static Z: Scalar = Scalar(
         [0x05, 0x9d, 0x3e, 0x0b, 0x09, 0x26, 0x50, 0x3d,
          0xa3, 0x84, 0xa1, 0x3c, 0x92, 0x7a, 0xc2, 0x06,
          0x41, 0x98, 0xcf, 0x34, 0x3a, 0x24, 0xd5, 0xb7,
@@ -621,7 +643,7 @@ mod test {
          0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
 
     #[test]
-    fn test_non_adjacent_form() {
+    fn non_adjacent_form() {
         let naf = A_SCALAR.non_adjacent_form();
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
@@ -629,7 +651,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_by_one() {
+    fn scalar_multiply_by_one() {
         let one = Scalar::one();
         let zero = Scalar::zero();
         let test_scalar = Scalar::multiply_add(&X, &one, &zero);
@@ -639,7 +661,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_only() {
+    fn scalar_multiply_only() {
         let zero = Scalar::zero();
         let test_scalar = Scalar::multiply_add(&X, &Y, &zero);
         for i in 0..32 {
@@ -648,7 +670,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_multiply_add() {
+    fn scalar_multiply_add() {
         let test_scalar = Scalar::multiply_add(&X, &Y, &Z);
         for i in 0..32 {
             assert!(test_scalar[i] == W[i]);
@@ -656,7 +678,7 @@ mod test {
     }
 
     #[test]
-    fn test_scalar_reduce() {
+    fn scalar_reduce() {
         let mut bignum = [0u8;64];
         // set bignum = x + 2^256x
         for i in 0..32 {
@@ -677,10 +699,39 @@ mod test {
 
     // Negating a scalar twice should result in the original scalar.
     #[test]
-    fn test_scalar_neg() {
+    fn scalar_neg() {
         let negative_x: Scalar = -X;
         let orig: Scalar = -negative_x;
 
         assert!(orig == X);
+    }
+}
+
+#[cfg(all(test, feature = "bench"))]
+mod bench {
+    use rand::OsRng;
+    use test::Bencher;
+
+    use super::*;
+    use super::test::{X, Y, Z};
+
+    #[bench]
+    fn scalar_random(b: &mut Bencher) {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+
+        b.iter(|| Scalar::random(&mut csprng));
+    }
+
+    #[bench]
+    fn scalar_multiply_add(b: &mut Bencher) {
+        b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
+    }
+
+    #[bench]
+    fn scalar_unpacked_multiply_add(b: &mut Bencher) {
+        let x = X.unpack();
+        let y = Y.unpack();
+        let z = Z.unpack();
+        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
     }
 }

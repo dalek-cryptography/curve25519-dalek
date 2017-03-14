@@ -31,7 +31,13 @@ use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 
+#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
+use collections::boxed::Box;
+#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
+use std::boxed::Box;
+
 use curve::ExtendedPoint;
+use curve::EdwardsBasepointTable;
 use curve::BasepointMult;
 use curve::ScalarMult;
 use curve::Identity;
@@ -253,11 +259,30 @@ impl BasepointMult<Scalar> for DecafPoint {
     // XXX is this actually in the image of the isogeny,
     // or do we need a different basepoint?
     fn basepoint() -> DecafPoint {
-        DecafPoint(constants::BASEPOINT)
+        DecafPoint(ExtendedPoint::basepoint())
     }
 
     fn basepoint_mult(scalar: &Scalar) -> DecafPoint {
         DecafPoint(ExtendedPoint::basepoint_mult(scalar))
+    }
+}
+
+
+/// Precomputation
+#[derive(Clone)]
+pub struct DecafBasepointTable(EdwardsBasepointTable);
+
+impl DecafBasepointTable {
+    /// Create a precomputed table of multiples of the given `basepoint`.
+    #[cfg(feature = "basepoint_table_creation")]
+    pub fn create(basepoint: &DecafPoint) -> Box<DecafBasepointTable> {
+        let edwards_table = EdwardsBasepointTable::create(&basepoint.0);
+        box DecafBasepointTable(*edwards_table)
+    }
+
+    /// Use the precomputed table to quickly compute `scalar * basepoint`
+    pub fn basepoint_mult(&self, scalar: &Scalar) -> DecafPoint {
+        DecafPoint(self.0.basepoint_mult(scalar))
     }
 }
 
@@ -322,7 +347,7 @@ mod test {
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &ExtendedPoint::basepoint() - &bp_recaf;
         let diff4 = diff.mult_by_pow_2(4);
-        assert_eq!(diff4.compress_edwards(), ExtendedPoint::identity().compress_edwards());
+        assert_eq!(diff4.compress_edwards(), CompressedEdwardsY::identity());
     }
 
     #[test]
@@ -355,6 +380,19 @@ mod test {
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
         }
+    }
+
+    /// Test basepoint_mult versus a newly-generated DecafBasepointTable
+    #[test]
+    #[cfg(feature = "basepoint_table_creation")]
+    fn basepoint_mult_vs_decafbasepointtable() {
+        let table = DecafBasepointTable::create(&DecafPoint::basepoint());
+        let mut rng = OsRng::new().unwrap();
+        let s = Scalar::random(&mut rng);
+        let basepoint_mult_s = DecafPoint::basepoint_mult(&s);
+        let table_basepoint_mult_s = table.basepoint_mult(&s);
+
+        assert_eq!(basepoint_mult_s, table_basepoint_mult_s);
     }
 }
 

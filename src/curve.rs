@@ -90,8 +90,10 @@ use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
 
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
 use collections::boxed::Box;
+#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
+use std::boxed::Box;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -822,17 +824,30 @@ impl ScalarMult<Scalar> for ExtendedPoint {
     }
 }
 
-/// Trait for scalar multiplication of a distinguished basepoint.
-pub trait BasepointMult<S> {
-    /// Return the basepoint `B`.
-    fn basepoint() -> Self;
-    /// Compute `scalar * B`.
-    fn basepoint_mult(scalar: &S) -> Self;
-}
+/// Precomputation
+#[derive(Clone)]
+pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
 
-impl BasepointMult<Scalar> for ExtendedPoint {
-    fn basepoint() -> ExtendedPoint {
-        constants::BASEPOINT
+impl EdwardsBasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    #[cfg(feature="basepoint_table_creation")]
+    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
+        // Create the table storage
+        // XXX can we be assured that this is not allocated on the stack?
+        // XXX can we skip the initialization without too much unsafety?
+        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
+        let mut P = basepoint.clone();
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P.to_affine_niels();
+            for j in 1..9 {
+                // table[i][j-1] is supposed to be j*(16^2)^i*B
+                table.0[i][j-1] = jP;
+                jP = (&P + &jP).to_extended().to_affine_niels();
+            }
+            P = P.mult_by_pow_2(8);
+        }
+        return table
     }
 
     /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
@@ -860,24 +875,42 @@ impl BasepointMult<Scalar> for ExtendedPoint {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint { //GeScalarMultBase
+    pub fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
 
         for i in (0..64).filter(|x| x % 2 == 1) {
-            t = &h + &select_precomputed_point(e[i], &constants::base[i/2]);
+            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
             h = t.to_extended();
         }
 
         h = h.mult_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
-            t = &h + &select_precomputed_point(e[i], &constants::base[i/2]);
+            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
             h = t.to_extended();
         }
 
         h
+    }
+}
+
+/// Trait for scalar multiplication of a distinguished basepoint.
+pub trait BasepointMult<S> {
+    /// Return the basepoint `B`.
+    fn basepoint() -> Self;
+    /// Compute `scalar * B`.
+    fn basepoint_mult(scalar: &S) -> Self;
+}
+
+impl BasepointMult<Scalar> for ExtendedPoint {
+    fn basepoint() -> ExtendedPoint {
+        constants::ED25519_BASEPOINT
+    }
+
+    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint {
+        constants::ED25519_BASEPOINT_TABLE.basepoint_mult(scalar)
     }
 }
 
@@ -1142,7 +1175,7 @@ mod test {
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_to_montgomery() {
-        assert_eq!(constants::BASEPOINT.compress_montgomery().unwrap(),
+        assert_eq!(constants::ED25519_BASEPOINT.compress_montgomery().unwrap(),
                    BASE_CMPRSSD_MONTY);
     }
 
@@ -1195,10 +1228,10 @@ mod test {
                               .decompress().unwrap();
         // Test projective coordinates exactly since we know they should
         // only differ by a flipped sign.
-        assert_eq!(minus_basepoint.X, -(&constants::BASEPOINT.X));
-        assert_eq!(minus_basepoint.Y,    constants::BASEPOINT.Y);
-        assert_eq!(minus_basepoint.Z,    constants::BASEPOINT.Z);
-        assert_eq!(minus_basepoint.T, -(&constants::BASEPOINT.T));
+        assert_eq!(minus_basepoint.X, -(&constants::ED25519_BASEPOINT.X));
+        assert_eq!(minus_basepoint.Y,    constants::ED25519_BASEPOINT.Y);
+        assert_eq!(minus_basepoint.Z,    constants::ED25519_BASEPOINT.Z);
+        assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT.T));
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.
@@ -1213,7 +1246,7 @@ mod test {
     /// using basepoint + basepoint versus the 2*basepoint constant.
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
-        let bp = constants::BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT;
         let bp_added = &bp + &bp;
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
     }
@@ -1222,7 +1255,7 @@ mod test {
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
-        let bp = constants::BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT;
         let bp_added = (&bp + &bp.to_projective_niels()).to_extended();
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
     }
@@ -1231,7 +1264,7 @@ mod test {
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
-        let bp = constants::BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT;
         let bp_affine_niels = bp.to_affine_niels();
         let bp_added = (&bp + &bp_affine_niels).to_extended();
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
@@ -1270,10 +1303,28 @@ mod test {
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
+    /// Test that multiplication by the basepoint order kills the basepoint
+    #[test]
+    fn basepoint_mult_by_basepoint_order() {
+        let should_be_id = ExtendedPoint::basepoint_mult(&constants::l);
+        assert!(should_be_id.is_identity());
+    }
+
+    /// Test precomputed basepoint mult
+    #[test]
+    #[cfg(feature="basepoint_table_creation")]
+    fn test_precomputed_basepoint_mult() {
+        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
+        let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB_2 = table.basepoint_mult(&A_SCALAR);
+        assert_eq!(aB_1.compress_edwards(),
+                   aB_2.compress_edwards());
+    }
+
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mult_vs_ed25519py() {
-        let aB = constants::BASEPOINT.scalar_mult(&A_SCALAR);
+        let aB = constants::ED25519_BASEPOINT.scalar_mult(&A_SCALAR);
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
@@ -1288,7 +1339,7 @@ mod test {
     /// Test basepoint.double() versus the 2*basepoint constant.
     #[test]
     fn basepoint_double_vs_basepoint2() {
-        assert_eq!(constants::BASEPOINT.double().compress_edwards(),
+        assert_eq!(constants::ED25519_BASEPOINT.double().compress_edwards(),
                    BASE2_CMPRSSD);
     }
 
@@ -1303,14 +1354,15 @@ mod test {
     /// Check that converting to projective and then back to extended round-trips.
     #[test]
     fn basepoint_projective_extended_round_trip() {
-        assert_eq!(constants::BASEPOINT.to_projective().to_extended().compress_edwards(),
+        assert_eq!(constants::ED25519_BASEPOINT
+                       .to_projective().to_extended().compress_edwards(),
                    constants::BASE_CMPRSSD);
     }
 
     /// Test computing 16*basepoint vs mult_by_pow_2(4)
     #[test]
     fn basepoint16_vs_mult_by_pow_2_4() {
-        let bp16 = constants::BASEPOINT.mult_by_pow_2(4);
+        let bp16 = constants::ED25519_BASEPOINT.mult_by_pow_2(4);
         assert_eq!(bp16.compress_edwards(), BASE16_CMPRSSD);
     }
 
@@ -1319,7 +1371,7 @@ mod test {
     fn conditional_assign_for_affine_niels_point() {
         let id     = AffineNielsPoint::identity();
         let mut p1 = AffineNielsPoint::identity();
-        let bp     = constants::BASEPOINT.to_affine_niels();
+        let bp     = constants::ED25519_BASEPOINT.to_affine_niels();
 
         p1.conditional_assign(&bp, 0);
         assert_eq!(p1, id);
@@ -1330,7 +1382,7 @@ mod test {
     #[test]
     fn is_small_order() {
         // The basepoint has large prime order
-        assert!(constants::BASEPOINT.is_small_order() == false);
+        assert!(constants::ED25519_BASEPOINT.is_small_order() == false);
         // constants::EIGHT_TORSION has all points of small order.
         for torsion_point in &constants::EIGHT_TORSION {
             assert!(torsion_point.is_small_order() == true);
@@ -1345,8 +1397,8 @@ mod test {
 
     #[test]
     fn is_identity() {
-        assert!(ExtendedPoint::identity().is_identity() == true);
-        assert!(     constants::BASEPOINT.is_identity() == false);
+        assert!(   ExtendedPoint::identity().is_identity() == true);
+        assert!(constants::ED25519_BASEPOINT.is_identity() == false);
     }
 }
 
@@ -1368,13 +1420,13 @@ mod bench {
 
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
-        let bp = constants::BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT;
         b.iter(|| bp.scalar_mult(&A_SCALAR));
     }
 
     #[bench]
     fn bench_select_precomputed_point(b: &mut Bencher) {
-        b.iter(|| select_precomputed_point(0, &constants::base[12]));
+        b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
 
     #[bench]
@@ -1385,54 +1437,61 @@ mod bench {
 
     #[bench]
     fn add_extended_and_cached_output_completed(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
-        let p2 = constants::BASEPOINT.to_projective_niels();
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
         b.iter(|| &p1 + &p2);
     }
 
     #[bench]
     fn add_extended_and_cached_output_extended(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
-        let p2 = constants::BASEPOINT.to_projective_niels();
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
     fn add_extended_and_precomputed_output_completed(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
-        let p2 = select_precomputed_point(6, &constants::base[27]);
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 
         b.iter(|| &p1 + &p2);
     }
 
     #[bench]
     fn add_extended_and_precomputed_output_extended(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
-        let p2 = select_precomputed_point(6, &constants::base[27]);
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
     fn projective_double_output_completed(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT.to_projective();
+        let p1 = constants::ED25519_BASEPOINT.to_projective();
 
         b.iter(|| p1.double() );
     }
 
     #[bench]
     fn extended_double_output_extended(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
+        let p1 = constants::ED25519_BASEPOINT;
 
         b.iter(|| p1.double() );
     }
 
     #[bench]
     fn mult_by_cofactor(b: &mut Bencher) {
-        let p1 = constants::BASEPOINT;
+        let p1 = constants::ED25519_BASEPOINT;
 
         b.iter(|| p1.mult_by_cofactor() );
+    }
+
+    #[cfg(feature="basepoint_table_creation")]
+    #[bench]
+    fn create_basepoint_table(b: &mut Bencher) {
+        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 }

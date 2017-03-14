@@ -6,7 +6,8 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test FEATURES=''
+  - TEST_COMMAND=test FEATURES='no-std'
+  - TEST_COMMAND=test FEATURES='std'
   - TEST_COMMAND=test FEATURES='nightly'
   - TEST_COMMAND=bench FEATURES='bench'
   - TEST_COMMAND=bench FEATURES='nightly bench'
@@ -18,13 +19,13 @@ matrix:
     - rust: beta
       env: TEST_COMMAND=bench FEATURES='bench'
     - rust: stable
-      env: TEST_COMMAND=bench FEATURES='nightly bench'
+      env: TEST_COMMAND=test FEATURES='nightly'
     - rust: beta
-      env: TEST_COMMAND=bench FEATURES='nightly bench'
+      env: TEST_COMMAND=test FEATURES='nightly'
     - rust: stable
-      env: TEST_COMMAND=test FEATURES='nightly'
+      env: TEST_COMMAND=bench FEATURES='nightly bench'
     - rust: beta
-      env: TEST_COMMAND=test FEATURES='nightly'
+      env: TEST_COMMAND=bench FEATURES='nightly bench'
 
 script:
   - cargo $TEST_COMMAND --features="$FEATURES"

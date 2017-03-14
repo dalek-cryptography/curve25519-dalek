@@ -390,7 +390,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_unmarshal_marshal() {  // TestUnmarshalMarshal
+    fn unmarshal_marshal() {  // TestUnmarshalMarshal
         let mut cspring: OsRng;
         let mut keypair: Keypair;
         let mut x: Option<ExtendedPoint>;
@@ -415,7 +415,7 @@ mod test {
     }
 
     #[test]
-    fn test_sign_verify() {  // TestSignVerify
+    fn sign_verify() {  // TestSignVerify
         let mut cspring: OsRng;
         let keypair: Keypair;
         let good_sig: Signature;
@@ -443,7 +443,7 @@ mod test {
     #[cfg(test)]
     #[cfg(not(release))]
     #[test]
-    fn test_golden() { // TestGolden
+    fn golden() { // TestGolden
         let mut line: String;
         let mut lineno: usize = 0;
 

@@ -130,9 +130,6 @@ extern crate rustc_serialize;
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
 
-#[cfg(all(test, feature = "bench"))]
-extern crate blake2;
-
 
 mod ed25519;
 

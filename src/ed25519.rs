@@ -494,7 +494,6 @@ mod test {
 
 #[cfg(all(test, feature = "bench"))]
 mod bench {
-    use blake2::Blake2b;
     use test::Bencher;
     use rand::OsRng;
     use sha2::Sha512;
@@ -543,31 +542,5 @@ mod bench {
         let mut rng: ZeroRng = ZeroRng::new();
 
         b.iter(| | Keypair::generate::<Sha512>(&mut rng));
-    }
-
-    #[bench]
-    fn blake2b_sign(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Blake2b>(&mut cspring);
-        let msg: &[u8] = "".as_bytes();
-
-        b.iter(| | keypair.sign::<Blake2b>(msg));
-    }
-
-    #[bench]
-    fn blake2b_verify(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Blake2b>(&mut cspring);
-        let msg: &[u8] = "".as_bytes();
-        let sig: Signature = keypair.sign::<Blake2b>(msg);
-
-        b.iter(| | keypair.verify::<Blake2b>(msg, &sig));
-    }
-
-    #[bench]
-    fn blake2b_key_generation(b: &mut Bencher) {
-        let mut rng: ZeroRng = ZeroRng::new();
-
-        b.iter(| | Keypair::generate::<Blake2b>(&mut rng));
     }
 }

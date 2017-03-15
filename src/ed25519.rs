@@ -253,7 +253,7 @@ impl PublicKey {
         let mut a: ExtendedPoint;
         let ao:  Option<ExtendedPoint>;
         let r: ProjectivePoint;
-        let mut digest: [u8; 64];
+        let digest: [u8; 64];
         let digest_reduced: Scalar;
 
         if signature.0[63] & 224 != 0 {
@@ -268,16 +268,15 @@ impl PublicKey {
         }
         a = -(&a);
 
-        digest = [0u8; 64];
-
         let top_half:    &[u8; 32] = array_ref!(&signature.0, 32, 32);
         let bottom_half: &[u8; 32] = array_ref!(&signature.0,  0, 32);
 
         h.input(&bottom_half[..]);
         h.input(&self.to_bytes());
         h.input(&message);
-        digest.copy_from_slice(h.result().as_slice());
 
+        let digest_bytes = h.result();
+        digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
         r = curve::double_scalar_mult_vartime(&digest_reduced, &a, &Scalar(*top_half));
 

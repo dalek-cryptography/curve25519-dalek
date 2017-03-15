@@ -114,22 +114,21 @@
 extern crate arrayref;
 extern crate sha2;
 extern crate curve25519_dalek;
+extern crate generic_array;
+extern crate digest;
 
 #[cfg(feature = "std")]
 extern crate rand;
-
-extern crate generic_array;
-extern crate digest;
 
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
-
 #[cfg(test)]
 extern crate rustc_serialize;
+
+#[cfg(all(test, feature = "bench"))]
+extern crate test;
 
 #[cfg(all(test, feature = "bench"))]
 extern crate blake2;

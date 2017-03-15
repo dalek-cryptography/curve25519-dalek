@@ -12,10 +12,11 @@
 
 use core::fmt::Debug;
 
-use sha2::{Digest, Sha512};
-
 #[cfg(feature = "std")]
 use rand::Rng;
+
+use digest::Digest;
+use generic_array::typenum::U64;
 
 use curve25519_dalek::curve;
 use curve25519_dalek::curve::BasepointMult;
@@ -25,6 +26,7 @@ use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::subtle::arrays_equal_ct;
 
+/// The length of an ed25519 `Signature`, in bytes.
 pub const SIGNATURE_LENGTH: usize = 64;
 
 /// An ed25519 signature.
@@ -129,14 +131,15 @@ impl SecretKey {
     ///
     /// A `SecretKey`.
     #[inline]
-    #[allow(dead_code)]
-    fn from_bytes(bytes: &[u8]) -> SecretKey {
+    pub fn from_bytes(bytes: &[u8]) -> SecretKey {
         SecretKey(*array_ref!(bytes, 0, 64))
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        let mut h: Sha512 = Sha512::new();
+    pub fn sign<D>(&self, message: &[u8]) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
         let mut expanded_key_secret: Scalar;
@@ -157,7 +160,7 @@ impl SecretKey {
         expanded_key_secret[31] &=  63;
         expanded_key_secret[31] |=  64;
 
-        h = Sha512::new();
+        h = D::default();
         h.input(&hash[32..]);
         h.input(&message);
         hash.copy_from_slice(h.result().as_slice());
@@ -166,7 +169,7 @@ impl SecretKey {
 
         r = ExtendedPoint::basepoint_mult(&mesg_digest);
 
-        h = Sha512::new();
+        h = D::default();
         h.input(&r.compress_edwards().to_bytes()[..]);
         h.input(public_key);
         h.input(&message);
@@ -225,8 +228,7 @@ impl PublicKey {
     ///
     /// A `PublicKey`.
     #[inline]
-    #[allow(dead_code)]
-    fn from_bytes(bytes: &[u8]) -> PublicKey {
+    pub fn from_bytes(bytes: &[u8]) -> PublicKey {
         PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32)))
     }
 
@@ -242,12 +244,14 @@ impl PublicKey {
     ///
     /// Returns true if the signature was successfully verified, and
     /// false otherwise.
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        let mut h: Sha512 = Sha512::new();
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
         let mut a: ExtendedPoint;
         let ao:  Option<ExtendedPoint>;
         let r: ProjectivePoint;
-        let mut digest: [u8; 64];
+        let digest: [u8; 64];
         let digest_reduced: Scalar;
 
         if signature.0[63] & 224 != 0 {
@@ -262,16 +266,15 @@ impl PublicKey {
         }
         a = -(&a);
 
-        digest = [0u8; 64];
-
         let top_half:    &[u8; 32] = array_ref!(&signature.0, 32, 32);
         let bottom_half: &[u8; 32] = array_ref!(&signature.0,  0, 32);
 
         h.input(&bottom_half[..]);
         h.input(&self.to_bytes());
         h.input(&message);
-        digest.copy_from_slice(h.result().as_slice());
 
+        let digest_bytes = h.result();
+        digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
         r = curve::double_scalar_mult_vartime(&digest_reduced, &a, &Scalar(*top_half));
 
@@ -295,15 +298,45 @@ pub struct Keypair {
 impl Keypair {
     /// Generate an ed25519 keypair.
     ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate rand;
+    /// extern crate sha2;
+    /// extern crate ed25519_dalek;
+    ///
+    /// # fn main() {
+    ///
+    /// use rand::Rng;
+    /// use rand::OsRng;
+    /// use sha2::Sha512;
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
+    ///
+    /// let mut cspring: OsRng = OsRng::new().unwrap();
+    /// let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+    ///
+    /// # }
+    /// ```
+    ///
     /// # Input
     ///
     /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
     /// from `rand::OsRng::new()` (in the `rand` crate).
+    ///
+    /// The caller must also supply a hash function which implements the
+    /// `Digest` and `Default` traits, and which returns 512 bits of output.
+    /// The standard hash function used for most ed25519 libraries is SHA-512,
+    /// which is available with `use sha2::Sha512` as in the example above.
+    /// Other suitable hash functions include Keccak-512 and Blake2b-512.
+    ///
     // we reassign 0 bytes to the temp variable t to overwrite it
     #[cfg(feature = "std")]
     #[allow(unused_assignments)]
-    pub fn generate<T: Rng>(cspring: &mut T) -> Keypair {
-        let mut h: Sha512 = Sha512::new();
+    pub fn generate<D>(cspring: &mut Rng) -> Keypair
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h:           D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let mut t:    [u8; 32] = [0u8; 32];
         let mut sk:   [u8; 64] = [0u8; 64];
@@ -335,13 +368,15 @@ impl Keypair {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        self.secret.sign(message)
+    pub fn sign<D>(&self, message: &[u8]) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
+        self.secret.sign::<D>(message)
     }
 
     /// Verify a signature on a message with this keypair's public key.
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        self.public.verify(message, signature)
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+            where D: Digest<OutputSize = U64> + Default {
+        self.public.verify::<D>(message, signature)
     }
 }
 
@@ -352,34 +387,14 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use test::Bencher;
     use curve25519_dalek::curve::ExtendedPoint;
     use rand::OsRng;
-    use rand::Rng;
     use rustc_serialize::hex::FromHex;
+    use sha2::Sha512;
     use super::*;
 
-    /// A fake RNG which simply returns zeroes.
-    struct ZeroRng;
-
-    impl ZeroRng {
-        fn new() -> ZeroRng {
-            ZeroRng
-        }
-    }
-
-    impl Rng for ZeroRng {
-        fn next_u32(&mut self) -> u32 { 0u32 }
-
-        fn fill_bytes(&mut self, bytes: &mut [u8]) {
-            for i in 0 .. bytes.len() {
-                bytes[i] = 0;
-            }
-        }
-    }
-
     #[test]
-    fn test_unmarshal_marshal() {  // TestUnmarshalMarshal
+    fn unmarshal_marshal() {  // TestUnmarshalMarshal
         let mut cspring: OsRng;
         let mut keypair: Keypair;
         let mut x: Option<ExtendedPoint>;
@@ -390,7 +405,7 @@ mod test {
 
         // from_bytes() fails if vx²-u=0 and vx²+u=0
         loop {
-            keypair = Keypair::generate(&mut cspring);
+            keypair = Keypair::generate::<Sha512>(&mut cspring);
             x = keypair.public.decompress();
 
             if x.is_some() {
@@ -404,7 +419,7 @@ mod test {
     }
 
     #[test]
-    fn test_sign_verify() {  // TestSignVerify
+    fn sign_verify() {  // TestSignVerify
         let mut cspring: OsRng;
         let keypair: Keypair;
         let good_sig: Signature;
@@ -414,15 +429,15 @@ mod test {
         let bad:  &[u8] = "wrong message".as_bytes();
 
         cspring  = OsRng::new().unwrap();
-        keypair  = Keypair::generate(&mut cspring);
-        good_sig = keypair.sign(&good);
-        bad_sig  = keypair.sign(&bad);
+        keypair  = Keypair::generate::<Sha512>(&mut cspring);
+        good_sig = keypair.sign::<Sha512>(&good);
+        bad_sig  = keypair.sign::<Sha512>(&bad);
 
-        assert!(keypair.verify(&good, &good_sig) == true,
+        assert!(keypair.verify::<Sha512>(&good, &good_sig) == true,
                 "Verification of a valid signature failed!");
-        assert!(keypair.verify(&good, &bad_sig)  == false,
+        assert!(keypair.verify::<Sha512>(&good, &bad_sig)  == false,
                 "Verification of a signature on a different message passed!");
-        assert!(keypair.verify(&bad,  &good_sig) == false,
+        assert!(keypair.verify::<Sha512>(&bad,  &good_sig) == false,
                 "Verification of a signature on a different message passed!");
     }
 
@@ -432,7 +447,7 @@ mod test {
     #[cfg(test)]
     #[cfg(not(release))]
     #[test]
-    fn test_golden() { // TestGolden
+    fn golden() { // TestGolden
         let mut line: String;
         let mut lineno: usize = 0;
 
@@ -465,40 +480,67 @@ mod test {
 
             let secret_key: SecretKey = SecretKey::from_bytes(&sec_bytes);
             let public_key: PublicKey = PublicKey::from_bytes(&pub_bytes);
-            let sig2: Signature = secret_key.sign(&message);
+            let sig2: Signature = secret_key.sign::<Sha512>(&message);
 
             println!("{:?}", sec_bytes);
             println!("{:?}", pub_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(public_key.verify(&message, &sig2), "Signature verification failed on line {}", lineno);
+            assert!(public_key.verify::<Sha512>(&message, &sig2),
+                    "Signature verification failed on line {}", lineno);
+        }
+    }
+}
 
+#[cfg(all(test, feature = "bench"))]
+mod bench {
+    use test::Bencher;
+    use rand::OsRng;
+    use sha2::Sha512;
+    use super::*;
+
+    /// A fake RNG which simply returns zeroes.
+    struct ZeroRng;
+
+    impl ZeroRng {
+        pub fn new() -> ZeroRng {
+            ZeroRng
+        }
+    }
+
+    impl Rng for ZeroRng {
+        fn next_u32(&mut self) -> u32 { 0u32 }
+
+        fn fill_bytes(&mut self, bytes: &mut [u8]) {
+            for i in 0 .. bytes.len() {
+                bytes[i] = 0;
+            }
         }
     }
 
     #[bench]
-    fn bench_sign(b: &mut Bencher) {
+    fn sign(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate(&mut cspring);
-        let msg: &[u8] = "test message".as_bytes();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let msg: &[u8] = b"";
 
-        b.iter(| | keypair.sign(msg));
+        b.iter(| | keypair.sign::<Sha512>(msg));
     }
 
     #[bench]
-    fn bench_verify(b: &mut Bencher) {
+    fn verify(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate(&mut cspring);
-        let msg: &[u8] = "test message".as_bytes();
-        let sig: Signature = keypair.sign(msg);
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let msg: &[u8] = b"";
+        let sig: Signature = keypair.sign::<Sha512>(msg);
 
-        b.iter(| | keypair.verify(msg, &sig));
+        b.iter(| | keypair.verify::<Sha512>(msg, &sig));
     }
 
     #[bench]
-    fn bench_key_generation(b: &mut Bencher) {
+    fn key_generation(b: &mut Bencher) {
         let mut rng: ZeroRng = ZeroRng::new();
 
-        b.iter(| | Keypair::generate(&mut rng));
+        b.iter(| | Keypair::generate::<Sha512>(&mut rng));
     }
 }

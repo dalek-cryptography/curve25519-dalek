@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
 license = "CC0-1.0"
@@ -10,11 +10,13 @@ documentation = "https://docs.rs/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
 categories = ["cryptography", "no-std"]
 description = "Fast and efficient ed25519 signing and verification in pure Rust."
-exclude = [ ".gitignore", "TESTVECTORS" ]
+exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
+
+[badges]
+travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 
 [dependencies]
 arrayref = "0.3.3"
-sha2 = "^0.4"
 
 [dependencies.curve25519-dalek]
 version = "^0.6"
@@ -24,9 +26,19 @@ default-features = false
 optional = true
 version = "^0.3"
 
+[dependencies.digest]
+version = "0.4"
+
+[dependencies.generic-array]
+# same version that digest depends on
+version = "^0.6"
+
 [dev-dependencies]
 rustc-serialize = "0.3"
+sha2 = "^0.4"
 
 [features]
 default = ["std"]
-std = ["rand"]
+std = ["rand", "curve25519-dalek/std"]
+bench = []
+nightly = ["curve25519-dalek/nightly"]

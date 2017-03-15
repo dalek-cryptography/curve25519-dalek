@@ -12,8 +12,6 @@
 
 use core::fmt::Debug;
 
-use sha2::Sha512;
-
 #[cfg(feature = "std")]
 use rand::Rng;
 
@@ -392,6 +390,7 @@ mod test {
     use curve25519_dalek::curve::ExtendedPoint;
     use rand::OsRng;
     use rustc_serialize::hex::FromHex;
+    use sha2::Sha512;
     use super::*;
 
     #[test]
@@ -499,6 +498,7 @@ mod bench {
     use digest::Digest;
     use test::Bencher;
     use rand::OsRng;
+    use sha2::Sha512;
     use super::*;
 
     /// A fake RNG which simply returns zeroes.

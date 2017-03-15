@@ -131,6 +131,10 @@ extern crate test;
 #[cfg(test)]
 extern crate rustc_serialize;
 
+#[cfg(all(test, feature = "bench"))]
+extern crate blake2;
+
+
 mod ed25519;
 
 // Export everything public in ed25519.

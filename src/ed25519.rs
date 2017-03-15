@@ -522,7 +522,7 @@ mod bench {
     fn sign(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
-        let msg: &[u8] = "".as_bytes();
+        let msg: &[u8] = b"";
 
         b.iter(| | keypair.sign::<Sha512>(msg));
     }
@@ -531,7 +531,7 @@ mod bench {
     fn verify(b: &mut Bencher) {
         let mut cspring: OsRng = OsRng::new().unwrap();
         let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
-        let msg: &[u8] = "".as_bytes();
+        let msg: &[u8] = b"";
         let sig: Signature = keypair.sign::<Sha512>(msg);
 
         b.iter(| | keypair.verify::<Sha512>(msg, &sig));

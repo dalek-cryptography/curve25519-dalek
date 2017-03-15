@@ -495,7 +495,6 @@ mod test {
 #[cfg(all(test, feature = "bench"))]
 mod bench {
     use blake2::Blake2b;
-    use digest::Digest;
     use test::Bencher;
     use rand::OsRng;
     use sha2::Sha512;

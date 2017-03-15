@@ -94,7 +94,7 @@ or form, safe.
 The signatures produced by this library are malleable, as defined in
 [the original paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf):
 
-![](https://raw.githubusercontent.com/isislovecruft/ed25519-dalek/develop/ed25519-malleability.png)
+![](https://github.com/isislovecruft/ed25519-dalek/blob/develop/res/ed25519-malleability.png)
 
 We could eliminate the malleability property by multiplying by the curve
 cofactor, however, this would cause our implementation to *not* match the

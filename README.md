@@ -100,13 +100,12 @@ The signatures produced by this library are malleable, as discussed in
 
 We could eliminate the malleability property by multiplying by the curve
 cofactor, however, this would cause our implementation to *not* match the
-behaviour of every other implementation in existence.  While there is, as of
-this writing, a
-[draft RFC for EdDSA signatures](https://tools.ietf.org/html/rfc8032) which
-specifies that the stronger check should be done (and while we agree that the
-stronger check should be done), it is our opinion that one doesn't get to
-change the definition of "ed25519 verification" a decade after the fact,
-declaring every implementation (including one's own) to be non-conformant.
+behaviour of every other implementation in existence.  As of this writing,
+[RFC 8032](https://tools.ietf.org/html/rfc8032), "Edwards-Curve Digital
+Signature Algorithm (EdDSA)," advises that the stronger check should be done.
+While we agree that the stronger check should be done, it is our opinion that
+one shouldn't get to change the definition of "ed25519 verification" a decade
+after the fact, breaking compatibility with every other implementation.
 
 In short, if malleable signatures are bad for your protocol, don't use them.
 Consider using a curve25519-based Verifiable Random Function (VRF), such as

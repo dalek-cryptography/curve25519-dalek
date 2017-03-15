@@ -148,3 +148,5 @@ to the `Cargo.toml`:
    rather than using the rust-crypto implementation whose API requires
    that we allocate memory and memzero it before mutating to store the
    digest.
+ * Incorporate ed25519-dalek into Brian Smith's
+   [crypto-bench](https://github.com/briansmith/crypto-bench).

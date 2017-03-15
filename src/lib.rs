@@ -52,7 +52,7 @@
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! let signature: Signature = keypair.sign(message);
+//! let signature: Signature = keypair.sign::<Sha512>(message);
 //! # }
 //! ```
 //!
@@ -72,8 +72,8 @@
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign(message);
-//! let verified: bool = keypair.verify(message, &signature);
+//! # let signature: Signature = keypair.sign::<Sha512>(message);
+//! let verified: bool = keypair.verify::<Sha512>(message, &signature);
 //!
 //! assert!(verified);
 //! # }
@@ -96,9 +96,9 @@
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign(message);
+//! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! let public_key: PublicKey = keypair.public;
-//! let verified: bool = public_key.verify(message, &signature);
+//! let verified: bool = public_key.verify::<Sha512>(message, &signature);
 //!
 //! assert!(verified);
 //! # }

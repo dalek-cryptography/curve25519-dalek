@@ -112,7 +112,6 @@
 
 #[macro_use]
 extern crate arrayref;
-extern crate sha2;
 extern crate curve25519_dalek;
 extern crate generic_array;
 extern crate digest;
@@ -123,6 +122,9 @@ extern crate rand;
 #[cfg(test)]
 #[macro_use]
 extern crate std;
+
+#[cfg(test)]
+extern crate sha2;
 
 #[cfg(test)]
 extern crate rustc_serialize;

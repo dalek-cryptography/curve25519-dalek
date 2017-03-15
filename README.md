@@ -87,11 +87,12 @@ review.  Neither have yet received what we would consider *sufficient* peer
 review by other qualified cryptographers to be considered in any way, shape,
 or form, safe.
 
-**USE AT YOUR OWN RISK**
+**USE AT YOUR OWN RISK.**
 
-## A Note on Signature Malleability
 
-The signatures produced by this library are malleable, as defined in
+### A Note on Signature Malleability
+
+The signatures produced by this library are malleable, as discussed in
 [the original paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf):
 
 ![](https://github.com/isislovecruft/ed25519-dalek/blob/develop/res/ed25519-malleability.png)

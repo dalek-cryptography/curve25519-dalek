@@ -36,6 +36,7 @@ version = "^0.6"
 
 [dev-dependencies]
 rustc-serialize = "0.3"
+blake2 = "^0.4"
 
 [features]
 default = ["std"]

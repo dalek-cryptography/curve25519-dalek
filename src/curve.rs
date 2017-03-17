@@ -1053,14 +1053,14 @@ impl ExtendedPoint {
     /// Returns `Some<[u8;32]>` if `self` is in the image of the
     /// Elligator2 map.  For a random point on the curve, this happens
     /// with probability 1/2.  Otherwise, returns `None`.
-    pub fn to_uniform_representative(&self) -> Option<[u8;32]> {
+    pub fn to_uniform_representative(&self) -> Option<[u8; 32]> {
         unimplemented!();
     }
 
     /// Use Elligator2 to convert a uniformly random string to a curve
     /// point.
     #[allow(unused_variables)] // REMOVE WHEN IMPLEMENTED
-    pub fn from_uniform_representative(bytes: &[u8;32]) -> ExtendedPoint {
+    pub fn from_uniform_representative(bytes: &[u8; 32]) -> ExtendedPoint {
         unimplemented!();
     }
 }

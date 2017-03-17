@@ -190,7 +190,7 @@ impl Scalar {
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-            where D: Digest<OutputSize=U64> + Default {
+            where D: Digest<OutputSize = U64> + Default {
         let mut hash = D::default();
         hash.input(input);
         // XXX this seems clumsy
@@ -200,7 +200,7 @@ impl Scalar {
     }
 
     /// View this `Scalar` as a sequence of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0
     }
 
@@ -226,7 +226,7 @@ impl Scalar {
     /// Intuitively, this is like a binary expansion, except that we
     /// allow some coefficients to grow up to `2^(w-1)` so that the
     /// nonzero coefficients are as sparse as possible.
-    pub fn non_adjacent_form(&self) -> [i8;256] {
+    pub fn non_adjacent_form(&self) -> [i8; 256] {
         // Step 1: write out bits of the scalar
         let mut naf = [0i8; 256];
         for i in 0..256 {
@@ -270,7 +270,7 @@ impl Scalar {
     // Unpack a scalar into 12 21-bit limbs.
     fn unpack(&self) -> UnpackedScalar {
         let mask_21bits: i64 = (1 << 21) -1;
-        let mut a = UnpackedScalar([0i64;12]);
+        let mut a = UnpackedScalar([0i64; 12]);
         a[ 0]  = mask_21bits &  load3(&self.0[ 0..])      ;
         a[ 1]  = mask_21bits & (load4(&self.0[ 2..]) >> 5);
         a[ 2]  = mask_21bits & (load3(&self.0[ 5..]) >> 2);
@@ -296,7 +296,7 @@ impl Scalar {
     ///
     /// Precondition: self[31] <= 127.  This is the case whenever
     /// `self` is reduced.
-    pub fn to_radix_16(&self) -> [i8;64] {
+    pub fn to_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 
@@ -339,8 +339,8 @@ impl Scalar {
     }
 
     /// Reduce a 512-bit little endian number mod l
-    pub fn reduce(input: &[u8;64]) -> Scalar {
-        let mut s = [0i64;24];
+    pub fn reduce(input: &[u8; 64]) -> Scalar {
+        let mut s = [0i64; 24];
 
         // XXX express this as two unpack_limbs
         // some issues re: masking with the top byte of the 32byte input
@@ -444,7 +444,7 @@ impl UnpackedScalar {
     pub fn multiply_add(a: &UnpackedScalar,
                         b: &UnpackedScalar,
                         c: &UnpackedScalar) -> UnpackedScalar {
-        let mut result = [0i64;24];
+        let mut result = [0i64; 24];
 
         // Multiply a and b, and add c
         result[0]  =         c[0] +  a[0]*b[0];
@@ -506,10 +506,10 @@ impl UnpackedScalar {
     /// limbs.  Reduction mod l amounts to eliminating all of the
     /// high limbs while carrying as appropriate to prevent
     /// overflows in the lower limbs.
-    fn reduce_limbs(mut limbs: &mut [i64;24]) -> UnpackedScalar {
+    fn reduce_limbs(mut limbs: &mut [i64; 24]) -> UnpackedScalar {
         #[inline]
         #[allow(dead_code)]
-        fn do_reduction(limbs: &mut [i64;24], i:usize) {
+        fn do_reduction(limbs: &mut [i64; 24], i:usize) {
             limbs[i - 12] += limbs[i] * 666643;
             limbs[i - 11] += limbs[i] * 470296;
             limbs[i - 10] += limbs[i] * 654183;
@@ -531,7 +531,7 @@ impl UnpackedScalar {
         #[allow(dead_code)]
         /// Carry excess from the `i`-th limb into the `(i+1)`-th limb.
         /// Postcondition: `-2^20 <= limbs[i] < 2^20`.
-        fn do_carry_centered(limbs: &mut [i64;24], i:usize) {
+        fn do_carry_centered(limbs: &mut [i64; 24], i:usize) {
             let carry: i64 = (limbs[i] + (1<<20)) >> 21;
             limbs[i+1] += carry;
             limbs[i  ] -= carry << 21;
@@ -585,7 +585,7 @@ impl UnpackedScalar {
         }
 
         // XXX better way to get [i64;12] from [i64;24] ?
-        UnpackedScalar(*array_ref!(limbs,0,12))
+        UnpackedScalar(*array_ref!(limbs, 0, 12))
     }
 
 }
@@ -632,7 +632,7 @@ mod test {
         0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
         0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09]);
 
-    static A_NAF: [i8;256] =
+    static A_NAF: [i8; 256] =
         [0,13,0,0,0,0,0,0,0,7,0,0,0,0,0,0,-9,0,0,0,0,-11,0,0,0,0,3,0,0,0,0,1,
          0,0,0,0,9,0,0,0,0,-5,0,0,0,0,0,0,3,0,0,0,0,11,0,0,0,0,11,0,0,0,0,0,
          -9,0,0,0,0,0,-3,0,0,0,0,9,0,0,0,0,0,1,0,0,0,0,0,0,-1,0,0,0,0,0,9,0,
@@ -679,7 +679,7 @@ mod test {
 
     #[test]
     fn scalar_reduce() {
-        let mut bignum = [0u8;64];
+        let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
         for i in 0..32 {
             bignum[   i] = X[i];

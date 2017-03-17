@@ -454,8 +454,9 @@ impl FieldElement {
 
         FieldElement(limbs)
     }
+
     #[cfg(not(feature="radix_51"))]
-    fn reduce(input: &[i64;10]) -> FieldElement { //FeCombine
+    fn reduce(input: &[i64; 10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
         let mut h = input.clone();
 
@@ -533,7 +534,7 @@ impl FieldElement {
         /* |h[0]| <= 2^25; from now on fits into int32 unchanged */
         /* |h[1]| <= 1.01*2^24 */
 
-        let mut output = FieldElement([0i32;10]);
+        let mut output = FieldElement([0i32; 10]);
         output[0] = h[0] as i32;
         output[1] = h[1] as i32;
         output[2] = h[2] as i32;
@@ -585,7 +586,7 @@ impl FieldElement {
     }
     /// Parse a `FieldElement` from 32 bytes.
     #[cfg(feature="radix_51")]
-    pub fn from_bytes(bytes: &[u8;32]) -> FieldElement {
+    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement {
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement(
         // load bits [  0, 64), no shift
@@ -621,7 +622,7 @@ impl FieldElement {
     /// assert!(data == bytes);
     /// ```
     #[cfg(not(feature="radix_51"))]
-    pub fn to_bytes(&self) -> [u8;32] { //FeToBytes
+    pub fn to_bytes(&self) -> [u8; 32] { //FeToBytes
         // Comment preserved from ed25519.go (presumably originally from ref10):
         //
         // # Preconditions
@@ -752,7 +753,7 @@ impl FieldElement {
     }
     /// Serialize this `FieldElement` to bytes.
     #[cfg(feature="radix_51")]
-    pub fn to_bytes(&self) -> [u8;32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         // This reduces to the range [0,2^255), but we need [0,2^255-19)
         let mut limbs = FieldElement::reduce(self.0).0;
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
@@ -925,7 +926,7 @@ impl FieldElement {
     }
 
     #[cfg(not(feature="radix_51"))]
-    fn square_inner(&self) -> [i64;10] {
+    fn square_inner(&self) -> [i64; 10] {
         let f0     = self[0]       as i64;
         let f1     = self[1]       as i64;
         let f2     = self[2]       as i64;
@@ -964,6 +965,7 @@ impl FieldElement {
 
         h
     }
+
     #[cfg(feature="radix_51")]
     #[inline(always)]
     fn square_inner(&self) -> [u64; 5] {
@@ -1170,8 +1172,7 @@ impl FieldElement {
     /// - `(0u8, zero)`      if `v` is zero;
     /// - `(0u8, garbage)`   if `u/v` is nonsquare.
     ///
-    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement)
-                      -> (u8, FieldElement) {
+    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement) -> (u8, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
         //
@@ -1259,28 +1260,28 @@ mod test {
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
-    pub static A_BYTES: [u8;32] =
+    pub static A_BYTES: [u8; 32] =
         [ 0x04, 0xfe, 0xdf, 0x98, 0xa7, 0xfa, 0x0a, 0x68,
           0x84, 0x92, 0xbd, 0x59, 0x08, 0x07, 0xa7, 0x03,
           0x9e, 0xd1, 0xf6, 0xf2, 0xe1, 0xd9, 0xe2, 0xa4,
           0xa4, 0x51, 0x47, 0x36, 0xf3, 0xc3, 0xa9, 0x17];
 
     /// Byte representation of a**2
-    static ASQ_BYTES: [u8;32] =
+    static ASQ_BYTES: [u8; 32] =
         [ 0x75, 0x97, 0x24, 0x9e, 0xe6, 0x06, 0xfe, 0xab,
           0x24, 0x04, 0x56, 0x68, 0x07, 0x91, 0x2d, 0x5d,
           0x0b, 0x0f, 0x3f, 0x1c, 0xb2, 0x6e, 0xf2, 0xe2,
           0x63, 0x9c, 0x12, 0xba, 0x73, 0x0b, 0xe3, 0x62];
 
     /// Byte representation of 1/a
-    static AINV_BYTES: [u8;32] =
+    static AINV_BYTES: [u8; 32] =
         [0x96, 0x1b, 0xcd, 0x8d, 0x4d, 0x5e, 0xa2, 0x3a,
          0xe9, 0x36, 0x37, 0x93, 0xdb, 0x7b, 0x4d, 0x70,
          0xb8, 0x0d, 0xc0, 0x55, 0xd0, 0x4c, 0x1d, 0x7b,
          0x90, 0x71, 0xd8, 0xe9, 0xb6, 0x18, 0xe6, 0x30];
 
     /// Byte representation of a^((p-5)/8)
-    static AP58_BYTES: [u8;32] =
+    static AP58_BYTES: [u8; 32] =
         [0x6a, 0x4f, 0x24, 0x89, 0x1f, 0x57, 0x60, 0x36,
          0xd0, 0xbe, 0x12, 0x3c, 0x8f, 0xf5, 0xb1, 0x59,
          0xe0, 0xf0, 0xb8, 0x1b, 0x20, 0xd2, 0xb5, 0x1f,

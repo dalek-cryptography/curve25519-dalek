@@ -584,7 +584,6 @@ impl UnpackedScalar {
             do_carry_uncentered(&mut limbs, i);
         }
 
-        // XXX better way to get [i64;12] from [i64;24] ?
         UnpackedScalar(*array_ref!(limbs, 0, 12))
     }
 

@@ -86,7 +86,7 @@ impl PartialEq for FieldElement {
         for i in 0..32 {
             are_equal &= self_bytes[i] == other_bytes[i];
         }
-        return are_equal;
+        are_equal
     }
 }
 
@@ -923,7 +923,7 @@ impl FieldElement {
         for b in &bytes {
             x |= *b;
         }
-        return byte_is_nonzero(x);
+        byte_is_nonzero(x)
     }
 
     #[cfg(not(feature="radix_51"))]

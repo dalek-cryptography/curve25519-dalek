@@ -41,25 +41,27 @@ use constants;
 #[cfg(feature="radix_51")]
 pub type Limb = u64;
 
-/// FieldElement represents an element of the field GF(2^255 - 19).  An element
-/// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
-/// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
-/// context.
+/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+///
+/// With the `radix_51` feature, a `FieldElement` is represented in
+/// radix 2^51 as five `u64`s; the coefficients are allowed to grow up
+/// to 2^54 between reductions mod `p`.
 #[cfg(feature="radix_51")]
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [u64; 5]);
 
-/// FieldElements are represented as an array of ten "Limbs", which are radix
-/// 25.5, that is, each Limb of a FieldElement alternates between being
-/// represented as a factor of 2^25 or 2^26 more than the last corresponding
-/// integer.
+/// Without the `radix51` feature enabled, `FieldElements` are represented
+/// in radix 2^25.5 as ten `i32`s.
 #[cfg(not(feature="radix_51"))]
 pub type Limb = i32;
 
-/// FieldElement represents an element of the field GF(2^255 - 19).  An element
-/// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
-/// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
-/// context.
+/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+///
+/// With the `radix_51` feature, a `FieldElement` is represented in
+/// radix 2^25.5 as ten `i32`s, so that an element t, entries
+/// t[0],...,t[9], represents the integer t[0]+2^26 t[1]+2^51
+/// t[2]+2^77 t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i]
+/// vary depending on context.
 #[cfg(not(feature="radix_51"))]
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [i32; 10]);

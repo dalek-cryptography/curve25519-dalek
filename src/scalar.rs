@@ -90,16 +90,14 @@ impl CTEq for Scalar {
 impl Index<usize> for Scalar {
     type Output = u8;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a u8 {
-        let ret: &'a u8 = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &u8 {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for Scalar {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut u8 {
-        let ret: &'a mut u8 = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut u8 {
+        &mut(self.0[_index])
     }
 }
 
@@ -194,7 +192,7 @@ impl Scalar {
     }
 
     /// View this `Scalar` as a sequence of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+    pub fn as_bytes(&self) -> &[u8;32] {
         &self.0
     }
 
@@ -381,16 +379,14 @@ pub struct UnpackedScalar(pub [i64; 12]);
 impl Index<usize> for UnpackedScalar {
     type Output = i64;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a i64 {
-        let ret: &'a i64 = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &i64 {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for UnpackedScalar {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut i64 {
-        let ret: &'a mut i64 = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut i64 {
+        &mut(self.0[_index])
     }
 }
 

@@ -110,16 +110,14 @@ impl Debug for FieldElement {
 impl Index<usize> for FieldElement {
     type Output = Limb;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a Limb {
-        let ret: &'a Limb = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &Limb {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for FieldElement {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut Limb {
-        let ret: &'a mut Limb = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut Limb {
+        &mut(self.0[_index])
     }
 }
 

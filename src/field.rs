@@ -132,7 +132,7 @@ impl<'b> AddAssign<&'b FieldElement> for FieldElement {
 impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     fn add(self, _rhs: &'b FieldElement) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output += _rhs;
         output
     }
@@ -158,7 +158,7 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     #[cfg(not(feature="radix_51"))]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output -= _rhs;
         output
     }
@@ -326,7 +326,7 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
 impl<'a> Neg for &'a FieldElement {
     type Output = FieldElement;
     fn neg(self) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output.negate();
         output
     }
@@ -656,7 +656,7 @@ impl FieldElement {
         // so floor(2^-255 * (h + 19 * 2^-25 * h9 + 2^-1)) = q.
         //
         let mut carry = [0i32; 10];
-        let mut h = self.clone();
+        let mut h: [i32; 10] = self.0;
 
         let mut q:i32 = (19*h[9] + (1 << 24)) >> 25;
         q = (h[0] + q) >> 26;
@@ -1352,7 +1352,7 @@ mod test {
 
     #[test]
     fn from_bytes_highbit_is_ignored() {
-        let mut cleared_bytes = B_BYTES.clone();
+        let mut cleared_bytes = B_BYTES;
         cleared_bytes[31] &= 127u8;
         let with_highbit_set    = FieldElement::from_bytes(&B_BYTES);
         let without_highbit_set = FieldElement::from_bytes(&cleared_bytes);

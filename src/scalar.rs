@@ -72,13 +72,7 @@ impl PartialEq for Scalar {
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        let equal: u8 = arrays_equal_ct(&self.0, &other.0);
-
-        if equal == 1u8 {
-            return true;
-        } else {
-            return false;
-        }
+        arrays_equal_ct(&self.0, &other.0) == 1u8
     }
 }
 

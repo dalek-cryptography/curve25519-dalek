@@ -470,13 +470,7 @@ pub trait IsIdentity {
 /// constructor.
 impl<T> IsIdentity for T where T: CTEq + Identity {
     fn is_identity(&self) -> bool {
-        let identity: T = T::identity();
-
-        if self.ct_eq(&identity) == 1u8 {
-            return true;
-        } else {
-            return false;
-        }
+        self.ct_eq(&T::identity()) == 1u8
     }
 }
 

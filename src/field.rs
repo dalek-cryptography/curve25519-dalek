@@ -319,7 +319,7 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
         let h8 = f0*g8 + f1_2*g7 + f2*g6 + f3_2*g5 + f4*g4 + f5_2*g3 + f6*g2 + f7_2*g1 + f8*g0 + f9_2*g9_19;
         let h9 = f0*g9 + f1*g8 + f2*g7 + f3*g6 + f4*g5 + f5*g4 + f6*g3 + f7*g2 + f8*g1 + f9*g0;
 
-        FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
+        FieldElement::reduce([h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
 }
 
@@ -455,9 +455,8 @@ impl FieldElement {
         FieldElement(limbs)
     }
     #[cfg(not(feature="radix_51"))]
-    fn reduce(input: &[i64;10]) -> FieldElement { //FeCombine
+    fn reduce(mut h: [i64; 10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
-        let mut h = input.clone();
 
         /*
           |h[0]| <= (1.1*1.1*2^52*(1+19+19+19+19)+1.1*1.1*2^50*(38+38+38+38+38))
@@ -581,7 +580,7 @@ impl FieldElement {
         h[8] =  load3(&data[26..]) << 4;
         h[9] = (load3(&data[29..]) & 8388607) << 2;
 
-        FieldElement::reduce(&h)
+        FieldElement::reduce(h)
     }
     /// Parse a `FieldElement` from 32 bytes.
     #[cfg(feature="radix_51")]
@@ -1028,12 +1027,12 @@ impl FieldElement {
     /// * |h[i]| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
     #[cfg(not(feature="radix_51"))]
     pub fn square(&self) -> FieldElement {
-        FieldElement::reduce(&self.square_inner())
+        FieldElement::reduce(self.square_inner())
     }
     /// Compute `self^2`.
     #[cfg(feature="radix_51")]
     pub fn square(&self) -> FieldElement {
-        FieldElement::reduce( self.square_inner())
+        FieldElement::reduce(self.square_inner())
     }
 
     /// Square this field element and multiply the result by 2.
@@ -1058,7 +1057,7 @@ impl FieldElement {
         for i in 0..self.0.len() {
             coeffs[i] += coeffs[i];
         }
-        FieldElement::reduce(&coeffs)
+        FieldElement::reduce(coeffs)
     }
     /// Compute `2 * self^2`.
     #[cfg(feature="radix_51")]

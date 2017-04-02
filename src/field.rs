@@ -907,7 +907,7 @@ impl FieldElement {
     ///
     /// If zero, return `1u8`.  Otherwise, return `0u8`.
     pub fn is_zero(&self) -> u8 {
-        return 1u8 & (!self.is_nonzero());
+        1u8 & (!self.is_nonzero())
     }
 
     /// Determine if this `FieldElement` is non-zero.

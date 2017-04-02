@@ -927,8 +927,7 @@ impl ExtendedPoint {
             r = s.double(); s = r.to_projective();
         }
         // Unroll last iteration so we can go directly to_extended()
-        r = s.double();
-        return r.to_extended();
+        s.double().to_extended()
     }
 
     /// Determine if this point is of small order.

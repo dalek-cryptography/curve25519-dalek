@@ -947,13 +947,7 @@ impl ExtendedPoint {
     ///
     /// True if it is of small order; false otherwise.
     pub fn is_small_order(&self) -> bool {
-        let p8: ExtendedPoint = self.mult_by_pow_2(3);
-
-        if p8.is_identity() {
-            return true;
-        } else {
-            return false;
-        }
+        self.mult_by_cofactor().is_identity()
     }
 }
 

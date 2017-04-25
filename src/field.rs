@@ -828,32 +828,6 @@ impl FieldElement {
         return s
     }
 
-    /// XXX clarify documentation
-    /// Determine if this field element, represented as a byte array,
-    /// is less than or equal to another field element represented as
-    /// a byte array.
-    ///
-    /// # Returns
-    ///
-    /// Returns `1u8` if `self.to_bytes() <= other.to_bytes()`, and `0u8` otherwise.
-    pub fn bytes_equal_less_than(&self, other: &[u8; 32]) -> u8 { // feBytesLess
-        // XXX cleanup
-	    let mut equal_so_far: i32 = -1i32;
-	    let mut greater:      i32 =  0i32;
-
-        let this: [u8; 32] = self.to_bytes();
-
-        for i in 32 .. 0 {
-            let x: i32 =  this[i-1] as i32;
-            let y: i32 = other[i-1] as i32;
-
-            greater      = (!equal_so_far & greater) | (equal_so_far & ((x - y) >> 31));
-            equal_so_far = equal_so_far & (((x ^ y) - 1) >> 31);
-        }
-
-        (!equal_so_far & 1 & greater) as u8
-    }
-
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is
     /// set.

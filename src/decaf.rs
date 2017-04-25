@@ -30,6 +30,7 @@ use subtle::CTAssignable;
 use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
+use core::ops::{Mul, MulAssign};
 
 #[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
 use collections::boxed::Box;
@@ -40,7 +41,6 @@ use curve;
 use curve::ExtendedPoint;
 use curve::EdwardsBasepointTable;
 use curve::BasepointMult;
-use curve::ScalarMult;
 use curve::Identity;
 use scalar::Scalar;
 
@@ -250,9 +250,18 @@ impl<'a> Neg for &'a DecafPoint {
     }
 }
 
-impl ScalarMult<Scalar> for DecafPoint {
-    fn scalar_mult(&self, scalar: &Scalar) -> DecafPoint {
-        DecafPoint(self.0.scalar_mult(scalar))
+impl<'b> MulAssign<&'b Scalar> for DecafPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
+        let result = (self as &DecafPoint) * scalar;
+        *self = result;
+    }
+}
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a DecafPoint {
+    type Output = DecafPoint;
+    /// Scalar multiplication: compute `scalar * self`.
+    fn mul(self, scalar: &'b Scalar) -> DecafPoint {
+        DecafPoint(&self.0 * scalar)
     }
 }
 

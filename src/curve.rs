@@ -79,7 +79,9 @@
 
 use core::fmt::Debug;
 use core::iter::Iterator;
-use core::ops::{Add, Sub, Neg, Index};
+use core::ops::{Add, Sub, Neg};
+use core::ops::{Mul, MulAssign};
+use core::ops::Index;
 
 use constants;
 use field::FieldElement;
@@ -789,18 +791,20 @@ impl<'a> Neg for &'a AffineNielsPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-/// Trait for scalar multiplication of an arbitrary point.
-pub trait ScalarMult<S> {
-    /// Compute `scalar * self`.
-    fn scalar_mult(&self, scalar: &S) -> Self;
+impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
+        let result = (self as &ExtendedPoint) * scalar;
+        *self = result;
+    }
 }
 
-impl ScalarMult<Scalar> for ExtendedPoint {
+impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
         for i in 0..7 {
@@ -1369,7 +1373,7 @@ mod test {
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mult_vs_ed25519py() {
-        let aB = constants::ED25519_BASEPOINT.scalar_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT * &A_SCALAR;
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
@@ -1454,7 +1458,7 @@ mod test {
         // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
-            P = P.scalar_mult(&A_SCALAR);
+            P *= &A_SCALAR;
         }
     }
 
@@ -1501,7 +1505,7 @@ mod bench {
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
         let bp = constants::ED25519_BASEPOINT;
-        b.iter(|| bp.scalar_mult(&A_SCALAR));
+        b.iter(|| &bp * &A_SCALAR);
     }
 
     #[bench]

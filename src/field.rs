@@ -15,7 +15,6 @@
 //! Based on Adam Langley's curve25519-donna and (Golang) ed25519
 //! implementations.
 
-use core::clone::Clone;
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
 use core::ops::{Sub, SubAssign};

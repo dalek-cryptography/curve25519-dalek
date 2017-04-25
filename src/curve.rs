@@ -232,7 +232,7 @@ impl CompressedMontgomeryU {
     /// Montgomery `v` corresponding to this `u`.
     pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
         let one:       FieldElement = FieldElement::one();
-        let v_squared: FieldElement = u * &(&(&u.square() + &(&(&constants::A * u) + &one)));
+        let v_squared: FieldElement = u * &(&u.square() + &(&(&constants::A * u) + &one));
 
         let (okay, v_inv) = v_squared.invsqrt();
         let v = &v_inv * &v_squared;

@@ -59,15 +59,15 @@
 //! implementation for [Ed25519](https://ed25519.cr.yp.to/ed25519-20110926.pdf),
 //! we use several different models for curve points:
 //!
-//! * CompletedPoint: points in 𝗣^1 x 𝗣^1;
-//! * ExtendedPoint: points in 𝗣^3;
-//! * ProjectivePoint: points in 𝗣^2.
+//! * `CompletedPoint`: points in 𝗣^1 x 𝗣^1;
+//! * `ExtendedPoint`: points in 𝗣^3;
+//! * `ProjectivePoint`: points in 𝗣^2.
 //!
 //! Finally, to accelerate additions, we use two cached point formats,
 //! one for the affine model and one for the 𝗣^3 model:
 //!
-//! * AffineNielsPoint: `(y+x, y-x, 2dxy)`
-//! * ProjectiveNielsPoint: `(Y+X, Y-X, Z, 2dXY)`
+//! * `AffineNielsPoint`: `(y+x, y-x, 2dxy)`
+//! * `ProjectiveNielsPoint`: `(Y+X, Y-X, Z, 2dXY)`
 //!
 //! [1]: https://moderncrypto.org/mail-archive/curves/2016/000807.html
 
@@ -103,7 +103,7 @@ use std::boxed::Box;
 /// determined by the `y`-coordinate and the sign of `x`, marshalled
 /// into a 32-byte array.
 ///
-/// The first 255 bits of a CompressedEdwardsY represent the
+/// The first 255 bits of a `CompressedEdwardsY` represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
@@ -116,7 +116,7 @@ impl Debug for CompressedEdwardsY {
 
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
@@ -303,7 +303,7 @@ pub struct ProjectivePoint {
     Z: FieldElement,
 }
 
-/// A CompletedPoint is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
+/// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
 #[derive(Copy, Clone)]
 pub struct CompletedPoint {
@@ -470,13 +470,7 @@ pub trait IsIdentity {
 /// constructor.
 impl<T> IsIdentity for T where T: CTEq + Identity {
     fn is_identity(&self) -> bool {
-        let identity: T = T::identity();
-
-        if self.ct_eq(&identity) == 1u8 {
-            return true;
-        } else {
-            return false;
-        }
+        self.ct_eq(&T::identity()) == 1u8
     }
 }
 
@@ -933,8 +927,7 @@ impl ExtendedPoint {
             r = s.double(); s = r.to_projective();
         }
         // Unroll last iteration so we can go directly to_extended()
-        r = s.double();
-        return r.to_extended();
+        s.double().to_extended()
     }
 
     /// Determine if this point is of small order.
@@ -947,13 +940,7 @@ impl ExtendedPoint {
     ///
     /// True if it is of small order; false otherwise.
     pub fn is_small_order(&self) -> bool {
-        let p8: ExtendedPoint = self.mult_by_pow_2(3);
-
-        if p8.is_identity() {
-            return true;
-        } else {
-            return false;
-        }
+        self.mult_by_cofactor().is_identity()
     }
 }
 

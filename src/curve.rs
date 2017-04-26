@@ -826,27 +826,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
 
-impl EdwardsBasepointTable {
-    /// Create a table of precomputed multiples of `basepoint`.
-    #[cfg(feature="basepoint_table_creation")]
-    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
-        // Create the table storage
-        // XXX can we be assured that this is not allocated on the stack?
-        // XXX can we skip the initialization without too much unsafety?
-        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
-        let mut P = basepoint.clone();
-        for i in 0..32 {
-            // P = (16^2)^i * B
-            let mut jP = P.to_affine_niels();
-            for j in 1..9 {
-                // table[i][j-1] is supposed to be j*(16^2)^i*B
-                table.0[i][j-1] = jP;
-                jP = (&P + &jP).to_extended().to_affine_niels();
-            }
-            P = P.mult_by_pow_2(8);
-        }
-        return table
-    }
+impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
+    type Output = ExtendedPoint;
 
     /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
     /// computing the multiple `aB` of the basepoint `B`.
@@ -873,7 +854,7 @@ impl EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    pub fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
@@ -894,21 +875,26 @@ impl EdwardsBasepointTable {
     }
 }
 
-/// Trait for scalar multiplication of a distinguished basepoint.
-pub trait BasepointMult<S> {
-    /// Return the basepoint `B`.
-    fn basepoint() -> Self;
-    /// Compute `scalar * B`.
-    fn basepoint_mult(scalar: &S) -> Self;
-}
-
-impl BasepointMult<Scalar> for ExtendedPoint {
-    fn basepoint() -> ExtendedPoint {
-        constants::ED25519_BASEPOINT
-    }
-
-    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint {
-        constants::ED25519_BASEPOINT_TABLE.basepoint_mult(scalar)
+impl EdwardsBasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    #[cfg(feature="basepoint_table_creation")]
+    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
+        // Create the table storage
+        // XXX can we be assured that this is not allocated on the stack?
+        // XXX can we skip the initialization without too much unsafety?
+        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
+        let mut P = basepoint.clone();
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P.to_affine_niels();
+            for j in 1..9 {
+                // table[i][j-1] is supposed to be j*(16^2)^i*B
+                table.0[i][j-1] = jP;
+                jP = (&P + &jP).to_extended().to_affine_niels();
+            }
+            P = P.mult_by_pow_2(8);
+        }
+        return table
     }
 }
 
@@ -1286,7 +1272,7 @@ mod test {
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
-        let bp = ExtendedPoint::basepoint_mult(&Scalar::one());
+        let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress_edwards();
         assert_eq!(compressed, constants::BASE_CMPRSSD);
     }
@@ -1338,7 +1324,7 @@ mod test {
     #[test]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         let aB_affine_niels = aB.to_affine_niels();
         let also_aB = (&ExtendedPoint::identity() + &aB_affine_niels).to_extended();
         assert_eq!(     aB.compress_edwards(),
@@ -1348,14 +1334,15 @@ mod test {
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn basepoint_mult_vs_ed25519py() {
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let should_be_id = ExtendedPoint::basepoint_mult(&constants::l);
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let should_be_id = B * &constants::l;
         assert!(should_be_id.is_identity());
     }
 
@@ -1364,10 +1351,9 @@ mod test {
     #[cfg(feature="basepoint_table_creation")]
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
-        let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
-        let aB_2 = table.basepoint_mult(&A_SCALAR);
-        assert_eq!(aB_1.compress_edwards(),
-                   aB_2.compress_edwards());
+        let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
+        let aB_2 = &(*table) * &A_SCALAR;
+        assert_eq!(aB_1.compress_edwards(), aB_2.compress_edwards());
     }
 
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
@@ -1388,7 +1374,7 @@ mod test {
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
         let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
-        let bp2 = ExtendedPoint::basepoint_mult(&Scalar(two_bytes));
+        let bp2 = &constants::ED25519_BASEPOINT_TABLE * &Scalar(two_bytes);
         assert_eq!(bp2.compress_edwards(), BASE2_CMPRSSD);
     }
 
@@ -1454,7 +1440,7 @@ mod test {
     /// the type system and prove correctness).
     #[test]
     fn monte_carlo_overflow_underflow_debug_assert_test() {
-        let mut P = ExtendedPoint::basepoint();
+        let mut P = constants::ED25519_BASEPOINT;
         // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
@@ -1499,13 +1485,14 @@ mod bench {
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {
-        b.iter(|| ExtendedPoint::basepoint_mult(&A_SCALAR));
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        b.iter(|| B * &A_SCALAR);
     }
 
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
-        let bp = constants::ED25519_BASEPOINT;
-        b.iter(|| &bp * &A_SCALAR);
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| B * &A_SCALAR);
     }
 
     #[bench]
@@ -1569,7 +1556,7 @@ mod bench {
     #[cfg(feature="basepoint_table_creation")]
     #[bench]
     fn create_basepoint_table(b: &mut Bencher) {
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
@@ -1590,8 +1577,8 @@ mod bench {
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
             // Create 10 points (by doing scalar mults)
-            let points: Vec<_> = scalars.iter()
-                .map(|s| ExtendedPoint::basepoint_mult(s)).collect();
+            let B = &constants::ED25519_BASEPOINT_TABLE;
+            let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
 
             // XXX Currently Rust's benchmarking implementation doesn't
             // allow you to specify a sequence of random inputs, but only

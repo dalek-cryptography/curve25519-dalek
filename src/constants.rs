@@ -24,6 +24,8 @@ use curve::ExtendedPoint;
 use curve::AffineNielsPoint;
 use curve::CompressedEdwardsY;
 use curve::EdwardsBasepointTable;
+#[cfg(feature = "yolocrypto")]
+use decaf::{DecafPoint, DecafBasepointTable};
 use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
@@ -135,6 +137,10 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
+
+/// The Ed25519 basepoint, as a `DecafPoint`.
+#[cfg(feature = "yolocrypto")]
+pub const DECAF_ED25519_BASEPOINT: DecafPoint = DecafPoint(ED25519_BASEPOINT);
 
 /// Basepoint has y = 4/5.
 #[cfg(not(feature="radix_51"))]
@@ -383,6 +389,11 @@ pub const bi: [AffineNielsPoint; 8] = [
         xy2d: FieldElement([692896803108118, 500174642072499, 2068223309439677, 1162190621851337, 1426986007309901]),
     }
 ];
+
+#[cfg(feature = "yolocrypto")]
+/// The Ed25519 basepoint
+pub const DECAF_ED25519_BASEPOINT_TABLE: DecafBasepointTable
+    = DecafBasepointTable(ED25519_BASEPOINT_TABLE);
 
 /// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.
 ///

@@ -32,11 +32,6 @@ use subtle::CTNegatable;
 use core::ops::{Add, Sub, Neg};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
-use collections::boxed::Box;
-#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
-use std::boxed::Box;
-
 use curve;
 use curve::ExtendedPoint;
 use curve::EdwardsBasepointTable;
@@ -278,10 +273,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a DecafBasepointTable {
 
 impl DecafBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
-    #[cfg(feature = "basepoint_table_creation")]
-    pub fn create(basepoint: &DecafPoint) -> Box<DecafBasepointTable> {
-        let edwards_table = EdwardsBasepointTable::create(&basepoint.0);
-        box DecafBasepointTable(*edwards_table)
+    pub fn create(basepoint: &DecafPoint) -> DecafBasepointTable {
+        DecafBasepointTable(EdwardsBasepointTable::create(&basepoint.0))
     }
 }
 

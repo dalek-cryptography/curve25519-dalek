@@ -92,11 +92,6 @@ use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
 
-#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
-use collections::boxed::Box;
-#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
-use std::boxed::Box;
-
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
@@ -877,12 +872,11 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
 
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
-    #[cfg(feature="basepoint_table_creation")]
-    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
+    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
         // Create the table storage
-        // XXX can we be assured that this is not allocated on the stack?
         // XXX can we skip the initialization without too much unsafety?
-        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
+        // stick 30K on the stack and call it a day.
+        let mut table = EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
         let mut P = basepoint.clone();
         for i in 0..32 {
             // P = (16^2)^i * B
@@ -894,7 +888,7 @@ impl EdwardsBasepointTable {
             }
             P = P.mult_by_pow_2(8);
         }
-        return table
+        table
     }
 }
 
@@ -1352,7 +1346,7 @@ mod test {
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
-        let aB_2 = &(*table) * &A_SCALAR;
+        let aB_2 = &table * &A_SCALAR;
         assert_eq!(aB_1.compress_edwards(), aB_2.compress_edwards());
     }
 

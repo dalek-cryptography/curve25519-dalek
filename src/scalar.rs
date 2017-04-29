@@ -207,6 +207,17 @@ impl Scalar {
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Get the bits of the scalar.
+    pub fn bits(&self) -> [i8;256] {
+        let mut bits = [0i8; 256];
+        for i in 0..256 {
+            // As i runs from 0..256, the bottom 3 bits index the bit,
+            // while the upper bits index the byte.
+            bits[i] = ((self.0[i>>3] >> (i&7)) & 1u8) as i8;
+        }
+        bits
+    }
+
     /// Compute a width-5 "Non-Adjacent Form" of this scalar.
     ///
     /// A width-`w` NAF of a positive integer `k` is an expression
@@ -220,12 +231,7 @@ impl Scalar {
     /// nonzero coefficients are as sparse as possible.
     pub fn non_adjacent_form(&self) -> [i8;256] {
         // Step 1: write out bits of the scalar
-        let mut naf = [0i8; 256];
-        for i in 0..256 {
-            // As i runs from 0..256, the bottom 3 bits index the bit,
-            // while the upper bits index the byte.
-            naf[i] = ((self.0[i>>3] >> (i&7)) & 1u8) as i8;
-        }
+        let mut naf = self.bits();
 
         // Step 2: zero coefficients by carrying them upwards or downwards 
         'bits: for i in 0..256 {

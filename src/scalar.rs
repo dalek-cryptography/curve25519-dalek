@@ -209,6 +209,11 @@ impl Scalar {
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Compute the multiplicative inverse of this scalar.
+    pub fn invert(&self) -> Scalar {
+        self.unpack().invert().pack()
+    }
+
     /// Get the bits of the scalar.
     pub fn bits(&self) -> [i8;256] {
         let mut bits = [0i8; 256];
@@ -460,6 +465,19 @@ impl UnpackedScalar {
     /// Return the one scalar.
     pub fn one() -> UnpackedScalar {
         UnpackedScalar([1,0,0,0,0,0,0,0,0,0,0,0])
+    }
+
+    /// Compute the multiplicative inverse of this scalar.
+    pub fn invert(&self) -> UnpackedScalar {
+        let mut y = UnpackedScalar::one();
+        // Run through bits of l-2 from highest to least
+        for bit in constants::l_minus_2.bits().iter().rev() {
+            y = &y * &y;
+            if *bit == 1 {
+                y *= self;
+            }
+        }
+        y
     }
 
     /// Compute `ab+c (mod l)`.
@@ -727,6 +745,14 @@ mod test {
         }
     }
 
+    #[test]
+    fn invert() {
+        let x = UnpackedScalar([2,0,0,0,0,0,0,0,0,0,0,0]);
+        let x_inv = x.invert();
+        let should_be_one = &x * &x_inv;
+        assert_eq!(should_be_one.pack(), Scalar::one());
+    }
+
     // Negating a scalar twice should result in the original scalar.
     #[test]
     fn scalar_neg() {
@@ -755,6 +781,12 @@ mod bench {
     #[bench]
     fn scalar_multiply_add(b: &mut Bencher) {
         b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
+    }
+
+    #[bench]
+    fn invert(b: &mut Bencher) {
+        let x = X.unpack();
+        b.iter(|| x.invert());
     }
 
     #[bench]

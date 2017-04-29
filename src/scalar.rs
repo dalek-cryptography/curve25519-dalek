@@ -31,6 +31,7 @@
 
 use core::cmp::{Eq, PartialEq};
 use core::ops::{Neg, Index, IndexMut};
+use core::ops::{Mul, MulAssign};
 use core::fmt::Debug;
 
 #[cfg(feature = "std")]
@@ -397,6 +398,20 @@ impl IndexMut<usize> for UnpackedScalar {
     }
 }
 
+impl<'b> MulAssign<&'b UnpackedScalar> for UnpackedScalar {
+    fn mul_assign(&mut self, _rhs: &'b UnpackedScalar) {
+        let result = (self as &UnpackedScalar) * _rhs;
+        self.0 = result.0;
+    }
+}
+
+impl<'a, 'b> Mul<&'b UnpackedScalar> for &'a UnpackedScalar {
+    type Output = UnpackedScalar;
+    fn mul(self, _rhs: &'b UnpackedScalar) -> UnpackedScalar {
+        UnpackedScalar::multiply_add(self,_rhs, &UnpackedScalar::zero())
+    }
+}
+
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
@@ -435,6 +450,16 @@ impl UnpackedScalar {
         s[31] =  (self.0[11] >> 17)                      as u8;
 
         s
+    }
+
+    /// Return the zero scalar.
+    pub fn zero() -> UnpackedScalar {
+        UnpackedScalar([0,0,0,0,0,0,0,0,0,0,0,0])
+    }
+
+    /// Return the one scalar.
+    pub fn one() -> UnpackedScalar {
+        UnpackedScalar([1,0,0,0,0,0,0,0,0,0,0,0])
     }
 
     /// Compute `ab+c (mod l)`.
@@ -655,6 +680,14 @@ mod test {
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
+    }
+
+    #[test]
+    fn unpacked_mul() {
+        let x = X.unpack();
+        let y = Y.unpack();
+        let z = &x * &y;
+        assert_eq!(z.pack(), X_TIMES_Y);
     }
 
     #[test]

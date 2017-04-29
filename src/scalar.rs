@@ -106,7 +106,8 @@ impl Neg for Scalar {
 
     /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
     fn neg(self) -> Scalar {
-        Scalar::multiply_add(&constants::lminus1, &self, &Scalar::zero())
+        // XXX this could be more efficient
+        Scalar::multiply_add(&constants::l_minus_1, &self, &Scalar::zero())
     }
 }
 

@@ -29,10 +29,13 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
-use core::cmp::{Eq, PartialEq};
-use core::ops::{Neg, Index, IndexMut};
-use core::ops::{Mul, MulAssign};
 use core::fmt::Debug;
+use core::ops::Neg;
+use core::ops::{Add, AddAssign};
+use core::ops::{Sub, SubAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Index, IndexMut};
+use core::cmp::{Eq, PartialEq};
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -102,14 +105,53 @@ impl IndexMut<usize> for Scalar {
     }
 }
 
-impl Neg for Scalar {
-    type Output = Scalar;
-
-    /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
-    fn neg(self) -> Scalar {
-        // XXX this could be more efficient
-        Scalar::multiply_add(&constants::l_minus_1, &self, &Scalar::zero())
+impl<'b> MulAssign<&'b Scalar> for Scalar {
+    fn mul_assign(&mut self, _rhs: &'b Scalar) {
+        let result = (self as &Scalar) * _rhs;
+        self.0 = result.0;
     }
+}
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn mul(self, _rhs: &'b Scalar) -> Scalar {
+        Scalar::multiply_add(self, _rhs, &Scalar::zero())
+    }
+}
+
+impl<'b> AddAssign<&'b Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'b Scalar) {
+        *self = Scalar::multiply_add(&Scalar::one(), self, _rhs);
+    }
+}
+
+impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn add(self, _rhs: &'b Scalar) -> Scalar {
+        Scalar::multiply_add(&Scalar::one(), self, _rhs)
+    }
+}
+
+impl<'b> SubAssign<&'b Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'b Scalar) {
+        // (l-1)*_rhs + self = self - _rhs
+        *self = Scalar::multiply_add(&constants::l_minus_1, _rhs, self);
+    }
+}
+
+impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn sub(self, _rhs: &'b Scalar) -> Scalar {
+        // (l-1)*_rhs + self = self - _rhs
+        Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
+    }
+}
+
+impl<'a> Neg for &'a Scalar {
+    type Output = Scalar;
+    fn neg(self) -> Scalar {
+        self * &constants::l_minus_1
+   }
 }
 
 impl CTAssignable for Scalar {
@@ -401,20 +443,6 @@ impl IndexMut<usize> for UnpackedScalar {
     }
 }
 
-impl<'b> MulAssign<&'b UnpackedScalar> for UnpackedScalar {
-    fn mul_assign(&mut self, _rhs: &'b UnpackedScalar) {
-        let result = (self as &UnpackedScalar) * _rhs;
-        self.0 = result.0;
-    }
-}
-
-impl<'a, 'b> Mul<&'b UnpackedScalar> for &'a UnpackedScalar {
-    type Output = UnpackedScalar;
-    fn mul(self, _rhs: &'b UnpackedScalar) -> UnpackedScalar {
-        UnpackedScalar::multiply_add(self,_rhs, &UnpackedScalar::zero())
-    }
-}
-
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
@@ -470,9 +498,9 @@ impl UnpackedScalar {
         let mut y = UnpackedScalar::one();
         // Run through bits of l-2 from highest to least
         for bit in constants::l_minus_2.bits().iter().rev() {
-            y = &y * &y;
+            y = UnpackedScalar::multiply_add(&y, &y, &UnpackedScalar::zero());
             if *bit == 1 {
-                y *= self;
+                y = UnpackedScalar::multiply_add(&y, self, &UnpackedScalar::zero());
             }
         }
         y
@@ -699,20 +727,24 @@ mod test {
     }
 
     #[test]
-    fn unpacked_mul() {
-        let x = X.unpack();
-        let y = Y.unpack();
-        let z = &x * &y;
-        assert_eq!(z.pack(), X_TIMES_Y);
+    fn impl_add() {
+        let mut two = Scalar::zero(); two[0] = 2;
+        let two = two;
+        let one = Scalar::one();
+        let should_be_two = &one + &one;
+        assert_eq!(should_be_two, two);
     }
 
     #[test]
-    fn scalar_multiply_only() {
-        let zero = Scalar::zero();
-        let test_scalar = Scalar::multiply_add(&X, &Y, &zero);
-        for i in 0..32 {
-            assert!(test_scalar[i] == X_TIMES_Y[i]);
-        }
+    fn impl_sub() {
+        let should_be_one = &constants::l - &constants::l_minus_1;
+        assert_eq!(should_be_one, Scalar::one());
+    }
+
+    #[test]
+    fn impl_mul() {
+        let should_be_X_TIMES_Y = &X * &Y;
+        assert_eq!(should_be_X_TIMES_Y, X_TIMES_Y);
     }
 
     #[test]
@@ -745,19 +777,18 @@ mod test {
 
     #[test]
     fn invert() {
-        let x = UnpackedScalar([2,0,0,0,0,0,0,0,0,0,0,0]);
-        let x_inv = x.invert();
-        let should_be_one = &x * &x_inv;
-        assert_eq!(should_be_one.pack(), Scalar::one());
+        let inv_X = X.invert();
+        let should_be_one = &inv_X * &X;
+        assert_eq!(should_be_one, Scalar::one());
     }
 
     // Negating a scalar twice should result in the original scalar.
     #[test]
-    fn scalar_neg() {
-        let negative_x: Scalar = -X;
-        let orig: Scalar = -negative_x;
+    fn neg_twice_is_identity() {
+        let negative_X = -&X;
+        let should_be_X = -&negative_X;
 
-        assert!(orig == X);
+        assert_eq!(should_be_X, X);
     }
 }
 

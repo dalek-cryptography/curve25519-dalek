@@ -144,21 +144,19 @@ impl CTAssignable for Scalar {
 }
 
 impl Scalar {
-    /// Return a `Scalar` chosen uniformly at random using a CSPRNG.
-    /// Panics if the operating system's CSPRNG is unavailable.
+    /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
     ///
-    /// * `cspring`: any cryptographically secure PRNG which
-    ///   implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `rand::Rng` interface.
     ///
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
     #[cfg(feature = "std")]
-    pub fn random<T: Rng>(csprng: &mut T) -> Self {
+    pub fn random<T: Rng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        csprng.fill_bytes(&mut scalar_bytes);
+        rng.fill_bytes(&mut scalar_bytes);
         Scalar::reduce(&scalar_bytes)
     }
 

@@ -276,6 +276,11 @@ impl DecafBasepointTable {
     pub fn create(basepoint: &DecafPoint) -> DecafBasepointTable {
         DecafBasepointTable(EdwardsBasepointTable::create(&basepoint.0))
     }
+
+    /// Get the basepoint for this table as a `DecafPoint`.
+    pub fn basepoint(&self) -> DecafPoint {
+        DecafPoint(self.0.basepoint())
+    }
 }
 
 // ------------------------------------------------------------------------

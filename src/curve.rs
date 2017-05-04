@@ -890,6 +890,13 @@ impl EdwardsBasepointTable {
         }
         table
     }
+
+    /// Get the basepoint for this table as an `ExtendedPoint`.
+    pub fn basepoint(&self) -> ExtendedPoint {
+        // self.0[0][0] has 1*(16^2)^0*B, but as an `AffineNielsPoint`
+        // Add identity to convert to extended.
+        (&ExtendedPoint::identity() + &self.0[0][0]).to_extended()
+    }
 }
 
 impl ExtendedPoint {
@@ -1269,6 +1276,13 @@ mod test {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress_edwards();
         assert_eq!(compressed, constants::BASE_CMPRSSD);
+    }
+
+    /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
+    #[test]
+    fn basepoint_table_basepoint_function_correct() {
+        let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
+        assert_eq!(bp.compress_edwards(), constants::BASE_CMPRSSD);
     }
 
     /// Test `impl Add<ExtendedPoint> for ExtendedPoint`

@@ -1066,12 +1066,15 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    pub fn k_fold_scalar_mult(scalars: &Vec<Scalar>,
-                            points: &Vec<ExtendedPoint>) -> ExtendedPoint {
-        assert_eq!(scalars.len(), points.len());
+    pub fn k_fold_scalar_mult<'a,'b,I,J>(scalars: I, points: J) -> ExtendedPoint
+        where I: IntoIterator<Item=&'a Scalar>, J: IntoIterator<Item=&'b ExtendedPoint>
+    {
+        //assert_eq!(scalars.len(), points.len());
 
-        let nafs: Vec<_> = scalars.iter().map(|c| c.non_adjacent_form()).collect();
-        let odd_multiples: Vec<_> = points.iter().map(|P| OddMultiples::create(&P)).collect();
+        let nafs: Vec<_> = scalars.into_iter()
+            .map(|c| c.non_adjacent_form()).collect();
+        let odd_multiples: Vec<_> = points.into_iter()
+            .map(|P| OddMultiples::create(P)).collect();
 
         let mut r = ProjectivePoint::identity();
 
@@ -1471,9 +1474,10 @@ mod test {
         #[test]
         fn k_fold_scalar_mult_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let points = vec![A,constants::ED25519_BASEPOINT];
-            let scalars = vec![A_SCALAR, B_SCALAR];
-            let result = vartime::k_fold_scalar_mult(&scalars, &points);
+            let result = vartime::k_fold_scalar_mult(
+                &[A_SCALAR, B_SCALAR],
+                &[A, constants::ED25519_BASEPOINT]
+            );
             assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
         }
     }

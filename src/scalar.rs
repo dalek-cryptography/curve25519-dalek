@@ -207,6 +207,8 @@ impl Scalar {
     /// Takes a type parameter `D`, which is any `Digest` producing 64
     /// bytes (512 bits) of output.
     ///
+    /// Convenience wrapper around `from_hash`.
+    ///
     /// # Example
     ///
     /// ```
@@ -227,6 +229,16 @@ impl Scalar {
             where D: Digest<OutputSize=U64> + Default {
         let mut hash = D::default();
         hash.input(input);
+        Scalar::from_hash(hash)
+    }
+
+    /// Construct a scalar from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    pub fn from_hash<D>(hash: D) -> Scalar
+            where D: Digest<OutputSize=U64> + Default {
         // XXX this seems clumsy
         let mut output = [0u8;64];
         output.copy_from_slice(hash.result().as_slice());

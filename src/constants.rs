@@ -70,7 +70,7 @@ pub const SQRT_M1: FieldElement = FieldElement([
 pub const SQRT_M1: FieldElement = FieldElement([1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]);
 
 /// Precomputed value of the other square root of -1 (mod p),
-/// i.e., MSQRT_M1 = -SQRT_M1.
+/// i.e., `MSQRT_M1 = -SQRT_M1`.
 #[cfg(not(feature="radix_51"))]
 pub const MSQRT_M1: FieldElement = FieldElement([
     32595792,    7943725,  -9377950,  -3500415, -12389472,
@@ -92,7 +92,7 @@ pub const A: FieldElement       = FieldElement([
 #[cfg(feature="radix_51")]
 pub const A: FieldElement = FieldElement([486662, 0, 0, 0, 0]);
 
-/// SQRT_MINUS_A is sqrt(-486662)
+/// `SQRT_MINUS_A` is sqrt(-486662)
 // XXX I think that this was used in Adam's code for his elligator
 // implementation, but that should maybe be using sqrt(-486664)
 // instead...?  - hdevalence
@@ -103,7 +103,7 @@ pub const SQRT_MINUS_A: FieldElement = FieldElement([ // sqrtMinusA
 #[cfg(feature="radix_51")]
 pub const SQRT_MINUS_A: FieldElement = FieldElement([557817479725543, 1643290402203250, 16226468853936, 1304118542701054, 1985241807451647]);
 
-/// SQRT_MINUS_APLUS2 is sqrt(-486664)
+/// `SQRT_MINUS_APLUS2` is sqrt(-486664)
 #[cfg(not(feature="radix_51"))]
 pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
     -12222970, -8312128, -11511410, 9067497, -15300785,
@@ -111,7 +111,7 @@ pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([
 #[cfg(feature="radix_51")]
 pub const SQRT_MINUS_APLUS2: FieldElement = FieldElement([1693982333959686, 608509411481997, 2235573344831311, 947681270984193, 266558006233600]);
 
-/// SQRT_MINUS_HALF is sqrt(-1/2)
+/// `SQRT_MINUS_HALF` is sqrt(-1/2)
 #[cfg(not(feature="radix_51"))]
 pub const SQRT_MINUS_HALF: FieldElement = FieldElement([ // sqrtMinusHalf
     -17256545,   3971863,  28865457,  -1750208,  27359696,
@@ -119,7 +119,7 @@ pub const SQRT_MINUS_HALF: FieldElement = FieldElement([ // sqrtMinusHalf
 #[cfg(feature="radix_51")]
 pub const SQRT_MINUS_HALF: FieldElement = FieldElement([266547196637087, 2134345371906993, 1135042577398223, 67298593331632, 743161882051057]);
 
-/// HALF_Q_MINUS_1_BYTES is (2^255-20)/2 expressed in little endian form.
+/// `HALF_Q_MINUS_1_BYTES` is (2^255-20)/2 expressed in little endian form.
 pub const HALF_Q_MINUS_1_BYTES: [u8; 32] = [ // halfQMinus1Bytes
     0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

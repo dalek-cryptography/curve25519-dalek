@@ -817,6 +817,18 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     }
 }
 
+impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
+    type Output = ExtendedPoint;
+
+    /// Scalar multiplication: compute `self * point`.
+    ///
+    /// Uses a window of size 4.  Note: for scalar multiplication of
+    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
+        point * &self
+    }
+}
+
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
@@ -1457,6 +1469,17 @@ mod test {
         for _ in 0..1_000 {
             P *= &A_SCALAR;
         }
+    }
+
+    #[test]
+    fn scalarmult_works_both_ways() {
+        let G: ExtendedPoint = constants::ED25519_BASEPOINT;
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &G * &s;
+        let P2 = &s * &G;
+
+        assert!(P1.compress_edwards().to_bytes() == P2.compress_edwards().to_bytes());
     }
 
     mod vartime {

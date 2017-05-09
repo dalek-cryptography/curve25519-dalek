@@ -84,6 +84,8 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
+#[cfg(feature = "yolocrypto")]
+use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;
@@ -829,6 +831,17 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     }
 }
 
+#[cfg(feature = "yolocrypto")]
+impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
+    type Output = DecafPoint;
+
+    /// Scalar multiplication: compute `self * scalar`.
+    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(self * &point.0)
+    }
+}
+
+
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
@@ -1162,6 +1175,8 @@ pub mod vartime {
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "yolocrypto")]
+    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::CTAssignable;
@@ -1472,7 +1487,7 @@ mod test {
     }
 
     #[test]
-    fn scalarmult_works_both_ways() {
+    fn scalarmult_extended_point_works_both_ways() {
         let G: ExtendedPoint = constants::ED25519_BASEPOINT;
         let s: Scalar = A_SCALAR;
 
@@ -1480,6 +1495,18 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress_edwards().to_bytes() == P2.compress_edwards().to_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "yolocrypto")]
+    fn scalarmult_decafpoint_works_both_ways() {
+        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT);
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &P * &s;
+        let P2 = &s * &P;
+
+        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
     mod vartime {

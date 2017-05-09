@@ -776,10 +776,11 @@ mod test {
         assert_eq!(should_be_one, Scalar::one());
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn impl_mul() {
-        let should_be_X_TIMES_Y = &X * &Y;
-        assert_eq!(should_be_X_TIMES_Y, X_TIMES_Y);
+        let should_be_X_times_Y = &X * &Y;
+        assert_eq!(should_be_X_times_Y, X_TIMES_Y);
     }
 
     #[test]
@@ -810,6 +811,7 @@ mod test {
         }
     }
 
+    #[allow(non_snake_case)]
     #[test]
     fn invert() {
         let inv_X = X.invert();
@@ -818,6 +820,7 @@ mod test {
     }
 
     // Negating a scalar twice should result in the original scalar.
+    #[allow(non_snake_case)]
     #[test]
     fn neg_twice_is_identity() {
         let negative_X = -&X;

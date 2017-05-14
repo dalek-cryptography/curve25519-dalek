@@ -447,6 +447,15 @@ impl CTAssignable for AffineNielsPoint {
     }
 }
 
+impl CTAssignable for ExtendedPoint {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+        self.X.conditional_assign(&other.X, choice);
+        self.Y.conditional_assign(&other.Y, choice);
+        self.Z.conditional_assign(&other.Z, choice);
+        self.T.conditional_assign(&other.T, choice);
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constant-time Equality
 // ------------------------------------------------------------------------

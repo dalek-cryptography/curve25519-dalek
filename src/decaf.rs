@@ -108,6 +108,61 @@ impl Identity for CompressedDecaf {
     }
 }
 
+// ------------------------------------------------------------------------
+// Serde support
+// ------------------------------------------------------------------------
+// Serializes to and from `DecafPoint` directly, doing compression
+// and decompression internally.  This means that users can create
+// structs containing `DecafPoint`s and use Serde's derived
+// serializers to serialize those structures.
+
+use serde::{Serialize, Deserialize};
+use serde::{Serializer, Deserializer};
+use serde::de::Visitor;
+use serde;
+
+impl Serialize for DecafPoint {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.compress().as_bytes())
+    }
+}
+
+impl<'de> Deserialize<'de> for DecafPoint {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct DecafPointVisitor;
+
+        impl<'de> Visitor<'de> for DecafPointVisitor {
+            type Value = DecafPoint;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("a valid point in Decaf format")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<DecafPoint, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
+                    CompressedDecaf(*arr32).decompress()
+                        .ok_or(serde::de::Error::custom("decompression failed"))
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(DecafPointVisitor)
+    }
+}
+
+// ------------------------------------------------------------------------
+// Internal point representations
+// ------------------------------------------------------------------------
+
 /// A point in a prime-order group.
 ///
 /// XXX think about how this API should work
@@ -380,6 +435,16 @@ mod test {
     use curve::ExtendedPoint;
     use curve::Identity;
     use super::*;
+
+    use serde_cbor;
+
+    #[test]
+    fn serde_cbor_basepoint_roundtrip() {
+        let output = serde_cbor::to_vec(&constants::DECAF_ED25519_BASEPOINT).unwrap();
+        let parsed: DecafPoint = serde_cbor::from_slice(&output).unwrap();
+        assert_eq!(parsed, constants::DECAF_ED25519_BASEPOINT);
+    }
+
 
     #[test]
     fn decaf_decompress_negative_s_fails() {

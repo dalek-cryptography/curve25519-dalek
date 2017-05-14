@@ -279,6 +279,59 @@ impl CompressedMontgomeryU {
 }
 
 // ------------------------------------------------------------------------
+// Serde support
+// ------------------------------------------------------------------------
+// Serializes to and from `ExtendedPoint` directly, doing compression
+// and decompression internally.  This means that users can create
+// structs containing `ExtendedPoint`s and use Serde's derived
+// serializers to serialize those structures.
+
+use serde::{Serialize, Deserialize};
+use serde::{Serializer, Deserializer};
+use serde::de::Visitor;
+use serde;
+
+impl Serialize for ExtendedPoint {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.compress_edwards().as_bytes())
+    }
+}
+
+impl<'de> Deserialize<'de> for ExtendedPoint {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct ExtendedPointVisitor;
+
+        impl<'de> Visitor<'de> for ExtendedPointVisitor {
+            type Value = ExtendedPoint;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("a valid point in Edwards y + sign format")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<ExtendedPoint, E>
+                where E: serde::de::Error
+            {
+                println!("VISIT_BYTES");
+                if v.len() == 32 {
+                    let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
+                    CompressedEdwardsY(*arr32).decompress()
+                        .ok_or(serde::de::Error::custom("decompression failed"))
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        println!("DESERIALIZE");
+        deserializer.deserialize_bytes(ExtendedPointVisitor)
+    }
+}
+
+// ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------
 
@@ -1576,6 +1629,29 @@ mod test {
             assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
         }
     }
+
+    use serde_cbor;
+
+    #[test]
+    fn serde_cbor_basepoint_roundtrip() {
+        let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        let parsed: ExtendedPoint = serde_cbor::from_slice(&output).unwrap();
+        assert_eq!(parsed.compress_edwards(), constants::BASE_CMPRSSD);
+    }
+
+    /*
+    use serde_json;
+
+    #[test]
+    fn serde_json_basepoint_roundtrip() {
+        let output = serde_json::to_string(&constants::ED25519_BASEPOINT).unwrap();
+        println!("{:?}", output);
+        println!("{:?}", constants::BASE_CMPRSSD);
+        let parsed: ExtendedPoint = serde_json::from_str(&output).unwrap();
+        println!("{:?}", parsed);
+        panic!();
+    }
+    */
 }
 
 // ------------------------------------------------------------------------

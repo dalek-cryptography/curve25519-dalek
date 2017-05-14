@@ -77,6 +77,9 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+#[cfg(not(feature = "std"))]
+use collections::Vec;
+
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};

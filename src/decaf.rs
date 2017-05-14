@@ -284,6 +284,38 @@ impl DecafBasepointTable {
 }
 
 // ------------------------------------------------------------------------
+// Constant-time conditional assignment
+// ------------------------------------------------------------------------
+
+impl CTAssignable for DecafPoint {
+    /// Conditionally assign `other` to `self`, if `choice == 1u8`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use curve25519_dalek::curve::Identity;
+    /// # use curve25519_dalek::decaf::DecafPoint;
+    /// # use curve25519_dalek::subtle::CTAssignable;
+    /// # use curve25519_dalek::constants;
+    /// let A = DecafPoint::identity();
+    /// let B = constants::DECAF_ED25519_BASEPOINT;
+    ///
+    /// let mut P = A;
+    ///
+    /// P.conditional_assign(&B, 0u8);
+    /// assert!(P == A);
+    /// P.conditional_assign(&B, 1u8);
+    /// assert!(P == B);
+    /// ```
+    fn conditional_assign(&mut self, other: &DecafPoint, choice: u8) {
+        self.0.X.conditional_assign(&other.0.X, choice);
+        self.0.Y.conditional_assign(&other.0.Y, choice);
+        self.0.Z.conditional_assign(&other.0.Z, choice);
+        self.0.T.conditional_assign(&other.0.T, choice);
+    }
+}
+
+// ------------------------------------------------------------------------
 // Debug traits
 // ------------------------------------------------------------------------
 

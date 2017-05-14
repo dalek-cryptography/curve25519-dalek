@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -36,12 +36,10 @@ version = "^0.6"
 version = "0.4"
 
 [features]
-nightly = ["basepoint_table_creation", "radix_51"]
+nightly = ["radix_51"]
 default = ["std"]
 std = ["rand"]
 yolocrypto = []
-# Needs nightly for placement new
-basepoint_table_creation = []
 bench = []
 # Radix-51 arithmetic using u128
 radix_51 = []

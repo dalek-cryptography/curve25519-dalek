@@ -59,15 +59,15 @@
 //! implementation for [Ed25519](https://ed25519.cr.yp.to/ed25519-20110926.pdf),
 //! we use several different models for curve points:
 //!
-//! * CompletedPoint: points in 𝗣^1 x 𝗣^1;
-//! * ExtendedPoint: points in 𝗣^3;
-//! * ProjectivePoint: points in 𝗣^2.
+//! * `CompletedPoint`: points in 𝗣^1 x 𝗣^1;
+//! * `ExtendedPoint`: points in 𝗣^3;
+//! * `ProjectivePoint`: points in 𝗣^2.
 //!
 //! Finally, to accelerate additions, we use two cached point formats,
 //! one for the affine model and one for the 𝗣^3 model:
 //!
-//! * AffineNielsPoint: `(y+x, y-x, 2dxy)`
-//! * ProjectiveNielsPoint: `(Y+X, Y-X, Z, 2dXY)`
+//! * `AffineNielsPoint`: `(y+x, y-x, 2dxy)`
+//! * `ProjectiveNielsPoint`: `(Y+X, Y-X, Z, 2dXY)`
 //!
 //! [1]: https://moderncrypto.org/mail-archive/curves/2016/000807.html
 
@@ -80,8 +80,12 @@
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
+use core::ops::{Mul, MulAssign};
+use core::ops::Index;
 
 use constants;
+#[cfg(feature = "yolocrypto")]
+use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;
@@ -89,11 +93,6 @@ use subtle::bytes_equal_ct;
 use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
-
-#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
-use collections::boxed::Box;
-#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
-use std::boxed::Box;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -103,7 +102,7 @@ use std::boxed::Box;
 /// determined by the `y`-coordinate and the sign of `x`, marshalled
 /// into a 32-byte array.
 ///
-/// The first 255 bits of a CompressedEdwardsY represent the
+/// The first 255 bits of a `CompressedEdwardsY` represent the
 /// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
@@ -116,7 +115,7 @@ impl Debug for CompressedEdwardsY {
 
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
@@ -232,7 +231,7 @@ impl CompressedMontgomeryU {
     /// Montgomery `v` corresponding to this `u`.
     pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
         let one:       FieldElement = FieldElement::one();
-        let v_squared: FieldElement = u * &(&(&u.square() + &(&(&constants::A * u) + &one)));
+        let v_squared: FieldElement = u * &(&u.square() + &(&(&constants::A * u) + &one));
 
         let (okay, v_inv) = v_squared.invsqrt();
         let v = &v_inv * &v_squared;
@@ -303,7 +302,7 @@ pub struct ProjectivePoint {
     Z: FieldElement,
 }
 
-/// A CompletedPoint is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
+/// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
 #[derive(Copy, Clone)]
 pub struct CompletedPoint {
@@ -448,6 +447,15 @@ impl CTAssignable for AffineNielsPoint {
     }
 }
 
+impl CTAssignable for ExtendedPoint {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+        self.X.conditional_assign(&other.X, choice);
+        self.Y.conditional_assign(&other.Y, choice);
+        self.Z.conditional_assign(&other.Z, choice);
+        self.T.conditional_assign(&other.T, choice);
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constant-time Equality
 // ------------------------------------------------------------------------
@@ -470,13 +478,7 @@ pub trait IsIdentity {
 /// constructor.
 impl<T> IsIdentity for T where T: CTEq + Identity {
     fn is_identity(&self) -> bool {
-        let identity: T = T::identity();
-
-        if self.ct_eq(&identity) == 1u8 {
-            return true;
-        } else {
-            return false;
-        }
+        self.ct_eq(&T::identity()) == 1u8
     }
 }
 
@@ -795,18 +797,20 @@ impl<'a> Neg for &'a AffineNielsPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-/// Trait for scalar multiplication of an arbitrary point.
-pub trait ScalarMult<S> {
-    /// Compute `scalar * self`.
-    fn scalar_mult(&self, scalar: &S) -> Self;
+impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
+        let result = (self as &ExtendedPoint) * scalar;
+        *self = result;
+    }
 }
 
-impl ScalarMult<Scalar> for ExtendedPoint {
+impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    fn scalar_mult(&self, scalar: &Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
         for i in 0..7 {
@@ -824,31 +828,35 @@ impl ScalarMult<Scalar> for ExtendedPoint {
     }
 }
 
+impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
+    type Output = ExtendedPoint;
+
+    /// Scalar multiplication: compute `self * point`.
+    ///
+    /// Uses a window of size 4.  Note: for scalar multiplication of
+    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
+        point * &self
+    }
+}
+
+#[cfg(feature = "yolocrypto")]
+impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
+    type Output = DecafPoint;
+
+    /// Scalar multiplication: compute `self * scalar`.
+    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(self * &point.0)
+    }
+}
+
+
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
 
-impl EdwardsBasepointTable {
-    /// Create a table of precomputed multiples of `basepoint`.
-    #[cfg(feature="basepoint_table_creation")]
-    pub fn create(basepoint: &ExtendedPoint) -> Box<EdwardsBasepointTable> {
-        // Create the table storage
-        // XXX can we be assured that this is not allocated on the stack?
-        // XXX can we skip the initialization without too much unsafety?
-        let mut table = box EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
-        let mut P = basepoint.clone();
-        for i in 0..32 {
-            // P = (16^2)^i * B
-            let mut jP = P.to_affine_niels();
-            for j in 1..9 {
-                // table[i][j-1] is supposed to be j*(16^2)^i*B
-                table.0[i][j-1] = jP;
-                jP = (&P + &jP).to_extended().to_affine_niels();
-            }
-            P = P.mult_by_pow_2(8);
-        }
-        return table
-    }
+impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
+    type Output = ExtendedPoint;
 
     /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
     /// computing the multiple `aB` of the basepoint `B`.
@@ -875,7 +883,7 @@ impl EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    pub fn basepoint_mult(&self, scalar: &Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
         let mut t: CompletedPoint;
@@ -896,21 +904,65 @@ impl EdwardsBasepointTable {
     }
 }
 
-/// Trait for scalar multiplication of a distinguished basepoint.
-pub trait BasepointMult<S> {
-    /// Return the basepoint `B`.
-    fn basepoint() -> Self;
-    /// Compute `scalar * B`.
-    fn basepoint_mult(scalar: &S) -> Self;
+impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
+    type Output = ExtendedPoint;
+
+    /// Construct an `ExtendedPoint` by via this `Scalar` times
+    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
+    ///
+    /// Precondition: this scalar must be reduced.
+    ///
+    /// The computation proceeds as follows, as described on page 13
+    /// of the Ed25519 paper.  Write this scalar `a` in radix 16 with
+    /// coefficients in [-8,8), i.e.,
+    ///
+    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
+    ///
+    /// with -8 ≤ a_i < 8.  Then
+    ///
+    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
+    ///
+    /// Grouping even and odd coefficients gives
+    ///
+    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
+    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
+    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
+    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
+    ///
+    /// We then use the `select_precomputed_point` function, which
+    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
+    /// and returns `x * 16^2i * B` in constant time.
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
+        basepoint_table * &self
+    }
 }
 
-impl BasepointMult<Scalar> for ExtendedPoint {
-    fn basepoint() -> ExtendedPoint {
-        constants::ED25519_BASEPOINT
+impl EdwardsBasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
+        // Create the table storage
+        // XXX can we skip the initialization without too much unsafety?
+        // stick 30K on the stack and call it a day.
+        let mut table = EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
+        let mut P = basepoint.clone();
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P.to_affine_niels();
+            for j in 1..9 {
+                // table[i][j-1] is supposed to be j*(16^2)^i*B
+                table.0[i][j-1] = jP;
+                jP = (&P + &jP).to_extended().to_affine_niels();
+            }
+            P = P.mult_by_pow_2(8);
+        }
+        table
     }
 
-    fn basepoint_mult(scalar: &Scalar) -> ExtendedPoint {
-        constants::ED25519_BASEPOINT_TABLE.basepoint_mult(scalar)
+    /// Get the basepoint for this table as an `ExtendedPoint`.
+    pub fn basepoint(&self) -> ExtendedPoint {
+        // self.0[0][0] has 1*(16^2)^0*B, but as an `AffineNielsPoint`
+        // Add identity to convert to extended.
+        (&ExtendedPoint::identity() + &self.0[0][0]).to_extended()
     }
 }
 
@@ -933,8 +985,7 @@ impl ExtendedPoint {
             r = s.double(); s = r.to_projective();
         }
         // Unroll last iteration so we can go directly to_extended()
-        r = s.double();
-        return r.to_extended();
+        s.double().to_extended()
     }
 
     /// Determine if this point is of small order.
@@ -947,71 +998,8 @@ impl ExtendedPoint {
     ///
     /// True if it is of small order; false otherwise.
     pub fn is_small_order(&self) -> bool {
-        let p8: ExtendedPoint = self.mult_by_pow_2(3);
-
-        if p8.is_identity() {
-            return true;
-        } else {
-            return false;
-        }
+        self.mult_by_cofactor().is_identity()
     }
-}
-
-/// Given a point `A` and scalars `a` and `b`, compute the point
-/// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
-/// with x positive).
-///
-/// # Warning
-///
-/// This function is *not* constant time, hence its name.
-// XXX should return ExtendedPoint?
-pub fn double_scalar_mult_vartime(a: &Scalar, A: &ExtendedPoint, b: &Scalar) -> ProjectivePoint {
-    let a_naf = a.non_adjacent_form();
-    let b_naf = b.non_adjacent_form();
-
-    // Build a lookup table of odd multiples of A
-    let mut Ai = [ProjectiveNielsPoint::identity(); 8];
-    let A2 = A.double();
-    Ai[0]  = A.to_projective_niels();
-    for i in 0..7 {
-        Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
-    }
-    // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
-
-    // Find starting index
-    let mut i: usize = 255;
-    for j in (0..255).rev() {
-        i = j;
-        if a_naf[i] != 0 || b_naf[i] != 0 {
-            break;
-        }
-    }
-
-    let mut r = ProjectivePoint::identity();
-    loop {
-        let mut t = r.double();
-
-        if a_naf[i] > 0 {
-            t = &t.to_extended() + &Ai[( a_naf[i]/2) as usize];
-        } else if a_naf[i] < 0 {
-            t = &t.to_extended() - &Ai[(-a_naf[i]/2) as usize];
-        }
-
-        if b_naf[i] > 0 {
-            t = &t.to_extended() + &constants::bi[( b_naf[i]/2) as usize];
-        } else if b_naf[i] < 0 {
-            t = &t.to_extended() - &constants::bi[(-b_naf[i]/2) as usize];
-        }
-
-        r = t.to_projective();
-
-        if i == 0 {
-            break;
-        }
-        i -= 1;
-    }
-
-    r
 }
 
 /// Given precomputed points `[P, 2P, 3P, ..., 8P]`, as well as `-8 ≤
@@ -1053,14 +1041,14 @@ impl ExtendedPoint {
     /// Returns `Some<[u8;32]>` if `self` is in the image of the
     /// Elligator2 map.  For a random point on the curve, this happens
     /// with probability 1/2.  Otherwise, returns `None`.
-    pub fn to_uniform_representative(&self) -> Option<[u8;32]> {
+    pub fn to_uniform_representative(&self) -> Option<[u8; 32]> {
         unimplemented!();
     }
 
     /// Use Elligator2 to convert a uniformly random string to a curve
     /// point.
     #[allow(unused_variables)] // REMOVE WHEN IMPLEMENTED
-    pub fn from_uniform_representative(bytes: &[u8;32]) -> ExtendedPoint {
+    pub fn from_uniform_representative(bytes: &[u8; 32]) -> ExtendedPoint {
         unimplemented!();
     }
 }
@@ -1105,11 +1093,132 @@ impl Debug for ProjectiveNielsPoint {
 }
 
 // ------------------------------------------------------------------------
+// Variable-time functions
+// ------------------------------------------------------------------------
+
+pub mod vartime {
+    //! Variable-time operations on curve points, useful for non-secret data.
+    use super::*;
+
+    /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
+    struct OddMultiples([ProjectiveNielsPoint; 8]);
+
+    impl OddMultiples {
+        fn create(A: &ExtendedPoint) -> OddMultiples {
+            let mut Ai = [ProjectiveNielsPoint::identity(); 8];
+            let A2 = A.double();
+            Ai[0]  = A.to_projective_niels();
+            for i in 0..7 {
+                Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+            }
+            // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
+            OddMultiples(Ai)
+        }
+    }
+
+    impl Index<usize> for OddMultiples {
+        type Output = ProjectiveNielsPoint;
+
+        fn index<'a>(&'a self, _index: usize) -> &'a ProjectiveNielsPoint {
+            &(self.0[_index])
+        }
+    }
+
+    /// Given a vector of public scalars and a vector of (possibly secret)
+    /// points, compute
+    ///
+    ///    c_1 P_1 + ... + c_n P_n.
+    ///
+    /// # Input
+    ///
+    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+    /// error to call this function with two vectors of different lengths.
+    pub fn k_fold_scalar_mult<'a,'b,I,J>(scalars: I, points: J) -> ExtendedPoint
+        where I: IntoIterator<Item=&'a Scalar>, J: IntoIterator<Item=&'b ExtendedPoint>
+    {
+        //assert_eq!(scalars.len(), points.len());
+
+        let nafs: Vec<_> = scalars.into_iter()
+            .map(|c| c.non_adjacent_form()).collect();
+        let odd_multiples: Vec<_> = points.into_iter()
+            .map(|P| OddMultiples::create(P)).collect();
+
+        let mut r = ProjectivePoint::identity();
+
+        for i in (0..255).rev() {
+            let mut t = r.double();
+
+            for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
+                if naf[i] > 0 {
+                    t = &t.to_extended() + &odd_multiple[( naf[i]/2) as usize];
+                } else if naf[i] < 0 {
+                    t = &t.to_extended() - &odd_multiple[(-naf[i]/2) as usize];
+                }
+            }
+
+            r = t.to_projective();
+        }
+
+        r.to_extended()
+    }
+
+    /// Given a point `A` and scalars `a` and `b`, compute the point
+    /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
+    /// with x positive).
+    pub fn double_scalar_mult_basepoint(a: &Scalar,
+                                        A: &ExtendedPoint,
+                                        b: &Scalar) -> ProjectivePoint {
+        let a_naf = a.non_adjacent_form();
+        let b_naf = b.non_adjacent_form();
+
+        // Find starting index
+        let mut i: usize = 255;
+        for j in (0..255).rev() {
+            i = j;
+            if a_naf[i] != 0 || b_naf[i] != 0 {
+                break;
+            }
+        }
+
+        let odd_multiples_of_A = OddMultiples::create(A);
+
+        let mut r = ProjectivePoint::identity();
+        loop {
+            let mut t = r.double();
+
+            if a_naf[i] > 0 {
+                t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
+            } else if a_naf[i] < 0 {
+                t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+            }
+
+            if b_naf[i] > 0 {
+                t = &t.to_extended() + &constants::bi[( b_naf[i]/2) as usize];
+            } else if b_naf[i] < 0 {
+                t = &t.to_extended() - &constants::bi[(-b_naf[i]/2) as usize];
+            }
+
+            r = t.to_projective();
+
+            if i == 0 {
+                break;
+            }
+            i -= 1;
+        }
+
+        r
+    }
+
+}
+
+// ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "yolocrypto")]
+    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::CTAssignable;
@@ -1236,9 +1345,16 @@ mod test {
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
-        let bp = ExtendedPoint::basepoint_mult(&Scalar::one());
+        let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress_edwards();
         assert_eq!(compressed, constants::BASE_CMPRSSD);
+    }
+
+    /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
+    #[test]
+    fn basepoint_table_basepoint_function_correct() {
+        let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
+        assert_eq!(bp.compress_edwards(), constants::BASE_CMPRSSD);
     }
 
     /// Test `impl Add<ExtendedPoint> for ExtendedPoint`
@@ -1288,7 +1404,7 @@ mod test {
     #[test]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         let aB_affine_niels = aB.to_affine_niels();
         let also_aB = (&ExtendedPoint::identity() + &aB_affine_niels).to_extended();
         assert_eq!(     aB.compress_edwards(),
@@ -1298,14 +1414,15 @@ mod test {
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn basepoint_mult_vs_ed25519py() {
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let should_be_id = ExtendedPoint::basepoint_mult(&constants::l);
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let should_be_id = B * &constants::l;
         assert!(should_be_id.is_identity());
     }
 
@@ -1314,25 +1431,16 @@ mod test {
     #[cfg(feature="basepoint_table_creation")]
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
-        let aB_1 = ExtendedPoint::basepoint_mult(&A_SCALAR);
-        let aB_2 = table.basepoint_mult(&A_SCALAR);
-        assert_eq!(aB_1.compress_edwards(),
-                   aB_2.compress_edwards());
+        let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
+        let aB_2 = &table * &A_SCALAR;
+        assert_eq!(aB_1.compress_edwards(), aB_2.compress_edwards());
     }
 
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mult_vs_ed25519py() {
-        let aB = constants::ED25519_BASEPOINT.scalar_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT * &A_SCALAR;
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
-    }
-
-    /// Test double_scalar_mult_vartime vs ed25519.py
-    #[test]
-    fn double_scalar_mult_vartime_vs_ed25519py() {
-        let A = A_TIMES_BASEPOINT.decompress().unwrap();
-        let result = double_scalar_mult_vartime(&A_SCALAR, &A, &B_SCALAR);
-        assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
     }
 
     /// Test basepoint.double() versus the 2*basepoint constant.
@@ -1346,7 +1454,7 @@ mod test {
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
         let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
-        let bp2 = ExtendedPoint::basepoint_mult(&Scalar(two_bytes));
+        let bp2 = &constants::ED25519_BASEPOINT_TABLE * &Scalar(two_bytes);
         assert_eq!(bp2.compress_edwards(), BASE2_CMPRSSD);
     }
 
@@ -1412,11 +1520,57 @@ mod test {
     /// the type system and prove correctness).
     #[test]
     fn monte_carlo_overflow_underflow_debug_assert_test() {
-        let mut P = ExtendedPoint::basepoint();
+        let mut P = constants::ED25519_BASEPOINT;
         // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
-            P = P.scalar_mult(&A_SCALAR);
+            P *= &A_SCALAR;
+        }
+    }
+
+    #[test]
+    fn scalarmult_extended_point_works_both_ways() {
+        let G: ExtendedPoint = constants::ED25519_BASEPOINT;
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &G * &s;
+        let P2 = &s * &G;
+
+        assert!(P1.compress_edwards().to_bytes() == P2.compress_edwards().to_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "yolocrypto")]
+    fn scalarmult_decafpoint_works_both_ways() {
+        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT);
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &P * &s;
+        let P2 = &s * &P;
+
+        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
+    }
+
+    mod vartime {
+        use super::super::*;
+        use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
+        
+        /// Test double_scalar_mult_vartime vs ed25519.py
+        #[test]
+        fn double_scalar_mult_basepoint_vs_ed25519py() {
+            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
+            assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
+        }
+
+        #[test]
+        fn k_fold_scalar_mult_vs_ed25519py() {
+            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            let result = vartime::k_fold_scalar_mult(
+                &[A_SCALAR, B_SCALAR],
+                &[A, constants::ED25519_BASEPOINT]
+            );
+            assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
         }
     }
 }
@@ -1427,6 +1581,7 @@ mod test {
 
 #[cfg(all(test, feature = "bench"))]
 mod bench {
+    use rand::OsRng;
     use test::Bencher;
     use constants;
     use super::*;
@@ -1434,24 +1589,19 @@ mod bench {
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {
-        b.iter(|| ExtendedPoint::basepoint_mult(&A_SCALAR));
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        b.iter(|| B * &A_SCALAR);
     }
 
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
-        let bp = constants::ED25519_BASEPOINT;
-        b.iter(|| bp.scalar_mult(&A_SCALAR));
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| B * &A_SCALAR);
     }
 
     #[bench]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
-    }
-
-    #[bench]
-    fn bench_double_scalar_mult_vartime(b: &mut Bencher) {
-        let A = A_TIMES_BASEPOINT.decompress().unwrap();
-        b.iter(|| double_scalar_mult_vartime(&A_SCALAR, &A, &B_SCALAR));
     }
 
     #[bench]
@@ -1510,7 +1660,37 @@ mod bench {
     #[cfg(feature="basepoint_table_creation")]
     #[bench]
     fn create_basepoint_table(b: &mut Bencher) {
-        let aB = ExtendedPoint::basepoint_mult(&A_SCALAR);
+        let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
+    }
+
+    mod vartime {
+        use super::super::*;
+        use super::super::test::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT};
+        use super::{Bencher, OsRng};
+
+        #[bench]
+        fn bench_double_scalar_mult_basepoint(b: &mut Bencher) {
+            let A = A_TIMES_BASEPOINT.decompress().unwrap();
+            b.iter(|| vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR));
+        }
+
+        #[bench]
+        fn ten_fold_scalar_mult(b: &mut Bencher) {
+            let mut csprng: OsRng = OsRng::new().unwrap();
+            // Create 10 random scalars
+            let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
+            // Create 10 points (by doing scalar mults)
+            let B = &constants::ED25519_BASEPOINT_TABLE;
+            let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
+
+            // XXX Currently Rust's benchmarking implementation doesn't
+            // allow you to specify a sequence of random inputs, but only
+            // many trials of the same input.
+            //
+            // Since this is a variable-time function, this means the
+            // benchmark is only useful as a ballpark measurement.
+            b.iter(|| vartime::k_fold_scalar_mult(&scalars, &points));
+        }
     }
 }

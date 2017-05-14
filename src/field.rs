@@ -15,7 +15,6 @@
 //! Based on Adam Langley's curve25519-donna and (Golang) ed25519
 //! implementations.
 
-use core::clone::Clone;
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
 use core::ops::{Sub, SubAssign};
@@ -41,25 +40,27 @@ use constants;
 #[cfg(feature="radix_51")]
 pub type Limb = u64;
 
-/// FieldElement represents an element of the field GF(2^255 - 19).  An element
-/// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
-/// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
-/// context.
+/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+///
+/// With the `radix_51` feature, a `FieldElement` is represented in
+/// radix 2^51 as five `u64`s; the coefficients are allowed to grow up
+/// to 2^54 between reductions mod `p`.
 #[cfg(feature="radix_51")]
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [u64; 5]);
 
-/// FieldElements are represented as an array of ten "Limbs", which are radix
-/// 25.5, that is, each Limb of a FieldElement alternates between being
-/// represented as a factor of 2^25 or 2^26 more than the last corresponding
-/// integer.
+/// Without the `radix51` feature enabled, `FieldElements` are represented
+/// in radix 2^25.5 as ten `i32`s.
 #[cfg(not(feature="radix_51"))]
 pub type Limb = i32;
 
-/// FieldElement represents an element of the field GF(2^255 - 19).  An element
-/// t, entries t[0]...t[9], represents the integer t[0]+2^26 t[1]+2^51 t[2]+2^77
-/// t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i] vary depending on
-/// context.
+/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+///
+/// With the `radix_51` feature, a `FieldElement` is represented in
+/// radix 2^25.5 as ten `i32`s, so that an element t, entries
+/// t[0],...,t[9], represents the integer t[0]+2^26 t[1]+2^51
+/// t[2]+2^77 t[3]+2^102 t[4]+...+2^230 t[9].  Bounds on each t[i]
+/// vary depending on context.
 #[cfg(not(feature="radix_51"))]
 #[derive(Copy, Clone)]
 pub struct FieldElement(pub [i32; 10]);
@@ -84,7 +85,7 @@ impl PartialEq for FieldElement {
         for i in 0..32 {
             are_equal &= self_bytes[i] == other_bytes[i];
         }
-        return are_equal;
+        are_equal
     }
 }
 
@@ -108,16 +109,14 @@ impl Debug for FieldElement {
 impl Index<usize> for FieldElement {
     type Output = Limb;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a Limb {
-        let ret: &'a Limb = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &Limb {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for FieldElement {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut Limb {
-        let ret: &'a mut Limb = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut Limb {
+        &mut(self.0[_index])
     }
 }
 
@@ -132,7 +131,7 @@ impl<'b> AddAssign<&'b FieldElement> for FieldElement {
 impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     fn add(self, _rhs: &'b FieldElement) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output += _rhs;
         output
     }
@@ -158,7 +157,7 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     #[cfg(not(feature="radix_51"))]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output -= _rhs;
         output
     }
@@ -319,14 +318,14 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
         let h8 = f0*g8 + f1_2*g7 + f2*g6 + f3_2*g5 + f4*g4 + f5_2*g3 + f6*g2 + f7_2*g1 + f8*g0 + f9_2*g9_19;
         let h9 = f0*g9 + f1*g8 + f2*g7 + f3*g6 + f4*g5 + f5*g4 + f6*g3 + f7*g2 + f8*g1 + f9*g0;
 
-        FieldElement::reduce(&[h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
+        FieldElement::reduce([h0, h1, h2, h3, h4, h5, h6, h7, h8, h9])
     }
 }
 
 impl<'a> Neg for &'a FieldElement {
     type Output = FieldElement;
     fn neg(self) -> FieldElement {
-        let mut output = self.clone();
+        let mut output = *self;
         output.negate();
         output
     }
@@ -454,10 +453,10 @@ impl FieldElement {
 
         FieldElement(limbs)
     }
+
     #[cfg(not(feature="radix_51"))]
-    fn reduce(input: &[i64;10]) -> FieldElement { //FeCombine
+    fn reduce(mut h: [i64; 10]) -> FieldElement { //FeCombine
         let mut c = [0i64;10];
-        let mut h = input.clone();
 
         /*
           |h[0]| <= (1.1*1.1*2^52*(1+19+19+19+19)+1.1*1.1*2^50*(38+38+38+38+38))
@@ -533,7 +532,7 @@ impl FieldElement {
         /* |h[0]| <= 2^25; from now on fits into int32 unchanged */
         /* |h[1]| <= 1.01*2^24 */
 
-        let mut output = FieldElement([0i32;10]);
+        let mut output = FieldElement([0i32; 10]);
         output[0] = h[0] as i32;
         output[1] = h[1] as i32;
         output[2] = h[2] as i32;
@@ -581,11 +580,11 @@ impl FieldElement {
         h[8] =  load3(&data[26..]) << 4;
         h[9] = (load3(&data[29..]) & 8388607) << 2;
 
-        FieldElement::reduce(&h)
+        FieldElement::reduce(h)
     }
     /// Parse a `FieldElement` from 32 bytes.
     #[cfg(feature="radix_51")]
-    pub fn from_bytes(bytes: &[u8;32]) -> FieldElement {
+    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement {
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement(
         // load bits [  0, 64), no shift
@@ -621,7 +620,7 @@ impl FieldElement {
     /// assert!(data == bytes);
     /// ```
     #[cfg(not(feature="radix_51"))]
-    pub fn to_bytes(&self) -> [u8;32] { //FeToBytes
+    pub fn to_bytes(&self) -> [u8; 32] { //FeToBytes
         // Comment preserved from ed25519.go (presumably originally from ref10):
         //
         // # Preconditions
@@ -656,7 +655,7 @@ impl FieldElement {
         // so floor(2^-255 * (h + 19 * 2^-25 * h9 + 2^-1)) = q.
         //
         let mut carry = [0i32; 10];
-        let mut h = self.clone();
+        let mut h: [i32; 10] = self.0;
 
         let mut q:i32 = (19*h[9] + (1 << 24)) >> 25;
         q = (h[0] + q) >> 26;
@@ -752,7 +751,7 @@ impl FieldElement {
     }
     /// Serialize this `FieldElement` to bytes.
     #[cfg(feature="radix_51")]
-    pub fn to_bytes(&self) -> [u8;32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         // This reduces to the range [0,2^255), but we need [0,2^255-19)
         let mut limbs = FieldElement::reduce(self.0).0;
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
@@ -830,32 +829,6 @@ impl FieldElement {
         return s
     }
 
-    /// XXX clarify documentation
-    /// Determine if this field element, represented as a byte array,
-    /// is less than or equal to another field element represented as
-    /// a byte array.
-    ///
-    /// # Returns
-    ///
-    /// Returns `1u8` if `self.to_bytes() <= other.to_bytes()`, and `0u8` otherwise.
-    pub fn bytes_equal_less_than(&self, other: &[u8; 32]) -> u8 { // feBytesLess
-        // XXX cleanup
-	    let mut equal_so_far: i32 = -1i32;
-	    let mut greater:      i32 =  0i32;
-
-        let this: [u8; 32] = self.to_bytes();
-
-        for i in 32 .. 0 {
-            let x: i32 =  this[i-1] as i32;
-            let y: i32 = other[i-1] as i32;
-
-            greater      = (!equal_so_far & greater) | (equal_so_far & ((x - y) >> 31));
-            equal_so_far = equal_so_far & (((x ^ y) - 1) >> 31);
-        }
-
-        (!equal_so_far & 1 & greater) as u8
-    }
-
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is
     /// set.
@@ -907,7 +880,7 @@ impl FieldElement {
     ///
     /// If zero, return `1u8`.  Otherwise, return `0u8`.
     pub fn is_zero(&self) -> u8 {
-        return 1u8 & (!self.is_nonzero());
+        1u8 & (!self.is_nonzero())
     }
 
     /// Determine if this `FieldElement` is non-zero.
@@ -921,11 +894,11 @@ impl FieldElement {
         for b in &bytes {
             x |= *b;
         }
-        return byte_is_nonzero(x);
+        byte_is_nonzero(x)
     }
 
     #[cfg(not(feature="radix_51"))]
-    fn square_inner(&self) -> [i64;10] {
+    fn square_inner(&self) -> [i64; 10] {
         let f0     = self[0]       as i64;
         let f1     = self[1]       as i64;
         let f2     = self[2]       as i64;
@@ -964,6 +937,7 @@ impl FieldElement {
 
         h
     }
+
     #[cfg(feature="radix_51")]
     #[inline(always)]
     fn square_inner(&self) -> [u64; 5] {
@@ -1028,12 +1002,12 @@ impl FieldElement {
     /// * |h[i]| bounded by 1.1*2^25, 1.1*2^24, 1.1*2^25, 1.1*2^24, etc.
     #[cfg(not(feature="radix_51"))]
     pub fn square(&self) -> FieldElement {
-        FieldElement::reduce(&self.square_inner())
+        FieldElement::reduce(self.square_inner())
     }
     /// Compute `self^2`.
     #[cfg(feature="radix_51")]
     pub fn square(&self) -> FieldElement {
-        FieldElement::reduce( self.square_inner())
+        FieldElement::reduce(self.square_inner())
     }
 
     /// Square this field element and multiply the result by 2.
@@ -1058,7 +1032,7 @@ impl FieldElement {
         for i in 0..self.0.len() {
             coeffs[i] += coeffs[i];
         }
-        FieldElement::reduce(&coeffs)
+        FieldElement::reduce(coeffs)
     }
     /// Compute `2 * self^2`.
     #[cfg(feature="radix_51")]
@@ -1170,8 +1144,7 @@ impl FieldElement {
     /// - `(0u8, zero)`      if `v` is zero;
     /// - `(0u8, garbage)`   if `u/v` is nonsquare.
     ///
-    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement)
-                      -> (u8, FieldElement) {
+    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement) -> (u8, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
         //
@@ -1259,28 +1232,28 @@ mod test {
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
-    pub static A_BYTES: [u8;32] =
+    pub static A_BYTES: [u8; 32] =
         [ 0x04, 0xfe, 0xdf, 0x98, 0xa7, 0xfa, 0x0a, 0x68,
           0x84, 0x92, 0xbd, 0x59, 0x08, 0x07, 0xa7, 0x03,
           0x9e, 0xd1, 0xf6, 0xf2, 0xe1, 0xd9, 0xe2, 0xa4,
           0xa4, 0x51, 0x47, 0x36, 0xf3, 0xc3, 0xa9, 0x17];
 
     /// Byte representation of a**2
-    static ASQ_BYTES: [u8;32] =
+    static ASQ_BYTES: [u8; 32] =
         [ 0x75, 0x97, 0x24, 0x9e, 0xe6, 0x06, 0xfe, 0xab,
           0x24, 0x04, 0x56, 0x68, 0x07, 0x91, 0x2d, 0x5d,
           0x0b, 0x0f, 0x3f, 0x1c, 0xb2, 0x6e, 0xf2, 0xe2,
           0x63, 0x9c, 0x12, 0xba, 0x73, 0x0b, 0xe3, 0x62];
 
     /// Byte representation of 1/a
-    static AINV_BYTES: [u8;32] =
+    static AINV_BYTES: [u8; 32] =
         [0x96, 0x1b, 0xcd, 0x8d, 0x4d, 0x5e, 0xa2, 0x3a,
          0xe9, 0x36, 0x37, 0x93, 0xdb, 0x7b, 0x4d, 0x70,
          0xb8, 0x0d, 0xc0, 0x55, 0xd0, 0x4c, 0x1d, 0x7b,
          0x90, 0x71, 0xd8, 0xe9, 0xb6, 0x18, 0xe6, 0x30];
 
     /// Byte representation of a^((p-5)/8)
-    static AP58_BYTES: [u8;32] =
+    static AP58_BYTES: [u8; 32] =
         [0x6a, 0x4f, 0x24, 0x89, 0x1f, 0x57, 0x60, 0x36,
          0xd0, 0xbe, 0x12, 0x3c, 0x8f, 0xf5, 0xb1, 0x59,
          0xe0, 0xf0, 0xb8, 0x1b, 0x20, 0xd2, 0xb5, 0x1f,
@@ -1352,7 +1325,7 @@ mod test {
 
     #[test]
     fn from_bytes_highbit_is_ignored() {
-        let mut cleared_bytes = B_BYTES.clone();
+        let mut cleared_bytes = B_BYTES;
         cleared_bytes[31] &= 127u8;
         let with_highbit_set    = FieldElement::from_bytes(&B_BYTES);
         let without_highbit_set = FieldElement::from_bytes(&cleared_bytes);

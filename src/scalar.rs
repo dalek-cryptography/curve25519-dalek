@@ -29,9 +29,13 @@
 //! between two scalars, the `UnpackedScalar` struct is stored as
 //! limbs.
 
-use core::cmp::{Eq, PartialEq};
-use core::ops::{Neg, Index, IndexMut};
 use core::fmt::Debug;
+use core::ops::Neg;
+use core::ops::{Add, AddAssign};
+use core::ops::{Sub, SubAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Index, IndexMut};
+use core::cmp::{Eq, PartialEq};
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -72,13 +76,7 @@ impl PartialEq for Scalar {
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        let equal: u8 = arrays_equal_ct(&self.0, &other.0);
-
-        if equal == 1u8 {
-            return true;
-        } else {
-            return false;
-        }
+        arrays_equal_ct(&self.0, &other.0) == 1u8
     }
 }
 
@@ -96,26 +94,64 @@ impl CTEq for Scalar {
 impl Index<usize> for Scalar {
     type Output = u8;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a u8 {
-        let ret: &'a u8 = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &u8 {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for Scalar {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut u8 {
-        let ret: &'a mut u8 = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut u8 {
+        &mut(self.0[_index])
     }
 }
 
-impl Neg for Scalar {
-    type Output = Scalar;
-
-    /// Negate this scalar by computing (l - 1) * self - 0 (mod l).
-    fn neg(self) -> Scalar {
-        Scalar::multiply_add(&constants::lminus1, &self, &Scalar::zero())
+impl<'b> MulAssign<&'b Scalar> for Scalar {
+    fn mul_assign(&mut self, _rhs: &'b Scalar) {
+        let result = (self as &Scalar) * _rhs;
+        self.0 = result.0;
     }
+}
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn mul(self, _rhs: &'b Scalar) -> Scalar {
+        Scalar::multiply_add(self, _rhs, &Scalar::zero())
+    }
+}
+
+impl<'b> AddAssign<&'b Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'b Scalar) {
+        *self = Scalar::multiply_add(&Scalar::one(), self, _rhs);
+    }
+}
+
+impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn add(self, _rhs: &'b Scalar) -> Scalar {
+        Scalar::multiply_add(&Scalar::one(), self, _rhs)
+    }
+}
+
+impl<'b> SubAssign<&'b Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'b Scalar) {
+        // (l-1)*_rhs + self = self - _rhs
+        *self = Scalar::multiply_add(&constants::l_minus_1, _rhs, self);
+    }
+}
+
+impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+    type Output = Scalar;
+    fn sub(self, _rhs: &'b Scalar) -> Scalar {
+        // (l-1)*_rhs + self = self - _rhs
+        Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
+    }
+}
+
+impl<'a> Neg for &'a Scalar {
+    type Output = Scalar;
+    fn neg(self) -> Scalar {
+        self * &constants::l_minus_1
+   }
 }
 
 impl CTAssignable for Scalar {
@@ -150,21 +186,19 @@ impl CTAssignable for Scalar {
 }
 
 impl Scalar {
-    /// Return a `Scalar` chosen uniformly at random using a CSPRNG.
-    /// Panics if the operating system's CSPRNG is unavailable.
+    /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
     ///
-    /// * `cspring`: any cryptographically secure PRNG which
-    ///   implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `rand::Rng` interface.
     ///
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
     #[cfg(feature = "std")]
-    pub fn random<T: Rng>(csprng: &mut T) -> Self {
+    pub fn random<T: Rng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        csprng.fill_bytes(&mut scalar_bytes);
+        rng.fill_bytes(&mut scalar_bytes);
         Scalar::reduce(&scalar_bytes)
     }
 
@@ -172,6 +206,8 @@ impl Scalar {
     ///
     /// Takes a type parameter `D`, which is any `Digest` producing 64
     /// bytes (512 bits) of output.
+    ///
+    /// Convenience wrapper around `from_hash`.
     ///
     /// # Example
     ///
@@ -190,9 +226,19 @@ impl Scalar {
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-            where D: Digest<OutputSize=U64> + Default {
+            where D: Digest<OutputSize = U64> + Default {
         let mut hash = D::default();
         hash.input(input);
+        Scalar::from_hash(hash)
+    }
+
+    /// Construct a scalar from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    pub fn from_hash<D>(hash: D) -> Scalar
+            where D: Digest<OutputSize=U64> + Default {
         // XXX this seems clumsy
         let mut output = [0u8;64];
         output.copy_from_slice(hash.result().as_slice());
@@ -200,7 +246,7 @@ impl Scalar {
     }
 
     /// View this `Scalar` as a sequence of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
@@ -215,6 +261,31 @@ impl Scalar {
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Construct a scalar from the given `u64`.
+    pub fn from_u64(x: u64) -> Scalar {
+        let mut s = Scalar::zero();
+        for i in 0..8 {
+            s[i] = (x >> (i*8)) as u8;
+        }
+        s
+    }
+
+    /// Compute the multiplicative inverse of this scalar.
+    pub fn invert(&self) -> Scalar {
+        self.unpack().invert().pack()
+    }
+
+    /// Get the bits of the scalar.
+    pub fn bits(&self) -> [i8;256] {
+        let mut bits = [0i8; 256];
+        for i in 0..256 {
+            // As i runs from 0..256, the bottom 3 bits index the bit,
+            // while the upper bits index the byte.
+            bits[i] = ((self.0[i>>3] >> (i&7)) & 1u8) as i8;
+        }
+        bits
+    }
+
     /// Compute a width-5 "Non-Adjacent Form" of this scalar.
     ///
     /// A width-`w` NAF of a positive integer `k` is an expression
@@ -226,14 +297,9 @@ impl Scalar {
     /// Intuitively, this is like a binary expansion, except that we
     /// allow some coefficients to grow up to `2^(w-1)` so that the
     /// nonzero coefficients are as sparse as possible.
-    pub fn non_adjacent_form(&self) -> [i8;256] {
+    pub fn non_adjacent_form(&self) -> [i8; 256] {
         // Step 1: write out bits of the scalar
-        let mut naf = [0i8; 256];
-        for i in 0..256 {
-            // As i runs from 0..256, the bottom 3 bits index the bit,
-            // while the upper bits index the byte.
-            naf[i] = ((self.0[i>>3] >> (i&7)) & 1u8) as i8;
-        }
+        let mut naf = self.bits();
 
         // Step 2: zero coefficients by carrying them upwards or downwards 
         'bits: for i in 0..256 {
@@ -270,7 +336,7 @@ impl Scalar {
     // Unpack a scalar into 12 21-bit limbs.
     fn unpack(&self) -> UnpackedScalar {
         let mask_21bits: i64 = (1 << 21) -1;
-        let mut a = UnpackedScalar([0i64;12]);
+        let mut a = UnpackedScalar([0i64; 12]);
         a[ 0]  = mask_21bits &  load3(&self.0[ 0..])      ;
         a[ 1]  = mask_21bits & (load4(&self.0[ 2..]) >> 5);
         a[ 2]  = mask_21bits & (load3(&self.0[ 5..]) >> 2);
@@ -296,7 +362,7 @@ impl Scalar {
     ///
     /// Precondition: self[31] <= 127.  This is the case whenever
     /// `self` is reduced.
-    pub fn to_radix_16(&self) -> [i8;64] {
+    pub fn to_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 
@@ -339,8 +405,8 @@ impl Scalar {
     }
 
     /// Reduce a 512-bit little endian number mod l
-    pub fn reduce(input: &[u8;64]) -> Scalar {
-        let mut s = [0i64;24];
+    pub fn reduce(input: &[u8; 64]) -> Scalar {
+        let mut s = [0i64; 24];
 
         // XXX express this as two unpack_limbs
         // some issues re: masking with the top byte of the 32byte input
@@ -387,16 +453,14 @@ pub struct UnpackedScalar(pub [i64; 12]);
 impl Index<usize> for UnpackedScalar {
     type Output = i64;
 
-    fn index<'a>(&'a self, _index: usize) -> &'a i64 {
-        let ret: &'a i64 = &(self.0[_index]);
-        ret
+    fn index(&self, _index: usize) -> &i64 {
+        &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for UnpackedScalar {
-    fn index_mut<'a>(&'a mut self, _index: usize) -> &'a mut i64 {
-        let ret: &'a mut i64 = &mut(self.0[_index]);
-        ret
+    fn index_mut(&mut self, _index: usize) -> &mut i64 {
+        &mut(self.0[_index])
     }
 }
 
@@ -440,11 +504,34 @@ impl UnpackedScalar {
         s
     }
 
+    /// Return the zero scalar.
+    pub fn zero() -> UnpackedScalar {
+        UnpackedScalar([0,0,0,0,0,0,0,0,0,0,0,0])
+    }
+
+    /// Return the one scalar.
+    pub fn one() -> UnpackedScalar {
+        UnpackedScalar([1,0,0,0,0,0,0,0,0,0,0,0])
+    }
+
+    /// Compute the multiplicative inverse of this scalar.
+    pub fn invert(&self) -> UnpackedScalar {
+        let mut y = UnpackedScalar::one();
+        // Run through bits of l-2 from highest to least
+        for bit in constants::l_minus_2.bits().iter().rev() {
+            y = UnpackedScalar::multiply_add(&y, &y, &UnpackedScalar::zero());
+            if *bit == 1 {
+                y = UnpackedScalar::multiply_add(&y, self, &UnpackedScalar::zero());
+            }
+        }
+        y
+    }
+
     /// Compute `ab+c (mod l)`.
     pub fn multiply_add(a: &UnpackedScalar,
                         b: &UnpackedScalar,
                         c: &UnpackedScalar) -> UnpackedScalar {
-        let mut result = [0i64;24];
+        let mut result = [0i64; 24];
 
         // Multiply a and b, and add c
         result[0]  =         c[0] +  a[0]*b[0];
@@ -506,10 +593,10 @@ impl UnpackedScalar {
     /// limbs.  Reduction mod l amounts to eliminating all of the
     /// high limbs while carrying as appropriate to prevent
     /// overflows in the lower limbs.
-    fn reduce_limbs(mut limbs: &mut [i64;24]) -> UnpackedScalar {
+    fn reduce_limbs(mut limbs: &mut [i64; 24]) -> UnpackedScalar {
         #[inline]
         #[allow(dead_code)]
-        fn do_reduction(limbs: &mut [i64;24], i:usize) {
+        fn do_reduction(limbs: &mut [i64; 24], i:usize) {
             limbs[i - 12] += limbs[i] * 666643;
             limbs[i - 11] += limbs[i] * 470296;
             limbs[i - 10] += limbs[i] * 654183;
@@ -531,7 +618,7 @@ impl UnpackedScalar {
         #[allow(dead_code)]
         /// Carry excess from the `i`-th limb into the `(i+1)`-th limb.
         /// Postcondition: `-2^20 <= limbs[i] < 2^20`.
-        fn do_carry_centered(limbs: &mut [i64;24], i:usize) {
+        fn do_carry_centered(limbs: &mut [i64; 24], i:usize) {
             let carry: i64 = (limbs[i] + (1<<20)) >> 21;
             limbs[i+1] += carry;
             limbs[i  ] -= carry << 21;
@@ -584,8 +671,7 @@ impl UnpackedScalar {
             do_carry_uncentered(&mut limbs, i);
         }
 
-        // XXX better way to get [i64;12] from [i64;24] ?
-        UnpackedScalar(*array_ref!(limbs,0,12))
+        UnpackedScalar(*array_ref!(limbs, 0, 12))
     }
 
 }
@@ -632,7 +718,7 @@ mod test {
         0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
         0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09]);
 
-    static A_NAF: [i8;256] =
+    static A_NAF: [i8; 256] =
         [0,13,0,0,0,0,0,0,0,7,0,0,0,0,0,0,-9,0,0,0,0,-11,0,0,0,0,3,0,0,0,0,1,
          0,0,0,0,9,0,0,0,0,-5,0,0,0,0,0,0,3,0,0,0,0,11,0,0,0,0,11,0,0,0,0,0,
          -9,0,0,0,0,0,-3,0,0,0,0,9,0,0,0,0,0,1,0,0,0,0,0,0,-1,0,0,0,0,0,9,0,
@@ -651,6 +737,20 @@ mod test {
     }
 
     #[test]
+    fn from_unsigned() {
+        let val = 0xdeadbeefdeadbeef;
+        let s = Scalar::from_u64(val);
+        assert_eq!(s[7], 0xde);
+        assert_eq!(s[6], 0xad);
+        assert_eq!(s[5], 0xbe);
+        assert_eq!(s[4], 0xef);
+        assert_eq!(s[3], 0xde);
+        assert_eq!(s[2], 0xad);
+        assert_eq!(s[1], 0xbe);
+        assert_eq!(s[0], 0xef);
+    }
+
+    #[test]
     fn scalar_multiply_by_one() {
         let one = Scalar::one();
         let zero = Scalar::zero();
@@ -661,12 +761,25 @@ mod test {
     }
 
     #[test]
-    fn scalar_multiply_only() {
-        let zero = Scalar::zero();
-        let test_scalar = Scalar::multiply_add(&X, &Y, &zero);
-        for i in 0..32 {
-            assert!(test_scalar[i] == X_TIMES_Y[i]);
-        }
+    fn impl_add() {
+        let mut two = Scalar::zero(); two[0] = 2;
+        let two = two;
+        let one = Scalar::one();
+        let should_be_two = &one + &one;
+        assert_eq!(should_be_two, two);
+    }
+
+    #[test]
+    fn impl_sub() {
+        let should_be_one = &constants::l - &constants::l_minus_1;
+        assert_eq!(should_be_one, Scalar::one());
+    }
+
+    #[allow(non_snake_case)]
+    #[test]
+    fn impl_mul() {
+        let should_be_X_times_Y = &X * &Y;
+        assert_eq!(should_be_X_times_Y, X_TIMES_Y);
     }
 
     #[test]
@@ -679,7 +792,7 @@ mod test {
 
     #[test]
     fn scalar_reduce() {
-        let mut bignum = [0u8;64];
+        let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
         for i in 0..32 {
             bignum[   i] = X[i];
@@ -697,13 +810,22 @@ mod test {
         }
     }
 
-    // Negating a scalar twice should result in the original scalar.
+    #[allow(non_snake_case)]
     #[test]
-    fn scalar_neg() {
-        let negative_x: Scalar = -X;
-        let orig: Scalar = -negative_x;
+    fn invert() {
+        let inv_X = X.invert();
+        let should_be_one = &inv_X * &X;
+        assert_eq!(should_be_one, Scalar::one());
+    }
 
-        assert!(orig == X);
+    // Negating a scalar twice should result in the original scalar.
+    #[allow(non_snake_case)]
+    #[test]
+    fn neg_twice_is_identity() {
+        let negative_X = -&X;
+        let should_be_X = -&negative_X;
+
+        assert_eq!(should_be_X, X);
     }
 }
 
@@ -725,6 +847,12 @@ mod bench {
     #[bench]
     fn scalar_multiply_add(b: &mut Bencher) {
         b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
+    }
+
+    #[bench]
+    fn invert(b: &mut Bencher) {
+        let x = X.unpack();
+        b.iter(|| x.invert());
     }
 
     #[bench]

@@ -30,16 +30,11 @@ use subtle::CTAssignable;
 use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
+use core::ops::{Mul, MulAssign};
 
-#[cfg(all(not(feature = "std"), feature = "basepoint_table_creation"))]
-use collections::boxed::Box;
-#[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
-use std::boxed::Box;
-
+use curve;
 use curve::ExtendedPoint;
 use curve::EdwardsBasepointTable;
-use curve::BasepointMult;
-use curve::ScalarMult;
 use curve::Identity;
 use scalar::Scalar;
 
@@ -249,40 +244,82 @@ impl<'a> Neg for &'a DecafPoint {
     }
 }
 
-impl ScalarMult<Scalar> for DecafPoint {
-    fn scalar_mult(&self, scalar: &Scalar) -> DecafPoint {
-        DecafPoint(self.0.scalar_mult(scalar))
+impl<'b> MulAssign<&'b Scalar> for DecafPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
+        let result = (self as &DecafPoint) * scalar;
+        *self = result;
     }
 }
 
-impl BasepointMult<Scalar> for DecafPoint {
-    // XXX is this actually in the image of the isogeny,
-    // or do we need a different basepoint?
-    fn basepoint() -> DecafPoint {
-        DecafPoint(ExtendedPoint::basepoint())
-    }
-
-    fn basepoint_mult(scalar: &Scalar) -> DecafPoint {
-        DecafPoint(ExtendedPoint::basepoint_mult(scalar))
+impl<'a, 'b> Mul<&'b Scalar> for &'a DecafPoint {
+    type Output = DecafPoint;
+    /// Scalar multiplication: compute `scalar * self`.
+    fn mul(self, scalar: &'b Scalar) -> DecafPoint {
+        DecafPoint(&self.0 * scalar)
     }
 }
-
 
 /// Precomputation
 #[derive(Clone)]
-pub struct DecafBasepointTable(EdwardsBasepointTable);
+pub struct DecafBasepointTable(pub EdwardsBasepointTable);
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a DecafBasepointTable {
+    type Output = DecafPoint;
+
+    fn mul(self, scalar: &'b Scalar) -> DecafPoint {
+        DecafPoint(&self.0 * scalar)
+    }
+}
+
+impl<'a, 'b> Mul<&'a DecafBasepointTable> for &'b Scalar {
+    type Output = DecafPoint;
+
+    fn mul(self, basepoint_table: &'a DecafBasepointTable) -> DecafPoint {
+        DecafPoint(self * &basepoint_table.0)
+    }
+}
 
 impl DecafBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
-    #[cfg(feature = "basepoint_table_creation")]
-    pub fn create(basepoint: &DecafPoint) -> Box<DecafBasepointTable> {
-        let edwards_table = EdwardsBasepointTable::create(&basepoint.0);
-        box DecafBasepointTable(*edwards_table)
+    pub fn create(basepoint: &DecafPoint) -> DecafBasepointTable {
+        DecafBasepointTable(EdwardsBasepointTable::create(&basepoint.0))
     }
 
-    /// Use the precomputed table to quickly compute `scalar * basepoint`
-    pub fn basepoint_mult(&self, scalar: &Scalar) -> DecafPoint {
-        DecafPoint(self.0.basepoint_mult(scalar))
+    /// Get the basepoint for this table as a `DecafPoint`.
+    pub fn basepoint(&self) -> DecafPoint {
+        DecafPoint(self.0.basepoint())
+    }
+}
+
+// ------------------------------------------------------------------------
+// Constant-time conditional assignment
+// ------------------------------------------------------------------------
+
+impl CTAssignable for DecafPoint {
+    /// Conditionally assign `other` to `self`, if `choice == 1u8`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use curve25519_dalek::curve::Identity;
+    /// # use curve25519_dalek::decaf::DecafPoint;
+    /// # use curve25519_dalek::subtle::CTAssignable;
+    /// # use curve25519_dalek::constants;
+    /// let A = DecafPoint::identity();
+    /// let B = constants::DECAF_ED25519_BASEPOINT;
+    ///
+    /// let mut P = A;
+    ///
+    /// P.conditional_assign(&B, 0u8);
+    /// assert!(P == A);
+    /// P.conditional_assign(&B, 1u8);
+    /// assert!(P == B);
+    /// ```
+    fn conditional_assign(&mut self, other: &DecafPoint, choice: u8) {
+        self.0.X.conditional_assign(&other.0.X, choice);
+        self.0.Y.conditional_assign(&other.0.Y, choice);
+        self.0.Z.conditional_assign(&other.0.Z, choice);
+        self.0.T.conditional_assign(&other.0.T, choice);
     }
 }
 
@@ -305,6 +342,31 @@ impl Debug for DecafPoint {
 }
 
 // ------------------------------------------------------------------------
+// Variable-time functions
+// ------------------------------------------------------------------------
+
+pub mod vartime {
+    //! Variable-time operations on decaf points, useful for non-secret data.
+    use super::*;
+
+    /// Given a vector of public scalars and a vector of (possibly secret)
+    /// points, compute
+    ///
+    ///    c_1 P_1 + ... + c_n P_n.
+    ///
+    /// # Input
+    ///
+    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+    /// error to call this function with two vectors of different lengths.
+    pub fn k_fold_scalar_mult<'a,'b,I,J>(scalars: I, points: J) -> DecafPoint
+        where I: IntoIterator<Item=&'a Scalar>, J: IntoIterator<Item=&'b DecafPoint>
+    {
+        let extended_points = points.into_iter().map(|P| &P.0);
+        DecafPoint(curve::vartime::k_fold_scalar_mult(scalars, extended_points))
+    }
+}
+
+// ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
 
@@ -316,7 +378,6 @@ mod test {
     use constants;
     use curve::CompressedEdwardsY;
     use curve::ExtendedPoint;
-    use curve::BasepointMult;
     use curve::Identity;
     use super::*;
 
@@ -342,17 +403,17 @@ mod test {
 
     #[test]
     fn decaf_basepoint_roundtrip() {
-        let bp_compressed_decaf = DecafPoint::basepoint().compress();
+        let bp_compressed_decaf = constants::DECAF_ED25519_BASEPOINT.compress();
         let bp_recaf = bp_compressed_decaf.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
-        let diff = &ExtendedPoint::basepoint() - &bp_recaf;
-        let diff4 = diff.mult_by_pow_2(4);
+        let diff = &constants::ED25519_BASEPOINT - &bp_recaf;
+        let diff4 = diff.mult_by_pow_2(4); // XXX this is wrong
         assert_eq!(diff4.compress_edwards(), CompressedEdwardsY::identity());
     }
 
     #[test]
     fn decaf_four_torsion_basepoint() {
-        let bp = DecafPoint::basepoint();
+        let bp = constants::DECAF_ED25519_BASEPOINT;
         let bp_coset = bp.coset4();
         for i in 0..4 {
             assert_eq!(bp, DecafPoint(bp_coset[i]));
@@ -362,8 +423,8 @@ mod test {
     #[test]
     fn decaf_four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
-        let s = Scalar::random(&mut rng);
-        let P = DecafPoint::basepoint_mult(&s);
+        let B = &constants::DECAF_ED25519_BASEPOINT_TABLE;
+        let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
         for i in 0..4 {
             assert_eq!(P, DecafPoint(P_coset[i]));
@@ -373,26 +434,13 @@ mod test {
     #[test]
     fn decaf_random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
+        let B = &constants::DECAF_ED25519_BASEPOINT_TABLE;
         for _ in 0..100 {
-            let s = Scalar::random(&mut rng);
-            let P = DecafPoint::basepoint_mult(&s);
+            let P = B * &Scalar::random(&mut rng);
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
         }
-    }
-
-    /// Test basepoint_mult versus a newly-generated DecafBasepointTable
-    #[test]
-    #[cfg(feature = "basepoint_table_creation")]
-    fn basepoint_mult_vs_decafbasepointtable() {
-        let table = DecafBasepointTable::create(&DecafPoint::basepoint());
-        let mut rng = OsRng::new().unwrap();
-        let s = Scalar::random(&mut rng);
-        let basepoint_mult_s = DecafPoint::basepoint_mult(&s);
-        let table_basepoint_mult_s = table.basepoint_mult(&s);
-
-        assert_eq!(basepoint_mult_s, table_basepoint_mult_s);
     }
 }
 
@@ -406,8 +454,8 @@ mod bench {
     #[bench]
     fn decompression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
-        let s = Scalar::random(&mut rng);
-        let P = DecafPoint::basepoint_mult(&s);
+        let B = &constants::DECAF_ED25519_BASEPOINT_TABLE;
+        let P = B * &Scalar::random(&mut rng);
         let P_compressed = P.compress();
         b.iter(|| P_compressed.decompress().unwrap());
     }
@@ -415,8 +463,8 @@ mod bench {
     #[bench]
     fn compression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
-        let s = Scalar::random(&mut rng);
-        let P = DecafPoint::basepoint_mult(&s);
+        let B = &constants::DECAF_ED25519_BASEPOINT_TABLE;
+        let P = B * &Scalar::random(&mut rng);
         b.iter(|| P.compress());
     }
 }

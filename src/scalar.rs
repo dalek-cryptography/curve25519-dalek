@@ -261,6 +261,15 @@ impl Scalar {
                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
+    /// Construct a scalar from the given `u64`.
+    pub fn from_u64(x: u64) -> Scalar {
+        let mut s = Scalar::zero();
+        for i in 0..8 {
+            s[i] = (x >> (i*8)) as u8;
+        }
+        s
+    }
+
     /// Compute the multiplicative inverse of this scalar.
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
@@ -725,6 +734,20 @@ mod test {
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
         }
+    }
+
+    #[test]
+    fn from_unsigned() {
+        let val = 0xdeadbeefdeadbeef;
+        let s = Scalar::from_u64(val);
+        assert_eq!(s[7], 0xde);
+        assert_eq!(s[6], 0xad);
+        assert_eq!(s[5], 0xbe);
+        assert_eq!(s[4], 0xef);
+        assert_eq!(s[3], 0xde);
+        assert_eq!(s[2], 0xad);
+        assert_eq!(s[1], 0xbe);
+        assert_eq!(s[0], 0xef);
     }
 
     #[test]

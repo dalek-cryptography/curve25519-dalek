@@ -19,11 +19,9 @@ use digest::Input;
 use digest::FixedOutput;
 use generic_array::typenum::U64;
 
-use curve25519_dalek::curve;
-use curve25519_dalek::curve::BasepointMult;
+use curve25519_dalek::constants;
 use curve25519_dalek::curve::CompressedEdwardsY;
 use curve25519_dalek::curve::ExtendedPoint;
-use curve25519_dalek::curve::ProjectivePoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::subtle::arrays_equal_ct;
 
@@ -168,7 +166,7 @@ impl SecretKey {
 
         mesg_digest = Scalar::reduce(&hash);
 
-        r = ExtendedPoint::basepoint_mult(&mesg_digest);
+        r = &mesg_digest * &constants::ED25519_BASEPOINT;
 
         h = D::default();
         h.digest(&r.compress_edwards().to_bytes()[..]);
@@ -251,7 +249,7 @@ impl PublicKey {
         let mut h: D = D::default();
         let mut a: ExtendedPoint;
         let ao:  Option<ExtendedPoint>;
-        let r: ProjectivePoint;
+        let r: ExtendedPoint;
         let digest: [u8; 64];
         let digest_reduced: Scalar;
 
@@ -277,7 +275,7 @@ impl PublicKey {
         let digest_bytes = h.fixed_result();
         digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
-        r = curve::double_scalar_mult_vartime(&digest_reduced, &a, &Scalar(*top_half));
+        r = &(&digest_reduced * &a) + &(&Scalar(*top_half) * &constants::ED25519_BASEPOINT);
 
         if arrays_equal_ct(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
             return true
@@ -354,7 +352,7 @@ impl Keypair {
         digest[31] &= 127;
         digest[31] |= 64;
 
-        pk = ExtendedPoint::basepoint_mult(&Scalar(*digest)).compress_edwards().to_bytes();
+        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT).compress_edwards().to_bytes();
 
         for i in  0..32 {
             sk[i]    = t[i];

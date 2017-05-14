@@ -271,6 +271,14 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a DecafBasepointTable {
     }
 }
 
+impl<'a, 'b> Mul<&'a DecafBasepointTable> for &'b Scalar {
+    type Output = DecafPoint;
+
+    fn mul(self, basepoint_table: &'a DecafBasepointTable) -> DecafPoint {
+        DecafPoint(self * &basepoint_table.0)
+    }
+}
+
 impl DecafBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
     pub fn create(basepoint: &DecafPoint) -> DecafBasepointTable {

@@ -904,6 +904,39 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     }
 }
 
+impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
+    type Output = ExtendedPoint;
+
+    /// Construct an `ExtendedPoint` by via this `Scalar` times
+    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
+    ///
+    /// Precondition: this scalar must be reduced.
+    ///
+    /// The computation proceeds as follows, as described on page 13
+    /// of the Ed25519 paper.  Write this scalar `a` in radix 16 with
+    /// coefficients in [-8,8), i.e.,
+    ///
+    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
+    ///
+    /// with -8 ≤ a_i < 8.  Then
+    ///
+    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
+    ///
+    /// Grouping even and odd coefficients gives
+    ///
+    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
+    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
+    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
+    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
+    ///
+    /// We then use the `select_precomputed_point` function, which
+    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
+    /// and returns `x * 16^2i * B` in constant time.
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
+        basepoint_table * &self
+    }
+}
+
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
     pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {

@@ -36,6 +36,7 @@ use collections::boxed::Box;
 #[cfg(all(feature = "std", feature = "basepoint_table_creation"))]
 use std::boxed::Box;
 
+use curve;
 use curve::ExtendedPoint;
 use curve::EdwardsBasepointTable;
 use curve::BasepointMult;
@@ -301,6 +302,30 @@ impl Debug for DecafPoint {
         let coset = self.coset4();
         write!(f, "DecafPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])
+    }
+}
+
+// ------------------------------------------------------------------------
+// Variable-time functions
+// ------------------------------------------------------------------------
+
+pub mod vartime {
+    //! Variable-time operations on decaf points, useful for non-secret data.
+    use super::*;
+
+    /// Given a vector of public scalars and a vector of (possibly secret)
+    /// points, compute
+    ///
+    ///    c_1 P_1 + ... + c_n P_n.
+    ///
+    /// # Input
+    ///
+    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+    /// error to call this function with two vectors of different lengths.
+    pub fn k_fold_scalar_mult(scalars: &Vec<Scalar>,
+                              points: &Vec<DecafPoint>) -> DecafPoint {
+        let extended_points: Vec<ExtendedPoint> = points.iter().map(|P| P.0).collect();
+        DecafPoint(curve::vartime::k_fold_scalar_mult(scalars, &extended_points))
     }
 }
 

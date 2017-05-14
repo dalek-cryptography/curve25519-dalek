@@ -84,6 +84,8 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
+#[cfg(feature = "yolocrypto")]
+use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;
@@ -442,6 +444,15 @@ impl CTAssignable for AffineNielsPoint {
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
         self.xy2d.conditional_assign(&other.xy2d, choice);
+    }
+}
+
+impl CTAssignable for ExtendedPoint {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+        self.X.conditional_assign(&other.X, choice);
+        self.Y.conditional_assign(&other.Y, choice);
+        self.Z.conditional_assign(&other.Z, choice);
+        self.T.conditional_assign(&other.T, choice);
     }
 }
 
@@ -817,6 +828,29 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     }
 }
 
+impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
+    type Output = ExtendedPoint;
+
+    /// Scalar multiplication: compute `self * point`.
+    ///
+    /// Uses a window of size 4.  Note: for scalar multiplication of
+    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
+        point * &self
+    }
+}
+
+#[cfg(feature = "yolocrypto")]
+impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
+    type Output = DecafPoint;
+
+    /// Scalar multiplication: compute `self * scalar`.
+    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(self * &point.0)
+    }
+}
+
+
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
@@ -867,6 +901,39 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
         }
 
         h
+    }
+}
+
+impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
+    type Output = ExtendedPoint;
+
+    /// Construct an `ExtendedPoint` by via this `Scalar` times
+    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
+    ///
+    /// Precondition: this scalar must be reduced.
+    ///
+    /// The computation proceeds as follows, as described on page 13
+    /// of the Ed25519 paper.  Write this scalar `a` in radix 16 with
+    /// coefficients in [-8,8), i.e.,
+    ///
+    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
+    ///
+    /// with -8 ≤ a_i < 8.  Then
+    ///
+    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
+    ///
+    /// Grouping even and odd coefficients gives
+    ///
+    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
+    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
+    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
+    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
+    ///
+    /// We then use the `select_precomputed_point` function, which
+    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
+    /// and returns `x * 16^2i * B` in constant time.
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
+        basepoint_table * &self
     }
 }
 
@@ -1150,6 +1217,8 @@ pub mod vartime {
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "yolocrypto")]
+    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::CTAssignable;
@@ -1457,6 +1526,29 @@ mod test {
         for _ in 0..1_000 {
             P *= &A_SCALAR;
         }
+    }
+
+    #[test]
+    fn scalarmult_extended_point_works_both_ways() {
+        let G: ExtendedPoint = constants::ED25519_BASEPOINT;
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &G * &s;
+        let P2 = &s * &G;
+
+        assert!(P1.compress_edwards().to_bytes() == P2.compress_edwards().to_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "yolocrypto")]
+    fn scalarmult_decafpoint_works_both_ways() {
+        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT);
+        let s: Scalar = A_SCALAR;
+
+        let P1 = &P * &s;
+        let P2 = &s * &P;
+
+        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
     mod vartime {

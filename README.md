@@ -57,12 +57,7 @@ fast.
 ## TODO
 
 * Implement hashing to a point on the curve (Elligator).
-* Add conversion to Montgomery form and rework compressed point types.
-* Maybe implement Mike Hamburg's Decaf point compression format, so that
-  users can be guaranteed to be in a prime-order subgroup and not have to
-  worry about cofactors.
-* Review finite field arithmetic.
-* Review scalar arithmetic.
-* Review addition formulas.
-* Proofread mathematics in documentation.
 * Maybe use serde for serialization.
+* Make a new `mask` type in `subtle.rs` and return that instead of `u8`s.
+* Implement all utilities in Golang's `crypto/subtle` package, and
+  move the module to its own crate.

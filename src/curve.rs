@@ -1643,19 +1643,16 @@ mod test {
         assert_eq!(parsed.compress_edwards(), constants::BASE_CMPRSSD);
     }
 
-    /*
-    use serde_json;
-
     #[test]
-    fn serde_json_basepoint_roundtrip() {
-        let output = serde_json::to_string(&constants::ED25519_BASEPOINT).unwrap();
-        println!("{:?}", output);
-        println!("{:?}", constants::BASE_CMPRSSD);
-        let parsed: ExtendedPoint = serde_json::from_str(&output).unwrap();
-        println!("{:?}", parsed);
-        panic!();
+    #[cfg(feature = "serde")]
+    fn serde_cbor_decode_invalid_fails() {
+        let mut output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        // CBOR apparently has two bytes of overhead for a 32-byte string.
+        // Set the low byte of the compressed point to 1 to make it invalid.
+        output[2] = 1;
+        let parsed: Result<ExtendedPoint,_> = serde_cbor::from_slice(&output);
+        assert!(parsed.is_err());
     }
-    */
 }
 
 // ------------------------------------------------------------------------

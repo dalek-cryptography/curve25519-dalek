@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
 license = "CC0-1.0"
@@ -19,7 +19,7 @@ travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 arrayref = "0.3.3"
 
 [dependencies.curve25519-dalek]
-version = "^0.6"
+version = "^0.7"
 default-features = false
 
 [dependencies.rand]
@@ -27,7 +27,7 @@ optional = true
 version = "^0.3"
 
 [dependencies.digest]
-version = "0.4"
+version = "^0.5"
 
 [dependencies.generic-array]
 # same version that digest depends on
@@ -35,7 +35,7 @@ version = "^0.6"
 
 [dev-dependencies]
 rustc-serialize = "0.3"
-sha2 = "^0.4"
+sha2 = "^0.5"
 
 [features]
 default = ["std"]

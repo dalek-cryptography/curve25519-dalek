@@ -116,11 +116,12 @@ impl Identity for CompressedDecaf {
 // structs containing `DecafPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
-use serde::{Serialize, Deserialize};
-use serde::{Serializer, Deserializer};
+#[cfg(feature = "serde")]
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+#[cfg(feature = "serde")]
 use serde::de::Visitor;
-use serde;
 
+#[cfg(feature = "serde")]
 impl Serialize for DecafPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
@@ -129,6 +130,7 @@ impl Serialize for DecafPoint {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for DecafPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
@@ -436,9 +438,11 @@ mod test {
     use curve::Identity;
     use super::*;
 
+    #[cfg(feature = "serde")]
     use serde_cbor;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn serde_cbor_basepoint_roundtrip() {
         let output = serde_cbor::to_vec(&constants::DECAF_ED25519_BASEPOINT).unwrap();
         let parsed: DecafPoint = serde_cbor::from_slice(&output).unwrap();

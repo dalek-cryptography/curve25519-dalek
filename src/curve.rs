@@ -286,11 +286,12 @@ impl CompressedMontgomeryU {
 // structs containing `ExtendedPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
-use serde::{Serialize, Deserialize};
-use serde::{Serializer, Deserializer};
+#[cfg(feature = "serde")]
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+#[cfg(feature = "serde")]
 use serde::de::Visitor;
-use serde;
 
+#[cfg(feature = "serde")]
 impl Serialize for ExtendedPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
@@ -299,6 +300,7 @@ impl Serialize for ExtendedPoint {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for ExtendedPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
@@ -1610,7 +1612,7 @@ mod test {
     mod vartime {
         use super::super::*;
         use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
-        
+
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
         fn double_scalar_mult_basepoint_vs_ed25519py() {
@@ -1630,9 +1632,11 @@ mod test {
         }
     }
 
+    #[cfg(feature = "serde")]
     use serde_cbor;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn serde_cbor_basepoint_roundtrip() {
         let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
         let parsed: ExtendedPoint = serde_cbor::from_slice(&output).unwrap();

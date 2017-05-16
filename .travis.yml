@@ -7,6 +7,7 @@ rust:
 
 env:
   - TEST_COMMAND=test FEATURES=--features="yolocrypto"
+  - TEST_COMMAND=test FEATURES=--features="yolocrypto serde"
   - TEST_COMMAND=test FEATURES=--features="yolocrypto nightly"
   - TEST_COMMAND=bench FEATURES=--features="yolocrypto bench"
   - TEST_COMMAND=bench FEATURES=--features="yolocrypto nightly bench"

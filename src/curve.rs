@@ -317,7 +317,6 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
             fn visit_bytes<E>(self, v: &[u8]) -> Result<ExtendedPoint, E>
                 where E: serde::de::Error
             {
-                println!("VISIT_BYTES");
                 if v.len() == 32 {
                     let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
                     CompressedEdwardsY(*arr32).decompress()
@@ -328,7 +327,6 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
             }
         }
 
-        println!("DESERIALIZE");
         deserializer.deserialize_bytes(ExtendedPointVisitor)
     }
 }

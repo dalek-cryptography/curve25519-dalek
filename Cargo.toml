@@ -18,6 +18,10 @@ exclude = [
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
+[dependencies.serde]
+version = "1.0"
+optional = true
+
 [dependencies.arrayref]
 version = "0.3.3"
 
@@ -34,6 +38,9 @@ version = "^0.6"
 
 [dev-dependencies.sha2]
 version = "0.4"
+
+[dev-dependencies.serde_cbor]
+version = "0.6"
 
 [features]
 nightly = ["radix_51"]

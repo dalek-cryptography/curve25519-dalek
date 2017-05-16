@@ -185,6 +185,50 @@ impl CTAssignable for Scalar {
     }
 }
 
+#[cfg(feature = "serde")]
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+#[cfg(feature = "serde")]
+use serde::de::Visitor;
+
+#[cfg(feature = "serde")]
+impl Serialize for Scalar {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Scalar {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct ScalarVisitor;
+
+        impl<'de> Visitor<'de> for ScalarVisitor {
+            type Value = Scalar;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("a 32-byte scalar value")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Scalar, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    // array_ref turns &[u8] into &[u8;32]
+                    Ok(Scalar(*array_ref!(v,0,32))) 
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(ScalarVisitor)
+    }
+}
+
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
@@ -826,6 +870,17 @@ mod test {
         let should_be_X = -&negative_X;
 
         assert_eq!(should_be_X, X);
+    }
+
+    #[cfg(feature = "serde")]
+    use serde_cbor;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_cbor_scalar_roundtrip() {
+        let output = serde_cbor::to_vec(&X).unwrap();
+        let parsed: Scalar = serde_cbor::from_slice(&output).unwrap();
+        assert_eq!(parsed, X);
     }
 }
 

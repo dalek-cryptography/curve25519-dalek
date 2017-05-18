@@ -1654,7 +1654,7 @@ mod bench {
     use test::Bencher;
     use constants;
     use super::*;
-    use super::test::{A_SCALAR, A_TIMES_BASEPOINT, B_SCALAR};
+    use super::test::{A_SCALAR};
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {

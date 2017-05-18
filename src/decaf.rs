@@ -672,7 +672,7 @@ mod test {
             // Check that P is on the curve
             assert!(P.0.is_valid());
             // Check that P is in the image of the decaf map
-            let compressed_P = P.compress();
+            P.compress();
         }
     }
 }

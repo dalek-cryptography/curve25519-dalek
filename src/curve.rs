@@ -87,8 +87,6 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
-#[cfg(feature = "yolocrypto")]
-use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;
@@ -279,6 +277,59 @@ impl CompressedMontgomeryU {
 }
 
 // ------------------------------------------------------------------------
+// Serde support
+// ------------------------------------------------------------------------
+// Serializes to and from `ExtendedPoint` directly, doing compression
+// and decompression internally.  This means that users can create
+// structs containing `ExtendedPoint`s and use Serde's derived
+// serializers to serialize those structures.
+
+#[cfg(feature = "serde")]
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+#[cfg(feature = "serde")]
+use serde::de::Visitor;
+
+#[cfg(feature = "serde")]
+impl Serialize for ExtendedPoint {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.compress_edwards().as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for ExtendedPoint {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct ExtendedPointVisitor;
+
+        impl<'de> Visitor<'de> for ExtendedPointVisitor {
+            type Value = ExtendedPoint;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("a valid point in Edwards y + sign format")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<ExtendedPoint, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
+                    CompressedEdwardsY(*arr32).decompress()
+                        .ok_or(serde::de::Error::custom("decompression failed"))
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(ExtendedPointVisitor)
+    }
+}
+
+// ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------
 
@@ -308,11 +359,12 @@ pub struct ProjectivePoint {
 /// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
 #[derive(Copy, Clone)]
+#[allow(missing_docs)]
 pub struct CompletedPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
+    pub X: FieldElement,
+    pub Y: FieldElement,
+    pub Z: FieldElement,
+    pub T: FieldElement,
 }
 
 /// A pre-computed point in the affine model for the curve, represented as
@@ -840,16 +892,6 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
         point * &self
-    }
-}
-
-#[cfg(feature = "yolocrypto")]
-impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
-    type Output = DecafPoint;
-
-    /// Scalar multiplication: compute `self * scalar`.
-    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
-        DecafPoint(self * &point.0)
     }
 }
 
@@ -1557,7 +1599,7 @@ mod test {
     mod vartime {
         use super::super::*;
         use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
-        
+
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
         fn double_scalar_mult_basepoint_vs_ed25519py() {
@@ -1576,6 +1618,28 @@ mod test {
             assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
         }
     }
+
+    #[cfg(feature = "serde")]
+    use serde_cbor;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_cbor_basepoint_roundtrip() {
+        let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        let parsed: ExtendedPoint = serde_cbor::from_slice(&output).unwrap();
+        assert_eq!(parsed.compress_edwards(), constants::BASE_CMPRSSD);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_cbor_decode_invalid_fails() {
+        let mut output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        // CBOR apparently has two bytes of overhead for a 32-byte string.
+        // Set the low byte of the compressed point to 1 to make it invalid.
+        output[2] = 1;
+        let parsed: Result<ExtendedPoint,_> = serde_cbor::from_slice(&output);
+        assert!(parsed.is_err());
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1588,7 +1652,7 @@ mod bench {
     use test::Bencher;
     use constants;
     use super::*;
-    use super::test::{A_SCALAR, A_TIMES_BASEPOINT, B_SCALAR};
+    use super::test::{A_SCALAR};
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {

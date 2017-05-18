@@ -47,6 +47,11 @@ extern crate arrayref;
 extern crate generic_array;
 extern crate digest;
 
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_cbor;
+
 #[cfg(feature = "std")]
 extern crate core;
 

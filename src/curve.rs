@@ -83,6 +83,7 @@ use collections::Vec;
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
@@ -802,10 +803,22 @@ impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
+    fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
+        *self = (self as &ExtendedPoint) + _rhs;
+    }
+}
+
 impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self - &other.to_projective_niels()).to_extended()
+    }
+}
+
+impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
+    fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
+        *self = (self as &ExtendedPoint) - _rhs;
     }
 }
 

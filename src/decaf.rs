@@ -586,7 +586,6 @@ mod test {
     use scalar::Scalar;
     use constants;
     use curve::CompressedEdwardsY;
-    use curve::ExtendedPoint;
     use curve::Identity;
     use super::*;
 

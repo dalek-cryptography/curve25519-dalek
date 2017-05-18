@@ -36,6 +36,7 @@ use subtle::CTAssignable;
 use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 use curve;
@@ -427,11 +428,23 @@ impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
     }
 }
 
+impl<'b> AddAssign<&'b DecafPoint> for DecafPoint {
+    fn add_assign(&mut self, _rhs: &DecafPoint) {
+        *self = (self as &DecafPoint) + _rhs;
+    }
+}
+
 impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
     type Output = DecafPoint;
 
     fn sub(self, other: &'b DecafPoint) -> DecafPoint {
         DecafPoint(&self.0 - &other.0)
+    }
+}
+
+impl<'b> SubAssign<&'b DecafPoint> for DecafPoint {
+    fn sub_assign(&mut self, _rhs: &DecafPoint) {
+        *self = (self as &DecafPoint) - _rhs;
     }
 }
 

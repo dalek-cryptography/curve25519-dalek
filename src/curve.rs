@@ -87,8 +87,6 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
-#[cfg(feature = "yolocrypto")]
-use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;

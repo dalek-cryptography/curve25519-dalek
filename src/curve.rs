@@ -897,16 +897,6 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     }
 }
 
-#[cfg(feature = "yolocrypto")]
-impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
-    type Output = DecafPoint;
-
-    /// Scalar multiplication: compute `self * scalar`.
-    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
-        DecafPoint(self * &point.0)
-    }
-}
-
 
 /// Precomputation
 #[derive(Clone)]

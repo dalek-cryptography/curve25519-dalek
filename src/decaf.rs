@@ -458,6 +458,16 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a DecafPoint {
     }
 }
 
+impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
+    type Output = DecafPoint;
+
+    /// Scalar multiplication: compute `self * scalar`.
+    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(self * &point.0)
+    }
+}
+
+
 /// Precomputation
 #[derive(Clone)]
 pub struct DecafBasepointTable(pub EdwardsBasepointTable);

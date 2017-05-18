@@ -361,11 +361,12 @@ pub struct ProjectivePoint {
 /// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
 /// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
 #[derive(Copy, Clone)]
+#[allow(missing_docs)]
 pub struct CompletedPoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-    T: FieldElement,
+    pub X: FieldElement,
+    pub Y: FieldElement,
+    pub Z: FieldElement,
+    pub T: FieldElement,
 }
 
 /// A pre-computed point in the affine model for the curve, represented as

@@ -24,6 +24,12 @@
 
 use core::fmt::Debug;
 
+#[cfg(feature = "std")]
+use rand::Rng;
+
+use digest::Digest;
+use generic_array::typenum::U32;
+
 use constants;
 use field::FieldElement;
 use subtle::CTAssignable;
@@ -33,7 +39,9 @@ use core::ops::{Add, Sub, Neg};
 use core::ops::{Mul, MulAssign};
 
 use curve;
+use curve::ValidityCheck;
 use curve::ExtendedPoint;
+use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
 use curve::Identity;
 use scalar::Scalar;
@@ -248,6 +256,140 @@ impl DecafPoint {
         , &self.0 + &constants::EIGHT_TORSION[4]
         , &self.0 + &constants::EIGHT_TORSION[6]
         ]
+    }
+
+    /// Computes the Elligator map as described in the Decaf paper.
+    ///
+    /// # Note
+    ///
+    /// This method is not public because it's just used for hashing
+    /// to a point -- proper elligator support is deferred for now.
+    fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
+        // Follows Appendix C of the Decaf paper.
+        // Use n = 2 as the quadratic nonresidue so that n*x = x + x.
+
+        // 1. Compute r <--- nr_0^2.
+        let r_0_squared = r_0.square();
+        let r = &r_0_squared + &r_0_squared;
+
+        // 2. Compute D <--- (dr + (a-d)) * (dr - (d + ar)) 
+        let dr = &constants::d * &r;
+        // D = (dr + (a-d)) * (dr - (d + ar)) = (dr + (a-d))*(dr - (d-r)) since a=-1
+        let D = &(&dr + &constants::a_minus_d) * &(&dr - &(&constants::d - &r));
+
+        // 3. Compute N <--- (r+1) * (a-2d)
+        let minus_one = -&FieldElement::one();
+        let N = &(&r + &FieldElement::one()) * &(&minus_one - &constants::d2);
+
+        // 4. Compute
+        //           / +1,     1 / sqrt(ND)   if ND is square
+        // c, e <--- | +1, 0                  if N or D = 0
+        //           \ -1,  nr_0 / sqrt(nND)  otherwise
+        let ND = &N * &D;
+        let nND = &ND + &ND;
+        let mut c = FieldElement::one();
+        let mut e = FieldElement::zero();
+        let (ND_is_nonzero_square, ND_invsqrt) = ND.invsqrt();
+        e.conditional_assign(&ND_invsqrt, ND_is_nonzero_square);
+        let (nND_is_nonzero_square, nND_invsqrt) = nND.invsqrt();
+        let nr_0_nND_invsqrt = &nND_invsqrt * &(r_0 + r_0);
+        c.conditional_assign(&minus_one, nND_is_nonzero_square);
+        e.conditional_assign(&nr_0_nND_invsqrt, nND_is_nonzero_square);
+
+        // 5. Compute s <--- c*|N*e|
+        let mut s = &N * &e;
+        let neg = s.is_negative_decaf();
+        s.conditional_negate(neg);
+        s *= &c;
+
+        // 6. Compute t <--- -c*N*(r-1)* ((a-2d)*e)^2  -1
+        let a_minus_2d_e_sq = (&(&minus_one-&constants::d2)*&e).square();
+        let c_N_r_minus_1 = &c * &(&N * &(&r + &minus_one));
+        let t = &minus_one - &(&c_N_r_minus_1 * &a_minus_2d_e_sq);
+
+        // 7. Apply the isogeny:
+        // (x,y) = ((2s)/(1+as^2), (1-as^2)/(t))
+        let as_sq = &minus_one * &s.square();
+        let P = CompletedPoint{
+            X: &s + &s,
+            Z: &FieldElement::one() + &as_sq,
+            Y: &FieldElement::one() - &as_sq,
+            T: t,
+        };
+
+        // Convert to extended and return.
+        DecafPoint(P.to_extended())
+    }
+
+    /// Return a `DecafPoint` chosen uniformly at random using a user-provided RNG.
+    ///
+    /// # Inputs
+    ///
+    /// * `rng`: any RNG which implements the `rand::Rng` interface.
+    ///
+    /// # Returns
+    ///
+    /// A random element of the Decaf group.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Decaf-flavoured Elligator 2 map, so that the discrete log of the
+    /// output point with respect to any other point should be unknown.
+    #[cfg(feature = "std")]
+    pub fn random<T: Rng>(rng: &mut T) -> Self {
+        let mut field_bytes = [0u8; 32];
+        rng.fill_bytes(&mut field_bytes);
+        let r_0 = FieldElement::from_bytes(&field_bytes);
+        DecafPoint::elligator_decaf_flavour(&r_0)
+    }
+
+    /// Hash a slice of bytes into a `DecafPoint`.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 32
+    /// bytes (256 bits) of output.
+    ///
+    /// Convenience wrapper around `from_hash`.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Decaf-flavoured Elligator 2 map, so that the discrete log of the
+    /// output point with respect to any other point should be unknown.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::decaf::DecafPoint;
+    /// extern crate sha2;
+    /// use sha2::Sha256;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let P = DecafPoint::hash_from_bytes::<Sha256>(msg.as_bytes());
+    /// # }
+    /// ```
+    ///
+    pub fn hash_from_bytes<D>(input: &[u8]) -> DecafPoint
+            where D: Digest<OutputSize=U32> + Default {
+        let mut hash = D::default();
+        hash.input(input);
+        DecafPoint::from_hash(hash)
+    }
+
+    /// Construct a `DecafPoint` from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    pub fn from_hash<D>(hash: D) -> DecafPoint
+            where D: Digest<OutputSize=U32> + Default {
+        // XXX this seems clumsy
+        let mut output = [0u8; 32];
+        output.copy_from_slice(hash.result().as_slice());
+        let r_0 = FieldElement::from_bytes(&output);
+        DecafPoint::elligator_decaf_flavour(&r_0)
     }
 }
 
@@ -509,6 +651,18 @@ mod test {
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
+        }
+    }
+
+    #[test]
+    fn decaf_random_is_valid() {
+        let mut rng = OsRng::new().unwrap();
+        for _ in 0..100 {
+            let P = DecafPoint::random(&mut rng);
+            // Check that P is on the curve
+            assert!(P.0.is_valid());
+            // Check that P is in the image of the decaf map
+            let compressed_P = P.compress();
         }
     }
 }

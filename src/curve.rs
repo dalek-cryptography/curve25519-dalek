@@ -822,6 +822,10 @@ impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
     }
 }
 
+// ------------------------------------------------------------------------
+// Negation
+// ------------------------------------------------------------------------
+
 impl<'a> Neg for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 

@@ -671,7 +671,7 @@ mod test {
     #[test]
     fn decaf_random_is_valid() {
         let mut rng = OsRng::new().unwrap();
-        for _ in 0..100_000 {
+        for _ in 0..10_000 {
             let P = DecafPoint::random(&mut rng);
             // Check that P is on the curve
             assert!(P.0.is_valid());

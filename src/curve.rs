@@ -87,8 +87,6 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
-#[cfg(feature = "yolocrypto")]
-use decaf::DecafPoint;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal_ct;
@@ -897,16 +895,6 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     }
 }
 
-#[cfg(feature = "yolocrypto")]
-impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
-    type Output = DecafPoint;
-
-    /// Scalar multiplication: compute `self * scalar`.
-    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
-        DecafPoint(self * &point.0)
-    }
-}
-
 
 /// Precomputation
 #[derive(Clone)]
@@ -1664,7 +1652,7 @@ mod bench {
     use test::Bencher;
     use constants;
     use super::*;
-    use super::test::{A_SCALAR, A_TIMES_BASEPOINT, B_SCALAR};
+    use super::test::{A_SCALAR};
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {

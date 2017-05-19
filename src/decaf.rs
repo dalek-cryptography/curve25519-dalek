@@ -458,6 +458,16 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a DecafPoint {
     }
 }
 
+impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
+    type Output = DecafPoint;
+
+    /// Scalar multiplication: compute `self * scalar`.
+    fn mul(self, point: &'b DecafPoint) -> DecafPoint {
+        DecafPoint(self * &point.0)
+    }
+}
+
+
 /// Precomputation
 #[derive(Clone)]
 pub struct DecafBasepointTable(pub EdwardsBasepointTable);
@@ -576,7 +586,6 @@ mod test {
     use scalar::Scalar;
     use constants;
     use curve::CompressedEdwardsY;
-    use curve::ExtendedPoint;
     use curve::Identity;
     use super::*;
 
@@ -662,7 +671,7 @@ mod test {
             // Check that P is on the curve
             assert!(P.0.is_valid());
             // Check that P is in the image of the decaf map
-            let compressed_P = P.compress();
+            P.compress();
         }
     }
 }

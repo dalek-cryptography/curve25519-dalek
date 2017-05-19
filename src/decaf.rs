@@ -267,6 +267,7 @@ impl DecafPoint {
     fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
         // Follows Appendix C of the Decaf paper.
         // Use n = 2 as the quadratic nonresidue so that n*x = x + x.
+        let minus_one = -&FieldElement::one();
 
         // 1. Compute r <--- nr_0^2.
         let r_0_squared = r_0.square();
@@ -274,11 +275,15 @@ impl DecafPoint {
 
         // 2. Compute D <--- (dr + (a-d)) * (dr - (d + ar)) 
         let dr = &constants::d * &r;
-        // D = (dr + (a-d)) * (dr - (d + ar)) = (dr + (a-d))*(dr - (d-r)) since a=-1
-        let D = &(&dr + &constants::a_minus_d) * &(&dr - &(&constants::d - &r));
+        // D = (dr + (a-d)) * (dr - (d + ar))
+        //   = (dr + (a-d)) * (dr - (d-r)) since a=-1
+        // writing as
+        //   = (dr + (a-d)) * dr - (dr + (a-d)) * (d - r)
+        // avoids two consecutive additions (could cause overflow)
+        let dr_plus_amd = &dr + &constants::a_minus_d;
+        let D = &(&dr_plus_amd * &dr) - &(&dr_plus_amd * &(&constants::d - &r));
 
         // 3. Compute N <--- (r+1) * (a-2d)
-        let minus_one = -&FieldElement::one();
         let N = &(&r + &FieldElement::one()) * &(&minus_one - &constants::d2);
 
         // 4. Compute
@@ -666,7 +671,7 @@ mod test {
     #[test]
     fn decaf_random_is_valid() {
         let mut rng = OsRng::new().unwrap();
-        for _ in 0..100 {
+        for _ in 0..10_000 {
             let P = DecafPoint::random(&mut rng);
             // Check that P is on the curve
             assert!(P.0.is_valid());

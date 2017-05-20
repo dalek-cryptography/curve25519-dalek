@@ -78,13 +78,21 @@ impl CompressedDecaf {
         let ss = s.square();
         let X = &s + &s;                    // X = 2s
         let Z = &FieldElement::one() - &ss; // Z = 1+as^2
-        let u = &(&Z * &Z) - &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
+        let ZZ = Z.square();
+        let u = &ZZ- &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
         let uss = &u * &ss;
+        let ussZZ = &uss * &ZZ;
 
-        let (uss_is_nonzero_square, mut v) = uss.invsqrt();
-        if (uss_is_nonzero_square | uss.is_zero()) == 0u8 {
+        if Z.is_zero() == 1u8 { return None; }
+
+        // Batch inversion: set b = 1/sqrt(us^2 Z^2)
+        let (ussZZ_is_nonzero_square, b) = ussZZ.invsqrt();
+        if (ussZZ_is_nonzero_square | uss.is_zero()) == 0u8 {
             return None; // us^2 is nonzero nonsquare
         }
+
+        let mut v = &b * &Z; // now v = 1/sqrt(us^2)
+        let Zinv = &b * &(&v * &uss); // now Zinv = b^2 Z us^2 = 1/Z
 
         // Now v = 1/sqrt(us^2) if us^2 is a nonzero square, 0 if us^2 is zero.
         let uv = &v * &u;
@@ -99,9 +107,9 @@ impl CompressedDecaf {
 
         // "To decode the point, one must decode it to affine form
         // instead of projective, and check that xy is non-negative."
-        //
-        // XXX can we merge this inversion with the one above?
-        let xy = &T * &Z.invert();
+
+        // Use the value of 1/Z previously computed in the batch inversion
+        let xy = &T * &Zinv;
         if (Y.is_nonzero() & xy.is_nonnegative_decaf()) == 1u8 {
             Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
         } else {

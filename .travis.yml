@@ -6,12 +6,12 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test FEATURES=--features="yolocrypto"
-  - TEST_COMMAND=test FEATURES=--features="yolocrypto serde"
-  - TEST_COMMAND=test FEATURES=--features="yolocrypto nightly"
-  - TEST_COMMAND=bench FEATURES=--features="yolocrypto bench"
-  - TEST_COMMAND=bench FEATURES=--features="yolocrypto nightly bench"
-  - TEST_COMMAND=build FEATURES=--no-default-features
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto'
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto serde'
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
+  - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
+  - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
+  - TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
 
 matrix:
   exclude:
@@ -20,23 +20,23 @@ matrix:
     # run benchmarks, which causes dalek not to build on stable.  See
     # https://github.com/isislovecruft/curve25519-dalek/pull/38#issuecomment-286027562
     - rust: stable
-      env: TEST_COMMAND=bench FEATURES=--features="yolocrypto bench"
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
     - rust: beta
-      env: TEST_COMMAND=bench FEATURES=--features="yolocrypto bench"
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
     - rust: stable
-      env: TEST_COMMAND=bench FEATURES=--features="yolocrypto nightly bench"
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
     - rust: beta
-      env: TEST_COMMAND=bench FEATURES=--features="yolocrypto nightly bench"
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
     # Test nightly features, such as radix_51, only on nightly.
     - rust: stable
-      env: TEST_COMMAND=test FEATURES=--features="yolocrypto nightly"
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
     - rust: beta
-      env: TEST_COMMAND=test FEATURES=--features="yolocrypto nightly"
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
     # Test no_std only on nightly.
     - rust: stable
-      env: TEST_COMMAND=build FEATURES=--no-default-features
+      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES=''
     - rust: beta
-      env: TEST_COMMAND=build FEATURES=--no-default-features
+      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES=''
 
 script:
-  - cargo $TEST_COMMAND $FEATURES
+  - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS

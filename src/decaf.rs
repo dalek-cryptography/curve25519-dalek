@@ -209,46 +209,127 @@ impl DecafPoint {
         // let untwisted_X = &self.X * &constants::MSQRT_M1;
         // etc.
 
-        // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8
+        // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8.
+        //
+        // We want to select a point (x,y) in the coset P + E[4] with
+        // y nonzero and xy nonnegative.  The naive approach is as
+        // follows.  First, compute xy = T/Z and check that Y is
+        // nonzero and xy is nonnegative.  If not, then "rotate" the
+        // original point by adding (x,y) + (i,0) = (iy,ix) = (x',y'):
+        // this rotated point has x'y' = -xy.  Then perform the normal
+        // Decaf encoding, as described in Appendix A.1 of the Decaf
+        // paper, using the rotated point (x',y').
+        //
+        // This is straightforward but requires an extra inversion.
+        // We would like to batch the inversion in xy = T/Z with the
+        // inverse square root in the computation of
+        //
+        //   r = invsqrt((a-d)*(Z+Y)*(Z-Y))
+        //     = invsqrt(a-d)*invsqrt(Z^2-Y^2),
+        //
+        // but the X and Y we are trying to decode depend on whether
+        // we rotated the coset representative!
+        //
+        // However, it is possible to batch these inversions.  Credit:
+        // the following explanation (and trick) is adapted from an
+        // email from Mike Hamburg, but of course any errors are ours.
+        //
+        // Let the initial point be  ( X_0 :  Y_0 : Z_0 :  T_0).
+        // The rotated point is then (iY_0 : iX_0 : Z_0 : -T_0).
+        //
+        // We want to relate the computation of:
+        //
+        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 - Y_0^2)  [non-rotated]
+        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 + X_0^2)  [rotated]
+        //
+        // The curve equation in extended coordinates is
+        //
+        //   0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*X^2*Y^2,
+        //
+        // so 
+        //                0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*T^2*Z^2         since XY=TZ
+        //                  = (-X^2 + Y^2 - Z^2 - d*T^2)*Z^2
+        //                  = ( X^2 - Y^2 + Z^2 + d*T^2)*Z^2             mult by -1
+        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 + d*T^2)*Z^2 - T^2*Z^2    sub T^2*Z^2
+        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2 + d*T^2*Z^2
+        //   (-1-d)*T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2
+        //
+        // for any point (X:Y:Z:T) in extended coordinates.  Therefore,
+        //
+        //   (Z^2 - Y^2)*(Z^2 + X^2) = Z^4 + Z^2*X^2 - Y^2*Z^2 - Y^2*X^2
+        //                           = Z^4 + Z^2*X^2 - Y^2*Z^2 - T^2*Z^2    since XY=TZ
+        //                           = Z^2*(X^2 - Y^2 + Z^2 - T^2)
+        //                           = (-1-d)*T^2*Z^2.
+        //
+        // Taking square roots of both sides and rearranging, we get
+        //
+        //   invsqrt(Z^2 - Y^2) = invsqrt(-1-d)*(Z^2+X^2)*(1/TZ)*invsqrt(Z^2+X^2)
+        //                        `-----------'           `---------------------'
+        //                        curve constant           batchable
+        //
+        // for any point (X:Y:Z:T) in extended coordinates.
+        //
+        // Therefore, we can do the computation with only one inverse
+        // square root like so:
+        //
+        // W <--- invsqrt((T_0 * Z_0)^2 * (Z_0^2+X_0^2))
+        //     =  1/(T_0 * Z_0 * sqrt(Z_0^2 + X_0^2))
+        //
+        // xy <--- T_0^2 * W^2 * (T_0 * Z_0) * (Z_0^2 + X_0^2)
+        //      =  T_0 / Z_0 = xy
+        //
+        // if Y_0 nonzero and xy nonnegative:
+        //   (X : Y : Z : T) <--- (X_0 : Y_0 : Z_0 : T_0)
+        //   r <--- (1/(-1-d)) * (Z_0^2 + X_0^2) * W
+        //       =  invsqrt(a-d) * invsqrt(Z_0^2 - Y_0^2)    since a = -1
+        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
+        // otherwise:
+        //   (X : Y : Z : T) <--- (i*Y_0 : i*X_0 : Z_0 : -T_0)
+        //   r <--- invsqrt(a-d) * (T_0 * Z_0) * W
+        //       =  invsqrt(a-d) * invsqrt(Z_0^2 + X_0^2)
+        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
+        //
+        // The rest of the compression follows the steps in the
+        // appendix of the Decaf paper.
 
         let mut X = self.0.X;
         let mut Y = self.0.Y;
         let mut T = self.0.T;
+        let Z = &self.0.Z;
 
-        // If y nonzero and xy nonnegative, continue.
-        // Otherwise, add Q_6 = (i,0) = constants::EIGHT_TORSION[6]
-        // (x,y) + Q_6 = (iy,ix)
-        // (X:Y:Z:T) + Q_6 = (iY:iX:Z:-T)
+        let TZ = &T * Z;
+        let ZZ_plus_XX = &Z.square() + &X.square();
+        let tmp = &TZ.square() * &ZZ_plus_XX;
+        let (tmp_is_nonzero_square, W) = tmp.invsqrt();
+        // tmp should always be a square (why? related to being in the
+        // image of the isogeny?)
+        debug_assert_eq!( tmp_is_nonzero_square | tmp.is_zero(), 1u8 );
 
-        // XXX it should be possible to avoid this inversion, but
-        // let's make sure the code is correct first
-        let xy = &T * &self.0.Z.invert();
-        let is_neg_mask = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
+        let xy = &T.square() * &(&W.square() * &(&TZ * &ZZ_plus_XX));
+        let rotate = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
+
+        let mut r = &W * &(&ZZ_plus_XX * &constants::inv_a_minus_d);
+        let r_rot = &W * &(&TZ * &constants::invsqrt_a_minus_d);
+
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
-        X.conditional_assign(&iY, is_neg_mask);
-        Y.conditional_assign(&iX, is_neg_mask);
-        T.conditional_negate(is_neg_mask);
 
-        // Step 1: Compute r = 1/sqrt((a-d)(Z+Y)(Z-Y))
-        let Z_plus_Y  = &self.0.Z + &Y;
-        let Z_minus_Y = &self.0.Z - &Y;
-        let t = &constants::a_minus_d * &(&Z_plus_Y * &Z_minus_Y);
-        let (t_is_nonzero_square, mut r) = t.invsqrt();
-        // t should always be square (why?)
-        debug_assert_eq!( t_is_nonzero_square | t.is_zero(), 1u8 );
+        r.conditional_assign(&r_rot, rotate);
+        X.conditional_assign(&iY,    rotate);
+        Y.conditional_assign(&iX,    rotate);
+        T.conditional_negate(rotate);
 
         // Step 2: Compute u = (a-d)r
         let u = &constants::a_minus_d * &r;
 
         // Step 3: Negate r if -2uZ is negative.
-        let uZ = &u * &self.0.Z;
+        let uZ = &u * Z;
         let m2uZ = -&(&uZ + &uZ);
         r.conditional_negate(m2uZ.is_negative_decaf());
 
         // Step 4: Compute s = | u(r(aZX - dYT)+Y)/a|
         //                   = |u(r(-ZX - dYT)+Y)| since a = -1
-        let minus_ZX = -&(&self.0.Z * &X);
+        let minus_ZX = -&(Z * &X);
         let dYT = &constants::d * &(&Y * &T);
         // Compute s = u(r(aZX - dYT)+Y) and cnegate for abs
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
@@ -647,6 +728,7 @@ mod test {
     #[test]
     fn encodings_of_small_multiples_of_basepoint() {
         // Table of encodings of (1+i)*basepoint
+        // Generated using the previous naive implementation.
         let compressed = [
             CompressedDecaf([141, 190, 226, 107, 177, 201, 35, 118, 14, 55, 160, 165, 242, 207, 121, 161, 177, 80, 8, 132, 205, 254, 101, 169, 233, 65, 124, 96, 255, 182, 249, 40]),
             CompressedDecaf([131, 57, 148, 16, 8, 196, 141, 82, 144, 220, 105, 112, 66, 33, 48, 16, 182, 198, 173, 35, 248, 181, 92, 231, 222, 35, 85, 56, 5, 252, 91, 40]),

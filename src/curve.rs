@@ -1672,6 +1672,18 @@ mod bench {
     use super::test::{A_SCALAR};
 
     #[bench]
+    fn edwards_decompress(b: &mut Bencher) {
+        let B = &constants::BASE_CMPRSSD;
+        b.iter(|| B.decompress().unwrap());
+    }
+
+    #[bench]
+    fn edwards_compress(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| B.compress_edwards());
+    }
+
+    #[bench]
     fn basepoint_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         b.iter(|| B * &A_SCALAR);

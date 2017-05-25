@@ -265,7 +265,7 @@ impl DecafPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
+    pub fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
         // Follows Appendix C of the Decaf paper.
         // Use n = 2 as the quadratic nonresidue so that n*x = x + x.
         let minus_one = -&FieldElement::one();

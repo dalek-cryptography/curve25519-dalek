@@ -134,8 +134,8 @@ impl CompressedEdwardsY {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
-        let u = &YY - &Z;                    // u =  y²-1
-        let v = &(&YY * &constants::d) + &Z; // v = dy²+1
+        let u = YY - Z;                    // u =  y²-1
+        let v = (YY * constants::d) + Z;   // v = dy²+1
         let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
 
         if is_nonzero_square != 1u8 { return None; }
@@ -145,7 +145,7 @@ impl CompressedEdwardsY {
         let    current_sign_bit = X.is_negative_ed25519();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
-        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
+        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: X * Y })
     }
 }
 
@@ -218,7 +218,7 @@ impl CompressedMontgomeryU {
     /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
     pub fn to_edwards_y(u: &FieldElement) -> FieldElement {
         // Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, so `y = (u-1)/(u+1)`.
-        &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
+        (u - FieldElement::one()) * (u + FieldElement::one()).invert()
     }
 
     /// Given a Montgomery `u` coordinate, compute the corresponding

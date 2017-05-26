@@ -125,6 +125,8 @@ impl<'b> AddAssign<&'b Scalar> for Scalar {
     }
 }
 
+add_impl!(Scalar, Scalar, Scalar);
+
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn add(self, _rhs: &'b Scalar) -> Scalar {
@@ -139,6 +141,8 @@ impl<'b> SubAssign<&'b Scalar> for Scalar {
     }
 }
 
+sub_impl!(Scalar, Scalar, Scalar);
+
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn sub(self, _rhs: &'b Scalar) -> Scalar {
@@ -146,6 +150,8 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
         Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
     }
 }
+
+neg_impl!(Scalar, Scalar);
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;

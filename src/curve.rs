@@ -867,6 +867,9 @@ impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
     }
 }
 
+mul_impl!(Scalar, ExtendedPoint, ExtendedPoint);
+mul_impl!(ExtendedPoint, Scalar, ExtendedPoint);
+
 impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
@@ -907,6 +910,8 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
+
+mul_impl!(Scalar, EdwardsBasepointTable, ExtendedPoint);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
@@ -956,6 +961,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
         h
     }
 }
+
+mul_impl!(EdwardsBasepointTable, Scalar, ExtendedPoint);
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     type Output = ExtendedPoint;

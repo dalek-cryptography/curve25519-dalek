@@ -424,6 +424,8 @@ impl Eq for DecafPoint {}
 // Arithmetic
 // ------------------------------------------------------------------------
 
+add_impl!(DecafPoint, DecafPoint, DecafPoint);
+
 impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
     type Output = DecafPoint;
 
@@ -432,6 +434,8 @@ impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
     }
 }
 
+sub_impl!(DecafPoint, DecafPoint, DecafPoint);
+
 impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
     type Output = DecafPoint;
 
@@ -439,6 +443,8 @@ impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
         DecafPoint(&self.0 - &other.0)
     }
 }
+
+neg_impl!(DecafPoint, DecafPoint);
 
 impl<'a> Neg for &'a DecafPoint {
     type Output = DecafPoint;

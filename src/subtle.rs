@@ -101,12 +101,12 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// ```
 /// # extern crate curve25519_dalek;
-/// # use curve25519_dalek::subtle::arrays_equal_ct;
+/// # use curve25519_dalek::subtle::arrays_equal;
 /// # fn main() {
 /// let a: [u8; 3] = [0, 1, 2];
 /// let b: [u8; 3] = [1, 2, 3];
 ///
-/// assert!(arrays_equal_ct(&a, &b) == 0);
+/// assert!(arrays_equal(&a, &b) == 0);
 /// # }
 /// ```
 ///
@@ -114,12 +114,12 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// ```
 /// # extern crate curve25519_dalek;
-/// # use curve25519_dalek::subtle::arrays_equal_ct;
+/// # use curve25519_dalek::subtle::arrays_equal;
 /// # fn main() {
 /// let a: [u8; 3] = [0, 1, 2];
 /// let b: [u8; 3] = [0, 1, 2];
 ///
-/// assert!(arrays_equal_ct(&a, &b) == 1);
+/// assert!(arrays_equal(&a, &b) == 1);
 /// # }
 /// ```
 ///
@@ -131,7 +131,7 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-pub fn arrays_equal_ct(a: &[u8; 32], b: &[u8; 32]) -> u8 {
+pub fn arrays_equal(a: &[u8; 32], b: &[u8; 32]) -> u8 {
     let mut x: u8 = 0;
 
     for i in 0..32 {

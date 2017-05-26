@@ -61,6 +61,10 @@ extern crate rand;
 #[cfg(not(feature = "std"))]
 extern crate collections;
 
+// Macros
+#[macro_use]
+mod macros;
+
 // Modules for low-level operations directly on field elements and curve points.
 
 pub mod field;

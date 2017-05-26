@@ -734,6 +734,14 @@ impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
+impl Add<ProjectiveNielsPoint> for ExtendedPoint {
+    type Output = CompletedPoint;
+    #[inline(always)]
+    fn add(self, other: ProjectiveNielsPoint) -> CompletedPoint {
+        &self + &other
+    }
+}
+
 impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 

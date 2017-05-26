@@ -69,12 +69,16 @@ pub fn bytes_equal_ct(a: u8, b: u8) -> u8 {
 
 /// Test if a byte is non-zero in constant time.
 ///
-/// ```rust,ignore
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::byte_is_nonzero;
+/// # fn main() {
 /// let mut x: u8;
 /// x = 0;
-/// assert!(byte_is_nonzero(x));
+/// assert!(byte_is_nonzero(x) == 0);
 /// x = 3;
 /// assert!(byte_is_nonzero(x) == 1);
+/// # }
 /// ```
 ///
 /// # Return

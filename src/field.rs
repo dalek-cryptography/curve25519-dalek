@@ -1390,6 +1390,12 @@ mod bench {
     }
 
     #[bench]
+    fn fieldelement_a_mul_a_by_value(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a*a);
+    }
+
+    #[bench]
     fn fieldelement_a_sq(b: &mut Bencher) {
         let a = FieldElement::from_bytes(&A_BYTES);
         b.iter(|| a.square());

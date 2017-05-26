@@ -1682,6 +1682,12 @@ mod bench {
     }
 
     #[bench]
+    fn scalar_mult_by_value(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| *B * A_SCALAR);
+    }
+
+    #[bench]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
@@ -1695,11 +1701,27 @@ mod bench {
     }
 
     #[bench]
+    fn add_extended_and_projective_niels_output_completed_by_value(b: &mut Bencher) {
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+
+        b.iter(|| p1 + p2);
+    }
+
+    #[bench]
     fn add_extended_and_projective_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
+    }
+
+    #[bench]
+    fn add_extended_and_projective_niels_output_extended_by_value(b: &mut Bencher) {
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+
+        b.iter(|| (p1 + p2).to_extended());
     }
 
     #[bench]

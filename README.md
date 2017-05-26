@@ -44,7 +44,7 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.8"
+    curve25519-dalek = "^0.9"
 
 Then, in your library or executable source, add:
 

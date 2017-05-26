@@ -137,6 +137,14 @@ impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
     }
 }
 
+impl Add<FieldElement> for FieldElement {
+    type Output = FieldElement;
+    #[inline(always)]
+    fn add(self, rhs: FieldElement) -> FieldElement {
+        &self + &rhs
+    }
+}
+
 impl<'b> SubAssign<&'b FieldElement> for FieldElement {
     #[cfg(not(feature="radix_51"))]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) { // fdifference()
@@ -180,6 +188,14 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
             (self.0[3] + 36028797018963952u64) - _rhs.0[3],
             (self.0[4] + 36028797018963952u64) - _rhs.0[4],
         ])
+    }
+}
+
+impl Sub<FieldElement> for FieldElement {
+    type Output = FieldElement;
+    #[inline(always)]
+    fn sub(self, rhs: FieldElement) -> FieldElement {
+        &self - &rhs
     }
 }
 
@@ -322,12 +338,27 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
     }
 }
 
+impl Mul<FieldElement> for FieldElement {
+    type Output = FieldElement;
+    #[inline(always)]
+    fn mul(self, rhs: FieldElement) -> FieldElement {
+        &self * &rhs
+    }
+}
+
 impl<'a> Neg for &'a FieldElement {
     type Output = FieldElement;
     fn neg(self) -> FieldElement {
         let mut output = *self;
         output.negate();
         output
+    }
+}
+
+impl Neg for FieldElement {
+    type Output = FieldElement;
+    fn neg(self) -> FieldElement {
+        -(&self)
     }
 }
 

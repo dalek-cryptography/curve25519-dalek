@@ -96,6 +96,37 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 
 /// Check equality of two 32-byte arrays in constant time.
 ///
+/// If the contents of the arrays do *not* match,
+/// `0u8` will be returned:
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::arrays_equal_ct;
+/// # fn main() {
+/// let a: [u8; 3] = [0, 1, 2];
+/// let b: [u8; 3] = [1, 2, 3];
+///
+/// assert!(arrays_equal_ct(&a, &b) == 0);
+/// # }
+/// ```
+///
+/// If the contents *do* match, `1u8` is returned:
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::arrays_equal_ct;
+/// # fn main() {
+/// let a: [u8; 3] = [0, 1, 2];
+/// let b: [u8; 3] = [0, 1, 2];
+///
+/// assert!(arrays_equal_ct(&a, &b) == 1);
+/// # }
+/// ```
+///
+/// This function is commonly used in various cryptographic applications, such
+/// as [signature verification](https://github.com/isislovecruft/ed25519-dalek/blob/0.3.2/src/ed25519.rs#L280),
+/// among many other applications.
+///
 /// # Return
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.

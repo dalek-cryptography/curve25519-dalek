@@ -13,6 +13,7 @@
 #![cfg_attr(not(feature = "std"), feature(collections))]
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "bench", feature(test))]
+#![cfg_attr(all(feature = "nightly", feature = "std"), feature(zero_one))]
 
 #![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
@@ -57,6 +58,9 @@ extern crate core;
 
 #[cfg(feature = "std")]
 extern crate rand;
+
+#[cfg(feature = "std")]
+extern crate num_traits;
 
 #[cfg(not(feature = "std"))]
 extern crate collections;

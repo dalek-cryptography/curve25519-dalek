@@ -94,9 +94,19 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
     (x & 1)
 }
 
-/// Check equality of two 32-byte arrays in constant time.
+/// Check equality of two arrays, `a` and `b`, in constant time.
 ///
-/// If the contents of the arrays do *not* match,
+/// There is a `debug_assert!` that the two arrays are of equal length.  For
+/// example, the following code will panic:
+///
+/// ```rust,ignore
+/// let a: [u8; 3] = [0, 0, 0];
+/// let b: [u8; 4] = [0, 0, 0, 0];
+///
+/// assert!(arrays_equal(&a, &b) == 1);
+/// ```
+///
+/// However, if the arrays are equal length, but their contents do *not* match,
 /// `0u8` will be returned:
 ///
 /// ```
@@ -110,7 +120,7 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 /// # }
 /// ```
 ///
-/// If the contents *do* match, `1u8` is returned:
+/// And finally, if the contents *do* match, `1u8` is returned:
 ///
 /// ```
 /// # extern crate curve25519_dalek;
@@ -131,11 +141,27 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-pub fn arrays_equal(a: &[u8; 32], b: &[u8; 32]) -> u8 {
+pub fn arrays_equal(a: &[u8], b: &[u8]) -> u8 {
+    debug_assert!(a.len() == b.len());
+
     let mut x: u8 = 0;
 
-    for i in 0..32 {
+    for i in 0 .. a.len() {
         x |= a[i] ^ b[i];
     }
     bytes_equal_ct(x, 0)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn arrays_equal_different_lengths() {
+        let a: [u8; 3] = [0, 0, 0];
+        let b: [u8; 4] = [0, 0, 0, 0];
+
+        assert!(arrays_equal(&a, &b) == 1);
+    }
 }

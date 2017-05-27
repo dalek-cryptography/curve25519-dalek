@@ -1187,9 +1187,7 @@ pub mod vartime {
     }
 
     /// Given a vector of public scalars and a vector of (possibly secret)
-    /// points, compute
-    ///
-    ///    c_1 P_1 + ... + c_n P_n.
+    /// points, compute `c_1 P_1 + ... + c_n P_n`.
     ///
     /// # Input
     ///

@@ -91,7 +91,7 @@ use constants;
 use field::FieldElement;
 use scalar::Scalar;
 use subtle::arrays_equal;
-use subtle::bytes_equal_ct;
+use subtle::bytes_equal;
 use subtle::CTAssignable;
 use subtle::CTEq;
 use subtle::CTNegatable;
@@ -1081,7 +1081,7 @@ fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
     for j in 1..9 {
         // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
         t.conditional_assign(&points[j-1],
-                             bytes_equal_ct(xabs as u8, j as u8));
+                             bytes_equal(xabs as u8, j as u8));
     }
     // Now t == |x| * P.
 

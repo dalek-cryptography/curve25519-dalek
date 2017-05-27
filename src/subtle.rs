@@ -57,7 +57,7 @@ impl<T> CTNegatable for T
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-pub fn bytes_equal_ct(a: u8, b: u8) -> u8 {
+pub fn bytes_equal(a: u8, b: u8) -> u8 {
     let mut x: u8;
 
     x  = !(a ^ b);
@@ -149,7 +149,7 @@ pub fn arrays_equal(a: &[u8], b: &[u8]) -> u8 {
     for i in 0 .. a.len() {
         x |= a[i] ^ b[i];
     }
-    bytes_equal_ct(x, 0)
+    bytes_equal(x, 0)
 }
 
 #[cfg(test)]

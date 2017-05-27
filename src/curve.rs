@@ -90,7 +90,7 @@ use core::ops::Index;
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
-use subtle::arrays_equal_ct;
+use subtle::arrays_equal;
 use subtle::bytes_equal_ct;
 use subtle::CTAssignable;
 use subtle::CTEq;
@@ -518,8 +518,8 @@ impl CTAssignable for ExtendedPoint {
 
 impl CTEq for ExtendedPoint {
     fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
-        arrays_equal_ct( self.compress_edwards().as_bytes(),
-                        other.compress_edwards().as_bytes())
+        arrays_equal( self.compress_edwards().as_bytes(),
+                      other.compress_edwards().as_bytes())
     }
 }
 

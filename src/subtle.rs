@@ -96,7 +96,7 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 
 /// Check equality of two arrays, `a` and `b`, in constant time.
 ///
-/// There is a `debug_assert!` that the two arrays are of equal length.  For
+/// There is an `assert!` that the two arrays are of equal length.  For
 /// example, the following code will panic:
 ///
 /// ```rust,ignore
@@ -142,7 +142,7 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
 pub fn arrays_equal(a: &[u8], b: &[u8]) -> u8 {
-    debug_assert!(a.len() == b.len());
+    assert_eq!(a.len(), b.len());
 
     let mut x: u8 = 0;
 

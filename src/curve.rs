@@ -1181,7 +1181,7 @@ pub mod vartime {
     impl Index<usize> for OddMultiples {
         type Output = ProjectiveNielsPoint;
 
-        fn index<'a>(&'a self, _index: usize) -> &'a ProjectiveNielsPoint {
+        fn index(&self, _index: usize) -> &ProjectiveNielsPoint {
             &(self.0[_index])
         }
     }

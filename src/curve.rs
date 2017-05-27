@@ -1006,7 +1006,7 @@ impl EdwardsBasepointTable {
         // XXX can we skip the initialization without too much unsafety?
         // stick 30K on the stack and call it a day.
         let mut table = EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
-        let mut P = basepoint.clone();
+        let mut P = *basepoint;
         for i in 0..32 {
             // P = (16^2)^i * B
             let mut jP = P.to_affine_niels();

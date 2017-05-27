@@ -1,5 +1,5 @@
 
-# curve25519-dalek  ![](https://img.shields.io/crates/v/curve25519-dalek.svg) ![](https://docs.rs/curve25519-dalek/badge.svg) ![](https://travis-ci.org/isislovecruft/curve25519-dalek.svg?branch=master)
+# curve25519-dalek  [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/curve25519-dalek) [![](https://docs.rs/curve25519-dalek/badge.svg)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/isislovecruft/curve25519-dalek.svg?branch=master)](https://travis-ci.org/isislovecruft/curve25519-dalek)
 
 **A low-level cryptographic library for point, group, field, and scalar
 operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y²
@@ -44,7 +44,7 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.8"
+    curve25519-dalek = "^0.9"
 
 Then, in your library or executable source, add:
 
@@ -57,7 +57,6 @@ fast.
 ## TODO
 
 * Implement hashing to a point on the curve (Elligator).
-* Maybe use serde for serialization.
 * Make a new `mask` type in `subtle.rs` and return that instead of `u8`s.
 * Implement all utilities in Golang's `crypto/subtle` package, and
   move the module to its own crate.

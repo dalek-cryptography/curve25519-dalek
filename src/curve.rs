@@ -83,13 +83,14 @@ use collections::Vec;
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
-use subtle::arrays_equal_ct;
+use subtle::arrays_equal;
 use subtle::bytes_equal_ct;
 use subtle::CTAssignable;
 use subtle::CTEq;
@@ -517,8 +518,8 @@ impl CTAssignable for ExtendedPoint {
 
 impl CTEq for ExtendedPoint {
     fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
-        arrays_equal_ct( self.compress_edwards().as_bytes(),
-                        other.compress_edwards().as_bytes())
+        arrays_equal( self.compress_edwards().as_bytes(),
+                      other.compress_edwards().as_bytes())
     }
 }
 
@@ -802,12 +803,28 @@ impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
+    fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
+        *self = (self as &ExtendedPoint) + _rhs;
+    }
+}
+
 impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self - &other.to_projective_niels()).to_extended()
     }
 }
+
+impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
+    fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
+        *self = (self as &ExtendedPoint) - _rhs;
+    }
+}
+
+// ------------------------------------------------------------------------
+// Negation
+// ------------------------------------------------------------------------
 
 impl<'a> Neg for &'a ExtendedPoint {
     type Output = ExtendedPoint;
@@ -1653,6 +1670,18 @@ mod bench {
     use constants;
     use super::*;
     use super::test::{A_SCALAR};
+
+    #[bench]
+    fn edwards_decompress(b: &mut Bencher) {
+        let B = &constants::BASE_CMPRSSD;
+        b.iter(|| B.decompress().unwrap());
+    }
+
+    #[bench]
+    fn edwards_compress(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| B.compress_edwards());
+    }
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {

@@ -36,6 +36,7 @@ use subtle::CTAssignable;
 use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 use curve;
@@ -78,13 +79,21 @@ impl CompressedDecaf {
         let ss = s.square();
         let X = &s + &s;                    // X = 2s
         let Z = &FieldElement::one() - &ss; // Z = 1+as^2
-        let u = &(&Z * &Z) - &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
+        let ZZ = Z.square();
+        let u = &ZZ- &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
         let uss = &u * &ss;
+        let ussZZ = &uss * &ZZ;
 
-        let (uss_is_nonzero_square, mut v) = uss.invsqrt();
-        if (uss_is_nonzero_square | uss.is_zero()) == 0u8 {
+        if Z.is_zero() == 1u8 { return None; }
+
+        // Batch inversion: set b = 1/sqrt(us^2 Z^2)
+        let (ussZZ_is_nonzero_square, b) = ussZZ.invsqrt();
+        if (ussZZ_is_nonzero_square | uss.is_zero()) == 0u8 {
             return None; // us^2 is nonzero nonsquare
         }
+
+        let mut v = &b * &Z; // now v = 1/sqrt(us^2)
+        let Zinv = &b * &(&v * &uss); // now Zinv = b^2 Z us^2 = 1/Z
 
         // Now v = 1/sqrt(us^2) if us^2 is a nonzero square, 0 if us^2 is zero.
         let uv = &v * &u;
@@ -99,9 +108,9 @@ impl CompressedDecaf {
 
         // "To decode the point, one must decode it to affine form
         // instead of projective, and check that xy is non-negative."
-        //
-        // XXX can we merge this inversion with the one above?
-        let xy = &T * &Z.invert();
+
+        // Use the value of 1/Z previously computed in the batch inversion
+        let xy = &T * &Zinv;
         if (Y.is_nonzero() & xy.is_nonnegative_decaf()) == 1u8 {
             Some(DecafPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
         } else {
@@ -201,46 +210,127 @@ impl DecafPoint {
         // let untwisted_X = &self.X * &constants::MSQRT_M1;
         // etc.
 
-        // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8
+        // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8.
+        //
+        // We want to select a point (x,y) in the coset P + E[4] with
+        // y nonzero and xy nonnegative.  The naive approach is as
+        // follows.  First, compute xy = T/Z and check that Y is
+        // nonzero and xy is nonnegative.  If not, then "rotate" the
+        // original point by adding (x,y) + (i,0) = (iy,ix) = (x',y'):
+        // this rotated point has x'y' = -xy.  Then perform the normal
+        // Decaf encoding, as described in Appendix A.1 of the Decaf
+        // paper, using the rotated point (x',y').
+        //
+        // This is straightforward but requires an extra inversion.
+        // We would like to batch the inversion in xy = T/Z with the
+        // inverse square root in the computation of
+        //
+        //   r = invsqrt((a-d)*(Z+Y)*(Z-Y))
+        //     = invsqrt(a-d)*invsqrt(Z^2-Y^2),
+        //
+        // but the X and Y we are trying to decode depend on whether
+        // we rotated the coset representative!
+        //
+        // However, it is possible to batch these inversions.  Credit:
+        // the following explanation (and trick) is adapted from an
+        // email from Mike Hamburg, but of course any errors are ours.
+        //
+        // Let the initial point be  ( X_0 :  Y_0 : Z_0 :  T_0).
+        // The rotated point is then (iY_0 : iX_0 : Z_0 : -T_0).
+        //
+        // We want to relate the computation of:
+        //
+        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 - Y_0^2)  [non-rotated]
+        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 + X_0^2)  [rotated]
+        //
+        // The curve equation in extended coordinates is
+        //
+        //   0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*X^2*Y^2,
+        //
+        // so 
+        //                0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*T^2*Z^2         since XY=TZ
+        //                  = (-X^2 + Y^2 - Z^2 - d*T^2)*Z^2
+        //                  = ( X^2 - Y^2 + Z^2 + d*T^2)*Z^2             mult by -1
+        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 + d*T^2)*Z^2 - T^2*Z^2    sub T^2*Z^2
+        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2 + d*T^2*Z^2
+        //   (-1-d)*T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2
+        //
+        // for any point (X:Y:Z:T) in extended coordinates.  Therefore,
+        //
+        //   (Z^2 - Y^2)*(Z^2 + X^2) = Z^4 + Z^2*X^2 - Y^2*Z^2 - Y^2*X^2
+        //                           = Z^4 + Z^2*X^2 - Y^2*Z^2 - T^2*Z^2    since XY=TZ
+        //                           = Z^2*(X^2 - Y^2 + Z^2 - T^2)
+        //                           = (-1-d)*T^2*Z^2.
+        //
+        // Taking square roots of both sides and rearranging, we get
+        //
+        //   invsqrt(Z^2 - Y^2) = invsqrt(-1-d)*(Z^2+X^2)*(1/TZ)*invsqrt(Z^2+X^2)
+        //                        `-----------'           `---------------------'
+        //                        curve constant           batchable
+        //
+        // for any point (X:Y:Z:T) in extended coordinates.
+        //
+        // Therefore, we can do the computation with only one inverse
+        // square root like so:
+        //
+        // W <--- invsqrt((T_0 * Z_0)^2 * (Z_0^2+X_0^2))
+        //     =  1/(T_0 * Z_0 * sqrt(Z_0^2 + X_0^2))
+        //
+        // xy <--- T_0^2 * W^2 * (T_0 * Z_0) * (Z_0^2 + X_0^2)
+        //      =  T_0 / Z_0 = xy
+        //
+        // if Y_0 nonzero and xy nonnegative:
+        //   (X : Y : Z : T) <--- (X_0 : Y_0 : Z_0 : T_0)
+        //   r <--- (1/(-1-d)) * (Z_0^2 + X_0^2) * W
+        //       =  invsqrt(a-d) * invsqrt(Z_0^2 - Y_0^2)    since a = -1
+        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
+        // otherwise:
+        //   (X : Y : Z : T) <--- (i*Y_0 : i*X_0 : Z_0 : -T_0)
+        //   r <--- invsqrt(a-d) * (T_0 * Z_0) * W
+        //       =  invsqrt(a-d) * invsqrt(Z_0^2 + X_0^2)
+        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
+        //
+        // The rest of the compression follows the steps in the
+        // appendix of the Decaf paper.
 
         let mut X = self.0.X;
         let mut Y = self.0.Y;
         let mut T = self.0.T;
+        let Z = &self.0.Z;
 
-        // If y nonzero and xy nonnegative, continue.
-        // Otherwise, add Q_6 = (i,0) = constants::EIGHT_TORSION[6]
-        // (x,y) + Q_6 = (iy,ix)
-        // (X:Y:Z:T) + Q_6 = (iY:iX:Z:-T)
+        let TZ = &T * Z;
+        let ZZ_plus_XX = &Z.square() + &X.square();
+        let tmp = &TZ.square() * &ZZ_plus_XX;
+        let (tmp_is_nonzero_square, W) = tmp.invsqrt();
+        // tmp should always be a square (why? related to being in the
+        // image of the isogeny?)
+        debug_assert_eq!( tmp_is_nonzero_square | tmp.is_zero(), 1u8 );
 
-        // XXX it should be possible to avoid this inversion, but
-        // let's make sure the code is correct first
-        let xy = &T * &self.0.Z.invert();
-        let is_neg_mask = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
+        let xy = &T.square() * &(&W.square() * &(&TZ * &ZZ_plus_XX));
+        let rotate = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
+
+        let mut r = &W * &(&ZZ_plus_XX * &constants::inv_a_minus_d);
+        let r_rot = &W * &(&TZ * &constants::invsqrt_a_minus_d);
+
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
-        X.conditional_assign(&iY, is_neg_mask);
-        Y.conditional_assign(&iX, is_neg_mask);
-        T.conditional_negate(is_neg_mask);
 
-        // Step 1: Compute r = 1/sqrt((a-d)(Z+Y)(Z-Y))
-        let Z_plus_Y  = &self.0.Z + &Y;
-        let Z_minus_Y = &self.0.Z - &Y;
-        let t = &constants::a_minus_d * &(&Z_plus_Y * &Z_minus_Y);
-        let (t_is_nonzero_square, mut r) = t.invsqrt();
-        // t should always be square (why?)
-        debug_assert_eq!( t_is_nonzero_square | t.is_zero(), 1u8 );
+        r.conditional_assign(&r_rot, rotate);
+        X.conditional_assign(&iY,    rotate);
+        Y.conditional_assign(&iX,    rotate);
+        T.conditional_negate(rotate);
 
         // Step 2: Compute u = (a-d)r
         let u = &constants::a_minus_d * &r;
 
         // Step 3: Negate r if -2uZ is negative.
-        let uZ = &u * &self.0.Z;
+        let uZ = &u * Z;
         let m2uZ = -&(&uZ + &uZ);
         r.conditional_negate(m2uZ.is_negative_decaf());
 
         // Step 4: Compute s = | u(r(aZX - dYT)+Y)/a|
         //                   = |u(r(-ZX - dYT)+Y)| since a = -1
-        let minus_ZX = -&(&self.0.Z * &X);
+        let minus_ZX = -&(Z * &X);
         let dYT = &constants::d * &(&Y * &T);
         // Compute s = u(r(aZX - dYT)+Y) and cnegate for abs
         let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
@@ -264,7 +354,7 @@ impl DecafPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
+    pub fn elligator_decaf_flavour(r_0: &FieldElement) -> DecafPoint {
         // Follows Appendix C of the Decaf paper.
         // Use n = 2 as the quadratic nonresidue so that n*x = x + x.
         let minus_one = -&FieldElement::one();
@@ -432,11 +522,23 @@ impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
     }
 }
 
+impl<'b> AddAssign<&'b DecafPoint> for DecafPoint {
+    fn add_assign(&mut self, _rhs: &DecafPoint) {
+        *self = (self as &DecafPoint) + _rhs;
+    }
+}
+
 impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
     type Output = DecafPoint;
 
     fn sub(self, other: &'b DecafPoint) -> DecafPoint {
         DecafPoint(&self.0 - &other.0)
+    }
+}
+
+impl<'b> SubAssign<&'b DecafPoint> for DecafPoint {
+    fn sub_assign(&mut self, _rhs: &DecafPoint) {
+        *self = (self as &DecafPoint) - _rhs;
     }
 }
 
@@ -637,6 +739,35 @@ mod test {
     }
 
     #[test]
+    fn encodings_of_small_multiples_of_basepoint() {
+        // Table of encodings of (1+i)*basepoint
+        // Generated using the previous naive implementation.
+        let compressed = [
+            CompressedDecaf([141, 190, 226, 107, 177, 201, 35, 118, 14, 55, 160, 165, 242, 207, 121, 161, 177, 80, 8, 132, 205, 254, 101, 169, 233, 65, 124, 96, 255, 182, 249, 40]),
+            CompressedDecaf([131, 57, 148, 16, 8, 196, 141, 82, 144, 220, 105, 112, 66, 33, 48, 16, 182, 198, 173, 35, 248, 181, 92, 231, 222, 35, 85, 56, 5, 252, 91, 40]),
+            CompressedDecaf([199, 132, 32, 144, 156, 143, 81, 170, 240, 56, 232, 6, 178, 37, 118, 190, 110, 201, 26, 173, 156, 97, 59, 162, 240, 247, 226, 107, 197, 111, 107, 26]),
+            CompressedDecaf([210, 120, 34, 214, 175, 27, 61, 6, 229, 181, 216, 36, 11, 245, 146, 232, 130, 215, 77, 29, 210, 30, 54, 155, 191, 81, 59, 124, 174, 3, 135, 36]),
+            CompressedDecaf([155, 52, 159, 52, 189, 27, 181, 0, 245, 131, 0, 197, 79, 208, 252, 122, 104, 161, 245, 143, 67, 94, 13, 129, 153, 173, 129, 179, 118, 231, 90, 52]),
+            CompressedDecaf([42, 117, 252, 118, 8, 1, 72, 25, 111, 246, 247, 103, 236, 86, 235, 29, 100, 156, 186, 209, 159, 21, 61, 26, 249, 25, 137, 228, 84, 23, 10, 27]),
+            CompressedDecaf([21, 126, 181, 117, 58, 90, 216, 28, 184, 57, 9, 23, 158, 68, 159, 171, 109, 150, 232, 140, 144, 73, 139, 122, 124, 105, 125, 160, 94, 185, 150, 52]),
+            CompressedDecaf([232, 167, 112, 233, 126, 33, 105, 63, 151, 6, 88, 225, 181, 17, 223, 12, 116, 138, 203, 47, 243, 225, 50, 171, 21, 220, 186, 179, 132, 20, 48, 6]),
+            CompressedDecaf([99, 44, 97, 48, 242, 174, 78, 198, 112, 154, 146, 36, 239, 34, 94, 4, 0, 244, 175, 34, 46, 0, 83, 187, 5, 163, 225, 63, 51, 237, 234, 22]),
+            CompressedDecaf([2, 33, 89, 176, 178, 123, 159, 75, 235, 172, 251, 11, 137, 177, 90, 122, 149, 186, 52, 243, 153, 190, 185, 202, 59, 137, 204, 160, 150, 152, 148, 55]),
+            CompressedDecaf([245, 79, 78, 226, 114, 69, 247, 112, 18, 54, 90, 225, 176, 77, 231, 235, 196, 123, 49, 221, 34, 205, 151, 228, 244, 112, 82, 58, 30, 31, 58, 12]),
+            CompressedDecaf([135, 53, 175, 167, 13, 94, 62, 31, 29, 248, 13, 132, 29, 69, 7, 188, 145, 49, 62, 55, 181, 109, 214, 11, 248, 162, 70, 15, 236, 126, 100, 60]),
+            CompressedDecaf([98, 150, 69, 229, 144, 122, 237, 107, 127, 177, 33, 64, 59, 173, 210, 102, 74, 34, 23, 16, 252, 117, 14, 97, 231, 178, 63, 193, 157, 28, 178, 17]),
+            CompressedDecaf([222, 104, 6, 1, 72, 12, 72, 178, 204, 238, 128, 70, 41, 150, 235, 96, 153, 150, 18, 4, 141, 206, 0, 38, 122, 112, 249, 51, 94, 251, 20, 57]),
+            CompressedDecaf([7, 221, 140, 57, 13, 146, 248, 27, 56, 4, 128, 23, 145, 120, 126, 4, 158, 173, 52, 213, 164, 250, 26, 55, 89, 96, 187, 111, 211, 18, 63, 19]),
+            CompressedDecaf([91, 213, 193, 10, 102, 92, 199, 124, 61, 176, 1, 47, 111, 59, 183, 91, 79, 56, 208, 109, 172, 209, 17, 167, 229, 216, 3, 236, 200, 208, 15, 20]),
+        ];
+        let mut bp = constants::DECAF_ED25519_BASEPOINT;
+        for i in 0..16 {
+            assert_eq!(bp.compress(), compressed[i]);
+            bp = &bp + &constants::DECAF_ED25519_BASEPOINT;
+        }
+    }
+
+    #[test]
     fn decaf_four_torsion_basepoint() {
         let bp = constants::DECAF_ED25519_BASEPOINT;
         let bp_coset = bp.coset4();
@@ -671,7 +802,7 @@ mod test {
     #[test]
     fn decaf_random_is_valid() {
         let mut rng = OsRng::new().unwrap();
-        for _ in 0..10_000 {
+        for _ in 0..100 {
             let P = DecafPoint::random(&mut rng);
             // Check that P is on the curve
             assert!(P.0.is_valid());

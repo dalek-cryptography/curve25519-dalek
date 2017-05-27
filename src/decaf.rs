@@ -209,7 +209,7 @@ impl DecafPoint {
         // Its inverse is x -> -ix.
         // let untwisted_X = &self.X * &constants::MSQRT_M1;
         // etc.
-
+        //
         // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8.
         //
         // We want to select a point (x,y) in the coset P + E[4] with

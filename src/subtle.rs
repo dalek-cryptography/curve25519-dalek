@@ -35,8 +35,7 @@ pub trait CTEq {
 ///
 /// Note: it is not necessary to implement this trait, as a generic
 /// implementation is provided.
-pub trait CTNegatable
-{
+pub trait CTNegatable {
     /// Conditionally negate an element if `choice == 1u8`.
     fn conditional_negate(&mut self, choice: u8);
 }

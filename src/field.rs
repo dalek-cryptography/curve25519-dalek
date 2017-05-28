@@ -116,7 +116,7 @@ impl Index<usize> for FieldElement {
 
 impl IndexMut<usize> for FieldElement {
     fn index_mut(&mut self, _index: usize) -> &mut Limb {
-        &mut(self.0[_index])
+        &mut (self.0[_index])
     }
 }
 
@@ -456,7 +456,7 @@ impl FieldElement {
 
     #[cfg(not(feature="radix_51"))]
     fn reduce(mut h: [i64; 10]) -> FieldElement { //FeCombine
-        let mut c = [0i64;10];
+        let mut c = [0i64; 10];
 
         /*
           |h[0]| <= (1.1*1.1*2^52*(1+19+19+19+19)+1.1*1.1*2^50*(38+38+38+38+38))
@@ -709,7 +709,7 @@ impl FieldElement {
         // evidently 2^255 h10-2^255 q = 0.
         // Goal: Output h[0]+...+2^230 h[9].
 
-        let mut s = [0u8;32];
+        let mut s = [0u8; 32];
         s[0] = (h[0] >> 0) as u8;
         s[1] = (h[0] >> 8) as u8;
         s[2] = (h[0] >> 16) as u8;
@@ -1179,7 +1179,7 @@ impl FieldElement {
 
         let r_prime = &constants::SQRT_M1 * &r;
         r.conditional_assign(&r_prime, flipped_sign_sqrt);
-        
+
         let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
 
         (was_nonzero_square, r)
@@ -1263,7 +1263,7 @@ mod test {
     fn a_mul_a_vs_a_squared_constant() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
-        assert_eq!(asq, &a*&a);
+        assert_eq!(asq, &a * &a);
     }
 
     #[test]
@@ -1381,7 +1381,7 @@ mod bench {
     #[bench]
     fn fieldelement_a_mul_a(b: &mut Bencher) {
         let a = FieldElement::from_bytes(&A_BYTES);
-        b.iter(|| &a*&a);
+        b.iter(|| &a * &a);
     }
 
     #[bench]

@@ -63,7 +63,7 @@ impl Debug for Scalar {
     }
 }
 
-impl Eq for Scalar{}
+impl Eq for Scalar {}
 impl PartialEq for Scalar {
     /// Test equality between two `Scalar`s.
     ///
@@ -101,7 +101,7 @@ impl Index<usize> for Scalar {
 
 impl IndexMut<usize> for Scalar {
     fn index_mut(&mut self, _index: usize) -> &mut u8 {
-        &mut(self.0[_index])
+        &mut (self.0[_index])
     }
 }
 
@@ -151,7 +151,7 @@ impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
         self * &constants::l_minus_1
-   }
+    }
 }
 
 impl CTAssignable for Scalar {
@@ -218,7 +218,7 @@ impl<'de> Deserialize<'de> for Scalar {
             {
                 if v.len() == 32 {
                     // array_ref turns &[u8] into &[u8;32]
-                    Ok(Scalar(*array_ref!(v,0,32))) 
+                    Ok(Scalar(*array_ref!(v, 0, 32)))
                 } else {
                     Err(serde::de::Error::invalid_length(v.len(), &self))
                 }
@@ -270,7 +270,8 @@ impl Scalar {
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-            where D: Digest<OutputSize = U64> + Default {
+        where D: Digest<OutputSize = U64> + Default
+    {
         let mut hash = D::default();
         hash.input(input);
         Scalar::from_hash(hash)
@@ -282,9 +283,10 @@ impl Scalar {
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
     pub fn from_hash<D>(hash: D) -> Scalar
-            where D: Digest<OutputSize=U64> + Default {
+        where D: Digest<OutputSize = U64> + Default
+    {
         // XXX this seems clumsy
-        let mut output = [0u8;64];
+        let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());
         Scalar::reduce(&output)
     }
@@ -320,7 +322,7 @@ impl Scalar {
     }
 
     /// Get the bits of the scalar.
-    pub fn bits(&self) -> [i8;256] {
+    pub fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
@@ -379,7 +381,7 @@ impl Scalar {
 
     // Unpack a scalar into 12 21-bit limbs.
     fn unpack(&self) -> UnpackedScalar {
-        let mask_21bits: i64 = (1 << 21) -1;
+        let mask_21bits: i64 = (1 << 21) - 1;
         let mut a = UnpackedScalar([0i64; 12]);
         a[ 0]  = mask_21bits &  load3(&self.0[ 0..])      ;
         a[ 1]  = mask_21bits & (load4(&self.0[ 2..]) >> 5);
@@ -504,7 +506,7 @@ impl Index<usize> for UnpackedScalar {
 
 impl IndexMut<usize> for UnpackedScalar {
     fn index_mut(&mut self, _index: usize) -> &mut i64 {
-        &mut(self.0[_index])
+        &mut (self.0[_index])
     }
 }
 
@@ -616,7 +618,7 @@ impl UnpackedScalar {
     ///   2^252 = -27742317777372353535851937790883648493 (mod l).
     ///
     /// We can write the right-hand side in 21-bit limbs as
-    /// 
+    ///
     /// rhs =    666643 * 2^0
     ///        + 470296 * 2^21
     ///        + 654183 * 2^42
@@ -640,7 +642,7 @@ impl UnpackedScalar {
     fn reduce_limbs(mut limbs: &mut [i64; 24]) -> UnpackedScalar {
         #[inline]
         #[allow(dead_code)]
-        fn do_reduction(limbs: &mut [i64; 24], i:usize) {
+        fn do_reduction(limbs: &mut [i64; 24], i: usize) {
             limbs[i - 12] += limbs[i] * 666643;
             limbs[i - 11] += limbs[i] * 470296;
             limbs[i - 10] += limbs[i] * 654183;
@@ -662,7 +664,7 @@ impl UnpackedScalar {
         #[allow(dead_code)]
         /// Carry excess from the `i`-th limb into the `(i+1)`-th limb.
         /// Postcondition: `-2^20 <= limbs[i] < 2^20`.
-        fn do_carry_centered(limbs: &mut [i64; 24], i:usize) {
+        fn do_carry_centered(limbs: &mut [i64; 24], i: usize) {
             let carry: i64 = (limbs[i] + (1<<20)) >> 21;
             limbs[i+1] += carry;
             limbs[i  ] -= carry << 21;
@@ -717,7 +719,6 @@ impl UnpackedScalar {
 
         UnpackedScalar(*array_ref!(limbs, 0, 12))
     }
-
 }
 
 #[cfg(test)]
@@ -901,7 +902,7 @@ mod bench {
 
     #[bench]
     fn scalar_multiply_add(b: &mut Bencher) {
-        b.iter(|| Scalar::multiply_add(&X, &Y, &Z) );
+        b.iter(|| Scalar::multiply_add(&X, &Y, &Z));
     }
 
     #[bench]
@@ -915,6 +916,6 @@ mod bench {
         let x = X.unpack();
         let y = Y.unpack();
         let z = Z.unpack();
-        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z) );
+        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z));
     }
 }

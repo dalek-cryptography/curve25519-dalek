@@ -193,7 +193,7 @@ impl CompressedMontgomeryU {
     //
     // XXX any other exceptional points for the birational map?
     pub fn decompress(&self) -> Option<ExtendedPoint> {
-        let u:   FieldElement = FieldElement::from_bytes(&self.0);
+        let u: FieldElement = FieldElement::from_bytes(&self.0);
 
         // If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
         // But 486660 is nonsquare mod p, so this is not a curve point.
@@ -317,8 +317,9 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
-                    CompressedEdwardsY(*arr32).decompress()
+                    let arr32 = array_ref!(v, 0, 32); // &[u8;32] from &[u8]
+                    CompressedEdwardsY(*arr32)
+                        .decompress()
                         .ok_or(serde::de::Error::custom("decompression failed"))
                 } else {
                     Err(serde::de::Error::invalid_length(v.len(), &self))
@@ -518,8 +519,8 @@ impl CTAssignable for ExtendedPoint {
 
 impl CTEq for ExtendedPoint {
     fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
-        arrays_equal( self.compress_edwards().as_bytes(),
-                      other.compress_edwards().as_bytes())
+        arrays_equal(self.compress_edwards().as_bytes(),
+                     other.compress_edwards().as_bytes())
     }
 }
 
@@ -551,7 +552,7 @@ impl ProjectivePoint {
     /// Given (X:Y:Z) in Ɛ, passing to Ɛₑ can be performed in 3M+1S by
     /// computing (XZ,YZ,XY,Z²).  (Note that in that paper, points are
     /// (X:Y:T:Z) so this really does match the code below).
-    #[allow(dead_code)]  // rustc complains this is unused even when it's used
+    #[allow(dead_code)] // rustc complains this is unused even when it's used
     fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.Z,
@@ -714,7 +715,7 @@ impl ExtendedPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -735,7 +736,7 @@ impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -756,7 +757,7 @@ impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
@@ -776,7 +777,7 @@ impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
@@ -796,7 +797,7 @@ impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self + &other.to_projective_niels()).to_extended()
@@ -809,7 +810,7 @@ impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
     }
 }
 
-impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self - &other.to_projective_niels()).to_extended()
@@ -1193,8 +1194,9 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    pub fn k_fold_scalar_mult<'a,'b,I,J>(scalars: I, points: J) -> ExtendedPoint
-        where I: IntoIterator<Item=&'a Scalar>, J: IntoIterator<Item=&'b ExtendedPoint>
+    pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+        where I: IntoIterator<Item = &'a Scalar>,
+              J: IntoIterator<Item = &'b ExtendedPoint>
     {
         //assert_eq!(scalars.len(), points.len());
 
@@ -1652,7 +1654,7 @@ mod test {
         // CBOR apparently has two bytes of overhead for a 32-byte string.
         // Set the low byte of the compressed point to 1 to make it invalid.
         output[2] = 1;
-        let parsed: Result<ExtendedPoint,_> = serde_cbor::from_slice(&output);
+        let parsed: Result<ExtendedPoint, _> = serde_cbor::from_slice(&output);
         assert!(parsed.is_err());
     }
 }
@@ -1667,7 +1669,7 @@ mod bench {
     use test::Bencher;
     use constants;
     use super::*;
-    use super::test::{A_SCALAR};
+    use super::test::A_SCALAR;
 
     #[bench]
     fn edwards_decompress(b: &mut Bencher) {
@@ -1734,21 +1736,21 @@ mod bench {
     fn projective_double_output_completed(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT.to_projective();
 
-        b.iter(|| p1.double() );
+        b.iter(|| p1.double());
     }
 
     #[bench]
     fn extended_double_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
 
-        b.iter(|| p1.double() );
+        b.iter(|| p1.double());
     }
 
     #[bench]
     fn mult_by_cofactor(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
 
-        b.iter(|| p1.mult_by_cofactor() );
+        b.iter(|| p1.mult_by_cofactor());
     }
 
     #[cfg(feature="basepoint_table_creation")]

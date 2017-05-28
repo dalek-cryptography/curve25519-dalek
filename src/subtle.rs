@@ -118,16 +118,9 @@ impl<T> CTNegatable for T
 #[inline(always)]
 #[cfg(feature = "std")]
 pub fn conditional_select<T>(a: T, b: T, choice: T) -> T
-    where T: PartialEq +
-             PartialOrd +
-             One +
-             Copy +
-             Signed +
-             Sub<T, Output = T> +
-          BitAnd<T, Output = T> +
-           BitOr<T, Output = T> +
-             Not<Output = T>
-{
+    where T: PartialEq + PartialOrd + Copy +
+             One + Signed + Sub<T, Output = T> + Not<Output = T> +
+             BitAnd<T, Output = T> + BitOr<T, Output = T> {
     (!(choice - T::one()) & a) | ((choice - T::one()) & b)
 }
 

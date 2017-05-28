@@ -826,7 +826,7 @@ impl FieldElement {
         debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
         s[31] &= 127u8;
 
-        return s
+        s
     }
 
     /// Determine if this `FieldElement` is negative, in the sense

@@ -23,7 +23,7 @@ use core::ops::{Index, IndexMut};
 use core::cmp::{Eq, PartialEq};
 use core::ops::Neg;
 
-use subtle::arrays_equal_ct;
+use subtle::arrays_equal;
 use subtle::byte_is_nonzero;
 use subtle::CTAssignable;
 use subtle::CTEq;
@@ -96,7 +96,7 @@ impl CTEq for FieldElement {
     ///
     /// `1u8` if the two `FieldElement`s are equal, and `0u8` otherwise.
     fn ct_eq(&self, other: &FieldElement) -> u8 {
-        arrays_equal_ct(&self.to_bytes(), &other.to_bytes())
+        arrays_equal(&self.to_bytes(), &other.to_bytes())
     }
 }
 

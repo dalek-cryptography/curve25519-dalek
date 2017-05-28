@@ -69,12 +69,16 @@ pub fn bytes_equal_ct(a: u8, b: u8) -> u8 {
 
 /// Test if a byte is non-zero in constant time.
 ///
-/// ```rust,ignore
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::byte_is_nonzero;
+/// # fn main() {
 /// let mut x: u8;
 /// x = 0;
-/// assert!(byte_is_nonzero(x));
+/// assert!(byte_is_nonzero(x) == 0);
 /// x = 3;
 /// assert!(byte_is_nonzero(x) == 1);
+/// # }
 /// ```
 ///
 /// # Return
@@ -90,17 +94,74 @@ pub fn byte_is_nonzero(b: u8) -> u8 {
     (x & 1)
 }
 
-/// Check equality of two 32-byte arrays in constant time.
+/// Check equality of two arrays, `a` and `b`, in constant time.
+///
+/// There is a `debug_assert!` that the two arrays are of equal length.  For
+/// example, the following code will panic:
+///
+/// ```rust,ignore
+/// let a: [u8; 3] = [0, 0, 0];
+/// let b: [u8; 4] = [0, 0, 0, 0];
+///
+/// assert!(arrays_equal(&a, &b) == 1);
+/// ```
+///
+/// However, if the arrays are equal length, but their contents do *not* match,
+/// `0u8` will be returned:
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::arrays_equal;
+/// # fn main() {
+/// let a: [u8; 3] = [0, 1, 2];
+/// let b: [u8; 3] = [1, 2, 3];
+///
+/// assert!(arrays_equal(&a, &b) == 0);
+/// # }
+/// ```
+///
+/// And finally, if the contents *do* match, `1u8` is returned:
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::arrays_equal;
+/// # fn main() {
+/// let a: [u8; 3] = [0, 1, 2];
+/// let b: [u8; 3] = [0, 1, 2];
+///
+/// assert!(arrays_equal(&a, &b) == 1);
+/// # }
+/// ```
+///
+/// This function is commonly used in various cryptographic applications, such
+/// as [signature verification](https://github.com/isislovecruft/ed25519-dalek/blob/0.3.2/src/ed25519.rs#L280),
+/// among many other applications.
 ///
 /// # Return
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
 #[inline(always)]
-pub fn arrays_equal_ct(a: &[u8; 32], b: &[u8; 32]) -> u8 {
+pub fn arrays_equal(a: &[u8], b: &[u8]) -> u8 {
+    debug_assert!(a.len() == b.len());
+
     let mut x: u8 = 0;
 
-    for i in 0..32 {
+    for i in 0 .. a.len() {
         x |= a[i] ^ b[i];
     }
     bytes_equal_ct(x, 0)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn arrays_equal_different_lengths() {
+        let a: [u8; 3] = [0, 0, 0];
+        let b: [u8; 4] = [0, 0, 0, 0];
+
+        assert!(arrays_equal(&a, &b) == 1);
+    }
 }

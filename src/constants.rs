@@ -55,6 +55,23 @@ pub const a_minus_d: FieldElement    = FieldElement([
      8787816,    6275908,   3247719,  18696448,  12055116, ]);
 #[cfg(feature="radix_51")]
 pub const a_minus_d: FieldElement = FieldElement([1321844580190025, 1785434093556034, 589740348686294, 217950738957124, 809005158844672]);
+#[cfg(feature="radix_51")]
+pub const invsqrt_a_minus_d: FieldElement = FieldElement([
+    278908739862762, 821645201101625, 8113234426968, 1777959178193151, 2118520810568447
+]);
+#[cfg(not(feature="radix_51"))]
+pub const invsqrt_a_minus_d: FieldElement = FieldElement([
+    6111485, 4156064, -27798727, 12243468, -25904040,
+    120897, 20826367, -7060776, 6093568, -1986012
+]);
+#[cfg(feature="radix_51")]
+pub const inv_a_minus_d: FieldElement = FieldElement([
+    2251799813563563, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247
+]);
+#[cfg(not(feature="radix_51"))]
+pub const inv_a_minus_d: FieldElement = FieldElement([
+    -121666, 0, 0, 0, 0, 0, 0, 0, 0, 0
+]);
 
 /// (p-1)/2, in little-endian bytes.
 pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
@@ -3247,5 +3264,10 @@ mod test {
         let a = FieldElement::minus_one();
         let a_minus_d = &a - &constants::d;
         assert_eq!(a_minus_d, constants::a_minus_d);
+        let (_, invsqrt_a_minus_d) = constants::a_minus_d.invsqrt();
+        assert_eq!(invsqrt_a_minus_d, constants::invsqrt_a_minus_d);
+        let inv_a_minus_d = invsqrt_a_minus_d.square();
+        assert_eq!(inv_a_minus_d, constants::inv_a_minus_d);
+        assert_eq!(&inv_a_minus_d * &a_minus_d, FieldElement::one());
     }
 }

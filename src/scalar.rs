@@ -47,7 +47,7 @@ use constants;
 use utils::{load3, load4};
 use subtle::CTAssignable;
 use subtle::CTEq;
-use subtle::arrays_equal_ct;
+use subtle::arrays_equal;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
@@ -76,7 +76,7 @@ impl PartialEq for Scalar {
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        arrays_equal_ct(&self.0, &other.0) == 1u8
+        arrays_equal(&self.0, &other.0) == 1u8
     }
 }
 
@@ -87,7 +87,7 @@ impl CTEq for Scalar {
     ///
     /// `1u8` if they are equal, and `0u8` otherwise.
     fn ct_eq(&self, other: &Self) -> u8 {
-        arrays_equal_ct(&self.0, &other.0)
+        arrays_equal(&self.0, &other.0)
     }
 }
 

@@ -129,6 +129,20 @@ pub fn conditional_select<T>(a: T, b: T, choice: T) -> T
 /// # Return
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::bytes_equal;
+/// # fn main() {
+/// let a: u8 = 0xDE;
+/// let b: u8 = 0xAD;
+///
+/// assert_eq!(bytes_equal(a, b), 0);
+/// assert_eq!(bytes_equal(a, a), 1);
+/// # }
+/// ```
 #[inline(always)]
 pub fn bytes_equal(a: u8, b: u8) -> u8 {
     let mut x: u8;

@@ -32,13 +32,12 @@ version = "0.3"
 [dependencies.digest]
 version = "0.4"
 
+[dependencies.subtle]
+version = "^0.1"
+
 [dependencies.generic-array]
 # same version that digest depends on
 version = "^0.6"
-
-[dependencies.num-traits]
-optional = true
-version = "^0.1"
 
 [dev-dependencies.sha2]
 version = "0.4"
@@ -49,7 +48,7 @@ version = "0.6"
 [features]
 nightly = ["radix_51"]
 default = ["std"]
-std = ["rand", "num-traits"]
+std = ["rand"]
 yolocrypto = []
 bench = []
 # Radix-51 arithmetic using u128

@@ -158,8 +158,11 @@ impl CTAssignable for Scalar {
     /// Conditionally assign another Scalar to this one.
     ///
     /// ```
+    /// # extern crate curve25519_dalek;
+    /// # extern crate subtle;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use curve25519_dalek::subtle::CTAssignable;
+    /// # use subtle::CTAssignable;
+    /// # fn main() {
     /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
     /// let b = Scalar([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -169,6 +172,7 @@ impl CTAssignable for Scalar {
     /// assert!(t[0] == a[0]);
     /// t.conditional_assign(&b, 1u8);
     /// assert!(t[0] == b[0]);
+    /// # }
     /// ```
     ///
     /// # Preconditions

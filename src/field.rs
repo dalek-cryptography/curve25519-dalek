@@ -340,25 +340,33 @@ impl CTAssignable for FieldElement {
     /// If `choice == 0`, replace `self` with `self`:
     ///
     /// ```
+    /// # extern crate subtle;
+    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::subtle::CTAssignable;
+    /// # use subtle::CTAssignable;
+    /// # fn main() {
     /// let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// h.conditional_assign(&g, 0);
     /// assert!(h == f);
+    /// # }
     /// ```
     ///
     /// If `choice == 1`, replace `self` with `f`:
     ///
     /// ```
+    /// # extern crate subtle;
+    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::field::FieldElement;
-    /// # use curve25519_dalek::subtle::CTAssignable;
+    /// # use subtle::CTAssignable;
+    /// # fn main() {
     /// # let f     = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// # let g     = FieldElement([2,2,2,2,2,2,2,2,2,2]);
     /// # let mut h = FieldElement([1,1,1,1,1,1,1,1,1,1]);
     /// h.conditional_assign(&g, 1);
     /// assert!(h == g);
+    /// # }
     /// ```
     ///
     /// # Preconditions

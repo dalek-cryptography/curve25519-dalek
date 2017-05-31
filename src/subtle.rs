@@ -11,7 +11,22 @@
 
 //! Constant-time traits and utility functions.
 
+#[cfg(feature = "std")]
+use core::ops::BitAnd;
+#[cfg(feature = "std")]
+use core::ops::BitOr;
+#[cfg(feature = "std")]
+use core::ops::Not;
+#[cfg(feature = "std")]
+use core::ops::Sub;
+
 use core::ops::Neg;
+
+#[cfg(feature = "std")]
+use num_traits::One;
+#[cfg(feature = "std")]
+use num_traits::Signed;
+
 
 /// Trait for items which can be conditionally assigned in constant time.
 pub trait CTAssignable {
@@ -50,11 +65,84 @@ impl<T> CTNegatable for T
     }
 }
 
+/// Select `a` if `choice == 1` or select `b` if `choice == 0`, in constant time.
+///
+/// # Inputs
+///
+/// * `a`, `b`, and `choice` must be types for which bitwise-AND, and
+///   bitwise-OR, bitwise-complement, subtraction, multiplicative identity,
+///   copying, partial equality, and partial order comparison are defined.
+/// * `choice`: If `choice` is equal to the multiplicative identity of the type
+///   (i.e. `1u8` for `u8`, etc.), then `a` is returned.  If `choice` is equal
+///   to the additive identity (i.e. `0u8` for `u8`, etc.) then `b` is returned.
+///
+/// # Warning
+///
+/// The behaviour of this function is undefined if `choice` is something other
+/// than a multiplicative identity or additive identity (i.e. `1u8` or `0u8`).
+///
+/// If you somehow manage to design a type which is not a signed integer, and
+/// yet implements all the requisite trait bounds for this generic, it's your
+/// problem if something breaks.
+///
+/// # Examples
+///
+/// This function should work for signed integer types:
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::conditional_select;
+/// # fn main() {
+/// let a: i32 = 5;
+/// let b: i32 = 13;
+///
+/// assert!(conditional_select(a, b, 0) == 13);
+/// assert!(conditional_select(a, b, 1) == 5);
+///
+/// let c: i64 = 2343249123;
+/// let d: i64 = 8723884895;
+///
+/// assert!(conditional_select(c, d, 0) == d);
+/// assert!(conditional_select(c, d, 1) == c);
+/// # }
+/// ```
+///
+/// It does not work with `i128`s, however, because the `num` crate doesn't
+/// implement `num::traits::Signed` for `i128`.
+///
+/// # TODO
+///
+/// Once `#[feature(specialization)]` is finished, we should rewrite this.  Or
+/// find some other way to only implement it for types which we know work
+/// correctly.
+#[inline(always)]
+#[cfg(feature = "std")]
+pub fn conditional_select<T>(a: T, b: T, choice: T) -> T
+    where T: PartialEq + PartialOrd + Copy +
+             One + Signed + Sub<T, Output = T> + Not<Output = T> +
+             BitAnd<T, Output = T> + BitOr<T, Output = T> {
+    (!(choice - T::one()) & a) | ((choice - T::one()) & b)
+}
+
 /// Check equality of two bytes in constant time.
 ///
 /// # Return
 ///
 /// Returns `1u8` if `a == b` and `0u8` otherwise.
+///
+/// # Examples
+///
+/// ```
+/// # extern crate curve25519_dalek;
+/// # use curve25519_dalek::subtle::bytes_equal;
+/// # fn main() {
+/// let a: u8 = 0xDE;
+/// let b: u8 = 0xAD;
+///
+/// assert_eq!(bytes_equal(a, b), 0);
+/// assert_eq!(bytes_equal(a, a), 1);
+/// # }
+/// ```
 #[inline(always)]
 pub fn bytes_equal(a: u8, b: u8) -> u8 {
     let mut x: u8;
@@ -162,5 +250,25 @@ mod test {
         let b: [u8; 4] = [0, 0, 0, 0];
 
         assert!(arrays_equal(&a, &b) == 1);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn conditional_select_i32() {
+        let a: i32 = 5;
+        let b: i32 = 13;
+
+        assert_eq!(conditional_select(a, b, 0), 13);
+        assert_eq!(conditional_select(a, b, 1), 5);
+    }
+
+    #[test]
+    #[cfg(feature = "std")]
+    fn conditional_select_i64() {
+        let c: i64 = 2343249123;
+        let d: i64 = 8723884895;
+
+        assert_eq!(conditional_select(c, d, 0), d);
+        assert_eq!(conditional_select(c, d, 1), c);
     }
 }

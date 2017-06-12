@@ -738,7 +738,7 @@ impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 
 impl Add<ProjectiveNielsPoint> for ExtendedPoint {
     type Output = CompletedPoint;
-    #[inline(always)]
+    #[inline]
     fn add(self, other: ProjectiveNielsPoint) -> CompletedPoint {
         &self + &other
     }
@@ -817,6 +817,7 @@ impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
 }
 
 impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
+    #[inline]
     fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) + _rhs;
     }
@@ -831,6 +832,7 @@ impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
 }
 
 impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
+    #[inline]
     fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) - _rhs;
     }
@@ -903,6 +905,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    #[inline]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
@@ -969,6 +972,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
+    #[inline]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
@@ -1020,6 +1024,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
+    #[inline]
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }

@@ -106,6 +106,7 @@ impl IndexMut<usize> for Scalar {
 }
 
 impl<'b> MulAssign<&'b Scalar> for Scalar {
+    #[inline]
     fn mul_assign(&mut self, _rhs: &'b Scalar) {
         let result = (self as &Scalar) * _rhs;
         self.0 = result.0;
@@ -114,12 +115,14 @@ impl<'b> MulAssign<&'b Scalar> for Scalar {
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
+    #[inline]
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
         Scalar::multiply_add(self, _rhs, &Scalar::zero())
     }
 }
 
 impl<'b> AddAssign<&'b Scalar> for Scalar {
+    #[inline]
     fn add_assign(&mut self, _rhs: &'b Scalar) {
         *self = Scalar::multiply_add(&Scalar::one(), self, _rhs);
     }
@@ -129,12 +132,14 @@ add_impl!(Scalar, Scalar, Scalar);
 
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
+    #[inline]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
         Scalar::multiply_add(&Scalar::one(), self, _rhs)
     }
 }
 
 impl<'b> SubAssign<&'b Scalar> for Scalar {
+    #[inline]
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
         // (l-1)*_rhs + self = self - _rhs
         *self = Scalar::multiply_add(&constants::l_minus_1, _rhs, self);
@@ -145,6 +150,7 @@ sub_impl!(Scalar, Scalar, Scalar);
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
+    #[inline]
     fn sub(self, _rhs: &'b Scalar) -> Scalar {
         // (l-1)*_rhs + self = self - _rhs
         Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
@@ -155,6 +161,7 @@ neg_impl!(Scalar, Scalar);
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
+    #[inline]
     fn neg(self) -> Scalar {
         self * &constants::l_minus_1
    }

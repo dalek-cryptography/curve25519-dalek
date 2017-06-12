@@ -519,6 +519,7 @@ add_impl!(DecafPoint, DecafPoint, DecafPoint);
 impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
     type Output = DecafPoint;
 
+    #[inline(always)]
     fn add(self, other: &'b DecafPoint) -> DecafPoint {
         DecafPoint(&self.0 + &other.0)
     }
@@ -527,12 +528,14 @@ impl<'a, 'b> Add<&'b DecafPoint> for &'a DecafPoint {
 sub_impl!(DecafPoint, DecafPoint, DecafPoint);
 
 impl<'b> AddAssign<&'b DecafPoint> for DecafPoint {
+    #[inline]
     fn add_assign(&mut self, _rhs: &DecafPoint) {
         *self = (self as &DecafPoint) + _rhs;
     }
 }
 
 impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
+    #[inline]
     type Output = DecafPoint;
 
     fn sub(self, other: &'b DecafPoint) -> DecafPoint {
@@ -543,6 +546,7 @@ impl<'a, 'b> Sub<&'b DecafPoint> for &'a DecafPoint {
 neg_impl!(DecafPoint, DecafPoint);
 
 impl<'b> SubAssign<&'b DecafPoint> for DecafPoint {
+    #[inline]
     fn sub_assign(&mut self, _rhs: &DecafPoint) {
         *self = (self as &DecafPoint) - _rhs;
     }
@@ -551,12 +555,14 @@ impl<'b> SubAssign<&'b DecafPoint> for DecafPoint {
 impl<'a> Neg for &'a DecafPoint {
     type Output = DecafPoint;
 
+    #[inline]
     fn neg(self) -> DecafPoint {
         DecafPoint(-&self.0)
     }
 }
 
 impl<'b> MulAssign<&'b Scalar> for DecafPoint {
+    #[inline]
     fn mul_assign(&mut self, scalar: &'b Scalar) {
         let result = (self as &DecafPoint) * scalar;
         *self = result;
@@ -566,6 +572,7 @@ impl<'b> MulAssign<&'b Scalar> for DecafPoint {
 impl<'a, 'b> Mul<&'b Scalar> for &'a DecafPoint {
     type Output = DecafPoint;
     /// Scalar multiplication: compute `scalar * self`.
+    #[inline]
     fn mul(self, scalar: &'b Scalar) -> DecafPoint {
         DecafPoint(&self.0 * scalar)
     }
@@ -575,6 +582,7 @@ impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
     type Output = DecafPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
+    #[inline]
     fn mul(self, point: &'b DecafPoint) -> DecafPoint {
         DecafPoint(self * &point.0)
     }
@@ -588,6 +596,7 @@ pub struct DecafBasepointTable(pub EdwardsBasepointTable);
 impl<'a, 'b> Mul<&'b Scalar> for &'a DecafBasepointTable {
     type Output = DecafPoint;
 
+    #[inline]
     fn mul(self, scalar: &'b Scalar) -> DecafPoint {
         DecafPoint(&self.0 * scalar)
     }
@@ -596,6 +605,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a DecafBasepointTable {
 impl<'a, 'b> Mul<&'a DecafBasepointTable> for &'b Scalar {
     type Output = DecafPoint;
 
+    #[inline]
     fn mul(self, basepoint_table: &'a DecafBasepointTable) -> DecafPoint {
         DecafPoint(self * &basepoint_table.0)
     }

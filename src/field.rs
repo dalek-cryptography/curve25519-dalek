@@ -197,7 +197,7 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
 }
 
 impl<'b> MulAssign<&'b FieldElement> for FieldElement {
-    #[inline]
+    #[inline(always)]
     fn mul_assign(&mut self, _rhs: &'b FieldElement) {
         let result = (self as &FieldElement) * _rhs;
         self.0 = result.0;

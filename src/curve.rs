@@ -717,7 +717,7 @@ impl ExtendedPoint {
 impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    #[inline]
+    #[inline(always)]
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X  = self.Y + self.X;
         let Y_minus_X = self.Y - self.X;
@@ -738,7 +738,7 @@ impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 
 impl Add<ProjectiveNielsPoint> for ExtendedPoint {
     type Output = CompletedPoint;
-    #[inline]
+    #[inline(always)]
     fn add(self, other: ProjectiveNielsPoint) -> CompletedPoint {
         &self + &other
     }
@@ -747,7 +747,7 @@ impl Add<ProjectiveNielsPoint> for ExtendedPoint {
 impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    #[inline]
+    #[inline(always)]
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X  = self.Y + self.X;
         let Y_minus_X = self.Y - self.X;
@@ -769,7 +769,7 @@ impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    #[inline]
+    #[inline(always)]
     fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X  = self.Y + self.X;
         let Y_minus_X = self.Y - self.X;
@@ -790,7 +790,7 @@ impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
 impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
-    #[inline]
+    #[inline(always)]
     fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X  = self.Y + self.X;
         let Y_minus_X = self.Y - self.X;
@@ -810,14 +810,14 @@ impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
 
 impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
-    #[inline]
+    #[inline(always)]
     fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self + &other.to_projective_niels()).to_extended()
     }
 }
 
 impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
-    #[inline]
+    #[inline(always)]
     fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) + _rhs;
     }
@@ -825,14 +825,14 @@ impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
 
 impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
-    #[inline]
+    #[inline(always)]
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self - &other.to_projective_niels()).to_extended()
     }
 }
 
 impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
-    #[inline]
+    #[inline(always)]
     fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) - _rhs;
     }
@@ -845,7 +845,7 @@ impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
 impl<'a> Neg for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
-    #[inline]
+    #[inline(always)]
     fn neg(self) -> ExtendedPoint {
         ExtendedPoint{
             X: -self.X,
@@ -859,7 +859,7 @@ impl<'a> Neg for &'a ExtendedPoint {
 impl<'a> Neg for &'a ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
-    #[inline]
+    #[inline(always)]
     fn neg(self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:   self.Y_minus_X,
@@ -874,7 +874,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
 impl<'a> Neg for &'a AffineNielsPoint {
     type Output = AffineNielsPoint;
 
-    #[inline]
+    #[inline(always)]
     fn neg(self) -> AffineNielsPoint {
         AffineNielsPoint{
             y_plus_x:   self.y_minus_x,
@@ -889,7 +889,7 @@ impl<'a> Neg for &'a AffineNielsPoint {
 // ------------------------------------------------------------------------
 
 impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
-    #[inline]
+    #[inline(always)]
     fn mul_assign(&mut self, scalar: &'b Scalar) {
         let result = (self as &ExtendedPoint) * scalar;
         *self = result;
@@ -905,7 +905,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    #[inline]
+    #[inline(always)]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
@@ -931,7 +931,7 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
-    #[inline]
+    #[inline(always)]
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
         point * &self
     }
@@ -972,7 +972,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    #[inline]
+    #[inline(always)]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
@@ -1024,7 +1024,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
-    #[inline]
+    #[inline(always)]
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }
@@ -1063,14 +1063,14 @@ impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
     ///
     /// Convenience wrapper around `mult_by_pow_2`.
-    #[inline]
+    #[inline(always)]
     pub fn mult_by_cofactor(&self) -> ExtendedPoint {
         self.mult_by_pow_2(3)
     }
 
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
-    #[inline]
+    #[inline(always)]
     pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut r: CompletedPoint;
         let mut s = self.to_projective();

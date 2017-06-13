@@ -135,8 +135,8 @@ impl CompressedEdwardsY {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
-        let u = &YY - &Z;                    // u =  y²-1
-        let v = &(&YY * &constants::d) + &Z; // v = dy²+1
+        let u = YY - Z;                    // u =  y²-1
+        let v = (YY * constants::d) + Z;   // v = dy²+1
         let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
 
         if is_nonzero_square != 1u8 { return None; }
@@ -146,7 +146,7 @@ impl CompressedEdwardsY {
         let    current_sign_bit = X.is_negative_ed25519();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
-        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
+        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: X * Y })
     }
 }
 
@@ -219,7 +219,7 @@ impl CompressedMontgomeryU {
     /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
     pub fn to_edwards_y(u: &FieldElement) -> FieldElement {
         // Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, so `y = (u-1)/(u+1)`.
-        &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
+        (u - &FieldElement::one()) * (u + &FieldElement::one()).invert()
     }
 
     /// Given a Montgomery `u` coordinate, compute the corresponding
@@ -233,10 +233,10 @@ impl CompressedMontgomeryU {
     /// Montgomery `v` corresponding to this `u`.
     pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
         let one:       FieldElement = FieldElement::one();
-        let v_squared: FieldElement = u * &(&u.square() + &(&(&constants::A * u) + &one));
+        let v_squared: FieldElement = u * &(u.square() + ((&constants::A * u) + one));
 
         let (okay, v_inv) = v_squared.invsqrt();
-        let v = &v_inv * &v_squared;
+        let v = v_inv * v_squared;
 
         (okay, v)
     }
@@ -267,8 +267,8 @@ impl CompressedMontgomeryU {
     /// convert from Montgomery to Edwards form via the right-hand side of the
     /// equation: `x=(u/v)*sqrt(-A-2)`.
     pub fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
-        let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
-        let neg_x: FieldElement = -(&x);
+        let mut x: FieldElement = (u * &v.invert()) * constants::SQRT_MINUS_APLUS2;
+        let neg_x: FieldElement = -x;
         let current_sign:    u8 = x.is_negative_ed25519();
 
         // Negate x to match the sign:
@@ -467,8 +467,8 @@ impl ValidityCheck for ProjectivePoint {
         let YY = self.Y.square();
         let ZZ = self.Z.square();
         let ZZZZ = ZZ.square();
-        let lhs = &(&YY - &XX) * &ZZ;
-        let rhs = &ZZZZ + &(&constants::d * &(&XX * &YY));
+        let lhs = (YY - XX) * ZZ;
+        let rhs = ZZZZ + (constants::d * (XX * YY));
 
         lhs == rhs
     }
@@ -554,18 +554,18 @@ impl ProjectivePoint {
     #[allow(dead_code)]  // rustc complains this is unused even when it's used
     fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
-            X: &self.X * &self.Z,
-            Y: &self.Y * &self.Z,
+            X: self.X * self.Z,
+            Y: self.Y * self.Z,
             Z: self.Z.square(),
-            T: &self.X * &self.Y,
+            T: self.X * self.Y,
         }
     }
 
     /// Convert this point to a `CompressedEdwardsY`
     pub fn compress_edwards(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
+        let x = self.X * recip;
+        let y = self.Y * recip;
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
@@ -591,9 +591,9 @@ impl ProjectivePoint {
         //
         // exceptional points:
         // y = 1 <=> Y/Z = 1 <=> Z - Y = 0
-        let Z_plus_Y   = &self.Z + &self.Y;
-        let Z_minus_Y  = &self.Z - &self.Y;
-        let u = &Z_plus_Y * &Z_minus_Y.invert();
+        let Z_plus_Y   = self.Z + self.Y;
+        let Z_minus_Y  = self.Z - self.Y;
+        let u = Z_plus_Y * Z_minus_Y.invert();
 
         if Z_minus_Y.is_zero() == 0u8 {
             Some(CompressedMontgomeryU(u.to_bytes()))
@@ -607,10 +607,10 @@ impl ExtendedPoint {
     /// Convert to a ProjectiveNielsPoint
     pub fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
-            Y_plus_X:  &self.Y + &self.X,
-            Y_minus_X: &self.Y - &self.X,
-            Z:          self.Z,
-            T2d:       &self.T * &constants::d2,
+            Y_plus_X:  self.Y + self.X,
+            Y_minus_X: self.Y - self.X,
+            Z:         self.Z,
+            T2d:       self.T * constants::d2,
         }
     }
 
@@ -631,12 +631,12 @@ impl ExtendedPoint {
     /// Mainly for testing.
     pub fn to_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        let xy2d = &(&x * &y) * &constants::d2;
+        let x = self.X * recip;
+        let y = self.Y * recip;
+        let xy2d = (x * y) * constants::d2;
         AffineNielsPoint{
-            y_plus_x:  &y + &x,
-            y_minus_x: &y - &x,
+            y_plus_x:  y + x,
+            y_minus_x: y - x,
             xy2d:      xy2d
         }
     }
@@ -662,19 +662,19 @@ impl CompletedPoint {
     /// Convert to a ProjectivePoint
     pub fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
-            X: &self.X * &self.T,
-            Y: &self.Y * &self.Z,
-            Z: &self.Z * &self.T,
+            X: self.X * self.T,
+            Y: self.Y * self.Z,
+            Z: self.Z * self.T,
         }
     }
 
     /// Convert to an ExtendedPoint
     pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
-            X: &self.X * &self.T,
-            Y: &self.Y * &self.Z,
-            Z: &self.Z * &self.T,
-            T: &self.X * &self.Y,
+            X: self.X * self.T,
+            Y: self.Y * self.Z,
+            Z: self.Z * self.T,
+            T: self.X * self.Y,
         }
     }
 }
@@ -689,16 +689,16 @@ impl ProjectivePoint {
         let XX          = self.X.square();
         let YY          = self.Y.square();
         let ZZ2         = self.Z.square2();
-        let X_plus_Y    = &self.X + &self.Y;
+        let X_plus_Y    = self.X + self.Y;
         let X_plus_Y_sq = X_plus_Y.square();
-        let YY_plus_XX  = &YY + &XX;
-        let YY_minus_XX = &YY - &XX;
+        let YY_plus_XX  = YY + XX;
+        let YY_minus_XX = YY - XX;
 
         CompletedPoint{
-            X: &X_plus_Y_sq - &YY_plus_XX,
+            X: X_plus_Y_sq - YY_plus_XX,
             Y: YY_plus_XX,
             Z: YY_minus_XX,
-            T: &ZZ2 - &YY_minus_XX
+            T: ZZ2 - YY_minus_XX
         }
     }
 }
@@ -717,41 +717,51 @@ impl ExtendedPoint {
 impl<'a,'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
+    #[inline(always)]
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PP = &Y_plus_X  * &other.Y_plus_X;
-        let MM = &Y_minus_X * &other.Y_minus_X;
-        let TT2d = &self.T * &other.T2d;
-        let ZZ   = &self.Z * &other.Z;
-        let ZZ2  = &ZZ + &ZZ;
+        let Y_plus_X  = self.Y + self.X;
+        let Y_minus_X = self.Y - self.X;
+        let PP = Y_plus_X  * other.Y_plus_X;
+        let MM = Y_minus_X * other.Y_minus_X;
+        let TT2d = self.T * other.T2d;
+        let ZZ   = self.Z * other.Z;
+        let ZZ2  = ZZ + ZZ;
 
         CompletedPoint{
-            X: &PP - &MM,
-            Y: &PP + &MM,
-            Z: &ZZ2 + &TT2d,
-            T: &ZZ2 - &TT2d
+            X: PP - MM,
+            Y: PP + MM,
+            Z: ZZ2 + TT2d,
+            T: ZZ2 - TT2d
         }
+    }
+}
+
+impl Add<ProjectiveNielsPoint> for ExtendedPoint {
+    type Output = CompletedPoint;
+    #[inline(always)]
+    fn add(self, other: ProjectiveNielsPoint) -> CompletedPoint {
+        &self + &other
     }
 }
 
 impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
+    #[inline(always)]
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PM = &Y_plus_X * &other.Y_minus_X;
-        let MP = &Y_minus_X  * &other.Y_plus_X;
-        let TT2d = &self.T * &other.T2d;
-        let ZZ   = &self.Z * &other.Z;
-        let ZZ2  = &ZZ + &ZZ;
+        let Y_plus_X  = self.Y + self.X;
+        let Y_minus_X = self.Y - self.X;
+        let PM = Y_plus_X * other.Y_minus_X;
+        let MP = Y_minus_X  * other.Y_plus_X;
+        let TT2d = self.T * other.T2d;
+        let ZZ   = self.Z * other.Z;
+        let ZZ2  = ZZ + ZZ;
 
         CompletedPoint{
-            X: &PM - &MP,
-            Y: &PM + &MP,
-            Z: &ZZ2 - &TT2d,
-            T: &ZZ2 + &TT2d
+            X: PM - MP,
+            Y: PM + MP,
+            Z: ZZ2 - TT2d,
+            T: ZZ2 + TT2d
         }
     }
 }
@@ -759,19 +769,20 @@ impl<'a,'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
+    #[inline(always)]
     fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PP        = &Y_plus_X  * &other.y_plus_x;
-        let MM        = &Y_minus_X * &other.y_minus_x;
-        let Txy2d     = &self.T * &other.xy2d;
-        let Z2        = &self.Z + &self.Z;
+        let Y_plus_X  = self.Y + self.X;
+        let Y_minus_X = self.Y - self.X;
+        let PP        = Y_plus_X  * other.y_plus_x;
+        let MM        = Y_minus_X * other.y_minus_x;
+        let Txy2d     = self.T * other.xy2d;
+        let Z2        = self.Z + self.Z;
 
         CompletedPoint{
-            X: &PP - &MM,
-            Y: &PP + &MM,
-            Z: &Z2 + &Txy2d,
-            T: &Z2 - &Txy2d
+            X: PP - MM,
+            Y: PP + MM,
+            Z: Z2 + Txy2d,
+            T: Z2 - Txy2d
         }
     }
 }
@@ -779,31 +790,34 @@ impl<'a,'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
 impl<'a,'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
+    #[inline(always)]
     fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PM        = &Y_plus_X  * &other.y_minus_x;
-        let MP        = &Y_minus_X * &other.y_plus_x;
-        let Txy2d     = &self.T * &other.xy2d;
-        let Z2        = &self.Z + &self.Z;
+        let Y_plus_X  = self.Y + self.X;
+        let Y_minus_X = self.Y - self.X;
+        let PM        = Y_plus_X  * other.y_minus_x;
+        let MP        = Y_minus_X * other.y_plus_x;
+        let Txy2d     = self.T * other.xy2d;
+        let Z2        = self.Z + self.Z;
 
         CompletedPoint{
-            X: &PM - &MP,
-            Y: &PM + &MP,
-            Z: &Z2 - &Txy2d,
-            T: &Z2 + &Txy2d
+            X: PM - MP,
+            Y: PM + MP,
+            Z: Z2 - Txy2d,
+            T: Z2 + Txy2d
         }
     }
 }
 
 impl<'a,'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
+    #[inline(always)]
     fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self + &other.to_projective_niels()).to_extended()
     }
 }
 
 impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
+    #[inline(always)]
     fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) + _rhs;
     }
@@ -811,12 +825,14 @@ impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
 
 impl<'a,'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
+    #[inline(always)]
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         (self - &other.to_projective_niels()).to_extended()
     }
 }
 
 impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
+    #[inline(always)]
     fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) - _rhs;
     }
@@ -829,12 +845,13 @@ impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
 impl<'a> Neg for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
+    #[inline(always)]
     fn neg(self) -> ExtendedPoint {
         ExtendedPoint{
-            X: -(&self.X),
+            X: -self.X,
             Y:  self.Y,
             Z:  self.Z,
-            T: -(&self.T),
+            T: -self.T,
         }
     }
 }
@@ -842,12 +859,13 @@ impl<'a> Neg for &'a ExtendedPoint {
 impl<'a> Neg for &'a ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
+    #[inline(always)]
     fn neg(self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:   self.Y_minus_X,
             Y_minus_X:  self.Y_plus_X,
             Z:          self.Z,
-            T2d:        -(&self.T2d),
+            T2d:        -self.T2d,
         }
     }
 }
@@ -856,11 +874,12 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
 impl<'a> Neg for &'a AffineNielsPoint {
     type Output = AffineNielsPoint;
 
+    #[inline(always)]
     fn neg(self) -> AffineNielsPoint {
         AffineNielsPoint{
             y_plus_x:   self.y_minus_x,
             y_minus_x:  self.y_plus_x,
-            xy2d:       -(&self.xy2d)
+            xy2d:       -self.xy2d
         }
     }
 }
@@ -870,11 +889,15 @@ impl<'a> Neg for &'a AffineNielsPoint {
 // ------------------------------------------------------------------------
 
 impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
+    #[inline(always)]
     fn mul_assign(&mut self, scalar: &'b Scalar) {
         let result = (self as &ExtendedPoint) * scalar;
         *self = result;
     }
 }
+
+mul_impl!(Scalar, ExtendedPoint, ExtendedPoint);
+mul_impl!(ExtendedPoint, Scalar, ExtendedPoint);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
@@ -882,6 +905,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    #[inline(always)]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let A = self.to_projective_niels();
         let mut As: [ProjectiveNielsPoint; 8] = [A; 8];
@@ -893,7 +917,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         let mut t: CompletedPoint;
         for i in (0..64).rev() {
             h = h.mult_by_pow_2(4);
-            t = &h + &select_precomputed_point(e[i], &As);
+            t = h + select_precomputed_point(e[i], &As);
             h = t.to_extended();
         }
         h
@@ -907,6 +931,7 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     ///
     /// Uses a window of size 4.  Note: for scalar multiplication of
     /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    #[inline(always)]
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
         point * &self
     }
@@ -916,6 +941,8 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 /// Precomputation
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
+
+mul_impl!(Scalar, EdwardsBasepointTable, ExtendedPoint);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
@@ -945,6 +972,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
+    #[inline(always)]
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
@@ -965,6 +993,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
         h
     }
 }
+
+mul_impl!(EdwardsBasepointTable, Scalar, ExtendedPoint);
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     type Output = ExtendedPoint;
@@ -994,6 +1024,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// We then use the `select_precomputed_point` function, which
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
+    #[inline(always)]
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }
@@ -1032,14 +1063,14 @@ impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
     ///
     /// Convenience wrapper around `mult_by_pow_2`.
-    #[inline]
+    #[inline(always)]
     pub fn mult_by_cofactor(&self) -> ExtendedPoint {
         self.mult_by_pow_2(3)
     }
 
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
-    #[inline]
+    #[inline(always)]
     pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
@@ -1696,6 +1727,12 @@ mod bench {
     }
 
     #[bench]
+    fn scalar_mult_by_value(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT;
+        b.iter(|| *B * A_SCALAR);
+    }
+
+    #[bench]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
@@ -1709,11 +1746,27 @@ mod bench {
     }
 
     #[bench]
+    fn add_extended_and_projective_niels_output_completed_by_value(b: &mut Bencher) {
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+
+        b.iter(|| p1 + p2);
+    }
+
+    #[bench]
     fn add_extended_and_projective_niels_output_extended(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT;
         let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
+    }
+
+    #[bench]
+    fn add_extended_and_projective_niels_output_extended_by_value(b: &mut Bencher) {
+        let p1 = constants::ED25519_BASEPOINT;
+        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+
+        b.iter(|| (p1 + p2).to_extended());
     }
 
     #[bench]

@@ -109,18 +109,21 @@ impl Debug for FieldElement {
 impl Index<usize> for FieldElement {
     type Output = Limb;
 
+    #[inline]
     fn index(&self, _index: usize) -> &Limb {
         &(self.0[_index])
     }
 }
 
 impl IndexMut<usize> for FieldElement {
+    #[inline]
     fn index_mut(&mut self, _index: usize) -> &mut Limb {
         &mut(self.0[_index])
     }
 }
 
 impl<'b> AddAssign<&'b FieldElement> for FieldElement {
+    #[inline]
     fn add_assign(&mut self, _rhs: &'b FieldElement) { // fsum()
         for i in 0..self.0.len() {
             self[i] += _rhs[i];
@@ -128,8 +131,14 @@ impl<'b> AddAssign<&'b FieldElement> for FieldElement {
     }
 }
 
+add_impl!(FieldElement, FieldElement, FieldElement);
+sub_impl!(FieldElement, FieldElement, FieldElement);
+mul_impl!(FieldElement, FieldElement, FieldElement);
+neg_impl!(FieldElement, FieldElement);
+
 impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
+    #[inline]
     fn add(self, _rhs: &'b FieldElement) -> FieldElement {
         let mut output = *self;
         output += _rhs;
@@ -139,12 +148,14 @@ impl<'a, 'b> Add<&'b FieldElement> for &'a FieldElement {
 
 impl<'b> SubAssign<&'b FieldElement> for FieldElement {
     #[cfg(not(feature="radix_51"))]
+    #[inline]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) { // fdifference()
         for i in 0..10 {
             self[i] -= _rhs[i];
         }
     }
     #[cfg(feature="radix_51")]
+    #[inline]
     fn sub_assign(&mut self, _rhs: &'b FieldElement) {
         let result = (self as &FieldElement) - _rhs;
         for i in 0..5 {
@@ -156,12 +167,14 @@ impl<'b> SubAssign<&'b FieldElement> for FieldElement {
 impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     #[cfg(not(feature="radix_51"))]
+    #[inline]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
         let mut output = *self;
         output -= _rhs;
         output
     }
     #[cfg(feature="radix_51")]
+    #[inline]
     fn sub(self, _rhs: &'b FieldElement) -> FieldElement {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
@@ -184,6 +197,7 @@ impl<'a, 'b> Sub<&'b FieldElement> for &'a FieldElement {
 }
 
 impl<'b> MulAssign<&'b FieldElement> for FieldElement {
+    #[inline(always)]
     fn mul_assign(&mut self, _rhs: &'b FieldElement) {
         let result = (self as &FieldElement) * _rhs;
         self.0 = result.0;
@@ -193,6 +207,7 @@ impl<'b> MulAssign<&'b FieldElement> for FieldElement {
 impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
     type Output = FieldElement;
     #[cfg(feature="radix_51")]
+    #[inline]
     fn mul(self, _rhs: &'b FieldElement) -> FieldElement {
         /// Multiply two 64-bit integers with 128 bits of output.
         #[inline(always)]
@@ -238,6 +253,7 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
     }
 
     #[cfg(not(feature="radix_51"))]
+    #[inline]
     fn mul(self, _rhs: &'b FieldElement) -> FieldElement {
         // Notes preserved from ed25519.go (presumably originally from ref10):
         //
@@ -324,6 +340,7 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
 
 impl<'a> Neg for &'a FieldElement {
     type Output = FieldElement;
+    #[inline]
     fn neg(self) -> FieldElement {
         let mut output = *self;
         output.negate();
@@ -383,6 +400,7 @@ impl CTAssignable for FieldElement {
 impl FieldElement {
     /// Invert the sign of this field element
     #[cfg(not(feature="radix_51"))]
+    #[inline]
     pub fn negate(&mut self) {
         for i in 0..10 {
             self[i] = -self[i];
@@ -390,6 +408,7 @@ impl FieldElement {
     }
     /// Invert the sign of this field element
     #[cfg(feature="radix_51")]
+    #[inline]
     pub fn negate(&mut self) {
         // See commentary in the Sub impl
         let neg = FieldElement::reduce([
@@ -1382,6 +1401,12 @@ mod bench {
     fn fieldelement_a_mul_a(b: &mut Bencher) {
         let a = FieldElement::from_bytes(&A_BYTES);
         b.iter(|| &a*&a);
+    }
+
+    #[bench]
+    fn fieldelement_a_mul_a_by_value(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        b.iter(|| a*a);
     }
 
     #[bench]

@@ -46,6 +46,7 @@ version = "0.6"
 nightly = ["radix_51"]
 default = ["std"]
 std = ["rand"]
+alloc = []
 yolocrypto = []
 bench = []
 # Radix-51 arithmetic using u128

@@ -495,7 +495,7 @@ mod test {
     use std::vec::Vec;
     use curve25519_dalek::edwards::ExtendedPoint;
     use rand::OsRng;
-    use rustc_serialize::hex::FromHex;
+    use hex::FromHex;
     use sha2::Sha512;
     use super::*;
 
@@ -573,14 +573,14 @@ mod test {
             let parts: Vec<&str> = line.split(':').collect();
             assert_eq!(parts.len(), 5, "wrong number of fields in line {}", lineno);
 
-            let sec_bytes: &[u8] = &parts[0].from_hex().unwrap();
-            let pub_bytes: &[u8] = &parts[1].from_hex().unwrap();
-            let message:   &[u8] = &parts[2].from_hex().unwrap();
-            let sig_bytes: &[u8] = &parts[3].from_hex().unwrap();
+            let sec_bytes: Vec<u8>= FromHex::from_hex(&parts[0]).unwrap();
+            let pub_bytes: Vec<u8> = FromHex::from_hex(&parts[1]).unwrap();
+            let message: Vec<u8> = FromHex::from_hex(&parts[2]).unwrap();
+            let sig_bytes: Vec<u8> = FromHex::from_hex(&parts[3]).unwrap();
 
 		    // The signatures in the test vectors also include the message
 		    // at the end, but we just want R and S.
-            let sig1: Signature = Signature::from_bytes(sig_bytes);
+            let sig1: Signature = Signature::from_bytes(sig_bytes.as_ref());
 
             let keypair: Keypair = Keypair::from_bytes(
                 array_ref!(*pub_bytes, 0, PUBLIC_KEY_LENGTH),

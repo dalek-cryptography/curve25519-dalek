@@ -60,7 +60,7 @@ pub struct CompressedDecaf(pub [u8; 32]);
 /// The result of compressing a `DecafPoint`.
 impl CompressedDecaf {
     /// View this `CompressedDecaf` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8;32] {
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0
     }
 
@@ -121,7 +121,7 @@ impl CompressedDecaf {
 
 impl Identity for CompressedDecaf {
     fn identity() -> CompressedDecaf {
-        CompressedDecaf([0u8;32])
+        CompressedDecaf([0u8; 32])
     }
 }
 
@@ -165,8 +165,9 @@ impl<'de> Deserialize<'de> for DecafPoint {
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    let arr32 = array_ref!(v,0,32); // &[u8;32] from &[u8]
-                    CompressedDecaf(*arr32).decompress()
+                    let arr32 = array_ref!(v, 0, 32); // &[u8;32] from &[u8]
+                    CompressedDecaf(*arr32)
+                        .decompress()
                         .ok_or(serde::de::Error::custom("decompression failed"))
                 } else {
                     Err(serde::de::Error::invalid_length(v.len(), &self))
@@ -193,10 +194,10 @@ impl DecafPoint {
     pub fn compress(&self) -> CompressedDecaf {
         // Q: Do we want to encode twisted or untwisted?
         //
-        // Notes: 
+        // Notes:
         // Recall that the twisted Edwards curve E_{a,d} is of the form
         //
-        //     ax^2 + y^2 = 1 + dx^2y^2. 
+        //     ax^2 + y^2 = 1 + dx^2y^2.
         //
         // Internally, we operate on the curve with a = -1, d =
         // -121665/121666, a.k.a., the twist.  But maybe we would like
@@ -205,11 +206,11 @@ impl DecafPoint {
         //
         // Fix i, a square root of -1 (mod p).
         //
-        // The map x -> ix is an isomorphism from E_{a,d} to E_{-a,-d}. 
+        // The map x -> ix is an isomorphism from E_{a,d} to E_{-a,-d}.
         // Its inverse is x -> -ix.
         // let untwisted_X = &self.X * &constants::MSQRT_M1;
         // etc.
-
+        //
         // Step 0: pre-rotation, needed for Decaf with E[8] = Z/8.
         //
         // We want to select a point (x,y) in the coset P + E[4] with
@@ -247,7 +248,7 @@ impl DecafPoint {
         //
         //   0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*X^2*Y^2,
         //
-        // so 
+        // so
         //                0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*T^2*Z^2         since XY=TZ
         //                  = (-X^2 + Y^2 - Z^2 - d*T^2)*Z^2
         //                  = ( X^2 - Y^2 + Z^2 + d*T^2)*Z^2             mult by -1
@@ -304,7 +305,7 @@ impl DecafPoint {
         let (tmp_is_nonzero_square, W) = tmp.invsqrt();
         // tmp should always be a square (why? related to being in the
         // image of the isogeny?)
-        debug_assert_eq!( tmp_is_nonzero_square | tmp.is_zero(), 1u8 );
+        debug_assert_eq!(tmp_is_nonzero_square | tmp.is_zero(), 1u8);
 
         let xy = &T.square() * &(&W.square() * &(&TZ * &ZZ_plus_XX));
         let rotate = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
@@ -363,7 +364,7 @@ impl DecafPoint {
         let r_0_squared = r_0.square();
         let r = &r_0_squared + &r_0_squared;
 
-        // 2. Compute D <--- (dr + (a-d)) * (dr - (d + ar)) 
+        // 2. Compute D <--- (dr + (a-d)) * (dr - (d + ar))
         let dr = &constants::d * &r;
         // D = (dr + (a-d)) * (dr - (d + ar))
         //   = (dr + (a-d)) * (dr - (d-r)) since a=-1
@@ -398,7 +399,7 @@ impl DecafPoint {
         s *= &c;
 
         // 6. Compute t <--- -c*N*(r-1)* ((a-2d)*e)^2  -1
-        let a_minus_2d_e_sq = (&(&minus_one-&constants::d2)*&e).square();
+        let a_minus_2d_e_sq = (&(&minus_one - &constants::d2) * &e).square();
         let c_N_r_minus_1 = &c * &(&N * &(&r + &minus_one));
         let t = &minus_one - &(&c_N_r_minus_1 * &a_minus_2d_e_sq);
 
@@ -467,7 +468,8 @@ impl DecafPoint {
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> DecafPoint
-            where D: Digest<OutputSize=U32> + Default {
+        where D: Digest<OutputSize = U32> + Default
+    {
         let mut hash = D::default();
         hash.input(input);
         DecafPoint::from_hash(hash)
@@ -479,7 +481,8 @@ impl DecafPoint {
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
     pub fn from_hash<D>(hash: D) -> DecafPoint
-            where D: Digest<OutputSize=U32> + Default {
+        where D: Digest<OutputSize = U32> + Default
+    {
         // XXX this seems clumsy
         let mut output = [0u8; 32];
         output.copy_from_slice(hash.result().as_slice());
@@ -617,10 +620,15 @@ impl CTAssignable for DecafPoint {
     /// # Example
     ///
     /// ```
+    /// # extern crate subtle;
+    /// # extern crate curve25519_dalek;
+    /// #
+    /// # use subtle::CTAssignable;
+    /// #
     /// # use curve25519_dalek::curve::Identity;
     /// # use curve25519_dalek::decaf::DecafPoint;
-    /// # use curve25519_dalek::subtle::CTAssignable;
     /// # use curve25519_dalek::constants;
+    /// # fn main() {
     /// let A = DecafPoint::identity();
     /// let B = constants::DECAF_ED25519_BASEPOINT;
     ///
@@ -630,6 +638,7 @@ impl CTAssignable for DecafPoint {
     /// assert!(P == A);
     /// P.conditional_assign(&B, 1u8);
     /// assert!(P == B);
+    /// # }
     /// ```
     fn conditional_assign(&mut self, other: &DecafPoint, choice: u8) {
         self.0.X.conditional_assign(&other.0.X, choice);
@@ -674,8 +683,9 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    pub fn k_fold_scalar_mult<'a,'b,I,J>(scalars: I, points: J) -> DecafPoint
-        where I: IntoIterator<Item=&'a Scalar>, J: IntoIterator<Item=&'b DecafPoint>
+    pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
+        where I: IntoIterator<Item = &'a Scalar>,
+              J: IntoIterator<Item = &'b DecafPoint>
     {
         let extended_points = points.into_iter().map(|P| &P.0);
         DecafPoint(curve::vartime::k_fold_scalar_mult(scalars, extended_points))
@@ -836,4 +846,3 @@ mod bench {
         b.iter(|| P.compress());
     }
 }
-

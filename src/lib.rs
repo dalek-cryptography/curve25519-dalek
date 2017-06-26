@@ -10,9 +10,10 @@
 //  - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(feature = "alloc", feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "bench", feature(test))]
+#![cfg_attr(all(feature = "nightly", feature = "std"), feature(zero_one))]
 
 #![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
@@ -46,6 +47,7 @@ extern crate arrayref;
 
 extern crate generic_array;
 extern crate digest;
+extern crate subtle;
 
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -58,8 +60,8 @@ extern crate core;
 #[cfg(feature = "std")]
 extern crate rand;
 
-#[cfg(not(feature = "std"))]
-extern crate collections;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 // Modules for low-level operations directly on field elements and curve points.
 
@@ -71,9 +73,8 @@ pub mod curve;
 #[cfg(feature = "yolocrypto")]
 pub mod decaf;
 
-// Constant-time functions and other miscelaneous utilities.
+// Other miscelaneous utilities.
 
-pub mod subtle;
 pub mod utils;
 
 // Low-level curve and point constants, as well as pre-computed curve group elements.

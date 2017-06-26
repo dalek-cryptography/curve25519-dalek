@@ -77,8 +77,8 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-#[cfg(not(feature = "std"))]
-use collections::Vec;
+#[cfg(feature = "alloc")]
+use alloc::Vec;
 
 use core::fmt::Debug;
 use core::iter::Iterator;
@@ -1194,6 +1194,7 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b ExtendedPoint>

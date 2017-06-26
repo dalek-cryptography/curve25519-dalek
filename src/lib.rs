@@ -10,7 +10,7 @@
 //  - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(collections))]
+#![cfg_attr(feature = "alloc", feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "bench", feature(test))]
 #![cfg_attr(all(feature = "nightly", feature = "std"), feature(zero_one))]
@@ -60,8 +60,8 @@ extern crate core;
 #[cfg(feature = "std")]
 extern crate rand;
 
-#[cfg(not(feature = "std"))]
-extern crate collections;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 // Modules for low-level operations directly on field elements and curve points.
 

@@ -47,6 +47,7 @@ extern crate arrayref;
 
 extern crate generic_array;
 extern crate digest;
+extern crate subtle;
 
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -58,9 +59,6 @@ extern crate core;
 
 #[cfg(feature = "std")]
 extern crate rand;
-
-#[cfg(feature = "std")]
-extern crate num_traits;
 
 #[cfg(not(feature = "std"))]
 extern crate collections;
@@ -75,9 +73,8 @@ pub mod curve;
 #[cfg(feature = "yolocrypto")]
 pub mod decaf;
 
-// Constant-time functions and other miscelaneous utilities.
+// Other miscelaneous utilities.
 
-pub mod subtle;
 pub mod utils;
 
 // Low-level curve and point constants, as well as pre-computed curve group elements.

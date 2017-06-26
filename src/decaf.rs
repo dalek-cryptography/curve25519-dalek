@@ -620,10 +620,15 @@ impl CTAssignable for DecafPoint {
     /// # Example
     ///
     /// ```
+    /// # extern crate subtle;
+    /// # extern crate curve25519_dalek;
+    /// #
+    /// # use subtle::CTAssignable;
+    /// #
     /// # use curve25519_dalek::curve::Identity;
     /// # use curve25519_dalek::decaf::DecafPoint;
-    /// # use curve25519_dalek::subtle::CTAssignable;
     /// # use curve25519_dalek::constants;
+    /// # fn main() {
     /// let A = DecafPoint::identity();
     /// let B = constants::DECAF_ED25519_BASEPOINT;
     ///
@@ -633,6 +638,7 @@ impl CTAssignable for DecafPoint {
     /// assert!(P == A);
     /// P.conditional_assign(&B, 1u8);
     /// assert!(P == B);
+    /// # }
     /// ```
     fn conditional_assign(&mut self, other: &DecafPoint, choice: u8) {
         self.0.X.conditional_assign(&other.0.X, choice);

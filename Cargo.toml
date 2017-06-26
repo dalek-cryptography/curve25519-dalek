@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.9.0"
+version = "0.9.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -37,7 +37,7 @@ version = "^0.1"
 
 [dependencies.generic-array]
 # same version that digest depends on
-version = "^0.6"
+version = "^0.8"
 
 [dev-dependencies.sha2]
 version = "0.6"

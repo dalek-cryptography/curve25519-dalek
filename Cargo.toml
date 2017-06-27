@@ -34,6 +34,7 @@ version = "0.6"
 
 [dependencies.subtle]
 version = "^0.1"
+default-features = false
 
 [dependencies.generic-array]
 # same version that digest depends on
@@ -48,7 +49,7 @@ version = "0.6"
 [features]
 nightly = ["radix_51"]
 default = ["std"]
-std = ["rand"]
+std = ["rand", "subtle/std"]
 alloc = []
 yolocrypto = []
 bench = []

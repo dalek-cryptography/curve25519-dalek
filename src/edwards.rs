@@ -1269,8 +1269,6 @@ pub mod vartime {
 
 #[cfg(test)]
 mod test {
-    #[cfg(feature = "yolocrypto")]
-    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::ConditionallyAssignable;
@@ -1548,18 +1546,6 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
-    }
-
-    #[test]
-    #[cfg(feature = "yolocrypto")]
-    fn scalarmult_decafpoint_works_both_ways() {
-        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT_POINT);
-        let s: Scalar = A_SCALAR;
-
-        let P1 = &P * &s;
-        let P2 = &s * &P;
-
-        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
     mod vartime {

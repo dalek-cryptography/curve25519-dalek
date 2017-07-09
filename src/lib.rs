@@ -76,7 +76,7 @@ pub mod montgomery;
 
 // Feature gate decaf while our implementation is unfinished and probably incorrect.
 #[cfg(feature = "yolocrypto")]
-pub mod decaf;
+pub mod ristretto;
 
 // Other miscelaneous utilities.
 

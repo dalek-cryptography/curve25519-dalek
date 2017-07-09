@@ -20,7 +20,7 @@
 
 use edwards::CompressedEdwardsY;
 #[cfg(feature = "yolocrypto")]
-use decaf::{DecafPoint, DecafBasepointTable};
+use ristretto::{RistrettoPoint, RistrettoBasepointTable};
 use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
@@ -52,10 +52,9 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
-/// The Ed25519 basepoint, as a `DecafPoint`.  This is called `_POINT` to distinguish it from
-/// `_TABLE`, which provides fast scalar multiplication.
-#[cfg(feature = "yolocrypto")] pub const DECAF_ED25519_BASEPOINT_POINT: DecafPoint =
-DecafPoint(ED25519_BASEPOINT_POINT);
+/// The Ed25519 basepoint, as a `RistrettoPoint`.
+#[cfg(feature = "yolocrypto")]
+pub const RISTRETTO_ED25519_BASEPOINT: RistrettoPoint = RistrettoPoint(ED25519_BASEPOINT_POINT);
 
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form
@@ -80,8 +79,8 @@ pub const l_minus_2: Scalar = Scalar([ 0xeb, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12,
 
 #[cfg(feature = "yolocrypto")]
 /// The Ed25519 basepoint
-pub const DECAF_ED25519_BASEPOINT_TABLE: DecafBasepointTable
-    = DecafBasepointTable(ED25519_BASEPOINT_TABLE);
+pub const RISTRETTO_ED25519_BASEPOINT_TABLE: RistrettoBasepointTable
+    = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 
 #[cfg(test)]
 mod test {

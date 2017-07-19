@@ -465,6 +465,20 @@ mod test {
         x.conditional_negate(1u8);
         assert_eq!(x, one);
     }
+
+    #[test]
+    fn encoding_is_canonical() {
+        // Encode 1 wrongly as 1 + (2^255 - 19) = 2^255 - 18
+        let one_encoded_wrongly_bytes: [u8;32] = [0xee, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f];
+        // Decode to a field element
+        let one = FieldElement::from_bytes(&one_encoded_wrongly_bytes);
+        // .. then check that the encoding is correct
+        let one_bytes = one.to_bytes();
+        assert_eq!(one_bytes[0], 1);
+        for i in 1..32 {
+            assert_eq!(one_bytes[i], 0);
+        }
+    }
 }
 
 #[cfg(all(test, feature = "bench"))]

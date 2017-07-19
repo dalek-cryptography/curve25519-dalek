@@ -45,6 +45,7 @@ use scalar::Scalar;
 
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
+use subtle;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -64,63 +65,65 @@ impl CompressedRistretto {
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.
+    ///
+    /// This function executes in constant time for all valid inputs.
+    /// Inputs which do not decode to a RistrettoPoint may return
+    /// early.
     pub fn decompress(&self) -> Option<RistrettoPoint> {
-        // XXX should decoding be CT ?
-        // XXX need to check that xy is nonnegative and reject otherwise
+        // Step 1. Check s for validity:
+        // 1.a) s must be 32 bytes (we get this from the type system)
+        // 1.b) s < p
+        // 1.c) s is nonnegative
+        //
+        // Our decoding routine ignores the high bit, so the only
+        // possible failure for 1.b) is if someone encodes s in 0..18
+        // as s+p in 2^255-19..2^255-1.  We can check this by
+        // converting back to bytes, and checking that we get the
+        // original input, since our encoding routine is canonical.
+
         let s = FieldElement::from_bytes(self.as_bytes());
+        let s_bytes_check = s.to_bytes();
+        let s_encoding_is_canonical =
+            subtle::slices_equal(&s_bytes_check[..], self.as_bytes());
+        let s_is_negative = s.is_negative_ed25519();
 
-        // Check that s = |s| and reject otherwise.
-        let mut abs_s = s;
-        let neg = abs_s.is_negative_decaf();
-        abs_s.conditional_negate(neg);
-        if abs_s != s { return None; }
+        if s_encoding_is_canonical == 0u8 || s_is_negative == 1u8 {
+            return None;
+        }
 
+        // Step 2.  The rest.  (XXX write comments)
         let ss = s.square();
-        let X = &s + &s;                    // X = 2s
-        let Z = &FieldElement::one() - &ss; // Z = 1+as^2
-        let ZZ = Z.square();
-        let u = &ZZ- &(&constants::d4 * &ss); // u = Z^2 - 4ds^2
-        let uss = &u * &ss;
-        let ussZZ = &uss * &ZZ;
+        let yden = &FieldElement::one() + &ss;
+        let ynum = &FieldElement::one() - &ss;
+        let yden_sqr = yden.square();
+        let xden_sqr = &(&(-&constants::d) * &ynum.square()) - &yden_sqr;
 
-        if Z.is_zero() == 1u8 { return None; }
+        let (ok, invsqrt) = (&xden_sqr * &yden_sqr).invsqrt();
 
-        // Batch inversion: set b = 1/sqrt(us^2 Z^2)
-        let (ussZZ_is_nonzero_square, b) = ussZZ.invsqrt();
-        if (ussZZ_is_nonzero_square | uss.is_zero()) == 0u8 {
-            return None; // us^2 is nonzero nonsquare
-        }
+        let xden_inv = &invsqrt * &yden;
+        let yden_inv = &invsqrt * &(&xden_inv * &xden_sqr);
 
-        let mut v = &b * &Z; // now v = 1/sqrt(us^2)
-        let Zinv = &b * &(&v * &uss); // now Zinv = b^2 Z us^2 = 1/Z
+        let mut x = &(&s + &s) * &xden_inv;
+        let x_is_negative = x.is_negative_ed25519();
+        x.conditional_negate(x_is_negative);
+        let y = &ynum * &yden_inv;
 
-        // Now v = 1/sqrt(us^2) if us^2 is a nonzero square, 0 if us^2 is zero.
-        let uv = &v * &u;
-        if uv.is_negative_decaf() == 1u8 {
-            v.negate();
-        }
-        let mut two_minus_Z = -&Z; two_minus_Z.0[0] += 2;
-        let mut w = &v * &(&s * &two_minus_Z);
-        w.conditional_assign(&FieldElement::one(), s.is_zero());
-        let Y = &w * &Z;
-        let T = &w * &X;
+        let t = &x * &y;
 
-        // "To decode the point, one must decode it to affine form
-        // instead of projective, and check that xy is non-negative."
-
-        // Use the value of 1/Z previously computed in the batch inversion
-        let xy = &T * &Zinv;
-        if (Y.is_nonzero() & xy.is_nonnegative_decaf()) == 1u8 {
-            Some(RistrettoPoint(ExtendedPoint{ X: X, Y: Y, Z: Z, T: T }))
+        if ok == 0u8 || t.is_negative_ed25519() == 1u8 || x.is_zero() == 1u8 {
+            return None;
         } else {
-            None
+            return Some(RistrettoPoint(ExtendedPoint{
+                X: x, Y: y, Z: FieldElement::one(), T: t
+            }));
         }
     }
 }
 
 impl Identity for CompressedRistretto {
     fn identity() -> CompressedRistretto {
-        CompressedRistretto([0u8; 32])
+        // After tweaking Decaf to Ristretto, the identity compresses as -1 :(
+        CompressedRistretto([0xec, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f])
     }
 }
 
@@ -191,151 +194,43 @@ pub struct RistrettoPoint(pub ExtendedPoint);
 impl RistrettoPoint {
     /// Compress in Ristretto format.
     pub fn compress(&self) -> CompressedRistretto {
-        // Q: Do we want to encode twisted or untwisted?
-        //
-        // Notes:
-        // Recall that the twisted Edwards curve E_{a,d} is of the form
-        //
-        //     ax^2 + y^2 = 1 + dx^2y^2.
-        //
-        // Internally, we operate on the curve with a = -1, d =
-        // -121665/121666, a.k.a., the twist.  But maybe we would like
-        // to use Ristretto on the untwisted curve with a = 1, d =
-        // 121665/121666.  (why? interop?)
-        //
-        // Fix i, a square root of -1 (mod p).
-        //
-        // The map x -> ix is an isomorphism from E_{a,d} to E_{-a,-d}.
-        // Its inverse is x -> -ix.
-        // let untwisted_X = &self.X * &constants::MSQRT_M1;
-        // etc.
-        //
-        // Step 0: pre-rotation, needed for Ristretto with E[8] = Z/8.
-        //
-        // We want to select a point (x,y) in the coset P + E[4] with
-        // y nonzero and xy nonnegative.  The naive approach is as
-        // follows.  First, compute xy = T/Z and check that Y is
-        // nonzero and xy is nonnegative.  If not, then "rotate" the
-        // original point by adding (x,y) + (i,0) = (iy,ix) = (x',y'):
-        // this rotated point has x'y' = -xy.  Then perform the normal
-        // Decaf encoding, as described in Appendix A.1 of the Decaf
-        // paper, using the rotated point (x',y').
-        //
-        // This is straightforward but requires an extra inversion.
-        // We would like to batch the inversion in xy = T/Z with the
-        // inverse square root in the computation of
-        //
-        //   r = invsqrt((a-d)*(Z+Y)*(Z-Y))
-        //     = invsqrt(a-d)*invsqrt(Z^2-Y^2),
-        //
-        // but the X and Y we are trying to decode depend on whether
-        // we rotated the coset representative!
-        //
-        // However, it is possible to batch these inversions.  Credit:
-        // the following explanation (and trick) is adapted from an
-        // email from Mike Hamburg, but of course any errors are ours.
-        //
-        // Let the initial point be  ( X_0 :  Y_0 : Z_0 :  T_0).
-        // The rotated point is then (iY_0 : iX_0 : Z_0 : -T_0).
-        //
-        // We want to relate the computation of:
-        //
-        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 - Y_0^2)  [non-rotated]
-        //   invsqrt(Z^2 - Y^2) = invsqrt(Z_0^2 + X_0^2)  [rotated]
-        //
-        // The curve equation in extended coordinates is
-        //
-        //   0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*X^2*Y^2,
-        //
-        // so
-        //                0 = (-X^2 + Y^2)*Z^2 - Z^4 - d*T^2*Z^2         since XY=TZ
-        //                  = (-X^2 + Y^2 - Z^2 - d*T^2)*Z^2
-        //                  = ( X^2 - Y^2 + Z^2 + d*T^2)*Z^2             mult by -1
-        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 + d*T^2)*Z^2 - T^2*Z^2    sub T^2*Z^2
-        //         -T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2 + d*T^2*Z^2
-        //   (-1-d)*T^2*Z^2 = (X^2 - Y^2 + Z^2 - T^2)*Z^2
-        //
-        // for any point (X:Y:Z:T) in extended coordinates.  Therefore,
-        //
-        //   (Z^2 - Y^2)*(Z^2 + X^2) = Z^4 + Z^2*X^2 - Y^2*Z^2 - Y^2*X^2
-        //                           = Z^4 + Z^2*X^2 - Y^2*Z^2 - T^2*Z^2    since XY=TZ
-        //                           = Z^2*(X^2 - Y^2 + Z^2 - T^2)
-        //                           = (-1-d)*T^2*Z^2.
-        //
-        // Taking square roots of both sides and rearranging, we get
-        //
-        //   invsqrt(Z^2 - Y^2) = invsqrt(-1-d)*(Z^2+X^2)*(1/TZ)*invsqrt(Z^2+X^2)
-        //                        `-----------'           `---------------------'
-        //                        curve constant           batchable
-        //
-        // for any point (X:Y:Z:T) in extended coordinates.
-        //
-        // Therefore, we can do the computation with only one inverse
-        // square root like so:
-        //
-        // W <--- invsqrt((T_0 * Z_0)^2 * (Z_0^2+X_0^2))
-        //     =  1/(T_0 * Z_0 * sqrt(Z_0^2 + X_0^2))
-        //
-        // xy <--- T_0^2 * W^2 * (T_0 * Z_0) * (Z_0^2 + X_0^2)
-        //      =  T_0 / Z_0 = xy
-        //
-        // if Y_0 nonzero and xy nonnegative:
-        //   (X : Y : Z : T) <--- (X_0 : Y_0 : Z_0 : T_0)
-        //   r <--- (1/(-1-d)) * (Z_0^2 + X_0^2) * W
-        //       =  invsqrt(a-d) * invsqrt(Z_0^2 - Y_0^2)    since a = -1
-        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
-        // otherwise:
-        //   (X : Y : Z : T) <--- (i*Y_0 : i*X_0 : Z_0 : -T_0)
-        //   r <--- invsqrt(a-d) * (T_0 * Z_0) * W
-        //       =  invsqrt(a-d) * invsqrt(Z_0^2 + X_0^2)
-        //       =  invsqrt(a-d) * invsqrt(Z^2 - Y^2)
-        //
-        // The rest of the compression follows the steps in the
-        // appendix of the Decaf paper.
-
         let mut X = self.0.X;
         let mut Y = self.0.Y;
-        let mut T = self.0.T;
         let Z = &self.0.Z;
+        let T = &self.0.T;
 
-        let TZ = &T * Z;
-        let ZZ_plus_XX = &Z.square() + &X.square();
-        let tmp = &TZ.square() * &ZZ_plus_XX;
-        let (tmp_is_nonzero_square, W) = tmp.invsqrt();
-        // tmp should always be a square (why? related to being in the
-        // image of the isogeny?)
-        debug_assert_eq!(tmp_is_nonzero_square | tmp.is_zero(), 1u8);
+        println!("{:?}", self);
+        println!("Z = {:?}", self.0.Z);
+        println!("Y = {:?}", self.0.Y);
 
-        let xy = &T.square() * &(&W.square() * &(&TZ * &ZZ_plus_XX));
-        let rotate = 1u8 & !(Y.is_nonzero() & xy.is_nonnegative_decaf());
-
-        let mut r = &W * &(&ZZ_plus_XX * &constants::inv_a_minus_d);
-        let r_rot = &W * &(&TZ * &constants::invsqrt_a_minus_d);
+        let u1 = &(Z + &Y) * &(Z - &Y);
+        let u2 = &X * &Y;
+        // Ignore return value since this is always square
+        let (_, invsqrt) = (&u1 * &u2.square()).invsqrt();
+        let i1 = &invsqrt * &u1;
+        let i2 = &invsqrt * &u2;
+        let z_inv = &i1 * &(&i2 * T);
+        let mut den_inv = i2;
 
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
+        let ristretto_magic = &constants::invsqrt_a_minus_d;
+        let enchanted_denominator = &i1 * ristretto_magic;
 
-        r.conditional_assign(&r_rot, rotate);
-        X.conditional_assign(&iY,    rotate);
-        Y.conditional_assign(&iX,    rotate);
-        T.conditional_negate(rotate);
+        let rotate = (T * &z_inv).is_negative_ed25519();
 
-        // Step 2: Compute u = (a-d)r
-        let u = &constants::a_minus_d * &r;
+        X.conditional_assign(&iY, rotate);
+        Y.conditional_assign(&iX, rotate);
+        den_inv.conditional_assign(&enchanted_denominator, rotate);
 
-        // Step 3: Negate r if -2uZ is negative.
-        let uZ = &u * Z;
-        let m2uZ = -&(&uZ + &uZ);
-        r.conditional_negate(m2uZ.is_negative_decaf());
+        Y.conditional_negate((&X * &z_inv).is_negative_ed25519());
 
-        // Step 4: Compute s = | u(r(aZX - dYT)+Y)/a|
-        //                   = |u(r(-ZX - dYT)+Y)| since a = -1
-        let minus_ZX = -&(Z * &X);
-        let dYT = &constants::d * &(&Y * &T);
-        // Compute s = u(r(aZX - dYT)+Y) and cnegate for abs
-        let mut s = &u * &(&(&r * &(&minus_ZX - &dYT)) + &Y);
-        let neg = s.is_negative_decaf();
-        s.conditional_negate(neg);
+        let mut s = &den_inv * &(Z - &Y);
+        let s_is_zero = s.is_zero();
+        s.conditional_assign(&FieldElement::one(), s_is_zero);
+        let s_is_negative = s.is_negative_ed25519();
+        s.conditional_negate(s_is_negative);
+
         CompressedRistretto(s.to_bytes())
     }
 
@@ -757,7 +652,13 @@ mod test {
     fn decompress_id() {
         let compressed_id = CompressedRistretto::identity();
         let id = compressed_id.decompress().unwrap();
-        assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
+        let mut identity_in_coset = false;
+        for P in &id.coset4() {
+            if P.compress() == CompressedEdwardsY::identity() {
+                identity_in_coset = true;
+            }
+        }
+        assert!(identity_in_coset);
     }
 
     #[test]
@@ -776,6 +677,8 @@ mod test {
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 
+    /*
+    // XXX replace these with ristretto encodings from the python implementation
     #[test]
     fn encodings_of_small_multiples_of_basepoint() {
         // Table of encodings of (1+i)*basepoint
@@ -804,6 +707,7 @@ mod test {
             bp = &bp + &constants::RISTRETTO_BASEPOINT_POINT;
         }
     }
+    */
 
     #[test]
     fn four_torsion_basepoint() {

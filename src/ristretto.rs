@@ -186,23 +186,85 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 // Internal point representations
 // ------------------------------------------------------------------------
 
-/// A point in a prime-order group.
+/// A `RistrettoPoint` represents a point in the Ristretto group for
+/// Curve25519.  Ristretto, a variant of Decaf, constructs a
+/// prime-order group as a quotient group of a subgroup of (the
+/// Edwards form of) Curve25519.
 ///
-/// XXX think about how this API should work
+/// Internally, a `RistrettoPoint` is a wrapper type around
+/// `ExtendedPoint`, with custom equality, compression, and
+/// decompression routines to account for the quotient.
 #[derive(Copy, Clone)]
 pub struct RistrettoPoint(pub ExtendedPoint);
 
 impl RistrettoPoint {
     /// Compress in Ristretto format.
+    ///
+    /// # Implementation Notes
+    ///
+    /// The Ristretto encoding is as follows, on input in affine coordinates `(x,y)`:
+    ///
+    /// 1.  If `xy` is negative or `x = 0`, "rotate" the point by
+    /// setting `(x,y) = (iy, ix)`.
+    /// 2.  If `x` is negative, set `(x,y) = (-x, -y)`.
+    /// 3.  Compute `s = +sqrt((1-y)/(1+y))`.
+    /// 4.  Return the little-endian 32-byte encoding of `s`.
+    ///
+    /// However, our input is in extended twisted Edwards coordinates
+    /// `(X:Y:Z:T)` with `x = X/Z`, `y = Y/Z`, `xy = T/Z` (see the
+    /// module-level documentation on curve representations for more
+    /// details).  Since inversions are expensive, we'd like to be
+    /// able to do this whole computation with only one inversion.
+    ///
+    /// Since `y = Y/Z`, in extended coordinates the formula for `s` becomes
+    ///
+    ///     s = sqrt((1 - Y/Z)/(1 + Y/Z)) = sqrt((Z-Y)/(Z+Y)).  <span style="float: right">(1)</span>
+    ///
+    /// We can compute this as
+    ///
+    ///     s = (Z - Y) / sqrt((Z-Y)(Z+Y)).  <span style="float: right">(1)</span>
+    ///
+    /// The denominator is 
+    ///
+    ///      invsqrt((Z-Y)(Z+Y)) = invsqrt(Z² - Y²).  <span style="float: right">(1)</span>
+    ///
+    /// Write the input point as `(X₀:Y₀:Z₀:T₀)`.  The rotation in
+    /// step 1 of the encoding procedure replaces `(X₀:Y₀:Z₀:T₀)` by
+    /// `(iY₀:iX₀:Z₀:-T₀)`.  We therefore wish to relate the
+    /// computation of
+    ///
+    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² - Y₀²)  [non-rotated case]
+    ///
+    /// with the computation of
+    ///
+    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² + X₀²).  [rotated case]
+    ///
+    /// Recall the curve equation (in the 𝗣² model):
+    ///
+    ///     (-X² + Y²)Z² = Z⁴ + dX²Y².  <span style="float: right">(1)</span>
+    ///
+    /// This means that, for any point `(X:Y:Z:T)` in extended coordinates, we have
+    ///
+    ///     -dX²Y² = Z⁴ + Z²X² - Z²Y²,  <span style="float: right">(2)</span>
+    ///
+    /// so that 
+    ///
+    ///     (-1-d)X²Y² = Z⁴ + Z²X² - Z²Y² - X²Y²,  <span style="float: right">(3)</span>
+    ///
+    /// and hence
+    ///
+    ///     (-1-d)X²Y² = (Z² - Y²)(Z² + X²).  <span style="float: right">(4)</span>
+    ///
+    /// Taking inverse square roots gives
+    ///
+    ///     invsqrt(Z² + X²) = invsqrt(-1-d) sqrt((Z² - Y²)/(X²Y²)). <span style="float: right">(4)</span>
+    /// 
+    ///
     pub fn compress(&self) -> CompressedRistretto {
         let mut X = self.0.X;
         let mut Y = self.0.Y;
         let Z = &self.0.Z;
         let T = &self.0.T;
-
-        println!("{:?}", self);
-        println!("Z = {:?}", self.0.Z);
-        println!("Y = {:?}", self.0.Y);
 
         let u1 = &(Z + &Y) * &(Z - &Y);
         let u2 = &X * &Y;

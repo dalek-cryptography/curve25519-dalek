@@ -66,6 +66,11 @@ extern crate alloc;
 // Modules for low-level operations directly on field elements and curve points.
 
 pub mod field;
+#[cfg(not(feature="radix_51"))]
+mod field_32bit;
+#[cfg(feature="radix_51")]
+mod field_64bit;
+
 pub mod scalar;
 pub mod curve;
 
@@ -80,3 +85,7 @@ pub mod utils;
 // Low-level curve and point constants, as well as pre-computed curve group elements.
 
 pub mod constants;
+#[cfg(not(feature="radix_51"))]
+mod constants_32bit;
+#[cfg(feature="radix_51")]
+mod constants_64bit;

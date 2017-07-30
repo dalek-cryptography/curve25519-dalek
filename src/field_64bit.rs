@@ -23,18 +23,11 @@ use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
 use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::ops::{Index, IndexMut};
-use core::cmp::{Eq, PartialEq};
 use core::ops::Neg;
 
-use subtle::arrays_equal;
-use subtle::byte_is_nonzero;
 use subtle::CTAssignable;
-use subtle::CTEq;
 
 use utils::load8;
-
-use constants;
 
 /// In the 64-bit implementation, field elements are represented in
 /// radix 2^51 as five `u64`s.

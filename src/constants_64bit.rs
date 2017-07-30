@@ -22,11 +22,7 @@
 use field_64bit::FieldElement64;
 use curve::ExtendedPoint;
 use curve::AffineNielsPoint;
-use curve::CompressedEdwardsY;
 use curve::EdwardsBasepointTable;
-#[cfg(feature = "yolocrypto")]
-use decaf::{DecafPoint, DecafBasepointTable};
-use scalar::Scalar;
 
 pub const p: FieldElement64 = FieldElement64([2251799813685229, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]);
 

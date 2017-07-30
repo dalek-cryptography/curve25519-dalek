@@ -20,13 +20,7 @@
 //! and implements functions that are generic with respect to the
 //! basic operations, such as inverses and square roots.
 
-use core::fmt::Debug;
-use core::ops::{Add, AddAssign};
-use core::ops::{Sub, SubAssign};
-use core::ops::{Mul, MulAssign};
-use core::ops::{Index, IndexMut};
 use core::cmp::{Eq, PartialEq};
-use core::ops::Neg;
 
 use subtle::arrays_equal;
 use subtle::byte_is_nonzero;

@@ -19,11 +19,7 @@
 #![allow(missing_docs)]
 #![allow(non_snake_case)]
 
-use field::FieldElement;
-use curve::ExtendedPoint;
-use curve::AffineNielsPoint;
 use curve::CompressedEdwardsY;
-use curve::EdwardsBasepointTable;
 #[cfg(feature = "yolocrypto")]
 use decaf::{DecafPoint, DecafBasepointTable};
 use scalar::Scalar;

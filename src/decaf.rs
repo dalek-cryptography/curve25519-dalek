@@ -40,7 +40,6 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 use curve;
-use curve::ValidityCheck;
 use curve::ExtendedPoint;
 use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
@@ -704,6 +703,7 @@ mod test {
     use constants;
     use curve::CompressedEdwardsY;
     use curve::Identity;
+    use curve::ValidityCheck;
     use super::*;
 
     #[cfg(feature = "serde")]

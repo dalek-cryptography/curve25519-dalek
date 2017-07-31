@@ -683,12 +683,12 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b DecafPoint>
     {
         let extended_points = points.into_iter().map(|P| &P.0);
-        DecafPoint(curve::vartime::k_fold_scalar_mult(scalars, extended_points))
+        DecafPoint(curve::vartime::multiscalar_mult(scalars, extended_points))
     }
 }
 

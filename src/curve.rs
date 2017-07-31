@@ -935,14 +935,14 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 /// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
 ///
 /// This function has the same behaviour as
-/// `vartime::k_fold_scalar_mult` but is constant-time.
+/// `vartime::multiscalar_mult` but is constant-time.
 ///
 /// # Input
 ///
 /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
 /// error to call this function with two vectors of different lengths.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
             J: IntoIterator<Item = &'b ExtendedPoint>
 {
@@ -1281,7 +1281,7 @@ pub mod vartime {
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b ExtendedPoint>
     {
@@ -1713,9 +1713,9 @@ mod test {
         }
 
         #[test]
-        fn k_fold_scalar_mult_vs_ed25519py() {
+        fn multiscalar_mult_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::k_fold_scalar_mult(
+            let result = vartime::multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT]
             );
@@ -1723,13 +1723,13 @@ mod test {
         }
 
         #[test]
-        fn k_fold_scalar_mult_vartime_vs_consttime() {
+        fn multiscalar_mult_vartime_vs_consttime() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result_vartime = vartime::k_fold_scalar_mult(
+            let result_vartime = vartime::multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT]
             );
-            let result_consttime = k_fold_scalar_mult(
+            let result_consttime = multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT]
             );
@@ -1871,7 +1871,7 @@ mod bench {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
 
-        b.iter(|| k_fold_scalar_mult(&scalars, &points));
+        b.iter(|| multiscalar_mult(&scalars, &points));
     }
 
     mod vartime {
@@ -1900,7 +1900,7 @@ mod bench {
             //
             // Since this is a variable-time function, this means the
             // benchmark is only useful as a ballpark measurement.
-            b.iter(|| vartime::k_fold_scalar_mult(&scalars, &points));
+            b.iter(|| vartime::multiscalar_mult(&scalars, &points));
         }
     }
 }

@@ -948,14 +948,6 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
 {
     //assert_eq!(scalars.len(), points.len());
 
-    // Setting s_i = i-th scalar, compute
-    //
-    //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
-    //
-    // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_list: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16()).collect();
-
     let lookup_tables: Vec<_> = points.into_iter()
         .map(|P_i| {
             // Construct a lookup table of [P_i,2*P_i,3*P_i,4*P_i,5*P_i,6*P_i,7*P_i]
@@ -966,6 +958,14 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
             }
             lookup_table
         }).collect();
+
+    // Setting s_i = i-th scalar, compute
+    //
+    //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
+    //
+    // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
+    let scalar_digits_list: Vec<_> = scalars.into_iter()
+        .map(|c| c.to_radix_16()).collect();
 
     // Compute s_1*P_1 + ... + s_n*P_n: since
     //

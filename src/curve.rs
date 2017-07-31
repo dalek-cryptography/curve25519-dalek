@@ -944,12 +944,15 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
-            J: IntoIterator<Item = &'b ExtendedPoint>
+          I::IntoIter: ExactSizeIterator,
+          J: IntoIterator<Item = &'b ExtendedPoint>,
+          J::IntoIter: ExactSizeIterator,
 {
-    //assert_eq!(scalars.len(), points.len());
+    let scalars_iter = scalars.into_iter();
+    let points_iter = points.into_iter();
+    assert_eq!(scalars_iter.len(), points_iter.len());
 
-    let lookup_tables: Vec<_> = points.into_iter()
-        .map(|P_i| {
+    let lookup_tables: Vec<_> = points_iter.map(|P_i| {
             // Construct a lookup table of [P_i,2*P_i,3*P_i,4*P_i,5*P_i,6*P_i,7*P_i]
             let mut lookup_table = [P_i.to_projective_niels(); 8];
             for j in 0..7 {
@@ -964,8 +967,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_list: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16()).collect();
+    let scalar_digits_list: Vec<_> = scalars_iter.map(|c| c.to_radix_16()).collect();
 
     // Compute s_1*P_1 + ... + s_n*P_n: since
     //
@@ -1283,15 +1285,18 @@ pub mod vartime {
     /// error to call this function with two vectors of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b ExtendedPoint>
+        where
+            I: IntoIterator<Item = &'a Scalar>,
+            I::IntoIter: ExactSizeIterator,
+            J: IntoIterator<Item = &'b ExtendedPoint>,
+            J::IntoIter: ExactSizeIterator,
     {
-        //assert_eq!(scalars.len(), points.len());
+        let scalars_iter = scalars.into_iter();
+        let points_iter = points.into_iter();
+        assert_eq!(scalars_iter.len(), points_iter.len());
 
-        let nafs: Vec<_> = scalars.into_iter()
-            .map(|c| c.non_adjacent_form()).collect();
-        let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| OddMultiples::create(P)).collect();
+        let nafs: Vec<_> = scalars_iter.map(|c| c.non_adjacent_form()).collect();
+        let odd_multiples: Vec<_> = points_iter.map(|P| OddMultiples::create(P)).collect();
 
         let mut r = ProjectivePoint::identity();
 
@@ -1701,6 +1706,15 @@ mod test {
         assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
+    #[test]
+    #[should_panic]
+    fn multiscalar_mult_with_wrong_sized_arguments() {
+        let result = multiscalar_mult(
+            &[A_SCALAR, B_SCALAR],
+            &[constants::ED25519_BASEPOINT],
+        );
+    }
+
     mod vartime {
         use super::super::*;
         use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
@@ -1711,6 +1725,15 @@ mod test {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
+        }
+
+        #[test]
+        #[should_panic]
+        fn multiscalar_mult_with_wrong_sized_arguments() {
+            let result = vartime::multiscalar_mult(
+                &[A_SCALAR, B_SCALAR],
+                &[constants::ED25519_BASEPOINT],
+            );
         }
 
         #[test]

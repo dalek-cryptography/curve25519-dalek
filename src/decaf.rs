@@ -577,6 +577,26 @@ impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
     }
 }
 
+/// Given a vector of (possibly secret) scalars and a vector of
+/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+///
+/// This function has the same behaviour as
+/// `vartime::multiscalar_mult` but is constant-time.
+///
+/// # Input
+///
+/// A vector of `Scalar`s and a vector of `DecafPoints`.  It is an
+/// error to call this function with two vectors of different lengths.
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
+    where I: IntoIterator<Item = &'a Scalar>,
+          I::IntoIter: ExactSizeIterator,
+          J: IntoIterator<Item = &'b DecafPoint>,
+          J::IntoIter: ExactSizeIterator,
+{
+    let extended_points = points.into_iter().map(|P| &P.0);
+    DecafPoint(curve::multiscalar_mult(scalars, extended_points))
+}
 
 /// Precomputation
 #[derive(Clone)]
@@ -685,7 +705,9 @@ pub mod vartime {
     /// error to call this function with two vectors of different lengths.
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
         where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b DecafPoint>
+              I::IntoIter: ExactSizeIterator,
+              J: IntoIterator<Item = &'b DecafPoint>,
+              J::IntoIter: ExactSizeIterator,
     {
         let extended_points = points.into_iter().map(|P| &P.0);
         DecafPoint(curve::vartime::multiscalar_mult(scalars, extended_points))

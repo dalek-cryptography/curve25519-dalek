@@ -202,12 +202,18 @@ impl<'a, 'b> Mul<&'b FieldElement> for &'a FieldElement {
         let a: &[u64; 5] = &self.0;
         let b: &[u64; 5] = &_rhs.0;
 
+        // 64-bit precomputations
+        let b1_19 = b[1] * 19;
+        let b2_19 = b[2] * 19;
+        let b3_19 = b[3] * 19;
+        let b4_19 = b[4] * 19;
+
         // Multiply to get 128-bit coefficients of output
-        let     c0: u128 = m(a[0],b[0]) + ( m(a[4],b[1]) +   m(a[3],b[2]) +   m(a[2],b[3]) +   m(a[1],b[4]) )*19;
-        let mut c1: u128 = m(a[1],b[0]) +   m(a[0],b[1]) + ( m(a[4],b[2]) +   m(a[3],b[3]) +   m(a[2],b[4]) )*19;
-        let mut c2: u128 = m(a[2],b[0]) +   m(a[1],b[1]) +   m(a[0],b[2]) + ( m(a[4],b[3]) +   m(a[3],b[4]) )*19;
-        let mut c3: u128 = m(a[3],b[0]) +   m(a[2],b[1]) +   m(a[1],b[2]) +   m(a[0],b[3]) + ( m(a[4],b[4]) )*19;
-        let mut c4: u128 = m(a[4],b[0]) +   m(a[3],b[1]) +   m(a[2],b[2]) +   m(a[1],b[3]) +   m(a[0],b[4]);
+        let     c0: u128 = m(a[0],b[0]) + m(a[4],b1_19) + m(a[3],b2_19) + m(a[2],b3_19) + m(a[1],b4_19);
+        let mut c1: u128 = m(a[1],b[0]) + m(a[0],b[1])  + m(a[4],b2_19) + m(a[3],b3_19) + m(a[2],b4_19);
+        let mut c2: u128 = m(a[2],b[0]) + m(a[1],b[1])  + m(a[0],b[2])  + m(a[4],b3_19) + m(a[3],b4_19);
+        let mut c3: u128 = m(a[3],b[0]) + m(a[2],b[1])  + m(a[1],b[2])  + m(a[0],b[3])  + m(a[4],b4_19);
+        let mut c4: u128 = m(a[4],b[0]) + m(a[3],b[1])  + m(a[2],b[2])  + m(a[1],b[3])  + m(a[0],b[4]);
 
         // Now c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
         // where b is the bitlength of the input limbs.

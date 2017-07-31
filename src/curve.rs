@@ -987,6 +987,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     // mults: we perform 63 multiplications by 16 instead of 63*n
     // multiplications, saving 252*(n-1) doublings.
     let mut Q = ExtendedPoint::identity();
+    // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
         Q = Q.mult_by_pow_2(4);
         let it = scalar_digits_list.iter().zip(lookup_tables.iter());

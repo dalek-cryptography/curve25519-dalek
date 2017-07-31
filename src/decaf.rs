@@ -40,7 +40,6 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 use curve;
-use curve::ValidityCheck;
 use curve::ExtendedPoint;
 use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
@@ -100,7 +99,7 @@ impl CompressedDecaf {
         if uv.is_negative_decaf() == 1u8 {
             v.negate();
         }
-        let mut two_minus_Z = -&Z; two_minus_Z[0] += 2;
+        let mut two_minus_Z = -&Z; two_minus_Z.0[0] += 2;
         let mut w = &v * &(&s * &two_minus_Z);
         w.conditional_assign(&FieldElement::one(), s.is_zero());
         let Y = &w * &Z;
@@ -704,6 +703,7 @@ mod test {
     use constants;
     use curve::CompressedEdwardsY;
     use curve::Identity;
+    use curve::ValidityCheck;
     use super::*;
 
     #[cfg(feature = "serde")]

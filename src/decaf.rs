@@ -40,7 +40,6 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 use curve;
-use curve::ValidityCheck;
 use curve::ExtendedPoint;
 use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
@@ -100,7 +99,7 @@ impl CompressedDecaf {
         if uv.is_negative_decaf() == 1u8 {
             v.negate();
         }
-        let mut two_minus_Z = -&Z; two_minus_Z[0] += 2;
+        let mut two_minus_Z = -&Z; two_minus_Z.0[0] += 2;
         let mut w = &v * &(&s * &two_minus_Z);
         w.conditional_assign(&FieldElement::one(), s.is_zero());
         let Y = &w * &Z;
@@ -577,6 +576,24 @@ impl<'a, 'b> Mul<&'b DecafPoint> for &'a Scalar {
     }
 }
 
+/// Given a vector of (possibly secret) scalars and a vector of
+/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+///
+/// This function has the same behaviour as
+/// `vartime::multiscalar_mult` but is constant-time.
+///
+/// # Input
+///
+/// A vector of `Scalar`s and a vector of `DecafPoints`.  It is an
+/// error to call this function with two vectors of different lengths.
+#[cfg(any(feature = "alloc", feature = "std"))]
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
+    where I: IntoIterator<Item = &'a Scalar>,
+          J: IntoIterator<Item = &'b DecafPoint>,
+{
+    let extended_points = points.into_iter().map(|P| &P.0);
+    DecafPoint(curve::multiscalar_mult(scalars, extended_points))
+}
 
 /// Precomputation
 #[derive(Clone)]
@@ -683,12 +700,12 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    pub fn k_fold_scalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b DecafPoint>
     {
         let extended_points = points.into_iter().map(|P| &P.0);
-        DecafPoint(curve::vartime::k_fold_scalar_mult(scalars, extended_points))
+        DecafPoint(curve::vartime::multiscalar_mult(scalars, extended_points))
     }
 }
 
@@ -704,6 +721,7 @@ mod test {
     use constants;
     use curve::CompressedEdwardsY;
     use curve::Identity;
+    use curve::ValidityCheck;
     use super::*;
 
     #[cfg(feature = "serde")]

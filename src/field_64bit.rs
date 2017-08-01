@@ -25,7 +25,7 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
 
-use subtle::CTAssignable;
+use subtle::ConditionallyAssignable;
 
 use utils::load8;
 
@@ -166,7 +166,7 @@ impl<'a> Neg for &'a FieldElement64 {
     }
 }
 
-impl CTAssignable for FieldElement64 {
+impl ConditionallyAssignable for FieldElement64 {
     fn conditional_assign(&mut self, f: &FieldElement64, choice: u8) {
         let mask = (-(choice as i64)) as u64;
         for i in 0..5 {

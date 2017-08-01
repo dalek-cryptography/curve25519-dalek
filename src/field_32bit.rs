@@ -44,6 +44,19 @@ use utils::{load3, load4};
 /// The coefficients t[i] are allowed to grow between multiplications.
 ///
 /// XXX document by how much
+///
+/// # Warning
+///
+/// You almost certainly do not want to use `FieldElement32` directly.  Consider
+/// using `curve25519_dalek::field::FieldElement`, which will automatically
+/// select between `FieldElement32` and `FieldElement64` depending on whether
+/// curve25519-dalek was compiled with `--features="nightly"`.
+///
+/// This implementation, `FieldElement32`, is intended for platforms that can
+/// multiply 32-bit inputs to produce 64-bit outputs, and is not preferred for
+/// use on x86_64, since the 64-bit implementation is both much simpler and much
+/// faster.  However, the `FieldElement64` implementation requires Rust's
+/// `u128`, which is not yet stable.
 #[derive(Copy, Clone)]
 pub struct FieldElement32(pub [i32; 10]);
 

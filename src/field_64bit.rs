@@ -38,6 +38,20 @@ pub type Limb = u64;
 /// In the 64-bit implementation, a `FieldElement` is represented in
 /// radix 2^51 as five `u64`s; the coefficients are allowed to grow up
 /// to 2^54 between reductions mod `p`.
+///
+/// # Warning
+///
+/// You almost certainly do not want to use `FieldElement64` directly.  Consider
+/// using `curve25519_dalek::field::FieldElement`, which will automatically
+/// select between `FieldElement32` and `FieldElement64` depending on whether
+/// curve25519-dalek was compiled with `--features="nightly"`.
+///
+/// This implementation, `FieldElement64`, is intended for x64_64 platforms,
+/// which have the `MUL` instructions taking 64-bit inputs and producing 128-bit
+/// outputs.  On other platforms, this implementation is not recommended.  On
+/// Haswell and newer, the BMI2 instruction set provides `MULX` and friends,
+/// which gives even better performance.  This implementation requires Rust's
+/// `u128`, which is not yet stable.
 #[derive(Copy, Clone)]
 pub struct FieldElement64(pub [u64; 5]);
 

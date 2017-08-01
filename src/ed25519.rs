@@ -8,7 +8,8 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 
-//! A Rust implementation of ed25519 key generation, signing, and verification.
+//! A Rust implementation of ed25519 EdDSA key generation, signing, and
+//! verification.
 
 use core::fmt::Debug;
 
@@ -25,17 +26,24 @@ use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::subtle::arrays_equal_ct;
 
-/// The length of an ed25519 `Signature`, in bytes.
+/// The length of an ed25519 EdDSA `Signature`, in bytes.
 pub const SIGNATURE_LENGTH: usize = 64;
 
-/// An ed25519 signature.
+/// The length of an ed25519 EdDSA `SecretKey`, in bytes.
+pub const SECRET_KEY_LENGTH: usize = 32;
+
+/// The length of an ed25519 EdDSA `PublicKey`, in bytes.
+pub const PUBLIC_KEY_LENGTH: usize = 32;
+
+/// An EdDSA signature.
 ///
 /// # Note
 ///
-/// These signatures, unlike the ed25519 reference implementation, are
-/// "detached"—that is, they do **not** include a copy of the message which
-/// has been signed.
+/// These signatures, unlike the ed25519 signature reference implementation, are
+/// "detached"—that is, they do **not** include a copy of the message which has
+/// been signed.
 #[derive(Copy)]
+#[repr(C)]
 pub struct Signature(pub [u8; SIGNATURE_LENGTH]);
 
 impl Clone for Signature {
@@ -44,17 +52,13 @@ impl Clone for Signature {
 
 impl Debug for Signature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Signature: {:?}", &self.0[..])
+        write!(f, "Signature([{:?}])", &self.0[..])
     }
 }
 
 impl Eq for Signature {}
 
 impl PartialEq for Signature {
-    /// # Note
-    ///
-    /// This function happens to be constant time, even though that is not
-    /// really necessary.
     fn eq(&self, other: &Signature) -> bool {
         let mut equal: u8 = 0;
 
@@ -71,10 +75,16 @@ impl PartialEq for Signature {
 }
 
 impl Signature {
-    /// View this signature as an array of 64 bytes.
+    /// View this `Signature` as a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
         self.0
+    }
+
+    /// View this `Signature` as a byte array.
+    #[inline]
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; SIGNATURE_LENGTH] {
+        &self.0
     }
 
     /// Construct a `Signature` from a slice of bytes.
@@ -84,8 +94,9 @@ impl Signature {
     }
 }
 
-/// An ed25519 private key.
-pub struct SecretKey(pub [u8; 64]);
+/// An EdDSA secret key.
+#[repr(C)]
+pub struct SecretKey(pub [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -94,99 +105,117 @@ impl Debug for SecretKey {
 }
 
 impl SecretKey {
-    /// View this secret key as an array of 32 bytes.
+    /// Convert this secret key to a byte array.
     #[inline]
-    pub fn to_bytes(&self) -> [u8; 64] {
+    pub fn to_bytes(&self) -> [u8; SECRET_KEY_LENGTH] {
         self.0
+    }
+
+    /// View this secret key as a byte array.
+    #[inline]
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; SECRET_KEY_LENGTH] {
+        &self.0
     }
 
     /// Construct a `SecretKey` from a slice of bytes.
     ///
-    /// # Warning
-    ///
-    /// **The caller is responsible for ensuring that the bytes represent a
-    /// *masked* secret key.  If you do not understand what this means, DO NOT
-    /// USE THIS CONSTRUCTOR.**
-    ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # extern crate ed25519_dalek;
+    /// # fn main() {
     /// use ed25519_dalek::SecretKey;
+    /// use ed25519_dalek::SECRET_KEY_LENGTH;
     ///
-    /// let secret_key_bytes: [u8; 64] = [
-    ///    157,  97, 177, 157, 239, 253,  90,  96, 186, 132,  74, 244, 146, 236,  44, 196,
-    ///     68,  73, 197, 105, 123,  50, 105,  25, 112,  59, 172,   3,  28, 174, 127,  96,
-    ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
-    ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,  81,  26];
-    /// let public_key_bytes: [u8; 32] = [
-    ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
-    ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
+    /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
+    ///    157, 097, 177, 157, 239, 253, 090, 096,
+    ///    186, 132, 074, 244, 146, 236, 044, 196,
+    ///    068, 073, 197, 105, 123, 050, 105, 025,
+    ///    112, 059, 172, 003, 028, 174, 127, 096, ];
     ///
-    /// let secret_key: SecretKey = SecretKey::from_bytes(&[&secret_key_bytes[..32],
-    ///                                                     &public_key_bytes[..32]].concat()[..]);
+    /// let secret_key: SecretKey = SecretKey::from_bytes(&secret_key_bytes[..]);
+    /// # }
     /// ```
     ///
     /// # Returns
     ///
-    /// A `SecretKey`.
+    /// An EdDSA `SecretKey`.
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> SecretKey {
-        SecretKey(*array_ref!(bytes, 0, 64))
+        SecretKey(*array_ref!(bytes, 0, SECRET_KEY_LENGTH))
     }
 
-    /// Sign a message with this keypair's secret key.
-    pub fn sign<D>(&self, message: &[u8]) -> Signature
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+    /// Generate a `SecretKey` from a `csprng`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate rand;
+    /// extern crate sha2;
+    /// extern crate ed25519_dalek;
+    ///
+    /// # fn main() {
+    ///
+    /// use rand::Rng;
+    /// use rand::OsRng;
+    /// use sha2::Sha512;
+    /// use ed25519_dalek::PublicKey;
+    /// use ed25519_dalek::SecretKey;
+    /// use ed25519_dalek::Signature;
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    ///
+    /// # }
+    /// ```
+    ///
+    /// Afterwards, you can generate the corresponding public—provided you also
+    /// supply a hash function which implements the `Digest` and `Default`
+    /// traits, and which returns 512 bits of output—via:
+    ///
+    /// ```
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// # extern crate ed25519_dalek;
+    /// #
+    /// # fn main() {
+    /// #
+    /// # use rand::Rng;
+    /// # use rand::OsRng;
+    /// # use sha2::Sha512;
+    /// # use ed25519_dalek::PublicKey;
+    /// # use ed25519_dalek::SecretKey;
+    /// # use ed25519_dalek::Signature;
+    /// #
+    /// # let mut csprng: OsRng = OsRng::new().unwrap();
+    /// # let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    ///
+    /// let public_key: PublicKey = PublicKey::from_secret::<Sha512>(&secret_key);
+    /// # }
+    /// ```
+    ///
+    /// The standard hash function used for most ed25519 libraries is SHA-512,
+    /// which is available with `use sha2::Sha512` as in the example above.
+    /// Other suitable hash functions include Keccak-512 and Blake2b-512.
+    ///
+    /// # Input
+    ///
+    /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
+    /// from `rand::OsRng::new()` (in the `rand` crate).
+    ///
+    #[cfg(feature = "std")]
+    pub fn generate(csprng: &mut Rng) -> SecretKey {
+        let mut sk: SecretKey = SecretKey([0u8; 32]);
 
-        let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
-        let mut expanded_key_secret: Scalar;
-        let mesg_digest: Scalar;
-        let hram_digest: Scalar;
-        let r: ExtendedPoint;
-        let s: Scalar;
-        let t: CompressedEdwardsY;
+        csprng.fill_bytes(&mut sk.0);
 
-        let secret_key: &[u8; 32] = array_ref!(&self.0,  0, 32);
-        let public_key: &[u8; 32] = array_ref!(&self.0, 32, 32);
-
-        h.digest(secret_key);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        expanded_key_secret = Scalar(*array_ref!(&hash, 0, 32));
-        expanded_key_secret[0]  &= 248;
-        expanded_key_secret[31] &=  63;
-        expanded_key_secret[31] |=  64;
-
-        h = D::default();
-        h.digest(&hash[32..]);
-        h.digest(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        mesg_digest = Scalar::reduce(&hash);
-
-        r = &mesg_digest * &constants::ED25519_BASEPOINT;
-
-        h = D::default();
-        h.digest(&r.compress_edwards().to_bytes()[..]);
-        h.digest(public_key);
-        h.digest(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        hram_digest = Scalar::reduce(&hash);
-
-        s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
-        t = r.compress_edwards();
-
-        signature_bytes[..32].copy_from_slice(&t.0);
-        signature_bytes[32..64].copy_from_slice(&s.0);
-        Signature(*array_ref!(&signature_bytes, 0, 64))
+        sk
     }
 }
 
 /// An ed25519 public key.
 #[derive(Copy, Clone)]
+#[repr(C)]
 pub struct PublicKey(pub CompressedEdwardsY);
 
 impl Debug for PublicKey {
@@ -196,10 +225,16 @@ impl Debug for PublicKey {
 }
 
 impl PublicKey {
-    /// View this public key as an array of 32 bytes.
+    /// Convert this public key to a byte array.
     #[inline]
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_LENGTH] {
         self.0.to_bytes()
+    }
+
+    /// View this public key as a byte array.
+    #[inline]
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; PUBLIC_KEY_LENGTH] {
+        &(self.0).0
     }
 
     /// Construct a `PublicKey` from a slice of bytes.
@@ -212,15 +247,18 @@ impl PublicKey {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # extern crate ed25519_dalek;
+    /// # fn main() {
     /// use ed25519_dalek::PublicKey;
+    /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
     ///
-    /// let public_key_bytes: [u8; 32] = [
+    /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
     ///
     /// let public_key: PublicKey = PublicKey::from_bytes(&public_key_bytes);
-    ///
+    /// # }
     /// ```
     ///
     /// # Returns
@@ -235,6 +273,30 @@ impl PublicKey {
     #[inline]
     fn decompress(&self) -> Option<ExtendedPoint> {
         self.0.decompress()
+    }
+
+    /// Derive this public key from its corresponding `SecretKey`.
+    #[cfg(feature = "std")]
+    #[allow(unused_assignments)]
+    pub fn from_secret<D>(secret_key: &SecretKey) -> PublicKey
+            where D: FixedOutput<OutputSize = U64> + Default + Input {
+
+        let mut h:           D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+        let     pk:   [u8; 32];
+        let mut digest: &mut [u8; 32];
+
+        h.digest(secret_key.as_bytes());
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        digest = array_mut_ref!(&mut hash, 0, 32);
+        digest[0]  &= 248;
+        digest[31] &= 127;
+        digest[31] |= 64;
+
+        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT).compress_edwards().to_bytes();
+
+        PublicKey(CompressedEdwardsY(pk))
     }
 
     /// Verify a signature on a message with this keypair's public key.
@@ -287,6 +349,7 @@ impl PublicKey {
 
 /// An ed25519 keypair.
 #[derive(Debug)]
+#[repr(C)]
 pub struct Keypair {
     /// The public half of this keypair.
     pub public: PublicKey,
@@ -295,6 +358,29 @@ pub struct Keypair {
 }
 
 impl Keypair {
+    /// Construct a `Keypair` from the bytes of a `PublicKey` and `SecretKey`.
+    ///
+    /// # Inputs
+    ///
+    /// * `public`: a `[u8; 32]` representing the compressed Edwards-Y
+    ///    coordinate of a point on curve25519.
+    /// * `secret`: a `[u8; 32]` representing the corresponding secret key.
+    ///
+    /// # Warning
+    ///
+    /// Absolutely no validation is done on the key.  If you give this function
+    /// bytes which do not represent a valid point, or which do not represent
+    /// corresponding parts of the key, then your `Keypair` will be broken and
+    /// it will be your fault.
+    ///
+    /// # Returns
+    ///
+    /// A `Keypair`.
+    pub fn from_bytes<'a>(public: &'a [u8; 32], secret: &'a [u8; 32]) -> Keypair {
+        Keypair{ public: PublicKey::from_bytes(public),
+                 secret: SecretKey::from_bytes(secret), }
+    }
+
     /// Generate an ed25519 keypair.
     ///
     /// # Example
@@ -320,7 +406,7 @@ impl Keypair {
     ///
     /// # Input
     ///
-    /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
+    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
     /// from `rand::OsRng::new()` (in the `rand` crate).
     ///
     /// The caller must also supply a hash function which implements the
@@ -328,48 +414,63 @@ impl Keypair {
     /// The standard hash function used for most ed25519 libraries is SHA-512,
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
-    ///
-    // we reassign 0 bytes to the temp variable t to overwrite it
     #[cfg(feature = "std")]
-    #[allow(unused_assignments)]
-    pub fn generate<D>(cspring: &mut Rng) -> Keypair
+    pub fn generate<D>(csprng: &mut Rng) -> Keypair
             where D: FixedOutput<OutputSize = U64> + Default + Input {
+        let sk: SecretKey = SecretKey::generate(csprng);
+        let pk: PublicKey = PublicKey::from_secret::<D>(&sk);
 
-        let mut h:           D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut t:    [u8; 32] = [0u8; 32];
-        let mut sk:   [u8; 64] = [0u8; 64];
-        let     pk:   [u8; 32];
-        let mut digest: &mut [u8; 32];
-
-        cspring.fill_bytes(&mut t);
-
-        h.digest(&t);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        digest = array_mut_ref!(&mut hash, 0, 32);
-        digest[0]  &= 248;
-        digest[31] &= 127;
-        digest[31] |= 64;
-
-        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT).compress_edwards().to_bytes();
-
-        for i in  0..32 {
-            sk[i]    = t[i];
-            sk[i+32] = pk[i];
-            t[i]     = 0;
-        }
-
-        Keypair{
-            public: PublicKey(CompressedEdwardsY(pk)),
-            secret: SecretKey(sk),
-        }
+        Keypair{ public: pk, secret: sk }
     }
 
     /// Sign a message with this keypair's secret key.
     pub fn sign<D>(&self, message: &[u8]) -> Signature
             where D: FixedOutput<OutputSize = U64> + Default + Input {
-        self.secret.sign::<D>(message)
+
+        let mut h: D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+        let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
+        let mut expanded_key_secret: Scalar;
+        let mesg_digest: Scalar;
+        let hram_digest: Scalar;
+        let r: ExtendedPoint;
+        let s: Scalar;
+        let t: CompressedEdwardsY;
+
+        let secret_key: &[u8; 32] = self.secret.as_bytes();
+        let public_key: &[u8; 32] = self.public.as_bytes();
+
+        h.digest(secret_key);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        expanded_key_secret = Scalar(*array_ref!(&hash, 0, 32));
+        expanded_key_secret[0]  &= 248;
+        expanded_key_secret[31] &=  63;
+        expanded_key_secret[31] |=  64;
+
+        h = D::default();
+        h.digest(&hash[32..]);
+        h.digest(&message);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        mesg_digest = Scalar::reduce(&hash);
+
+        r = &mesg_digest * &constants::ED25519_BASEPOINT;
+
+        h = D::default();
+        h.digest(&r.compress_edwards().to_bytes()[..]);
+        h.digest(public_key);
+        h.digest(&message);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        hram_digest = Scalar::reduce(&hash);
+
+        s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
+        t = r.compress_edwards();
+
+        signature_bytes[..32].copy_from_slice(&t.0);
+        signature_bytes[32..64].copy_from_slice(&s.0);
+        Signature(*array_ref!(&signature_bytes, 0, 64))
     }
 
     /// Verify a signature on a message with this keypair's public key.
@@ -475,17 +576,14 @@ mod test {
 		    // at the end, but we just want R and S.
             let sig1: Signature = Signature::from_bytes(sig_bytes);
 
-            assert_eq!(pub_bytes.len(), 32);
+            let keypair: Keypair = Keypair::from_bytes(
+                array_ref!(*pub_bytes, 0, PUBLIC_KEY_LENGTH),
+                array_ref!(*sec_bytes, 0, SECRET_KEY_LENGTH));
 
-            let secret_key: SecretKey = SecretKey::from_bytes(&sec_bytes);
-            let public_key: PublicKey = PublicKey::from_bytes(&pub_bytes);
-            let sig2: Signature = secret_key.sign::<Sha512>(&message);
-
-            println!("{:?}", sec_bytes);
-            println!("{:?}", pub_bytes);
+            let sig2: Signature = keypair.sign::<Sha512>(&message);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(public_key.verify::<Sha512>(&message, &sig2),
+            assert!(keypair.verify::<Sha512>(&message, &sig2),
                     "Signature verification failed on line {}", lineno);
         }
     }

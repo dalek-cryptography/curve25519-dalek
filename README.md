@@ -44,7 +44,7 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.9"
+    curve25519-dalek = "^0.10"
 
 Then, in your library or executable source, add:
 
@@ -56,7 +56,7 @@ fast.
 
 ## TODO
 
+We intend to stabilise the following before curve25519-dalek-1.0.0:
+
 * Implement hashing to a point on the curve (Elligator).
-* Make a new `mask` type in `subtle.rs` and return that instead of `u8`s.
-* Implement all utilities in Golang's `crypto/subtle` package, and
-  move the module to its own crate.
+* Finish Ristretto (Decaf for curve25519) implementation.

@@ -59,6 +59,11 @@ pub struct CompressedDecaf(pub [u8; 32]);
 
 /// The result of compressing a `DecafPoint`.
 impl CompressedDecaf {
+    /// Convert this `CompressedDecaf` to an array of bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+
     /// View this `CompressedDecaf` as an array of bytes.
     pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0

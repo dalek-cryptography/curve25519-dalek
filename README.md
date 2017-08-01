@@ -56,7 +56,7 @@ fast.
 
 ## TODO
 
+We intend to stabilise the following before curve25519-dalek-1.0.0:
+
 * Implement hashing to a point on the curve (Elligator).
-* Make a new `mask` type in `subtle.rs` and return that instead of `u8`s.
-* Implement all utilities in Golang's `crypto/subtle` package, and
-  move the module to its own crate.
+* Finish Ristretto (Decaf for curve25519) implementation.

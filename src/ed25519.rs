@@ -16,15 +16,19 @@ use core::fmt::Debug;
 #[cfg(feature = "std")]
 use rand::Rng;
 
+use digest::BlockInput;
+use digest::Digest;
 use digest::Input;
 use digest::FixedOutput;
+
 use generic_array::typenum::U64;
 
 use curve25519_dalek::constants;
 use curve25519_dalek::curve::CompressedEdwardsY;
 use curve25519_dalek::curve::ExtendedPoint;
 use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::subtle::arrays_equal_ct;
+
+use subtle::slices_equal;
 
 /// The length of an ed25519 EdDSA `Signature`, in bytes.
 pub const SIGNATURE_LENGTH: usize = 64;
@@ -279,14 +283,14 @@ impl PublicKey {
     #[cfg(feature = "std")]
     #[allow(unused_assignments)]
     pub fn from_secret<D>(secret_key: &SecretKey) -> PublicKey
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+            where D: Digest<OutputSize = U64> + Default {
 
         let mut h:           D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let     pk:   [u8; 32];
         let mut digest: &mut [u8; 32];
 
-        h.digest(secret_key.as_bytes());
+        h.input(secret_key.as_bytes());
         hash.copy_from_slice(h.fixed_result().as_slice());
 
         digest = array_mut_ref!(&mut hash, 0, 32);
@@ -306,7 +310,7 @@ impl PublicKey {
     /// Returns true if the signature was successfully verified, and
     /// false otherwise.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+            where D: Digest<OutputSize = U64> + Default {
 
         let mut h: D = D::default();
         let mut a: ExtendedPoint;
@@ -330,16 +334,16 @@ impl PublicKey {
         let top_half:    &[u8; 32] = array_ref!(&signature.0, 32, 32);
         let bottom_half: &[u8; 32] = array_ref!(&signature.0,  0, 32);
 
-        h.digest(&bottom_half[..]);
-        h.digest(&self.to_bytes());
-        h.digest(&message);
+        h.input(&bottom_half[..]);
+        h.input(&self.to_bytes());
+        h.input(&message);
 
         let digest_bytes = h.fixed_result();
         digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
         r = &(&digest_reduced * &a) + &(&Scalar(*top_half) * &constants::ED25519_BASEPOINT);
 
-        if arrays_equal_ct(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
+        if slices_equal(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
             return true
         } else {
             return false
@@ -416,7 +420,7 @@ impl Keypair {
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     #[cfg(feature = "std")]
     pub fn generate<D>(csprng: &mut Rng) -> Keypair
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+            where D: Digest<OutputSize = U64> + Default {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = PublicKey::from_secret::<D>(&sk);
 
@@ -425,7 +429,7 @@ impl Keypair {
 
     /// Sign a message with this keypair's secret key.
     pub fn sign<D>(&self, message: &[u8]) -> Signature
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+            where D: Digest<OutputSize = U64> + Default {
 
         let mut h: D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
@@ -440,7 +444,7 @@ impl Keypair {
         let secret_key: &[u8; 32] = self.secret.as_bytes();
         let public_key: &[u8; 32] = self.public.as_bytes();
 
-        h.digest(secret_key);
+        h.input(secret_key);
         hash.copy_from_slice(h.fixed_result().as_slice());
 
         expanded_key_secret = Scalar(*array_ref!(&hash, 0, 32));
@@ -449,8 +453,8 @@ impl Keypair {
         expanded_key_secret[31] |=  64;
 
         h = D::default();
-        h.digest(&hash[32..]);
-        h.digest(&message);
+        h.input(&hash[32..]);
+        h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
 
         mesg_digest = Scalar::reduce(&hash);
@@ -458,9 +462,9 @@ impl Keypair {
         r = &mesg_digest * &constants::ED25519_BASEPOINT;
 
         h = D::default();
-        h.digest(&r.compress_edwards().to_bytes()[..]);
-        h.digest(public_key);
-        h.digest(&message);
+        h.input(&r.compress_edwards().to_bytes()[..]);
+        h.input(public_key);
+        h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
 
         hram_digest = Scalar::reduce(&hash);
@@ -475,7 +479,7 @@ impl Keypair {
 
     /// Verify a signature on a message with this keypair's public key.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
-            where D: FixedOutput<OutputSize = U64> + Default + Input {
+            where D: FixedOutput<OutputSize = U64> + BlockInput + Default + Input {
         self.public.verify::<D>(message, signature)
     }
 }

@@ -32,8 +32,6 @@ use generic_array::typenum::U32;
 
 use constants;
 use field::FieldElement;
-use subtle::CTAssignable;
-use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
@@ -45,6 +43,9 @@ use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
 use curve::Identity;
 use scalar::Scalar;
+
+use subtle::ConditionallyAssignable;
+use subtle::ConditionallyNegatable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -631,7 +632,7 @@ impl DecafBasepointTable {
 // Constant-time conditional assignment
 // ------------------------------------------------------------------------
 
-impl CTAssignable for DecafPoint {
+impl ConditionallyAssignable for DecafPoint {
     /// Conditionally assign `other` to `self`, if `choice == 1u8`.
     ///
     /// # Example
@@ -640,7 +641,7 @@ impl CTAssignable for DecafPoint {
     /// # extern crate subtle;
     /// # extern crate curve25519_dalek;
     /// #
-    /// # use subtle::CTAssignable;
+    /// # use subtle::ConditionallyAssignable;
     /// #
     /// # use curve25519_dalek::curve::Identity;
     /// # use curve25519_dalek::decaf::DecafPoint;

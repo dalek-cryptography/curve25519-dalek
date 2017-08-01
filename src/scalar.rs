@@ -45,9 +45,10 @@ use generic_array::typenum::U64;
 
 use constants;
 use utils::{load3, load4};
-use subtle::CTAssignable;
-use subtle::CTEq;
-use subtle::arrays_equal;
+
+use subtle::slices_equal;
+use subtle::ConditionallyAssignable;
+use subtle::Equal;
 
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
@@ -76,18 +77,18 @@ impl PartialEq for Scalar {
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        arrays_equal(&self.0, &other.0) == 1u8
+        slices_equal(&self.0, &other.0) == 1u8
     }
 }
 
-impl CTEq for Scalar {
+impl Equal for Scalar {
     /// Test equality between two `Scalar`s in constant time.
     ///
     /// # Returns
     ///
     /// `1u8` if they are equal, and `0u8` otherwise.
     fn ct_eq(&self, other: &Self) -> u8 {
-        arrays_equal(&self.0, &other.0)
+        slices_equal(&self.0, &other.0)
     }
 }
 
@@ -154,14 +155,14 @@ impl<'a> Neg for &'a Scalar {
     }
 }
 
-impl CTAssignable for Scalar {
+impl ConditionallyAssignable for Scalar {
     /// Conditionally assign another Scalar to this one.
     ///
     /// ```
     /// # extern crate curve25519_dalek;
     /// # extern crate subtle;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::CTAssignable;
+    /// # use subtle::ConditionallyAssignable;
     /// # fn main() {
     /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);

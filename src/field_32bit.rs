@@ -30,7 +30,7 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
 
-use subtle::CTAssignable;
+use subtle::ConditionallyAssignable;
 
 use utils::{load3, load4};
 
@@ -189,7 +189,7 @@ impl<'a> Neg for &'a FieldElement32 {
     }
 }
 
-impl CTAssignable for FieldElement32 {
+impl ConditionallyAssignable for FieldElement32 {
     fn conditional_assign(&mut self, f: &FieldElement32, choice: u8) {
         let mask = -(choice as i32);
         for i in 0..10 {

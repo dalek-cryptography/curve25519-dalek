@@ -33,7 +33,7 @@ version = "0.3"
 version = "0.6"
 
 [dependencies.subtle]
-version = "^0.1"
+version = "^0.2"
 default-features = false
 
 [dependencies.generic-array]
@@ -47,7 +47,7 @@ version = "0.6"
 version = "0.6"
 
 [features]
-nightly = ["radix_51"]
+nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []

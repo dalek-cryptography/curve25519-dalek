@@ -22,10 +22,10 @@
 
 use core::cmp::{Eq, PartialEq};
 
-use subtle::arrays_equal;
+use subtle::slices_equal;
 use subtle::byte_is_nonzero;
-use subtle::CTAssignable;
-use subtle::CTEq;
+use subtle::ConditionallyAssignable;
+use subtle::Equal;
 
 use constants;
 
@@ -62,7 +62,7 @@ impl PartialEq for FieldElement {
     }
 }
 
-impl CTEq for FieldElement {
+impl Equal for FieldElement {
     /// Test equality between two `FieldElement`s.  Since the
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
@@ -71,7 +71,7 @@ impl CTEq for FieldElement {
     ///
     /// `1u8` if the two `FieldElement`s are equal, and `0u8` otherwise.
     fn ct_eq(&self, other: &FieldElement) -> u8 {
-        arrays_equal(&self.to_bytes(), &other.to_bytes())
+        slices_equal(&self.to_bytes(), &other.to_bytes())
     }
 }
 
@@ -323,7 +323,7 @@ impl FieldElement {
 #[cfg(test)]
 mod test {
     use field::*;
-    use subtle::CTNegatable;
+    use subtle::ConditionallyNegatable;
 
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\

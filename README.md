@@ -119,7 +119,7 @@ eventually support VXEdDSA in curve25519-dalek.
 To install, add the following to your project's `Cargo.toml`:
 
     [dependencies.ed25519-dalek]
-    version = "^0.3"
+    version = "^0.4"
 
 Then, in your library or executable source, add:
 
@@ -129,7 +129,7 @@ To cause your application to build `ed25519-dalek` with the nightly feature
 enabled by default, instead do:
 
     [dependencies.ed25519-dalek]
-    version = "^0.3"
+    version = "^0.4"
     features = ["nightly"]
 
 To cause your application to instead build with the nightly feature enabled

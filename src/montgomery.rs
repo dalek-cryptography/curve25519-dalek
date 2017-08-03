@@ -157,6 +157,7 @@ impl CompressedMontgomeryU {
 
 #[cfg(test)]
 mod test {
+    use edwards::Identity;
     use super::*;
 
     /// The X25519 basepoint, in compressed Montgomery form.

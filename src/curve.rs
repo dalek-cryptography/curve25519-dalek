@@ -90,11 +90,12 @@ use core::ops::Index;
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
-use subtle::arrays_equal;
+
+use subtle::slices_equal;
 use subtle::bytes_equal;
-use subtle::CTAssignable;
-use subtle::CTEq;
-use subtle::CTNegatable;
+use subtle::ConditionallyAssignable;
+use subtle::ConditionallyNegatable;
+use subtle::Equal;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -486,7 +487,7 @@ impl ValidityCheck for ExtendedPoint {
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
-impl CTAssignable for ProjectiveNielsPoint {
+impl ConditionallyAssignable for ProjectiveNielsPoint {
     fn conditional_assign(&mut self, other: &ProjectiveNielsPoint, choice: u8) {
         self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
         self.Y_minus_X.conditional_assign(&other.Y_minus_X, choice);
@@ -495,7 +496,7 @@ impl CTAssignable for ProjectiveNielsPoint {
     }
 }
 
-impl CTAssignable for AffineNielsPoint {
+impl ConditionallyAssignable for AffineNielsPoint {
     fn conditional_assign(&mut self, other: &AffineNielsPoint, choice: u8) {
         // PreComputedGroupElementCMove()
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
@@ -504,7 +505,7 @@ impl CTAssignable for AffineNielsPoint {
     }
 }
 
-impl CTAssignable for ExtendedPoint {
+impl ConditionallyAssignable for ExtendedPoint {
     fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
         self.X.conditional_assign(&other.X, choice);
         self.Y.conditional_assign(&other.Y, choice);
@@ -517,9 +518,9 @@ impl CTAssignable for ExtendedPoint {
 // Constant-time Equality
 // ------------------------------------------------------------------------
 
-impl CTEq for ExtendedPoint {
+impl Equal for ExtendedPoint {
     fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
-        arrays_equal(self.compress_edwards().as_bytes(),
+        slices_equal(self.compress_edwards().as_bytes(),
                      other.compress_edwards().as_bytes())
     }
 }
@@ -533,7 +534,7 @@ pub trait IsIdentity {
 /// Implement generic identity equality testing for a point representations
 /// which have constant-time equality testing and a defined identity
 /// constructor.
-impl<T> IsIdentity for T where T: CTEq + Identity {
+impl<T> IsIdentity for T where T: Equal + Identity {
     fn is_identity(&self) -> bool {
         self.ct_eq(&T::identity()) == 1u8
     }
@@ -1156,7 +1157,7 @@ impl ExtendedPoint {
 /// x ≤ 8`, compute `x * B` in constant time, i.e., without branching
 /// on x or using it as an array index.
 fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
-    where T: Identity + CTAssignable, for<'a> &'a T: Neg<Output=T>
+    where T: Identity + ConditionallyAssignable, for<'a> &'a T: Neg<Output=T>
 {
     debug_assert!(x >= -8); debug_assert!(x <= 8);
 
@@ -1371,7 +1372,7 @@ mod test {
     use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
-    use subtle::CTAssignable;
+    use subtle::ConditionallyAssignable;
     use constants;
     use super::*;
 

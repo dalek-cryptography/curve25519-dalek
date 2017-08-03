@@ -32,8 +32,6 @@ use generic_array::typenum::U32;
 
 use constants;
 use field::FieldElement;
-use subtle::CTAssignable;
-use subtle::CTNegatable;
 
 use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
@@ -45,6 +43,9 @@ use curve::CompletedPoint;
 use curve::EdwardsBasepointTable;
 use curve::Identity;
 use scalar::Scalar;
+
+use subtle::ConditionallyAssignable;
+use subtle::ConditionallyNegatable;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -58,6 +59,11 @@ pub struct CompressedDecaf(pub [u8; 32]);
 
 /// The result of compressing a `DecafPoint`.
 impl CompressedDecaf {
+    /// Convert this `CompressedDecaf` to an array of bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+
     /// View this `CompressedDecaf` as an array of bytes.
     pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0
@@ -631,7 +637,7 @@ impl DecafBasepointTable {
 // Constant-time conditional assignment
 // ------------------------------------------------------------------------
 
-impl CTAssignable for DecafPoint {
+impl ConditionallyAssignable for DecafPoint {
     /// Conditionally assign `other` to `self`, if `choice == 1u8`.
     ///
     /// # Example
@@ -640,7 +646,7 @@ impl CTAssignable for DecafPoint {
     /// # extern crate subtle;
     /// # extern crate curve25519_dalek;
     /// #
-    /// # use subtle::CTAssignable;
+    /// # use subtle::ConditionallyAssignable;
     /// #
     /// # use curve25519_dalek::curve::Identity;
     /// # use curve25519_dalek::decaf::DecafPoint;

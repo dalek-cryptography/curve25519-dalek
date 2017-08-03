@@ -1,10 +1,10 @@
 [package]
 name = "curve25519-dalek"
-version = "0.9.3"
+version = "0.10.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
-license = "CC0-1.0"
+license = "BSD-3-Clause"
 repository = "https://github.com/isislovecruft/curve25519-dalek"
 homepage = "https://code.ciph.re/isis/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
@@ -33,7 +33,7 @@ version = "0.3"
 version = "0.6"
 
 [dependencies.subtle]
-version = "^0.1"
+version = "^0.2"
 default-features = false
 
 [dependencies.generic-array]
@@ -47,7 +47,7 @@ version = "0.6"
 version = "0.6"
 
 [features]
-nightly = ["radix_51"]
+nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []

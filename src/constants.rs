@@ -19,7 +19,7 @@
 #![allow(missing_docs)]
 #![allow(non_snake_case)]
 
-use curve::CompressedEdwardsY;
+use edwards::CompressedEdwardsY;
 #[cfg(feature = "yolocrypto")]
 use decaf::{DecafPoint, DecafBasepointTable};
 use scalar::Scalar;
@@ -86,8 +86,8 @@ pub const DECAF_ED25519_BASEPOINT_TABLE: DecafBasepointTable
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use curve::IsIdentity;
-    use curve::ValidityCheck;
+    use edwards::IsIdentity;
+    use edwards::ValidityCheck;
     use constants;
 
     #[test]

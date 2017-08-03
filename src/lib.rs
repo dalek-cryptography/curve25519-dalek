@@ -72,7 +72,8 @@ mod field_32bit;
 mod field_64bit;
 
 pub mod scalar;
-pub mod curve;
+pub mod edwards;
+pub mod montgomery;
 
 // Feature gate decaf while our implementation is unfinished and probably incorrect.
 #[cfg(feature = "yolocrypto")]

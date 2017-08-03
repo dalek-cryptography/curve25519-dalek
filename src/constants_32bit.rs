@@ -20,9 +20,9 @@
 #![allow(non_snake_case)]
 
 use field_32bit::FieldElement32;
-use curve::ExtendedPoint;
-use curve::AffineNielsPoint;
-use curve::EdwardsBasepointTable;
+use edwards::ExtendedPoint;
+use edwards::AffineNielsPoint;
+use edwards::EdwardsBasepointTable;
 
 pub const d: FieldElement32       = FieldElement32([
     -10913610,  13857413, -15372611,   6949391,    114729,

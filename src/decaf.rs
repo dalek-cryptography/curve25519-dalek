@@ -37,11 +37,11 @@ use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-use curve;
-use curve::ExtendedPoint;
-use curve::CompletedPoint;
-use curve::EdwardsBasepointTable;
-use curve::Identity;
+use edwards;
+use edwards::ExtendedPoint;
+use edwards::CompletedPoint;
+use edwards::EdwardsBasepointTable;
+use edwards::Identity;
 use scalar::Scalar;
 
 use subtle::ConditionallyAssignable;
@@ -598,7 +598,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> DecafPoint
           J: IntoIterator<Item = &'b DecafPoint>,
 {
     let extended_points = points.into_iter().map(|P| &P.0);
-    DecafPoint(curve::multiscalar_mult(scalars, extended_points))
+    DecafPoint(edwards::multiscalar_mult(scalars, extended_points))
 }
 
 /// Precomputation
@@ -648,7 +648,7 @@ impl ConditionallyAssignable for DecafPoint {
     /// #
     /// # use subtle::ConditionallyAssignable;
     /// #
-    /// # use curve25519_dalek::curve::Identity;
+    /// # use curve25519_dalek::edwards::Identity;
     /// # use curve25519_dalek::decaf::DecafPoint;
     /// # use curve25519_dalek::constants;
     /// # fn main() {
@@ -711,7 +711,7 @@ pub mod vartime {
               J: IntoIterator<Item = &'b DecafPoint>
     {
         let extended_points = points.into_iter().map(|P| &P.0);
-        DecafPoint(curve::vartime::multiscalar_mult(scalars, extended_points))
+        DecafPoint(edwards::vartime::multiscalar_mult(scalars, extended_points))
     }
 }
 
@@ -725,9 +725,9 @@ mod test {
 
     use scalar::Scalar;
     use constants;
-    use curve::CompressedEdwardsY;
-    use curve::Identity;
-    use curve::ValidityCheck;
+    use edwards::CompressedEdwardsY;
+    use edwards::Identity;
+    use edwards::ValidityCheck;
     use super::*;
 
     #[cfg(feature = "serde")]

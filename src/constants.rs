@@ -53,9 +53,10 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
-/// The Ed25519 basepoint, as a `DecafPoint`.
-#[cfg(feature = "yolocrypto")]
-pub const DECAF_ED25519_BASEPOINT: DecafPoint = DecafPoint(ED25519_BASEPOINT);
+/// The Ed25519 basepoint, as a `DecafPoint`.  This is called `_POINT` to distinguish it from
+/// `_TABLE`, which provides fast scalar multiplication.
+#[cfg(feature = "yolocrypto")] pub const DECAF_ED25519_BASEPOINT_POINT: DecafPoint =
+DecafPoint(ED25519_BASEPOINT_POINT);
 
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form

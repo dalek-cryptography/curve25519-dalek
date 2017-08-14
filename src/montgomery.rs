@@ -170,7 +170,7 @@ mod test {
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_to_montgomery() {
-        assert_eq!(constants::ED25519_BASEPOINT.compress_montgomery().unwrap(),
+        assert_eq!(constants::ED25519_BASEPOINT_POINT.compress_montgomery().unwrap(),
                    BASE_CMPRSSD_MONTY);
     }
 

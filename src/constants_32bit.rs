@@ -94,8 +94,9 @@ pub const SQRT_MINUS_HALF: FieldElement32 = FieldElement32([ // sqrtMinusHalf
     -17256545,   3971863,  28865457,  -1750208,  27359696,
     -16640980,  12573105,   1002827,   -163343,  11073975, ]);
 
-/// Basepoint has y = 4/5.
-pub const ED25519_BASEPOINT: ExtendedPoint = ExtendedPoint{
+/// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
+/// be used for scalar multiplication (it's much faster).
+pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
         X: FieldElement32([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
         Y: FieldElement32([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),

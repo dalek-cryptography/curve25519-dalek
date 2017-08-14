@@ -653,7 +653,7 @@ impl ConditionallyAssignable for DecafPoint {
     /// # use curve25519_dalek::constants;
     /// # fn main() {
     /// let A = DecafPoint::identity();
-    /// let B = constants::DECAF_ED25519_BASEPOINT;
+    /// let B = constants::DECAF_ED25519_BASEPOINT_POINT;
     ///
     /// let mut P = A;
     ///
@@ -736,9 +736,9 @@ mod test {
     #[test]
     #[cfg(feature = "serde")]
     fn serde_cbor_basepoint_roundtrip() {
-        let output = serde_cbor::to_vec(&constants::DECAF_ED25519_BASEPOINT).unwrap();
+        let output = serde_cbor::to_vec(&constants::DECAF_ED25519_BASEPOINT_POINT).unwrap();
         let parsed: DecafPoint = serde_cbor::from_slice(&output).unwrap();
-        assert_eq!(parsed, constants::DECAF_ED25519_BASEPOINT);
+        assert_eq!(parsed, constants::DECAF_ED25519_BASEPOINT_POINT);
     }
 
 
@@ -764,10 +764,10 @@ mod test {
 
     #[test]
     fn decaf_basepoint_roundtrip() {
-        let bp_compressed_decaf = constants::DECAF_ED25519_BASEPOINT.compress();
+        let bp_compressed_decaf = constants::DECAF_ED25519_BASEPOINT_POINT.compress();
         let bp_recaf = bp_compressed_decaf.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
-        let diff = &constants::ED25519_BASEPOINT - &bp_recaf;
+        let diff = &constants::ED25519_BASEPOINT_POINT - &bp_recaf;
         let diff4 = diff.mult_by_pow_2(4); // XXX this is wrong
         assert_eq!(diff4.compress_edwards(), CompressedEdwardsY::identity());
     }
@@ -794,16 +794,16 @@ mod test {
             CompressedDecaf([7, 221, 140, 57, 13, 146, 248, 27, 56, 4, 128, 23, 145, 120, 126, 4, 158, 173, 52, 213, 164, 250, 26, 55, 89, 96, 187, 111, 211, 18, 63, 19]),
             CompressedDecaf([91, 213, 193, 10, 102, 92, 199, 124, 61, 176, 1, 47, 111, 59, 183, 91, 79, 56, 208, 109, 172, 209, 17, 167, 229, 216, 3, 236, 200, 208, 15, 20]),
         ];
-        let mut bp = constants::DECAF_ED25519_BASEPOINT;
+        let mut bp = constants::DECAF_ED25519_BASEPOINT_POINT;
         for i in 0..16 {
             assert_eq!(bp.compress(), compressed[i]);
-            bp = &bp + &constants::DECAF_ED25519_BASEPOINT;
+            bp = &bp + &constants::DECAF_ED25519_BASEPOINT_POINT;
         }
     }
 
     #[test]
     fn decaf_four_torsion_basepoint() {
-        let bp = constants::DECAF_ED25519_BASEPOINT;
+        let bp = constants::DECAF_ED25519_BASEPOINT_POINT;
         let bp_coset = bp.coset4();
         for i in 0..4 {
             assert_eq!(bp, DecafPoint(bp_coset[i]));

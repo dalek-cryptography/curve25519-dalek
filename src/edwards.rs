@@ -427,8 +427,7 @@ impl ProjectivePoint {
     /// Given (X:Y:Z) in Ɛ, passing to Ɛₑ can be performed in 3M+1S by
     /// computing (XZ,YZ,XY,Z²).  (Note that in that paper, points are
     /// (X:Y:T:Z) so this really does match the code below).
-    #[allow(dead_code)] // rustc complains this is unused even when it's used
-    fn to_extended(&self) -> ExtendedPoint {
+    pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.Z,
             Y: &self.Y * &self.Z,
@@ -1192,7 +1191,7 @@ pub mod vartime {
     /// with x positive).
     pub fn double_scalar_mult_basepoint(a: &Scalar,
                                         A: &ExtendedPoint,
-                                        b: &Scalar) -> ProjectivePoint {
+                                        b: &Scalar) -> ExtendedPoint {
         let a_naf = a.non_adjacent_form();
         let b_naf = b.non_adjacent_form();
 
@@ -1231,7 +1230,7 @@ pub mod vartime {
             i -= 1;
         }
 
-        r
+        r.to_extended()
     }
 
 }

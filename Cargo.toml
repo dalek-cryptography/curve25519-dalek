@@ -16,7 +16,7 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 
 [dependencies]
-arrayref = "0.3.3"
+arrayref = "0.3.4"
 
 [dependencies.curve25519-dalek]
 version = "^0.11"

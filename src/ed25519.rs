@@ -24,8 +24,8 @@ use digest::FixedOutput;
 use generic_array::typenum::U64;
 
 use curve25519_dalek::constants;
-use curve25519_dalek::curve::CompressedEdwardsY;
-use curve25519_dalek::curve::ExtendedPoint;
+use curve25519_dalek::edwards::CompressedEdwardsY;
+use curve25519_dalek::edwards::ExtendedPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use subtle::slices_equal;
@@ -298,7 +298,7 @@ impl PublicKey {
         digest[31] &= 127;
         digest[31] |= 64;
 
-        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT).compress_edwards().to_bytes();
+        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT_TABLE).compress_edwards().to_bytes();
 
         PublicKey(CompressedEdwardsY(pk))
     }
@@ -311,6 +311,8 @@ impl PublicKey {
     /// false otherwise.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
             where D: Digest<OutputSize = U64> + Default {
+
+        use curve25519_dalek::edwards::vartime;
 
         let mut h: D = D::default();
         let mut a: ExtendedPoint;
@@ -341,7 +343,7 @@ impl PublicKey {
         let digest_bytes = h.fixed_result();
         digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
-        r = &(&digest_reduced * &a) + &(&Scalar(*top_half) * &constants::ED25519_BASEPOINT);
+        r = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &Scalar(*top_half));
 
         if slices_equal(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
             return true
@@ -459,7 +461,7 @@ impl Keypair {
 
         mesg_digest = Scalar::reduce(&hash);
 
-        r = &mesg_digest * &constants::ED25519_BASEPOINT;
+        r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
 
         h = D::default();
         h.input(&r.compress_edwards().to_bytes()[..]);
@@ -491,7 +493,7 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use curve25519_dalek::curve::ExtendedPoint;
+    use curve25519_dalek::edwards::ExtendedPoint;
     use rand::OsRng;
     use rustc_serialize::hex::FromHex;
     use sha2::Sha512;

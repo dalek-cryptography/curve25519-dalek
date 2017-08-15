@@ -90,6 +90,7 @@ use core::ops::Index;
 use constants;
 use field::FieldElement;
 use scalar::Scalar;
+use montgomery::CompressedMontgomeryU;
 
 use subtle::slices_equal;
 use subtle::bytes_equal;
@@ -148,133 +149,6 @@ impl CompressedEdwardsY {
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
         Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
-    }
-}
-
-/// In "Montgomery u" format, as used in X25519, a point `(u,v)` on
-/// the Montgomery curve
-///
-///    v^2 = u * (u^2 + 486662*u + 1)
-///
-/// is represented just by `u`.  Note that we use `(u,v)` instead of
-/// `(x,y)` for Montgomery coordinates to avoid confusion with Edwards
-/// coordinates.  For Montgomery curves, it is possible to compute the
-/// `u`-coordinate of `n(u,v)` just from `n` and `u`, so it is not
-/// necessary to use `v` for a Diffie-Hellman key exchange.
-///
-/// XXX add note on monty, twist security, edwards impl of x25519, rfc7748
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct CompressedMontgomeryU(pub [u8; 32]);
-
-impl CompressedMontgomeryU {
-    /// View this `CompressedMontgomeryU` as an array of bytes.
-    pub fn to_bytes(&self) -> [u8; 32] {
-        self.0
-    }
-
-    /// Attempt to decompress to an `ExtendedPoint`.
-    ///
-    /// # Note
-    ///
-    /// Since there are two curve points with the same
-    /// `u`-coordinate, the `u`-coordinate does not fully specify a
-    /// point.  That is, roundtripping between an `ExtendedPoint` and
-    /// a `CompressedMontgomeryU` discards its sign bit.
-    ///
-    /// # Warning
-    ///
-    /// This function is *not* constant time.
-    ///
-    /// # Return
-    ///
-    /// An `Option<ExtendedPoint>`, which will be `None` if either condition holds:
-    ///
-    /// * `u = -1`, or
-    /// * `v` is not square.
-    //
-    // XXX any other exceptional points for the birational map?
-    pub fn decompress(&self) -> Option<ExtendedPoint> {
-        let u: FieldElement = FieldElement::from_bytes(&self.0);
-
-        // If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
-        // But 486660 is nonsquare mod p, so this is not a curve point.
-        //
-        // Note: currently, without this check, u = -1 will accidentally
-        // decode to a valid (but incorrect) point, since 0.invert() = 0.
-        if u == FieldElement::minus_one() {
-            return None;
-        }
-
-        let y: FieldElement = CompressedMontgomeryU::to_edwards_y(&u); // y = (u-1)/(u+1)
-
-        // XXX this does two inversions: the above + one in .decompress()
-        // is it possible to do one?
-        CompressedEdwardsY(y.to_bytes()).decompress()
-    }
-
-    /// Given a Montgomery `u` coordinate, compute an Edwards `y` via
-    /// `y = (u-1)/(u+1)`.
-    ///
-    /// # Return
-    ///
-    /// A `FieldElement` corresponding to this coordinate, but in Edwards form.
-    pub fn to_edwards_y(u: &FieldElement) -> FieldElement {
-        // Since `u = (1+y)/(1-y)` and `v = √(u(u²+Au+1))`, so `y = (u-1)/(u+1)`.
-        &(u - &FieldElement::one()) * &(u + &FieldElement::one()).invert()
-    }
-
-    /// Given a Montgomery `u` coordinate, compute the corresponding
-    /// Montgomery `v` coordinate by computing the right-hand side of
-    /// the Montgomery field equation, `v² = u(u² + Au +1)`.
-    ///
-    /// # Return
-    ///
-    /// A tuple of (`u8`, `FieldElement`), where the `u8` is `1` if the v² was
-    /// actually a square and `0` if otherwise, along with a `FieldElement`: the
-    /// Montgomery `v` corresponding to this `u`.
-    pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
-        let one:       FieldElement = FieldElement::one();
-        let v_squared: FieldElement = u * &(&u.square() + &(&(&constants::A * u) + &one));
-
-        let (okay, v_inv) = v_squared.invsqrt();
-        let v = &v_inv * &v_squared;
-
-        (okay, v)
-    }
-
-    /// Given Montgomery coordinates `(u, v)`, recover the Edwards `x` coordinate.
-    ///
-    /// # Inputs
-    ///
-    /// * `u` and `v` are both `&FieldElement`s, corresponding the the `(u, v)`
-    ///   coordinates of this `CompressedMontgomeryU`.
-    /// * `sign` is an &u8.
-    ///
-    /// ## Explanation of choice of `sign`
-    ///
-    /// ### Original Signal behaviour:
-    ///
-    /// - `1u8` will leave `x` negative if it is negative, and will negate
-    ///   `x` if it is positive, and
-    /// - `0u8` will leave `x` positive if it is positive, and will negate
-    ///   `x` if it is negative.
-    ///
-    /// Hence, if `sign` is `1u8`, the returned `x` will be negative.
-    /// Otherwise, if `sign` is `0u8`, the returned `x` will be positive.
-    ///
-    /// # Return
-    ///
-    /// A `FieldElement`, the Edwards `x` coordinate, by using `(u, v)` to
-    /// convert from Montgomery to Edwards form via the right-hand side of the
-    /// equation: `x=(u/v)*sqrt(-A-2)`.
-    pub fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
-        let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
-        let neg_x: FieldElement = -(&x);
-        let current_sign:    u8 = x.is_negative_ed25519();
-
-        // Negate x to match the sign:
-        x.conditional_assign(&neg_x, current_sign ^ sign);
-        x
     }
 }
 
@@ -553,8 +427,7 @@ impl ProjectivePoint {
     /// Given (X:Y:Z) in Ɛ, passing to Ɛₑ can be performed in 3M+1S by
     /// computing (XZ,YZ,XY,Z²).  (Note that in that paper, points are
     /// (X:Y:T:Z) so this really does match the code below).
-    #[allow(dead_code)] // rustc complains this is unused even when it's used
-    fn to_extended(&self) -> ExtendedPoint {
+    pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.Z,
             Y: &self.Y * &self.Z,
@@ -1318,7 +1191,7 @@ pub mod vartime {
     /// with x positive).
     pub fn double_scalar_mult_basepoint(a: &Scalar,
                                         A: &ExtendedPoint,
-                                        b: &Scalar) -> ProjectivePoint {
+                                        b: &Scalar) -> ExtendedPoint {
         let a_naf = a.non_adjacent_form();
         let b_naf = b.non_adjacent_form();
 
@@ -1357,7 +1230,7 @@ pub mod vartime {
             i -= 1;
         }
 
-        r
+        r.to_extended()
     }
 
 }
@@ -1375,13 +1248,6 @@ mod test {
     use subtle::ConditionallyAssignable;
     use constants;
     use super::*;
-
-    /// The X25519 basepoint, in compressed Montgomery form.
-    static BASE_CMPRSSD_MONTY: CompressedMontgomeryU =
-        CompressedMontgomeryU([0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -1432,40 +1298,6 @@ mod test {
         0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85,
         0x09, 0x6f, 0xfe, 0x35, 0x4f, 0x13, 0x2b, 0x42]);
 
-    /// Test Montgomery conversion against the X25519 basepoint.
-    #[test]
-    fn basepoint_to_montgomery() {
-        assert_eq!(constants::ED25519_BASEPOINT.compress_montgomery().unwrap(),
-                   BASE_CMPRSSD_MONTY);
-    }
-
-    /// Test Montgomery conversion against the X25519 basepoint.
-    #[test]
-    fn basepoint_from_montgomery() {
-        assert_eq!(BASE_CMPRSSD_MONTY.decompress().unwrap().compress_edwards(),
-                   constants::BASE_CMPRSSD);
-    }
-
-    /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
-    /// But 486660 is nonsquare mod p, so this should fail.
-    ///
-    /// XXX what does Signal do here?
-    #[test]
-    fn u_minus_one_monty() {
-        let minus_one = FieldElement::minus_one();
-        let minus_one_bytes = minus_one.to_bytes();
-        let div_by_zero_u = CompressedMontgomeryU(minus_one_bytes);
-        assert!(div_by_zero_u.decompress().is_none());
-    }
-
-    /// Montgomery compression of the identity point should
-    /// fail (it's sent to infinity).
-    #[test]
-    fn identity_to_monty() {
-        let id = ExtendedPoint::identity();
-        assert!(id.compress_montgomery().is_none());
-    }
-
     /// Test round-trip decompression for the basepoint.
     #[test]
     fn basepoint_decompression_compression() {
@@ -1487,10 +1319,10 @@ mod test {
                               .decompress().unwrap();
         // Test projective coordinates exactly since we know they should
         // only differ by a flipped sign.
-        assert_eq!(minus_basepoint.X, -(&constants::ED25519_BASEPOINT.X));
-        assert_eq!(minus_basepoint.Y,    constants::ED25519_BASEPOINT.Y);
-        assert_eq!(minus_basepoint.Z,    constants::ED25519_BASEPOINT.Z);
-        assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT.T));
+        assert_eq!(minus_basepoint.X, -(&constants::ED25519_BASEPOINT_POINT.X));
+        assert_eq!(minus_basepoint.Y,    constants::ED25519_BASEPOINT_POINT.Y);
+        assert_eq!(minus_basepoint.Z,    constants::ED25519_BASEPOINT_POINT.Z);
+        assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT_POINT.T));
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.
@@ -1512,7 +1344,7 @@ mod test {
     /// using basepoint + basepoint versus the 2*basepoint constant.
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
-        let bp = constants::ED25519_BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT_POINT;
         let bp_added = &bp + &bp;
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
     }
@@ -1521,7 +1353,7 @@ mod test {
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
-        let bp = constants::ED25519_BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT_POINT;
         let bp_added = (&bp + &bp.to_projective_niels()).to_extended();
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
     }
@@ -1530,7 +1362,7 @@ mod test {
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
-        let bp = constants::ED25519_BASEPOINT;
+        let bp = constants::ED25519_BASEPOINT_POINT;
         let bp_affine_niels = bp.to_affine_niels();
         let bp_added = (&bp + &bp_affine_niels).to_extended();
         assert_eq!(bp_added.compress_edwards(), BASE2_CMPRSSD);
@@ -1581,7 +1413,7 @@ mod test {
     #[test]
     #[cfg(feature="basepoint_table_creation")]
     fn test_precomputed_basepoint_mult() {
-        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT);
+        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT_POINT);
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         let aB_2 = &table * &A_SCALAR;
         assert_eq!(aB_1.compress_edwards(), aB_2.compress_edwards());
@@ -1590,14 +1422,14 @@ mod test {
     /// Test scalar_mult versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mult_vs_ed25519py() {
-        let aB = &constants::ED25519_BASEPOINT * &A_SCALAR;
+        let aB = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
         assert_eq!(aB.compress_edwards(), A_TIMES_BASEPOINT);
     }
 
     /// Test basepoint.double() versus the 2*basepoint constant.
     #[test]
     fn basepoint_double_vs_basepoint2() {
-        assert_eq!(constants::ED25519_BASEPOINT.double().compress_edwards(),
+        assert_eq!(constants::ED25519_BASEPOINT_POINT.double().compress_edwards(),
                    BASE2_CMPRSSD);
     }
 
@@ -1612,7 +1444,7 @@ mod test {
     /// Check that converting to projective and then back to extended round-trips.
     #[test]
     fn basepoint_projective_extended_round_trip() {
-        assert_eq!(constants::ED25519_BASEPOINT
+        assert_eq!(constants::ED25519_BASEPOINT_POINT
                        .to_projective().to_extended().compress_edwards(),
                    constants::BASE_CMPRSSD);
     }
@@ -1620,7 +1452,7 @@ mod test {
     /// Test computing 16*basepoint vs mult_by_pow_2(4)
     #[test]
     fn basepoint16_vs_mult_by_pow_2_4() {
-        let bp16 = constants::ED25519_BASEPOINT.mult_by_pow_2(4);
+        let bp16 = constants::ED25519_BASEPOINT_POINT.mult_by_pow_2(4);
         assert_eq!(bp16.compress_edwards(), BASE16_CMPRSSD);
     }
 
@@ -1629,7 +1461,7 @@ mod test {
     fn conditional_assign_for_affine_niels_point() {
         let id     = AffineNielsPoint::identity();
         let mut p1 = AffineNielsPoint::identity();
-        let bp     = constants::ED25519_BASEPOINT.to_affine_niels();
+        let bp     = constants::ED25519_BASEPOINT_POINT.to_affine_niels();
 
         p1.conditional_assign(&bp, 0);
         assert_eq!(p1, id);
@@ -1640,7 +1472,7 @@ mod test {
     #[test]
     fn is_small_order() {
         // The basepoint has large prime order
-        assert!(constants::ED25519_BASEPOINT.is_small_order() == false);
+        assert!(constants::ED25519_BASEPOINT_POINT.is_small_order() == false);
         // constants::EIGHT_TORSION has all points of small order.
         for torsion_point in &constants::EIGHT_TORSION {
             assert!(torsion_point.is_small_order() == true);
@@ -1656,7 +1488,7 @@ mod test {
     #[test]
     fn is_identity() {
         assert!(   ExtendedPoint::identity().is_identity() == true);
-        assert!(constants::ED25519_BASEPOINT.is_identity() == false);
+        assert!(constants::ED25519_BASEPOINT_POINT.is_identity() == false);
     }
 
     /// Rust's debug builds have overflow and underflow trapping,
@@ -1671,7 +1503,7 @@ mod test {
     /// the type system and prove correctness).
     #[test]
     fn monte_carlo_overflow_underflow_debug_assert_test() {
-        let mut P = constants::ED25519_BASEPOINT;
+        let mut P = constants::ED25519_BASEPOINT_POINT;
         // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
@@ -1681,7 +1513,7 @@ mod test {
 
     #[test]
     fn scalarmult_extended_point_works_both_ways() {
-        let G: ExtendedPoint = constants::ED25519_BASEPOINT;
+        let G: ExtendedPoint = constants::ED25519_BASEPOINT_POINT;
         let s: Scalar = A_SCALAR;
 
         let P1 = &G * &s;
@@ -1693,7 +1525,7 @@ mod test {
     #[test]
     #[cfg(feature = "yolocrypto")]
     fn scalarmult_decafpoint_works_both_ways() {
-        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT);
+        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT_POINT);
         let s: Scalar = A_SCALAR;
 
         let P1 = &P * &s;
@@ -1719,7 +1551,7 @@ mod test {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
-                &[A, constants::ED25519_BASEPOINT]
+                &[A, constants::ED25519_BASEPOINT_POINT]
             );
             assert_eq!(result.compress_edwards(), DOUBLE_SCALAR_MULT_RESULT);
         }
@@ -1729,11 +1561,11 @@ mod test {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result_vartime = vartime::multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
-                &[A, constants::ED25519_BASEPOINT]
+                &[A, constants::ED25519_BASEPOINT_POINT]
             );
             let result_consttime = multiscalar_mult(
                 &[A_SCALAR, B_SCALAR],
-                &[A, constants::ED25519_BASEPOINT]
+                &[A, constants::ED25519_BASEPOINT_POINT]
             );
 
             assert_eq!(result_vartime.compress_edwards(), result_consttime.compress_edwards());
@@ -1746,7 +1578,7 @@ mod test {
     #[test]
     #[cfg(feature = "serde")]
     fn serde_cbor_basepoint_roundtrip() {
-        let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
         let parsed: ExtendedPoint = serde_cbor::from_slice(&output).unwrap();
         assert_eq!(parsed.compress_edwards(), constants::BASE_CMPRSSD);
     }
@@ -1754,7 +1586,7 @@ mod test {
     #[test]
     #[cfg(feature = "serde")]
     fn serde_cbor_decode_invalid_fails() {
-        let mut output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT).unwrap();
+        let mut output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
         // CBOR apparently has two bytes of overhead for a 32-byte string.
         // Set the low byte of the compressed point to 1 to make it invalid.
         output[2] = 1;
@@ -1783,7 +1615,7 @@ mod bench {
 
     #[bench]
     fn edwards_compress(b: &mut Bencher) {
-        let B = &constants::ED25519_BASEPOINT;
+        let B = &constants::ED25519_BASEPOINT_POINT;
         b.iter(|| B.compress_edwards());
     }
 
@@ -1795,7 +1627,7 @@ mod bench {
 
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
-        let B = &constants::ED25519_BASEPOINT;
+        let B = &constants::ED25519_BASEPOINT_POINT;
         b.iter(|| B * &A_SCALAR);
     }
 
@@ -1806,53 +1638,53 @@ mod bench {
 
     #[bench]
     fn add_extended_and_projective_niels_output_completed(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
-        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+        let p1 = constants::ED25519_BASEPOINT_POINT;
+        let p2 = constants::ED25519_BASEPOINT_POINT.to_projective_niels();
 
         b.iter(|| &p1 + &p2);
     }
 
     #[bench]
     fn add_extended_and_projective_niels_output_extended(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
-        let p2 = constants::ED25519_BASEPOINT.to_projective_niels();
+        let p1 = constants::ED25519_BASEPOINT_POINT;
+        let p2 = constants::ED25519_BASEPOINT_POINT.to_projective_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
     fn add_extended_and_affine_niels_output_completed(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
-        let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
+        let p1 = constants::ED25519_BASEPOINT_POINT;
+        let p2 = constants::ED25519_BASEPOINT_POINT.to_affine_niels();
 
         b.iter(|| &p1 + &p2);
     }
 
     #[bench]
     fn add_extended_and_affine_niels_output_extended(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
-        let p2 = constants::ED25519_BASEPOINT.to_affine_niels();
+        let p1 = constants::ED25519_BASEPOINT_POINT;
+        let p2 = constants::ED25519_BASEPOINT_POINT.to_affine_niels();
 
         b.iter(|| (&p1 + &p2).to_extended());
     }
 
     #[bench]
     fn projective_double_output_completed(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT.to_projective();
+        let p1 = constants::ED25519_BASEPOINT_POINT.to_projective();
 
         b.iter(|| p1.double());
     }
 
     #[bench]
     fn extended_double_output_extended(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
+        let p1 = constants::ED25519_BASEPOINT_POINT;
 
         b.iter(|| p1.double());
     }
 
     #[bench]
     fn mult_by_cofactor(b: &mut Bencher) {
-        let p1 = constants::ED25519_BASEPOINT;
+        let p1 = constants::ED25519_BASEPOINT_POINT;
 
         b.iter(|| p1.mult_by_cofactor());
     }

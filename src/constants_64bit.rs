@@ -20,9 +20,9 @@
 #![allow(non_snake_case)]
 
 use field_64bit::FieldElement64;
-use curve::ExtendedPoint;
-use curve::AffineNielsPoint;
-use curve::EdwardsBasepointTable;
+use edwards::ExtendedPoint;
+use edwards::AffineNielsPoint;
+use edwards::EdwardsBasepointTable;
 
 pub const p: FieldElement64 = FieldElement64([2251799813685229, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]);
 
@@ -67,8 +67,9 @@ pub const SQRT_MINUS_APLUS2: FieldElement64 = FieldElement64([1693982333959686, 
 /// `SQRT_MINUS_HALF` is sqrt(-1/2)
 pub const SQRT_MINUS_HALF: FieldElement64 = FieldElement64([266547196637087, 2134345371906993, 1135042577398223, 67298593331632, 743161882051057]);
 
-/// Basepoint has y = 4/5.
-pub const ED25519_BASEPOINT: ExtendedPoint = ExtendedPoint {
+/// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
+/// be used for scalar multiplication (it's much faster).
+pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
     X: FieldElement64([1738742601995546, 1146398526822698, 2070867633025821, 562264141797630, 587772402128613]),
     Y: FieldElement64([1801439850948184, 1351079888211148, 450359962737049, 900719925474099, 1801439850948198]),
     Z: FieldElement64([1, 0, 0, 0, 0]),

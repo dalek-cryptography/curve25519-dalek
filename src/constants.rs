@@ -19,7 +19,7 @@
 #![allow(missing_docs)]
 #![allow(non_snake_case)]
 
-use curve::CompressedEdwardsY;
+use edwards::CompressedEdwardsY;
 #[cfg(feature = "yolocrypto")]
 use decaf::{DecafPoint, DecafBasepointTable};
 use scalar::Scalar;
@@ -53,9 +53,10 @@ pub const BASE_CMPRSSD: CompressedEdwardsY =
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]);
 
-/// The Ed25519 basepoint, as a `DecafPoint`.
-#[cfg(feature = "yolocrypto")]
-pub const DECAF_ED25519_BASEPOINT: DecafPoint = DecafPoint(ED25519_BASEPOINT);
+/// The Ed25519 basepoint, as a `DecafPoint`.  This is called `_POINT` to distinguish it from
+/// `_TABLE`, which provides fast scalar multiplication.
+#[cfg(feature = "yolocrypto")] pub const DECAF_ED25519_BASEPOINT_POINT: DecafPoint =
+DecafPoint(ED25519_BASEPOINT_POINT);
 
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form
@@ -86,8 +87,8 @@ pub const DECAF_ED25519_BASEPOINT_TABLE: DecafBasepointTable
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use curve::IsIdentity;
-    use curve::ValidityCheck;
+    use edwards::IsIdentity;
+    use edwards::ValidityCheck;
     use constants;
 
     #[test]

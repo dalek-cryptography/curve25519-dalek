@@ -646,4 +646,16 @@ mod bench {
 
         b.iter(| | Keypair::generate::<Sha512>(&mut rng));
     }
+
+    #[bench]
+    fn underlying_scalar_mult_basepoint(b: &mut Bencher) {
+        use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+
+        let scalar: Scalar = Scalar([  20, 130, 129, 196, 247, 182, 211, 102,
+                                       11, 168, 169, 131, 159,  69, 126,  35,
+                                      109, 193, 175,  54, 118, 234, 138,  81,
+                                       60, 183,  80, 186,  92, 248, 132,  13, ]);
+
+        b.iter(| | &scalar * &ED25519_BASEPOINT_TABLE);
+    }
 }

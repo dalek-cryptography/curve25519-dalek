@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
 license = "CC0-1.0"
@@ -16,10 +16,10 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 
 [dependencies]
-arrayref = "0.3.3"
+arrayref = "0.3.4"
 
 [dependencies.curve25519-dalek]
-version = "^0.10"
+version = "^0.11"
 default-features = false
 
 [dependencies.subtle]

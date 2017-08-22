@@ -568,12 +568,46 @@ impl UnpackedScalar {
         let mut y = UnpackedScalar::one();
         // Run through bits of l-2 from highest to least
         for bit in constants::l_minus_2.bits().iter().rev() {
-            y = UnpackedScalar::multiply_add(&y, &y, &UnpackedScalar::zero());
+            y = y.square();
             if *bit == 1 {
                 y = UnpackedScalar::multiply_add(&y, self, &UnpackedScalar::zero());
             }
         }
         y
+    }
+
+    /// Compute `a^2 (mod l)`.
+    pub fn square(&self) -> UnpackedScalar {
+        let a = self.0;
+        let mut result = [0i64; 24];
+
+        result[0]  = a[0]*a[0];
+        result[1]  = 2i64 * a[0]*a[1];
+        result[2]  = 2i64 * (a[0]*a[2])  + a[1]*a[1];
+        result[3]  = 2i64 * (a[0]*a[3]   + a[1]*a[2]);
+        result[4]  = 2i64 * (a[0]*a[4]   + a[1]*a[3])  + a[2]*a[2];
+        result[5]  = 2i64 * (a[0]*a[5]   + a[1]*a[4]   + a[2]*a[3]);
+        result[6]  = 2i64 * (a[0]*a[6]   + a[1]*a[5]   + a[2]*a[4]) + a[3]*a[3];
+        result[7]  = 2i64 * (a[0]*a[7]   + a[1]*a[6]   + a[2]*a[5]  + a[3]*a[4]);
+        result[8]  = 2i64 * (a[0]*a[8]   + a[1]*a[7]   + a[2]*a[6]  + a[3]*a[5]) + a[4]*a[4];
+        result[9]  = 2i64 * (a[0]*a[9]   + a[1]*a[8]   + a[2]*a[7]  + a[3]*a[6]  + a[4]*a[5]);
+        result[10] = 2i64 * (a[0]*a[10]  + a[1]*a[9]   + a[2]*a[8]  + a[3]*a[7]  + a[4]*a[6]) + a[5]*a[5];
+        result[11] = 2i64 * (a[0]*a[11]  + a[1]*a[10]  + a[2]*a[9]  + a[3]*a[8]  + a[4]*a[7]  + a[5]*a[6]);
+        result[12] = 2i64 * (a[1]*a[11]  + a[2]*a[10]  + a[3]*a[9]  + a[4]*a[8]  + a[5]*a[7]) + a[6]*a[6];
+        result[13] = 2i64 * (a[2]*a[11]  + a[3]*a[10]  + a[4]*a[9]  + a[5]*a[8]  + a[6]*a[7]);
+        result[14] = 2i64 * (a[3]*a[11]  + a[4]*a[10]  + a[5]*a[9]  + a[6]*a[8]) + a[7]*a[7];
+        result[15] = 2i64 * (a[4]*a[11]  + a[5]*a[10]  + a[6]*a[9]  + a[7]*a[8]);
+        result[16] = 2i64 * (a[5]*a[11]  + a[6]*a[10]  + a[7]*a[9]) + a[8]*a[8];
+        result[17] = 2i64 * (a[6]*a[11]  + a[7]*a[10]  + a[8]*a[9]);
+        result[18] = 2i64 * (a[7]*a[11]  + a[8]*a[10]) + a[9]*a[9];
+        result[19] = 2i64 * (a[8]*a[11]  + a[9]*a[10]);
+        result[20] = 2i64 * (a[9]*a[11]) + a[10]*a[10];
+        result[21] = 2i64 * (a[10]*a[11]);
+        result[22] = a[11]*a[11];
+        result[23] = 0i64;
+
+        // Reduce limbs
+        UnpackedScalar::reduce_limbs(&mut result)
     }
 
     /// Compute `ab+c (mod l)`.
@@ -839,6 +873,15 @@ mod test {
     }
 
     #[test]
+    fn square() {
+        let expected = Scalar::multiply_add(&X, &X, &Scalar::zero());
+        let actual = X.unpack().square().pack();
+        for i in 0..32 {
+            assert!(expected[i] == actual[i]);
+        }
+    }
+
+    #[test]
     fn scalar_reduce() {
         let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
@@ -912,6 +955,12 @@ mod bench {
     fn invert(b: &mut Bencher) {
         let x = X.unpack();
         b.iter(|| x.invert());
+    }
+
+    #[bench]
+    fn square(b: &mut Bencher) {
+        let x = X.unpack();
+        b.iter(|| x.square());
     }
 
     #[bench]

@@ -571,17 +571,17 @@ impl UnpackedScalar {
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
         // as it was published on 2017-09-03.
 
-        let _1 = *self;
-        let _10 = _1.square();
-        let _11 = UnpackedScalar::multiply_add(&_10, &_1, &UnpackedScalar::zero());
-        let _101 = UnpackedScalar::multiply_add(&_11, &_10, &UnpackedScalar::zero());
-        let _111 = UnpackedScalar::multiply_add(&_101, &_10, &UnpackedScalar::zero());
-        let _1001 = UnpackedScalar::multiply_add(&_111, &_10, &UnpackedScalar::zero());
-        let _1011 = UnpackedScalar::multiply_add(&_1001, &_10, &UnpackedScalar::zero());
-        let _1101 = UnpackedScalar::multiply_add(&_1011, &_10, &UnpackedScalar::zero());
-        let _1111 = UnpackedScalar::multiply_add(&_1101, &_10, &UnpackedScalar::zero());
+        let    _1 = *self;
+        let   _10 = _1.square();
+        let   _11 = UnpackedScalar::multiply_add(&_10,    &_1, &UnpackedScalar::zero());
+        let  _101 = UnpackedScalar::multiply_add(&_10,   &_11, &UnpackedScalar::zero());
+        let  _111 = UnpackedScalar::multiply_add(&_10,  &_101, &UnpackedScalar::zero());
+        let _1001 = UnpackedScalar::multiply_add(&_10,  &_111, &UnpackedScalar::zero());
+        let _1011 = UnpackedScalar::multiply_add(&_10, &_1001, &UnpackedScalar::zero());
+        let _1101 = UnpackedScalar::multiply_add(&_10, &_1011, &UnpackedScalar::zero());
+        let _1111 = UnpackedScalar::multiply_add(&_10, &_1101, &UnpackedScalar::zero());
 
-        // 0b10000
+        // _10000
         let mut y = UnpackedScalar::multiply_add(&_1111, &_1, &UnpackedScalar::zero());
 
         #[inline]

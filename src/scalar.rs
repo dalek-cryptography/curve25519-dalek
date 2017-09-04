@@ -2,11 +2,13 @@
 //
 // This file is part of curve25519-dalek.
 // Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+// - Brian Smith <brian@briansmith.org>
 
 //! Arithmetic for scalar multiplication.
 //!
@@ -565,14 +567,59 @@ impl UnpackedScalar {
 
     /// Compute the multiplicative inverse of this scalar.
     pub fn invert(&self) -> UnpackedScalar {
-        let mut y = UnpackedScalar::one();
-        // Run through bits of l-2 from highest to least
-        for bit in constants::l_minus_2.bits().iter().rev() {
-            y = y.square();
-            if *bit == 1 {
-                y = UnpackedScalar::multiply_add(&y, self, &UnpackedScalar::zero());
+        // This is a direct transliteration of the addition chain from
+        // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
+        // as it was published on 2017-09-03.
+
+        let _1 = *self;
+        let _10 = _1.square();
+        let _11 = UnpackedScalar::multiply_add(&_10, &_1, &UnpackedScalar::zero());
+        let _101 = UnpackedScalar::multiply_add(&_11, &_10, &UnpackedScalar::zero());
+        let _111 = UnpackedScalar::multiply_add(&_101, &_10, &UnpackedScalar::zero());
+        let _1001 = UnpackedScalar::multiply_add(&_111, &_10, &UnpackedScalar::zero());
+        let _1011 = UnpackedScalar::multiply_add(&_1001, &_10, &UnpackedScalar::zero());
+        let _1101 = UnpackedScalar::multiply_add(&_1011, &_10, &UnpackedScalar::zero());
+        let _1111 = UnpackedScalar::multiply_add(&_1101, &_10, &UnpackedScalar::zero());
+
+        // 0b10000
+        let mut y = UnpackedScalar::multiply_add(&_1111, &_1, &UnpackedScalar::zero());
+
+        #[inline]
+        fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
+            for _ in 0..squarings {
+                *y = y.square();
             }
+            *y = UnpackedScalar::multiply_add(y, x, &UnpackedScalar::zero());
         }
+
+        square_multiply(&mut y, 123 + 3, &_101);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,       4, &_1001);
+        square_multiply(&mut y,       4, &_1101);
+        square_multiply(&mut y,       3, &_111);
+        square_multiply(&mut y,   1 + 3, &_101);
+        square_multiply(&mut y,   3 + 3, &_101);
+        square_multiply(&mut y,       3, &_111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   2 + 3, &_111);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,   2 + 4, &_1011);
+        square_multiply(&mut y,   6 + 4, &_1001);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1001);
+        square_multiply(&mut y,   1 + 3, &_111);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   1 + 2, &_11);
+
         y
     }
 

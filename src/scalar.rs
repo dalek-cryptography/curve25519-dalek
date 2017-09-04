@@ -573,13 +573,13 @@ impl UnpackedScalar {
 
         let    _1 = *self;
         let   _10 = _1.square();
-        let   _11 = UnpackedScalar::multiply_add(&_10,    &_1, &UnpackedScalar::zero());
-        let  _101 = UnpackedScalar::multiply_add(&_10,   &_11, &UnpackedScalar::zero());
-        let  _111 = UnpackedScalar::multiply_add(&_10,  &_101, &UnpackedScalar::zero());
-        let _1001 = UnpackedScalar::multiply_add(&_10,  &_111, &UnpackedScalar::zero());
-        let _1011 = UnpackedScalar::multiply_add(&_10, &_1001, &UnpackedScalar::zero());
-        let _1101 = UnpackedScalar::multiply_add(&_10, &_1011, &UnpackedScalar::zero());
-        let _1111 = UnpackedScalar::multiply_add(&_10, &_1101, &UnpackedScalar::zero());
+        let  _100 = _10.square();
+        let   _11 = UnpackedScalar::multiply_add(&_10,     &_1, &UnpackedScalar::zero());
+        let  _101 = UnpackedScalar::multiply_add(&_10,    &_11, &UnpackedScalar::zero());
+        let  _111 = UnpackedScalar::multiply_add(&_10,   &_101, &UnpackedScalar::zero());
+        let _1001 = UnpackedScalar::multiply_add(&_10,   &_111, &UnpackedScalar::zero());
+        let _1011 = UnpackedScalar::multiply_add(&_10,  &_1001, &UnpackedScalar::zero());
+        let _1111 = UnpackedScalar::multiply_add(&_100, &_1011, &UnpackedScalar::zero());
 
         // _10000
         let mut y = UnpackedScalar::multiply_add(&_1111, &_1, &UnpackedScalar::zero());
@@ -597,8 +597,8 @@ impl UnpackedScalar {
         square_multiply(&mut y,   1 + 4, &_1111);
         square_multiply(&mut y,   1 + 4, &_1111);
         square_multiply(&mut y,       4, &_1001);
-        square_multiply(&mut y,       4, &_1101);
-        square_multiply(&mut y,       3, &_111);
+        square_multiply(&mut y,       2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
         square_multiply(&mut y,   1 + 3, &_101);
         square_multiply(&mut y,   3 + 3, &_101);
         square_multiply(&mut y,       3, &_111);

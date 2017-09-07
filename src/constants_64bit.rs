@@ -54,6 +54,9 @@ pub const HALF: FieldElement64 = FieldElement64([2251799813685239, 2251799813685
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement64 = FieldElement64([486662, 0, 0, 0, 0]);
 
+/// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within Montgomery laddering.)
+pub const APLUS2_OVER_FOUR: FieldElement64 = FieldElement64([121666, 0, 0, 0, 0]);
+
 /// `SQRT_MINUS_A` is sqrt(-486662)
 // XXX I think that this was used in Adam's code for his elligator
 // implementation, but that should maybe be using sqrt(-486664)

@@ -90,6 +90,7 @@ use constants;
 use field::FieldElement;
 use scalar::Scalar;
 use montgomery::CompressedMontgomeryU;
+use montgomery::MontgomeryPoint;
 
 use subtle::slices_equal;
 use subtle::bytes_equal;
@@ -447,14 +448,14 @@ impl ProjectivePoint {
         CompressedEdwardsY(s)
     }
 
-    /// Convert this point to a `CompressedMontgomeryU`.
+    /// Convert this point to a Montgomery u-coordinate (affine).
     /// Note that this discards the sign.
     ///
     /// # Return
     /// - `None` if `self` is the identity point;
-    /// - `Some(CompressedMontgomeryU)` otherwise.
+    /// - `Some(FieldElement)` otherwise.
     ///
-    pub fn compress_montgomery(&self) -> Option<CompressedMontgomeryU> {
+    fn convert_to_montgomery(&self) -> Option<FieldElement> {
         // u = (1 + y) /  (1 - y)
         // v = sqrt(-486664) * u / x
         //
@@ -470,7 +471,38 @@ impl ProjectivePoint {
         let u = &Z_plus_Y * &Z_minus_Y.invert();
 
         if Z_minus_Y.is_zero() == 0u8 {
-            Some(CompressedMontgomeryU(u.to_bytes()))
+            Some(u)
+        } else {
+            None
+        }
+    }
+
+    /// Convert this point to a `CompressedMontgomeryU`.
+    /// Note that this discards the sign.
+    ///
+    /// # Return
+    /// - `None` if `self` is the identity point;
+    /// - `Some(CompressedMontgomeryU)` otherwise.
+    ///
+    pub fn compress_montgomery(&self) -> Option<CompressedMontgomeryU> {
+        let u: Option<FieldElement> = self.convert_to_montgomery();
+
+        if u.is_some() {
+            Some(CompressedMontgomeryU(u.unwrap().to_bytes()))
+        } else {
+            None
+        }
+    }
+
+    /// Convert this point to its equivalent on the Montgomery form of
+    /// the curve, without compressing.
+    ///
+    /// DOCDOC
+    pub fn to_montgomery(&self) -> Option<MontgomeryPoint> {
+        let u: Option<FieldElement> = self.convert_to_montgomery();
+
+        if u.is_some() {
+            Some(MontgomeryPoint{ U: u.unwrap(), Z: FieldElement::one() })
         } else {
             None
         }
@@ -513,6 +545,11 @@ impl ExtendedPoint {
             y_minus_x: &y - &x,
             xy2d:      xy2d
         }
+    }
+
+    /// DOCDOC
+    pub fn to_montgomery(&self) -> Option<MontgomeryPoint> {
+        self.to_projective().to_montgomery()
     }
 
     /// Compress this point to `CompressedEdwardsY` format.

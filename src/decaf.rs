@@ -194,6 +194,11 @@ impl<'de> Deserialize<'de> for DecafPoint {
 pub struct DecafPoint(pub ExtendedPoint);
 
 impl DecafPoint {
+    /// Convert this `DecafPoint` to its underlying `ExtendedPoint`.
+    pub fn to_edwards(&self) -> ExtendedPoint {
+        self.0
+    }
+
     /// Compress in Decaf format.
     pub fn compress(&self) -> CompressedDecaf {
         // Q: Do we want to encode twisted or untwisted?
@@ -752,7 +757,7 @@ mod test {
     fn decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
-        assert_eq!(id.0.compress_edwards(), CompressedEdwardsY::identity());
+        assert_eq!(id.to_edwards().compress(), CompressedEdwardsY::identity());
     }
 
     #[test]
@@ -764,11 +769,11 @@ mod test {
     #[test]
     fn decaf_basepoint_roundtrip() {
         let bp_compressed_decaf = constants::DECAF_ED25519_BASEPOINT_POINT.compress();
-        let bp_recaf = bp_compressed_decaf.decompress().unwrap().0;
+        let bp_recaf = bp_compressed_decaf.decompress().unwrap().to_edwards();
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &constants::ED25519_BASEPOINT_POINT - &bp_recaf;
         let diff4 = diff.mult_by_pow_2(4); // XXX this is wrong
-        assert_eq!(diff4.compress_edwards(), CompressedEdwardsY::identity());
+        assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]
@@ -838,7 +843,7 @@ mod test {
         for _ in 0..100 {
             let P = DecafPoint::random(&mut rng);
             // Check that P is on the curve
-            assert!(P.0.is_valid());
+            assert!(P.to_edwards().is_valid());
             // Check that P is in the image of the decaf map
             P.compress();
         }

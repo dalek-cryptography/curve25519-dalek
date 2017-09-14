@@ -119,7 +119,7 @@ impl CompressedMontgomeryU {
     /// # Returns
     ///
     /// A projective `MontgomeryPoint` corresponding to this compressed point.
-    pub fn decompress_montgomery(&self) -> MontgomeryPoint {
+    pub fn decompress(&self) -> MontgomeryPoint {
         MontgomeryPoint{
             // XXX is it a problem here if we're not using a canonical encoding? —isis
             U: FieldElement::from_bytes(&self.0),
@@ -257,8 +257,8 @@ impl Identity for MontgomeryPoint {
 /// `1` if the points are equal, and `0` otherwise.
 impl Equal for MontgomeryPoint {
     fn ct_eq(&self, that: &MontgomeryPoint) -> u8 {
-        slices_equal(self.compress_montgomery().as_bytes(),
-                     that.compress_montgomery().as_bytes())
+        slices_equal(self.compress().as_bytes(),
+                     that.compress().as_bytes())
     }
 }
 
@@ -301,7 +301,7 @@ impl MontgomeryPoint {
     /// # Returns
     ///
     /// A `CompressedMontgomeryU`.
-    pub fn compress_montgomery(&self) -> CompressedMontgomeryU {
+    pub fn compress(&self) -> CompressedMontgomeryU {
         let u_affine: FieldElement = &self.U * &self.W.invert();
 
         CompressedMontgomeryU(u_affine.to_bytes())
@@ -425,15 +425,15 @@ mod test {
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_to_montgomery() {
-        assert_eq!(constants::ED25519_BASEPOINT_POINT.compress_montgomery().unwrap(),
+        assert_eq!(constants::ED25519_BASEPOINT_POINT.to_montgomery().compress(),
                    BASE_COMPRESSED_MONTGOMERY);
     }
 
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_from_montgomery() {
-        assert_eq!(BASE_COMPRESSED_MONTGOMERY.decompress_edwards().unwrap().compress_edwards(),
-                   constants::BASE_CMPRSSD);
+        assert_eq!(BASE_COMPRESSED_MONTGOMERY,
+                   constants::BASE_CMPRSSD.decompress().unwrap().to_montgomery().compress());
     }
 
     /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
@@ -448,26 +448,28 @@ mod test {
         assert!(div_by_zero_u.decompress_edwards().is_none());
     }
 
-    /// Montgomery compression of the identity point should
-    /// fail (it's sent to infinity).
+    /// Montgomery compression of the identity point should not fail (since the
+    /// mapping in `ProjectivePoint.to_montgomery()` should be valid for the
+    /// identity.
     #[test]
     fn identity_to_monty() {
         let id = ExtendedPoint::identity();
-        assert!(id.compress_montgomery().is_none());
+        assert_eq!(id.to_montgomery().compress(), MontgomeryPoint::identity().compress());
     }
 
     #[test]
     fn projective_to_affine_roundtrips() {
-        let p = BASE_COMPRESSED_MONTGOMERY.decompress_montgomery();
+        assert_eq!(BASE_COMPRESSED_MONTGOMERY.decompress().compress(),
+                   BASE_COMPRESSED_MONTGOMERY);
 
     }
 
     #[test]
     fn differential_double_matches_double() {
         let p: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
-        let q: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress_montgomery().differential_double();
+        let q: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress().differential_double();
 
-        assert_eq!(p.compress_montgomery().unwrap(), q.compress_montgomery());
+        assert_eq!(p.to_montgomery().compress(), q.compress());
     }
 
     #[test]
@@ -480,13 +482,13 @@ mod test {
         let p2: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s2;
         let diff: ExtendedPoint = &p1 - &p2;
 
-        let p1m: MontgomeryPoint = p1.to_montgomery().unwrap();
-        let p2m: MontgomeryPoint = p2.to_montgomery().unwrap();
-        let diffm: MontgomeryPoint = diff.to_montgomery().unwrap();
+        let p1m: MontgomeryPoint = p1.to_montgomery();
+        let p2m: MontgomeryPoint = p2.to_montgomery();
+        let diffm: MontgomeryPoint = diff.to_montgomery();
 
         let result = p1m.differential_add(&p2m, &diffm);
 
-        assert_eq!(result.compress_montgomery(), (&p1 + &p2).compress_montgomery().unwrap());
+        assert_eq!(result.compress(), (&p1 + &p2).to_montgomery().compress());
     }
 
     #[test]
@@ -495,20 +497,21 @@ mod test {
 
         let s: Scalar = Scalar::random(&mut csprng);
         let p_edwards: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
-        let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery().unwrap();
+        let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = &s * &p_edwards;
         let result   = &s * &p_montgomery;
 
-        assert_eq!(result.compress_montgomery(), expected.compress_montgomery().unwrap())
+        assert_eq!(result.compress(), expected.to_montgomery().compress())
     }
 
     #[test]
     fn ladder_basepoint_times_two_matches_double() {
         let two: Scalar = Scalar::from_u64(2u64);
-        let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress_montgomery() * &two;
-        let mut expected: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
+        let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress() * &two;
+        let expected: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
 
-        assert_eq!(result.compress_montgomery(), expected.compress_montgomery().unwrap());
+        assert_eq!(result.compress(), expected.to_montgomery().compress());
+
     }
 }

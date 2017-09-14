@@ -1,0 +1,19 @@
+language: rust
+
+rust:
+  - nightly
+
+env:
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES=''
+  - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='bench'
+  - TEST_COMMAND=build EXTRA_FLAGS='--no-default-features' FEATURES='nightly'
+
+matrix:
+  include:
+    - rust: stable
+      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std'
+    - rust: beta
+      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std'
+
+script:
+  - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS

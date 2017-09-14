@@ -1,0 +1,32 @@
+[package]
+name = "x25519-dalek"
+version = "0.0.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/isislovecruft/x25519-dalek"
+documentation = "https://docs.rs/x25519-dalek"
+categories = ["cryptography", "no-std"]
+keywords = ["cryptography", "curve25519", "key-exchange", "x25519", "diffie-hellman"]
+description = "X25519 elliptic curve Diffie-Hellman key exchange in pure-Rust, using curve25519-dalek."
+exclude = [
+    ".gitignore",
+    ".travis.yml",
+    "CONTRIBUTING.md",
+]
+
+[badges]
+travis-ci = { repository = "isislovecruft/x25519-dalek", branch = "master"}
+
+[dependencies.curve25519-dalek]
+version = "^0.12"
+
+[dependencies.rand]
+optional = true
+version = "^0.3"
+
+[features]
+bench = []
+default = ["std", "nightly"]
+std = ["rand", "curve25519-dalek/std"]
+nightly = ["curve25519-dalek/nightly"]

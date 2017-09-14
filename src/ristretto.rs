@@ -93,9 +93,10 @@ impl CompressedRistretto {
         }
 
         // Step 2.  The rest.  (XXX write comments)
+        let one = FieldElement::one();
         let ss = s.square();
-        let yden = &FieldElement::one() + &ss;
-        let ynum = &FieldElement::one() - &ss;
+        let yden = &one + &ss; // 1 - a*s^2
+        let ynum = &one - &ss; // 1 + a*s^2
         let yden_sqr = yden.square();
         let xden_sqr = &(&(-&constants::d) * &ynum.square()) - &yden_sqr;
 
@@ -104,19 +105,17 @@ impl CompressedRistretto {
         let xden_inv = &invsqrt * &yden;
         let yden_inv = &invsqrt * &(&xden_inv * &xden_sqr);
 
-        let mut x = &(&s + &s) * &xden_inv;
+        let mut x = &(&s + &s) * &xden_inv; // 2*s*xden_inv
         let x_is_negative = x.is_negative_ed25519();
         x.conditional_negate(x_is_negative);
         let y = &ynum * &yden_inv;
 
         let t = &x * &y;
 
-        if ok == 0u8 || t.is_negative_ed25519() == 1u8 || x.is_zero() == 1u8 {
+        if ok == 0u8 || t.is_negative_ed25519() == 1u8 || y.is_zero() == 1u8 {
             return None;
         } else {
-            return Some(RistrettoPoint(ExtendedPoint{
-                X: x, Y: y, Z: FieldElement::one(), T: t
-            }));
+            return Some(RistrettoPoint(ExtendedPoint{X: x, Y: y, Z: one, T: t}));
         }
     }
 }
@@ -289,8 +288,6 @@ impl RistrettoPoint {
         Y.conditional_negate((&X * &z_inv).is_negative_ed25519());
 
         let mut s = &den_inv * &(Z - &Y);
-        let s_is_zero = s.is_zero();
-        s.conditional_assign(&FieldElement::one(), s_is_zero);
         let s_is_negative = s.is_negative_ed25519();
         s.conditional_negate(s_is_negative);
 

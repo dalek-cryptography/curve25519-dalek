@@ -35,6 +35,8 @@ version = "0.6"
 [dependencies.subtle]
 version = "^0.2"
 default-features = false
+git = "https://github.com/isislovecruft/subtle"
+branch = "feature/conditional-swap_r1"
 
 [dependencies.generic-array]
 # same version that digest depends on

@@ -512,6 +512,35 @@ mod test {
         let expected: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
 
         assert_eq!(result.compress(), expected.to_montgomery().compress());
+    }
+}
 
+#[cfg(all(test, feature = "bench"))]
+mod bench {
+    use rand::OsRng;
+    use constants::ED25519_BASEPOINT_TABLE;
+    use constants::BASE_COMPRESSED_MONTGOMERY;
+    use test::Bencher;
+    use super::*;
+
+    #[bench]
+    fn montgomery_decompress(b: &mut Bencher) {
+        b.iter(| | BASE_COMPRESSED_MONTGOMERY.decompress());
+    }
+
+    #[bench]
+    fn montgomery_compress(b: &mut Bencher) {
+        let p: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress();
+
+        b.iter(| | p.compress());
+    }
+
+    #[bench]
+    fn montgomery_ladder(b: &mut Bencher) {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let s: Scalar = Scalar::random(&mut csprng);
+        let p: MontgomeryPoint = (&Scalar::random(&mut csprng) * &ED25519_BASEPOINT_TABLE).to_montgomery();
+
+        b.iter(| | &s * &p);
     }
 }

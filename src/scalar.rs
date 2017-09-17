@@ -33,6 +33,7 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Index, IndexMut};
+use core::ops::Range;
 use core::cmp::{Eq, PartialEq};
 
 #[cfg(feature = "std")]
@@ -513,6 +514,13 @@ impl IndexMut<usize> for UnpackedScalar {
     }
 }
 
+impl Index<Range<usize>> for UnpackedScalar {
+    type Output = [i64];
+    fn index(&self, index: Range<usize>) -> &Self::Output {
+        &(self.0[index])
+    }
+}
+
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
@@ -580,37 +588,123 @@ impl UnpackedScalar {
     pub fn multiply_add(a: &UnpackedScalar,
                         b: &UnpackedScalar,
                         c: &UnpackedScalar) -> UnpackedScalar {
-        let mut result = [0i64; 24];
+        
+        #[inline]
+        fn karatsuba_12(lhs: &UnpackedScalar, rhs: &UnpackedScalar ) -> [i64; 24] {
+            #[inline]
+            fn array_diff_6(lhs: &[i64], rhs: &[i64]) -> [i64; 6] {
+                let mut output = [0; 6];
+                output[5] = lhs[5] - rhs[5];
+                output[4] = lhs[4] - rhs[4];
+                output[3] = lhs[3] - rhs[3];
+                output[2] = lhs[2] - rhs[2];
+                output[1] = lhs[1] - rhs[1];
+                output[0] = lhs[0] - rhs[0];
+                output
+            }
 
-        // Multiply a and b, and add c
-        result[0]  =         c[0] +  a[0]*b[0];
-        result[1]  =         c[1] +  a[0]*b[1]  +  a[1]*b[0];
-        result[2]  =         c[2] +  a[0]*b[2]  +  a[1]*b[1] +  a[2]*b[0];
-        result[3]  =         c[3] +  a[0]*b[3]  +  a[1]*b[2] +  a[2]*b[1] +  a[3]*b[0];
-        result[4]  =         c[4] +  a[0]*b[4]  +  a[1]*b[3] +  a[2]*b[2] +  a[3]*b[1] +  a[4]*b[0];
-        result[5]  =         c[5] +  a[0]*b[5]  +  a[1]*b[4] +  a[2]*b[3] +  a[3]*b[2] +  a[4]*b[1] +  a[5]*b[0];
-        result[6]  =         c[6] +  a[0]*b[6]  +  a[1]*b[5] +  a[2]*b[4] +  a[3]*b[3] +  a[4]*b[2] +  a[5]*b[1] +  a[6]*b[0];
-        result[7]  =         c[7] +  a[0]*b[7]  +  a[1]*b[6] +  a[2]*b[5] +  a[3]*b[4] +  a[4]*b[3] +  a[5]*b[2] +  a[6]*b[1] +  a[7]*b[0];
-        result[8]  =         c[8] +  a[0]*b[8]  +  a[1]*b[7] +  a[2]*b[6] +  a[3]*b[5] +  a[4]*b[4] +  a[5]*b[3] +  a[6]*b[2] +  a[7]*b[1] +  a[8]*b[0];
-        result[9]  =         c[9] +  a[0]*b[9]  +  a[1]*b[8] +  a[2]*b[7] +  a[3]*b[6] +  a[4]*b[5] +  a[5]*b[4] +  a[6]*b[3] +  a[7]*b[2] +  a[8]*b[1] +  a[9]*b[0];
-        result[10] =        c[10] +  a[0]*b[10] +  a[1]*b[9] +  a[2]*b[8] +  a[3]*b[7] +  a[4]*b[6] +  a[5]*b[5] +  a[6]*b[4] +  a[7]*b[3] +  a[8]*b[2] +  a[9]*b[1] + a[10]*b[0];
-        result[11] =        c[11] +  a[0]*b[11] + a[1]*b[10] +  a[2]*b[9] +  a[3]*b[8] +  a[4]*b[7] +  a[5]*b[6] +  a[6]*b[5] +  a[7]*b[4] +  a[8]*b[3] +  a[9]*b[2] + a[10]*b[1] + a[11]*b[0];
-        result[12] =   a[1]*b[11] +  a[2]*b[10] +  a[3]*b[9] +  a[4]*b[8] +  a[5]*b[7] +  a[6]*b[6] +  a[7]*b[5] +  a[8]*b[4] +  a[9]*b[3] + a[10]*b[2] + a[11]*b[1];
-        result[13] =   a[2]*b[11] +  a[3]*b[10] +  a[4]*b[9] +  a[5]*b[8] +  a[6]*b[7] +  a[7]*b[6] +  a[8]*b[5] +  a[9]*b[4] + a[10]*b[3] + a[11]*b[2];
-        result[14] =   a[3]*b[11] +  a[4]*b[10] +  a[5]*b[9] +  a[6]*b[8] +  a[7]*b[7] +  a[8]*b[6] +  a[9]*b[5] + a[10]*b[4] + a[11]*b[3];
-        result[15] =   a[4]*b[11] +  a[5]*b[10] +  a[6]*b[9] +  a[7]*b[8] +  a[8]*b[7] +  a[9]*b[6] + a[10]*b[5] + a[11]*b[4];
-        result[16] =   a[5]*b[11] +  a[6]*b[10] +  a[7]*b[9] +  a[8]*b[8] +  a[9]*b[7] + a[10]*b[6] + a[11]*b[5];
-        result[17] =   a[6]*b[11] +  a[7]*b[10] +  a[8]*b[9] +  a[9]*b[8] + a[10]*b[7] + a[11]*b[6];
-        result[18] =   a[7]*b[11] +  a[8]*b[10] +  a[9]*b[9] + a[10]*b[8] + a[11]*b[7];
-        result[19] =   a[8]*b[11] +  a[9]*b[10] + a[10]*b[9] + a[11]*b[8];
-        result[20] =   a[9]*b[11] + a[10]*b[10] + a[11]*b[9];
-        result[21] =  a[10]*b[11] + a[11]*b[10];
-        result[22] =  a[11]*b[11];
-        result[23] =          0i64;
+            let mut result = [0i64; 24];
+            let c_0 = karatsuba_6(&lhs[0..6], &rhs[0..6]);
+            let c_1 = karatsuba_6(&lhs[6..12], &rhs[6..12]);
+
+            let a = array_diff_6(&lhs[6..12], &lhs[0..6]);
+            let b = array_diff_6(&rhs[6..12], &rhs[0..6]);
+            let c_2 = karatsuba_6(&a, &b);
+
+            result[23] = c_1[11];
+            result[22] = c_1[10];   
+            result[21] = c_1[9];
+            result[20] = c_1[8]; 
+            result[19] = c_1[7];
+            result[18] = c_1[6];
+            result[17] = c_1[5]  + c_0[11] + c_1[11] - c_2[11];
+            result[16] = c_1[4]  + c_0[10] + c_1[10] - c_2[10];
+            result[15] = c_1[3]  + c_0[9]  + c_1[9]  - c_2[9];
+            result[14] = c_1[2]  + c_0[8]  + c_1[8]  - c_2[8];
+            result[13] = c_1[1]  + c_0[7]  + c_1[7]  - c_2[7];
+            result[12] = c_1[0]  + c_0[6]  + c_1[6]  - c_2[6];
+            result[11] = c_0[11] + c_0[5]  + c_1[5]  - c_2[5];
+            result[10] = c_0[10] + c_0[4]  + c_1[4]  - c_2[4];
+            result[9]  = c_0[9]  + c_0[3]  + c_1[3]  - c_2[3];
+            result[8]  = c_0[8]  + c_0[2]  + c_1[2]  - c_2[2];
+            result[7]  = c_0[7]  + c_0[1]  + c_1[1]  - c_2[1];
+            result[6]  = c_0[6]  + c_0[0]  + c_1[0]  - c_2[0];
+            result[5]  = c_0[5];
+            result[4]  = c_0[4];
+            result[3]  = c_0[3];
+            result[2]  = c_0[2];
+            result[1]  = c_0[1];
+            result[0]  = c_0[0];
+
+            result
+        }
+
+        #[inline]
+        fn karatsuba_6(lhs: &[i64], rhs: &[i64] ) -> [i64; 12] {
+            #[inline]
+            fn array_diff_3(lhs: &[i64], rhs: &[i64]) -> [i64; 3] {
+                let mut output = [0; 3];
+                output[2] = lhs[2] - rhs[2];
+                output[1] = lhs[1] - rhs[1];
+                output[0] = lhs[0] - rhs[0];
+                output
+            }
+
+            let mut result = [0i64; 12];
+            let c_0 = karatsuba_3(&lhs[0..3], &rhs[0..3]);
+            let c_1 = karatsuba_3(&lhs[3..6], &rhs[3..6]);
+
+            let a = array_diff_3(&lhs[3..6], &lhs[0..3]);
+            let b = array_diff_3(&rhs[3..6], &rhs[0..3]);
+            let c_2 = karatsuba_3(&a, &b);
+
+            result[11] = c_1[5];
+            result[10] = c_1[4];
+            result[9]  = c_1[3];
+            result[8]  = c_1[2] + c_0[5] + c_1[5] - c_2[5];
+            result[7]  = c_1[1] + c_0[4] + c_1[4] - c_2[4];
+            result[6]  = c_1[0] + c_0[3] + c_1[3] - c_2[3];
+            result[5]  = c_0[5] + c_0[2] + c_1[2] - c_2[2];
+            result[4]  = c_0[4] + c_0[1] + c_1[1] - c_2[1];
+            result[3]  = c_0[3] + c_0[0] + c_1[0] - c_2[0];
+            result[2]  = c_0[2]; 
+            result[1]  = c_0[1];
+            result[0]  = c_0[0]; 
+
+            result
+        }
+
+        #[inline]
+        fn karatsuba_3(lhs: &[i64], rhs: &[i64] ) -> [i64; 6] {
+            let mut result = [0i64; 6];
+            result[5] = 0;
+            result[4] = lhs[2]*rhs[2];
+            result[3] = lhs[2]*rhs[1] + lhs[1]*rhs[2];
+            result[2] = lhs[2]*rhs[0] + lhs[1]*rhs[1] + lhs[0]*rhs[2];
+            result[1] = lhs[1]*rhs[0] + lhs[0]*rhs[1];
+            result[0] = lhs[0]*rhs[0];
+            result
+        }
+
+
+        let mut result = karatsuba_12(a, b);
+        result[0]  +=  c[0];
+        result[1]  +=  c[1];
+        result[2]  +=  c[2];
+        result[3]  +=  c[3];
+        result[4]  +=  c[4];
+        result[5]  +=  c[5];
+        result[6]  +=  c[6];
+        result[7]  +=  c[7];
+        result[8]  +=  c[8];
+        result[9]  +=  c[9]; 
+        result[10] += c[10]; 
+        result[11] += c[11]; 
 
         // Reduce limbs
         UnpackedScalar::reduce_limbs(&mut result)
     }
+
 
     /// Reduce 24 limbs to 12, consuming the input. Reduction is mod
     ///

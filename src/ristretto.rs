@@ -8,12 +8,139 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! An implementation of Mike Hamburg's Ristretto cofactor-eliminating
-//! point-compression scheme, providing a prime-order group on top of
-//! Curve25519.
+//! An implementation of Ristretto, which provides a prime-order group.
+//!
+//! Ristretto is a modification of Mike Hamburg's [Decaf
+//! cofactor-eliminating point-compression
+//! scheme](https://eprint.iacr.org/2015/673.pdf) to work on top of the
+//! Curve25519 group.
 //!
 //! Note: this code is currently feature-gated with the `yolocrypto`
 //! feature flag, because our implementation is still unfinished.
+//!
+//! ## Decaf
+//!
+//! The introduction of the Decaf paper, [_Decaf: Eliminating cofactors
+//! through point compression_](https://eprint.iacr.org/2015/673.pdf)
+//! notes that while most cryptographic systems require a group of prime
+//! order, most concrete implementations using elliptic curve groups
+//! fall short -- they either provide a group of prime order, but with
+//! incomplete or variable-time addition formulae (for instance, most
+//! Weierstrass models), or else they provide a fast and safe
+//! implementation of a group whose order is not quite a prime \\(q\\),
+//! but \\(hq\\) for a small cofactor \\(h\\) (for instance, Edwards
+//! curves, which have cofactor at least \\(4\\)).
+//!
+//! This abstraction mismatch requires ad-hoc protocol modifications to
+//! ensure security; these modifications require careful analysis and
+//! are a recurring source of vulnerabilities.
+//!
+//! The Decaf suggestion is to use a quotient group, such as \\(\mathcal
+//! E / \mathcal E[4]\\) or \\(2 \mathcal E / \mathcal E[2] \\), to
+//! implement a prime-order group.
+//!
+//! This requires only changing
+//!
+//! 1. the function for equality checking (so that two representatives
+//!    of the same coset are considered equal);
+//! 2. the function for encoding (so that two representatives of the
+//!    same coset are encoded as identical bitstrings);
+//! 3. the function for decoding (so that only the canonical encoding of
+//!    a coset is accepted).
+//!
+//! Internally, each coset is represented by a curve point; two points
+//! may represent the same coset in the same way that two points with
+//! different \\(X,Y,Z\\) coordinates may represent the same point.  The
+//! group operations are carried out using the fast, safe Edwards
+//! formulas.
+//!
+//! The Decaf paper suggests implementing the compression and
+//! decompression routines using an isogeny from a Jacobi quartic; for
+//! curves of cofactor \\(4\\), this eliminates the cofactor, and
+//! explains the name: Decaf is named "after the procedure which divides
+//! the effect of coffee by \\(4\\)".  However, Curve25519 has a cofactor of \\(8\\).  To eliminate its
+//! cofactor, we tweak Decaf to restrict further.  This gives the
+//! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.  In
+//! what follows we focus on the Curve25519 case.
+//!
+//! ## The Jacobi Quartic
+//!
+//! The Jacobi quartic is parameterized by \\(e, A\\), and is of the
+//! form $$ \mathcal J\_{e,A} : t\^2 = es\^4 + 2As\^2 + 1, $$ with
+//! identity point \\((0,1)\\).  For more details on the Jacobi quartic,
+//! see the [Decaf paper](https://eprint.iacr.org/2015/673.pdf) or
+//! [_Jacobi Quartic Curves
+//! Revisited_](https://eprint.iacr.org/2009/312.pdf) by Hisil, Wong,
+//! Carter, and Dawson).
+//!
+//! ## The Edwards Curve
+//!
+//! Our primary internal model for Curve25519 points is the "Extended
+//! Twisted Edwards Coordinates" of Hisil, Wong, Carter, and Dawson.
+//! These correspond to the affine model
+//!
+//! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2,$$
+//! 
+//! with \\(a = -1\\), \\(d = -121665/121666\\).  We write \\(\mathcal E
+//! = \mathcal E\_{-1,-121665/121666}\\) when there is no risk of
+//! confusion.  In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
+//! with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$
+//! (For more details on this model, see the documentation
+//! for the `edwards` module).
+//!
+//! ## The Isogeny
+//!
+//! We can map from \\(\mathcal J\_{1,(d-1)/(d+1)}\\) to \\(\mathcal
+//! E_{-1,d}\\) via the \\(2\\)-isogeny
+//! $$ \theta : (s,t) \mapsto \left( \frac{2s}{t \sqrt{-1-d}},
+//! \frac{1-s\^2}{1+s\^2} \right)$$
+//!
+//!
+//! # Notes on (Curve25519) Ristretto
+//!
+//! ## The Jacobi Quartic
+//!
+//! ## The Edwards Curve
+//!
+//! The group \\(\mathcal E(\mathbb F_p)\\) has order \\(8 \ell\\),
+//! where \\(\ell = 2\^{252} + \cdots\\) is a prime.  The structure is
+//! \\(\mathcal E \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), so
+//! that every point \\(P\\) is of the form \\(P = P_0 + Q\\) for
+//! \\(P_0\\) in the prime-order subgroup \\(\mathcal E[\ell]\\) and a
+//! torsion point \\(Q\\) in \\(\mathcal E[8]\\).  (This is a slight
+//! abuse of terminology; throughout, we use "torsion" to refer to the
+//! small-order \\(\mathcal E[8]\\) part, not the large-order
+//! \\(\mathcal E[\ell]\\) part).
+//!
+//! We will use \\(\mathcal E\\) to construct a prime-order group
+//! \\(G\\), namely $$G = (2\mathcal E)/\mathcal E[4].$$  Here
+//! \\(2\mathcal E\\) denotes the subgroup of *even* points, i.e., the
+//! image of the multiplication-by-2 map \\([2] : \mathcal E \rightarrow
+//! \mathcal E\\).  We have \\(\\#(2\mathcal E) = 4\ell\\), since
+//! \\(\mathcal E[2] \cong \mathbb Z/2\\) and \\(2\mathcal E \cong
+//! \mathcal E / \mathcal E[2]\\).  Since \\(\mathcal E[4] = 2 \mathcal
+//! E[8])\\), \\(\mathcal E[4] \subset 2\mathcal E\\), so the quotient
+//! group \\((2\mathcal E)/\mathcal E[4]\\) is well-defined; it has
+//! prime order \\(4\ell / 4 = \ell.\\)
+//!
+//! We can write the four-torsion \\(\mathcal E[4]\\) explicitly as
+//! $$\mathcal E[4] = \\{ Q_0, Q_2, Q_4, Q_6 \\}$$ with $$ Q_0 = (0,+1),
+//! \quad Q_2 = (+i,0), \quad Q_4 = (0,-1), \quad Q_6 = (-i,0).$$
+//!
+//! For a point \\(P = (x,y)\\), we can write the coset \\(P + \mathcal
+//! E[4]\\) as $$ P + \mathcal E[4] = \\{ (x,y), (iy,ix), (-x,-y),
+//! (-iy,-ix) \\}.$$
+//!
+//! Notice 
+//!
+//! with parameters `e`, `A`. (For more details, see the [Decaf
+//! paper](https://eprint.iacr.org/2015/673.pdf) or [_Jacobi Quartic
+//! Curves Revisited_](https://eprint.iacr.org/2009/312.pdf) by Hisil,
+//! Wong, Carter, and Dawson).
+//!
+//! Ristretto uses the Jacobi quartic `J_{
+//! 
+//! 
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

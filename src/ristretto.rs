@@ -18,6 +18,8 @@
 //! Note: this code is currently feature-gated with the `yolocrypto`
 //! feature flag, because our implementation is still unfinished.
 //!
+//! # Notes on Ristretto
+//!
 //! ## Decaf
 //!
 //! The introduction of the Decaf paper, [_Decaf: Eliminating cofactors
@@ -58,10 +60,10 @@
 //! decompression routines using an isogeny from a Jacobi quartic; for
 //! curves of cofactor \\(4\\), this eliminates the cofactor, and
 //! explains the name: Decaf is named "after the procedure which divides
-//! the effect of coffee by \\(4\\)".  However, Curve25519 has a cofactor of \\(8\\).  To eliminate its
-//! cofactor, we tweak Decaf to restrict further.  This gives the
-//! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.  In
-//! what follows we focus on the Curve25519 case.
+//! the effect of coffee by \\(4\\)".  However, Curve25519 has a
+//! cofactor of \\(8\\).  To eliminate its cofactor, we tweak Decaf to
+//! restrict further.  This gives the
+//! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.
 //!
 //! ## The Jacobi Quartic
 //!
@@ -73,74 +75,124 @@
 //! Revisited_](https://eprint.iacr.org/2009/312.pdf) by Hisil, Wong,
 //! Carter, and Dawson).
 //!
+//! When \\(e = a\^2\\), \\(\mathcal J\_{e,A}\\) has full
+//! \\(2\\)-torsion (i.e., \\(\mathcal J[2] \cong \mathbb Z /2 \times
+//! \mathbb Z/2\\)), and
+//! we can write the \\(\mathcal J[2]\\)-coset of a point \\(P =
+//! (s,t)\\) as
+//! $$
+//! P + \mathcal J[2] = \left\\{
+//!                       (s,t),
+//!                       (-s,-t),
+//!                       (1/as, -t/as\^2),
+//!                       (-1/as, t/as\^2) \right\\}.
+//! $$
+//! Notice that replacing \\(a\\) by \\(-a\\) just swaps the last two
+//! points, so this set does not depend on the choice of \\(a\\).  In
+//! what follows we require \\(a = \pm 1\\).
+//!
+//! ## Encoding \\(\mathcal J / \mathcal J[2]\\)
+//!
+//! To encode points on \\(\mathcal J\\) modulo \\(\mathcal J[2]\\),
+//! we need to choose a canonical representative of the above coset.
+//! To do this, it's sufficient to make two independent sign choices:
+//! the Decaf paper suggests choosing \\((s,t)\\) with \\(s\\)
+//! non-negative and finite, and \\(t/s\\) non-negative or infinite.
+//!
+//! The encoding is then the (canonical byte encoding of the)
+//! \\(s\\)-value of the canonical representative.
+//!
 //! ## The Edwards Curve
 //!
-//! Our primary internal model for Curve25519 points is the "Extended
-//! Twisted Edwards Coordinates" of Hisil, Wong, Carter, and Dawson.
+//! Our primary internal model for Curve25519 points are the [_Extended
+//! Twisted Edwards Coordinates_](https://eprint.iacr.org/2008/522.pdf)
+//! of Hisil, Wong, Carter, and Dawson.
 //! These correspond to the affine model
 //!
-//! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2,$$
+//! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
 //! 
-//! with \\(a = -1\\), \\(d = -121665/121666\\).  We write \\(\mathcal E
-//! = \mathcal E\_{-1,-121665/121666}\\) when there is no risk of
-//! confusion.  In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
-//! with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$
-//! (For more details on this model, see the documentation
-//! for the `edwards` module).
+//! In projective coordinates, we represent a point as
+//! \\((X:Y:Z:T)\\) with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$
+//! (For more details on this model, see the documentation for the
+//! `edwards` module).
+//!
+//! The case \\(a = 1\\) is the _untwisted_ case; we only consider \\(a
+//! = \pm 1\\), and in particular we focus on the twisted Edwards form
+//! of Curve25519, which has \\(a = -1, d = -121665/121666\\).  When not
+//! otherwise specified, we write \\(\mathcal E\\) for \\(\mathcal
+//! E\_{-1, -121665/121666}\\).
+//!
+//! The structure of the Curve25519 group is \\( \mathcal E(\mathbb
+//! F\_p) \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), where \\( \ell
+//! = 2\^{252} + \cdots \\) is a large prime.  Because \\(\mathcal E[8]
+//! \cong \mathbb Z / 8\\), we have \\(\[2\](\mathcal E[8]) = \mathcal
+//! E[4]\\), \\(\mathcal E[4] \cong \mathbb Z / 4
+//! \\) and \\( \mathcal E[2] \cong \mathbb Z / 2\\).  In particular
+//! this tells us that the group 
+//! $$
+//! \frac{\[2\](\mathcal E)}{\mathcal E[4]}
+//! $$
+//! is well-defined and has prime order \\( (8\ell / 2) / 4 = \ell \\).
+//!
+//! We can write the four-torsion \\(\mathcal E[4]\\) explicitly as
+//! $$
+//! \mathcal E[4] = \\{ Q_0, Q_2, Q_4, Q_6 \\}
+//! $$
+//! with 
+//! $$ Q_0 = (0,+1), \quad Q_2 = (+i,0), \quad Q_4 = (0,-1), \quad Q_6 = (-i,0).
+//! $$
+//! Here \\(i\\) is the (positive) square root of \\(-1\\), and the even
+//! indices are chosen to situate \\(\mathcal E[4]\\) inside \\(\mathcal
+//! E[8]\\).
+//!
+//! For a point \\(P = (x,y)\\), we can write the coset \\(P + \mathcal
+//! E[4]\\) as 
+//! $$ P + \mathcal E[4] = \\{ (x,y), (iy,ix), (-x,-y), (-iy,-ix) \\}.$$
 //!
 //! ## The Isogeny
 //!
-//! We can map from \\(\mathcal J\_{1,(d-1)/(d+1)}\\) to \\(\mathcal
-//! E_{-1,d}\\) via the \\(2\\)-isogeny
-//! $$ \theta : (s,t) \mapsto \left( \frac{2s}{t \sqrt{-1-d}},
-//! \frac{1-s\^2}{1+s\^2} \right)$$
+//! For \\(a = \pm 1\\), we have a \\(2\\)-isogeny
+//! $$
+//! \theta\_{a,d} : \mathcal J\_{a\^2, -a(a+d)/(a-d)} \longrightarrow \mathcal E\_{a,d}
+//! $$
+//! defined by
+//! $$
+//! \theta\_{a,d} : (s,t) \mapsto \left( \frac{1}{\sqrt{ad-1}} \cdot \frac{2s}{t},\quad \frac{1+as\^2}{1-as\^2} \right).
+//! $$
 //!
+//! We can check that \\(\theta\_{a,d}\\) really does map to \\(\mathcal E\_{a,d}\\) using the following Sage script: 
 //!
-//! # Notes on (Curve25519) Ristretto
+//! ```text,no_run
+//! sage: d,s = var('d,s')
+//! sage: for a in [1, -1]:
+//! ....:     y = (1+a*s^2)/(1-a*s^2)
+//! ....:     tsq = s^4 - 2*a*((a+d)/(a-d))*s^2 + 1
+//! ....:     xsq = 4*s^2/(tsq*(a*d-1))
+//! ....:     curve_equation = xsq*(a - d*y^2) + y^2 -1
+//! ....:     print a, curve_equation.is_zero()
+//! 1 True
+//! -1 True
+//! ```
 //!
-//! ## The Jacobi Quartic
+//! XXX explain how to use the isogeny to transport the encoding from
+//! the Jacobi quartic
 //!
-//! ## The Edwards Curve
+//! XXX what's a nice way to see that the image is \\(2 \mathcal E\\)?
+//! montgomery connection?
 //!
-//! The group \\(\mathcal E(\mathbb F_p)\\) has order \\(8 \ell\\),
-//! where \\(\ell = 2\^{252} + \cdots\\) is a prime.  The structure is
-//! \\(\mathcal E \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), so
-//! that every point \\(P\\) is of the form \\(P = P_0 + Q\\) for
-//! \\(P_0\\) in the prime-order subgroup \\(\mathcal E[\ell]\\) and a
-//! torsion point \\(Q\\) in \\(\mathcal E[8]\\).  (This is a slight
-//! abuse of terminology; throughout, we use "torsion" to refer to the
-//! small-order \\(\mathcal E[8]\\) part, not the large-order
-//! \\(\mathcal E[\ell]\\) part).
+//! XXX Its dual is ... ?
 //!
-//! We will use \\(\mathcal E\\) to construct a prime-order group
-//! \\(G\\), namely $$G = (2\mathcal E)/\mathcal E[4].$$  Here
-//! \\(2\mathcal E\\) denotes the subgroup of *even* points, i.e., the
-//! image of the multiplication-by-2 map \\([2] : \mathcal E \rightarrow
-//! \mathcal E\\).  We have \\(\\#(2\mathcal E) = 4\ell\\), since
-//! \\(\mathcal E[2] \cong \mathbb Z/2\\) and \\(2\mathcal E \cong
-//! \mathcal E / \mathcal E[2]\\).  Since \\(\mathcal E[4] = 2 \mathcal
-//! E[8])\\), \\(\mathcal E[4] \subset 2\mathcal E\\), so the quotient
-//! group \\((2\mathcal E)/\mathcal E[4]\\) is well-defined; it has
-//! prime order \\(4\ell / 4 = \ell.\\)
+//! ## The Ristretto Encoding
 //!
-//! We can write the four-torsion \\(\mathcal E[4]\\) explicitly as
-//! $$\mathcal E[4] = \\{ Q_0, Q_2, Q_4, Q_6 \\}$$ with $$ Q_0 = (0,+1),
-//! \quad Q_2 = (+i,0), \quad Q_4 = (0,-1), \quad Q_6 = (-i,0).$$
+//! ## Encoding in Extended Coordinates
 //!
-//! For a point \\(P = (x,y)\\), we can write the coset \\(P + \mathcal
-//! E[4]\\) as $$ P + \mathcal E[4] = \\{ (x,y), (iy,ix), (-x,-y),
-//! (-iy,-ix) \\}.$$
+//! ## Decoding to Extended Coordinates
 //!
-//! Notice 
+//! ## Elligator
 //!
-//! with parameters `e`, `A`. (For more details, see the [Decaf
-//! paper](https://eprint.iacr.org/2015/673.pdf) or [_Jacobi Quartic
-//! Curves Revisited_](https://eprint.iacr.org/2009/312.pdf) by Hisil,
-//! Wong, Carter, and Dawson).
+//! ## The Double-Ristretto Encoding
 //!
-//! Ristretto uses the Jacobi quartic `J_{
-//! 
-//! 
+//! ## ???
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

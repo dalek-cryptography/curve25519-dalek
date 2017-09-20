@@ -111,16 +111,35 @@
 //!
 //! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
 //! 
-//! In projective coordinates, we represent a point as
-//! \\((X:Y:Z:T)\\) with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$
-//! (For more details on this model, see the documentation for the
-//! `edwards` module).
+//! In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
+//! with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$ (For more
+//! details on this model, see the documentation for the `edwards`
+//! module). The case \\(a = 1\\) is the _untwisted_ case; we only
+//! consider \\(a = \pm 1\\), and in particular we focus on the twisted
+//! Edwards form of Curve25519, which has \\(a = -1, d =
+//! -121665/121666\\).  When not otherwise specified, we write
+//! \\(\mathcal E\\) for \\(\mathcal E\_{-1, -121665/121666}\\).
 //!
-//! The case \\(a = 1\\) is the _untwisted_ case; we only consider \\(a
-//! = \pm 1\\), and in particular we focus on the twisted Edwards form
-//! of Curve25519, which has \\(a = -1, d = -121665/121666\\).  When not
-//! otherwise specified, we write \\(\mathcal E\\) for \\(\mathcal
-//! E\_{-1, -121665/121666}\\).
+//! When both \\(d\\) and \\(ad\\) are nonsquare (which forces \\(a\\)
+//! to be square), the curve is *complete*.  In this case the
+//! four-torsion subgroup is cyclic (XXX why no extra points?), and we
+//! can write it explicitly as
+//! $$
+//! \mathcal E\_{a,d}[4] = \\{ (0,1),\; (1/\sqrt a, 0),\; (0, -1),\; (-1/\sqrt{a}, 0)\\}.
+//! $$
+//! These are the only points with \\(xy = 0\\); the points with \\( y
+//! \neq 0 \\) are \\(2\\)-torsion.  The \\(\mathcal
+//! E\_{a,d}[4]\\)-coset of \\(P = (x,y)\\) is then
+//! $$
+//! P + \mathcal E\_{a,d}[4] = \\{ (x,y),\; (y/\sqrt a, -x\sqrt a),\; (-x, -y),\; (-y/\sqrt a, x\sqrt a)\\}.
+//! $$
+//! Notice that if \\(xy \neq 0 \\), then exactly two of
+//! these points have \\( xy \\) non-negative, and they differ by the
+//! \\(2\\)-torsion point \\( (0,-1) \\).  This means that we can select
+//! a representative modulo \\(\mathcal
+//! E\_{a,d}[2] \\) by requiring \\(xy\\) nonnegative and \\(y \neq
+//! 0\\), and we can ensure this condition by conditionally adding a
+//! \\(4\\)-torsion point if \\(xy\\) is negative or \\(y = 0\\).
 //!
 //! The structure of the Curve25519 group is \\( \mathcal E(\mathbb
 //! F\_p) \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), where \\( \ell
@@ -134,33 +153,20 @@
 //! $$
 //! is well-defined and has prime order \\( (8\ell / 2) / 4 = \ell \\).
 //!
-//! We can write the four-torsion \\(\mathcal E[4]\\) explicitly as
-//! $$
-//! \mathcal E[4] = \\{ Q_0, Q_2, Q_4, Q_6 \\}
-//! $$
-//! with 
-//! $$ Q_0 = (0,+1), \quad Q_2 = (+i,0), \quad Q_4 = (0,-1), \quad Q_6 = (-i,0).
-//! $$
-//! Here \\(i\\) is the (positive) square root of \\(-1\\), and the even
-//! indices are chosen to situate \\(\mathcal E[4]\\) inside \\(\mathcal
-//! E[8]\\).
-//!
-//! For a point \\(P = (x,y)\\), we can write the coset \\(P + \mathcal
-//! E[4]\\) as 
-//! $$ P + \mathcal E[4] = \\{ (x,y), (iy,ix), (-x,-y), (-iy,-ix) \\}.$$
-//!
 //! ## The Isogeny
 //!
 //! For \\(a = \pm 1\\), we have a \\(2\\)-isogeny
 //! $$
 //! \theta\_{a,d} : \mathcal J\_{a\^2, -a(a+d)/(a-d)} \longrightarrow \mathcal E\_{a,d}
 //! $$
-//! defined by
+//! (or simply \\(\theta\\)) defined by
 //! $$
 //! \theta\_{a,d} : (s,t) \mapsto \left( \frac{1}{\sqrt{ad-1}} \cdot \frac{2s}{t},\quad \frac{1+as\^2}{1-as\^2} \right).
 //! $$
 //!
-//! We can check that \\(\theta\_{a,d}\\) really does map to \\(\mathcal E\_{a,d}\\) using the following Sage script: 
+//! XXX Its dual is ... ?
+//!
+//! We can check that \\(\theta\_{a,d}\\) really does map to \\(\mathcal E\_{a,d}\\) using the following Sage script that checks the Edwards curve equation: 
 //!
 //! ```text,no_run
 //! sage: d,s = var('d,s')
@@ -174,19 +180,41 @@
 //! -1 True
 //! ```
 //!
-//! XXX explain how to use the isogeny to transport the encoding from
-//! the Jacobi quartic
+//! The Decaf paper notes that, for a group \\( G \\) with normal
+//! subgroup \\(G' \leq G\\), a group homomorphism \\( \phi : G
+//! \rightarrow H \\) induces a homomorphism
+//! $$ 
+//! \bar{\phi} : \frac G {G'} \longrightarrow \frac {\phi(G)}{\phi(G')} \leq \frac {H} {\phi(G')},
+//! $$ 
+//! and that the induced homomorphism \\(\bar{\phi}\\) is injective if
+//! \\( \ker \phi \leq G' \\).  In our context, the kernel of
+//! \\(\theta\_{a,d}\\) is \\( \\{(0, \pm 1)\\} \leq \mathcal J[2] \\),
+//! so \\(\theta\_{a,d}\\) gives an isomorphism
+//! $$
+//! \frac {\mathcal J} {\mathcal J[2]} 
+//! \cong 
+//! \frac {\theta\_{a,d}(\mathcal J)} {\theta\_{a,d}(\mathcal J[2])}
+//! \cong
+//! \frac {\[2\](\mathcal E\_{a,d})} {\mathcal E\_{a,d}[2]}.
+//! $$
 //!
 //! XXX what's a nice way to see that the image is \\(2 \mathcal E\\)?
-//! montgomery connection?
+//! montgomery connection? what about the image of \\(\mathcal J[2]\\)?
 //!
-//! XXX Its dual is ... ?
+//!
+//!
 //!
 //! ## The Ristretto Encoding
+//!
+//! XXX prelude (figure out where to break with previous section)
+//!
+//! In affine coordinates, the Ristretto encoding is as follows:
 //!
 //! ## Encoding in Extended Coordinates
 //!
 //! ## Decoding to Extended Coordinates
+//!
+//! ## Equality Testing
 //!
 //! ## Elligator
 //!

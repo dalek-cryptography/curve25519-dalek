@@ -74,7 +74,7 @@ included in the SUPERCOP benchmarking suite (albeit their numbers are for the
 older Nehalem microarchitecture).
 
 Additionally, thanks to Rust, this implementation has both type and memory
-safety.  It's also easily readable a much larger set of people than those who
+safety.  It's also easily readable for a much larger set of people than those who
 can read qhasm, making it more readily and more easily auditable.  We're of
 the opinion that, ultimately, these features—combined with speed—are more
 valuable than simply cycle counts alone.

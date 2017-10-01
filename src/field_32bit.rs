@@ -56,7 +56,7 @@ use utils::{load3, load4};
 /// faster.  However, the `FieldElement64` implementation requires Rust's
 /// `u128`, which is not yet stable.
 #[derive(Copy, Clone)]
-pub struct FieldElement32(pub [i32; 10]);
+pub struct FieldElement32(pub (crate) [i32; 10]);
 
 impl Debug for FieldElement32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {

@@ -81,42 +81,9 @@ impl FieldElement {
     /// # Return
     ///
     /// If negative, return `1u8`.  Otherwise, return `0u8`.
-    pub fn is_negative_ed25519(&self) -> u8 { //FeIsNegative
+    pub fn is_negative(&self) -> u8 {
         let bytes = self.to_bytes();
         (bytes[0] & 1) as u8
-    }
-
-    /// Determine if this `FieldElement` is negative, in the
-    /// sense used by Decaf: `x` is nonnegative if the least
-    /// absolute residue for `x` lies in `[0, (p-1)/2]`, and
-    /// is negative otherwise.
-    ///
-    /// # Return
-    ///
-    /// Returns `1u8` if negative, `0u8` if nonnegative.
-    ///
-    /// # Implementation
-    ///
-    /// Uses a trick borrowed from Mike Hamburg's code.  Let `x \in
-    /// F_p` and let `y \in Z` be the least absolute residue for `x`.
-    /// Suppose `y ≤ (p-1)/2`.  Then `2y < p` so `2y = 2y mod p` and
-    /// `2y mod p` is even.  On the other hand, if `y > (p-1)/2` then
-    /// `2y ≥ p`; since `y < p`, `2y \in [p, 2p)`, so `2y mod p =
-    /// 2y-p`, which is odd.
-    ///
-    /// Thus we can test whether `y ≤ (p-1)/2` by checking whether `2y
-    /// mod p` is even.
-    pub fn is_negative_decaf(&self) -> u8 {
-        let y = self + self;
-        (y.to_bytes()[0] & 1) as u8
-    }
-
-    /// Determine if this `FieldElement` is nonnegative, in the
-    /// sense used by Decaf: `x` is nonnegative if the least
-    /// absolute residue for `x` lies in `[0, (p-1)/2]`, and
-    /// is negative otherwise.
-    pub fn is_nonnegative_decaf(&self) -> u8 {
-        1u8 & (!self.is_negative_decaf())
     }
 
     /// Determine if this `FieldElement` is zero.

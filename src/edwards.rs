@@ -143,7 +143,7 @@ impl CompressedEdwardsY {
 
         // Flip the sign of X if it's not correct
         let compressed_sign_bit = self.as_bytes()[31] >> 7;
-        let    current_sign_bit = X.is_negative_ed25519();
+        let    current_sign_bit = X.is_negative();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
         Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
@@ -442,7 +442,7 @@ impl ProjectivePoint {
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
-        s[31] ^= (x.is_negative_ed25519() << 7) as u8;
+        s[31] ^= (x.is_negative() << 7) as u8;
         CompressedEdwardsY(s)
     }
 

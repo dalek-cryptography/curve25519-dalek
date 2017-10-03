@@ -451,7 +451,7 @@ impl CompressedRistretto {
         let s_bytes_check = s.to_bytes();
         let s_encoding_is_canonical =
             subtle::slices_equal(&s_bytes_check[..], self.as_bytes());
-        let s_is_negative = s.is_negative_ed25519();
+        let s_is_negative = s.is_negative();
 
         if s_encoding_is_canonical == 0u8 || s_is_negative == 1u8 {
             return None;
@@ -471,13 +471,13 @@ impl CompressedRistretto {
         let yden_inv = &invsqrt * &(&xden_inv * &xden_sqr);
 
         let mut x = &(&s + &s) * &xden_inv; // 2*s*xden_inv
-        let x_is_negative = x.is_negative_ed25519();
+        let x_is_negative = x.is_negative();
         x.conditional_negate(x_is_negative);
         let y = &ynum * &yden_inv;
 
         let t = &x * &y;
 
-        if ok == 0u8 || t.is_negative_ed25519() == 1u8 || y.is_zero() == 1u8 {
+        if ok == 0u8 || t.is_negative() == 1u8 || y.is_zero() == 1u8 {
             return None;
         } else {
             return Some(RistrettoPoint(ExtendedPoint{X: x, Y: y, Z: one, T: t}));
@@ -643,16 +643,16 @@ impl RistrettoPoint {
         let ristretto_magic = &constants::invsqrt_a_minus_d;
         let enchanted_denominator = &i1 * ristretto_magic;
 
-        let rotate = (T * &z_inv).is_negative_ed25519();
+        let rotate = (T * &z_inv).is_negative();
 
         X.conditional_assign(&iY, rotate);
         Y.conditional_assign(&iX, rotate);
         den_inv.conditional_assign(&enchanted_denominator, rotate);
 
-        Y.conditional_negate((&X * &z_inv).is_negative_ed25519());
+        Y.conditional_negate((&X * &z_inv).is_negative());
 
         let mut s = &den_inv * &(Z - &Y);
-        let s_is_negative = s.is_negative_ed25519();
+        let s_is_negative = s.is_negative();
         s.conditional_negate(s_is_negative);
 
         CompressedRistretto(s.to_bytes())

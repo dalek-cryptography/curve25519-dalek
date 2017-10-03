@@ -216,6 +216,14 @@ mod test {
     }
 
     #[test]
+    fn test_sqrt_ad_minus_one() {
+        let a = FieldElement::minus_one();
+        let ad_minus_one = &(&a * &constants::d) + &a;
+        let should_be_ad_minus_one = constants::sqrt_ad_minus_one.square();
+        assert_eq!(should_be_ad_minus_one, ad_minus_one);
+    }
+
+    #[test]
     fn test_a_minus_d() {
         let a = FieldElement::minus_one();
         let a_minus_d = &a - &constants::d;

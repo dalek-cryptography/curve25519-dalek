@@ -23,6 +23,7 @@ use core::cmp::{Eq, PartialEq};
 use subtle::slices_equal;
 use subtle::byte_is_nonzero;
 use subtle::ConditionallyAssignable;
+use subtle::ConditionallyNegatable;
 use subtle::Equal;
 
 use constants;
@@ -199,6 +200,8 @@ impl FieldElement {
     /// Given `FieldElements` `u` and `v`, attempt to compute
     /// `sqrt(u/v)` in constant time.
     ///
+    /// This function always returns the nonnegative square root, if it exists.
+    ///
     /// It would be much better to use an `Option` type here, but
     /// doing so forces the caller to branch, which we don't want to
     /// do.  This seems like the least bad solution.
@@ -244,6 +247,10 @@ impl FieldElement {
 
         let r_prime = &constants::SQRT_M1 * &r;
         r.conditional_assign(&r_prime, flipped_sign_sqrt);
+
+        // Choose the nonnegative square root.
+        let r_is_negative = r.is_negative();
+        r.conditional_negate(r_is_negative);
 
         let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
 

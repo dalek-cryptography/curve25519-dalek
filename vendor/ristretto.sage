@@ -532,9 +532,14 @@ def test(cls,n):
         
     
     P = cls.base()
+    print "base", list(P.encode())
+    for i in xrange(16):
+	Q = P*i
+	print i, list(Q.encode())
+
     Q = cls()
     for i in xrange(n):
-        #print binascii.hexlify(Q.encode())
+        #print i, binascii.hexlify(Q.encode())
         QQ = cls.decode(Q.encode())
         if QQ != Q: raise TestFailedException("Round trip %s != %s" % (str(QQ),str(Q)))
         
@@ -556,22 +561,25 @@ def test(cls,n):
         Q = Q1
 
 test(Ed25519Point,100)
-test(NegEd25519Point,100)
-test(IsoEd25519Point,100)
-test(IsoEd448Point,100)
-test(TwistedEd448GoldilocksPoint,100)
-test(Ed448GoldilocksPoint,100)
+#test(NegEd25519Point,100)
+#test(IsoEd25519Point,100)
+#test(IsoEd448Point,100)
+#test(TwistedEd448GoldilocksPoint,100)
+#test(Ed448GoldilocksPoint,100)
         
    
 def testElligator(cls,n):
     print "Testing elligator on %s" % cls.__name__
     for i in xrange(n):
-        cls.elligator(randombytes(cls.encLen))
+        r = randombytes(cls.encLen)
+        Q = cls.elligator(r)
+	print list(r), list(Q.encode())
+
 testElligator(Ed25519Point,100)
-testElligator(NegEd25519Point,100)
-testElligator(IsoEd448Point,100)
-testElligator(Ed448GoldilocksPoint,100)
-testElligator(TwistedEd448GoldilocksPoint,100)
+#testElligator(NegEd25519Point,100)
+#testElligator(IsoEd448Point,100)
+#testElligator(Ed448GoldilocksPoint,100)
+#testElligator(TwistedEd448GoldilocksPoint,100)
 
 def gangtest(classes,n):
     print "Gang test",[cls.__name__ for cls in classes]

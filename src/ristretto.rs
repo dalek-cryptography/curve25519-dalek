@@ -487,8 +487,7 @@ impl CompressedRistretto {
 
 impl Identity for CompressedRistretto {
     fn identity() -> CompressedRistretto {
-        // After tweaking Decaf to Ristretto, the identity compresses as -1 :(
-        CompressedRistretto([0xec, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f])
+        CompressedRistretto([0u8; 32])
     }
 }
 
@@ -668,68 +667,52 @@ impl RistrettoPoint {
         ]
     }
 
-    /// Computes the Elligator map as described in the Decaf paper.
+    /// Computes the Ristretto Elligator map.
     ///
     /// # Note
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub fn elligator_decaf_flavour(r_0: &FieldElement) -> RistrettoPoint {
-        // Follows Appendix C of the Decaf paper.
-        // Use n = 2 as the quadratic nonresidue so that n*x = x + x.
-        let minus_one = -&FieldElement::one();
+    pub fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
+        println!("r_0 = {:?}", r_0);
+        let (i, d) = (&constants::SQRT_M1, &constants::d);
+        let one = FieldElement::one();
 
-        // 1. Compute r <--- nr_0^2.
-        let r_0_squared = r_0.square();
-        let r = &r_0_squared + &r_0_squared;
+        let r = i * &r_0.square();
 
-        // 2. Compute D <--- (dr + (a-d)) * (dr - (d + ar))
-        let dr = &constants::d * &r;
-        // D = (dr + (a-d)) * (dr - (d + ar))
-        //   = (dr + (a-d)) * (dr - (d-r)) since a=-1
-        // writing as
-        //   = (dr + (a-d)) * dr - (dr + (a-d)) * (d - r)
-        // avoids two consecutive additions (could cause overflow)
-        let dr_plus_amd = &dr + &constants::a_minus_d;
-        let D = &(&dr_plus_amd * &dr) - &(&dr_plus_amd * &(&constants::d - &r));
+        // D = (dr -a)(ar-d) = -(dr+1)(r+d) 
+        let D = -&( &(&(d * &r) + &one) * &(&r + d) );
+        // N = a(d-a)(d+a)(r+1) = -(r+1)(d^2 -1)
+        let d_sq = d.square();
+        let N = -&( &(&d_sq - &one) * &(&r + &one) );
 
-        // 3. Compute N <--- (r+1) * (a-2d)
-        let N = &(&r + &FieldElement::one()) * &(&minus_one - &constants::d2);
+        let mut s = FieldElement::zero();
+        let mut c = -&one;
 
-        // 4. Compute
-        //           / +1,     1 / sqrt(ND)   if ND is square
-        // c, e <--- | +1, 0                  if N or D = 0
-        //           \ -1,  nr_0 / sqrt(nND)  otherwise
-        let ND = &N * &D;
-        let nND = &ND + &ND;
-        let mut c = FieldElement::one();
-        let mut e = FieldElement::zero();
-        let (ND_is_nonzero_square, ND_invsqrt) = ND.invsqrt();
-        e.conditional_assign(&ND_invsqrt, ND_is_nonzero_square);
-        let (nND_is_nonzero_square, nND_invsqrt) = nND.invsqrt();
-        let nr_0_nND_invsqrt = &nND_invsqrt * &(r_0 + r_0);
-        c.conditional_assign(&minus_one, nND_is_nonzero_square);
-        e.conditional_assign(&nr_0_nND_invsqrt, nND_is_nonzero_square);
+        let (N_over_D_is_square, maybe_s) = FieldElement::sqrt_ratio(&N, &D);
+        // s = sqrt(N/D) if N/D is square
+        s.conditional_assign(&maybe_s, N_over_D_is_square);
 
-        // 5. Compute s <--- c*|N*e|
-        let mut s = &N * &e;
-        let neg = s.is_negative_decaf();
-        s.conditional_negate(neg);
-        s *= &c;
+        let (rN_over_D_is_square, mut maybe_s) = FieldElement::sqrt_ratio(&(&r*&N), &D);
+        maybe_s.negate();
 
-        // 6. Compute t <--- -c*N*(r-1)* ((a-2d)*e)^2  -1
-        let a_minus_2d_e_sq = (&(&minus_one - &constants::d2) * &e).square();
-        let c_N_r_minus_1 = &c * &(&N * &(&r + &minus_one));
-        let t = &minus_one - &(&c_N_r_minus_1 * &a_minus_2d_e_sq);
+        // s = -sqrt(rN/D) if rN/D is square (should happen exactly when N/D is nonsquare)
+        debug_assert_eq!(N_over_D_is_square | rN_over_D_is_square, 1u8);
+        s.conditional_assign(&maybe_s, rN_over_D_is_square);
+        c.conditional_assign(&r, rN_over_D_is_square);
+
+        // T = (c * (r - one) * (d-one).square()) - D;
+        let T = &(&c * &(&(&r - &one) * &((d - &one).square()))) - &D;
+
 
         // 7. Apply the isogeny:
         // (x,y) = ((2s)/(1+as^2), (1-as^2)/(t))
-        let as_sq = &minus_one * &s.square();
+        let s_sq = s.square();
         let P = CompletedPoint{
-            X: &s + &s,
-            Z: &FieldElement::one() + &as_sq,
-            Y: &FieldElement::one() - &as_sq,
-            T: t,
+            X: &(&(&s + &s) * &D) * &constants::invsqrt_a_minus_d,
+            Z: T,
+            Y: &FieldElement::one() - &s_sq,
+            T: &FieldElement::one() + &s_sq,
         };
 
         // Convert to extended and return.
@@ -755,7 +738,7 @@ impl RistrettoPoint {
         let mut field_bytes = [0u8; 32];
         rng.fill_bytes(&mut field_bytes);
         let r_0 = FieldElement::from_bytes(&field_bytes);
-        RistrettoPoint::elligator_decaf_flavour(&r_0)
+        RistrettoPoint::elligator_ristretto_flavour(&r_0)
     }
 
     /// Hash a slice of bytes into a `RistrettoPoint`.
@@ -806,7 +789,7 @@ impl RistrettoPoint {
         let mut output = [0u8; 32];
         output.copy_from_slice(hash.result().as_slice());
         let r_0 = FieldElement::from_bytes(&output);
-        RistrettoPoint::elligator_decaf_flavour(&r_0)
+        RistrettoPoint::elligator_ristretto_flavour(&r_0)
     }
 }
 
@@ -1119,7 +1102,7 @@ mod test {
         // Table of encodings of i*basepoint
         // Generated using ristretto.sage
         let compressed = [
-            CompressedRistretto([236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127]),
+            CompressedRistretto([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
             CompressedRistretto([226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227, 11, 106, 165, 130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118]),
             CompressedRistretto([106, 73, 50, 16, 247, 73, 156, 209, 127, 236, 181, 16, 174, 12, 234, 35, 161, 16, 232, 213, 185, 1, 248, 172, 173, 211, 9, 92, 115, 163, 185, 25]),
             CompressedRistretto([148, 116, 31, 93, 93, 82, 117, 94, 206, 79, 35, 240, 68, 238, 39, 213, 209, 234, 30, 43, 209, 150, 180, 98, 22, 107, 22, 21, 42, 157, 2, 89]),
@@ -1160,6 +1143,35 @@ mod test {
         let P_coset = P.coset4();
         for i in 0..4 {
             assert_eq!(P, RistrettoPoint(P_coset[i]));
+        }
+    }
+
+    #[test]
+    fn elligator_vs_ristretto_sage() {
+        let bytes: [[u8;32]; 8] = [
+            [192, 145, 157, 191, 240, 79, 98, 26, 219, 167, 184, 111, 133, 98, 100, 169, 53, 212, 205, 130, 146, 94, 65, 146, 119, 203, 119, 173, 37, 165, 171, 55],
+            [69, 173, 250, 65, 1, 193, 109, 14, 236, 65, 151, 62, 107, 251, 239, 220, 248, 91, 248, 108, 58, 105, 8, 202, 118, 132, 76, 243, 204, 93, 139, 123],
+            [127, 120, 209, 207, 219, 237, 6, 90, 135, 67, 142, 124, 14, 239, 3, 143, 113, 4, 100, 152, 221, 33, 161, 178, 93, 245, 179, 208, 198, 145, 26, 130],
+            [87, 87, 58, 155, 29, 72, 49, 81, 244, 242, 182, 81, 188, 210, 236, 63, 219, 132, 127, 254, 176, 13, 29, 221, 135, 223, 243, 171, 7, 39, 99, 236],
+            [88, 38, 95, 13, 223, 230, 14, 110, 116, 0, 69, 36, 119, 243, 213, 176, 171, 131, 186, 116, 141, 27, 170, 151, 3, 82, 101, 52, 102, 128, 245, 126],
+            [98, 141, 61, 219, 49, 68, 22, 180, 151, 85, 129, 92, 188, 52, 75, 228, 134, 51, 208, 129, 29, 8, 201, 221, 21, 106, 187, 219, 40, 167, 89, 135],
+            [193, 136, 83, 249, 207, 20, 145, 19, 202, 210, 31, 203, 118, 146, 4, 223, 159, 37, 9, 83, 0, 85, 2, 224, 90, 197, 201, 190, 92, 170, 29, 29],
+            [226, 211, 37, 13, 123, 99, 51, 180, 181, 241, 222, 237, 76, 148, 136, 181, 166, 8, 105, 38, 173, 8, 142, 239, 163, 157, 118, 95, 122, 156, 175, 130],
+        ];
+        let encoded_images: [CompressedRistretto; 8] = [
+            CompressedRistretto([238, 201, 94, 143, 244, 113, 239, 63, 170, 196, 93, 156, 166, 5, 218, 254, 185, 105, 73, 246, 11, 230, 151, 52, 20, 137, 229, 166, 155, 106, 116, 124]),
+            CompressedRistretto([68, 175, 63, 102, 231, 235, 10, 88, 97, 149, 247, 12, 123, 253, 148, 220, 96, 254, 49, 159, 229, 148, 128, 176, 254, 18, 228, 9, 62, 247, 181, 54]),
+            CompressedRistretto([190, 124, 251, 26, 36, 146, 47, 180, 34, 157, 67, 33, 157, 156, 89, 227, 103, 217, 30, 118, 28, 28, 136, 154, 154, 52, 74, 240, 18, 180, 3, 54]),
+            CompressedRistretto([112, 226, 8, 36, 70, 90, 119, 210, 94, 246, 31, 241, 93, 26, 160, 93, 172, 53, 79, 242, 104, 205, 90, 203, 25, 224, 47, 57, 236, 194, 199, 105]),
+            CompressedRistretto([160, 118, 169, 159, 50, 146, 83, 248, 19, 37, 76, 156, 115, 62, 59, 96, 108, 111, 70, 208, 134, 44, 78, 101, 117, 236, 236, 159, 81, 87, 211, 70]),
+            CompressedRistretto([112, 225, 32, 170, 213, 187, 251, 68, 124, 174, 236, 185, 129, 52, 150, 101, 224, 198, 45, 161, 248, 79, 172, 80, 115, 9, 169, 132, 15, 201, 193, 126]),
+            CompressedRistretto([72, 100, 105, 93, 207, 23, 159, 154, 142, 204, 169, 166, 224, 250, 45, 29, 185, 222, 57, 161, 32, 68, 212, 219, 168, 21, 24, 43, 138, 217, 86, 79]),
+            CompressedRistretto([84, 138, 118, 133, 135, 2, 173, 1, 226, 119, 13, 35, 193, 82, 29, 196, 27, 242, 113, 32, 133, 101, 51, 142, 124, 218, 226, 241, 186, 15, 124, 32]),
+        ];
+        for i in 0..8 {
+            let r_0 = FieldElement::from_bytes(&bytes[i]);
+            let Q = RistrettoPoint::elligator_ristretto_flavour(&r_0);
+            assert_eq!(Q.compress(), encoded_images[i]);
         }
     }
 

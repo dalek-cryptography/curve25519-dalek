@@ -35,7 +35,9 @@ use field::FieldElement;
 use edwards::{ExtendedPoint, CompressedEdwardsY};
 use scalar::Scalar;
 
-// XXX move these to a common "traits" or "group" module? —isis
+// XXX Move these to a common "group" module?  At the same time, we should
+// XXX probably make a `trait Group` once const generics are implemented in
+// XXX Rust. —isis
 use edwards::{Identity, ValidityCheck};
 
 use subtle::slices_equal;
@@ -54,8 +56,6 @@ use subtle::Mask;
 /// coordinates.  For Montgomery curves, it is possible to compute the
 /// `u`-coordinate of `n(u,v)` just from `n` and `u`, so it is not
 /// necessary to use `v` for a Diffie-Hellman key exchange.
-///
-/// XXX add note on monty, twist security, edwards impl of x25519, rfc7748
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct CompressedMontgomeryU(pub [u8; 32]);
 
@@ -211,7 +211,7 @@ impl CompressedMontgomeryU {
 /// Here, again, to differentiate from points in the twisted Edwards model, we
 /// call the point `(x,y)` in affine coordinates `(u,v)` and similarly in projective
 /// space we use `(U:V:W)`.  However, since (as per Montgomery's original work) the
-/// v-coordinate is superfluous to the definition of the group law, we merely
+/// v-coordinate is superfluous for the purposes of scalar multiplication, we merely
 /// use `(U:W)`.
 #[derive(Copy, Clone, Debug)]
 #[allow(missing_docs)]
@@ -224,9 +224,9 @@ pub struct MontgomeryPoint{
 ///
 /// In projective coordinates, the quotient map `x : E (A,B) → E/<⦵> = 𝗣¹` is
 ///
-///               ⎧ (x_P:1) if P = (x_P:y_P:1) ,
-///      x : P ↦  ⎨
-///               ⎩   (1:0) if P = O = (0:1:0) .
+///               ⎧ (x_P:1) if P = (x_P:y_P:1) ,
+///      x : P ↦  ⎨
+///               ⎩   (1:0) if P = O = (0:1:0) .
 ///
 /// We emphasize that the formula `x((U: V : W)) = (U : W)` only holds on the
 /// open subset of `E_(A,B)` where `W ≠ 0`; it does not extend to the point
@@ -325,11 +325,12 @@ impl MontgomeryPoint {
     /// results of this method are not correct, but instead result in `(0:0)`
     /// (an invalid projective point in the Montgomery model).
     ///
-    // XXX API-wise, do we care that doubling is degenerate, or should we allow
-    //     the user to do a stupid and inefficient (albeit not incorrect) thing?
+    /// The doubling case is degenerate, in that using this method to accomplish
+    /// point doubling is less efficient than using `differential_double()`.
     fn differential_add(&self, that: &MontgomeryPoint,
                         difference: &MontgomeryPoint) -> MontgomeryPoint {
-        // debug_assert!(self.ct_eq(that) != 1);     // The doubling case is degenerate
+        // XXX Do we want these debug assertions? We would need to implement
+        // XXX is_two_torsion_point(). —isis
         // debug_assert!(!difference.is_identity()); // P ⦵ Q ∉ {O,T}
         // debug_assert!(!difference.is_two_torsion_point());
 
@@ -342,13 +343,20 @@ impl MontgomeryPoint {
         }
     }
 
-    /// Differential doubling for single-coordinate Montgomery points.
+    /// Pseudo-doubling for single-coordinate Montgomery points.
     ///
-    /// DOCDOC
+    /// Given a Montgomery U-coordinate of a point `P`, compute the
+    /// U-coordinate given by
+    ///
+    ///      differential_double: x(P) ⟼ x([2]P)
     ///
     /// # Returns
     ///
-    /// A Montgomery point.
+    /// A Montgomery point equal to doubling this one.
+    ///
+    // XXX It seems possible that combining the differential_add() and
+    // XXX differential_double() methods would save a non-trivial amount of
+    // XXX computation in the ladder. —isis
     fn differential_double(&self) -> MontgomeryPoint {
         let mut v1: FieldElement;
         let v2: FieldElement;
@@ -370,8 +378,9 @@ impl MontgomeryPoint {
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
 ///
-/// DOCDOC
-/// explain montgomery laddering
+/// The reader is refered to §5.3 of ["Montgomery Curves and Their Arithmetic"
+/// by Craig Costello and Benjamin Smith](https://eprint.iacr.org/2017/212.pdf)
+/// for an overview of side-channel-free Montgomery laddering algorithms.
 impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 

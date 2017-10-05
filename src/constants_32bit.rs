@@ -75,7 +75,7 @@ pub const HALF: FieldElement32 = FieldElement32([
 pub const A: FieldElement32       = FieldElement32([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 
-/// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within Montgomery laddering.)
+/// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub const APLUS2_OVER_FOUR: FieldElement32 = FieldElement32([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
 /// `SQRT_MINUS_A` is sqrt(-486662)

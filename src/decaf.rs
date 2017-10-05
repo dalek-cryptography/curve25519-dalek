@@ -189,7 +189,7 @@ impl<'de> Deserialize<'de> for DecafPoint {
 
 /// A point in a prime-order group.
 ///
-/// XXX think about how this API should work
+// XXX think about how this API should work
 #[derive(Copy, Clone)]
 pub struct DecafPoint(pub ExtendedPoint);
 
@@ -752,7 +752,7 @@ mod test {
     fn decaf_decompress_id() {
         let compressed_id = CompressedDecaf::identity();
         let id = compressed_id.decompress().unwrap();
-        assert_eq!(id.0.compress_edwards(), CompressedEdwardsY::identity());
+        assert_eq!(id.0.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]
@@ -768,7 +768,7 @@ mod test {
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &constants::ED25519_BASEPOINT_POINT - &bp_recaf;
         let diff4 = diff.mult_by_pow_2(4); // XXX this is wrong
-        assert_eq!(diff4.compress_edwards(), CompressedEdwardsY::identity());
+        assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 
     #[test]

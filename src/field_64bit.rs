@@ -51,7 +51,7 @@ pub type Limb = u64;
 /// which gives even better performance.  This implementation requires Rust's
 /// `u128`, which is not yet stable.
 #[derive(Copy, Clone)]
-pub struct FieldElement64(pub [u64; 5]);
+pub struct FieldElement64(pub (crate) [u64; 5]);
 
 impl Debug for FieldElement64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {

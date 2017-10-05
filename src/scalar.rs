@@ -2,11 +2,13 @@
 //
 // This file is part of curve25519-dalek.
 // Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+// - Brian Smith <brian@briansmith.org>
 
 //! Arithmetic for scalar multiplication.
 //!
@@ -20,12 +22,11 @@
 //!
 //! The `Scalar` struct represents an element in ℤ/lℤ.
 //!
-//! Arithmetic operations on `Scalar`s are done using 12 21-bit limbs.
-//! However, in contrast to `FieldElement`s, `Scalar`s are stored in
+//! In contrast to `FieldElement`s, `Scalar`s are stored in
 //! memory as bytes, allowing easy access to the bits of the `Scalar`
 //! when multiplying a point by a scalar.  For efficient arithmetic
-//! between two scalars, the `UnpackedScalar` struct is stored as
-//! limbs.
+//! between two scalars, the `UnpackedScalar` struct (internally
+//! either `Scalar32` or `Scalar64`) is stored as limbs.
 
 use core::fmt::Debug;
 use core::ops::Neg;
@@ -40,9 +41,6 @@ use rand::Rng;
 
 use digest::Digest;
 use generic_array::typenum::U64;
-
-use constants;
-use utils::{load3, load4};
 
 use subtle::slices_equal;
 use subtle::ConditionallyAssignable;
@@ -106,50 +104,47 @@ impl IndexMut<usize> for Scalar {
 
 impl<'b> MulAssign<&'b Scalar> for Scalar {
     fn mul_assign(&mut self, _rhs: &'b Scalar) {
-        let result = (self as &Scalar) * _rhs;
-        self.0 = result.0;
+        *self = Scalar::mul(self, _rhs)
     }
 }
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
-        Scalar::multiply_add(self, _rhs, &Scalar::zero())
+        Scalar::mul(self, _rhs)
     }
 }
 
 impl<'b> AddAssign<&'b Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'b Scalar) {
-        *self = Scalar::multiply_add(&Scalar::one(), self, _rhs);
+        *self = Scalar::add(self, _rhs);
     }
 }
 
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn add(self, _rhs: &'b Scalar) -> Scalar {
-        Scalar::multiply_add(&Scalar::one(), self, _rhs)
+        Scalar::add(self, _rhs)
     }
 }
 
 impl<'b> SubAssign<&'b Scalar> for Scalar {
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
-        // (l-1)*_rhs + self = self - _rhs
-        *self = Scalar::multiply_add(&constants::l_minus_1, _rhs, self);
+        *self = Scalar::sub(self, _rhs);
     }
 }
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn sub(self, _rhs: &'b Scalar) -> Scalar {
-        // (l-1)*_rhs + self = self - _rhs
-        Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
+        Scalar::sub(self, _rhs)
     }
 }
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
-        self * &constants::l_minus_1
+        Scalar::sub(&Scalar::zero(), self)
     }
 }
 
@@ -231,6 +226,18 @@ impl<'de> Deserialize<'de> for Scalar {
         deserializer.deserialize_bytes(ScalarVisitor)
     }
 }
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+#[cfg(feature="radix_51")]
+type UnpackedScalar = Scalar64;
+#[cfg(feature="radix_51")]
+use scalar_64bit::*;
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+#[cfg(not(feature="radix_51"))]
+type UnpackedScalar = Scalar32;
+#[cfg(not(feature="radix_51"))]
+use scalar_32bit::*;
 
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
@@ -382,26 +389,6 @@ impl Scalar {
         naf
     }
 
-    // Unpack a scalar into 12 21-bit limbs.
-    fn unpack(&self) -> UnpackedScalar {
-        let mask_21bits: i64 = (1 << 21) - 1;
-        let mut a = UnpackedScalar([0i64; 12]);
-        a[ 0]  = mask_21bits &  load3(&self.0[ 0..])      ;
-        a[ 1]  = mask_21bits & (load4(&self.0[ 2..]) >> 5);
-        a[ 2]  = mask_21bits & (load3(&self.0[ 5..]) >> 2);
-        a[ 3]  = mask_21bits & (load4(&self.0[ 7..]) >> 7);
-        a[ 4]  = mask_21bits & (load4(&self.0[10..]) >> 4);
-        a[ 5]  = mask_21bits & (load3(&self.0[13..]) >> 1);
-        a[ 6]  = mask_21bits & (load4(&self.0[15..]) >> 6);
-        a[ 7]  = mask_21bits & (load3(&self.0[18..]) >> 3);
-        a[ 8]  = mask_21bits &  load3(&self.0[21..])      ;
-        a[ 9]  = mask_21bits & (load4(&self.0[23..]) >> 5);
-        a[10]  = mask_21bits & (load3(&self.0[26..]) >> 2);
-        a[11]  =                load4(&self.0[28..]) >> 7 ;
-
-        a
-    }
-
     /// Write this scalar in radix 16, with coefficients in `[-8,8)`,
     /// i.e., compute `a_i` such that
     ///
@@ -440,293 +427,106 @@ impl Scalar {
         output
     }
 
-    /// Compute `ab+c (mod l)`.
-    /// XXX should this exist, or should we just have Mul, Add etc impls
-    /// that unpack and then call UnpackedScalar::multiply_add ?
-    pub fn multiply_add(a: &Scalar, b: &Scalar, c: &Scalar) -> Scalar {
-        // Unpack scalars into limbs
-        let al = a.unpack();
-        let bl = b.unpack();
-        let cl = c.unpack();
+    /// Unpack this `Scalar` to an `UnpackedScalar`
+    pub fn unpack(&self) -> UnpackedScalar {
+        UnpackedScalar::from_bytes(&self.0)
+    }
 
-        // Multiply and repack
-        UnpackedScalar::multiply_add(&al, &bl, &cl).pack()
+    /// Compute `a + b` (mod l)
+    pub fn add(a: &Scalar, b: &Scalar) -> Scalar {
+        UnpackedScalar::add(&a.unpack(), &b.unpack()).pack()
+    }
+
+    /// Compute `a - b` (mod l).
+    pub fn sub(a: &Scalar, b: &Scalar) -> Scalar {
+        UnpackedScalar::sub(&a.unpack(), &b.unpack()).pack()
+    }
+
+    /// Compute `a * b` (mod l).
+    pub fn mul(a: &Scalar, b: &Scalar) -> Scalar {
+        UnpackedScalar::mul(&a.unpack(), &b.unpack()).pack()
+    }
+
+    /// Compute `(a * b) + c` (mod l).
+    pub fn multiply_add(a: &Scalar, b: &Scalar, c: &Scalar) -> Scalar {
+        UnpackedScalar::add(&UnpackedScalar::mul(&a.unpack(), &b.unpack()), &c.unpack()).pack()
     }
 
     /// Reduce a 512-bit little endian number mod l
     pub fn reduce(input: &[u8; 64]) -> Scalar {
-        let mut s = [0i64; 24];
-
-        // XXX express this as two unpack_limbs
-        // some issues re: masking with the top byte of the 32byte input
-        let mask_21bits: i64 = (1 << 21) -1;
-        s[0]  = mask_21bits &  load3(&input[ 0..])      ;
-        s[1]  = mask_21bits & (load4(&input[ 2..]) >> 5);
-        s[2]  = mask_21bits & (load3(&input[ 5..]) >> 2);
-        s[3]  = mask_21bits & (load4(&input[ 7..]) >> 7);
-        s[4]  = mask_21bits & (load4(&input[10..]) >> 4);
-        s[5]  = mask_21bits & (load3(&input[13..]) >> 1);
-        s[6]  = mask_21bits & (load4(&input[15..]) >> 6);
-        s[7]  = mask_21bits & (load3(&input[18..]) >> 3);
-        s[8]  = mask_21bits &  load3(&input[21..])      ;
-        s[9]  = mask_21bits & (load4(&input[23..]) >> 5);
-        s[10] = mask_21bits & (load3(&input[26..]) >> 2);
-        s[11] = mask_21bits & (load4(&input[28..]) >> 7);
-        s[12] = mask_21bits & (load4(&input[31..]) >> 4);
-        s[13] = mask_21bits & (load3(&input[34..]) >> 1);
-        s[14] = mask_21bits & (load4(&input[36..]) >> 6);
-        s[15] = mask_21bits & (load3(&input[39..]) >> 3);
-        s[16] = mask_21bits &  load3(&input[42..])      ;
-        s[17] = mask_21bits & (load4(&input[44..]) >> 5);
-        s[18] = mask_21bits & (load3(&input[47..]) >> 2);
-        s[19] = mask_21bits & (load4(&input[49..]) >> 7);
-        s[20] = mask_21bits & (load4(&input[52..]) >> 4);
-        s[21] = mask_21bits & (load3(&input[55..]) >> 1);
-        s[22] = mask_21bits & (load4(&input[57..]) >> 6);
-        s[23] =                load4(&input[60..]) >> 3 ;
-
-        // XXX replacing the previous code in this function with the
-        // call to reduce_limbs adds two extra carry passes (the ones
-        // at the top of the reduce_limbs function).  Otherwise they
-        // are identical.  The test seems to work OK but it would be
-        // good to check that this really is OK to add.
-        UnpackedScalar::reduce_limbs(&mut s).pack()
-    }
-}
-
-/// The `UnpackedScalar` struct represents an element in ℤ/lℤ as 12
-/// 21-bit limbs.
-#[derive(Copy,Clone)]
-pub struct UnpackedScalar(pub [i64; 12]);
-
-impl Index<usize> for UnpackedScalar {
-    type Output = i64;
-
-    fn index(&self, _index: usize) -> &i64 {
-        &(self.0[_index])
-    }
-}
-
-impl IndexMut<usize> for UnpackedScalar {
-    fn index_mut(&mut self, _index: usize) -> &mut i64 {
-        &mut (self.0[_index])
+        UnpackedScalar::from_bytes_wide(input).pack()
     }
 }
 
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
-        let mut s = Scalar::zero();
-        s[0]  =  (self.0[ 0] >>  0)                      as u8;
-        s[1]  =  (self.0[ 0] >>  8)                      as u8;
-        s[2]  = ((self.0[ 0] >> 16) | (self.0[ 1] << 5)) as u8;
-        s[3]  =  (self.0[ 1] >>  3)                      as u8;
-        s[4]  =  (self.0[ 1] >> 11)                      as u8;
-        s[5]  = ((self.0[ 1] >> 19) | (self.0[ 2] << 2)) as u8;
-        s[6]  =  (self.0[ 2] >>  6)                      as u8;
-        s[7]  = ((self.0[ 2] >> 14) | (self.0[ 3] << 7)) as u8;
-        s[8]  =  (self.0[ 3] >>  1)                      as u8;
-        s[9]  =  (self.0[ 3] >>  9)                      as u8;
-        s[10] = ((self.0[ 3] >> 17) | (self.0[ 4] << 4)) as u8;
-        s[11] =  (self.0[ 4] >>  4)                      as u8;
-        s[12] =  (self.0[ 4] >> 12)                      as u8;
-        s[13] = ((self.0[ 4] >> 20) | (self.0[ 5] << 1)) as u8;
-        s[14] =  (self.0[ 5] >>  7)                      as u8;
-        s[15] = ((self.0[ 5] >> 15) | (self.0[ 6] << 6)) as u8;
-        s[16] =  (self.0[ 6] >>  2)                      as u8;
-        s[17] =  (self.0[ 6] >> 10)                      as u8;
-        s[18] = ((self.0[ 6] >> 18) | (self.0[ 7] << 3)) as u8;
-        s[19] =  (self.0[ 7] >>  5)                      as u8;
-        s[20] =  (self.0[ 7] >> 13)                      as u8;
-        s[21] =  (self.0[ 8] >>  0)                      as u8;
-        s[22] =  (self.0[ 8] >>  8)                      as u8;
-        s[23] = ((self.0[ 8] >> 16) | (self.0[ 9] << 5)) as u8;
-        s[24] =  (self.0[ 9] >>  3)                      as u8;
-        s[25] =  (self.0[ 9] >> 11)                      as u8;
-        s[26] = ((self.0[ 9] >> 19) | (self.0[10] << 2)) as u8;
-        s[27] =  (self.0[10] >>  6)                      as u8;
-        s[28] = ((self.0[10] >> 14) | (self.0[11] << 7)) as u8;
-        s[29] =  (self.0[11] >>  1)                      as u8;
-        s[30] =  (self.0[11] >>  9)                      as u8;
-        s[31] =  (self.0[11] >> 17)                      as u8;
-
-        s
-    }
-
-    /// Return the zero scalar.
-    pub fn zero() -> UnpackedScalar {
-        UnpackedScalar([0,0,0,0,0,0,0,0,0,0,0,0])
-    }
-
-    /// Return the one scalar.
-    pub fn one() -> UnpackedScalar {
-        UnpackedScalar([1,0,0,0,0,0,0,0,0,0,0,0])
+        Scalar(self.to_bytes())
     }
 
     /// Compute the multiplicative inverse of this scalar.
     pub fn invert(&self) -> UnpackedScalar {
-        let mut y = UnpackedScalar::one();
-        // Run through bits of l-2 from highest to least
-        for bit in constants::l_minus_2.bits().iter().rev() {
-            y = UnpackedScalar::multiply_add(&y, &y, &UnpackedScalar::zero());
-            if *bit == 1 {
-                y = UnpackedScalar::multiply_add(&y, self, &UnpackedScalar::zero());
+        // This is a direct transliteration of the addition chain from
+        // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
+        // as it was published on 2017-09-03.
+
+        let    _1 = self.to_montgomery();
+        let   _10 = _1.montgomery_square();
+        let  _100 = _10.montgomery_square();
+        let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
+        let  _101 = UnpackedScalar::montgomery_mul(&_10,    &_11);
+        let  _111 = UnpackedScalar::montgomery_mul(&_10,   &_101);
+        let _1001 = UnpackedScalar::montgomery_mul(&_10,   &_111);
+        let _1011 = UnpackedScalar::montgomery_mul(&_10,  &_1001);
+        let _1111 = UnpackedScalar::montgomery_mul(&_100, &_1011);
+
+        // _10000
+        let mut y = UnpackedScalar::montgomery_mul(&_1111, &_1);
+
+        #[inline]
+        fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
+            for _ in 0..squarings {
+                *y = y.montgomery_square();
             }
-        }
-        y
-    }
-
-    /// Compute `ab+c (mod l)`.
-    pub fn multiply_add(a: &UnpackedScalar,
-                        b: &UnpackedScalar,
-                        c: &UnpackedScalar) -> UnpackedScalar {
-        let mut result = [0i64; 24];
-
-        // Multiply a and b, and add c
-        result[0]  =         c[0] +  a[0]*b[0];
-        result[1]  =         c[1] +  a[0]*b[1]  +  a[1]*b[0];
-        result[2]  =         c[2] +  a[0]*b[2]  +  a[1]*b[1] +  a[2]*b[0];
-        result[3]  =         c[3] +  a[0]*b[3]  +  a[1]*b[2] +  a[2]*b[1] +  a[3]*b[0];
-        result[4]  =         c[4] +  a[0]*b[4]  +  a[1]*b[3] +  a[2]*b[2] +  a[3]*b[1] +  a[4]*b[0];
-        result[5]  =         c[5] +  a[0]*b[5]  +  a[1]*b[4] +  a[2]*b[3] +  a[3]*b[2] +  a[4]*b[1] +  a[5]*b[0];
-        result[6]  =         c[6] +  a[0]*b[6]  +  a[1]*b[5] +  a[2]*b[4] +  a[3]*b[3] +  a[4]*b[2] +  a[5]*b[1] +  a[6]*b[0];
-        result[7]  =         c[7] +  a[0]*b[7]  +  a[1]*b[6] +  a[2]*b[5] +  a[3]*b[4] +  a[4]*b[3] +  a[5]*b[2] +  a[6]*b[1] +  a[7]*b[0];
-        result[8]  =         c[8] +  a[0]*b[8]  +  a[1]*b[7] +  a[2]*b[6] +  a[3]*b[5] +  a[4]*b[4] +  a[5]*b[3] +  a[6]*b[2] +  a[7]*b[1] +  a[8]*b[0];
-        result[9]  =         c[9] +  a[0]*b[9]  +  a[1]*b[8] +  a[2]*b[7] +  a[3]*b[6] +  a[4]*b[5] +  a[5]*b[4] +  a[6]*b[3] +  a[7]*b[2] +  a[8]*b[1] +  a[9]*b[0];
-        result[10] =        c[10] +  a[0]*b[10] +  a[1]*b[9] +  a[2]*b[8] +  a[3]*b[7] +  a[4]*b[6] +  a[5]*b[5] +  a[6]*b[4] +  a[7]*b[3] +  a[8]*b[2] +  a[9]*b[1] + a[10]*b[0];
-        result[11] =        c[11] +  a[0]*b[11] + a[1]*b[10] +  a[2]*b[9] +  a[3]*b[8] +  a[4]*b[7] +  a[5]*b[6] +  a[6]*b[5] +  a[7]*b[4] +  a[8]*b[3] +  a[9]*b[2] + a[10]*b[1] + a[11]*b[0];
-        result[12] =   a[1]*b[11] +  a[2]*b[10] +  a[3]*b[9] +  a[4]*b[8] +  a[5]*b[7] +  a[6]*b[6] +  a[7]*b[5] +  a[8]*b[4] +  a[9]*b[3] + a[10]*b[2] + a[11]*b[1];
-        result[13] =   a[2]*b[11] +  a[3]*b[10] +  a[4]*b[9] +  a[5]*b[8] +  a[6]*b[7] +  a[7]*b[6] +  a[8]*b[5] +  a[9]*b[4] + a[10]*b[3] + a[11]*b[2];
-        result[14] =   a[3]*b[11] +  a[4]*b[10] +  a[5]*b[9] +  a[6]*b[8] +  a[7]*b[7] +  a[8]*b[6] +  a[9]*b[5] + a[10]*b[4] + a[11]*b[3];
-        result[15] =   a[4]*b[11] +  a[5]*b[10] +  a[6]*b[9] +  a[7]*b[8] +  a[8]*b[7] +  a[9]*b[6] + a[10]*b[5] + a[11]*b[4];
-        result[16] =   a[5]*b[11] +  a[6]*b[10] +  a[7]*b[9] +  a[8]*b[8] +  a[9]*b[7] + a[10]*b[6] + a[11]*b[5];
-        result[17] =   a[6]*b[11] +  a[7]*b[10] +  a[8]*b[9] +  a[9]*b[8] + a[10]*b[7] + a[11]*b[6];
-        result[18] =   a[7]*b[11] +  a[8]*b[10] +  a[9]*b[9] + a[10]*b[8] + a[11]*b[7];
-        result[19] =   a[8]*b[11] +  a[9]*b[10] + a[10]*b[9] + a[11]*b[8];
-        result[20] =   a[9]*b[11] + a[10]*b[10] + a[11]*b[9];
-        result[21] =  a[10]*b[11] + a[11]*b[10];
-        result[22] =  a[11]*b[11];
-        result[23] =          0i64;
-
-        // Reduce limbs
-        UnpackedScalar::reduce_limbs(&mut result)
-    }
-
-    /// Reduce 24 limbs to 12, consuming the input. Reduction is mod
-    ///
-    ///   l = 2^252 + 27742317777372353535851937790883648493,
-    ///
-    /// so
-    ///
-    ///   2^252 = -27742317777372353535851937790883648493 (mod l).
-    ///
-    /// We can write the right-hand side in 21-bit limbs as
-    ///
-    /// rhs =    666643 * 2^0
-    ///        + 470296 * 2^21
-    ///        + 654183 * 2^42
-    ///        - 997805 * 2^63
-    ///        + 136657 * 2^84
-    ///        - 683901 * 2^105
-    ///
-    /// The (12+k)-th limb of `limbs` is the coefficient of
-    ///
-    ///    2^(252 + 21*k)
-    ///
-    /// since 12*21 = 252.  By the above, we have that
-    ///
-    ///    c * 2^(252 + 21*k) =   c * 666643 * 2^(21*k)
-    ///                         + c * 470296 * 2^(42*k) + ...
-    ///
-    /// so we can eliminate it by adding those values to the lower
-    /// limbs.  Reduction mod l amounts to eliminating all of the
-    /// high limbs while carrying as appropriate to prevent
-    /// overflows in the lower limbs.
-    fn reduce_limbs(mut limbs: &mut [i64; 24]) -> UnpackedScalar {
-        #[inline]
-        #[allow(dead_code)]
-        fn do_reduction(limbs: &mut [i64; 24], i: usize) {
-            limbs[i - 12] += limbs[i] * 666643;
-            limbs[i - 11] += limbs[i] * 470296;
-            limbs[i - 10] += limbs[i] * 654183;
-            limbs[i -  9] -= limbs[i] * 997805;
-            limbs[i -  8] += limbs[i] * 136657;
-            limbs[i -  7] -= limbs[i] * 683901;
-            limbs[i] = 0;
-        }
-        /// Carry excess from the `i`-th limb into the `(i+1)`-th limb.
-        /// Postcondition: `0 <= limbs[i] < 2^21`.
-        #[inline]
-        #[allow(dead_code)]
-        fn do_carry_uncentered(limbs: &mut [i64; 24], i: usize) {
-            let carry: i64 = limbs[i] >> 21;
-            limbs[i+1] += carry;
-            limbs[i  ] -= carry << 21;
-        }
-        #[inline]
-        #[allow(dead_code)]
-        /// Carry excess from the `i`-th limb into the `(i+1)`-th limb.
-        /// Postcondition: `-2^20 <= limbs[i] < 2^20`.
-        fn do_carry_centered(limbs: &mut [i64; 24], i: usize) {
-            let carry: i64 = (limbs[i] + (1<<20)) >> 21;
-            limbs[i+1] += carry;
-            limbs[i  ] -= carry << 21;
+            *y = UnpackedScalar::montgomery_mul(y, x);
         }
 
-        for i in 0..23 {
-            do_carry_centered(&mut limbs, i);
-        }
-        for i in (0..23).filter(|x| x % 2 == 1) {
-            do_carry_centered(&mut limbs, i);
-        }
+        square_multiply(&mut y, 123 + 3, &_101);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,       4, &_1001);
+        square_multiply(&mut y,       2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   1 + 3, &_101);
+        square_multiply(&mut y,   3 + 3, &_101);
+        square_multiply(&mut y,       3, &_111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   2 + 3, &_111);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,   2 + 4, &_1011);
+        square_multiply(&mut y,   6 + 4, &_1001);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1001);
+        square_multiply(&mut y,   1 + 3, &_111);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   1 + 2, &_11);
 
-        do_reduction(&mut limbs, 23);
-        do_reduction(&mut limbs, 22);
-        do_reduction(&mut limbs, 21);
-        do_reduction(&mut limbs, 20);
-        do_reduction(&mut limbs, 19);
-        do_reduction(&mut limbs, 18);
-
-        for i in (6..18).filter(|x| x % 2 == 0) {
-            do_carry_centered(&mut limbs, i);
-        }
-        for i in (6..16).filter(|x| x % 2 == 1) {
-            do_carry_centered(&mut limbs, i);
-        }
-
-        do_reduction(&mut limbs, 17);
-        do_reduction(&mut limbs, 16);
-        do_reduction(&mut limbs, 15);
-        do_reduction(&mut limbs, 14);
-        do_reduction(&mut limbs, 13);
-        do_reduction(&mut limbs, 12);
-
-        for i in (0..12).filter(|x| x % 2 == 0) {
-            do_carry_centered(&mut limbs, i);
-        }
-        for i in (0..12).filter(|x| x % 2 == 1) {
-            do_carry_centered(&mut limbs, i);
-        }
-
-        do_reduction(&mut limbs, 12);
-
-        for i in 0..12 {
-            do_carry_uncentered(&mut limbs, i);
-        }
-
-        do_reduction(&mut limbs, 12);
-
-        for i in 0..11 {
-            do_carry_uncentered(&mut limbs, i);
-        }
-
-        UnpackedScalar(*array_ref!(limbs, 0, 12))
+        y.from_montgomery()
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use constants;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     pub static X: Scalar = Scalar(
@@ -734,6 +534,12 @@ mod test {
          0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
          0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
          0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04]);
+    /// 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
+    pub static XINV: Scalar = Scalar(
+        [0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
+         0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
+         0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
+         0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f]);
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
     pub static Y: Scalar = Scalar(
         [0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
@@ -839,6 +645,15 @@ mod test {
     }
 
     #[test]
+    fn square() {
+        let expected = Scalar::multiply_add(&X, &X, &Scalar::zero());
+        let actual = X.unpack().square().pack();
+        for i in 0..32 {
+            assert!(expected[i] == actual[i]);
+        }
+    }
+
+    #[test]
     fn scalar_reduce() {
         let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
@@ -862,6 +677,7 @@ mod test {
     #[test]
     fn invert() {
         let inv_X = X.invert();
+        assert_eq!(inv_X, XINV);
         let should_be_one = &inv_X * &X;
         assert_eq!(should_be_one, Scalar::one());
     }
@@ -894,7 +710,7 @@ mod bench {
     use test::Bencher;
 
     use super::*;
-    use super::test::{X, Y, Z};
+    use super::test::{X};
 
     #[bench]
     fn scalar_random(b: &mut Bencher) {
@@ -904,21 +720,8 @@ mod bench {
     }
 
     #[bench]
-    fn scalar_multiply_add(b: &mut Bencher) {
-        b.iter(|| Scalar::multiply_add(&X, &Y, &Z));
-    }
-
-    #[bench]
     fn invert(b: &mut Bencher) {
         let x = X.unpack();
         b.iter(|| x.invert());
-    }
-
-    #[bench]
-    fn scalar_unpacked_multiply_add(b: &mut Bencher) {
-        let x = X.unpack();
-        let y = Y.unpack();
-        let z = Z.unpack();
-        b.iter(|| UnpackedScalar::multiply_add(&x, &y, &z));
     }
 }

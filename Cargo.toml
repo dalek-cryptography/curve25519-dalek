@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -33,7 +33,7 @@ version = "0.3"
 version = "0.6"
 
 [dependencies.subtle]
-version = "^0.2"
+version = "^0.3"
 default-features = false
 
 [dependencies.generic-array]

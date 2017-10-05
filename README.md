@@ -1,4 +1,4 @@
-# ed25519-dalek ![](https://img.shields.io/crates/v/ed25519-dalek.svg) ![](https://docs.rs/ed25519-dalek/badge.svg) ![](https://travis-ci.org/isislovecruft/ed25519-dalek.svg?branch=master)
+# ed25519-dalek [![](https://img.shields.io/crates/v/ed25519-dalek.svg)](https://crates.io/crates/ed25519-dalek) [![](https://docs.rs/ed25519-dalek/badge.svg)](https://docs.rs/ed25519-dalek) [![](https://travis-ci.org/isislovecruft/ed25519-dalek.svg?branch=master)](https://travis-ci.org/isislovecruft/ed25519-dalek?branch=master)
 
 Fast and efficient Rust implementation of ed25519 key generation, signing, and
 verification in Rust.

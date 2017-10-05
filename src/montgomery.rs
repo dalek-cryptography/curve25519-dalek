@@ -267,9 +267,10 @@ impl Equal for MontgomeryPoint {
 ///
 /// # Note
 ///
-/// All points, except for `(X:W) = (0:0)`, are valid, since the projective
-/// model is linear through the origin and is comprised by all `X` in
-/// ℤ/(2²⁵⁵-19).
+/// All projective points, except for `(X:W) = (0:0)`, are valid, since the
+/// projective model is linear through the origin and is comprised by all `X` in
+/// ℤ/(2²⁵⁵-19), thus `(0:0)` is the only element in Fₚ² which is not a
+/// projective point.
 ///
 /// # Returns
 ///

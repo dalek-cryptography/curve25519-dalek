@@ -40,7 +40,6 @@ use scalar::Scalar;
 // XXX Rust. —isis
 use edwards::{Identity, ValidityCheck};
 
-use subtle::slices_equal;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallySwappable;
 use subtle::Equal;

@@ -1,9 +1,8 @@
 // -*- mode: rust; -*-
 //
-// To the extent possible under law, the authors have waived all copyright and
-// related or neighboring rights to curve25519-dalek, using the Creative
-// Commons "CC0" public domain dedication.  See
-// <http://creativecommons.org/publicdomain/zero/1.0/> for full details.
+// This file is part of ed25519-dalek.
+// Copyright (c) 2017 Isis Lovecruft
+// See LICENSE for licensing information.
 //
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>

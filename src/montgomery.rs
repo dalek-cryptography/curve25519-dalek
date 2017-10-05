@@ -327,8 +327,8 @@ impl MontgomeryPoint {
     /// results of this method are not correct, but instead result in `(0:0)`
     /// (an invalid projective point in the Montgomery model).
     ///
-    /// The doubling case is degenerate, in that using this method to accomplish
-    /// point doubling is less efficient than using `differential_double()`.
+    /// The doubling case is degenerate, in that `P ⦵ Q ∉ {O,T}`, where `T` is
+    /// the two torsion point.
     fn differential_add(&self, that: &MontgomeryPoint,
                         difference: &MontgomeryPoint) -> MontgomeryPoint {
         // XXX Do we want these debug assertions? We would need to implement

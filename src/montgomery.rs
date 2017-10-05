@@ -257,8 +257,9 @@ impl Identity for MontgomeryPoint {
 /// `1` if the points are equal, and `0` otherwise.
 impl Equal for MontgomeryPoint {
     fn ct_eq(&self, that: &MontgomeryPoint) -> u8 {
-        slices_equal(self.compress().as_bytes(),
-                     that.compress().as_bytes())
+        // (U_P:W_P) = (U_Q:W_Q) iff U_P * W_Q == U_Q * W_P,
+        // since U_P/W_P == U_Q/W_Q.
+        (&self.U * &that.W).ct_eq(&(&self.W * &that.U))
     }
 }
 

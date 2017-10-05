@@ -120,7 +120,6 @@ impl CompressedMontgomeryU {
     /// A projective `MontgomeryPoint` corresponding to this compressed point.
     pub fn decompress(&self) -> MontgomeryPoint {
         MontgomeryPoint{
-            // XXX is it a problem here if we're not using a canonical encoding? —isis
             U: FieldElement::from_bytes(&self.0),
             W: FieldElement::one(),
         }

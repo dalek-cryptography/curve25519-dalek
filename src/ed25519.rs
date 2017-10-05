@@ -297,7 +297,7 @@ impl PublicKey {
         digest[31] &= 127;
         digest[31] |= 64;
 
-        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT_TABLE).compress_edwards().to_bytes();
+        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
 
         PublicKey(CompressedEdwardsY(pk))
     }
@@ -344,11 +344,7 @@ impl PublicKey {
         digest_reduced = Scalar::reduce(&digest);
         r = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &Scalar(*top_half));
 
-        if slices_equal(bottom_half, &r.compress_edwards().to_bytes()) == 1 {
-            return true
-        } else {
-            return false
-        }
+        slices_equal(bottom_half, &r.compress().to_bytes()) == 1
     }
 }
 
@@ -463,7 +459,7 @@ impl Keypair {
         r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
 
         h = D::default();
-        h.input(&r.compress_edwards().to_bytes()[..]);
+        h.input(&r.compress().to_bytes()[..]);
         h.input(public_key);
         h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
@@ -471,7 +467,7 @@ impl Keypair {
         hram_digest = Scalar::reduce(&hash);
 
         s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
-        t = r.compress_edwards();
+        t = r.compress();
 
         signature_bytes[..32].copy_from_slice(&t.0);
         signature_bytes[32..64].copy_from_slice(&s.0);
@@ -518,7 +514,7 @@ mod test {
                 break;
             }
         }
-        public = PublicKey(a.compress_edwards());
+        public = PublicKey(a.compress());
 
         assert!(keypair.public.0 == public.0);
     }

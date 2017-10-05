@@ -19,7 +19,7 @@ travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 arrayref = "0.3.4"
 
 [dependencies.curve25519-dalek]
-version = "^0.11"
+version = "^0.12"
 default-features = false
 
 [dependencies.subtle]

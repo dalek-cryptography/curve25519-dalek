@@ -425,6 +425,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(test)]
 mod test {
+    use constants::ED25519_BASEPOINT_TABLE;
     use constants::BASE_COMPRESSED_MONTGOMERY;
     use edwards::Identity;
     use super::*;
@@ -482,6 +483,26 @@ mod test {
     }
 
     #[test]
+    fn montgomery_ct_eq_ne() {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let s1: Scalar = Scalar::random(&mut csprng);
+        let s2: Scalar = Scalar::random(&mut csprng);
+        let p1: MontgomeryPoint = (&s1 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+        let p2: MontgomeryPoint = (&s2 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+
+        assert_eq!(p1.ct_eq(&p2), 0);
+    }
+
+    #[test]
+    fn montgomery_ct_eq_eq() {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let s1: Scalar = Scalar::random(&mut csprng);
+        let p1: MontgomeryPoint = (&s1 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+
+        assert_eq!(p1.ct_eq(&p1), 1);
+    }
+
+    #[test]
     fn differential_add_matches_edwards_model() {
         let mut csprng: OsRng = OsRng::new().unwrap();
 
@@ -531,6 +552,17 @@ mod bench {
     use constants::BASE_COMPRESSED_MONTGOMERY;
     use test::Bencher;
     use super::*;
+
+    #[bench]
+    fn montgomery_ct_eq(b: &mut Bencher) {
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let s1: Scalar = Scalar::random(&mut csprng);
+        let s2: Scalar = Scalar::random(&mut csprng);
+        let p1: MontgomeryPoint = (&s1 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+        let p2: MontgomeryPoint = (&s2 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+
+        b.iter(| | p1.ct_eq(&p2))
+    }
 
     #[bench]
     fn montgomery_decompress(b: &mut Bencher) {

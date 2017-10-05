@@ -1,9 +1,9 @@
 [package]
 name = "ed25519-dalek"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Isis Lovecruft <isis@torproject.org>"]
 readme = "README.md"
-license = "CC0-1.0"
+license = "BSD-3-Clause"
 repository = "https://github.com/isislovecruft/ed25519-dalek"
 homepage = "https://code.ciph.re/isis/ed25519-dalek"
 documentation = "https://docs.rs/ed25519-dalek"
@@ -19,11 +19,11 @@ travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
 arrayref = "0.3.4"
 
 [dependencies.curve25519-dalek]
-version = "^0.11"
+version = "^0.12"
 default-features = false
 
 [dependencies.subtle]
-version = "^0.2"
+version = "^0.3"
 default-features = false
 
 [dependencies.rand]
@@ -38,7 +38,7 @@ version = "^0.6"
 version = "^0.8"
 
 [dev-dependencies]
-rustc-serialize = "0.3"
+hex = "0.2"
 sha2 = "^0.6"
 
 [features]

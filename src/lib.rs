@@ -41,8 +41,6 @@ extern crate test;
 #[cfg(test)]
 extern crate sha2;
 
-// this appears to only be used for serde support right now?
-#[cfg(feature = "serde")]
 #[macro_use]
 extern crate arrayref;
 
@@ -73,11 +71,6 @@ mod field_32bit;
 mod field_64bit;
 
 pub mod scalar;
-#[cfg(not(feature="radix_51"))]
-mod scalar_32bit;
-#[cfg(feature="radix_51")]
-mod scalar_64bit;
-
 pub mod edwards;
 pub mod montgomery;
 

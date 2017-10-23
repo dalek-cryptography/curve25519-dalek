@@ -15,7 +15,7 @@
 #![cfg_attr(all(feature = "nightly", feature = "std"), feature(zero_one))]
 
 #![allow(unused_features)]
-#![deny(missing_docs)] // refuse to compile if documentation is missing
+//#![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek
 //!
@@ -49,6 +49,9 @@ extern crate alloc;
 
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
+
+#[cfg(feature = "yolocrypto")]
+extern crate stdsimd;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it
 // too. Hopefully we can eliminate `generic_array` from `Digest` once const
@@ -90,6 +93,10 @@ pub(crate) mod field;
 
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;
+
+// XXX this should be in backend
+#[cfg(all(feature="yolocrypto", not(feature="radix_51")))]
+pub(crate) mod avx2;
 
 // Internal curve models which are not part of the public API.
 pub(crate) mod curve_models;

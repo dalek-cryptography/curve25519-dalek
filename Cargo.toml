@@ -24,6 +24,10 @@ rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9e
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
+[dependencies]
+#stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
+stdsimd = { git = "https://github.com/hdevalence/stdsimd", branch="feature/more-avx2" }
+
 [dependencies.serde]
 version = "1.0"
 optional = true

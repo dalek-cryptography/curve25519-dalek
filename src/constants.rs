@@ -19,7 +19,6 @@
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
-#[cfg(feature = "yolocrypto")]
 use ristretto::{RistrettoPoint, RistrettoBasepointTable};
 use montgomery::CompressedMontgomeryU;
 use scalar::Scalar;
@@ -63,7 +62,6 @@ pub const BASE_COMPRESSED_MONTGOMERY: CompressedMontgomeryU =
 
 /// The Ed25519 basepoint, as a `RistrettoPoint`.  This is called `_POINT` to distinguish it from
 /// `_TABLE`, which provides fast scalar multiplication.
-#[cfg(feature = "yolocrypto")]
 pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BASEPOINT_POINT);
 
 /// `l` is the order of base point, i.e. 2^252 +
@@ -87,7 +85,6 @@ pub const l_minus_2: Scalar = Scalar([ 0xeb, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
 
-#[cfg(feature = "yolocrypto")]
 /// The Ed25519 basepoint, as a RistrettoPoint
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);

@@ -15,8 +15,7 @@
 //! scheme](https://eprint.iacr.org/2015/673.pdf) to work on top of the
 //! Curve25519 group.
 //!
-//! Note: this code is currently feature-gated with the `yolocrypto`
-//! feature flag, because our implementation is still unfinished.
+//! Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
 //!
 //! # Notes on Ristretto
 //!

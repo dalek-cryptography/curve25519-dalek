@@ -1011,6 +1011,7 @@ pub mod vartime {
     ///
     /// A vector of `Scalar`s and a vector of `RistrettoPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b RistrettoPoint>

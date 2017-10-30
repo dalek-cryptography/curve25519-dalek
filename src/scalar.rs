@@ -583,6 +583,36 @@ mod test {
          0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
 
     #[test]
+    fn fuzzer_testcase_reduction() {
+        // LE bytes of 24519928653854221733733552434404946937899825954937634815
+        let a_bytes = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        // LE bytes of 4975441334397345751130612518500927154628011511324180036903450236863266160640
+        let b_bytes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 210, 210, 210, 255, 255, 255, 255, 10];
+        // LE bytes of 6432735165214683820902750800207468552549813371247423777071615116673864412038
+        let c_bytes = [134, 171, 119, 216, 180, 128, 178, 62, 171, 132, 32, 62, 34, 119, 104, 193, 47, 215, 181, 250, 14, 207, 172, 93, 75, 207, 211, 103, 144, 204, 56, 14];
+
+        let a = Scalar(a_bytes);
+        let b = Scalar(b_bytes);
+        let c = Scalar(c_bytes);
+
+        let mut tmp = [0u8; 64];
+
+        // also_a = (a mod l)
+        tmp[0..32].copy_from_slice(&a_bytes[..]);
+        let also_a = Scalar::reduce(&tmp);
+
+        // also_b = (b mod l)
+        tmp[0..32].copy_from_slice(&b_bytes[..]);
+        let also_b = Scalar::reduce(&tmp);
+
+        let expected_c = &a * &b;
+        let also_expected_c = &also_a * &also_b;
+
+        assert_eq!(c, expected_c);
+        assert_eq!(c, also_expected_c);
+    }
+
+    #[test]
     fn non_adjacent_form() {
         let naf = A_SCALAR.non_adjacent_form();
         for i in 0..256 {

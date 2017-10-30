@@ -19,6 +19,7 @@
 #![allow(non_snake_case)]
 
 use field_64bit::FieldElement64;
+use scalar_64bit::Scalar64;
 use edwards::ExtendedPoint;
 use edwards::AffineNielsPoint;
 use edwards::EdwardsBasepointTable;
@@ -68,6 +69,18 @@ pub const SQRT_MINUS_APLUS2: FieldElement64 = FieldElement64([1693982333959686, 
 
 /// `SQRT_MINUS_HALF` is sqrt(-1/2)
 pub const SQRT_MINUS_HALF: FieldElement64 = FieldElement64([266547196637087, 2134345371906993, 1135042577398223, 67298593331632, 743161882051057]);
+
+/// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
+pub const L: Scalar64 = Scalar64([ 0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000 ]);
+
+/// `L` * `LFACTOR` = -1 (mod 2^51)
+pub const LFACTOR: u64 = 0x51da312547e1b;
+
+/// `R` = R % L where R = 2^260
+pub const R: Scalar64 = Scalar64([ 0x000f48bd6721e6ed, 0x0003bab5ac67e45a, 0x000fffffeb35e51b, 0x000fffffffffffff, 0x00000fffffffffff ]);
+
+/// `RR` = (R^2) % L where R = 2^260
+pub const RR: Scalar64 = Scalar64([ 0x0009d265e952d13b, 0x000d63c715bea69f, 0x0005be65cb687604, 0x0003dceec73d217f, 0x000009411b7c309a ]);
 
 /// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
 /// be used for scalar multiplication (it's much faster).

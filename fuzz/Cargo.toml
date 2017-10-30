@@ -21,4 +21,8 @@ members = ["."]
 
 [[bin]]
 name = "decaf"
-path = "fuzzers/decaf.rs"
+path = "fuzz_targets/decaf.rs"
+
+[[bin]]
+name = "scalar_constructor_accepts_256bit_values"
+path = "fuzz_targets/scalar_constructor_accepts_256bit_values.rs"

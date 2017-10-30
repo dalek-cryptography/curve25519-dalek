@@ -23,15 +23,9 @@ use edwards::ExtendedPoint;
 use edwards::AffineNielsPoint;
 use edwards::EdwardsBasepointTable;
 
-pub const p: FieldElement64 = FieldElement64([2251799813685229, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]);
-
 pub const d: FieldElement64 = FieldElement64([929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575]);
 
 pub const d2: FieldElement64 = FieldElement64([1859910466990425, 932731440258426, 1072319116312658, 1815898335770999, 633789495995903]);
-
-pub const d4: FieldElement64 = FieldElement64([1468021120295602, 1865462880516853, 2144638232625316, 1379996857856750, 1267578991991807]);
-
-pub const a_minus_d: FieldElement64 = FieldElement64([1321844580190025, 1785434093556034, 589740348686294, 217950738957124, 809005158844672]);
 
 pub const sqrt_ad_minus_one: FieldElement64 = FieldElement64([
     2241493124984347, 425987919032274, 2207028919301688, 1220490630685848, 974799131293748
@@ -41,10 +35,6 @@ pub const invsqrt_a_minus_d: FieldElement64 = FieldElement64([
     278908739862762, 821645201101625, 8113234426968, 1777959178193151, 2118520810568447
 ]);
 
-pub const inv_a_minus_d: FieldElement64 = FieldElement64([
-    2251799813563563, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247
-]);
-
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement64 = FieldElement64([1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]);
 
@@ -52,26 +42,14 @@ pub const SQRT_M1: FieldElement64 = FieldElement64([1718705420411056, 2349088835
 /// i.e., `MSQRT_M1 = -SQRT_M1`.
 pub const MSQRT_M1: FieldElement64 = FieldElement64([533094393274173, 2016890930128738, 18285341111199, 134597186663265, 1486323764102114]);
 
-/// Precomputed value of 1/2 (mod p).
-pub const HALF: FieldElement64 = FieldElement64([2251799813685239, 2251799813685247, 2251799813685247, 2251799813685247, 1125899906842623]);
-
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement64 = FieldElement64([486662, 0, 0, 0, 0]);
 
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub const APLUS2_OVER_FOUR: FieldElement64 = FieldElement64([121666, 0, 0, 0, 0]);
 
-/// `SQRT_MINUS_A` is sqrt(-486662)
-// XXX I think that this was used in Adam's code for his elligator
-// implementation, but that should maybe be using sqrt(-486664)
-// instead...?  - hdevalence
-pub const SQRT_MINUS_A: FieldElement64 = FieldElement64([557817479725543, 1643290402203250, 16226468853936, 1304118542701054, 1985241807451647]);
-
 /// `SQRT_MINUS_APLUS2` is sqrt(-486664)
 pub const SQRT_MINUS_APLUS2: FieldElement64 = FieldElement64([1693982333959686, 608509411481997, 2235573344831311, 947681270984193, 266558006233600]);
-
-/// `SQRT_MINUS_HALF` is sqrt(-1/2)
-pub const SQRT_MINUS_HALF: FieldElement64 = FieldElement64([266547196637087, 2134345371906993, 1135042577398223, 67298593331632, 743161882051057]);
 
 /// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
 /// be used for scalar multiplication (it's much faster).

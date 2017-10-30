@@ -31,14 +31,6 @@ pub const d2: FieldElement32      = FieldElement32([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
 
-pub const d4: FieldElement32      = FieldElement32([
-    23454405,  -11679213,   5618422,  -5756869,    458917,
-    -1596832,  -25103633, -12990876,  -7676928, -14666033  ]);
-
-pub const a_minus_d: FieldElement32    = FieldElement32([
-    10913609,  -13857413,  15372611,  -6949391,   -114729,
-     8787816,    6275908,   3247719,  18696448,  12055116, ]);
-
 pub const sqrt_ad_minus_one: FieldElement32 = FieldElement32([
     24849947, -153582, -23613485, 6347715, -21072328, -667138, -25271143, -15367704, -870347, 14525639
 ]);
@@ -47,18 +39,6 @@ pub const invsqrt_a_minus_d: FieldElement32 = FieldElement32([
     6111485, 4156064, -27798727, 12243468, -25904040,
     120897, 20826367, -7060776, 6093568, -1986012
 ]);
-
-#[cfg(not(feature="radix_51"))]
-pub const inv_a_minus_d: FieldElement32 = FieldElement32([
-    -121666, 0, 0, 0, 0, 0, 0, 0, 0, 0
-]);
-
-/// (p-1)/2, in little-endian bytes.
-pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
-    [0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
 
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement32 = FieldElement32([
@@ -71,10 +51,6 @@ pub const MSQRT_M1: FieldElement32 = FieldElement32([
     32595792,    7943725,  -9377950,  -3500415, -12389472,
     272473,     25146209,   2005654,   -326686, -11406482, ]);
 
-/// Precomputed value of 1/2 (mod p).
-pub const HALF: FieldElement32 = FieldElement32([
-    10, 0, 0, 0, 0, 0, 0, 0, 0, -16777216, ]);
-
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub const A: FieldElement32       = FieldElement32([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
@@ -82,23 +58,10 @@ pub const A: FieldElement32       = FieldElement32([
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub const APLUS2_OVER_FOUR: FieldElement32 = FieldElement32([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-/// `SQRT_MINUS_A` is sqrt(-486662)
-// XXX I think that this was used in Adam's code for his elligator
-// implementation, but that should maybe be using sqrt(-486664)
-// instead...?  - hdevalence
-pub const SQRT_MINUS_A: FieldElement32 = FieldElement32([ // sqrtMinusA
-    12222970,    8312128,  11511410,  -9067497,  15300785,
-    241793,    -25456130, -14121551,  12187136,  -3972024, ]);
-
 /// `SQRT_MINUS_APLUS2` is sqrt(-486664)
 pub const SQRT_MINUS_APLUS2: FieldElement32 = FieldElement32([
     -12222970, -8312128, -11511410, 9067497, -15300785,
     -241793, 25456130, 14121551, -12187136, 3972024]);
-
-/// `SQRT_MINUS_HALF` is sqrt(-1/2)
-pub const SQRT_MINUS_HALF: FieldElement32 = FieldElement32([ // sqrtMinusHalf
-    -17256545,   3971863,  28865457,  -1750208,  27359696,
-    -16640980,  12573105,   1002827,   -163343,  11073975, ]);
 
 /// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
 /// be used for scalar multiplication (it's much faster).

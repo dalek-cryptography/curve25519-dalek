@@ -28,20 +28,6 @@ pub use constants_64bit::*;
 #[cfg(not(feature="radix_51"))]
 pub use constants_32bit::*;
 
-/// (p-1)/2, in little-endian bytes.
-pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
-    [0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
-
-/// `HALF_Q_MINUS_1_BYTES` is (2^255-20)/2 expressed in little endian form.
-pub const HALF_Q_MINUS_1_BYTES: [u8; 32] = [ // halfQMinus1Bytes
-    0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, ];
-
 /// Basepoint has y = 4/5.
 ///
 /// Generated with Sage: these are the bytes of 4/5 in 𝔽_p.  The
@@ -123,13 +109,6 @@ mod test {
         }
     }
 
-    #[test]
-    fn test_half() {
-        let one = FieldElement::one();
-        let two = &one + &one;
-        assert_eq!(one, &two * &constants::HALF);
-    }
-
     /// Test that the constant for sqrt(-486664) really is a square
     /// root of -486664.
     #[test]
@@ -205,14 +184,6 @@ mod test {
     }
 
     #[test]
-    fn test_d4() {
-        let mut four = FieldElement::zero();
-        // XXX should have a way to create small field elements
-        four.0[0] = 4;
-        assert_eq!(&constants::d * &four, constants::d4);
-    }
-
-    #[test]
     fn test_sqrt_ad_minus_one() {
         let a = FieldElement::minus_one();
         let ad_minus_one = &(&a * &constants::d) + &a;
@@ -220,15 +191,4 @@ mod test {
         assert_eq!(should_be_ad_minus_one, ad_minus_one);
     }
 
-    #[test]
-    fn test_a_minus_d() {
-        let a = FieldElement::minus_one();
-        let a_minus_d = &a - &constants::d;
-        assert_eq!(a_minus_d, constants::a_minus_d);
-        let (_, invsqrt_a_minus_d) = constants::a_minus_d.invsqrt();
-        assert_eq!(invsqrt_a_minus_d, constants::invsqrt_a_minus_d);
-        let inv_a_minus_d = invsqrt_a_minus_d.square();
-        assert_eq!(inv_a_minus_d, constants::inv_a_minus_d);
-        assert_eq!(&inv_a_minus_d * &a_minus_d, FieldElement::one());
-    }
 }

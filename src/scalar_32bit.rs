@@ -9,9 +9,6 @@
 //! depend on how the limbs are combined, but will stay within
 //! -0x1ffffffe00000008 (62 bits with sign bit) to
 //! 0x43fffffbc0000011 (63 bits), which is still safe.
-//!
-//! (the 9th limb will never exceed 21 bits, so the actual
-//! ranges are slightly smaller)
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
@@ -53,7 +50,7 @@ impl Scalar32 {
         Scalar32([0,0,0,0,0,0,0,0,0])
     }
 
-    /// Unpack a 32 byte / 512 bit scalar into 9 29-bit limbs, ignoring the upper 3 bits.
+    /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
     pub fn from_bytes(bytes: &[u8; 32]) -> Scalar32 {
         let mut words = [0u32; 8];
         for i in 0..8 {
@@ -63,7 +60,7 @@ impl Scalar32 {
         }
 
         let mask = (1u32 << 29) - 1;
-        let top_mask = (1u32 << 21) - 1;
+        let top_mask = (1u32 << 24) - 1;
         let mut s = Scalar32::zero();
 
         s[ 0] =   words[0]                            & mask;
@@ -376,7 +373,6 @@ impl Scalar32 {
         Scalar32::montgomery_reduce(&limbs)
     }
 }
-
 
 #[cfg(test)]
 mod test {

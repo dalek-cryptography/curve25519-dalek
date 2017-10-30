@@ -7,10 +7,6 @@
 //! To see that this is safe for intermediate results, note that
 //! the largest limb in a 5 by 5 product of 52-bit limbs will be
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
-//!
-//! (the 5th limb will never exceed 45 bits, so the actual
-//! ranges are slightly smaller)
-
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
@@ -52,7 +48,7 @@ impl Scalar64 {
         Scalar64([0,0,0,0,0])
     }
 
-    /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs, ignoring the upper 3 bits
+    /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     pub fn from_bytes(bytes: &[u8; 32]) -> Scalar64 {
         let mut words = [0u64; 8];
         for i in 0..4 {
@@ -62,7 +58,7 @@ impl Scalar64 {
         }
 
         let mask = (1u64 << 52) - 1;
-        let top_mask = (1u64 << 45) - 1;
+        let top_mask = (1u64 << 48) - 1;
         let mut s = Scalar64::zero();
 
         s[ 0] =   words[0]                            & mask;

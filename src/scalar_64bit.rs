@@ -181,18 +181,20 @@ impl Scalar64 {
 
     /// Compute `a * b`
     #[inline(always)]
-    fn mul_internal(a: &Scalar64, b: &Scalar64) -> [u128; 9] {
-        [
-            m(a[0],b[0]),
-            m(a[0],b[1]) + m(a[1],b[0]),
-            m(a[0],b[2]) + m(a[1],b[1]) + m(a[2],b[0]),
-            m(a[0],b[3]) + m(a[1],b[2]) + m(a[2],b[1]) + m(a[3],b[0]),
-            m(a[0],b[4]) + m(a[1],b[3]) + m(a[2],b[2]) + m(a[3],b[1]) + m(a[4],b[0]),
-                           m(a[1],b[4]) + m(a[2],b[3]) + m(a[3],b[2]) + m(a[4],b[1]),
-                                          m(a[2],b[4]) + m(a[3],b[3]) + m(a[4],b[2]),
-                                                         m(a[3],b[4]) + m(a[4],b[3]),
-                                                                        m(a[4],b[4])
-        ]
+    pub (crate) fn mul_internal(a: &Scalar64, b: &Scalar64) -> [u128; 9] {
+        let mut z = [0u128; 9];
+
+        z[0] = m(a[0],b[0]);
+        z[1] = m(a[0],b[1]) + m(a[1],b[0]);
+        z[2] = m(a[0],b[2]) + m(a[1],b[1]) + m(a[2],b[0]);
+        z[3] = m(a[0],b[3]) + m(a[1],b[2]) + m(a[2],b[1]) + m(a[3],b[0]);
+        z[4] = m(a[0],b[4]) + m(a[1],b[3]) + m(a[2],b[2]) + m(a[3],b[1]) + m(a[4],b[0]);
+        z[5] =                m(a[1],b[4]) + m(a[2],b[3]) + m(a[3],b[2]) + m(a[4],b[1]);
+        z[6] =                               m(a[2],b[4]) + m(a[3],b[3]) + m(a[4],b[2]);
+        z[7] =                                              m(a[3],b[4]) + m(a[4],b[3]);
+        z[8] =                                                             m(a[4],b[4]);
+
+        z
     }
 
     /// Compute `a^2`
@@ -220,7 +222,7 @@ impl Scalar64 {
 
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(always)]
-    fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar64 {
+    pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar64 {
 
         #[inline(always)]
         fn part1(sum: u128) -> (u128, u64) {

@@ -197,7 +197,7 @@ impl Scalar32 {
     ///
     /// This is implemented with a one-level refined Karatsuba decomposition
     #[inline(always)]
-    fn mul_internal(a: &Scalar32, b: &Scalar32) -> [u64; 17] {
+    pub (crate) fn mul_internal(a: &Scalar32, b: &Scalar32) -> [u64; 17] {
         let mut z = [0u64; 17];
 
         z[0] = m(a[0],b[0]);                                                             // c00
@@ -289,7 +289,7 @@ impl Scalar32 {
 
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^261
     #[inline(always)]
-    fn montgomery_reduce(limbs: &[u64; 17]) -> Scalar32 {
+    pub (crate) fn montgomery_reduce(limbs: &[u64; 17]) -> Scalar32 {
 
         #[inline(always)]
         fn part1(sum: u64) -> (u64, u32) {

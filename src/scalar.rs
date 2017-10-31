@@ -731,6 +731,38 @@ mod test {
         assert_eq!(should_be_unpacked.0, unpacked.0);
     }
 
+
+    #[test]
+    fn montgomery_reduce_matches_reduce() {
+        let mut bignum = [0u8; 64];
+
+        // set bignum = x + 2^256x
+        for i in 0..32 {
+            bignum[   i] = X[i];
+            bignum[32+i] = X[i];
+        }
+        // x + 2^256x (mod l)
+        //         = 3958878930004874126169954872055634648693766179881526445624823978500314864344
+        let expected = Scalar([216, 154, 179, 139, 210, 121,   2,  71,
+                                69,  99, 158, 216,  23, 173,  63, 100,
+                               204,   0,  91,  50, 219, 153,  57, 249,
+                                28,  82,  31, 197, 100, 165, 192,   8]);
+        let reduced = Scalar::reduce(&bignum);
+
+        // The reduced scalar should match the expected
+        assert_eq!(reduced.0, expected.0);
+
+        //  (x + 2^256x) * R
+        let interim = UnpackedScalar::mul_internal(&UnpackedScalar::from_bytes_wide(&bignum),
+                                                   &constants::R);
+        // ((x + 2^256x) * R) / R  (mod l)
+        let montgomery_reduced = UnpackedScalar::montgomery_reduce(&interim);
+
+        // The Montgomery reduced scalar should match the reduced one, as well as the expected
+        assert_eq!(montgomery_reduced.0, reduced.unpack().0);
+        assert_eq!(montgomery_reduced.0, expected.unpack().0)
+    }
+
     #[cfg(feature = "serde")]
     use serde_cbor;
 

@@ -106,7 +106,7 @@ impl Scalar32 {
         hi[5] = ((words[12] >> 22) | (words[13] << 10)) & mask;
         hi[6] = ((words[13] >> 19) | (words[14] << 13)) & mask;
         hi[7] = ((words[14] >> 16) | (words[15] << 16)) & mask;
-        hi[8] =  (words[15] >> 13)                      & mask;
+        hi[8] =   words[15] >> 13                             ;
 
         lo = Scalar32::montgomery_mul(&lo, &constants::R);  // (lo * R) / R = lo
         hi = Scalar32::montgomery_mul(&hi, &constants::RR); // (hi * R^2) / R = hi * R

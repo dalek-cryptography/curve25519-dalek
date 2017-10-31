@@ -38,10 +38,6 @@ pub(crate) const INVSQRT_A_MINUS_D: FieldElement64 = FieldElement64([
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub(crate) const SQRT_M1: FieldElement64 = FieldElement64([1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]);
 
-/// Precomputed value of the other square root of -1 (mod p),
-/// i.e., `MSQRT_M1 = -SQRT_M1`.
-pub(crate) const MSQRT_M1: FieldElement64 = FieldElement64([533094393274173, 2016890930128738, 18285341111199, 134597186663265, 1486323764102114]);
-
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
 pub(crate) const MONTGOMERY_A: FieldElement64 = FieldElement64([486662, 0, 0, 0, 0]);
 

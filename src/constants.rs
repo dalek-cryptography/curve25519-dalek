@@ -86,7 +86,17 @@ pub const BASEPOINT_ORDER_MINUS_2: Scalar = Scalar([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
 ]);
 
+// Precomputed basepoint table is generated into a file by build.rs
+
+/*
+#[cfg(feature="precomputed_tables")]
+pub use generated::ED25519_BASEPOINT_TABLE;
+*/
+#[cfg(feature="precomputed_tables")]
+include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
+
 /// The Ed25519 basepoint, as a RistrettoPoint
+#[cfg(feature="precomputed_tables")]
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 

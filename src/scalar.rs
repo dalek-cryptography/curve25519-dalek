@@ -722,6 +722,15 @@ mod test {
         assert_eq!(should_be_X, X);
     }
 
+    #[test]
+    fn to_bytes_from_bytes_roundtrips() {
+        let unpacked = X.unpack();
+        let bytes = unpacked.to_bytes();
+        let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
+
+        assert_eq!(should_be_unpacked.0, unpacked.0);
+    }
+
     #[cfg(feature = "serde")]
     use serde_cbor;
 

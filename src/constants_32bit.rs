@@ -12,10 +12,6 @@
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(non_upper_case_globals)]
-#![allow(missing_docs)]
 #![allow(non_snake_case)]
 
 use field_32bit::FieldElement32;
@@ -23,19 +19,23 @@ use edwards::ExtendedPoint;
 use edwards::AffineNielsPoint;
 use edwards::EdwardsBasepointTable;
 
-pub const d: FieldElement32       = FieldElement32([
+/// Edwards `d` value, equal to `-121665/121666 mod p`.
+pub const EDWARDS_D: FieldElement32       = FieldElement32([
     -10913610,  13857413, -15372611,   6949391,    114729,
     -8787816,   -6275908,  -3247719, -18696448, -12055116, ]);
 
-pub const d2: FieldElement32      = FieldElement32([
+/// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
+pub const EDWARDS_D2: FieldElement32      = FieldElement32([
     -21827239,  -5839606, -30745221,  13898782,    229458,
     15978800,  -12551817,  -6495438,  29715968,   9444199, ]);
 
-pub const sqrt_ad_minus_one: FieldElement32 = FieldElement32([
+/// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.
+pub const SQRT_AD_MINUS_ONE: FieldElement32 = FieldElement32([
     24849947, -153582, -23613485, 6347715, -21072328, -667138, -25271143, -15367704, -870347, 14525639
 ]);
 
-pub const invsqrt_a_minus_d: FieldElement32 = FieldElement32([
+/// `= 1/sqrt(a-d)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.
+pub const INVSQRT_A_MINUS_D: FieldElement32 = FieldElement32([
     6111485, 4156064, -27798727, 12243468, -25904040,
     120897, 20826367, -7060776, 6093568, -1986012
 ]);
@@ -52,7 +52,7 @@ pub const MSQRT_M1: FieldElement32 = FieldElement32([
     272473,     25146209,   2005654,   -326686, -11406482, ]);
 
 /// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
-pub const A: FieldElement32       = FieldElement32([
+pub const MONTGOMERY_A: FieldElement32       = FieldElement32([
     486662, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]);
 
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
@@ -63,8 +63,9 @@ pub const SQRT_MINUS_APLUS2: FieldElement32 = FieldElement32([
     -12222970, -8312128, -11511410, 9067497, -15300785,
     -241793, 25456130, 14121551, -12187136, 3972024]);
 
-/// Basepoint has y = 4/5.  This is called `_POINT` to distinguish it from `_TABLE`, which should
-/// be used for scalar multiplication (it's much faster).
+/// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
+/// distinguish it from `_TABLE`, which should be used for scalar
+/// multiplication (it's much faster).
 pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
         X: FieldElement32([-14297830, -7645148, 16144683, -16471763, 27570974, -2696100, -26142465, 8378389, 20764389, 8758491]),
         Y: FieldElement32([-26843541, -6710886, 13421773, -13421773, 26843546, 6710886, -13421773, 13421773, -26843546, -6710886]),
@@ -130,7 +131,8 @@ pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     },
 ];
 
-pub const bi: [AffineNielsPoint; 8] = [
+/// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B]`.
+pub const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: [AffineNielsPoint; 8] = [
     AffineNielsPoint{
         y_plus_x:  FieldElement32([25967493, -14356035, 29566456, 3660896, -12694345, 4014787, 27544626, -11754271, -6079156, 2047605]),
         y_minus_x: FieldElement32([-12545711, 934262, -2722910, 3049990, -727428, 9406986, 12720692, 5043384, 19500929, -15469378]),

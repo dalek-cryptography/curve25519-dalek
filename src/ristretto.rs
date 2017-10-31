@@ -462,7 +462,7 @@ impl CompressedRistretto {
         let yden = &one + &ss; // 1 - a*s^2
         let ynum = &one - &ss; // 1 + a*s^2
         let yden_sqr = yden.square();
-        let xden_sqr = &(&(-&constants::d) * &ynum.square()) - &yden_sqr;
+        let xden_sqr = &(&(-&constants::EDWARDS_D) * &ynum.square()) - &yden_sqr;
 
         let (ok, invsqrt) = (&xden_sqr * &yden_sqr).invsqrt();
 
@@ -639,7 +639,7 @@ impl RistrettoPoint {
 
         let iX = &X * &constants::SQRT_M1;
         let iY = &Y * &constants::SQRT_M1;
-        let ristretto_magic = &constants::invsqrt_a_minus_d;
+        let ristretto_magic = &constants::INVSQRT_A_MINUS_D;
         let enchanted_denominator = &i1 * ristretto_magic;
 
         let rotate = (T * &z_inv).is_negative();
@@ -673,7 +673,7 @@ impl RistrettoPoint {
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
     pub fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
-        let (i, d) = (&constants::SQRT_M1, &constants::d);
+        let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
 
         let r = i * &r_0.square();
@@ -706,7 +706,7 @@ impl RistrettoPoint {
         let s_sq = s.square();
         let P = CompletedPoint{
             X: &(&s + &s) * &D,
-            Z: &T * &constants::sqrt_ad_minus_one,
+            Z: &T * &constants::SQRT_AD_MINUS_ONE,
             Y: &FieldElement::one() - &s_sq,
             T: &FieldElement::one() + &s_sq,
         };
@@ -1061,7 +1061,7 @@ mod test {
     #[test]
     fn decompress_negative_s_fails() {
         // constants::d is neg, so decompression should fail as |d| != d.
-        let bad_compressed = CompressedRistretto(constants::d.to_bytes());
+        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.to_bytes());
         assert!(bad_compressed.decompress().is_none());
     }
 

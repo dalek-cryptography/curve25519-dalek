@@ -10,6 +10,12 @@ env:
 
 matrix:
   include:
+    - rust: stable
+      env: TEST_COMMAND=test FEATURES=--features="serde"
+    - rust: beta
+      env: TEST_COMMAND=test FEATURES=--features="serde"
+    - rust: nightly
+      env: TEST_COMMAND=test FEATURES=--features="serde"
     - rust: nightly
       env: TEST_COMMAND=build FEATURES=--no-default-features
     - rust: nightly

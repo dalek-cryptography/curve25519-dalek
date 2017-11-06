@@ -15,6 +15,18 @@ use core::fmt::Debug;
 #[cfg(feature = "std")]
 use rand::Rng;
 
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserialize};
+#[cfg(feature = "serde")]
+use serde::{Serializer, Deserializer};
+#[cfg(feature = "serde")]
+use serde::de::Error as SerdeError;
+#[cfg(feature = "serde")]
+use serde::de::Visitor;
+
+#[cfg(feature = "sha2")]
+use sha2::Sha512;
+
 use digest::BlockInput;
 use digest::Digest;
 use digest::Input;
@@ -38,6 +50,9 @@ pub const SECRET_KEY_LENGTH: usize = 32;
 /// The length of an ed25519 EdDSA `PublicKey`, in bytes.
 pub const PUBLIC_KEY_LENGTH: usize = 32;
 
+/// The length of an ed25519 EdDSA `Keypair`, in bytes.
+pub const KEYPAIR_LENGTH: usize = SECRET_KEY_LENGTH + PUBLIC_KEY_LENGTH;
+
 /// An EdDSA signature.
 ///
 /// # Note
@@ -47,7 +62,29 @@ pub const PUBLIC_KEY_LENGTH: usize = 32;
 /// been signed.
 #[derive(Copy)]
 #[repr(C)]
-pub struct Signature(pub [u8; SIGNATURE_LENGTH]);
+pub struct Signature {
+    /// `r` is an `ExtendedPoint`, formed by using an hash function with
+    /// 512-bits output to produce the digest of:
+    ///
+    /// - the nonce half of the `ExpandedSecretKey`, and
+    /// - the message to be signed.
+    ///
+    /// This digest is then interpreted as a `Scalar` and reduced into an
+    /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
+    /// basepoint to produce `r`, and `ExtendedPoint`.
+    pub (crate) r: CompressedEdwardsY,
+
+    /// `s` is a `Scalar`, formed by using an hash function with 512-bits output
+    /// to produce the digest of:
+    ///
+    /// - the `r` portion of this `Signature`,
+    /// - the `PublicKey` which should be used to verify this `Signature`, and
+    /// - the message to be signed.
+    ///
+    /// This digest is then interpreted as a `Scalar` and reduced into an
+    /// element in ℤ/lℤ.
+    pub (crate) s: Scalar,
+}
 
 impl Clone for Signature {
     fn clone(&self) -> Self { *self }
@@ -55,7 +92,7 @@ impl Clone for Signature {
 
 impl Debug for Signature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Signature([{:?}])", &self.0[..])
+        write!(f, "Signature( r: {:?}, s: {:?} )", &self.r, &self.s)
     }
 }
 
@@ -65,41 +102,69 @@ impl PartialEq for Signature {
     fn eq(&self, other: &Signature) -> bool {
         let mut equal: u8 = 0;
 
-        for i in 0..64 {
-            equal |= self.0[i] ^ other.0[i];
+        for i in 0..32 {
+            equal |= self.r.0[i] ^ other.r.0[i];
+            equal |= self.s[i]   ^ other.s[i];
         }
-
-        if equal == 0 {
-            return true;
-        } else {
-            return false;
-        }
+        equal == 0
     }
 }
 
 impl Signature {
-    /// View this `Signature` as a byte array.
+    /// Convert this `Signature` to a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
-        self.0
-    }
+        let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
 
-    /// View this `Signature` as a byte array.
-    #[inline]
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; SIGNATURE_LENGTH] {
-        &self.0
+        signature_bytes[..32].copy_from_slice(&self.r.as_bytes()[..]);
+        signature_bytes[32..].copy_from_slice(&self.s.as_bytes()[..]);
+        signature_bytes
     }
 
     /// Construct a `Signature` from a slice of bytes.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Signature {
-        Signature(*array_ref!(bytes, 0, SIGNATURE_LENGTH))
+    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, &'static str> {
+        if bytes.len() != SIGNATURE_LENGTH {
+            return Err("Wrong length of bytes for signature! Need 64 bytes.")
+        }
+
+        let lower: &[u8; 32] = array_ref!(bytes,  0, 32);
+        let upper: &[u8; 32] = array_ref!(bytes, 32, 32);
+
+        Ok(Signature{ r: CompressedEdwardsY(*lower), s: Scalar(*upper) })
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Signature {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_bytes(&self.to_bytes()[..])
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'d> Deserialize<'d> for Signature {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+        struct SignatureVisitor;
+
+        impl<'d> Visitor<'d> for SignatureVisitor {
+            type Value = Signature;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("An ed25519 signature as 64 bytes, as specified in RFC8032.")
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Signature, E> where E: SerdeError{
+                Signature::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
+            }
+        }
+        deserializer.deserialize_bytes(SignatureVisitor)
     }
 }
 
 /// An EdDSA secret key.
 #[repr(C)]
-pub struct SecretKey(pub [u8; SECRET_KEY_LENGTH]);
+pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -108,6 +173,11 @@ impl Debug for SecretKey {
 }
 
 impl SecretKey {
+    /// Expand this `SecretKey` into an `ExpandedSecretKey`.
+    pub fn expand<D>(&self) -> ExpandedSecretKey where D: Digest<OutputSize = U64> + Default {
+        ExpandedSecretKey::from_secret_key::<D>(&self)
+    }
+
     /// Convert this secret key to a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; SECRET_KEY_LENGTH] {
@@ -126,26 +196,38 @@ impl SecretKey {
     ///
     /// ```
     /// # extern crate ed25519_dalek;
-    /// # fn main() {
+    /// #
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::SECRET_KEY_LENGTH;
     ///
+    /// # fn doctest() -> Result<SecretKey, &'static str> {
     /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
     ///    157, 097, 177, 157, 239, 253, 090, 096,
     ///    186, 132, 074, 244, 146, 236, 044, 196,
     ///    068, 073, 197, 105, 123, 050, 105, 025,
     ///    112, 059, 172, 003, 028, 174, 127, 096, ];
     ///
-    /// let secret_key: SecretKey = SecretKey::from_bytes(&secret_key_bytes[..]);
+    /// let secret_key: SecretKey = SecretKey::from_bytes(&secret_key_bytes)?;
+    /// #
+    /// # Ok(secret_key)
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     let result = doctest();
+    /// #     assert!(result.is_ok());
     /// # }
     /// ```
     ///
     /// # Returns
     ///
-    /// An EdDSA `SecretKey`.
+    /// A `Result` whose okay value is an EdDSA `SecretKey` or whose error value
+    /// is an `&'static str` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> SecretKey {
-        SecretKey(*array_ref!(bytes, 0, SECRET_KEY_LENGTH))
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, &'static str> {
+        if bytes.len() != SECRET_KEY_LENGTH {
+            return Err("Wrong length of bytes for creating secret key!");
+        }
+        Ok(SecretKey(*array_ref!(bytes, 0, SECRET_KEY_LENGTH)))
     }
 
     /// Generate a `SecretKey` from a `csprng`.
@@ -203,7 +285,7 @@ impl SecretKey {
     ///
     /// # Input
     ///
-    /// A CSPRING with a `fill_bytes()` method, e.g. the one returned
+    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
     /// from `rand::OsRng::new()` (in the `rand` crate).
     ///
     #[cfg(feature = "std")]
@@ -216,14 +298,299 @@ impl SecretKey {
     }
 }
 
-/// An ed25519 public key.
-#[derive(Copy, Clone)]
+#[cfg(feature = "serde")]
+impl Serialize for SecretKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'d> Deserialize<'d> for SecretKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+        struct SecretKeyVisitor;
+
+        impl<'d> Visitor<'d> for SecretKeyVisitor {
+            type Value = SecretKey;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("An ed25519 secret key as 32 bytes, as specified in RFC8032.")
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<SecretKey, E> where E: SerdeError {
+                SecretKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
+            }
+        }
+        deserializer.deserialize_bytes(SecretKeyVisitor)
+    }
+}
+
+/// An "expanded" secret key.
+///
+/// This is produced by using an hash function with 512-bits output to digest a
+/// `SecretKey`.  The output digest is then split in half, the lower half being
+/// the actual `key` used to sign messages, after twiddling with some bits.¹ The
+/// upper half is used a sort of half-baked, ill-designed² pseudo-domain-separation
+/// "nonce"-like thing, which is used during signature production by
+/// concatenating it with the message to be signed before the message is hashed.
+//
+// ¹ This results in a slight bias towards non-uniformity at one spectrum of
+// the range of valid keys.  Oh well: not my idea; not my problem.
+//
+// ² It is the author's view (specifically, isis agora lovecruft, in the event
+// you'd like to complain about me, again) that this is "ill-designed" because
+// this doesn't actually provide true hash domain separation, in that in many
+// real-world applications a user wishes to have one key which is used in
+// several contexts (such as within tor, which does does domain separation
+// manually by pre-concatenating static strings to messages to achieve more
+// robust domain separation).  In other real-world applications, such as
+// bitcoind, a user might wish to have one master keypair from which others are
+// derived (à la BIP32) and different domain separators between keys derived at
+// different levels (and similarly for tree-based key derivation constructions,
+// such as hash-based signatures).  Leaving the domain separation to
+// application designers, who thus far have produced incompatible,
+// slightly-differing, ad hoc domain separation (at least those application
+// designers who knew enough cryptographic theory to do so!), is therefore a
+// bad design choice on the part of the cryptographer designing primitives
+// which should be simple and as foolproof as possible to use for
+// non-cryptographers.  Further, later in the ed25519 signature scheme, as
+// specified in RFC8032, the public key is added into *another* hash digest
+// (along with the message, again); it is unclear to this author why there's
+// not only one but two poorly-thought-out attempts at domain separation in the
+// same signature scheme, and which both fail in exactly the same way.  For a
+// better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
+// "generalised EdDSA" and "VXEdDSA".
 #[repr(C)]
-pub struct PublicKey(pub CompressedEdwardsY);
+pub struct ExpandedSecretKey {
+    pub (crate) key: Scalar,
+    pub (crate) nonce: [u8; 32],
+}
+
+#[cfg(feature = "sha2")]
+impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
+    /// Construct an `ExpandedSecretKey` from a `SecretKey`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// # extern crate ed25519_dalek;
+    /// #
+    /// # fn main() {
+    /// #
+    /// use rand::{Rng, OsRng};
+    /// use sha2::Sha512;
+    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
+    /// # }
+    /// ```
+    fn from(secret_key: &'a SecretKey) -> ExpandedSecretKey {
+        ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key)
+    }
+}
+
+impl ExpandedSecretKey {
+    /// Convert this `ExpandedSecretKey` into an array of 64 bytes.
+    ///
+    /// # Returns
+    ///
+    /// An array of 64 bytes.  The first 32 bytes represent the "expanded"
+    /// secret key, and the last 32 bytes represent the "domain-separation"
+    /// "nonce".
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// # extern crate ed25519_dalek;
+    /// #
+    /// # #[cfg(feature = "sha2")]
+    /// # fn main() {
+    /// #
+    /// use rand::{Rng, OsRng};
+    /// use sha2::Sha512;
+    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
+    /// let expanded_secret_key_bytes: [u8; 64] = expanded_secret_key.to_bytes();
+    ///
+    /// assert!(&expanded_secret_key_bytes[..] != &[0u8; 64][..]);
+    /// # }
+    /// #
+    /// # #[cfg(not(feature = "sha2"))]
+    /// # fn main() { }
+    /// ```
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 64] {
+        let mut bytes: [u8; 64] = [0u8; 64];
+
+        bytes[..32].copy_from_slice(&self.key.0[..]);
+        bytes[32..].copy_from_slice(&self.nonce[..]);
+        bytes
+    }
+
+    /// Construct an `ExpandedSecretKey` from a slice of bytes.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` whose okay value is an EdDSA `ExpandedSecretKey` or whose
+    /// error value is an `&'static str` describing the error that occurred.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// # extern crate ed25519_dalek;
+    /// #
+    /// use rand::{Rng, OsRng};
+    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    ///
+    /// # #[cfg(feature = "sha2")]
+    /// # fn do_test() -> Result<ExpandedSecretKey, &'static str> {
+    /// #
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
+    /// let bytes: [u8; 64] = expanded_secret_key.to_bytes();
+    /// let expanded_secret_key_again = ExpandedSecretKey::from_bytes(&bytes)?;
+    /// #
+    /// # Ok(expanded_secret_key_again)
+    /// # }
+    /// #
+    /// # #[cfg(feature = "sha2")]
+    /// # fn main() {
+    /// #     let result = do_test();
+    /// #     assert!(result.is_ok());
+    /// # }
+    /// #
+    /// # #[cfg(not(feature = "sha2"))]
+    /// # fn main() {}
+    /// ```
+    #[inline]
+    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, &'static str> {
+        if bytes.len() != 64 {
+            return Err("Wrong length of bytes for creating expanded secret key!");
+        }
+        Ok(ExpandedSecretKey{ key: Scalar(*array_ref!(bytes, 0, 32)),
+                              nonce:      *array_ref!(bytes, 32, 32), })
+    }
+
+    /// Construct an `ExpandedSecretKey` from a `SecretKey`, using hash function `D`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// # extern crate ed25519_dalek;
+    /// #
+    /// # fn do_test() {
+    /// #
+    /// use rand::{Rng, OsRng};
+    /// use sha2::Sha512;
+    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
+    /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key);
+    /// # }
+    /// #
+    /// # fn main() { do_test(); }
+    /// ```
+    pub fn from_secret_key<D>(secret_key: &SecretKey) -> ExpandedSecretKey
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+        let mut expanded_key: Scalar;
+
+        h.input(secret_key.as_bytes());
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        expanded_key = Scalar(*array_ref!(&hash, 0, 32));
+        expanded_key[0]  &= 248;
+        expanded_key[31] &=  63;
+        expanded_key[31] |=  64;
+
+        ExpandedSecretKey{ key: expanded_key, nonce: *array_ref!(&hash, 32, 32) }
+    }
+
+    /// Sign a message with this `ExpandedSecretKey`.
+    pub fn sign<D>(&self, message: &[u8], public_key: &PublicKey) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
+
+        let mut h: D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+        let mesg_digest: Scalar;
+        let hram_digest: Scalar;
+        let r: ExtendedPoint;
+        let s: Scalar;
+
+        h.input(&self.nonce);
+        h.input(&message);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        mesg_digest = Scalar::reduce(&hash);
+
+        r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
+
+        h = D::default();
+        h.input(r.compress().as_bytes());
+        h.input(public_key.as_bytes());
+        h.input(&message);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        hram_digest = Scalar::reduce(&hash);
+
+        s = Scalar::multiply_add(&hram_digest, &self.key, &mesg_digest);
+
+        Signature{ r: r.compress(), s: s }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for ExpandedSecretKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_bytes(&self.to_bytes()[..])
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'d> Deserialize<'d> for ExpandedSecretKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+        struct ExpandedSecretKeyVisitor;
+
+        impl<'d> Visitor<'d> for ExpandedSecretKeyVisitor {
+            type Value = ExpandedSecretKey;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("An ed25519 expanded secret key as 64 bytes, as specified in RFC8032.")
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<ExpandedSecretKey, E> where E: SerdeError {
+                ExpandedSecretKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
+            }
+        }
+        deserializer.deserialize_bytes(ExpandedSecretKeyVisitor)
+    }
+}
+
+/// An ed25519 public key.
+#[derive(Copy, Clone, Eq, PartialEq)]
+#[repr(C)]
+pub struct PublicKey(pub (crate) CompressedEdwardsY);
 
 impl Debug for PublicKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "PublicKey( CompressedPoint( {:?} ))", self.0)
+        write!(f, "PublicKey( CompressedEdwardsY( {:?} ))", self.0)
     }
 }
 
@@ -252,24 +619,35 @@ impl PublicKey {
     ///
     /// ```
     /// # extern crate ed25519_dalek;
-    /// # fn main() {
+    /// #
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
     ///
+    /// # fn doctest() -> Result<PublicKey, &'static str> {
     /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
     ///
-    /// let public_key: PublicKey = PublicKey::from_bytes(&public_key_bytes);
+    /// let public_key = PublicKey::from_bytes(&public_key_bytes)?;
+    /// #
+    /// # Ok(public_key)
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     doctest();
     /// # }
     /// ```
     ///
     /// # Returns
     ///
-    /// A `PublicKey`.
+    /// A `Result` whose okay value is an EdDSA `PublicKey` or whose error value
+    /// is an `&'static str` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> PublicKey {
-        PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32)))
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, &'static str> {
+        if bytes.len() != PUBLIC_KEY_LENGTH {
+            return Err("Wrong length of bytes for creating public key!");
+        }
+        Ok(PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32))))
     }
 
     /// Convert this public key to its underlying extended twisted Edwards coordinate.
@@ -320,7 +698,7 @@ impl PublicKey {
         let digest: [u8; 64];
         let digest_reduced: Scalar;
 
-        if signature.0[63] & 224 != 0 {
+        if signature.s[31] & 224 != 0 {
             return false;
         }
         ao = self.decompress();
@@ -332,40 +710,81 @@ impl PublicKey {
         }
         a = -(&a);
 
-        let top_half:    &[u8; 32] = array_ref!(&signature.0, 32, 32);
-        let bottom_half: &[u8; 32] = array_ref!(&signature.0,  0, 32);
-
-        h.input(&bottom_half[..]);
-        h.input(&self.to_bytes());
+        h.input(signature.r.as_bytes());
+        h.input(self.as_bytes());
         h.input(&message);
 
         let digest_bytes = h.fixed_result();
         digest = *array_ref!(digest_bytes, 0, 64);
         digest_reduced = Scalar::reduce(&digest);
-        r = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &Scalar(*top_half));
+        r = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &signature.s);
 
-        slices_equal(bottom_half, &r.compress().to_bytes()) == 1
+        slices_equal(signature.r.as_bytes(), r.compress().as_bytes()) == 1
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for PublicKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'d> Deserialize<'d> for PublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+
+        struct PublicKeyVisitor;
+
+        impl<'d> Visitor<'d> for PublicKeyVisitor {
+            type Value = PublicKey;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("An ed25519 signature as specified in RFC8032")
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<PublicKey, E> where E: SerdeError {
+                PublicKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
+            }
+        }
+        deserializer.deserialize_bytes(PublicKeyVisitor)
     }
 }
 
 /// An ed25519 keypair.
 #[derive(Debug)]
-#[repr(C)]
 pub struct Keypair {
-    /// The public half of this keypair.
-    pub public: PublicKey,
     /// The secret half of this keypair.
     pub secret: SecretKey,
+    /// The public half of this keypair.
+    pub public: PublicKey,
 }
 
 impl Keypair {
+    /// Convert this keypair to bytes.
+    ///
+    /// # Returns
+    ///
+    /// An array of bytes, `[u8; KEYPAIR_LENGTH]`.  The first
+    /// `SECRET_KEY_LENGTH` of bytes is the `SecretKey`, and the next
+    /// `PUBLIC_KEY_LENGTH` bytes is the `PublicKey` (the same as other
+    /// libraries, such as [Adam Langley's ed25519 Golang
+    /// implementation](https://github.com/agl/ed25519/)).
+    pub fn to_bytes(&self) -> [u8; KEYPAIR_LENGTH] {
+        let mut bytes: [u8; KEYPAIR_LENGTH] = [0u8; KEYPAIR_LENGTH];
+
+        bytes[..SECRET_KEY_LENGTH].copy_from_slice(self.secret.as_bytes());
+        bytes[SECRET_KEY_LENGTH..].copy_from_slice(self.public.as_bytes());
+        bytes
+    }
+
     /// Construct a `Keypair` from the bytes of a `PublicKey` and `SecretKey`.
     ///
     /// # Inputs
     ///
-    /// * `public`: a `[u8; 32]` representing the compressed Edwards-Y
-    ///    coordinate of a point on curve25519.
-    /// * `secret`: a `[u8; 32]` representing the corresponding secret key.
+    /// * `bytes`: an `&[u8]` representing the scalar for the secret key, and a
+    ///   compressed Edwards-Y coordinate of a point on curve25519, both as bytes.
+    ///   (As obtained from `Keypair::to_bytes()`.)
     ///
     /// # Warning
     ///
@@ -376,10 +795,16 @@ impl Keypair {
     ///
     /// # Returns
     ///
-    /// A `Keypair`.
-    pub fn from_bytes<'a>(public: &'a [u8; 32], secret: &'a [u8; 32]) -> Keypair {
-        Keypair{ public: PublicKey::from_bytes(public),
-                 secret: SecretKey::from_bytes(secret), }
+    /// A `Result` whose okay value is an EdDSA `Keypair` or whose error value
+    /// is an `&'static str` describing the error that occurred.
+    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, &'static str> {
+        if bytes.len() != KEYPAIR_LENGTH {
+            return Err("Wrong length of bytes for creating keypair!");
+        }
+        let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
+        let public = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..])?;
+
+        Ok(Keypair{ secret: secret, public: public })
     }
 
     /// Generate an ed25519 keypair.
@@ -425,59 +850,49 @@ impl Keypair {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign<D>(&self, message: &[u8]) -> Signature
-            where D: Digest<OutputSize = U64> + Default {
-
-        let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut signature_bytes: [u8; 64] = [0u8; SIGNATURE_LENGTH];
-        let mut expanded_key_secret: Scalar;
-        let mesg_digest: Scalar;
-        let hram_digest: Scalar;
-        let r: ExtendedPoint;
-        let s: Scalar;
-        let t: CompressedEdwardsY;
-
-        let secret_key: &[u8; 32] = self.secret.as_bytes();
-        let public_key: &[u8; 32] = self.public.as_bytes();
-
-        h.input(secret_key);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        expanded_key_secret = Scalar(*array_ref!(&hash, 0, 32));
-        expanded_key_secret[0]  &= 248;
-        expanded_key_secret[31] &=  63;
-        expanded_key_secret[31] |=  64;
-
-        h = D::default();
-        h.input(&hash[32..]);
-        h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        mesg_digest = Scalar::reduce(&hash);
-
-        r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
-
-        h = D::default();
-        h.input(&r.compress().to_bytes()[..]);
-        h.input(public_key);
-        h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
-
-        hram_digest = Scalar::reduce(&hash);
-
-        s = Scalar::multiply_add(&hram_digest, &expanded_key_secret, &mesg_digest);
-        t = r.compress();
-
-        signature_bytes[..32].copy_from_slice(&t.0);
-        signature_bytes[32..64].copy_from_slice(&s.0);
-        Signature(*array_ref!(&signature_bytes, 0, 64))
+    pub fn sign<D>(&self, message: &[u8]) -> Signature where D: Digest<OutputSize = U64> + Default {
+        self.secret.expand::<D>().sign::<D>(&message, &self.public)
     }
 
     /// Verify a signature on a message with this keypair's public key.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
             where D: FixedOutput<OutputSize = U64> + BlockInput + Default + Input {
         self.public.verify::<D>(message, signature)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Keypair {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        serializer.serialize_bytes(&self.to_bytes()[..])
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'d> Deserialize<'d> for Keypair {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+
+        struct KeypairVisitor;
+
+        impl<'d> Visitor<'d> for KeypairVisitor {
+            type Value = Keypair;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("An ed25519 signature as specified in RFC8032")
+            }
+
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Keypair, E> where E: SerdeError {
+                let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
+                let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
+
+                if secret_key.is_ok() && public_key.is_ok() {
+                    Ok(Keypair{ secret: secret_key.unwrap(), public: public_key.unwrap() })
+                } else {
+                    Err(SerdeError::invalid_length(bytes.len(), &self))
+                }
+            }
+        }
+        deserializer.deserialize_bytes(KeypairVisitor)
     }
 }
 
@@ -493,6 +908,32 @@ mod test {
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;
+
+    #[cfg(all(test, feature = "serde"))]
+    static PUBLIC_KEY: PublicKey = PublicKey(CompressedEdwardsY([
+        130, 039, 155, 015, 062, 076, 188, 063,
+        124, 122, 026, 251, 233, 253, 225, 220,
+        014, 041, 166, 120, 108, 035, 254, 077,
+        160, 083, 172, 058, 219, 042, 086, 120, ]));
+
+    #[cfg(all(test, feature = "serde"))]
+    static SECRET_KEY: SecretKey = SecretKey([
+        062, 070, 027, 163, 092, 182, 011, 003,
+        077, 234, 098, 004, 011, 127, 079, 228,
+        243, 187, 150, 073, 201, 137, 076, 022,
+        085, 251, 152, 002, 241, 042, 072, 054, ]);
+
+    /// Signature with the above keypair of a blank message.
+    #[cfg(all(test, feature = "serde"))]
+    static SIGNATURE_BYTES: [u8; SIGNATURE_LENGTH] = [
+        010, 126, 151, 143, 157, 064, 047, 001,
+        196, 140, 179, 058, 226, 152, 018, 102,
+        160, 123, 080, 016, 210, 086, 196, 028,
+        053, 231, 012, 157, 169, 019, 158, 063,
+        045, 154, 238, 007, 053, 185, 227, 229,
+        079, 108, 213, 080, 124, 252, 084, 167,
+        216, 085, 134, 144, 129, 149, 041, 081,
+        063, 120, 126, 100, 092, 059, 050, 011, ];
 
     #[test]
     fn unmarshal_marshal() {  // TestUnmarshalMarshal
@@ -568,24 +1009,76 @@ mod test {
             let parts: Vec<&str> = line.split(':').collect();
             assert_eq!(parts.len(), 5, "wrong number of fields in line {}", lineno);
 
-            let sec_bytes: Vec<u8>= FromHex::from_hex(&parts[0]).unwrap();
+            let sec_bytes: Vec<u8> = FromHex::from_hex(&parts[0]).unwrap();
             let pub_bytes: Vec<u8> = FromHex::from_hex(&parts[1]).unwrap();
-            let message: Vec<u8> = FromHex::from_hex(&parts[2]).unwrap();
+            let msg_bytes: Vec<u8> = FromHex::from_hex(&parts[2]).unwrap();
             let sig_bytes: Vec<u8> = FromHex::from_hex(&parts[3]).unwrap();
+
+            let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+            let public: PublicKey = PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+            let keypair: Keypair  = Keypair{ secret: secret, public: public };
 
 		    // The signatures in the test vectors also include the message
 		    // at the end, but we just want R and S.
-            let sig1: Signature = Signature::from_bytes(sig_bytes.as_ref());
-
-            let keypair: Keypair = Keypair::from_bytes(
-                array_ref!(*pub_bytes, 0, PUBLIC_KEY_LENGTH),
-                array_ref!(*sec_bytes, 0, SECRET_KEY_LENGTH));
-
-            let sig2: Signature = keypair.sign::<Sha512>(&message);
+            let sig1: Signature = Signature::from_bytes(&sig_bytes[..64]).unwrap();
+            let sig2: Signature = keypair.sign::<Sha512>(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(keypair.verify::<Sha512>(&message, &sig2),
+            assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2),
                     "Signature verification failed on line {}", lineno);
+        }
+    }
+
+    #[test]
+    fn public_key_from_bytes() {
+        // Make another function so that we can test the ? operator.
+        fn do_the_test() -> Result<PublicKey, &'static str> {
+            let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
+                215, 090, 152, 001, 130, 177, 010, 183,
+                213, 075, 254, 211, 201, 100, 007, 058,
+                014, 225, 114, 243, 218, 166, 035, 037,
+                175, 002, 026, 104, 247, 007, 081, 026, ];
+            let public_key = PublicKey::from_bytes(&public_key_bytes)?;
+
+            Ok(public_key)
+        }
+        assert_eq!(do_the_test(), Ok(PublicKey(CompressedEdwardsY([
+            215, 090, 152, 001, 130, 177, 010, 183,
+            213, 075, 254, 211, 201, 100, 007, 058,
+            014, 225, 114, 243, 218, 166, 035, 037,
+            175, 002, 026, 104, 247, 007, 081, 026, ]))))
+    }
+
+    #[cfg(all(test, feature = "serde"))]
+    use bincode::{serialize, deserialize, Infinite};
+
+    #[cfg(all(test, feature = "serde"))]
+    #[test]
+    fn serialize_deserialize_signature() {
+        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
+        let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
+        let decoded_signature: Signature = deserialize(&encoded_signature).unwrap();
+
+        assert_eq!(signature, decoded_signature);
+    }
+
+    #[cfg(all(test, feature = "serde"))]
+    #[test]
+    fn serialize_deserialize_public_key() {
+        let encoded_public_key: Vec<u8> = serialize(&PUBLIC_KEY, Infinite).unwrap();
+        let decoded_public_key: PublicKey = deserialize(&encoded_public_key).unwrap();
+
+        assert_eq!(PUBLIC_KEY, decoded_public_key);
+    }
+
+    #[cfg(all(test, feature = "serde"))]
+    #[test]
+    fn serialize_deserialize_secret_key() {
+        let encoded_secret_key: Vec<u8> = serialize(&SECRET_KEY, Infinite).unwrap();
+        let decoded_secret_key: SecretKey = deserialize(&encoded_secret_key).unwrap();
+
+        for i in 0..32 {
+            assert_eq!(SECRET_KEY.0[i], decoded_secret_key.0[i]);
         }
     }
 }
@@ -623,6 +1116,16 @@ mod bench {
         let msg: &[u8] = b"";
 
         b.iter(| | keypair.sign::<Sha512>(msg));
+    }
+
+    #[bench]
+    fn sign_expanded_key(b: &mut Bencher) {
+        let mut cspring: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
+        let msg: &[u8] = b"";
+
+        b.iter(| | expanded.sign::<Sha512>(msg, &keypair.public));
     }
 
     #[bench]

@@ -119,7 +119,7 @@ eventually support VXEdDSA in curve25519-dalek.
 To install, add the following to your project's `Cargo.toml`:
 
     [dependencies.ed25519-dalek]
-    version = "^0.4"
+    version = "^0.5"
 
 Then, in your library or executable source, add:
 
@@ -129,7 +129,7 @@ To cause your application to build `ed25519-dalek` with the nightly feature
 enabled by default, instead do:
 
     [dependencies.ed25519-dalek]
-    version = "^0.4"
+    version = "^0.5"
     features = ["nightly"]
 
 To cause your application to instead build with the nightly feature enabled
@@ -138,6 +138,15 @@ to the `Cargo.toml`:
 
     [features]
     nightly = ["ed25519-dalek/nightly"]
+
+Using the `nightly` feature will nearly double the latency of signing and
+verification.
+
+To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
+
+    [dependencies.ed25519-dalek]
+    version = "^0.5"
+    features = ["serde"]
 
 
 # TODO

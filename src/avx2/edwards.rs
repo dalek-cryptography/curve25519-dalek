@@ -102,3 +102,88 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
     
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn serial_add(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
+        use field_32bit::FieldElement32;
+
+        let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
+        let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);
+
+        let S0  =  &Y1 - &X1; // R1
+        let S1  =  &Y1 + &X1; // R3
+        let S2  =  &Y2 - &X2; // R2
+        let S3  =  &Y2 + &X2; // R4
+
+        let S4  =  &S0 * &S2; // R5 = R1 * R2
+        let S5  =  &S1 * &S3; // R6 = R3 * R4
+        let S6  =  &T1 * &T2; // R7
+        let S7  =  &Z1 * &Z2; // R8
+
+        let S8  =  &S6 * &(-&FieldElement32([2*121665,0,0,0,0,0,0,0,0,0])); // R7
+        let S9  =  &S7 *    &FieldElement32([2*121666,0,0,0,0,0,0,0,0,0]);  // R8
+        let S10 =  &S4 *    &FieldElement32([  121666,0,0,0,0,0,0,0,0,0]);  // R5
+        let S11 =  &S5 *    &FieldElement32([  121666,0,0,0,0,0,0,0,0,0]);  // R6
+
+        let S12 = &S11 - &S10; // R1
+        let S13 = &S11 + &S10; // R4
+        let S14 =  &S9 - &S8;  // R2
+        let S15 =  &S9 + &S8;  // R3
+
+        let X3  = &S12 * &S14; // R1 * R2
+        let Y3  = &S15 * &S13; // R3 * R4
+        let Z3  = &S15 * &S14; // R2 * R3
+        let T3  = &S12 * &S13; // R1 * R4
+
+        edwards::ExtendedPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+    }
+
+    #[test]
+    fn serial_add_vs_edwards_extendedpoint() {
+        use constants;
+        use scalar::Scalar;
+        use edwards::Identity;
+
+        println!("Testing id + id");
+        let P = edwards::ExtendedPoint::identity();
+        let Q = edwards::ExtendedPoint::identity();
+        let R: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        println!("P = {:?}", P);
+        println!("Q = {:?}", Q);
+        println!("R = {:?}", R);
+        println!("P + Q = {:?}", &P + &Q);
+        assert_eq!(R.compress(), (&P + &Q).compress());
+
+        println!("Testing id + B");
+        let P = edwards::ExtendedPoint::identity();
+        let Q = constants::ED25519_BASEPOINT_POINT;
+        let R: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        println!("P = {:?}", P);
+        println!("Q = {:?}", Q);
+        println!("R = {:?}", R);
+        println!("P + Q = {:?}", &P + &Q);
+        assert_eq!(R.compress(), (&P + &Q).compress());
+
+        println!("Testing B + B");
+        let P = constants::ED25519_BASEPOINT_POINT;
+        let Q = constants::ED25519_BASEPOINT_POINT;
+        let R: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        println!("P = {:?}", P);
+        println!("Q = {:?}", Q);
+        println!("R = {:?}", R);
+        println!("P + Q = {:?}", &P + &Q);
+        assert_eq!(R.compress(), (&P + &Q).compress());
+
+        println!("Testing B + kB");
+        let P = constants::ED25519_BASEPOINT_POINT;
+        let Q = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
+        let R: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        println!("P = {:?}", P);
+        println!("Q = {:?}", Q);
+        println!("R = {:?}", R);
+        println!("P + Q = {:?}", &P + &Q);
+        assert_eq!(R.compress(), (&P + &Q).compress());
+    }
+}

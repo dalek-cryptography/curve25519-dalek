@@ -71,8 +71,8 @@ impl FieldElement32x4 {
         FieldElement32x4(buf)
     }
 
-    // Given `self = (A,B,C,D)`, compute `(B - A, B + A, D - C, D + C)`.
-    pub fn diff_sum(&self) -> FieldElement32x4 {
+    // Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)`.
+    pub fn diff_sum(&mut self) {
         /// (v0 v1 v2 v3 v4 v5 v6 v7) -> (v1 v0 v3 v2 v5 v4 v7 v6)
         #[inline(always)]
         fn alternate_32bit_lanes(v: u32x8) -> u32x8 {
@@ -92,8 +92,6 @@ impl FieldElement32x4 {
             }
         }
 
-        let mut out = [u32x8::splat(0); 5];
-
         for i in 0..5 {
             let x = self.0[i];
             let p = P_TIMES_2.0[i] ;
@@ -103,10 +101,8 @@ impl FieldElement32x4 {
             let sum  =  x + x_shuf;
             let diff_sum = blend_alternating_32bit_lanes(diff, sum);
 
-            out[i] = diff_sum;
+            self.0[i] = diff_sum;
         }
-
-        FieldElement32x4(out)
     }
 
     // Given `self = (A,B,C,D)`, compute `(B + A, B - A, D + C, D - C)`.
@@ -415,9 +411,10 @@ mod test {
         let x2 = FieldElement32([10200, 10201, 10202, 10203, 10204, 10205, 10206, 10207, 10208, 10209]);
         let x3 = FieldElement32([10300, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        vec.diff_sum();
 
-        let result = vec.diff_sum().split();
+        let result = vec.split();
 
         assert_eq!(result[0], &x1 - &x0);
         assert_eq!(result[1], &x1 + &x0);
@@ -493,7 +490,7 @@ mod bench {
 
     #[bench]
     fn multiply(b: &mut Bencher) {
-        let vec = FieldElement32x4::splat(&FieldElement::zero());
+        let vec = FieldElement32x4::splat(&FieldElement32::zero());
         let vecprime = vec.clone();
 
         b.iter(|| &vec * &vecprime );

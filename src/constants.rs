@@ -19,8 +19,7 @@
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
-#[cfg(feature = "yolocrypto")]
-use decaf::{DecafPoint, DecafBasepointTable};
+use ristretto::{RistrettoPoint, RistrettoBasepointTable};
 use montgomery::CompressedMontgomeryU;
 use scalar::Scalar;
 
@@ -61,10 +60,9 @@ pub const BASE_COMPRESSED_MONTGOMERY: CompressedMontgomeryU =
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
 
-/// The Ed25519 basepoint, as a `DecafPoint`.  This is called `_POINT` to distinguish it from
+/// The Ed25519 basepoint, as a `RistrettoPoint`.  This is called `_POINT` to distinguish it from
 /// `_TABLE`, which provides fast scalar multiplication.
-#[cfg(feature = "yolocrypto")] pub const DECAF_ED25519_BASEPOINT_POINT: DecafPoint =
-DecafPoint(ED25519_BASEPOINT_POINT);
+pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BASEPOINT_POINT);
 
 /// `l` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493, in little-endian form
@@ -87,10 +85,9 @@ pub const l_minus_2: Scalar = Scalar([ 0xeb, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
 
-#[cfg(feature = "yolocrypto")]
-/// The Ed25519 basepoint
-pub const DECAF_ED25519_BASEPOINT_TABLE: DecafBasepointTable
-    = DecafBasepointTable(ED25519_BASEPOINT_TABLE);
+/// The Ed25519 basepoint, as a RistrettoPoint
+pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
+    = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 
 #[cfg(test)]
 mod test {
@@ -213,6 +210,14 @@ mod test {
         // XXX should have a way to create small field elements
         four.0[0] = 4;
         assert_eq!(&constants::d * &four, constants::d4);
+    }
+
+    #[test]
+    fn test_sqrt_ad_minus_one() {
+        let a = FieldElement::minus_one();
+        let ad_minus_one = &(&a * &constants::d) + &a;
+        let should_be_ad_minus_one = constants::sqrt_ad_minus_one.square();
+        assert_eq!(should_be_ad_minus_one, ad_minus_one);
     }
 
     #[test]

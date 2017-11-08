@@ -143,7 +143,7 @@ impl CompressedEdwardsY {
 
         // Flip the sign of X if it's not correct
         let compressed_sign_bit = self.as_bytes()[31] >> 7;
-        let    current_sign_bit = X.is_negative_ed25519();
+        let    current_sign_bit = X.is_negative();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
         Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
@@ -442,7 +442,7 @@ impl ProjectivePoint {
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
-        s[31] ^= (x.is_negative_ed25519() << 7) as u8;
+        s[31] ^= (x.is_negative() << 7) as u8;
         CompressedEdwardsY(s)
     }
 
@@ -1269,8 +1269,6 @@ pub mod vartime {
 
 #[cfg(test)]
 mod test {
-    #[cfg(feature = "yolocrypto")]
-    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::ConditionallyAssignable;
@@ -1548,18 +1546,6 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
-    }
-
-    #[test]
-    #[cfg(feature = "yolocrypto")]
-    fn scalarmult_decafpoint_works_both_ways() {
-        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT_POINT);
-        let s: Scalar = A_SCALAR;
-
-        let P1 = &P * &s;
-        let P2 = &s * &P;
-
-        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
     mod vartime {

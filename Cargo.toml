@@ -51,6 +51,7 @@ nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []
+# This isn't used at the moment, but keep it around for future yolocrypto features.
 yolocrypto = []
 bench = []
 # Radix-51 arithmetic using u128

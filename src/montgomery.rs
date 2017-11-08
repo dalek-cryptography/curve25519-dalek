@@ -183,7 +183,7 @@ impl CompressedMontgomeryU {
     pub fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
         let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
         let neg_x: FieldElement = -(&x);
-        let current_sign:    u8 = x.is_negative_ed25519();
+        let current_sign:    u8 = x.is_negative();
 
         // Negate x to match the sign:
         x.conditional_assign(&neg_x, current_sign ^ sign);

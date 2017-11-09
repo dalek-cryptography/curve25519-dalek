@@ -38,9 +38,6 @@
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
 
-#[cfg(test)]
-extern crate sha2;
-
 #[macro_use]
 extern crate arrayref;
 

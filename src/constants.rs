@@ -11,11 +11,22 @@
 //! This module contains various constants (such as curve parameters
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
+//!
+//! Most of the constants are given with
+//! `LONG_DESCRIPTIVE_UPPER_CASE_NAMES`, but they can be brought into
+//! scope using a `let` binding:
+//!
+//! ```
+//! use curve25519_dalek::constants;
+//! use curve25519_dalek::edwards::IsIdentity;
+//!
+//! let B = &constants::RISTRETTO_BASEPOINT_TABLE;
+//! let l = &constants::BASEPOINT_ORDER;
+//! 
+//! let A = l * B;
+//! assert!(A.is_identity());
+//! ```
 
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(non_upper_case_globals)]
-#![allow(missing_docs)]
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
@@ -27,20 +38,6 @@ use scalar::Scalar;
 pub use constants_64bit::*;
 #[cfg(not(feature="radix_51"))]
 pub use constants_32bit::*;
-
-/// (p-1)/2, in little-endian bytes.
-pub const HALF_P_MINUS_1_BYTES: [u8; 32] =
-    [0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f];
-
-/// `HALF_Q_MINUS_1_BYTES` is (2^255-20)/2 expressed in little endian form.
-pub const HALF_Q_MINUS_1_BYTES: [u8; 32] = [ // halfQMinus1Bytes
-    0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f, ];
 
 /// Basepoint has y = 4/5.
 ///
@@ -64,26 +61,30 @@ pub const BASE_COMPRESSED_MONTGOMERY: CompressedMontgomeryU =
 /// `_TABLE`, which provides fast scalar multiplication.
 pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BASEPOINT_POINT);
 
-/// `l` is the order of base point, i.e. 2^252 +
-/// 27742317777372353535851937790883648493, in little-endian form
-pub const l: Scalar = Scalar([ 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-                               0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
+/// `BASEPOINT_ORDER` is the order of base point, i.e. `l = 2^252 +
+/// 27742317777372353535851937790883648493`, in little-endian bytes.
+pub const BASEPOINT_ORDER: Scalar = Scalar([
+    0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+]);
 
-/// `l_minus_1` is the order of base point minus one, i.e. 2^252 +
-/// 27742317777372353535851937790883648493 - 1, in little-endian form
-pub const l_minus_1: Scalar = Scalar([ 0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-                                       0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-                                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
+/// `BASEPOINT_ORDER_MINUS_1` is the order of base point minus one, i.e. `l-1`, in little-endian bytes.
+pub const BASEPOINT_ORDER_MINUS_1: Scalar = Scalar([
+    0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+]);
 
-/// `lminus1` is the order of base point minus two, i.e. 2^252 +
-/// 27742317777372353535851937790883648493 - 2, in little-endian form
-pub const l_minus_2: Scalar = Scalar([ 0xeb, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-                                       0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-                                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 ]);
+/// `BASEPOINT_ORDER_MINUS_2` is the order of base point minus two, i.e. `l-2`, in little-endian bytes.
+pub const BASEPOINT_ORDER_MINUS_2: Scalar = Scalar([
+    0xeb, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+]);
 
 /// The Ed25519 basepoint, as a RistrettoPoint
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
@@ -123,13 +124,6 @@ mod test {
         }
     }
 
-    #[test]
-    fn test_half() {
-        let one = FieldElement::one();
-        let two = &one + &one;
-        assert_eq!(one, &two * &constants::HALF);
-    }
-
     /// Test that the constant for sqrt(-486664) really is a square
     /// root of -486664.
     #[test]
@@ -155,27 +149,22 @@ mod test {
     }
 
     #[test]
-    /// Test that SQRT_M1 and MSQRT_M1 are square roots of -1
+    /// Test that SQRT_M1 is a square root of -1
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement::minus_one();
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
-        let msqrt_m1_sq = &constants::MSQRT_M1 * &constants::MSQRT_M1;
         assert_eq!(minus_one,  sqrt_m1_sq);
-        assert_eq!(minus_one, msqrt_m1_sq);
     }
 
     #[test]
     fn test_sqrt_constants_sign() {
-        let one       = FieldElement::one();
         let minus_one = FieldElement::minus_one();
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
         assert_eq!(was_nonzero_square, 1u8);
         let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
-        let sign_test_msqrt = &invsqrt_m1 * &constants::MSQRT_M1;
         // XXX it seems we have flipped the sign relative to
         // the invsqrt function?
         assert_eq!(sign_test_sqrt, minus_one);
-        assert_eq!(sign_test_msqrt, one);
     }
 
     /// Test that d = -121665/121666
@@ -187,8 +176,8 @@ mod test {
         let b = FieldElement32([ 121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
-        assert_eq!(d, constants::d);
-        assert_eq!(d2, constants::d2);
+        assert_eq!(d, constants::EDWARDS_D);
+        assert_eq!(d2, constants::EDWARDS_D2);
     }
 
     /// Test that d = -121665/121666
@@ -200,35 +189,16 @@ mod test {
         let b =   FieldElement64([121666,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
-        assert_eq!(d, constants::d);
-        assert_eq!(d2, constants::d2);
-    }
-
-    #[test]
-    fn test_d4() {
-        let mut four = FieldElement::zero();
-        // XXX should have a way to create small field elements
-        four.0[0] = 4;
-        assert_eq!(&constants::d * &four, constants::d4);
+        assert_eq!(d, constants::EDWARDS_D);
+        assert_eq!(d2, constants::EDWARDS_D2);
     }
 
     #[test]
     fn test_sqrt_ad_minus_one() {
         let a = FieldElement::minus_one();
-        let ad_minus_one = &(&a * &constants::d) + &a;
-        let should_be_ad_minus_one = constants::sqrt_ad_minus_one.square();
+        let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
+        let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
         assert_eq!(should_be_ad_minus_one, ad_minus_one);
     }
 
-    #[test]
-    fn test_a_minus_d() {
-        let a = FieldElement::minus_one();
-        let a_minus_d = &a - &constants::d;
-        assert_eq!(a_minus_d, constants::a_minus_d);
-        let (_, invsqrt_a_minus_d) = constants::a_minus_d.invsqrt();
-        assert_eq!(invsqrt_a_minus_d, constants::invsqrt_a_minus_d);
-        let inv_a_minus_d = invsqrt_a_minus_d.square();
-        assert_eq!(inv_a_minus_d, constants::inv_a_minus_d);
-        assert_eq!(&inv_a_minus_d * &a_minus_d, FieldElement::one());
-    }
 }

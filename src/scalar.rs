@@ -136,7 +136,7 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
 impl<'b> SubAssign<&'b Scalar> for Scalar {
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
         // (l-1)*_rhs + self = self - _rhs
-        *self = Scalar::multiply_add(&constants::l_minus_1, _rhs, self);
+        *self = Scalar::multiply_add(&constants::BASEPOINT_ORDER_MINUS_1, _rhs, self);
     }
 }
 
@@ -144,14 +144,14 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn sub(self, _rhs: &'b Scalar) -> Scalar {
         // (l-1)*_rhs + self = self - _rhs
-        Scalar::multiply_add(&constants::l_minus_1, _rhs, self)
+        Scalar::multiply_add(&constants::BASEPOINT_ORDER_MINUS_1, _rhs, self)
     }
 }
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
-        self * &constants::l_minus_1
+        self * &constants::BASEPOINT_ORDER_MINUS_1
     }
 }
 
@@ -900,7 +900,7 @@ mod test {
 
     #[test]
     fn impl_sub() {
-        let should_be_one = &constants::l - &constants::l_minus_1;
+        let should_be_one = &constants::BASEPOINT_ORDER - &constants::BASEPOINT_ORDER_MINUS_1;
         assert_eq!(should_be_one, Scalar::one());
     }
 

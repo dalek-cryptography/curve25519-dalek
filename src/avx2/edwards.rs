@@ -214,7 +214,7 @@ mod test {
     }
 
     #[test]
-    fn addition_vs_serial_add_vs_edwards_extendedpoint() {
+    fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
         use constants;
         use scalar::Scalar;
         use edwards::Identity;
@@ -238,6 +238,60 @@ mod test {
         let P = constants::ED25519_BASEPOINT_POINT;
         let Q = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
         addition_test_helper(P, Q);
+    }
+
+    fn serial_double(P: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
+        let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
+
+        let S0 = &X1 + &Y1;  // R1
+
+        let S1 = X1.square();
+        let S2 = Y1.square();
+        let S3 = Z1.square();
+        let S4 = S0.square();
+
+        let S5 = &S1 + &S2;
+        let S6 = &S1 - &S2;
+        let S7 = &S3 + &S3;
+        let S8 = &S7 + &S6;
+        let S9 = &S5 - &S4;
+
+        let X3 = &S8 * &S9;
+        let Y3 = &S5 * &S6;
+        let Z3 = &S8 * &S6;
+        let T3 = &S5 * &S9;
+
+        edwards::ExtendedPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+    }
+
+    fn doubling_test_helper(P: edwards::ExtendedPoint) {
+        let R1: edwards::ExtendedPoint = serial_double(P.into()).into();
+        println!("Testing point doubling:");
+        println!("P = {:?}", P);
+        println!("(serial) R1 = {:?}", R1);
+        //println!("(vector) R2 = {:?}", R2);
+        println!("P + P = {:?}", &P + &P);
+        assert_eq!(R1.compress(), (&P + &P).compress());
+        println!("OK!\n");
+    }
+
+    #[test]
+    fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
+        use constants;
+        use scalar::Scalar;
+        use edwards::Identity;
+
+        println!("Testing [2]id");
+        let P = edwards::ExtendedPoint::identity();
+        doubling_test_helper(P);
+
+        println!("Testing [2]B");
+        let P = constants::ED25519_BASEPOINT_POINT;
+        doubling_test_helper(P);
+
+        println!("Testing [2]([k]B)");
+        let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
+        doubling_test_helper(P);
     }
 }
 

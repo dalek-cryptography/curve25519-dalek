@@ -344,14 +344,23 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
             unsafe { u32x8::from(_mm256_mul_epu32(x,y)) }
         }
 
-        let x19 = u32x8::new(19,0,19,0,19,0,19,0);
+        let v19 = u32x8::new(19,0,19,0,19,0,19,0);
+
+        // XXX clean up this horrifying abomination
+        //
+        // The idea is to take the standard "schoolbook multiplication square" (see
+        // FieldElement32), and walk up each column from top to bottom, then left to right.
+        //
+        // Instead of multiplying by 19 in a precomputation, we overwrite the b[i] value with
+        // b[i]*19 as soon as we will no longer need it.
+        //
 
         macro_rules! loop_body {
             ($i:expr) => {
                 let (ai, ai1) = unpack_pair(self.0[$i/2]);
 
                 c[9] = c[9] + m(ai, b[(100 + 9-$i) % 10]);
-                b[(100 + 9-$i) % 10] = m_lo(b[(100 + 9-$i) % 10], x19);
+                b[(100 + 9-$i) % 10] = m_lo(b[(100 + 9-$i) % 10], v19);
                 c[8] = c[8] + m(ai, b[(100 + 8-$i) % 10]);
                 c[7] = c[7] + m(ai, b[(100 + 7-$i) % 10]);
                 c[6] = c[6] + m(ai, b[(100 + 6-$i) % 10]);
@@ -364,7 +373,7 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
 
                 let ai1_2 = ai1 + ai1;
                 c[9] = c[9] + m(ai1,   b[(100 + 9-($i+1)) % 10]);
-                b[(100 + 9-($i+1)) % 10] = m_lo(b[(100 + 9-($i+1)) % 10], x19);
+                b[(100 + 9-($i+1)) % 10] = m_lo(b[(100 + 9-($i+1)) % 10], v19);
                 c[8] = c[8] + m(ai1_2, b[(100 + 8-($i+1)) % 10]);
                 c[7] = c[7] + m(ai1,   b[(100 + 7-($i+1)) % 10]);
                 c[6] = c[6] + m(ai1_2, b[(100 + 6-($i+1)) % 10]);

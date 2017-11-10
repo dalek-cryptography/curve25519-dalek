@@ -19,7 +19,7 @@ use stdsimd::simd::{u32x8, i32x8, u64x4};
 
 use backend::u32::field::FieldElement32;
 
-static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
+pub(crate) static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
     u32x8::new(134217690, 134217690, 67108862, 67108862, 134217690, 134217690, 67108862, 67108862),
     u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862),
     u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862),
@@ -28,8 +28,21 @@ static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
 ]);
 
 /// A vector of four `FieldElements`, implemented using AVX2.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct FieldElement32x4(pub(crate) [u32x8; 5]);
+
+use subtle::ConditionallyAssignable;
+
+impl ConditionallyAssignable for FieldElement32x4 {
+    fn conditional_assign(&mut self, other: &FieldElement32x4, choice: u8) {
+        let mask = (-(choice as i32)) as u32;
+        let mask_vec = u32x8::splat(mask);
+        for i in 0..5 {
+            self.0[i] = self.0[i] ^ (mask_vec & (self.0[i] ^ other.0[i]));
+        }
+    }
+}
+
 
 impl FieldElement32x4 {
     pub(crate) fn split(&self) -> [FieldElement32; 4] {
@@ -69,6 +82,19 @@ impl FieldElement32x4 {
         }
 
         FieldElement32x4(buf)
+    }
+
+    // Negate variables in lanes where mask is set
+    // XXX fix up api
+    pub fn mask_negate(&mut self, mask: u8) {
+        unsafe {
+            use stdsimd::vendor::_mm256_blend_epi32;
+            for i in 0..5 {
+                let negated = P_TIMES_2.0[i] - self.0[i];
+                self.0[i] = _mm256_blend_epi32(self.0[i].into(), negated.into(), mask as i32).into();
+            }
+        }
+        self.reduce32();
     }
 
     // Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)`.

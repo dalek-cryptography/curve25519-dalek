@@ -14,15 +14,22 @@
 #![allow(bad_style)]
 
 use std::convert::From;
-use std::ops::Add;
+use std::ops::{Add, Mul, Neg};
 
-use stdsimd::simd::u32x8;
+use stdsimd::simd::{u32x8, i32x8};
+
+use subtle::ConditionallyAssignable;
 
 use edwards;
+use scalar::Scalar;
+
+use traits::Identity;
 
 use avx2::field::FieldElement32x4;
+use avx2::field::P_TIMES_2;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
+#[derive(Copy, Clone, Debug)]
 pub(crate) struct ExtendedPoint(FieldElement32x4);
 
 // XXX need to cfg gate here to handle FieldElement64
@@ -37,6 +44,165 @@ impl From<ExtendedPoint> for edwards::ExtendedPoint {
     fn from(P: ExtendedPoint) -> edwards::ExtendedPoint {
         let tmp = P.0.split();
         edwards::ExtendedPoint{X: tmp[0], Y: tmp[1], Z: tmp[2], T: tmp[3]}
+    }
+}
+
+impl ConditionallyAssignable for ExtendedPoint {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+        self.0.conditional_assign(&other.0, choice);
+    }
+}
+
+impl Identity for ExtendedPoint {
+    fn identity() -> ExtendedPoint {
+        ExtendedPoint(FieldElement32x4([
+            u32x8::new(0,1,0,0,1,0,0,0),
+            u32x8::splat(0),
+            u32x8::splat(0),
+            u32x8::splat(0),
+            u32x8::splat(0),
+        ]))
+    }
+}
+
+impl<'a> Neg for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    fn neg(self) -> ExtendedPoint {
+        let mut neg = *self;
+        neg.0.mask_negate(0b10100101);
+        neg
+    }
+}
+
+impl ExtendedPoint {
+    fn double(&self) -> ExtendedPoint {
+        unsafe {
+            use stdsimd::vendor::_mm256_permute2x128_si256;
+            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
+            use stdsimd::vendor::_mm256_blend_epi32;
+            use stdsimd::vendor::_mm256_shuffle_epi32;
+
+            macro_rules! print_vec {
+                ($x:ident) => {
+                    let splits = $x.split();
+                    println!("{}[0] = {:?}", stringify!($x), splits[0].to_bytes());
+                    println!("{}[1] = {:?}", stringify!($x), splits[1].to_bytes());
+                    println!("{}[2] = {:?}", stringify!($x), splits[2].to_bytes());
+                    println!("{}[3] = {:?}", stringify!($x), splits[3].to_bytes());
+                }
+            }
+
+            let P = &self.0;
+
+            let mut t0 = FieldElement32x4::zero();
+            let mut t1 = FieldElement32x4::zero();
+
+            // Set t0 = (X1 Y1 X1 Y1)
+            t0.0[0] = _mm256_permute2x128_si256(P.0[0].into(), P.0[0].into(), 0b0000_0000).into();
+            t0.0[1] = _mm256_permute2x128_si256(P.0[1].into(), P.0[1].into(), 0b0000_0000).into();
+            t0.0[2] = _mm256_permute2x128_si256(P.0[2].into(), P.0[2].into(), 0b0000_0000).into();
+            t0.0[3] = _mm256_permute2x128_si256(P.0[3].into(), P.0[3].into(), 0b0000_0000).into();
+            t0.0[4] = _mm256_permute2x128_si256(P.0[4].into(), P.0[4].into(), 0b0000_0000).into();
+
+            // Set t1 = (Y1 X1 Y1 X1)
+            t1.0[0] = _mm256_shuffle_epi32(t0.0[0].into(), 0b10_11_00_01).into();
+            t1.0[1] = _mm256_shuffle_epi32(t0.0[1].into(), 0b10_11_00_01).into();
+            t1.0[2] = _mm256_shuffle_epi32(t0.0[2].into(), 0b10_11_00_01).into();
+            t1.0[3] = _mm256_shuffle_epi32(t0.0[3].into(), 0b10_11_00_01).into();
+            t1.0[4] = _mm256_shuffle_epi32(t0.0[4].into(), 0b10_11_00_01).into();
+
+            // Set t0 = (X1+Y1 X1+Y1 X1+Y1 X1+Y1)
+            t0.0[0] = t0.0[0] + t1.0[0];
+            t0.0[1] = t0.0[1] + t1.0[1];
+            t0.0[2] = t0.0[2] + t1.0[2];
+            t0.0[3] = t0.0[3] + t1.0[3];
+            t0.0[4] = t0.0[4] + t1.0[4];
+
+            // Set t0 = (X1 Y1 Z1 X1+Y1)
+            t0.0[0] = _mm256_blend_epi32(t0.0[0].into(), P.0[0].into(), 0b01011111).into();
+            t0.0[1] = _mm256_blend_epi32(t0.0[1].into(), P.0[1].into(), 0b01011111).into();
+            t0.0[2] = _mm256_blend_epi32(t0.0[2].into(), P.0[2].into(), 0b01011111).into();
+            t0.0[3] = _mm256_blend_epi32(t0.0[3].into(), P.0[3].into(), 0b01011111).into();
+            t0.0[4] = _mm256_blend_epi32(t0.0[4].into(), P.0[4].into(), 0b01011111).into();
+
+            t1 = &t0 * &t0; // replace with .square()
+
+            // Now t1 = (S1 S2 S3 S4)
+
+            let c0 = u32x8::new(0,0,2,2,0,0,2,2); // (ABCD) -> (AAAA)
+            let c1 = u32x8::new(1,1,3,3,1,1,3,3); // (ABCD) -> (BBBB)
+
+            // Horror block goes here: we want to compute the following table:
+            // We know that the bit-excess b is bounded by eps, since S1 S2 S3 S4
+            // are the outputs of a squaring, so they're freshly reduced.
+            // 
+            //    + | S1 | S1 | S1 | S1 |  
+            //    + | S2 |    |    | S2 |  
+            //    + |    |    | S3 |    |  
+            //    + |    |    | S3 |    |  
+            //    + |    | 2p | 2p | 2p |  
+            //    - |    | S2 | S2 |    |  
+            //    - |    |    |    | S4 |  
+            //    =======================  
+            //        S5   S6   S8   S9    
+            //
+            // Bounds for even / odd limbs:
+            //
+            //    + |  2^26 |  2^26 |  2^26 |  2^26 |    + |  2^25 |  2^25 |  2^25 |  2^25 |  
+            //    + |  2^26 |       |       |  2^26 |    + |  2^25 |       |       |  2^25 |  
+            //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
+            //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
+            //    + |       |  2^27 |  2^27 |  2^27 |    + |       |  2^26 |  2^26 |  2^26 |  
+            //    - |       |   0   |    0  |       |    - |       |    0  |    0  |       |  
+            //    - |       |       |       |    0  |    - |       |       |       |    0  |  
+            //    ===================================    ===================================
+            //    <   2^27   2^27.59 2^28.33   2^28           2^26  2^26.59 2^27.33  2^27
+            //
+            // So, the bit-excess for (S5 S6 S8 S9) is (1, 1.59, 2.33, 2).
+            //
+            // However the multiplication routine only allows (1.75, 1.75, 1.75, 1.75).
+            //
+            // This is because we need to have 19*y[i] < 2^32.  Otherwise I think we could get b < 2.5.
+            //
+            // Can we tighten these bounds to avoid a reduction? Alternately, can we do better than
+            // the 64-bit reduction that reduce32() calls internally?
+            //
+            // Also, can we do better than the mess below?
+            for i in 0..5 {
+                let zero = i32x8::splat(0);
+                let S1 = _mm256_permutevar8x32_epi32(t1.0[i], c0);
+                let S2 = _mm256_permutevar8x32_epi32(t1.0[i], c1);
+                let S3_2 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into(), 0b01010000).into();
+                t0.0[i] = (P_TIMES_2.0[i] + S3_2) + S1;
+                t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into(), 0b10100101).into();
+                let S4 = _mm256_blend_epi32(zero, t1.0[i].into(), 0b10100000);
+                let sub = _mm256_blend_epi32(S2.into(), S4, 0b10100101).into();
+                t0.0[i] = t0.0[i] - sub;
+            }
+
+            // This is really sad, see above
+            t0.reduce32();
+
+            let c0 = u32x8::new(4,0,6,2,4,0,6,2); // (ABCD) -> (CACA)
+            let c1 = u32x8::new(5,1,7,3,1,5,3,7); // (ABCD) -> (DBBD)
+
+            for i in 0..5 {
+                let tmp = t0.0[i];
+                t0.0[i] = _mm256_permutevar8x32_epi32(tmp, c0);
+                t1.0[i] = _mm256_permutevar8x32_epi32(tmp, c1);
+            }
+
+            ExtendedPoint(&t0 * &t1)
+        }
+    }
+
+    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+        let mut tmp: ExtendedPoint = *self;
+        for _ in 0..k {
+            tmp = tmp.double();
+        }
+        tmp
     }
 }
 
@@ -134,13 +300,56 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
         }
     }
 }
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+    /// Scalar multiplication: compute `scalar * self`.
+    ///
+    /// Uses a window of size 4.
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
+        use traits::select_precomputed_point;
+
+        // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
+        let mut lookup_table: [ExtendedPoint; 8] = [*self; 8];
+        for i in 0..7 {
+            lookup_table[i+1] = self + &lookup_table[i];
+        }
+
+        // Setting s = scalar, compute
+        //
+        //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
+        //
+        // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
+        let scalar_digits = scalar.to_radix_16();
+
+        // Compute s*P as
+        //
+        //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
+        //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
+        //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
+        //
+        // We sum right-to-left.
+        let mut Q = ExtendedPoint::identity();
+        for i in (0..64).rev() {
+            // Q = 16*Q
+            Q = Q.mult_by_pow_2(4);
+            // R = s_i * Q
+            let R = select_precomputed_point(scalar_digits[i], &lookup_table);
+            // Q = Q + R
+            Q = &Q + &R;
+        }
+        Q
+    }
+}
     
 #[cfg(test)]
 mod test {
     use super::*;
 
+    use constants;
+
     fn serial_add(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
-        use field_32bit::FieldElement32;
+        use backend::u32::field::FieldElement32;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
         let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);
@@ -217,7 +426,6 @@ mod test {
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
         use constants;
         use scalar::Scalar;
-        use edwards::Identity;
 
         println!("Testing id + id");
         let P = edwards::ExtendedPoint::identity();
@@ -243,18 +451,37 @@ mod test {
     fn serial_double(P: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
 
+        macro_rules! print_var {
+            ($x:ident) => {
+                println!("{} = {:?}", stringify!($x), $x.to_bytes());
+            }
+        }
+
         let S0 = &X1 + &Y1;  // R1
+        print_var!(S0);
+        println!("");
 
         let S1 = X1.square();
         let S2 = Y1.square();
         let S3 = Z1.square();
         let S4 = S0.square();
+        print_var!(S1);
+        print_var!(S2);
+        print_var!(S3);
+        print_var!(S4);
+        println!("");
 
         let S5 = &S1 + &S2;
         let S6 = &S1 - &S2;
         let S7 = &S3 + &S3;
         let S8 = &S7 + &S6;
         let S9 = &S5 - &S4;
+        print_var!(S5);
+        print_var!(S6);
+        print_var!(S7);
+        print_var!(S8);
+        print_var!(S9);
+        println!("");
 
         let X3 = &S8 * &S9;
         let Y3 = &S5 * &S6;
@@ -266,12 +493,14 @@ mod test {
 
     fn doubling_test_helper(P: edwards::ExtendedPoint) {
         let R1: edwards::ExtendedPoint = serial_double(P.into()).into();
+        let R2: edwards::ExtendedPoint = ExtendedPoint::from(P).double().into();
         println!("Testing point doubling:");
         println!("P = {:?}", P);
         println!("(serial) R1 = {:?}", R1);
-        //println!("(vector) R2 = {:?}", R2);
+        println!("(vector) R2 = {:?}", R2);
         println!("P + P = {:?}", &P + &P);
         assert_eq!(R1.compress(), (&P + &P).compress());
+        assert_eq!(R2.compress(), (&P + &P).compress());
         println!("OK!\n");
     }
 
@@ -279,7 +508,6 @@ mod test {
     fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
         use constants;
         use scalar::Scalar;
-        use edwards::Identity;
 
         println!("Testing [2]id");
         let P = edwards::ExtendedPoint::identity();
@@ -292,6 +520,33 @@ mod test {
         println!("Testing [2]([k]B)");
         let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
         doubling_test_helper(P);
+    }
+
+    #[test]
+    fn identity_trait_vs_edwards_identity() {
+        let id1: edwards::ExtendedPoint = ExtendedPoint::identity().into();
+        let id2: edwards::ExtendedPoint = edwards::ExtendedPoint::identity();
+        assert_eq!(id1.compress(), id2.compress());
+    }
+
+    #[test]
+    fn neg_vs_edwards_neg() {
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let Bneg = -&B;
+        assert_eq!(edwards::ExtendedPoint::from(Bneg).compress(),
+                   (-&constants::ED25519_BASEPOINT_POINT).compress());
+    }
+
+    #[test]
+    fn scalar_mult_vs_edwards_scalar_mult() {
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
+        // some random bytes
+        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+
+        let R1 = edwards::ExtendedPoint::from(&B * &s);
+        let R2 = &constants::ED25519_BASEPOINT_TABLE * &s;
+
+        assert_eq!(R1.compress(), R2.compress());
     }
 }
 
@@ -310,6 +565,23 @@ mod bench {
         let Q = ExtendedPoint::from(B * &Scalar::from_u64(98932328));
 
         b.iter(|| &P + &Q );
+    }
+
+    #[bench]
+    fn point_doubling(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
+
+        b.iter(|| P.double() );
+    }
+
+    #[bench]
+    fn scalar_mult(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
+        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+
+        b.iter(|| &P * &s );
     }
 }
 

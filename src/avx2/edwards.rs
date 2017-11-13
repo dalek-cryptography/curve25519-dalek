@@ -126,7 +126,7 @@ impl ExtendedPoint {
             t0.0[3] = _mm256_blend_epi32(t0.0[3].into(), P.0[3].into(), 0b01011111).into();
             t0.0[4] = _mm256_blend_epi32(t0.0[4].into(), P.0[4].into(), 0b01011111).into();
 
-            t1 = &t0 * &t0; // replace with .square()
+            t1 = t0.square();
 
             // Now t1 = (S1 S2 S3 S4)
 
@@ -167,6 +167,9 @@ impl ExtendedPoint {
             //
             // Can we tighten these bounds to avoid a reduction? Alternately, can we do better than
             // the 64-bit reduction that reduce32() calls internally?
+            // 
+            // Or, could we do the arithmetic on the intermediate [u64x4;10], then do
+            // the reduction we'd need to do for the squaring?
             //
             // Also, can we do better than the mess below?
             for i in 0..5 {

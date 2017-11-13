@@ -30,7 +30,7 @@ use avx2::field::P_TIMES_2;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
 #[derive(Copy, Clone, Debug)]
-pub(crate) struct ExtendedPoint(FieldElement32x4);
+pub struct ExtendedPoint(FieldElement32x4);
 
 // XXX need to cfg gate here to handle FieldElement64
 impl From<edwards::ExtendedPoint> for ExtendedPoint {
@@ -344,6 +344,93 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         Q
     }
 }
+
+#[derive(Clone)]
+pub struct EdwardsBasepointTable(pub [[ExtendedPoint; 8]; 32]);
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
+    type Output = ExtendedPoint;
+
+    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
+    /// computing the multiple `aB` of the basepoint `B`.
+    ///
+    /// Precondition: the scalar must be reduced.
+    ///
+    /// The computation proceeds as follows, as described on page 13
+    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
+    /// coefficients in [-8,8), i.e.,
+    ///
+    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
+    ///
+    /// with -8 ≤ a_i < 8.  Then
+    ///
+    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
+    ///
+    /// Grouping even and odd coefficients gives
+    ///
+    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
+    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
+    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
+    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
+    ///
+    /// We then use the `select_precomputed_point` function, which
+    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
+    /// and returns `x * 16^2i * B` in constant time.
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
+        let e = scalar.to_radix_16();
+        let mut h = ExtendedPoint::identity();
+
+        for i in (0..64).filter(|x| x % 2 == 1) {
+            h = &h + &edwards::select_precomputed_point(e[i], &self.0[i/2]);
+        }
+
+        h = h.mult_by_pow_2(4);
+
+        for i in (0..64).filter(|x| x % 2 == 0) {
+            h = &h + &edwards::select_precomputed_point(e[i], &self.0[i/2]);
+        }
+
+        h
+    }
+}
+
+impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
+    type Output = ExtendedPoint;
+
+    /// Given `self` a table of precomputed multiples of the point `B`, compute `B * s`.
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
+        basepoint_table * &self
+    }
+}
+
+impl EdwardsBasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
+        // Create the table storage
+        // XXX can we skip the initialization without too much unsafety?
+        // stick 30K on the stack and call it a day.
+        let mut table = EdwardsBasepointTable([[ExtendedPoint::identity(); 8]; 32]);
+        let mut P = *basepoint;
+        for i in 0..32 {
+            // P = (16^2)^i * B
+            let mut jP = P;
+            for j in 1..9 {
+                // table[i][j-1] is supposed to be j*(16^2)^i*B
+                table.0[i][j-1] = jP;
+                jP = &P + &jP;
+            }
+            P = P.mult_by_pow_2(8);
+        }
+        table
+    }
+
+    /// Get the basepoint for this table as an `ExtendedPoint`.
+    pub fn basepoint(&self) -> ExtendedPoint {
+        // self.0[0][0] has 1*(16^2)^0*B
+        self.0[0][0]
+    }
+}
+
     
 #[cfg(test)]
 mod test {
@@ -551,6 +638,20 @@ mod test {
 
         assert_eq!(R1.compress(), R2.compress());
     }
+
+    #[test]
+    fn scalar_mult_vs_basepoint_table_scalar_mult() {
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let B_table = EdwardsBasepointTable::create(&B);
+        // some random bytes
+        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+
+        let P1 = &B * &s;
+        let P2 = &B_table * &s;
+
+        assert_eq!(edwards::ExtendedPoint::from(P1).compress(),
+                   edwards::ExtendedPoint::from(P2).compress());
+    }
 }
 
 #[cfg(all(test, feature = "bench"))]
@@ -585,6 +686,22 @@ mod bench {
         let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
         b.iter(|| &P * &s );
+    }
+
+    #[bench]
+    fn basepoint_table_creation(b: &mut Bencher) {
+        let B = ExtendedPoint::from(constants::ED25519_BASEPOINT_POINT);
+
+        b.iter(|| EdwardsBasepointTable::create(&B) );
+    }
+
+    #[bench]
+    fn basepoint_mult(b: &mut Bencher) {
+        let B = ExtendedPoint::from(constants::ED25519_BASEPOINT_POINT);
+        let table = EdwardsBasepointTable::create(&B);
+        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+
+        b.iter(|| &table * &s );
     }
 }
 

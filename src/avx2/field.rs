@@ -218,20 +218,58 @@ impl FieldElement32x4 {
     }
 
     pub fn reduce32(&mut self) {
-        let mut b = [u64x4::splat(0); 10];
 
-        let (b0, b1) = unpack_pair(self.0[0]);
-        b[0] = b0.into(); b[1] = b1.into();
-        let (b2, b3) = unpack_pair(self.0[1]);
-        b[2] = b2.into(); b[3] = b3.into();
-        let (b4, b5) = unpack_pair(self.0[2]);
-        b[4] = b4.into(); b[5] = b5.into();
-        let (b6, b7) = unpack_pair(self.0[3]);
-        b[6] = b6.into(); b[7] = b7.into();
-        let (b8, b9) = unpack_pair(self.0[4]);
-        b[8] = b8.into(); b[9] = b9.into();
+        let shifts = i32x8::new(26,26,25,25,26,26,25,25);
+        let masks  = u32x8::new((1<<26)-1, (1<<26)-1, (1<<25)-1, (1<<25)-1,
+                                (1<<26)-1, (1<<26)-1, (1<<25)-1, (1<<25)-1);
 
-        *self = FieldElement32x4::reduce64(b);
+        let carry = |v: u32x8| -> u32x8 {
+            unsafe {
+                use stdsimd::vendor::_mm256_srlv_epi32;
+                _mm256_srlv_epi32(v.into(), shifts).into()
+            }
+        };
+
+        let swap_lanes = |v: u32x8| -> u32x8 {
+            unsafe {
+                use stdsimd::vendor::_mm256_shuffle_epi32;
+                _mm256_shuffle_epi32(v.into(), 0b01_00_11_10).into()
+            }
+        };
+
+        let combine = |v_lo: u32x8, v_hi: u32x8| -> u32x8 {
+            unsafe {
+                use stdsimd::vendor::_mm256_blend_epi32;
+                _mm256_blend_epi32(v_lo.into(), v_hi.into(), 0b11_00_11_00).into()
+            }
+        };
+
+        let v = &mut self.0;
+
+        let c10 = swap_lanes(carry(v[0]));
+        v[0] = (v[0] & masks) + combine(u32x8::splat(0), c10);
+        let c32 = swap_lanes(carry(v[1]));
+        v[1] = (v[1] & masks) + combine(c10, c32);
+        let c54 = swap_lanes(carry(v[2]));
+        v[2] = (v[2] & masks) + combine(c32, c54);
+        let c76 = swap_lanes(carry(v[3]));
+        v[3] = (v[3] & masks) + combine(c54, c76);
+        let c98 = swap_lanes(carry(v[4]));
+        v[4] = (v[4] & masks) + combine(c76, c98);
+
+        // Still need to account for c9
+        // c98 = (c9, c9, c8, c8, c9, c9, c8, c8)
+        //
+        let c9_19: u32x8;
+        unsafe { 
+            use stdsimd::vendor::_mm256_mul_epu32;
+            use stdsimd::vendor::_mm256_shuffle_epi32;
+            let c9_spread: u32x8 = _mm256_shuffle_epi32(c98.into(), 0b11_01_10_00).into();
+            let c9_19_spread: u32x8 = _mm256_mul_epu32(c9_spread, u64x4::splat(19).into()).into();
+            c9_19 = _mm256_shuffle_epi32(c9_19_spread.into(), 0b11_01_10_00).into();
+        }
+
+        v[0] = v[0] + c9_19;
     }
 
     pub fn reduce64(mut z: [u64x4; 10]) -> FieldElement32x4 {

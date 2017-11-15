@@ -83,16 +83,6 @@ impl ExtendedPoint {
             use stdsimd::vendor::_mm256_blend_epi32;
             use stdsimd::vendor::_mm256_shuffle_epi32;
 
-            macro_rules! print_vec {
-                ($x:ident) => {
-                    let splits = $x.split();
-                    println!("{}[0] = {:?}", stringify!($x), splits[0].to_bytes());
-                    println!("{}[1] = {:?}", stringify!($x), splits[1].to_bytes());
-                    println!("{}[2] = {:?}", stringify!($x), splits[2].to_bytes());
-                    println!("{}[3] = {:?}", stringify!($x), splits[3].to_bytes());
-                }
-            }
-
             let P = &self.0;
 
             let mut t0 = FieldElement32x4::zero();
@@ -226,63 +216,27 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             let mut t0 = FieldElement32x4::zero();
             let mut t1 = FieldElement32x4::zero();
 
-            macro_rules! print_vec {
-                ($x:ident) => {
-                    let splits = $x.split();
-                    println!("{}[0] = {:?}", stringify!($x), splits[0].to_bytes());
-                    println!("{}[1] = {:?}", stringify!($x), splits[1].to_bytes());
-                    println!("{}[2] = {:?}", stringify!($x), splits[2].to_bytes());
-                    println!("{}[3] = {:?}", stringify!($x), splits[3].to_bytes());
-                }
-            }
-
             for i in 0..5 {
                 t0.0[i] = _mm256_permute2x128_si256(P.0[i].into(), Q.0[i].into(), 32).into();
             }
-            //println!("t0 = (X1, Y1, X2, Y2)");
-            //print_vec!(t0);
-            //println!("");
 
             t0.diff_sum();
-
-            //println!("t0 = (S0 S1 S2 S3)");
-            //print_vec!(t0);
-            //println!("");
 
             for i in 0..5 {
                 t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), 0b11110000).into();
                 t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
             }
-            //println!("t0 = (S2 S3 Z2 T2)");
-            //print_vec!(t0);
-            //println!("");
-
-            //println!("t1 = (S0 S1 Z1 T1)");
-            //print_vec!(t1);
-            //println!("");
 
             let mut t2 = &t0 * &t1;
-            //println!("t2 = (S4 S5 S6 S7)");
-            //print_vec!(t2);
-            //println!("");
             
             t2.scale_by_curve_constants();
-            //println!("t2 = (S8 S9 S10 S11)");
-            //print_vec!(t2);
-            //println!("");
             
             for i in 0..5 {
                 let swapped = _mm256_shuffle_epi32(t2.0[i].into(), 0b10_11_00_01);
                 t2.0[i] = _mm256_blend_epi32(t2.0[i].into(), swapped, 0b11110000).into();
             }
-            //println!("t2 = (S8 S9 S11 S10)");
-            //print_vec!(t2);
-            //println!("");
 
             t2.diff_sum();
-            //println!("t2 = (S12 S13 S14 S15)");
-            //print_vec!(t2);
-            //println!("");
 
             let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
             let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
@@ -291,13 +245,6 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
                 t0.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c0);
                 t1.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c1);
             }
-            //println!("t0 = (S11 S13 S13 S11)");
-            //print_vec!(t0);
-            //println!("");
-
-            //println!("t1 = (S12 S14 S14 S12)");
-            //print_vec!(t1);
-            //println!("");
 
             ExtendedPoint(&t0 * &t1)
         }

@@ -72,7 +72,7 @@ impl Scalar64 {
 
     /// Reduce a 64 byte / 512 bit scalar mod l
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar64 {
-        let mut words = [064; 8];
+        let mut words = [0u64; 8];
         for i in 0..8 {
             for j in 0..8 {
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);

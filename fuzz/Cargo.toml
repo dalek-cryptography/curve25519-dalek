@@ -10,7 +10,11 @@ cargo-fuzz = true
 
 [dependencies.curve25519-dalek]
 path = ".."
-features = ["yolocrypto"]
+
+[features]
+yolocrypto = ["curve25519-dalek/yolocrypto"]
+nightly = ["curve25519-dalek/nightly"]
+radix_51 = ["curve25519-dalek/radix_51"]
 
 [dependencies.libfuzzer-sys]
 git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
@@ -21,4 +25,8 @@ members = ["."]
 
 [[bin]]
 name = "decaf"
-path = "fuzzers/decaf.rs"
+path = "fuzz_targets/decaf.rs"
+
+[[bin]]
+name = "scalar_constructor_accepts_256bit_values"
+path = "fuzz_targets/scalar_constructor_accepts_256bit_values.rs"

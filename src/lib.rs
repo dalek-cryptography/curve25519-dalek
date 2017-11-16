@@ -80,10 +80,6 @@ pub mod montgomery;
 
 pub mod ristretto;
 
-// Other miscelaneous utilities.
-
-mod utils;
-
 // Low-level curve and point constants, as well as pre-computed curve group elements.
 
 pub mod constants;

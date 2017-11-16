@@ -48,8 +48,6 @@ mod montgomery;
 mod edwards;
 #[path="src/ristretto.rs"]
 mod ristretto;
-#[path="src/utils.rs"]
-mod utils;
 
 #[path="src/constants.rs"]
 mod constants;

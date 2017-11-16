@@ -1366,6 +1366,7 @@ mod test {
 
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
@@ -1374,6 +1375,7 @@ mod test {
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
         assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
@@ -1424,6 +1426,7 @@ mod test {
 
     /// Sanity check for conversion to precomputed points
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1435,6 +1438,7 @@ mod test {
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
@@ -1442,6 +1446,7 @@ mod test {
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_by_basepoint_order() {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let should_be_id = B * &constants::BASEPOINT_ORDER;
@@ -1474,6 +1479,7 @@ mod test {
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_two_vs_basepoint2() {
         let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &Scalar(two_bytes);
@@ -1567,6 +1573,7 @@ mod test {
 
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
+        #[cfg(feature="precomputed_tables")]
         fn double_scalar_mult_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
@@ -1647,6 +1654,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         b.iter(|| B * &A_SCALAR);
@@ -1659,6 +1667,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
@@ -1716,14 +1725,15 @@ mod bench {
         b.iter(|| p1.mult_by_cofactor());
     }
 
-    #[cfg(feature="basepoint_table_creation")]
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn ten_fold_scalar_mult(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
@@ -1747,6 +1757,7 @@ mod bench {
         }
 
         #[bench]
+        #[cfg(feature="basepoint_table_creation")]
         fn ten_fold_scalar_mult(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars

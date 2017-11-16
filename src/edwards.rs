@@ -1144,6 +1144,17 @@ impl Debug for ProjectiveNielsPoint {
     }
 }
 
+impl Debug for EdwardsBasepointTable {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "EdwardsBasepointTable([\n")?;
+        for i in 0..32 {
+            write!(f, "\t{:?},\n", &self.0[i])?;
+        }
+        write!(f, "])")
+    }
+}
+
+
 // ------------------------------------------------------------------------
 // Variable-time functions
 // ------------------------------------------------------------------------

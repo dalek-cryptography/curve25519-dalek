@@ -55,7 +55,7 @@ pub struct FieldElement64(pub (crate) [u64; 5]);
 
 impl Debug for FieldElement64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement64: {:?}", &self.0[..])
+        write!(f, "FieldElement64({:?})", &self.0[..])
     }
 }
 

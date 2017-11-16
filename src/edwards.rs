@@ -1111,35 +1111,35 @@ impl ExtendedPoint {
 
 impl Debug for ExtendedPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ExtendedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
+        write!(f, "ExtendedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for ProjectivePoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectivePoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n)",
+        write!(f, "ProjectivePoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n}}",
                &self.X, &self.Y, &self.Z)
     }
 }
 
 impl Debug for CompletedPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompletedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
+        write!(f, "CompletedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for AffineNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "AffineNielsPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
+        write!(f, "AffineNielsPoint{{\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n}}",
                &self.y_plus_x, &self.y_minus_x, &self.xy2d)
     }
 }
 
 impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectiveNielsPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
+        write!(f, "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
                &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }
 }

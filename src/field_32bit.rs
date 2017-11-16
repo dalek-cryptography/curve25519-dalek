@@ -60,7 +60,7 @@ pub struct FieldElement32(pub (crate) [i32; 10]);
 
 impl Debug for FieldElement32 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement32: {:?}", &self.0[..])
+        write!(f, "FieldElement32({:?})", &self.0[..])
     }
 }
 

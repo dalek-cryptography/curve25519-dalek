@@ -1,4 +1,6 @@
 #![cfg_attr(feature = "nightly", feature(i128_type))]
+#![allow(unused_variables)]
+#![allow(dead_code)]
 
 extern crate core;
 extern crate subtle;

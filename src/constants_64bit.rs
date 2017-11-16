@@ -18,7 +18,6 @@ use field_64bit::FieldElement64;
 use scalar_64bit::Scalar64;
 use edwards::ExtendedPoint;
 use edwards::AffineNielsPoint;
-use edwards::EdwardsBasepointTable;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement64 = FieldElement64([929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575]);

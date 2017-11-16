@@ -30,7 +30,8 @@
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
-use ristretto::{RistrettoPoint, RistrettoBasepointTable};
+use ristretto::RistrettoPoint;
+
 use montgomery::CompressedMontgomeryU;
 use scalar::Scalar;
 
@@ -88,13 +89,11 @@ pub const BASEPOINT_ORDER_MINUS_2: Scalar = Scalar([
 
 // Precomputed basepoint table is generated into a file by build.rs
 
-/*
-#[cfg(feature="precomputed_tables")]
-pub use generated::ED25519_BASEPOINT_TABLE;
-*/
 #[cfg(feature="precomputed_tables")]
 include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
 
+#[cfg(feature="precomputed_tables")]
+use ristretto::RistrettoBasepointTable;
 /// The Ed25519 basepoint, as a RistrettoPoint
 #[cfg(feature="precomputed_tables")]
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable

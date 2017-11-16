@@ -846,7 +846,7 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
-            J: IntoIterator<Item = &'b ExtendedPoint>
+          J: IntoIterator<Item = &'b ExtendedPoint>
 {
     //assert_eq!(scalars.len(), points.len());
 

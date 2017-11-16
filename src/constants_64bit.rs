@@ -49,16 +49,16 @@ pub(crate) const APLUS2_OVER_FOUR: FieldElement64 = FieldElement64([121666, 0, 0
 pub(crate) const SQRT_MINUS_APLUS2: FieldElement64 = FieldElement64([1693982333959686, 608509411481997, 2235573344831311, 947681270984193, 266558006233600]);
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
-pub const L: Scalar64 = Scalar64([ 0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000 ]);
+pub(crate) const L: Scalar64 = Scalar64([ 0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000 ]);
 
 /// `L` * `LFACTOR` = -1 (mod 2^51)
-pub const LFACTOR: u64 = 0x51da312547e1b;
+pub(crate) const LFACTOR: u64 = 0x51da312547e1b;
 
 /// `R` = R % L where R = 2^260
-pub const R: Scalar64 = Scalar64([ 0x000f48bd6721e6ed, 0x0003bab5ac67e45a, 0x000fffffeb35e51b, 0x000fffffffffffff, 0x00000fffffffffff ]);
+pub(crate) const R: Scalar64 = Scalar64([ 0x000f48bd6721e6ed, 0x0003bab5ac67e45a, 0x000fffffeb35e51b, 0x000fffffffffffff, 0x00000fffffffffff ]);
 
 /// `RR` = (R^2) % L where R = 2^260
-pub const RR: Scalar64 = Scalar64([ 0x0009d265e952d13b, 0x000d63c715bea69f, 0x0005be65cb687604, 0x0003dceec73d217f, 0x000009411b7c309a ]);
+pub(crate) const RR: Scalar64 = Scalar64([ 0x0009d265e952d13b, 0x000d63c715bea69f, 0x0005be65cb687604, 0x0003dceec73d217f, 0x000009411b7c309a ]);
 
 /// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
 /// distinguish it from `_TABLE`, which should be used for scalar

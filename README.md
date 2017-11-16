@@ -44,7 +44,7 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.12"
+    curve25519-dalek = "^0.13"
 
 Then, in your library or executable source, add:
 
@@ -60,3 +60,11 @@ We intend to stabilise the following before curve25519-dalek-1.0.0:
 
 * Implement hashing to a point on the curve (Elligator).
 * Finish Ristretto (Decaf for curve25519) implementation.
+
+## Contributing
+
+Please see
+[CONTRIBUTING.md](https://github.com/isislovecruft/curve25519-dalek/blob/master/CONTRIBUTING.md).
+
+Patches and pull requests should be make against the `develop`
+branch, **not** `master`.

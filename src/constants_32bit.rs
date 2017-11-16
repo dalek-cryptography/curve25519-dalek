@@ -62,11 +62,6 @@ pub(crate) const SQRT_MINUS_APLUS2: FieldElement32 = FieldElement32([
     33312638, 25456129, 14121551, 54921728,  3972023,
 ]);
 
-/// `SQRT_MINUS_HALF` is sqrt(-1/2)
-pub const SQRT_MINUS_HALF: FieldElement32 = FieldElement32([ // sqrtMinusHalf
-    -17256545,   3971863,  28865457,  -1750208,  27359696,
-    -16640980,  12573105,   1002827,   -163343,  11073975, ]);
-
 /// `L` is the order of base point, i.e. 2^252 +
 /// 27742317777372353535851937790883648493
 pub(crate) const L: Scalar32 = Scalar32([ 0x1cf5d3ed, 0x009318d2, 0x1de73596, 0x1df3bd45,

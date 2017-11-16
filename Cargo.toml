@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.12.1"
+version = "0.13.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -14,6 +14,9 @@ description = "A low-level cryptographic library for point, group, field, and sc
 exclude = [
     ".gitignore"
 ]
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header rustdoc-include-katex-header.html"]
 
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
@@ -51,59 +54,8 @@ nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []
+# This isn't used at the moment, but keep it around for future yolocrypto features.
 yolocrypto = []
 bench = []
 # Radix-51 arithmetic using u128
 radix_51 = []
-
-# The development profile, used for `cargo build`.
-[profile.dev]
-opt-level = 0      # controls the `--opt-level` the compiler builds with
-debug = true       # controls whether the compiler passes `-g`
-rpath = false      # controls whether the compiler passes `-C rpath`
-lto = false        # controls `-C lto` for binaries and staticlibs
-debug-assertions = true # controls whether debug assertions are enabled
-codegen-units = 1  # controls whether the compiler passes `-C codegen-units`
-                   # `codegen-units` is ignored when `lto = true`
-panic = 'unwind'   # panic strategy (`-C panic=...`), can also be 'abort'
-
-# The release profile, used for `cargo build --release`.
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = false
-debug-assertions = false
-codegen-units = 1
-panic = 'unwind'
-
-# The testing profile, used for `cargo test`.
-[profile.test]
-opt-level = 0
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 1
-panic = 'unwind'
-required-features = ['yolocrypto']
-
-# The benchmarking profile, used for `cargo bench`.
-[profile.bench]
-opt-level = 3
-debug = false
-rpath = false
-lto = false
-debug-assertions = false
-codegen-units = 1
-panic = 'unwind'
-
-# The documentation profile, used for `cargo doc`.
-[profile.doc]
-opt-level = 0
-debug = true
-rpath = false
-lto = false
-debug-assertions = true
-codegen-units = 1
-panic = 'unwind'

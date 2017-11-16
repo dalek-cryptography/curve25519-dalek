@@ -146,8 +146,9 @@ impl CompressedMontgomeryU {
     /// actually a square and `0` if otherwise, along with a `FieldElement`: the
     /// Montgomery `v` corresponding to this `u`.
     pub fn to_montgomery_v(u: &FieldElement) -> (u8, FieldElement) {
+        let A = &constants::MONTGOMERY_A;
         let one:       FieldElement = FieldElement::one();
-        let v_squared: FieldElement = u * &(&u.square() + &(&(&constants::A * u) + &one));
+        let v_squared: FieldElement = u * &(&u.square() + &(&(A * u) + &one));
 
         let (okay, v_inv) = v_squared.invsqrt();
         let v = &v_inv * &v_squared;
@@ -183,7 +184,7 @@ impl CompressedMontgomeryU {
     pub fn to_edwards_x(u: &FieldElement, v: &FieldElement, sign: &u8) -> FieldElement {
         let mut x: FieldElement = &(u * &v.invert()) * &constants::SQRT_MINUS_APLUS2;
         let neg_x: FieldElement = -(&x);
-        let current_sign:    u8 = x.is_negative_ed25519();
+        let current_sign:    u8 = x.is_negative();
 
         // Negate x to match the sign:
         x.conditional_assign(&neg_x, current_sign ^ sign);

@@ -135,15 +135,15 @@ impl CompressedEdwardsY {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
-        let u = &YY - &Z;                    // u =  y²-1
-        let v = &(&YY * &constants::d) + &Z; // v = dy²+1
+        let u = &YY - &Z;                            // u =  y²-1
+        let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
         let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
 
         if is_nonzero_square != 1u8 { return None; }
 
         // Flip the sign of X if it's not correct
         let compressed_sign_bit = self.as_bytes()[31] >> 7;
-        let    current_sign_bit = X.is_negative_ed25519();
+        let    current_sign_bit = X.is_negative();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
         Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
@@ -342,7 +342,7 @@ impl ValidityCheck for ProjectivePoint {
         let ZZ = self.Z.square();
         let ZZZZ = ZZ.square();
         let lhs = &(&YY - &XX) * &ZZ;
-        let rhs = &ZZZZ + &(&constants::d * &(&XX * &YY));
+        let rhs = &ZZZZ + &(&constants::EDWARDS_D * &(&XX * &YY));
 
         lhs == rhs
     }
@@ -442,7 +442,7 @@ impl ProjectivePoint {
         let mut s: [u8; 32];
 
         s      =  y.to_bytes();
-        s[31] ^= (x.is_negative_ed25519() << 7) as u8;
+        s[31] ^= (x.is_negative() << 7) as u8;
         CompressedEdwardsY(s)
     }
 
@@ -518,7 +518,7 @@ impl ExtendedPoint {
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
             Z:          self.Z,
-            T2d:       &self.T * &constants::d2,
+            T2d:       &self.T * &constants::EDWARDS_D2,
         }
     }
 
@@ -541,7 +541,7 @@ impl ExtendedPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
-        let xy2d = &(&x * &y) * &constants::d2;
+        let xy2d = &(&x * &y) * &constants::EDWARDS_D2;
         AffineNielsPoint{
             y_plus_x:  &y + &x,
             y_minus_x: &y - &x,
@@ -1233,6 +1233,7 @@ pub mod vartime {
         }
 
         let odd_multiples_of_A = OddMultiples::create(A);
+        let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
 
         let mut r = ProjectivePoint::identity();
         loop {
@@ -1245,9 +1246,9 @@ pub mod vartime {
             }
 
             if b_naf[i] > 0 {
-                t = &t.to_extended() + &constants::bi[( b_naf[i]/2) as usize];
+                t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
             } else if b_naf[i] < 0 {
-                t = &t.to_extended() - &constants::bi[(-b_naf[i]/2) as usize];
+                t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
             }
 
             r = t.to_projective();
@@ -1269,8 +1270,6 @@ pub mod vartime {
 
 #[cfg(test)]
 mod test {
-    #[cfg(feature = "yolocrypto")]
-    use decaf::DecafPoint;
     use field::FieldElement;
     use scalar::Scalar;
     use subtle::ConditionallyAssignable;
@@ -1433,7 +1432,7 @@ mod test {
     #[test]
     fn basepoint_mult_by_basepoint_order() {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let should_be_id = B * &constants::l;
+        let should_be_id = B * &constants::BASEPOINT_ORDER;
         assert!(should_be_id.is_identity());
     }
 
@@ -1548,18 +1547,6 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
-    }
-
-    #[test]
-    #[cfg(feature = "yolocrypto")]
-    fn scalarmult_decafpoint_works_both_ways() {
-        let P: DecafPoint = DecafPoint(constants::ED25519_BASEPOINT_POINT);
-        let s: Scalar = A_SCALAR;
-
-        let P1 = &P * &s;
-        let P2 = &s * &P;
-
-        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
 
     mod vartime {

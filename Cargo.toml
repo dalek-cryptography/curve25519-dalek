@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -16,7 +16,7 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header rustdoc-include-katex-header.html"]
+rustdoc-args = ["--html-in-header", "rustdoc-include-katex-header.html"]
 
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}

@@ -37,8 +37,8 @@ use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
 pub use constants_64bit::*;
-//#[cfg(not(feature="radix_51"))]
-//pub use constants_32bit::*;
+#[cfg(not(feature="radix_51"))]
+pub use constants_32bit::*;
 
 /// Basepoint has y = 4/5.
 ///
@@ -151,7 +151,7 @@ mod test {
     #[cfg(not(feature="radix_51"))]
     fn sqrt_minus_aplus2() {
         use field_32bit::FieldElement32;
-        let minus_aplus2 = FieldElement32([-486664,0,0,0,0,0,0,0,0,0]);
+        let minus_aplus2 = -&FieldElement32([486664,0,0,0,0,0,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
         let sq = &sqrt * &sqrt;
         assert_eq!(sq, minus_aplus2);
@@ -181,8 +181,8 @@ mod test {
     #[test]
     fn test_d_vs_ratio() {
         use field_32bit::FieldElement32;
-        let a = FieldElement32([-121665,0,0,0,0,0,0,0,0,0]);
-        let b = FieldElement32([ 121666,0,0,0,0,0,0,0,0,0]);
+        let a = -&FieldElement32([121665,0,0,0,0,0,0,0,0,0]);
+        let b =   FieldElement32([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
         assert_eq!(d, constants::EDWARDS_D);

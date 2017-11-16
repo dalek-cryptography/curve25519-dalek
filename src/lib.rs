@@ -82,7 +82,7 @@ pub mod ristretto;
 
 // Other miscelaneous utilities.
 
-pub mod utils;
+mod utils;
 
 // Low-level curve and point constants, as well as pre-computed curve group elements.
 
@@ -91,4 +91,3 @@ pub mod constants;
 mod constants_32bit;
 #[cfg(feature="radix_51")]
 mod constants_64bit;
-

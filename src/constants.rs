@@ -37,8 +37,8 @@ use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
 pub use constants_64bit::*;
-#[cfg(not(feature="radix_51"))]
-pub use constants_32bit::*;
+//#[cfg(not(feature="radix_51"))]
+//pub use constants_32bit::*;
 
 /// Basepoint has y = 4/5.
 ///

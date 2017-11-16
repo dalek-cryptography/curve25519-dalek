@@ -15,9 +15,6 @@ exclude = [
     ".gitignore",
     ".travis.yml",
 ]
-include = [
-    "rustdoc-include-katex-header.html",
-]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "rustdoc-include-katex-header.html"]

@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![allow(unused_variables)]
+#![allow(non_snake_case)]
 #![allow(dead_code)]
 
 extern crate core;
@@ -87,5 +88,18 @@ use edwards::EdwardsBasepointTable;
 /// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
 /// for `0 ≤ i < 32`, `1 ≤ j < 9`.
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = {:?};
-        \n\n", &table).as_bytes()).unwrap();
+    \n\n", &table).as_bytes()).unwrap();
+
+    // Now generate AFFINE_ODD_MULTIPLES_OF_BASEPOINT
+    let B = &constants::ED25519_BASEPOINT_POINT;
+    let B2 = B.double();
+    let mut odd_multiples = [B.to_affine_niels(); 8];
+    for i in 0..7 {
+        odd_multiples[i+1] = (&B2 + &odd_multiples[i]).to_extended().to_affine_niels();
+    }
+
+    f.write_all(format!("\n
+/// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B]`.
+pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: [AffineNielsPoint; 8] = {:?};
+    \n\n", &odd_multiples).as_bytes()).unwrap();
 }

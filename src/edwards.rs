@@ -1228,6 +1228,7 @@ pub mod vartime {
     /// Given a point `A` and scalars `a` and `b`, compute the point
     /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
     /// with x positive).
+    #[cfg(feature="precomputed_tables")]
     pub fn double_scalar_mult_basepoint(a: &Scalar,
                                         A: &ExtendedPoint,
                                         b: &Scalar) -> ExtendedPoint {

@@ -16,7 +16,7 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header rustdoc-include-katex-header.html"]
+rustdoc-args = ["--html-in-header", "rustdoc-include-katex-header.html"]
 
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}

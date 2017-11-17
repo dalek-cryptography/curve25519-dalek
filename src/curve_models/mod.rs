@@ -73,7 +73,6 @@
 
 use core::fmt::Debug;
 use core::ops::{Add, Sub, Neg};
-use core::ops::Index;
 
 use constants;
 

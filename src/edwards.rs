@@ -277,7 +277,14 @@ impl ExtendedPoint {
 
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
-        self.to_projective().compress()
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let mut s: [u8; 32];
+
+        s      =  y.to_bytes();
+        s[31] ^= (x.is_negative() << 7) as u8;
+        CompressedEdwardsY(s)
     }
 }
 

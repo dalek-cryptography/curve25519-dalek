@@ -427,7 +427,7 @@ impl Scalar {
     }
 
     /// Unpack this `Scalar` to an `UnpackedScalar`
-    pub fn unpack(&self) -> UnpackedScalar {
+    pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.0)
     }
 

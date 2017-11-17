@@ -36,12 +36,15 @@ mod edwards;
 mod ristretto;
 #[path="src/constants.rs"]
 mod constants;
+#[path="src/traits.rs"]
+mod traits;
 
 // Internal modules
 
 #[path="src/field.rs"]
 mod field;
-
+#[path="src/curve_models/mod.rs"]
+mod curve_models;
 #[path="src/backend/mod.rs"]
 mod backend;
 
@@ -65,8 +68,9 @@ use backend::u64::field::FieldElement64;
 #[cfg(not(feature=\"radix_51\"))]
 use backend::u32::field::FieldElement32;
 
-use edwards::AffineNielsPoint;
 use edwards::EdwardsBasepointTable;
+
+use curve_models::AffineNielsPoint;
 
 /// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.
 ///

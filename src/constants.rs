@@ -18,7 +18,7 @@
 //!
 //! ```
 //! use curve25519_dalek::constants;
-//! use curve25519_dalek::edwards::IsIdentity;
+//! use curve25519_dalek::traits::IsIdentity;
 //!
 //! let B = &constants::RISTRETTO_BASEPOINT_TABLE;
 //! let l = &constants::BASEPOINT_ORDER;
@@ -102,8 +102,7 @@ pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use edwards::IsIdentity;
-    use edwards::ValidityCheck;
+    use traits::{IsIdentity, ValidityCheck};
     use constants;
 
     #[test]

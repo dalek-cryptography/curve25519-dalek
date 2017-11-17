@@ -400,17 +400,20 @@ use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-use edwards;
-use edwards::ExtendedPoint;
-use edwards::CompletedPoint;
-use edwards::EdwardsBasepointTable;
-use edwards::Identity;
-use scalar::Scalar;
-
 use subtle;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
 use subtle::Equal;
+
+use edwards;
+use edwards::ExtendedPoint;
+use edwards::EdwardsBasepointTable;
+
+use scalar::Scalar;
+
+use curve_models::CompletedPoint;
+
+use traits::Identity;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -953,7 +956,7 @@ impl ConditionallyAssignable for RistrettoPoint {
     /// #
     /// # use subtle::ConditionallyAssignable;
     /// #
-    /// # use curve25519_dalek::edwards::Identity;
+    /// # use curve25519_dalek::traits::Identity;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// # use curve25519_dalek::constants;
     /// # fn main() {
@@ -1032,8 +1035,7 @@ mod test {
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use edwards::Identity;
-    use edwards::ValidityCheck;
+    use traits::{Identity, ValidityCheck};
     use super::*;
 
     #[cfg(feature = "serde")]

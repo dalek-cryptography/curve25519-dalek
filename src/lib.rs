@@ -83,6 +83,8 @@ pub mod edwards;
 pub mod ristretto;
 // Useful constants, like the Ed25519 basepoint
 pub mod constants;
+// External (and internal) traits.
+pub mod traits;
 
 //------------------------------------------------------------------------
 // curve25519-dalek internal modules
@@ -95,4 +97,4 @@ pub(crate) mod field;
 pub(crate) mod backend;
 
 // Internal curve models which are not part of the public API.
-//mod curve_models;
+pub(crate) mod curve_models;

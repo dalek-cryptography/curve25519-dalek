@@ -94,9 +94,5 @@ pub(crate) mod field;
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;
 
-// XXX this should be in backend
-#[cfg(all(feature="yolocrypto", not(feature="radix_51")))]
-pub(crate) mod avx2;
-
 // Internal curve models which are not part of the public API.
 pub(crate) mod curve_models;

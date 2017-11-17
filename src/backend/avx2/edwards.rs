@@ -25,8 +25,8 @@ use scalar::Scalar;
 
 use traits::Identity;
 
-use avx2::field::FieldElement32x4;
-use avx2::field::P_TIMES_2;
+use backend::avx2::field::FieldElement32x4;
+use backend::avx2::field::P_TIMES_2;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
 #[derive(Copy, Clone, Debug)]
@@ -324,17 +324,18 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
     /// and returns `x * 16^2i * B` in constant time.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
+        use traits::select_precomputed_point;
         let e = scalar.to_radix_16();
         let mut h = ExtendedPoint::identity();
 
         for i in (0..64).filter(|x| x % 2 == 1) {
-            h = &h + &edwards::select_precomputed_point(e[i], &self.0[i/2]);
+            h = &h + &select_precomputed_point(e[i], &self.0[i/2]);
         }
 
         h = h.mult_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
-            h = &h + &edwards::select_precomputed_point(e[i], &self.0[i/2]);
+            h = &h + &select_precomputed_point(e[i], &self.0[i/2]);
         }
 
         h
@@ -395,7 +396,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
           J: IntoIterator<Item = &'b ExtendedPoint>
 {
-    use edwards::select_precomputed_point;
+    use traits::select_precomputed_point;
     //assert_eq!(scalars.len(), points.len());
 
     let lookup_tables: Vec<_> = points.into_iter()

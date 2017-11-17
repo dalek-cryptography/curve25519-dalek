@@ -59,6 +59,7 @@ rand = "0.3"
 generic-array = "^0.8"
 digest = "0.6"
 arrayref = "0.3.4"
+stdsimd = { git = "https://github.com/hdevalence/stdsimd", branch="feature/more-avx2" }
 
 [build-dependencies.serde]
 version = "1.0"

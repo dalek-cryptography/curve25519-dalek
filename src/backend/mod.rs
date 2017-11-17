@@ -28,3 +28,7 @@ pub mod u32;
 #[cfg(feature="radix_51")]
 pub mod u64;
 
+/// Code using AVX2.
+#[cfg(all(feature="yolocrypto", not(feature="radix_51")))]
+pub mod avx2;
+

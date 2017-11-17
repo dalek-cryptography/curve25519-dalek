@@ -21,6 +21,8 @@ use std::path::Path;
 // For instance, this shouldn't exist here at all, but it does.
 #[cfg(feature = "serde")]
 extern crate serde;
+#[cfg(feature = "yolocrypto")]
+extern crate stdsimd;
 
 // Public modules
 

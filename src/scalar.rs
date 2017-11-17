@@ -46,6 +46,17 @@ use subtle::slices_equal;
 use subtle::ConditionallyAssignable;
 use subtle::Equal;
 
+use backend;
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+#[cfg(feature="radix_51")]
+type UnpackedScalar = backend::u64::scalar::Scalar64;
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+#[cfg(not(feature="radix_51"))]
+type UnpackedScalar = backend::u32::scalar::Scalar32;
+
+
 /// The `Scalar` struct represents an element in ℤ/lℤ, where
 ///
 /// l = 2^252 + 27742317777372353535851937790883648493
@@ -226,18 +237,6 @@ impl<'de> Deserialize<'de> for Scalar {
         deserializer.deserialize_bytes(ScalarVisitor)
     }
 }
-
-/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-#[cfg(feature="radix_51")]
-type UnpackedScalar = Scalar64;
-#[cfg(feature="radix_51")]
-use scalar_64bit::*;
-
-/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-#[cfg(not(feature="radix_51"))]
-type UnpackedScalar = Scalar32;
-#[cfg(not(feature="radix_51"))]
-use scalar_32bit::*;
 
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.

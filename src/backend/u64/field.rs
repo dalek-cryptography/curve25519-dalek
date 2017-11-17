@@ -25,10 +25,6 @@ use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
 
-/// In the 64-bit implementation, field elements are represented in
-/// radix 2^51 as five `u64`s.
-pub type Limb = u64;
-
 /// A `FieldElement64` represents an element of the field GF(2^255 - 19).
 ///
 /// In the 64-bit implementation, a `FieldElement` is represented in

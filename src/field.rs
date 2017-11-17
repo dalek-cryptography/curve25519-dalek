@@ -27,17 +27,19 @@ use subtle::ConditionallyNegatable;
 use subtle::Equal;
 
 use constants;
+use backend;
 
+#[cfg(feature="radix_51")]
+pub use backend::u64::field::*;
 /// A `FieldElement` represents an element of the field GF(2^255 - 19).
 #[cfg(feature="radix_51")]
-pub type FieldElement = FieldElement64;
+pub type FieldElement = backend::u64::field::FieldElement64;
+
+#[cfg(not(feature="radix_51"))]
+pub use backend::u32::field::*;
 /// A `FieldElement` represents an element of the field GF(2^255 - 19).
 #[cfg(not(feature="radix_51"))]
-pub type FieldElement = FieldElement32;
-#[cfg(feature="radix_51")]
-pub use field_64bit::*;
-#[cfg(not(feature="radix_51"))]
-pub use field_32bit::*;
+pub type FieldElement = backend::u32::field::FieldElement32;
 
 impl Eq for FieldElement {}
 impl PartialEq for FieldElement {

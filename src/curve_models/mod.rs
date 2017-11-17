@@ -144,18 +144,22 @@ use traits::Identity;
 
 impl Identity for ProjectivePoint {
     fn identity() -> ProjectivePoint {
-        ProjectivePoint{ X: FieldElement::zero(),
-                         Y: FieldElement::one(),
-                         Z: FieldElement::one() }
+        ProjectivePoint{
+            X: FieldElement::zero(),
+            Y: FieldElement::one(),
+            Z: FieldElement::one(),
+        }
     }
 }
 
 impl Identity for ProjectiveNielsPoint {
     fn identity() -> ProjectiveNielsPoint {
-        ProjectiveNielsPoint{ Y_plus_X:  FieldElement::one(),
-                     Y_minus_X: FieldElement::one(),
-                     Z:         FieldElement::one(),
-                     T2d:       FieldElement::zero() }
+        ProjectiveNielsPoint{
+            Y_plus_X:  FieldElement::one(),
+            Y_minus_X: FieldElement::one(),
+            Z:         FieldElement::one(),
+            T2d:       FieldElement::zero(),
+        }
     }
 }
 

@@ -233,7 +233,7 @@ impl Equal for ExtendedPoint {
 
 impl ExtendedPoint {
     /// Convert to a ProjectiveNielsPoint
-    pub fn to_projective_niels(&self) -> ProjectiveNielsPoint {
+    pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -247,7 +247,7 @@ impl ExtendedPoint {
     ///
     /// Given a point in Ɛₑ, we can convert to projective coordinates
     /// cost-free by simply ignoring T.
-    fn to_projective(&self) -> ProjectivePoint {
+    pub(crate) fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: self.X,
             Y: self.Y,
@@ -257,7 +257,7 @@ impl ExtendedPoint {
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub fn to_affine_niels(&self) -> AffineNielsPoint {
+    pub(crate) fn to_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -647,17 +647,13 @@ impl EdwardsBasepointTable {
 
 impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
-    ///
-    /// Convenience wrapper around `mult_by_pow_2`.
-    #[inline]
     pub fn mult_by_cofactor(&self) -> ExtendedPoint {
         self.mult_by_pow_2(3)
     }
 
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
-    #[inline]
-    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+    pub(crate) fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
         for _ in 0..(k-1) {

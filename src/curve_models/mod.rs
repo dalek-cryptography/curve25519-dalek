@@ -280,6 +280,8 @@ impl ProjectivePoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
+// These are doc(hidden) so they don't appear in the public API docs.
+#[doc(hidden)]
 impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -301,6 +303,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
+#[doc(hidden)]
 impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -322,6 +325,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
+#[doc(hidden)]
 impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -342,6 +346,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     }
 }
 
+#[doc(hidden)]
 impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 

@@ -560,7 +560,7 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 /// `ExtendedPoint`, with custom equality, compression, and
 /// decompression routines to account for the quotient.
 #[derive(Copy, Clone)]
-pub struct RistrettoPoint(pub ExtendedPoint);
+pub struct RistrettoPoint(pub(crate) ExtendedPoint);
 
 impl RistrettoPoint {
     /// Compress in Ristretto format.

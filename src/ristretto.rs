@@ -1133,6 +1133,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1195,6 +1196,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1227,6 +1229,7 @@ mod bench {
     use super::*;
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn decompression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1236,6 +1239,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn compression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;

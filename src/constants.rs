@@ -30,7 +30,8 @@
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
-use ristretto::{RistrettoPoint, RistrettoBasepointTable};
+use ristretto::RistrettoPoint;
+
 use montgomery::CompressedMontgomeryU;
 use scalar::Scalar;
 
@@ -86,7 +87,15 @@ pub const BASEPOINT_ORDER_MINUS_2: Scalar = Scalar([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
 ]);
 
+// Precomputed basepoint table is generated into a file by build.rs
+
+#[cfg(feature="precomputed_tables")]
+include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
+
+#[cfg(feature="precomputed_tables")]
+use ristretto::RistrettoBasepointTable;
 /// The Ed25519 basepoint, as a RistrettoPoint
+#[cfg(feature="precomputed_tables")]
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 
@@ -142,7 +151,7 @@ mod test {
     #[cfg(not(feature="radix_51"))]
     fn sqrt_minus_aplus2() {
         use field_32bit::FieldElement32;
-        let minus_aplus2 = FieldElement32([-486664,0,0,0,0,0,0,0,0,0]);
+        let minus_aplus2 = -&FieldElement32([486664,0,0,0,0,0,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
         let sq = &sqrt * &sqrt;
         assert_eq!(sq, minus_aplus2);
@@ -172,8 +181,8 @@ mod test {
     #[test]
     fn test_d_vs_ratio() {
         use field_32bit::FieldElement32;
-        let a = FieldElement32([-121665,0,0,0,0,0,0,0,0,0]);
-        let b = FieldElement32([ 121666,0,0,0,0,0,0,0,0,0]);
+        let a = -&FieldElement32([121665,0,0,0,0,0,0,0,0,0]);
+        let b =   FieldElement32([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
         assert_eq!(d, constants::EDWARDS_D);

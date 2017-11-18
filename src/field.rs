@@ -404,29 +404,6 @@ mod test {
         assert_eq!(without_highbit_set, with_highbit_set);
     }
 
-    #[cfg(not(feature="radix_51"))]
-    static B_LIMBS_RADIX_25_5: FieldElement32 = FieldElement32(
-        [-5652623, 8034020, 8266223, -13556020, -5672552,
-         -5582839, -12603138, 15161929, -16418207, 13296296]);
-
-    #[cfg(not(feature="radix_51"))]
-    #[test]
-    fn from_bytes_vs_radix_25_5_limb_constants() {
-        let test_elt = FieldElement::from_bytes(&B_BYTES);
-        assert_eq!(test_elt.0, B_LIMBS_RADIX_25_5.0);
-    }
-
-    #[cfg(not(feature="radix_51"))]
-    #[test]
-    fn radix_25_5_limb_constants_to_bytes_vs_byte_constants() {
-        let test_bytes = B_LIMBS_RADIX_25_5.to_bytes();
-        for i in 0..31 {
-            assert!(test_bytes[i] == B_BYTES[i]);
-        }
-        // Check that high bit is set to zero in to_bytes
-        assert!(test_bytes[31] == (B_BYTES[31] & 127u8));
-    }
-
     #[test]
     fn conditional_negate() {
         let       one = FieldElement::one();

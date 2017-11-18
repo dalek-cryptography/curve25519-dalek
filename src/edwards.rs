@@ -846,7 +846,7 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
-            J: IntoIterator<Item = &'b ExtendedPoint>
+          J: IntoIterator<Item = &'b ExtendedPoint>
 {
     //assert_eq!(scalars.len(), points.len());
 
@@ -1111,38 +1111,49 @@ impl ExtendedPoint {
 
 impl Debug for ExtendedPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ExtendedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
+        write!(f, "ExtendedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for ProjectivePoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectivePoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n)",
+        write!(f, "ProjectivePoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n}}",
                &self.X, &self.Y, &self.Z)
     }
 }
 
 impl Debug for CompletedPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompletedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
+        write!(f, "CompletedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
 impl Debug for AffineNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "AffineNielsPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
+        write!(f, "AffineNielsPoint{{\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n}}",
                &self.y_plus_x, &self.y_minus_x, &self.xy2d)
     }
 }
 
 impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectiveNielsPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
+        write!(f, "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
                &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }
 }
+
+impl Debug for EdwardsBasepointTable {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "EdwardsBasepointTable([\n")?;
+        for i in 0..32 {
+            write!(f, "\t{:?},\n", &self.0[i])?;
+        }
+        write!(f, "])")
+    }
+}
+
 
 // ------------------------------------------------------------------------
 // Variable-time functions
@@ -1217,6 +1228,7 @@ pub mod vartime {
     /// Given a point `A` and scalars `a` and `b`, compute the point
     /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
     /// with x positive).
+    #[cfg(feature="precomputed_tables")]
     pub fn double_scalar_mult_basepoint(a: &Scalar,
                                         A: &ExtendedPoint,
                                         b: &Scalar) -> ExtendedPoint {
@@ -1354,6 +1366,7 @@ mod test {
 
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
@@ -1362,6 +1375,7 @@ mod test {
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
         assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
@@ -1412,6 +1426,7 @@ mod test {
 
     /// Sanity check for conversion to precomputed points
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1423,6 +1438,7 @@ mod test {
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
@@ -1430,6 +1446,7 @@ mod test {
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_by_basepoint_order() {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let should_be_id = B * &constants::BASEPOINT_ORDER;
@@ -1462,6 +1479,7 @@ mod test {
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_two_vs_basepoint2() {
         let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &Scalar(two_bytes);
@@ -1555,6 +1573,7 @@ mod test {
 
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
+        #[cfg(feature="precomputed_tables")]
         fn double_scalar_mult_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
@@ -1635,6 +1654,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         b.iter(|| B * &A_SCALAR);
@@ -1647,6 +1667,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
@@ -1704,14 +1725,15 @@ mod bench {
         b.iter(|| p1.mult_by_cofactor());
     }
 
-    #[cfg(feature="basepoint_table_creation")]
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn ten_fold_scalar_mult(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
@@ -1735,6 +1757,7 @@ mod bench {
         }
 
         #[bench]
+        #[cfg(feature="basepoint_table_creation")]
         fn ten_fold_scalar_mult(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars

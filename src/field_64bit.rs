@@ -25,8 +25,6 @@ use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
 
-use utils::load8;
-
 /// In the 64-bit implementation, field elements are represented in
 /// radix 2^51 as five `u64`s.
 pub type Limb = u64;
@@ -55,7 +53,7 @@ pub struct FieldElement64(pub (crate) [u64; 5]);
 
 impl Debug for FieldElement64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement64: {:?}", &self.0[..])
+        write!(f, "FieldElement64({:?})", &self.0[..])
     }
 }
 
@@ -247,6 +245,17 @@ impl FieldElement64 {
     /// canonical.
     ///
     pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement64 {
+        let load8 = |input: &[u8]| -> u64 {
+               (input[0] as u64)
+            | ((input[1] as u64) << 8)
+            | ((input[2] as u64) << 16)
+            | ((input[3] as u64) << 24)
+            | ((input[4] as u64) << 32)
+            | ((input[5] as u64) << 40)
+            | ((input[6] as u64) << 48)
+            | ((input[7] as u64) << 56)
+        };
+
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement64(
         // load bits [  0, 64), no shift

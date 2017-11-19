@@ -1054,7 +1054,7 @@ mod test {
 
     /// Test precomputed basepoint mult
     #[test]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT_POINT);
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1325,14 +1325,14 @@ mod bench {
     }
 
     #[bench]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
     #[bench]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn ten_fold_scalar_mult(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
@@ -1356,7 +1356,7 @@ mod bench {
         }
 
         #[bench]
-        #[cfg(feature="basepoint_table_creation")]
+        #[cfg(feature="precomputed_tables")]
         fn ten_fold_scalar_mult(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars

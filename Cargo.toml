@@ -70,11 +70,11 @@ nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []
-# This isn't used at the moment, but keep it around for future yolocrypto features.
-yolocrypto = []
+yolocrypto = ["avx2_backend"]
 bench = []
 # Radix-51 arithmetic using u128
 radix_51 = []
 # Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
 precomputed_tables = []
-
+# experimental avx2 support
+avx2_backend = ["radix_51"]

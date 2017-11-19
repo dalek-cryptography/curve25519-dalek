@@ -509,7 +509,7 @@ mod test {
     use constants;
 
     fn serial_add(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
-        use backend::u32::field::FieldElement32;
+        use backend::u64::field::FieldElement64;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
         let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);
@@ -540,10 +540,10 @@ mod test {
         print_var!(S7);
         println!("");
 
-        let S8  =  &S4 *    &FieldElement32([  121666,0,0,0,0,0,0,0,0,0]);  // R5
-        let S9  =  &S5 *    &FieldElement32([  121666,0,0,0,0,0,0,0,0,0]);  // R6
-        let S10 =  &S6 *    &FieldElement32([2*121666,0,0,0,0,0,0,0,0,0]);  // R8
-        let S11 =  &S7 * &(-&FieldElement32([2*121665,0,0,0,0,0,0,0,0,0])); // R7
+        let S8  =  &S4 *    &FieldElement64([  121666,0,0,0,0]);  // R5
+        let S9  =  &S5 *    &FieldElement64([  121666,0,0,0,0]);  // R6
+        let S10 =  &S6 *    &FieldElement64([2*121666,0,0,0,0]);  // R8
+        let S11 =  &S7 * &(-&FieldElement64([2*121665,0,0,0,0])); // R7
         print_var!(S8 );
         print_var!(S9 );
         print_var!(S10);

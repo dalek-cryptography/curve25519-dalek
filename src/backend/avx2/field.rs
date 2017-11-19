@@ -17,7 +17,7 @@ use std::ops::Mul;
 
 use stdsimd::simd::{u32x8, i32x8, u64x4};
 
-use backend::u32::field::FieldElement32;
+use backend::u64::field::FieldElement64;
 
 pub(crate) static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
     u32x8::new(134217690, 134217690, 67108862, 67108862, 134217690, 134217690, 67108862, 67108862),
@@ -45,17 +45,23 @@ impl ConditionallyAssignable for FieldElement32x4 {
 
 
 impl FieldElement32x4 {
-    pub(crate) fn split(&self) -> [FieldElement32; 4] {
-        let mut out = [FieldElement32::zero(); 4];
+    pub(crate) fn split(&self) -> [FieldElement64; 4] {
+        let mut out = [FieldElement64::zero(); 4];
         for i in 0..5 {
-            out[0].0[2*i  ] = self.0[i].extract(0); //
-            out[1].0[2*i  ] = self.0[i].extract(1); //
-            out[0].0[2*i+1] = self.0[i].extract(2); // `.
-            out[1].0[2*i+1] = self.0[i].extract(3); //  | pre-swapped to avoid
-            out[2].0[2*i  ] = self.0[i].extract(4); //  | a cross lane shuffle
-            out[3].0[2*i  ] = self.0[i].extract(5); // .'
-            out[2].0[2*i+1] = self.0[i].extract(6); //
-            out[3].0[2*i+1] = self.0[i].extract(7); //
+
+            let a_2i   = self.0[i].extract(0) as u64; //
+            let b_2i   = self.0[i].extract(1) as u64; //
+            let a_2i_1 = self.0[i].extract(2) as u64; // `.
+            let b_2i_1 = self.0[i].extract(3) as u64; //  | pre-swapped to avoid
+            let c_2i   = self.0[i].extract(4) as u64; //  | a cross lane shuffle
+            let d_2i   = self.0[i].extract(5) as u64; // .'
+            let c_2i_1 = self.0[i].extract(6) as u64; //
+            let d_2i_1 = self.0[i].extract(7) as u64; //
+
+            out[0].0[i] = a_2i + (a_2i_1 << 26);
+            out[1].0[i] = b_2i + (b_2i_1 << 26);
+            out[2].0[i] = c_2i + (c_2i_1 << 26);
+            out[3].0[i] = d_2i + (d_2i_1 << 26);
         }
         
         out
@@ -65,23 +71,34 @@ impl FieldElement32x4 {
         FieldElement32x4([u32x8::splat(0);5])
     }
 
-    pub fn splat(x: &FieldElement32) -> FieldElement32x4 {
+    pub fn splat(x: &FieldElement64) -> FieldElement32x4 {
         FieldElement32x4::new(x,x,x,x)
     }
 
     pub fn new(
-        x0: &FieldElement32,
-        x1: &FieldElement32,
-        x2: &FieldElement32,
-        x3: &FieldElement32,
+        x0: &FieldElement64,
+        x1: &FieldElement64,
+        x2: &FieldElement64,
+        x3: &FieldElement64,
     ) -> FieldElement32x4 {
         let mut buf = [u32x8::splat(0); 5];
+        let low_26_bits = (1 << 26) - 1;
         for i in 0..5 {
-            buf[i] = u32x8::new(x0.0[2*i  ], x1.0[2*i  ], x0.0[2*i+1], x1.0[2*i+1],
-                                x2.0[2*i  ], x3.0[2*i  ], x2.0[2*i+1], x3.0[2*i+1]);
+            let a_2i   = (x0.0[i] & low_26_bits) as u32;
+            let a_2i_1 = (x0.0[i] >> 26) as u32;
+            let b_2i   = (x1.0[i] & low_26_bits) as u32;
+            let b_2i_1 = (x1.0[i] >> 26) as u32;
+            let c_2i   = (x2.0[i] & low_26_bits) as u32;
+            let c_2i_1 = (x2.0[i] >> 26) as u32;
+            let d_2i   = (x3.0[i] & low_26_bits) as u32;
+            let d_2i_1 = (x3.0[i] >> 26) as u32;
+
+            buf[i] = u32x8::new(a_2i, b_2i, a_2i_1, b_2i_1, c_2i, d_2i, c_2i_1, d_2i_1);
         }
 
-        FieldElement32x4(buf)
+        let mut out = FieldElement32x4(buf);
+        out.reduce32();
+        return out;
     }
 
     // Negate variables in lanes where mask is set
@@ -521,22 +538,22 @@ mod test {
 
     #[test]
     fn scale_by_curve_constants() {
-        let mut x = FieldElement32x4::splat(&FieldElement32::one());
+        let mut x = FieldElement32x4::splat(&FieldElement64::one());
         x.scale_by_curve_constants();
 
         let xs = x.split();
-        assert_eq!(xs[0],   FieldElement32([  121666,0,0,0,0,0,0,0,0,0]));
-        assert_eq!(xs[1],   FieldElement32([  121666,0,0,0,0,0,0,0,0,0]));
-        assert_eq!(xs[2],   FieldElement32([2*121666,0,0,0,0,0,0,0,0,0]));
-        assert_eq!(xs[3], -&FieldElement32([2*121665,0,0,0,0,0,0,0,0,0]));
+        assert_eq!(xs[0],   FieldElement64([  121666,0,0,0,0]));
+        assert_eq!(xs[1],   FieldElement64([  121666,0,0,0,0]));
+        assert_eq!(xs[2],   FieldElement64([2*121666,0,0,0,0]));
+        assert_eq!(xs[3], -&FieldElement64([2*121665,0,0,0,0]));
     }
 
     #[test]
     fn diff_sum_vs_serial() {
-        let x0 = FieldElement32([10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009]);
-        let x1 = FieldElement32([10100, 10101, 10102, 10103, 10104, 10105, 10106, 10107, 10108, 10109]);
-        let x2 = FieldElement32([10200, 10201, 10202, 10203, 10204, 10205, 10206, 10207, 10208, 10209]);
-        let x3 = FieldElement32([10300, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309]);
+        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
         let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
         vec.diff_sum();
@@ -551,10 +568,10 @@ mod test {
 
     #[test]
     fn square_vs_serial() {
-        let x0 = FieldElement32([10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009]);
-        let x1 = FieldElement32([10100, 10101, 10102, 10103, 10104, 10105, 10106, 10107, 10108, 10109]);
-        let x2 = FieldElement32([10200, 10201, 10202, 10203, 10204, 10205, 10206, 10207, 10208, 10209]);
-        let x3 = FieldElement32([10300, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309]);
+        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
         let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
 
@@ -569,10 +586,10 @@ mod test {
 
     #[test]
     fn multiply_vs_serial() {
-        let x0 = FieldElement32([10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009]);
-        let x1 = FieldElement32([10100, 10101, 10102, 10103, 10104, 10105, 10106, 10107, 10108, 10109]);
-        let x2 = FieldElement32([10200, 10201, 10202, 10203, 10204, 10205, 10206, 10207, 10208, 10209]);
-        let x3 = FieldElement32([10300, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309]);
+        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
         let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
         let vecprime = vec.clone();
@@ -587,10 +604,10 @@ mod test {
 
     #[test]
     fn test_unpack_repack_pair() {
-        let x0 = FieldElement32([10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009]);
-        let x1 = FieldElement32([10100, 10101, 10102, 10103, 10104, 10105, 10106, 10107, 10108, 10109]);
-        let x2 = FieldElement32([10200, 10201, 10202, 10203, 10204, 10205, 10206, 10207, 10208, 10209]);
-        let x3 = FieldElement32([10300, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309]);
+        let x0 = FieldElement64([10000 + (10001 << 26), 0, 0, 0, 0]);
+        let x1 = FieldElement64([10100 + (10101 << 26), 0, 0, 0, 0]);
+        let x2 = FieldElement64([10200 + (10201 << 26), 0, 0, 0, 0]);
+        let x3 = FieldElement64([10300 + (10301 << 26), 0, 0, 0, 0]);
 
         let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
 
@@ -611,10 +628,10 @@ mod test {
 
     #[test]
     fn new_split_roundtrips() {
-        let x0 = FieldElement32::from_bytes(&[0x10; 32]);
-        let x1 = FieldElement32::from_bytes(&[0x11; 32]);
-        let x2 = FieldElement32::from_bytes(&[0x12; 32]);
-        let x3 = FieldElement32::from_bytes(&[0x13; 32]);
+        let x0 = FieldElement64::from_bytes(&[0x10; 32]);
+        let x1 = FieldElement64::from_bytes(&[0x11; 32]);
+        let x2 = FieldElement64::from_bytes(&[0x12; 32]);
+        let x3 = FieldElement64::from_bytes(&[0x13; 32]);
 
         let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
 
@@ -635,7 +652,7 @@ mod bench {
 
     #[bench]
     fn multiply(b: &mut Bencher) {
-        let vec = FieldElement32x4::splat(&FieldElement32::zero());
+        let vec = FieldElement32x4::splat(&FieldElement64::zero());
         let vecprime = vec.clone();
 
         b.iter(|| &vec * &vecprime );

@@ -412,8 +412,6 @@ impl FieldElement32x4 {
 
         let v19 = u32x8::new(19,0,19,0,19,0,19,0);
 
-        let mut z = [u64x4::splat(0); 10];
-
         let (x0, x1) = unpack_pair(self.0[0]);
         let (x2, x3) = unpack_pair(self.0[1]);
         let (x4, x5) = unpack_pair(self.0[2]);
@@ -435,37 +433,24 @@ impl FieldElement32x4 {
         let x8_19  = m_lo(v19, x8);
         let x9_19  = m_lo(v19, x9);
 
-        z[0] = m(x0,  x0) + m(x2_2,x8_19) + m(x4_2,x6_19) + ((m(x1_2,x9_19) +  m(x3_2,x7_19) +    m(x5,x5_19)) << 1);
-        z[1] = m(x0_2,x1) + m(x3_2,x8_19) + m(x5_2,x6_19) +                  ((m(x2,x9_19)   +    m(x4,x7_19)) << 1);
-        z[2] = m(x0_2,x2) + m(x1_2,x1)    + m(x4_2,x8_19) + m(x6,x6_19)    + ((m(x3_2,x9_19) +  m(x5_2,x7_19)) << 1);
-        z[3] = m(x0_2,x3) + m(x1_2,x2)    + m(x5_2,x8_19) +                  ((m(x4,x9_19)   +    m(x6,x7_19)) << 1);
-        z[4] = m(x0_2,x4) + m(x1_2,x3_2)  + m(x2,  x2)    + m(x6_2,x8_19)  + ((m(x5_2,x9_19) +    m(x7,x7_19)) << 1);
-        z[5] = m(x0_2,x5) + m(x1_2,x4)    + m(x2_2,x3)    + m(x7_2,x8_19)                    +  ((m(x6,x9_19)) << 1);
-        z[6] = m(x0_2,x6) + m(x1_2,x5_2)  + m(x2_2,x4)    + m(x3_2,x3) + m(x8,x8_19)        + ((m(x7_2,x9_19)) << 1);
-        z[7] = m(x0_2,x7) + m(x1_2,x6)    + m(x2_2,x5)    + m(x3_2,x4)                      +   ((m(x8,x9_19)) << 1);
-        z[8] = m(x0_2,x8) + m(x1_2,x7_2)  + m(x2_2,x6)    + m(x3_2,x5_2) + m(x4,x4)         +   ((m(x9,x9_19)) << 1);
-        z[9] = m(x0_2,x9) + m(x1_2,x8)    + m(x2_2,x7)    + m(x3_2,x6) + m(x4_2,x5);
+        let z0 = m(x0,  x0) + m(x2_2,x8_19) + m(x4_2,x6_19) + ((m(x1_2,x9_19) +  m(x3_2,x7_19) +    m(x5,x5_19)) << 1);
+        let z1 = m(x0_2,x1) + m(x3_2,x8_19) + m(x5_2,x6_19) +                  ((m(x2,x9_19)   +    m(x4,x7_19)) << 1);
+        let z2 = m(x0_2,x2) + m(x1_2,x1)    + m(x4_2,x8_19) + m(x6,x6_19)    + ((m(x3_2,x9_19) +  m(x5_2,x7_19)) << 1);
+        let z3 = m(x0_2,x3) + m(x1_2,x2)    + m(x5_2,x8_19) +                  ((m(x4,x9_19)   +    m(x6,x7_19)) << 1);
+        let z4 = m(x0_2,x4) + m(x1_2,x3_2)  + m(x2,  x2)    + m(x6_2,x8_19)  + ((m(x5_2,x9_19) +    m(x7,x7_19)) << 1);
+        let z5 = m(x0_2,x5) + m(x1_2,x4)    + m(x2_2,x3)    + m(x7_2,x8_19)                    +  ((m(x6,x9_19)) << 1);
+        let z6 = m(x0_2,x6) + m(x1_2,x5_2)  + m(x2_2,x4)    + m(x3_2,x3) + m(x8,x8_19)        + ((m(x7_2,x9_19)) << 1);
+        let z7 = m(x0_2,x7) + m(x1_2,x6)    + m(x2_2,x5)    + m(x3_2,x4)                      +   ((m(x8,x9_19)) << 1);
+        let z8 = m(x0_2,x8) + m(x1_2,x7_2)  + m(x2_2,x6)    + m(x3_2,x5_2) + m(x4,x4)         +   ((m(x9,x9_19)) << 1);
+        let z9 = m(x0_2,x9) + m(x1_2,x8)    + m(x2_2,x7)    + m(x3_2,x6) + m(x4_2,x5);
         
-        return FieldElement32x4::reduce64(z);
+        FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 
 impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
     type Output = FieldElement32x4;
     fn mul(self, _rhs: &'b FieldElement32x4) -> FieldElement32x4 {
-        let mut b = [u32x8::splat(0); 10];
-        let mut c = [u64x4::splat(0); 10];
-
-        let (b0, b1) = unpack_pair(_rhs.0[0]);
-        b[0] = b0; b[1] = b1;
-        let (b2, b3) = unpack_pair(_rhs.0[1]);
-        b[2] = b2; b[3] = b3;
-        let (b4, b5) = unpack_pair(_rhs.0[2]);
-        b[4] = b4; b[5] = b5;
-        let (b6, b7) = unpack_pair(_rhs.0[3]);
-        b[6] = b6; b[7] = b7;
-        let (b8, b9) = unpack_pair(_rhs.0[4]);
-        b[8] = b8; b[9] = b9;
 
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
@@ -479,55 +464,48 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
             unsafe { u32x8::from(_mm256_mul_epu32(x,y)) }
         }
 
+        let (x0, x1) = unpack_pair(self.0[0]);
+        let (x2, x3) = unpack_pair(self.0[1]);
+        let (x4, x5) = unpack_pair(self.0[2]);
+        let (x6, x7) = unpack_pair(self.0[3]);
+        let (x8, x9) = unpack_pair(self.0[4]);
+
+        let (y0, y1) = unpack_pair(_rhs.0[0]);
+        let (y2, y3) = unpack_pair(_rhs.0[1]);
+        let (y4, y5) = unpack_pair(_rhs.0[2]);
+        let (y6, y7) = unpack_pair(_rhs.0[3]);
+        let (y8, y9) = unpack_pair(_rhs.0[4]);
+
         let v19 = u32x8::new(19,0,19,0,19,0,19,0);
 
-        // XXX clean up this horrifying abomination
-        //
-        // The idea is to take the standard "schoolbook multiplication square" (see
-        // FieldElement32), and walk up each column from top to bottom, then left to right.
-        //
-        // Instead of multiplying by 19 in a precomputation, we overwrite the b[i] value with
-        // b[i]*19 as soon as we will no longer need it.
-        //
+        let y1_19 = m_lo(v19, y1); // This fits in a u32
+        let y2_19 = m_lo(v19, y2); // iff 26 + b + lg(19) < 32
+        let y3_19 = m_lo(v19, y3); // if  b < 32 - 26 - 4.248 = 1.752
+        let y4_19 = m_lo(v19, y4); 
+        let y5_19 = m_lo(v19, y5); // below, b<2.5: this is a bottleneck,
+        let y6_19 = m_lo(v19, y6); // could be avoided by promoting to
+        let y7_19 = m_lo(v19, y7); // u64 here instead of in m()
+        let y8_19 = m_lo(v19, y8);
+        let y9_19 = m_lo(v19, y9);
 
-        macro_rules! loop_body {
-            ($i:expr) => {
-                let (ai, ai1) = unpack_pair(self.0[$i/2]);
+        let x1_2 = x1 + x1; // This fits in a u32 iff 25 + b + 1 < 32
+        let x3_2 = x3 + x3; //                    iff b < 6
+        let x5_2 = x5 + x5;
+        let x7_2 = x7 + x7;
+        let x9_2 = x9 + x9;
 
-                c[9] = c[9] + m(ai, b[(100 + 9-$i) % 10]);
-                b[(100 + 9-$i) % 10] = m_lo(b[(100 + 9-$i) % 10], v19);
-                c[8] = c[8] + m(ai, b[(100 + 8-$i) % 10]);
-                c[7] = c[7] + m(ai, b[(100 + 7-$i) % 10]);
-                c[6] = c[6] + m(ai, b[(100 + 6-$i) % 10]);
-                c[5] = c[5] + m(ai, b[(100 + 5-$i) % 10]);
-                c[4] = c[4] + m(ai, b[(100 + 4-$i) % 10]);
-                c[3] = c[3] + m(ai, b[(100 + 3-$i) % 10]);
-                c[2] = c[2] + m(ai, b[(100 + 2-$i) % 10]);
-                c[1] = c[1] + m(ai, b[(100 + 1-$i) % 10]);
-                c[0] = c[0] + m(ai, b[(100 + 0-$i) % 10]);
+        let z0 = m(x0,y0) + m(x1_2,y9_19) + m(x2,y8_19) + m(x3_2,y7_19) + m(x4,y6_19) + m(x5_2,y5_19) + m(x6,y4_19) + m(x7_2,y3_19) + m(x8,y2_19) + m(x9_2,y1_19);
+        let z1 = m(x0,y1) +   m(x1,y0)    + m(x2,y9_19) +   m(x3,y8_19) + m(x4,y7_19) +   m(x5,y6_19) + m(x6,y5_19) +   m(x7,y4_19) + m(x8,y3_19) + m(x9,y2_19);
+        let z2 = m(x0,y2) + m(x1_2,y1)    + m(x2,y0)    + m(x3_2,y9_19) + m(x4,y8_19) + m(x5_2,y7_19) + m(x6,y6_19) + m(x7_2,y5_19) + m(x8,y4_19) + m(x9_2,y3_19);
+        let z3 = m(x0,y3) +   m(x1,y2)    + m(x2,y1)    +   m(x3,y0)    + m(x4,y9_19) +   m(x5,y8_19) + m(x6,y7_19) +   m(x7,y6_19) + m(x8,y5_19) + m(x9,y4_19);
+        let z4 = m(x0,y4) + m(x1_2,y3)    + m(x2,y2)    + m(x3_2,y1)    + m(x4,y0)    + m(x5_2,y9_19) + m(x6,y8_19) + m(x7_2,y7_19) + m(x8,y6_19) + m(x9_2,y5_19);
+        let z5 = m(x0,y5) +   m(x1,y4)    + m(x2,y3)    +   m(x3,y2)    + m(x4,y1)    +   m(x5,y0)    + m(x6,y9_19) +   m(x7,y8_19) + m(x8,y7_19) + m(x9,y6_19);
+        let z6 = m(x0,y6) + m(x1_2,y5)    + m(x2,y4)    + m(x3_2,y3)    + m(x4,y2)    + m(x5_2,y1)    + m(x6,y0)    + m(x7_2,y9_19) + m(x8,y8_19) + m(x9_2,y7_19);
+        let z7 = m(x0,y7) +   m(x1,y6)    + m(x2,y5)    +   m(x3,y4)    + m(x4,y3)    +   m(x5,y2)    + m(x6,y1)    +   m(x7,y0)    + m(x8,y9_19) + m(x9,y8_19);
+        let z8 = m(x0,y8) + m(x1_2,y7)    + m(x2,y6)    + m(x3_2,y5)    + m(x4,y4)    + m(x5_2,y3)    + m(x6,y2)    + m(x7_2,y1)    + m(x8,y0)    + m(x9_2,y9_19);
+        let z9 = m(x0,y9) +   m(x1,y8)    + m(x2,y7)    +   m(x3,y6)    + m(x4,y5)    +   m(x5,y4)    + m(x6,y3)    +   m(x7,y2)    + m(x8,y1)    + m(x9,y0);
 
-                let ai1_2 = ai1 + ai1;
-                c[9] = c[9] + m(ai1,   b[(100 + 9-($i+1)) % 10]);
-                b[(100 + 9-($i+1)) % 10] = m_lo(b[(100 + 9-($i+1)) % 10], v19);
-                c[8] = c[8] + m(ai1_2, b[(100 + 8-($i+1)) % 10]);
-                c[7] = c[7] + m(ai1,   b[(100 + 7-($i+1)) % 10]);
-                c[6] = c[6] + m(ai1_2, b[(100 + 6-($i+1)) % 10]);
-                c[5] = c[5] + m(ai1,   b[(100 + 5-($i+1)) % 10]);
-                c[4] = c[4] + m(ai1_2, b[(100 + 4-($i+1)) % 10]);
-                c[3] = c[3] + m(ai1,   b[(100 + 3-($i+1)) % 10]);
-                c[2] = c[2] + m(ai1_2, b[(100 + 2-($i+1)) % 10]);
-                c[1] = c[1] + m(ai1,   b[(100 + 1-($i+1)) % 10]);
-                c[0] = c[0] + m(ai1_2, b[(100 + 0-($i+1)) % 10]);
-            };
-        }
-
-        loop_body!(0);
-        loop_body!(2);
-        loop_body!(4);
-        loop_body!(6);
-        loop_body!(8);
-
-        return FieldElement32x4::reduce64(c);
+        FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 

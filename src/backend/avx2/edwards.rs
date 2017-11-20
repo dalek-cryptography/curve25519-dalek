@@ -772,6 +772,21 @@ mod bench {
     use scalar::Scalar;
 
     #[bench]
+    fn conversion_into__avx2_format(b: &mut Bencher) {
+        let B = constants::ED25519_BASEPOINT_POINT;
+
+        b.iter(|| ExtendedPoint::from(B));
+    }
+
+    #[bench]
+    fn conversion_outof_avx2_format(b: &mut Bencher) {
+        let B = constants::ED25519_BASEPOINT_POINT;
+        let B_avx2 = ExtendedPoint::from(B);
+
+        b.iter(|| edwards::ExtendedPoint::from(B_avx2));
+    }
+
+    #[bench]
     fn point_addition(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));

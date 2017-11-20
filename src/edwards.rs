@@ -432,38 +432,47 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let P = self.to_projective_niels();
-        let mut lookup_table: [ProjectiveNielsPoint; 8] = [P; 8];
-        for i in 0..7 {
-            lookup_table[i+1] = (self + &lookup_table[i])
-                .to_extended().to_projective_niels();
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+            use backend::avx2::edwards as edwards_avx2;
+            let P_avx2 = edwards_avx2::ExtendedPoint::from(*self);
+            return ExtendedPoint::from(&P_avx2 * scalar);
         }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+            // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
+            let P = self.to_projective_niels();
+            let mut lookup_table: [ProjectiveNielsPoint; 8] = [P; 8];
+            for i in 0..7 {
+                lookup_table[i+1] = (self + &lookup_table[i])
+                    .to_extended().to_projective_niels();
+            }
 
-        // Setting s = scalar, compute
-        //
-        //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
-        //
-        // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
-        let scalar_digits = scalar.to_radix_16();
+            // Setting s = scalar, compute
+            //
+            //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
+            //
+            // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
+            let scalar_digits = scalar.to_radix_16();
 
-        // Compute s*P as
-        //
-        //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
-        //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
-        //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
-        //
-        // We sum right-to-left.
-        let mut Q = ExtendedPoint::identity();
-        for i in (0..64).rev() {
-            // Q = 16*Q
-            Q = Q.mult_by_pow_2(4);
-            // R = s_i * Q
-            let R = select_precomputed_point(scalar_digits[i], &lookup_table);
-            // Q = Q + R
-            Q = (&Q + &R).to_extended();
+            // Compute s*P as
+            //
+            //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
+            //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
+            //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
+            //
+            // We sum right-to-left.
+            let mut Q = ExtendedPoint::identity();
+            for i in (0..64).rev() {
+                // Q = 16*Q
+                Q = Q.mult_by_pow_2(4);
+                // R = s_i * Q
+                let R = select_precomputed_point(scalar_digits[i], &lookup_table);
+                // Q = Q + R
+                Q = (&Q + &R).to_extended();
+            }
+            Q
         }
-        Q
     }
 }
 

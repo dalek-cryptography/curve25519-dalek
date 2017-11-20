@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "nightly", feature(i128_type))]
+#![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]

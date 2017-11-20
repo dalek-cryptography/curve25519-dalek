@@ -227,7 +227,9 @@ impl<'de> Deserialize<'de> for Scalar {
             {
                 if v.len() == 32 {
                     // array_ref turns &[u8] into &[u8;32]
-                    Ok(Scalar(*array_ref!(v, 0, 32)))
+                    let mut bytes = [0u8;32];
+                    bytes.copy_from_slice(v);
+                    Ok(Scalar(bytes))
                 } else {
                     Err(serde::de::Error::invalid_length(v.len(), &self))
                 }

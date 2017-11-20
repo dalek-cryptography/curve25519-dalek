@@ -141,8 +141,9 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    let arr32 = array_ref!(v, 0, 32); // &[u8;32] from &[u8]
-                    CompressedEdwardsY(*arr32)
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+                    CompressedEdwardsY(arr32)
                         .decompress()
                         .ok_or(serde::de::Error::custom("decompression failed"))
                 } else {

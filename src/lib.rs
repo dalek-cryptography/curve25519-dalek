@@ -63,12 +63,6 @@ extern crate serde;
 #[cfg(all(test, feature = "serde"))]
 extern crate serde_cbor;
 
-// this appears to only be used for serde support right now?
-// XXX let's eliminate this dep
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate arrayref;
-
 //------------------------------------------------------------------------
 // curve25519-dalek public modules
 //------------------------------------------------------------------------

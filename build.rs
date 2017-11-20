@@ -8,8 +8,6 @@ extern crate subtle;
 extern crate rand;
 extern crate digest;
 extern crate generic_array;
-#[macro_use]
-extern crate arrayref;
 
 use std::env;
 use std::fs::File;

@@ -254,7 +254,7 @@ impl Scalar {
     pub fn random<T: Rng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
-        Scalar::reduce(&scalar_bytes)
+        Scalar::reduce_wide(&scalar_bytes)
     }
 
     /// Hash a slice of bytes into a scalar.
@@ -299,7 +299,7 @@ impl Scalar {
         // XXX this seems clumsy
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());
-        Scalar::reduce(&output)
+        Scalar::reduce_wide(&output)
     }
 
     /// View this `Scalar` as a sequence of bytes.
@@ -439,7 +439,7 @@ impl Scalar {
     }
 
     /// Reduce a 512-bit little endian number mod l
-    pub fn reduce(input: &[u8; 64]) -> Scalar {
+    pub fn reduce_wide(input: &[u8; 64]) -> Scalar {
         UnpackedScalar::from_bytes_wide(input).pack()
     }
 }
@@ -585,11 +585,11 @@ mod test {
 
         // also_a = (a mod l)
         tmp[0..32].copy_from_slice(&a_bytes[..]);
-        let also_a = Scalar::reduce(&tmp);
+        let also_a = Scalar::reduce_wide(&tmp);
 
         // also_b = (b mod l)
         tmp[0..32].copy_from_slice(&b_bytes[..]);
-        let also_b = Scalar::reduce(&tmp);
+        let also_b = Scalar::reduce_wide(&tmp);
 
         let expected_c = &a * &b;
         let also_expected_c = &also_a * &also_b;
@@ -670,7 +670,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_reduce() {
+    fn reduce_wide() {
         let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
         for i in 0..32 {
@@ -683,7 +683,7 @@ mod test {
                                69,  99, 158, 216,  23, 173,  63, 100,
                               204,   0,  91,  50, 219, 153,  57, 249,
                                28,  82,  31, 197, 100, 165, 192,   8]);
-        let test_red = Scalar::reduce(&bignum);
+        let test_red = Scalar::reduce_wide(&bignum);
         for i in 0..32 {
             assert!(test_red[i] == reduced[i]);
         }
@@ -719,7 +719,7 @@ mod test {
 
 
     #[test]
-    fn montgomery_reduce_matches_reduce() {
+    fn montgomery_reduce_matches_reduce_wide() {
         let mut bignum = [0u8; 64];
 
         // set bignum = x + 2^256x
@@ -733,7 +733,7 @@ mod test {
                                 69,  99, 158, 216,  23, 173,  63, 100,
                                204,   0,  91,  50, 219, 153,  57, 249,
                                 28,  82,  31, 197, 100, 165, 192,   8]);
-        let reduced = Scalar::reduce(&bignum);
+        let reduced = Scalar::reduce_wide(&bignum);
 
         // The reduced scalar should match the expected
         assert_eq!(reduced.0, expected.0);

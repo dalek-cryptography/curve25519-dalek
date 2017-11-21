@@ -333,7 +333,7 @@ impl Scalar {
     }
 
     /// Get the bits of the scalar.
-    pub fn bits(&self) -> [i8; 256] {
+    pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
@@ -354,7 +354,7 @@ impl Scalar {
     /// Intuitively, this is like a binary expansion, except that we
     /// allow some coefficients to grow up to `2^(w-1)` so that the
     /// nonzero coefficients are as sparse as possible.
-    pub fn non_adjacent_form(&self) -> [i8; 256] {
+    pub(crate) fn non_adjacent_form(&self) -> [i8; 256] {
         // Step 1: write out bits of the scalar
         let mut naf = self.bits();
 
@@ -399,7 +399,7 @@ impl Scalar {
     ///
     /// Precondition: self[31] <= 127.  This is the case whenever
     /// `self` is reduced.
-    pub fn to_radix_16(&self) -> [i8; 64] {
+    pub(crate) fn to_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 

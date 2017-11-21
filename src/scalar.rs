@@ -115,47 +115,47 @@ impl IndexMut<usize> for Scalar {
 
 impl<'b> MulAssign<&'b Scalar> for Scalar {
     fn mul_assign(&mut self, _rhs: &'b Scalar) {
-        *self = Scalar::mul(self, _rhs)
+        *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
-        Scalar::mul(self, _rhs)
+        UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 impl<'b> AddAssign<&'b Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'b Scalar) {
-        *self = Scalar::add(self, _rhs);
+        *self = UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn add(self, _rhs: &'b Scalar) -> Scalar {
-        Scalar::add(self, _rhs)
+        UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 impl<'b> SubAssign<&'b Scalar> for Scalar {
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
-        *self = Scalar::sub(self, _rhs);
+        *self = UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn sub(self, _rhs: &'b Scalar) -> Scalar {
-        Scalar::sub(self, _rhs)
+        UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
-        Scalar::sub(&Scalar::zero(), self)
+        &Scalar::zero() - self
     }
 }
 
@@ -431,21 +431,6 @@ impl Scalar {
     /// Unpack this `Scalar` to an `UnpackedScalar`
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.0)
-    }
-
-    /// Compute `a + b` (mod l)
-    pub fn add(a: &Scalar, b: &Scalar) -> Scalar {
-        UnpackedScalar::add(&a.unpack(), &b.unpack()).pack()
-    }
-
-    /// Compute `a - b` (mod l).
-    pub fn sub(a: &Scalar, b: &Scalar) -> Scalar {
-        UnpackedScalar::sub(&a.unpack(), &b.unpack()).pack()
-    }
-
-    /// Compute `a * b` (mod l).
-    pub fn mul(a: &Scalar, b: &Scalar) -> Scalar {
-        UnpackedScalar::mul(&a.unpack(), &b.unpack()).pack()
     }
 
     /// Compute `(a * b) + c` (mod l).

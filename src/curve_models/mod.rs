@@ -211,6 +211,12 @@ impl Identity for ProjectivePoint {
     }
 }
 
+impl Default for ProjectivePoint {
+    fn default() -> ProjectivePoint {
+        ProjectivePoint::identity()
+    }
+}
+
 impl Identity for ProjectiveNielsPoint {
     fn identity() -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
@@ -222,6 +228,12 @@ impl Identity for ProjectiveNielsPoint {
     }
 }
 
+impl Default for ProjectiveNielsPoint {
+    fn default() -> ProjectiveNielsPoint {
+        ProjectiveNielsPoint::identity()
+    }
+}
+
 impl Identity for AffineNielsPoint {
     fn identity() -> AffineNielsPoint {
         AffineNielsPoint{
@@ -229,6 +241,12 @@ impl Identity for AffineNielsPoint {
             y_minus_x: FieldElement::one(),
             xy2d:      FieldElement::zero(),
         }
+    }
+}
+
+impl Default for AffineNielsPoint {
+    fn default() -> AffineNielsPoint {
+        AffineNielsPoint::identity()
     }
 }
 

@@ -47,6 +47,7 @@ use subtle::ConditionallyAssignable;
 use subtle::Equal;
 
 use backend;
+use constants;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 #[cfg(feature="radix_51")]
@@ -438,6 +439,14 @@ impl Scalar {
         UnpackedScalar::add(&UnpackedScalar::mul(&a.unpack(), &b.unpack()), &c.unpack()).pack()
     }
 
+    /// Reduce this `Scalar` mod l.
+    pub fn reduce(&self) -> Scalar {
+        let x = self.unpack();
+        let xR = UnpackedScalar::mul_internal(&x, &constants::R);
+        let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
+        x_mod_l.pack()
+    }
+
     /// Reduce a 512-bit little endian number mod l
     pub fn reduce_wide(input: &[u8; 64]) -> Scalar {
         UnpackedScalar::from_bytes_wide(input).pack()
@@ -670,6 +679,17 @@ mod test {
     }
 
     #[test]
+    fn reduce() {
+        let biggest = Scalar([0xff; 32]);
+        // sage: l = 2^252 + 27742317777372353535851937790883648493
+        // sage: big = 2^256 - 1
+        // sage: repr((big % l).digits(256))
+        let biggest_mod_l = Scalar([28, 149, 152, 141, 116, 49, 236, 214, 112, 207, 125, 115, 244, 91, 239, 198, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15]);
+        let reduced = biggest.reduce();
+        assert_eq!(reduced, biggest_mod_l);
+    }
+
+    #[test]
     fn reduce_wide() {
         let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
@@ -716,7 +736,6 @@ mod test {
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
     }
-
 
     #[test]
     fn montgomery_reduce_matches_reduce_wide() {
@@ -768,6 +787,13 @@ mod bench {
 
     use super::*;
     use super::test::{X};
+
+    #[bench]
+    fn reduce(b: &mut Bencher) {
+        let unreduced = Scalar([0xff; 32]);
+
+        b.iter(|| unreduced.reduce());
+    }
 
     #[bench]
     fn scalar_random(b: &mut Bencher) {

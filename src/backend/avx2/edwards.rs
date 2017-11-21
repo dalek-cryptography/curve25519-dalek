@@ -391,20 +391,25 @@ impl EdwardsBasepointTable {
 /// error to call this function with two vectors of different lengths.
 ///
 /// XXX need to clear memory
+/// 
+/// XXX this takes `edwards::ExtendedPoints` because we have to alloc scratch space here anyways,
+/// and we need some space to store the converted points, so we may as well do the conversion here.
+/// maybe there's a better way to avoid code duplication...
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b ExtendedPoint>
+          J: IntoIterator<Item = &'b edwards::ExtendedPoint>
 {
     use traits::select_precomputed_point;
     //assert_eq!(scalars.len(), points.len());
 
     let lookup_tables: Vec<_> = points.into_iter()
-        .map(|P_i| {
-            // Construct a lookup table of [P_i,2*P_i,3*P_i,4*P_i,5*P_i,6*P_i,7*P_i]
-            let mut lookup_table: [ExtendedPoint; 8] = [*P_i; 8];
+        .map(|P| {
+            let P = ExtendedPoint::from(*P);
+            // Construct a lookup table of [P,2*P,3*P,4*P,5*P,6*P,7*P]
+            let mut lookup_table: [ExtendedPoint; 8] = [P; 8];
             for i in 0..7 {
-                lookup_table[i+1] = P_i + &lookup_table[i];
+                lookup_table[i+1] = &P + &lookup_table[i];
             }
             lookup_table
         }).collect();
@@ -448,7 +453,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
             Q = &Q + &R_i;
         }
     }
-    Q
+    Q.into()
 }
 
 pub mod vartime {
@@ -464,10 +469,12 @@ pub mod vartime {
     /// error to call this function with two vectors of different lengths.
     ///
     /// XXX need to clear memory
+    ///
+    /// XXX see note on consttime multiscalar mul
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b ExtendedPoint>
+              J: IntoIterator<Item = &'b edwards::ExtendedPoint>
     {
         //assert_eq!(scalars.len(), points.len());
 
@@ -475,9 +482,10 @@ pub mod vartime {
             .map(|c| c.non_adjacent_form()).collect();
         let odd_multiples: Vec<_> = points.into_iter()
             .map(|P| {
-                // Construct a lookup table of [P_i,2*P_i,3*P_i,4*P_i,5*P_i,6*P_i,7*P_i]
+                let P = ExtendedPoint::from(*P);
+                // Construct a lookup table of [P,2*P,3*P,4*P,5*P,6*P,7*P]
                 let P2 = P.double();
-                let mut lookup_table: [ExtendedPoint; 8] = [*P; 8];
+                let mut lookup_table: [ExtendedPoint; 8] = [P; 8];
                 for i in 0..7 {
                     lookup_table[i+1] = &P2 + &lookup_table[i];
                 }
@@ -498,7 +506,7 @@ pub mod vartime {
                 }
             }
         }
-        Q
+        Q.into()
     }
 }
 
@@ -734,10 +742,10 @@ mod test {
 
         let R = &(&P1 * &s1) + &(&P2 * &s2);
         
-        let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1, P2]);
+        let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
         assert_eq!(edwards::ExtendedPoint::from(R).compress(),
-                   edwards::ExtendedPoint::from(R_multiscalar).compress());
+                   R_multiscalar.compress());
     }
 
     mod vartime {
@@ -754,10 +762,10 @@ mod test {
 
             let R = &(&P1 * &s1) + &(&P2 * &s2);
             
-            let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1, P2]);
+            let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
             assert_eq!(edwards::ExtendedPoint::from(R).compress(),
-                       edwards::ExtendedPoint::from(R_multiscalar).compress());
+                       R_multiscalar.compress());
         }
     }
 }
@@ -835,7 +843,7 @@ mod bench {
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
         // Create 10 points (by doing scalar mults)
         let B = &constants::ED25519_BASEPOINT_POINT;
-        let points: Vec<_> = scalars.iter().map(|s| ExtendedPoint::from(B * &s)).collect();
+        let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
 
         b.iter(|| multiscalar_mult(&scalars, &points));
     }
@@ -850,7 +858,7 @@ mod bench {
             // Create 2 random scalars
             let s1 = Scalar::random(&mut csprng);
             let s2 = Scalar::random(&mut csprng);
-            let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
+            let B = constants::ED25519_BASEPOINT_POINT;
             let P = &B * &s1;
 
             b.iter(|| vartime::multiscalar_mult(&[s1, s2], &[B, P]));
@@ -863,7 +871,7 @@ mod bench {
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
             // Create 10 points (by doing scalar mults)
             let B = &constants::ED25519_BASEPOINT_POINT;
-            let points: Vec<_> = scalars.iter().map(|s| ExtendedPoint::from(B * &s)).collect();
+            let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
 
             b.iter(|| vartime::multiscalar_mult(&scalars, &points));
         }

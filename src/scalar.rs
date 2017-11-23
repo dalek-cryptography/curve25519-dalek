@@ -265,7 +265,7 @@ impl Serialize for Scalar {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        serializer.serialize_bytes(self.reduce().as_bytes())
     }
 }
 
@@ -280,17 +280,25 @@ impl<'de> Deserialize<'de> for Scalar {
             type Value = Scalar;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("a 32-byte scalar value")
+                formatter.write_str("a canonically-encoded 32-byte scalar value")
             }
 
             fn visit_bytes<E>(self, v: &[u8]) -> Result<Scalar, E>
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    // array_ref turns &[u8] into &[u8;32]
                     let mut bytes = [0u8;32];
                     bytes.copy_from_slice(v);
-                    Ok(Scalar(bytes))
+
+                    static ERRMSG: &'static str = "encoding was not canonical";
+
+                    Scalar::from_canonical_bytes(bytes)
+                        .ok_or(
+                            serde::de::Error::invalid_value(
+                                serde::de::Unexpected::Bytes(v),
+                                &ERRMSG,
+                            )
+                        )
                 } else {
                     Err(serde::de::Error::invalid_length(v.len(), &self))
                 }

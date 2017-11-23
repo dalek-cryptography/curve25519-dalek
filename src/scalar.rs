@@ -489,6 +489,28 @@ impl Scalar {
         x_mod_l.pack()
     }
 
+    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). 
+    ///
+    /// This is intended for uses like input validation, where variable-time code is acceptable.
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # extern crate subtle;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// # use subtle::ConditionallyAssignable;
+    /// # fn main() {
+    /// // 2^255 - 1, since `from_bits` clears the high bit
+    /// let _2_255_minus_1 = Scalar::from_bits([0xff;32]);
+    /// assert!(!_2_255_minus_1.is_canonical());
+    ///
+    /// let reduced = _2_255_minus_1.reduce();
+    /// assert!(reduced.is_canonical());
+    /// # }
+    /// ```
+    pub fn is_canonical(&self) -> bool {
+        *self == self.reduce()
+    }
+
     /// Reduce a 512-bit little endian number mod l
     pub fn reduce_wide(input: &[u8; 64]) -> Scalar {
         UnpackedScalar::from_bytes_wide(input).pack()

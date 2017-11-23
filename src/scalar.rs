@@ -12,28 +12,31 @@
 
 //! Arithmetic for scalar multiplication.
 //!
-//! The Ed25519 basepoint P has prime order
+//! Both the Ristretto group and the Ed25519 basepoint have prime order
+//! \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
 //!
-//! l = 2^252 + 27742317777372353535851937790883648493.
+//! The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
+//! represents an element of \\(\mathbb Z / \ell\\).
 //!
-//! Thus a multiple `aP` of the basepoint (with a ∈ ℤ) depends only
-//! on the value of `a (mod l)`, or equivalently, the image of `a` in
-//! the quotient ℤ/lℤ.
+//! The code is intended to be useful with both the Ristretto group
+//! (where everything is done modulo \\( \ell \\), and the X/Ed25519
+//! setting, which mandates specific bit-twiddles that are not
+//! well-defined modulo \\( \ell \\).
 //!
-//! The `Scalar` struct represents an element in ℤ/lℤ.
+//! To create a `Scalar` by reducing a 256-bit integer mod \\( \ell \\),
+//! use `Scalar::from_bytes_mod_order`.
 //!
-//! In contrast to `FieldElement`s, `Scalar`s are stored in
-//! memory as bytes, allowing easy access to the bits of the `Scalar`
-//! when multiplying a point by a scalar.  For efficient arithmetic
-//! between two scalars, the `UnpackedScalar` struct (internally
-//! either `Scalar32` or `Scalar64`) is stored as limbs.
+//! To create a `Scalar` with a specific bit-pattern (e.g., for
+//! compatibility with X25519 "clamping"), use `Scalar::from_bits`.
+//!
+//! All arithmetic on `Scalars` is done modulo \\( \ell \\). 
 
 use core::fmt::Debug;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::ops::{Index, IndexMut};
+use core::ops::{Index};
 use core::cmp::{Eq, PartialEq};
 
 #[cfg(feature = "std")]
@@ -50,10 +53,16 @@ use backend;
 use constants;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+/// 
+/// This is a type alias for one of the scalar types in the `backend`
+/// module.
 #[cfg(feature="radix_51")]
 type UnpackedScalar = backend::u64::scalar::Scalar64;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+/// 
+/// This is a type alias for one of the scalar types in the `backend`
+/// module.
 #[cfg(not(feature="radix_51"))]
 type UnpackedScalar = backend::u32::scalar::Scalar32;
 
@@ -64,11 +73,47 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 ///
 /// is the order of the basepoint.  The `Scalar` is stored as bytes.
 #[derive(Copy, Clone)]
-pub struct Scalar(pub [u8; 32]);
+pub struct Scalar {
+    /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.
+    /// 
+    /// # Invariant
+    /// 
+    /// The integer representing this scalar must be bounded above by 2^255, or equivalently the high bit of `bytes[31]` must be zero.
+    /// 
+    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
+    pub(crate) bytes: [u8; 32],
+}
+
+impl Scalar {
+    /// Construct a `Scalar` by reducing a 256-bit integer modulo the group order.
+    pub fn from_bytes_mod_order(bytes: [u8;32]) -> Scalar {
+        // Temporarily allow s_unreduced.bytes > 2^255 ...
+        let s_unreduced = Scalar{bytes: bytes};
+
+        // Then reduce mod the group order and return the reduced representative.
+        let s = s_unreduced.reduce();
+        debug_assert_eq!(0u8, s[31] >> 7);
+
+        s
+    }
+
+    /// Construct a `Scalar` from the low 255 bits of a 256-bit integer.
+    /// 
+    /// This function is intended for applications like X25519 which
+    /// require specific bit-patterns when performing scalar
+    /// multiplication.
+    pub fn from_bits(bytes: [u8; 32]) -> Scalar {
+        let mut s = Scalar{bytes: bytes};
+        // Ensure that s < 2^255 by masking the high bit
+        s.bytes[31] &= 0b0111_1111;
+
+        s
+    }
+}
 
 impl Debug for Scalar {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Scalar: {:?}", &self.0[..])
+        write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
 
@@ -85,7 +130,7 @@ impl PartialEq for Scalar {
     ///
     /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        slices_equal(&self.0, &other.0) == 1u8
+        slices_equal(&self.bytes, &other.bytes) == 1u8
     }
 }
 
@@ -96,21 +141,16 @@ impl Equal for Scalar {
     ///
     /// `1u8` if they are equal, and `0u8` otherwise.
     fn ct_eq(&self, other: &Self) -> u8 {
-        slices_equal(&self.0, &other.0)
+        slices_equal(&self.bytes, &other.bytes)
     }
 }
 
 impl Index<usize> for Scalar {
     type Output = u8;
 
+    /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
     fn index(&self, _index: usize) -> &u8 {
-        &(self.0[_index])
-    }
-}
-
-impl IndexMut<usize> for Scalar {
-    fn index_mut(&mut self, _index: usize) -> &mut u8 {
-        &mut (self.0[_index])
+        &(self.bytes[_index])
     }
 }
 
@@ -169,10 +209,8 @@ impl ConditionallyAssignable for Scalar {
     /// # use curve25519_dalek::scalar::Scalar;
     /// # use subtle::ConditionallyAssignable;
     /// # fn main() {
-    /// let a = Scalar([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    ///                 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
-    /// let b = Scalar([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-    ///                 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
+    /// let a = Scalar::from_bits([0u8;32]);
+    /// let b = Scalar::from_bits([1u8;32]);
     /// let mut t = a;
     /// t.conditional_assign(&b, 0u8);
     /// assert!(t[0] == a[0]);
@@ -190,7 +228,7 @@ impl ConditionallyAssignable for Scalar {
         // if choice = 1u8, mask = (-1i8) as u8 = 11111111
         let mask = -(choice as i8) as u8;
         for i in 0..32 {
-            self[i] ^= mask & (self[i] ^ other[i]);
+            self.bytes[i] ^= mask & (self.bytes[i] ^ other.bytes[i]);
         }
     }
 }
@@ -305,27 +343,31 @@ impl Scalar {
 
     /// View this `Scalar` as a sequence of bytes.
     pub fn as_bytes(&self) -> &[u8; 32] {
-        &self.0
+        &self.bytes
     }
 
     /// Construct the additive identity
     pub fn zero() -> Self {
-        Scalar([0u8; 32])
+        Scalar { bytes: [0u8; 32]}
     }
 
     /// Construct the multiplicative identity
     pub fn one() -> Self {
-        Scalar([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+        Scalar {
+            bytes: [
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+        }
     }
 
     /// Construct a scalar from the given `u64`.
     pub fn from_u64(x: u64) -> Scalar {
-        let mut s = Scalar::zero();
+        let mut s_bytes = [0u8; 32];
         for i in 0..8 {
-            s[i] = (x >> (i*8)) as u8;
+            s_bytes[i] = (x >> (i*8)) as u8;
         }
-        s
+        Scalar{ bytes: s_bytes }
     }
 
     /// Compute the multiplicative inverse of this scalar.
@@ -339,7 +381,7 @@ impl Scalar {
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
             // while the upper bits index the byte.
-            bits[i] = ((self.0[i>>3] >> (i&7)) & 1u8) as i8;
+            bits[i] = ((self.bytes[i>>3] >> (i&7)) & 1u8) as i8;
         }
         bits
     }
@@ -431,7 +473,7 @@ impl Scalar {
 
     /// Unpack this `Scalar` to an `UnpackedScalar`
     pub(crate) fn unpack(&self) -> UnpackedScalar {
-        UnpackedScalar::from_bytes(&self.0)
+        UnpackedScalar::from_bytes(&self.bytes)
     }
 
     /// Compute `(a * b) + c` (mod l).
@@ -456,7 +498,7 @@ impl Scalar {
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
-        Scalar(self.to_bytes())
+        Scalar{ bytes: self.to_bytes() }
     }
 
     /// Compute the multiplicative inverse of this scalar.
@@ -524,48 +566,69 @@ mod test {
     use constants;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
-    pub static X: Scalar = Scalar(
-        [0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
-         0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
-         0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
-         0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04]);
+    pub static X: Scalar = Scalar{
+        bytes: [
+            0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
+            0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
+            0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
+            0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04,
+        ],
+    };
     /// 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
-    pub static XINV: Scalar = Scalar(
-        [0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
-         0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
-         0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
-         0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f]);
+    pub static XINV: Scalar = Scalar{
+        bytes: [
+            0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
+            0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
+            0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
+            0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f,
+        ],
+    };
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
-    pub static Y: Scalar = Scalar(
-        [0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
-         0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
-         0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
-         0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05]);
+    pub static Y: Scalar = Scalar{
+        bytes: [
+            0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
+            0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
+            0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
+            0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05,
+        ],
+    };
     /// z = 5033871415930814945849241457262266927579821285980625165479289807629491019013
-    pub static Z: Scalar = Scalar(
-        [0x05, 0x9d, 0x3e, 0x0b, 0x09, 0x26, 0x50, 0x3d,
-         0xa3, 0x84, 0xa1, 0x3c, 0x92, 0x7a, 0xc2, 0x06,
-         0x41, 0x98, 0xcf, 0x34, 0x3a, 0x24, 0xd5, 0xb7,
-         0xeb, 0x33, 0x6a, 0x2d, 0xfc, 0x11, 0x21, 0x0b]);
+    pub static Z: Scalar = Scalar{
+        bytes: [
+            0x05, 0x9d, 0x3e, 0x0b, 0x09, 0x26, 0x50, 0x3d,
+            0xa3, 0x84, 0xa1, 0x3c, 0x92, 0x7a, 0xc2, 0x06,
+            0x41, 0x98, 0xcf, 0x34, 0x3a, 0x24, 0xd5, 0xb7,
+            0xeb, 0x33, 0x6a, 0x2d, 0xfc, 0x11, 0x21, 0x0b,
+        ],
+    };
     /// w = 3486911242272497535104403593250518247409663771668155364040899665266216860804
-    static W: Scalar = Scalar(
-        [0x84, 0xfc, 0xbc, 0x4f, 0x78, 0x12, 0xa0, 0x06,
-         0xd7, 0x91, 0xd9, 0x7a, 0x3a, 0x27, 0xdd, 0x1e,
-         0x21, 0x43, 0x45, 0xf7, 0xb1, 0xb9, 0x56, 0x7a,
-         0x81, 0x30, 0x73, 0x44, 0x96, 0x85, 0xb5, 0x07]);
+    static W: Scalar = Scalar{
+        bytes: [
+            0x84, 0xfc, 0xbc, 0x4f, 0x78, 0x12, 0xa0, 0x06,
+            0xd7, 0x91, 0xd9, 0x7a, 0x3a, 0x27, 0xdd, 0x1e,
+            0x21, 0x43, 0x45, 0xf7, 0xb1, 0xb9, 0x56, 0x7a,
+            0x81, 0x30, 0x73, 0x44, 0x96, 0x85, 0xb5, 0x07,
+        ],
+    };
 
     /// x*y = 5690045403673944803228348699031245560686958845067437804563560795922180092780
-    static X_TIMES_Y: Scalar = Scalar(
-        [0x6c, 0x33, 0x74, 0xa1, 0x89, 0x4f, 0x62, 0x21,
-         0x0a, 0xaa, 0x2f, 0xe1, 0x86, 0xa6, 0xf9, 0x2c,
-         0xe0, 0xaa, 0x75, 0xc2, 0x77, 0x95, 0x81, 0xc2,
-         0x95, 0xfc, 0x08, 0x17, 0x9a, 0x73, 0x94, 0x0c]);
+    static X_TIMES_Y: Scalar = Scalar{
+        bytes: [
+            0x6c, 0x33, 0x74, 0xa1, 0x89, 0x4f, 0x62, 0x21,
+            0x0a, 0xaa, 0x2f, 0xe1, 0x86, 0xa6, 0xf9, 0x2c,
+            0xe0, 0xaa, 0x75, 0xc2, 0x77, 0x95, 0x81, 0xc2,
+            0x95, 0xfc, 0x08, 0x17, 0x9a, 0x73, 0x94, 0x0c,
+        ],
+    };
 
-    static A_SCALAR: Scalar = Scalar([
-        0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
-        0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
-        0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
-        0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09]);
+    static A_SCALAR: Scalar = Scalar{
+        bytes: [
+            0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
+            0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
+            0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
+            0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09,
+        ],
+    };
 
     static A_NAF: [i8; 256] =
         [0,13,0,0,0,0,0,0,0,7,0,0,0,0,0,0,-9,0,0,0,0,-11,0,0,0,0,3,0,0,0,0,1,
@@ -586,9 +649,9 @@ mod test {
         // LE bytes of 6432735165214683820902750800207468552549813371247423777071615116673864412038
         let c_bytes = [134, 171, 119, 216, 180, 128, 178, 62, 171, 132, 32, 62, 34, 119, 104, 193, 47, 215, 181, 250, 14, 207, 172, 93, 75, 207, 211, 103, 144, 204, 56, 14];
 
-        let a = Scalar(a_bytes);
-        let b = Scalar(b_bytes);
-        let c = Scalar(c_bytes);
+        let a = Scalar::from_bytes_mod_order(a_bytes);
+        let b = Scalar::from_bytes_mod_order(b_bytes);
+        let c = Scalar::from_bytes_mod_order(c_bytes);
 
         let mut tmp = [0u8; 64];
 
@@ -641,8 +704,7 @@ mod test {
 
     #[test]
     fn impl_add() {
-        let mut two = Scalar::zero(); two[0] = 2;
-        let two = two;
+        let two = Scalar::from_u64(2);
         let one = Scalar::one();
         let should_be_two = &one + &one;
         assert_eq!(should_be_two, two);
@@ -680,13 +742,19 @@ mod test {
 
     #[test]
     fn reduce() {
-        let biggest = Scalar([0xff; 32]);
+        let biggest = Scalar::from_bytes_mod_order([0xff; 32]);
         // sage: l = 2^252 + 27742317777372353535851937790883648493
         // sage: big = 2^256 - 1
         // sage: repr((big % l).digits(256))
-        let biggest_mod_l = Scalar([28, 149, 152, 141, 116, 49, 236, 214, 112, 207, 125, 115, 244, 91, 239, 198, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15]);
-        let reduced = biggest.reduce();
-        assert_eq!(reduced, biggest_mod_l);
+        let biggest_mod_l = Scalar{
+            bytes: [
+                  28, 149, 152, 141, 116,  49, 236, 214,
+                 112, 207, 125, 115, 244,  91, 239, 198,
+                 254, 255, 255, 255, 255, 255, 255, 255,
+                 255, 255, 255, 255, 255, 255, 255,  15,
+            ],
+        };
+        assert_eq!(biggest, biggest_mod_l);
     }
 
     #[test]
@@ -699,10 +767,14 @@ mod test {
         }
         // 3958878930004874126169954872055634648693766179881526445624823978500314864344
         // = x + 2^256x (mod l)
-        let reduced = Scalar([216, 154, 179, 139, 210, 121,   2,  71,
-                               69,  99, 158, 216,  23, 173,  63, 100,
-                              204,   0,  91,  50, 219, 153,  57, 249,
-                               28,  82,  31, 197, 100, 165, 192,   8]);
+        let reduced = Scalar{
+            bytes: [
+                216, 154, 179, 139, 210, 121,   2,  71,
+                 69,  99, 158, 216,  23, 173,  63, 100,
+                204,   0,  91,  50, 219, 153,  57, 249,
+                 28,  82,  31, 197, 100, 165, 192,   8,
+            ],
+        };
         let test_red = Scalar::reduce_wide(&bignum);
         for i in 0..32 {
             assert!(test_red[i] == reduced[i]);
@@ -748,14 +820,18 @@ mod test {
         }
         // x + 2^256x (mod l)
         //         = 3958878930004874126169954872055634648693766179881526445624823978500314864344
-        let expected = Scalar([216, 154, 179, 139, 210, 121,   2,  71,
-                                69,  99, 158, 216,  23, 173,  63, 100,
-                               204,   0,  91,  50, 219, 153,  57, 249,
-                                28,  82,  31, 197, 100, 165, 192,   8]);
+        let expected = Scalar{
+            bytes: [
+                216, 154, 179, 139, 210, 121,   2,  71,
+                 69,  99, 158, 216,  23, 173,  63, 100,
+                204,   0,  91,  50, 219, 153,  57, 249,
+                 28,  82,  31, 197, 100, 165, 192,   8
+            ],
+        };
         let reduced = Scalar::reduce_wide(&bignum);
 
         // The reduced scalar should match the expected
-        assert_eq!(reduced.0, expected.0);
+        assert_eq!(reduced.bytes, expected.bytes);
 
         //  (x + 2^256x) * R
         let interim = UnpackedScalar::mul_internal(&UnpackedScalar::from_bytes_wide(&bignum),
@@ -790,7 +866,7 @@ mod bench {
 
     #[bench]
     fn reduce(b: &mut Bencher) {
-        let unreduced = Scalar([0xff; 32]);
+        let unreduced = Scalar::from_bits([0xff; 32]);
 
         b.iter(|| unreduced.reduce());
     }

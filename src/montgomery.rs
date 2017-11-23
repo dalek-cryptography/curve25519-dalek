@@ -549,20 +549,6 @@ mod test {
 
         assert_eq!(result.compress(), expected.to_montgomery().compress());
     }
-
-    #[test]
-    #[should_panic(expected = "assertion failed: self[31] <= 127")]
-    #[cfg(feature="precomputed_tables")]
-    fn ladder_matches_scalarmult_with_scalar_high_bit_set() {
-        let mut s: Scalar = Scalar::one();
-
-        s[31] = 255;
-
-        let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress() * &s;
-        let expected: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
-
-        assert_eq!(result.compress(), expected.to_montgomery().compress())
-    }
 }
 
 #[cfg(all(test, feature = "bench"))]

@@ -621,6 +621,18 @@ mod test {
         ],
     };
 
+    /// sage: l = 2^252 + 27742317777372353535851937790883648493
+    /// sage: big = 2^256 - 1
+    /// sage: repr((big % l).digits(256))
+    static CANONICAL_2_256_MINUS_1: Scalar = Scalar{
+        bytes: [
+              28, 149, 152, 141, 116,  49, 236, 214,
+             112, 207, 125, 115, 244,  91, 239, 198,
+             254, 255, 255, 255, 255, 255, 255, 255,
+             255, 255, 255, 255, 255, 255, 255,  15,
+        ],
+    };
+
     static A_SCALAR: Scalar = Scalar{
         bytes: [
             0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
@@ -743,18 +755,7 @@ mod test {
     #[test]
     fn reduce() {
         let biggest = Scalar::from_bytes_mod_order([0xff; 32]);
-        // sage: l = 2^252 + 27742317777372353535851937790883648493
-        // sage: big = 2^256 - 1
-        // sage: repr((big % l).digits(256))
-        let biggest_mod_l = Scalar{
-            bytes: [
-                  28, 149, 152, 141, 116,  49, 236, 214,
-                 112, 207, 125, 115, 244,  91, 239, 198,
-                 254, 255, 255, 255, 255, 255, 255, 255,
-                 255, 255, 255, 255, 255, 255, 255,  15,
-            ],
-        };
-        assert_eq!(biggest, biggest_mod_l);
+        assert_eq!(biggest, CANONICAL_2_256_MINUS_1);
     }
 
     #[test]

@@ -23,13 +23,16 @@
 //! setting, which mandates specific bit-twiddles that are not
 //! well-defined modulo \\( \ell \\).
 //!
+//! To create a `Scalar` from a supposedly canonical encoding, use
+//! `Scalar::from_canonical_bytes`.
+//!
 //! To create a `Scalar` by reducing a 256-bit integer mod \\( \ell \\),
 //! use `Scalar::from_bytes_mod_order`.
 //!
 //! To create a `Scalar` with a specific bit-pattern (e.g., for
 //! compatibility with X25519 "clamping"), use `Scalar::from_bits`.
 //!
-//! All arithmetic on `Scalars` is done modulo \\( \ell \\). 
+//! All arithmetic on `Scalars` is done modulo \\( \ell \\).
 
 use core::fmt::Debug;
 use core::ops::Neg;
@@ -95,6 +98,25 @@ impl Scalar {
         debug_assert_eq!(0u8, s[31] >> 7);
 
         s
+    }
+
+    /// Attempt to construct a `Scalar` from a canonical byte representation.
+    ///
+    /// # Return
+    ///
+    /// - `Some(s)`, where `s` is the `Scalar` corresponding to `bytes`,
+    ///   if `bytes` is a canonical byte representation;
+    /// - `None` if `bytes` is not a canonical byte representation.
+    pub fn from_canonical_bytes(bytes: [u8; 32]) -> Option<Scalar> {
+        // Check that the high bit is not set
+        if (bytes[31] >> 7) != 0u8 { return None; }
+        let candidate = Scalar::from_bits(bytes);
+
+        if candidate.is_canonical() {
+            Some(candidate)
+        } else {
+            None
+        }
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer.
@@ -867,12 +889,30 @@ mod test {
         assert_eq!(montgomery_reduced.0, expected.unpack().0)
     }
 
-    #[cfg(feature = "serde")]
-    use serde_cbor;
+    #[test]
+    fn canonical_decoding() {
+        // canonical encoding of 1667457891
+        let canonical_bytes = [99, 99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,];
+
+        // encoding of
+        //   7265385991361016183439748078976496179028704920197054998554201349516117938192
+        // = 28380414028753969466561515933501938171588560817147392552250411230663687203 (mod l)
+        // non_canonical because unreduced mod l
+        let non_canonical_bytes_because_unreduced = [16; 32];
+
+        // encoding with high bit set, to check that the parser isn't pre-masking the high bit
+        let non_canonical_bytes_because_highbit = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128];
+
+        assert!( Scalar::from_canonical_bytes(canonical_bytes).is_some() );
+        assert!( Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none() );
+        assert!( Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none() );
+    }
 
     #[test]
     #[cfg(feature = "serde")]
     fn serde_cbor_scalar_roundtrip() {
+        // XXX remove serde_cbor
+        use serde_cbor;
         let output = serde_cbor::to_vec(&X).unwrap();
         let parsed: Scalar = serde_cbor::from_slice(&output).unwrap();
         assert_eq!(parsed, X);

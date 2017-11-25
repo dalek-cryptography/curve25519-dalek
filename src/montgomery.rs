@@ -38,7 +38,9 @@ use scalar::Scalar;
 // XXX Move these to a common "group" module?  At the same time, we should
 // XXX probably make a `trait Group` once const generics are implemented in
 // XXX Rust. —isis
-use edwards::{Identity, ValidityCheck};
+// 
+// XXX I put these in a `traits` module for now - hdevalence
+use traits::{Identity, ValidityCheck};
 
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallySwappable;
@@ -427,7 +429,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 #[cfg(test)]
 mod test {
     use constants::BASE_COMPRESSED_MONTGOMERY;
-    use edwards::Identity;
+    use traits::Identity;
     use super::*;
 
     use rand::OsRng;

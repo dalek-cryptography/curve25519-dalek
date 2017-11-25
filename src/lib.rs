@@ -35,22 +35,9 @@
 //! hatred of the Daleks.  Rusty destroys the other Daleks and departs the
 //! ship, determined to track down and bring an end to the Dalek race.
 
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
-
-// this appears to only be used for serde support right now?
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate arrayref;
-
-extern crate generic_array;
-extern crate digest;
-extern crate subtle;
-
-#[cfg(feature = "serde")]
-extern crate serde;
-#[cfg(all(test, feature = "serde"))]
-extern crate serde_cbor;
+//------------------------------------------------------------------------
+// External dependencies:
+//------------------------------------------------------------------------
 
 #[cfg(feature = "std")]
 extern crate core;
@@ -61,29 +48,47 @@ extern crate rand;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-// Modules for low-level operations directly on field elements and curve points.
+#[cfg(all(test, feature = "bench"))]
+extern crate test;
 
-pub mod field;
-#[cfg(not(feature="radix_51"))]
-mod field_32bit;
-#[cfg(feature="radix_51")]
-mod field_64bit;
+// The `Digest` trait is implemented using `generic_array`, so we need it too. Hopefully we can eliminate `generic_array` from `Digest` once const generics land.
+extern crate digest;
+extern crate generic_array;
 
+// Used for traits related to constant-time code.
+extern crate subtle;
+
+#[cfg(feature = "serde")]
+extern crate serde;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_cbor;
+
+//------------------------------------------------------------------------
+// curve25519-dalek public modules
+//------------------------------------------------------------------------
+
+// Scalar arithmetic mod l = 2^252 + ..., the order of the Ristretto group
 pub mod scalar;
-#[cfg(not(feature="radix_51"))]
-mod scalar_32bit;
-#[cfg(feature="radix_51")]
-mod scalar_64bit;
-
-pub mod edwards;
+// Point operations on the Montgomery form of Curve25519
 pub mod montgomery;
-
+// Point operations on the Edwards form of Curve25519
+pub mod edwards;
+// Group operations on the Ristretto group
 pub mod ristretto;
-
-// Low-level curve and point constants, as well as pre-computed curve group elements.
-
+// Useful constants, like the Ed25519 basepoint
 pub mod constants;
-#[cfg(not(feature="radix_51"))]
-mod constants_32bit;
-#[cfg(feature="radix_51")]
-mod constants_64bit;
+// External (and internal) traits.
+pub mod traits;
+
+//------------------------------------------------------------------------
+// curve25519-dalek internal modules
+//------------------------------------------------------------------------
+
+// Finite field arithmetic mod p = 2^255 - 19
+pub(crate) mod field;
+
+// Arithmetic backends (using u32, u64, etc) live here
+pub(crate) mod backend;
+
+// Internal curve models which are not part of the public API.
+pub(crate) mod curve_models;

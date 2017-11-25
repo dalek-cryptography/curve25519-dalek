@@ -18,7 +18,7 @@
 //!
 //! ```
 //! use curve25519_dalek::constants;
-//! use curve25519_dalek::edwards::IsIdentity;
+//! use curve25519_dalek::traits::IsIdentity;
 //!
 //! let B = &constants::RISTRETTO_BASEPOINT_TABLE;
 //! let l = &constants::BASEPOINT_ORDER;
@@ -36,9 +36,9 @@ use montgomery::CompressedMontgomeryU;
 use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
-pub use constants_64bit::*;
+pub use backend::u64::constants::*;
 #[cfg(not(feature="radix_51"))]
-pub use constants_32bit::*;
+pub use backend::u32::constants::*;
 
 /// Basepoint has y = 4/5.
 ///
@@ -102,8 +102,7 @@ pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
 #[cfg(test)]
 mod test {
     use field::FieldElement;
-    use edwards::IsIdentity;
-    use edwards::ValidityCheck;
+    use traits::{IsIdentity, ValidityCheck};
     use constants;
 
     #[test]
@@ -138,7 +137,7 @@ mod test {
     #[test]
     #[cfg(feature="radix_51")]
     fn sqrt_minus_aplus2() {
-        use field_64bit::FieldElement64;
+        use backend::u64::field::FieldElement64;
         let minus_aplus2 = -&FieldElement64([486664,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
         let sq = &sqrt * &sqrt;
@@ -150,7 +149,7 @@ mod test {
     #[test]
     #[cfg(not(feature="radix_51"))]
     fn sqrt_minus_aplus2() {
-        use field_32bit::FieldElement32;
+        use backend::u32::field::FieldElement32;
         let minus_aplus2 = -&FieldElement32([486664,0,0,0,0,0,0,0,0,0]);
         let sqrt = constants::SQRT_MINUS_APLUS2;
         let sq = &sqrt * &sqrt;
@@ -180,7 +179,7 @@ mod test {
     #[cfg(not(feature="radix_51"))]
     #[test]
     fn test_d_vs_ratio() {
-        use field_32bit::FieldElement32;
+        use backend::u32::field::FieldElement32;
         let a = -&FieldElement32([121665,0,0,0,0,0,0,0,0,0]);
         let b =   FieldElement32([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
@@ -193,7 +192,7 @@ mod test {
     #[cfg(feature="radix_51")]
     #[test]
     fn test_d_vs_ratio() {
-        use field_64bit::FieldElement64;
+        use backend::u64::field::FieldElement64;
         let a = -&FieldElement64([121665,0,0,0,0]);
         let b =   FieldElement64([121666,0,0,0,0]);
         let d = &a * &b.invert();

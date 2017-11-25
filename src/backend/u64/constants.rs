@@ -12,8 +12,8 @@
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
 
-use field_64bit::FieldElement64;
-use scalar_64bit::Scalar64;
+use backend::u64::field::FieldElement64;
+use backend::u64::scalar::Scalar64;
 use edwards::ExtendedPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.

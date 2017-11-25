@@ -8,8 +8,6 @@ extern crate subtle;
 extern crate rand;
 extern crate digest;
 extern crate generic_array;
-#[macro_use]
-extern crate arrayref;
 
 use std::env;
 use std::fs::File;
@@ -24,39 +22,29 @@ use std::path::Path;
 #[cfg(feature = "serde")]
 extern crate serde;
 
-#[path="src/field.rs"]
-mod field;
-#[cfg(not(feature="radix_51"))]
-#[path="src/field_32bit.rs"]
-mod field_32bit;
-#[cfg(feature="radix_51")]
-#[path="src/field_64bit.rs"]
-mod field_64bit;
+// Public modules
 
 #[path="src/scalar.rs"]
 mod scalar;
-#[cfg(not(feature="radix_51"))]
-#[path="src/scalar_32bit.rs"]
-mod scalar_32bit;
-#[cfg(feature="radix_51")]
-#[path="src/scalar_64bit.rs"]
-mod scalar_64bit;
-
 #[path="src/montgomery.rs"]
 mod montgomery;
 #[path="src/edwards.rs"]
 mod edwards;
 #[path="src/ristretto.rs"]
 mod ristretto;
-
 #[path="src/constants.rs"]
 mod constants;
-#[cfg(not(feature="radix_51"))]
-#[path="src/constants_32bit.rs"]
-mod constants_32bit;
-#[cfg(feature="radix_51")]
-#[path="src/constants_64bit.rs"]
-mod constants_64bit;
+#[path="src/traits.rs"]
+mod traits;
+
+// Internal modules
+
+#[path="src/field.rs"]
+mod field;
+#[path="src/curve_models/mod.rs"]
+mod curve_models;
+#[path="src/backend/mod.rs"]
+mod backend;
 
 use edwards::EdwardsBasepointTable;
 
@@ -73,13 +61,14 @@ fn main() {
 
     f.write_all(format!("\n
 #[cfg(feature=\"radix_51\")]
-use field_64bit::FieldElement64;
+use backend::u64::field::FieldElement64;
 
 #[cfg(not(feature=\"radix_51\"))]
-use field_32bit::FieldElement32;
+use backend::u32::field::FieldElement32;
 
-use edwards::AffineNielsPoint;
 use edwards::EdwardsBasepointTable;
+
+use curve_models::AffineNielsPoint;
 
 /// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.
 ///

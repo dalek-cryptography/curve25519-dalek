@@ -737,7 +737,6 @@ mod test {
         assert_eq!(should_be_unpacked.0, unpacked.0);
     }
 
-
     #[test]
     fn montgomery_reduce_matches_reduce() {
         let mut bignum = [0u8; 64];

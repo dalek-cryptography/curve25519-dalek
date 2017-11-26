@@ -67,7 +67,7 @@ pub struct Scalar(pub [u8; 32]);
 
 impl Debug for Scalar {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Scalar: {:?}", &self.0[..])
+        write!(f, "Scalar({:?})", &self.0[..])
     }
 }
 

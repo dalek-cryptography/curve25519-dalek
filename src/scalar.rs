@@ -373,7 +373,7 @@ impl Scalar {
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
     pub fn to_bytes(&self) -> [u8; 32] {
-        self.0
+        self.bytes
     }
 
     /// View this `Scalar` as a sequence of bytes.

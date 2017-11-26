@@ -427,6 +427,11 @@ pub struct CompressedRistretto(pub [u8; 32]);
 
 /// The result of compressing a `RistrettoPoint`.
 impl CompressedRistretto {
+    /// Convert this `CompressedRistretto` to its underlying array of bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+
     /// View this `CompressedRistretto` as an array of bytes.
     pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0

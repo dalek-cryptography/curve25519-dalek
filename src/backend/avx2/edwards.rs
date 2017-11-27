@@ -815,7 +815,7 @@ mod bench {
     fn scalar_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
-        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+        let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
         b.iter(|| &P * &s );
     }
@@ -831,7 +831,7 @@ mod bench {
     fn basepoint_mult(b: &mut Bencher) {
         let B = ExtendedPoint::from(constants::ED25519_BASEPOINT_POINT);
         let table = EdwardsBasepointTable::create(&B);
-        let s = Scalar([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
+        let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
         b.iter(|| &table * &s );
     }

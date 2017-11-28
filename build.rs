@@ -8,6 +8,7 @@ extern crate subtle;
 extern crate rand;
 extern crate digest;
 extern crate generic_array;
+extern crate clear_on_drop;
 
 use std::env;
 use std::fs::File;

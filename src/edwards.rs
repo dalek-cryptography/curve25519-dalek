@@ -235,7 +235,7 @@ impl Equal for ExtendedPoint {
 // ------------------------------------------------------------------------
 
 impl ExtendedPoint {
-    /// Convert to a `ProjectiveNielsPoint`
+    /// Convert to a ProjectiveNielsPoint
     pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
@@ -519,8 +519,14 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_list: Vec<_> = scalars.into_iter()
+    let scalar_digits_vec: Vec<_> = scalars.into_iter()
         .map(|c| c.to_radix_16()).collect();
+
+    // This above puts the scalar digits into a heap-allocated Vec.
+    // To ensure that these are erased, pass ownership of the Vec into a
+    // ClearOnDrop wrapper.
+    use clear_on_drop::ClearOnDrop;
+    let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
 
     // Compute s_1*P_1 + ... + s_n*P_n: since
     //
@@ -545,7 +551,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
         Q = Q.mult_by_pow_2(4);
-        let it = scalar_digits_list.iter().zip(lookup_tables.iter());
+        let it = scalar_digits.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
             // R_i = s_{i,j} * P_i
             let R_i = select_precomputed_point(s_i[j], lookup_table_i);

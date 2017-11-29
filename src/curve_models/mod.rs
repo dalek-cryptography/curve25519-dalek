@@ -138,8 +138,13 @@ use traits::ValidityCheck;
 // Internal point representations
 // ------------------------------------------------------------------------
 
-/// A `ProjectivePoint` is a point on the curve in 𝗣²(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to (x:y:1).
+/// A `ProjectivePoint` is a point \\((X:Y:Z)\\) on the \\(\mathbb
+/// P\^2\\) model of the curve.
+/// A point \\((x,y)\\) in the affine model corresponds to
+/// \\((x:y:1)\\).
+///
+/// More details on the relationships between the different curve models
+/// can be found in the module-level documentation.
 #[derive(Copy, Clone)]
 pub struct ProjectivePoint {
     pub X: FieldElement,
@@ -147,8 +152,13 @@ pub struct ProjectivePoint {
     pub Z: FieldElement,
 }
 
-/// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
+/// A `CompletedPoint` is a point \\(((X:Z), (Y:T))\\) on the \\(\mathbb
+/// P\^1 \times \mathbb P\^1 \\) model of the curve.
+/// A point (x,y) in the affine model corresponds to \\( ((x:1),(y:1))
+/// \\).
+///
+/// More details on the relationships between the different curve models
+/// can be found in the module-level documentation.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
 pub struct CompletedPoint {
@@ -159,9 +169,10 @@ pub struct CompletedPoint {
 }
 
 /// A pre-computed point in the affine model for the curve, represented as
-/// (y+x, y-x, 2dxy).  These precomputations accelerate addition and
-/// subtraction, and were introduced by Niels Duif in the ed25519 paper
-/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
+/// \\((y+x, y-x, 2dxy)\\) in "Niels coordinates".
+///
+/// More details on the relationships between the different curve models
+/// can be found in the module-level documentation.
 // Safe to derive Eq because affine coordinates.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
@@ -171,10 +182,11 @@ pub struct AffineNielsPoint {
     pub xy2d:      FieldElement,
 }
 
-/// A pre-computed point in the P³(𝔽ₚ) model for the curve, represented as
-/// (Y+X, Y-X, Z, 2dXY).  These precomputations accelerate addition and
-/// subtraction, and were introduced by Niels Duif in the ed25519 paper
-/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
+/// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
+/// curve, represented as \\((Y+X, Y-X, Z, 2dXY)\\) in "Niels coordinates".
+///
+/// More details on the relationships between the different curve models
+/// can be found in the module-level documentation.
 #[derive(Copy, Clone)]
 pub struct ProjectiveNielsPoint {
     pub Y_plus_X:  FieldElement,
@@ -266,14 +278,10 @@ impl ConditionallyAssignable for AffineNielsPoint {
 // ------------------------------------------------------------------------
 
 impl ProjectivePoint {
-    /// Convert to the extended twisted Edwards representation of this
-    /// point.
+    /// Convert this point from the \\( \mathbb P\^2 \\) model to the
+    /// \\( \mathbb P\^3 \\) model.
     ///
-    /// From §3 in [0]:
-    ///
-    /// Given (X:Y:Z) in Ɛ, passing to Ɛₑ can be performed in 3M+1S by
-    /// computing (XZ,YZ,XY,Z²).  (Note that in that paper, points are
-    /// (X:Y:T:Z) so this really does match the code below).
+    /// This costs \\(3 \mathrm M + 1 \mathrm S\\).
     pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.Z,
@@ -285,7 +293,10 @@ impl ProjectivePoint {
 }
 
 impl CompletedPoint {
-    /// Convert to a ProjectivePoint
+    /// Convert this point from the \\( \mathbb P\^1 \times \mathbb P\^1
+    /// \\) model to the \\( \mathbb P\^2 \\) model.
+    ///
+    /// This costs \\(3 \mathrm M \\).
     pub fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: &self.X * &self.T,
@@ -294,7 +305,10 @@ impl CompletedPoint {
         }
     }
 
-    /// Convert to an ExtendedPoint
+    /// Convert this point from the \\( \mathbb P\^1 \times \mathbb P\^1
+    /// \\) model to the \\( \mathbb P\^3 \\) model.
+    ///
+    /// This costs \\(4 \mathrm M \\).
     pub fn to_extended(&self) -> ExtendedPoint {
         ExtendedPoint{
             X: &self.X * &self.T,

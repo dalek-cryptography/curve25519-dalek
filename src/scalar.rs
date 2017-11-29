@@ -10,7 +10,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 // - Brian Smith <brian@briansmith.org>
 
-//! Arithmetic for scalar multiplication.
+//! Arithmetic on scalars.
 //!
 //! Both the Ristretto group and the Ed25519 basepoint have prime order
 //! \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).

@@ -347,8 +347,13 @@ impl ProjectivePoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-// These are doc(hidden) so they don't appear in the public API docs.
-#[doc(hidden)]
+// XXX(hdevalence) These were doc(hidden) so they don't appear in the
+// public API docs.
+// However, that prevents them being used with --document-private-items,
+// so comment out the doc(hidden) for now until this is resolved
+//
+// upstream rust issue: https://github.com/rust-lang/rust/issues/46380
+//#[doc(hidden)]
 impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -370,7 +375,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-#[doc(hidden)]
+//#[doc(hidden)]
 impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -392,7 +397,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-#[doc(hidden)]
+//#[doc(hidden)]
 impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 
@@ -413,7 +418,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
     }
 }
 
-#[doc(hidden)]
+//#[doc(hidden)]
 impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
     type Output = CompletedPoint;
 

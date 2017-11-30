@@ -310,3 +310,5 @@
 pub(crate) mod field;
 
 pub(crate) mod edwards;
+
+pub(crate) mod constants;

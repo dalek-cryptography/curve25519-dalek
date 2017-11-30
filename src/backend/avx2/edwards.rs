@@ -14,7 +14,7 @@
 #![allow(bad_style)]
 
 use std::convert::From;
-use std::ops::{Add, Sub, Mul, Neg};
+use std::ops::{Index, Add, Sub, Mul, Neg};
 
 use stdsimd::simd::{u32x8, i32x8};
 
@@ -28,9 +28,11 @@ use traits::Identity;
 use backend::avx2::field::FieldElement32x4;
 use backend::avx2::field::P_TIMES_2;
 
+use backend::avx2;
+
 /// A point on Curve25519, represented in an AVX2-friendly format.
 #[derive(Copy, Clone, Debug)]
-pub struct ExtendedPoint(FieldElement32x4);
+pub struct ExtendedPoint(pub(super) FieldElement32x4);
 
 // XXX need to cfg gate here to handle FieldElement64
 impl From<edwards::ExtendedPoint> for ExtendedPoint {
@@ -539,6 +541,79 @@ pub mod vartime {
     //! Variable-time operations on curve points, useful for non-secret data.
     use super::*;
 
+    /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
+    struct OddMultiples([ExtendedPoint; 8]);
+
+    impl OddMultiples {
+        fn create(A: ExtendedPoint) -> OddMultiples {
+            // XXX would be great to skip this initialization
+            let mut Ai = [A; 8];
+            let A2 = A.double();
+            for i in 0..7 {
+                Ai[i+1] = &A2 + &Ai[i];
+            }
+            // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
+            OddMultiples(Ai)
+        }
+    }
+
+    impl Index<usize> for OddMultiples {
+        type Output = ExtendedPoint;
+
+        fn index(&self, _index: usize) -> &ExtendedPoint {
+            &(self.0[_index])
+        }
+    }
+
+    /// Given a point `A` and scalars `a` and `b`, compute the point
+    /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
+    /// with x positive).
+    ///
+    /// This is the same as calling the iterator-based function, but slightly faster.
+    pub fn double_scalar_mult_basepoint(a: &Scalar,
+                                        A: &edwards::ExtendedPoint,
+                                        b: &Scalar) -> edwards::ExtendedPoint {
+        let a_naf = a.non_adjacent_form();
+        let b_naf = b.non_adjacent_form();
+
+        // Find starting index
+        let mut i: usize = 255;
+        for j in (0..255).rev() {
+            i = j;
+            if a_naf[i] != 0 || b_naf[i] != 0 {
+                break;
+            }
+        }
+
+        let odd_multiples_of_A = OddMultiples::create((*A).into());
+        let odd_multiples_of_B = &avx2::constants::ODD_MULTIPLES_OF_BASEPOINT;
+
+        let mut Q = ExtendedPoint::identity();
+
+        loop {
+            Q = Q.double();
+
+            if a_naf[i] > 0 {
+                Q = &Q + &odd_multiples_of_A[( a_naf[i]/2) as usize];
+            } else if a_naf[i] < 0 {
+                Q = &Q - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+            }
+
+            if b_naf[i] > 0 {
+                Q = &Q + &odd_multiples_of_B[( b_naf[i]/2) as usize];
+            } else if b_naf[i] < 0 {
+                Q = &Q - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
+            }
+
+            if i == 0 {
+                break;
+            }
+            i -= 1;
+        }
+
+        Q.into()
+    }
+
     /// Given a vector of public scalars and a vector of (possibly secret)
     /// points, compute `c_1 P_1 + ... + c_n P_n`.
     ///
@@ -559,17 +634,9 @@ pub mod vartime {
 
         let nafs: Vec<_> = scalars.into_iter()
             .map(|c| c.non_adjacent_form()).collect();
+
         let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| {
-                let P = ExtendedPoint::from(*P);
-                // Construct a lookup table of [P,2*P,3*P,4*P,5*P,6*P,7*P]
-                let P2 = P.double();
-                let mut lookup_table: [ExtendedPoint; 8] = [P; 8];
-                for i in 0..7 {
-                    lookup_table[i+1] = &P2 + &lookup_table[i];
-                }
-                lookup_table
-            }).collect();
+            .map(|P| OddMultiples::create((*P).into()) ).collect();
 
         let mut Q = ExtendedPoint::identity();
 
@@ -965,7 +1032,7 @@ mod bench {
             let B = constants::ED25519_BASEPOINT_POINT;
             let P = &B * &s1;
 
-            b.iter(|| vartime::multiscalar_mult(&[s1, s2], &[B, P]));
+            b.iter(|| vartime::double_scalar_mult_basepoint(&s2, &P, &s1) );
         }
 
         #[bench]

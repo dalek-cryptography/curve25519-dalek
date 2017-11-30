@@ -24,9 +24,5 @@ git = "https://github.com/rust-fuzz/libfuzzer-sys.git"
 members = ["."]
 
 [[bin]]
-name = "decaf"
-path = "fuzz_targets/decaf.rs"
-
-[[bin]]
 name = "scalar_constructor_accepts_256bit_values"
 path = "fuzz_targets/scalar_constructor_accepts_256bit_values.rs"

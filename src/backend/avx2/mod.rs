@@ -12,7 +12,7 @@
 //! Curve25519, using AVX2 to implement the 4-way parallel formulas of
 //! Hisil, Wong, Carter, and Dawson (HWCD).
 //!
-//! Their 2008 paper _Twisted Edwards Curves Revisited_, which
+//! Their 2008 paper [_Twisted Edwards Curves Revisited_][hwcd08], which
 //! introduced the extended coordinates used in other parts of `-dalek`,
 //! also describes 4-way parallel formulas for point addition and
 //! doubling:
@@ -101,12 +101,15 @@
 //! The 4-wide formulas of the HWCD paper do not seem to have been
 //! implemented using SIMD before.  The HWCD paper also describes and
 //! analyzes a 2-wide variant of the Montgomery ladder; this strategy was
-//! used by Tung Chou's `sandy2x` implementation, which used a 2-wide
-//! field implementation in 128-bit registers.  Curiously, however,
-//! although the `sandy2x` paper cites the HWCD paper for extended
+//! used in 2015 by Tung Chou's `sandy2x` implementation, which used a 2-wide
+//! field implementation in 128-bit vector registers.  Curiously, however,
+//! although the [`sandy2x` paper][sandy2x] cites the HWCD paper for extended
 //! twisted Edwards coordinates, it does not mention the 4-wide HWCD
 //! Edwards formulas or that the 2-wide Montgomery formulas it uses were
-//! previously published there.
+//! previously published there.  There is also a 2015 paper by Hernández
+//! and López on using AVX2 for the X25519 Montgomery ladder, but
+//! neither the paper nor the code are publicly available, and it apparently
+//! gives only a [slight speedup][avx2trac].
 //!
 //! HWCD also suggest using a mixed representation, passing between \\(
 //! \mathbb P\^3 \\) "extended" coordinates and \\( \mathbb P\^2 \\)
@@ -118,9 +121,12 @@
 //!
 //! This optimization is not used for the parallel formulas, which are
 //! therefore slightly less efficient when counting the total number of
-//! multiplications and squarings.  In addition, the parallel formulas
-//! can only use a \\( 32 \times 32 \rightarrow 64 \\)-bit multiplier
-//! instead of a \\( 64 \times 64 \rightarrow 128\\)-bit multiplier.
+//! field multiplications and squarings.  In particular, vectorized doublings
+//! are less efficient than serial doublings.  
+//! In addition, the parallel formulas can only use a \\( 32 \times 32
+//! \rightarrow 64 \\)-bit integer multiplier, so the speedup from
+//! vectorization must overcome the disadvantage of losing the \\( 64
+//! \times 64 \rightarrow 128\\)-bit (serial) integer multiplier. 
 //!
 //! When used for constant-time variable-base scalar multiplication,
 //! this strategy (using AVX2) gives a significant speedup over the
@@ -305,6 +311,10 @@
 //! The implementation uses the unstable `stdsimd` crate to provide AVX2
 //! intrinsics, and the code is not yet cleanly factored between the
 //! field element parts and the point parts.
+//!
+//! [sandy2x]: https://eprint.iacr.org/2015/943.pdf
+//! [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28
+//! [hwcd08]: https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf
 
 
 pub(crate) mod field;

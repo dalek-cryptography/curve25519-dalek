@@ -101,8 +101,8 @@ impl FieldElement32x4 {
         return out;
     }
 
-    // Negate variables in lanes where mask is set
-    // XXX fix up api
+    /// Negate variables in lanes where mask is set
+    /// XXX fix up api
     pub fn mask_negate(&mut self, mask: u8) {
         unsafe {
             use stdsimd::vendor::_mm256_blend_epi32;
@@ -114,7 +114,7 @@ impl FieldElement32x4 {
         self.reduce32();
     }
 
-    // Given `self = (A,B,C,D)`, set `self = (A,B,D,C)`
+    /// Given `self = (A,B,C,D)`, set `self = (A,B,D,C)`
     pub fn swap_CD(&mut self) {
         unsafe {
             use stdsimd::vendor::_mm256_shuffle_epi32;
@@ -126,7 +126,7 @@ impl FieldElement32x4 {
         }
     }
 
-    // Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)`.
+    /// Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)`.
     pub fn diff_sum(&mut self) {
         /// (v0 v1 v2 v3 v4 v5 v6 v7) -> (v1 v0 v3 v2 v5 v4 v7 v6)
         #[inline(always)]

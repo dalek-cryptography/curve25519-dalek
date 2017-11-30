@@ -202,15 +202,9 @@ impl FieldElement32x4 {
 
     /// Let `self` \\(= (A, B, C, D) \\).
     ///
-    /// If `negate_121665 = true`, compute 
-    ///
+    /// Compute
     /// $$( 121666A, 121666B, 2\cdot 121666C, -2\cdot 121665 D).$$
-    ///
-    /// If `negate_121665 = false`, compute
-    ///
-    /// $$( 121666A, 121666B, 2\cdot 121666C, 2\cdot 121665 D).$$
-    ///
-    pub fn scale_by_curve_constants(&mut self, negate_121665: bool) {
+    pub fn scale_by_curve_constants(&mut self) {
         let mut b = [u64x4::splat(0); 10];
 
         let consts   = u32x8::new(121666, 0, 121666, 0, 2*121666, 0, 2*121665, 0);
@@ -225,57 +219,32 @@ impl FieldElement32x4 {
             let (b0, b1) = unpack_pair(self.0[0]);
             let b0 = _mm256_mul_epu32(b0, consts); // need a new binding since now
             let b1 = _mm256_mul_epu32(b1, consts); // b0 has type u64x4
-            if negate_121665 {
-                b[0] = _mm256_blend_epi32(b0.into(), (low__p20 - b0).into(), 0b11_00_00_00).into();
-                b[1] = _mm256_blend_epi32(b1.into(), (odd__p20 - b1).into(), 0b11_00_00_00).into();
-            } else {
-                b[0] = b0;
-                b[1] = b1;
-            }
+            b[0] = _mm256_blend_epi32(b0.into(), (low__p20 - b0).into(), 0b11_00_00_00).into();
+            b[1] = _mm256_blend_epi32(b1.into(), (odd__p20 - b1).into(), 0b11_00_00_00).into();
 
             let (b2, b3) = unpack_pair(self.0[1]);
             let b2 = _mm256_mul_epu32(b2, consts);
             let b3 = _mm256_mul_epu32(b3, consts);
-            if negate_121665 {
-                b[2] = _mm256_blend_epi32(b2.into(), (even_p20 - b2).into(), 0b11_00_00_00).into();
-                b[3] = _mm256_blend_epi32(b3.into(), (odd__p20 - b3).into(), 0b11_00_00_00).into();
-            } else {
-                b[2] = b2;
-                b[3] = b3;
-            }
+            b[2] = _mm256_blend_epi32(b2.into(), (even_p20 - b2).into(), 0b11_00_00_00).into();
+            b[3] = _mm256_blend_epi32(b3.into(), (odd__p20 - b3).into(), 0b11_00_00_00).into();
 
             let (b4, b5) = unpack_pair(self.0[2]);
             let b4 = _mm256_mul_epu32(b4, consts);
             let b5 = _mm256_mul_epu32(b5, consts);
-            if negate_121665 {
-                b[4] = _mm256_blend_epi32(b4.into(), (even_p20 - b4).into(), 0b11_00_00_00).into();
-                b[5] = _mm256_blend_epi32(b5.into(), (odd__p20 - b5).into(), 0b11_00_00_00).into();
-            } else {
-                b[4] = b4;
-                b[5] = b5;
-            }
+            b[4] = _mm256_blend_epi32(b4.into(), (even_p20 - b4).into(), 0b11_00_00_00).into();
+            b[5] = _mm256_blend_epi32(b5.into(), (odd__p20 - b5).into(), 0b11_00_00_00).into();
 
             let (b6, b7) = unpack_pair(self.0[3]);
             let b6 = _mm256_mul_epu32(b6, consts);
             let b7 = _mm256_mul_epu32(b7, consts);
-            if negate_121665 {
-                b[6] = _mm256_blend_epi32(b6.into(), (even_p20 - b6).into(), 0b11_00_00_00).into();
-                b[7] = _mm256_blend_epi32(b7.into(), (odd__p20 - b7).into(), 0b11_00_00_00).into();
-            } else {
-                b[6] = b6;
-                b[7] = b7;
-            }
+            b[6] = _mm256_blend_epi32(b6.into(), (even_p20 - b6).into(), 0b11_00_00_00).into();
+            b[7] = _mm256_blend_epi32(b7.into(), (odd__p20 - b7).into(), 0b11_00_00_00).into();
 
             let (b8, b9) = unpack_pair(self.0[4]);
             let b8 = _mm256_mul_epu32(b8, consts);
             let b9 = _mm256_mul_epu32(b9, consts);
-            if negate_121665 {
-                b[8] = _mm256_blend_epi32(b8.into(), (even_p20 - b8).into(), 0b11_00_00_00).into();
-                b[9] = _mm256_blend_epi32(b9.into(), (odd__p20 - b9).into(), 0b11_00_00_00).into();
-            } else {
-                b[8] = b8;
-                b[9] = b9;
-            }
+            b[8] = _mm256_blend_epi32(b8.into(), (even_p20 - b8).into(), 0b11_00_00_00).into();
+            b[9] = _mm256_blend_epi32(b9.into(), (odd__p20 - b9).into(), 0b11_00_00_00).into();
         }
 
         *self = FieldElement32x4::reduce64(b);
@@ -564,22 +533,13 @@ mod test {
     #[test]
     fn scale_by_curve_constants() {
         let mut x = FieldElement32x4::splat(&FieldElement64::one());
-        x.scale_by_curve_constants(true);
+        x.scale_by_curve_constants();
 
         let xs = x.split();
         assert_eq!(xs[0],   FieldElement64([  121666,0,0,0,0]));
         assert_eq!(xs[1],   FieldElement64([  121666,0,0,0,0]));
         assert_eq!(xs[2],   FieldElement64([2*121666,0,0,0,0]));
         assert_eq!(xs[3], -&FieldElement64([2*121665,0,0,0,0]));
-
-        let mut y = FieldElement32x4::splat(&FieldElement64::one());
-        y.scale_by_curve_constants(false);
-
-        let ys = y.split();
-        assert_eq!(ys[0], FieldElement64([  121666,0,0,0,0]));
-        assert_eq!(ys[1], FieldElement64([  121666,0,0,0,0]));
-        assert_eq!(ys[2], FieldElement64([2*121666,0,0,0,0]));
-        assert_eq!(ys[3], FieldElement64([2*121665,0,0,0,0]));
     }
 
     #[test]

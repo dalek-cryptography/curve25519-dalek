@@ -238,7 +238,7 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             let mut t2 = &t0 * &t1;
 
             // set t2 = (S8 S9 S10 S11)
-            t2.scale_by_curve_constants(true);
+            t2.scale_by_curve_constants();
 
             // set t2 = (S8 S9 S11 S10)
             t2.swap_CD();
@@ -265,70 +265,12 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
 impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
-    /// Uses a slight tweak of the parallel unified formulas of HWCD'08
+    /// Implement subtraction by negating the point and adding.
+    ///
+    /// Empirically, this seems about the same cost as a custom subtraction impl (maybe because the
+    /// benefit is cancelled by increased code size?)
     fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
-        unsafe {
-            use stdsimd::vendor::_mm256_permute2x128_si256;
-            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
-            use stdsimd::vendor::_mm256_blend_epi32;
-            use stdsimd::vendor::_mm256_shuffle_epi32;
-
-            let P: &FieldElement32x4 = &self.0;
-            let Q: &FieldElement32x4 = &other.0;
-
-            let mut t0 = FieldElement32x4::zero();
-            let mut t1 = FieldElement32x4::zero();
-
-            // set t0 = (X1 Y1 X2 Y2)
-            for i in 0..5 {
-                t0.0[i] = _mm256_permute2x128_si256(P.0[i].into(), Q.0[i].into(), 32).into();
-            }
-
-            // Since we're subtracting instead of adding, we want to add the point (-X2 Y2 Z2 -T2).
-            // Set (X2' Y2' Z2' T2') = (-X2 Y2 Z2 -T2)
-            //
-            //  so S2 = Y2 - X2' = Y2 - (-X2) = Y2 + X2
-            // and S3 = Y2 + X2' = Y2 + (-X2) = Y2 - X2
-
-            // set t0 = (Y1-X1 Y1+X1 Y2-X2 Y2+X2) = (S0 S1 S3 S2)
-            t0.diff_sum();
-
-            // set t0 = (S0 S1 S2 S3)
-            t0.swap_CD();
-
-            // set t1 = (S0 S1 Z1 T1)
-            // set t0 = (S2 S3 Z2 T2) = (S2 S3 Z2' -T2')
-            for i in 0..5 {
-                t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), 0b11110000).into();
-                t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
-            }
-
-            // set t2 = (S0*S2 S1*S3 Z1*Z2   T1*T2 )
-            //        = (S0*S2 S1*S3 Z1*Z2' -T1*T2') = (S4 S5 S6 -S7)
-            let mut t2 = &t0 * &t1;
-
-            // set t2 = (S8 S9 S10 S11)
-            t2.scale_by_curve_constants(false);
-
-            // set t2 = (S8 S9 S11 S10)
-            t2.swap_CD();
-
-            // set t2 = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
-            t2.diff_sum();
-
-            let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
-            let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
-
-            // set t0 = (S12 S15 S15 S12)
-            // set t1 = (S14 S13 S14 S13)
-            for i in 0..5 {
-                t0.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c0);
-                t1.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c1);
-            }
-
-            // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
-            ExtendedPoint(&t0 * &t1)
-        }
+        self + &(-other)
     }
 }
 
@@ -647,7 +589,6 @@ pub mod vartime {
                 if naf[i] > 0 {
                     Q = &Q + &odd_multiple[( naf[i]/2) as usize];
                 } else if naf[i] < 0 {
-                    // XXX impl Sub
                     Q = &Q - &odd_multiple[(-naf[i]/2) as usize];
                 }
             }

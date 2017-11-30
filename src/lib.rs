@@ -51,7 +51,9 @@ extern crate alloc;
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
 
-// The `Digest` trait is implemented using `generic_array`, so we need it too. Hopefully we can eliminate `generic_array` from `Digest` once const generics land.
+// The `Digest` trait is implemented using `generic_array`, so we need it
+// too. Hopefully we can eliminate `generic_array` from `Digest` once const
+// generics land.
 extern crate digest;
 extern crate generic_array;
 

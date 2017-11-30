@@ -14,7 +14,7 @@
 #![allow(bad_style)]
 
 use std::convert::From;
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, Sub, Mul, Neg};
 
 use stdsimd::simd::{u32x8, i32x8};
 
@@ -70,6 +70,7 @@ impl<'a> Neg for &'a ExtendedPoint {
 
     fn neg(self) -> ExtendedPoint {
         let mut neg = *self;
+        // (X Y Z T) -> (-X Y Z -T)
         neg.0.mask_negate(0b10100101);
         neg
     }
@@ -216,36 +217,114 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             let mut t0 = FieldElement32x4::zero();
             let mut t1 = FieldElement32x4::zero();
 
+            // set t0 = (X1 Y1 X2 Y2)
             for i in 0..5 {
                 t0.0[i] = _mm256_permute2x128_si256(P.0[i].into(), Q.0[i].into(), 32).into();
             }
 
+            // set t0 = (Y1-X1 Y1+X1 Y2-X2 Y2+X2) = (S0 S1 S2 S3)
             t0.diff_sum();
 
+            // set t1 = (S0 S1 Z1 T1)
+            // set t0 = (S2 S3 Z2 T2)
             for i in 0..5 {
                 t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), 0b11110000).into();
                 t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
             }
 
+            // set t2 = (S0*S2 S1*S3 Z1*Z2 T1*T2) = (S4 S5 S6 S7)
             let mut t2 = &t0 * &t1;
-            
-            t2.scale_by_curve_constants();
-            
-            for i in 0..5 {
-                let swapped = _mm256_shuffle_epi32(t2.0[i].into(), 0b10_11_00_01);
-                t2.0[i] = _mm256_blend_epi32(t2.0[i].into(), swapped, 0b11110000).into();
-            }
 
+            // set t2 = (S8 S9 S10 S11)
+            t2.scale_by_curve_constants(true);
+
+            // set t2 = (S8 S9 S11 S10)
+            t2.swap_CD();
+
+            // set t2 = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
             t2.diff_sum();
 
             let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
             let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
 
+            // set t0 = (S12 S15 S15 S12)
+            // set t1 = (S14 S13 S14 S13)
             for i in 0..5 {
                 t0.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c0);
                 t1.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c1);
             }
 
+            // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
+            ExtendedPoint(&t0 * &t1)
+        }
+    }
+}
+
+impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    /// Uses a slight tweak of the parallel unified formulas of HWCD'08
+    fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
+        unsafe {
+            use stdsimd::vendor::_mm256_permute2x128_si256;
+            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
+            use stdsimd::vendor::_mm256_blend_epi32;
+            use stdsimd::vendor::_mm256_shuffle_epi32;
+
+            let P: &FieldElement32x4 = &self.0;
+            let Q: &FieldElement32x4 = &other.0;
+
+            let mut t0 = FieldElement32x4::zero();
+            let mut t1 = FieldElement32x4::zero();
+
+            // set t0 = (X1 Y1 X2 Y2)
+            for i in 0..5 {
+                t0.0[i] = _mm256_permute2x128_si256(P.0[i].into(), Q.0[i].into(), 32).into();
+            }
+
+            // Since we're subtracting instead of adding, we want to add the point (-X2 Y2 Z2 -T2).
+            // Set (X2' Y2' Z2' T2') = (-X2 Y2 Z2 -T2)
+            //
+            //  so S2 = Y2 - X2' = Y2 - (-X2) = Y2 + X2
+            // and S3 = Y2 + X2' = Y2 + (-X2) = Y2 - X2
+
+            // set t0 = (Y1-X1 Y1+X1 Y2-X2 Y2+X2) = (S0 S1 S3 S2)
+            t0.diff_sum();
+
+            // set t0 = (S0 S1 S2 S3)
+            t0.swap_CD();
+
+            // set t1 = (S0 S1 Z1 T1)
+            // set t0 = (S2 S3 Z2 T2) = (S2 S3 Z2' -T2')
+            for i in 0..5 {
+                t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), 0b11110000).into();
+                t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
+            }
+
+            // set t2 = (S0*S2 S1*S3 Z1*Z2   T1*T2 )
+            //        = (S0*S2 S1*S3 Z1*Z2' -T1*T2') = (S4 S5 S6 -S7)
+            let mut t2 = &t0 * &t1;
+
+            // set t2 = (S8 S9 S10 S11)
+            t2.scale_by_curve_constants(false);
+
+            // set t2 = (S8 S9 S11 S10)
+            t2.swap_CD();
+
+            // set t2 = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
+            t2.diff_sum();
+
+            let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
+            let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
+
+            // set t0 = (S12 S15 S15 S12)
+            // set t1 = (S14 S13 S14 S13)
+            for i in 0..5 {
+                t0.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c0);
+                t1.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c1);
+            }
+
+            // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
             ExtendedPoint(&t0 * &t1)
         }
     }
@@ -502,7 +581,7 @@ pub mod vartime {
                     Q = &Q + &odd_multiple[( naf[i]/2) as usize];
                 } else if naf[i] < 0 {
                     // XXX impl Sub
-                    Q = &Q + &(-&odd_multiple[(-naf[i]/2) as usize]);
+                    Q = &Q - &odd_multiple[(-naf[i]/2) as usize];
                 }
             }
         }
@@ -577,40 +656,65 @@ mod test {
     }
 
     fn addition_test_helper(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) {
-        let R1: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
-        let R2: edwards::ExtendedPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
+        // Test the serial implementation of the parallel addition formulas
+        let R_serial: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        // Test the vector implementation of the parallel addition formulas
+        let R_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
+        // Test the vector implementation of the parallel subtraction formulas
+        let S_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
+
         println!("Testing point addition:");
         println!("P = {:?}", P);
         println!("Q = {:?}", Q);
-        println!("(serial) R1 = {:?}", R1);
-        println!("(vector) R2 = {:?}", R2);
-        println!("P + Q = {:?}", &P + &Q);
-        assert_eq!(R1.compress(), (&P + &Q).compress());
-        assert_eq!(R2.compress(), (&P + &Q).compress());
+        println!("R = P + Q = {:?}", &P + &Q);
+        println!("R_serial = {:?}", R_serial);
+        println!("R_vector = {:?}", R_vector);
+        println!("S = P - Q = {:?}", &P - &Q);
+        println!("S_vector = {:?}", S_vector);
+        assert_eq!(R_serial.compress(), (&P + &Q).compress());
+        assert_eq!(R_vector.compress(), (&P + &Q).compress());
+        assert_eq!(S_vector.compress(), (&P - &Q).compress());
         println!("OK!\n");
     }
+
+    #[test]
+    fn sub_vs_add_minus() {
+        let P: ExtendedPoint = edwards::ExtendedPoint::identity().into();
+        let Q: ExtendedPoint = edwards::ExtendedPoint::identity().into();
+
+        let mQ = -&Q;
+
+        println!("sub");
+        let R1: edwards::ExtendedPoint = (&P - &Q).into();
+        println!("add neg");
+        let R2: edwards::ExtendedPoint = (&P + &mQ).into();
+
+        assert_eq!(R2.compress(), edwards::ExtendedPoint::identity().compress());
+        assert_eq!(R1.compress(), edwards::ExtendedPoint::identity().compress());
+    }
+
 
     #[test]
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
         use constants;
         use scalar::Scalar;
 
-        println!("Testing id + id");
+        println!("Testing id +- id");
         let P = edwards::ExtendedPoint::identity();
         let Q = edwards::ExtendedPoint::identity();
         addition_test_helper(P, Q);
 
-        println!("Testing id + B");
+        println!("Testing id +- B");
         let P = edwards::ExtendedPoint::identity();
         let Q = constants::ED25519_BASEPOINT_POINT;
         addition_test_helper(P, Q);
 
-        println!("Testing B + B");
+        println!("Testing B +- B");
         let P = constants::ED25519_BASEPOINT_POINT;
         let Q = constants::ED25519_BASEPOINT_POINT;
         addition_test_helper(P, Q);
 
-        println!("Testing B + kB");
+        println!("Testing B +- kB");
         let P = constants::ED25519_BASEPOINT_POINT;
         let Q = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
         addition_test_helper(P, Q);

@@ -8,15 +8,19 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Field arithmetic for ℤ/(2²⁵⁵-19).
+//! Field arithmetic modulo \\(p = 2\^{255} - 19\\).
 //!
-//! Partially based on Adam Langley's curve25519-donna and (Golang)
-//! ed25519 implementations, with other techniques inspired by Mike
-//! Hamburg's code.
+//! The `curve25519_dalek::field` module provides a type alias
+//! `curve25519_dalek::field::FieldElement` to a field element type
+//! defined in the `backend` module; either `FieldElement64` or
+//! `FieldElement32`.
 //!
-//! This module re-exports either the 32-bit or 64-bit implementation,
-//! and implements functions that are generic with respect to the
-//! basic operations, such as inverses and square roots.
+//! Field operations defined in terms of machine
+//! operations, such as field multiplication or squaring, are defined in
+//! the backend implementation.
+//!
+//! Field operations defined in terms of other field operations, such as
+//! field inversion or square roots, are defined here.
 
 use core::cmp::{Eq, PartialEq};
 
@@ -31,13 +35,21 @@ use backend;
 
 #[cfg(feature="radix_51")]
 pub use backend::u64::field::*;
-/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
 #[cfg(feature="radix_51")]
 pub type FieldElement = backend::u64::field::FieldElement64;
 
 #[cfg(not(feature="radix_51"))]
 pub use backend::u32::field::*;
-/// A `FieldElement` represents an element of the field GF(2^255 - 19).
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
 #[cfg(not(feature="radix_51"))]
 pub type FieldElement = backend::u32::field::FieldElement32;
 

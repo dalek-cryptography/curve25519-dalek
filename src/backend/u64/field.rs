@@ -8,14 +8,8 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Field arithmetic for ℤ/(2²⁵⁵-19), using 64-bit arithmetic wuth
-//! 128-bit products.
-//!
-//! On x86_64, the multiplications lower to `MUL` instructions taking
-//! 64-bit inputs and producing 128-bit outputs.  On other platforms,
-//! this implementation is not recommended.  On Haswell and newer, the
-//! BMI2 instruction set provides `MULX` and friends, which gives even
-//! better performance.
+//! Field arithmetic modulo \\(p = 2\^{255} - 19\\), using \\(64\\)-bit
+//! limbs with \\(128\\)-bit products.
 
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
@@ -25,25 +19,21 @@ use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
 
-/// A `FieldElement64` represents an element of the field GF(2^255 - 19).
+/// A `FieldElement64` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// In the 64-bit implementation, a `FieldElement` is represented in
-/// radix 2^51 as five `u64`s; the coefficients are allowed to grow up
-/// to 2^54 between reductions mod `p`.
+/// radix \\(2\^{51}\\) as five `u64`s; the coefficients are allowed to
+/// grow up to \\(2\^{54}\\) between reductions modulo \\(p\\).
 ///
-/// # Warning
-///
-/// You almost certainly do not want to use `FieldElement64` directly.  Consider
-/// using `curve25519_dalek::field::FieldElement`, which will automatically
-/// select between `FieldElement32` and `FieldElement64` depending on whether
-/// curve25519-dalek was compiled with `--features="nightly"`.
-///
-/// This implementation, `FieldElement64`, is intended for x64_64 platforms,
-/// which have the `MUL` instructions taking 64-bit inputs and producing 128-bit
-/// outputs.  On other platforms, this implementation is not recommended.  On
-/// Haswell and newer, the BMI2 instruction set provides `MULX` and friends,
-/// which gives even better performance.  This implementation requires Rust's
-/// `u128`, which is not yet stable.
+/// # Note
+/// 
+/// The `curve25519_dalek::field` module provides a type alias
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
+/// or `FieldElement32`.
+/// 
+/// The backend-specific type `FieldElement64` should not be used
+/// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
 pub struct FieldElement64(pub (crate) [u64; 5]);
 

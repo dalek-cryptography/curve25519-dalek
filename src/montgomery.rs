@@ -8,7 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Montgomery arithmetic.
+//! Group operations for Curve25519, in Montgomery form.
 //!
 //! Apart from the compressed point implementation
 //! (i.e. `CompressedMontgomeryU`), this module is a "clean room" implementation

@@ -52,12 +52,11 @@ use traits::select_precomputed_point;
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// In "Edwards y" format, the point `(x,y)` on the curve is
-/// determined by the `y`-coordinate and the sign of `x`, marshalled
-/// into a 32-byte array.
+/// In "Edwards y" / "Ed25519" format, the curve point \\((x,y)\\) is
+/// determined by the \\(y\\)-coordinate and the sign of \\(x\\).
 ///
 /// The first 255 bits of a `CompressedEdwardsY` represent the
-/// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
+/// \\(y\\)-coordinate.  The high bit of the 32nd byte gives the sign of \\(x\\).
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
@@ -80,9 +79,9 @@ impl CompressedEdwardsY {
 
     /// Attempt to decompress to an `ExtendedPoint`.
     ///
-    /// Returns `None` if the input is not the `y`-coordinate of a
+    /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> Option<ExtendedPoint> { // FromBytes()
+    pub fn decompress(&self) -> Option<ExtendedPoint> {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
@@ -160,8 +159,11 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
 // Internal point representations
 // ------------------------------------------------------------------------
 
-/// An `ExtendedPoint` is a point on the curve in 𝗣³(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to (x:y:1:xy).
+/// An `ExtendedPoint` represents a point on the Edwards form of Curve25519.
+///
+/// The name refers to the extended twisted Edwards coordinates of
+/// Hisil, Wong, Carter, and Dawson, and more details on curve models
+/// can be found in the `curve25519-dalek` internal documentation.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
 pub struct ExtendedPoint {
@@ -233,7 +235,7 @@ impl Equal for ExtendedPoint {
 // ------------------------------------------------------------------------
 
 impl ExtendedPoint {
-    /// Convert to a ProjectiveNielsPoint
+    /// Convert to a `ProjectiveNielsPoint`
     pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
@@ -243,11 +245,10 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert the representation of this point from extended Twisted Edwards
-    /// coodinates to projective coordinates.
+    /// Convert the representation of this point from extended
+    /// coordinates to projective coordinates.
     ///
-    /// Given a point in Ɛₑ, we can convert to projective coordinates
-    /// cost-free by simply ignoring T.
+    /// Free. 
     pub(crate) fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: self.X,
@@ -428,8 +429,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
-    /// Uses a window of size 4.  Note: for scalar multiplication of
-    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
         let P = self.to_projective_niels();
@@ -469,27 +470,32 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
 impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     type Output = ExtendedPoint;
 
-    /// Scalar multiplication: compute `self * point`.
+    /// Scalar multiplication: compute `scalar * self`.
     ///
-    /// Uses a window of size 4.  Note: for scalar multiplication of
-    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
         point * &self
     }
 }
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+/// Given an iterator of (possibly secret) scalars and an iterator of
+/// (possibly secret) points, compute
+/// $$
+/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+/// $$
 ///
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
 ///
 /// # Input
 ///
-/// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
-/// error to call this function with two vectors of different lengths.
+/// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+/// error to call this function with two iterators of different lengths.
 /// 
 /// XXX need to clear memory
+// XXX later when we do more fancy multiscalar mults, we can delegate
+// based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
@@ -550,68 +556,76 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     Q
 }
 
-/// Precomputation
+/// A precomputed table of multiples of a basepoint, for accelerating
+/// fixed-base scalar multiplication.  One table, for the Ed25519
+/// basepoint, is provided in the `constants` module.
 ///
-/// XXX we should box the internals
+/// The basepoint tables are reasonably large (30KB), so they should
+/// probably be boxed.
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub(crate) [[AffineNielsPoint; 8]; 32]);
+
+impl EdwardsBasepointTable {
+    /// The computation uses Pippeneger's algorithm, as described on 
+    /// page 13 of the Ed25519 paper.  Write the scalar \\(a\\) in radix \\(16\\) with
+    /// coefficients in \\([-8,8)\\), i.e.,
+    /// $$
+    ///     a = a\_0 + a\_1 16\^1 + \cdots + a\_{63} 16\^{63},
+    /// $$
+    /// with \\(-8 \leq a_i < 8\\).  Then
+    /// $$
+    ///     a B = a\_0 B + a\_1 16\^1 B + \cdots + a\_{63} 16\^{63} B.
+    /// $$
+    /// Grouping even and odd coefficients gives
+    /// $$
+    /// \begin{aligned}
+    ///     a B = \quad a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B    \\\\
+    ///               + a\_1 16\^1 B +& a\_3 16\^3 B + \cdots + a\_{63} 16\^{63} B    \\\\
+    ///         = \quad(a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B)   \\\\
+    ///            + 16(a\_1 16\^0 B +& a\_3 16\^2 B + \cdots + a\_{63} 16\^{62} B).  \\\\
+    /// \end{aligned}
+    /// $$
+    /// We then use the `select_precomputed_point` function, which
+    /// takes \\(-8 \leq x < 8\\) and \\([16\^{2i} B, \ldots, 8\cdot16\^{2i} B]\\),
+    /// and returns \\(x \cdot 16\^{2i} \cdot B\\) in constant time.
+    ///
+    /// The radix-\\(16\\) representation requires that the scalar is bounded
+    /// by \\(2\^{255}\\), which is always the case.
+    fn basepoint_mul(&self, scalar: &Scalar) -> ExtendedPoint {
+        let a = scalar.to_radix_16();
+
+        let mut P = ExtendedPoint::identity();
+
+        for i in (0..64).filter(|x| x % 2 == 1) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P = P.mult_by_pow_2(4);
+
+        for i in (0..64).filter(|x| x % 2 == 0) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P
+    }
+}
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
-    /// computing the multiple `aB` of the basepoint `B`.
-    ///
-    /// Precondition: the scalar must be reduced.
-    ///
-    /// The computation proceeds as follows, as described on page 13
-    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
-    /// coefficients in [-8,8), i.e.,
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with -8 ≤ a_i < 8.  Then
-    ///
-    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
-    ///
-    /// Grouping even and odd coefficients gives
-    ///
-    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
-    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
-    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
-    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
-    ///
-    /// We then use the `select_precomputed_point` function, which
-    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
-    /// and returns `x * 16^2i * B` in constant time.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        let e = scalar.to_radix_16();
-        let mut h = ExtendedPoint::identity();
-        let mut t: CompletedPoint;
-
-        for i in (0..64).filter(|x| x % 2 == 1) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h = h.mult_by_pow_2(4);
-
-        for i in (0..64).filter(|x| x % 2 == 0) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h
+        // delegate to a private function so that its documentation appears in internal docs
+        self.basepoint_mul(scalar)
     }
 }
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` by via this `Scalar` times
-    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
-    ///
-    /// Precondition: this scalar must be reduced.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }
@@ -666,13 +680,20 @@ impl ExtendedPoint {
 
     /// Determine if this point is of small order.
     ///
-    /// The order of the group of points on the curve Ɛ is |Ɛ| = 8q.  Thus, to
-    /// check if a point P is of small order, we multiply by 8 and then test
-    /// if the result is equal to the identity.
+    /// The order of the group of points on the curve \\(\mathcal E\\)
+    /// is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
+    /// E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
+    /// subgroup \\( \mathcal E[8] \\) consists of eight points of small
+    /// order.  (Technically all of \\(\mathcal E\\) is torsion, but we
+    /// use the word only to refer to the \\(\mathcal E[8]\\) part, not
+    /// the prime-order subgroup \\(\mathcal E[\ell]\\).
+    ///
+    /// For more information on cofactors and the group structure, see
+    /// the internal `curve25519-dalek` documentation on Ristretto.
     ///
     /// # Return
     ///
-    /// True if it is of small order; false otherwise.
+    /// True if `self` is of small order; false otherwise.
     pub fn is_small_order(&self) -> bool {
         self.mult_by_cofactor().is_identity()
     }
@@ -756,13 +777,16 @@ pub mod vartime {
         }
     }
 
-    /// Given a vector of public scalars and a vector of (possibly secret)
-    /// points, compute `c_1 P_1 + ... + c_n P_n`.
+    /// Given an iterable of public scalars and an iterable of public
+    /// points, compute
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
     ///
     /// # Input
     ///
-    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+    /// error to call this function with two iterators of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,
@@ -794,8 +818,8 @@ pub mod vartime {
         r.to_extended()
     }
 
-    /// Given a point `A` and scalars `a` and `b`, compute the point
-    /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
+    /// Given a point \\(A\\) and scalars \\(a\\) and \\(b\\), compute the point
+    /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
     #[cfg(feature="precomputed_tables")]
     pub fn double_scalar_mult_basepoint(a: &Scalar,

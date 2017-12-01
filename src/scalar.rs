@@ -512,11 +512,6 @@ impl Scalar {
         UnpackedScalar::from_bytes(&self.bytes)
     }
 
-    /// Compute `(a * b) + c` (mod l).
-    pub fn multiply_add(a: &Scalar, b: &Scalar, c: &Scalar) -> Scalar {
-        UnpackedScalar::add(&UnpackedScalar::mul(&a.unpack(), &b.unpack()), &c.unpack()).pack()
-    }
-
     /// Reduce this `Scalar` modulo \\(\ell\\).
     pub fn reduce(&self) -> Scalar {
         let x = self.unpack();
@@ -759,9 +754,7 @@ mod test {
 
     #[test]
     fn scalar_multiply_by_one() {
-        let one = Scalar::one();
-        let zero = Scalar::zero();
-        let test_scalar = Scalar::multiply_add(&X, &one, &zero);
+        let test_scalar = &X * &Scalar::one();
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
@@ -789,16 +782,8 @@ mod test {
     }
 
     #[test]
-    fn scalar_multiply_add() {
-        let test_scalar = Scalar::multiply_add(&X, &Y, &Z);
-        for i in 0..32 {
-            assert!(test_scalar[i] == W[i]);
-        }
-    }
-
-    #[test]
     fn square() {
-        let expected = Scalar::multiply_add(&X, &X, &Scalar::zero());
+        let expected = &X * &X;
         let actual = X.unpack().square().pack();
         for i in 0..32 {
             assert!(expected[i] == actual[i]);

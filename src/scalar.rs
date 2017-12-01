@@ -10,29 +10,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 // - Brian Smith <brian@briansmith.org>
 
-//! Arithmetic on scalars.
-//!
-//! Both the Ristretto group and the Ed25519 basepoint have prime order
-//! \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
-//!
-//! The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
-//! represents an element of \\(\mathbb Z / \ell\\).
-//!
-//! The code is intended to be useful with both the Ristretto group
-//! (where everything is done modulo \\( \ell \\), and the X/Ed25519
-//! setting, which mandates specific bit-twiddles that are not
-//! well-defined modulo \\( \ell \\).
-//!
-//! To create a `Scalar` from a supposedly canonical encoding, use
-//! `Scalar::from_canonical_bytes`.
-//!
-//! To create a `Scalar` by reducing a 256-bit integer mod \\( \ell \\),
-//! use `Scalar::from_bytes_mod_order`.
-//!
-//! To create a `Scalar` with a specific bit-pattern (e.g., for
-//! compatibility with X25519 "clamping"), use `Scalar::from_bits`.
-//!
-//! All arithmetic on `Scalars` is done modulo \\( \ell \\).
+//! Arithmetic on scalars (integers mod the group order).
 
 use core::fmt::Debug;
 use core::ops::Neg;
@@ -70,11 +48,27 @@ type UnpackedScalar = backend::u64::scalar::Scalar64;
 type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 
-/// The `Scalar` struct represents an element in ℤ/lℤ, where
+/// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
+/// represents an element of \\(\mathbb Z / \ell\\).
 ///
-/// l = 2^252 + 27742317777372353535851937790883648493
+/// Both the Ristretto group and the Ed25519 basepoint have prime order
+/// \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
 ///
-/// is the order of the basepoint.  The `Scalar` is stored as bytes.
+/// The code is intended to be useful with both the Ristretto group
+/// (where everything is done modulo \\( \ell \\)), and the X/Ed25519
+/// setting, which mandates specific bit-twiddles that are not
+/// well-defined modulo \\( \ell \\).
+///
+/// To create a `Scalar` from a supposedly canonical encoding, use
+/// `Scalar::from_canonical_bytes`.
+///
+/// To create a `Scalar` by reducing a 256-bit integer mod \\( \ell \\),
+/// use `Scalar::from_bytes_mod_order`.
+///
+/// To create a `Scalar` with a specific bit-pattern (e.g., for
+/// compatibility with X25519 "clamping"), use `Scalar::from_bits`.
+///
+/// All arithmetic on `Scalars` is done modulo \\( \ell \\).
 #[derive(Copy, Clone)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.
@@ -88,8 +82,9 @@ pub struct Scalar {
 }
 
 impl Scalar {
-    /// Construct a `Scalar` by reducing a 256-bit integer modulo the group order.
-    pub fn from_bytes_mod_order(bytes: [u8;32]) -> Scalar {
+    /// Construct a `Scalar` by reducing a 256-bit little-endian integer
+    /// modulo the group order \\( \ell \\).
+    pub fn from_bytes_mod_order(bytes: [u8; 32]) -> Scalar {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
         let s_unreduced = Scalar{bytes: bytes};
 
@@ -381,12 +376,12 @@ impl Scalar {
         &self.bytes
     }
 
-    /// Construct the additive identity
+    /// Construct the scalar \\( 0 \\).
     pub fn zero() -> Self {
         Scalar { bytes: [0u8; 32]}
     }
 
-    /// Construct the multiplicative identity
+    /// Construct the scalar \\( 1 \\).
     pub fn one() -> Self {
         Scalar {
             bytes: [
@@ -423,14 +418,17 @@ impl Scalar {
 
     /// Compute a width-5 "Non-Adjacent Form" of this scalar.
     ///
-    /// A width-`w` NAF of a positive integer `k` is an expression
-    /// `k = sum(k[i]*2^i for i in range(l))`, where each nonzero
-    /// coefficient `k[i]` is odd and bounded by `|k[i]| < 2^(w-1)`,
-    /// `k[l-1]` is nonzero, and at most one of any `w` consecutive
+    /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
+    /// $$
+    /// k = \sum_{i=0}\^n k\_i 2\^i,
+    /// $$
+    /// where each nonzero
+    /// coefficient \\(k\_i\\) is odd and bounded by \\(|k\_i| < 2\^{w-1}\\),
+    /// \\(k\_{n-1}\\) is nonzero, and at most one of any \\(w\\) consecutive
     /// coefficients is nonzero.  (Hankerson, Menezes, Vanstone; def 3.32).
     ///
     /// Intuitively, this is like a binary expansion, except that we
-    /// allow some coefficients to grow up to `2^(w-1)` so that the
+    /// allow some coefficients to grow up to \\(2\^{w-1}\\) so that the
     /// nonzero coefficients are as sparse as possible.
     pub(crate) fn non_adjacent_form(&self) -> [i8; 256] {
         // Step 1: write out bits of the scalar
@@ -468,15 +466,12 @@ impl Scalar {
         naf
     }
 
-    /// Write this scalar in radix 16, with coefficients in `[-8,8)`,
-    /// i.e., compute `a_i` such that
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with `-8 ≤ a_i < 8` for `0 ≤ i < 63` and `-8 ≤ a_63 ≤ 8`.
-    ///
-    /// Precondition: self[31] <= 127.  This is the case whenever
-    /// `self` is reduced.
+    /// Write this scalar in radix 16, with coefficients in \\([-8,8)\\),
+    /// i.e., compute \\(a\_i\\) such that
+    /// $$
+    ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
+    /// $$
+    /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_63 \leq 8\\).
     pub(crate) fn to_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
@@ -506,7 +501,7 @@ impl Scalar {
         output
     }
 
-    /// Unpack this `Scalar` to an `UnpackedScalar`
+    /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
     }
@@ -516,7 +511,7 @@ impl Scalar {
         UnpackedScalar::add(&UnpackedScalar::mul(&a.unpack(), &b.unpack()), &c.unpack()).pack()
     }
 
-    /// Reduce this `Scalar` mod l.
+    /// Reduce this `Scalar` modulo \\(\ell\\).
     pub fn reduce(&self) -> Scalar {
         let x = self.unpack();
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);

@@ -75,7 +75,7 @@ pub struct Scalar {
     /// 
     /// # Invariant
     /// 
-    /// The integer representing this scalar must be bounded above by 2^255, or equivalently the high bit of `bytes[31]` must be zero.
+    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or equivalently the high bit of `bytes[31]` must be zero.
     /// 
     // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
     pub(crate) bytes: [u8; 32],

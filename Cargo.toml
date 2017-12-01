@@ -25,8 +25,7 @@ rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9e
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
 [dependencies]
-#stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
-stdsimd = { git = "https://github.com/hdevalence/stdsimd", branch="feature/more-avx2" }
+stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
 
 [dependencies.serde]
 version = "1.0"
@@ -59,7 +58,7 @@ rand = "0.3"
 generic-array = "^0.8"
 digest = "0.6"
 arrayref = "0.3.4"
-stdsimd = { git = "https://github.com/hdevalence/stdsimd", branch="feature/more-avx2" }
+stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
 
 [build-dependencies.serde]
 version = "1.0"

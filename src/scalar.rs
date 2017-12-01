@@ -62,8 +62,11 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 /// To create a `Scalar` from a supposedly canonical encoding, use
 /// `Scalar::from_canonical_bytes`.
 ///
-/// To create a `Scalar` by reducing a 256-bit integer mod \\( \ell \\),
+/// To create a `Scalar` by reducing a \\(256\\)-bit integer mod \\( \ell \\),
 /// use `Scalar::from_bytes_mod_order`.
+///
+/// To create a `Scalar` by reducing a \\(512\\)-bit integer mod \\( \ell \\),
+/// use `Scalar::from_bytes_mod_order_wide`.
 ///
 /// To create a `Scalar` with a specific bit-pattern (e.g., for
 /// compatibility with X25519 "clamping"), use `Scalar::from_bits`.

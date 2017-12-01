@@ -180,7 +180,7 @@
 //! S\_{12} &\gets S\_9 - S\_8 \\\\
 //! S\_{13} &\gets S\_9 + S\_8 \\\\
 //! S\_{14} &\gets S\_{10} - S\_{11} \\\\
-//! S\_{15} &\gets S\_{10} - S\_{11}
+//! S\_{15} &\gets S\_{10} + S\_{11}
 //! \end{aligned}
 //! $$
 //!
@@ -311,6 +311,20 @@
 //! The implementation uses the unstable `stdsimd` crate to provide AVX2
 //! intrinsics, and the code is not yet cleanly factored between the
 //! field element parts and the point parts.
+//!
+//! When compiling with AVX512VL, LLVM is able to use the extra
+//! `ymm16..ymm31` registers to reduce register pressure, and avoid
+//! spills during field multiplication.  This gives a small but
+//! noticeable speedup.
+//!
+//! The addition and subtraction steps involve masking, to apply
+//! operations to a single lane of the vector.  AVX512VL extends the
+//! predication features of AVX512 to AVX2 code and would probably be
+//! beneficial.  Unfortunately, LLVM is currently unable to lower `op +
+//! blend` into an AVX512VL masked operation.  However, the explicitly
+//! masked versions of the intrinsics seem to produce the same LLVM IR
+//! as an `op + blend`, so hopefully this will improve as the AVX512
+//! support in LLVM improves.
 //!
 //! [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 //! [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28

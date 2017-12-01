@@ -1,19 +1,23 @@
-//! Arithmetic mod 2^252 + 27742317777372353535851937790883648493
-//! with 5 52-bit unsigned limbs. 51-bit limbs would cover the
-//! desired bit range (253 bits), but isn't large enough to reduce
-//! a 512 bit number with Montgomery multiplication, so 52 bits is
-//! used instead
+//! Arithmetic mod \\(2\^{252} + 27742317777372353535851937790883648493\\)
+//! with five \\(52\\)-bit unsigned limbs.
 //!
-//! To see that this is safe for intermediate results, note that
-//! the largest limb in a 5 by 5 product of 52-bit limbs will be
+//! \\(51\\)-bit limbs would cover the desired bit range (\\(253\\)
+//! bits), but isn't large enough to reduce a \\(512\\)-bit number with
+//! Montgomery multiplication, so \\(52\\) bits is used instead.  To see
+//! that this is safe for intermediate results, note that the largest
+//! limb in a \\(5\times 5\\) product of \\(52\\)-bit limbs will be
+//!
+//! ```text
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
+//! ```
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
 use constants;
 
-/// The `Scalar64` struct represents an element in ℤ/lℤ as 5 52-bit limbs
+/// The `Scalar64` struct represents an element in 
+/// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
 #[derive(Copy,Clone)]
 pub struct Scalar64(pub [u64; 5]);
 

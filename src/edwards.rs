@@ -550,68 +550,76 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     Q
 }
 
-/// Precomputation
+/// A precomputed table of multiples of a basepoint, for accelerating
+/// fixed-base scalar multiplication.  One table, for the Ed25519
+/// basepoint, is provided in the `constants` module.
 ///
-/// XXX we should box the internals
+/// The basepoint tables are reasonably large (30KB), so they should
+/// probably be boxed.
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub(crate) [[AffineNielsPoint; 8]; 32]);
+
+impl EdwardsBasepointTable {
+    /// The computation uses Pippeneger's algorithm, as described on 
+    /// page 13 of the Ed25519 paper.  Write the scalar \\(a\\) in radix \\(16\\) with
+    /// coefficients in \\([-8,8)\\), i.e.,
+    /// $$
+    ///     a = a\_0 + a\_1 16\^1 + \cdots + a\_{63} 16\^{63},
+    /// $$
+    /// with \\(-8 \leq a_i < 8\\).  Then
+    /// $$
+    ///     a B = a\_0 B + a\_1 16\^1 B + \cdots + a\_{63} 16\^{63} B.
+    /// $$
+    /// Grouping even and odd coefficients gives
+    /// $$
+    /// \begin{aligned}
+    ///     a B = \quad a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B    \\\\
+    ///               + a\_1 16\^1 B +& a\_3 16\^3 B + \cdots + a\_{63} 16\^{63} B    \\\\
+    ///         = \quad(a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B)   \\\\
+    ///            + 16(a\_1 16\^0 B +& a\_3 16\^2 B + \cdots + a\_{63} 16\^{62} B).  \\\\
+    /// \end{aligned}
+    /// $$
+    /// We then use the `select_precomputed_point` function, which
+    /// takes \\(-8 \leq x < 8\\) and \\([16\^{2i} B, \ldots, 8\cdot16\^{2i} B]\\),
+    /// and returns \\(x \cdot 16\^{2i} \cdot B\\) in constant time.
+    ///
+    /// The radix-\\(16\\) representation requires that the scalar is bounded
+    /// by \\(2\^{255}\\), which is always the case.
+    fn basepoint_mul(&self, scalar: &Scalar) -> ExtendedPoint {
+        let a = scalar.to_radix_16();
+
+        let mut P = ExtendedPoint::identity();
+
+        for i in (0..64).filter(|x| x % 2 == 1) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P = P.mult_by_pow_2(4);
+
+        for i in (0..64).filter(|x| x % 2 == 0) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P
+    }
+}
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
-    /// computing the multiple `aB` of the basepoint `B`.
-    ///
-    /// Precondition: the scalar must be reduced.
-    ///
-    /// The computation proceeds as follows, as described on page 13
-    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
-    /// coefficients in [-8,8), i.e.,
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with -8 ≤ a_i < 8.  Then
-    ///
-    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
-    ///
-    /// Grouping even and odd coefficients gives
-    ///
-    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
-    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
-    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
-    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
-    ///
-    /// We then use the `select_precomputed_point` function, which
-    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
-    /// and returns `x * 16^2i * B` in constant time.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        let e = scalar.to_radix_16();
-        let mut h = ExtendedPoint::identity();
-        let mut t: CompletedPoint;
-
-        for i in (0..64).filter(|x| x % 2 == 1) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h = h.mult_by_pow_2(4);
-
-        for i in (0..64).filter(|x| x % 2 == 0) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h
+        // delegate to a private function so that its documentation appears in internal docs
+        self.basepoint_mul(scalar)
     }
 }
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` by via this `Scalar` times
-    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
-    ///
-    /// Precondition: this scalar must be reduced.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }

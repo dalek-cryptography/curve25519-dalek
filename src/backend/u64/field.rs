@@ -27,11 +27,11 @@ use subtle::ConditionallyAssignable;
 /// grow up to \\(2\^{54}\\) between reductions modulo \\(p\\).
 ///
 /// # Note
-/// 
+///
 /// The `curve25519_dalek::field` module provides a type alias
 /// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
 /// or `FieldElement32`.
-/// 
+///
 /// The backend-specific type `FieldElement64` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]

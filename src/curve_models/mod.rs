@@ -10,7 +10,7 @@
 
 //! This module contains internal curve representations which are not part
 //! of the public API.
-//! 
+//!
 //! # Curve representations
 //!
 //! Internally, we use several different models for the curve.  Here
@@ -62,7 +62,7 @@
 //! $$
 //!     \frac {W\_1} {W\_3} = \frac {XT} {ZT} = \frac X Z = x,
 //! $$
-//! and 
+//! and
 //! $$
 //!     \frac {W\_2} {W\_3} = \frac {YZ} {ZT} = \frac Y T = y,
 //! $$

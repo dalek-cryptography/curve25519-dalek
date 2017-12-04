@@ -70,7 +70,7 @@ pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
 /// array is `i*P`, where `P` is a point of order 8 generating Ɛ[8].
 ///
 /// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
-/// indexed by 0,4. 
+/// indexed by 0,4.
 pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
     ExtendedPoint {
         X: FieldElement64([0, 0, 0, 0, 0]),

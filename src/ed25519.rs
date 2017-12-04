@@ -753,6 +753,7 @@ impl<'d> Deserialize<'d> for PublicKey {
 
 /// An ed25519 keypair.
 #[derive(Debug)]
+#[repr(C)]
 pub struct Keypair {
     /// The secret half of this keypair.
     pub secret: SecretKey,

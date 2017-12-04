@@ -38,11 +38,11 @@ use subtle::ConditionallyAssignable;
 /// to \\(2\^{25+b}\\) or \\(2\^{26+b}\\), where \\(b = 1.75\\).
 ///
 /// # Note
-/// 
+///
 /// The `curve25519_dalek::field` module provides a type alias
 /// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
 /// or `FieldElement32`.
-/// 
+///
 /// The backend-specific type `FieldElement32` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
@@ -133,7 +133,7 @@ impl<'a, 'b> Mul<&'b FieldElement32> for &'a FieldElement32 {
         let y1_19 = 19 * y[1]; // This fits in a u32
         let y2_19 = 19 * y[2]; // iff 26 + b + lg(19) < 32
         let y3_19 = 19 * y[3]; // if  b < 32 - 26 - 4.248 = 1.752
-        let y4_19 = 19 * y[4]; 
+        let y4_19 = 19 * y[4];
         let y5_19 = 19 * y[5]; // below, b<2.5: this is a bottleneck,
         let y6_19 = 19 * y[6]; // could be avoided by promoting to
         let y7_19 = 19 * y[7]; // u64 here instead of in m()
@@ -181,7 +181,7 @@ impl<'a, 'b> Mul<&'b FieldElement32> for &'a FieldElement32 {
         // How big is the contribution to z[i+j] from x[i], y[j]?
         //
         // Using the bounds above, we get:
-        // 
+        //
         // i even, j even:   x[i]*y[j] <   2^(26+b)*2^(26+b) = 2*2^(51+2*b)
         // i  odd, j even:   x[i]*y[j] <   2^(25+b)*2^(26+b) = 1*2^(51+2*b)
         // i even, j  odd:   x[i]*y[j] <   2^(26+b)*2^(25+b) = 1*2^(51+2*b)
@@ -191,7 +191,7 @@ impl<'a, 'b> Mul<&'b FieldElement32> for &'a FieldElement32 {
         // (since 2^255 - 19 = 0 mod p).  This adds a factor of 19, so
         // we get the bounds (z0 is the biggest one, but calculated for
         // posterity here in case finer estimation is needed later):
-        // 
+        //
         //  z0 < ( 2 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 249*2^(51 + 2*b)
         //  z1 < ( 1 +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 154*2^(51 + 2*b)
         //  z2 < ( 2 +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 195*2^(51 + 2*b)
@@ -232,15 +232,15 @@ impl FieldElement32 {
     pub fn negate(&mut self) {
         // Compute -b as ((2^4 * p) - b) to avoid underflow.
         let neg = FieldElement32::reduce([
-            ((0x3ffffed << 4) - self.0[0]) as u64, 
-            ((0x1ffffff << 4) - self.0[1]) as u64, 
-            ((0x3ffffff << 4) - self.0[2]) as u64, 
-            ((0x1ffffff << 4) - self.0[3]) as u64, 
-            ((0x3ffffff << 4) - self.0[4]) as u64, 
-            ((0x1ffffff << 4) - self.0[5]) as u64, 
-            ((0x3ffffff << 4) - self.0[6]) as u64, 
-            ((0x1ffffff << 4) - self.0[7]) as u64, 
-            ((0x3ffffff << 4) - self.0[8]) as u64, 
+            ((0x3ffffed << 4) - self.0[0]) as u64,
+            ((0x1ffffff << 4) - self.0[1]) as u64,
+            ((0x3ffffff << 4) - self.0[2]) as u64,
+            ((0x1ffffff << 4) - self.0[3]) as u64,
+            ((0x3ffffff << 4) - self.0[4]) as u64,
+            ((0x1ffffff << 4) - self.0[5]) as u64,
+            ((0x3ffffff << 4) - self.0[6]) as u64,
+            ((0x1ffffff << 4) - self.0[7]) as u64,
+            ((0x3ffffff << 4) - self.0[8]) as u64,
             ((0x1ffffff << 4) - self.0[9]) as u64,
         ]);
         self.0 = neg.0;
@@ -298,7 +298,7 @@ impl FieldElement32 {
         // Since z[3] < 2^64, c < 2^(64-25) = 2^39,
         // so    z[4] < 2^26 + 2^39 < 2^39.0002
         carry(&mut z, 4); carry(&mut z, 8);
-        // Now z[4] < 2^26 
+        // Now z[4] < 2^26
         // and z[5] < 2^25 + 2^13.0002 < 2^25.0004 (good enough)
 
         // Last carry has a multiplication by 19:
@@ -396,7 +396,7 @@ impl FieldElement32 {
         const LOW_26_BITS: u32 = (1 << 26) - 1;
 
         h[0] += 19*q;
-        
+
         // Now carry the result to compute r + 19q...
         h[1] += h[0] >> 26;
         h[0] = h[0] & LOW_26_BITS;
@@ -416,7 +416,7 @@ impl FieldElement32 {
         h[7] = h[7] & LOW_25_BITS;
         h[9] += h[8] >> 26;
         h[8] = h[8] & LOW_26_BITS;
-        
+
         // ... but instead of carrying the value
         // (h[9] >> 25) = q*2^255 into another limb,
         // discard it, subtracting the value from h.

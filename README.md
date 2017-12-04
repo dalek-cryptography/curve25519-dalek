@@ -44,22 +44,34 @@ Extensive documentation is available [here](https://docs.rs/curve25519-dalek).
 To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
-    curve25519-dalek = "^0.13"
+```toml
+curve25519-dalek = "^0.14"
+```
 
 Then, in your library or executable source, add:
 
-    extern crate curve25519_dalek
+    extern crate curve25519_dalek;
+
+## Features
 
 On nightly Rust, using the `nightly` feature enables a radix-51 field
 arithmetic implementation using `u128`s, which is approximately twice as
-fast.
+fast.  It will also enable additional developer documentation when
+compiling via `make doc-internal`.
+
+By default, the benchmarks are not compiled without the `bench`
+feature.  To run the benchmarks, do:
+
+```sh
+cargo bench --features="bench"
+```
 
 ## TODO
 
 We intend to stabilise the following before curve25519-dalek-1.0.0:
 
 * Implement hashing to a point on the curve (Elligator).
-* Finish Ristretto (Decaf for curve25519) implementation.
+* Finish Ristretto documentation.
 
 ## Contributing
 

@@ -128,10 +128,17 @@ impl Signature {
             return Err("Wrong length of bytes for signature! Need 64 bytes.")
         }
 
-        let lower: &[u8; 32] = array_ref!(bytes,  0, 32);
-        let upper: &[u8; 32] = array_ref!(bytes, 32, 32);
+        let mut lower: [u8; 32] = [0u8; 32];
+        let mut upper: [u8; 32] = [0u8; 32];
 
-        Ok(Signature{ r: CompressedEdwardsY(*lower), s: Scalar(*upper) })
+        lower.copy_from_slice(&bytes[..32]);
+        upper.copy_from_slice(&bytes[32..]);
+
+        if upper[31] & 224 != 0 {
+            return Err("High-bit of scalar 's' in signature must not be set.")
+        }
+
+        Ok(Signature{ r: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
     }
 }
 
@@ -227,7 +234,11 @@ impl SecretKey {
         if bytes.len() != SECRET_KEY_LENGTH {
             return Err("Wrong length of bytes for creating secret key!");
         }
-        Ok(SecretKey(*array_ref!(bytes, 0, SECRET_KEY_LENGTH)))
+        let mut bits: [u8; 32] = [0u8; 32];
+
+        bits.copy_from_slice(&bytes[..32]);
+
+        Ok(SecretKey(bits))
     }
 
     /// Generate a `SecretKey` from a `csprng`.
@@ -431,7 +442,7 @@ impl ExpandedSecretKey {
     pub fn to_bytes(&self) -> [u8; 64] {
         let mut bytes: [u8; 64] = [0u8; 64];
 
-        bytes[..32].copy_from_slice(&self.key.0[..]);
+        bytes[..32].copy_from_slice(self.key.as_bytes());
         bytes[32..].copy_from_slice(&self.nonce[..]);
         bytes
     }
@@ -479,8 +490,15 @@ impl ExpandedSecretKey {
         if bytes.len() != 64 {
             return Err("Wrong length of bytes for creating expanded secret key!");
         }
-        Ok(ExpandedSecretKey{ key: Scalar(*array_ref!(bytes, 0, 32)),
-                              nonce:      *array_ref!(bytes, 32, 32), })
+
+        let mut lower: [u8; 32] = [0u8; 32];
+        let mut upper: [u8; 32] = [0u8; 32];
+
+        lower.copy_from_slice(&bytes[00..32]);
+        upper.copy_from_slice(&bytes[32..64]);
+
+        Ok(ExpandedSecretKey{ key:   Scalar::from_bits(lower),
+                              nonce:                   upper  })
     }
 
     /// Construct an `ExpandedSecretKey` from a `SecretKey`, using hash function `D`.
@@ -509,18 +527,21 @@ impl ExpandedSecretKey {
             where D: Digest<OutputSize = U64> + Default {
 
         let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut expanded_key: Scalar;
+        let mut hash:  [u8; 64] = [0u8; 64];
+        let mut lower: [u8; 32] = [0u8; 32];
+        let mut upper: [u8; 32] = [0u8; 32];
 
         h.input(secret_key.as_bytes());
         hash.copy_from_slice(h.fixed_result().as_slice());
 
-        expanded_key = Scalar(*array_ref!(&hash, 0, 32));
-        expanded_key[0]  &= 248;
-        expanded_key[31] &=  63;
-        expanded_key[31] |=  64;
+        lower.copy_from_slice(&hash[00..32]);
+        upper.copy_from_slice(&hash[32..64]);
 
-        ExpandedSecretKey{ key: expanded_key, nonce: *array_ref!(&hash, 32, 32) }
+        lower[0]  &= 248;
+        lower[31] &=  63;
+        lower[31] |=  64;
+
+        ExpandedSecretKey{ key: Scalar::from_bits(lower), nonce: upper, }
     }
 
     /// Sign a message with this `ExpandedSecretKey`.
@@ -538,7 +559,7 @@ impl ExpandedSecretKey {
         h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
 
-        mesg_digest = Scalar::reduce(&hash);
+        mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
 
         r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
 
@@ -548,9 +569,9 @@ impl ExpandedSecretKey {
         h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
 
-        hram_digest = Scalar::reduce(&hash);
+        hram_digest = Scalar::from_bytes_mod_order_wide(&hash);
 
-        s = Scalar::multiply_add(&hram_digest, &self.key, &mesg_digest);
+        s = &(&hram_digest * &self.key) + &mesg_digest;
 
         Signature{ r: r.compress(), s: s }
     }
@@ -647,7 +668,11 @@ impl PublicKey {
         if bytes.len() != PUBLIC_KEY_LENGTH {
             return Err("Wrong length of bytes for creating public key!");
         }
-        Ok(PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32))))
+        let mut bits: [u8; 32] = [0u8; 32];
+
+        bits.copy_from_slice(&bytes[..32]);
+
+        Ok(PublicKey(CompressedEdwardsY(bits)))
     }
 
     /// Convert this public key to its underlying extended twisted Edwards coordinate.
@@ -662,20 +687,20 @@ impl PublicKey {
     pub fn from_secret<D>(secret_key: &SecretKey) -> PublicKey
             where D: Digest<OutputSize = U64> + Default {
 
-        let mut h:           D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let     pk:   [u8; 32];
-        let mut digest: &mut [u8; 32];
+        let mut h:    D = D::default();
+        let mut hash:   [u8; 64] = [0u8; 64];
+        let mut digest: [u8; 32] = [0u8; 32];
+        let     pk:     [u8; 32];
 
         h.input(secret_key.as_bytes());
         hash.copy_from_slice(h.fixed_result().as_slice());
 
-        digest = array_mut_ref!(&mut hash, 0, 32);
+        digest.copy_from_slice(&hash[..32]);
         digest[0]  &= 248;
         digest[31] &= 127;
         digest[31] |= 64;
 
-        pk = (&Scalar(*digest) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
+        pk = (&Scalar::from_bits(digest) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
 
         PublicKey(CompressedEdwardsY(pk))
     }
@@ -687,20 +712,15 @@ impl PublicKey {
     /// Returns true if the signature was successfully verified, and
     /// false otherwise.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
-            where D: Digest<OutputSize = U64> + Default {
-
+            where D: Digest<OutputSize = U64> + Default
+    {
         use curve25519_dalek::edwards::vartime;
 
         let mut h: D = D::default();
         let mut a: ExtendedPoint;
         let ao:  Option<ExtendedPoint>;
-        let r: ExtendedPoint;
-        let digest: [u8; 64];
-        let digest_reduced: Scalar;
+        let mut digest: [u8; 64] = [0u8; 64];
 
-        if signature.s[31] & 224 != 0 {
-            return false;
-        }
         ao = self.decompress();
 
         if ao.is_some() {
@@ -714,10 +734,10 @@ impl PublicKey {
         h.input(self.as_bytes());
         h.input(&message);
 
-        let digest_bytes = h.fixed_result();
-        digest = *array_ref!(digest_bytes, 0, 64);
-        digest_reduced = Scalar::reduce(&digest);
-        r = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &signature.s);
+        digest.copy_from_slice(h.fixed_result().as_slice());
+
+        let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&digest);
+        let r: ExtendedPoint = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &signature.s);
 
         slices_equal(signature.r.as_bytes(), r.compress().as_bytes()) == 1
     }
@@ -1150,10 +1170,11 @@ mod bench {
     fn underlying_scalar_mult_basepoint(b: &mut Bencher) {
         use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 
-        let scalar: Scalar = Scalar([  20, 130, 129, 196, 247, 182, 211, 102,
-                                       11, 168, 169, 131, 159,  69, 126,  35,
-                                      109, 193, 175,  54, 118, 234, 138,  81,
-                                       60, 183,  80, 186,  92, 248, 132,  13, ]);
+        let scalar: Scalar = Scalar::from_bits([
+             20, 130, 129, 196, 247, 182, 211, 102,
+             11, 168, 169, 131, 159,  69, 126,  35,
+            109, 193, 175,  54, 118, 234, 138,  81,
+             60, 183,  80, 186,  92, 248, 132,  13, ]);
 
         b.iter(| | &scalar * &ED25519_BASEPOINT_TABLE);
     }

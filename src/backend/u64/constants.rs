@@ -8,9 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! This module contains various constants (such as curve parameters
-//! and useful field elements like `sqrt(-1)`), as well as
-//! lookup tables of pre-computed points.
+//! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
 use backend::u64::field::FieldElement64;
 use backend::u64::scalar::Scalar64;

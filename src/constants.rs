@@ -8,9 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! This module contains various constants (such as curve parameters
-//! and useful field elements like `sqrt(-1)`), as well as
-//! lookup tables of pre-computed points.
+//! This module contains various constants, such as the Ristretto and Ed25519 basepoints.
 //!
 //! Most of the constants are given with
 //! `LONG_DESCRIPTIVE_UPPER_CASE_NAMES`, but they can be brought into

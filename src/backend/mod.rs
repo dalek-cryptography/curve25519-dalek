@@ -22,11 +22,9 @@
 //! `32bit` since identifiers can't start with letters, and the backends
 //! do use `u32`/`u64`, so this seems like a least-bad option.
 
-/// Code using `u32`s and a `(u32, u32) -> u64` multiplier.
 #[cfg(not(feature="radix_51"))]
 pub mod u32;
 
-/// Code using `u64`s and a `(u64, u64) -> u128` multiplier.
 #[cfg(feature="radix_51")]
 pub mod u64;
 

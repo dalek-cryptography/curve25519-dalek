@@ -8,19 +8,12 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Field arithmetic for ℤ/(2²⁵⁵-19), using 32-bit arithmetic with
-//! 64-bit products.
+//! Field arithmetic modulo \\(p = 2\^{255} - 19\\), using \\(32\\)-bit
+//! limbs with \\(64\\)-bit products.
 //!
-//! This code was originally derived from Adam Langley's
-//! curve25519-donna and (Golang) ed25519 implementations.
-//!
-//! This implementation is intended for platforms that can multiply
-//! 32-bit inputs to produce 64-bit outputs.
-//!
-//! This implementation is not preferred for use on x86_64, since the
-//! 64-bit implementation is both much simpler and much faster.
-//! However, that implementation requires Rust's `u128`, which is not
-//! yet stable.
+//! This code was originally derived from Adam Langley's Golang ed25519
+//! implementation, and was then rewritten to use unsigned limbs instead
+//! of signed limbs.
 
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
@@ -30,28 +23,28 @@ use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
 
-/// A `FieldElement32` represents an element of the field GF(2^255 - 19).
+/// A `FieldElement32` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
-/// In the 32-bit implementation, a `FieldElement32` is represented in
-/// radix 2^25.5 as ten `u32`s, so that an element t, entries
-/// t[0],...,t[9], represents `sum(t[i]*2^ceil(i*51/2))`.
+/// In the 32-bit implementation, a `FieldElement` is represented in
+/// radix \\(2\^{25.5}\\) as ten `u32`s.  This means that a field
+/// element \\(x\\) is represented as
+/// $$
+/// x = \sum\_{i=0}\^9 x\_i 2\^{\lceil i \frac {51} 2 \rceil}
+///   = x\_0 + x\_1 2\^{26} + x\_2 2\^{51} + x\_3 2\^{77} + \cdots + x\_9 2\^{230};
+/// $$
+/// the coefficients are alternately bounded by \\(2\^{25}\\) and
+/// \\(2\^{26}\\).  The limbs are allowed to grow between reductions up
+/// to \\(2\^{25+b}\\) or \\(2\^{26+b}\\), where \\(b = 1.75\\).
 ///
-/// The coefficients t[i] are allowed to grow between multiplications.
-///
-/// XXX document by how much
-///
-/// # Warning
-///
-/// You almost certainly do not want to use `FieldElement32` directly.  Consider
-/// using `curve25519_dalek::field::FieldElement`, which will automatically
-/// select between `FieldElement32` and `FieldElement64` depending on whether
-/// curve25519-dalek was compiled with `--features="nightly"`.
-///
-/// This implementation, `FieldElement32`, is intended for platforms that can
-/// multiply 32-bit inputs to produce 64-bit outputs, and is not preferred for
-/// use on x86_64, since the 64-bit implementation is both much simpler and much
-/// faster.  However, the `FieldElement64` implementation requires Rust's
-/// `u128`, which is not yet stable.
+/// # Note
+/// 
+/// The `curve25519_dalek::field` module provides a type alias
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
+/// or `FieldElement32`.
+/// 
+/// The backend-specific type `FieldElement32` should not be used
+/// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
 pub struct FieldElement32(pub (crate) [u32; 10]);
 

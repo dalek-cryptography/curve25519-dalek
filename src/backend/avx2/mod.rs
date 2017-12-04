@@ -100,16 +100,20 @@
 //!
 //! The 4-wide formulas of the HWCD paper do not seem to have been
 //! implemented using SIMD before.  The HWCD paper also describes and
-//! analyzes a 2-wide variant of the Montgomery ladder; this strategy was
-//! used in 2015 by Tung Chou's `sandy2x` implementation, which used a 2-wide
-//! field implementation in 128-bit vector registers.  Curiously, however,
-//! although the [`sandy2x` paper][sandy2x] cites the HWCD paper for extended
-//! twisted Edwards coordinates, it does not mention the 4-wide HWCD
-//! Edwards formulas or that the 2-wide Montgomery formulas it uses were
-//! previously published there.  There is also a 2015 paper by Hernández
-//! and López on using AVX2 for the X25519 Montgomery ladder, but
-//! neither the paper nor the code are publicly available, and it apparently
-//! gives only a [slight speedup][avx2trac].
+//! analyzes a 2-wide variant of the Montgomery ladder (for comparison
+//! with parallel Edwards formulas); this strategy was used in 2015 by
+//! Tung Chou's `sandy2x` implementation, which used a 2-wide field
+//! implementation in 128-bit vector registers.  
+//!
+//! Curiously, however, although the [`sandy2x` paper][sandy2x] also
+//! implements Edwards arithmetic, and cites the HWCD paper, it doesn't
+//! mention or discuss the parallel formulas from HWCD, or that the
+//! 2-wide Montgomery formulas it uses were previously published there.
+//! There is also a 2015 paper by Hernández and López on using AVX2 for
+//! the X25519 Montgomery ladder, but neither the paper nor the code are
+//! publicly available, and it apparently gives only a [slight
+//! speedup][avx2trac], suggesting that it also overlooked the
+//! HWCD formulas.
 //!
 //! HWCD also suggest using a mixed representation, passing between \\(
 //! \mathbb P\^3 \\) "extended" coordinates and \\( \mathbb P\^2 \\)
@@ -119,7 +123,7 @@
 //! details on the different coordinate systems can be found in the
 //! `curve_models` module documentation.
 //!
-//! This optimization is not used for the parallel formulas, which are
+//! This optimization is not compatible with the parallel formulas, which are
 //! therefore slightly less efficient when counting the total number of
 //! field multiplications and squarings.  In particular, vectorized doublings
 //! are less efficient than serial doublings.  
@@ -135,6 +139,17 @@
 //! approximately 1.8x for Skylake-X with `target_cpu=skylake-avx512` (using the extra
 //! `ymm16..ymm31` registers from AVX512VL), and of approximately 1.0x
 //! for Ryzen (which implements AVX2 at half rate).
+//!
+//! (Note: since testing this, the experimental `llvm50` Rust branch
+//! used to compile the experimental `stdsimd` intrinsics have fallen
+//! out of sync and it is no longer possible to compile for
+//! `skylake-avx512`.  This is why all of this branch is part of the
+//! `yolocrypto` feature, pending upstream work.)
+//!
+//! However, since the relative cost of doubling and addition has
+//! changed, the optimal tradeoffs for window size etc. in scalar
+//! multiplication have probably also changed and should be
+//! re-evaluated.
 //!
 //! # Tweaked formulas
 //!
@@ -300,6 +315,10 @@
 //! Since this breaks cleanly into two 128-bit lanes, it may be possible
 //! to adapt it to 128-bit vector instructions such as NEON without too
 //! much difficulty.
+//!
+//! Going the other direction, to extend this to AVX512, we could either
+//! run two point operations in parallel in lower and upper halves of
+//! the registers, or use 2-way parallelism within a field operation.
 //!
 //! We don't attempt to use AVX2 for serial field element computations
 //! such as inversion, since wherever we have AVX2 we also have `mulx`.

@@ -400,17 +400,20 @@ use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-use edwards;
-use edwards::ExtendedPoint;
-use edwards::CompletedPoint;
-use edwards::EdwardsBasepointTable;
-use edwards::Identity;
-use scalar::Scalar;
-
 use subtle;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
 use subtle::Equal;
+
+use edwards;
+use edwards::ExtendedPoint;
+use edwards::EdwardsBasepointTable;
+
+use scalar::Scalar;
+
+use curve_models::CompletedPoint;
+
+use traits::Identity;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -424,6 +427,11 @@ pub struct CompressedRistretto(pub [u8; 32]);
 
 /// The result of compressing a `RistrettoPoint`.
 impl CompressedRistretto {
+    /// Convert this `CompressedRistretto` to its underlying array of bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+
     /// View this `CompressedRistretto` as an array of bytes.
     pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
         &self.0
@@ -530,8 +538,9 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    let arr32 = array_ref!(v, 0, 32); // &[u8;32] from &[u8]
-                    CompressedRistretto(*arr32)
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+                    CompressedRistretto(arr32)
                         .decompress()
                         .ok_or(serde::de::Error::custom("decompression failed"))
                 } else {
@@ -557,7 +566,7 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 /// `ExtendedPoint`, with custom equality, compression, and
 /// decompression routines to account for the quotient.
 #[derive(Copy, Clone)]
-pub struct RistrettoPoint(pub ExtendedPoint);
+pub struct RistrettoPoint(pub(crate) ExtendedPoint);
 
 impl RistrettoPoint {
     /// Compress in Ristretto format.
@@ -953,7 +962,7 @@ impl ConditionallyAssignable for RistrettoPoint {
     /// #
     /// # use subtle::ConditionallyAssignable;
     /// #
-    /// # use curve25519_dalek::edwards::Identity;
+    /// # use curve25519_dalek::traits::Identity;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// # use curve25519_dalek::constants;
     /// # fn main() {
@@ -1032,8 +1041,7 @@ mod test {
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use edwards::Identity;
-    use edwards::ValidityCheck;
+    use traits::{Identity, ValidityCheck};
     use super::*;
 
     #[cfg(feature = "serde")]
@@ -1133,6 +1141,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1195,6 +1204,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1227,6 +1237,7 @@ mod bench {
     use super::*;
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn decompression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1236,6 +1247,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn compression(b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;

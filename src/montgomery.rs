@@ -8,7 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Montgomery arithmetic.
+//! Group operations for Curve25519, in Montgomery form.
 //!
 //! Apart from the compressed point implementation
 //! (i.e. `CompressedMontgomeryU`), this module is a "clean room" implementation
@@ -38,7 +38,9 @@ use scalar::Scalar;
 // XXX Move these to a common "group" module?  At the same time, we should
 // XXX probably make a `trait Group` once const generics are implemented in
 // XXX Rust. —isis
-use edwards::{Identity, ValidityCheck};
+// 
+// XXX I put these in a `traits` module for now - hdevalence
+use traits::{Identity, ValidityCheck};
 
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallySwappable;
@@ -426,9 +428,8 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(test)]
 mod test {
-    use constants::ED25519_BASEPOINT_TABLE;
     use constants::BASE_COMPRESSED_MONTGOMERY;
-    use edwards::Identity;
+    use traits::Identity;
     use super::*;
 
     use rand::OsRng;
@@ -484,26 +485,29 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn montgomery_ct_eq_ne() {
         let mut csprng: OsRng = OsRng::new().unwrap();
         let s1: Scalar = Scalar::random(&mut csprng);
         let s2: Scalar = Scalar::random(&mut csprng);
-        let p1: MontgomeryPoint = (&s1 * &ED25519_BASEPOINT_TABLE).to_montgomery();
-        let p2: MontgomeryPoint = (&s2 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+        let p1: MontgomeryPoint = (&s1 * &constants::ED25519_BASEPOINT_TABLE).to_montgomery();
+        let p2: MontgomeryPoint = (&s2 * &constants::ED25519_BASEPOINT_TABLE).to_montgomery();
 
         assert_eq!(p1.ct_eq(&p2), 0);
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn montgomery_ct_eq_eq() {
         let mut csprng: OsRng = OsRng::new().unwrap();
         let s1: Scalar = Scalar::random(&mut csprng);
-        let p1: MontgomeryPoint = (&s1 * &ED25519_BASEPOINT_TABLE).to_montgomery();
+        let p1: MontgomeryPoint = (&s1 * &constants::ED25519_BASEPOINT_TABLE).to_montgomery();
 
         assert_eq!(p1.ct_eq(&p1), 1);
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn differential_add_matches_edwards_model() {
         let mut csprng: OsRng = OsRng::new().unwrap();
 
@@ -523,6 +527,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn ladder_matches_scalarmult() {
         let mut csprng: OsRng = OsRng::new().unwrap();
 
@@ -544,22 +549,10 @@ mod test {
 
         assert_eq!(result.compress(), expected.to_montgomery().compress());
     }
-
-    #[test]
-    #[should_panic(expected = "assertion failed: self[31] <= 127")]
-    fn ladder_matches_scalarmult_with_scalar_high_bit_set() {
-        let mut s: Scalar = Scalar::one();
-
-        s[31] = 255;
-
-        let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress() * &s;
-        let expected: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
-
-        assert_eq!(result.compress(), expected.to_montgomery().compress())
-    }
 }
 
 #[cfg(all(test, feature = "bench"))]
+#[cfg(feature="precomputed_tables")]
 mod bench {
     use rand::OsRng;
     use constants::ED25519_BASEPOINT_TABLE;

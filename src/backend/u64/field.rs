@@ -8,14 +8,8 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Field arithmetic for ℤ/(2²⁵⁵-19), using 64-bit arithmetic wuth
-//! 128-bit products.
-//!
-//! On x86_64, the multiplications lower to `MUL` instructions taking
-//! 64-bit inputs and producing 128-bit outputs.  On other platforms,
-//! this implementation is not recommended.  On Haswell and newer, the
-//! BMI2 instruction set provides `MULX` and friends, which gives even
-//! better performance.
+//! Field arithmetic modulo \\(p = 2\^{255} - 19\\), using \\(64\\)-bit
+//! limbs with \\(128\\)-bit products.
 
 use core::fmt::Debug;
 use core::ops::{Add, AddAssign};
@@ -25,37 +19,27 @@ use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
 
-use utils::load8;
-
-/// In the 64-bit implementation, field elements are represented in
-/// radix 2^51 as five `u64`s.
-pub type Limb = u64;
-
-/// A `FieldElement64` represents an element of the field GF(2^255 - 19).
+/// A `FieldElement64` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// In the 64-bit implementation, a `FieldElement` is represented in
-/// radix 2^51 as five `u64`s; the coefficients are allowed to grow up
-/// to 2^54 between reductions mod `p`.
+/// radix \\(2\^{51}\\) as five `u64`s; the coefficients are allowed to
+/// grow up to \\(2\^{54}\\) between reductions modulo \\(p\\).
 ///
-/// # Warning
+/// # Note
 ///
-/// You almost certainly do not want to use `FieldElement64` directly.  Consider
-/// using `curve25519_dalek::field::FieldElement`, which will automatically
-/// select between `FieldElement32` and `FieldElement64` depending on whether
-/// curve25519-dalek was compiled with `--features="nightly"`.
+/// The `curve25519_dalek::field` module provides a type alias
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
+/// or `FieldElement32`.
 ///
-/// This implementation, `FieldElement64`, is intended for x64_64 platforms,
-/// which have the `MUL` instructions taking 64-bit inputs and producing 128-bit
-/// outputs.  On other platforms, this implementation is not recommended.  On
-/// Haswell and newer, the BMI2 instruction set provides `MULX` and friends,
-/// which gives even better performance.  This implementation requires Rust's
-/// `u128`, which is not yet stable.
+/// The backend-specific type `FieldElement64` should not be used
+/// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
 pub struct FieldElement64(pub (crate) [u64; 5]);
 
 impl Debug for FieldElement64 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement64: {:?}", &self.0[..])
+        write!(f, "FieldElement64({:?})", &self.0[..])
     }
 }
 
@@ -247,6 +231,17 @@ impl FieldElement64 {
     /// canonical.
     ///
     pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement64 {
+        let load8 = |input: &[u8]| -> u64 {
+               (input[0] as u64)
+            | ((input[1] as u64) << 8)
+            | ((input[2] as u64) << 16)
+            | ((input[3] as u64) << 24)
+            | ((input[4] as u64) << 32)
+            | ((input[5] as u64) << 40)
+            | ((input[6] as u64) << 48)
+            | ((input[7] as u64) << 56)
+        };
+
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement64(
         // load bits [  0, 64), no shift

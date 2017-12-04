@@ -8,67 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Group operations for Curve25519, in the form of the twisted
-//! Edwards curve -x²+y²=1+dx²y² modulo p=2²⁵⁵-19 with
-//! parameter d=-121665/121666.
-//!
-//! # Curve representations
-//!
-//! Internally, we use several different models for the curve.  Here
-//! is a sketch of the relationship between the models, following [a
-//! post](https://moderncrypto.org/mail-archive/curves/2016/000807.html)
-//! by Ben Smith on the moderncrypto mailing list.
-//!
-//! Begin with the affine equation for the curve,
-//!
-//!     -x² + y² = 1 + dx²y².       <span style="float: right">(1)</span>
-//!
-//! Next, pass to the projective closure 𝗣^1 x 𝗣^1 by setting x=X/Z,
-//! y=Y/T.  Clearing denominators gives the model
-//!
-//!     -X²T² + Y²Z² = Z²T² + dX²Y². <span style="float: right">(2)<span>
-//!
-//! To map from 𝗣^1 x 𝗣^1, a product of two lines, to 𝗣^3, we use the
-//! Segre embedding,
-//!
-//!     σ : ((X:Z),(Y:T)) ↦ (XY:XT:ZY:ZT).  <span style="float: right">(3)</span>
-//!
-//! Using coordinates (W₀:W₁:W₂:W₃) for 𝗣^3, the image of σ(𝗣^1 x 𝗣^1)
-//! is the surface defined by W₀W₃=W₁W₂, and under σ, equation (2)
-//! becomes
-//!
-//!     -W₁² + W₂² = W₃² + dW₀².   <span style="float: right">(4)</span>
-//!
-//! Up to variable naming, this is exactly the curve model introduced
-//! in ["Twisted Edwards Curves
-//! Revisited"](https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf)
-//! by Hisil, Wong, Carter, and Dawson.  We can map from 𝗣^3 to 𝗣² by
-//! sending (W₀:W₁:W₂:W₃) to (W₁:W₂:W₃).  Notice that
-//!
-//!     W₁/W₃ = XT/ZT = X/Z = x    <span style="float: right">(5)</span>
-//!
-//!     W₂/W₃ = ZY/ZT = Y/T = y,   <span style="float: right">(6)</span>
-//!
-//! so this is the same as if we had started with the affine model (1)
-//! and passed to 𝗣^2 by setting `x = W₁/W₃`, `y = W₂/W₃`.  Up to
-//! variable naming, this is the projective representation introduced
-//! in ["Twisted Edwards Curves"](https://eprint.iacr.org/2008/013).
-//!
-//! Following the implementation strategy in the ref10 reference
-//! implementation for [Ed25519](https://ed25519.cr.yp.to/ed25519-20110926.pdf),
-//! we use several different models for curve points:
-//!
-//! * `CompletedPoint`: points in 𝗣^1 x 𝗣^1;
-//! * `ExtendedPoint`: points in 𝗣^3;
-//! * `ProjectivePoint`: points in 𝗣^2.
-//!
-//! Finally, to accelerate additions, we use two cached point formats,
-//! one for the affine model and one for the 𝗣^3 model:
-//!
-//! * `AffineNielsPoint`: `(y+x, y-x, 2dxy)`
-//! * `ProjectiveNielsPoint`: `(Y+X, Y-X, Z, 2dXY)`
-//!
-//! [1]: https://moderncrypto.org/mail-archive/curves/2016/000807.html
+//! Group operations for Curve25519, in Edwards form.
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -86,27 +26,37 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Index;
 
-use constants;
-use field::FieldElement;
-use scalar::Scalar;
-use montgomery::MontgomeryPoint;
-
 use subtle::slices_equal;
-use subtle::bytes_equal;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
+// XXX subtle::Equal
 use subtle::Equal;
+
+use constants;
+
+use field::FieldElement;
+use scalar::Scalar;
+
+use montgomery::MontgomeryPoint;
+use curve_models::ProjectivePoint;
+use curve_models::CompletedPoint; 
+use curve_models::AffineNielsPoint;
+use curve_models::ProjectiveNielsPoint;
+
+use traits::{Identity, IsIdentity};
+use traits::ValidityCheck;
+
+use traits::select_precomputed_point;
 
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// In "Edwards y" format, the point `(x,y)` on the curve is
-/// determined by the `y`-coordinate and the sign of `x`, marshalled
-/// into a 32-byte array.
+/// In "Edwards y" / "Ed25519" format, the curve point \\((x,y)\\) is
+/// determined by the \\(y\\)-coordinate and the sign of \\(x\\).
 ///
 /// The first 255 bits of a `CompressedEdwardsY` represent the
-/// y-coordinate. The high bit of the 32nd byte gives the sign of `x`.
+/// \\(y\\)-coordinate.  The high bit of the 32nd byte gives the sign of \\(x\\).
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
@@ -129,9 +79,9 @@ impl CompressedEdwardsY {
 
     /// Attempt to decompress to an `ExtendedPoint`.
     ///
-    /// Returns `None` if the input is not the `y`-coordinate of a
+    /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> Option<ExtendedPoint> { // FromBytes()
+    pub fn decompress(&self) -> Option<ExtendedPoint> {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
@@ -190,8 +140,9 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
-                    let arr32 = array_ref!(v, 0, 32); // &[u8;32] from &[u8]
-                    CompressedEdwardsY(*arr32)
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+                    CompressedEdwardsY(arr32)
                         .decompress()
                         .ok_or(serde::de::Error::custom("decompression failed"))
                 } else {
@@ -208,75 +159,23 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
 // Internal point representations
 // ------------------------------------------------------------------------
 
-/// An `ExtendedPoint` is a point on the curve in 𝗣³(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to (x:y:1:xy).
-// XXX members should not be public, but that's needed for the
-// constants module. Fix when RFC #1422 lands:
-// https://github.com/rust-lang/rust/issues/32409
+/// An `ExtendedPoint` represents a point on the Edwards form of Curve25519.
+///
+/// The name refers to the extended twisted Edwards coordinates of
+/// Hisil, Wong, Carter, and Dawson, and more details on curve models
+/// can be found in the `curve25519-dalek` internal documentation.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
 pub struct ExtendedPoint {
-    pub X: FieldElement,
-    pub Y: FieldElement,
-    pub Z: FieldElement,
-    pub T: FieldElement,
-}
-
-/// A `ProjectivePoint` is a point on the curve in 𝗣²(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to (x:y:1).
-#[derive(Copy, Clone)]
-pub struct ProjectivePoint {
-    X: FieldElement,
-    Y: FieldElement,
-    Z: FieldElement,
-}
-
-/// A `CompletedPoint` is a point ((X:Z), (Y:T)) in 𝗣¹(𝔽ₚ)×𝗣¹(𝔽ₚ).
-/// A point (x,y) in the affine model corresponds to ((x:1),(y:1)).
-#[derive(Copy, Clone)]
-#[allow(missing_docs)]
-pub struct CompletedPoint {
-    pub X: FieldElement,
-    pub Y: FieldElement,
-    pub Z: FieldElement,
-    pub T: FieldElement,
-}
-
-/// A pre-computed point in the affine model for the curve, represented as
-/// (y+x, y-x, 2dxy).  These precomputations accelerate addition and
-/// subtraction, and were introduced by Niels Duif in the ed25519 paper
-/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
-// Safe to derive Eq because affine coordinates.
-#[derive(Copy, Clone, Eq, PartialEq)]
-#[allow(missing_docs)]
-pub struct AffineNielsPoint {
-    pub y_plus_x:  FieldElement,
-    pub y_minus_x: FieldElement,
-    pub xy2d:      FieldElement,
-}
-
-/// A pre-computed point in the P³(𝔽ₚ) model for the curve, represented as
-/// (Y+X, Y-X, Z, 2dXY).  These precomputations accelerate addition and
-/// subtraction, and were introduced by Niels Duif in the ed25519 paper
-/// ["High-Speed High-Security Signatures"](https://ed25519.cr.yp.to/ed25519-20110926.pdf).
-#[derive(Copy, Clone)]
-pub struct ProjectiveNielsPoint {
-    Y_plus_X:  FieldElement,
-    Y_minus_X: FieldElement,
-    Z:         FieldElement,
-    T2d:       FieldElement,
+    pub(crate) X: FieldElement,
+    pub(crate) Y: FieldElement,
+    pub(crate) Z: FieldElement,
+    pub(crate) T: FieldElement,
 }
 
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------
-
-/// Trait for curve point types which have an identity constructor.
-pub trait Identity {
-    /// Returns the identity element of the curve.
-    /// Can be used as a constructor.
-    fn identity() -> Self;
-}
 
 impl Identity for CompressedEdwardsY {
     fn identity() -> CompressedEdwardsY {
@@ -296,57 +195,9 @@ impl Identity for ExtendedPoint {
     }
 }
 
-impl Identity for ProjectivePoint {
-    fn identity() -> ProjectivePoint {
-        ProjectivePoint{ X: FieldElement::zero(),
-                         Y: FieldElement::one(),
-                         Z: FieldElement::one() }
-    }
-}
-
-impl Identity for ProjectiveNielsPoint {
-    fn identity() -> ProjectiveNielsPoint {
-        ProjectiveNielsPoint{ Y_plus_X:  FieldElement::one(),
-                     Y_minus_X: FieldElement::one(),
-                     Z:         FieldElement::one(),
-                     T2d:       FieldElement::zero() }
-    }
-}
-
-impl Identity for AffineNielsPoint {
-    fn identity() -> AffineNielsPoint {
-        AffineNielsPoint{
-            y_plus_x:  FieldElement::one(),
-            y_minus_x: FieldElement::one(),
-            xy2d:      FieldElement::zero(),
-        }
-    }
-}
-
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
-
-/// Trait for checking whether a point is on the curve
-pub trait ValidityCheck {
-    /// Checks whether the point is on the curve. Not CT.
-    fn is_valid(&self) -> bool;
-}
-
-impl ValidityCheck for ProjectivePoint {
-    fn is_valid(&self) -> bool {
-        // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
-        // homogenized as (-X^2 + Y^2)*Z^2 = Z^4 + d*X^2*Y^2
-        let XX = self.X.square();
-        let YY = self.Y.square();
-        let ZZ = self.Z.square();
-        let ZZZZ = ZZ.square();
-        let lhs = &(&YY - &XX) * &ZZ;
-        let rhs = &ZZZZ + &(&constants::EDWARDS_D * &(&XX * &YY));
-
-        lhs == rhs
-    }
-}
 
 impl ValidityCheck for ExtendedPoint {
     // XXX this should also check that T is correct
@@ -358,24 +209,6 @@ impl ValidityCheck for ExtendedPoint {
 // ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
-
-impl ConditionallyAssignable for ProjectiveNielsPoint {
-    fn conditional_assign(&mut self, other: &ProjectiveNielsPoint, choice: u8) {
-        self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
-        self.Y_minus_X.conditional_assign(&other.Y_minus_X, choice);
-        self.Z.conditional_assign(&other.Z, choice);
-        self.T2d.conditional_assign(&other.T2d, choice);
-    }
-}
-
-impl ConditionallyAssignable for AffineNielsPoint {
-    fn conditional_assign(&mut self, other: &AffineNielsPoint, choice: u8) {
-        // PreComputedGroupElementCMove()
-        self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
-        self.y_minus_x.conditional_assign(&other.y_minus_x, choice);
-        self.xy2d.conditional_assign(&other.xy2d, choice);
-    }
-}
 
 impl ConditionallyAssignable for ExtendedPoint {
     fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
@@ -397,123 +230,13 @@ impl Equal for ExtendedPoint {
     }
 }
 
-/// Trait for testing if a curve point is equivalent to the identity point.
-pub trait IsIdentity {
-    /// Return true if this element is the identity element of the curve.
-    fn is_identity(&self) -> bool;
-}
-
-/// Implement generic identity equality testing for a point representations
-/// which have constant-time equality testing and a defined identity
-/// constructor.
-impl<T> IsIdentity for T where T: Equal + Identity {
-    fn is_identity(&self) -> bool {
-        self.ct_eq(&T::identity()) == 1u8
-    }
-}
-
 // ------------------------------------------------------------------------
 // Point conversions
 // ------------------------------------------------------------------------
 
-impl ProjectivePoint {
-    /// Convert to the extended twisted Edwards representation of this
-    /// point.
-    ///
-    /// From §3 in [0]:
-    ///
-    /// Given (X:Y:Z) in Ɛ, passing to Ɛₑ can be performed in 3M+1S by
-    /// computing (XZ,YZ,XY,Z²).  (Note that in that paper, points are
-    /// (X:Y:T:Z) so this really does match the code below).
-    pub fn to_extended(&self) -> ExtendedPoint {
-        ExtendedPoint{
-            X: &self.X * &self.Z,
-            Y: &self.Y * &self.Z,
-            Z: self.Z.square(),
-            T: &self.X * &self.Y,
-        }
-    }
-
-    /// Convert this point to a `CompressedEdwardsY`
-    pub fn compress(&self) -> CompressedEdwardsY {
-        let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        let mut s: [u8; 32];
-
-        s      =  y.to_bytes();
-        s[31] ^= (x.is_negative() << 7) as u8;
-        CompressedEdwardsY(s)
-    }
-
-    /// Convert this projective point in the Edwards model to its equivalent
-    /// projective point on the Montgomery form of the curve.
-    ///
-    /// Taking the Montgomery curve equation in affine coordinates:
-    ///
-    ///     E_(A,B) = Bv² = u³ + Au² + u   <span style="float: right">(1)</span>
-    ///
-    /// and given its relations to the coordinates of the Edwards model:
-    ///
-    ///     u = (1+y)/(1-y)                <span style="float: right">(2)</span>
-    ///     v = (λu)/(x)
-    ///
-    /// Converting from affine to projective coordinates in the Montgomery
-    /// model, we arrive at:
-    ///
-    ///     u = (Z+Y)/(Z-Y)                <span style="float: right">(3)</span>
-    ///     v = λ * ((Z+Y)/(Z-Y)) * (Z/X)
-    ///
-    /// The transition between affine and projective is given by
-    ///
-    ///      u → U/W                       <span style="float: right">(4)</span>
-    ///      v → V/W
-    ///
-    /// thus the Montgomery curve equation (1) becomes
-    ///
-    ///      E_(A,B) : BV²W = U³ + AU²W + UW² ⊆ 𝗣^2  <span style="float: right">(5)</span>
-    ///
-    /// Here, again, to differentiate from points in the twisted Edwards model, we
-    /// call the point `(x,y)` in affine coordinates `(u,v)` and similarly in projective
-    /// space we use `(U:V:W)`.  However, since (as per Montgomery's original work) the
-    /// v-coordinate is superfluous to the definition of the group law, we merely
-    /// use `(U:W)`.
-    ///
-    /// Therefore, the direct translation between projective Montgomery points
-    /// and projective twisted Edwards points is
-    ///
-    ///      (U:W) = (Z+Y:Z-Y)             <span style="float: right">(6)</span>
-    ///
-    /// Note, however, that there appears to be an exception where `Z=Y`,
-    /// since—from equation 2—this would imply that `y=1` (thus causing the
-    /// denominator to be zero).  If this is the case, then it follows from the
-    /// twisted Edwards curve equation
-    ///
-    ///      -x² + y² = 1 + dx²y²          <span style="float: right">(7)</span>
-    ///
-    /// that
-    ///
-    ///      -x² + 1 = 1 + dx²
-    ///
-    /// and, assuming that `d ≠ -1`,
-    ///
-    ///      -x² = x²
-    ///       x  = 0
-    ///
-    /// Therefore, the only valid point with `y=1` is the twisted Edwards
-    /// identity point, which correctly becomes `(1:0)`, that is, the identity,
-    /// in the Montgomery model.
-    pub fn to_montgomery(&self) -> MontgomeryPoint {
-        MontgomeryPoint{
-            U: &self.Z + &self.Y,
-            W: &self.Z - &self.Y,
-        }
-    }
-}
-
 impl ExtendedPoint {
-    /// Convert to a ProjectiveNielsPoint
-    pub fn to_projective_niels(&self) -> ProjectiveNielsPoint {
+    /// Convert to a `ProjectiveNielsPoint`
+    pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -522,12 +245,11 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert the representation of this point from extended Twisted Edwards
-    /// coodinates to projective coordinates.
+    /// Convert the representation of this point from extended
+    /// coordinates to projective coordinates.
     ///
-    /// Given a point in Ɛₑ, we can convert to projective coordinates
-    /// cost-free by simply ignoring T.
-    fn to_projective(&self) -> ProjectivePoint {
+    /// Free. 
+    pub(crate) fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: self.X,
             Y: self.Y,
@@ -537,7 +259,7 @@ impl ExtendedPoint {
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub fn to_affine_niels(&self) -> AffineNielsPoint {
+    pub(crate) fn to_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -549,36 +271,88 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert this point to its equivalent on the Montgomery form of the
-    /// curve.
+    /// Convert this `ExtendedPoint` on the Edwards model to the
+    /// corresponding `MontgomeryPoint` on the Montgomery model.
+    ///
+    /// Note that this is a one-way conversion, since the Montgomery
+    /// model does not retain sign information.
+    ///
+    // XXX need to figure out how to keep this in internal docs, and
+    // also to rewrite it to use tex
+    //
+    // # Implementation notes
+    // 
+    // Taking the Montgomery curve equation in affine coordinates:
+    //
+    //     E_(A,B) = Bv² = u³ + Au² + u   <span style="float: right">(1)</span>
+    //
+    // and given its relations to the coordinates of the Edwards model:
+    //
+    //     u = (1+y)/(1-y)                <span style="float: right">(2)</span>
+    //     v = (λu)/(x)
+    //
+    // Converting from affine to projective coordinates in the Montgomery
+    // model, we arrive at:
+    //
+    //     u = (Z+Y)/(Z-Y)                <span style="float: right">(3)</span>
+    //     v = λ * ((Z+Y)/(Z-Y)) * (Z/X)
+    //
+    // The transition between affine and projective is given by
+    //
+    //      u → U/W                       <span style="float: right">(4)</span>
+    //      v → V/W
+    //
+    // thus the Montgomery curve equation (1) becomes
+    //
+    //      E_(A,B) : BV²W = U³ + AU²W + UW² ⊆ 𝗣^2  <span style="float: right">(5)</span>
+    //
+    // Here, again, to differentiate from points in the twisted Edwards model, we
+    // call the point `(x,y)` in affine coordinates `(u,v)` and similarly in projective
+    // space we use `(U:V:W)`.  However, since (as per Montgomery's original work) the
+    // v-coordinate is not required to perform scalar multiplication, we merely
+    // use `(U:W)`.
+    //
+    // Therefore, the direct translation between projective Montgomery points
+    // and projective twisted Edwards points is
+    //
+    //      (U:W) = (Z+Y:Z-Y)             <span style="float: right">(6)</span>
+    //
+    // Note, however, that there appears to be an exception where `Z=Y`,
+    // since—from equation 2—this would imply that `y=1` (thus causing the
+    // denominator to be zero).  If this is the case, then it follows from the
+    // twisted Edwards curve equation
+    //
+    //      -x² + y² = 1 + dx²y²          <span style="float: right">(7)</span>
+    //
+    // that
+    //
+    //      -x² + 1 = 1 + dx²
+    //
+    // and, assuming that `d ≠ -1`,
+    //
+    //      -x² = x²
+    //       x  = 0
+    //
+    // Therefore, the only valid point with `y=1` is the twisted Edwards
+    // identity point, which correctly becomes `(1:0)`, that is, the identity,
+    // in the Montgomery model.
     pub fn to_montgomery(&self) -> MontgomeryPoint {
-        self.to_projective().to_montgomery()
+        MontgomeryPoint{
+            U: &self.Z + &self.Y,
+            W: &self.Z - &self.Y,
+        }
     }
 
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
-        self.to_projective().compress()
-    }
-}
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let mut s: [u8; 32];
 
-impl CompletedPoint {
-    /// Convert to a ProjectivePoint
-    pub fn to_projective(&self) -> ProjectivePoint {
-        ProjectivePoint{
-            X: &self.X * &self.T,
-            Y: &self.Y * &self.Z,
-            Z: &self.Z * &self.T,
-        }
-    }
-
-    /// Convert to an ExtendedPoint
-    pub fn to_extended(&self) -> ExtendedPoint {
-        ExtendedPoint{
-            X: &self.X * &self.T,
-            Y: &self.Y * &self.Z,
-            Z: &self.Z * &self.T,
-            T: &self.X * &self.Y,
-        }
+        s      =  y.to_bytes();
+        s[31] ^= (x.is_negative() << 7) as u8;
+        CompressedEdwardsY(s)
     }
 }
 
@@ -586,29 +360,9 @@ impl CompletedPoint {
 // Doubling
 // ------------------------------------------------------------------------
 
-impl ProjectivePoint {
-    /// Double this point: return self + self
-    pub fn double(&self) -> CompletedPoint { // Double()
-        let XX          = self.X.square();
-        let YY          = self.Y.square();
-        let ZZ2         = self.Z.square2();
-        let X_plus_Y    = &self.X + &self.Y;
-        let X_plus_Y_sq = X_plus_Y.square();
-        let YY_plus_XX  = &YY + &XX;
-        let YY_minus_XX = &YY - &XX;
-
-        CompletedPoint{
-            X: &X_plus_Y_sq - &YY_plus_XX,
-            Y: YY_plus_XX,
-            Z: YY_minus_XX,
-            T: &ZZ2 - &YY_minus_XX
-        }
-    }
-}
-
 impl ExtendedPoint {
     /// Add this point to itself.
-    pub fn double(&self) -> ExtendedPoint {
+    pub(crate) fn double(&self) -> ExtendedPoint {
         self.to_projective().double().to_extended()
     }
 }
@@ -616,88 +370,6 @@ impl ExtendedPoint {
 // ------------------------------------------------------------------------
 // Addition and Subtraction
 // ------------------------------------------------------------------------
-
-impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
-    type Output = CompletedPoint;
-
-    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PP = &Y_plus_X  * &other.Y_plus_X;
-        let MM = &Y_minus_X * &other.Y_minus_X;
-        let TT2d = &self.T * &other.T2d;
-        let ZZ   = &self.Z * &other.Z;
-        let ZZ2  = &ZZ + &ZZ;
-
-        CompletedPoint{
-            X: &PP - &MM,
-            Y: &PP + &MM,
-            Z: &ZZ2 + &TT2d,
-            T: &ZZ2 - &TT2d
-        }
-    }
-}
-
-impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
-    type Output = CompletedPoint;
-
-    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PM = &Y_plus_X * &other.Y_minus_X;
-        let MP = &Y_minus_X  * &other.Y_plus_X;
-        let TT2d = &self.T * &other.T2d;
-        let ZZ   = &self.Z * &other.Z;
-        let ZZ2  = &ZZ + &ZZ;
-
-        CompletedPoint{
-            X: &PM - &MP,
-            Y: &PM + &MP,
-            Z: &ZZ2 - &TT2d,
-            T: &ZZ2 + &TT2d
-        }
-    }
-}
-
-impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
-    type Output = CompletedPoint;
-
-    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PP        = &Y_plus_X  * &other.y_plus_x;
-        let MM        = &Y_minus_X * &other.y_minus_x;
-        let Txy2d     = &self.T * &other.xy2d;
-        let Z2        = &self.Z + &self.Z;
-
-        CompletedPoint{
-            X: &PP - &MM,
-            Y: &PP + &MM,
-            Z: &Z2 + &Txy2d,
-            T: &Z2 - &Txy2d
-        }
-    }
-}
-
-impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
-    type Output = CompletedPoint;
-
-    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
-        let Y_plus_X  = &self.Y + &self.X;
-        let Y_minus_X = &self.Y - &self.X;
-        let PM        = &Y_plus_X  * &other.y_minus_x;
-        let MP        = &Y_minus_X * &other.y_plus_x;
-        let Txy2d     = &self.T * &other.xy2d;
-        let Z2        = &self.Z + &self.Z;
-
-        CompletedPoint{
-            X: &PM - &MP,
-            Y: &PM + &MP,
-            Z: &Z2 - &Txy2d,
-            T: &Z2 + &Txy2d
-        }
-    }
-}
 
 impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
@@ -742,32 +414,6 @@ impl<'a> Neg for &'a ExtendedPoint {
     }
 }
 
-impl<'a> Neg for &'a ProjectiveNielsPoint {
-    type Output = ProjectiveNielsPoint;
-
-    fn neg(self) -> ProjectiveNielsPoint {
-        ProjectiveNielsPoint{
-            Y_plus_X:   self.Y_minus_X,
-            Y_minus_X:  self.Y_plus_X,
-            Z:          self.Z,
-            T2d:        -(&self.T2d),
-        }
-    }
-}
-
-
-impl<'a> Neg for &'a AffineNielsPoint {
-    type Output = AffineNielsPoint;
-
-    fn neg(self) -> AffineNielsPoint {
-        AffineNielsPoint{
-            y_plus_x:   self.y_minus_x,
-            y_minus_x:  self.y_plus_x,
-            xy2d:       -(&self.xy2d)
-        }
-    }
-}
-
 // ------------------------------------------------------------------------
 // Scalar multiplication
 // ------------------------------------------------------------------------
@@ -783,8 +429,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
-    /// Uses a window of size 4.  Note: for scalar multiplication of
-    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
         let P = self.to_projective_niels();
@@ -824,29 +470,36 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
 impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     type Output = ExtendedPoint;
 
-    /// Scalar multiplication: compute `self * point`.
+    /// Scalar multiplication: compute `scalar * self`.
     ///
-    /// Uses a window of size 4.  Note: for scalar multiplication of
-    /// the basepoint, `basepoint_mult` is approximately 4x faster.
+    /// For scalar multiplication of a basepoint,
+    /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
         point * &self
     }
 }
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+/// Given an iterator of (possibly secret) scalars and an iterator of
+/// (possibly secret) points, compute
+/// $$
+/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+/// $$
 ///
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
 ///
 /// # Input
 ///
-/// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
-/// error to call this function with two vectors of different lengths.
+/// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+/// error to call this function with two iterators of different lengths.
+/// 
+/// XXX need to clear memory
+// XXX later when we do more fancy multiscalar mults, we can delegate
+// based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
-            J: IntoIterator<Item = &'b ExtendedPoint>
+          J: IntoIterator<Item = &'b ExtendedPoint>
 {
     //assert_eq!(scalars.len(), points.len());
 
@@ -889,7 +542,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     // mults: we perform 63 multiplications by 16 instead of 63*n
     // multiplications, saving 252*(n-1) doublings.
     let mut Q = ExtendedPoint::identity();
-    // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
+    // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
         Q = Q.mult_by_pow_2(4);
         let it = scalar_digits_list.iter().zip(lookup_tables.iter());
@@ -903,87 +556,76 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     Q
 }
 
-/// Precomputation
+/// A precomputed table of multiples of a basepoint, for accelerating
+/// fixed-base scalar multiplication.  One table, for the Ed25519
+/// basepoint, is provided in the `constants` module.
+///
+/// The basepoint tables are reasonably large (30KB), so they should
+/// probably be boxed.
 #[derive(Clone)]
-pub struct EdwardsBasepointTable(pub [[AffineNielsPoint; 8]; 32]);
+pub struct EdwardsBasepointTable(pub(crate) [[AffineNielsPoint; 8]; 32]);
+
+impl EdwardsBasepointTable {
+    /// The computation uses Pippeneger's algorithm, as described on 
+    /// page 13 of the Ed25519 paper.  Write the scalar \\(a\\) in radix \\(16\\) with
+    /// coefficients in \\([-8,8)\\), i.e.,
+    /// $$
+    ///     a = a\_0 + a\_1 16\^1 + \cdots + a\_{63} 16\^{63},
+    /// $$
+    /// with \\(-8 \leq a_i < 8\\).  Then
+    /// $$
+    ///     a B = a\_0 B + a\_1 16\^1 B + \cdots + a\_{63} 16\^{63} B.
+    /// $$
+    /// Grouping even and odd coefficients gives
+    /// $$
+    /// \begin{aligned}
+    ///     a B = \quad a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B    \\\\
+    ///               + a\_1 16\^1 B +& a\_3 16\^3 B + \cdots + a\_{63} 16\^{63} B    \\\\
+    ///         = \quad(a\_0 16\^0 B +& a\_2 16\^2 B + \cdots + a\_{62} 16\^{62} B)   \\\\
+    ///            + 16(a\_1 16\^0 B +& a\_3 16\^2 B + \cdots + a\_{63} 16\^{62} B).  \\\\
+    /// \end{aligned}
+    /// $$
+    /// We then use the `select_precomputed_point` function, which
+    /// takes \\(-8 \leq x < 8\\) and \\([16\^{2i} B, \ldots, 8\cdot16\^{2i} B]\\),
+    /// and returns \\(x \cdot 16\^{2i} \cdot B\\) in constant time.
+    ///
+    /// The radix-\\(16\\) representation requires that the scalar is bounded
+    /// by \\(2\^{255}\\), which is always the case.
+    fn basepoint_mul(&self, scalar: &Scalar) -> ExtendedPoint {
+        let a = scalar.to_radix_16();
+
+        let mut P = ExtendedPoint::identity();
+
+        for i in (0..64).filter(|x| x % 2 == 1) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P = P.mult_by_pow_2(4);
+
+        for i in (0..64).filter(|x| x % 2 == 0) {
+            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+        }
+
+        P
+    }
+}
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
-    /// computing the multiple `aB` of the basepoint `B`.
-    ///
-    /// Precondition: the scalar must be reduced.
-    ///
-    /// The computation proceeds as follows, as described on page 13
-    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
-    /// coefficients in [-8,8), i.e.,
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with -8 ≤ a_i < 8.  Then
-    ///
-    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
-    ///
-    /// Grouping even and odd coefficients gives
-    ///
-    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
-    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
-    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
-    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
-    ///
-    /// We then use the `select_precomputed_point` function, which
-    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
-    /// and returns `x * 16^2i * B` in constant time.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        let e = scalar.to_radix_16();
-        let mut h = ExtendedPoint::identity();
-        let mut t: CompletedPoint;
-
-        for i in (0..64).filter(|x| x % 2 == 1) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h = h.mult_by_pow_2(4);
-
-        for i in (0..64).filter(|x| x % 2 == 0) {
-            t = &h + &select_precomputed_point(e[i], &self.0[i/2]);
-            h = t.to_extended();
-        }
-
-        h
+        // delegate to a private function so that its documentation appears in internal docs
+        self.basepoint_mul(scalar)
     }
 }
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` by via this `Scalar` times
-    /// a the basepoint, `B` included in a precomputed `basepoint_table`.
-    ///
-    /// Precondition: this scalar must be reduced.
-    ///
-    /// The computation proceeds as follows, as described on page 13
-    /// of the Ed25519 paper.  Write this scalar `a` in radix 16 with
-    /// coefficients in [-8,8), i.e.,
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with -8 ≤ a_i < 8.  Then
-    ///
-    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
-    ///
-    /// Grouping even and odd coefficients gives
-    ///
-    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
-    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
-    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
-    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
-    ///
-    /// We then use the `select_precomputed_point` function, which
-    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
-    /// and returns `x * 16^2i * B` in constant time.
+    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }
@@ -1020,17 +662,13 @@ impl EdwardsBasepointTable {
 
 impl ExtendedPoint {
     /// Multiply by the cofactor: compute `8 * self`.
-    ///
-    /// Convenience wrapper around `mult_by_pow_2`.
-    #[inline]
     pub fn mult_by_cofactor(&self) -> ExtendedPoint {
         self.mult_by_pow_2(3)
     }
 
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
-    #[inline]
-    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+    pub(crate) fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
         for _ in 0..(k-1) {
@@ -1042,49 +680,30 @@ impl ExtendedPoint {
 
     /// Determine if this point is of small order.
     ///
-    /// The order of the group of points on the curve Ɛ is |Ɛ| = 8q.  Thus, to
-    /// check if a point P is of small order, we multiply by 8 and then test
-    /// if the result is equal to the identity.
+    /// The order of the group of points on the curve \\(\mathcal E\\)
+    /// is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
+    /// E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
+    /// subgroup \\( \mathcal E[8] \\) consists of eight points of small
+    /// order.  (Technically all of \\(\mathcal E\\) is torsion, but we
+    /// use the word only to refer to the \\(\mathcal E[8]\\) part, not
+    /// the prime-order subgroup \\(\mathcal E[\ell]\\).
+    ///
+    /// For more information on cofactors and the group structure, see
+    /// the internal `curve25519-dalek` documentation on Ristretto.
     ///
     /// # Return
     ///
-    /// True if it is of small order; false otherwise.
+    /// True if `self` is of small order; false otherwise.
     pub fn is_small_order(&self) -> bool {
         self.mult_by_cofactor().is_identity()
     }
 }
 
-/// Given precomputed points `[P, 2P, 3P, ..., 8P]`, as well as `-8 ≤
-/// x ≤ 8`, compute `x * B` in constant time, i.e., without branching
-/// on x or using it as an array index.
-fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
-    where T: Identity + ConditionallyAssignable, for<'a> &'a T: Neg<Output=T>
-{
-    debug_assert!(x >= -8); debug_assert!(x <= 8);
-
-    // Compute xabs = |x|
-    let xmask = x >> 7;
-    let xabs  = (x + xmask) ^ xmask;
-
-    // Set t = 0 * P = identity
-    let mut t = T::identity();
-    for j in 1..9 {
-        // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
-        t.conditional_assign(&points[j-1],
-                             bytes_equal(xabs as u8, j as u8));
-    }
-    // Now t == |x| * P.
-
-    let neg_mask = (xmask & 1) as u8;
-    t.conditional_negate(neg_mask);
-    // Now t == x * P.
-
-    t
-}
-
 // ------------------------------------------------------------------------
 // Elligator2 (uniform encoding/decoding of curve points)
 // ------------------------------------------------------------------------
+
+// XXX should this be in another module, with types and `From` impls, like `CompressedEdwardsY`?
 
 impl ExtendedPoint {
     /// Use Elligator2 to try to convert `self` to a uniformly random
@@ -1093,14 +712,14 @@ impl ExtendedPoint {
     /// Returns `Some<[u8;32]>` if `self` is in the image of the
     /// Elligator2 map.  For a random point on the curve, this happens
     /// with probability 1/2.  Otherwise, returns `None`.
-    pub fn to_uniform_representative(&self) -> Option<[u8; 32]> {
+    fn to_uniform_representative(&self) -> Option<[u8; 32]> {
         unimplemented!();
     }
 
     /// Use Elligator2 to convert a uniformly random string to a curve
     /// point.
     #[allow(unused_variables)] // REMOVE WHEN IMPLEMENTED
-    pub fn from_uniform_representative(bytes: &[u8; 32]) -> ExtendedPoint {
+    fn from_uniform_representative(bytes: &[u8; 32]) -> ExtendedPoint {
         unimplemented!();
     }
 }
@@ -1111,36 +730,18 @@ impl ExtendedPoint {
 
 impl Debug for ExtendedPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ExtendedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
+        write!(f, "ExtendedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
 
-impl Debug for ProjectivePoint {
+impl Debug for EdwardsBasepointTable {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectivePoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?}\n)",
-               &self.X, &self.Y, &self.Z)
-    }
-}
-
-impl Debug for CompletedPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "CompletedPoint(\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n)",
-               &self.X, &self.Y, &self.Z, &self.T)
-    }
-}
-
-impl Debug for AffineNielsPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "AffineNielsPoint(\n\ty_plus_x: {:?},\n\ty_minus_x: {:?},\n\txy2d: {:?}\n)",
-               &self.y_plus_x, &self.y_minus_x, &self.xy2d)
-    }
-}
-
-impl Debug for ProjectiveNielsPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ProjectiveNielsPoint(\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n)",
-               &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
+        write!(f, "EdwardsBasepointTable([\n")?;
+        for i in 0..32 {
+            write!(f, "\t{:?},\n", &self.0[i])?;
+        }
+        write!(f, "])")
     }
 }
 
@@ -1176,13 +777,16 @@ pub mod vartime {
         }
     }
 
-    /// Given a vector of public scalars and a vector of (possibly secret)
-    /// points, compute `c_1 P_1 + ... + c_n P_n`.
+    /// Given an iterable of public scalars and an iterable of public
+    /// points, compute
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
     ///
     /// # Input
     ///
-    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+    /// error to call this function with two iterators of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,
@@ -1214,9 +818,10 @@ pub mod vartime {
         r.to_extended()
     }
 
-    /// Given a point `A` and scalars `a` and `b`, compute the point
-    /// `aA+bB`, where `B` is the Ed25519 basepoint (i.e., `B = (x,4/5)`
+    /// Given a point \\(A\\) and scalars \\(a\\) and \\(b\\), compute the point
+    /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
+    #[cfg(feature="precomputed_tables")]
     pub fn double_scalar_mult_basepoint(a: &Scalar,
                                         A: &ExtendedPoint,
                                         b: &Scalar) -> ExtendedPoint {
@@ -1297,18 +902,24 @@ mod test {
                             0x72, 0xc3, 0x7f, 0x82, 0xf2, 0x96, 0x96, 0x70]);
 
     /// 4493907448824000747700850167940867464579944529806937181821189941592931634714
-    pub static A_SCALAR: Scalar = Scalar([
-        0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
-        0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
-        0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
-        0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09]);
+    pub static A_SCALAR: Scalar = Scalar{
+        bytes: [
+            0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
+            0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
+            0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
+            0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09,
+        ],
+    };
 
     /// 2506056684125797857694181776241676200180934651973138769173342316833279714961
-    pub static B_SCALAR: Scalar = Scalar([
-        0x91, 0x26, 0x7a, 0xcf, 0x25, 0xc2, 0x09, 0x1b,
-        0xa2, 0x17, 0x74, 0x7b, 0x66, 0xf0, 0xb3, 0x2e,
-        0x9d, 0xf2, 0xa5, 0x67, 0x41, 0xcf, 0xda, 0xc4,
-        0x56, 0xa7, 0xd4, 0xaa, 0xb8, 0x60, 0x8a, 0x05]);
+    pub static B_SCALAR: Scalar = Scalar{
+        bytes: [
+            0x91, 0x26, 0x7a, 0xcf, 0x25, 0xc2, 0x09, 0x1b,
+            0xa2, 0x17, 0x74, 0x7b, 0x66, 0xf0, 0xb3, 0x2e,
+            0x9d, 0xf2, 0xa5, 0x67, 0x41, 0xcf, 0xda, 0xc4,
+            0x56, 0xa7, 0xd4, 0xaa, 0xb8, 0x60, 0x8a, 0x05,
+        ],
+    };
 
     /// A_SCALAR * basepoint, computed with ed25519.py
     pub static A_TIMES_BASEPOINT: CompressedEdwardsY = CompressedEdwardsY([
@@ -1354,6 +965,7 @@ mod test {
 
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
@@ -1362,6 +974,7 @@ mod test {
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
         assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
@@ -1412,6 +1025,7 @@ mod test {
 
     /// Sanity check for conversion to precomputed points
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1423,6 +1037,7 @@ mod test {
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
@@ -1430,6 +1045,7 @@ mod test {
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_by_basepoint_order() {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let should_be_id = B * &constants::BASEPOINT_ORDER;
@@ -1462,9 +1078,10 @@ mod test {
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_two_vs_basepoint2() {
-        let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
-        let bp2 = &constants::ED25519_BASEPOINT_TABLE * &Scalar(two_bytes);
+        let two = Scalar::from_u64(2);
+        let bp2 = &constants::ED25519_BASEPOINT_TABLE * &two;
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
 
@@ -1555,6 +1172,7 @@ mod test {
 
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
+        #[cfg(feature="precomputed_tables")]
         fn double_scalar_mult_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
@@ -1635,6 +1253,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         b.iter(|| B * &A_SCALAR);
@@ -1647,6 +1266,7 @@ mod bench {
     }
 
     #[bench]
+    #[cfg(feature="precomputed_tables")]
     fn bench_select_precomputed_point(b: &mut Bencher) {
         b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
     }
@@ -1704,14 +1324,15 @@ mod bench {
         b.iter(|| p1.mult_by_cofactor());
     }
 
-    #[cfg(feature="basepoint_table_creation")]
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
     #[bench]
+    #[cfg(feature="basepoint_table_creation")]
     fn ten_fold_scalar_mult(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
@@ -1735,6 +1356,7 @@ mod bench {
         }
 
         #[bench]
+        #[cfg(feature="basepoint_table_creation")]
         fn ten_fold_scalar_mult(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars

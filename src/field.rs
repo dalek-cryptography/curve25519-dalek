@@ -8,15 +8,19 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Field arithmetic for ℤ/(2²⁵⁵-19).
+//! Field arithmetic modulo \\(p = 2\^{255} - 19\\).
 //!
-//! Partially based on Adam Langley's curve25519-donna and (Golang)
-//! ed25519 implementations, with other techniques inspired by Mike
-//! Hamburg's code.
+//! The `curve25519_dalek::field` module provides a type alias
+//! `curve25519_dalek::field::FieldElement` to a field element type
+//! defined in the `backend` module; either `FieldElement64` or
+//! `FieldElement32`.
 //!
-//! This module re-exports either the 32-bit or 64-bit implementation,
-//! and implements functions that are generic with respect to the
-//! basic operations, such as inverses and square roots.
+//! Field operations defined in terms of machine
+//! operations, such as field multiplication or squaring, are defined in
+//! the backend implementation.
+//!
+//! Field operations defined in terms of other field operations, such as
+//! field inversion or square roots, are defined here.
 
 use core::cmp::{Eq, PartialEq};
 
@@ -27,17 +31,27 @@ use subtle::ConditionallyNegatable;
 use subtle::Equal;
 
 use constants;
+use backend;
 
-/// A `FieldElement` represents an element of the field GF(2^255 - 19).
 #[cfg(feature="radix_51")]
-pub type FieldElement = FieldElement64;
-/// A `FieldElement` represents an element of the field GF(2^255 - 19).
-#[cfg(not(feature="radix_51"))]
-pub type FieldElement = FieldElement32;
+pub use backend::u64::field::*;
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
 #[cfg(feature="radix_51")]
-pub use field_64bit::*;
+pub type FieldElement = backend::u64::field::FieldElement64;
+
 #[cfg(not(feature="radix_51"))]
-pub use field_32bit::*;
+pub use backend::u32::field::*;
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
+#[cfg(not(feature="radix_51"))]
+pub type FieldElement = backend::u32::field::FieldElement32;
 
 impl Eq for FieldElement {}
 impl PartialEq for FieldElement {
@@ -402,29 +416,6 @@ mod test {
         let with_highbit_set    = FieldElement::from_bytes(&B_BYTES);
         let without_highbit_set = FieldElement::from_bytes(&cleared_bytes);
         assert_eq!(without_highbit_set, with_highbit_set);
-    }
-
-    #[cfg(not(feature="radix_51"))]
-    static B_LIMBS_RADIX_25_5: FieldElement32 = FieldElement32(
-        [-5652623, 8034020, 8266223, -13556020, -5672552,
-         -5582839, -12603138, 15161929, -16418207, 13296296]);
-
-    #[cfg(not(feature="radix_51"))]
-    #[test]
-    fn from_bytes_vs_radix_25_5_limb_constants() {
-        let test_elt = FieldElement::from_bytes(&B_BYTES);
-        assert_eq!(test_elt.0, B_LIMBS_RADIX_25_5.0);
-    }
-
-    #[cfg(not(feature="radix_51"))]
-    #[test]
-    fn radix_25_5_limb_constants_to_bytes_vs_byte_constants() {
-        let test_bytes = B_LIMBS_RADIX_25_5.to_bytes();
-        for i in 0..31 {
-            assert!(test_bytes[i] == B_BYTES[i]);
-        }
-        // Check that high bit is set to zero in to_bytes
-        assert!(test_bytes[31] == (B_BYTES[31] & 127u8));
     }
 
     #[test]

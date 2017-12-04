@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.13.2"
+version = "0.14.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -12,9 +12,11 @@ categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "curve25519", "elliptic", "curve", "ECC"]
 description = "A low-level cryptographic library for point, group, field, and scalar operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y² = 1 - 121665/121666 x²y² over GF(2²⁵⁵ - 19)."
 exclude = [
+    "**/.gitignore",
     ".gitignore",
     ".travis.yml",
 ]
+build = "build.rs"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
@@ -25,9 +27,6 @@ travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 [dependencies.serde]
 version = "1.0"
 optional = true
-
-[dependencies.arrayref]
-version = "0.3.4"
 
 [dependencies.rand]
 optional = true
@@ -50,6 +49,17 @@ version = "0.6"
 [dev-dependencies.serde_cbor]
 version = "0.6"
 
+[build-dependencies]
+subtle = "^0.3"
+rand = "0.3"
+generic-array = "^0.8"
+digest = "0.6"
+arrayref = "0.3.4"
+
+[build-dependencies.serde]
+version = "1.0"
+optional = true
+
 [features]
 nightly = ["radix_51", "subtle/nightly"]
 default = ["std"]
@@ -60,3 +70,6 @@ yolocrypto = []
 bench = []
 # Radix-51 arithmetic using u128
 radix_51 = []
+# Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
+precomputed_tables = []
+

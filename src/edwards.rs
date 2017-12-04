@@ -849,49 +849,60 @@ pub mod vartime {
     /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
     #[cfg(feature="precomputed_tables")]
-    pub fn double_scalar_mult_basepoint(a: &Scalar,
-                                        A: &ExtendedPoint,
-                                        b: &Scalar) -> ExtendedPoint {
-        let a_naf = a.non_adjacent_form();
-        let b_naf = b.non_adjacent_form();
+    pub fn double_scalar_mult_basepoint(
+        a: &Scalar,
+        A: &ExtendedPoint,
+        b: &Scalar,
+    ) -> ExtendedPoint {
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+            use backend::avx2::edwards as edwards_avx2;
 
-        // Find starting index
-        let mut i: usize = 255;
-        for j in (0..255).rev() {
-            i = j;
-            if a_naf[i] != 0 || b_naf[i] != 0 {
-                break;
-            }
+            edwards_avx2::vartime::double_scalar_mult_basepoint(a, A, b)
         }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+            let a_naf = a.non_adjacent_form();
+            let b_naf = b.non_adjacent_form();
 
-        let odd_multiples_of_A = OddMultiples::create(A);
-        let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
-
-        let mut r = ProjectivePoint::identity();
-        loop {
-            let mut t = r.double();
-
-            if a_naf[i] > 0 {
-                t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
-            } else if a_naf[i] < 0 {
-                t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+            // Find starting index
+            let mut i: usize = 255;
+            for j in (0..255).rev() {
+                i = j;
+                if a_naf[i] != 0 || b_naf[i] != 0 {
+                    break;
+                }
             }
 
-            if b_naf[i] > 0 {
-                t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
-            } else if b_naf[i] < 0 {
-                t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
+            let odd_multiples_of_A = OddMultiples::create(A);
+            let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
+
+            let mut r = ProjectivePoint::identity();
+            loop {
+                let mut t = r.double();
+
+                if a_naf[i] > 0 {
+                    t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
+                } else if a_naf[i] < 0 {
+                    t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+                }
+
+                if b_naf[i] > 0 {
+                    t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
+                } else if b_naf[i] < 0 {
+                    t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
+                }
+
+                r = t.to_projective();
+
+                if i == 0 {
+                    break;
+                }
+                i -= 1;
             }
 
-            r = t.to_projective();
-
-            if i == 0 {
-                break;
-            }
-            i -= 1;
+            r.to_extended()
         }
-
-        r.to_extended()
     }
 
 }

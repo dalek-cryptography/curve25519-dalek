@@ -740,7 +740,7 @@ impl<'d> Deserialize<'d> for PublicKey {
             type Value = PublicKey;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("An ed25519 signature as specified in RFC8032")
+                formatter.write_str("An ed25519 public key as a 32-byte compressed point, as specified in RFC8032")
             }
 
             fn visit_bytes<E>(self, bytes: &[u8]) -> Result<PublicKey, E> where E: SerdeError {

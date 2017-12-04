@@ -45,7 +45,7 @@ To install, add the following to the dependencies section of your project's
 `Cargo.toml`:
 
 ```toml
-curve25519-dalek = "^0.13"
+curve25519-dalek = "^0.14"
 ```
 
 Then, in your library or executable source, add:

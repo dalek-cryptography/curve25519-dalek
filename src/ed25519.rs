@@ -10,7 +10,7 @@
 //! A Rust implementation of ed25519 EdDSA key generation, signing, and
 //! verification.
 
-use core::fmt::Debug;
+use core::fmt::{self, Debug, Display};
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -123,10 +123,8 @@ impl Signature {
 
     /// Construct a `Signature` from a slice of bytes.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, &'static str> {
-        if bytes.len() != SIGNATURE_LENGTH {
-            return Err("Wrong length of bytes for signature! Need 64 bytes.")
-        }
+    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, FromBytesError> {
+        check_bytes_len(bytes, SIGNATURE_LENGTH)?;
 
         let lower: &[u8; 32] = array_ref!(bytes,  0, 32);
         let upper: &[u8; 32] = array_ref!(bytes, 32, 32);
@@ -199,8 +197,9 @@ impl SecretKey {
     /// #
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::SECRET_KEY_LENGTH;
+    /// use ed25519_dalek::FromBytesError;
     ///
-    /// # fn doctest() -> Result<SecretKey, &'static str> {
+    /// # fn doctest() -> Result<SecretKey, FromBytesError> {
     /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
     ///    157, 097, 177, 157, 239, 253, 090, 096,
     ///    186, 132, 074, 244, 146, 236, 044, 196,
@@ -221,12 +220,11 @@ impl SecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `SecretKey` or whose error value
-    /// is an `&'static str` describing the error that occurred.
+    /// is an `FromBytesError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, &'static str> {
-        if bytes.len() != SECRET_KEY_LENGTH {
-            return Err("Wrong length of bytes for creating secret key!");
-        }
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, FromBytesError> {
+        check_bytes_len(bytes, SECRET_KEY_LENGTH)?;
+
         Ok(SecretKey(*array_ref!(bytes, 0, SECRET_KEY_LENGTH)))
     }
 
@@ -441,7 +439,7 @@ impl ExpandedSecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `ExpandedSecretKey` or whose
-    /// error value is an `&'static str` describing the error that occurred.
+    /// error value is an `FromBytesError` describing the error that occurred.
     ///
     /// # Examples
     ///
@@ -452,9 +450,10 @@ impl ExpandedSecretKey {
     /// #
     /// use rand::{Rng, OsRng};
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    /// use ed25519_dalek::FromBytesError;
     ///
     /// # #[cfg(feature = "sha2")]
-    /// # fn do_test() -> Result<ExpandedSecretKey, &'static str> {
+    /// # fn do_test() -> Result<ExpandedSecretKey, FromBytesError> {
     /// #
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
@@ -475,10 +474,9 @@ impl ExpandedSecretKey {
     /// # fn main() {}
     /// ```
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, &'static str> {
-        if bytes.len() != 64 {
-            return Err("Wrong length of bytes for creating expanded secret key!");
-        }
+    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, FromBytesError> {
+        check_bytes_len(bytes, 64)?;
+
         Ok(ExpandedSecretKey{ key: Scalar(*array_ref!(bytes, 0, 32)),
                               nonce:      *array_ref!(bytes, 32, 32), })
     }
@@ -622,8 +620,9 @@ impl PublicKey {
     /// #
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
+    /// use ed25519_dalek::FromBytesError;
     ///
-    /// # fn doctest() -> Result<PublicKey, &'static str> {
+    /// # fn doctest() -> Result<PublicKey, FromBytesError> {
     /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
@@ -641,12 +640,11 @@ impl PublicKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `PublicKey` or whose error value
-    /// is an `&'static str` describing the error that occurred.
+    /// is an `FromBytesError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, &'static str> {
-        if bytes.len() != PUBLIC_KEY_LENGTH {
-            return Err("Wrong length of bytes for creating public key!");
-        }
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, FromBytesError> {
+        check_bytes_len(bytes, PUBLIC_KEY_LENGTH)?;
+
         Ok(PublicKey(CompressedEdwardsY(*array_ref!(bytes, 0, 32))))
     }
 
@@ -796,11 +794,10 @@ impl Keypair {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `Keypair` or whose error value
-    /// is an `&'static str` describing the error that occurred.
-    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, &'static str> {
-        if bytes.len() != KEYPAIR_LENGTH {
-            return Err("Wrong length of bytes for creating keypair!");
-        }
+    /// is an `FromBytesError` describing the error that occurred.
+    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, FromBytesError> {
+        check_bytes_len(bytes, KEYPAIR_LENGTH)?;
+
         let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
         let public = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..])?;
 
@@ -893,6 +890,37 @@ impl<'d> Deserialize<'d> for Keypair {
             }
         }
         deserializer.deserialize_bytes(KeypairVisitor)
+    }
+}
+
+/// An error which occurred when using the `from_bytes` constructor.
+///
+/// This error will be returned if the byte slice given was not the correct
+/// length for constructing that kind of object.
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub struct FromBytesError {
+    _private: (),
+}
+
+impl Display for FromBytesError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "wrong length of bytes when constructing ed25519 object")
+    }
+}
+
+#[cfg(feature = "std")]
+impl ::std::error::Error for FromBytesError {
+    fn description(&self) -> &str {
+        "wrong length of bytes when constructing ed25519 object"
+    }
+}
+
+#[inline(always)]
+fn check_bytes_len(bytes: &[u8], len: usize) -> Result<(), FromBytesError> {
+    if bytes.len() != len {
+        Err(FromBytesError { _private: () })
+    } else {
+        Ok(())
     }
 }
 
@@ -1032,7 +1060,7 @@ mod test {
     #[test]
     fn public_key_from_bytes() {
         // Make another function so that we can test the ? operator.
-        fn do_the_test() -> Result<PublicKey, &'static str> {
+        fn do_the_test() -> Result<PublicKey, FromBytesError> {
             let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
                 215, 090, 152, 001, 130, 177, 010, 183,
                 213, 075, 254, 211, 201, 100, 007, 058,

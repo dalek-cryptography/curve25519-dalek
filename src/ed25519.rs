@@ -908,12 +908,7 @@ impl Display for FromBytesError {
     }
 }
 
-#[cfg(feature = "std")]
-impl ::std::error::Error for FromBytesError {
-    fn description(&self) -> &str {
-        "wrong length of bytes when constructing ed25519 object"
-    }
-}
+impl ::failure::Fail for FromBytesError { }
 
 #[inline(always)]
 fn check_bytes_len(bytes: &[u8], len: usize) -> Result<(), FromBytesError> {

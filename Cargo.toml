@@ -45,6 +45,10 @@ optional = true
 version = "^0.6"
 optional = true
 
+[dependencies.failure]
+version = "^0.1.1"
+default-features = false
+
 [dev-dependencies]
 hex = "0.2"
 sha2 = "^0.6"
@@ -52,7 +56,7 @@ bincode = "^0.9"
 
 [features]
 default = ["std"]
-std = ["rand", "curve25519-dalek/std"]
+std = ["rand", "curve25519-dalek/std", "failure/std"]
 bench = []
 nightly = ["curve25519-dalek/nightly"]
 asm = ["sha2/asm"]

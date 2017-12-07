@@ -237,17 +237,19 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             // set t2 = (S0*S2 S1*S3 Z1*Z2 T1*T2) = (S4 S5 S6 S7)
             let mut t2 = &t0 * &t1;
 
-            // set t2 = (S8 S9 S10 S11)
+            //// set t2 = (S8 S9 S10 S11)
+            // set t2 = (121666*S4  121666*S5 2*121666*S6 2*121665*S7)
+            //        = (       S8         S9         S10        -S11)
             t2.scale_by_curve_constants();
 
-            // set t2 = (S8 S9 S11 S10)
+            // set t2 = (S8 S9 -S11 S10)
             t2.swap_CD();
 
-            // set t2 = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
+            // set t2 = (S9-S8 S9+S8 S10+S11 S10-S11) = (S12 S13 S15 S14)
             t2.diff_sum();
 
-            let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
-            let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
+            let c0 = u32x8::new(0,4,2,6,4,0,6,2); // (ABCD) -> (ACCA)
+            let c1 = u32x8::new(5,1,7,3,5,1,7,3); // (ABCD) -> (DBDB)
 
             // set t0 = (S12 S15 S15 S12)
             // set t1 = (S14 S13 S14 S13)

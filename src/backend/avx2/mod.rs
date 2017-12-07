@@ -87,9 +87,9 @@
 //! Hamburg.  Ignoring the sign for the moment, since
 //! \\(2 \cdot 121666 < 2\^{18}\\), all these constants fit in 32 bits,
 //! so this can be done in parallel as a scaling by \\( (121666, 121666,
-//! 2\cdot 121665, 2\cdot 121666) \\).  To handle the sign, we use
-//! masking to negate one of the field elements.
+//! -2\cdot 121665, 2\cdot 121666) \\).
 //!
+//! How do we handle the sign?
 //! Since we're primarily interested in Ristretto performance, not
 //! Curve25519 performance, we could alternately work on the
 //! \\(4\\)-isogenous "IsoEd25519" curve, which has \\(d = 121665\\).
@@ -97,6 +97,7 @@
 //! one field element by a 32-bit constant is not much easier than
 //! multiplying four field elements by 32-bit constants, and it would
 //! prevent accelerating Curve25519, so we don't make this choice.
+//! Instead, we flip the sign later by swapping two intermediate variables (see below).
 //!
 //! The 4-wide formulas of the HWCD paper do not seem to have been
 //! implemented using SIMD before.  The HWCD paper also describes and
@@ -186,7 +187,7 @@
 //! S\_8    &\gets S\_4 \cdot 121666 \\\\
 //! S\_9    &\gets S\_5 \cdot 121666 \\\\
 //! S\_{10} &\gets S\_6 \cdot 2 \cdot 121666 \\\\
-//! S\_{11} &\gets S\_7 \cdot 2 \cdot (-121665)
+//! S\_{11} &\gets S\_7 \cdot 2 \cdot 121665
 //! \end{aligned}
 //! $$
 //! 
@@ -194,8 +195,8 @@
 //! \begin{aligned}
 //! S\_{12} &\gets S\_9 - S\_8 \\\\
 //! S\_{13} &\gets S\_9 + S\_8 \\\\
-//! S\_{14} &\gets S\_{10} - S\_{11} \\\\
-//! S\_{15} &\gets S\_{10} + S\_{11}
+//! S\_{15} &\gets S\_{10} - S\_{11} \\\\
+//! S\_{14} &\gets S\_{10} + S\_{11}
 //! \end{aligned}
 //! $$
 //!
@@ -208,7 +209,10 @@
 //! \end{aligned}
 //! $$
 //!
-//! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = P\_1 + P\_2 \\).
+//! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = P\_1 + P\_2 \\).  Notice that by multiplying
+//! \\( S\_{11} \\) by \\(121665\\) instead of by \\(-121665\\), we save a negation; since we use
+//! \\( S\_{11} \\) to compute \\( S\_{10} \pm S\_{11} \\), flipping the sign of \\( S\_{11} \\)
+//! swaps \\( S\_{14} \\) and \\( S\_{15} \\).
 //!
 //! ## Doubling
 //!

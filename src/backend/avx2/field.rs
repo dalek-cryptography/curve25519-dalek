@@ -203,48 +203,35 @@ impl FieldElement32x4 {
     /// Let `self` \\(= (A, B, C, D) \\).
     ///
     /// Compute
-    /// $$( 121666A, 121666B, 2\cdot 121666C, -2\cdot 121665 D).$$
+    /// $$( 121666A, 121666B, 2\cdot 121666C, 2\cdot 121665 D).$$
     pub fn scale_by_curve_constants(&mut self) {
         let mut b = [u64x4::splat(0); 10];
 
         let consts   = u32x8::new(121666, 0, 121666, 0, 2*121666, 0, 2*121665, 0);
-        let low__p20 = u64x4::splat(0x3ffffed << 20);
-        let even_p20 = u64x4::splat(0x3ffffff << 20);
-        let odd__p20 = u64x4::splat(0x1ffffff << 20);
 
         unsafe {
             use stdsimd::vendor::_mm256_mul_epu32;
             use stdsimd::vendor::_mm256_blend_epi32;
 
             let (b0, b1) = unpack_pair(self.0[0]);
-            let b0 = _mm256_mul_epu32(b0, consts); // need a new binding since now
-            let b1 = _mm256_mul_epu32(b1, consts); // b0 has type u64x4
-            b[0] = _mm256_blend_epi32(b0.into(), (low__p20 - b0).into(), 0b11_00_00_00).into();
-            b[1] = _mm256_blend_epi32(b1.into(), (odd__p20 - b1).into(), 0b11_00_00_00).into();
+            b[0] = _mm256_mul_epu32(b0, consts);
+            b[1] = _mm256_mul_epu32(b1, consts);
 
             let (b2, b3) = unpack_pair(self.0[1]);
-            let b2 = _mm256_mul_epu32(b2, consts);
-            let b3 = _mm256_mul_epu32(b3, consts);
-            b[2] = _mm256_blend_epi32(b2.into(), (even_p20 - b2).into(), 0b11_00_00_00).into();
-            b[3] = _mm256_blend_epi32(b3.into(), (odd__p20 - b3).into(), 0b11_00_00_00).into();
+            b[2] = _mm256_mul_epu32(b2, consts);
+            b[3] = _mm256_mul_epu32(b3, consts);
 
             let (b4, b5) = unpack_pair(self.0[2]);
-            let b4 = _mm256_mul_epu32(b4, consts);
-            let b5 = _mm256_mul_epu32(b5, consts);
-            b[4] = _mm256_blend_epi32(b4.into(), (even_p20 - b4).into(), 0b11_00_00_00).into();
-            b[5] = _mm256_blend_epi32(b5.into(), (odd__p20 - b5).into(), 0b11_00_00_00).into();
+            b[4] = _mm256_mul_epu32(b4, consts);
+            b[5] = _mm256_mul_epu32(b5, consts);
 
             let (b6, b7) = unpack_pair(self.0[3]);
-            let b6 = _mm256_mul_epu32(b6, consts);
-            let b7 = _mm256_mul_epu32(b7, consts);
-            b[6] = _mm256_blend_epi32(b6.into(), (even_p20 - b6).into(), 0b11_00_00_00).into();
-            b[7] = _mm256_blend_epi32(b7.into(), (odd__p20 - b7).into(), 0b11_00_00_00).into();
+            b[6] = _mm256_mul_epu32(b6, consts);
+            b[7] = _mm256_mul_epu32(b7, consts);
 
             let (b8, b9) = unpack_pair(self.0[4]);
-            let b8 = _mm256_mul_epu32(b8, consts);
-            let b9 = _mm256_mul_epu32(b9, consts);
-            b[8] = _mm256_blend_epi32(b8.into(), (even_p20 - b8).into(), 0b11_00_00_00).into();
-            b[9] = _mm256_blend_epi32(b9.into(), (odd__p20 - b9).into(), 0b11_00_00_00).into();
+            b[8] = _mm256_mul_epu32(b8, consts);
+            b[9] = _mm256_mul_epu32(b9, consts);
         }
 
         *self = FieldElement32x4::reduce64(b);
@@ -539,7 +526,7 @@ mod test {
         assert_eq!(xs[0],   FieldElement64([  121666,0,0,0,0]));
         assert_eq!(xs[1],   FieldElement64([  121666,0,0,0,0]));
         assert_eq!(xs[2],   FieldElement64([2*121666,0,0,0,0]));
-        assert_eq!(xs[3], -&FieldElement64([2*121665,0,0,0,0]));
+        assert_eq!(xs[3],   FieldElement64([2*121665,0,0,0,0]));
     }
 
     #[test]

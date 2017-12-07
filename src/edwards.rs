@@ -43,10 +43,10 @@ use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
 
+use curve_models::window::LookupTable;
+
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
-
-use traits::select_precomputed_point;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -433,12 +433,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let P = self.to_projective_niels();
-        let mut lookup_table: [ProjectiveNielsPoint; 8] = [P; 8];
-        for i in 0..7 {
-            lookup_table[i+1] = (self + &lookup_table[i])
-                .to_extended().to_projective_niels();
-        }
+        let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(self);
 
         // Setting s = scalar, compute
         //
@@ -456,13 +451,12 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         // We sum right-to-left.
         let mut Q = ExtendedPoint::identity();
         for i in (0..64).rev() {
-            // Q = 16*Q
+            // Q <-- 16*Q
             Q = Q.mult_by_pow_2(4);
-            // R = s_i * Q
-            let R = select_precomputed_point(scalar_digits[i], &lookup_table);
-            // Q = Q + R
-            Q = (&Q + &R).to_extended();
+            // Q <-- Q + P * s_i
+            Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
         }
+
         Q
     }
 }
@@ -502,17 +496,14 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
           J: IntoIterator<Item = &'b ExtendedPoint>
 {
     //assert_eq!(scalars.len(), points.len());
+    
+    use clear_on_drop::ClearOnDrop;
 
-    let lookup_tables: Vec<_> = points.into_iter()
-        .map(|P_i| {
-            // Construct a lookup table of [P_i,2*P_i,3*P_i,4*P_i,5*P_i,6*P_i,7*P_i]
-            let mut lookup_table = [P_i.to_projective_niels(); 8];
-            for j in 0..7 {
-                lookup_table[j+1] = (P_i + &lookup_table[j])
-                    .to_extended().to_projective_niels();
-            }
-            lookup_table
-        }).collect();
+    let lookup_tables_vec: Vec<_> = points.into_iter()
+        .map(|P| LookupTable::<ProjectiveNielsPoint>::from(P) )
+        .collect();
+
+    let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
 
     // Setting s_i = i-th scalar, compute
     //
@@ -520,12 +511,12 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
     let scalar_digits_vec: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16()).collect();
+        .map(|c| c.to_radix_16())
+        .collect();
 
     // This above puts the scalar digits into a heap-allocated Vec.
     // To ensure that these are erased, pass ownership of the Vec into a
     // ClearOnDrop wrapper.
-    use clear_on_drop::ClearOnDrop;
     let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
 
     // Compute s_1*P_1 + ... + s_n*P_n: since
@@ -554,7 +545,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         let it = scalar_digits.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
             // R_i = s_{i,j} * P_i
-            let R_i = select_precomputed_point(s_i[j], lookup_table_i);
+            let R_i = lookup_table_i.select(s_i[j]);
             // Q = Q + R_i
             Q = (&Q + &R_i).to_extended();
         }
@@ -569,7 +560,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
 /// The basepoint tables are reasonably large (30KB), so they should
 /// probably be boxed.
 #[derive(Clone)]
-pub struct EdwardsBasepointTable(pub(crate) [[AffineNielsPoint; 8]; 32]);
+pub struct EdwardsBasepointTable(pub(crate) [LookupTable<AffineNielsPoint>; 32]);
 
 impl EdwardsBasepointTable {
     /// The computation uses Pippeneger's algorithm, as described on 
@@ -578,7 +569,7 @@ impl EdwardsBasepointTable {
     /// $$
     ///     a = a\_0 + a\_1 16\^1 + \cdots + a\_{63} 16\^{63},
     /// $$
-    /// with \\(-8 \leq a_i < 8\\).  Then
+    /// with \\(-8 \leq a_i < 8\\), \\(-8 \leq a\_{63} \leq 8\\).  Then
     /// $$
     ///     a B = a\_0 B + a\_1 16\^1 B + \cdots + a\_{63} 16\^{63} B.
     /// $$
@@ -591,25 +582,28 @@ impl EdwardsBasepointTable {
     ///            + 16(a\_1 16\^0 B +& a\_3 16\^2 B + \cdots + a\_{63} 16\^{62} B).  \\\\
     /// \end{aligned}
     /// $$
-    /// We then use the `select_precomputed_point` function, which
-    /// takes \\(-8 \leq x < 8\\) and \\([16\^{2i} B, \ldots, 8\cdot16\^{2i} B]\\),
-    /// and returns \\(x \cdot 16\^{2i} \cdot B\\) in constant time.
+    /// For each \\(i = 0 \ldots 31\\), we create a lookup table of
+    /// $$
+    /// [16\^{2i} B, \ldots, 8\cdot16\^{2i} B],
+    /// $$
+    /// and use it to select \\( x \cdot 16\^{2i} \cdot B \\) in constant time.
     ///
     /// The radix-\\(16\\) representation requires that the scalar is bounded
     /// by \\(2\^{255}\\), which is always the case.
     fn basepoint_mul(&self, scalar: &Scalar) -> ExtendedPoint {
         let a = scalar.to_radix_16();
 
+        let tables = &self.0;
         let mut P = ExtendedPoint::identity();
 
         for i in (0..64).filter(|x| x % 2 == 1) {
-            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+            P = (&P + &tables[i/2].select(a[i])).to_extended();
         }
 
         P = P.mult_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
-            P = (&P + &select_precomputed_point(a[i], &self.0[i/2])).to_extended();
+            P = (&P + &tables[i/2].select(a[i])).to_extended();
         }
 
         P
@@ -640,29 +634,24 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
     pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
-        // Create the table storage
-        // XXX can we skip the initialization without too much unsafety?
-        // stick 30K on the stack and call it a day.
-        let mut table = EdwardsBasepointTable([[AffineNielsPoint::identity(); 8]; 32]);
+        // XXX use init_with
+        let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
         let mut P = *basepoint;
         for i in 0..32 {
             // P = (16^2)^i * B
-            let mut jP = P.to_affine_niels();
-            for j in 1..9 {
-                // table[i][j-1] is supposed to be j*(16^2)^i*B
-                table.0[i][j-1] = jP;
-                jP = (&P + &jP).to_extended().to_affine_niels();
-            }
+            table.0[i] = LookupTable::from(&P);
             P = P.mult_by_pow_2(8);
         }
         table
     }
 
     /// Get the basepoint for this table as an `ExtendedPoint`.
+    ///
+    /// XXX maybe this would be better as a `From` impl
     pub fn basepoint(&self) -> ExtendedPoint {
-        // self.0[0][0] has 1*(16^2)^0*B, but as an `AffineNielsPoint`
-        // Add identity to convert to extended.
-        (&ExtendedPoint::identity() + &self.0[0][0]).to_extended()
+        // self.0[0].select(1) = 1*(16^2)^0*B
+        // but as an `AffineNielsPoint`, so add identity to convert to extended.
+        (&ExtendedPoint::identity() + &self.0[0].select(1)).to_extended()
     }
 }
 
@@ -1274,7 +1263,9 @@ mod bench {
     #[bench]
     #[cfg(feature="precomputed_tables")]
     fn bench_select_precomputed_point(b: &mut Bencher) {
-        b.iter(|| select_precomputed_point(0, &constants::ED25519_BASEPOINT_TABLE.0[0]));
+        use test::black_box;
+        let table = &constants::ED25519_BASEPOINT_TABLE.0[0];
+        b.iter(|| table.select(black_box(5)) );
     }
 
     #[bench]

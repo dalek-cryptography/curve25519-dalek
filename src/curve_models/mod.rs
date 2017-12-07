@@ -134,6 +134,8 @@ use edwards::ExtendedPoint;
 use subtle::ConditionallyAssignable;
 use traits::ValidityCheck;
 
+pub mod window;
+
 // ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------

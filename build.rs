@@ -69,6 +69,7 @@ use backend::u32::field::FieldElement32;
 
 use edwards::EdwardsBasepointTable;
 
+use curve_models::window::LookupTable;
 use curve_models::AffineNielsPoint;
 
 /// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.

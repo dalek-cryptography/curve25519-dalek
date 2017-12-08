@@ -47,6 +47,8 @@ extern crate rand;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+extern crate clear_on_drop;
+
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
 

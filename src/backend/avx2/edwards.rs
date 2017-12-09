@@ -26,7 +26,7 @@ use scalar::Scalar;
 use traits::Identity;
 
 use backend::avx2::field::FieldElement32x4;
-use backend::avx2::field::P_TIMES_2;
+use backend::avx2::field::P_TIMES_2_MASKED;
 
 use backend::avx2;
 
@@ -119,9 +119,9 @@ impl ExtendedPoint {
             t0.0[3] = _mm256_blend_epi32(t0.0[3].into(), P.0[3].into(), 0b01011111).into();
             t0.0[4] = _mm256_blend_epi32(t0.0[4].into(), P.0[4].into(), 0b01011111).into();
 
-            t1 = t0.square();
+            t1 = t0.square(0b11_00_00_00);
 
-            // Now t1 = (S1 S2 S3 S4)
+            // Now t1 = (S1 S2 S3 -S4)
 
             let c0 = u32x8::new(0,0,2,2,0,0,2,2); // (ABCD) -> (AAAA)
             let c1 = u32x8::new(1,1,3,3,1,1,3,3); // (ABCD) -> (BBBB)
@@ -134,9 +134,9 @@ impl ExtendedPoint {
             //    + | S2 |    |    | S2 |  
             //    + |    |    | S3 |    |  
             //    + |    |    | S3 |    |  
-            //    + |    | 2p | 2p | 2p |  
+            //    + |    |    |    |-S4 |
+            //    + |    | 2p | 2p |    |  
             //    - |    | S2 | S2 |    |  
-            //    - |    |    |    | S4 |  
             //    =======================  
             //        S5   S6   S8   S9    
             //
@@ -146,17 +146,17 @@ impl ExtendedPoint {
             //    + |  2^26 |       |       |  2^26 |    + |  2^25 |       |       |  2^25 |  
             //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
             //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
-            //    + |       |  2^27 |  2^27 |  2^27 |    + |       |  2^26 |  2^26 |  2^26 |  
+            //    + |       |       |       |  2^26 |    + |       |       |       |  2^25 |
+            //    + |       |  2^27 |  2^27 |       |    + |       |  2^26 |  2^26 |       |
             //    - |       |   0   |    0  |       |    - |       |    0  |    0  |       |  
-            //    - |       |       |       |    0  |    - |       |       |       |    0  |  
             //    ===================================    ===================================
-            //    <   2^27   2^27.59 2^28.33   2^28           2^26  2^26.59 2^27.33  2^27
+            //    <   2^27   2^27.59 2^28.33 2^27.59          2^26  2^26.59 2^27.33 2^27.59
             //
-            // So, the bit-excess for (S5 S6 S8 S9) is (1, 1.59, 2.33, 2).
+            // So, the bit-excess for (S5 S6 S8 S9) is (1, 1.59, 2.33, 1.59).
             //
             // However the multiplication routine only allows (1.75, 1.75, 1.75, 1.75).
             //
-            // This is because we need to have 19*y[i] < 2^32.  Otherwise I think we could get b < 2.5.
+            // This is because we need to have 19*y[i] < 2^32.  Otherwise the bound would be b < 2.5.
             //
             // Can we tighten these bounds to avoid a reduction? Alternately, can we do better than
             // the 64-bit reduction that reduce32() calls internally?
@@ -169,16 +169,13 @@ impl ExtendedPoint {
                 let zero = i32x8::splat(0);
                 let S1 = _mm256_permutevar8x32_epi32(t1.0[i], c0);
                 let S2 = _mm256_permutevar8x32_epi32(t1.0[i], c1);
-                let S3_2 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into(), 0b01010000).into();
-                t0.0[i] = (P_TIMES_2.0[i] + S3_2) + S1;
+                let S3_2: u32x8 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into(), 0b01010000).into();
+                // tmp0 = (0 0 2*S3 -S4)
+                let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into(), t1.0[i].into(), 0b10100000).into();
+                t0.0[i] = (P_TIMES_2_MASKED.0[i] + tmp0) + S1;
                 t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into(), 0b10100101).into();
-                let S4 = _mm256_blend_epi32(zero, t1.0[i].into(), 0b10100000);
-                let sub = _mm256_blend_epi32(S2.into(), S4, 0b10100101).into();
-                t0.0[i] = t0.0[i] - sub;
+                t0.0[i] = t0.0[i] - _mm256_blend_epi32(S2.into(), zero, 0b10100101).into();
             }
-
-            // This is really sad, see above
-            t0.reduce32();
 
             let c0 = u32x8::new(4,0,6,2,4,0,6,2); // (ABCD) -> (CACA)
             let c1 = u32x8::new(5,1,7,3,1,5,3,7); // (ABCD) -> (DBBD)

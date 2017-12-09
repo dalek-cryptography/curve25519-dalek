@@ -27,6 +27,14 @@ pub(crate) static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
     u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862)
 ]);
 
+pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
+    u32x8::new(        0, 134217690,        0, 67108862, 134217690,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0)
+]);
+
 /// A vector of four `FieldElements`, implemented using AVX2.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct FieldElement32x4(pub(crate) [u32x8; 5]);
@@ -400,7 +408,13 @@ pub fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
 }
 
 impl FieldElement32x4 {
-    pub fn square(&self) -> FieldElement32x4 {
+    /// Square this field element, then conditionally negate according to `neg_mask`; for instance,
+    /// `neg_mask = 0b11_00_00_00` negates the \\( D \\) value.
+    ///
+    /// # Precondition
+    ///
+    /// Limbs must be bounded by bit-excess \\( b < 2.0 \\).
+    pub fn square(&self, neg_mask: u8) -> FieldElement32x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use stdsimd::vendor::_mm256_mul_epu32;
@@ -436,16 +450,55 @@ impl FieldElement32x4 {
         let x8_19  = m_lo(v19, x8);
         let x9_19  = m_lo(v19, x9);
 
-        let z0 = m(x0,  x0) + m(x2_2,x8_19) + m(x4_2,x6_19) + ((m(x1_2,x9_19) +  m(x3_2,x7_19) +    m(x5,x5_19)) << 1);
-        let z1 = m(x0_2,x1) + m(x3_2,x8_19) + m(x5_2,x6_19) +                  ((m(x2,x9_19)   +    m(x4,x7_19)) << 1);
-        let z2 = m(x0_2,x2) + m(x1_2,x1)    + m(x4_2,x8_19) + m(x6,x6_19)    + ((m(x3_2,x9_19) +  m(x5_2,x7_19)) << 1);
-        let z3 = m(x0_2,x3) + m(x1_2,x2)    + m(x5_2,x8_19) +                  ((m(x4,x9_19)   +    m(x6,x7_19)) << 1);
-        let z4 = m(x0_2,x4) + m(x1_2,x3_2)  + m(x2,  x2)    + m(x6_2,x8_19)  + ((m(x5_2,x9_19) +    m(x7,x7_19)) << 1);
-        let z5 = m(x0_2,x5) + m(x1_2,x4)    + m(x2_2,x3)    + m(x7_2,x8_19)                    +  ((m(x6,x9_19)) << 1);
-        let z6 = m(x0_2,x6) + m(x1_2,x5_2)  + m(x2_2,x4)    + m(x3_2,x3) + m(x8,x8_19)        + ((m(x7_2,x9_19)) << 1);
-        let z7 = m(x0_2,x7) + m(x1_2,x6)    + m(x2_2,x5)    + m(x3_2,x4)                      +   ((m(x8,x9_19)) << 1);
-        let z8 = m(x0_2,x8) + m(x1_2,x7_2)  + m(x2_2,x6)    + m(x3_2,x5_2) + m(x4,x4)         +   ((m(x9,x9_19)) << 1);
-        let z9 = m(x0_2,x9) + m(x1_2,x8)    + m(x2_2,x7)    + m(x3_2,x6) + m(x4_2,x5);
+        let mut z0 = m(x0,  x0) + m(x2_2,x8_19) + m(x4_2,x6_19) + ((m(x1_2,x9_19) +  m(x3_2,x7_19) +    m(x5,x5_19)) << 1);
+        let mut z1 = m(x0_2,x1) + m(x3_2,x8_19) + m(x5_2,x6_19) +                  ((m(x2,x9_19)   +    m(x4,x7_19)) << 1);
+        let mut z2 = m(x0_2,x2) + m(x1_2,x1)    + m(x4_2,x8_19) + m(x6,x6_19)    + ((m(x3_2,x9_19) +  m(x5_2,x7_19)) << 1);
+        let mut z3 = m(x0_2,x3) + m(x1_2,x2)    + m(x5_2,x8_19) +                  ((m(x4,x9_19)   +    m(x6,x7_19)) << 1);
+        let mut z4 = m(x0_2,x4) + m(x1_2,x3_2)  + m(x2,  x2)    + m(x6_2,x8_19)  + ((m(x5_2,x9_19) +    m(x7,x7_19)) << 1);
+        let mut z5 = m(x0_2,x5) + m(x1_2,x4)    + m(x2_2,x3)    + m(x7_2,x8_19)                    +  ((m(x6,x9_19)) << 1);
+        let mut z6 = m(x0_2,x6) + m(x1_2,x5_2)  + m(x2_2,x4)    + m(x3_2,x3) + m(x8,x8_19)        + ((m(x7_2,x9_19)) << 1);
+        let mut z7 = m(x0_2,x7) + m(x1_2,x6)    + m(x2_2,x5)    + m(x3_2,x4)                      +   ((m(x8,x9_19)) << 1);
+        let mut z8 = m(x0_2,x8) + m(x1_2,x7_2)  + m(x2_2,x6)    + m(x3_2,x5_2) + m(x4,x4)         +   ((m(x9,x9_19)) << 1);
+        let mut z9 = m(x0_2,x9) + m(x1_2,x8)    + m(x2_2,x7)    + m(x3_2,x6) + m(x4_2,x5);
+
+        #[inline(always)]
+        fn mask_neg(x: u64x4, p: u64x4, mask: u8) -> u64x4 {
+            unsafe {
+                use stdsimd::vendor::_mm256_blend_epi32;
+                _mm256_blend_epi32(x.into(), (p - x).into(), mask as i32).into()
+            }
+        }
+
+        // The biggest z_i is bounded as z_i < 249*2^(51 + 2*b);
+        // if b < 1.5 we get z_i < 4485585228861014016.
+        //
+        // The limbs of the multiples of p are bounded above by
+        //
+        // 0x3fffffff << 37 = 9223371899415822336 < 2^63
+        //
+        // and below by
+        //
+        // 0x1fffffff << 37 = 4611685880988434432
+        //                  > 4485585228861014016
+        //
+        // So these multiples of p are big enough to avoid underflow
+        // in subtraction, and small enough to fit within u64 
+        // with room for a carry.
+
+        let low__p37 = u64x4::splat(0x3ffffed << 37);
+        let even_p37 = u64x4::splat(0x3ffffff << 37);
+        let odd__p37 = u64x4::splat(0x1ffffff << 37);
+
+        z0 = mask_neg(z0, low__p37, neg_mask);
+        z1 = mask_neg(z1, odd__p37, neg_mask);
+        z2 = mask_neg(z2, even_p37, neg_mask);
+        z3 = mask_neg(z3, odd__p37, neg_mask);
+        z4 = mask_neg(z4, even_p37, neg_mask);
+        z5 = mask_neg(z5, odd__p37, neg_mask);
+        z6 = mask_neg(z6, even_p37, neg_mask);
+        z7 = mask_neg(z7, odd__p37, neg_mask);
+        z8 = mask_neg(z8, even_p37, neg_mask);
+        z9 = mask_neg(z9, odd__p37, neg_mask);
         
         FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
@@ -556,12 +609,14 @@ mod test {
 
         let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
 
-        let result = vec.square().split();
+        let neg_mask = 0b11_00_00_00;
+
+        let result = vec.square(neg_mask).split();
 
         assert_eq!(result[0], &x0 * &x0);
         assert_eq!(result[1], &x1 * &x1);
         assert_eq!(result[2], &x2 * &x2);
-        assert_eq!(result[3], &x3 * &x3);
+        assert_eq!(result[3], -&(&x3 * &x3));
     }
 
 

@@ -657,7 +657,6 @@ impl PublicKey {
     }
 
     /// Derive this public key from its corresponding `SecretKey`.
-    #[cfg(feature = "std")]
     #[allow(unused_assignments)]
     pub fn from_secret<D>(secret_key: &SecretKey) -> PublicKey
             where D: Digest<OutputSize = U64> + Default {

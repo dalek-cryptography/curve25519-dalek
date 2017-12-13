@@ -10,11 +10,7 @@
 
 //! Module for common traits.
 
-use core::ops::Neg;
-
 use subtle;
-use subtle::ConditionallyAssignable;
-use subtle::ConditionallyNegatable;
 
 // ------------------------------------------------------------------------
 // Public Traits
@@ -54,34 +50,4 @@ impl<T> IsIdentity for T where T: subtle::Equal + Identity {
 pub(crate) trait ValidityCheck {
     /// Checks whether the point is on the curve. Not CT.
     fn is_valid(&self) -> bool;
-}
-
-// This isn't a trait, but it is fully generic...
-
-/// Given precomputed points `[P, 2P, 3P, ..., 8P]`, as well as `-8 ≤
-/// x ≤ 8`, compute `x * B` in constant time, i.e., without branching
-/// on x or using it as an array index.
-pub(crate) fn select_precomputed_point<T>(x: i8, points: &[T; 8]) -> T
-    where T: Identity + ConditionallyAssignable, for<'a> &'a T: Neg<Output=T>
-{
-    debug_assert!(x >= -8); debug_assert!(x <= 8);
-
-    // Compute xabs = |x|
-    let xmask = x >> 7;
-    let xabs  = (x + xmask) ^ xmask;
-
-    // Set t = 0 * P = identity
-    let mut t = T::identity();
-    for j in 1..9 {
-        // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
-        t.conditional_assign(&points[j-1],
-                             subtle::bytes_equal(xabs as u8, j as u8));
-    }
-    // Now t == |x| * P.
-
-    let neg_mask = (xmask & 1) as u8;
-    t.conditional_negate(neg_mask);
-    // Now t == x * P.
-
-    t
 }

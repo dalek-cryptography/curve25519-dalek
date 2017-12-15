@@ -22,6 +22,7 @@ use subtle::ConditionallyAssignable;
 
 use edwards;
 use scalar::Scalar;
+use curve_models::window::LookupTable;
 
 use traits::Identity;
 
@@ -52,6 +53,12 @@ impl From<ExtendedPoint> for edwards::ExtendedPoint {
 impl ConditionallyAssignable for ExtendedPoint {
     fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
         self.0.conditional_assign(&other.0, choice);
+    }
+}
+
+impl Default for ExtendedPoint {
+    fn default() -> ExtendedPoint {
+        ExtendedPoint::identity()
     }
 }
 
@@ -273,19 +280,24 @@ impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl From<ExtendedPoint> for LookupTable<ExtendedPoint> {
+    fn from(P: ExtendedPoint) -> Self {
+        let mut points = [P; 8];
+        for i in 0..7 {
+            points[i+1] = &P + &points[i];
+        }
+        LookupTable(points)
+    }
+}
+
 impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        use traits::select_precomputed_point;
-
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let mut lookup_table: [ExtendedPoint; 8] = [*self; 8];
-        for i in 0..7 {
-            lookup_table[i+1] = self + &lookup_table[i];
-        }
+        let lookup_table = LookupTable::from(*self);
 
         // Setting s = scalar, compute
         //
@@ -305,62 +317,36 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         for i in (0..64).rev() {
             // Q = 16*Q
             Q = Q.mult_by_pow_2(4);
-            // R = s_i * Q
-            let R = select_precomputed_point(scalar_digits[i], &lookup_table);
-            // Q = Q + R
-            Q = &Q + &R;
+            // Q += P*s_i
+            Q = &Q + &lookup_table.select(scalar_digits[i]);
         }
         Q
     }
 }
 
 #[derive(Clone)]
-pub struct EdwardsBasepointTable(pub [[ExtendedPoint; 8]; 32]);
+pub struct EdwardsBasepointTable(pub [LookupTable<ExtendedPoint>; 32]);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar`, `scalar`, by
-    /// computing the multiple `aB` of the basepoint `B`.
-    ///
-    /// Precondition: the scalar must be reduced.
-    ///
-    /// The computation proceeds as follows, as described on page 13
-    /// of the Ed25519 paper.  Write the scalar `a` in radix 16 with
-    /// coefficients in [-8,8), i.e.,
-    ///
-    ///    a = a_0 + a_1*16^1 + ... + a_63*16^63,
-    ///
-    /// with -8 ≤ a_i < 8.  Then
-    ///
-    ///    a*B = a_0*B + a_1*16^1*B + ... + a_63*16^63*B.
-    ///
-    /// Grouping even and odd coefficients gives
-    ///
-    ///    a*B =       a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B
-    ///              + a_1*16^1*B + a_3*16^3*B + ... + a_63*16^63*B
-    ///        =      (a_0*16^0*B + a_2*16^2*B + ... + a_62*16^62*B)
-    ///          + 16*(a_1*16^0*B + a_3*16^2*B + ... + a_63*16^62*B).
-    ///
-    /// We then use the `select_precomputed_point` function, which
-    /// takes `-8 ≤ x < 8` and `[16^2i * B, ..., 8 * 16^2i * B]`,
-    /// and returns `x * 16^2i * B` in constant time.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        use traits::select_precomputed_point;
-        let e = scalar.to_radix_16();
-        let mut h = ExtendedPoint::identity();
+        let a = scalar.to_radix_16();
+
+        let tables = &self.0;
+        let mut P = ExtendedPoint::identity();
 
         for i in (0..64).filter(|x| x % 2 == 1) {
-            h = &h + &select_precomputed_point(e[i], &self.0[i/2]);
+            P = &P + &tables[i/2].select(a[i]);
         }
 
-        h = h.mult_by_pow_2(4);
+        P = P.mult_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
-            h = &h + &select_precomputed_point(e[i], &self.0[i/2]);
+            P = &P + &tables[i/2].select(a[i]);
         }
 
-        h
+        P
     }
 }
 
@@ -376,19 +362,12 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
     pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
-        // Create the table storage
-        // XXX can we skip the initialization without too much unsafety?
-        // stick 30K on the stack and call it a day.
-        let mut table = EdwardsBasepointTable([[ExtendedPoint::identity(); 8]; 32]);
+        // XXX use init_with
+        let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
         let mut P = *basepoint;
         for i in 0..32 {
             // P = (16^2)^i * B
-            let mut jP = P;
-            for j in 1..9 {
-                // table[i][j-1] is supposed to be j*(16^2)^i*B
-                table.0[i][j-1] = jP;
-                jP = &P + &jP;
-            }
+            table.0[i] = LookupTable::from(P);
             P = P.mult_by_pow_2(8);
         }
         table
@@ -396,8 +375,8 @@ impl EdwardsBasepointTable {
 
     /// Get the basepoint for this table as an `ExtendedPoint`.
     pub fn basepoint(&self) -> ExtendedPoint {
-        // self.0[0][0] has 1*(16^2)^0*B
-        self.0[0][0]
+        // self.0[0].select(1) = 1*(16^2)^0*B
+        self.0[0].select(1)
     }
 }
 
@@ -422,19 +401,11 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Extende
     where I: IntoIterator<Item = &'a Scalar>,
           J: IntoIterator<Item = &'b edwards::ExtendedPoint>
 {
-    use traits::select_precomputed_point;
     //assert_eq!(scalars.len(), points.len());
 
     let lookup_tables: Vec<_> = points.into_iter()
-        .map(|P| {
-            let P = ExtendedPoint::from(*P);
-            // Construct a lookup table of [P,2*P,3*P,4*P,5*P,6*P,7*P]
-            let mut lookup_table: [ExtendedPoint; 8] = [P; 8];
-            for i in 0..7 {
-                lookup_table[i+1] = &P + &lookup_table[i];
-            }
-            lookup_table
-        }).collect();
+        .map(|P| LookupTable::from(ExtendedPoint::from(*P)) )
+        .collect();
 
     // Setting s_i = i-th scalar, compute
     //
@@ -469,10 +440,8 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Extende
         Q = Q.mult_by_pow_2(4);
         let it = scalar_digits_list.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
-            // R_i = s_{i,j} * P_i
-            let R_i = select_precomputed_point(s_i[j], lookup_table_i);
-            // Q = Q + R_i
-            Q = &Q + &R_i;
+            // Q = Q + s_{i,j} * P_i
+            Q = &Q + &lookup_table_i.select(s_i[j]);
         }
     }
     Q.into()

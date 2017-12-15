@@ -29,6 +29,6 @@ pub mod u32;
 pub mod u64;
 
 /// Code using AVX2.
-#[cfg(all(target_feature="avx2", feature="yolocrypto", feature="avx2_backend"))]
+#[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
 pub mod avx2;
 

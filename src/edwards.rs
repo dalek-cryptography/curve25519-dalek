@@ -433,13 +433,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
             let P_avx2 = edwards_avx2::ExtendedPoint::from(*self);
             return ExtendedPoint::from(&P_avx2 * scalar);
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
             // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
             let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(self);
 
@@ -505,13 +505,13 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
           J: IntoIterator<Item = &'b ExtendedPoint>
 {
     // If we built with AVX2, use the AVX2 backend.
-    #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+    #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
         use backend::avx2::edwards as edwards_avx2;
 
         edwards_avx2::multiscalar_mult(scalars, points)
     }
     // Otherwise, proceed as normal:
-    #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+    #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
         //assert_eq!(scalars.len(), points.len());
         
         use clear_on_drop::ClearOnDrop;
@@ -806,13 +806,13 @@ pub mod vartime {
               J: IntoIterator<Item = &'b ExtendedPoint>
     {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
 
             edwards_avx2::vartime::multiscalar_mult(scalars, points)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
             //assert_eq!(scalars.len(), points.len());
 
             let nafs: Vec<_> = scalars.into_iter()
@@ -850,13 +850,13 @@ pub mod vartime {
         b: &Scalar,
     ) -> ExtendedPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(target_feature = "avx2", feature = "avx2_backend"))] {
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
 
             edwards_avx2::vartime::double_scalar_mult_basepoint(a, A, b)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(target_feature = "avx2", feature = "avx2_backend")))] {
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
             let a_naf = a.non_adjacent_form();
             let b_naf = b.non_adjacent_form();
 

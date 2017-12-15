@@ -26,7 +26,7 @@ travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
 [dependencies.stdsimd]
 git = "https://github.com/rust-lang-nursery/stdsimd"
-optional = true
+#optional = true
 
 [dependencies.serde]
 version = "1.0"
@@ -66,7 +66,7 @@ clear_on_drop = "=0.2.3"
 
 [build-dependencies.stdsimd]
 git = "https://github.com/rust-lang-nursery/stdsimd"
-optional = true
+#optional = true
 
 [build-dependencies.serde]
 version = "1.0"

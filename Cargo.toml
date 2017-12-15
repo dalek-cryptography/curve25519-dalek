@@ -24,8 +24,9 @@ rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9e
 [badges]
 travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
-[dependencies]
-stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
+[dependencies.stdsimd]
+git = "https://github.com/rust-lang-nursery/stdsimd"
+optional = true
 
 [dependencies.serde]
 version = "1.0"
@@ -62,7 +63,10 @@ generic-array = "^0.8"
 digest = "0.6"
 arrayref = "0.3.4"
 clear_on_drop = "=0.2.3"
-stdsimd = { git = "https://github.com/rust-lang-nursery/stdsimd" }
+
+[build-dependencies.stdsimd]
+git = "https://github.com/rust-lang-nursery/stdsimd"
+optional = true
 
 [build-dependencies.serde]
 version = "1.0"
@@ -80,4 +84,4 @@ radix_51 = []
 # Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
 precomputed_tables = []
 # experimental avx2 support
-avx2_backend = ["radix_51"]
+avx2_backend = ["nightly"]

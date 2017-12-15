@@ -19,13 +19,15 @@ use stdsimd::simd::{u32x8, i32x8, u64x4};
 
 use backend::u64::field::FieldElement64;
 
-pub(crate) static P_TIMES_2: FieldElement32x4 = FieldElement32x4([
-    u32x8::new(134217690, 134217690, 67108862, 67108862, 134217690, 134217690, 67108862, 67108862),
-    u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862),
-    u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862),
-    u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862),
-    u32x8::new(134217726, 134217726, 67108862, 67108862, 134217726, 134217726, 67108862, 67108862)
-]);
+pub(crate) static P_TIMES_2_LO: u32x8 =
+    u32x8::new(67108845 << 1, 67108845 << 1, 33554431 << 1, 33554431 << 1, 67108845 << 1, 67108845 << 1, 33554431 << 1, 33554431 << 1);
+pub(crate) static P_TIMES_2_HI: u32x8 =
+    u32x8::new(67108863 << 1, 67108863 << 1, 33554431 << 1, 33554431 << 1, 67108863 << 1, 67108863 << 1, 33554431 << 1, 33554431 << 1);
+
+pub(crate) static P_TIMES_16_LO: u32x8 =
+    u32x8::new(67108845 << 4, 67108845 << 4, 33554431 << 4, 33554431 << 4, 67108845 << 4, 67108845 << 4, 33554431 << 4, 33554431 << 4);
+pub(crate) static P_TIMES_16_HI: u32x8 =
+    u32x8::new(67108863 << 4, 67108863 << 4, 33554431 << 4, 33554431 << 4, 67108863 << 4, 67108863 << 4, 33554431 << 4, 33554431 << 4);
 
 pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
     u32x8::new(        0, 134217690,        0, 67108862, 134217690,         0, 67108862,        0),
@@ -112,12 +114,14 @@ impl FieldElement32x4 {
     /// Negate variables in lanes where mask is set
     /// XXX fix up api
     pub fn mask_negate(&mut self, mask: u8) {
+        let mask = mask as i32;
         unsafe {
             use stdsimd::vendor::_mm256_blend_epi32;
-            for i in 0..5 {
-                let negated = P_TIMES_2.0[i] - self.0[i];
-                self.0[i] = _mm256_blend_epi32(self.0[i].into(), negated.into(), mask as i32).into();
-            }
+            self.0[0] = _mm256_blend_epi32(self.0[0].into(), (P_TIMES_16_LO - self.0[0]).into(), mask).into();
+            self.0[1] = _mm256_blend_epi32(self.0[1].into(), (P_TIMES_16_HI - self.0[1]).into(), mask).into();
+            self.0[2] = _mm256_blend_epi32(self.0[2].into(), (P_TIMES_16_HI - self.0[2]).into(), mask).into();
+            self.0[3] = _mm256_blend_epi32(self.0[3].into(), (P_TIMES_16_HI - self.0[3]).into(), mask).into();
+            self.0[4] = _mm256_blend_epi32(self.0[4].into(), (P_TIMES_16_HI - self.0[4]).into(), mask).into();
         }
         self.reduce32();
     }
@@ -134,78 +138,47 @@ impl FieldElement32x4 {
         }
     }
 
-    /// Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)`.
-    pub fn diff_sum(&mut self) {
-        /// (v0 v1 v2 v3 v4 v5 v6 v7) -> (v1 v0 v3 v2 v5 v4 v7 v6)
-        #[inline(always)]
-        fn alternate_32bit_lanes(v: u32x8) -> u32x8 {
-            unsafe {
-                use stdsimd::vendor::_mm256_shuffle_epi32;
-                _mm256_shuffle_epi32(v.as_i32x8(), 0b10_11_00_01).as_u32x8()
-            }
+    /// Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)` according to `mask`.
+    pub fn diff_sum(&mut self, mask: u8) {
+        let mask = mask as i32;
+        unsafe {
+            use stdsimd::vendor::{_mm256_shuffle_epi32, _mm256_blend_epi32};
+
+            let x01 = self.0[0];
+            let x01_shuf = _mm256_shuffle_epi32(x01.as_i32x8(), 0b10_11_00_01).as_u32x8();
+            let v1 = (x01_shuf + P_TIMES_2_LO) - x01;
+            let v2 =  x01_shuf + x01;
+            let diffsum01 = _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8();
+            self.0[0] = _mm256_blend_epi32(x01.into(), diffsum01.into(), mask).into();
+
+            let x23 = self.0[1];
+            let x23_shuf = _mm256_shuffle_epi32(x23.as_i32x8(), 0b10_11_00_01).as_u32x8();
+            let v1 = (x23_shuf + P_TIMES_2_HI) - x23;
+            let v2 =  x23_shuf + x23;
+            let diffsum23 = _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8();
+            self.0[1] = _mm256_blend_epi32(x23.into(), diffsum23.into(), mask).into();
+
+            let x45 = self.0[2];
+            let x45_shuf = _mm256_shuffle_epi32(x45.as_i32x8(), 0b10_11_00_01).as_u32x8();
+            let v1 = (x45_shuf + P_TIMES_2_HI) - x45;
+            let v2 =  x45_shuf + x45;
+            let diffsum45 = _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8();
+            self.0[2] = _mm256_blend_epi32(x45.into(), diffsum45.into(), mask).into();
+
+            let x67 = self.0[3];
+            let x67_shuf = _mm256_shuffle_epi32(x67.as_i32x8(), 0b10_11_00_01).as_u32x8();
+            let v1 = (x67_shuf + P_TIMES_2_HI) - x67;
+            let v2 =  x67_shuf + x67;
+            let diffsum67 = _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8();
+            self.0[3] = _mm256_blend_epi32(x67.into(), diffsum67.into(), mask).into();
+
+            let x89 = self.0[4];
+            let x89_shuf = _mm256_shuffle_epi32(x89.as_i32x8(), 0b10_11_00_01).as_u32x8();
+            let v1 = (x89_shuf + P_TIMES_2_HI) - x89;
+            let v2 =  x89_shuf + x89;
+            let diffsum89 = _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8();
+            self.0[4] = _mm256_blend_epi32(x89.into(), diffsum89.into(), mask).into();
         }
-
-        /// (v0 XX v2 XX v4 XX v6 XX)
-        /// (XX v1 XX v3 XX v5 XX v7) -> (v0 v1 v2 v3 v4 v5 v6 v7)
-        #[inline(always)]
-        fn blend_alternating_32bit_lanes(v1: u32x8, v2: u32x8) -> u32x8 {
-            unsafe {
-                use stdsimd::vendor::_mm256_blend_epi32;
-                _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8()
-            }
-        }
-
-        for i in 0..5 {
-            let x = self.0[i];
-            let p = P_TIMES_2.0[i] ;
-            let x_shuf = alternate_32bit_lanes(x);
-
-            let diff = (x_shuf + p) - x;
-            let sum  =  x + x_shuf;
-            let diff_sum = blend_alternating_32bit_lanes(diff, sum);
-
-            self.0[i] = diff_sum;
-        }
-    }
-
-    // Given `self = (A,B,C,D)`, compute `(B + A, B - A, D + C, D - C)`.
-    pub fn sum_diff(&self) -> FieldElement32x4 {
-        /// (v0 v1 v2 v3 v4 v5 v6 v7) -> (v1 v0 v3 v2 v5 v4 v7 v6)
-        #[inline(always)]
-        #[allow(dead_code)] // XXX
-        fn alternate_32bit_lanes(v: u32x8) -> u32x8 {
-            unsafe {
-                use stdsimd::vendor::_mm256_shuffle_epi32;
-                _mm256_shuffle_epi32(v.as_i32x8(), 0b10_11_00_01).as_u32x8()
-            }
-        }
-
-        /// (v0 XX v2 XX v4 XX v6 XX)
-        /// (XX v1 XX v3 XX v5 XX v7) -> (v0 v1 v2 v3 v4 v5 v6 v7)
-        #[inline(always)]
-        #[allow(dead_code)] // XXX
-        fn blend_alternating_32bit_lanes(v1: u32x8, v2: u32x8) -> u32x8 {
-            unsafe {
-                use stdsimd::vendor::_mm256_blend_epi32;
-                _mm256_blend_epi32(v1.into(), v2.into(), 0b10101010).as_u32x8()
-            }
-        }
-
-        let mut out = [u32x8::splat(0); 5];
-
-        for i in 0..5 {
-            let x = self.0[i];
-            let p = P_TIMES_2.0[i];
-            let x_shuf = alternate_32bit_lanes(x);
-
-            let sum  =  x      + x_shuf;
-            let diff = (x + p) - x_shuf;
-            let sum_diff = blend_alternating_32bit_lanes(sum, diff);
-
-            out[i] = sum_diff;
-        }
-
-        FieldElement32x4(out)
     }
 
     /// Let `self` \\(= (A, B, C, D) \\).
@@ -590,7 +563,7 @@ mod test {
         let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
         let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
-        vec.diff_sum();
+        vec.diff_sum(0xff);
 
         let result = vec.split();
 
@@ -598,6 +571,16 @@ mod test {
         assert_eq!(result[1], &x1 + &x0);
         assert_eq!(result[2], &x3 - &x2);
         assert_eq!(result[3], &x3 + &x2);
+
+        let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        vec.diff_sum(0b01011111); // leave D unchanged
+
+        let result = vec.split();
+
+        assert_eq!(result[0], &x1 - &x0);
+        assert_eq!(result[1], &x1 + &x0);
+        assert_eq!(result[2], &x3 - &x2);
+        assert_eq!(result[3], x3);
     }
 
     #[test]

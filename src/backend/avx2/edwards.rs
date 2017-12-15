@@ -229,7 +229,7 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             }
 
             // set t0 = (Y1-X1 Y1+X1 Y2-X2 Y2+X2) = (S0 S1 S2 S3)
-            t0.diff_sum();
+            t0.diff_sum(0xff);
 
             // set t1 = (S0 S1 Z1 T1)
             // set t0 = (S2 S3 Z2 T2)
@@ -250,7 +250,7 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             t2.swap_CD();
 
             // set t2 = (S9-S8 S9+S8 S10+S11 S10-S11) = (S12 S13 S15 S14)
-            t2.diff_sum();
+            t2.diff_sum(0xff);
 
             let c0 = u32x8::new(0,4,2,6,4,0,6,2); // (ABCD) -> (ACCA)
             let c1 = u32x8::new(5,1,7,3,5,1,7,3); // (ABCD) -> (DBDB)

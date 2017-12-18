@@ -63,14 +63,18 @@
 //! is in the multiplication and squaring steps, which share a single
 //! instruction.
 //!
-//! Our strategy is to implement 4-wide multiplication and squaring using one
-//! 64-bit AVX2 lane for each field element.  Field elements are
-//! represented in the usual way as 10 `u32` limbs. The addition and
-//! subtraction steps are done largely serially, using masking to handle
-//! the instruction divergence. 
+//! Our strategy is to implement 4-wide multiplication and squaring
+//! using one 64-bit AVX2 lane for each field element.  Field elements
+//! are represented in the usual way as 10 `u32` limbs in radix
+//! \\(25.5\\) (i.e., alternating between \\(2\^{26}\\) for even limbs
+//! and \\(2\^{25}\\) for odd limbs).  This has the effect that passing
+//! between the parallel 32-bit AVX2 representation and the serial
+//! 64-bit representation amounts to regrouping digits.
 //!
-//! The remaining obstacle to parallelism is the multiplication by the
-//! curve constant \\(k = 2d\\).  In the Curve25519 case, this is 
+//! The addition and subtraction steps are done largely serially, using
+//! masking to handle the instruction divergence.  The remaining
+//! obstacle to parallelism is the multiplication by the curve constant
+//! \\(k = 2d\\).  In the Curve25519 case, this is 
 //!
 //! $$ k \equiv 2 \frac{-121665}{121666} \\ \equiv 16295367250680780974490674513165176452449235426866156013048779062215315747161 \pmod p. $$
 //!
@@ -87,8 +91,8 @@
 //! variables by \\(121666\\).  This trick was suggested by Mike
 //! Hamburg.  Ignoring the sign for the moment, since
 //! \\(2 \cdot 121666 < 2\^{18}\\), all these constants fit in 32 bits,
-//! so this can be done in parallel as a scaling by \\( (121666, 121666,
-//! -2\cdot 121665, 2\cdot 121666) \\).
+//! so (up to sign) this can be done in parallel as four multiplications
+//! by small constants \\( (121666, 121666, 2\cdot 121665, 2\cdot 121666) \\).
 //!
 //! How do we handle the sign?
 //! Since we're primarily interested in Ristretto performance, not
@@ -98,7 +102,8 @@
 //! one field element by a 32-bit constant is not much easier than
 //! multiplying four field elements by 32-bit constants, and it would
 //! prevent accelerating Curve25519, so we don't make this choice.
-//! Instead, we flip the sign later by swapping two intermediate variables (see below).
+//! Instead, we just negate one lane, and move the \\(1 \mathbf D\\)
+//! into precomputation (see below).
 //!
 //! The 4-wide formulas of the HWCD paper do not seem to have been
 //! implemented using SIMD before.  The HWCD paper also describes and
@@ -298,7 +303,24 @@
 //!
 //! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = [2]P\_1 \\).
 //!
-//! In practice, we compute \\( (S\_5, S\_6, S\_7, S\_9 ) \\) as
+//! Performing too many intermediate additions and subtractions grows
+//! the bounds beyond what is allowed as input to multiplication,
+//! forcing an extra carry pass.  However, it is just possible to avoid
+//! this by rearranging signs.
+//!
+//! Assume that the bounds on the limbs of each field element are
+//! parameterized by \\( b \in \mathbb R \\) representing the excess
+//! bits, so that each limb is bounded by either \\( 2\^{25} \\) or \\(
+//! 2\^{26} \\).
+//!
+//! The multiplication routine requires that its inputs are bounded by
+//! \\( b < 1.75 \\), in order to fit a multiplication by \\( 19 \\)
+//! into 32 bits.  Since \\( \lg 19 < 4.25 \\), \\( 19x < 2\^{32} \\)
+//! when \\( x < 2\^{27.75} = 2\^{26 + 1.75} \\).  However, this is only
+//! required for one of the inputs; the other can grow up to \\( b < 2.5
+//! \\).
+//!
+//! Computing \\( (S\_5, S\_6, S\_8, S\_9 ) \\) as
 //!
 //! $$
 //! \begin{matrix}
@@ -313,15 +335,51 @@
 //! \end{matrix}
 //! $$
 //!
-//! adding multiples of \\(p\\) to prevent underflow.  This results in
-//! 32-bit limbs which are just too large for multiplication, so we
-//! perform a reduction.  However, since we just need to reduce the
-//! excess in each limb, not a full reduction, it's enough to perform
-//! each carry in parallel.
+//! results in bit-excesses \\( (1.00, 1.59, 2.33, 2.00)\\) for 
+//! \\( (S\_5, S\_6, S\_8, S\_9 ) \\).  The products we want to compute
+//! are then
 //!
-//! With some finesse, it may be possible to rearrange this
-//! computation to avoid the extra carry pass, but this is not yet
-//! implemented.
+//! $$
+//! \begin{aligned}
+//! X\_3 &\gets S\_8 S\_9 \leftrightarrow (2.33, 2.00) \\\\
+//! Y\_3 &\gets S\_5 S\_6 \leftrightarrow (1.00, 1.59) \\\\
+//! Z\_3 &\gets S\_8 S\_6 \leftrightarrow (2.33, 1.59) \\\\
+//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 2.00) 
+//! \end{aligned}
+//! $$
+//!
+//! which are too large.  However, if we flip the sign of \\( S\_4 =
+//! S\_0\^2 \\) during squaring, so that we output \\(S\_4' = -S\_4
+//! \pmod p\\), then we can compute
+//!
+//! $$
+//! \begin{matrix}
+//!  & S\_1 & S\_1 & S\_1 & S\_1 \\\\
+//! +& S\_2 &      &      & S\_2 \\\\
+//! +&      &      & S\_3 &      \\\\
+//! +&      &      & S\_3 &      \\\\
+//! +&      &      &      & S\_4' \\\\
+//! +&      & 2p   & 2p   &      \\\\
+//! -&      & S\_2 & S\_2 &      \\\\
+//! =& S\_5 & S\_6 & S\_8 & S\_9 
+//! \end{matrix}
+//! $$
+//!
+//! resulting in bit-excesses \\( (1.00, 1.59, 2.33, 1.59)\\) for 
+//! \\( (S\_5, S\_6, S\_8, S\_9 ) \\).  The products we want to compute
+//! are then 
+//!
+//! $$
+//! \begin{aligned}
+//! X\_3 &\gets S\_8 S\_9 \leftrightarrow (2.33, 1.59) \\\\
+//! Y\_3 &\gets S\_5 S\_6 \leftrightarrow (1.00, 1.59) \\\\
+//! Z\_3 &\gets S\_8 S\_6 \leftrightarrow (2.33, 1.59) \\\\
+//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 1.59) 
+//! \end{aligned}
+//! $$
+//!
+//! whose right-hand sides are all bounded with \\( b < 1.75 \\) and
+//! whose left-hand sides are all bounded with \\( b < 2.5 \\).
 //!
 //! # Field element representation
 //!

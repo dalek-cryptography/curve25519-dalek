@@ -191,9 +191,9 @@ impl ExtendedPoint {
             let c0 = u32x8::new(0,0,2,2,0,0,2,2); // (ABCD) -> (AAAA)
             let c1 = u32x8::new(1,1,3,3,1,1,3,3); // (ABCD) -> (BBBB)
 
-            // Horror block goes here: we want to compute the following table:
-            // We know that the bit-excess b is bounded by eps, since S1 S2 S3 S4
-            // are the outputs of a squaring, so they're freshly reduced.
+            // See discussion of bounds in the module-level documentation.
+            //
+            // We want to compute
             // 
             //    + | S1 | S1 | S1 | S1 |  
             //    + | S2 |    |    | S2 |  
@@ -205,31 +205,6 @@ impl ExtendedPoint {
             //    =======================  
             //        S5   S6   S8   S9    
             //
-            // Bounds for even / odd limbs:
-            //
-            //    + |  2^26 |  2^26 |  2^26 |  2^26 |    + |  2^25 |  2^25 |  2^25 |  2^25 |  
-            //    + |  2^26 |       |       |  2^26 |    + |  2^25 |       |       |  2^25 |  
-            //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
-            //    + |       |       |  2^26 |       |    + |       |       |  2^25 |       |  
-            //    + |       |       |       |  2^26 |    + |       |       |       |  2^25 |
-            //    + |       |  2^27 |  2^27 |       |    + |       |  2^26 |  2^26 |       |
-            //    - |       |   0   |    0  |       |    - |       |    0  |    0  |       |  
-            //    ===================================    ===================================
-            //    <   2^27   2^27.59 2^28.33 2^27.59          2^26  2^26.59 2^27.33 2^27.59
-            //
-            // So, the bit-excess for (S5 S6 S8 S9) is (1, 1.59, 2.33, 1.59).
-            //
-            // However the multiplication routine only allows (1.75, 1.75, 1.75, 1.75).
-            //
-            // This is because we need to have 19*y[i] < 2^32.  Otherwise the bound would be b < 2.5.
-            //
-            // Can we tighten these bounds to avoid a reduction? Alternately, can we do better than
-            // the 64-bit reduction that reduce32() calls internally?
-            // 
-            // Or, could we do the arithmetic on the intermediate [u64x4;10], then do
-            // the reduction we'd need to do for the squaring?
-            //
-            // Also, can we do better than the mess below?
             for i in 0..5 {
                 let zero = i32x8::splat(0);
                 let S1 = _mm256_permutevar8x32_epi32(t1.0[i], c0);

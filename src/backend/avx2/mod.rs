@@ -69,7 +69,8 @@
 //! subtraction steps are done largely serially, using masking to handle
 //! the instruction divergence. 
 //!
-//! The remaining obstacle to parallelism is the multiplication by the curve constant \\(k = 2d\\).  In the Curve25519 case, this is 
+//! The remaining obstacle to parallelism is the multiplication by the
+//! curve constant \\(k = 2d\\).  In the Curve25519 case, this is 
 //!
 //! $$ k \equiv 2 \frac{-121665}{121666} \\ \equiv 16295367250680780974490674513165176452449235426866156013048779062215315747161 \pmod p. $$
 //!
@@ -133,25 +134,6 @@
 //! vectorization must overcome the disadvantage of losing the \\( 64
 //! \times 64 \rightarrow 128\\)-bit (serial) integer multiplier. 
 //!
-//! When used for constant-time variable-base scalar multiplication,
-//! this strategy (using AVX2) gives a significant speedup over the
-//! serial implementation (using the \\(64 \times 64\\) multiplier) of
-//! approximately 1.6x for Skylake-X with `target_cpu=skylake` (using AVX2), of
-//! approximately 1.8x for Skylake-X with `target_cpu=skylake-avx512` (using the extra
-//! `ymm16..ymm31` registers from AVX512VL), and of approximately 1.0x
-//! for Ryzen (which implements AVX2 at half rate).
-//!
-//! (Note: since testing this, the experimental `llvm50` Rust branch
-//! used to compile the experimental `stdsimd` intrinsics have fallen
-//! out of sync and it is no longer possible to compile for
-//! `skylake-avx512`.  This is why all of this branch is part of the
-//! `yolocrypto` feature, pending upstream work.)
-//!
-//! However, since the relative cost of doubling and addition has
-//! changed, the optimal tradeoffs for window size etc. in scalar
-//! multiplication have probably also changed and should be
-//! re-evaluated.
-//!
 //! # Tweaked formulas
 //!
 //! After tweaking the formulas as described above, we obtain the
@@ -187,7 +169,7 @@
 //! S\_8    &\gets S\_4 \cdot 121666 \\\\
 //! S\_9    &\gets S\_5 \cdot 121666 \\\\
 //! S\_{10} &\gets S\_6 \cdot 2 \cdot 121666 \\\\
-//! S\_{11} &\gets S\_7 \cdot 2 \cdot 121665
+//! S\_{11} &\gets S\_7 \cdot -2 \cdot 121665
 //! \end{aligned}
 //! $$
 //! 
@@ -195,8 +177,8 @@
 //! \begin{aligned}
 //! S\_{12} &\gets S\_9 - S\_8 \\\\
 //! S\_{13} &\gets S\_9 + S\_8 \\\\
-//! S\_{15} &\gets S\_{10} - S\_{11} \\\\
-//! S\_{14} &\gets S\_{10} + S\_{11}
+//! S\_{14} &\gets S\_{10} - S\_{11} \\\\
+//! S\_{15} &\gets S\_{10} + S\_{11}
 //! \end{aligned}
 //! $$
 //!
@@ -209,10 +191,76 @@
 //! \end{aligned}
 //! $$
 //!
-//! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = P\_1 + P\_2 \\).  Notice that by multiplying
-//! \\( S\_{11} \\) by \\(121665\\) instead of by \\(-121665\\), we save a negation; since we use
-//! \\( S\_{11} \\) to compute \\( S\_{10} \pm S\_{11} \\), flipping the sign of \\( S\_{11} \\)
-//! swaps \\( S\_{14} \\) and \\( S\_{15} \\).
+//! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = P\_1 + P\_2 \\).
+//!
+//! ## Readdition
+//!
+//! If the point \\( P_2 = (X\_2 : Y\_2 : Z\_2 : T\_2) \\) is fixed, we can precompute
+//!
+//! $$
+//! \begin{aligned}
+//! S\_2 &\gets Y\_2 - X\_2 \\\\
+//! S\_3 &\gets Y\_2 + X\_2 
+//! \end{aligned}
+//! $$
+//!
+//! $$
+//! \begin{aligned}
+//! S\_2'    &\gets S\_2 \cdot 121666 \\\\
+//! S\_3'    &\gets S\_3 \cdot 121666 \\\\
+//! Z\_2'    &\gets Z\_2 \cdot 2 \cdot 121666 \\\\
+//! T\_2'    &\gets T\_2 \cdot -2 \cdot 121665 \\\\
+//! \end{aligned}
+//! $$
+//!
+//! to obtain the `CachedPoint` \\( (S\_2', S\_3', Z\_2', T\_2') \\).
+//! This precomputation is essentially the same as that suggested in
+//! §3.1 of HWCD, with the difference that the multiplication by the curve
+//! constant \\( -121665 / 121666 \\) is spread over all four
+//! coordinates, to allow a vectorized computation of four
+//! multiplications of small constants instead of a serial computation
+//! of multiplication by a large constant.
+//!
+//! To perform readdition of \\(P_1 = (X_1 : Y_1 : Z_1 : T_1) \\) and 
+//! \\(P_2 = (S\_2', S\_3', Z\_2', T\_2') \\), we compute
+//!
+//! $$
+//! \begin{aligned}
+//! S\_0 &\gets Y\_1 - X\_1 \\\\
+//! S\_1 &\gets Y\_1 + X\_1
+//! \end{aligned}
+//! $$
+//!
+//! $$
+//! \begin{aligned}
+//! S\_8    &\gets S\_0 S\_2' \\\\
+//! S\_9    &\gets S\_1 S\_3' \\\\
+//! S\_{10} &\gets Z\_1 Z\_2' \\\\
+//! S\_{11} &\gets T\_1 T\_2'
+//! \end{aligned}
+//! $$
+//! 
+//! $$
+//! \begin{aligned}
+//! S\_{12} &\gets S\_9 - S\_8 \\\\
+//! S\_{13} &\gets S\_9 + S\_8 \\\\
+//! S\_{14} &\gets S\_{10} - S\_{11} \\\\
+//! S\_{15} &\gets S\_{10} + S\_{11}
+//! \end{aligned}
+//! $$
+//!
+//! $$
+//! \begin{aligned}
+//! X\_3 &\gets S\_{12} S\_{14} \\\\
+//! Y\_3 &\gets S\_{15} S\_{13} \\\\
+//! Z\_3 &\gets S\_{15} S\_{14} \\\\
+//! T\_3 &\gets S\_{12} S\_{13}
+//! \end{aligned}
+//! $$
+//!
+//! to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = P\_1 + P\_2 \\).
+//!
+//! Compared to the addition formulas above, this saves \\( 1\mathbf D \\).
 //!
 //! ## Doubling
 //!
@@ -348,6 +396,26 @@
 //! masked versions of the intrinsics seem to produce the same LLVM IR
 //! as an `op + blend`, so hopefully this will improve as the AVX512
 //! support in LLVM improves.
+//!
+//! When used for constant-time variable-base scalar multiplication,
+//! this strategy (using AVX2) gives a significant speedup over the
+//! serial implementation (using the \\(64 \times 64\\) multiplier) of
+//! approximately 1.6x for Skylake-X with `target_cpu=skylake` (using AVX2), of
+//! approximately 1.8x for Skylake-X with `target_cpu=skylake-avx512` (using the extra
+//! `ymm16..ymm31` registers from AVX512VL), and of approximately 1.0x
+//! for Ryzen (which implements AVX2 at half rate).
+//!
+//! When used for variable-time double-base scalar multiplication \\( aA
+//! + bB \\) for fixed \\(B\\) (as in, e.g., signature verification),
+//! this strategy provides a 1.4x speedup on Skylake-X over the same
+//! operation as implemented in `ed25519-donna`, the fastest
+//! production-quality Ed25519 implementation.
+//!
+//! (Note: since testing this, the experimental `llvm50` Rust branch
+//! used to compile the experimental `stdsimd` intrinsics have fallen
+//! out of sync and it is no longer possible to compile for
+//! `skylake-avx512`.  This is why all of this branch is part of the
+//! `yolocrypto` feature, pending upstream work.)
 //!
 //! [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 //! [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28

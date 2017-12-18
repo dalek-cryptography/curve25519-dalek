@@ -26,7 +26,7 @@ travis-ci = { repository = "isislovecruft/curve25519-dalek", branch = "master"}
 
 [dependencies.stdsimd]
 git = "https://github.com/rust-lang-nursery/stdsimd"
-#optional = true
+optional = true
 
 [dependencies.serde]
 version = "1.0"
@@ -66,7 +66,7 @@ clear_on_drop = "=0.2.3"
 
 [build-dependencies.stdsimd]
 git = "https://github.com/rust-lang-nursery/stdsimd"
-#optional = true
+optional = true
 
 [build-dependencies.serde]
 version = "1.0"
@@ -84,4 +84,4 @@ radix_51 = []
 # Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
 precomputed_tables = []
 # experimental avx2 support
-avx2_backend = ["nightly"]
+avx2_backend = ["nightly", "stdsimd"]

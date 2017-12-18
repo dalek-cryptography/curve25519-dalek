@@ -29,6 +29,8 @@ use traits::Identity;
 use backend::avx2::field::FieldElement32x4;
 use backend::avx2::field::P_TIMES_2_MASKED;
 
+use backend::avx2::field::{A_LANES, B_LANES, C_LANES, D_LANES, ALL_LANES};
+
 use backend::avx2;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
@@ -74,13 +76,69 @@ impl Identity for ExtendedPoint {
     }
 }
 
+/// A cached point with some precomputed variables used for readdition.
+#[derive(Copy, Clone, Debug)]
+pub struct CachedPoint(pub(super) FieldElement32x4);
+
+impl From<ExtendedPoint> for CachedPoint {
+    fn from(mut P: ExtendedPoint) -> CachedPoint {
+        let mut x = P.0;
+
+        // x = (S2 S3 Z2 T2)
+        x.diff_sum(0b00001111);
+
+        // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
+        x.scale_by_curve_constants();
+
+        // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
+        x.negate(D_LANES);
+
+        CachedPoint(x)
+    }
+}
+
+impl Default for CachedPoint {
+    fn default() -> CachedPoint {
+        CachedPoint::identity()
+    }
+}
+
+impl Identity for CachedPoint {
+    fn identity() -> CachedPoint {
+        CachedPoint(FieldElement32x4([
+            u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
+            u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+        ]))
+    }
+}
+
+impl ConditionallyAssignable for CachedPoint {
+    fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
+        self.0.conditional_assign(&other.0, choice);
+    }
+}
+
+impl<'a> Neg for &'a CachedPoint {
+    type Output = CachedPoint;
+
+    fn neg(self) -> CachedPoint {
+        let mut neg = *self;
+        neg.0.swap_AB();
+        neg.0.negate_lazy(D_LANES);
+        neg
+    }
+}
+
 impl<'a> Neg for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
     fn neg(self) -> ExtendedPoint {
         let mut neg = *self;
         // (X Y Z T) -> (-X Y Z -T)
-        neg.0.mask_negate(0b10100101);
+        neg.0.negate(A_LANES | D_LANES);
         neg
     }
 }
@@ -206,6 +264,49 @@ impl ExtendedPoint {
     }
 }
 
+impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    /// Uses a slight tweak of the parallel unified formulas of HWCD'08
+    fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
+        unsafe {
+            use stdsimd::vendor::_mm256_permute2x128_si256;
+            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
+            use stdsimd::vendor::_mm256_blend_epi32;
+            use stdsimd::vendor::_mm256_shuffle_epi32;
+
+            let mut tmp = self.0;
+
+            // tmp = (Y1-X1 Y1+X1 Z1 T1) = (S0 S1 Z1 T1)
+            tmp.diff_sum(A_LANES | B_LANES);
+
+            // tmp = (S0*S2' S1*S3' Z1*Z2' T1*T2') = (S8 S9 S10 S11)
+            tmp = &tmp * &other.0;
+
+            // tmp = (S8 S9 S11 S10)
+            tmp.swap_CD();
+
+            // tmp = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
+            tmp.diff_sum(ALL_LANES);
+
+            let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
+            let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
+
+            // set t0 = (S12 S15 S15 S12)
+            // set t1 = (S14 S13 S14 S13)
+            let mut t0 = FieldElement32x4::zero();
+            let mut t1 = FieldElement32x4::zero();
+            for i in 0..5 {
+                t0.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i], c0);
+                t1.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i], c1);
+            }
+
+            // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
+            ExtendedPoint(&t0 * &t1)
+        }
+    }
+}
+
 impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -280,11 +381,11 @@ impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl From<ExtendedPoint> for LookupTable<ExtendedPoint> {
+impl From<ExtendedPoint> for LookupTable<CachedPoint> {
     fn from(P: ExtendedPoint) -> Self {
-        let mut points = [P; 8];
+        let mut points = [CachedPoint::from(P); 8];
         for i in 0..7 {
-            points[i+1] = &P + &points[i];
+            points[i+1] = (&P + &points[i]).into();
         }
         LookupTable(points)
     }
@@ -297,7 +398,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     /// Uses a window of size 4.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let lookup_table = LookupTable::from(*self);
+        let lookup_table = LookupTable::<CachedPoint>::from(*self);
 
         // Setting s = scalar, compute
         //
@@ -325,7 +426,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
 }
 
 #[derive(Clone)]
-pub struct EdwardsBasepointTable(pub [LookupTable<ExtendedPoint>; 32]);
+pub struct EdwardsBasepointTable(pub [LookupTable<CachedPoint>; 32]);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
     type Output = ExtendedPoint;
@@ -371,12 +472,6 @@ impl EdwardsBasepointTable {
             P = P.mult_by_pow_2(8);
         }
         table
-    }
-
-    /// Get the basepoint for this table as an `ExtendedPoint`.
-    pub fn basepoint(&self) -> ExtendedPoint {
-        // self.0[0].select(1) = 1*(16^2)^0*B
-        self.0[0].select(1)
     }
 }
 
@@ -639,16 +734,23 @@ mod test {
         // Test the vector implementation of the parallel subtraction formulas
         let S_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
 
+        // Test the vector implementation of the parallel readdition formulas
+        let cached_Q = CachedPoint::from(ExtendedPoint::from(Q));
+        let T_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
+
         println!("Testing point addition:");
         println!("P = {:?}", P);
         println!("Q = {:?}", Q);
+        println!("cached Q = {:?}", cached_Q);
         println!("R = P + Q = {:?}", &P + &Q);
         println!("R_serial = {:?}", R_serial);
         println!("R_vector = {:?}", R_vector);
+        println!("T_vector = {:?}", T_vector);
         println!("S = P - Q = {:?}", &P - &Q);
         println!("S_vector = {:?}", S_vector);
         assert_eq!(R_serial.compress(), (&P + &Q).compress());
         assert_eq!(R_vector.compress(), (&P + &Q).compress());
+        assert_eq!(T_vector.compress(), (&P + &Q).compress());
         assert_eq!(S_vector.compress(), (&P - &Q).compress());
         println!("OK!\n");
     }
@@ -872,6 +974,16 @@ mod bench {
         let B_avx2 = ExtendedPoint::from(B);
 
         b.iter(|| edwards::ExtendedPoint::from(B_avx2));
+    }
+
+    #[bench]
+    fn point_readdition(b: &mut Bencher) {
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
+        let Q = ExtendedPoint::from(B * &Scalar::from_u64(98932328));
+        let Q_cached = CachedPoint::from(Q);
+
+        b.iter(|| &P + &Q_cached );
     }
 
     #[bench]

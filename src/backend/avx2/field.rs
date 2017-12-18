@@ -13,6 +13,13 @@
 
 #![allow(bad_style)]
 
+pub const A_LANES: u8 = 0b0000_0101;
+pub const B_LANES: u8 = 0b0000_1010;
+pub const C_LANES: u8 = 0b0101_0000;
+pub const D_LANES: u8 = 0b1010_0000;
+
+pub const ALL_LANES: u8 = A_LANES | B_LANES | C_LANES | D_LANES;
+
 use std::ops::Mul;
 
 use stdsimd::simd::{u32x8, i32x8, u64x4};
@@ -111,9 +118,21 @@ impl FieldElement32x4 {
         return out;
     }
 
+    pub fn negate_lazy(&mut self, mask: u8) {
+        let mask = mask as i32;
+        unsafe {
+            use stdsimd::vendor::_mm256_blend_epi32;
+            self.0[0] = _mm256_blend_epi32(self.0[0].into(), (P_TIMES_2_LO - self.0[0]).into(), mask).into();
+            self.0[1] = _mm256_blend_epi32(self.0[1].into(), (P_TIMES_2_HI - self.0[1]).into(), mask).into();
+            self.0[2] = _mm256_blend_epi32(self.0[2].into(), (P_TIMES_2_HI - self.0[2]).into(), mask).into();
+            self.0[3] = _mm256_blend_epi32(self.0[3].into(), (P_TIMES_2_HI - self.0[3]).into(), mask).into();
+            self.0[4] = _mm256_blend_epi32(self.0[4].into(), (P_TIMES_2_HI - self.0[4]).into(), mask).into();
+        }
+    }
+
     /// Negate variables in lanes where mask is set
     /// XXX fix up api
-    pub fn mask_negate(&mut self, mask: u8) {
+    pub fn negate(&mut self, mask: u8) {
         let mask = mask as i32;
         unsafe {
             use stdsimd::vendor::_mm256_blend_epi32;
@@ -124,6 +143,18 @@ impl FieldElement32x4 {
             self.0[4] = _mm256_blend_epi32(self.0[4].into(), (P_TIMES_16_HI - self.0[4]).into(), mask).into();
         }
         self.reduce32();
+    }
+
+    /// Given `self = (A,B,C,D)`, set `self = (B,A,C,D)`
+    pub fn swap_AB(&mut self) {
+        unsafe {
+            use stdsimd::vendor::_mm256_shuffle_epi32;
+            use stdsimd::vendor::_mm256_blend_epi32;
+            for i in 0..5 {
+                let swapped = _mm256_shuffle_epi32(self.0[i].into(), 0b10_11_00_01);
+                self.0[i] = _mm256_blend_epi32(self.0[i].into(), swapped, 0b00001111).into();
+            }
+        }
     }
 
     /// Given `self = (A,B,C,D)`, set `self = (A,B,D,C)`
@@ -192,7 +223,6 @@ impl FieldElement32x4 {
 
         unsafe {
             use stdsimd::vendor::_mm256_mul_epu32;
-            use stdsimd::vendor::_mm256_blend_epi32;
 
             let (b0, b1) = unpack_pair(self.0[0]);
             b[0] = _mm256_mul_epu32(b0, consts);

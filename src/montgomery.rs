@@ -31,6 +31,7 @@
 use core::ops::{Mul, MulAssign};
 
 use constants;
+use constants::APLUS2_OVER_FOUR;
 use field::FieldElement;
 use edwards::{ExtendedPoint, CompressedEdwardsY};
 use scalar::Scalar;
@@ -379,6 +380,44 @@ impl MontgomeryPoint {
     }
 }
 
+/// DOCDOC
+fn differential_add_and_double(P: &mut MontgomeryPoint, Q: &mut MontgomeryPoint,
+                               difference: &MontgomeryPoint) {
+    let t0 = &P.U + &P.W;
+    let t1 = &P.U - &P.W;
+    let t2 = &Q.U + &Q.W;
+    let t3 = &Q.U - &Q.W;
+
+    let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+    let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+
+    let t6 = &t4 - &t5;     // 4 U_P W_P
+
+    let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+    let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+
+    let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+    let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+
+    let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+    let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
+
+    let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
+
+    let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2         // P'_U
+    let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+
+    let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)          // P'_W
+
+    let t17 = &difference.U * &t12; // D_U * 4 (W_P U_Q - U_P W_Q)^2                  // Q'_W
+    let t18 = &difference.W * &t11; // D_W * 4 (U_P U_Q - W_P W_Q)^2                  // Q'_U
+
+    P.U = t14;  // P'_U = (U_P + W_P)^2 (U_P - W_P)^2
+    P.W = t16;  // P'_W = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+    Q.U = t18;  // Q'_U = D_W * 4 (U_P U_Q - W_P W_Q)^2
+    Q.W = t17;
+}
+
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
 ///
 /// The reader is refered to §5.3 of ["Montgomery Curves and Their Arithmetic"
@@ -399,8 +438,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             debug_assert!(mask == 0 || mask == 1);
 
             x0.conditional_swap(&mut x1, mask);
-            x1 = x0.differential_add(&x1, &self);
-            x0 = x0.differential_double();
+            differential_add_and_double(&mut x0, &mut x1, &self);
         }
         x0.conditional_swap(&mut x1, bits[0] as u8);
         x0

@@ -143,9 +143,9 @@
 //! # extern crate ed25519_dalek;
 //! # use rand::{Rng, OsRng};
 //! # use sha2::Sha512;
-//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, FromBytesError};
+//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, DecodingError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), FromBytesError> {
+//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), DecodingError> {
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
 //! # let keypair_orig: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
@@ -287,5 +287,8 @@ extern crate bincode;
 
 mod ed25519;
 
+pub mod errors;
+
 // Export everything public in ed25519.
 pub use ed25519::*;
+pub use errors::*;

@@ -15,6 +15,42 @@ use stdsimd::simd::u32x8;
 use backend::avx2::field::FieldElement32x4;
 use backend::avx2::edwards::ExtendedPoint;
 
+/// The low limbs of (2p, 2p, 2p, 2p), so that
+/// ```no_run
+/// (2p, 2p, 2p, 2p) = [P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI]
+/// ```
+pub(crate) static P_TIMES_2_LO: u32x8 =
+    u32x8::new(67108845 << 1, 67108845 << 1, 33554431 << 1, 33554431 << 1, 67108845 << 1, 67108845 << 1, 33554431 << 1, 33554431 << 1);
+
+/// The high limbs of (2p, 2p, 2p, 2p), so that
+/// ```no_run
+/// (2p, 2p, 2p, 2p) = [P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI]
+/// ```
+pub(crate) static P_TIMES_2_HI: u32x8 =
+    u32x8::new(67108863 << 1, 67108863 << 1, 33554431 << 1, 33554431 << 1, 67108863 << 1, 67108863 << 1, 33554431 << 1, 33554431 << 1);
+
+/// The low limbs of (16p, 16p, 16p, 16p), so that
+/// ```no_run
+/// (16p, 16p, 16p, 16p) = [P_TIMES_16_LO, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI]
+/// ```
+pub(crate) static P_TIMES_16_LO: u32x8 =
+    u32x8::new(67108845 << 4, 67108845 << 4, 33554431 << 4, 33554431 << 4, 67108845 << 4, 67108845 << 4, 33554431 << 4, 33554431 << 4);
+
+/// The high limbs of (16p, 16p, 16p, 16p), so that
+/// ```no_run
+/// (16p, 16p, 16p, 16p) = [P_TIMES_16_LO, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI]
+/// ```
+pub(crate) static P_TIMES_16_HI: u32x8 =
+    u32x8::new(67108863 << 4, 67108863 << 4, 33554431 << 4, 33554431 << 4, 67108863 << 4, 67108863 << 4, 33554431 << 4, 33554431 << 4);
+
+pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
+    u32x8::new(        0, 134217690,        0, 67108862, 134217690,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0),
+    u32x8::new(        0, 134217726,        0, 67108862, 134217726,         0, 67108862,        0)
+]);
+
 /// Odd multiples of the Ed25519 basepoint:
 pub static ODD_MULTIPLES_OF_BASEPOINT: [ExtendedPoint; 8] = [
     ExtendedPoint(FieldElement32x4([

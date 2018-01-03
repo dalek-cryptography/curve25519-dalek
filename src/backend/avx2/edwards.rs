@@ -27,7 +27,6 @@ use curve_models::window::LookupTable;
 use traits::Identity;
 
 use backend::avx2::field::FieldElement32x4;
-use backend::avx2::field::P_TIMES_2_MASKED;
 
 use backend::avx2::field::{A_LANES, B_LANES, C_LANES, D_LANES, ALL_LANES};
 
@@ -212,7 +211,7 @@ impl ExtendedPoint {
                 let S3_2: u32x8 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into(), 0b01010000).into();
                 // tmp0 = (0 0 2*S3 -S4)
                 let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into(), t1.0[i].into(), 0b10100000).into();
-                t0.0[i] = (P_TIMES_2_MASKED.0[i] + tmp0) + S1;
+                t0.0[i] = (avx2::constants::P_TIMES_2_MASKED.0[i] + tmp0) + S1;
                 t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into(), 0b10100101).into();
                 t0.0[i] = t0.0[i] - _mm256_blend_epi32(S2.into(), zero, 0b10100101).into();
             }

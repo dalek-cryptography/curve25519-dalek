@@ -296,25 +296,16 @@ impl FieldElement32x4 {
         let LOW_25_BITS: u64x4 = u64x4::splat((1<<25)-1);
         let LOW_26_BITS: u64x4 = u64x4::splat((1<<26)-1);
 
-        /// XXX check whether u64x4 >> is this already
-        #[inline(always)]
-        fn shift_right(x: u64x4, s: i32) -> u64x4 {
-            unsafe {
-                use stdsimd::vendor::_mm256_srli_epi64;
-                _mm256_srli_epi64(x.into(), s).as_u64x4()
-            }
-        }
-
         // Carry the value from limb i = 0..8 to limb i+1
         let carry = |z: &mut [u64x4; 10], i: usize| {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
-                z[i+1] = z[i+1] + shift_right(z[i], 26);
+                z[i+1] = z[i+1] + (z[i] >> 26);
                 z[i] = z[i] & LOW_26_BITS;
             } else {
                 // Odd limbs have 25 bits
-                z[i+1] = z[i+1] + shift_right(z[i], 25);
+                z[i+1] = z[i+1] + (z[i] >> 25);
                 z[i] = z[i] & LOW_25_BITS;
             }
         };
@@ -337,10 +328,10 @@ impl FieldElement32x4 {
         // big.  To ensure c < 2^32, we would need z[9] < 2^57.
         // Instead, we split the carry in two, with c = c_0 + c_1*2^26.
 
-        let c = shift_right(z[9], 25);
+        let c = z[9] >> 25;
         z[9] = z[9] & LOW_25_BITS;
-        let mut c0 = c & LOW_26_BITS;     // c0 < 2^26;
-        let mut c1 = shift_right(c, 26);  // c1 < 2^(39-26) = 2^13;
+        let mut c0 = c & LOW_26_BITS; // c0 < 2^26;
+        let mut c1 = c >> 26;         // c1 < 2^(39-26) = 2^13;
 
         unsafe {
             use stdsimd::vendor::_mm256_mul_epu32;

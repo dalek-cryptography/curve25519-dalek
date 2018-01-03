@@ -18,6 +18,11 @@ pub const B_LANES: u8 = 0b0000_1010;
 pub const C_LANES: u8 = 0b0101_0000;
 pub const D_LANES: u8 = 0b1010_0000;
 
+pub const A_LANES64: u8 = 0b00_00_00_11;
+pub const B_LANES64: u8 = 0b00_00_11_00;
+pub const C_LANES64: u8 = 0b00_11_00_00;
+pub const D_LANES64: u8 = 0b11_00_00_00;
+
 pub const ALL_LANES: u8 = A_LANES | B_LANES | C_LANES | D_LANES;
 
 use std::ops::Mul;

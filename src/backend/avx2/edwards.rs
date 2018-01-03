@@ -29,6 +29,7 @@ use traits::Identity;
 use backend::avx2::field::FieldElement32x4;
 
 use backend::avx2::field::{A_LANES, B_LANES, C_LANES, D_LANES, ALL_LANES};
+use backend::avx2::field::D_LANES64;
 
 use backend::avx2;
 
@@ -155,6 +156,12 @@ impl ExtendedPoint {
             let mut t0 = FieldElement32x4::zero();
             let mut t1 = FieldElement32x4::zero();
 
+            // Want to compute (X1 Y1 Z1 X1+Y1).
+            // Not sure how to do this less expensively than computing
+            // (X1 Y1 Z1 T1) --(256bit shuffle)--> (X1 Y1 X1 Y1)
+            // (X1 Y1 X1 Y1) --(2x128b shuffle)--> (Y1 X1 Y1 X1)
+            // and then adding.
+
             // Set t0 = (X1 Y1 X1 Y1)
             t0.0[0] = _mm256_permute2x128_si256(P.0[0].into(), P.0[0].into(), 0b0000_0000).into();
             t0.0[1] = _mm256_permute2x128_si256(P.0[1].into(), P.0[1].into(), 0b0000_0000).into();
@@ -177,13 +184,15 @@ impl ExtendedPoint {
             t0.0[4] = t0.0[4] + t1.0[4];
 
             // Set t0 = (X1 Y1 Z1 X1+Y1)
-            t0.0[0] = _mm256_blend_epi32(t0.0[0].into(), P.0[0].into(), 0b01011111).into();
-            t0.0[1] = _mm256_blend_epi32(t0.0[1].into(), P.0[1].into(), 0b01011111).into();
-            t0.0[2] = _mm256_blend_epi32(t0.0[2].into(), P.0[2].into(), 0b01011111).into();
-            t0.0[3] = _mm256_blend_epi32(t0.0[3].into(), P.0[3].into(), 0b01011111).into();
-            t0.0[4] = _mm256_blend_epi32(t0.0[4].into(), P.0[4].into(), 0b01011111).into();
+            // why does this intrinsic take an i32 for the imm8 ???
+            t0.0[0] = _mm256_blend_epi32(P.0[0].into(), t0.0[0].into(), D_LANES as i32).into();
+            t0.0[1] = _mm256_blend_epi32(P.0[1].into(), t0.0[1].into(), D_LANES as i32).into();
+            t0.0[2] = _mm256_blend_epi32(P.0[2].into(), t0.0[2].into(), D_LANES as i32).into();
+            t0.0[3] = _mm256_blend_epi32(P.0[3].into(), t0.0[3].into(), D_LANES as i32).into();
+            t0.0[4] = _mm256_blend_epi32(P.0[4].into(), t0.0[4].into(), D_LANES as i32).into();
 
-            t1 = t0.square(0b11_00_00_00);
+            // Set t1 = t0^2, negating the D values
+            t1 = t0.square(D_LANES64);
 
             // Now t1 = (S1 S2 S3 -S4)
 
@@ -309,7 +318,8 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             // set t1 = (S0 S1 Z1 T1)
             // set t0 = (S2 S3 Z2 T2)
             for i in 0..5 {
-                t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), 0b11110000).into();
+                // why does this intrinsic take an i32 for the imm8 ???
+                t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), (C_LANES | D_LANES) as i32).into();
                 t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
             }
 

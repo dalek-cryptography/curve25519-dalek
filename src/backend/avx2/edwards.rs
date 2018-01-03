@@ -81,7 +81,7 @@ impl Identity for ExtendedPoint {
 pub struct CachedPoint(pub(super) FieldElement32x4);
 
 impl From<ExtendedPoint> for CachedPoint {
-    fn from(mut P: ExtendedPoint) -> CachedPoint {
+    fn from(P: ExtendedPoint) -> CachedPoint {
         let mut x = P.0;
 
         // x = (S2 S3 Z2 T2)
@@ -253,10 +253,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     /// Uses a slight tweak of the parallel unified formulas of HWCD'08
     fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
         unsafe {
-            use stdsimd::vendor::_mm256_permute2x128_si256;
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
-            use stdsimd::vendor::_mm256_blend_epi32;
-            use stdsimd::vendor::_mm256_shuffle_epi32;
 
             let mut tmp = self.0;
 
@@ -299,7 +296,6 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
             use stdsimd::vendor::_mm256_permute2x128_si256;
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
             use stdsimd::vendor::_mm256_blend_epi32;
-            use stdsimd::vendor::_mm256_shuffle_epi32;
 
             let P: &FieldElement32x4 = &self.0;
             let Q: &FieldElement32x4 = &other.0;

@@ -470,11 +470,11 @@ impl EdwardsBasepointTable {
 /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
 /// error to call this function with two vectors of different lengths.
 ///
-/// XXX need to clear memory
-/// 
 /// XXX this takes `edwards::ExtendedPoints` because we have to alloc scratch space here anyways,
 /// and we need some space to store the converted points, so we may as well do the conversion here.
-/// maybe there's a better way to avoid code duplication...
+/// maybe there's a better way to avoid code duplication... however we can't quite just write a
+/// generic `multiscalar_mult` because the non-vectorized code passes between models and this code
+/// doesn't.
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
@@ -482,17 +482,26 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Extende
 {
     //assert_eq!(scalars.len(), points.len());
 
-    let lookup_tables: Vec<_> = points.into_iter()
+    use clear_on_drop::ClearOnDrop;
+    let lookup_tables_vec: Vec<_> = points.into_iter()
         .map(|P| LookupTable::from(ExtendedPoint::from(*P)) )
         .collect();
+
+    let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
 
     // Setting s_i = i-th scalar, compute
     //
     //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_list: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16()).collect();
+    let scalar_digits_vec: Vec<_> = scalars.into_iter()
+        .map(|c| c.to_radix_16())
+        .collect();
+
+    // The above puts the scalar digits into a heap-allocated Vec.
+    // To ensure that these are erased, pass ownership of the Vec into a
+    // ClearOnDrop wrapper.
+    let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
 
     // Compute s_1*P_1 + ... + s_n*P_n: since
     //
@@ -517,7 +526,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Extende
     // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
         Q = Q.mult_by_pow_2(4);
-        let it = scalar_digits_list.iter().zip(lookup_tables.iter());
+        let it = scalar_digits.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
             // Q = Q + s_{i,j} * P_i
             Q = &Q + &lookup_table_i.select(s_i[j]);

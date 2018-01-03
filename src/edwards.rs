@@ -496,7 +496,6 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 /// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 /// 
-/// XXX need to clear memory
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]

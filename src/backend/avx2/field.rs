@@ -120,7 +120,6 @@ impl FieldElement32x4 {
     }
 
     /// Negate variables in lanes where mask is set
-    /// XXX fix up api
     pub fn negate(&mut self, mask: u8) {
         let mask = mask as i32;
         unsafe {

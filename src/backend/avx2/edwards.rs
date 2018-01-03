@@ -37,14 +37,12 @@ use backend::avx2;
 #[derive(Copy, Clone, Debug)]
 pub struct ExtendedPoint(pub(super) FieldElement32x4);
 
-// XXX need to cfg gate here to handle FieldElement64
 impl From<edwards::ExtendedPoint> for ExtendedPoint {
     fn from(P: edwards::ExtendedPoint) -> ExtendedPoint {
         ExtendedPoint(FieldElement32x4::new(&P.X, &P.Y, &P.Z, &P.T))
     }
 }
 
-// XXX need to cfg gate here to handle FieldElement64
 impl From<ExtendedPoint> for edwards::ExtendedPoint {
     fn from(P: ExtendedPoint) -> edwards::ExtendedPoint {
         let tmp = P.0.split();
@@ -608,17 +606,15 @@ pub mod vartime {
         Q.into()
     }
 
-    /// Given a vector of public scalars and a vector of (possibly secret)
-    /// points, compute `c_1 P_1 + ... + c_n P_n`.
+    /// Given a vector of public scalars and a vector of public points, compute
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
     ///
     /// # Input
     ///
     /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
-    ///
-    /// XXX need to clear memory
-    ///
-    /// XXX see note on consttime multiscalar mul
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
         where I: IntoIterator<Item = &'a Scalar>,

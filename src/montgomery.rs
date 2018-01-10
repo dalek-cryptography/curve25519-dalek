@@ -336,29 +336,26 @@ fn differential_add_and_double(P: &mut MontgomeryPoint, Q: &mut MontgomeryPoint,
 
     let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
 
-    let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2         // P'_U
+    let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
     let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
 
-    let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)          // P'_W
+    let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
 
-    let t17 = &difference.U * &t12; // D_U * 4 (W_P U_Q - U_P W_Q)^2                  // Q'_W
-    let t18 = &difference.W * &t11; // D_W * 4 (U_P U_Q - W_P W_Q)^2                  // Q'_U
+    let t17 = &difference.U * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+    let t18 = &difference.W * &t11; // W_D * 4 (U_P U_Q - W_P W_Q)^2
 
-    P.U = t14;  // P'_U = (U_P + W_P)^2 (U_P - W_P)^2
-    P.W = t16;  // P'_W = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
-    Q.U = t18;  // Q'_U = D_W * 4 (U_P U_Q - W_P W_Q)^2
-    Q.W = t17;
+    P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+    P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+    Q.U = t18;  // U_{Q'} = D_W * 4 (U_P U_Q - W_P W_Q)^2
+    Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
-///
-/// The reader is refered to §5.3 of ["Montgomery Curves and Their Arithmetic"
-/// by Craig Costello and Benjamin Smith](https://eprint.iacr.org/2017/212.pdf)
-/// for an overview of side-channel-free Montgomery laddering algorithms.
 impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
+        // Algorithm 8 of Costello-Smith 2017
         let mut x0: MontgomeryPoint = MontgomeryPoint::identity();
         let mut x1: MontgomeryPoint = *self;
 

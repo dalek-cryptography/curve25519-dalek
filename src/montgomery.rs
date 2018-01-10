@@ -310,74 +310,6 @@ impl MontgomeryPoint {
 
         CompressedMontgomeryU(u_affine.to_bytes())
     }
-
-    /// Differential addition for single-coordinate Montgomery points.
-    ///
-    /// Montgomery coordinates in projective 𝗣¹ space are odd in that 𝗣¹
-    /// inherits none of the group structure from E_(A,B).  Hence, the mapping
-    /// of the group operation, `⊕`, is undefined for the pair `(x(P), x(Q))`;
-    /// that is, given `x(P)` and `x(Q)`, we cannot derive `x(P ⊕ Q)`.  This is
-    /// due to the fact that, in Montgomery coordinates, `x(P)` determines `P`
-    /// only up to a sign, and thus we cannot differentiate `x(P ⊕ Q)` from
-    /// `x(P ⊖ Q)`.  However, via differential addition, any three of the values
-    /// `{x(P), x(Q), x(P ⊕ Q), x(P ⊖ Q)}` determines the forth, so we can
-    /// define *pseudo-addition* for a singular coordinate.
-    ///
-    /// # Warning
-    ///
-    /// If the `difference` is the identity point, or a two torsion point, the
-    /// results of this method are not correct, but instead result in `(0:0)`
-    /// (an invalid projective point in the Montgomery model).
-    ///
-    /// The doubling case is degenerate, in that `P ⦵ Q ∉ {O,T}`, where `T` is
-    /// the two torsion point.
-    fn differential_add(&self, that: &MontgomeryPoint,
-                        difference: &MontgomeryPoint) -> MontgomeryPoint {
-        // XXX Do we want these debug assertions? We would need to implement
-        // XXX is_two_torsion_point(). —isis
-        // debug_assert!(!difference.is_identity()); // P ⦵ Q ∉ {O,T}
-        // debug_assert!(!difference.is_two_torsion_point());
-
-        let v1: FieldElement = &(&self.U + &self.W) * &(&that.U - &that.W);
-        let v2: FieldElement = &(&self.U - &self.W) * &(&that.U + &that.W);
-
-        MontgomeryPoint {
-            U: &difference.W * &(&v1 + &v2).square(),  // does reduction on square()
-            W: &difference.U * &(&v1 - &v2).square(),  // does reduction on square()
-        }
-    }
-
-    /// Pseudo-doubling for single-coordinate Montgomery points.
-    ///
-    /// Given a Montgomery U-coordinate of a point `P`, compute the
-    /// U-coordinate given by
-    ///
-    ///      differential_double: x(P) ⟼ x([2]P)
-    ///
-    /// # Returns
-    ///
-    /// A Montgomery point equal to doubling this one.
-    ///
-    // XXX It seems possible that combining the differential_add() and
-    // XXX differential_double() methods would save a non-trivial amount of
-    // XXX computation in the ladder. —isis
-    fn differential_double(&self) -> MontgomeryPoint {
-        let mut v1: FieldElement;
-        let v2: FieldElement;
-        let v3: FieldElement;
-
-        v1 = (&self.U + &self.W).square();
-        v2 = (&self.U - &self.W).square();
-
-        let U: FieldElement = &v1 * &v2;
-
-        v1 -= &v2;
-        v3  = &(&constants::APLUS2_OVER_FOUR * &v1) + &v2;
-
-        let W: FieldElement = &v1 * &v3;
-
-        MontgomeryPoint{ U: U, W: W }
-    }
 }
 
 /// DOCDOC
@@ -515,14 +447,6 @@ mod test {
     }
 
     #[test]
-    fn differential_double_matches_double() {
-        let p: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
-        let q: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress().differential_double();
-
-        assert_eq!(p.to_montgomery().compress(), q.compress());
-    }
-
-    #[test]
     #[cfg(feature="precomputed_tables")]
     fn montgomery_ct_eq_ne() {
         let mut csprng: OsRng = OsRng::new().unwrap();
@@ -542,26 +466,6 @@ mod test {
         let p1: MontgomeryPoint = (&s1 * &constants::ED25519_BASEPOINT_TABLE).to_montgomery();
 
         assert_eq!(p1.ct_eq(&p1), 1);
-    }
-
-    #[test]
-    #[cfg(feature="precomputed_tables")]
-    fn differential_add_matches_edwards_model() {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-
-        let s1: Scalar = Scalar::random(&mut csprng);
-        let s2: Scalar = Scalar::random(&mut csprng);
-        let p1: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s1;
-        let p2: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s2;
-        let diff: ExtendedPoint = &p1 - &p2;
-
-        let p1m: MontgomeryPoint = p1.to_montgomery();
-        let p2m: MontgomeryPoint = p2.to_montgomery();
-        let diffm: MontgomeryPoint = diff.to_montgomery();
-
-        let result = p1m.differential_add(&p2m, &diffm);
-
-        assert_eq!(result.compress(), (&p1 + &p2).to_montgomery().compress());
     }
 
     #[test]

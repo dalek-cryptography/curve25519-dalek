@@ -6,10 +6,11 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto'
-  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto serde'
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES=''
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
-  - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
+  - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='nightly bench'
   - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
   - TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
 
@@ -20,14 +21,18 @@ matrix:
     # run benchmarks, which causes dalek not to build on stable.  See
     # https://github.com/isislovecruft/curve25519-dalek/pull/38#issuecomment-286027562
     - rust: stable
-      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='nightly bench'
     - rust: beta
-      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto bench'
+      env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='nightly bench'
     - rust: stable
       env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
     - rust: beta
       env: TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='yolocrypto nightly bench'
     # Test nightly features, such as radix_51, only on nightly.
+    - rust: stable
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
+    - rust: beta
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
     - rust: stable
       env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
     - rust: beta

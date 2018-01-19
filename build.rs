@@ -8,6 +8,7 @@ extern crate subtle;
 extern crate rand;
 extern crate digest;
 extern crate generic_array;
+extern crate clear_on_drop;
 
 use std::env;
 use std::fs::File;
@@ -68,6 +69,7 @@ use backend::u32::field::FieldElement32;
 
 use edwards::EdwardsBasepointTable;
 
+use curve_models::window::LookupTable;
 use curve_models::AffineNielsPoint;
 
 /// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.

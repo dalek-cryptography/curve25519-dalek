@@ -30,7 +30,7 @@ optional = true
 
 [dependencies.rand]
 optional = true
-version = "0.3"
+version = "0.4"
 
 [dependencies.digest]
 version = "0.7"
@@ -54,7 +54,7 @@ version = "0.6"
 
 [build-dependencies]
 subtle = "^0.3"
-rand = "0.3"
+rand = "0.4"
 generic-array = "0.9"
 digest = "0.7"
 arrayref = "0.3.4"

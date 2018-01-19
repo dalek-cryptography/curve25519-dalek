@@ -31,6 +31,7 @@
 use core::ops::{Mul, MulAssign};
 
 use constants;
+use constants::APLUS2_OVER_FOUR;
 use field::FieldElement;
 use edwards::{ExtendedPoint, CompressedEdwardsY};
 use scalar::Scalar;
@@ -309,85 +310,52 @@ impl MontgomeryPoint {
 
         CompressedMontgomeryU(u_affine.to_bytes())
     }
+}
 
-    /// Differential addition for single-coordinate Montgomery points.
-    ///
-    /// Montgomery coordinates in projective 𝗣¹ space are odd in that 𝗣¹
-    /// inherits none of the group structure from E_(A,B).  Hence, the mapping
-    /// of the group operation, `⊕`, is undefined for the pair `(x(P), x(Q))`;
-    /// that is, given `x(P)` and `x(Q)`, we cannot derive `x(P ⊕ Q)`.  This is
-    /// due to the fact that, in Montgomery coordinates, `x(P)` determines `P`
-    /// only up to a sign, and thus we cannot differentiate `x(P ⊕ Q)` from
-    /// `x(P ⊖ Q)`.  However, via differential addition, any three of the values
-    /// `{x(P), x(Q), x(P ⊕ Q), x(P ⊖ Q)}` determines the forth, so we can
-    /// define *pseudo-addition* for a singular coordinate.
-    ///
-    /// # Warning
-    ///
-    /// If the `difference` is the identity point, or a two torsion point, the
-    /// results of this method are not correct, but instead result in `(0:0)`
-    /// (an invalid projective point in the Montgomery model).
-    ///
-    /// The doubling case is degenerate, in that `P ⦵ Q ∉ {O,T}`, where `T` is
-    /// the two torsion point.
-    fn differential_add(&self, that: &MontgomeryPoint,
-                        difference: &MontgomeryPoint) -> MontgomeryPoint {
-        // XXX Do we want these debug assertions? We would need to implement
-        // XXX is_two_torsion_point(). —isis
-        // debug_assert!(!difference.is_identity()); // P ⦵ Q ∉ {O,T}
-        // debug_assert!(!difference.is_two_torsion_point());
+/// DOCDOC
+fn differential_add_and_double(P: &mut MontgomeryPoint, Q: &mut MontgomeryPoint,
+                               difference: &MontgomeryPoint) {
+    let t0 = &P.U + &P.W;
+    let t1 = &P.U - &P.W;
+    let t2 = &Q.U + &Q.W;
+    let t3 = &Q.U - &Q.W;
 
-        let v1: FieldElement = &(&self.U + &self.W) * &(&that.U - &that.W);
-        let v2: FieldElement = &(&self.U - &self.W) * &(&that.U + &that.W);
+    let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+    let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
 
-        MontgomeryPoint {
-            U: &difference.W * &(&v1 + &v2).square(),  // does reduction on square()
-            W: &difference.U * &(&v1 - &v2).square(),  // does reduction on square()
-        }
-    }
+    let t6 = &t4 - &t5;     // 4 U_P W_P
 
-    /// Pseudo-doubling for single-coordinate Montgomery points.
-    ///
-    /// Given a Montgomery U-coordinate of a point `P`, compute the
-    /// U-coordinate given by
-    ///
-    ///      differential_double: x(P) ⟼ x([2]P)
-    ///
-    /// # Returns
-    ///
-    /// A Montgomery point equal to doubling this one.
-    ///
-    // XXX It seems possible that combining the differential_add() and
-    // XXX differential_double() methods would save a non-trivial amount of
-    // XXX computation in the ladder. —isis
-    fn differential_double(&self) -> MontgomeryPoint {
-        let mut v1: FieldElement;
-        let v2: FieldElement;
-        let v3: FieldElement;
+    let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+    let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
 
-        v1 = (&self.U + &self.W).square();
-        v2 = (&self.U - &self.W).square();
+    let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+    let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
 
-        let U: FieldElement = &v1 * &v2;
+    let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+    let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
 
-        v1 -= &v2;
-        v3  = &(&constants::APLUS2_OVER_FOUR * &v1) + &v2;
+    let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
 
-        let W: FieldElement = &v1 * &v3;
+    let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+    let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
 
-        MontgomeryPoint{ U: U, W: W }
-    }
+    let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+
+    let t17 = &difference.U * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+    let t18 = &difference.W * &t11; // W_D * 4 (U_P U_Q - W_P W_Q)^2
+
+    P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+    P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+    Q.U = t18;  // U_{Q'} = D_W * 4 (U_P U_Q - W_P W_Q)^2
+    Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
-///
-/// The reader is refered to §5.3 of ["Montgomery Curves and Their Arithmetic"
-/// by Craig Costello and Benjamin Smith](https://eprint.iacr.org/2017/212.pdf)
-/// for an overview of side-channel-free Montgomery laddering algorithms.
 impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
+        // Algorithm 8 of Costello-Smith 2017
         let mut x0: MontgomeryPoint = MontgomeryPoint::identity();
         let mut x1: MontgomeryPoint = *self;
 
@@ -399,8 +367,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             debug_assert!(mask == 0 || mask == 1);
 
             x0.conditional_swap(&mut x1, mask);
-            x1 = x0.differential_add(&x1, &self);
-            x0 = x0.differential_double();
+            differential_add_and_double(&mut x0, &mut x1, &self);
         }
         x0.conditional_swap(&mut x1, bits[0] as u8);
         x0
@@ -477,14 +444,6 @@ mod test {
     }
 
     #[test]
-    fn differential_double_matches_double() {
-        let p: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
-        let q: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress().differential_double();
-
-        assert_eq!(p.to_montgomery().compress(), q.compress());
-    }
-
-    #[test]
     #[cfg(feature="precomputed_tables")]
     fn montgomery_ct_eq_ne() {
         let mut csprng: OsRng = OsRng::new().unwrap();
@@ -504,26 +463,6 @@ mod test {
         let p1: MontgomeryPoint = (&s1 * &constants::ED25519_BASEPOINT_TABLE).to_montgomery();
 
         assert_eq!(p1.ct_eq(&p1), 1);
-    }
-
-    #[test]
-    #[cfg(feature="precomputed_tables")]
-    fn differential_add_matches_edwards_model() {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-
-        let s1: Scalar = Scalar::random(&mut csprng);
-        let s2: Scalar = Scalar::random(&mut csprng);
-        let p1: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s1;
-        let p2: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s2;
-        let diff: ExtendedPoint = &p1 - &p2;
-
-        let p1m: MontgomeryPoint = p1.to_montgomery();
-        let p2m: MontgomeryPoint = p2.to_montgomery();
-        let diffm: MontgomeryPoint = diff.to_montgomery();
-
-        let result = p1m.differential_add(&p2m, &diffm);
-
-        assert_eq!(result.compress(), (&p1 + &p2).to_montgomery().compress());
     }
 
     #[test]

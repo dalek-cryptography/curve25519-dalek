@@ -1,6 +1,11 @@
 
 # curve25519-dalek  [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://docs.rs/curve25519-dalek/badge.svg)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/isislovecruft/curve25519-dalek.svg?branch=master)](https://travis-ci.org/isislovecruft/curve25519-dalek)
 
+<img
+ width="50%"
+ align="right"
+ src="https://user-images.githubusercontent.com/797/34898472-83686016-f7f3-11e7-967b-24b2aadd623a.png"/>
+
 **A low-level cryptographic library for point, group, field, and scalar
 operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y²
 = 1 - 121665/121666 x²y² over GF(2²⁵⁵ - 19).**

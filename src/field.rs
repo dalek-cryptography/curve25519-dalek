@@ -124,15 +124,6 @@ impl FieldElement {
         byte_is_nonzero(x)
     }
 
-    #[inline]
-    #[allow(dead_code)]
-    /// Requires k > 0; raise self to the 2^(2^k)-th power.
-    fn pow2k(&self, k: u32) -> FieldElement {
-        let mut z = self.square();
-        for _ in 1..k { z = z.square(); }
-        z
-    }
-
     /// Compute (self^(2^250-1), self^11), used as a helper function
     /// within invert() and pow22523().
     ///

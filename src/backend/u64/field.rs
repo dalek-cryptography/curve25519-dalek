@@ -78,8 +78,7 @@ impl<'a, 'b> Sub<&'b FieldElement64> for &'a FieldElement64 {
         // just bigger than _rhs and avoid having to do a reduction.
         //
         // Since we don't yet have type-level integers to do this, we
-        // have to add an explicit reduction call here, which is a
-        // somewhat significant cost.
+        // have to add an explicit reduction call here.
         FieldElement64::reduce([
             (self.0[0] + 36028797018963664u64) - _rhs.0[0],
             (self.0[1] + 36028797018963952u64) - _rhs.0[1],
@@ -200,20 +199,39 @@ impl FieldElement64 {
         FieldElement64([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
     }
 
-    /// Given 64-bit limbs, reduce to enforce the bound c_i < 2^51.
+    /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + eps).
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> FieldElement64 {
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        limbs[1] +=  limbs[0] >> 51;
-        limbs[0] = limbs[0] & low_51_bit_mask;
-        limbs[2] +=  limbs[1] >> 51;
-        limbs[1] = limbs[1] & low_51_bit_mask;
-        limbs[3] +=  limbs[2] >> 51;
-        limbs[2] = limbs[2] & low_51_bit_mask;
-        limbs[4] +=  limbs[3] >> 51;
-        limbs[3] = limbs[3] & low_51_bit_mask;
-        limbs[0] += (limbs[4] >> 51) * 19;
-        limbs[4] = limbs[4] & low_51_bit_mask;
+        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+
+        // Since the input limbs are bounded by 2^64, the biggest
+        // carry-out is bounded by 2^13.
+        //
+        // The biggest carry-in is c4 * 19, resulting in
+        //
+        // 2^51 + 19*2^13 < 2^51.0000000001
+        //
+        // Because we don't need to canonicalize, only to reduce the
+        // limb sizes, it's OK to do a "weak reduction", where we
+        // compute the carry-outs in parallel.
+        
+        let c0 = limbs[0] >> 51;
+        let c1 = limbs[1] >> 51;
+        let c2 = limbs[2] >> 51;
+        let c3 = limbs[3] >> 51;
+        let c4 = limbs[4] >> 51;
+        
+        limbs[0] &= LOW_51_BIT_MASK;
+        limbs[1] &= LOW_51_BIT_MASK;
+        limbs[2] &= LOW_51_BIT_MASK;
+        limbs[3] &= LOW_51_BIT_MASK;
+        limbs[4] &= LOW_51_BIT_MASK;
+        
+        limbs[0] += c4 * 19;
+        limbs[1] += c0;
+        limbs[2] += c1;
+        limbs[3] += c2;
+        limbs[4] += c3;
 
         FieldElement64(limbs)
     }
@@ -260,17 +278,23 @@ impl FieldElement64 {
     /// Serialize this `FieldElement64` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
-        // This reduces to the range [0,2^255), but we need [0,2^255-19).
-        let mut limbs = FieldElement64::reduce(self.0).0;
-
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
-        // Write h = pq + r with 0 <= r < p.  We want to compute r = h mod p.
+        // Write h = pq + r with 0 <= r < p.
         //
-        // Since h < 2^255, q = 0 or 1, with q = 0 when h < p and q = 1 when h >= p.
+        // We want to compute r = h mod p.
+        //
+        // If h < 2*p = 2^256 - 38,
+        // then q = 0 or 1,
+        //
+        // with q = 0 when h < p
+        //  and q = 1 when h >= p.
         //
         // Notice that h >= p <==> h + 19 >= p + 19 <==> h + 19 >= 2^255.
         // Therefore q can be computed as the carry bit of h + 19.
+
+        // First, reduce the limbs to ensure h < 2*p.
+        let mut limbs = FieldElement64::reduce(self.0).0;
 
         let mut q = (limbs[0] + 19) >> 51;
         q = (limbs[1] + q) >> 51;

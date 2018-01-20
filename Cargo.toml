@@ -5,8 +5,8 @@ authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/isislovecruft/curve25519-dalek"
-homepage = "https://code.ciph.re/isis/curve25519-dalek"
+repository = "https://github.com/dalek-cryptography/curve25519-dalek"
+homepage = "https://dalek.rs/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "curve25519", "elliptic", "curve", "ECC"]

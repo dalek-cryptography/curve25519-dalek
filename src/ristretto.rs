@@ -667,6 +667,7 @@ impl RistrettoPoint {
     }
 
     /// Double-and-compress a batch of points.
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto> 
         where I: IntoIterator<Item = &'a RistrettoPoint>
     {

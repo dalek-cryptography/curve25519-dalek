@@ -1,5 +1,5 @@
 
-# curve25519-dalek  [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://docs.rs/curve25519-dalek/badge.svg)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/isislovecruft/curve25519-dalek.svg?branch=master)](https://travis-ci.org/isislovecruft/curve25519-dalek)
+# curve25519-dalek  [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://docs.rs/curve25519-dalek/badge.svg)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
 
 <img
  width="50%"
@@ -36,7 +36,7 @@ decryption or signing and verification.  Instead, it is a low-level library,
 intended for other cryptographers who would like to implement their own
 primitives using this curve.  (For an example of how one would implement a
 signature scheme using this library, see
-[ed25519-dalek](https://github.com/isislovecruft/ed25519-dalek).)
+[ed25519-dalek](https://github.com/dalek-cryptography/ed25519-dalek).)
 
 **USE AT YOUR OWN RISK**
 
@@ -81,7 +81,7 @@ We intend to stabilise the following before curve25519-dalek-1.0.0:
 ## Contributing
 
 Please see
-[CONTRIBUTING.md](https://github.com/isislovecruft/curve25519-dalek/blob/master/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md).
 
 Patches and pull requests should be make against the `develop`
 branch, **not** `master`.

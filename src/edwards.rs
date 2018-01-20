@@ -432,32 +432,41 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(self);
-
-        // Setting s = scalar, compute
-        //
-        //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
-        //
-        // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
-        let scalar_digits = scalar.to_radix_16();
-
-        // Compute s*P as
-        //
-        //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
-        //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
-        //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
-        //
-        // We sum right-to-left.
-        let mut Q = ExtendedPoint::identity();
-        for i in (0..64).rev() {
-            // Q <-- 16*Q
-            Q = Q.mult_by_pow_2(4);
-            // Q <-- Q + P * s_i
-            Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
+            use backend::avx2::edwards as edwards_avx2;
+            let P_avx2 = edwards_avx2::ExtendedPoint::from(*self);
+            return ExtendedPoint::from(&P_avx2 * scalar);
         }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
+            // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
+            let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(self);
 
-        Q
+            // Setting s = scalar, compute
+            //
+            //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
+            //
+            // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
+            let scalar_digits = scalar.to_radix_16();
+
+            // Compute s*P as
+            //
+            //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
+            //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
+            //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
+            //
+            // We sum right-to-left.
+            let mut Q = ExtendedPoint::identity();
+            for i in (0..64).rev() {
+                // Q <-- 16*Q
+                Q = Q.mult_by_pow_2(4);
+                // Q <-- Q + P * s_i
+                Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
+            }
+
+            Q
+        }
     }
 }
 
@@ -487,7 +496,6 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 /// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 /// 
-/// XXX need to clear memory
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
@@ -495,62 +503,71 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
     where I: IntoIterator<Item = &'a Scalar>,
           J: IntoIterator<Item = &'b ExtendedPoint>
 {
-    //assert_eq!(scalars.len(), points.len());
-    
-    use clear_on_drop::ClearOnDrop;
+    // If we built with AVX2, use the AVX2 backend.
+    #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
+        use backend::avx2::edwards as edwards_avx2;
 
-    let lookup_tables_vec: Vec<_> = points.into_iter()
-        .map(|P| LookupTable::<ProjectiveNielsPoint>::from(P) )
-        .collect();
-
-    let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
-
-    // Setting s_i = i-th scalar, compute
-    //
-    //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
-    //
-    // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_vec: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16())
-        .collect();
-
-    // This above puts the scalar digits into a heap-allocated Vec.
-    // To ensure that these are erased, pass ownership of the Vec into a
-    // ClearOnDrop wrapper.
-    let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
-
-    // Compute s_1*P_1 + ... + s_n*P_n: since
-    //
-    //    s_i*P_i = P_i*(s_{i,0} +     s_{i,1}*16^1 + ... +     s_{i,63}*16^63)
-    //    s_i*P_i =  P_i*s_{i,0} + P_i*s_{i,1}*16^1 + ... + P_i*s_{i,63}*16^63
-    //    s_i*P_i =  P_i*s_{i,0} + 16*(P_i*s_{i,1} + 16*( ... + 16*P_i*s_{i,63})...)
-    //
-    // we have the two-dimensional sum
-    //
-    //    s_1*P_1 =   P_1*s_{1,0} + 16*(P_1*s_{1,1} + 16*( ... + 16*P_1*s_{1,63})...)
-    //  + s_2*P_2 = + P_2*s_{2,0} + 16*(P_2*s_{2,1} + 16*( ... + 16*P_2*s_{2,63})...)
-    //      ...
-    //  + s_n*P_n = + P_n*s_{n,0} + 16*(P_n*s_{n,1} + 16*( ... + 16*P_n*s_{n,63})...)
-    //
-    // We sum column-wise top-to-bottom, then right-to-left,
-    // multiplying by 16 only once per column.
-    //
-    // This provides the speedup over doing n independent scalar
-    // mults: we perform 63 multiplications by 16 instead of 63*n
-    // multiplications, saving 252*(n-1) doublings.
-    let mut Q = ExtendedPoint::identity();
-    // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
-    for j in (0..64).rev() {
-        Q = Q.mult_by_pow_2(4);
-        let it = scalar_digits.iter().zip(lookup_tables.iter());
-        for (s_i, lookup_table_i) in it {
-            // R_i = s_{i,j} * P_i
-            let R_i = lookup_table_i.select(s_i[j]);
-            // Q = Q + R_i
-            Q = (&Q + &R_i).to_extended();
-        }
+        edwards_avx2::multiscalar_mult(scalars, points)
     }
-    Q
+    // Otherwise, proceed as normal:
+    #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
+        //assert_eq!(scalars.len(), points.len());
+        
+        use clear_on_drop::ClearOnDrop;
+
+        let lookup_tables_vec: Vec<_> = points.into_iter()
+            .map(|P| LookupTable::<ProjectiveNielsPoint>::from(P) )
+            .collect();
+
+        let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
+
+        // Setting s_i = i-th scalar, compute
+        //
+        //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
+        //
+        // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
+        let scalar_digits_vec: Vec<_> = scalars.into_iter()
+            .map(|c| c.to_radix_16())
+            .collect();
+
+        // This above puts the scalar digits into a heap-allocated Vec.
+        // To ensure that these are erased, pass ownership of the Vec into a
+        // ClearOnDrop wrapper.
+        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+
+        // Compute s_1*P_1 + ... + s_n*P_n: since
+        //
+        //    s_i*P_i = P_i*(s_{i,0} +     s_{i,1}*16^1 + ... +     s_{i,63}*16^63)
+        //    s_i*P_i =  P_i*s_{i,0} + P_i*s_{i,1}*16^1 + ... + P_i*s_{i,63}*16^63
+        //    s_i*P_i =  P_i*s_{i,0} + 16*(P_i*s_{i,1} + 16*( ... + 16*P_i*s_{i,63})...)
+        //
+        // we have the two-dimensional sum
+        //
+        //    s_1*P_1 =   P_1*s_{1,0} + 16*(P_1*s_{1,1} + 16*( ... + 16*P_1*s_{1,63})...)
+        //  + s_2*P_2 = + P_2*s_{2,0} + 16*(P_2*s_{2,1} + 16*( ... + 16*P_2*s_{2,63})...)
+        //      ...
+        //  + s_n*P_n = + P_n*s_{n,0} + 16*(P_n*s_{n,1} + 16*( ... + 16*P_n*s_{n,63})...)
+        //
+        // We sum column-wise top-to-bottom, then right-to-left,
+        // multiplying by 16 only once per column.
+        //
+        // This provides the speedup over doing n independent scalar
+        // mults: we perform 63 multiplications by 16 instead of 63*n
+        // multiplications, saving 252*(n-1) doublings.
+        let mut Q = ExtendedPoint::identity();
+        // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
+        for j in (0..64).rev() {
+            Q = Q.mult_by_pow_2(4);
+            let it = scalar_digits.iter().zip(lookup_tables.iter());
+            for (s_i, lookup_table_i) in it {
+                // R_i = s_{i,j} * P_i
+                let R_i = lookup_table_i.select(s_i[j]);
+                // Q = Q + R_i
+                Q = (&Q + &R_i).to_extended();
+            }
+        }
+        Q
+    }
 }
 
 /// A precomputed table of multiples of a basepoint, for accelerating
@@ -787,79 +804,99 @@ pub mod vartime {
         where I: IntoIterator<Item = &'a Scalar>,
               J: IntoIterator<Item = &'b ExtendedPoint>
     {
-        //assert_eq!(scalars.len(), points.len());
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
+            use backend::avx2::edwards as edwards_avx2;
 
-        let nafs: Vec<_> = scalars.into_iter()
-            .map(|c| c.non_adjacent_form()).collect();
-        let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| OddMultiples::create(P)).collect();
+            edwards_avx2::vartime::multiscalar_mult(scalars, points)
+        }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
+            //assert_eq!(scalars.len(), points.len());
 
-        let mut r = ProjectivePoint::identity();
+            let nafs: Vec<_> = scalars.into_iter()
+                .map(|c| c.non_adjacent_form()).collect();
+            let odd_multiples: Vec<_> = points.into_iter()
+                .map(|P| OddMultiples::create(P)).collect();
 
-        for i in (0..255).rev() {
-            let mut t = r.double();
+            let mut r = ProjectivePoint::identity();
 
-            for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
-                if naf[i] > 0 {
-                    t = &t.to_extended() + &odd_multiple[( naf[i]/2) as usize];
-                } else if naf[i] < 0 {
-                    t = &t.to_extended() - &odd_multiple[(-naf[i]/2) as usize];
+            for i in (0..255).rev() {
+                let mut t = r.double();
+
+                for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
+                    if naf[i] > 0 {
+                        t = &t.to_extended() + &odd_multiple[( naf[i]/2) as usize];
+                    } else if naf[i] < 0 {
+                        t = &t.to_extended() - &odd_multiple[(-naf[i]/2) as usize];
+                    }
                 }
+
+                r = t.to_projective();
             }
 
-            r = t.to_projective();
+            r.to_extended()
         }
-
-        r.to_extended()
     }
 
     /// Given a point \\(A\\) and scalars \\(a\\) and \\(b\\), compute the point
     /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
     #[cfg(feature="precomputed_tables")]
-    pub fn double_scalar_mult_basepoint(a: &Scalar,
-                                        A: &ExtendedPoint,
-                                        b: &Scalar) -> ExtendedPoint {
-        let a_naf = a.non_adjacent_form();
-        let b_naf = b.non_adjacent_form();
+    pub fn double_scalar_mult_basepoint(
+        a: &Scalar,
+        A: &ExtendedPoint,
+        b: &Scalar,
+    ) -> ExtendedPoint {
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
+            use backend::avx2::edwards as edwards_avx2;
 
-        // Find starting index
-        let mut i: usize = 255;
-        for j in (0..255).rev() {
-            i = j;
-            if a_naf[i] != 0 || b_naf[i] != 0 {
-                break;
-            }
+            edwards_avx2::vartime::double_scalar_mult_basepoint(a, A, b)
         }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
+            let a_naf = a.non_adjacent_form();
+            let b_naf = b.non_adjacent_form();
 
-        let odd_multiples_of_A = OddMultiples::create(A);
-        let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
-
-        let mut r = ProjectivePoint::identity();
-        loop {
-            let mut t = r.double();
-
-            if a_naf[i] > 0 {
-                t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
-            } else if a_naf[i] < 0 {
-                t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+            // Find starting index
+            let mut i: usize = 255;
+            for j in (0..255).rev() {
+                i = j;
+                if a_naf[i] != 0 || b_naf[i] != 0 {
+                    break;
+                }
             }
 
-            if b_naf[i] > 0 {
-                t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
-            } else if b_naf[i] < 0 {
-                t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
+            let odd_multiples_of_A = OddMultiples::create(A);
+            let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
+
+            let mut r = ProjectivePoint::identity();
+            loop {
+                let mut t = r.double();
+
+                if a_naf[i] > 0 {
+                    t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
+                } else if a_naf[i] < 0 {
+                    t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
+                }
+
+                if b_naf[i] > 0 {
+                    t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
+                } else if b_naf[i] < 0 {
+                    t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
+                }
+
+                r = t.to_projective();
+
+                if i == 0 {
+                    break;
+                }
+                i -= 1;
             }
 
-            r = t.to_projective();
-
-            if i == 0 {
-                break;
-            }
-            i -= 1;
+            r.to_extended()
         }
-
-        r.to_extended()
     }
 
 }
@@ -1049,7 +1086,7 @@ mod test {
 
     /// Test precomputed basepoint mult
     #[test]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn test_precomputed_basepoint_mult() {
         let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT_POINT);
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1322,14 +1359,14 @@ mod bench {
     }
 
     #[bench]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn create_basepoint_table(b: &mut Bencher) {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         b.iter(|| EdwardsBasepointTable::create(&aB));
     }
 
     #[bench]
-    #[cfg(feature="basepoint_table_creation")]
+    #[cfg(feature="precomputed_tables")]
     fn ten_fold_scalar_mult(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
@@ -1353,7 +1390,7 @@ mod bench {
         }
 
         #[bench]
-        #[cfg(feature="basepoint_table_creation")]
+        #[cfg(feature="precomputed_tables")]
         fn ten_fold_scalar_mult(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars

@@ -11,10 +11,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "alloc", feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(i128_type))]
+#![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "bench", feature(test))]
-#![cfg_attr(all(feature = "nightly", feature = "std"), feature(zero_one))]
 
-#![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 //! # curve25519-dalek
@@ -51,6 +50,9 @@ extern crate clear_on_drop;
 
 #[cfg(all(test, feature = "bench"))]
 extern crate test;
+
+#[cfg(feature = "yolocrypto")]
+extern crate stdsimd;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it
 // too. Hopefully we can eliminate `generic_array` from `Digest` once const

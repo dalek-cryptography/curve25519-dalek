@@ -47,8 +47,8 @@ version = "^0.1.1"
 default-features = false
 
 [dev-dependencies]
-hex = "0.2"
-sha2 = "^0.6"
+hex = "0.3"
+sha2 = "0.7"
 bincode = "^0.9"
 
 [features]

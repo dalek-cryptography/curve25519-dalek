@@ -143,9 +143,9 @@
 //! # extern crate ed25519_dalek;
 //! # use rand::{Rng, OsRng};
 //! # use sha2::Sha512;
-//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey};
+//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, DecodingError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), &'static str> {
+//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), DecodingError> {
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
 //! # let keypair_orig: Keypair = Keypair::generate::<Sha512>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
@@ -257,17 +257,16 @@
 #![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
-#[macro_use]
-extern crate arrayref;
 extern crate curve25519_dalek;
 extern crate generic_array;
 extern crate digest;
 extern crate subtle;
+extern crate failure;
 
 #[cfg(feature = "std")]
 extern crate rand;
 
-#[cfg(test)]
+#[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
 
@@ -288,5 +287,8 @@ extern crate bincode;
 
 mod ed25519;
 
+pub mod errors;
+
 // Export everything public in ed25519.
 pub use ed25519::*;
+pub use errors::*;

@@ -1,11 +1,11 @@
 [package]
 name = "ed25519-dalek"
 version = "0.6.0"
-authors = ["Isis Lovecruft <isis@torproject.org>"]
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/isislovecruft/ed25519-dalek"
-homepage = "https://code.ciph.re/isis/ed25519-dalek"
+repository = "https://github.com/dalek-cryptography/ed25519-dalek"
+homepage = "https://dalek.rs"
 documentation = "https://docs.rs/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
 categories = ["cryptography", "no-std"]

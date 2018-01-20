@@ -27,10 +27,7 @@ use serde::de::Visitor;
 #[cfg(feature = "sha2")]
 use sha2::Sha512;
 
-use digest::BlockInput;
 use digest::Digest;
-use digest::Input;
-use digest::FixedOutput;
 
 use generic_array::typenum::U64;
 
@@ -539,7 +536,6 @@ impl ExpandedSecretKey {
     /// ```
     pub fn from_secret_key<D>(secret_key: &SecretKey) -> ExpandedSecretKey
             where D: Digest<OutputSize = U64> + Default {
-
         let mut h: D = D::default();
         let mut hash:  [u8; 64] = [0u8; 64];
         let mut lower: [u8; 32] = [0u8; 32];
@@ -561,7 +557,6 @@ impl ExpandedSecretKey {
     /// Sign a message with this `ExpandedSecretKey`.
     pub fn sign<D>(&self, message: &[u8], public_key: &PublicKey) -> Signature
             where D: Digest<OutputSize = U64> + Default {
-
         let mut h: D = D::default();
         let mut hash: [u8; 64] = [0u8; 64];
         let mesg_digest: Scalar;
@@ -887,13 +882,14 @@ impl Keypair {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign<D>(&self, message: &[u8]) -> Signature where D: Digest<OutputSize = U64> + Default {
+    pub fn sign<D>(&self, message: &[u8]) -> Signature
+            where D: Digest<OutputSize = U64> + Default {
         self.secret.expand::<D>().sign::<D>(&message, &self.public)
     }
 
     /// Verify a signature on a message with this keypair's public key.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
-            where D: FixedOutput<OutputSize = U64> + BlockInput + Default + Input {
+            where D: Digest<OutputSize = U64> + Default {
         self.public.verify::<D>(message, signature)
     }
 }

@@ -190,11 +190,11 @@ impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
         // and there is no overflow.
         out[0] = out[0] + carry * 19;
 
-        // Now out[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + eps).
+        // Now out[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
         out[1] += out[0] >> 51;
         out[0] &= LOW_51_BIT_MASK;
 
-        // Now out[i] < 2^(51 + eps) for all i.
+        // Now out[i] < 2^(51 + epsilon) for all i.
         FieldElement64(out)
     }
 }
@@ -246,7 +246,7 @@ impl FieldElement64 {
         FieldElement64([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
     }
 
-    /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + eps).
+    /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> FieldElement64 {
         const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
@@ -499,11 +499,11 @@ impl FieldElement64 {
             // and there is no overflow.
             a[0] = a[0] + carry * 19;
 
-            // Now a[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + eps).
+            // Now a[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
             a[1] += a[0] >> 51;
             a[0] &= LOW_51_BIT_MASK;
 
-            // Now all a[i] < 2^(51 + eps) and a = self^(2^k).
+            // Now all a[i] < 2^(51 + epsilon) and a = self^(2^k).
             
             k = k - 1;
             if k == 0 {

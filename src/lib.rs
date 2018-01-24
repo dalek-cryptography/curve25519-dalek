@@ -68,6 +68,10 @@ extern crate serde;
 #[cfg(all(test, feature = "serde"))]
 extern crate serde_cbor;
 
+// Internal macros. Must come first!
+#[macro_use]
+pub(crate) mod macros;
+
 //------------------------------------------------------------------------
 // curve25519-dalek public modules
 //------------------------------------------------------------------------

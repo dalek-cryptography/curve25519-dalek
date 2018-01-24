@@ -925,11 +925,15 @@ impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
     }
 }
 
+define_add_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint, Output = RistrettoPoint);
+
 impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
     fn add_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) + _rhs;
     }
 }
+
+define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
 impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
@@ -939,17 +943,29 @@ impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
     }
 }
 
+define_sub_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint, Output = RistrettoPoint);
+
 impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
     fn sub_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) - _rhs;
     }
 }
 
+define_sub_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
+
 impl<'a> Neg for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn neg(self) -> RistrettoPoint {
         RistrettoPoint(-&self.0)
+    }
+}
+
+impl Neg for RistrettoPoint {
+    type Output = RistrettoPoint;
+
+    fn neg(self) -> RistrettoPoint {
+        -&self
     }
 }
 
@@ -976,6 +992,12 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
         RistrettoPoint(self * &point.0)
     }
 }
+
+define_mul_assign_variants!(LHS = RistrettoPoint, RHS = Scalar);
+
+define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint);
+define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint);
+
 
 /// Given a vector of (possibly secret) scalars and a vector of
 /// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.

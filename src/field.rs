@@ -124,15 +124,6 @@ impl FieldElement {
         byte_is_nonzero(x)
     }
 
-    #[inline]
-    #[allow(dead_code)]
-    /// Requires k > 0; raise self to the 2^(2^k)-th power.
-    fn pow2k(&self, k: u32) -> FieldElement {
-        let mut z = self.square();
-        for _ in 1..k { z = z.square(); }
-        z
-    }
-
     /// Compute (self^(2^250-1), self^11), used as a helper function
     /// within invert() and pow22523().
     ///
@@ -176,6 +167,64 @@ impl FieldElement {
         let t19 = &t18 * &t13;             // 249..0
 
         (t19, t3)
+    }
+
+    /// Given a slice of public `FieldElements`, replace each with its inverse.
+    ///
+    /// All input `FieldElements` **MUST** be nonzero.
+    ///
+    /// This function is most efficient when the batch size (slice
+    /// length) is a power of 2.
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    pub fn batch_invert(inputs: &mut [FieldElement]) {
+        // First, compute the product of all inputs using a product
+        // tree:
+        //
+        // Inputs: [x_0, x_1, x_2]
+        //
+        // Tree:
+        //
+        //                 x_0*x_1*x_2*1         tree[1]
+        //                   /       \
+        //               x_0*x_1     x_2*1       tree[2,3]
+        //                / \        / \
+        //              x_0  x_1   x_2  1        tree[4,5,6,7]
+        //
+        //  The leaves of the tree are the inputs.  We store the tree in
+        //  an array of length 2*n, similar to a binary heap.
+        //
+        //  To initialize the tree, set every node to 1, then fill in
+        //  the leaf nodes with the input variables.  Finally, set every
+        //  non-leaf node to be the product of its children.
+
+        let n = inputs.len().next_power_of_two();
+        let mut tree = vec![FieldElement::one(); 2*n];
+        tree[n..n+inputs.len()].copy_from_slice(inputs);
+        for i in (1..n).rev() {
+            tree[i] = &tree[2*i] * &tree[2*i+1];
+        }
+
+        // The root of the tree is the product of all inputs, and is
+        // stored at index 1.  Compute its inverse.
+        let allinv = tree[1].invert();
+
+        // To compute y_i = 1/x_i, start at the i-th leaf node of the
+        // tree, and walk up to the root of the tree, multiplying
+        // `allinv` by each sibling.  This computes
+        //
+        // y_i = y * (all x_j except x_i)
+        //
+        // using lg(n) multiplications for each y_i, taking n*lg(n) in
+        // total.
+        for i in 0..inputs.len() {
+            let mut inv = allinv;
+            let mut node = n + i;
+            while node > 1 {
+                inv *= &tree[node ^ 1];
+                node = node >> 1;
+            }
+            inputs[i] = inv;
+        }
     }
 
     /// Given a nonzero field element, compute its inverse.
@@ -376,6 +425,21 @@ mod test {
     }
 
     #[test]
+    fn batch_invert_a_matches_nonbatched() {
+        let a    = FieldElement::from_bytes(&A_BYTES);
+        let ap58 = FieldElement::from_bytes(&AP58_BYTES);
+        let asq  = FieldElement::from_bytes(&ASQ_BYTES);
+        let ainv = FieldElement::from_bytes(&AINV_BYTES);
+        let a2   = &a + &a;
+        let a_list = vec![a, ap58, asq, ainv, a2];
+        let mut ainv_list = a_list.clone();
+        FieldElement::batch_invert(&mut ainv_list[..]);
+        for i in 0..5 {
+            assert_eq!(a_list[i].invert(), ainv_list[i]);
+        }
+    }
+
+    #[test]
     fn a_p58_vs_ap58_constant() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
@@ -469,5 +533,26 @@ mod bench {
     fn fieldelement_a_inv(b: &mut Bencher) {
         let a = FieldElement::from_bytes(&A_BYTES);
         b.iter(|| a.invert());
+    }
+
+    #[bench]
+    fn batch_16_inv(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        let mut a_vec = vec![a; 16];
+        b.iter(|| FieldElement::batch_invert(&mut a_vec));
+    }
+
+    #[bench]
+    fn batch_128_inv(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        let mut a_vec = vec![a; 128];
+        b.iter(|| FieldElement::batch_invert(&mut a_vec));
+    }
+
+    #[bench]
+    fn batch_1024_inv(b: &mut Bencher) {
+        let a = FieldElement::from_bytes(&A_BYTES);
+        let mut a_vec = vec![a; 1024];
+        b.iter(|| FieldElement::batch_invert(&mut a_vec));
     }
 }

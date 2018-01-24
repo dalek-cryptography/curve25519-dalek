@@ -78,8 +78,7 @@ impl<'a, 'b> Sub<&'b FieldElement64> for &'a FieldElement64 {
         // just bigger than _rhs and avoid having to do a reduction.
         //
         // Since we don't yet have type-level integers to do this, we
-        // have to add an explicit reduction call here, which is a
-        // somewhat significant cost.
+        // have to add an explicit reduction call here.
         FieldElement64::reduce([
             (self.0[0] + 36028797018963664u64) - _rhs.0[0],
             (self.0[1] + 36028797018963952u64) - _rhs.0[1],
@@ -109,7 +108,19 @@ impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
         let a: &[u64; 5] = &self.0;
         let b: &[u64; 5] = &_rhs.0;
 
-        // 64-bit precomputations to avoid 128-bit multiplications
+        // Precondition: assume input limbs a[i], b[i] are bounded as
+        //
+        // a[i], b[i] < 2^(51 + b)
+        //
+        // where b is a real parameter measuring the "bit excess" of the limbs.
+
+        // 64-bit precomputations to avoid 128-bit multiplications.
+        //
+        // This fits into a u64 whenever 51 + b + lg(19) < 64.
+        //
+        // Since 51 + b + lg(19) < 51 + 4.25 + b
+        //                       = 55.25 + b,
+        // this fits if b < 8.75.
         let b1_19 = b[1] * 19;
         let b2_19 = b[2] * 19;
         let b3_19 = b[3] * 19;
@@ -122,34 +133,69 @@ impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
         let mut c3: u128 = m(a[3],b[0]) + m(a[2],b[1])  + m(a[1],b[2])  + m(a[0],b[3])  + m(a[4],b4_19);
         let mut c4: u128 = m(a[4],b[0]) + m(a[3],b[1])  + m(a[2],b[2])  + m(a[1],b[3])  + m(a[0],b[4]);
 
-        // Now c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
-        // where b is the bitlength of the input limbs.
-
-        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
-        // After the first carry pass, all c[i] fit into u64.
+        // How big are the c[i]? We have
+        //
+        //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19) 
+        //         < 2^(102 + lg(1 + 4*19) + 2*b)
+        //         < 2^(108.27 + 2*b)
+        //
+        // The carry (c[i] >> 51) fits into a u64 when
+        //    108.27 + 2*b - 51 < 64
+        //    2*b < 6.73
+        //    b < 3.365.
+        //
+        // So we require b < 3 to ensure this fits.
         debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
         debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
         debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
         debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
         debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
 
-        // The 128-bit output limbs are stored in two 64-bit registers
-        // (low/high part).  By rebinding the names after carrying, we
-        // inform LLVM that the values have shrunk, so it can
-        // efficiently allocate registers.
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        c1 +=  (c0 >> 51) as u128;
-        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
-        c2 +=  (c1 >> 51) as u128;
-        let c1: u64 = (c1 as u64) & low_51_bit_mask;
-        c3 +=  (c2 >> 51) as u128;
-        let c2: u64 = (c2 as u64) & low_51_bit_mask;
-        c4 +=  (c3 >> 51) as u128;
-        let c3: u64 = (c3 as u64) & low_51_bit_mask;
-        c0 += ((c4 >> 51) as u64) * 19;
-        let c4: u64 = (c4 as u64) & low_51_bit_mask;
+        // Casting to u64 and back tells the compiler that the carry is
+        // bounded by 2^64, so that the addition is a u128 + u64 rather
+        // than u128 + u128.
 
-        FieldElement64::reduce([c0,c1,c2,c3,c4])
+        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+        let mut out = [0u64; 5];
+
+        c1 += ((c0 >> 51) as u64) as u128;
+        out[0] = (c0 as u64) & LOW_51_BIT_MASK;
+
+        c2 += ((c1 >> 51) as u64) as u128;
+        out[1] = (c1 as u64) & LOW_51_BIT_MASK;
+
+        c3 += ((c2 >> 51) as u64) as u128;
+        out[2] = (c2 as u64) & LOW_51_BIT_MASK;
+
+        c4 += ((c3 >> 51) as u64) as u128;
+        out[3] = (c3 as u64) & LOW_51_BIT_MASK;
+
+        let carry: u64 = (c4 >> 51) as u64;
+        out[4] = (c4 as u64) & LOW_51_BIT_MASK;
+
+        // To see that this does not overflow, we need out[0] + carry * 19 < 2^64.
+        //
+        // c4 < a0*b4 + a1*b3 + a2*b2 + a3*b1 + a4*b0 + (carry from c3)
+        //    < 5*(2^(51 + b) * 2^(51 + b)) + (carry from c3)
+        //    < 2^(102 + 2*b + lg(5)) + 2^64.
+        //
+        // When b < 3 we get
+        //
+        // c4 < 2^110.33  so that carry < 2^59.33
+        //
+        // so that
+        //
+        // out[0] + carry * 19 < 2^51 + 19 * 2^59.33 < 2^63.58
+        //
+        // and there is no overflow.
+        out[0] = out[0] + carry * 19;
+
+        // Now out[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
+        out[1] += out[0] >> 51;
+        out[0] &= LOW_51_BIT_MASK;
+
+        // Now out[i] < 2^(51 + epsilon) for all i.
+        FieldElement64(out)
     }
 }
 
@@ -200,20 +246,39 @@ impl FieldElement64 {
         FieldElement64([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
     }
 
-    /// Given 64-bit limbs, reduce to enforce the bound c_i < 2^51.
+    /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> FieldElement64 {
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        limbs[1] +=  limbs[0] >> 51;
-        limbs[0] = limbs[0] & low_51_bit_mask;
-        limbs[2] +=  limbs[1] >> 51;
-        limbs[1] = limbs[1] & low_51_bit_mask;
-        limbs[3] +=  limbs[2] >> 51;
-        limbs[2] = limbs[2] & low_51_bit_mask;
-        limbs[4] +=  limbs[3] >> 51;
-        limbs[3] = limbs[3] & low_51_bit_mask;
-        limbs[0] += (limbs[4] >> 51) * 19;
-        limbs[4] = limbs[4] & low_51_bit_mask;
+        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+
+        // Since the input limbs are bounded by 2^64, the biggest
+        // carry-out is bounded by 2^13.
+        //
+        // The biggest carry-in is c4 * 19, resulting in
+        //
+        // 2^51 + 19*2^13 < 2^51.0000000001
+        //
+        // Because we don't need to canonicalize, only to reduce the
+        // limb sizes, it's OK to do a "weak reduction", where we
+        // compute the carry-outs in parallel.
+        
+        let c0 = limbs[0] >> 51;
+        let c1 = limbs[1] >> 51;
+        let c2 = limbs[2] >> 51;
+        let c3 = limbs[3] >> 51;
+        let c4 = limbs[4] >> 51;
+        
+        limbs[0] &= LOW_51_BIT_MASK;
+        limbs[1] &= LOW_51_BIT_MASK;
+        limbs[2] &= LOW_51_BIT_MASK;
+        limbs[3] &= LOW_51_BIT_MASK;
+        limbs[4] &= LOW_51_BIT_MASK;
+        
+        limbs[0] += c4 * 19;
+        limbs[1] += c0;
+        limbs[2] += c1;
+        limbs[3] += c2;
+        limbs[4] += c3;
 
         FieldElement64(limbs)
     }
@@ -260,17 +325,23 @@ impl FieldElement64 {
     /// Serialize this `FieldElement64` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
-        // This reduces to the range [0,2^255), but we need [0,2^255-19).
-        let mut limbs = FieldElement64::reduce(self.0).0;
-
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
-        // Write h = pq + r with 0 <= r < p.  We want to compute r = h mod p.
+        // Write h = pq + r with 0 <= r < p.
         //
-        // Since h < 2^255, q = 0 or 1, with q = 0 when h < p and q = 1 when h >= p.
+        // We want to compute r = h mod p.
+        //
+        // If h < 2*p = 2^256 - 38,
+        // then q = 0 or 1,
+        //
+        // with q = 0 when h < p
+        //  and q = 1 when h >= p.
         //
         // Notice that h >= p <==> h + 19 >= p + 19 <==> h + 19 >= 2^255.
         // Therefore q can be computed as the carry bit of h + 19.
+
+        // First, reduce the limbs to ensure h < 2*p.
+        let mut limbs = FieldElement64::reduce(self.0).0;
 
         let mut q = (limbs[0] + 19) >> 51;
         q = (limbs[1] + q) >> 51;
@@ -337,73 +408,124 @@ impl FieldElement64 {
         s
     }
 
-    #[inline(always)]
-    fn square_inner(&self) -> [u64; 5] {
+    /// Given `k > 0`, return `self^(2^k)`.
+    pub fn pow2k(&self, mut k: u32) -> FieldElement64 {
+
+        debug_assert!( k > 0 );
+
         /// Multiply two 64-bit integers with 128 bits of output.
         #[inline(always)]
         fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
 
-        // Alias self, _rhs for more readable formulas
-        let a: &[u64; 5] = &self.0;
+        let mut a: [u64; 5] = self.0;
 
-        // Precomputation: 64-bit multiply by 19
-        let a3_19 = 19 * a[3];
-        let a4_19 = 19 * a[4];
+        loop {
+            // Precondition: assume input limbs a[i] are bounded as
+            //
+            // a[i] < 2^(51 + b)
+            //
+            // where b is a real parameter measuring the "bit excess" of the limbs.
 
-        // Multiply to get 128-bit coefficients of output
-        let     c0: u128 = m(a[0],  a[0]) + 2*( m(a[1], a4_19) + m(a[2], a3_19) );
-        let mut c1: u128 = m(a[3], a3_19) + 2*( m(a[0],  a[1]) + m(a[2], a4_19) );
-        let mut c2: u128 = m(a[1],  a[1]) + 2*( m(a[0],  a[2]) + m(a[4], a3_19) );
-        let mut c3: u128 = m(a[4], a4_19) + 2*( m(a[0],  a[3]) + m(a[1],  a[2]) );
-        let mut c4: u128 = m(a[2],  a[2]) + 2*( m(a[0],  a[4]) + m(a[1],  a[3]) );
+            // Precomputation: 64-bit multiply by 19.
+            //
+            // This fits into a u64 whenever 51 + b + lg(19) < 64.
+            //
+            // Since 51 + b + lg(19) < 51 + 4.25 + b
+            //                       = 55.25 + b,
+            // this fits if b < 8.75.
+            let a3_19 = 19 * a[3];
+            let a4_19 = 19 * a[4];
 
-        // Same bound as in multiply:
-        //    c[i] < 2^2b * (1+i + (4-i)*19) < 2^(2b + lg(1+4*19)) < 2^(2b + 6.27)
-        // where b is the bitlength of the input limbs.
-        //
-        // The carry (c[i] >> 51) fits into a u64 iff 2b+6.27 < 64+51 iff b <= 54.
-        // After the first carry pass, all c[i] fit into u64.
-        debug_assert!(a[0] < (1 << 54));
-        debug_assert!(a[1] < (1 << 54));
-        debug_assert!(a[2] < (1 << 54));
-        debug_assert!(a[3] < (1 << 54));
-        debug_assert!(a[4] < (1 << 54));
+            // Multiply to get 128-bit coefficients of output.
+            //
+            // The 128-bit multiplications by 2 turn into 1 slr + 1 slrd each,
+            // which doesn't seem any better or worse than doing them as precomputations
+            // on the 64-bit inputs.
+            let     c0: u128 = m(a[0],  a[0]) + 2*( m(a[1], a4_19) + m(a[2], a3_19) );
+            let mut c1: u128 = m(a[3], a3_19) + 2*( m(a[0],  a[1]) + m(a[2], a4_19) );
+            let mut c2: u128 = m(a[1],  a[1]) + 2*( m(a[0],  a[2]) + m(a[4], a3_19) );
+            let mut c3: u128 = m(a[4], a4_19) + 2*( m(a[0],  a[3]) + m(a[1],  a[2]) );
+            let mut c4: u128 = m(a[2],  a[2]) + 2*( m(a[0],  a[4]) + m(a[1],  a[3]) );
 
-        // The 128-bit output limbs are stored in two 64-bit registers (low/high part).
-        // By rebinding the names after carrying, we free the upper registers for reuse.
-        let low_51_bit_mask = (1u64 << 51) - 1;
-        c1 +=  (c0 >> 51) as u128;
-        let mut c0: u64 = (c0 as u64) & low_51_bit_mask;
-        c2 +=  (c1 >> 51) as u128;
-        let c1: u64 = (c1 as u64) & low_51_bit_mask;
-        c3 +=  (c2 >> 51) as u128;
-        let c2: u64 = (c2 as u64) & low_51_bit_mask;
-        c4 +=  (c3 >> 51) as u128;
-        let c3: u64 = (c3 as u64) & low_51_bit_mask;
-        c0 += ((c4 >> 51) as u64) * 19;
-        let c4: u64 = (c4 as u64) & low_51_bit_mask;
+            // Same bound as in multiply:
+            //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19) 
+            //         < 2^(102 + lg(1 + 4*19) + 2*b)
+            //         < 2^(108.27 + 2*b)
+            //
+            // The carry (c[i] >> 51) fits into a u64 when
+            //    108.27 + 2*b - 51 < 64
+            //    2*b < 6.73
+            //    b < 3.365.
+            //
+            // So we require b < 3 to ensure this fits.
+            debug_assert!(a[0] < (1 << 54));
+            debug_assert!(a[1] < (1 << 54));
+            debug_assert!(a[2] < (1 << 54));
+            debug_assert!(a[3] < (1 << 54));
+            debug_assert!(a[4] < (1 << 54));
 
-        // Now c_i all fit into u64, but are not yet bounded by 2^51.
-        [c0,c1,c2,c3,c4]
+            const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+
+            // Casting to u64 and back tells the compiler that the carry is bounded by 2^64, so
+            // that the addition is a u128 + u64 rather than u128 + u128.
+            c1 += ((c0 >> 51) as u64) as u128;
+            a[0] = (c0 as u64) & LOW_51_BIT_MASK;
+
+            c2 += ((c1 >> 51) as u64) as u128;
+            a[1] = (c1 as u64) & LOW_51_BIT_MASK;
+
+            c3 += ((c2 >> 51) as u64) as u128;
+            a[2] = (c2 as u64) & LOW_51_BIT_MASK;
+
+            c4 += ((c3 >> 51) as u64) as u128;
+            a[3] = (c3 as u64) & LOW_51_BIT_MASK;
+
+            let carry: u64 = (c4 >> 51) as u64;
+            a[4] = (c4 as u64) & LOW_51_BIT_MASK;
+
+            // To see that this does not overflow, we need a[0] + carry * 19 < 2^64.
+            //
+            // c4 < a2^2 + 2*a0*a4 + 2*a1*a3 + (carry from c3)
+            //    < 2^(102 + 2*b + lg(5)) + 2^64.
+            //
+            // When b < 3 we get
+            //
+            // c4 < 2^110.33  so that carry < 2^59.33
+            //
+            // so that
+            //
+            // a[0] + carry * 19 < 2^51 + 19 * 2^59.33 < 2^63.58
+            //
+            // and there is no overflow.
+            a[0] = a[0] + carry * 19;
+
+            // Now a[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
+            a[1] += a[0] >> 51;
+            a[0] &= LOW_51_BIT_MASK;
+
+            // Now all a[i] < 2^(51 + epsilon) and a = self^(2^k).
+            
+            k = k - 1;
+            if k == 0 {
+                break;
+            }
+        }
+
+        FieldElement64(a)
     }
 
     /// Returns the square of this field element.
     pub fn square(&self) -> FieldElement64 {
-        FieldElement64::reduce(self.square_inner())
+        self.pow2k(1)
     }
 
     /// Returns 2 times the square of this field element.
     pub fn square2(&self) -> FieldElement64 {
-        let mut limbs = self.square_inner();
-        // For this to work, need to have 1 extra bit of headroom after carry
-        // --> max 53 bit inputs, not 54
-        //
-        // XXX check that this is correct; I think it isn't -- hdevalence
-        limbs[0] *= 2;
-        limbs[1] *= 2;
-        limbs[2] *= 2;
-        limbs[3] *= 2;
-        limbs[4] *= 2;
-        FieldElement64::reduce(limbs)
+        let mut square = self.pow2k(1);
+        for i in 0..5 {
+            square.0[i] *= 2;
+        }
+
+        square
     }
 }

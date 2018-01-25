@@ -9,29 +9,21 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![cfg_attr(not(feature = "std"), no_std)]
+
 #![cfg_attr(feature = "alloc", feature(alloc))]
-#![cfg_attr(feature = "nightly", feature(i128_type))]
-#![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "bench", feature(test))]
 
-#![deny(missing_docs)] // refuse to compile if documentation is missing
+#![cfg_attr(feature = "nightly", feature(i128_type))]
+#![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
+#![cfg_attr(feature = "nightly", feature(external_doc))]
 
-//! # curve25519-dalek
-//!
-//! **A high-performance, pure-Rust implementation of group operations for Ristretto and Curve25519.**
-//!
-//! **[SPOILER ALERT]** The Twelfth Doctor's first encounter with the Daleks is
-//! in his second full episode, "Into the Dalek".  A beleaguered ship of the
-//! "Combined Galactic Resistance" has discovered a broken Dalek that has
-//! turned "good", desiring to kill all other Daleks.  The Doctor, Clara and a
-//! team of soldiers are miniaturized and enter the Dalek, which the Doctor
-//! names Rusty.  They repair the damage, but accidentally restore it to its
-//! original nature, causing it to go on the rampage and alert the Dalek fleet
-//! to the whereabouts of the rebel ship.  However, the Doctor manages to
-//! return Rusty to its previous state by linking his mind with the Dalek's:
-//! Rusty shares the Doctor's view of the universe's beauty, but also his deep
-//! hatred of the Daleks.  Rusty destroys the other Daleks and departs the
-//! ship, determined to track down and bring an end to the Dalek race.
+// Refuse to compile if documentation is missing, but only on nightly.
+//
+// This means that missing docs will still fail CI, but means we can use
+// README.md as the crate documentation.
+#![cfg_attr(feature = "nightly", deny(missing_docs))]
+
+#![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 
 //------------------------------------------------------------------------
 // External dependencies:

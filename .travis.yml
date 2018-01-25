@@ -52,4 +52,3 @@ notifications:
   slack:
     rooms:
       - dalek-cryptography:Xxv9WotKYWdSoKlgKNqXiHoD#dalek-bots
-      - dalek-cryptography:Xxv9WotKYWdSoKlgKNqXiHoD#curve25519-dalek

@@ -378,11 +378,15 @@ impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+define_add_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint, Output = ExtendedPoint);
+
 impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
     fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) + _rhs;
     }
 }
+
+define_add_assign_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint);
 
 impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
@@ -391,11 +395,15 @@ impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+define_sub_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint, Output = ExtendedPoint);
+
 impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
     fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
         *self = (self as &ExtendedPoint) - _rhs;
     }
 }
+
+define_sub_assign_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint);
 
 // ------------------------------------------------------------------------
 // Negation
@@ -414,6 +422,14 @@ impl<'a> Neg for &'a ExtendedPoint {
     }
 }
 
+impl Neg for ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    fn neg(self) -> ExtendedPoint {
+        -&self
+    }
+}
+
 // ------------------------------------------------------------------------
 // Scalar multiplication
 // ------------------------------------------------------------------------
@@ -424,6 +440,11 @@ impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
         *self = result;
     }
 }
+
+define_mul_assign_variants!(LHS = ExtendedPoint, RHS = Scalar);
+
+define_mul_variants!(LHS = ExtendedPoint, RHS = Scalar, Output = ExtendedPoint);
+define_mul_variants!(LHS = Scalar, RHS = ExtendedPoint, Output = ExtendedPoint);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
@@ -478,7 +499,7 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
-        point * &self
+        point * self
     }
 }
 

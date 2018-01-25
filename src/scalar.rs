@@ -186,6 +186,8 @@ impl<'b> MulAssign<&'b Scalar> for Scalar {
     }
 }
 
+define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
+
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
@@ -193,11 +195,15 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     }
 }
 
+define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
+
 impl<'b> AddAssign<&'b Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'b Scalar) {
         *self = UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
+
+define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
@@ -206,11 +212,15 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     }
 }
 
+define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
+
 impl<'b> SubAssign<&'b Scalar> for Scalar {
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
         *self = UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
+
+define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
@@ -219,10 +229,19 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     }
 }
 
+define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
+
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
         &Scalar::zero() - self
+    }
+}
+
+impl<'a> Neg for Scalar {
+    type Output = Scalar;
+    fn neg(self) -> Scalar {
+        -&self
     }
 }
 

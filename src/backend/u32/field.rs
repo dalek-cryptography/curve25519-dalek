@@ -264,6 +264,16 @@ impl FieldElement32 {
         ])
     }
 
+    /// Given `k > 0`, return `self^(2^k)`.
+    pub fn pow2k(&self, k: u32) -> FieldElement32 {
+        debug_assert!( k > 0 );
+        let mut z = self.square();
+        for _ in 1..k {
+            z = z.square();
+        }
+        z
+    }
+
     /// Given unreduced coefficients `z[0], ..., z[9]` of any size,
     /// carry and reduce them mod p to obtain a `FieldElement32`
     /// whose coefficients have excess `b < 0.007`.

@@ -58,7 +58,8 @@ Curve arithmetic is implemented using one of the following backends:
 
 * a `u32` backend using `u64` products;
 * a `u64` backend using `u128` products, available using the `nightly` feature;
-* an experimental AVX2 backend, available using the `yolocrypto` feature when compiling for a target with `target_feature=+avx2`
+* an experimental AVX2 backend, available using the `yolocrypto` feature when
+  compiling for a target with `target_feature=+avx2`.
 
 By default, the benchmarks are not compiled without the `bench`
 feature.  Benchmarks can be run via:
@@ -68,6 +69,10 @@ cargo bench --features="bench"                    # u32 backend
 cargo bench --features="bench nightly"            # u64 backend
 cargo bench --features="bench nightly yolocrypto" # u64 or avx2 if available
 ```
+
+The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
+is meant to indicate that it is not considered production-ready, and we do not
+consider `yolocrypto` features to be covered by semver guarantees.
 
 # Contributing
 

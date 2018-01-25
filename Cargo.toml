@@ -40,8 +40,9 @@ version = "0.4"
 version = "0.7"
 
 [dependencies.subtle]
-version = "^0.3"
+version = "0.5"
 default-features = false
+features = ["generic-impls"]
 
 [dependencies.clear_on_drop]
 version = "=0.2.3"

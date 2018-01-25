@@ -160,10 +160,6 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
 // ------------------------------------------------------------------------
 
 /// An `EdwardsPoint` represents a point on the Edwards form of Curve25519.
-///
-/// The name refers to the extended twisted Edwards coordinates of
-/// Hisil, Wong, Carter, and Dawson, and more details on curve models
-/// can be found in the `curve25519-dalek` internal documentation.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
 pub struct EdwardsPoint {

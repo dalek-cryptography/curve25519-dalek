@@ -14,7 +14,7 @@
 
 use backend::u32::field::FieldElement32;
 use backend::u32::scalar::Scalar32;
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement32       = FieldElement32([
@@ -84,7 +84,7 @@ pub(crate) const RR: Scalar32 = Scalar32([ 0x0b5f9d12, 0x1e141b17, 0x158d7f3d, 0
 /// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
 /// distinguish it from `_TABLE`, which should be used for scalar
 /// multiplication (it's much faster).
-pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
+pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
         X: FieldElement32([52811034, 25909283, 16144682, 17082669, 27570973, 30858332, 40966398, 8378388, 20764389, 8758491]),
         Y: FieldElement32([40265304, 26843545, 13421772, 20132659, 26843545, 6710886, 53687091, 13421772, 40265318, 26843545]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -98,50 +98,50 @@ pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
 ///
 /// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
 /// indexed by 0,4.
-pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
-    ExtendedPoint{
+pub const EIGHT_TORSION: [EdwardsPoint; 8] = [
+    EdwardsPoint{
         X: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Y: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([21352778, 5345713, 4660180, 25206575, 24143089, 14568123, 30185756, 21306662, 33579924, 8345318]),
         Y: FieldElement32([6952903, 1265500, 60246523, 7057497, 4037696, 5447722, 35427965, 15325401, 19365852, 31985330]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([41846657, 21581751, 11716001, 27684820, 48915701, 16297738, 20670665, 24995334, 3541542, 28543251])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([32595773, 7943725, 57730914, 30054016, 54719391, 272472, 25146209, 2005654, 66782178, 22147949]),
         Y: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([21352778, 5345713, 4660180, 25206575, 24143089, 14568123, 30185756, 21306662, 33579924, 8345318]),
         Y: FieldElement32([60155942, 32288931, 6862340, 26496934, 63071167, 28106709, 31680898, 18229030, 47743011, 1569101]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([25262188, 11972680, 55392862, 5869611, 18193162, 17256693, 46438198, 8559097, 63567321, 5011180])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Y: FieldElement32([67108844, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([45756067, 28208718, 62448683, 8347856, 42965774, 18986308, 36923107, 12247769, 33528939, 25209113]),
         Y: FieldElement32([60155942, 32288931, 6862340, 26496934, 63071167, 28106709, 31680898, 18229030, 47743011, 1569101]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([41846657, 21581751, 11716001, 27684820, 48915701, 16297738, 20670665, 24995334, 3541542, 28543251])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([34513072, 25610706, 9377949, 3500415, 12389472, 33281959, 41962654, 31548777, 326685, 11406482]),
         Y: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         T: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     },
-    ExtendedPoint{
+    EdwardsPoint{
         X: FieldElement32([45756067, 28208718, 62448683, 8347856, 42965774, 18986308, 36923107, 12247769, 33528939, 25209113]),
         Y: FieldElement32([6952903, 1265500, 60246523, 7057497, 4037696, 5447722, 35427965, 15325401, 19365852, 31985330]),
         Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),

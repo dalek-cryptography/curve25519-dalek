@@ -92,12 +92,12 @@ impl<T: Debug> Debug for LookupTable<T> {
     }
 }
 
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 use curve_models::ProjectiveNielsPoint;
 use curve_models::AffineNielsPoint;
 
-impl<'a> From<&'a ExtendedPoint> for LookupTable<ProjectiveNielsPoint> {
-    fn from(P: &'a ExtendedPoint) -> Self {
+impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
+    fn from(P: &'a EdwardsPoint) -> Self {
         let mut points = [P.to_projective_niels(); 8];
         for j in 0..7 {
             points[j+1] = (P + &points[j])
@@ -108,8 +108,8 @@ impl<'a> From<&'a ExtendedPoint> for LookupTable<ProjectiveNielsPoint> {
     }
 }
 
-impl<'a> From<&'a ExtendedPoint> for LookupTable<AffineNielsPoint> {
-    fn from(P: &'a ExtendedPoint) -> Self {
+impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
+    fn from(P: &'a EdwardsPoint) -> Self {
         let mut points = [P.to_affine_niels(); 8];
         // XXX batch inversion would be good if perf mattered here
         for j in 0..7 {

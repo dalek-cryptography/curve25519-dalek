@@ -12,7 +12,7 @@
 
 use backend::u64::field::FieldElement64;
 use backend::u64::scalar::Scalar64;
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement64 = FieldElement64([929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575]);
@@ -57,7 +57,7 @@ pub(crate) const RR: Scalar64 = Scalar64([ 0x0009d265e952d13b, 0x000d63c715bea69
 /// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
 /// distinguish it from `_TABLE`, which should be used for scalar
 /// multiplication (it's much faster).
-pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
+pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
     X: FieldElement64([1738742601995546, 1146398526822698, 2070867633025821, 562264141797630, 587772402128613]),
     Y: FieldElement64([1801439850948184, 1351079888211148, 450359962737049, 900719925474099, 1801439850948198]),
     Z: FieldElement64([1, 0, 0, 0, 0]),
@@ -71,57 +71,57 @@ pub const ED25519_BASEPOINT_POINT: ExtendedPoint = ExtendedPoint{
 ///
 /// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
 /// indexed by 0,4.
-pub const EIGHT_TORSION: [ExtendedPoint; 8] = [
-    ExtendedPoint {
+pub const EIGHT_TORSION: [EdwardsPoint; 8] = [
+    EdwardsPoint {
         X: FieldElement64([0, 0, 0, 0, 0]),
         Y: FieldElement64([1, 0, 0, 0, 0]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([0, 0, 0, 0, 0]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([358744748052810, 1691584618240980, 977650209285361, 1429865912637724, 560044844278676]),
         Y: FieldElement64([84926274344903, 473620666599931, 365590438845504, 1028470286882429, 2146499180330972]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([1448326834587521, 1857896831960481, 1093722731865333, 1677408490711241, 1915505153018406]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([533094393274173, 2016890930128738, 18285341111199, 134597186663265, 1486323764102114]),
         Y: FieldElement64([0, 0, 0, 0, 0]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([0, 0, 0, 0, 0]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([358744748052810, 1691584618240980, 977650209285361, 1429865912637724, 560044844278676]),
         Y: FieldElement64([2166873539340326, 1778179147085316, 1886209374839743, 1223329526802818, 105300633354275]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([803472979097708, 393902981724766, 1158077081819914, 574391322974006, 336294660666841]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([0, 0, 0, 0, 0]),
         Y: FieldElement64([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([0, 0, 0, 0, 0]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([1893055065632419, 560215195444267, 1274149604399886, 821933901047523, 1691754969406571]),
         Y: FieldElement64([2166873539340326, 1778179147085316, 1886209374839743, 1223329526802818, 105300633354275]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([1448326834587521, 1857896831960481, 1093722731865333, 1677408490711241, 1915505153018406]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133]),
         Y: FieldElement64([0, 0, 0, 0, 0]),
         Z: FieldElement64([1, 0, 0, 0, 0]),
         T: FieldElement64([0, 0, 0, 0, 0]),
     }
     ,
-    ExtendedPoint {
+    EdwardsPoint {
         X: FieldElement64([1893055065632419, 560215195444267, 1274149604399886, 821933901047523, 1691754969406571]),
         Y: FieldElement64([84926274344903, 473620666599931, 365590438845504, 1028470286882429, 2146499180330972]),
         Z: FieldElement64([1, 0, 0, 0, 0]),

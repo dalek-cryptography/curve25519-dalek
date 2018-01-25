@@ -56,7 +56,7 @@
 //! introduced in [_Twisted Edwards Curves
 //! Revisited_][hisil-wong-carter-dawson-2008] by Hisil, Wong, Carter,
 //! and Dawson.  In `curve25519-dalek`, it is represented as the
-//! `ExtendedPoint` struct.  We can map from \\(\mathbb P\^3 \\) to
+//! `EdwardsPoint` struct.  We can map from \\(\mathbb P\^3 \\) to
 //! \\(\mathbb P\^2 \\) by sending \\( (W\_0:W\_1:W\_2:W\_3) \\) to \\(
 //! (W\_1:W\_2:W\_3) \\).  Notice that
 //! $$
@@ -103,7 +103,7 @@
 //!
 //! Our naming for the `CompletedPoint` (\\(\mathbb P\^1 \times \mathbb
 //! P\^1 \\)), `ProjectivePoint` (\\(\mathbb P\^2 \\)), and
-//! `ExtendedPoint` (\\(\mathbb P\^3 \\)) structs follows the naming in
+//! `EdwardsPoint` (\\(\mathbb P\^3 \\)) structs follows the naming in
 //! Adam Langley's [Golang ed25519][agl-ed25519] implementation, which
 //! `curve25519-dalek` was originally derived from.
 //!
@@ -130,7 +130,7 @@ use core::ops::{Add, Sub, Neg};
 use constants;
 
 use field::FieldElement;
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 use subtle::ConditionallyAssignable;
 use traits::ValidityCheck;
 
@@ -302,8 +302,8 @@ impl ProjectivePoint {
     /// \\( \mathbb P\^3 \\) model.
     ///
     /// This costs \\(3 \mathrm M + 1 \mathrm S\\).
-    pub fn to_extended(&self) -> ExtendedPoint {
-        ExtendedPoint{
+    pub fn to_extended(&self) -> EdwardsPoint {
+        EdwardsPoint{
             X: &self.X * &self.Z,
             Y: &self.Y * &self.Z,
             Z: self.Z.square(),
@@ -329,8 +329,8 @@ impl CompletedPoint {
     /// \\) model to the \\( \mathbb P\^3 \\) model.
     ///
     /// This costs \\(4 \mathrm M \\).
-    pub fn to_extended(&self) -> ExtendedPoint {
-        ExtendedPoint{
+    pub fn to_extended(&self) -> EdwardsPoint {
+        EdwardsPoint{
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
             Z: &self.Z * &self.T,
@@ -374,7 +374,7 @@ impl ProjectivePoint {
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -396,7 +396,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -418,7 +418,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a ExtendedPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
@@ -439,7 +439,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a ExtendedPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a ExtendedPoint {
+impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {

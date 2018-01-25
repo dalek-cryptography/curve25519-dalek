@@ -26,6 +26,11 @@ extern crate serde;
 #[cfg(feature = "yolocrypto")]
 extern crate stdsimd;
 
+// Macros come first!
+#[path="src/macros.rs"]
+#[macro_use]
+mod macros;
+
 // Public modules
 
 #[path="src/scalar.rs"]

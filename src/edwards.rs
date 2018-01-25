@@ -455,8 +455,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
-            use backend::avx2::edwards as edwards_avx2;
-            let P_avx2 = edwards_avx2::EdwardsPoint::from(*self);
+            use backend::avx2::edwards::ExtendedPoint;
+            let P_avx2 = ExtendedPoint::from(*self);
             return EdwardsPoint::from(&P_avx2 * scalar);
         }
         // Otherwise, proceed as normal:

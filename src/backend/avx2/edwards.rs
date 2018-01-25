@@ -35,36 +35,36 @@ use backend::avx2;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
 #[derive(Copy, Clone, Debug)]
-pub struct EdwardsPoint(pub(super) FieldElement32x4);
+pub struct ExtendedPoint(pub(super) FieldElement32x4);
 
-impl From<edwards::EdwardsPoint> for EdwardsPoint {
-    fn from(P: edwards::EdwardsPoint) -> EdwardsPoint {
-        EdwardsPoint(FieldElement32x4::new(&P.X, &P.Y, &P.Z, &P.T))
+impl From<edwards::EdwardsPoint> for ExtendedPoint {
+    fn from(P: edwards::EdwardsPoint) -> ExtendedPoint {
+        ExtendedPoint(FieldElement32x4::new(&P.X, &P.Y, &P.Z, &P.T))
     }
 }
 
-impl From<EdwardsPoint> for edwards::EdwardsPoint {
-    fn from(P: EdwardsPoint) -> edwards::EdwardsPoint {
+impl From<ExtendedPoint> for edwards::EdwardsPoint {
+    fn from(P: ExtendedPoint) -> edwards::EdwardsPoint {
         let tmp = P.0.split();
         edwards::EdwardsPoint{X: tmp[0], Y: tmp[1], Z: tmp[2], T: tmp[3]}
     }
 }
 
-impl ConditionallyAssignable for EdwardsPoint {
-    fn conditional_assign(&mut self, other: &EdwardsPoint, choice: u8) {
+impl ConditionallyAssignable for ExtendedPoint {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
         self.0.conditional_assign(&other.0, choice);
     }
 }
 
-impl Default for EdwardsPoint {
-    fn default() -> EdwardsPoint {
-        EdwardsPoint::identity()
+impl Default for ExtendedPoint {
+    fn default() -> ExtendedPoint {
+        ExtendedPoint::identity()
     }
 }
 
-impl Identity for EdwardsPoint {
-    fn identity() -> EdwardsPoint {
-        EdwardsPoint(FieldElement32x4([
+impl Identity for ExtendedPoint {
+    fn identity() -> ExtendedPoint {
+        ExtendedPoint(FieldElement32x4([
             u32x8::new(0,1,0,0,1,0,0,0),
             u32x8::splat(0),
             u32x8::splat(0),
@@ -78,8 +78,8 @@ impl Identity for EdwardsPoint {
 #[derive(Copy, Clone, Debug)]
 pub struct CachedPoint(pub(super) FieldElement32x4);
 
-impl From<EdwardsPoint> for CachedPoint {
-    fn from(P: EdwardsPoint) -> CachedPoint {
+impl From<ExtendedPoint> for CachedPoint {
+    fn from(P: ExtendedPoint) -> CachedPoint {
         let mut x = P.0;
 
         // x = (S2 S3 Z2 T2)
@@ -130,10 +130,10 @@ impl<'a> Neg for &'a CachedPoint {
     }
 }
 
-impl<'a> Neg for &'a EdwardsPoint {
-    type Output = EdwardsPoint;
+impl<'a> Neg for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
 
-    fn neg(self) -> EdwardsPoint {
+    fn neg(self) -> ExtendedPoint {
         let mut neg = *self;
         // (X Y Z T) -> (-X Y Z -T)
         neg.0.negate(A_LANES | D_LANES);
@@ -141,8 +141,8 @@ impl<'a> Neg for &'a EdwardsPoint {
     }
 }
 
-impl EdwardsPoint {
-    fn double(&self) -> EdwardsPoint {
+impl ExtendedPoint {
+    fn double(&self) -> ExtendedPoint {
         unsafe {
             use stdsimd::vendor::_mm256_permute2x128_si256;
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
@@ -232,12 +232,12 @@ impl EdwardsPoint {
                 t1.0[i] = _mm256_permutevar8x32_epi32(tmp, c1);
             }
 
-            EdwardsPoint(&t0 * &t1)
+            ExtendedPoint(&t0 * &t1)
         }
     }
 
-    pub fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
-        let mut tmp: EdwardsPoint = *self;
+    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+        let mut tmp: ExtendedPoint = *self;
         for _ in 0..k {
             tmp = tmp.double();
         }
@@ -245,11 +245,11 @@ impl EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Add<&'b CachedPoint> for &'a EdwardsPoint {
-    type Output = EdwardsPoint;
+impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
 
     /// Uses a slight tweak of the parallel unified formulas of HWCD'08
-    fn add(self, other: &'b CachedPoint) -> EdwardsPoint {
+    fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
         unsafe {
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
 
@@ -280,16 +280,16 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a EdwardsPoint {
             }
 
             // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
-            EdwardsPoint(&t0 * &t1)
+            ExtendedPoint(&t0 * &t1)
         }
     }
 }
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
-    type Output = EdwardsPoint;
+impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
 
     /// Uses a slight tweak of the parallel unified formulas of HWCD'08
-    fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+    fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         unsafe {
             use stdsimd::vendor::_mm256_permute2x128_si256;
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
@@ -342,25 +342,25 @@ impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
             }
 
             // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
-            EdwardsPoint(&t0 * &t1)
+            ExtendedPoint(&t0 * &t1)
         }
     }
 }
 
-impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
-    type Output = EdwardsPoint;
+impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
 
     /// Implement subtraction by negating the point and adding.
     ///
     /// Empirically, this seems about the same cost as a custom subtraction impl (maybe because the
     /// benefit is cancelled by increased code size?)
-    fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+    fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
         self + &(-other)
     }
 }
 
-impl From<EdwardsPoint> for LookupTable<CachedPoint> {
-    fn from(P: EdwardsPoint) -> Self {
+impl From<ExtendedPoint> for LookupTable<CachedPoint> {
+    fn from(P: ExtendedPoint) -> Self {
         let mut points = [CachedPoint::from(P); 8];
         for i in 0..7 {
             points[i+1] = (&P + &points[i]).into();
@@ -369,12 +369,12 @@ impl From<EdwardsPoint> for LookupTable<CachedPoint> {
     }
 }
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
-    type Output = EdwardsPoint;
+impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// Uses a window of size 4.
-    fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
         let lookup_table = LookupTable::<CachedPoint>::from(*self);
 
@@ -392,7 +392,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
         //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
         //
         // We sum right-to-left.
-        let mut Q = EdwardsPoint::identity();
+        let mut Q = ExtendedPoint::identity();
         for i in (0..64).rev() {
             // Q = 16*Q
             Q = Q.mult_by_pow_2(4);
@@ -407,13 +407,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
 pub struct EdwardsBasepointTable(pub [LookupTable<CachedPoint>; 32]);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
-    type Output = EdwardsPoint;
+    type Output = ExtendedPoint;
 
-    fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
+    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
         let a = scalar.to_radix_16();
 
         let tables = &self.0;
-        let mut P = EdwardsPoint::identity();
+        let mut P = ExtendedPoint::identity();
 
         for i in (0..64).filter(|x| x % 2 == 1) {
             P = &P + &tables[i/2].select(a[i]);
@@ -430,17 +430,17 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
 }
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
-    type Output = EdwardsPoint;
+    type Output = ExtendedPoint;
 
     /// Given `self` a table of precomputed multiples of the point `B`, compute `B * s`.
-    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> EdwardsPoint {
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
         basepoint_table * &self
     }
 }
 
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
-    pub fn create(basepoint: &EdwardsPoint) -> EdwardsBasepointTable {
+    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
         // XXX use init_with
         let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
         let mut P = *basepoint;
@@ -478,7 +478,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Edwards
 
     use clear_on_drop::ClearOnDrop;
     let lookup_tables_vec: Vec<_> = points.into_iter()
-        .map(|P| LookupTable::from(EdwardsPoint::from(*P)) )
+        .map(|P| LookupTable::from(ExtendedPoint::from(*P)) )
         .collect();
 
     let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
@@ -516,7 +516,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Edwards
     // This provides the speedup over doing n independent scalar
     // mults: we perform 63 multiplications by 16 instead of 63*n
     // multiplications, saving 252*(n-1) doublings.
-    let mut Q = EdwardsPoint::identity();
+    let mut Q = ExtendedPoint::identity();
     // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
         Q = Q.mult_by_pow_2(4);
@@ -534,10 +534,10 @@ pub mod vartime {
     use super::*;
 
     /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
-    struct OddMultiples([EdwardsPoint; 8]);
+    struct OddMultiples([ExtendedPoint; 8]);
 
     impl OddMultiples {
-        fn create(A: EdwardsPoint) -> OddMultiples {
+        fn create(A: ExtendedPoint) -> OddMultiples {
             // XXX would be great to skip this initialization
             let mut Ai = [A; 8];
             let A2 = A.double();
@@ -550,9 +550,9 @@ pub mod vartime {
     }
 
     impl Index<usize> for OddMultiples {
-        type Output = EdwardsPoint;
+        type Output = ExtendedPoint;
 
-        fn index(&self, _index: usize) -> &EdwardsPoint {
+        fn index(&self, _index: usize) -> &ExtendedPoint {
             &(self.0[_index])
         }
     }
@@ -580,7 +580,7 @@ pub mod vartime {
         let odd_multiples_of_A = OddMultiples::create((*A).into());
         let odd_multiples_of_B = &avx2::constants::ODD_MULTIPLES_OF_BASEPOINT;
 
-        let mut Q = EdwardsPoint::identity();
+        let mut Q = ExtendedPoint::identity();
 
         loop {
             Q = Q.double();
@@ -628,7 +628,7 @@ pub mod vartime {
         let odd_multiples: Vec<_> = points.into_iter()
             .map(|P| OddMultiples::create((*P).into()) ).collect();
 
-        let mut Q = EdwardsPoint::identity();
+        let mut Q = ExtendedPoint::identity();
 
         for i in (0..255).rev() {
             Q = Q.double();
@@ -715,13 +715,13 @@ mod test {
         // Test the serial implementation of the parallel addition formulas
         let R_serial: edwards::EdwardsPoint = serial_add(P.into(), Q.into()).into();
         // Test the vector implementation of the parallel addition formulas
-        let R_vector: edwards::EdwardsPoint = (&EdwardsPoint::from(P) + &EdwardsPoint::from(Q)).into();
+        let R_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
         // Test the vector implementation of the parallel subtraction formulas
-        let S_vector: edwards::EdwardsPoint = (&EdwardsPoint::from(P) - &EdwardsPoint::from(Q)).into();
+        let S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
 
         // Test the vector implementation of the parallel readdition formulas
-        let cached_Q = CachedPoint::from(EdwardsPoint::from(Q));
-        let T_vector: edwards::EdwardsPoint = (&EdwardsPoint::from(P) + &cached_Q).into();
+        let cached_Q = CachedPoint::from(ExtendedPoint::from(Q));
+        let T_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
 
         println!("Testing point addition:");
         println!("P = {:?}", P);
@@ -742,8 +742,8 @@ mod test {
 
     #[test]
     fn sub_vs_add_minus() {
-        let P: EdwardsPoint = edwards::EdwardsPoint::identity().into();
-        let Q: EdwardsPoint = edwards::EdwardsPoint::identity().into();
+        let P: ExtendedPoint = edwards::EdwardsPoint::identity().into();
+        let Q: ExtendedPoint = edwards::EdwardsPoint::identity().into();
 
         let mQ = -&Q;
 
@@ -828,7 +828,7 @@ mod test {
 
     fn doubling_test_helper(P: edwards::EdwardsPoint) {
         let R1: edwards::EdwardsPoint = serial_double(P.into()).into();
-        let R2: edwards::EdwardsPoint = EdwardsPoint::from(P).double().into();
+        let R2: edwards::EdwardsPoint = ExtendedPoint::from(P).double().into();
         println!("Testing point doubling:");
         println!("P = {:?}", P);
         println!("(serial) R1 = {:?}", R1);
@@ -859,14 +859,14 @@ mod test {
 
     #[test]
     fn identity_trait_vs_edwards_identity() {
-        let id1: edwards::EdwardsPoint = EdwardsPoint::identity().into();
+        let id1: edwards::EdwardsPoint = ExtendedPoint::identity().into();
         let id2: edwards::EdwardsPoint = edwards::EdwardsPoint::identity();
         assert_eq!(id1.compress(), id2.compress());
     }
 
     #[test]
     fn neg_vs_edwards_neg() {
-        let B: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let Bneg = -&B;
         assert_eq!(edwards::EdwardsPoint::from(Bneg).compress(),
                    (-&constants::ED25519_BASEPOINT_POINT).compress());
@@ -874,7 +874,7 @@ mod test {
 
     #[test]
     fn scalar_mult_vs_edwards_scalar_mult() {
-        let B: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         // some random bytes
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
@@ -886,7 +886,7 @@ mod test {
 
     #[test]
     fn scalar_mult_vs_basepoint_table_scalar_mult() {
-        let B: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let B_table = EdwardsBasepointTable::create(&B);
         // some random bytes
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
@@ -900,7 +900,7 @@ mod test {
 
     #[test]
     fn multiscalar_mult_vs_adding_scalar_mults() {
-        let B: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.into();
+        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
         let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
 
@@ -920,7 +920,7 @@ mod test {
 
         #[test]
         fn multiscalar_mult_vs_adding_scalar_mults() {
-            let B: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.into();
+            let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
             let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
             let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
 
@@ -950,13 +950,13 @@ mod bench {
     fn conversion_into__avx2_format(b: &mut Bencher) {
         let B = constants::ED25519_BASEPOINT_POINT;
 
-        b.iter(|| EdwardsPoint::from(B));
+        b.iter(|| ExtendedPoint::from(B));
     }
 
     #[bench]
     fn conversion_outof_avx2_format(b: &mut Bencher) {
         let B = constants::ED25519_BASEPOINT_POINT;
-        let B_avx2 = EdwardsPoint::from(B);
+        let B_avx2 = ExtendedPoint::from(B);
 
         b.iter(|| edwards::EdwardsPoint::from(B_avx2));
     }
@@ -964,8 +964,8 @@ mod bench {
     #[bench]
     fn point_readdition(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let P = EdwardsPoint::from(B * &Scalar::from_u64(83973422));
-        let Q = EdwardsPoint::from(B * &Scalar::from_u64(98932328));
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
+        let Q = ExtendedPoint::from(B * &Scalar::from_u64(98932328));
         let Q_cached = CachedPoint::from(Q);
 
         b.iter(|| &P + &Q_cached );
@@ -974,8 +974,8 @@ mod bench {
     #[bench]
     fn point_addition(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let P = EdwardsPoint::from(B * &Scalar::from_u64(83973422));
-        let Q = EdwardsPoint::from(B * &Scalar::from_u64(98932328));
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
+        let Q = ExtendedPoint::from(B * &Scalar::from_u64(98932328));
 
         b.iter(|| &P + &Q );
     }
@@ -983,7 +983,7 @@ mod bench {
     #[bench]
     fn point_doubling(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let P = EdwardsPoint::from(B * &Scalar::from_u64(83973422));
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
 
         b.iter(|| P.double() );
     }
@@ -991,7 +991,7 @@ mod bench {
     #[bench]
     fn scalar_mult(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let P = EdwardsPoint::from(B * &Scalar::from_u64(83973422));
+        let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
         b.iter(|| &P * &s );
@@ -999,14 +999,14 @@ mod bench {
 
     #[bench]
     fn basepoint_table_creation(b: &mut Bencher) {
-        let B = EdwardsPoint::from(constants::ED25519_BASEPOINT_POINT);
+        let B = ExtendedPoint::from(constants::ED25519_BASEPOINT_POINT);
 
         b.iter(|| EdwardsBasepointTable::create(&B) );
     }
 
     #[bench]
     fn basepoint_mult(b: &mut Bencher) {
-        let B = EdwardsPoint::from(constants::ED25519_BASEPOINT_POINT);
+        let B = ExtendedPoint::from(constants::ED25519_BASEPOINT_POINT);
         let table = EdwardsBasepointTable::create(&B);
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
@@ -1019,8 +1019,8 @@ mod bench {
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
         // Create 10 points (by doing scalar mults)
-        let B = &constants::ED25519_BASEPOINT_POINT;
-        let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
         b.iter(|| multiscalar_mult(&scalars, &points));
     }
@@ -1035,8 +1035,7 @@ mod bench {
             // Create 2 random scalars
             let s1 = Scalar::random(&mut csprng);
             let s2 = Scalar::random(&mut csprng);
-            let B = constants::ED25519_BASEPOINT_POINT;
-            let P = &B * &s1;
+            let P = &s1 * &constants::ED25519_BASEPOINT_TABLE;
 
             b.iter(|| vartime::double_scalar_mult_basepoint(&s2, &P, &s1) );
         }
@@ -1047,8 +1046,8 @@ mod bench {
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
             // Create 10 points (by doing scalar mults)
-            let B = &constants::ED25519_BASEPOINT_POINT;
-            let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
+            let B = &constants::ED25519_BASEPOINT_TABLE;
+            let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
             b.iter(|| vartime::multiscalar_mult(&scalars, &points));
         }

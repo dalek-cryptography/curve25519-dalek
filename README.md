@@ -21,6 +21,11 @@ implementing a wide range of ECC-based crypto protocols, such as key agreement,
 signatures, anonymous credentials, rangeproofs, and zero-knowledge proof
 systems.
 
+In particular, `curve25519-dalek` implements Ristretto, which constructs a
+prime-order group from a non-prime-order Edwards curve.  This provides the
+speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
+cofactor-related abstraction mismatches.
+
 ## WARNING
 
 We do not yet consider this code to be production-ready.  We intend to

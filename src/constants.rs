@@ -8,7 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! This module contains various constants, such as the Ristretto and Ed25519 basepoints.
+//! Various constants, such as the Ristretto and Ed25519 basepoints.
 //!
 //! Most of the constants are given with
 //! `LONG_DESCRIPTIVE_UPPER_CASE_NAMES`, but they can be brought into

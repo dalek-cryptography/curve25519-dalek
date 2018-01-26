@@ -36,7 +36,10 @@
 //! are a recurring source of [vulnerabilities][cryptonote] and [design
 //! complications][ed25519_hkd].
 //!
-//! Ristretto points are represented by the `RistrettoPoint` struct.
+//! Instead, Ristretto uses a quotient group to implement a prime-order
+//! group using a non-prime-order curve.  More details are described in
+//! the *Implementation* section below.  Ristretto points are provided
+//! in `curve25519-dalek` by the `RistrettoPoint` struct.
 //!
 //! ## Encoding and Decoding
 //!

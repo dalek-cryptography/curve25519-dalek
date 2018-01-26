@@ -125,8 +125,8 @@
 //! explains the name: Decaf is named "after the procedure which divides
 //! the effect of coffee by \\(4\\)".  However, Curve25519 has a
 //! cofactor of \\(8\\).  To eliminate its cofactor, we tweak Decaf to
-//! restrict further.  This gives the
-//! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.
+//! restrict further.  This [additional restriction][ristretto_coffee]
+//! gives the _Ristretto_ encoding.
 //!
 //! Notes on the details of the encoding can be found in the
 //! `ristretto::notes` submodule of the internal `curve25519-dalek`
@@ -136,6 +136,8 @@
 //! https://moderncrypto.org/mail-archive/curves/2017/000898.html
 //! [ed25519_hkd]:
 //! https://moderncrypto.org/mail-archive/curves/2017/000858.html
+//! [ristretto_coffee]:
+//! https://en.wikipedia.org/wiki/Ristretto
 
 mod notes {
 

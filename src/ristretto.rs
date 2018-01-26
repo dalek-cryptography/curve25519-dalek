@@ -8,37 +8,98 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+// We allow non snake_case names because coordinates in projective space are
+// traditionally denoted by the capitalisation of their respective
+// counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my
+// affine and projective cakes and eat both of them too.
+#![allow(non_snake_case)]
+
 //! An implementation of Ristretto, which provides a prime-order group.
 //!
-//! Ristretto is a modification of Mike Hamburg's [Decaf
-//! cofactor-eliminating point-compression
-//! scheme](https://eprint.iacr.org/2015/673.pdf) to work on top of the
-//! Curve25519 group.
+//! # The Ristretto Group
 //!
-//! Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
-//!
-//! # Notes on Ristretto
-//!
-//! ## Decaf
-//!
-//! The introduction of the Decaf paper, [_Decaf: Eliminating cofactors
-//! through point compression_](https://eprint.iacr.org/2015/673.pdf)
-//! notes that while most cryptographic systems require a group of prime
-//! order, most concrete implementations using elliptic curve groups
-//! fall short -- they either provide a group of prime order, but with
-//! incomplete or variable-time addition formulae (for instance, most
-//! Weierstrass models), or else they provide a fast and safe
-//! implementation of a group whose order is not quite a prime \\(q\\),
-//! but \\(hq\\) for a small cofactor \\(h\\) (for instance, Edwards
-//! curves, which have cofactor at least \\(4\\)).
+//! Ristretto is a modification of Mike Hamburg's Decaf scheme to work
+//! with Curve25519.  The introduction of the Decaf paper, [_Decaf:
+//! Eliminating cofactors through point
+//! compression_](https://eprint.iacr.org/2015/673.pdf), notes that while
+//! most cryptographic systems require a group of prime order, most
+//! concrete implementations using elliptic curve groups fall short --
+//! they either provide a group of prime order, but with incomplete or
+//! variable-time addition formulae (for instance, most Weierstrass
+//! models), or else they provide a fast and safe implementation of a
+//! group whose order is not quite a prime \\(q\\), but \\(hq\\) for a
+//! small cofactor \\(h\\) (for instance, Edwards curves, which have
+//! cofactor at least \\(4\\)).
 //!
 //! This abstraction mismatch requires ad-hoc protocol modifications to
 //! ensure security; these modifications require careful analysis and
-//! are a recurring source of vulnerabilities.
+//! are a recurring source of [vulnerabilities][cryptonote] and [design
+//! complications][ed25519_hkd].
+//!
+//! Ristretto points are represented by the `RistrettoPoint` struct.
+//!
+//! ## Encoding and Decoding
+//!
+//! Encoding is done by converting to and from a `CompressedRistretto`
+//! struct, which is a typed wrapper around `[u8; 32]`.
+//!
+//! The encoding is not batchable, but it is possible to
+//! double-and-encode in a batch using
+//! `RistrettoPoint::double_and_compress_batch`.
+//!
+//! ## Equality Testing
+//!
+//! Testing equality of points on an Edwards curve in projective
+//! coordinates requires an expensive inversion.  By contrast, equality
+//! checking in the Ristretto group can be done in projective
+//! coordinates without requiring an inversion, so it is much faster.
+//!
+//! The `RistrettoPoint` struct implements the `subtle::Equal` trait for
+//! constant-time equality checking, and the Rust `Eq` trait for
+//! variable-time equality checking.
+//!
+//! ## Scalars
+//!
+//! Scalars are represented by the `Scalar` struct.  Each scalar has a
+//! canonical representative mod the group order; see
+//! `Scalar::from_canonical_bytes()` and `Scalar::is_canonical()`.
+//!
+//! ## Scalar Multiplication
+//!
+//! Scalar multiplication on Ristretto points is provided by:
+//!
+//! * the `*` operator between a `Scalar` and a `RistrettoPoint`, which
+//! performs constant-time variable-base scalar multiplication;
+//!
+//! * the `*` operator between a `Scalar` and a
+//! `RistrettoBasepointTable`, which performs constant-time fixed-base
+//! scalar multiplication;
+//!
+//! * the `ristretto::multiscalar_mult` function, which performs
+//! constant-time variable-base multiscalar multiplication;
+//!
+//! * the `ristretto::vartime::multiscalar_mult` function, which
+//! performs variable-time variable-base multiscalar multiplication.
+//!
+//! ## Random Points and Hashing to Ristretto
+//!
+//! The Ristretto group comes equipped with an Elligator map.  This is
+//! used to implement
+//!
+//! * `RistrettoPoint::random()`, which generates random points from an
+//! RNG;
+//!
+//! * `RistrettoPoint::from_hash()` and
+//! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
+//! group.
+//!
+//! The Elligator map itself is not currently exposed.
+//!
+//! ## Implementation
 //!
 //! The Decaf suggestion is to use a quotient group, such as \\(\mathcal
 //! E / \mathcal E[4]\\) or \\(2 \mathcal E / \mathcal E[2] \\), to
-//! implement a prime-order group.
+//! implement a prime-order group using a non-prime-order curve.
 //!
 //! This requires only changing
 //!
@@ -63,6 +124,21 @@
 //! cofactor of \\(8\\).  To eliminate its cofactor, we tweak Decaf to
 //! restrict further.  This gives the
 //! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.
+//!
+//! Notes on the details of the encoding can be found in the
+//! `ristretto::notes` submodule of the internal `curve25519-dalek`
+//! documentation.
+//!
+//! [cryptonote]:
+//! https://moderncrypto.org/mail-archive/curves/2017/000898.html
+//! [ed25519_hkd]:
+//! https://moderncrypto.org/mail-archive/curves/2017/000858.html
+
+mod notes {
+
+//! Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
+//!
+//! # Notes on Ristretto
 //!
 //! ## The Jacobi Quartic
 //!
@@ -379,11 +455,7 @@
 //!
 //! ## ???
 
-// We allow non snake_case names because coordinates in projective space are
-// traditionally denoted by the capitalisation of their respective
-// counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my
-// affine and projective cakes and eat both of them too.
-#![allow(non_snake_case)]
+}
 
 use core::fmt::Debug;
 

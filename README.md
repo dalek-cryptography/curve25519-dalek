@@ -108,8 +108,12 @@ Golang ed25519 library](https://github.com/agl/ed25519), which was in
 turn a port of the reference `ref10` implementation.
 
 The fast `u32` and `u64` scalar arithmetic was implemented by Andrew Moon, and
-the addition chain for scalar inversion was provided by Brian Smith.  The
-`no_std` support was contributed by Tony Arcieri.
+the addition chain for scalar inversion was provided by Brian Smith.
+
+The `no_std` support was contributed by Tony Arcieri.
+
+Thanks also to Ashley Hauck, Lucas Salibian, and Manish Goregaokar for their
+contributions.
 
 [ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
 [x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek

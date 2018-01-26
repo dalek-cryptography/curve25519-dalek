@@ -1045,8 +1045,11 @@ define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint
 define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint);
 
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+/// Given an iterator of (possibly secret) scalars and an iterator of
+/// (possibly secret) points, compute
+/// $$
+/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+/// $$
 ///
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
@@ -1161,15 +1164,16 @@ pub mod vartime {
     //! Variable-time operations on ristretto points, useful for non-secret data.
     use super::*;
 
-    /// Given a vector of public scalars and a vector of (possibly secret)
+    /// Given an iterable of public scalars and an iterable of public
     /// points, compute
-    ///
-    ///    c_1 P_1 + ... + c_n P_n.
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
     ///
     /// # Input
     ///
-    /// A vector of `Scalar`s and a vector of `RistrettoPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// A iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
+    /// error to call this function with two iterators of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
         where I: IntoIterator<Item = &'a Scalar>,

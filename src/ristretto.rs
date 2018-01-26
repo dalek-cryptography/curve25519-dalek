@@ -419,29 +419,31 @@ use traits::Identity;
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// A point serialized using Mike Hamburg's Ristretto scheme.
+/// A Ristretto point, in compressed wire format.
 ///
-/// XXX think about how this API should work
+/// The Ristretto encoding is canonical, so two points are equal if and
+/// only if their encodings are equal.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
-/// The result of compressing a `RistrettoPoint`.
 impl CompressedRistretto {
-    /// Convert this `CompressedRistretto` to its underlying array of bytes.
+    /// Copy the bytes of this `CompressedRistretto`.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0
     }
 
     /// View this `CompressedRistretto` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.
     ///
-    /// This function executes in constant time for all valid inputs.
-    /// Inputs which do not decode to a RistrettoPoint may return
-    /// early.
+    /// # Return
+    ///
+    /// - `Some(RistrettoPoint)` if `self` was the canonical encoding of a point;
+    ///
+    /// - `None` if `self` was not the canonical encoding of a point.
     pub fn decompress(&self) -> Option<RistrettoPoint> {
         // Step 1. Check s for validity:
         // 1.a) s must be 32 bytes (we get this from the type system)
@@ -562,75 +564,17 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 /// prime-order group as a quotient group of a subgroup of (the
 /// Edwards form of) Curve25519.
 ///
-/// Internally, a `RistrettoPoint` is a wrapper type around
-/// `EdwardsPoint`, with custom equality, compression, and
-/// decompression routines to account for the quotient.
+/// Internally, a `RistrettoPoint` is implemented as a wrapper type
+/// around `EdwardsPoint`, with custom equality, compression, and
+/// decompression routines to account for the quotient.  This means that
+/// operations on `RistrettoPoint`s are exactly as fast as operations on
+/// `EdwardsPoint`s.
+///
 #[derive(Copy, Clone)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
-    /// Compress in Ristretto format.
-    ///
-    /// # Implementation Notes
-    ///
-    /// The Ristretto encoding is as follows, on input in affine coordinates `(x,y)`:
-    ///
-    /// 1.  If `xy` is negative or `x = 0`, "rotate" the point by
-    /// setting `(x,y) = (iy, ix)`.
-    /// 2.  If `x` is negative, set `(x,y) = (-x, -y)`.
-    /// 3.  Compute `s = +sqrt((1-y)/(1+y))`.
-    /// 4.  Return the little-endian 32-byte encoding of `s`.
-    ///
-    /// However, our input is in extended twisted Edwards coordinates
-    /// `(X:Y:Z:T)` with `x = X/Z`, `y = Y/Z`, `xy = T/Z` (see the
-    /// module-level documentation on curve representations for more
-    /// details).  Since inversions are expensive, we'd like to be
-    /// able to do this whole computation with only one inversion.
-    ///
-    /// Since `y = Y/Z`, in extended coordinates the formula for `s` becomes
-    ///
-    ///     s = sqrt((1 - Y/Z)/(1 + Y/Z)) = sqrt((Z-Y)/(Z+Y)).  <span style="float: right">(1)</span>
-    ///
-    /// We can compute this as
-    ///
-    ///     s = (Z - Y) / sqrt((Z-Y)(Z+Y)).  <span style="float: right">(1)</span>
-    ///
-    /// The denominator is 
-    ///
-    ///      invsqrt((Z-Y)(Z+Y)) = invsqrt(Z² - Y²).  <span style="float: right">(1)</span>
-    ///
-    /// Write the input point as `(X₀:Y₀:Z₀:T₀)`.  The rotation in
-    /// step 1 of the encoding procedure replaces `(X₀:Y₀:Z₀:T₀)` by
-    /// `(iY₀:iX₀:Z₀:-T₀)`.  We therefore wish to relate the
-    /// computation of
-    ///
-    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² - Y₀²)  [non-rotated case]
-    ///
-    /// with the computation of
-    ///
-    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² + X₀²).  [rotated case]
-    ///
-    /// Recall the curve equation (in the 𝗣² model):
-    ///
-    ///     (-X² + Y²)Z² = Z⁴ + dX²Y².  <span style="float: right">(1)</span>
-    ///
-    /// This means that, for any point `(X:Y:Z:T)` in extended coordinates, we have
-    ///
-    ///     -dX²Y² = Z⁴ + Z²X² - Z²Y²,  <span style="float: right">(2)</span>
-    ///
-    /// so that 
-    ///
-    ///     (-1-d)X²Y² = Z⁴ + Z²X² - Z²Y² - X²Y²,  <span style="float: right">(3)</span>
-    ///
-    /// and hence
-    ///
-    ///     (-1-d)X²Y² = (Z² - Y²)(Z² + X²).  <span style="float: right">(4)</span>
-    ///
-    /// Taking inverse square roots gives
-    ///
-    ///     invsqrt(Z² + X²) = invsqrt(-1-d) sqrt((Z² - Y²)/(X²Y²)). <span style="float: right">(4)</span>
-    /// 
-    ///
+    /// Compress this point using the Ristretto encoding.
     pub fn compress(&self) -> CompressedRistretto {
         let mut X = self.0.X;
         let mut Y = self.0.Y;
@@ -666,7 +610,37 @@ impl RistrettoPoint {
         CompressedRistretto(s.to_bytes())
     }
 
-    /// Double-and-compress a batch of points.
+    /// Double-and-compress a batch of points.  The Ristretto encoding
+    /// is not batchable, since it requires an inverse square root.
+    ///
+    /// However, given input points \\( P\_1, \ldots, P\_n, \\)
+    /// it is possible to compute the encodings of their doubles \\(
+    /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
+    /// in a batch.
+    ///
+    /// This function has optimal performance when the batch size is a
+    /// power of two, but this is not a requirement.
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// extern crate rand;
+    /// use rand::OsRng;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let mut rng = OsRng::new().unwrap();
+    /// let points: Vec<RistrettoPoint> = 
+    ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
+    ///
+    /// let compressed = RistrettoPoint::double_and_compress_batch(&points);
+    /// 
+    /// for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
+    ///     assert_eq!(*P2_compressed, (P + P).compress());
+    /// }
+    /// # }
+    /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto> 
         where I: IntoIterator<Item = &'a RistrettoPoint>
@@ -762,7 +736,7 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
+    pub(crate) fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
 
@@ -781,7 +755,7 @@ impl RistrettoPoint {
         // s = sqrt(N/D) if N/D is square
         s.conditional_assign(&maybe_s, N_over_D_is_square);
 
-        // XXX how do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
+        // XXX how exactly do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
         let (rN_over_D_is_square, mut maybe_s) = FieldElement::sqrt_ratio(&(&r*&N), &D);
         maybe_s.negate();
 
@@ -1007,7 +981,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 ///
 /// # Input
 ///
-/// An iterable of `Scalar`s and a iterable of `DecafPoints`.  It is an
+/// An iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
@@ -1018,9 +992,10 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
     RistrettoPoint(edwards::multiscalar_mult(scalars, extended_points))
 }
 
-/// Precomputation
+/// A precomputed table of multiples of a basepoint, used to accelerate
+/// scalar multiplication.
 #[derive(Clone)]
-pub struct RistrettoBasepointTable(pub EdwardsBasepointTable);
+pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     type Output = RistrettoPoint;

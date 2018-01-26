@@ -9,6 +9,45 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Group operations for Curve25519, in Edwards form.
+//!
+//! ## Encoding and Decoding
+//!
+//! Encoding is done by converting to and from a `CompressedEdwardsY`
+//! struct, which is a typed wrapper around `[u8; 32]`.
+//!
+//! ## Equality Testing
+//!
+//! The `EdwardsPoint` struct implements the `subtle::Equal` trait for
+//! constant-time equality checking, and the Rust `Eq` trait for
+//! variable-time equality checking.
+//!
+//! ## Scalars
+//!
+//! Scalars are represented by the `Scalar` struct.  To construct a scalar with a specific bit
+//! pattern, see `Scalar::from_bits()`.
+//!
+//! ## Scalar Multiplication
+//!
+//! Scalar multiplication on Edwards points is provided by:
+//!
+//! * the `*` operator between a `Scalar` and a `EdwardsPoint`, which
+//! performs constant-time variable-base scalar multiplication;
+//!
+//! * the `*` operator between a `Scalar` and a
+//! `EdwardsBasepointTable`, which performs constant-time fixed-base
+//! scalar multiplication;
+//!
+//! * the `edwards::multiscalar_mult` function, which performs
+//! constant-time variable-base multiscalar multiplication;
+//!
+//! * the `edwards::vartime::multiscalar_mult` function, which
+//! performs variable-time variable-base multiscalar multiplication.
+//!
+//! ## Conversion to Montgomery form
+//!
+//! An `EdwardsPoint` can be converted directly to a `MontgomeryPoint`, but not vice-versa.
+//!
+//! XXX expand
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

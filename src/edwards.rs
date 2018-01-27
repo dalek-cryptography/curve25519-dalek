@@ -21,6 +21,26 @@
 //! constant-time equality checking, and the Rust `Eq` trait for
 //! variable-time equality checking.
 //!
+//! ## Cofactor-related functions
+//!
+//! The order of the group of points on the curve \\(\mathcal E\\)
+//! is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
+//! E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
+//! subgroup \\( \mathcal E[8] \\) consists of eight points of small
+//! order.  Technically, all of \\(\mathcal E\\) is torsion, but we
+//! use the word only to refer to the small \\(\mathcal E[8]\\) part, not
+//! the large prime-order \\(\mathcal E[\ell]\\) part.
+//!
+//! To test if a point is in \\( \mathcal E[8] \\), use
+//! `EdwardsPoint::is_small_order()`.
+//!
+//! To test if a point is in \\( \mathcal E[\ell] \\), use
+//! `EdwardsPoint::is_torsion_free()`.
+//!
+//! To multiply by the cofactor, use `EdwardsPoint::mult_by_cofactor()`.
+//!
+//! To avoid dealing with cofactors entirely, consider using Ristretto.
+//!
 //! ## Scalars
 //!
 //! Scalars are represented by the `Scalar` struct.  To construct a scalar with a specific bit
@@ -729,14 +749,14 @@ impl EdwardsBasepointTable {
 }
 
 impl EdwardsPoint {
-    /// Multiply by the cofactor: compute `8 * self`.
+    /// Multiply by the cofactor: return \\([8]P\\).
     pub fn mult_by_cofactor(&self) -> EdwardsPoint {
         self.mult_by_pow_2(3)
     }
 
-    /// Compute `2^k * self` by successive doublings.
-    /// Requires `k > 0`.
+    /// Compute \\([2\^k] P \\) by successive doublings. Requires \\( k > 0 \\).
     pub(crate) fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
+        debug_assert!( k > 0 );
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
         for _ in 0..(k-1) {
@@ -748,22 +768,59 @@ impl EdwardsPoint {
 
     /// Determine if this point is of small order.
     ///
-    /// The order of the group of points on the curve \\(\mathcal E\\)
-    /// is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
-    /// E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
-    /// subgroup \\( \mathcal E[8] \\) consists of eight points of small
-    /// order.  (Technically all of \\(\mathcal E\\) is torsion, but we
-    /// use the word only to refer to the \\(\mathcal E[8]\\) part, not
-    /// the prime-order subgroup \\(\mathcal E[\ell]\\).
+    /// # Return
     ///
-    /// For more information on cofactors and the group structure, see
-    /// the internal `curve25519-dalek` documentation on Ristretto.
+    /// * `true` if `self` is in the torsion subgroup \\( \mathcal E[8] \\);
+    /// * `false` if `self` is not in the torsion subgroup \\( \mathcal E[8] \\).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::constants;
+    ///
+    /// // Generator of the prime-order subgroup
+    /// let P = constants::ED25519_BASEPOINT_POINT;
+    /// // Generator of the torsion subgroup
+    /// let Q = constants::EIGHT_TORSION[1];
+    ///
+    /// // P has large order
+    /// assert_eq!(P.is_small_order(), false);
+    ///
+    /// // Q has small order
+    /// assert_eq!(Q.is_small_order(), true);
+    /// ```
+    pub fn is_small_order(&self) -> bool {
+        self.mult_by_cofactor().is_identity()
+    }
+
+    /// Determine if this point is “torsion-free”, i.e., is contained in
+    /// the prime-order subgroup.
     ///
     /// # Return
     ///
-    /// True if `self` is of small order; false otherwise.
-    pub fn is_small_order(&self) -> bool {
-        self.mult_by_cofactor().is_identity()
+    /// * `true` if `self` has zero torsion component and is in the
+    /// prime-order subgroup;
+    /// * `false` if `self` has a nonzero torsion component and is not
+    /// in the prime-order subgroup.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::constants;
+    ///
+    /// // Generator of the prime-order subgroup
+    /// let P = constants::ED25519_BASEPOINT_POINT;
+    /// // Generator of the torsion subgroup
+    /// let Q = constants::EIGHT_TORSION[1];
+    ///
+    /// // P is torsion-free
+    /// assert_eq!(P.is_torsion_free(), true);
+    ///
+    /// // P + Q is not torsion-free
+    /// assert_eq!((P+Q).is_torsion_free(), false);
+    /// ```
+    pub fn is_torsion_free(&self) -> bool {
+        (self * &constants::BASEPOINT_ORDER).is_identity()
     }
 }
 

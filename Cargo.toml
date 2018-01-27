@@ -50,7 +50,8 @@ clear_on_drop = "=0.2.3"
 subtle = { version = "0.5", features = ["generic-impls"], default-features = false }
 stdsimd = { version = "0.0.4", optional = true }
 serde = { version = "1.0", optional = true }
-rand = { version = "0.4", optional = true }
+# Allowing rand to be optional during builds causes a build failure when compiling for no_std targets
+rand = { version = "0.4", optional = false }
 
 [features]
 nightly = ["radix_51", "subtle/nightly", "clear_on_drop/nightly"]

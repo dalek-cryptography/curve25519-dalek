@@ -44,7 +44,7 @@ pub use backend::u32::constants::*;
 /// which is the \\(y\\)-coordinate of the Ed25519 basepoint.
 ///
 /// The sign bit is 0 since the basepoint has \\(x\\) chosen to be positive.
-pub const BASE_CMPRSSD: CompressedEdwardsY =
+pub const ED25519_BASEPOINT_COMPRESSED: CompressedEdwardsY =
     CompressedEdwardsY([0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
                         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,

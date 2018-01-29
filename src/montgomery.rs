@@ -412,7 +412,7 @@ mod test {
     #[test]
     fn basepoint_from_montgomery() {
         assert_eq!(BASE_COMPRESSED_MONTGOMERY,
-                   constants::BASE_CMPRSSD.decompress().unwrap().to_montgomery().compress());
+                   constants::ED25519_BASEPOINT_COMPRESSED.decompress().unwrap().to_montgomery().compress());
     }
 
     /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.

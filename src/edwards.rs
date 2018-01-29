@@ -1085,18 +1085,18 @@ mod test {
     #[test]
     fn basepoint_decompression_compression() {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
-        let bp = constants::BASE_CMPRSSD.decompress().unwrap();
+        let bp = constants::ED25519_BASEPOINT_COMPRESSED.decompress().unwrap();
         assert!(bp.is_valid());
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
-        assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test sign handling in decompression
     #[test]
     fn decompression_sign_handling() {
         // Manually set the high bit of the last byte to flip the sign
-        let mut minus_basepoint_bytes = constants::BASE_CMPRSSD.as_bytes().clone();
+        let mut minus_basepoint_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes().clone();
         minus_basepoint_bytes[31] |= 1 << 7;
         let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
                               .decompress().unwrap();
@@ -1114,7 +1114,7 @@ mod test {
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
-        assert_eq!(compressed, constants::BASE_CMPRSSD);
+        assert_eq!(compressed, constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
@@ -1122,7 +1122,7 @@ mod test {
     #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
-        assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test `impl Add<EdwardsPoint> for EdwardsPoint`
@@ -1235,7 +1235,7 @@ mod test {
     fn basepoint_projective_extended_round_trip() {
         assert_eq!(constants::ED25519_BASEPOINT_POINT
                        .to_projective().to_extended().compress(),
-                   constants::BASE_CMPRSSD);
+                   constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test computing 16*basepoint vs mult_by_pow_2(4)
@@ -1358,7 +1358,7 @@ mod test {
     fn serde_cbor_basepoint_roundtrip() {
         let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
         let parsed: EdwardsPoint = serde_cbor::from_slice(&output).unwrap();
-        assert_eq!(parsed.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(parsed.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     #[test]
@@ -1387,7 +1387,7 @@ mod bench {
 
     #[bench]
     fn edwards_decompress(b: &mut Bencher) {
-        let B = &constants::BASE_CMPRSSD;
+        let B = &constants::ED25519_BASEPOINT_COMPRESSED;
         b.iter(|| B.decompress().unwrap());
     }
 

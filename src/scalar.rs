@@ -790,12 +790,6 @@ mod test {
         assert_eq!(should_be_two, two);
     }
 
-    #[test]
-    fn impl_sub() {
-        let should_be_one = &constants::BASEPOINT_ORDER - &constants::BASEPOINT_ORDER_MINUS_1;
-        assert_eq!(should_be_one, Scalar::one());
-    }
-
     #[allow(non_snake_case)]
     #[test]
     fn impl_mul() {

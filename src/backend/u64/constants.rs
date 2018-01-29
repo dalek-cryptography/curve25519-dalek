@@ -54,8 +54,10 @@ pub(crate) const R: Scalar64 = Scalar64([ 0x000f48bd6721e6ed, 0x0003bab5ac67e45a
 /// `RR` = (R^2) % L where R = 2^260
 pub(crate) const RR: Scalar64 = Scalar64([ 0x0009d265e952d13b, 0x000d63c715bea69f, 0x0005be65cb687604, 0x0003dceec73d217f, 0x000009411b7c309a ]);
 
-/// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
-/// distinguish it from `_TABLE`, which should be used for scalar
+/// The Ed25519 basepoint, as an `EdwardsPoint`.
+///
+/// This is called `_POINT` to distinguish it from
+/// `ED25519_BASEPOINT_TABLE`, which should be used for scalar
 /// multiplication (it's much faster).
 pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
     X: FieldElement64([1738742601995546, 1146398526822698, 2070867633025821, 562264141797630, 587772402128613]),
@@ -64,14 +66,19 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
     T: FieldElement64([1841354044333475, 16398895984059, 755974180946558, 900171276175154, 1821297809914039]),
 };
 
-/// The 8-torsion subgroup Ɛ[8].
+/// The 8-torsion subgroup \\(\mathcal E [8]\\).
 ///
-/// In the case of Curve25519, it is cyclic; the `i`th element of the
-/// array is `i*P`, where `P` is a point of order 8 generating Ɛ[8].
+/// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
+/// the array is \\([i]P\\), where \\(P\\) is a point of order \\(8\\)
+/// generating \\(\mathcal E[8]\\).
 ///
-/// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
-/// indexed by 0,4.
-pub const EIGHT_TORSION: [EdwardsPoint; 8] = [
+/// Thus \\(\mathcal E[8]\\) is the points indexed by `0,2,4,6`, and
+/// \\(\mathcal E[2]\\) is the points indexed by `0,4`.
+pub const EIGHT_TORSION: [EdwardsPoint; 8] = EIGHT_TORSION_INNER_DOC_HIDDEN;
+
+/// Inner item used to hide limb constants from cargo doc output.
+#[doc(hidden)]
+pub const EIGHT_TORSION_INNER_DOC_HIDDEN: [EdwardsPoint; 8] = [
     EdwardsPoint {
         X: FieldElement64([0, 0, 0, 0, 0]),
         Y: FieldElement64([1, 0, 0, 0, 0]),

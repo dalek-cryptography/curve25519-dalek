@@ -63,11 +63,23 @@
 //! * the `edwards::vartime::multiscalar_mult` function, which
 //! performs variable-time variable-base multiscalar multiplication.
 //!
-//! ## Conversion to Montgomery form
+//! ## Implementation
 //!
-//! An `EdwardsPoint` can be converted directly to a `MontgomeryPoint`, but not vice-versa.
+//! The Edwards arithmetic is implemented using the “extended twisted
+//! coordinates” of Hisil, Wong, Carter, and Dawson, and the
+//! corresponding complete formulas.  For more details,
+//! see the `curve_models` submodule of the internal documentation.
 //!
-//! XXX expand
+//! ## Validity Checking
+//!
+//! There is no function for checking whether a point is valid.
+//! Instead, the `EdwardsPoint` struct is guaranteed to hold a valid
+//! point on the curve.
+//!
+//! We use the Rust type system to make invalid points
+//! unrepresentable: `EdwardsPoint` objects can only be created via
+//! successful decompression of a compressed point, or else by
+//! operations on other (valid) `EdwardsPoint`s.
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

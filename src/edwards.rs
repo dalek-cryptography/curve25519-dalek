@@ -77,11 +77,11 @@ impl CompressedEdwardsY {
         self.0
     }
 
-    /// Attempt to decompress to an `ExtendedPoint`.
+    /// Attempt to decompress to an `EdwardsPoint`.
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> Option<ExtendedPoint> {
+    pub fn decompress(&self) -> Option<EdwardsPoint> {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();
         let YY = Y.square();
@@ -96,16 +96,16 @@ impl CompressedEdwardsY {
         let    current_sign_bit = X.is_negative();
         X.conditional_negate(current_sign_bit ^ compressed_sign_bit);
 
-        Some(ExtendedPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
+        Some(EdwardsPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
     }
 }
 
 // ------------------------------------------------------------------------
 // Serde support
 // ------------------------------------------------------------------------
-// Serializes to and from `ExtendedPoint` directly, doing compression
+// Serializes to and from `EdwardsPoint` directly, doing compression
 // and decompression internally.  This means that users can create
-// structs containing `ExtendedPoint`s and use Serde's derived
+// structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
 #[cfg(feature = "serde")]
@@ -114,7 +114,7 @@ use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
 use serde::de::Visitor;
 
 #[cfg(feature = "serde")]
-impl Serialize for ExtendedPoint {
+impl Serialize for EdwardsPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
@@ -123,20 +123,20 @@ impl Serialize for ExtendedPoint {
 }
 
 #[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for ExtendedPoint {
+impl<'de> Deserialize<'de> for EdwardsPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
     {
-        struct ExtendedPointVisitor;
+        struct EdwardsPointVisitor;
 
-        impl<'de> Visitor<'de> for ExtendedPointVisitor {
-            type Value = ExtendedPoint;
+        impl<'de> Visitor<'de> for EdwardsPointVisitor {
+            type Value = EdwardsPoint;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<ExtendedPoint, E>
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<EdwardsPoint, E>
                 where E: serde::de::Error
             {
                 if v.len() == 32 {
@@ -151,7 +151,7 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
             }
         }
 
-        deserializer.deserialize_bytes(ExtendedPointVisitor)
+        deserializer.deserialize_bytes(EdwardsPointVisitor)
     }
 }
 
@@ -159,14 +159,10 @@ impl<'de> Deserialize<'de> for ExtendedPoint {
 // Internal point representations
 // ------------------------------------------------------------------------
 
-/// An `ExtendedPoint` represents a point on the Edwards form of Curve25519.
-///
-/// The name refers to the extended twisted Edwards coordinates of
-/// Hisil, Wong, Carter, and Dawson, and more details on curve models
-/// can be found in the `curve25519-dalek` internal documentation.
+/// An `EdwardsPoint` represents a point on the Edwards form of Curve25519.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
-pub struct ExtendedPoint {
+pub struct EdwardsPoint {
     pub(crate) X: FieldElement,
     pub(crate) Y: FieldElement,
     pub(crate) Z: FieldElement,
@@ -186,9 +182,9 @@ impl Identity for CompressedEdwardsY {
     }
 }
 
-impl Identity for ExtendedPoint {
-    fn identity() -> ExtendedPoint {
-        ExtendedPoint{ X: FieldElement::zero(),
+impl Identity for EdwardsPoint {
+    fn identity() -> EdwardsPoint {
+        EdwardsPoint{ X: FieldElement::zero(),
                        Y: FieldElement::one(),
                        Z: FieldElement::one(),
                        T: FieldElement::zero() }
@@ -199,7 +195,7 @@ impl Identity for ExtendedPoint {
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
 
-impl ValidityCheck for ExtendedPoint {
+impl ValidityCheck for EdwardsPoint {
     // XXX this should also check that T is correct
     fn is_valid(&self) -> bool {
         self.to_projective().is_valid()
@@ -210,8 +206,8 @@ impl ValidityCheck for ExtendedPoint {
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
-impl ConditionallyAssignable for ExtendedPoint {
-    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+impl ConditionallyAssignable for EdwardsPoint {
+    fn conditional_assign(&mut self, other: &EdwardsPoint, choice: u8) {
         self.X.conditional_assign(&other.X, choice);
         self.Y.conditional_assign(&other.Y, choice);
         self.Z.conditional_assign(&other.Z, choice);
@@ -223,8 +219,8 @@ impl ConditionallyAssignable for ExtendedPoint {
 // Constant-time Equality
 // ------------------------------------------------------------------------
 
-impl Equal for ExtendedPoint {
-    fn ct_eq(&self, other: &ExtendedPoint) -> u8 {
+impl Equal for EdwardsPoint {
+    fn ct_eq(&self, other: &EdwardsPoint) -> u8 {
         slices_equal(self.compress().as_bytes(),
                      other.compress().as_bytes())
     }
@@ -234,7 +230,7 @@ impl Equal for ExtendedPoint {
 // Point conversions
 // ------------------------------------------------------------------------
 
-impl ExtendedPoint {
+impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
@@ -271,7 +267,7 @@ impl ExtendedPoint {
         }
     }
 
-    /// Convert this `ExtendedPoint` on the Edwards model to the
+    /// Convert this `EdwardsPoint` on the Edwards model to the
     /// corresponding `MontgomeryPoint` on the Montgomery model.
     ///
     /// Note that this is a one-way conversion, since the Montgomery
@@ -360,9 +356,9 @@ impl ExtendedPoint {
 // Doubling
 // ------------------------------------------------------------------------
 
-impl ExtendedPoint {
+impl EdwardsPoint {
     /// Add this point to itself.
-    pub(crate) fn double(&self) -> ExtendedPoint {
+    pub(crate) fn double(&self) -> EdwardsPoint {
         self.to_projective().double().to_extended()
     }
 }
@@ -371,49 +367,49 @@ impl ExtendedPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-    fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
+impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+    type Output = EdwardsPoint;
+    fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self + &other.to_projective_niels()).to_extended()
     }
 }
 
-define_add_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint, Output = ExtendedPoint);
+define_add_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'b> AddAssign<&'b ExtendedPoint> for ExtendedPoint {
-    fn add_assign(&mut self, _rhs: &'b ExtendedPoint) {
-        *self = (self as &ExtendedPoint) + _rhs;
+impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
+    fn add_assign(&mut self, _rhs: &'b EdwardsPoint) {
+        *self = (self as &EdwardsPoint) + _rhs;
     }
 }
 
-define_add_assign_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint);
+define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
-impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-    fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
+impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
+    type Output = EdwardsPoint;
+    fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self - &other.to_projective_niels()).to_extended()
     }
 }
 
-define_sub_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint, Output = ExtendedPoint);
+define_sub_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'b> SubAssign<&'b ExtendedPoint> for ExtendedPoint {
-    fn sub_assign(&mut self, _rhs: &'b ExtendedPoint) {
-        *self = (self as &ExtendedPoint) - _rhs;
+impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
+    fn sub_assign(&mut self, _rhs: &'b EdwardsPoint) {
+        *self = (self as &EdwardsPoint) - _rhs;
     }
 }
 
-define_sub_assign_variants!(LHS = ExtendedPoint, RHS = ExtendedPoint);
+define_sub_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
 // ------------------------------------------------------------------------
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
+impl<'a> Neg for &'a EdwardsPoint {
+    type Output = EdwardsPoint;
 
-    fn neg(self) -> ExtendedPoint {
-        ExtendedPoint{
+    fn neg(self) -> EdwardsPoint {
+        EdwardsPoint{
             X: -(&self.X),
             Y:  self.Y,
             Z:  self.Z,
@@ -422,10 +418,10 @@ impl<'a> Neg for &'a ExtendedPoint {
     }
 }
 
-impl Neg for ExtendedPoint {
-    type Output = ExtendedPoint;
+impl Neg for EdwardsPoint {
+    type Output = EdwardsPoint;
 
-    fn neg(self) -> ExtendedPoint {
+    fn neg(self) -> EdwardsPoint {
         -&self
     }
 }
@@ -434,30 +430,30 @@ impl Neg for ExtendedPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-impl<'b> MulAssign<&'b Scalar> for ExtendedPoint {
+impl<'b> MulAssign<&'b Scalar> for EdwardsPoint {
     fn mul_assign(&mut self, scalar: &'b Scalar) {
-        let result = (self as &ExtendedPoint) * scalar;
+        let result = (self as &EdwardsPoint) * scalar;
         *self = result;
     }
 }
 
-define_mul_assign_variants!(LHS = ExtendedPoint, RHS = Scalar);
+define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 
-define_mul_variants!(LHS = ExtendedPoint, RHS = Scalar, Output = ExtendedPoint);
-define_mul_variants!(LHS = Scalar, RHS = ExtendedPoint, Output = ExtendedPoint);
+define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
+define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
+impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
+    type Output = EdwardsPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
-            use backend::avx2::edwards as edwards_avx2;
-            let P_avx2 = edwards_avx2::ExtendedPoint::from(*self);
-            return ExtendedPoint::from(&P_avx2 * scalar);
+            use backend::avx2::edwards::ExtendedPoint;
+            let P_avx2 = ExtendedPoint::from(*self);
+            return EdwardsPoint::from(&P_avx2 * scalar);
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
@@ -478,7 +474,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
             //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
             //
             // We sum right-to-left.
-            let mut Q = ExtendedPoint::identity();
+            let mut Q = EdwardsPoint::identity();
             for i in (0..64).rev() {
                 // Q <-- 16*Q
                 Q = Q.mult_by_pow_2(4);
@@ -491,14 +487,14 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
-    type Output = ExtendedPoint;
+impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
+    type Output = EdwardsPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, point: &'b ExtendedPoint) -> ExtendedPoint {
+    fn mul(self, point: &'b EdwardsPoint) -> EdwardsPoint {
         point * self
     }
 }
@@ -514,15 +510,15 @@ impl<'a, 'b> Mul<&'b ExtendedPoint> for &'a Scalar {
 ///
 /// # Input
 ///
-/// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+/// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 /// 
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
     where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b ExtendedPoint>
+          J: IntoIterator<Item = &'b EdwardsPoint>
 {
     // If we built with AVX2, use the AVX2 backend.
     #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
@@ -575,7 +571,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
         // This provides the speedup over doing n independent scalar
         // mults: we perform 63 multiplications by 16 instead of 63*n
         // multiplications, saving 252*(n-1) doublings.
-        let mut Q = ExtendedPoint::identity();
+        let mut Q = EdwardsPoint::identity();
         // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
         for j in (0..64).rev() {
             Q = Q.mult_by_pow_2(4);
@@ -628,11 +624,11 @@ impl EdwardsBasepointTable {
     ///
     /// The radix-\\(16\\) representation requires that the scalar is bounded
     /// by \\(2\^{255}\\), which is always the case.
-    fn basepoint_mul(&self, scalar: &Scalar) -> ExtendedPoint {
+    fn basepoint_mul(&self, scalar: &Scalar) -> EdwardsPoint {
         let a = scalar.to_radix_16();
 
         let tables = &self.0;
-        let mut P = ExtendedPoint::identity();
+        let mut P = EdwardsPoint::identity();
 
         for i in (0..64).filter(|x| x % 2 == 1) {
             P = (&P + &tables[i/2].select(a[i])).to_extended();
@@ -649,29 +645,29 @@ impl EdwardsBasepointTable {
 }
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
-    type Output = ExtendedPoint;
+    type Output = EdwardsPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
-    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
+    fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // delegate to a private function so that its documentation appears in internal docs
         self.basepoint_mul(scalar)
     }
 }
 
 impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
-    type Output = ExtendedPoint;
+    type Output = EdwardsPoint;
 
-    /// Construct an `ExtendedPoint` from a `Scalar` \\(a\\) by
+    /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
-    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
+    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> EdwardsPoint {
         basepoint_table * &self
     }
 }
 
 impl EdwardsBasepointTable {
     /// Create a table of precomputed multiples of `basepoint`.
-    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
+    pub fn create(basepoint: &EdwardsPoint) -> EdwardsBasepointTable {
         // XXX use init_with
         let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
         let mut P = *basepoint;
@@ -683,25 +679,25 @@ impl EdwardsBasepointTable {
         table
     }
 
-    /// Get the basepoint for this table as an `ExtendedPoint`.
+    /// Get the basepoint for this table as an `EdwardsPoint`.
     ///
     /// XXX maybe this would be better as a `From` impl
-    pub fn basepoint(&self) -> ExtendedPoint {
+    pub fn basepoint(&self) -> EdwardsPoint {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.
-        (&ExtendedPoint::identity() + &self.0[0].select(1)).to_extended()
+        (&EdwardsPoint::identity() + &self.0[0].select(1)).to_extended()
     }
 }
 
-impl ExtendedPoint {
+impl EdwardsPoint {
     /// Multiply by the cofactor: compute `8 * self`.
-    pub fn mult_by_cofactor(&self) -> ExtendedPoint {
+    pub fn mult_by_cofactor(&self) -> EdwardsPoint {
         self.mult_by_pow_2(3)
     }
 
     /// Compute `2^k * self` by successive doublings.
     /// Requires `k > 0`.
-    pub(crate) fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+    pub(crate) fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
         for _ in 0..(k-1) {
@@ -738,7 +734,7 @@ impl ExtendedPoint {
 
 // XXX should this be in another module, with types and `From` impls, like `CompressedEdwardsY`?
 
-impl ExtendedPoint {
+impl EdwardsPoint {
     /// Use Elligator2 to try to convert `self` to a uniformly random
     /// string.
     ///
@@ -752,7 +748,7 @@ impl ExtendedPoint {
     /// Use Elligator2 to convert a uniformly random string to a curve
     /// point.
     #[allow(unused_variables)] // REMOVE WHEN IMPLEMENTED
-    fn from_uniform_representative(bytes: &[u8; 32]) -> ExtendedPoint {
+    fn from_uniform_representative(bytes: &[u8; 32]) -> EdwardsPoint {
         unimplemented!();
     }
 }
@@ -761,9 +757,9 @@ impl ExtendedPoint {
 // Debug traits
 // ------------------------------------------------------------------------
 
-impl Debug for ExtendedPoint {
+impl Debug for EdwardsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "ExtendedPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
+        write!(f, "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }
 }
@@ -790,7 +786,7 @@ pub mod vartime {
     struct OddMultiples([ProjectiveNielsPoint; 8]);
 
     impl OddMultiples {
-        fn create(A: &ExtendedPoint) -> OddMultiples {
+        fn create(A: &EdwardsPoint) -> OddMultiples {
             let mut Ai = [ProjectiveNielsPoint::identity(); 8];
             let A2 = A.double();
             Ai[0]  = A.to_projective_niels();
@@ -818,12 +814,12 @@ pub mod vartime {
     ///
     /// # Input
     ///
-    /// A iterable of `Scalar`s and a iterable of `ExtendedPoints`.  It is an
+    /// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
     /// error to call this function with two iterators of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> ExtendedPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
         where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b ExtendedPoint>
+              J: IntoIterator<Item = &'b EdwardsPoint>
     {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
@@ -866,9 +862,9 @@ pub mod vartime {
     #[cfg(feature="precomputed_tables")]
     pub fn double_scalar_mult_basepoint(
         a: &Scalar,
-        A: &ExtendedPoint,
+        A: &EdwardsPoint,
         b: &Scalar,
-    ) -> ExtendedPoint {
+    ) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
@@ -1033,7 +1029,7 @@ mod test {
         assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
     }
 
-    /// Test `impl Add<ExtendedPoint> for ExtendedPoint`
+    /// Test `impl Add<EdwardsPoint> for EdwardsPoint`
     /// using basepoint + basepoint versus the 2*basepoint constant.
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
@@ -1042,7 +1038,7 @@ mod test {
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
-    /// Test `impl Add<ProjectiveNielsPoint> for ExtendedPoint`
+    /// Test `impl Add<ProjectiveNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
@@ -1051,7 +1047,7 @@ mod test {
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
-    /// Test `impl Add<AffineNielsPoint> for ExtendedPoint`
+    /// Test `impl Add<AffineNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
@@ -1061,13 +1057,13 @@ mod test {
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
-    /// Check that equality of `ExtendedPoints` handles projective
+    /// Check that equality of `EdwardsPoints` handles projective
     /// coordinates correctly.
     #[test]
     fn extended_point_equality_handles_scaling() {
         let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
-        let id1 = ExtendedPoint::identity();
-        let id2 = ExtendedPoint{
+        let id1 = EdwardsPoint::identity();
+        let id2 = EdwardsPoint{
             X: FieldElement::zero(),
             Y: FieldElement::from_bytes(&two_bytes),
             Z: FieldElement::from_bytes(&two_bytes),
@@ -1083,7 +1079,7 @@ mod test {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         let aB_affine_niels = aB.to_affine_niels();
-        let also_aB = (&ExtendedPoint::identity() + &aB_affine_niels).to_extended();
+        let also_aB = (&EdwardsPoint::identity() + &aB_affine_niels).to_extended();
         assert_eq!(     aB.compress(),
                    also_aB.compress());
     }
@@ -1178,13 +1174,13 @@ mod test {
 
     #[test]
     fn compressed_identity() {
-        assert_eq!(ExtendedPoint::identity().compress(),
+        assert_eq!(EdwardsPoint::identity().compress(),
                    CompressedEdwardsY::identity());
     }
 
     #[test]
     fn is_identity() {
-        assert!(   ExtendedPoint::identity().is_identity() == true);
+        assert!(   EdwardsPoint::identity().is_identity() == true);
         assert!(constants::ED25519_BASEPOINT_POINT.is_identity() == false);
     }
 
@@ -1210,7 +1206,7 @@ mod test {
 
     #[test]
     fn scalarmult_extended_point_works_both_ways() {
-        let G: ExtendedPoint = constants::ED25519_BASEPOINT_POINT;
+        let G: EdwardsPoint = constants::ED25519_BASEPOINT_POINT;
         let s: Scalar = A_SCALAR;
 
         let P1 = &G * &s;
@@ -1265,7 +1261,7 @@ mod test {
     #[cfg(feature = "serde")]
     fn serde_cbor_basepoint_roundtrip() {
         let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
-        let parsed: ExtendedPoint = serde_cbor::from_slice(&output).unwrap();
+        let parsed: EdwardsPoint = serde_cbor::from_slice(&output).unwrap();
         assert_eq!(parsed.compress(), constants::BASE_CMPRSSD);
     }
 
@@ -1276,7 +1272,7 @@ mod test {
         // CBOR apparently has two bytes of overhead for a 32-byte string.
         // Set the low byte of the compressed point to 1 to make it invalid.
         output[2] = 1;
-        let parsed: Result<ExtendedPoint, _> = serde_cbor::from_slice(&output);
+        let parsed: Result<EdwardsPoint, _> = serde_cbor::from_slice(&output);
         assert!(parsed.is_err());
     }
 }

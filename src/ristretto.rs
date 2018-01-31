@@ -406,7 +406,7 @@ use subtle::ConditionallyNegatable;
 use subtle::Equal;
 
 use edwards;
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
 
 use scalar::Scalar;
@@ -487,7 +487,7 @@ impl CompressedRistretto {
         if ok == 0u8 || t.is_negative() == 1u8 || y.is_zero() == 1u8 {
             return None;
         } else {
-            return Some(RistrettoPoint(ExtendedPoint{X: x, Y: y, Z: one, T: t}));
+            return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
         }
     }
 }
@@ -563,10 +563,10 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 /// Edwards form of) Curve25519.
 ///
 /// Internally, a `RistrettoPoint` is a wrapper type around
-/// `ExtendedPoint`, with custom equality, compression, and
+/// `EdwardsPoint`, with custom equality, compression, and
 /// decompression routines to account for the quotient.
 #[derive(Copy, Clone)]
-pub struct RistrettoPoint(pub(crate) ExtendedPoint);
+pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
     /// Compress in Ristretto format.
@@ -748,7 +748,7 @@ impl RistrettoPoint {
 
 
     /// Return the coset self + E[4], for debugging.
-    fn coset4(&self) -> [ExtendedPoint; 4] {
+    fn coset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
         , &self.0 + &constants::EIGHT_TORSION[2]
         , &self.0 + &constants::EIGHT_TORSION[4]
@@ -881,7 +881,7 @@ impl RistrettoPoint {
 
 impl Identity for RistrettoPoint {
     fn identity() -> RistrettoPoint {
-        RistrettoPoint(ExtendedPoint::identity())
+        RistrettoPoint(EdwardsPoint::identity())
     }
 }
 

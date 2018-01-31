@@ -33,7 +33,7 @@ use core::ops::{Mul, MulAssign};
 use constants;
 use constants::APLUS2_OVER_FOUR;
 use field::FieldElement;
-use edwards::{ExtendedPoint, CompressedEdwardsY};
+use edwards::{EdwardsPoint, CompressedEdwardsY};
 use scalar::Scalar;
 
 // XXX Move these to a common "group" module?  At the same time, we should
@@ -72,13 +72,13 @@ impl CompressedMontgomeryU {
         self.0
     }
 
-    /// Attempt to decompress to an `ExtendedPoint`.
+    /// Attempt to decompress to an `EdwardsPoint`.
     ///
     /// # Note
     ///
     /// Since there are two curve points with the same
     /// `u`-coordinate, the `u`-coordinate does not fully specify a
-    /// point.  That is, roundtripping between an `ExtendedPoint` and
+    /// point.  That is, roundtripping between an `EdwardsPoint` and
     /// a `CompressedMontgomeryU` discards its sign bit.
     ///
     /// # Warning
@@ -87,13 +87,13 @@ impl CompressedMontgomeryU {
     ///
     /// # Return
     ///
-    /// An `Option<ExtendedPoint>`, which will be `None` if either condition holds:
+    /// An `Option<EdwardsPoint>`, which will be `None` if either condition holds:
     ///
     /// * `u = -1`, or
     /// * `v` is not square.
     //
     // XXX any other exceptional points for the birational map?
-    pub fn decompress_edwards(&self) -> Option<ExtendedPoint> {
+    pub fn decompress_edwards(&self) -> Option<EdwardsPoint> {
         let u: FieldElement = FieldElement::from_bytes(&self.0);
 
         // If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
@@ -432,7 +432,7 @@ mod test {
     /// identity.
     #[test]
     fn identity_to_monty() {
-        let id = ExtendedPoint::identity();
+        let id = EdwardsPoint::identity();
         assert_eq!(id.to_montgomery().compress(), MontgomeryPoint::identity().compress());
     }
 
@@ -471,7 +471,7 @@ mod test {
         let mut csprng: OsRng = OsRng::new().unwrap();
 
         let s: Scalar = Scalar::random(&mut csprng);
-        let p_edwards: ExtendedPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
+        let p_edwards: EdwardsPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
         let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = &s * &p_edwards;
@@ -484,7 +484,7 @@ mod test {
     fn ladder_basepoint_times_two_matches_double() {
         let two: Scalar = Scalar::from_u64(2u64);
         let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress() * &two;
-        let expected: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.double();
+        let expected: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.double();
 
         assert_eq!(result.compress(), expected.to_montgomery().compress());
     }

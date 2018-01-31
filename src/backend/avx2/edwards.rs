@@ -37,16 +37,16 @@ use backend::avx2;
 #[derive(Copy, Clone, Debug)]
 pub struct ExtendedPoint(pub(super) FieldElement32x4);
 
-impl From<edwards::ExtendedPoint> for ExtendedPoint {
-    fn from(P: edwards::ExtendedPoint) -> ExtendedPoint {
+impl From<edwards::EdwardsPoint> for ExtendedPoint {
+    fn from(P: edwards::EdwardsPoint) -> ExtendedPoint {
         ExtendedPoint(FieldElement32x4::new(&P.X, &P.Y, &P.Z, &P.T))
     }
 }
 
-impl From<ExtendedPoint> for edwards::ExtendedPoint {
-    fn from(P: ExtendedPoint) -> edwards::ExtendedPoint {
+impl From<ExtendedPoint> for edwards::EdwardsPoint {
+    fn from(P: ExtendedPoint) -> edwards::EdwardsPoint {
         let tmp = P.0.split();
-        edwards::ExtendedPoint{X: tmp[0], Y: tmp[1], Z: tmp[2], T: tmp[3]}
+        edwards::EdwardsPoint{X: tmp[0], Y: tmp[1], Z: tmp[2], T: tmp[3]}
     }
 }
 
@@ -461,18 +461,18 @@ impl EdwardsBasepointTable {
 ///
 /// # Input
 ///
-/// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+/// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
 /// error to call this function with two vectors of different lengths.
 ///
-/// XXX this takes `edwards::ExtendedPoints` because we have to alloc scratch space here anyways,
+/// XXX this takes `edwards::EdwardsPoints` because we have to alloc scratch space here anyways,
 /// and we need some space to store the converted points, so we may as well do the conversion here.
 /// maybe there's a better way to avoid code duplication... however we can't quite just write a
 /// generic `multiscalar_mult` because the non-vectorized code passes between models and this code
 /// doesn't.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
+pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
     where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b edwards::ExtendedPoint>
+          J: IntoIterator<Item = &'b edwards::EdwardsPoint>
 {
     //assert_eq!(scalars.len(), points.len());
 
@@ -563,8 +563,8 @@ pub mod vartime {
     ///
     /// This is the same as calling the iterator-based function, but slightly faster.
     pub fn double_scalar_mult_basepoint(a: &Scalar,
-                                        A: &edwards::ExtendedPoint,
-                                        b: &Scalar) -> edwards::ExtendedPoint {
+                                        A: &edwards::EdwardsPoint,
+                                        b: &Scalar) -> edwards::EdwardsPoint {
         let a_naf = a.non_adjacent_form();
         let b_naf = b.non_adjacent_form();
 
@@ -613,12 +613,12 @@ pub mod vartime {
     ///
     /// # Input
     ///
-    /// A vector of `Scalar`s and a vector of `ExtendedPoints`.  It is an
+    /// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
     /// error to call this function with two vectors of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::ExtendedPoint
+    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
         where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b edwards::ExtendedPoint>
+              J: IntoIterator<Item = &'b edwards::EdwardsPoint>
     {
         //assert_eq!(scalars.len(), points.len());
 
@@ -651,7 +651,7 @@ mod test {
 
     use constants;
 
-    fn serial_add(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
+    fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         use backend::u64::field::FieldElement64;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
@@ -708,20 +708,20 @@ mod test {
         let Z3  = &S15 * &S14; // R2 * R3
         let T3  = &S12 * &S13; // R1 * R4
 
-        edwards::ExtendedPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+        edwards::EdwardsPoint{X: X3, Y: Y3, Z: Z3, T: T3}
     }
 
-    fn addition_test_helper(P: edwards::ExtendedPoint, Q: edwards::ExtendedPoint) {
+    fn addition_test_helper(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) {
         // Test the serial implementation of the parallel addition formulas
-        let R_serial: edwards::ExtendedPoint = serial_add(P.into(), Q.into()).into();
+        let R_serial: edwards::EdwardsPoint = serial_add(P.into(), Q.into()).into();
         // Test the vector implementation of the parallel addition formulas
-        let R_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
+        let R_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
         // Test the vector implementation of the parallel subtraction formulas
-        let S_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
+        let S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
 
         // Test the vector implementation of the parallel readdition formulas
         let cached_Q = CachedPoint::from(ExtendedPoint::from(Q));
-        let T_vector: edwards::ExtendedPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
+        let T_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
 
         println!("Testing point addition:");
         println!("P = {:?}", P);
@@ -742,18 +742,18 @@ mod test {
 
     #[test]
     fn sub_vs_add_minus() {
-        let P: ExtendedPoint = edwards::ExtendedPoint::identity().into();
-        let Q: ExtendedPoint = edwards::ExtendedPoint::identity().into();
+        let P: ExtendedPoint = edwards::EdwardsPoint::identity().into();
+        let Q: ExtendedPoint = edwards::EdwardsPoint::identity().into();
 
         let mQ = -&Q;
 
         println!("sub");
-        let R1: edwards::ExtendedPoint = (&P - &Q).into();
+        let R1: edwards::EdwardsPoint = (&P - &Q).into();
         println!("add neg");
-        let R2: edwards::ExtendedPoint = (&P + &mQ).into();
+        let R2: edwards::EdwardsPoint = (&P + &mQ).into();
 
-        assert_eq!(R2.compress(), edwards::ExtendedPoint::identity().compress());
-        assert_eq!(R1.compress(), edwards::ExtendedPoint::identity().compress());
+        assert_eq!(R2.compress(), edwards::EdwardsPoint::identity().compress());
+        assert_eq!(R1.compress(), edwards::EdwardsPoint::identity().compress());
     }
 
 
@@ -763,12 +763,12 @@ mod test {
         use scalar::Scalar;
 
         println!("Testing id +- id");
-        let P = edwards::ExtendedPoint::identity();
-        let Q = edwards::ExtendedPoint::identity();
+        let P = edwards::EdwardsPoint::identity();
+        let Q = edwards::EdwardsPoint::identity();
         addition_test_helper(P, Q);
 
         println!("Testing id +- B");
-        let P = edwards::ExtendedPoint::identity();
+        let P = edwards::EdwardsPoint::identity();
         let Q = constants::ED25519_BASEPOINT_POINT;
         addition_test_helper(P, Q);
 
@@ -783,7 +783,7 @@ mod test {
         addition_test_helper(P, Q);
     }
 
-    fn serial_double(P: edwards::ExtendedPoint) -> edwards::ExtendedPoint {
+    fn serial_double(P: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
 
         macro_rules! print_var {
@@ -823,12 +823,12 @@ mod test {
         let Z3 = &S8 * &S6;
         let T3 = &S5 * &S9;
 
-        edwards::ExtendedPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+        edwards::EdwardsPoint{X: X3, Y: Y3, Z: Z3, T: T3}
     }
 
-    fn doubling_test_helper(P: edwards::ExtendedPoint) {
-        let R1: edwards::ExtendedPoint = serial_double(P.into()).into();
-        let R2: edwards::ExtendedPoint = ExtendedPoint::from(P).double().into();
+    fn doubling_test_helper(P: edwards::EdwardsPoint) {
+        let R1: edwards::EdwardsPoint = serial_double(P.into()).into();
+        let R2: edwards::EdwardsPoint = ExtendedPoint::from(P).double().into();
         println!("Testing point doubling:");
         println!("P = {:?}", P);
         println!("(serial) R1 = {:?}", R1);
@@ -845,7 +845,7 @@ mod test {
         use scalar::Scalar;
 
         println!("Testing [2]id");
-        let P = edwards::ExtendedPoint::identity();
+        let P = edwards::EdwardsPoint::identity();
         doubling_test_helper(P);
 
         println!("Testing [2]B");
@@ -859,8 +859,8 @@ mod test {
 
     #[test]
     fn identity_trait_vs_edwards_identity() {
-        let id1: edwards::ExtendedPoint = ExtendedPoint::identity().into();
-        let id2: edwards::ExtendedPoint = edwards::ExtendedPoint::identity();
+        let id1: edwards::EdwardsPoint = ExtendedPoint::identity().into();
+        let id2: edwards::EdwardsPoint = edwards::EdwardsPoint::identity();
         assert_eq!(id1.compress(), id2.compress());
     }
 
@@ -868,7 +868,7 @@ mod test {
     fn neg_vs_edwards_neg() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let Bneg = -&B;
-        assert_eq!(edwards::ExtendedPoint::from(Bneg).compress(),
+        assert_eq!(edwards::EdwardsPoint::from(Bneg).compress(),
                    (-&constants::ED25519_BASEPOINT_POINT).compress());
     }
 
@@ -878,7 +878,7 @@ mod test {
         // some random bytes
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
 
-        let R1 = edwards::ExtendedPoint::from(&B * &s);
+        let R1 = edwards::EdwardsPoint::from(&B * &s);
         let R2 = &constants::ED25519_BASEPOINT_TABLE * &s;
 
         assert_eq!(R1.compress(), R2.compress());
@@ -894,8 +894,8 @@ mod test {
         let P1 = &B * &s;
         let P2 = &B_table * &s;
 
-        assert_eq!(edwards::ExtendedPoint::from(P1).compress(),
-                   edwards::ExtendedPoint::from(P2).compress());
+        assert_eq!(edwards::EdwardsPoint::from(P1).compress(),
+                   edwards::EdwardsPoint::from(P2).compress());
     }
 
     #[test]
@@ -911,7 +911,7 @@ mod test {
         
         let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
-        assert_eq!(edwards::ExtendedPoint::from(R).compress(),
+        assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                    R_multiscalar.compress());
     }
 
@@ -931,7 +931,7 @@ mod test {
             
             let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
-            assert_eq!(edwards::ExtendedPoint::from(R).compress(),
+            assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                        R_multiscalar.compress());
         }
     }
@@ -958,7 +958,7 @@ mod bench {
         let B = constants::ED25519_BASEPOINT_POINT;
         let B_avx2 = ExtendedPoint::from(B);
 
-        b.iter(|| edwards::ExtendedPoint::from(B_avx2));
+        b.iter(|| edwards::EdwardsPoint::from(B_avx2));
     }
 
     #[bench]
@@ -1019,8 +1019,8 @@ mod bench {
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
         // Create 10 points (by doing scalar mults)
-        let B = &constants::ED25519_BASEPOINT_POINT;
-        let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
+        let B = &constants::ED25519_BASEPOINT_TABLE;
+        let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
         b.iter(|| multiscalar_mult(&scalars, &points));
     }
@@ -1035,8 +1035,7 @@ mod bench {
             // Create 2 random scalars
             let s1 = Scalar::random(&mut csprng);
             let s2 = Scalar::random(&mut csprng);
-            let B = constants::ED25519_BASEPOINT_POINT;
-            let P = &B * &s1;
+            let P = &s1 * &constants::ED25519_BASEPOINT_TABLE;
 
             b.iter(|| vartime::double_scalar_mult_basepoint(&s2, &P, &s1) );
         }
@@ -1047,8 +1046,8 @@ mod bench {
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
             // Create 10 points (by doing scalar mults)
-            let B = &constants::ED25519_BASEPOINT_POINT;
-            let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
+            let B = &constants::ED25519_BASEPOINT_TABLE;
+            let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
             b.iter(|| vartime::multiscalar_mult(&scalars, &points));
         }

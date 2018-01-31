@@ -395,7 +395,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(test)]
 mod test {
-    use constants::BASE_COMPRESSED_MONTGOMERY;
+    use constants::X25519_BASEPOINT_COMPRESSED;
     use traits::Identity;
     use super::*;
 
@@ -405,14 +405,14 @@ mod test {
     #[test]
     fn basepoint_to_montgomery() {
         assert_eq!(constants::ED25519_BASEPOINT_POINT.to_montgomery().compress(),
-                   BASE_COMPRESSED_MONTGOMERY);
+                   X25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test Montgomery conversion against the X25519 basepoint.
     #[test]
     fn basepoint_from_montgomery() {
-        assert_eq!(BASE_COMPRESSED_MONTGOMERY,
-                   constants::BASE_CMPRSSD.decompress().unwrap().to_montgomery().compress());
+        assert_eq!(X25519_BASEPOINT_COMPRESSED,
+                   constants::ED25519_BASEPOINT_COMPRESSED.decompress().unwrap().to_montgomery().compress());
     }
 
     /// If u = -1, then v^2 = u*(u^2+486662*u+1) = 486660.
@@ -438,8 +438,8 @@ mod test {
 
     #[test]
     fn projective_to_affine_roundtrips() {
-        assert_eq!(BASE_COMPRESSED_MONTGOMERY.decompress().compress(),
-                   BASE_COMPRESSED_MONTGOMERY);
+        assert_eq!(X25519_BASEPOINT_COMPRESSED.decompress().compress(),
+                   X25519_BASEPOINT_COMPRESSED);
 
     }
 
@@ -483,7 +483,7 @@ mod test {
     #[test]
     fn ladder_basepoint_times_two_matches_double() {
         let two: Scalar = Scalar::from_u64(2u64);
-        let result: MontgomeryPoint = &BASE_COMPRESSED_MONTGOMERY.decompress() * &two;
+        let result: MontgomeryPoint = &X25519_BASEPOINT_COMPRESSED.decompress() * &two;
         let expected: EdwardsPoint = constants::ED25519_BASEPOINT_POINT.double();
 
         assert_eq!(result.compress(), expected.to_montgomery().compress());
@@ -495,7 +495,7 @@ mod test {
 mod bench {
     use rand::OsRng;
     use constants::ED25519_BASEPOINT_TABLE;
-    use constants::BASE_COMPRESSED_MONTGOMERY;
+    use constants::X25519_BASEPOINT_COMPRESSED;
     use test::Bencher;
     use super::*;
 
@@ -512,12 +512,12 @@ mod bench {
 
     #[bench]
     fn montgomery_decompress(b: &mut Bencher) {
-        b.iter(| | BASE_COMPRESSED_MONTGOMERY.decompress());
+        b.iter(| | X25519_BASEPOINT_COMPRESSED.decompress());
     }
 
     #[bench]
     fn montgomery_compress(b: &mut Bencher) {
-        let p: MontgomeryPoint = BASE_COMPRESSED_MONTGOMERY.decompress();
+        let p: MontgomeryPoint = X25519_BASEPOINT_COMPRESSED.decompress();
 
         b.iter(| | p.compress());
     }

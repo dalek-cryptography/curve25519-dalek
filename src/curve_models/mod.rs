@@ -8,8 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! This module contains internal curve representations which are not part
-//! of the public API.
+//! Internal curve representations which are not part of the public API.
 //!
 //! # Curve representations
 //!

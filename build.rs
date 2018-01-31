@@ -80,11 +80,13 @@ use edwards::EdwardsBasepointTable;
 use curve_models::window::LookupTable;
 use curve_models::AffineNielsPoint;
 
-/// Table containing precomputed multiples of the basepoint `B = (x,4/5)`.
-///
-/// The table is defined so `constants::base[i][j-1] = j*(16^2i)*B`,
-/// for `0 ≤ i < 32`, `1 ≤ j < 9`.
-pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = {:?};
+
+/// Table containing precomputed multiples of the Ed25519 basepoint \\\\(B = (x, 4/5)\\\\).
+pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
+
+/// Inner constant, used to avoid filling the docs with precomputed points.
+#[doc(hidden)]
+pub const ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable = {:?};
     \n\n", &table).as_bytes()).unwrap();
 
     // Now generate AFFINE_ODD_MULTIPLES_OF_BASEPOINT

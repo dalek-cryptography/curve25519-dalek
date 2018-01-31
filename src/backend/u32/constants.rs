@@ -81,24 +81,34 @@ pub(crate) const RR: Scalar32 = Scalar32([ 0x0b5f9d12, 0x1e141b17, 0x158d7f3d, 0
                                            0x1972d781, 0x042feb7c, 0x1ceec73d, 0x1e184d1e,
                                            0x0005046d ]);
 
+/// The Ed25519 basepoint, as an `EdwardsPoint`.
+///
+/// This is called `_POINT` to distinguish it from
+/// `ED25519_BASEPOINT_TABLE`, which should be used for scalar
+/// multiplication (it's much faster).
+pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
+    X: FieldElement32([52811034, 25909283, 16144682, 17082669, 27570973, 30858332, 40966398, 8378388, 20764389, 8758491]),
+    Y: FieldElement32([40265304, 26843545, 13421772, 20132659, 26843545, 6710886, 53687091, 13421772, 40265318, 26843545]),
+    Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+    T: FieldElement32([28827043, 27438313, 39759291, 244362, 8635006, 11264893, 19351346, 13413597, 16611511, 27139452]),
+};
+
+/// The 8-torsion subgroup \\(\mathcal E [8]\\).
+///
+/// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
+/// the array is \\([i]P\\), where \\(P\\) is a point of order \\(8\\)
+/// generating \\(\mathcal E[8]\\).
+///
+/// Thus \\(\mathcal E[8]\\) is the points indexed by `0,2,4,6`, and
+/// \\(\mathcal E[2]\\) is the points indexed by `0,4`.
 /// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
 /// distinguish it from `_TABLE`, which should be used for scalar
 /// multiplication (it's much faster).
-pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint{
-        X: FieldElement32([52811034, 25909283, 16144682, 17082669, 27570973, 30858332, 40966398, 8378388, 20764389, 8758491]),
-        Y: FieldElement32([40265304, 26843545, 13421772, 20132659, 26843545, 6710886, 53687091, 13421772, 40265318, 26843545]),
-        Z: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
-        T: FieldElement32([28827043, 27438313, 39759291, 244362, 8635006, 11264893, 19351346, 13413597, 16611511, 27139452]),
-};
+pub const EIGHT_TORSION: [EdwardsPoint; 8] = EIGHT_TORSION_INNER_DOC_HIDDEN;
 
-/// The 8-torsion subgroup Ɛ[8].
-///
-/// In the case of Curve25519, it is cyclic; the `i`th element of the
-/// array is `i*P`, where `P` is a point of order 8 generating Ɛ[8].
-///
-/// Thus Ɛ[4] is the points indexed by 0,2,4,6 and Ɛ[2] is the points
-/// indexed by 0,4.
-pub const EIGHT_TORSION: [EdwardsPoint; 8] = [
+/// Inner item used to hide limb constants from cargo doc output.
+#[doc(hidden)]
+pub const EIGHT_TORSION_INNER_DOC_HIDDEN: [EdwardsPoint; 8] = [
     EdwardsPoint{
         X: FieldElement32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
         Y: FieldElement32([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]),

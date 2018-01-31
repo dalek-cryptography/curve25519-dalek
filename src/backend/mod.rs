@@ -8,8 +8,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! This module contains "backends" that contain different
-//! implementations of common code for different architectures.
+//! Pluggable implementations for different architectures.
 //!
 //! The naming of the `u32` and `u64` modules is somewhat unfortunate,
 //! since these are also the names of primitive types.  Since types have

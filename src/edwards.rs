@@ -9,6 +9,77 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Group operations for Curve25519, in Edwards form.
+//!
+//! ## Encoding and Decoding
+//!
+//! Encoding is done by converting to and from a `CompressedEdwardsY`
+//! struct, which is a typed wrapper around `[u8; 32]`.
+//!
+//! ## Equality Testing
+//!
+//! The `EdwardsPoint` struct implements the `subtle::Equal` trait for
+//! constant-time equality checking, and the Rust `Eq` trait for
+//! variable-time equality checking.
+//!
+//! ## Cofactor-related functions
+//!
+//! The order of the group of points on the curve \\(\mathcal E\\)
+//! is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
+//! E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
+//! subgroup \\( \mathcal E[8] \\) consists of eight points of small
+//! order.  Technically, all of \\(\mathcal E\\) is torsion, but we
+//! use the word only to refer to the small \\(\mathcal E[8]\\) part, not
+//! the large prime-order \\(\mathcal E[\ell]\\) part.
+//!
+//! To test if a point is in \\( \mathcal E[8] \\), use
+//! `EdwardsPoint::is_small_order()`.
+//!
+//! To test if a point is in \\( \mathcal E[\ell] \\), use
+//! `EdwardsPoint::is_torsion_free()`.
+//!
+//! To multiply by the cofactor, use `EdwardsPoint::mult_by_cofactor()`.
+//!
+//! To avoid dealing with cofactors entirely, consider using Ristretto.
+//!
+//! ## Scalars
+//!
+//! Scalars are represented by the `Scalar` struct.  To construct a scalar with a specific bit
+//! pattern, see `Scalar::from_bits()`.
+//!
+//! ## Scalar Multiplication
+//!
+//! Scalar multiplication on Edwards points is provided by:
+//!
+//! * the `*` operator between a `Scalar` and a `EdwardsPoint`, which
+//! performs constant-time variable-base scalar multiplication;
+//!
+//! * the `*` operator between a `Scalar` and a
+//! `EdwardsBasepointTable`, which performs constant-time fixed-base
+//! scalar multiplication;
+//!
+//! * the `edwards::multiscalar_mult` function, which performs
+//! constant-time variable-base multiscalar multiplication;
+//!
+//! * the `edwards::vartime::multiscalar_mult` function, which
+//! performs variable-time variable-base multiscalar multiplication.
+//!
+//! ## Implementation
+//!
+//! The Edwards arithmetic is implemented using the “extended twisted
+//! coordinates” of Hisil, Wong, Carter, and Dawson, and the
+//! corresponding complete formulas.  For more details,
+//! see the `curve_models` submodule of the internal documentation.
+//!
+//! ## Validity Checking
+//!
+//! There is no function for checking whether a point is valid.
+//! Instead, the `EdwardsPoint` struct is guaranteed to hold a valid
+//! point on the curve.
+//!
+//! We use the Rust type system to make invalid points
+//! unrepresentable: `EdwardsPoint` objects can only be created via
+//! successful decompression of a compressed point, or else by
+//! operations on other (valid) `EdwardsPoint`s.
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -690,14 +761,14 @@ impl EdwardsBasepointTable {
 }
 
 impl EdwardsPoint {
-    /// Multiply by the cofactor: compute `8 * self`.
+    /// Multiply by the cofactor: return \\([8]P\\).
     pub fn mult_by_cofactor(&self) -> EdwardsPoint {
         self.mult_by_pow_2(3)
     }
 
-    /// Compute `2^k * self` by successive doublings.
-    /// Requires `k > 0`.
+    /// Compute \\([2\^k] P \\) by successive doublings. Requires \\( k > 0 \\).
     pub(crate) fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
+        debug_assert!( k > 0 );
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
         for _ in 0..(k-1) {
@@ -709,22 +780,59 @@ impl EdwardsPoint {
 
     /// Determine if this point is of small order.
     ///
-    /// The order of the group of points on the curve \\(\mathcal E\\)
-    /// is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
-    /// E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
-    /// subgroup \\( \mathcal E[8] \\) consists of eight points of small
-    /// order.  (Technically all of \\(\mathcal E\\) is torsion, but we
-    /// use the word only to refer to the \\(\mathcal E[8]\\) part, not
-    /// the prime-order subgroup \\(\mathcal E[\ell]\\).
+    /// # Return
     ///
-    /// For more information on cofactors and the group structure, see
-    /// the internal `curve25519-dalek` documentation on Ristretto.
+    /// * `true` if `self` is in the torsion subgroup \\( \mathcal E[8] \\);
+    /// * `false` if `self` is not in the torsion subgroup \\( \mathcal E[8] \\).
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::constants;
+    ///
+    /// // Generator of the prime-order subgroup
+    /// let P = constants::ED25519_BASEPOINT_POINT;
+    /// // Generator of the torsion subgroup
+    /// let Q = constants::EIGHT_TORSION[1];
+    ///
+    /// // P has large order
+    /// assert_eq!(P.is_small_order(), false);
+    ///
+    /// // Q has small order
+    /// assert_eq!(Q.is_small_order(), true);
+    /// ```
+    pub fn is_small_order(&self) -> bool {
+        self.mult_by_cofactor().is_identity()
+    }
+
+    /// Determine if this point is “torsion-free”, i.e., is contained in
+    /// the prime-order subgroup.
     ///
     /// # Return
     ///
-    /// True if `self` is of small order; false otherwise.
-    pub fn is_small_order(&self) -> bool {
-        self.mult_by_cofactor().is_identity()
+    /// * `true` if `self` has zero torsion component and is in the
+    /// prime-order subgroup;
+    /// * `false` if `self` has a nonzero torsion component and is not
+    /// in the prime-order subgroup.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::constants;
+    ///
+    /// // Generator of the prime-order subgroup
+    /// let P = constants::ED25519_BASEPOINT_POINT;
+    /// // Generator of the torsion subgroup
+    /// let Q = constants::EIGHT_TORSION[1];
+    ///
+    /// // P is torsion-free
+    /// assert_eq!(P.is_torsion_free(), true);
+    ///
+    /// // P + Q is not torsion-free
+    /// assert_eq!((P+Q).is_torsion_free(), false);
+    /// ```
+    pub fn is_torsion_free(&self) -> bool {
+        (self * &constants::BASEPOINT_ORDER).is_identity()
     }
 }
 
@@ -989,18 +1097,18 @@ mod test {
     #[test]
     fn basepoint_decompression_compression() {
         let base_X = FieldElement::from_bytes(&BASE_X_COORD_BYTES);
-        let bp = constants::BASE_CMPRSSD.decompress().unwrap();
+        let bp = constants::ED25519_BASEPOINT_COMPRESSED.decompress().unwrap();
         assert!(bp.is_valid());
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
-        assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test sign handling in decompression
     #[test]
     fn decompression_sign_handling() {
         // Manually set the high bit of the last byte to flip the sign
-        let mut minus_basepoint_bytes = constants::BASE_CMPRSSD.as_bytes().clone();
+        let mut minus_basepoint_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes().clone();
         minus_basepoint_bytes[31] |= 1 << 7;
         let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
                               .decompress().unwrap();
@@ -1018,7 +1126,7 @@ mod test {
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
-        assert_eq!(compressed, constants::BASE_CMPRSSD);
+        assert_eq!(compressed, constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
@@ -1026,7 +1134,7 @@ mod test {
     #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
-        assert_eq!(bp.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test `impl Add<EdwardsPoint> for EdwardsPoint`
@@ -1139,7 +1247,7 @@ mod test {
     fn basepoint_projective_extended_round_trip() {
         assert_eq!(constants::ED25519_BASEPOINT_POINT
                        .to_projective().to_extended().compress(),
-                   constants::BASE_CMPRSSD);
+                   constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     /// Test computing 16*basepoint vs mult_by_pow_2(4)
@@ -1262,7 +1370,7 @@ mod test {
     fn serde_cbor_basepoint_roundtrip() {
         let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
         let parsed: EdwardsPoint = serde_cbor::from_slice(&output).unwrap();
-        assert_eq!(parsed.compress(), constants::BASE_CMPRSSD);
+        assert_eq!(parsed.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
     #[test]
@@ -1291,7 +1399,7 @@ mod bench {
 
     #[bench]
     fn edwards_decompress(b: &mut Bencher) {
-        let B = &constants::BASE_CMPRSSD;
+        let B = &constants::ED25519_BASEPOINT_COMPRESSED;
         b.iter(|| B.decompress().unwrap());
     }
 

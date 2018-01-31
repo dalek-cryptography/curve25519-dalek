@@ -39,7 +39,7 @@ use scalar::Scalar;
 // XXX Move these to a common "group" module?  At the same time, we should
 // XXX probably make a `trait Group` once const generics are implemented in
 // XXX Rust. —isis
-// 
+//
 // XXX I put these in a `traits` module for now - hdevalence
 use traits::{Identity, ValidityCheck};
 

@@ -200,16 +200,16 @@ impl ExtendedPoint {
             // See discussion of bounds in the module-level documentation.
             //
             // We want to compute
-            // 
-            //    + | S1 | S1 | S1 | S1 |  
-            //    + | S2 |    |    | S2 |  
-            //    + |    |    | S3 |    |  
-            //    + |    |    | S3 |    |  
+            //
+            //    + | S1 | S1 | S1 | S1 |
+            //    + | S2 |    |    | S2 |
+            //    + |    |    | S3 |    |
+            //    + |    |    | S3 |    |
             //    + |    |    |    |-S4 |
-            //    + |    | 2p | 2p |    |  
-            //    - |    | S2 | S2 |    |  
-            //    =======================  
-            //        S5   S6   S8   S9    
+            //    + |    | 2p | 2p |    |
+            //    - |    | S2 | S2 |    |
+            //    =======================
+            //        S5   S6   S8   S9
             //
             for i in 0..5 {
                 let zero = i32x8::splat(0);
@@ -908,7 +908,7 @@ mod test {
         let P2 = &B * &s1;
 
         let R = &(&P1 * &s1) + &(&P2 * &s2);
-        
+
         let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
         assert_eq!(edwards::EdwardsPoint::from(R).compress(),
@@ -928,7 +928,7 @@ mod test {
             let P2 = &B * &s1;
 
             let R = &(&P1 * &s1) + &(&P2 * &s2);
-            
+
             let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
 
             assert_eq!(edwards::EdwardsPoint::from(R).compress(),

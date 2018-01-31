@@ -110,7 +110,7 @@ use scalar::Scalar;
 
 use montgomery::MontgomeryPoint;
 use curve_models::ProjectivePoint;
-use curve_models::CompletedPoint; 
+use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
 
@@ -315,7 +315,7 @@ impl EdwardsPoint {
     /// Convert the representation of this point from extended
     /// coordinates to projective coordinates.
     ///
-    /// Free. 
+    /// Free.
     pub(crate) fn to_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: self.X,
@@ -348,7 +348,7 @@ impl EdwardsPoint {
     // also to rewrite it to use tex
     //
     // # Implementation notes
-    // 
+    //
     // Taking the Montgomery curve equation in affine coordinates:
     //
     //     E_(A,B) = Bv² = u³ + Au² + u   <span style="float: right">(1)</span>
@@ -583,7 +583,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 ///
 /// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
-/// 
+///
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
@@ -600,7 +600,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
     // Otherwise, proceed as normal:
     #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
         //assert_eq!(scalars.len(), points.len());
-        
+
         use clear_on_drop::ClearOnDrop;
 
         let lookup_tables_vec: Vec<_> = points.into_iter()
@@ -668,7 +668,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
 pub struct EdwardsBasepointTable(pub(crate) [LookupTable<AffineNielsPoint>; 32]);
 
 impl EdwardsBasepointTable {
-    /// The computation uses Pippeneger's algorithm, as described on 
+    /// The computation uses Pippeneger's algorithm, as described on
     /// page 13 of the Ed25519 paper.  Write the scalar \\(a\\) in radix \\(16\\) with
     /// coefficients in \\([-8,8)\\), i.e.,
     /// $$

@@ -69,7 +69,7 @@ impl FieldElement32x4 {
             out[2].0[i] = c_2i + (c_2i_1 << 26);
             out[3].0[i] = d_2i + (d_2i_1 << 26);
         }
-        
+
         out
     }
 
@@ -280,7 +280,7 @@ impl FieldElement32x4 {
         // c98 = (c9, c9, c8, c8, c9, c9, c8, c8)
         //
         let c9_19: u32x8;
-        unsafe { 
+        unsafe {
             use stdsimd::vendor::_mm256_mul_epu32;
             use stdsimd::vendor::_mm256_shuffle_epi32;
             let c9_spread: u32x8 = _mm256_shuffle_epi32(c98.into(), 0b11_01_10_00).into();
@@ -318,7 +318,7 @@ impl FieldElement32x4 {
         // Since z[3] < 2^64, c < 2^(64-25) = 2^39,
         // so    z[4] < 2^26 + 2^39 < 2^39.0002
         carry(&mut z, 4); carry(&mut z, 8);
-        // Now z[4] < 2^26 
+        // Now z[4] < 2^26
         // and z[5] < 2^25 + 2^13.0002 < 2^25.0004 (good enough)
 
         // Last carry has a multiplication by 19.  In the serial case we
@@ -402,7 +402,7 @@ impl FieldElement32x4 {
             use stdsimd::vendor::_mm256_mul_epu32;
             unsafe { _mm256_mul_epu32(x,y) }
         }
-        
+
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
             use stdsimd::vendor::_mm256_mul_epu32;
@@ -464,7 +464,7 @@ impl FieldElement32x4 {
         //                  > 4485585228861014016
         //
         // So these multiples of p are big enough to avoid underflow
-        // in subtraction, and small enough to fit within u64 
+        // in subtraction, and small enough to fit within u64
         // with room for a carry.
 
         let low__p37 = u64x4::splat(0x3ffffed << 37);
@@ -481,7 +481,7 @@ impl FieldElement32x4 {
         z7 = mask_neg(z7, odd__p37, neg_mask);
         z8 = mask_neg(z8, even_p37, neg_mask);
         z9 = mask_neg(z9, odd__p37, neg_mask);
-        
+
         FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
@@ -495,7 +495,7 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
             use stdsimd::vendor::_mm256_mul_epu32;
             unsafe { _mm256_mul_epu32(x,y) }
         }
-        
+
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
             use stdsimd::vendor::_mm256_mul_epu32;
@@ -519,7 +519,7 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
         let y1_19 = m_lo(v19, y1); // This fits in a u32
         let y2_19 = m_lo(v19, y2); // iff 26 + b + lg(19) < 32
         let y3_19 = m_lo(v19, y3); // if  b < 32 - 26 - 4.248 = 1.752
-        let y4_19 = m_lo(v19, y4); 
+        let y4_19 = m_lo(v19, y4);
         let y5_19 = m_lo(v19, y5); // below, b<2.5: this is a bottleneck,
         let y6_19 = m_lo(v19, y6); // could be avoided by promoting to
         let y7_19 = m_lo(v19, y7); // u64 here instead of in m()

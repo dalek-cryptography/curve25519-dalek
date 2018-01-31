@@ -190,7 +190,7 @@ mod notes {
 //! These correspond to the affine model
 //!
 //! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
-//! 
+//!
 //! In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
 //! with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$ (For more
 //! details on this model, see the documentation for the `edwards`
@@ -231,7 +231,7 @@ mod notes {
 //! \cong \mathbb Z / 8\\), we have \\(\[2\](\mathcal E[8]) = \mathcal
 //! E[4]\\), \\(\mathcal E[4] \cong \mathbb Z / 4
 //! \\) and \\( \mathcal E[2] \cong \mathbb Z / 2\\).  In particular
-//! this tells us that the group 
+//! this tells us that the group
 //! $$
 //! \frac{\[2\](\mathcal E)}{\mathcal E[4]}
 //! $$
@@ -272,16 +272,16 @@ mod notes {
 //! The Decaf paper recalls that, for a group \\( G \\) with normal
 //! subgroup \\(G' \leq G\\), a group homomorphism \\( \phi : G
 //! \rightarrow H \\) induces a homomorphism
-//! $$ 
+//! $$
 //! \bar{\phi} : \frac G {G'} \longrightarrow \frac {\phi(G)}{\phi(G')} \leq \frac {H} {\phi(G')},
-//! $$ 
+//! $$
 //! and that the induced homomorphism \\(\bar{\phi}\\) is injective if
 //! \\( \ker \phi \leq G' \\).  In our context, the kernel of
 //! \\(\theta\\) is \\( \\{(0, \pm 1)\\} \leq \mathcal J[2] \\),
 //! so \\(\theta\\) gives an isomorphism
 //! $$
-//! \frac {\mathcal J} {\mathcal J[2]} 
-//! \cong 
+//! \frac {\mathcal J} {\mathcal J[2]}
+//! \cong
 //! \frac {\theta(\mathcal J)} {\theta(\mathcal J[2])}
 //! \cong
 //! \frac {\[2\](\mathcal E)} {\mathcal E[2]}.
@@ -313,26 +313,26 @@ mod notes {
 //!    the point by setting \\( (x,y) \gets (x,y) + P_4 \\), where
 //!    \\(P_4\\) is a \\(4\\)-torsion point.
 //!
-//! 2. Check if \\(x\\) is negative or \\( y = -1 \\); if so, set 
+//! 2. Check if \\(x\\) is negative or \\( y = -1 \\); if so, set
 //!    \\( (x,y) \gets (x,y) + (0,-1) = (-x, -y) \\).
 //!
 //! 3. Compute $$ s = +\sqrt {(-a) \frac {1 - y} {1 + y} }, $$ choosing
 //!    the positive square root.
 //!
-//! The output is then the (canonical) byte-encoding of \\(s\\).  
+//! The output is then the (canonical) byte-encoding of \\(s\\).
 //!
 //! If \\(\mathcal E\\) has cofactor \\(4\\), we skip the first step,
 //! since our input already represents a coset in
 //! \\( \[2\](\mathcal E) / \mathcal E[2] \\).
-//! 
+//!
 //! To see that this corresponds to the encoding procedure above, notice
 //! that the first step lifts from \\( \mathcal E / \mathcal E[4] \\) to
 //! \\(\mathcal E / \mathcal E[2]\\).  To understand steps 2 and 3,
-//! notice that the \\(y\\)-coordinate of \\(\theta(s,t)\\) is 
+//! notice that the \\(y\\)-coordinate of \\(\theta(s,t)\\) is
 //! $$
 //! y = \frac {1 + as\^2}{1 - as\^2},
 //! $$
-//! so that the \\(s\\)-coordinate of \\(\theta\^{-1}(x,y)\\) has 
+//! so that the \\(s\\)-coordinate of \\(\theta\^{-1}(x,y)\\) has
 //! $$
 //! s\^2 = (-a)\frac {1-y}{1+y}.
 //! $$
@@ -387,7 +387,7 @@ mod notes {
 //! \\) requires an inverse square root.
 //! As inversions are expensive, we'd like to be able to do this
 //! whole computation with only one inverse square root, by batching
-//! together the inversion and the inverse square root.  
+//! together the inversion and the inverse square root.
 //!
 //! However, it is not obvious how to do this, since the inverse square
 //! root computation depends on the affine coordinates (which select the
@@ -403,7 +403,7 @@ mod notes {
 //! $$
 //!
 //! Here \\( (X:Y:Z:T) \\) are the coordinates of the distinguished
-//! representative of the coset.  
+//! representative of the coset.
 //! Write \\( (X\_0 : Y\_0 : Z\_0 : T\_0) \\)
 //! for the coordinates of the initial representative.  Then the
 //! torquing procedure in step 1 replaces \\( (X\_0 : Y\_0 : Z\_0 :
@@ -427,9 +427,9 @@ mod notes {
 //! $$
 //! (a-d)X\^2Y\^2 = Z\^4 - aZ\^2X\^2 - Z\^2Y\^2 + aX\^2Y\^2 = (Z\^2 - Y\^2)(Z\^2 + X\^2).
 //! $$
-//! 
+//!
 //! The encoding procedure is as follows:
-//! 
+//!
 //! 1. \\(u\_1 \gets (Z\_0 + Y\_0)(Z\_0 - Y\_0) = Z\_0\^2 - Y\_0\^2 \\)
 //! 2. \\(u\_2 \gets X\_0 Y\_0 \\)
 //! 3. \\(I \gets \mathrm{invsqrt}(u\_1 u\_2\^2) = 1/\sqrt{X\_0\^2 Y\_0\^2 (Z\_0\^2 - Y\_0\^2)} \\)
@@ -708,18 +708,18 @@ impl RistrettoPoint {
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let mut rng = OsRng::new().unwrap();
-    /// let points: Vec<RistrettoPoint> = 
+    /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
     /// let compressed = RistrettoPoint::double_and_compress_batch(&points);
-    /// 
+    ///
     /// for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
     ///     assert_eq!(*P2_compressed, (P + P).compress());
     /// }
     /// # }
     /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto> 
+    pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
         where I: IntoIterator<Item = &'a RistrettoPoint>
     {
         #[derive(Copy, Clone, Debug)]
@@ -787,7 +787,7 @@ impl RistrettoPoint {
             let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
 
             g.conditional_negate(negcheck2);
-            
+
             let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
 
             let s_is_negative = s.is_negative();
@@ -819,7 +819,7 @@ impl RistrettoPoint {
 
         let r = i * &r_0.square();
 
-        // D = (dr -a)(ar-d) = -(dr+1)(r+d) 
+        // D = (dr -a)(ar-d) = -(dr+1)(r+d)
         let D = -&( &(&(d * &r) + &one) * &(&r + d) );
         // N = a(d-a)(d+a)(r+1) = -(r+1)(d^2 -1)
         let d_sq = d.square();
@@ -957,7 +957,7 @@ impl Equal for RistrettoPoint {
         let Y1X2 = &self.0.Y * &other.0.X;
         let X1X2 = &self.0.X * &other.0.X;
         let Y1Y2 = &self.0.Y * &other.0.Y;
-        
+
         X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
     }
 }
@@ -1379,11 +1379,11 @@ mod test {
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng::new().unwrap();
 
-        let points: Vec<RistrettoPoint> = 
+        let points: Vec<RistrettoPoint> =
             (0..1024).map(|_| RistrettoPoint::random(&mut rng)).collect();
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
-        
+
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
             assert_eq!(*P2_compressed, (P + P).compress());
         }
@@ -1431,7 +1431,7 @@ mod bench {
     fn double_and_compress_n_random_points(n: usize, b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
 
-        let points: Vec<RistrettoPoint> = 
+        let points: Vec<RistrettoPoint> =
             (0..n).map(|_| RistrettoPoint::random(&mut rng)).collect();
 
         b.iter(|| RistrettoPoint::double_and_compress_batch(&points) );

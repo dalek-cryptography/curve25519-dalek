@@ -23,7 +23,7 @@ use traits::Identity;
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
 ///
-/// The computation of \\( xP \\) is done in constant time by the `select` function.  
+/// The computation of \\( xP \\) is done in constant time by the `select` function.
 ///
 /// Since `LookupTable` does not implement `Index`, it's more difficult
 /// to accidentally use the table directly.  Unfortunately the table is
@@ -52,7 +52,7 @@ use clear_on_drop::clear::ZeroSafe;
 /// XXX is this a good compromise?
 unsafe impl<T> ZeroSafe for LookupTable<T> {}
 
-impl<T> LookupTable<T> 
+impl<T> LookupTable<T>
 where T: Identity + ConditionallyAssignable + ConditionallyNegatable
 {
     /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.

@@ -24,7 +24,7 @@
 #![cfg_attr(feature = "nightly", deny(missing_docs))]
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
-#![doc(html_logo_url = "https://user-images.githubusercontent.com/797/34898472-83686016-f7f3-11e7-967b-24b2aadd623a.png")]
+#![doc(html_logo_url = "https://github.com/dalek-cryptography/curve25519-dalek/blob/develop/dalek-logo-clear.png?raw=true")]
 
 //------------------------------------------------------------------------
 // External dependencies:

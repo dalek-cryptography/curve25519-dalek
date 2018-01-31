@@ -4,7 +4,7 @@
 <img
  width="33%"
  align="right"
- src="https://user-images.githubusercontent.com/797/34898472-83686016-f7f3-11e7-967b-24b2aadd623a.png"/>
+ src="https://raw.githubusercontent.com/dalek-cryptography/curve25519-dalek/develop/dalek-logo-clear.png"/>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
 

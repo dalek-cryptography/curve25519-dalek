@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"

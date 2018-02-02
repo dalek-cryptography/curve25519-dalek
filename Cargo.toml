@@ -27,6 +27,10 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 [dev-dependencies]
 sha2 = "0.7"
 serde_cbor = "0.6"
+# The following are used for the integration tests in the tests/ directory, in order
+# to automatically detect API breakage.
+ed25519-dalek = { version = "*" }
+x25519-dalek = { version = "*", features = ["std"], default-features = false }
 
 # Note: we generate precomputed tables by building the crate twice: once as
 # part of build.rs, and then once "for real".

@@ -28,9 +28,9 @@
 #![allow(non_snake_case)]
 
 use edwards::CompressedEdwardsY;
-use ristretto::RistrettoPoint;
-
 use montgomery::CompressedMontgomeryU;
+use ristretto::RistrettoPoint;
+use ristretto::CompressedRistretto;
 use scalar::Scalar;
 
 #[cfg(feature="radix_51")]
@@ -57,6 +57,12 @@ pub const X25519_BASEPOINT_COMPRESSED: CompressedMontgomeryU =
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
+/// The Ristretto basepoint, in `CompressedRistretto` format.
+pub const RISTRETTO_BASEPOINT_COMPRESSED: CompressedRistretto =
+    CompressedRistretto([0xe2, 0xf2, 0xae, 0x0a, 0x6a, 0xbc, 0x4e, 0x71,
+                         0xa8, 0x84, 0xa9, 0x61, 0xc5, 0x00, 0x51, 0x5f,
+                         0x58, 0xe3, 0x0b, 0x6a, 0xa5, 0x82, 0xdd, 0x8d,
+                         0xb6, 0xa6, 0x59, 0x45, 0xe0, 0x8d, 0x2d, 0x76]);
 
 /// The Ristretto basepoint, as a `RistrettoPoint`.
 ///

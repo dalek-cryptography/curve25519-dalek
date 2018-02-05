@@ -287,7 +287,7 @@ impl ConditionallyAssignable for EdwardsPoint {
 }
 
 // ------------------------------------------------------------------------
-// Constant-time Equality
+// Equality
 // ------------------------------------------------------------------------
 
 impl Equal for EdwardsPoint {
@@ -296,6 +296,14 @@ impl Equal for EdwardsPoint {
                      other.compress().as_bytes())
     }
 }
+
+impl PartialEq for EdwardsPoint {
+    fn eq(&self, other: &EdwardsPoint) -> bool {
+        self.ct_eq(other) == 1u8
+    }
+}
+
+impl Eq for EdwardsPoint {}
 
 // ------------------------------------------------------------------------
 // Point conversions
@@ -343,71 +351,16 @@ impl EdwardsPoint {
     ///
     /// Note that this is a one-way conversion, since the Montgomery
     /// model does not retain sign information.
-    ///
-    // XXX need to figure out how to keep this in internal docs, and
-    // also to rewrite it to use tex
-    //
-    // # Implementation notes
-    //
-    // Taking the Montgomery curve equation in affine coordinates:
-    //
-    //     E_(A,B) = Bv² = u³ + Au² + u   <span style="float: right">(1)</span>
-    //
-    // and given its relations to the coordinates of the Edwards model:
-    //
-    //     u = (1+y)/(1-y)                <span style="float: right">(2)</span>
-    //     v = (λu)/(x)
-    //
-    // Converting from affine to projective coordinates in the Montgomery
-    // model, we arrive at:
-    //
-    //     u = (Z+Y)/(Z-Y)                <span style="float: right">(3)</span>
-    //     v = λ * ((Z+Y)/(Z-Y)) * (Z/X)
-    //
-    // The transition between affine and projective is given by
-    //
-    //      u → U/W                       <span style="float: right">(4)</span>
-    //      v → V/W
-    //
-    // thus the Montgomery curve equation (1) becomes
-    //
-    //      E_(A,B) : BV²W = U³ + AU²W + UW² ⊆ 𝗣^2  <span style="float: right">(5)</span>
-    //
-    // Here, again, to differentiate from points in the twisted Edwards model, we
-    // call the point `(x,y)` in affine coordinates `(u,v)` and similarly in projective
-    // space we use `(U:V:W)`.  However, since (as per Montgomery's original work) the
-    // v-coordinate is not required to perform scalar multiplication, we merely
-    // use `(U:W)`.
-    //
-    // Therefore, the direct translation between projective Montgomery points
-    // and projective twisted Edwards points is
-    //
-    //      (U:W) = (Z+Y:Z-Y)             <span style="float: right">(6)</span>
-    //
-    // Note, however, that there appears to be an exception where `Z=Y`,
-    // since—from equation 2—this would imply that `y=1` (thus causing the
-    // denominator to be zero).  If this is the case, then it follows from the
-    // twisted Edwards curve equation
-    //
-    //      -x² + y² = 1 + dx²y²          <span style="float: right">(7)</span>
-    //
-    // that
-    //
-    //      -x² + 1 = 1 + dx²
-    //
-    // and, assuming that `d ≠ -1`,
-    //
-    //      -x² = x²
-    //       x  = 0
-    //
-    // Therefore, the only valid point with `y=1` is the twisted Edwards
-    // identity point, which correctly becomes `(1:0)`, that is, the identity,
-    // in the Montgomery model.
     pub fn to_montgomery(&self) -> MontgomeryPoint {
-        MontgomeryPoint{
-            U: &self.Z + &self.Y,
-            W: &self.Z - &self.Y,
-        }
+        // We have u = (1+y)/(1-y) = (Z+Y)/(Z-Y).
+        //
+        // The denominator is zero only when y=1, the identity point of
+        // the Edwards curve.  Since 0.invert() = 0, in this case we
+        // compute u = 0, the identity point of the Montgomery line.
+        let U = &self.Z + &self.Y;
+        let W = &self.Z - &self.Y;
+        let u = &U * &W.invert();
+        MontgomeryPoint(u.to_bytes())
     }
 
     /// Compress this point to `CompressedEdwardsY` format.

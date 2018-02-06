@@ -57,7 +57,7 @@
 //! Here \\( k = 2d \\) is a curve constant.
 //!
 //! # Implementation strategy
-//! 
+//!
 //! For a software implementation, each "processor"'s operations are too
 //! low-latency to parallelize across threads.  However, the main cost
 //! is in the multiplication and squaring steps, which share a single
@@ -74,7 +74,7 @@
 //! The addition and subtraction steps are done largely serially, using
 //! masking to handle the instruction divergence.  The remaining
 //! obstacle to parallelism is the multiplication by the curve constant
-//! \\(k = 2d\\).  In the Curve25519 case, this is 
+//! \\(k = 2d\\).  In the Curve25519 case, this is
 //!
 //! $$ k \equiv 2 \frac{-121665}{121666} \\ \equiv 16295367250680780974490674513165176452449235426866156013048779062215315747161 \pmod p. $$
 //!
@@ -110,7 +110,7 @@
 //! analyzes a 2-wide variant of the Montgomery ladder (for comparison
 //! with parallel Edwards formulas); this strategy was used in 2015 by
 //! Tung Chou's `sandy2x` implementation, which used a 2-wide field
-//! implementation in 128-bit vector registers.  
+//! implementation in 128-bit vector registers.
 //!
 //! Curiously, however, although the [`sandy2x` paper][sandy2x] also
 //! implements Edwards arithmetic, and cites the HWCD paper, it doesn't
@@ -133,11 +133,11 @@
 //! This optimization is not compatible with the parallel formulas, which are
 //! therefore slightly less efficient when counting the total number of
 //! field multiplications and squarings.  In particular, vectorized doublings
-//! are less efficient than serial doublings.  
+//! are less efficient than serial doublings.
 //! In addition, the parallel formulas can only use a \\( 32 \times 32
 //! \rightarrow 64 \\)-bit integer multiplier, so the speedup from
 //! vectorization must overcome the disadvantage of losing the \\( 64
-//! \times 64 \rightarrow 128\\)-bit (serial) integer multiplier. 
+//! \times 64 \rightarrow 128\\)-bit (serial) integer multiplier.
 //!
 //! # Tweaked formulas
 //!
@@ -156,7 +156,7 @@
 //! S\_0 &\gets Y\_1 - X\_1 \\\\
 //! S\_1 &\gets Y\_1 + X\_1 \\\\
 //! S\_2 &\gets Y\_2 - X\_2 \\\\
-//! S\_3 &\gets Y\_2 + X\_2 
+//! S\_3 &\gets Y\_2 + X\_2
 //! \end{aligned}
 //! $$
 //!
@@ -165,7 +165,7 @@
 //! S\_4 &\gets S\_0 S\_2 \\\\
 //! S\_5 &\gets S\_1 S\_3 \\\\
 //! S\_6 &\gets Z\_1 Z\_2 \\\\
-//! S\_7 &\gets T\_1 T\_2 
+//! S\_7 &\gets T\_1 T\_2
 //! \end{aligned}
 //! $$
 //!
@@ -177,7 +177,7 @@
 //! S\_{11} &\gets S\_7 \cdot -2 \cdot 121665
 //! \end{aligned}
 //! $$
-//! 
+//!
 //! $$
 //! \begin{aligned}
 //! S\_{12} &\gets S\_9 - S\_8 \\\\
@@ -205,7 +205,7 @@
 //! $$
 //! \begin{aligned}
 //! S\_2 &\gets Y\_2 - X\_2 \\\\
-//! S\_3 &\gets Y\_2 + X\_2 
+//! S\_3 &\gets Y\_2 + X\_2
 //! \end{aligned}
 //! $$
 //!
@@ -226,7 +226,7 @@
 //! multiplications of small constants instead of a serial computation
 //! of multiplication by a large constant.
 //!
-//! To perform readdition of \\(P_1 = (X_1 : Y_1 : Z_1 : T_1) \\) and 
+//! To perform readdition of \\(P_1 = (X_1 : Y_1 : Z_1 : T_1) \\) and
 //! \\(P_2 = (S\_2', S\_3', Z\_2', T\_2') \\), we compute
 //!
 //! $$
@@ -244,7 +244,7 @@
 //! S\_{11} &\gets T\_1 T\_2'
 //! \end{aligned}
 //! $$
-//! 
+//!
 //! $$
 //! \begin{aligned}
 //! S\_{12} &\gets S\_9 - S\_8 \\\\
@@ -278,7 +278,7 @@
 //! S\_1 &\gets X\_1\^2 \\\\
 //! S\_2 &\gets Y\_1\^2 \\\\
 //! S\_3 &\gets Z\_1\^2 \\\\
-//! S\_4 &\gets S\_0\^2 
+//! S\_4 &\gets S\_0\^2
 //! \end{aligned}
 //! $$
 //!
@@ -297,7 +297,7 @@
 //! X\_3 &\gets S\_8 S\_9 \\\\
 //! Y\_3 &\gets S\_5 S\_6 \\\\
 //! Z\_3 &\gets S\_8 S\_6 \\\\
-//! T\_3 &\gets S\_5 S\_9 
+//! T\_3 &\gets S\_5 S\_9
 //! \end{aligned}
 //! $$
 //!
@@ -331,11 +331,11 @@
 //! +&      & 2p   & 2p   & 2p   \\\\
 //! -&      & S\_2 & S\_2 &      \\\\
 //! -&      &      &      & S\_4 \\\\
-//! =& S\_5 & S\_6 & S\_8 & S\_9 
+//! =& S\_5 & S\_6 & S\_8 & S\_9
 //! \end{matrix}
 //! $$
 //!
-//! results in bit-excesses \\( (1.00, 1.59, 2.33, 2.00)\\) for 
+//! results in bit-excesses \\( (1.00, 1.59, 2.33, 2.00)\\) for
 //! \\( (S\_5, S\_6, S\_8, S\_9 ) \\).  The products we want to compute
 //! are then
 //!
@@ -344,7 +344,7 @@
 //! X\_3 &\gets S\_8 S\_9 \leftrightarrow (2.33, 2.00) \\\\
 //! Y\_3 &\gets S\_5 S\_6 \leftrightarrow (1.00, 1.59) \\\\
 //! Z\_3 &\gets S\_8 S\_6 \leftrightarrow (2.33, 1.59) \\\\
-//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 2.00) 
+//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 2.00)
 //! \end{aligned}
 //! $$
 //!
@@ -361,20 +361,20 @@
 //! +&      &      &      & S\_4' \\\\
 //! +&      & 2p   & 2p   &      \\\\
 //! -&      & S\_2 & S\_2 &      \\\\
-//! =& S\_5 & S\_6 & S\_8 & S\_9 
+//! =& S\_5 & S\_6 & S\_8 & S\_9
 //! \end{matrix}
 //! $$
 //!
-//! resulting in bit-excesses \\( (1.00, 1.59, 2.33, 1.59)\\) for 
+//! resulting in bit-excesses \\( (1.00, 1.59, 2.33, 1.59)\\) for
 //! \\( (S\_5, S\_6, S\_8, S\_9 ) \\).  The products we want to compute
-//! are then 
+//! are then
 //!
 //! $$
 //! \begin{aligned}
 //! X\_3 &\gets S\_8 S\_9 \leftrightarrow (2.33, 1.59) \\\\
 //! Y\_3 &\gets S\_5 S\_6 \leftrightarrow (1.00, 1.59) \\\\
 //! Z\_3 &\gets S\_8 S\_6 \leftrightarrow (2.33, 1.59) \\\\
-//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 1.59) 
+//! T\_3 &\gets S\_5 S\_9 \leftrightarrow (1.00, 1.59)
 //! \end{aligned}
 //! $$
 //!

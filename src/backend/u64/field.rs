@@ -135,7 +135,7 @@ impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
 
         // How big are the c[i]? We have
         //
-        //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19) 
+        //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19)
         //         < 2^(102 + lg(1 + 4*19) + 2*b)
         //         < 2^(108.27 + 2*b)
         //
@@ -261,19 +261,19 @@ impl FieldElement64 {
         // Because we don't need to canonicalize, only to reduce the
         // limb sizes, it's OK to do a "weak reduction", where we
         // compute the carry-outs in parallel.
-        
+
         let c0 = limbs[0] >> 51;
         let c1 = limbs[1] >> 51;
         let c2 = limbs[2] >> 51;
         let c3 = limbs[3] >> 51;
         let c4 = limbs[4] >> 51;
-        
+
         limbs[0] &= LOW_51_BIT_MASK;
         limbs[1] &= LOW_51_BIT_MASK;
         limbs[2] &= LOW_51_BIT_MASK;
         limbs[3] &= LOW_51_BIT_MASK;
         limbs[4] &= LOW_51_BIT_MASK;
-        
+
         limbs[0] += c4 * 19;
         limbs[1] += c0;
         limbs[2] += c1;
@@ -448,7 +448,7 @@ impl FieldElement64 {
             let mut c4: u128 = m(a[2],  a[2]) + 2*( m(a[0],  a[4]) + m(a[1],  a[3]) );
 
             // Same bound as in multiply:
-            //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19) 
+            //    c[i] < 2^(102 + 2*b) * (1+i + (4-i)*19)
             //         < 2^(102 + lg(1 + 4*19) + 2*b)
             //         < 2^(108.27 + 2*b)
             //
@@ -504,7 +504,7 @@ impl FieldElement64 {
             a[0] &= LOW_51_BIT_MASK;
 
             // Now all a[i] < 2^(51 + epsilon) and a = self^(2^k).
-            
+
             k = k - 1;
             if k == 0 {
                 break;

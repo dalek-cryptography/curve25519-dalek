@@ -34,14 +34,14 @@ use backend;
 use constants;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-/// 
+///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature="radix_51")]
 type UnpackedScalar = backend::u64::scalar::Scalar64;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-/// 
+///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(not(feature="radix_51"))]
@@ -75,11 +75,11 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 #[derive(Copy, Clone)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.
-    /// 
+    ///
     /// # Invariant
-    /// 
+    ///
     /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or equivalently the high bit of `bytes[31]` must be zero.
-    /// 
+    ///
     // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
     pub(crate) bytes: [u8; 32],
 }
@@ -124,7 +124,7 @@ impl Scalar {
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer.
-    /// 
+    ///
     /// This function is intended for applications like X25519 which
     /// require specific bit-patterns when performing scalar
     /// multiplication.
@@ -462,7 +462,7 @@ impl Scalar {
         // Step 1: write out bits of the scalar
         let mut naf = self.bits();
 
-        // Step 2: zero coefficients by carrying them upwards or downwards 
+        // Step 2: zero coefficients by carrying them upwards or downwards
         'bits: for i in 0..256 {
             if naf[i] == 0 { continue 'bits; }
             'window: for b in 1..6 {
@@ -481,7 +481,7 @@ impl Scalar {
                             // Since naf[k] = 0 or 1 for k > i, naf[k] == 1.
                             naf[k] = 0; // Subtract 2^k
                         } else {
-                            // By now we have subtracted 2^k = 
+                            // By now we have subtracted 2^k =
                             // 2^(i+b) + 2^(i+b) + 2^(i+b+1) + ... + 2^(k-1).
                             naf[k] = 1; // Add back 2^k.
                             break 'carry;
@@ -542,7 +542,7 @@ impl Scalar {
         x_mod_l.pack()
     }
 
-    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). 
+    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\).
     ///
     /// This is intended for uses like input validation, where variable-time code is acceptable.
     ///
@@ -788,12 +788,6 @@ mod test {
         let one = Scalar::one();
         let should_be_two = &one + &one;
         assert_eq!(should_be_two, two);
-    }
-
-    #[test]
-    fn impl_sub() {
-        let should_be_one = &constants::BASEPOINT_ORDER - &constants::BASEPOINT_ORDER_MINUS_1;
-        assert_eq!(should_be_one, Scalar::one());
     }
 
     #[allow(non_snake_case)]

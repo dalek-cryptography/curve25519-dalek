@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.14.4"
+version = "0.15.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -9,8 +9,8 @@ repository = "https://github.com/dalek-cryptography/curve25519-dalek"
 homepage = "https://dalek.rs/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
-keywords = ["cryptography", "curve25519", "elliptic", "curve", "ECC"]
-description = "A low-level cryptographic library for point, group, field, and scalar operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y² = 1 - 121665/121666 x²y² over GF(2²⁵⁵ - 19)."
+keywords = ["cryptography", "ristretto", "curve25519", "ECC"]
+description = "A pure-Rust implementation of group operations on Ristretto and Curve25519"
 exclude = [
     "**/.gitignore",
     ".gitignore",
@@ -24,53 +24,34 @@ rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9e
 [badges]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
-[dependencies.stdsimd]
-version = "0.0.4"
-optional = true
+[dev-dependencies]
+sha2 = "0.7"
+serde_cbor = "0.6"
 
-[dependencies.serde]
-version = "1.0"
-optional = true
+# Note: we generate precomputed tables by building the crate twice: once as
+# part of build.rs, and then once "for real".
+#
+# This means that the [dependencies] and [build-dependencies] sections must
+# match exactly, since the build.rs uses the crate itself as a library.
 
-[dependencies.rand]
-optional = true
-version = "0.4"
-
-[dependencies.digest]
-version = "0.7"
-
-[dependencies.subtle]
-version = "^0.3"
-default-features = false
-
-[dependencies.clear_on_drop]
-version = "=0.2.3"
-
-[dependencies.generic-array]
-# same version that digest depends on
-version = "0.9"
-
-[dev-dependencies.sha2]
-version = "0.7"
-
-[dev-dependencies.serde_cbor]
-version = "0.6"
+[dependencies]
+digest = "0.7"
+generic-array = "0.9"
+clear_on_drop = "=0.2.3"
+subtle = { version = "0.5", features = ["generic-impls"], default-features = false }
+stdsimd = { version = "0.0.4", optional = true }
+serde = { version = "1.0", optional = true }
+rand = { version = "0.4", optional = true }
 
 [build-dependencies]
-subtle = "^0.3"
-rand = "0.4"
-generic-array = "0.9"
 digest = "0.7"
-arrayref = "0.3.4"
+generic-array = "0.9"
 clear_on_drop = "=0.2.3"
-
-[build-dependencies.stdsimd]
-version = "0.0.4"
-optional = true
-
-[build-dependencies.serde]
-version = "1.0"
-optional = true
+subtle = { version = "0.5", features = ["generic-impls"], default-features = false }
+stdsimd = { version = "0.0.4", optional = true }
+serde = { version = "1.0", optional = true }
+# Allowing rand to be optional during builds causes a build failure when compiling for no_std targets
+rand = { version = "0.4", optional = false }
 
 [features]
 nightly = ["radix_51", "subtle/nightly", "clear_on_drop/nightly"]

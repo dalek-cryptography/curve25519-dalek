@@ -8,37 +8,101 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+// We allow non snake_case names because coordinates in projective space are
+// traditionally denoted by the capitalisation of their respective
+// counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my
+// affine and projective cakes and eat both of them too.
+#![allow(non_snake_case)]
+
 //! An implementation of Ristretto, which provides a prime-order group.
 //!
-//! Ristretto is a modification of Mike Hamburg's [Decaf
-//! cofactor-eliminating point-compression
-//! scheme](https://eprint.iacr.org/2015/673.pdf) to work on top of the
-//! Curve25519 group.
+//! # The Ristretto Group
 //!
-//! Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
-//!
-//! # Notes on Ristretto
-//!
-//! ## Decaf
-//!
-//! The introduction of the Decaf paper, [_Decaf: Eliminating cofactors
-//! through point compression_](https://eprint.iacr.org/2015/673.pdf)
-//! notes that while most cryptographic systems require a group of prime
-//! order, most concrete implementations using elliptic curve groups
-//! fall short -- they either provide a group of prime order, but with
-//! incomplete or variable-time addition formulae (for instance, most
-//! Weierstrass models), or else they provide a fast and safe
-//! implementation of a group whose order is not quite a prime \\(q\\),
-//! but \\(hq\\) for a small cofactor \\(h\\) (for instance, Edwards
-//! curves, which have cofactor at least \\(4\\)).
+//! Ristretto is a modification of Mike Hamburg's Decaf scheme to work
+//! with Curve25519.  The introduction of the Decaf paper, [_Decaf:
+//! Eliminating cofactors through point
+//! compression_](https://eprint.iacr.org/2015/673.pdf), notes that while
+//! most cryptographic systems require a group of prime order, most
+//! concrete implementations using elliptic curve groups fall short --
+//! they either provide a group of prime order, but with incomplete or
+//! variable-time addition formulae (for instance, most Weierstrass
+//! models), or else they provide a fast and safe implementation of a
+//! group whose order is not quite a prime \\(q\\), but \\(hq\\) for a
+//! small cofactor \\(h\\) (for instance, Edwards curves, which have
+//! cofactor at least \\(4\\)).
 //!
 //! This abstraction mismatch requires ad-hoc protocol modifications to
 //! ensure security; these modifications require careful analysis and
-//! are a recurring source of vulnerabilities.
+//! are a recurring source of [vulnerabilities][cryptonote] and [design
+//! complications][ed25519_hkd].
+//!
+//! Instead, Ristretto uses a quotient group to implement a prime-order
+//! group using a non-prime-order curve.  More details are described in
+//! the *Implementation* section below.  Ristretto points are provided
+//! in `curve25519-dalek` by the `RistrettoPoint` struct.
+//!
+//! ## Encoding and Decoding
+//!
+//! Encoding is done by converting to and from a `CompressedRistretto`
+//! struct, which is a typed wrapper around `[u8; 32]`.
+//!
+//! The encoding is not batchable, but it is possible to
+//! double-and-encode in a batch using
+//! `RistrettoPoint::double_and_compress_batch`.
+//!
+//! ## Equality Testing
+//!
+//! Testing equality of points on an Edwards curve in projective
+//! coordinates requires an expensive inversion.  By contrast, equality
+//! checking in the Ristretto group can be done in projective
+//! coordinates without requiring an inversion, so it is much faster.
+//!
+//! The `RistrettoPoint` struct implements the `subtle::Equal` trait for
+//! constant-time equality checking, and the Rust `Eq` trait for
+//! variable-time equality checking.
+//!
+//! ## Scalars
+//!
+//! Scalars are represented by the `Scalar` struct.  Each scalar has a
+//! canonical representative mod the group order; see
+//! `Scalar::from_canonical_bytes()` and `Scalar::is_canonical()`.
+//!
+//! ## Scalar Multiplication
+//!
+//! Scalar multiplication on Ristretto points is provided by:
+//!
+//! * the `*` operator between a `Scalar` and a `RistrettoPoint`, which
+//! performs constant-time variable-base scalar multiplication;
+//!
+//! * the `*` operator between a `Scalar` and a
+//! `RistrettoBasepointTable`, which performs constant-time fixed-base
+//! scalar multiplication;
+//!
+//! * the `ristretto::multiscalar_mult` function, which performs
+//! constant-time variable-base multiscalar multiplication;
+//!
+//! * the `ristretto::vartime::multiscalar_mult` function, which
+//! performs variable-time variable-base multiscalar multiplication.
+//!
+//! ## Random Points and Hashing to Ristretto
+//!
+//! The Ristretto group comes equipped with an Elligator map.  This is
+//! used to implement
+//!
+//! * `RistrettoPoint::random()`, which generates random points from an
+//! RNG;
+//!
+//! * `RistrettoPoint::from_hash()` and
+//! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
+//! group.
+//!
+//! The Elligator map itself is not currently exposed.
+//!
+//! ## Implementation
 //!
 //! The Decaf suggestion is to use a quotient group, such as \\(\mathcal
 //! E / \mathcal E[4]\\) or \\(2 \mathcal E / \mathcal E[2] \\), to
-//! implement a prime-order group.
+//! implement a prime-order group using a non-prime-order curve.
 //!
 //! This requires only changing
 //!
@@ -61,8 +125,25 @@
 //! explains the name: Decaf is named "after the procedure which divides
 //! the effect of coffee by \\(4\\)".  However, Curve25519 has a
 //! cofactor of \\(8\\).  To eliminate its cofactor, we tweak Decaf to
-//! restrict further.  This gives the
-//! [Ristretto](https://en.wikipedia.org/wiki/Ristretto) encoding.
+//! restrict further.  This [additional restriction][ristretto_coffee]
+//! gives the _Ristretto_ encoding.
+//!
+//! Notes on the details of the encoding can be found in the
+//! `ristretto::notes` submodule of the internal `curve25519-dalek`
+//! documentation.
+//!
+//! [cryptonote]:
+//! https://moderncrypto.org/mail-archive/curves/2017/000898.html
+//! [ed25519_hkd]:
+//! https://moderncrypto.org/mail-archive/curves/2017/000858.html
+//! [ristretto_coffee]:
+//! https://en.wikipedia.org/wiki/Ristretto
+
+mod notes {
+
+//! Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
+//!
+//! # Notes on Ristretto
 //!
 //! ## The Jacobi Quartic
 //!
@@ -109,7 +190,7 @@
 //! These correspond to the affine model
 //!
 //! $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
-//! 
+//!
 //! In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
 //! with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$ (For more
 //! details on this model, see the documentation for the `edwards`
@@ -150,7 +231,7 @@
 //! \cong \mathbb Z / 8\\), we have \\(\[2\](\mathcal E[8]) = \mathcal
 //! E[4]\\), \\(\mathcal E[4] \cong \mathbb Z / 4
 //! \\) and \\( \mathcal E[2] \cong \mathbb Z / 2\\).  In particular
-//! this tells us that the group 
+//! this tells us that the group
 //! $$
 //! \frac{\[2\](\mathcal E)}{\mathcal E[4]}
 //! $$
@@ -191,16 +272,16 @@
 //! The Decaf paper recalls that, for a group \\( G \\) with normal
 //! subgroup \\(G' \leq G\\), a group homomorphism \\( \phi : G
 //! \rightarrow H \\) induces a homomorphism
-//! $$ 
+//! $$
 //! \bar{\phi} : \frac G {G'} \longrightarrow \frac {\phi(G)}{\phi(G')} \leq \frac {H} {\phi(G')},
-//! $$ 
+//! $$
 //! and that the induced homomorphism \\(\bar{\phi}\\) is injective if
 //! \\( \ker \phi \leq G' \\).  In our context, the kernel of
 //! \\(\theta\\) is \\( \\{(0, \pm 1)\\} \leq \mathcal J[2] \\),
 //! so \\(\theta\\) gives an isomorphism
 //! $$
-//! \frac {\mathcal J} {\mathcal J[2]} 
-//! \cong 
+//! \frac {\mathcal J} {\mathcal J[2]}
+//! \cong
 //! \frac {\theta(\mathcal J)} {\theta(\mathcal J[2])}
 //! \cong
 //! \frac {\[2\](\mathcal E)} {\mathcal E[2]}.
@@ -232,26 +313,26 @@
 //!    the point by setting \\( (x,y) \gets (x,y) + P_4 \\), where
 //!    \\(P_4\\) is a \\(4\\)-torsion point.
 //!
-//! 2. Check if \\(x\\) is negative or \\( y = -1 \\); if so, set 
+//! 2. Check if \\(x\\) is negative or \\( y = -1 \\); if so, set
 //!    \\( (x,y) \gets (x,y) + (0,-1) = (-x, -y) \\).
 //!
 //! 3. Compute $$ s = +\sqrt {(-a) \frac {1 - y} {1 + y} }, $$ choosing
 //!    the positive square root.
 //!
-//! The output is then the (canonical) byte-encoding of \\(s\\).  
+//! The output is then the (canonical) byte-encoding of \\(s\\).
 //!
 //! If \\(\mathcal E\\) has cofactor \\(4\\), we skip the first step,
 //! since our input already represents a coset in
 //! \\( \[2\](\mathcal E) / \mathcal E[2] \\).
-//! 
+//!
 //! To see that this corresponds to the encoding procedure above, notice
 //! that the first step lifts from \\( \mathcal E / \mathcal E[4] \\) to
 //! \\(\mathcal E / \mathcal E[2]\\).  To understand steps 2 and 3,
-//! notice that the \\(y\\)-coordinate of \\(\theta(s,t)\\) is 
+//! notice that the \\(y\\)-coordinate of \\(\theta(s,t)\\) is
 //! $$
 //! y = \frac {1 + as\^2}{1 - as\^2},
 //! $$
-//! so that the \\(s\\)-coordinate of \\(\theta\^{-1}(x,y)\\) has 
+//! so that the \\(s\\)-coordinate of \\(\theta\^{-1}(x,y)\\) has
 //! $$
 //! s\^2 = (-a)\frac {1-y}{1+y}.
 //! $$
@@ -306,7 +387,7 @@
 //! \\) requires an inverse square root.
 //! As inversions are expensive, we'd like to be able to do this
 //! whole computation with only one inverse square root, by batching
-//! together the inversion and the inverse square root.  
+//! together the inversion and the inverse square root.
 //!
 //! However, it is not obvious how to do this, since the inverse square
 //! root computation depends on the affine coordinates (which select the
@@ -322,7 +403,7 @@
 //! $$
 //!
 //! Here \\( (X:Y:Z:T) \\) are the coordinates of the distinguished
-//! representative of the coset.  
+//! representative of the coset.
 //! Write \\( (X\_0 : Y\_0 : Z\_0 : T\_0) \\)
 //! for the coordinates of the initial representative.  Then the
 //! torquing procedure in step 1 replaces \\( (X\_0 : Y\_0 : Z\_0 :
@@ -346,9 +427,9 @@
 //! $$
 //! (a-d)X\^2Y\^2 = Z\^4 - aZ\^2X\^2 - Z\^2Y\^2 + aX\^2Y\^2 = (Z\^2 - Y\^2)(Z\^2 + X\^2).
 //! $$
-//! 
+//!
 //! The encoding procedure is as follows:
-//! 
+//!
 //! 1. \\(u\_1 \gets (Z\_0 + Y\_0)(Z\_0 - Y\_0) = Z\_0\^2 - Y\_0\^2 \\)
 //! 2. \\(u\_2 \gets X\_0 Y\_0 \\)
 //! 3. \\(I \gets \mathrm{invsqrt}(u\_1 u\_2\^2) = 1/\sqrt{X\_0\^2 Y\_0\^2 (Z\_0\^2 - Y\_0\^2)} \\)
@@ -379,11 +460,7 @@
 //!
 //! ## ???
 
-// We allow non snake_case names because coordinates in projective space are
-// traditionally denoted by the capitalisation of their respective
-// counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my
-// affine and projective cakes and eat both of them too.
-#![allow(non_snake_case)]
+}
 
 use core::fmt::Debug;
 
@@ -406,7 +483,7 @@ use subtle::ConditionallyNegatable;
 use subtle::Equal;
 
 use edwards;
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
 
 use scalar::Scalar;
@@ -419,29 +496,31 @@ use traits::Identity;
 // Compressed points
 // ------------------------------------------------------------------------
 
-/// A point serialized using Mike Hamburg's Ristretto scheme.
+/// A Ristretto point, in compressed wire format.
 ///
-/// XXX think about how this API should work
+/// The Ristretto encoding is canonical, so two points are equal if and
+/// only if their encodings are equal.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
-/// The result of compressing a `RistrettoPoint`.
 impl CompressedRistretto {
-    /// Convert this `CompressedRistretto` to its underlying array of bytes.
+    /// Copy the bytes of this `CompressedRistretto`.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0
     }
 
     /// View this `CompressedRistretto` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.
     ///
-    /// This function executes in constant time for all valid inputs.
-    /// Inputs which do not decode to a RistrettoPoint may return
-    /// early.
+    /// # Return
+    ///
+    /// - `Some(RistrettoPoint)` if `self` was the canonical encoding of a point;
+    ///
+    /// - `None` if `self` was not the canonical encoding of a point.
     pub fn decompress(&self) -> Option<RistrettoPoint> {
         // Step 1. Check s for validity:
         // 1.a) s must be 32 bytes (we get this from the type system)
@@ -487,7 +566,7 @@ impl CompressedRistretto {
         if ok == 0u8 || t.is_negative() == 1u8 || y.is_zero() == 1u8 {
             return None;
         } else {
-            return Some(RistrettoPoint(ExtendedPoint{X: x, Y: y, Z: one, T: t}));
+            return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
         }
     }
 }
@@ -562,75 +641,17 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 /// prime-order group as a quotient group of a subgroup of (the
 /// Edwards form of) Curve25519.
 ///
-/// Internally, a `RistrettoPoint` is a wrapper type around
-/// `ExtendedPoint`, with custom equality, compression, and
-/// decompression routines to account for the quotient.
+/// Internally, a `RistrettoPoint` is implemented as a wrapper type
+/// around `EdwardsPoint`, with custom equality, compression, and
+/// decompression routines to account for the quotient.  This means that
+/// operations on `RistrettoPoint`s are exactly as fast as operations on
+/// `EdwardsPoint`s.
+///
 #[derive(Copy, Clone)]
-pub struct RistrettoPoint(pub(crate) ExtendedPoint);
+pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
-    /// Compress in Ristretto format.
-    ///
-    /// # Implementation Notes
-    ///
-    /// The Ristretto encoding is as follows, on input in affine coordinates `(x,y)`:
-    ///
-    /// 1.  If `xy` is negative or `x = 0`, "rotate" the point by
-    /// setting `(x,y) = (iy, ix)`.
-    /// 2.  If `x` is negative, set `(x,y) = (-x, -y)`.
-    /// 3.  Compute `s = +sqrt((1-y)/(1+y))`.
-    /// 4.  Return the little-endian 32-byte encoding of `s`.
-    ///
-    /// However, our input is in extended twisted Edwards coordinates
-    /// `(X:Y:Z:T)` with `x = X/Z`, `y = Y/Z`, `xy = T/Z` (see the
-    /// module-level documentation on curve representations for more
-    /// details).  Since inversions are expensive, we'd like to be
-    /// able to do this whole computation with only one inversion.
-    ///
-    /// Since `y = Y/Z`, in extended coordinates the formula for `s` becomes
-    ///
-    ///     s = sqrt((1 - Y/Z)/(1 + Y/Z)) = sqrt((Z-Y)/(Z+Y)).  <span style="float: right">(1)</span>
-    ///
-    /// We can compute this as
-    ///
-    ///     s = (Z - Y) / sqrt((Z-Y)(Z+Y)).  <span style="float: right">(1)</span>
-    ///
-    /// The denominator is 
-    ///
-    ///      invsqrt((Z-Y)(Z+Y)) = invsqrt(Z² - Y²).  <span style="float: right">(1)</span>
-    ///
-    /// Write the input point as `(X₀:Y₀:Z₀:T₀)`.  The rotation in
-    /// step 1 of the encoding procedure replaces `(X₀:Y₀:Z₀:T₀)` by
-    /// `(iY₀:iX₀:Z₀:-T₀)`.  We therefore wish to relate the
-    /// computation of
-    ///
-    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² - Y₀²)  [non-rotated case]
-    ///
-    /// with the computation of
-    ///
-    ///      invsqrt(Z² - Y²) = invsqrt(Z₀² + X₀²).  [rotated case]
-    ///
-    /// Recall the curve equation (in the 𝗣² model):
-    ///
-    ///     (-X² + Y²)Z² = Z⁴ + dX²Y².  <span style="float: right">(1)</span>
-    ///
-    /// This means that, for any point `(X:Y:Z:T)` in extended coordinates, we have
-    ///
-    ///     -dX²Y² = Z⁴ + Z²X² - Z²Y²,  <span style="float: right">(2)</span>
-    ///
-    /// so that 
-    ///
-    ///     (-1-d)X²Y² = Z⁴ + Z²X² - Z²Y² - X²Y²,  <span style="float: right">(3)</span>
-    ///
-    /// and hence
-    ///
-    ///     (-1-d)X²Y² = (Z² - Y²)(Z² + X²).  <span style="float: right">(4)</span>
-    ///
-    /// Taking inverse square roots gives
-    ///
-    ///     invsqrt(Z² + X²) = invsqrt(-1-d) sqrt((Z² - Y²)/(X²Y²)). <span style="float: right">(4)</span>
-    /// 
-    ///
+    /// Compress this point using the Ristretto encoding.
     pub fn compress(&self) -> CompressedRistretto {
         let mut X = self.0.X;
         let mut Y = self.0.Y;
@@ -666,9 +687,39 @@ impl RistrettoPoint {
         CompressedRistretto(s.to_bytes())
     }
 
-    /// Double-and-compress a batch of points.
+    /// Double-and-compress a batch of points.  The Ristretto encoding
+    /// is not batchable, since it requires an inverse square root.
+    ///
+    /// However, given input points \\( P\_1, \ldots, P\_n, \\)
+    /// it is possible to compute the encodings of their doubles \\(
+    /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
+    /// in a batch.
+    ///
+    /// This function has optimal performance when the batch size is a
+    /// power of two, but this is not a requirement.
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// extern crate rand;
+    /// use rand::OsRng;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let mut rng = OsRng::new().unwrap();
+    /// let points: Vec<RistrettoPoint> =
+    ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
+    ///
+    /// let compressed = RistrettoPoint::double_and_compress_batch(&points);
+    ///
+    /// for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
+    ///     assert_eq!(*P2_compressed, (P + P).compress());
+    /// }
+    /// # }
+    /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto> 
+    pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
         where I: IntoIterator<Item = &'a RistrettoPoint>
     {
         #[derive(Copy, Clone, Debug)]
@@ -736,7 +787,7 @@ impl RistrettoPoint {
             let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
 
             g.conditional_negate(negcheck2);
-            
+
             let mut s = &(&h - &g) * &(&magic * &(&g * &Tinv));
 
             let s_is_negative = s.is_negative();
@@ -748,7 +799,7 @@ impl RistrettoPoint {
 
 
     /// Return the coset self + E[4], for debugging.
-    fn coset4(&self) -> [ExtendedPoint; 4] {
+    fn coset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
         , &self.0 + &constants::EIGHT_TORSION[2]
         , &self.0 + &constants::EIGHT_TORSION[4]
@@ -762,13 +813,13 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
+    pub(crate) fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
 
         let r = i * &r_0.square();
 
-        // D = (dr -a)(ar-d) = -(dr+1)(r+d) 
+        // D = (dr -a)(ar-d) = -(dr+1)(r+d)
         let D = -&( &(&(d * &r) + &one) * &(&r + d) );
         // N = a(d-a)(d+a)(r+1) = -(r+1)(d^2 -1)
         let d_sq = d.square();
@@ -781,7 +832,7 @@ impl RistrettoPoint {
         // s = sqrt(N/D) if N/D is square
         s.conditional_assign(&maybe_s, N_over_D_is_square);
 
-        // XXX how do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
+        // XXX how exactly do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
         let (rN_over_D_is_square, mut maybe_s) = FieldElement::sqrt_ratio(&(&r*&N), &D);
         maybe_s.negate();
 
@@ -881,7 +932,7 @@ impl RistrettoPoint {
 
 impl Identity for RistrettoPoint {
     fn identity() -> RistrettoPoint {
-        RistrettoPoint(ExtendedPoint::identity())
+        RistrettoPoint(EdwardsPoint::identity())
     }
 }
 
@@ -906,7 +957,7 @@ impl Equal for RistrettoPoint {
         let Y1X2 = &self.0.Y * &other.0.X;
         let X1X2 = &self.0.X * &other.0.X;
         let Y1Y2 = &self.0.Y * &other.0.Y;
-        
+
         X1Y2.ct_eq(&Y1X2) | X1X2.ct_eq(&Y1Y2)
     }
 }
@@ -999,15 +1050,18 @@ define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint
 define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint);
 
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
+/// Given an iterator of (possibly secret) scalars and an iterator of
+/// (possibly secret) points, compute
+/// $$
+/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+/// $$
 ///
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
 ///
 /// # Input
 ///
-/// An iterable of `Scalar`s and a iterable of `DecafPoints`.  It is an
+/// An iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 #[cfg(any(feature = "alloc", feature = "std"))]
 pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
@@ -1018,9 +1072,10 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
     RistrettoPoint(edwards::multiscalar_mult(scalars, extended_points))
 }
 
-/// Precomputation
+/// A precomputed table of multiples of a basepoint, used to accelerate
+/// scalar multiplication.
 #[derive(Clone)]
-pub struct RistrettoBasepointTable(pub EdwardsBasepointTable);
+pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     type Output = RistrettoPoint;
@@ -1114,15 +1169,16 @@ pub mod vartime {
     //! Variable-time operations on ristretto points, useful for non-secret data.
     use super::*;
 
-    /// Given a vector of public scalars and a vector of (possibly secret)
+    /// Given an iterable of public scalars and an iterable of public
     /// points, compute
-    ///
-    ///    c_1 P_1 + ... + c_n P_n.
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
     ///
     /// # Input
     ///
-    /// A vector of `Scalar`s and a vector of `RistrettoPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// A iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
+    /// error to call this function with two iterators of different lengths.
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
         where I: IntoIterator<Item = &'a Scalar>,
@@ -1323,11 +1379,11 @@ mod test {
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng::new().unwrap();
 
-        let points: Vec<RistrettoPoint> = 
+        let points: Vec<RistrettoPoint> =
             (0..1024).map(|_| RistrettoPoint::random(&mut rng)).collect();
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
-        
+
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
             assert_eq!(*P2_compressed, (P + P).compress());
         }
@@ -1375,7 +1431,7 @@ mod bench {
     fn double_and_compress_n_random_points(n: usize, b: &mut Bencher) {
         let mut rng = OsRng::new().unwrap();
 
-        let points: Vec<RistrettoPoint> = 
+        let points: Vec<RistrettoPoint> =
             (0..n).map(|_| RistrettoPoint::random(&mut rng)).collect();
 
         b.iter(|| RistrettoPoint::double_and_compress_batch(&points) );

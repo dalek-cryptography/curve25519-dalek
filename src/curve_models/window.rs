@@ -23,7 +23,7 @@ use traits::Identity;
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
 ///
-/// The computation of \\( xP \\) is done in constant time by the `select` function.  
+/// The computation of \\( xP \\) is done in constant time by the `select` function.
 ///
 /// Since `LookupTable` does not implement `Index`, it's more difficult
 /// to accidentally use the table directly.  Unfortunately the table is
@@ -52,7 +52,7 @@ use clear_on_drop::clear::ZeroSafe;
 /// XXX is this a good compromise?
 unsafe impl<T> ZeroSafe for LookupTable<T> {}
 
-impl<T> LookupTable<T> 
+impl<T> LookupTable<T>
 where T: Identity + ConditionallyAssignable + ConditionallyNegatable
 {
     /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
@@ -92,12 +92,12 @@ impl<T: Debug> Debug for LookupTable<T> {
     }
 }
 
-use edwards::ExtendedPoint;
+use edwards::EdwardsPoint;
 use curve_models::ProjectiveNielsPoint;
 use curve_models::AffineNielsPoint;
 
-impl<'a> From<&'a ExtendedPoint> for LookupTable<ProjectiveNielsPoint> {
-    fn from(P: &'a ExtendedPoint) -> Self {
+impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
+    fn from(P: &'a EdwardsPoint) -> Self {
         let mut points = [P.to_projective_niels(); 8];
         for j in 0..7 {
             points[j+1] = (P + &points[j])
@@ -108,8 +108,8 @@ impl<'a> From<&'a ExtendedPoint> for LookupTable<ProjectiveNielsPoint> {
     }
 }
 
-impl<'a> From<&'a ExtendedPoint> for LookupTable<AffineNielsPoint> {
-    fn from(P: &'a ExtendedPoint) -> Self {
+impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
+    fn from(P: &'a EdwardsPoint) -> Self {
         let mut points = [P.to_affine_niels(); 8];
         // XXX batch inversion would be good if perf mattered here
         for j in 0..7 {

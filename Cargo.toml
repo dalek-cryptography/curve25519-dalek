@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.14.4"
+version = "0.15.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -9,8 +9,8 @@ repository = "https://github.com/dalek-cryptography/curve25519-dalek"
 homepage = "https://dalek.rs/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
-keywords = ["cryptography", "curve25519", "elliptic", "curve", "ECC"]
-description = "A low-level cryptographic library for point, group, field, and scalar operations on a curve isomorphic to the twisted Edwards curve defined by -x²+y² = 1 - 121665/121666 x²y² over GF(2²⁵⁵ - 19)."
+keywords = ["cryptography", "ristretto", "curve25519", "ECC"]
+description = "A pure-Rust implementation of group operations on Ristretto and Curve25519"
 exclude = [
     "**/.gitignore",
     ".gitignore",

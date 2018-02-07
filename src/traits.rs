@@ -32,9 +32,9 @@ pub trait IsIdentity {
 /// Implement generic identity equality testing for a point representations
 /// which have constant-time equality testing and a defined identity
 /// constructor.
-impl<T> IsIdentity for T where T: subtle::Equal + Identity {
+impl<T> IsIdentity for T where T: subtle::ConstantTimeEq + Identity {
     fn is_identity(&self) -> bool {
-        self.ct_eq(&T::identity()) == 1u8
+        self.ct_eq(&T::identity()).unwrap_u8() == 1u8
     }
 }
 

@@ -20,6 +20,7 @@ use core::borrow::Borrow;
 use stdsimd::simd::{u32x8, i32x8};
 
 use subtle::ConditionallyAssignable;
+use subtle::Choice;
 
 use edwards;
 use scalar::Scalar;
@@ -52,7 +53,7 @@ impl From<ExtendedPoint> for edwards::EdwardsPoint {
 }
 
 impl ConditionallyAssignable for ExtendedPoint {
-    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: Choice) {
         self.0.conditional_assign(&other.0, choice);
     }
 }
@@ -115,7 +116,7 @@ impl Identity for CachedPoint {
 }
 
 impl ConditionallyAssignable for CachedPoint {
-    fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &CachedPoint, choice: Choice) {
         self.0.conditional_assign(&other.0, choice);
     }
 }

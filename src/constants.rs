@@ -165,7 +165,7 @@ mod test {
     fn test_sqrt_constants_sign() {
         let minus_one = FieldElement::minus_one();
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
-        assert_eq!(was_nonzero_square, 1u8);
+        assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
         let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
         // XXX it seems we have flipped the sign relative to
         // the invsqrt function?

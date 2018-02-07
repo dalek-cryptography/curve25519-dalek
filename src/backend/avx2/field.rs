@@ -38,10 +38,11 @@ use backend::avx2::constants::{P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_16_LO, P_TIME
 pub(crate) struct FieldElement32x4(pub(crate) [u32x8; 5]);
 
 use subtle::ConditionallyAssignable;
+use subtle::Choice;
 
 impl ConditionallyAssignable for FieldElement32x4 {
-    fn conditional_assign(&mut self, other: &FieldElement32x4, choice: u8) {
-        let mask = (-(choice as i32)) as u32;
+    fn conditional_assign(&mut self, other: &FieldElement32x4, choice: Choice) {
+        let mask = (-(choice.unwrap_u8() as i32)) as u32;
         let mask_vec = u32x8::splat(mask);
         for i in 0..5 {
             self.0[i] = self.0[i] ^ (mask_vec & (self.0[i] ^ other.0[i]));

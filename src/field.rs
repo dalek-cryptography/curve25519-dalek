@@ -24,11 +24,10 @@
 
 use core::cmp::{Eq, PartialEq};
 
-use subtle::slices_equal;
-use subtle::byte_is_nonzero;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
-use subtle::Equal;
+use subtle::Choice;
+use subtle::ConstantTimeEq;
 
 use constants;
 use backend;
@@ -54,37 +53,19 @@ pub use backend::u32::field::*;
 pub type FieldElement = backend::u32::field::FieldElement32;
 
 impl Eq for FieldElement {}
+
 impl PartialEq for FieldElement {
-    /// Test equality between two `FieldElement`s.  Since the
-    /// internal representation is not canonical, the field elements
-    /// are normalized to wire format before comparison.
-    ///
-    /// # Warning
-    ///
-    /// This comparison is *not* constant time.  It could easily be
-    /// made to be, but the main use of an `Eq` implementation is for
-    /// branching, so it seems pointless to do so.
     fn eq(&self, other: &FieldElement) -> bool {
-        let  self_bytes =  self.to_bytes();
-        let other_bytes = other.to_bytes();
-        let mut are_equal: bool = true;
-        for i in 0..32 {
-            are_equal &= self_bytes[i] == other_bytes[i];
-        }
-        are_equal
+        self.ct_eq(other).unwrap_u8() == 1u8
     }
 }
 
-impl Equal for FieldElement {
+impl ConstantTimeEq for FieldElement {
     /// Test equality between two `FieldElement`s.  Since the
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
-    ///
-    /// # Returns
-    ///
-    /// `1u8` if the two `FieldElement`s are equal, and `0u8` otherwise.
-    fn ct_eq(&self, other: &FieldElement) -> u8 {
-        slices_equal(&self.to_bytes(), &other.to_bytes())
+    fn ct_eq(&self, other: &FieldElement) -> Choice {
+        self.to_bytes().ct_eq(&other.to_bytes())
     }
 }
 
@@ -95,33 +76,22 @@ impl FieldElement {
     ///
     /// # Return
     ///
-    /// If negative, return `1u8`.  Otherwise, return `0u8`.
-    pub fn is_negative(&self) -> u8 {
+    /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+    pub fn is_negative(&self) -> Choice {
         let bytes = self.to_bytes();
-        (bytes[0] & 1) as u8
+        (bytes[0] & 1).into()
     }
 
     /// Determine if this `FieldElement` is zero.
     ///
     /// # Return
     ///
-    /// If zero, return `1u8`.  Otherwise, return `0u8`.
-    pub fn is_zero(&self) -> u8 {
-        1u8 & (!self.is_nonzero())
-    }
-
-    /// Determine if this `FieldElement` is non-zero.
-    ///
-    /// # Return
-    ///
-    /// If non-zero, return `1u8`.  Otherwise, return `0u8`.
-    pub fn is_nonzero(&self) -> u8 {  //FeIsNonZero
+    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+    pub fn is_zero(&self) -> Choice {
+        let zero = [0u8; 32];
         let bytes = self.to_bytes();
-        let mut x = 0u8;
-        for b in &bytes {
-            x |= *b;
-        }
-        byte_is_nonzero(x)
+
+        bytes.ct_eq(&zero)
     }
 
     /// Compute (self^(2^250-1), self^11), used as a helper function
@@ -275,7 +245,25 @@ impl FieldElement {
     /// - `(0u8, zero)`      if `v` is zero;
     /// - `(0u8, garbage)`   if `u/v` is nonsquare.
     ///
-    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement) -> (u8, FieldElement) {
+    /// # Example
+    ///
+    /// ```ignore
+    /// let one = FieldElement::one();
+    /// let two = &one + &one;
+    /// let four = &two * &two;
+    ///
+    /// // two is nonsquare mod p
+    /// let (two_is_square, two_sqrt) = FieldElement::sqrt_ratio(&two, &one);
+    /// assert_eq!(two_is_square.unwrap_u8(), 0u8);
+    ///
+    /// // four is square mod p
+    /// let (four_is_square, four_sqrt) = FieldElement::sqrt_ratio(&four, &one);
+    ///
+    /// assert_eq!(four_is_square.unwrap_u8(), 1u8);
+    /// assert_eq!(four_sqrt.is_negative().unwrap_u8
+    /// ```
+    ///
+    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
         //
@@ -333,7 +321,7 @@ impl FieldElement {
     /// - `(0u8, zero)`         if `self` is zero;
     /// - `(0u8, garbage)`      if `self` is nonsquare.
     ///
-    pub fn invsqrt(&self) -> (u8, FieldElement) {
+    pub fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio(&FieldElement::one(), self)
     }
 
@@ -487,11 +475,11 @@ mod test {
         let       one = FieldElement::one();
         let minus_one = FieldElement::minus_one();
         let mut x = one;
-        x.conditional_negate(1u8);
+        x.conditional_negate(Choice::from(1));
         assert_eq!(x, minus_one);
-        x.conditional_negate(0u8);
+        x.conditional_negate(Choice::from(0));
         assert_eq!(x, minus_one);
-        x.conditional_negate(1u8);
+        x.conditional_negate(Choice::from(1));
         assert_eq!(x, one);
     }
 

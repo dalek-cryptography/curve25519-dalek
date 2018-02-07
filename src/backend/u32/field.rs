@@ -22,6 +22,7 @@ use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
 
 use subtle::ConditionallyAssignable;
+use subtle::Choice;
 
 /// A `FieldElement32` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -219,10 +220,9 @@ impl<'a> Neg for &'a FieldElement32 {
 }
 
 impl ConditionallyAssignable for FieldElement32 {
-    fn conditional_assign(&mut self, f: &FieldElement32, choice: u8) {
-        let mask = (-(choice as i32)) as u32;
+    fn conditional_assign(&mut self, other: &FieldElement32, choice: Choice) {
         for i in 0..10 {
-            self.0[i] ^= mask & (self.0[i] ^ f.0[i]);
+            self.0[i].conditional_assign(&other.0[i], choice);
         }
     }
 }

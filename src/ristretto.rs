@@ -463,6 +463,10 @@ mod notes {
 }
 
 use core::fmt::Debug;
+use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
+use core::ops::{Mul, MulAssign};
+use core::borrow::Borrow;
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -472,10 +476,6 @@ use generic_array::typenum::U32;
 
 use constants;
 use field::FieldElement;
-
-use core::ops::{Add, Sub, Neg};
-use core::ops::{AddAssign, SubAssign};
-use core::ops::{Mul, MulAssign};
 
 use subtle;
 use subtle::ConditionallyAssignable;
@@ -1059,16 +1059,49 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
 ///
-/// # Input
+/// It is an error to call this function with two iterators of different lengths.
 ///
-/// An iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
-/// error to call this function with two iterators of different lengths.
+/// # Examples
+///
+/// The trait bound aims for maximum flexibility: the inputs must be
+/// convertable to iterators (`I: IntoIter`), and the iterator's items
+/// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
+/// iterators returning either `Scalar`s or `&Scalar`s.
+///
+/// ```
+/// use curve25519_dalek::{constants, ristretto};
+/// use curve25519_dalek::scalar::Scalar;
+///
+/// // Some scalars
+/// let a = Scalar::from_u64(87329482);
+/// let b = Scalar::from_u64(37264829);
+/// let c = Scalar::from_u64(98098098);
+///
+/// // Some points
+/// let P = constants::RISTRETTO_BASEPOINT_POINT;
+/// let Q = P + P;
+/// let R = P + Q;
+///
+/// // A1 = a*P + b*Q + c*R
+/// let abc = [a,b,c];
+/// let A1 = ristretto::multiscalar_mult(&abc, &[P,Q,R]);
+/// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+///
+/// // A2 = (-a)*P + (-b)*Q + (-c)*R
+/// let minus_abc = abc.iter().map(|x| -x);
+/// let A2 = ristretto::multiscalar_mult(minus_abc, &[P,Q,R]);
+/// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+///
+/// assert_eq!(A1.compress(), (-A2).compress());
+/// ```
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
-    where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b RistrettoPoint>,
+pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> RistrettoPoint
+    where I: IntoIterator,
+          I::Item: Borrow<Scalar>,
+          J: IntoIterator,
+          J::Item: Borrow<RistrettoPoint>,
 {
-    let extended_points = points.into_iter().map(|P| &P.0);
+    let extended_points = points.into_iter().map(|P| P.borrow().0);
     RistrettoPoint(edwards::multiscalar_mult(scalars, extended_points))
 }
 
@@ -1169,22 +1202,57 @@ pub mod vartime {
     //! Variable-time operations on ristretto points, useful for non-secret data.
     use super::*;
 
-    /// Given an iterable of public scalars and an iterable of public
-    /// points, compute
+    /// Given an iterator of public scalars and an iterator of public points, compute
     /// $$
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
     /// $$
     ///
-    /// # Input
+    /// This function has the same behaviour as
+    /// `vartime::multiscalar_mult` but is constant-time.
     ///
-    /// A iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
-    /// error to call this function with two iterators of different lengths.
+    /// It is an error to call this function with two iterators of different lengths.
+    ///
+    /// # Examples
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    ///
+    /// ```
+    /// use curve25519_dalek::{constants, ristretto};
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from_u64(87329482);
+    /// let b = Scalar::from_u64(37264829);
+    /// let c = Scalar::from_u64(98098098);
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    ///
+    /// // A1 = a*P + b*Q + c*R
+    /// let abc = [a,b,c];
+    /// let A1 = ristretto::vartime::multiscalar_mult(&abc, &[P,Q,R]);
+    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+    ///
+    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
+    /// let minus_abc = abc.iter().map(|x| -x);
+    /// let A2 = ristretto::vartime::multiscalar_mult(minus_abc, &[P,Q,R]);
+    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+    ///
+    /// assert_eq!(A1.compress(), (-A2).compress());
+    /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b RistrettoPoint>
+    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> RistrettoPoint
+        where I: IntoIterator,
+              I::Item: Borrow<Scalar>,
+              J: IntoIterator,
+              J::Item: Borrow<RistrettoPoint>,
     {
-        let extended_points = points.into_iter().map(|P| &P.0);
+        let extended_points = points.into_iter().map(|P| P.borrow().0);
         RistrettoPoint(edwards::vartime::multiscalar_mult(scalars, extended_points))
     }
 }

@@ -537,6 +537,25 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 /// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
 /// error to call this function with two iterators of different lengths.
 ///
+/// # Examples
+/// ```
+/// use curve25519_dalek::{constants, edwards};
+/// use curve25519_dalek::scalar::Scalar;
+///
+/// // Some scalars
+/// let a = Scalar::from_u64(87329482);
+/// let b = Scalar::from_u64(37264829);
+/// let c = Scalar::from_u64(98098098);
+///
+/// // Some points
+/// let P = constants::ED25519_BASEPOINT_POINT;
+/// let Q = P + P;
+/// let R = P + Q;
+///
+/// // A1 = a*P + b*Q + c*R
+/// let A1 = edwards::multiscalar_mult(&[a,b,c], &[P,Q,R]);
+/// ```
+///
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]

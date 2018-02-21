@@ -118,3 +118,5 @@ contributions.
 [ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
 [x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
+[docs-external]: https://doc.dalek.rs/curve25519_dalek/
+[docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/

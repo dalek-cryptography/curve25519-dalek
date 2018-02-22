@@ -68,7 +68,8 @@
 //! The Edwards arithmetic is implemented using the “extended twisted
 //! coordinates” of Hisil, Wong, Carter, and Dawson, and the
 //! corresponding complete formulas.  For more details,
-//! see the `curve_models` submodule of the internal documentation.
+//! see the [`curve_models` submodule][curve_models] 
+//! of the internal documentation.
 //!
 //! ## Validity Checking
 //!
@@ -80,6 +81,8 @@
 //! unrepresentable: `EdwardsPoint` objects can only be created via
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
+//!
+//! [curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective

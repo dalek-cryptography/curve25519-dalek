@@ -453,32 +453,19 @@ impl EdwardsBasepointTable {
     }
 }
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
-///
-/// This function has the same behaviour as
-/// `vartime::multiscalar_mult` but is constant-time.
-///
-/// # Input
-///
-/// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
-/// error to call this function with two vectors of different lengths.
-///
-/// XXX this takes `edwards::EdwardsPoints` because we have to alloc scratch space here anyways,
-/// and we need some space to store the converted points, so we may as well do the conversion here.
-/// maybe there's a better way to avoid code duplication... however we can't quite just write a
-/// generic `multiscalar_mult` because the non-vectorized code passes between models and this code
-/// doesn't.
+/// Internal multiscalar code.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-    where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b edwards::EdwardsPoint>
+pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+    where I: IntoIterator,
+          I::Item: Borrow<Scalar>,
+          J: IntoIterator,
+          J::Item: Borrow<edwards::EdwardsPoint>,
 {
     //assert_eq!(scalars.len(), points.len());
 
     use clear_on_drop::ClearOnDrop;
     let lookup_tables_vec: Vec<_> = points.into_iter()
-        .map(|P| LookupTable::from(ExtendedPoint::from(*P)) )
+        .map(|P| LookupTable::from(ExtendedPoint::from(*P.borrow())) )
         .collect();
 
     let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
@@ -489,7 +476,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Edwards
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
     let scalar_digits_vec: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16())
+        .map(|c| c.borrow().to_radix_16())
         .collect();
 
     // The above puts the scalar digits into a heap-allocated Vec.
@@ -606,27 +593,21 @@ pub mod vartime {
         Q.into()
     }
 
-    /// Given a vector of public scalars and a vector of public points, compute
-    /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-    /// $$
-    ///
-    /// # Input
-    ///
-    /// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// Internal multiscalar function
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b edwards::EdwardsPoint>
+    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+        where I: IntoIterator,
+              I::Item: Borrow<Scalar>,
+              J: IntoIterator,
+              J::Item: Borrow<edwards::EdwardsPoint>,
     {
         //assert_eq!(scalars.len(), points.len());
 
         let nafs: Vec<_> = scalars.into_iter()
-            .map(|c| c.non_adjacent_form()).collect();
+            .map(|c| c.borrow().non_adjacent_form()).collect();
 
         let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| OddMultiples::create((*P).into()) ).collect();
+            .map(|P| OddMultiples::create((*P.borrow()).into()) ).collect();
 
         let mut Q = ExtendedPoint::identity();
 

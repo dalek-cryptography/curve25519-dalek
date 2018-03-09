@@ -96,6 +96,7 @@ use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Index;
+use core::borrow::Borrow;
 
 use subtle::slices_equal;
 use subtle::ConditionallyAssignable;
@@ -532,17 +533,49 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 /// This function has the same behaviour as
 /// `vartime::multiscalar_mult` but is constant-time.
 ///
-/// # Input
+/// It is an error to call this function with two iterators of different lengths.
 ///
-/// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
-/// error to call this function with two iterators of different lengths.
+/// # Examples
 ///
+/// The trait bound aims for maximum flexibility: the inputs must be
+/// convertable to iterators (`I: IntoIter`), and the iterator's items
+/// must be `Borrow<Scalar>` (or `Borrow<EdwardsPoint>`), to allow
+/// iterators returning either `Scalar`s or `&Scalar`s.
+///
+/// ```
+/// use curve25519_dalek::{constants, edwards};
+/// use curve25519_dalek::scalar::Scalar;
+///
+/// // Some scalars
+/// let a = Scalar::from_u64(87329482);
+/// let b = Scalar::from_u64(37264829);
+/// let c = Scalar::from_u64(98098098);
+///
+/// // Some points
+/// let P = constants::ED25519_BASEPOINT_POINT;
+/// let Q = P + P;
+/// let R = P + Q;
+///
+/// // A1 = a*P + b*Q + c*R
+/// let abc = [a,b,c];
+/// let A1 = edwards::multiscalar_mult(&abc, &[P,Q,R]);
+/// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+///
+/// // A2 = (-a)*P + (-b)*Q + (-c)*R
+/// let minus_abc = abc.iter().map(|x| -x);
+/// let A2 = edwards::multiscalar_mult(minus_abc, &[P,Q,R]);
+/// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+///
+/// assert_eq!(A1.compress(), (-A2).compress());
+/// ```
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
-    where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b EdwardsPoint>
+pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
+    where I: IntoIterator,
+          I::Item: Borrow<Scalar>,
+          J: IntoIterator,
+          J::Item: Borrow<EdwardsPoint>,
 {
     // If we built with AVX2, use the AVX2 backend.
     #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
@@ -557,7 +590,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
         use clear_on_drop::ClearOnDrop;
 
         let lookup_tables_vec: Vec<_> = points.into_iter()
-            .map(|P| LookupTable::<ProjectiveNielsPoint>::from(P) )
+            .map(|P| LookupTable::<ProjectiveNielsPoint>::from(P.borrow()) )
             .collect();
 
         let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
@@ -568,7 +601,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
         //
         // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
         let scalar_digits_vec: Vec<_> = scalars.into_iter()
-            .map(|c| c.to_radix_16())
+            .map(|c| c.borrow().to_radix_16())
             .collect();
 
         // This above puts the scalar digits into a heap-allocated Vec.
@@ -867,20 +900,57 @@ pub mod vartime {
         }
     }
 
-    /// Given an iterable of public scalars and an iterable of public
-    /// points, compute
+    /// Given an iterator of public scalars and an iterator of public points, compute
     /// $$
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
     /// $$
     ///
-    /// # Input
+    /// This function has the same behaviour as
+    /// `edwards::multiscalar_mult` but operates on non-secret data.
     ///
-    /// A iterable of `Scalar`s and a iterable of `EdwardsPoints`.  It is an
-    /// error to call this function with two iterators of different lengths.
+    /// It is an error to call this function with two iterators of different lengths.
+    ///
+    /// # Examples
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<EdwardsPoint>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    ///
+    /// ```
+    /// use curve25519_dalek::{constants, edwards};
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from_u64(87329482);
+    /// let b = Scalar::from_u64(37264829);
+    /// let c = Scalar::from_u64(98098098);
+    ///
+    /// // Some points
+    /// let P = constants::ED25519_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    ///
+    /// // A1 = a*P + b*Q + c*R
+    /// let abc = [a,b,c];
+    /// let A1 = edwards::vartime::multiscalar_mult(&abc, &[P,Q,R]);
+    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+    ///
+    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
+    /// let minus_abc = abc.iter().map(|x| -x);
+    /// let A2 = edwards::vartime::multiscalar_mult(minus_abc, &[P,Q,R]);
+    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+    ///
+    /// assert_eq!(A1.compress(), (-A2).compress());
+    /// ```
+    // XXX later when we do more fancy multiscalar mults, we can delegate
+    // based on the iter's size hint -- hdevalence
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> EdwardsPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b EdwardsPoint>
+    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
+        where I: IntoIterator,
+              I::Item: Borrow<Scalar>,
+              J: IntoIterator,
+              J::Item: Borrow<EdwardsPoint>,
     {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
@@ -893,9 +963,9 @@ pub mod vartime {
             //assert_eq!(scalars.len(), points.len());
 
             let nafs: Vec<_> = scalars.into_iter()
-                .map(|c| c.non_adjacent_form()).collect();
+                .map(|c| c.borrow().non_adjacent_form()).collect();
             let odd_multiples: Vec<_> = points.into_iter()
-                .map(|P| OddMultiples::create(P)).collect();
+                .map(|P| OddMultiples::create(P.borrow())).collect();
 
             let mut r = ProjectivePoint::identity();
 

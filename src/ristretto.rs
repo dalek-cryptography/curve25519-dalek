@@ -129,7 +129,7 @@
 //! gives the _Ristretto_ encoding.
 //!
 //! Notes on the details of the encoding can be found in the
-//! `ristretto::notes` submodule of the internal `curve25519-dalek`
+//! [`ristretto::notes`][ristretto_notes] submodule of the internal `curve25519-dalek`
 //! documentation.
 //!
 //! [cryptonote]:
@@ -138,6 +138,8 @@
 //! https://moderncrypto.org/mail-archive/curves/2017/000858.html
 //! [ristretto_coffee]:
 //! https://en.wikipedia.org/wiki/Ristretto
+//! [ristretto_notes]:
+//! https://doc-internal.dalek.rs/curve25519_dalek/ristretto/notes/index.html
 
 mod notes {
 

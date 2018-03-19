@@ -25,7 +25,7 @@ pub const D_LANES64: u8 = 0b11_00_00_00;
 
 pub const ALL_LANES: u8 = A_LANES | B_LANES | C_LANES | D_LANES;
 
-use std::ops::Mul;
+use core::ops::Mul;
 
 use stdsimd::simd::{u32x8, i32x8, u64x4};
 

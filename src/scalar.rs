@@ -393,6 +393,92 @@ impl Scalar {
         self.unpack().invert().pack()
     }
 
+    /// Given a slice of nonzero (possibly secret) `Scalar`s,
+    /// compute their inverses in a batch.
+    ///
+    /// # Return
+    ///
+    /// Each element of `inputs` is replaced by its inverse.
+    ///
+    /// The product of all inverses is returned.
+    ///
+    /// # Warning
+    ///
+    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
+    ///
+    /// This function is most efficient when the batch size (slice
+    /// length) is a power of 2.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// # fn main() {
+    ///
+    /// let mut scalars = [
+    ///     Scalar::from_u64(3),
+    ///     Scalar::from_u64(5),
+    ///     Scalar::from_u64(7),
+    ///     Scalar::from_u64(11),
+    /// ];
+    ///
+    /// let allinv = Scalar::batch_invert(&mut scalars);
+    ///
+    /// assert_eq!(allinv, Scalar::from_u64(3*5*7*11).invert());
+    /// assert_eq!(scalars[0], Scalar::from_u64(3).invert());
+    /// assert_eq!(scalars[1], Scalar::from_u64(5).invert());
+    /// assert_eq!(scalars[2], Scalar::from_u64(7).invert());
+    /// assert_eq!(scalars[3], Scalar::from_u64(11).invert());
+    /// # }
+    /// ```
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
+        // This code is essentially identical to the FieldElement
+        // implementation, and is documented there.  Unfortunately,
+        // it's not easy to write it generically, since here we want
+        // to use `UnpackedScalar`s internally, and `Scalar`s
+        // externally, but there's no corresponding distinction for
+        // field elements.
+
+        use clear_on_drop::ClearOnDrop;
+        use clear_on_drop::clear::ZeroSafe;
+        // Mark UnpackedScalars as zeroable.
+        unsafe impl ZeroSafe for UnpackedScalar {}
+
+        let n = inputs.len().next_power_of_two();
+        let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
+
+        // Wrap the tree storage in a ClearOnDrop to wipe it when we
+        // pass out of scope.
+        let mut tree_vec = vec![one; 2*n];
+        let mut tree = ClearOnDrop::new(tree_vec);
+
+        for i in 0..inputs.len() {
+            tree[n+i] = inputs[i].unpack().to_montgomery();
+        }
+
+        for i in (1..n).rev() {
+            tree[i] = UnpackedScalar::montgomery_mul(&tree[2*i], &tree[2*i+1]);
+        }
+
+        let allinv = tree[1].montgomery_invert();
+
+        for i in 0..inputs.len() {
+            let mut inv = allinv;
+            let mut node = n + i;
+            while node > 1 {
+                inv = UnpackedScalar::montgomery_mul(&inv, &tree[node ^1]);
+                node = node >> 1;
+            }
+            inputs[i] = inv.from_montgomery().pack();
+        }
+
+        allinv.from_montgomery().pack()
+    }
+
     /// Get the bits of the scalar.
     pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
@@ -495,6 +581,7 @@ impl Scalar {
     }
 
     /// Reduce this `Scalar` modulo \\(\ell\\).
+    #[allow(non_snake_case)]
     pub fn reduce(&self) -> Scalar {
         let x = self.unpack();
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
@@ -531,13 +618,11 @@ impl UnpackedScalar {
         Scalar{ bytes: self.to_bytes() }
     }
 
-    /// Compute the multiplicative inverse of this scalar.
-    pub fn invert(&self) -> UnpackedScalar {
-        // This is a direct transliteration of the addition chain from
+    /// Inverts an UnpackedScalar in Montgomery form.
+    pub fn montgomery_invert(&self) -> UnpackedScalar {
+        // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        // as it was published on 2017-09-03.
-
-        let    _1 = self.to_montgomery();
+        let    _1 = self;
         let   _10 = _1.montgomery_square();
         let  _100 = _10.montgomery_square();
         let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
@@ -586,7 +671,12 @@ impl UnpackedScalar {
         square_multiply(&mut y,       3, &_101);
         square_multiply(&mut y,   1 + 2, &_11);
 
-        y.from_montgomery()
+        y
+    }
+
+    /// Inverts an UnpackedScalar not in Montgomery form.
+    pub fn invert(&self) -> UnpackedScalar {
+        self.to_montgomery().montgomery_invert().from_montgomery()
     }
 }
 

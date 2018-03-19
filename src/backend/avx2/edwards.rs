@@ -456,7 +456,7 @@ impl EdwardsBasepointTable {
 
 /// Internal multiscalar code.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
     where I: IntoIterator,
           I::Item: Borrow<Scalar>,
           J: IntoIterator,
@@ -596,7 +596,7 @@ pub mod vartime {
 
     /// Internal multiscalar function
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
         where I: IntoIterator,
               I::Item: Borrow<Scalar>,
               J: IntoIterator,
@@ -881,7 +881,7 @@ mod test {
     }
 
     #[test]
-    fn multiscalar_mult_vs_adding_scalar_mults() {
+    fn multiscalar_mul_vs_adding_scalar_mults() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
         let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -891,7 +891,7 @@ mod test {
 
         let R = &(&P1 * &s1) + &(&P2 * &s2);
 
-        let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
+        let R_multiscalar = multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
 
         assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                    R_multiscalar.compress());
@@ -901,7 +901,7 @@ mod test {
         use super::*;
 
         #[test]
-        fn multiscalar_mult_vs_adding_scalar_mults() {
+        fn multiscalar_mul_vs_adding_scalar_mults() {
             let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
             let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
             let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -911,7 +911,7 @@ mod test {
 
             let R = &(&P1 * &s1) + &(&P2 * &s2);
 
-            let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
+            let R_multiscalar = vartime::multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
 
             assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                        R_multiscalar.compress());
@@ -1004,7 +1004,7 @@ mod bench {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
-        b.iter(|| multiscalar_mult(&scalars, &points));
+        b.iter(|| multiscalar_mul(&scalars, &points));
     }
 
     mod vartime {
@@ -1031,7 +1031,7 @@ mod bench {
             let B = &constants::ED25519_BASEPOINT_TABLE;
             let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
-            b.iter(|| vartime::multiscalar_mult(&scalars, &points));
+            b.iter(|| vartime::multiscalar_mul(&scalars, &points));
         }
     }
 }

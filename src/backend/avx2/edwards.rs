@@ -13,8 +13,9 @@
 // just going to own it
 #![allow(bad_style)]
 
-use std::convert::From;
-use std::ops::{Index, Add, Sub, Mul, Neg};
+use core::convert::From;
+use core::ops::{Index, Add, Sub, Mul, Neg};
+use core::borrow::Borrow;
 
 use stdsimd::simd::{u32x8, i32x8};
 

@@ -67,14 +67,19 @@ pub(crate) mod macros;
 
 // Scalar arithmetic mod l = 2^252 + ..., the order of the Ristretto group
 pub mod scalar;
+
 // Point operations on the Montgomery form of Curve25519
 pub mod montgomery;
+
 // Point operations on the Edwards form of Curve25519
 pub mod edwards;
+
 // Group operations on the Ristretto group
 pub mod ristretto;
+
 // Useful constants, like the Ed25519 basepoint
 pub mod constants;
+
 // External (and internal) traits.
 pub mod traits;
 
@@ -90,3 +95,6 @@ pub(crate) mod backend;
 
 // Internal curve models which are not part of the public API.
 pub(crate) mod curve_models;
+
+// Implementations of scalar mul algorithms live here
+pub(crate) mod scalar_mul;

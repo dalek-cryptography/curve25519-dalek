@@ -117,7 +117,7 @@ use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
 
-use curve_models::window::LookupTable;
+use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;

@@ -24,7 +24,7 @@ use subtle::Choice;
 
 use edwards;
 use scalar::Scalar;
-use curve_models::window::LookupTable;
+use scalar_mul::window::LookupTable;
 
 use traits::Identity;
 

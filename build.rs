@@ -54,6 +54,8 @@ mod field;
 mod curve_models;
 #[path="src/backend/mod.rs"]
 mod backend;
+#[path="src/scalar_mul/mod.rs"]
+mod scalar_mul;
 
 use edwards::EdwardsBasepointTable;
 
@@ -77,9 +79,9 @@ use backend::u32::field::FieldElement32;
 
 use edwards::EdwardsBasepointTable;
 
-use curve_models::window::LookupTable;
 use curve_models::AffineNielsPoint;
 
+use scalar_mul::window::LookupTable;
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\\\(B = (x, 4/5)\\\\).
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;

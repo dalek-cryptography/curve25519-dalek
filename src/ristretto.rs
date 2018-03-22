@@ -1327,7 +1327,7 @@ mod test {
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - &bp_recaf;
-        let diff4 = diff.mult_by_pow_2(2);
+        let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 

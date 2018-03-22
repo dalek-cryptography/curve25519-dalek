@@ -505,7 +505,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
             let mut Q = EdwardsPoint::identity();
             for i in (0..64).rev() {
                 // Q <-- 16*Q
-                Q = Q.mult_by_pow_2(4);
+                Q = Q.mul_by_pow_2(4);
                 // Q <-- Q + P * s_i
                 Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
             }
@@ -634,7 +634,7 @@ pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
         let mut Q = EdwardsPoint::identity();
         // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
         for j in (0..64).rev() {
-            Q = Q.mult_by_pow_2(4);
+            Q = Q.mul_by_pow_2(4);
             let it = scalar_digits.iter().zip(lookup_tables.iter());
             for (s_i, lookup_table_i) in it {
                 // R_i = s_{i,j} * P_i
@@ -694,7 +694,7 @@ impl EdwardsBasepointTable {
             P = (&P + &tables[i/2].select(a[i])).to_extended();
         }
 
-        P = P.mult_by_pow_2(4);
+        P = P.mul_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
             P = (&P + &tables[i/2].select(a[i])).to_extended();
@@ -734,7 +734,7 @@ impl EdwardsBasepointTable {
         for i in 0..32 {
             // P = (16^2)^i * B
             table.0[i] = LookupTable::from(&P);
-            P = P.mult_by_pow_2(8);
+            P = P.mul_by_pow_2(8);
         }
         table
     }
@@ -752,11 +752,11 @@ impl EdwardsBasepointTable {
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\([8]P\\).
     pub fn mult_by_cofactor(&self) -> EdwardsPoint {
-        self.mult_by_pow_2(3)
+        self.mul_by_pow_2(3)
     }
 
     /// Compute \\([2\^k] P \\) by successive doublings. Requires \\( k > 0 \\).
-    pub(crate) fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
+    pub(crate) fn mul_by_pow_2(&self, k: u32) -> EdwardsPoint {
         debug_assert!( k > 0 );
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
@@ -1276,10 +1276,10 @@ mod test {
                    constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
-    /// Test computing 16*basepoint vs mult_by_pow_2(4)
+    /// Test computing 16*basepoint vs mul_by_pow_2(4)
     #[test]
-    fn basepoint16_vs_mult_by_pow_2_4() {
-        let bp16 = constants::ED25519_BASEPOINT_POINT.mult_by_pow_2(4);
+    fn basepoint16_vs_mul_by_pow_2_4() {
+        let bp16 = constants::ED25519_BASEPOINT_POINT.mul_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 

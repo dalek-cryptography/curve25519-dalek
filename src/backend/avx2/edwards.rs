@@ -237,7 +237,7 @@ impl ExtendedPoint {
         }
     }
 
-    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+    pub fn mul_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut tmp: ExtendedPoint = *self;
         for _ in 0..k {
             tmp = tmp.double();
@@ -396,7 +396,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         let mut Q = ExtendedPoint::identity();
         for i in (0..64).rev() {
             // Q = 16*Q
-            Q = Q.mult_by_pow_2(4);
+            Q = Q.mul_by_pow_2(4);
             // Q += P*s_i
             Q = &Q + &lookup_table.select(scalar_digits[i]);
         }
@@ -420,7 +420,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
             P = &P + &tables[i/2].select(a[i]);
         }
 
-        P = P.mult_by_pow_2(4);
+        P = P.mul_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
             P = &P + &tables[i/2].select(a[i]);
@@ -448,7 +448,7 @@ impl EdwardsBasepointTable {
         for i in 0..32 {
             // P = (16^2)^i * B
             table.0[i] = LookupTable::from(P);
-            P = P.mult_by_pow_2(8);
+            P = P.mul_by_pow_2(8);
         }
         table
     }
@@ -507,7 +507,7 @@ pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
     let mut Q = ExtendedPoint::identity();
     // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
-        Q = Q.mult_by_pow_2(4);
+        Q = Q.mul_by_pow_2(4);
         let it = scalar_digits.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
             // Q = Q + s_{i,j} * P_i

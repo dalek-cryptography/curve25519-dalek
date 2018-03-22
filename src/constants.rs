@@ -105,7 +105,7 @@ mod test {
     #[test]
     fn test_eight_torsion() {
         for i in 0..8 {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(3);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -114,7 +114,7 @@ mod test {
     #[test]
     fn test_four_torsion() {
         for i in (0..8).filter(|i| i % 2 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(2);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -123,7 +123,7 @@ mod test {
     #[test]
     fn test_two_torsion() {
         for i in (0..8).filter(|i| i % 4 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(1);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }

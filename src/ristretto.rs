@@ -475,7 +475,7 @@ use core::borrow::Borrow;
 use rand::Rng;
 
 use digest::Digest;
-use generic_array::typenum::U32;
+use generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
@@ -816,7 +816,7 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub(crate) fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
 
@@ -871,27 +871,40 @@ impl RistrettoPoint {
     ///
     /// # Implementation
     ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the discrete log of the
-    /// output point with respect to any other point should be unknown.
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
     #[cfg(feature = "std")]
     pub fn random<T: Rng>(rng: &mut T) -> Self {
         let mut field_bytes = [0u8; 32];
+
         rng.fill_bytes(&mut field_bytes);
-        let r_0 = FieldElement::from_bytes(&field_bytes);
-        RistrettoPoint::elligator_ristretto_flavour(&r_0)
+        let r_1 = FieldElement::from_bytes(&field_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        rng.fill_bytes(&mut field_bytes);
+        let r_2 = FieldElement::from_bytes(&field_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        &R_1 + &R_2
     }
 
     /// Hash a slice of bytes into a `RistrettoPoint`.
     ///
-    /// Takes a type parameter `D`, which is any `Digest` producing 32
-    /// bytes (256 bits) of output.
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes of output.
     ///
     /// Convenience wrapper around `from_hash`.
     ///
     /// # Implementation
     ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the discrete log of the
-    /// output point with respect to any other point should be unknown.
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
     ///
     /// # Example
     ///
@@ -899,18 +912,18 @@ impl RistrettoPoint {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// extern crate sha2;
-    /// use sha2::Sha256;
+    /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    /// let P = RistrettoPoint::hash_from_bytes::<Sha256>(msg.as_bytes());
+    /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
-        where D: Digest<OutputSize = U32> + Default
+        where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
         hash.input(input);
@@ -923,13 +936,24 @@ impl RistrettoPoint {
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
     pub fn from_hash<D>(hash: D) -> RistrettoPoint
-        where D: Digest<OutputSize = U32> + Default
+        where D: Digest<OutputSize = U64> + Default
     {
-        // XXX this seems clumsy
-        let mut output = [0u8; 32];
-        output.copy_from_slice(hash.result().as_slice());
-        let r_0 = FieldElement::from_bytes(&output);
-        RistrettoPoint::elligator_ristretto_flavour(&r_0)
+        // dealing with generic arrays is clumsy, until const generics land
+        let output = hash.result();
+
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        let mut r_2_bytes = [0u8; 32];
+        r_2_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        let r_2 = FieldElement::from_bytes(&r_2_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        &R_1 + &R_2
     }
 }
 
@@ -1431,7 +1455,7 @@ mod test {
         ];
         for i in 0..16 {
             let r_0 = FieldElement::from_bytes(&bytes[i]);
-            let Q = RistrettoPoint::elligator_ristretto_flavour(&r_0);
+            let Q = RistrettoPoint::elligator_ristretto_flavor(&r_0);
             assert_eq!(Q.compress(), encoded_images[i]);
         }
     }

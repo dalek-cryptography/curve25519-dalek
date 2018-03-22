@@ -994,7 +994,7 @@ pub mod vartime {
     /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
     #[cfg(feature="precomputed_tables")]
-    pub fn double_scalar_mult_basepoint(
+    pub fn double_scalar_mul_basepoint(
         a: &Scalar,
         A: &EdwardsPoint,
         b: &Scalar,
@@ -1003,7 +1003,7 @@ pub mod vartime {
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
 
-            edwards_avx2::vartime::double_scalar_mult_basepoint(a, A, b)
+            edwards_avx2::vartime::double_scalar_mul_basepoint(a, A, b)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
@@ -1356,9 +1356,9 @@ mod test {
         /// Test double_scalar_mult_vartime vs ed25519.py
         #[test]
         #[cfg(feature="precomputed_tables")]
-        fn double_scalar_mult_basepoint_vs_ed25519py() {
+        fn double_scalar_mul_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
+            let result = vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
         }
 
@@ -1535,9 +1535,9 @@ mod bench {
         use super::{Bencher, OsRng};
 
         #[bench]
-        fn bench_double_scalar_mult_basepoint(b: &mut Bencher) {
+        fn bench_double_scalar_mul_basepoint(b: &mut Bencher) {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            b.iter(|| vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR));
+            b.iter(|| vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR));
         }
 
         #[bench]

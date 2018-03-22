@@ -550,7 +550,7 @@ pub mod vartime {
     /// with x positive).
     ///
     /// This is the same as calling the iterator-based function, but slightly faster.
-    pub fn double_scalar_mult_basepoint(a: &Scalar,
+    pub fn double_scalar_mul_basepoint(a: &Scalar,
                                         A: &edwards::EdwardsPoint,
                                         b: &Scalar) -> edwards::EdwardsPoint {
         let a_naf = a.non_adjacent_form();
@@ -1019,7 +1019,7 @@ mod bench {
             let s2 = Scalar::random(&mut csprng);
             let P = &s1 * &constants::ED25519_BASEPOINT_TABLE;
 
-            b.iter(|| vartime::double_scalar_mult_basepoint(&s2, &P, &s1) );
+            b.iter(|| vartime::double_scalar_mul_basepoint(&s2, &P, &s1) );
         }
 
         #[bench]

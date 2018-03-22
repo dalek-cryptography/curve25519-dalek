@@ -26,9 +26,9 @@ use rand::Rng;
 use digest::Digest;
 use generic_array::typenum::U64;
 
-use subtle::slices_equal;
+use subtle::Choice;
 use subtle::ConditionallyAssignable;
-use subtle::Equal;
+use subtle::ConstantTimeEq;
 
 use backend;
 use constants;
@@ -145,29 +145,14 @@ impl Debug for Scalar {
 
 impl Eq for Scalar {}
 impl PartialEq for Scalar {
-    /// Test equality between two `Scalar`s.
-    ///
-    /// # Warning
-    ///
-    /// This function is *not* guaranteed to be constant time and should only be
-    /// used for debugging purposes.
-    ///
-    /// # Returns
-    ///
-    /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        slices_equal(&self.bytes, &other.bytes) == 1u8
+        self.ct_eq(other).unwrap_u8() == 1u8
     }
 }
 
-impl Equal for Scalar {
-    /// Test equality between two `Scalar`s in constant time.
-    ///
-    /// # Returns
-    ///
-    /// `1u8` if they are equal, and `0u8` otherwise.
-    fn ct_eq(&self, other: &Self) -> u8 {
-        slices_equal(&self.bytes, &other.bytes)
+impl ConstantTimeEq for Scalar {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.bytes.ct_eq(&other.bytes)
     }
 }
 
@@ -246,34 +231,9 @@ impl<'a> Neg for Scalar {
 }
 
 impl ConditionallyAssignable for Scalar {
-    /// Conditionally assign another Scalar to this one.
-    ///
-    /// ```
-    /// # extern crate curve25519_dalek;
-    /// # extern crate subtle;
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::ConditionallyAssignable;
-    /// # fn main() {
-    /// let a = Scalar::from_bits([0u8;32]);
-    /// let b = Scalar::from_bits([1u8;32]);
-    /// let mut t = a;
-    /// t.conditional_assign(&b, 0u8);
-    /// assert!(t[0] == a[0]);
-    /// t.conditional_assign(&b, 1u8);
-    /// assert!(t[0] == b[0]);
-    /// # }
-    /// ```
-    ///
-    /// # Preconditions
-    ///
-    /// * `choice` in {0,1}
-    // XXX above test checks first byte because Scalar does not impl Eq
-    fn conditional_assign(&mut self, other: &Scalar, choice: u8) {
-        // if choice = 0u8, mask = (-0i8) as u8 = 00000000
-        // if choice = 1u8, mask = (-1i8) as u8 = 11111111
-        let mask = -(choice as i8) as u8;
+    fn conditional_assign(&mut self, other: &Scalar, choice: Choice) {
         for i in 0..32 {
-            self.bytes[i] ^= mask & (self.bytes[i] ^ other.bytes[i]);
+            self.bytes[i].conditional_assign(&other.bytes[i], choice);
         }
     }
 }
@@ -433,6 +393,95 @@ impl Scalar {
         self.unpack().invert().pack()
     }
 
+    /// Given a slice of nonzero (possibly secret) `Scalar`s,
+    /// compute their inverses in a batch.
+    ///
+    /// # Return
+    ///
+    /// Each element of `inputs` is replaced by its inverse.
+    ///
+    /// The product of all inverses is returned.
+    ///
+    /// # Warning
+    ///
+    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
+    ///
+    /// This function is most efficient when the batch size (slice
+    /// length) is a power of 2.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// # fn main() {
+    ///
+    /// let mut scalars = [
+    ///     Scalar::from_u64(3),
+    ///     Scalar::from_u64(5),
+    ///     Scalar::from_u64(7),
+    ///     Scalar::from_u64(11),
+    /// ];
+    ///
+    /// let allinv = Scalar::batch_invert(&mut scalars);
+    ///
+    /// assert_eq!(allinv, Scalar::from_u64(3*5*7*11).invert());
+    /// assert_eq!(scalars[0], Scalar::from_u64(3).invert());
+    /// assert_eq!(scalars[1], Scalar::from_u64(5).invert());
+    /// assert_eq!(scalars[2], Scalar::from_u64(7).invert());
+    /// assert_eq!(scalars[3], Scalar::from_u64(11).invert());
+    /// # }
+    /// ```
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
+        // This code is essentially identical to the FieldElement
+        // implementation, and is documented there.  Unfortunately,
+        // it's not easy to write it generically, since here we want
+        // to use `UnpackedScalar`s internally, and `Scalar`s
+        // externally, but there's no corresponding distinction for
+        // field elements.
+
+        use clear_on_drop::ClearOnDrop;
+        use clear_on_drop::clear::ZeroSafe;
+        // Mark UnpackedScalars as zeroable.
+        unsafe impl ZeroSafe for UnpackedScalar {}
+
+        let n = inputs.len().next_power_of_two();
+        let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
+
+        // Wrap the tree storage in a ClearOnDrop to wipe it when we
+        // pass out of scope.
+        let tree_vec = vec![one; 2*n];
+        let mut tree = ClearOnDrop::new(tree_vec);
+
+        for i in 0..inputs.len() {
+            tree[n+i] = inputs[i].unpack().to_montgomery();
+        }
+
+        for i in (1..n).rev() {
+            tree[i] = UnpackedScalar::montgomery_mul(&tree[2*i], &tree[2*i+1]);
+        }
+
+        // tree[1] is zero iff any of the inputs are zero.
+        debug_assert!(tree[1].from_montgomery().pack() != Scalar::zero());
+
+        let allinv = tree[1].montgomery_invert();
+
+        for i in 0..inputs.len() {
+            let mut inv = allinv;
+            let mut node = n + i;
+            while node > 1 {
+                inv = UnpackedScalar::montgomery_mul(&inv, &tree[node ^1]);
+                node = node >> 1;
+            }
+            inputs[i] = inv.from_montgomery().pack();
+        }
+
+        allinv.from_montgomery().pack()
+    }
+
     /// Get the bits of the scalar.
     pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
@@ -535,6 +584,7 @@ impl Scalar {
     }
 
     /// Reduce this `Scalar` modulo \\(\ell\\).
+    #[allow(non_snake_case)]
     pub fn reduce(&self) -> Scalar {
         let x = self.unpack();
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
@@ -571,13 +621,11 @@ impl UnpackedScalar {
         Scalar{ bytes: self.to_bytes() }
     }
 
-    /// Compute the multiplicative inverse of this scalar.
-    pub fn invert(&self) -> UnpackedScalar {
-        // This is a direct transliteration of the addition chain from
+    /// Inverts an UnpackedScalar in Montgomery form.
+    pub fn montgomery_invert(&self) -> UnpackedScalar {
+        // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        // as it was published on 2017-09-03.
-
-        let    _1 = self.to_montgomery();
+        let    _1 = self;
         let   _10 = _1.montgomery_square();
         let  _100 = _10.montgomery_square();
         let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
@@ -626,7 +674,12 @@ impl UnpackedScalar {
         square_multiply(&mut y,       3, &_101);
         square_multiply(&mut y,   1 + 2, &_11);
 
-        y.from_montgomery()
+        y
+    }
+
+    /// Inverts an UnpackedScalar not in Montgomery form.
+    pub fn invert(&self) -> UnpackedScalar {
+        self.to_montgomery().montgomery_invert().from_montgomery()
     }
 }
 
@@ -660,24 +713,6 @@ mod test {
             0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
             0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
             0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05,
-        ],
-    };
-    /// z = 5033871415930814945849241457262266927579821285980625165479289807629491019013
-    pub static Z: Scalar = Scalar{
-        bytes: [
-            0x05, 0x9d, 0x3e, 0x0b, 0x09, 0x26, 0x50, 0x3d,
-            0xa3, 0x84, 0xa1, 0x3c, 0x92, 0x7a, 0xc2, 0x06,
-            0x41, 0x98, 0xcf, 0x34, 0x3a, 0x24, 0xd5, 0xb7,
-            0xeb, 0x33, 0x6a, 0x2d, 0xfc, 0x11, 0x21, 0x0b,
-        ],
-    };
-    /// w = 3486911242272497535104403593250518247409663771668155364040899665266216860804
-    static W: Scalar = Scalar{
-        bytes: [
-            0x84, 0xfc, 0xbc, 0x4f, 0x78, 0x12, 0xa0, 0x06,
-            0xd7, 0x91, 0xd9, 0x7a, 0x3a, 0x27, 0xdd, 0x1e,
-            0x21, 0x43, 0x45, 0xf7, 0xb1, 0xb9, 0x56, 0x7a,
-            0x81, 0x30, 0x73, 0x44, 0x96, 0x85, 0xb5, 0x07,
         ],
     };
 
@@ -775,7 +810,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_multiply_by_one() {
+    fn scalar_mul_by_one() {
         let test_scalar = &X * &Scalar::one();
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
@@ -926,6 +961,15 @@ mod test {
         let output = serde_cbor::to_vec(&X).unwrap();
         let parsed: Scalar = serde_cbor::from_slice(&output).unwrap();
         assert_eq!(parsed, X);
+    }
+
+    #[test]
+    #[should_panic]
+    fn batch_invert_with_a_zero_input_panics() {
+        let mut xs = vec![Scalar::one(); 16];
+        xs[3] = Scalar::zero();
+        // This should panic in debug mode.
+        Scalar::batch_invert(&mut xs);
     }
 }
 

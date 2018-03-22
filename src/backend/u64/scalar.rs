@@ -270,6 +270,7 @@ impl Scalar64 {
 
     /// Compute `a^2` (mod l)
     #[inline(never)]
+    #[allow(dead_code)] // XXX we don't expose square() via the Scalar API
     pub fn square(&self) -> Scalar64 {
         let aa = Scalar64::montgomery_reduce(&Scalar64::square_internal(self));
         Scalar64::montgomery_reduce(&Scalar64::mul_internal(&aa, &constants::RR))

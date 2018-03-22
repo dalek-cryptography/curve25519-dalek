@@ -13,12 +13,14 @@
 // just going to own it
 #![allow(bad_style)]
 
-use std::convert::From;
-use std::ops::{Index, Add, Sub, Mul, Neg};
+use core::convert::From;
+use core::ops::{Index, Add, Sub, Mul, Neg};
+use core::borrow::Borrow;
 
 use stdsimd::simd::{u32x8, i32x8};
 
 use subtle::ConditionallyAssignable;
+use subtle::Choice;
 
 use edwards;
 use scalar::Scalar;
@@ -51,7 +53,7 @@ impl From<ExtendedPoint> for edwards::EdwardsPoint {
 }
 
 impl ConditionallyAssignable for ExtendedPoint {
-    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: Choice) {
         self.0.conditional_assign(&other.0, choice);
     }
 }
@@ -114,7 +116,7 @@ impl Identity for CachedPoint {
 }
 
 impl ConditionallyAssignable for CachedPoint {
-    fn conditional_assign(&mut self, other: &CachedPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &CachedPoint, choice: Choice) {
         self.0.conditional_assign(&other.0, choice);
     }
 }
@@ -236,7 +238,7 @@ impl ExtendedPoint {
         }
     }
 
-    pub fn mult_by_pow_2(&self, k: u32) -> ExtendedPoint {
+    pub fn mul_by_pow_2(&self, k: u32) -> ExtendedPoint {
         let mut tmp: ExtendedPoint = *self;
         for _ in 0..k {
             tmp = tmp.double();
@@ -395,7 +397,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
         let mut Q = ExtendedPoint::identity();
         for i in (0..64).rev() {
             // Q = 16*Q
-            Q = Q.mult_by_pow_2(4);
+            Q = Q.mul_by_pow_2(4);
             // Q += P*s_i
             Q = &Q + &lookup_table.select(scalar_digits[i]);
         }
@@ -419,7 +421,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
             P = &P + &tables[i/2].select(a[i]);
         }
 
-        P = P.mult_by_pow_2(4);
+        P = P.mul_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
             P = &P + &tables[i/2].select(a[i]);
@@ -447,38 +449,25 @@ impl EdwardsBasepointTable {
         for i in 0..32 {
             // P = (16^2)^i * B
             table.0[i] = LookupTable::from(P);
-            P = P.mult_by_pow_2(8);
+            P = P.mul_by_pow_2(8);
         }
         table
     }
 }
 
-/// Given a vector of (possibly secret) scalars and a vector of
-/// (possibly secret) points, compute `c_1 P_1 + ... + c_n P_n`.
-///
-/// This function has the same behaviour as
-/// `vartime::multiscalar_mult` but is constant-time.
-///
-/// # Input
-///
-/// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
-/// error to call this function with two vectors of different lengths.
-///
-/// XXX this takes `edwards::EdwardsPoints` because we have to alloc scratch space here anyways,
-/// and we need some space to store the converted points, so we may as well do the conversion here.
-/// maybe there's a better way to avoid code duplication... however we can't quite just write a
-/// generic `multiscalar_mult` because the non-vectorized code passes between models and this code
-/// doesn't.
+/// Internal multiscalar code.
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-    where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b edwards::EdwardsPoint>
+pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+    where I: IntoIterator,
+          I::Item: Borrow<Scalar>,
+          J: IntoIterator,
+          J::Item: Borrow<edwards::EdwardsPoint>,
 {
     //assert_eq!(scalars.len(), points.len());
 
     use clear_on_drop::ClearOnDrop;
     let lookup_tables_vec: Vec<_> = points.into_iter()
-        .map(|P| LookupTable::from(ExtendedPoint::from(*P)) )
+        .map(|P| LookupTable::from(ExtendedPoint::from(*P.borrow())) )
         .collect();
 
     let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
@@ -489,7 +478,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Edwards
     //
     // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
     let scalar_digits_vec: Vec<_> = scalars.into_iter()
-        .map(|c| c.to_radix_16())
+        .map(|c| c.borrow().to_radix_16())
         .collect();
 
     // The above puts the scalar digits into a heap-allocated Vec.
@@ -519,7 +508,7 @@ pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::Edwards
     let mut Q = ExtendedPoint::identity();
     // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
     for j in (0..64).rev() {
-        Q = Q.mult_by_pow_2(4);
+        Q = Q.mul_by_pow_2(4);
         let it = scalar_digits.iter().zip(lookup_tables.iter());
         for (s_i, lookup_table_i) in it {
             // Q = Q + s_{i,j} * P_i
@@ -562,7 +551,7 @@ pub mod vartime {
     /// with x positive).
     ///
     /// This is the same as calling the iterator-based function, but slightly faster.
-    pub fn double_scalar_mult_basepoint(a: &Scalar,
+    pub fn double_scalar_mul_basepoint(a: &Scalar,
                                         A: &edwards::EdwardsPoint,
                                         b: &Scalar) -> edwards::EdwardsPoint {
         let a_naf = a.non_adjacent_form();
@@ -606,27 +595,21 @@ pub mod vartime {
         Q.into()
     }
 
-    /// Given a vector of public scalars and a vector of public points, compute
-    /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-    /// $$
-    ///
-    /// # Input
-    ///
-    /// A vector of `Scalar`s and a vector of `EdwardsPoints`.  It is an
-    /// error to call this function with two vectors of different lengths.
+    /// Internal multiscalar function
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b edwards::EdwardsPoint>
+    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
+        where I: IntoIterator,
+              I::Item: Borrow<Scalar>,
+              J: IntoIterator,
+              J::Item: Borrow<edwards::EdwardsPoint>,
     {
         //assert_eq!(scalars.len(), points.len());
 
         let nafs: Vec<_> = scalars.into_iter()
-            .map(|c| c.non_adjacent_form()).collect();
+            .map(|c| c.borrow().non_adjacent_form()).collect();
 
         let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| OddMultiples::create((*P).into()) ).collect();
+            .map(|P| OddMultiples::create((*P.borrow()).into()) ).collect();
 
         let mut Q = ExtendedPoint::identity();
 
@@ -873,7 +856,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_mult_vs_edwards_scalar_mult() {
+    fn scalar_mul_vs_edwards_scalar_mul() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         // some random bytes
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
@@ -885,7 +868,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_mult_vs_basepoint_table_scalar_mult() {
+    fn scalar_mul_vs_basepoint_table_scalar_mul() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let B_table = EdwardsBasepointTable::create(&B);
         // some random bytes
@@ -899,7 +882,7 @@ mod test {
     }
 
     #[test]
-    fn multiscalar_mult_vs_adding_scalar_mults() {
+    fn multiscalar_mul_vs_adding_scalar_muls() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
         let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -909,7 +892,7 @@ mod test {
 
         let R = &(&P1 * &s1) + &(&P2 * &s2);
 
-        let R_multiscalar = multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
+        let R_multiscalar = multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
 
         assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                    R_multiscalar.compress());
@@ -919,7 +902,7 @@ mod test {
         use super::*;
 
         #[test]
-        fn multiscalar_mult_vs_adding_scalar_mults() {
+        fn multiscalar_mul_vs_adding_scalar_muls() {
             let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
             let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
             let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -929,7 +912,7 @@ mod test {
 
             let R = &(&P1 * &s1) + &(&P2 * &s2);
 
-            let R_multiscalar = vartime::multiscalar_mult(&[s1, s2], &[P1.into(), P2.into()]);
+            let R_multiscalar = vartime::multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
 
             assert_eq!(edwards::EdwardsPoint::from(R).compress(),
                        R_multiscalar.compress());
@@ -989,7 +972,7 @@ mod bench {
     }
 
     #[bench]
-    fn scalar_mult(b: &mut Bencher) {
+    fn scalar_mul(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
@@ -1014,7 +997,7 @@ mod bench {
     }
 
     #[bench]
-    fn ten_fold_scalar_mult(b: &mut Bencher) {
+    fn ten_fold_scalar_mul(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1022,7 +1005,7 @@ mod bench {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
-        b.iter(|| multiscalar_mult(&scalars, &points));
+        b.iter(|| multiscalar_mul(&scalars, &points));
     }
 
     mod vartime {
@@ -1030,18 +1013,18 @@ mod bench {
         use super::{constants, Bencher, OsRng};
 
         #[bench]
-        fn double_scalar_mult(b: &mut Bencher) {
+        fn double_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 2 random scalars
             let s1 = Scalar::random(&mut csprng);
             let s2 = Scalar::random(&mut csprng);
             let P = &s1 * &constants::ED25519_BASEPOINT_TABLE;
 
-            b.iter(|| vartime::double_scalar_mult_basepoint(&s2, &P, &s1) );
+            b.iter(|| vartime::double_scalar_mul_basepoint(&s2, &P, &s1) );
         }
 
         #[bench]
-        fn ten_fold_scalar_mult(b: &mut Bencher) {
+        fn ten_fold_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1049,7 +1032,7 @@ mod bench {
             let B = &constants::ED25519_BASEPOINT_TABLE;
             let points: Vec<_> = scalars.iter().map(|s| B * s).collect();
 
-            b.iter(|| vartime::multiscalar_mult(&scalars, &points));
+            b.iter(|| vartime::multiscalar_mul(&scalars, &points));
         }
     }
 }

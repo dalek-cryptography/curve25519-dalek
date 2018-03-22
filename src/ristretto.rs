@@ -57,9 +57,10 @@
 //! checking in the Ristretto group can be done in projective
 //! coordinates without requiring an inversion, so it is much faster.
 //!
-//! The `RistrettoPoint` struct implements the `subtle::Equal` trait for
-//! constant-time equality checking, and the Rust `Eq` trait for
-//! variable-time equality checking.
+//! The `RistrettoPoint` struct implements the
+//! `subtle::ConstantTimeEq` trait for constant-time equality
+//! checking, and the Rust `Eq` trait for variable-time equality
+//! checking.
 //!
 //! ## Scalars
 //!
@@ -78,10 +79,10 @@
 //! `RistrettoBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `ristretto::multiscalar_mult` function, which performs
+//! * the `ristretto::multiscalar_mul` function, which performs
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `ristretto::vartime::multiscalar_mult` function, which
+//! * the `ristretto::vartime::multiscalar_mul` function, which
 //! performs variable-time variable-base multiscalar multiplication.
 //!
 //! ## Random Points and Hashing to Ristretto
@@ -129,7 +130,7 @@
 //! gives the _Ristretto_ encoding.
 //!
 //! Notes on the details of the encoding can be found in the
-//! `ristretto::notes` submodule of the internal `curve25519-dalek`
+//! [`ristretto::notes`][ristretto_notes] submodule of the internal `curve25519-dalek`
 //! documentation.
 //!
 //! [cryptonote]:
@@ -138,6 +139,8 @@
 //! https://moderncrypto.org/mail-archive/curves/2017/000858.html
 //! [ristretto_coffee]:
 //! https://en.wikipedia.org/wiki/Ristretto
+//! [ristretto_notes]:
+//! https://doc-internal.dalek.rs/curve25519_dalek/ristretto/notes/index.html
 
 mod notes {
 
@@ -463,24 +466,24 @@ mod notes {
 }
 
 use core::fmt::Debug;
+use core::ops::{Add, Sub, Neg};
+use core::ops::{AddAssign, SubAssign};
+use core::ops::{Mul, MulAssign};
+use core::borrow::Borrow;
 
 #[cfg(feature = "std")]
 use rand::Rng;
 
 use digest::Digest;
-use generic_array::typenum::U32;
+use generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
 
-use core::ops::{Add, Sub, Neg};
-use core::ops::{AddAssign, SubAssign};
-use core::ops::{Mul, MulAssign};
-
-use subtle;
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallyNegatable;
-use subtle::Equal;
+use subtle::ConstantTimeEq;
+use subtle::Choice;
 
 use edwards;
 use edwards::EdwardsPoint;
@@ -536,10 +539,10 @@ impl CompressedRistretto {
         let s = FieldElement::from_bytes(self.as_bytes());
         let s_bytes_check = s.to_bytes();
         let s_encoding_is_canonical =
-            subtle::slices_equal(&s_bytes_check[..], self.as_bytes());
+            &s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if s_encoding_is_canonical == 0u8 || s_is_negative == 1u8 {
+        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
             return None;
         }
 
@@ -563,7 +566,7 @@ impl CompressedRistretto {
 
         let t = &x * &y;
 
-        if ok == 0u8 || t.is_negative() == 1u8 || y.is_zero() == 1u8 {
+        if ok.unwrap_u8() == 0u8 || t.is_negative().unwrap_u8() == 1u8 || y.is_zero().unwrap_u8() == 1u8 {
             return None;
         } else {
             return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
@@ -813,7 +816,7 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub(crate) fn elligator_ristretto_flavour(r_0: &FieldElement) -> RistrettoPoint {
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
 
@@ -837,7 +840,7 @@ impl RistrettoPoint {
         maybe_s.negate();
 
         // s = -sqrt(rN/D) if rN/D is square (should happen exactly when N/D is nonsquare)
-        debug_assert_eq!(N_over_D_is_square ^ rN_over_D_is_square, 1u8);
+        debug_assert_eq!((N_over_D_is_square ^ rN_over_D_is_square).unwrap_u8(), 1u8);
         s.conditional_assign(&maybe_s, rN_over_D_is_square);
         c.conditional_assign(&r, rN_over_D_is_square);
 
@@ -868,27 +871,40 @@ impl RistrettoPoint {
     ///
     /// # Implementation
     ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the discrete log of the
-    /// output point with respect to any other point should be unknown.
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
     #[cfg(feature = "std")]
     pub fn random<T: Rng>(rng: &mut T) -> Self {
         let mut field_bytes = [0u8; 32];
+
         rng.fill_bytes(&mut field_bytes);
-        let r_0 = FieldElement::from_bytes(&field_bytes);
-        RistrettoPoint::elligator_ristretto_flavour(&r_0)
+        let r_1 = FieldElement::from_bytes(&field_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        rng.fill_bytes(&mut field_bytes);
+        let r_2 = FieldElement::from_bytes(&field_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        &R_1 + &R_2
     }
 
     /// Hash a slice of bytes into a `RistrettoPoint`.
     ///
-    /// Takes a type parameter `D`, which is any `Digest` producing 32
-    /// bytes (256 bits) of output.
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes of output.
     ///
     /// Convenience wrapper around `from_hash`.
     ///
     /// # Implementation
     ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the discrete log of the
-    /// output point with respect to any other point should be unknown.
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
     ///
     /// # Example
     ///
@@ -896,18 +912,18 @@ impl RistrettoPoint {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// extern crate sha2;
-    /// use sha2::Sha256;
+    /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    /// let P = RistrettoPoint::hash_from_bytes::<Sha256>(msg.as_bytes());
+    /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
     ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
-        where D: Digest<OutputSize = U32> + Default
+        where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
         hash.input(input);
@@ -920,13 +936,24 @@ impl RistrettoPoint {
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
     pub fn from_hash<D>(hash: D) -> RistrettoPoint
-        where D: Digest<OutputSize = U32> + Default
+        where D: Digest<OutputSize = U64> + Default
     {
-        // XXX this seems clumsy
-        let mut output = [0u8; 32];
-        output.copy_from_slice(hash.result().as_slice());
-        let r_0 = FieldElement::from_bytes(&output);
-        RistrettoPoint::elligator_ristretto_flavour(&r_0)
+        // dealing with generic arrays is clumsy, until const generics land
+        let output = hash.result();
+
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        let mut r_2_bytes = [0u8; 32];
+        r_2_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        let r_2 = FieldElement::from_bytes(&r_2_bytes);
+        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        &R_1 + &R_2
     }
 }
 
@@ -942,17 +969,18 @@ impl Identity for RistrettoPoint {
 
 impl PartialEq for RistrettoPoint {
     fn eq(&self, other: &RistrettoPoint) -> bool {
-        self.ct_eq(other) == 1u8
+        self.ct_eq(other).unwrap_u8() == 1u8
     }
 }
 
-impl Equal for RistrettoPoint {
+impl ConstantTimeEq for RistrettoPoint {
     /// Test equality between two `RistrettoPoint`s.
     ///
     /// # Returns
     ///
-    /// `1u8` if the two `RistrettoPoint`s are equal, and `0u8` otherwise.
-    fn ct_eq(&self, other: &RistrettoPoint) -> u8 {
+    /// * `Choice(1)` if the two `RistrettoPoint`s are equal;
+    /// * `Choice(0)` otherwise.
+    fn ct_eq(&self, other: &RistrettoPoint) -> Choice {
         let X1Y2 = &self.0.X * &other.0.Y;
         let Y1X2 = &self.0.Y * &other.0.X;
         let X1X2 = &self.0.X * &other.0.X;
@@ -1057,19 +1085,52 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 /// $$
 ///
 /// This function has the same behaviour as
-/// `vartime::multiscalar_mult` but is constant-time.
+/// `vartime::multiscalar_mul` but is constant-time.
 ///
-/// # Input
+/// It is an error to call this function with two iterators of different lengths.
 ///
-/// An iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
-/// error to call this function with two iterators of different lengths.
+/// # Examples
+///
+/// The trait bound aims for maximum flexibility: the inputs must be
+/// convertable to iterators (`I: IntoIter`), and the iterator's items
+/// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
+/// iterators returning either `Scalar`s or `&Scalar`s.
+///
+/// ```
+/// use curve25519_dalek::{constants, ristretto};
+/// use curve25519_dalek::scalar::Scalar;
+///
+/// // Some scalars
+/// let a = Scalar::from_u64(87329482);
+/// let b = Scalar::from_u64(37264829);
+/// let c = Scalar::from_u64(98098098);
+///
+/// // Some points
+/// let P = constants::RISTRETTO_BASEPOINT_POINT;
+/// let Q = P + P;
+/// let R = P + Q;
+///
+/// // A1 = a*P + b*Q + c*R
+/// let abc = [a,b,c];
+/// let A1 = ristretto::multiscalar_mul(&abc, &[P,Q,R]);
+/// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+///
+/// // A2 = (-a)*P + (-b)*Q + (-c)*R
+/// let minus_abc = abc.iter().map(|x| -x);
+/// let A2 = ristretto::multiscalar_mul(minus_abc, &[P,Q,R]);
+/// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+///
+/// assert_eq!(A1.compress(), (-A2).compress());
+/// ```
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
-    where I: IntoIterator<Item = &'a Scalar>,
-          J: IntoIterator<Item = &'b RistrettoPoint>,
+pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+    where I: IntoIterator,
+          I::Item: Borrow<Scalar>,
+          J: IntoIterator,
+          J::Item: Borrow<RistrettoPoint>,
 {
-    let extended_points = points.into_iter().map(|P| &P.0);
-    RistrettoPoint(edwards::multiscalar_mult(scalars, extended_points))
+    let extended_points = points.into_iter().map(|P| P.borrow().0);
+    RistrettoPoint(edwards::multiscalar_mul(scalars, extended_points))
 }
 
 /// A precomputed table of multiples of a basepoint, used to accelerate
@@ -1110,7 +1171,7 @@ impl RistrettoBasepointTable {
 // ------------------------------------------------------------------------
 
 impl ConditionallyAssignable for RistrettoPoint {
-    /// Conditionally assign `other` to `self`, if `choice == 1u8`.
+    /// Conditionally assign `other` to `self`, if `choice == Choice(1)`.
     ///
     /// # Example
     ///
@@ -1118,24 +1179,26 @@ impl ConditionallyAssignable for RistrettoPoint {
     /// # extern crate subtle;
     /// # extern crate curve25519_dalek;
     /// #
-    /// # use subtle::ConditionallyAssignable;
+    /// use subtle::ConditionallyAssignable;
+    /// use subtle::Choice;
     /// #
     /// # use curve25519_dalek::traits::Identity;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// # use curve25519_dalek::constants;
     /// # fn main() {
+    ///
     /// let A = RistrettoPoint::identity();
     /// let B = constants::RISTRETTO_BASEPOINT_POINT;
     ///
     /// let mut P = A;
     ///
-    /// P.conditional_assign(&B, 0u8);
-    /// assert!(P == A);
-    /// P.conditional_assign(&B, 1u8);
-    /// assert!(P == B);
+    /// P.conditional_assign(&B, Choice::from(0));
+    /// assert_eq!(P, A);
+    /// P.conditional_assign(&B, Choice::from(1));
+    /// assert_eq!(P, B);
     /// # }
     /// ```
-    fn conditional_assign(&mut self, other: &RistrettoPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &RistrettoPoint, choice: Choice) {
         self.0.X.conditional_assign(&other.0.X, choice);
         self.0.Y.conditional_assign(&other.0.Y, choice);
         self.0.Z.conditional_assign(&other.0.Z, choice);
@@ -1169,23 +1232,58 @@ pub mod vartime {
     //! Variable-time operations on ristretto points, useful for non-secret data.
     use super::*;
 
-    /// Given an iterable of public scalars and an iterable of public
-    /// points, compute
+    /// Given an iterator of public scalars and an iterator of public points, compute
     /// $$
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
     /// $$
     ///
-    /// # Input
+    /// This function has the same behaviour as
+    /// `vartime::multiscalar_mul` but is constant-time.
     ///
-    /// A iterable of `Scalar`s and a iterable of `RistrettoPoints`.  It is an
-    /// error to call this function with two iterators of different lengths.
+    /// It is an error to call this function with two iterators of different lengths.
+    ///
+    /// # Examples
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    ///
+    /// ```
+    /// use curve25519_dalek::{constants, ristretto};
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from_u64(87329482);
+    /// let b = Scalar::from_u64(37264829);
+    /// let c = Scalar::from_u64(98098098);
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    ///
+    /// // A1 = a*P + b*Q + c*R
+    /// let abc = [a,b,c];
+    /// let A1 = ristretto::vartime::multiscalar_mul(&abc, &[P,Q,R]);
+    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
+    ///
+    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
+    /// let minus_abc = abc.iter().map(|x| -x);
+    /// let A2 = ristretto::vartime::multiscalar_mul(minus_abc, &[P,Q,R]);
+    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
+    ///
+    /// assert_eq!(A1.compress(), (-A2).compress());
+    /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<'a, 'b, I, J>(scalars: I, points: J) -> RistrettoPoint
-        where I: IntoIterator<Item = &'a Scalar>,
-              J: IntoIterator<Item = &'b RistrettoPoint>
+    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+        where I: IntoIterator,
+              I::Item: Borrow<Scalar>,
+              J: IntoIterator,
+              J::Item: Borrow<RistrettoPoint>,
     {
-        let extended_points = points.into_iter().map(|P| &P.0);
-        RistrettoPoint(edwards::vartime::multiscalar_mult(scalars, extended_points))
+        let extended_points = points.into_iter().map(|P| P.borrow().0);
+        RistrettoPoint(edwards::vartime::multiscalar_mul(scalars, extended_points))
     }
 }
 
@@ -1257,7 +1355,7 @@ mod test {
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - &bp_recaf;
-        let diff4 = diff.mult_by_pow_2(2);
+        let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 
@@ -1357,7 +1455,7 @@ mod test {
         ];
         for i in 0..16 {
             let r_0 = FieldElement::from_bytes(&bytes[i]);
-            let Q = RistrettoPoint::elligator_ristretto_flavour(&r_0);
+            let Q = RistrettoPoint::elligator_ristretto_flavor(&r_0);
             assert_eq!(Q.compress(), encoded_images[i]);
         }
     }

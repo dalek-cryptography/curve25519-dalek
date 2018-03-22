@@ -1,10 +1,10 @@
 
-# curve25519-dalek  [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://docs.rs/curve25519-dalek/badge.svg)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
+# curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://doc.dalek.rs) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
 
 <img
  width="33%"
  align="right"
- src="https://raw.githubusercontent.com/dalek-cryptography/curve25519-dalek/develop/dalek-logo-clear.png"/>
+ src="https://doc.dalek.rs/assets/dalek-logo-clear.png"/>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
 
@@ -118,3 +118,5 @@ contributions.
 [ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
 [x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
+[docs-external]: https://doc.dalek.rs/curve25519_dalek/
+[docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/

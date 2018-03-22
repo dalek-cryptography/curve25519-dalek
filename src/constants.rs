@@ -105,7 +105,7 @@ mod test {
     #[test]
     fn test_eight_torsion() {
         for i in 0..8 {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(3);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(3);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -114,7 +114,7 @@ mod test {
     #[test]
     fn test_four_torsion() {
         for i in (0..8).filter(|i| i % 2 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(2);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(2);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -123,34 +123,10 @@ mod test {
     #[test]
     fn test_two_torsion() {
         for i in (0..8).filter(|i| i % 4 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mult_by_pow_2(1);
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(1);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
-    }
-
-    /// Test that the constant for sqrt(-486664) really is a square
-    /// root of -486664.
-    #[test]
-    #[cfg(feature="radix_51")]
-    fn sqrt_minus_aplus2() {
-        use backend::u64::field::FieldElement64;
-        let minus_aplus2 = -&FieldElement64([486664,0,0,0,0]);
-        let sqrt = constants::SQRT_MINUS_APLUS2;
-        let sq = &sqrt * &sqrt;
-        assert_eq!(sq, minus_aplus2);
-    }
-
-    /// Test that the constant for sqrt(-486664) really is a square
-    /// root of -486664.
-    #[test]
-    #[cfg(not(feature="radix_51"))]
-    fn sqrt_minus_aplus2() {
-        use backend::u32::field::FieldElement32;
-        let minus_aplus2 = -&FieldElement32([486664,0,0,0,0,0,0,0,0,0]);
-        let sqrt = constants::SQRT_MINUS_APLUS2;
-        let sq = &sqrt * &sqrt;
-        assert_eq!(sq, minus_aplus2);
     }
 
     #[test]
@@ -165,7 +141,7 @@ mod test {
     fn test_sqrt_constants_sign() {
         let minus_one = FieldElement::minus_one();
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
-        assert_eq!(was_nonzero_square, 1u8);
+        assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
         let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
         // XXX it seems we have flipped the sign relative to
         // the invsqrt function?

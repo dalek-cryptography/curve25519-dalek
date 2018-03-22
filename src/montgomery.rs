@@ -60,8 +60,8 @@ use traits::{Identity, ValidityCheck};
 
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallySwappable;
-use subtle::Equal;
-use subtle::Mask;
+use subtle::ConstantTimeEq;
+use subtle::Choice;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -69,8 +69,8 @@ use subtle::Mask;
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
-impl Equal for MontgomeryPoint {
-    fn ct_eq(&self, other: &MontgomeryPoint) -> u8 {
+impl ConstantTimeEq for MontgomeryPoint {
+    fn ct_eq(&self, other: &MontgomeryPoint) -> Choice {
         let self_fe = FieldElement::from_bytes(&self.0);
         let other_fe = FieldElement::from_bytes(&other.0);
 
@@ -80,7 +80,7 @@ impl Equal for MontgomeryPoint {
 
 impl PartialEq for MontgomeryPoint {
     fn eq(&self, other: &MontgomeryPoint) -> bool {
-        self.ct_eq(other) == 1u8
+        self.ct_eq(other).unwrap_u8() == 1u8
     }
 }
 
@@ -157,7 +157,7 @@ impl Identity for ProjectivePoint {
 }
 
 impl ConditionallyAssignable for ProjectivePoint {
-    fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Mask) {
+    fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
         self.U.conditional_assign(&that.U, choice);
         self.W.conditional_assign(&that.W, choice);
     }
@@ -244,14 +244,14 @@ impl Mul<Scalar> for MontgomeryPoint {
         let bits: [i8; 256] = scalar.bits();
 
         for i in (0..255).rev() {
-            let mask: u8 = (bits[i+1] ^ bits[i]) as u8;
+            let choice: u8 = (bits[i+1] ^ bits[i]) as u8;
 
-            debug_assert!(mask == 0 || mask == 1);
+            debug_assert!(choice == 0 || choice == 1);
 
-            x0.conditional_swap(&mut x1, mask);
+            x0.conditional_swap(&mut x1, choice.into());
             differential_add_and_double(&mut x0, &mut x1, &affine_u);
         }
-        x0.conditional_swap(&mut x1, bits[0] as u8);
+        x0.conditional_swap(&mut x1, Choice::from(bits[0] as u8));
 
         x0.to_affine()
     }

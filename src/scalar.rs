@@ -26,9 +26,9 @@ use rand::Rng;
 use digest::Digest;
 use generic_array::typenum::U64;
 
-use subtle::slices_equal;
+use subtle::Choice;
 use subtle::ConditionallyAssignable;
-use subtle::Equal;
+use subtle::ConstantTimeEq;
 
 use backend;
 use constants;
@@ -145,29 +145,14 @@ impl Debug for Scalar {
 
 impl Eq for Scalar {}
 impl PartialEq for Scalar {
-    /// Test equality between two `Scalar`s.
-    ///
-    /// # Warning
-    ///
-    /// This function is *not* guaranteed to be constant time and should only be
-    /// used for debugging purposes.
-    ///
-    /// # Returns
-    ///
-    /// True if they are equal, and false otherwise.
     fn eq(&self, other: &Self) -> bool {
-        slices_equal(&self.bytes, &other.bytes) == 1u8
+        self.ct_eq(other).unwrap_u8() == 1u8
     }
 }
 
-impl Equal for Scalar {
-    /// Test equality between two `Scalar`s in constant time.
-    ///
-    /// # Returns
-    ///
-    /// `1u8` if they are equal, and `0u8` otherwise.
-    fn ct_eq(&self, other: &Self) -> u8 {
-        slices_equal(&self.bytes, &other.bytes)
+impl ConstantTimeEq for Scalar {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.bytes.ct_eq(&other.bytes)
     }
 }
 
@@ -246,34 +231,9 @@ impl<'a> Neg for Scalar {
 }
 
 impl ConditionallyAssignable for Scalar {
-    /// Conditionally assign another Scalar to this one.
-    ///
-    /// ```
-    /// # extern crate curve25519_dalek;
-    /// # extern crate subtle;
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::ConditionallyAssignable;
-    /// # fn main() {
-    /// let a = Scalar::from_bits([0u8;32]);
-    /// let b = Scalar::from_bits([1u8;32]);
-    /// let mut t = a;
-    /// t.conditional_assign(&b, 0u8);
-    /// assert!(t[0] == a[0]);
-    /// t.conditional_assign(&b, 1u8);
-    /// assert!(t[0] == b[0]);
-    /// # }
-    /// ```
-    ///
-    /// # Preconditions
-    ///
-    /// * `choice` in {0,1}
-    // XXX above test checks first byte because Scalar does not impl Eq
-    fn conditional_assign(&mut self, other: &Scalar, choice: u8) {
-        // if choice = 0u8, mask = (-0i8) as u8 = 00000000
-        // if choice = 1u8, mask = (-1i8) as u8 = 11111111
-        let mask = -(choice as i8) as u8;
+    fn conditional_assign(&mut self, other: &Scalar, choice: Choice) {
         for i in 0..32 {
-            self.bytes[i] ^= mask & (self.bytes[i] ^ other.bytes[i]);
+            self.bytes[i].conditional_assign(&other.bytes[i], choice);
         }
     }
 }

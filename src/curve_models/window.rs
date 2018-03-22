@@ -14,9 +14,10 @@
 
 use core::fmt::Debug;
 
-use subtle;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallyAssignable;
+use subtle::ConstantTimeEq;
+use subtle::Choice;
 
 use traits::Identity;
 
@@ -67,12 +68,12 @@ where T: Identity + ConditionallyAssignable + ConditionallyNegatable
         let mut t = T::identity();
         for j in 1..9 {
             // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
-            t.conditional_assign(&self.0[j-1],
-                                 subtle::bytes_equal(xabs as u8, j as u8));
+            let c = (xabs as u8).ct_eq(&(j as u8));
+            t.conditional_assign(&self.0[j-1], c);
         }
         // Now t == |x| * P.
 
-        let neg_mask = (xmask & 1) as u8;
+        let neg_mask = Choice::from((xmask & 1) as u8);
         t.conditional_negate(neg_mask);
         // Now t == x * P.
 

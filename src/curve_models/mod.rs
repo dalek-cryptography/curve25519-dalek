@@ -126,11 +126,13 @@
 use core::fmt::Debug;
 use core::ops::{Add, Sub, Neg};
 
+use subtle::ConditionallyAssignable;
+use subtle::Choice;
+
 use constants;
 
 use field::FieldElement;
 use edwards::EdwardsPoint;
-use subtle::ConditionallyAssignable;
 use traits::ValidityCheck;
 
 pub mod window;
@@ -275,7 +277,7 @@ impl ValidityCheck for ProjectivePoint {
 // ------------------------------------------------------------------------
 
 impl ConditionallyAssignable for ProjectiveNielsPoint {
-    fn conditional_assign(&mut self, other: &ProjectiveNielsPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &ProjectiveNielsPoint, choice: Choice) {
         self.Y_plus_X.conditional_assign(&other.Y_plus_X, choice);
         self.Y_minus_X.conditional_assign(&other.Y_minus_X, choice);
         self.Z.conditional_assign(&other.Z, choice);
@@ -284,7 +286,7 @@ impl ConditionallyAssignable for ProjectiveNielsPoint {
 }
 
 impl ConditionallyAssignable for AffineNielsPoint {
-    fn conditional_assign(&mut self, other: &AffineNielsPoint, choice: u8) {
+    fn conditional_assign(&mut self, other: &AffineNielsPoint, choice: Choice) {
         // PreComputedGroupElementCMove()
         self.y_plus_x.conditional_assign(&other.y_plus_x, choice);
         self.y_minus_x.conditional_assign(&other.y_minus_x, choice);

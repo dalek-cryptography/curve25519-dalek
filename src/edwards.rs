@@ -825,31 +825,6 @@ impl EdwardsPoint {
 }
 
 // ------------------------------------------------------------------------
-// Elligator2 (uniform encoding/decoding of curve points)
-// ------------------------------------------------------------------------
-
-// XXX should this be in another module, with types and `From` impls, like `CompressedEdwardsY`?
-
-impl EdwardsPoint {
-    /// Use Elligator2 to try to convert `self` to a uniformly random
-    /// string.
-    ///
-    /// Returns `Some<[u8;32]>` if `self` is in the image of the
-    /// Elligator2 map.  For a random point on the curve, this happens
-    /// with probability 1/2.  Otherwise, returns `None`.
-    fn to_uniform_representative(&self) -> Option<[u8; 32]> {
-        unimplemented!();
-    }
-
-    /// Use Elligator2 to convert a uniformly random string to a curve
-    /// point.
-    #[allow(unused_variables)] // REMOVE WHEN IMPLEMENTED
-    fn from_uniform_representative(bytes: &[u8; 32]) -> EdwardsPoint {
-        unimplemented!();
-    }
-}
-
-// ------------------------------------------------------------------------
 // Debug traits
 // ------------------------------------------------------------------------
 

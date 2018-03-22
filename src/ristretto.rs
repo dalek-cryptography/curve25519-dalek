@@ -79,10 +79,10 @@
 //! `RistrettoBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `ristretto::multiscalar_mult` function, which performs
+//! * the `ristretto::multiscalar_mul` function, which performs
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `ristretto::vartime::multiscalar_mult` function, which
+//! * the `ristretto::vartime::multiscalar_mul` function, which
 //! performs variable-time variable-base multiscalar multiplication.
 //!
 //! ## Random Points and Hashing to Ristretto
@@ -1085,7 +1085,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 /// $$
 ///
 /// This function has the same behaviour as
-/// `vartime::multiscalar_mult` but is constant-time.
+/// `vartime::multiscalar_mul` but is constant-time.
 ///
 /// It is an error to call this function with two iterators of different lengths.
 ///
@@ -1112,25 +1112,25 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 ///
 /// // A1 = a*P + b*Q + c*R
 /// let abc = [a,b,c];
-/// let A1 = ristretto::multiscalar_mult(&abc, &[P,Q,R]);
+/// let A1 = ristretto::multiscalar_mul(&abc, &[P,Q,R]);
 /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
 ///
 /// // A2 = (-a)*P + (-b)*Q + (-c)*R
 /// let minus_abc = abc.iter().map(|x| -x);
-/// let A2 = ristretto::multiscalar_mult(minus_abc, &[P,Q,R]);
+/// let A2 = ristretto::multiscalar_mul(minus_abc, &[P,Q,R]);
 /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
 ///
 /// assert_eq!(A1.compress(), (-A2).compress());
 /// ```
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> RistrettoPoint
+pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
     where I: IntoIterator,
           I::Item: Borrow<Scalar>,
           J: IntoIterator,
           J::Item: Borrow<RistrettoPoint>,
 {
     let extended_points = points.into_iter().map(|P| P.borrow().0);
-    RistrettoPoint(edwards::multiscalar_mult(scalars, extended_points))
+    RistrettoPoint(edwards::multiscalar_mul(scalars, extended_points))
 }
 
 /// A precomputed table of multiples of a basepoint, used to accelerate
@@ -1238,7 +1238,7 @@ pub mod vartime {
     /// $$
     ///
     /// This function has the same behaviour as
-    /// `vartime::multiscalar_mult` but is constant-time.
+    /// `vartime::multiscalar_mul` but is constant-time.
     ///
     /// It is an error to call this function with two iterators of different lengths.
     ///
@@ -1265,25 +1265,25 @@ pub mod vartime {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = ristretto::vartime::multiscalar_mult(&abc, &[P,Q,R]);
+    /// let A1 = ristretto::vartime::multiscalar_mul(&abc, &[P,Q,R]);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = ristretto::vartime::multiscalar_mult(minus_abc, &[P,Q,R]);
+    /// let A2 = ristretto::vartime::multiscalar_mul(minus_abc, &[P,Q,R]);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// ```
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> RistrettoPoint
+    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
         where I: IntoIterator,
               I::Item: Borrow<Scalar>,
               J: IntoIterator,
               J::Item: Borrow<RistrettoPoint>,
     {
         let extended_points = points.into_iter().map(|P| P.borrow().0);
-        RistrettoPoint(edwards::vartime::multiscalar_mult(scalars, extended_points))
+        RistrettoPoint(edwards::vartime::multiscalar_mul(scalars, extended_points))
     }
 }
 
@@ -1355,7 +1355,7 @@ mod test {
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
         let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - &bp_recaf;
-        let diff4 = diff.mult_by_pow_2(2);
+        let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
 

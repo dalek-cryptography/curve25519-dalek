@@ -37,7 +37,7 @@
 //! To test if a point is in \\( \mathcal E[\ell] \\), use
 //! `EdwardsPoint::is_torsion_free()`.
 //!
-//! To multiply by the cofactor, use `EdwardsPoint::mult_by_cofactor()`.
+//! To multiply by the cofactor, use `EdwardsPoint::mul_by_cofactor()`.
 //!
 //! To avoid dealing with cofactors entirely, consider using Ristretto.
 //!
@@ -57,10 +57,10 @@
 //! `EdwardsBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `edwards::multiscalar_mult` function, which performs
+//! * the `edwards::multiscalar_mul` function, which performs
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `edwards::vartime::multiscalar_mult` function, which
+//! * the `edwards::vartime::multiscalar_mul` function, which
 //! performs variable-time variable-base multiscalar multiplication.
 //!
 //! ## Implementation
@@ -504,7 +504,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
             let mut Q = EdwardsPoint::identity();
             for i in (0..64).rev() {
                 // Q <-- 16*Q
-                Q = Q.mult_by_pow_2(4);
+                Q = Q.mul_by_pow_2(4);
                 // Q <-- Q + P * s_i
                 Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
             }
@@ -533,7 +533,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 /// $$
 ///
 /// This function has the same behaviour as
-/// `vartime::multiscalar_mult` but is constant-time.
+/// `vartime::multiscalar_mul` but is constant-time.
 ///
 /// It is an error to call this function with two iterators of different lengths.
 ///
@@ -560,12 +560,12 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 ///
 /// // A1 = a*P + b*Q + c*R
 /// let abc = [a,b,c];
-/// let A1 = edwards::multiscalar_mult(&abc, &[P,Q,R]);
+/// let A1 = edwards::multiscalar_mul(&abc, &[P,Q,R]);
 /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
 ///
 /// // A2 = (-a)*P + (-b)*Q + (-c)*R
 /// let minus_abc = abc.iter().map(|x| -x);
-/// let A2 = edwards::multiscalar_mult(minus_abc, &[P,Q,R]);
+/// let A2 = edwards::multiscalar_mul(minus_abc, &[P,Q,R]);
 /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
 ///
 /// assert_eq!(A1.compress(), (-A2).compress());
@@ -573,7 +573,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // XXX later when we do more fancy multiscalar mults, we can delegate
 // based on the iter's size hint -- hdevalence
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
+pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     where I: IntoIterator,
           I::Item: Borrow<Scalar>,
           J: IntoIterator,
@@ -583,7 +583,7 @@ pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
     #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
         use backend::avx2::edwards as edwards_avx2;
 
-        edwards_avx2::multiscalar_mult(scalars, points)
+        edwards_avx2::multiscalar_mul(scalars, points)
     }
     // Otherwise, proceed as normal:
     #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
@@ -633,7 +633,7 @@ pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
         let mut Q = EdwardsPoint::identity();
         // XXX this impl makes no effort to be cache-aware; maybe it could be improved?
         for j in (0..64).rev() {
-            Q = Q.mult_by_pow_2(4);
+            Q = Q.mul_by_pow_2(4);
             let it = scalar_digits.iter().zip(lookup_tables.iter());
             for (s_i, lookup_table_i) in it {
                 // R_i = s_{i,j} * P_i
@@ -693,7 +693,7 @@ impl EdwardsBasepointTable {
             P = (&P + &tables[i/2].select(a[i])).to_extended();
         }
 
-        P = P.mult_by_pow_2(4);
+        P = P.mul_by_pow_2(4);
 
         for i in (0..64).filter(|x| x % 2 == 0) {
             P = (&P + &tables[i/2].select(a[i])).to_extended();
@@ -733,7 +733,7 @@ impl EdwardsBasepointTable {
         for i in 0..32 {
             // P = (16^2)^i * B
             table.0[i] = LookupTable::from(&P);
-            P = P.mult_by_pow_2(8);
+            P = P.mul_by_pow_2(8);
         }
         table
     }
@@ -750,12 +750,12 @@ impl EdwardsBasepointTable {
 
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\([8]P\\).
-    pub fn mult_by_cofactor(&self) -> EdwardsPoint {
-        self.mult_by_pow_2(3)
+    pub fn mul_by_cofactor(&self) -> EdwardsPoint {
+        self.mul_by_pow_2(3)
     }
 
     /// Compute \\([2\^k] P \\) by successive doublings. Requires \\( k > 0 \\).
-    pub(crate) fn mult_by_pow_2(&self, k: u32) -> EdwardsPoint {
+    pub(crate) fn mul_by_pow_2(&self, k: u32) -> EdwardsPoint {
         debug_assert!( k > 0 );
         let mut r: CompletedPoint;
         let mut s = self.to_projective();
@@ -790,7 +790,7 @@ impl EdwardsPoint {
     /// assert_eq!(Q.is_small_order(), true);
     /// ```
     pub fn is_small_order(&self) -> bool {
-        self.mult_by_cofactor().is_identity()
+        self.mul_by_cofactor().is_identity()
     }
 
     /// Determine if this point is “torsion-free”, i.e., is contained in
@@ -908,7 +908,7 @@ pub mod vartime {
     /// $$
     ///
     /// This function has the same behaviour as
-    /// `edwards::multiscalar_mult` but operates on non-secret data.
+    /// `edwards::multiscalar_mul` but operates on non-secret data.
     ///
     /// It is an error to call this function with two iterators of different lengths.
     ///
@@ -935,12 +935,12 @@ pub mod vartime {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = edwards::vartime::multiscalar_mult(&abc, &[P,Q,R]);
+    /// let A1 = edwards::vartime::multiscalar_mul(&abc, &[P,Q,R]);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = edwards::vartime::multiscalar_mult(minus_abc, &[P,Q,R]);
+    /// let A2 = edwards::vartime::multiscalar_mul(minus_abc, &[P,Q,R]);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
@@ -948,7 +948,7 @@ pub mod vartime {
     // XXX later when we do more fancy multiscalar mults, we can delegate
     // based on the iter's size hint -- hdevalence
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mult<I, J>(scalars: I, points: J) -> EdwardsPoint
+    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
         where I: IntoIterator,
               I::Item: Borrow<Scalar>,
               J: IntoIterator,
@@ -958,7 +958,7 @@ pub mod vartime {
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
 
-            edwards_avx2::vartime::multiscalar_mult(scalars, points)
+            edwards_avx2::vartime::multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
@@ -993,7 +993,7 @@ pub mod vartime {
     /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
     /// with x positive).
     #[cfg(feature="precomputed_tables")]
-    pub fn double_scalar_mult_basepoint(
+    pub fn double_scalar_mul_basepoint(
         a: &Scalar,
         A: &EdwardsPoint,
         b: &Scalar,
@@ -1002,7 +1002,7 @@ pub mod vartime {
         #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
             use backend::avx2::edwards as edwards_avx2;
 
-            edwards_avx2::vartime::double_scalar_mult_basepoint(a, A, b)
+            edwards_avx2::vartime::double_scalar_mul_basepoint(a, A, b)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
@@ -1244,9 +1244,9 @@ mod test {
         assert_eq!(aB_1.compress(), aB_2.compress());
     }
 
-    /// Test scalar_mult versus a known scalar multiple from ed25519.py
+    /// Test scalar_mul versus a known scalar multiple from ed25519.py
     #[test]
-    fn scalar_mult_vs_ed25519py() {
+    fn scalar_mul_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
@@ -1275,10 +1275,10 @@ mod test {
                    constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
-    /// Test computing 16*basepoint vs mult_by_pow_2(4)
+    /// Test computing 16*basepoint vs mul_by_pow_2(4)
     #[test]
-    fn basepoint16_vs_mult_by_pow_2_4() {
-        let bp16 = constants::ED25519_BASEPOINT_POINT.mult_by_pow_2(4);
+    fn basepoint16_vs_mul_by_pow_2_4() {
+        let bp16 = constants::ED25519_BASEPOINT_POINT.mul_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 
@@ -1330,7 +1330,7 @@ mod test {
     #[test]
     fn monte_carlo_overflow_underflow_debug_assert_test() {
         let mut P = constants::ED25519_BASEPOINT_POINT;
-        // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
+        // N.B. each scalar_mul does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
             P *= &A_SCALAR;
@@ -1352,19 +1352,19 @@ mod test {
         use super::super::*;
         use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
 
-        /// Test double_scalar_mult_vartime vs ed25519.py
+        /// Test double_scalar_mul_vartime vs ed25519.py
         #[test]
         #[cfg(feature="precomputed_tables")]
-        fn double_scalar_mult_basepoint_vs_ed25519py() {
+        fn double_scalar_mul_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR);
+            let result = vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
         }
 
         #[test]
-        fn multiscalar_mult_vs_ed25519py() {
+        fn multiscalar_mul_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::multiscalar_mult(
+            let result = vartime::multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );
@@ -1372,13 +1372,13 @@ mod test {
         }
 
         #[test]
-        fn multiscalar_mult_vartime_vs_consttime() {
+        fn multiscalar_mul_vartime_vs_consttime() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result_vartime = vartime::multiscalar_mult(
+            let result_vartime = vartime::multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );
-            let result_consttime = multiscalar_mult(
+            let result_consttime = multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );
@@ -1442,7 +1442,7 @@ mod bench {
     }
 
     #[bench]
-    fn scalar_mult(b: &mut Bencher) {
+    fn scalar_mul(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_POINT;
         b.iter(|| B * &A_SCALAR);
     }
@@ -1502,10 +1502,10 @@ mod bench {
     }
 
     #[bench]
-    fn mult_by_cofactor(b: &mut Bencher) {
+    fn mul_by_cofactor(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT_POINT;
 
-        b.iter(|| p1.mult_by_cofactor());
+        b.iter(|| p1.mul_by_cofactor());
     }
 
     #[bench]
@@ -1517,7 +1517,7 @@ mod bench {
 
     #[bench]
     #[cfg(feature="precomputed_tables")]
-    fn ten_fold_scalar_mult(b: &mut Bencher) {
+    fn ten_fold_scalar_mul(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1525,7 +1525,7 @@ mod bench {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let points: Vec<_> = scalars.iter().map(|s| B * &s).collect();
 
-        b.iter(|| multiscalar_mult(&scalars, &points));
+        b.iter(|| multiscalar_mul(&scalars, &points));
     }
 
     mod vartime {
@@ -1534,14 +1534,14 @@ mod bench {
         use super::{Bencher, OsRng};
 
         #[bench]
-        fn bench_double_scalar_mult_basepoint(b: &mut Bencher) {
+        fn bench_double_scalar_mul_basepoint(b: &mut Bencher) {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            b.iter(|| vartime::double_scalar_mult_basepoint(&A_SCALAR, &A, &B_SCALAR));
+            b.iter(|| vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR));
         }
 
         #[bench]
         #[cfg(feature="precomputed_tables")]
-        fn ten_fold_scalar_mult(b: &mut Bencher) {
+        fn ten_fold_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1555,7 +1555,7 @@ mod bench {
             //
             // Since this is a variable-time function, this means the
             // benchmark is only useful as a ballpark measurement.
-            b.iter(|| vartime::multiscalar_mult(&scalars, &points));
+            b.iter(|| vartime::multiscalar_mul(&scalars, &points));
         }
     }
 }

@@ -464,6 +464,9 @@ impl Scalar {
             tree[i] = UnpackedScalar::montgomery_mul(&tree[2*i], &tree[2*i+1]);
         }
 
+        // tree[1] is zero iff any of the inputs are zero.
+        debug_assert!(tree[1].from_montgomery().pack() != Scalar::zero());
+
         let allinv = tree[1].montgomery_invert();
 
         for i in 0..inputs.len() {
@@ -976,6 +979,15 @@ mod test {
         let output = serde_cbor::to_vec(&X).unwrap();
         let parsed: Scalar = serde_cbor::from_slice(&output).unwrap();
         assert_eq!(parsed, X);
+    }
+
+    #[test]
+    #[should_panic]
+    fn batch_invert_with_a_zero_input_panics() {
+        let mut xs = vec![Scalar::one(); 16];
+        xs[3] = Scalar::zero();
+        // This should panic in debug mode.
+        Scalar::batch_invert(&mut xs);
     }
 }
 

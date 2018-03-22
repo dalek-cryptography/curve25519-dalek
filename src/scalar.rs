@@ -453,7 +453,7 @@ impl Scalar {
 
         // Wrap the tree storage in a ClearOnDrop to wipe it when we
         // pass out of scope.
-        let mut tree_vec = vec![one; 2*n];
+        let tree_vec = vec![one; 2*n];
         let mut tree = ClearOnDrop::new(tree_vec);
 
         for i in 0..inputs.len() {

@@ -46,20 +46,9 @@ pub(crate) const SQRT_M1: FieldElement32 = FieldElement32([
     33281959, 41962654, 31548777,  326685, 11406482,
 ]);
 
-/// In Montgomery form y² = x³+Ax²+x, Curve25519 has A=486662.
-pub(crate) const MONTGOMERY_A: FieldElement32 = FieldElement32([
-    486662, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-]);
-
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub(crate) const APLUS2_OVER_FOUR: FieldElement32 = FieldElement32([
     121666, 0, 0, 0, 0, 0, 0, 0, 0, 0
-]);
-
-/// `SQRT_MINUS_APLUS2` is sqrt(-486664)
-pub(crate) const SQRT_MINUS_APLUS2: FieldElement32 = FieldElement32([
-    54885894, 25242303, 55597453,  9067496, 51808079,
-    33312638, 25456129, 14121551, 54921728,  3972023,
 ]);
 
 /// `L` is the order of base point, i.e. 2^252 +

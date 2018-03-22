@@ -129,30 +129,6 @@ mod test {
         }
     }
 
-    /// Test that the constant for sqrt(-486664) really is a square
-    /// root of -486664.
-    #[test]
-    #[cfg(feature="radix_51")]
-    fn sqrt_minus_aplus2() {
-        use backend::u64::field::FieldElement64;
-        let minus_aplus2 = -&FieldElement64([486664,0,0,0,0]);
-        let sqrt = constants::SQRT_MINUS_APLUS2;
-        let sq = &sqrt * &sqrt;
-        assert_eq!(sq, minus_aplus2);
-    }
-
-    /// Test that the constant for sqrt(-486664) really is a square
-    /// root of -486664.
-    #[test]
-    #[cfg(not(feature="radix_51"))]
-    fn sqrt_minus_aplus2() {
-        use backend::u32::field::FieldElement32;
-        let minus_aplus2 = -&FieldElement32([486664,0,0,0,0,0,0,0,0,0]);
-        let sqrt = constants::SQRT_MINUS_APLUS2;
-        let sq = &sqrt * &sqrt;
-        assert_eq!(sq, minus_aplus2);
-    }
-
     #[test]
     /// Test that SQRT_M1 is a square root of -1
     fn test_sqrt_minus_one() {

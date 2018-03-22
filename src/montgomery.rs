@@ -50,13 +50,12 @@
 
 use core::ops::{Mul, MulAssign};
 
-use constants;
 use constants::APLUS2_OVER_FOUR;
 use field::FieldElement;
 use edwards::{EdwardsPoint, CompressedEdwardsY};
 use scalar::Scalar;
 
-use traits::{Identity, ValidityCheck};
+use traits::Identity;
 
 use subtle::ConditionallyAssignable;
 use subtle::ConditionallySwappable;
@@ -277,8 +276,7 @@ impl Mul<MontgomeryPoint> for Scalar {
 
 #[cfg(test)]
 mod test {
-    use constants::X25519_BASEPOINT;
-    use traits::Identity;
+    use constants;
     use super::*;
 
     use rand::OsRng;

@@ -341,6 +341,7 @@ impl Scalar32 {
 
     /// Compute `a^2` (mod l).
     #[inline(never)]
+    #[allow(dead_code)] // XXX we don't expose square() via the Scalar API
     pub fn square(&self) -> Scalar32 {
         let aa = Scalar32::montgomery_reduce(&Scalar32::square_internal(self));
         Scalar32::montgomery_reduce(&Scalar32::mul_internal(&aa, &constants::RR))

@@ -463,17 +463,11 @@
 //! `ymm16..ymm31` registers from AVX512VL), and of approximately 1.0x
 //! for Ryzen (which implements AVX2 at half rate).
 //!
-//! When used for variable-time double-base scalar multiplication \\( aA
-//! + bB \\) for fixed \\(B\\) (as in, e.g., signature verification),
+//! When used for variable-time double-base scalar multiplication 
+//! \\( aA + bB \\) for fixed \\(B\\) (as in, e.g., signature verification),
 //! this strategy provides a 1.4x speedup on Skylake-X over the same
 //! operation as implemented in `ed25519-donna`, the fastest
 //! production-quality Ed25519 implementation.
-//!
-//! (Note: since testing this, the experimental `llvm50` Rust branch
-//! used to compile the experimental `stdsimd` intrinsics have fallen
-//! out of sync and it is no longer possible to compile for
-//! `skylake-avx512`.  This is why all of this branch is part of the
-//! `yolocrypto` feature, pending upstream work.)
 //!
 //! [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 //! [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28

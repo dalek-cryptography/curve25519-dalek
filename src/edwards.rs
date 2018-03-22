@@ -37,7 +37,7 @@
 //! To test if a point is in \\( \mathcal E[\ell] \\), use
 //! `EdwardsPoint::is_torsion_free()`.
 //!
-//! To multiply by the cofactor, use `EdwardsPoint::mult_by_cofactor()`.
+//! To multiply by the cofactor, use `EdwardsPoint::mul_by_cofactor()`.
 //!
 //! To avoid dealing with cofactors entirely, consider using Ristretto.
 //!
@@ -751,7 +751,7 @@ impl EdwardsBasepointTable {
 
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\([8]P\\).
-    pub fn mult_by_cofactor(&self) -> EdwardsPoint {
+    pub fn mul_by_cofactor(&self) -> EdwardsPoint {
         self.mul_by_pow_2(3)
     }
 
@@ -791,7 +791,7 @@ impl EdwardsPoint {
     /// assert_eq!(Q.is_small_order(), true);
     /// ```
     pub fn is_small_order(&self) -> bool {
-        self.mult_by_cofactor().is_identity()
+        self.mul_by_cofactor().is_identity()
     }
 
     /// Determine if this point is “torsion-free”, i.e., is contained in
@@ -1503,10 +1503,10 @@ mod bench {
     }
 
     #[bench]
-    fn mult_by_cofactor(b: &mut Bencher) {
+    fn mul_by_cofactor(b: &mut Bencher) {
         let p1 = constants::ED25519_BASEPOINT_POINT;
 
-        b.iter(|| p1.mult_by_cofactor());
+        b.iter(|| p1.mul_by_cofactor());
     }
 
     #[bench]

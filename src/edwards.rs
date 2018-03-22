@@ -1245,9 +1245,9 @@ mod test {
         assert_eq!(aB_1.compress(), aB_2.compress());
     }
 
-    /// Test scalar_mult versus a known scalar multiple from ed25519.py
+    /// Test scalar_mul versus a known scalar multiple from ed25519.py
     #[test]
-    fn scalar_mult_vs_ed25519py() {
+    fn scalar_mul_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
@@ -1331,7 +1331,7 @@ mod test {
     #[test]
     fn monte_carlo_overflow_underflow_debug_assert_test() {
         let mut P = constants::ED25519_BASEPOINT_POINT;
-        // N.B. each scalar_mult does 1407 field mults, 1024 field squarings,
+        // N.B. each scalar_mul does 1407 field mults, 1024 field squarings,
         // so this does ~ 1M of each operation.
         for _ in 0..1_000 {
             P *= &A_SCALAR;
@@ -1353,7 +1353,7 @@ mod test {
         use super::super::*;
         use super::{A_SCALAR, B_SCALAR, A_TIMES_BASEPOINT, DOUBLE_SCALAR_MULT_RESULT};
 
-        /// Test double_scalar_mult_vartime vs ed25519.py
+        /// Test double_scalar_mul_vartime vs ed25519.py
         #[test]
         #[cfg(feature="precomputed_tables")]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
@@ -1443,7 +1443,7 @@ mod bench {
     }
 
     #[bench]
-    fn scalar_mult(b: &mut Bencher) {
+    fn scalar_mul(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_POINT;
         b.iter(|| B * &A_SCALAR);
     }
@@ -1518,7 +1518,7 @@ mod bench {
 
     #[bench]
     #[cfg(feature="precomputed_tables")]
-    fn ten_fold_scalar_mult(b: &mut Bencher) {
+    fn ten_fold_scalar_mul(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1542,7 +1542,7 @@ mod bench {
 
         #[bench]
         #[cfg(feature="precomputed_tables")]
-        fn ten_fold_scalar_mult(b: &mut Bencher) {
+        fn ten_fold_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();

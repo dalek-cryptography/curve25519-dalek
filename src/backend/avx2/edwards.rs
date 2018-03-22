@@ -855,7 +855,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_mult_vs_edwards_scalar_mult() {
+    fn scalar_mul_vs_edwards_scalar_mul() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         // some random bytes
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
@@ -867,7 +867,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_mult_vs_basepoint_table_scalar_mult() {
+    fn scalar_mul_vs_basepoint_table_scalar_mul() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let B_table = EdwardsBasepointTable::create(&B);
         // some random bytes
@@ -881,7 +881,7 @@ mod test {
     }
 
     #[test]
-    fn multiscalar_mul_vs_adding_scalar_mults() {
+    fn multiscalar_mul_vs_adding_scalar_muls() {
         let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
         let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
         let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -901,7 +901,7 @@ mod test {
         use super::*;
 
         #[test]
-        fn multiscalar_mul_vs_adding_scalar_mults() {
+        fn multiscalar_mul_vs_adding_scalar_muls() {
             let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
             let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
             let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
@@ -971,7 +971,7 @@ mod bench {
     }
 
     #[bench]
-    fn scalar_mult(b: &mut Bencher) {
+    fn scalar_mul(b: &mut Bencher) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let P = ExtendedPoint::from(B * &Scalar::from_u64(83973422));
         let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
@@ -996,7 +996,7 @@ mod bench {
     }
 
     #[bench]
-    fn ten_fold_scalar_mult(b: &mut Bencher) {
+    fn ten_fold_scalar_mul(b: &mut Bencher) {
         let mut csprng: OsRng = OsRng::new().unwrap();
         // Create 10 random scalars
         let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();
@@ -1012,7 +1012,7 @@ mod bench {
         use super::{constants, Bencher, OsRng};
 
         #[bench]
-        fn double_scalar_mult(b: &mut Bencher) {
+        fn double_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 2 random scalars
             let s1 = Scalar::random(&mut csprng);
@@ -1023,7 +1023,7 @@ mod bench {
         }
 
         #[bench]
-        fn ten_fold_scalar_mult(b: &mut Bencher) {
+        fn ten_fold_scalar_mul(b: &mut Bencher) {
             let mut csprng: OsRng = OsRng::new().unwrap();
             // Create 10 random scalars
             let scalars: Vec<_> = (0..10).map(|_| Scalar::random(&mut csprng)).collect();

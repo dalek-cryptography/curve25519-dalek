@@ -775,7 +775,7 @@ mod test {
     }
 
     #[test]
-    fn scalar_multiply_by_one() {
+    fn scalar_mul_by_one() {
         let test_scalar = &X * &Scalar::one();
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);

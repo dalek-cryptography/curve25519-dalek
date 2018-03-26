@@ -1145,8 +1145,8 @@ mod bench {
 
     #[bench]
     fn sign(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let msg: &[u8] = b"";
 
         b.iter(| | keypair.sign::<Sha512>(msg));
@@ -1154,8 +1154,8 @@ mod bench {
 
     #[bench]
     fn sign_expanded_key(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
         let msg: &[u8] = b"";
 
@@ -1164,8 +1164,8 @@ mod bench {
 
     #[bench]
     fn verify(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign::<Sha512>(msg);
 

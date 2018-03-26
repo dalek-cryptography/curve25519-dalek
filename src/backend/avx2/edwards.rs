@@ -371,40 +371,6 @@ impl From<ExtendedPoint> for LookupTable<CachedPoint> {
     }
 }
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-    /// Scalar multiplication: compute `scalar * self`.
-    ///
-    /// Uses a window of size 4.
-    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-        let lookup_table = LookupTable::<CachedPoint>::from(*self);
-
-        // Setting s = scalar, compute
-        //
-        //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
-        //
-        // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
-        let scalar_digits = scalar.to_radix_16();
-
-        // Compute s*P as
-        //
-        //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
-        //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
-        //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
-        //
-        // We sum right-to-left.
-        let mut Q = ExtendedPoint::identity();
-        for i in (0..64).rev() {
-            // Q = 16*Q
-            Q = Q.mul_by_pow_2(4);
-            // Q += P*s_i
-            Q = &Q + &lookup_table.select(scalar_digits[i]);
-        }
-        Q
-    }
-}
-
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub [LookupTable<CachedPoint>; 32]);
 
@@ -739,7 +705,6 @@ mod test {
         assert_eq!(R1.compress(), edwards::EdwardsPoint::identity().compress());
     }
 
-
     #[test]
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
         use constants;
@@ -838,84 +803,5 @@ mod test {
         println!("Testing [2]([k]B)");
         let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from_u64(8475983829);
         doubling_test_helper(P);
-    }
-
-    #[test]
-    fn identity_trait_vs_edwards_identity() {
-        let id1: edwards::EdwardsPoint = ExtendedPoint::identity().into();
-        let id2: edwards::EdwardsPoint = edwards::EdwardsPoint::identity();
-        assert_eq!(id1.compress(), id2.compress());
-    }
-
-    #[test]
-    fn neg_vs_edwards_neg() {
-        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
-        let Bneg = -&B;
-        assert_eq!(edwards::EdwardsPoint::from(Bneg).compress(),
-                   (-&constants::ED25519_BASEPOINT_POINT).compress());
-    }
-
-    #[test]
-    fn scalar_mul_vs_edwards_scalar_mul() {
-        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
-        // some random bytes
-        let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
-
-        let R1 = edwards::EdwardsPoint::from(&B * &s);
-        let R2 = &constants::ED25519_BASEPOINT_TABLE * &s;
-
-        assert_eq!(R1.compress(), R2.compress());
-    }
-
-    #[test]
-    fn scalar_mul_vs_basepoint_table_scalar_mul() {
-        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
-        let B_table = EdwardsBasepointTable::create(&B);
-        // some random bytes
-        let s = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
-
-        let P1 = &B * &s;
-        let P2 = &B_table * &s;
-
-        assert_eq!(edwards::EdwardsPoint::from(P1).compress(),
-                   edwards::EdwardsPoint::from(P2).compress());
-    }
-
-    #[test]
-    fn multiscalar_mul_vs_adding_scalar_muls() {
-        let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
-        let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
-        let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
-
-        let P1 = &B * &s2;
-        let P2 = &B * &s1;
-
-        let R = &(&P1 * &s1) + &(&P2 * &s2);
-
-        let R_multiscalar = multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
-
-        assert_eq!(edwards::EdwardsPoint::from(R).compress(),
-                   R_multiscalar.compress());
-    }
-
-    mod vartime {
-        use super::*;
-
-        #[test]
-        fn multiscalar_mul_vs_adding_scalar_muls() {
-            let B: ExtendedPoint = constants::ED25519_BASEPOINT_POINT.into();
-            let s1 = Scalar::from_bits([233, 1, 233, 147, 113, 78, 244, 120, 40, 45, 103, 51, 224, 199, 189, 218, 96, 140, 211, 112, 39, 194, 73, 216, 173, 33, 102, 93, 76, 200, 84, 12]);
-            let s2 = Scalar::from_bits([165, 30, 79, 89, 58, 24, 195, 245, 248, 146, 203, 236, 119, 43, 64, 119, 196, 111, 188, 251, 248, 53, 234, 59, 215, 28, 218, 13, 59, 120, 14, 4]);
-
-            let P1 = &B * &s2;
-            let P2 = &B * &s1;
-
-            let R = &(&P1 * &s1) + &(&P2 * &s2);
-
-            let R_multiscalar = vartime::multiscalar_mul(&[s1, s2], &[P1.into(), P2.into()]);
-
-            assert_eq!(edwards::EdwardsPoint::from(R).compress(),
-                       R_multiscalar.compress());
-        }
     }
 }

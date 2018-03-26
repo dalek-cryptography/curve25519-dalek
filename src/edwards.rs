@@ -477,39 +477,16 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
-            use backend::avx2::edwards::ExtendedPoint;
-            let P_avx2 = ExtendedPoint::from(*self);
-            return EdwardsPoint::from(&P_avx2 * scalar);
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use backend::avx2::scalar_mul::variable_base::mul;
+            mul(self, scalar)
         }
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
-            // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-            let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(self);
-
-            // Setting s = scalar, compute
-            //
-            //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
-            //
-            // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
-            let scalar_digits = scalar.to_radix_16();
-
-            // Compute s*P as
-            //
-            //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)
-            //    s*P =  P*s_0 + P*s_1*16^1 + P*s_2*16^2 + ... + P*s_63*16^63
-            //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
-            //
-            // We sum right-to-left.
-            let mut Q = EdwardsPoint::identity();
-            for i in (0..64).rev() {
-                // Q <-- 16*Q
-                Q = Q.mul_by_pow_2(4);
-                // Q <-- Q + P * s_i
-                Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended()
-            }
-
-            Q
+        // Otherwise, use the serial backend:
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        {
+            use scalar_mul::variable_base::mul;
+            mul(self, scalar)
         }
     }
 }

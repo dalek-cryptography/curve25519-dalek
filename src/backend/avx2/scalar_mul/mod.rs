@@ -8,6 +8,4 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-pub mod window;
-
 pub mod variable_base;

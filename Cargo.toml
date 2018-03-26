@@ -28,6 +28,11 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 [dev-dependencies]
 sha2 = "0.7"
 serde_cbor = "0.6"
+criterion = "0.2"
+
+[[bench]]
+name = "dalek_benchmarks"
+harness = false
 
 # Note: we generate precomputed tables by building the crate twice: once as
 # part of build.rs, and then once "for real".
@@ -60,7 +65,6 @@ default = ["std"]
 std = ["rand", "subtle/std"]
 alloc = []
 yolocrypto = ["avx2_backend"]
-bench = []
 # Radix-51 arithmetic using u128
 radix_51 = []
 # Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.

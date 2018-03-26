@@ -671,20 +671,4 @@ mod test {
         assert_eq!(x2, splits[2]);
         assert_eq!(x3, splits[3]);
     }
-
 }
-
-#[cfg(all(test, feature = "bench"))]
-mod bench {
-    use test::Bencher;
-    use super::*;
-
-    #[bench]
-    fn multiply(b: &mut Bencher) {
-        let vec = FieldElement32x4::splat(&FieldElement64::zero());
-        let vecprime = vec.clone();
-
-        b.iter(|| &vec * &vecprime );
-    }
-}
-

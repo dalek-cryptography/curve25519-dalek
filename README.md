@@ -66,13 +66,12 @@ Curve arithmetic is implemented using one of the following backends:
 * an experimental AVX2 backend, available using the `yolocrypto` feature when
   compiling for a target with `target_feature=+avx2`.
 
-By default, the benchmarks are not compiled without the `bench`
-feature.  Benchmarks can be run via:
+Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --features="bench"                    # u32 backend
-cargo bench --features="bench nightly"            # u64 backend
-cargo bench --features="bench nightly yolocrypto" # u64 or avx2 if available
+cargo bench                                 # u32 backend
+cargo bench --features="nightly"            # u64 backend
+cargo bench --features="nightly yolocrypto" # u64 or avx2 if available
 ```
 
 The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
@@ -120,3 +119,4 @@ contributions.
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
 [docs-external]: https://doc.dalek.rs/curve25519_dalek/
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
+[criterion]: https://github.com/japaric/criterion.rs

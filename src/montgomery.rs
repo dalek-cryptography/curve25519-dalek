@@ -347,22 +347,3 @@ mod test {
         assert_eq!(result, expected.to_montgomery())
     }
 }
-
-#[cfg(all(test, feature = "bench"))]
-#[cfg(feature="precomputed_tables")]
-mod bench {
-    use rand::OsRng;
-    use constants::ED25519_BASEPOINT_TABLE;
-    use constants::X25519_BASEPOINT;
-    use test::Bencher;
-    use super::*;
-
-    #[bench]
-    fn montgomery_ladder(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let s: Scalar = Scalar::random(&mut csprng);
-        let P: MontgomeryPoint = (&Scalar::random(&mut csprng) * &ED25519_BASEPOINT_TABLE).to_montgomery();
-
-        b.iter(|| s * P);
-    }
-}

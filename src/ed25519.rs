@@ -910,7 +910,9 @@ impl<'d> Deserialize<'d> for Keypair {
             type Value = Keypair;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("An ed25519 signature as specified in RFC8032")
+                formatter.write_str("An ed25519 keypair, 64 bytes in total where the secret key is \
+                                     the first 32 bytes and is in unexpanded form, and the second \
+                                     32 bytes is a compressed point for a public key.")
             }
 
             fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Keypair, E> where E: SerdeError {
@@ -1143,8 +1145,8 @@ mod bench {
 
     #[bench]
     fn sign(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let msg: &[u8] = b"";
 
         b.iter(| | keypair.sign::<Sha512>(msg));
@@ -1152,8 +1154,8 @@ mod bench {
 
     #[bench]
     fn sign_expanded_key(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
         let msg: &[u8] = b"";
 
@@ -1162,8 +1164,8 @@ mod bench {
 
     #[bench]
     fn verify(b: &mut Bencher) {
-        let mut cspring: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+        let mut csprng: OsRng = OsRng::new().unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign::<Sha512>(msg);
 

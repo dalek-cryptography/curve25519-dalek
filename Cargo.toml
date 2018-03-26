@@ -13,7 +13,7 @@ description = "Fast and efficient ed25519 EdDSA key generations, signing, and ve
 exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 
 [badges]
-travis-ci = { repository = "isislovecruft/ed25519-dalek", branch = "master"}
+travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
 version = "0.14"

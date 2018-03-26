@@ -11,7 +11,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #![cfg_attr(feature = "alloc", feature(alloc))]
-#![cfg_attr(feature = "bench", feature(test))]
 
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
@@ -40,9 +39,6 @@ extern crate rand;
 extern crate alloc;
 
 extern crate clear_on_drop;
-
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
 
 #[cfg(feature = "yolocrypto")]
 extern crate stdsimd;

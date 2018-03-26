@@ -519,38 +519,3 @@ mod test {
         }
     }
 }
-
-
-#[cfg(all(test, feature = "bench"))]
-mod bench {
-    use test::Bencher;
-
-    use super::*;
-    use super::test::{X, Y};
-
-    #[bench]
-    fn square(b: &mut Bencher) {
-        b.iter(|| X.square());
-    }
-
-    #[bench]
-    fn mul(b: &mut Bencher) {
-        b.iter(|| Scalar32::mul(&X, &Y));
-    }
-
-    #[bench]
-    fn montgomery_square(b: &mut Bencher) {
-        b.iter(|| X.montgomery_square());
-    }
-
-    #[bench]
-    fn montgomery_mul(b: &mut Bencher) {
-        b.iter(|| Scalar32::montgomery_mul(&X, &Y));
-    }
-
-    #[bench]
-    fn from_bytes_wide(b: &mut Bencher) {
-        let bignum = [255u8; 64]; // 2^512 - 1
-        b.iter(|| Scalar32::from_bytes_wide(&bignum));
-    }
-}

@@ -972,32 +972,3 @@ mod test {
         Scalar::batch_invert(&mut xs);
     }
 }
-
-#[cfg(all(test, feature = "bench"))]
-mod bench {
-    use rand::OsRng;
-    use test::Bencher;
-
-    use super::*;
-    use super::test::{X};
-
-    #[bench]
-    fn reduce(b: &mut Bencher) {
-        let unreduced = Scalar::from_bits([0xff; 32]);
-
-        b.iter(|| unreduced.reduce());
-    }
-
-    #[bench]
-    fn scalar_random(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-
-        b.iter(|| Scalar::random(&mut csprng));
-    }
-
-    #[bench]
-    fn invert(b: &mut Bencher) {
-        let x = X.unpack();
-        b.iter(|| x.invert());
-    }
-}

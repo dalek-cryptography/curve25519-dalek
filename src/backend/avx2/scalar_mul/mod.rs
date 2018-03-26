@@ -9,3 +9,5 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 pub mod variable_base;
+
+pub mod straus;

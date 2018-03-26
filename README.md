@@ -151,8 +151,6 @@ To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
 
 # TODO
 
- * Maybe add methods to make exporting keys for backup easier.  Maybe using
-   serde?
  * We can probably make this go even faster if we implement SHA512,
    rather than using the rust-crypto implementation whose API requires
    that we allocate memory and memzero it before mutating to store the

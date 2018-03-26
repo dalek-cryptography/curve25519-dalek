@@ -33,10 +33,10 @@ use generic_array::typenum::U64;
 
 use curve25519_dalek::constants;
 use curve25519_dalek::edwards::CompressedEdwardsY;
-use curve25519_dalek::edwards::ExtendedPoint;
+use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 
-use subtle::slices_equal;
+use subtle::ConstantTimeEq;
 
 use errors::DecodingError;
 use errors::InternalError;
@@ -72,7 +72,7 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 #[derive(Copy)]
 #[repr(C)]
 pub struct Signature {
-    /// `r` is an `ExtendedPoint`, formed by using an hash function with
+    /// `r` is an `EdwardsPoint`, formed by using an hash function with
     /// 512-bits output to produce the digest of:
     ///
     /// - the nonce half of the `ExpandedSecretKey`, and
@@ -80,7 +80,7 @@ pub struct Signature {
     ///
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
-    /// basepoint to produce `r`, and `ExtendedPoint`.
+    /// basepoint to produce `r`, and `EdwardsPoint`.
     pub (crate) r: CompressedEdwardsY,
 
     /// `s` is a `Scalar`, formed by using an hash function with 512-bits output
@@ -561,7 +561,7 @@ impl ExpandedSecretKey {
         let mut hash: [u8; 64] = [0u8; 64];
         let mesg_digest: Scalar;
         let hram_digest: Scalar;
-        let r: ExtendedPoint;
+        let r: EdwardsPoint;
         let s: Scalar;
 
         h.input(&self.nonce);
@@ -687,7 +687,7 @@ impl PublicKey {
 
     /// Convert this public key to its underlying extended twisted Edwards coordinate.
     #[inline]
-    fn decompress(&self) -> Option<ExtendedPoint> {
+    fn decompress(&self) -> Option<EdwardsPoint> {
         self.0.decompress()
     }
 
@@ -726,8 +726,8 @@ impl PublicKey {
         use curve25519_dalek::edwards::vartime;
 
         let mut h: D = D::default();
-        let mut a: ExtendedPoint;
-        let ao:  Option<ExtendedPoint>;
+        let mut a: EdwardsPoint;
+        let ao:  Option<EdwardsPoint>;
         let mut digest: [u8; 64] = [0u8; 64];
 
         ao = self.decompress();
@@ -746,9 +746,9 @@ impl PublicKey {
         digest.copy_from_slice(h.fixed_result().as_slice());
 
         let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&digest);
-        let r: ExtendedPoint = vartime::double_scalar_mult_basepoint(&digest_reduced, &a, &signature.s);
+        let r: EdwardsPoint = vartime::double_scalar_mul_basepoint(&digest_reduced, &a, &signature.s);
 
-        slices_equal(signature.r.as_bytes(), r.compress().as_bytes()) == 1
+        (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
     }
 }
 
@@ -937,7 +937,7 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use curve25519_dalek::edwards::ExtendedPoint;
+    use curve25519_dalek::edwards::EdwardsPoint;
     use rand::OsRng;
     use hex::FromHex;
     use sha2::Sha512;
@@ -973,8 +973,8 @@ mod test {
     fn unmarshal_marshal() {  // TestUnmarshalMarshal
         let mut cspring: OsRng;
         let mut keypair: Keypair;
-        let mut x: Option<ExtendedPoint>;
-        let a: ExtendedPoint;
+        let mut x: Option<EdwardsPoint>;
+        let a: EdwardsPoint;
         let public: PublicKey;
 
         cspring = OsRng::new().unwrap();

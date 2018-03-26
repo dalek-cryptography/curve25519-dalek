@@ -16,10 +16,11 @@
 use core::fmt;
 use core::fmt::Display;
 
-/// Internal errors.  Most application-level developer will likely not
+/// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub (crate) enum InternalError {
+    #[allow(dead_code)]
     PointDecompressionError,
     ScalarFormatError,
     /// An error in the length of bytes handed to a constructor.

@@ -16,11 +16,11 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "0.14"
+version = "0.16"
 default-features = false
 
 [dependencies.subtle]
-version = "0.5"
+version = "0.6"
 default-features = false
 
 [dependencies.rand]
@@ -53,8 +53,8 @@ bincode = "^0.9"
 
 [features]
 default = ["std"]
-std = ["rand", "curve25519-dalek/std", "failure/std"]
+std = ["rand", "subtle/std", "curve25519-dalek/std", "failure/std"]
 bench = []
-nightly = ["curve25519-dalek/nightly"]
+nightly = ["curve25519-dalek/nightly", "subtle/nightly"]
 asm = ["sha2/asm"]
-
+yolocrypto = ["curve25519-dalek/yolocrypto"]

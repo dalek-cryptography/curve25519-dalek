@@ -144,7 +144,7 @@ impl<'a> Neg for &'a ExtendedPoint {
 }
 
 impl ExtendedPoint {
-    fn double(&self) -> ExtendedPoint {
+    pub fn double(&self) -> ExtendedPoint {
         unsafe {
             use stdsimd::vendor::_mm256_permute2x128_si256;
             use stdsimd::vendor::_mm256_permutevar8x32_epi32;
@@ -361,6 +361,18 @@ impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    /// Implement subtraction by negating the point and adding.
+    ///
+    /// Empirically, this seems about the same cost as a custom subtraction impl (maybe because the
+    /// benefit is cancelled by increased code size?)
+    fn sub(self, other: &'b CachedPoint) -> ExtendedPoint {
+        self + &(-other)
+    }
+}
+
 impl From<ExtendedPoint> for LookupTable<CachedPoint> {
     fn from(P: ExtendedPoint) -> Self {
         let mut points = [CachedPoint::from(P); 8];
@@ -421,67 +433,18 @@ impl EdwardsBasepointTable {
     }
 }
 
-/// Internal multiscalar code.
-#[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-    where I: IntoIterator,
-          I::Item: Borrow<Scalar>,
-          J: IntoIterator,
-          J::Item: Borrow<edwards::EdwardsPoint>,
-{
-    //assert_eq!(scalars.len(), points.len());
+use scalar_mul::window::OddLookupTable;
 
-    use clear_on_drop::ClearOnDrop;
-    let lookup_tables_vec: Vec<_> = points.into_iter()
-        .map(|P| LookupTable::from(ExtendedPoint::from(*P.borrow())) )
-        .collect();
-
-    let lookup_tables = ClearOnDrop::new(lookup_tables_vec);
-
-    // Setting s_i = i-th scalar, compute
-    //
-    //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
-    //
-    // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    let scalar_digits_vec: Vec<_> = scalars.into_iter()
-        .map(|c| c.borrow().to_radix_16())
-        .collect();
-
-    // The above puts the scalar digits into a heap-allocated Vec.
-    // To ensure that these are erased, pass ownership of the Vec into a
-    // ClearOnDrop wrapper.
-    let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
-
-    // Compute s_1*P_1 + ... + s_n*P_n: since
-    //
-    //    s_i*P_i = P_i*(s_{i,0} +     s_{i,1}*16^1 + ... +     s_{i,63}*16^63)
-    //    s_i*P_i =  P_i*s_{i,0} + P_i*s_{i,1}*16^1 + ... + P_i*s_{i,63}*16^63
-    //    s_i*P_i =  P_i*s_{i,0} + 16*(P_i*s_{i,1} + 16*( ... + 16*P_i*s_{i,63})...)
-    //
-    // we have the two-dimensional sum
-    //
-    //    s_1*P_1 =   P_1*s_{1,0} + 16*(P_1*s_{1,1} + 16*( ... + 16*P_1*s_{1,63})...)
-    //  + s_2*P_2 = + P_2*s_{2,0} + 16*(P_2*s_{2,1} + 16*( ... + 16*P_2*s_{2,63})...)
-    //      ...
-    //  + s_n*P_n = + P_n*s_{n,0} + 16*(P_n*s_{n,1} + 16*( ... + 16*P_n*s_{n,63})...)
-    //
-    // We sum column-wise top-to-bottom, then right-to-left,
-    // multiplying by 16 only once per column.
-    //
-    // This provides the speedup over doing n independent scalar
-    // mults: we perform 63 multiplications by 16 instead of 63*n
-    // multiplications, saving 252*(n-1) doublings.
-    let mut Q = ExtendedPoint::identity();
-    // XXX this algorithm makes no effort to be cache-aware; maybe it could be improved?
-    for j in (0..64).rev() {
-        Q = Q.mul_by_pow_2(4);
-        let it = scalar_digits.iter().zip(lookup_tables.iter());
-        for (s_i, lookup_table_i) in it {
-            // Q = Q + s_{i,j} * P_i
-            Q = &Q + &lookup_table_i.select(s_i[j]);
+impl<'a> From<&'a ExtendedPoint> for OddLookupTable<CachedPoint> {
+    fn from(A: &'a ExtendedPoint) -> Self {
+        let mut Ai = [CachedPoint::from(*A); 8];
+        let A2 = A.double();
+        for i in 0..7 {
+            Ai[i + 1] = (&A2 + &Ai[i]).into();
         }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
+        OddLookupTable(Ai)
     }
-    Q.into()
 }
 
 pub mod vartime {
@@ -558,38 +521,6 @@ pub mod vartime {
             i -= 1;
         }
 
-        Q.into()
-    }
-
-    /// Internal multiscalar function
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> edwards::EdwardsPoint
-        where I: IntoIterator,
-              I::Item: Borrow<Scalar>,
-              J: IntoIterator,
-              J::Item: Borrow<edwards::EdwardsPoint>,
-    {
-        //assert_eq!(scalars.len(), points.len());
-
-        let nafs: Vec<_> = scalars.into_iter()
-            .map(|c| c.borrow().non_adjacent_form()).collect();
-
-        let odd_multiples: Vec<_> = points.into_iter()
-            .map(|P| OddMultiples::create((*P.borrow()).into()) ).collect();
-
-        let mut Q = ExtendedPoint::identity();
-
-        for i in (0..255).rev() {
-            Q = Q.double();
-
-            for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
-                if naf[i] > 0 {
-                    Q = &Q + &odd_multiple[( naf[i]/2) as usize];
-                } else if naf[i] < 0 {
-                    Q = &Q - &odd_multiple[(-naf[i]/2) as usize];
-                }
-            }
-        }
         Q.into()
     }
 }

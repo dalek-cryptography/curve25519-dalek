@@ -13,3 +13,5 @@ pub mod window;
 pub mod variable_base;
 
 pub mod straus;
+
+pub mod vartime_straus;

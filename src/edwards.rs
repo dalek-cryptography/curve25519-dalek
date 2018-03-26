@@ -845,8 +845,6 @@ pub mod vartime {
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// ```
-    // XXX later when we do more fancy multiscalar mults, we can delegate
-    // based on the iter's size hint -- hdevalence
     #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
         where I: IntoIterator,
@@ -854,38 +852,19 @@ pub mod vartime {
               J: IntoIterator,
               J::Item: Borrow<EdwardsPoint>,
     {
+        // XXX later when we do more fancy multiscalar mults, we can delegate
+        // based on the iter's size hint -- hdevalence
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
-            use backend::avx2::edwards as edwards_avx2;
-
-            edwards_avx2::vartime::multiscalar_mul(scalars, points)
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use backend::avx2::scalar_mul::vartime_straus::multiscalar_mul;
+            multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
-            //assert_eq!(scalars.len(), points.len());
-
-            let nafs: Vec<_> = scalars.into_iter()
-                .map(|c| c.borrow().non_adjacent_form()).collect();
-            let odd_multiples: Vec<_> = points.into_iter()
-                .map(|P| OddMultiples::create(P.borrow())).collect();
-
-            let mut r = ProjectivePoint::identity();
-
-            for i in (0..255).rev() {
-                let mut t = r.double();
-
-                for (naf, odd_multiple) in nafs.iter().zip(odd_multiples.iter()) {
-                    if naf[i] > 0 {
-                        t = &t.to_extended() + &odd_multiple[( naf[i]/2) as usize];
-                    } else if naf[i] < 0 {
-                        t = &t.to_extended() - &odd_multiple[(-naf[i]/2) as usize];
-                    }
-                }
-
-                r = t.to_projective();
-            }
-
-            r.to_extended()
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        {
+            use scalar_mul::vartime_straus::multiscalar_mul;
+            multiscalar_mul(scalars, points)
         }
     }
 

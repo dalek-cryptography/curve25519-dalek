@@ -14,8 +14,8 @@ use core::borrow::Borrow;
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use curve_models::{CompletedPoint, ProjectivePoint, ProjectiveNielsPoint};
 use scalar_mul::window::OddLookupTable;
+use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 
 /// Perform variable-time, variable-base scalar multiplication.
 pub(crate) fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
@@ -31,24 +31,24 @@ where
         .collect();
     let lookup_tables: Vec<_> = points
         .into_iter()
-        .map(|P| OddLookupTable::<ProjectiveNielsPoint>::from(P.borrow()))
+        .map(|point| {
+            let avx2_point = ExtendedPoint::from(*point.borrow());
+            OddLookupTable::<CachedPoint>::from(&avx2_point)
+        })
         .collect();
 
-    let mut r = ProjectivePoint::identity();
+    let mut Q = ExtendedPoint::identity();
 
     for i in (0..255).rev() {
-        let mut t: CompletedPoint = r.double();
+        Q = Q.double();
 
         for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
             if naf[i] > 0 {
-                t = &t.to_extended() + &lookup_table.select(naf[i] as usize);
+                Q = &Q + &lookup_table.select(naf[i] as usize);
             } else if naf[i] < 0 {
-                t = &t.to_extended() - &lookup_table.select(-naf[i] as usize);
+                Q = &Q - &lookup_table.select(-naf[i] as usize);
             }
         }
-
-        r = t.to_projective();
     }
-
-    r.to_extended()
+    Q.into()
 }

@@ -383,56 +383,6 @@ impl From<ExtendedPoint> for LookupTable<CachedPoint> {
     }
 }
 
-#[derive(Clone)]
-pub struct EdwardsBasepointTable(pub [LookupTable<CachedPoint>; 32]);
-
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsBasepointTable {
-    type Output = ExtendedPoint;
-
-    fn mul(self, scalar: &'b Scalar) -> ExtendedPoint {
-        let a = scalar.to_radix_16();
-
-        let tables = &self.0;
-        let mut P = ExtendedPoint::identity();
-
-        for i in (0..64).filter(|x| x % 2 == 1) {
-            P = &P + &tables[i/2].select(a[i]);
-        }
-
-        P = P.mul_by_pow_2(4);
-
-        for i in (0..64).filter(|x| x % 2 == 0) {
-            P = &P + &tables[i/2].select(a[i]);
-        }
-
-        P
-    }
-}
-
-impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
-    type Output = ExtendedPoint;
-
-    /// Given `self` a table of precomputed multiples of the point `B`, compute `B * s`.
-    fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> ExtendedPoint {
-        basepoint_table * &self
-    }
-}
-
-impl EdwardsBasepointTable {
-    /// Create a table of precomputed multiples of `basepoint`.
-    pub fn create(basepoint: &ExtendedPoint) -> EdwardsBasepointTable {
-        // XXX use init_with
-        let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
-        let mut P = *basepoint;
-        for i in 0..32 {
-            // P = (16^2)^i * B
-            table.0[i] = LookupTable::from(P);
-            P = P.mul_by_pow_2(8);
-        }
-        table
-    }
-}
-
 use scalar_mul::window::OddLookupTable;
 
 impl<'a> From<&'a ExtendedPoint> for OddLookupTable<CachedPoint> {

@@ -23,7 +23,7 @@
 //! Eliminating cofactors through point
 //! compression_](https://eprint.iacr.org/2015/673.pdf), notes that while
 //! most cryptographic systems require a group of prime order, most
-//! concrete implementations using elliptic curve groups fall short --
+//! concrete implementations using elliptic curve groups fall short –
 //! they either provide a group of prime order, but with incomplete or
 //! variable-time addition formulae (for instance, most Weierstrass
 //! models), or else they provide a fast and safe implementation of a
@@ -31,15 +31,19 @@
 //! small cofactor \\(h\\) (for instance, Edwards curves, which have
 //! cofactor at least \\(4\\)).
 //!
-//! This abstraction mismatch requires ad-hoc protocol modifications to
-//! ensure security; these modifications require careful analysis and
-//! are a recurring source of [vulnerabilities][cryptonote] and [design
+//! This abstraction mismatch is commonly “handled” by pushing the
+//! complexity upwards, adding ad-hoc protocol modifications.  But
+//! these modifications require careful analysis and are a recurring
+//! source of unexpected [vulnerabilities][cryptonote] and [design
 //! complications][ed25519_hkd].
 //!
-//! Instead, Ristretto uses a quotient group to implement a prime-order
-//! group using a non-prime-order curve.  More details are described in
-//! the *Implementation* section below.  Ristretto points are provided
-//! in `curve25519-dalek` by the `RistrettoPoint` struct.
+//! Instead, Ristretto uses a quotient group to implement a
+//! prime-order group using a non-prime-order curve.  This provides
+//! the correct abstraction for cryptographic systems, while retaining
+//! the speed and safety benefits of an Edwards curve.  More details
+//! are described in the *Implementation* section below.  Ristretto
+//! points are provided in `curve25519-dalek` by the `RistrettoPoint`
+//! struct.
 //!
 //! ## Encoding and Decoding
 //!

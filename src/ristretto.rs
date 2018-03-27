@@ -69,8 +69,10 @@
 //! ## Scalars
 //!
 //! Scalars are represented by the `Scalar` struct.  Each scalar has a
-//! canonical representative mod the group order; see
-//! `Scalar::from_canonical_bytes()` and `Scalar::is_canonical()`.
+//! canonical representative mod the group order.  To attempt to load
+//! a supposedly-canonical scalar, use
+//! `Scalar::from_canonical_bytes()`. To check whether a
+//! representative is canonical, use `Scalar::is_canonical()`.
 //!
 //! ## Scalar Multiplication
 //!

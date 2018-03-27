@@ -19,7 +19,9 @@
 //! # The Ristretto Group
 //!
 //! Ristretto is a modification of Mike Hamburg's Decaf scheme to work
-//! with Curve25519.  The introduction of the Decaf paper, [_Decaf:
+//! with cofactor-\\(8\\) curves, such as Curve25519.
+//!
+//! The introduction of the Decaf paper, [_Decaf:
 //! Eliminating cofactors through point
 //! compression_](https://eprint.iacr.org/2015/673.pdf), notes that while
 //! most cryptographic systems require a group of prime order, most
@@ -34,13 +36,21 @@
 //! This abstraction mismatch is commonly “handled” by pushing the
 //! complexity upwards, adding ad-hoc protocol modifications.  But
 //! these modifications require careful analysis and are a recurring
-//! source of unexpected [vulnerabilities][cryptonote] and [design
+//! source of [vulnerabilities][cryptonote] and [design
 //! complications][ed25519_hkd].
 //!
-//! Instead, Ristretto uses a quotient group to implement a
+//! Instead, Decaf (and Ristretto) use a quotient group to implement a
 //! prime-order group using a non-prime-order curve.  This provides
 //! the correct abstraction for cryptographic systems, while retaining
-//! the speed and safety benefits of an Edwards curve.  More details
+//! the speed and safety benefits of an Edwards curve.
+//!
+//! Decaf is named “after the procedure which divides the effect of
+//! coffee by \\(4\\)”.  However, Curve25519 has a cofactor of
+//! \\(8\\).  To eliminate its cofactor, Ristretto restricts further;
+//! this [additional restriction][ristretto_coffee] gives the
+//! _Ristretto_ encoding.
+//!
+//! More details
 //! are described in the *Implementation* section below.  Ristretto
 //! points are provided in `curve25519-dalek` by the `RistrettoPoint`
 //! struct.
@@ -121,19 +131,10 @@
 //!    a coset is accepted).
 //!
 //! Internally, each coset is represented by a curve point; two points
-//! may represent the same coset in the same way that two points with
-//! different \\(X,Y,Z\\) coordinates may represent the same point.  The
-//! group operations are carried out using the fast, safe Edwards
-//! formulas.
-//!
-//! The Decaf paper suggests implementing the compression and
-//! decompression routines using an isogeny from a Jacobi quartic; for
-//! curves of cofactor \\(4\\), this eliminates the cofactor, and
-//! explains the name: Decaf is named "after the procedure which divides
-//! the effect of coffee by \\(4\\)".  However, Curve25519 has a
-//! cofactor of \\(8\\).  To eliminate its cofactor, we tweak Decaf to
-//! restrict further.  This [additional restriction][ristretto_coffee]
-//! gives the _Ristretto_ encoding.
+//! \\( P, Q \\) may represent the same coset in the same way that two
+//! points with different \\(X,Y,Z\\) coordinates may represent the
+//! same point.  The group operations are carried out with no overhead
+//! using Edwards formulas.
 //!
 //! Notes on the details of the encoding can be found in the
 //! [`ristretto::notes`][ristretto_notes] submodule of the internal `curve25519-dalek`

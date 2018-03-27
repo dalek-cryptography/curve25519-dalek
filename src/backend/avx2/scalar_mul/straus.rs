@@ -31,10 +31,7 @@ where
     // for each input point P
     let lookup_tables: Vec<_> = points
         .into_iter()
-        .map(|point| {
-            let avx2_point = ExtendedPoint::from(*point.borrow());
-            LookupTable::<CachedPoint>::from(avx2_point)
-        })
+        .map(|point| LookupTable::<CachedPoint>::from(point.borrow()))
         .collect();
 
     let scalar_digits_vec: Vec<_> = scalars

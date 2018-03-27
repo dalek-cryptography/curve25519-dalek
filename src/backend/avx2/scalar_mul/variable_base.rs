@@ -8,10 +8,8 @@ use scalar_mul::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
 pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
-    // XXX combine these conversions
-    let avx2_point = ExtendedPoint::from(*point);
     // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-    let lookup_table = LookupTable::<CachedPoint>::from(avx2_point);
+    let lookup_table = LookupTable::<CachedPoint>::from(point);
     // Setting s = scalar, compute
     //
     //    s = s_0 + s_1*16^1 + ... + s_63*16^63,

@@ -31,10 +31,7 @@ where
         .collect();
     let lookup_tables: Vec<_> = points
         .into_iter()
-        .map(|point| {
-            let avx2_point = ExtendedPoint::from(*point.borrow());
-            OddLookupTable::<CachedPoint>::from(&avx2_point)
-        })
+        .map(|point| OddLookupTable::<CachedPoint>::from(point.borrow()))
         .collect();
 
     let mut Q = ExtendedPoint::identity();

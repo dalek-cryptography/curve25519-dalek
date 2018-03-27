@@ -24,7 +24,7 @@ use subtle::Choice;
 
 use edwards;
 use scalar::Scalar;
-use scalar_mul::window::LookupTable;
+use scalar_mul::window::{LookupTable, OddLookupTable};
 
 use traits::Identity;
 
@@ -73,62 +73,6 @@ impl Identity for ExtendedPoint {
             u32x8::splat(0),
             u32x8::splat(0),
         ]))
-    }
-}
-
-/// A cached point with some precomputed variables used for readdition.
-#[derive(Copy, Clone, Debug)]
-pub struct CachedPoint(pub(super) FieldElement32x4);
-
-impl From<ExtendedPoint> for CachedPoint {
-    fn from(P: ExtendedPoint) -> CachedPoint {
-        let mut x = P.0;
-
-        // x = (S2 S3 Z2 T2)
-        x.diff_sum(0b00001111);
-
-        // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
-        x.scale_by_curve_constants();
-
-        // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
-        x.negate(D_LANES);
-
-        CachedPoint(x)
-    }
-}
-
-impl Default for CachedPoint {
-    fn default() -> CachedPoint {
-        CachedPoint::identity()
-    }
-}
-
-impl Identity for CachedPoint {
-    fn identity() -> CachedPoint {
-        CachedPoint(FieldElement32x4([
-            u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
-            u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-        ]))
-    }
-}
-
-impl ConditionallyAssignable for CachedPoint {
-    fn conditional_assign(&mut self, other: &CachedPoint, choice: Choice) {
-        self.0.conditional_assign(&other.0, choice);
-    }
-}
-
-impl<'a> Neg for &'a CachedPoint {
-    type Output = CachedPoint;
-
-    fn neg(self) -> CachedPoint {
-        let mut neg = *self;
-        neg.0.swap_AB();
-        neg.0.negate_lazy(D_LANES);
-        neg
     }
 }
 
@@ -236,6 +180,62 @@ impl ExtendedPoint {
     }
 }
 
+/// A cached point with some precomputed variables used for readdition.
+#[derive(Copy, Clone, Debug)]
+pub struct CachedPoint(pub(super) FieldElement32x4);
+
+impl From<ExtendedPoint> for CachedPoint {
+    fn from(P: ExtendedPoint) -> CachedPoint {
+        let mut x = P.0;
+
+        // x = (S2 S3 Z2 T2)
+        x.diff_sum(0b00001111);
+
+        // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
+        x.scale_by_curve_constants();
+
+        // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
+        x.negate(D_LANES);
+
+        CachedPoint(x)
+    }
+}
+
+impl Default for CachedPoint {
+    fn default() -> CachedPoint {
+        CachedPoint::identity()
+    }
+}
+
+impl Identity for CachedPoint {
+    fn identity() -> CachedPoint {
+        CachedPoint(FieldElement32x4([
+            u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
+            u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+        ]))
+    }
+}
+
+impl ConditionallyAssignable for CachedPoint {
+    fn conditional_assign(&mut self, other: &CachedPoint, choice: Choice) {
+        self.0.conditional_assign(&other.0, choice);
+    }
+}
+
+impl<'a> Neg for &'a CachedPoint {
+    type Output = CachedPoint;
+
+    fn neg(self) -> CachedPoint {
+        let mut neg = *self;
+        neg.0.swap_AB();
+        neg.0.negate_lazy(D_LANES);
+        neg
+    }
+}
+
 impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -288,8 +288,9 @@ impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl From<ExtendedPoint> for LookupTable<CachedPoint> {
-    fn from(P: ExtendedPoint) -> Self {
+impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let P = ExtendedPoint::from(*point);
         let mut points = [CachedPoint::from(P); 8];
         for i in 0..7 {
             points[i+1] = (&P + &points[i]).into();
@@ -298,11 +299,10 @@ impl From<ExtendedPoint> for LookupTable<CachedPoint> {
     }
 }
 
-use scalar_mul::window::OddLookupTable;
-
-impl<'a> From<&'a ExtendedPoint> for OddLookupTable<CachedPoint> {
-    fn from(A: &'a ExtendedPoint) -> Self {
-        let mut Ai = [CachedPoint::from(*A); 8];
+impl<'a> From<&'a edwards::EdwardsPoint> for OddLookupTable<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let A = ExtendedPoint::from(*point);
+        let mut Ai = [CachedPoint::from(A); 8];
         let A2 = A.double();
         for i in 0..7 {
             Ai[i + 1] = (&A2 + &Ai[i]).into();

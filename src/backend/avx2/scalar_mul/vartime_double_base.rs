@@ -30,8 +30,7 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         }
     }
 
-    let avx2_A = ExtendedPoint::from(*A);
-    let table_A = OddLookupTable::<CachedPoint>::from(&avx2_A);
+    let table_A = OddLookupTable::<CachedPoint>::from(A);
     let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
 
     let mut Q = ExtendedPoint::identity();

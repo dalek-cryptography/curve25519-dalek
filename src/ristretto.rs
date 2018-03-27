@@ -832,6 +832,16 @@ pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
 
 /// A precomputed table of multiples of a basepoint, used to accelerate
 /// scalar multiplication.
+///
+/// A precomputed table of multiples of the Ristretto basepoint is
+/// available in the `constants` module:
+/// ```
+/// use curve25519_dalek::constants;
+/// use curve25519_dalek::scalar::Scalar;
+///
+/// let a = Scalar::from_u64(87329482);
+/// let P = &a * &constants::RISTRETTO_BASEPOINT_TABLE;
+/// ```
 #[derive(Clone)]
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 

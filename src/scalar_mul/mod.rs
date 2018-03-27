@@ -15,6 +15,8 @@ pub mod variable_base;
 #[cfg(feature="precomputed_tables")]
 pub mod vartime_double_base;
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub mod straus;
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub mod vartime_straus;

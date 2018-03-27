@@ -132,17 +132,6 @@ impl<'a> Neg for &'a CachedPoint {
     }
 }
 
-impl<'a> Neg for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-
-    fn neg(self) -> ExtendedPoint {
-        let mut neg = *self;
-        // (X Y Z T) -> (-X Y Z -T)
-        neg.0.negate(A_LANES | D_LANES);
-        neg
-    }
-}
-
 impl ExtendedPoint {
     pub fn double(&self) -> ExtendedPoint {
         unsafe {
@@ -287,80 +276,6 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
-impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-
-    /// Uses a slight tweak of the parallel unified formulas of HWCD'08
-    fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
-        unsafe {
-            use stdsimd::vendor::_mm256_permute2x128_si256;
-            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
-            use stdsimd::vendor::_mm256_blend_epi32;
-
-            let P: &FieldElement32x4 = &self.0;
-            let Q: &FieldElement32x4 = &other.0;
-
-            let mut t0 = FieldElement32x4::zero();
-            let mut t1 = FieldElement32x4::zero();
-
-            // set t0 = (X1 Y1 X2 Y2)
-            for i in 0..5 {
-                t0.0[i] = _mm256_permute2x128_si256(P.0[i].into(), Q.0[i].into(), 32).into();
-            }
-
-            // set t0 = (Y1-X1 Y1+X1 Y2-X2 Y2+X2) = (S0 S1 S2 S3)
-            t0.diff_sum(0xff);
-
-            // set t1 = (S0 S1 Z1 T1)
-            // set t0 = (S2 S3 Z2 T2)
-            for i in 0..5 {
-                // why does this intrinsic take an i32 for the imm8 ???
-                t1.0[i] = _mm256_blend_epi32(t0.0[i].into(), P.0[i].into(), (C_LANES | D_LANES) as i32).into();
-                t0.0[i] = _mm256_permute2x128_si256(t0.0[i].into(), Q.0[i].into(), 49).into();
-            }
-
-            // set t2 = (S0*S2 S1*S3 Z1*Z2 T1*T2) = (S4 S5 S6 S7)
-            let mut t2 = &t0 * &t1;
-
-            //// set t2 = (S8 S9 S10 S11)
-            // set t2 = (121666*S4  121666*S5 2*121666*S6 2*121665*S7)
-            //        = (       S8         S9         S10        -S11)
-            t2.scale_by_curve_constants();
-
-            // set t2 = (S8 S9 -S11 S10)
-            t2.swap_CD();
-
-            // set t2 = (S9-S8 S9+S8 S10+S11 S10-S11) = (S12 S13 S15 S14)
-            t2.diff_sum(0xff);
-
-            let c0 = u32x8::new(0,4,2,6,4,0,6,2); // (ABCD) -> (ACCA)
-            let c1 = u32x8::new(5,1,7,3,5,1,7,3); // (ABCD) -> (DBDB)
-
-            // set t0 = (S12 S15 S15 S12)
-            // set t1 = (S14 S13 S14 S13)
-            for i in 0..5 {
-                t0.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c0);
-                t1.0[i] = _mm256_permutevar8x32_epi32(t2.0[i], c1);
-            }
-
-            // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
-            ExtendedPoint(&t0 * &t1)
-        }
-    }
-}
-
-impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
-    type Output = ExtendedPoint;
-
-    /// Implement subtraction by negating the point and adding.
-    ///
-    /// Empirically, this seems about the same cost as a custom subtraction impl (maybe because the
-    /// benefit is cancelled by increased code size?)
-    fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
-        self + &(-other)
-    }
-}
-
 impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -466,14 +381,11 @@ mod test {
     fn addition_test_helper(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) {
         // Test the serial implementation of the parallel addition formulas
         let R_serial: edwards::EdwardsPoint = serial_add(P.into(), Q.into()).into();
-        // Test the vector implementation of the parallel addition formulas
-        let R_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &ExtendedPoint::from(Q)).into();
-        // Test the vector implementation of the parallel subtraction formulas
-        let S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &ExtendedPoint::from(Q)).into();
 
         // Test the vector implementation of the parallel readdition formulas
         let cached_Q = CachedPoint::from(ExtendedPoint::from(Q));
-        let T_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
+        let R_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
+        let S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &cached_Q).into();
 
         println!("Testing point addition:");
         println!("P = {:?}", P);
@@ -482,30 +394,12 @@ mod test {
         println!("R = P + Q = {:?}", &P + &Q);
         println!("R_serial = {:?}", R_serial);
         println!("R_vector = {:?}", R_vector);
-        println!("T_vector = {:?}", T_vector);
         println!("S = P - Q = {:?}", &P - &Q);
         println!("S_vector = {:?}", S_vector);
         assert_eq!(R_serial.compress(), (&P + &Q).compress());
         assert_eq!(R_vector.compress(), (&P + &Q).compress());
-        assert_eq!(T_vector.compress(), (&P + &Q).compress());
         assert_eq!(S_vector.compress(), (&P - &Q).compress());
         println!("OK!\n");
-    }
-
-    #[test]
-    fn sub_vs_add_minus() {
-        let P: ExtendedPoint = edwards::EdwardsPoint::identity().into();
-        let Q: ExtendedPoint = edwards::EdwardsPoint::identity().into();
-
-        let mQ = -&Q;
-
-        println!("sub");
-        let R1: edwards::EdwardsPoint = (&P - &Q).into();
-        println!("add neg");
-        let R2: edwards::EdwardsPoint = (&P + &mQ).into();
-
-        assert_eq!(R2.compress(), edwards::EdwardsPoint::identity().compress());
-        assert_eq!(R1.compress(), edwards::EdwardsPoint::identity().compress());
     }
 
     #[test]

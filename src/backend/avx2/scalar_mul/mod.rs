@@ -10,6 +10,9 @@
 
 pub mod variable_base;
 
+#[cfg(feature="precomputed_tables")]
+pub mod vartime_double_base;
+
 pub mod straus;
 
 pub mod vartime_straus;

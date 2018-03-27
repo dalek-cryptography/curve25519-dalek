@@ -98,7 +98,6 @@ use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::ops::Index;
 use core::borrow::Borrow;
 
 use subtle::ConditionallyAssignable;
@@ -778,30 +777,6 @@ pub mod vartime {
     //! Variable-time operations on curve points, useful for non-secret data.
     use super::*;
 
-    /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
-    struct OddMultiples([ProjectiveNielsPoint; 8]);
-
-    impl OddMultiples {
-        fn create(A: &EdwardsPoint) -> OddMultiples {
-            let mut Ai = [ProjectiveNielsPoint::identity(); 8];
-            let A2 = A.double();
-            Ai[0]  = A.to_projective_niels();
-            for i in 0..7 {
-                Ai[i+1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
-            }
-            // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
-            OddMultiples(Ai)
-        }
-    }
-
-    impl Index<usize> for OddMultiples {
-        type Output = ProjectiveNielsPoint;
-
-        fn index(&self, _index: usize) -> &ProjectiveNielsPoint {
-            &(self.0[_index])
-        }
-    }
-
     /// Given an iterator of public scalars and an iterator of public points, compute
     /// $$
     /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
@@ -868,66 +843,22 @@ pub mod vartime {
         }
     }
 
-    /// Given a point \\(A\\) and scalars \\(a\\) and \\(b\\), compute the point
-    /// \\(aA+bB\\), where \\(B\\) is the Ed25519 basepoint (i.e., \\(B = (x,4/5)\\)
-    /// with x positive).
+    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
     #[cfg(feature="precomputed_tables")]
-    pub fn double_scalar_mul_basepoint(
-        a: &Scalar,
-        A: &EdwardsPoint,
-        b: &Scalar,
-    ) -> EdwardsPoint {
+    pub fn double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))] {
-            use backend::avx2::edwards as edwards_avx2;
-
-            edwards_avx2::vartime::double_scalar_mul_basepoint(a, A, b)
+        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use backend::avx2::scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))] {
-            let a_naf = a.non_adjacent_form();
-            let b_naf = b.non_adjacent_form();
-
-            // Find starting index
-            let mut i: usize = 255;
-            for j in (0..255).rev() {
-                i = j;
-                if a_naf[i] != 0 || b_naf[i] != 0 {
-                    break;
-                }
-            }
-
-            let odd_multiples_of_A = OddMultiples::create(A);
-            let odd_multiples_of_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
-
-            let mut r = ProjectivePoint::identity();
-            loop {
-                let mut t = r.double();
-
-                if a_naf[i] > 0 {
-                    t = &t.to_extended() + &odd_multiples_of_A[( a_naf[i]/2) as usize];
-                } else if a_naf[i] < 0 {
-                    t = &t.to_extended() - &odd_multiples_of_A[(-a_naf[i]/2) as usize];
-                }
-
-                if b_naf[i] > 0 {
-                    t = &t.to_extended() + &odd_multiples_of_B[( b_naf[i]/2) as usize];
-                } else if b_naf[i] < 0 {
-                    t = &t.to_extended() - &odd_multiples_of_B[(-b_naf[i]/2) as usize];
-                }
-
-                r = t.to_projective();
-
-                if i == 0 {
-                    break;
-                }
-                i -= 1;
-            }
-
-            r.to_extended()
+        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        {
+            use scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
         }
     }
-
 }
 
 // ------------------------------------------------------------------------

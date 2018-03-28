@@ -1,15 +1,25 @@
-Below are some notes on Ristretto, which are *NOT* a full writeup and which may have errors.
+Below are some notes on Ristretto, which are not an authoritative
+writeup and which may have errors.  See also the [Decaf
+paper][decaf_paper], the [libdecaf
+implementation][ristretto_libdecaf], and the [Sage
+script][ristretto_sage].
 
-# Notes on Ristretto
+Decaf constructs a prime-order group from a cofactor-\\(4\\) Edwards
+curve by defining an encoding of a related Jacobi quartic, then
+transporting the encoding from the Jacobi quartic to the Edwards curve
+by means of an isogeny.  Ristretto uses a different Jacobi quartic and
+a different isogeny, but is otherwise similar.
+
+These notes only describe Ristretto, and focus on the cofactor-\\(8\\)
+case.
 
 ## The Jacobi Quartic
 
-The Jacobi quartic is parameterized by \\(e, A\\), and is of the
+The Jacobi quartic curve is parameterized by \\(e, A\\), and is of the
 form $$ \mathcal J\_{e,A} : t\^2 = es\^4 + 2As\^2 + 1, $$ with
 identity point \\((0,1)\\).  For more details on the Jacobi quartic,
-see the [Decaf paper](https://eprint.iacr.org/2015/673.pdf) or
-[_Jacobi Quartic Curves
-Revisited_](https://eprint.iacr.org/2009/312.pdf) by Hisil, Wong,
+see the [Decaf paper][decaf_paper] or
+[_Jacobi Quartic Curves Revisited_][hwcd_jacobi] by Hisil, Wong,
 Carter, and Dawson).
 
 When \\(e = a\^2\\), \\(\mathcal J\_{e,A}\\) has full
@@ -19,10 +29,13 @@ we can write the \\(\mathcal J[2]\\)-coset of a point \\(P =
 (s,t)\\) as
 $$
 P + \mathcal J[2] = \left\\{
-                      (s,t),
-                      (-s,-t),
-                      (1/as, -t/as\^2),
-                      (-1/as, t/as\^2) \right\\}.
+
+(s,t),
+(-s,-t),
+(1/as, -t/as\^2),
+(-1/as, t/as\^2)
+
+\right\\}.
 $$
 Notice that replacing \\(a\\) by \\(-a\\) just swaps the last two
 points, so this set does not depend on the choice of \\(a\\).  In
@@ -42,9 +55,8 @@ The encoding is then the (canonical byte encoding of the)
 ## The Edwards Curve
 
 Our primary internal model for Curve25519 points are the [_Extended
-Twisted Edwards Coordinates_](https://eprint.iacr.org/2008/522.pdf)
-of Hisil, Wong, Carter, and Dawson.
-These correspond to the affine model
+Twisted Edwards Coordinates_][hwcd_edwards] of Hisil, Wong, Carter,
+and Dawson.  These correspond to the affine model
 
 $$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
 
@@ -316,3 +328,11 @@ It's possible to do batch encoding of \\( [2]P \\) using the dual
 isogeny \\(\hat{\theta}\\).  Defer this for now.
 
 ## ???
+
+[ristretto_sage]: https://sourceforge.net/p/ed448goldilocks/code/ci/master/tree/aux/ristretto/ristretto.sage
+[ristretto_libdecaf]: https://sourceforge.net/p/ed448goldilocks/code/ci/master/tree/
+[decaf_paper]: https://eprint.iacr.org/2015/673.pdf
+[hwcd_jacobi]: https://eprint.iacr.org/2009/312.pdf
+[hwcd_edwards]: https://eprint.iacr.org/2008/522.pdf
+[edwards_edwards]: https://www.ams.org/journals/bull/2007-44-03/S0273-0979-07-01153-6/S0273-0979-07-01153-6.pdf
+[twisted_edwards]: https://eprint.iacr.org/2008/013.pdf

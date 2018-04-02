@@ -96,7 +96,7 @@ or form, safe.
 The signatures produced by this library are malleable, as discussed in
 [the original paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf):
 
-![](https://github.com/isislovecruft/ed25519-dalek/blob/develop/res/ed25519-malleability.png)
+![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/ed25519-malleability.png)
 
 We could eliminate the malleability property by multiplying by the curve
 cofactor, however, this would cause our implementation to *not* match the
@@ -111,7 +111,7 @@ In short, if malleable signatures are bad for your protocol, don't use them.
 Consider using a curve25519-based Verifiable Random Function (VRF), such as
 [Trevor Perrin's VXEdDSA](https://www.whispersystems.org/docs/specifications/xeddsa/),
 instead.  We
-[plan](https://github.com/isislovecruft/curve25519-dalek/issues/9) to
+[plan](https://github.com/dalek-cryptography/curve25519-dalek/issues/9) to
 eventually support VXEdDSA in curve25519-dalek.
 
 # Installation

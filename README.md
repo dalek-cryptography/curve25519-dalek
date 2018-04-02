@@ -91,7 +91,7 @@ Documentation is available [here](https://docs.rs/x25519-dalek).
 To install, add the following to your project's `Cargo.toml`:
 
     [dependencies.x25519-dalek]
-    version = "^0.0"
+    version = "^0.1"
 
 Then, in your library or executable source, add:
 

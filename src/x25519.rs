@@ -68,7 +68,6 @@ pub fn diffie_hellman(my_secret: &[u8; 32], their_public: &[u8; 32]) -> [u8; 32]
 
 #[cfg(test)]
 mod test {
-    use curve25519_dalek::constants::BASE_COMPRESSED_MONTGOMERY;
     use super::*;
 
     fn do_rfc7748_ladder_test1(input_scalar: &Scalar,
@@ -124,6 +123,8 @@ mod test {
     #[test]
     #[ignore] // Run only if you want to burn a lot of CPU doing 1,000,000 DH operations
     fn rfc7748_ladder_test2() {
+        use curve25519_dalek::constants::BASE_COMPRESSED_MONTGOMERY;
+
         let mut k: Scalar = Scalar(BASE_COMPRESSED_MONTGOMERY.0);
         let mut u: CompressedMontgomeryU = BASE_COMPRESSED_MONTGOMERY;
         let mut result: CompressedMontgomeryU;

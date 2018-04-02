@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/isislovecruft/x25519-dalek"
+repository = "https://github.com/dalek-cryptography/x25519-dalek"
+homepage = "https://dalek.rs/"
 documentation = "https://docs.rs/x25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "curve25519", "key-exchange", "x25519", "diffie-hellman"]
@@ -16,7 +17,7 @@ exclude = [
 ]
 
 [badges]
-travis-ci = { repository = "isislovecruft/x25519-dalek", branch = "master"}
+travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
 version = "^0.12"

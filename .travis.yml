@@ -17,3 +17,8 @@ matrix:
 
 script:
   - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS
+
+notifications:
+  slack:
+    rooms:
+      - dalek-cryptography:Xxv9WotKYWdSoKlgKNqXiHoD#dalek-bots

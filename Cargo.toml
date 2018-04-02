@@ -26,8 +26,14 @@ version = "^0.12"
 optional = true
 version = "^0.3"
 
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "x25519"
+harness = false
+
 [features]
-bench = []
 default = ["std", "nightly"]
 std = ["rand", "curve25519-dalek/std"]
 nightly = ["curve25519-dalek/nightly"]

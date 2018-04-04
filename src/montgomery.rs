@@ -229,12 +229,17 @@ fn differential_add_and_double(
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
+define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);
+
+define_mul_variants!(LHS = MontgomeryPoint, RHS = Scalar, Output = MontgomeryPoint);
+define_mul_variants!(LHS = Scalar, RHS = MontgomeryPoint, Output = MontgomeryPoint);
+
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
-impl Mul<Scalar> for MontgomeryPoint {
+impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0([n]P) \\).
-    fn mul(self, scalar: Scalar) -> MontgomeryPoint {
+    fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
@@ -256,16 +261,16 @@ impl Mul<Scalar> for MontgomeryPoint {
     }
 }
 
-impl MulAssign<Scalar> for MontgomeryPoint {
-    fn mul_assign(&mut self, scalar: Scalar) {
-        *self = (*self) * scalar;
+impl<'b> MulAssign<&'b Scalar> for MontgomeryPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
+        *self = (self as &MontgomeryPoint) * scalar;
     }
 }
 
-impl Mul<MontgomeryPoint> for Scalar {
+impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
     type Output = MontgomeryPoint;
 
-    fn mul(self, point: MontgomeryPoint) -> MontgomeryPoint {
+    fn mul(self, point: &'b MontgomeryPoint) -> MontgomeryPoint {
         point * self
     }
 }
@@ -345,24 +350,5 @@ mod test {
         let result   = s * p_montgomery;
 
         assert_eq!(result, expected.to_montgomery())
-    }
-}
-
-#[cfg(all(test, feature = "bench"))]
-#[cfg(feature="precomputed_tables")]
-mod bench {
-    use rand::OsRng;
-    use constants::ED25519_BASEPOINT_TABLE;
-    use constants::X25519_BASEPOINT;
-    use test::Bencher;
-    use super::*;
-
-    #[bench]
-    fn montgomery_ladder(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let s: Scalar = Scalar::random(&mut csprng);
-        let P: MontgomeryPoint = (&Scalar::random(&mut csprng) * &ED25519_BASEPOINT_TABLE).to_montgomery();
-
-        b.iter(|| s * P);
     }
 }

@@ -135,8 +135,6 @@ use field::FieldElement;
 use edwards::EdwardsPoint;
 use traits::ValidityCheck;
 
-pub mod window;
-
 // ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------

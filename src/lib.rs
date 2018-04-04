@@ -11,11 +11,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #![cfg_attr(feature = "alloc", feature(alloc))]
-#![cfg_attr(feature = "bench", feature(test))]
 
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
+#![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
 
 // Refuse to compile if documentation is missing, but only on nightly.
 //
@@ -41,12 +41,6 @@ extern crate alloc;
 
 extern crate clear_on_drop;
 
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
-
-#[cfg(feature = "yolocrypto")]
-extern crate stdsimd;
-
 // The `Digest` trait is implemented using `generic_array`, so we need it
 // too. Hopefully we can eliminate `generic_array` from `Digest` once const
 // generics land.
@@ -71,14 +65,19 @@ pub(crate) mod macros;
 
 // Scalar arithmetic mod l = 2^252 + ..., the order of the Ristretto group
 pub mod scalar;
+
 // Point operations on the Montgomery form of Curve25519
 pub mod montgomery;
+
 // Point operations on the Edwards form of Curve25519
 pub mod edwards;
+
 // Group operations on the Ristretto group
 pub mod ristretto;
+
 // Useful constants, like the Ed25519 basepoint
 pub mod constants;
+
 // External (and internal) traits.
 pub mod traits;
 
@@ -94,3 +93,6 @@ pub(crate) mod backend;
 
 // Internal curve models which are not part of the public API.
 pub(crate) mod curve_models;
+
+// Implementations of scalar mul algorithms live here
+pub(crate) mod scalar_mul;

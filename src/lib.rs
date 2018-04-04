@@ -15,6 +15,7 @@
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
+#![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
 
 // Refuse to compile if documentation is missing, but only on nightly.
 //
@@ -39,9 +40,6 @@ extern crate rand;
 extern crate alloc;
 
 extern crate clear_on_drop;
-
-#[cfg(feature = "yolocrypto")]
-extern crate stdsimd;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it
 // too. Hopefully we can eliminate `generic_array` from `Digest` once const

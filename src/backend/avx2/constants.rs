@@ -10,7 +10,7 @@
 
 //! This module contains constants used by the AVX2 backend.
 
-use stdsimd::simd::u32x8;
+use core::simd::u32x8;
 
 use scalar_mul::window::OddLookupTable;
 use backend::avx2::field::FieldElement32x4;

@@ -1,7 +1,7 @@
 Below are some notes on Ristretto, which are not an authoritative
 writeup and which may have errors.  See also the [Decaf
 paper][decaf_paper], the [libdecaf
-implementation][ristretto_libdecaf], and the [Sage
+implementation of Ristretto][ristretto_libdecaf], and its [Sage
 script][ristretto_sage].
 
 Decaf constructs a prime-order group from a cofactor-\\(4\\) Edwards
@@ -22,19 +22,17 @@ see the [Decaf paper][decaf_paper] or
 [_Jacobi Quartic Curves Revisited_][hwcd_jacobi] by Hisil, Wong,
 Carter, and Dawson).
 
-When \\(e = a\^2\\), \\(\mathcal J\_{e,A}\\) has full
+When \\(e = a\^2\\) is a square, \\(\mathcal J\_{e,A}\\) has full
 \\(2\\)-torsion (i.e., \\(\mathcal J[2] \cong \mathbb Z /2 \times
 \mathbb Z/2\\)), and
 we can write the \\(\mathcal J[2]\\)-coset of a point \\(P =
 (s,t)\\) as
 $$
 P + \mathcal J[2] = \left\\{
-
 (s,t),
 (-s,-t),
 (1/as, -t/as\^2),
 (-1/as, t/as\^2)
-
 \right\\}.
 $$
 Notice that replacing \\(a\\) by \\(-a\\) just swaps the last two

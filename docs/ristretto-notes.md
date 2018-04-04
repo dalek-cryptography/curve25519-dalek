@@ -52,20 +52,23 @@ The encoding is then the (canonical byte encoding of the)
 
 ## The Edwards Curve
 
-Our primary internal model for Curve25519 points are the [_Extended
-Twisted Edwards Coordinates_][hwcd_edwards] of Hisil, Wong, Carter,
-and Dawson.  These correspond to the affine model
-
-$$\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.$$
-
+The primary internal model in `curve25519-dalek` for Curve25519 points
+is the [_Extended Twisted Edwards Coordinates_][hwcd_edwards] of
+Hisil, Wong, Carter, and Dawson.  These correspond to the affine model
+$$
+\mathcal E\_{a,d} : ax\^2 + y\^2 = 1 + dx\^2y\^2.
+$$
 In projective coordinates, we represent a point as \\((X:Y:Z:T)\\)
-with $$XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.$$ (For more
-details on this model, see the documentation for the `edwards`
-module). The case \\(a = 1\\) is the _untwisted_ case; we only
-consider \\(a = \pm 1\\), and in particular we focus on the twisted
-Edwards form of Curve25519, which has \\(a = -1, d =
--121665/121666\\).  When not otherwise specified, we write
-\\(\mathcal E\\) for \\(\mathcal E\_{-1, -121665/121666}\\).
+with
+$$
+XY = ZT, \quad aX\^2 + Y\^2 = Z\^2 + dT\^2.
+$$
+(For more details on this model, see the
+[`curve_models`][curve_models] documentation). The case \\(a = 1\\) is
+the _untwisted_ case; we only consider \\(a = \pm 1\\), and in
+particular we focus on the twisted Edwards form of Curve25519, which
+has \\(a = -1, d = -121665/121666\\).  When not otherwise specified,
+we write \\(\mathcal E\\) for \\(\mathcal E\_{-1, -121665/121666}\\).
 
 When both \\(d\\) and \\(ad\\) are nonsquare (which forces \\(a\\)
 to be square), the curve is *complete*.  In this case the
@@ -334,3 +337,4 @@ isogeny \\(\hat{\theta}\\).  Defer this for now.
 [hwcd_edwards]: https://eprint.iacr.org/2008/522.pdf
 [edwards_edwards]: https://www.ams.org/journals/bull/2007-44-03/S0273-0979-07-01153-6/S0273-0979-07-01153-6.pdf
 [twisted_edwards]: https://eprint.iacr.org/2008/013.pdf
+[curve_models]: ../../curve_models/index.html

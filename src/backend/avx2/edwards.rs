@@ -14,16 +14,14 @@
 #![allow(bad_style)]
 
 use core::convert::From;
-use core::ops::{Index, Add, Sub, Mul, Neg};
-use core::borrow::Borrow;
+use core::ops::{Add, Sub, Neg};
 
-use core::simd::{IntoBits, u32x8, i32x8};
+use core::simd::{IntoBits, u32x8};
 
 use subtle::ConditionallyAssignable;
 use subtle::Choice;
 
 use edwards;
-use scalar::Scalar;
 use scalar_mul::window::{LookupTable, OddLookupTable};
 
 use traits::Identity;
@@ -312,8 +310,6 @@ impl<'a> From<&'a edwards::EdwardsPoint> for OddLookupTable<CachedPoint> {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    use constants;
 
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         use backend::u64::field::FieldElement64;

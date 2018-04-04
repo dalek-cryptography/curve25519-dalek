@@ -268,7 +268,6 @@ impl FieldElement32x4 {
         let masks  = u32x8::new((1<<26)-1, (1<<26)-1, (1<<25)-1, (1<<25)-1,
                                 (1<<26)-1, (1<<26)-1, (1<<25)-1, (1<<25)-1);
 
-        /// Compute the carry-out of each coefficient of v using a left shift.
         let carry = |v: u32x8| -> u32x8 {
             unsafe {
                 use core::arch::x86_64::_mm256_srlv_epi32;

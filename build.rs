@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
+#![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
@@ -23,8 +24,6 @@ use std::path::Path;
 // For instance, this shouldn't exist here at all, but it does.
 #[cfg(feature = "serde")]
 extern crate serde;
-#[cfg(feature = "yolocrypto")]
-extern crate stdsimd;
 
 // Macros come first!
 #[path = "src/macros.rs"]

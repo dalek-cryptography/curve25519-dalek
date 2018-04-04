@@ -14,24 +14,19 @@
 #![allow(bad_style)]
 
 use core::convert::From;
-use core::ops::{Index, Add, Sub, Mul, Neg};
-use core::borrow::Borrow;
+use core::ops::{Add, Sub, Neg};
 
-use stdsimd::simd::{u32x8, i32x8};
+use core::simd::{IntoBits, u32x8};
 
 use subtle::ConditionallyAssignable;
 use subtle::Choice;
 
 use edwards;
-use scalar::Scalar;
 use scalar_mul::window::{LookupTable, OddLookupTable};
 
 use traits::Identity;
 
-use backend::avx2::field::FieldElement32x4;
-
-use backend::avx2::field::{A_LANES, B_LANES, C_LANES, D_LANES, ALL_LANES};
-use backend::avx2::field::D_LANES64;
+use backend::avx2::field::{D_LANES, Lanes, FieldElement32x4};
 
 use backend::avx2;
 
@@ -79,10 +74,10 @@ impl Identity for ExtendedPoint {
 impl ExtendedPoint {
     pub fn double(&self) -> ExtendedPoint {
         unsafe {
-            use stdsimd::vendor::_mm256_permute2x128_si256;
-            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
-            use stdsimd::vendor::_mm256_blend_epi32;
-            use stdsimd::vendor::_mm256_shuffle_epi32;
+            use core::arch::x86_64::_mm256_permute2x128_si256;
+            use core::arch::x86_64::_mm256_permutevar8x32_epi32;
+            use core::arch::x86_64::_mm256_blend_epi32;
+            use core::arch::x86_64::_mm256_shuffle_epi32;
 
             let P = &self.0;
 
@@ -96,18 +91,18 @@ impl ExtendedPoint {
             // and then adding.
 
             // Set t0 = (X1 Y1 X1 Y1)
-            t0.0[0] = _mm256_permute2x128_si256(P.0[0].into(), P.0[0].into(), 0b0000_0000).into();
-            t0.0[1] = _mm256_permute2x128_si256(P.0[1].into(), P.0[1].into(), 0b0000_0000).into();
-            t0.0[2] = _mm256_permute2x128_si256(P.0[2].into(), P.0[2].into(), 0b0000_0000).into();
-            t0.0[3] = _mm256_permute2x128_si256(P.0[3].into(), P.0[3].into(), 0b0000_0000).into();
-            t0.0[4] = _mm256_permute2x128_si256(P.0[4].into(), P.0[4].into(), 0b0000_0000).into();
+            t0.0[0] = _mm256_permute2x128_si256(P.0[0].into_bits(), P.0[0].into_bits(), 0b0000_0000).into_bits();
+            t0.0[1] = _mm256_permute2x128_si256(P.0[1].into_bits(), P.0[1].into_bits(), 0b0000_0000).into_bits();
+            t0.0[2] = _mm256_permute2x128_si256(P.0[2].into_bits(), P.0[2].into_bits(), 0b0000_0000).into_bits();
+            t0.0[3] = _mm256_permute2x128_si256(P.0[3].into_bits(), P.0[3].into_bits(), 0b0000_0000).into_bits();
+            t0.0[4] = _mm256_permute2x128_si256(P.0[4].into_bits(), P.0[4].into_bits(), 0b0000_0000).into_bits();
 
             // Set t1 = (Y1 X1 Y1 X1)
-            t1.0[0] = _mm256_shuffle_epi32(t0.0[0].into(), 0b10_11_00_01).into();
-            t1.0[1] = _mm256_shuffle_epi32(t0.0[1].into(), 0b10_11_00_01).into();
-            t1.0[2] = _mm256_shuffle_epi32(t0.0[2].into(), 0b10_11_00_01).into();
-            t1.0[3] = _mm256_shuffle_epi32(t0.0[3].into(), 0b10_11_00_01).into();
-            t1.0[4] = _mm256_shuffle_epi32(t0.0[4].into(), 0b10_11_00_01).into();
+            t1.0[0] = _mm256_shuffle_epi32(t0.0[0].into_bits(), 0b10_11_00_01).into_bits();
+            t1.0[1] = _mm256_shuffle_epi32(t0.0[1].into_bits(), 0b10_11_00_01).into_bits();
+            t1.0[2] = _mm256_shuffle_epi32(t0.0[2].into_bits(), 0b10_11_00_01).into_bits();
+            t1.0[3] = _mm256_shuffle_epi32(t0.0[3].into_bits(), 0b10_11_00_01).into_bits();
+            t1.0[4] = _mm256_shuffle_epi32(t0.0[4].into_bits(), 0b10_11_00_01).into_bits();
 
             // Set t0 = (X1+Y1 X1+Y1 X1+Y1 X1+Y1)
             t0.0[0] = t0.0[0] + t1.0[0];
@@ -118,19 +113,19 @@ impl ExtendedPoint {
 
             // Set t0 = (X1 Y1 Z1 X1+Y1)
             // why does this intrinsic take an i32 for the imm8 ???
-            t0.0[0] = _mm256_blend_epi32(P.0[0].into(), t0.0[0].into(), D_LANES as i32).into();
-            t0.0[1] = _mm256_blend_epi32(P.0[1].into(), t0.0[1].into(), D_LANES as i32).into();
-            t0.0[2] = _mm256_blend_epi32(P.0[2].into(), t0.0[2].into(), D_LANES as i32).into();
-            t0.0[3] = _mm256_blend_epi32(P.0[3].into(), t0.0[3].into(), D_LANES as i32).into();
-            t0.0[4] = _mm256_blend_epi32(P.0[4].into(), t0.0[4].into(), D_LANES as i32).into();
+            t0.0[0] = _mm256_blend_epi32(P.0[0].into_bits(), t0.0[0].into_bits(), D_LANES as i32).into_bits();
+            t0.0[1] = _mm256_blend_epi32(P.0[1].into_bits(), t0.0[1].into_bits(), D_LANES as i32).into_bits();
+            t0.0[2] = _mm256_blend_epi32(P.0[2].into_bits(), t0.0[2].into_bits(), D_LANES as i32).into_bits();
+            t0.0[3] = _mm256_blend_epi32(P.0[3].into_bits(), t0.0[3].into_bits(), D_LANES as i32).into_bits();
+            t0.0[4] = _mm256_blend_epi32(P.0[4].into_bits(), t0.0[4].into_bits(), D_LANES as i32).into_bits();
 
             // Set t1 = t0^2, negating the D values
-            t1 = t0.square(D_LANES64);
+            t1 = t0.square_and_negate_D();
 
             // Now t1 = (S1 S2 S3 -S4)
 
-            let c0 = u32x8::new(0,0,2,2,0,0,2,2); // (ABCD) -> (AAAA)
-            let c1 = u32x8::new(1,1,3,3,1,1,3,3); // (ABCD) -> (BBBB)
+            let c0 = u32x8::new(0,0,2,2,0,0,2,2).into_bits(); // (ABCD) -> (AAAA)
+            let c1 = u32x8::new(1,1,3,3,1,1,3,3).into_bits(); // (ABCD) -> (BBBB)
 
             // See discussion of bounds in the module-level documentation.
             //
@@ -147,24 +142,24 @@ impl ExtendedPoint {
             //        S5   S6   S8   S9
             //
             for i in 0..5 {
-                let zero = i32x8::splat(0);
-                let S1 = _mm256_permutevar8x32_epi32(t1.0[i], c0);
-                let S2 = _mm256_permutevar8x32_epi32(t1.0[i], c1);
-                let S3_2: u32x8 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into(), 0b01010000).into();
+                let zero = u32x8::splat(0).into_bits();
+                let S1: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c0).into_bits();
+                let S2: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c1).into_bits();
+                let S3_2: u32x8 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into_bits(), 0b01010000).into_bits();
                 // tmp0 = (0 0 2*S3 -S4)
-                let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into(), t1.0[i].into(), 0b10100000).into();
+                let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into_bits(), t1.0[i].into_bits(), 0b10100000).into_bits();
                 t0.0[i] = (avx2::constants::P_TIMES_2_MASKED.0[i] + tmp0) + S1;
-                t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into(), 0b10100101).into();
-                t0.0[i] = t0.0[i] - _mm256_blend_epi32(S2.into(), zero, 0b10100101).into();
+                t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
+                t0.0[i] = t0.0[i] - _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
             }
 
-            let c0 = u32x8::new(4,0,6,2,4,0,6,2); // (ABCD) -> (CACA)
-            let c1 = u32x8::new(5,1,7,3,1,5,3,7); // (ABCD) -> (DBBD)
+            let c0 = u32x8::new(4,0,6,2,4,0,6,2).into_bits(); // (ABCD) -> (CACA)
+            let c1 = u32x8::new(5,1,7,3,1,5,3,7).into_bits(); // (ABCD) -> (DBBD)
 
             for i in 0..5 {
                 let tmp = t0.0[i];
-                t0.0[i] = _mm256_permutevar8x32_epi32(tmp, c0);
-                t1.0[i] = _mm256_permutevar8x32_epi32(tmp, c1);
+                t0.0[i] = _mm256_permutevar8x32_epi32(tmp.into_bits(), c0).into_bits();
+                t1.0[i] = _mm256_permutevar8x32_epi32(tmp.into_bits(), c1).into_bits();
             }
 
             ExtendedPoint(&t0 * &t1)
@@ -189,13 +184,13 @@ impl From<ExtendedPoint> for CachedPoint {
         let mut x = P.0;
 
         // x = (S2 S3 Z2 T2)
-        x.diff_sum(0b00001111);
+        x.diff_sum(Lanes::AB);
 
         // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
         x.scale_by_curve_constants();
 
         // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
-        x.negate(D_LANES);
+        x.negate_D();
 
         CachedPoint(x)
     }
@@ -231,7 +226,7 @@ impl<'a> Neg for &'a CachedPoint {
     fn neg(self) -> CachedPoint {
         let mut neg = *self;
         neg.0.swap_AB();
-        neg.0.negate_lazy(D_LANES);
+        neg.0.negate_D_lazy();
         neg
     }
 }
@@ -242,12 +237,12 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     /// Uses a slight tweak of the parallel unified formulas of HWCD'08
     fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
         unsafe {
-            use stdsimd::vendor::_mm256_permutevar8x32_epi32;
+            use core::arch::x86_64::_mm256_permutevar8x32_epi32;
 
             let mut tmp = self.0;
 
             // tmp = (Y1-X1 Y1+X1 Z1 T1) = (S0 S1 Z1 T1)
-            tmp.diff_sum(A_LANES | B_LANES);
+            tmp.diff_sum(Lanes::AB);
 
             // tmp = (S0*S2' S1*S3' Z1*Z2' T1*T2') = (S8 S9 S10 S11)
             tmp = &tmp * &other.0;
@@ -256,7 +251,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
             tmp.swap_CD();
 
             // tmp = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
-            tmp.diff_sum(ALL_LANES);
+            tmp.diff_sum(Lanes::ALL);
 
             let c0 = u32x8::new(0,5,2,7,5,0,7,2); // (ABCD) -> (ADDA)
             let c1 = u32x8::new(4,1,6,3,4,1,6,3); // (ABCD) -> (CBCB)
@@ -266,8 +261,8 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
             let mut t0 = FieldElement32x4::zero();
             let mut t1 = FieldElement32x4::zero();
             for i in 0..5 {
-                t0.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i], c0);
-                t1.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i], c1);
+                t0.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i].into_bits(), c0.into_bits()).into_bits();
+                t1.0[i] = _mm256_permutevar8x32_epi32(tmp.0[i].into_bits(), c1.into_bits()).into_bits();
             }
 
             // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
@@ -315,8 +310,6 @@ impl<'a> From<&'a edwards::EdwardsPoint> for OddLookupTable<CachedPoint> {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    use constants;
 
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         use backend::u64::field::FieldElement64;

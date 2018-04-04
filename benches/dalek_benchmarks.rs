@@ -13,6 +13,7 @@ extern crate curve25519_dalek;
 use curve25519_dalek::constants;
 use curve25519_dalek::scalar::Scalar;
 
+static BATCH_SIZES: [usize; 5] = [1, 2, 4, 8, 16];
 static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024];
 
 mod edwards_benches {
@@ -133,7 +134,7 @@ mod ristretto_benches {
                     .collect();
                 b.iter(|| RistrettoPoint::double_and_compress_batch(&points));
             },
-            &MULTISCALAR_SIZES,
+            &BATCH_SIZES,
         );
     }
 
@@ -186,7 +187,7 @@ mod scalar_benches {
                     Scalar::batch_invert(&mut s);
                 });
             },
-            &MULTISCALAR_SIZES,
+            &BATCH_SIZES,
         );
     }
 

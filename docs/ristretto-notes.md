@@ -120,14 +120,18 @@ P + \mathcal E\_{a,d}[4] = \\{ (x,y),\\; (y/\sqrt a, -x\sqrt a),\\; (-x, -y),\\;
 $$
 Notice that if \\(xy \neq 0 \\), then exactly two of these points have
 \\( xy \\) non-negative, and they differ by the \\(2\\)-torsion point
-\\( (0,-1) \\). This means that we can select a representative modulo
+\\( (0,-1) \\).
+
+This means that we can select a representative modulo
 \\(\mathcal E[2]\\) by requiring \\(xy\\) nonnegative and \\(y \neq
 0\\), and we can ensure that this condition holds by conditionally
 adding a \\(4\\)-torsion point \\(Q_4\\) if \\(xy\\) is negative or
 \\(y = 0\\).
 
-Convenient choices for \\( Q_4 \\) are \\((1,0)\\) when
-\\( a = 1 \\) and \\( (i, 0) \\) when \\( a = -1 \\).
+The points of exact order \\(4\\) are \\( (\pm 1/\sqrt{a}, 0 )\\);
+convenient choices for \\( Q_4 \\) are \\((1,0)\\) when \\( a = 1 \\)
+and \\( (i, 0) \\) when \\( a = -1 \\), although the choice of which
+\\(4\\)-torsion point to use doesn't matter.
 
 This procedure gives a canonical lift from \\(\mathcal E / \mathcal
 E[4]\\) to \\(\mathcal E / \mathcal E[2]\\).  Since it involves a
@@ -207,7 +211,8 @@ apply the encoding for \\( \[2\](\mathcal E) / \mathcal E[2] \\).
 ## The Ristretto Encoding
 
 We can write the above encoding/decoding procedure in affine
-coordinates as follows:
+coordinates, before describing optimized formulas to and from
+projective coordinates.
 
 ### Encoding in Affine Coordinates
 
@@ -215,8 +220,8 @@ On input \\( (x,y) \in \[2\](\mathcal E)\\), a representative for a
 coset in \\( \[2\](\mathcal E) / \mathcal E[4] \\):
 
 1. Check if \\( xy \\) is negative or \\( x = 0 \\); if so, torque
-   the point by setting \\( (x,y) \gets (x,y) + P_4 \\), where
-   \\(P_4\\) is a \\(4\\)-torsion point.
+   the point by setting \\( (x,y) \gets (x,y) + Q_4 \\), where
+   \\(Q_4\\) is a \\(4\\)-torsion point.
 
 2. Check if \\(x\\) is negative or \\( y = -1 \\); if so, set
    \\( (x,y) \gets (x,y) + (0,-1) = (-x, -y) \\).
@@ -291,70 +296,114 @@ not exist.
 The formulas above are given in affine coordinates, but the usual
 internal representation is extended twisted Edwards coordinates \\(
 (X:Y:Z:T) \\) with \\( x = X/Z \\), \\(y = Y/Z\\), \\(xy = T/Z \\).
-Selecting the distinguished representative of the coset
+
+This section only covers the cofactor-\\(8\\) case, since it is more complicated:
+selecting the distinguished representative of the coset
 requires the affine coordinates \\( (x,y) \\), and computing \\( s
 \\) requires an inverse square root.
 As inversions are expensive, we'd like to be able to do this
 whole computation with only one inverse square root, by batching
 together the inversion and the inverse square root.
 
-However, it is not obvious how to do this, since the inverse square
-root computation depends on the affine coordinates (which select the
-distinguished representative).
+It is not obvious how to do this, since we need the inverse square
+root of one of two values, depending on what the distinguished
+representative is, but the choice of representative depends on the
+affine coordinates.  However, an ingenious trick (due to Mike Hamburg)
+allows recovering either of the inverse square roots we want.
 
-In what follows we consider only the case
-\\(a = -1\\); a similar argument applies to the case \\( a = 1\\).
+### Batching the Inversion and Inverse Square Root
+
+Write \\( (X\_0 : Y\_0 : Z\_0 : T\_0) \\)
+for the coordinates of the initial representative, and write 
+\\( (X:Y:Z:T) \\) for the coordinates of the distinguished
+representative of the coset.
 
 Since \\(y = Y/Z\\), in extended coordinates the formula for \\(s\\) becomes
 $$
-s = \sqrt{ \frac{ 1 - Y/Z}{1+Y/Z}} = \sqrt{\frac{Z - Y}{Z+Y}}
-= \frac {Z - Y} {\sqrt{Z\^2 - Y\^2}}.
+s
+= \sqrt{ (-a) \frac{ 1 - Y/Z}{1+Y/Z}} = \sqrt{\frac{Z - Y}{Z+Y}} \sqrt{-a}
+= \frac {Z - Y} {\sqrt{Z\^2 - Y\^2}} \sqrt{-a},
 $$
+so we need to compute \\( 1 / \sqrt{Z^2 - Y^2} \\).
 
-Here \\( (X:Y:Z:T) \\) are the coordinates of the distinguished
-representative of the coset.
-Write \\( (X\_0 : Y\_0 : Z\_0 : T\_0) \\)
-for the coordinates of the initial representative.  Then the
-torquing procedure in step 1 replaces \\( (X\_0 : Y\_0 : Z\_0 :
-T\_0) \\) by \\( (iY\_0 : iX\_0 : Z\_0 : -T\_0) \\).  This means we
-want to obtain either
+The distinguished representative \\( (X:Y:Z:T) \\) is selected by the
+torquing procedure in step 1, which conditionally adds a
+\\(4\\)-torsion point \\(Q_4\\).  As noted in the torquing section
+above, \\( Q_4 = (\pm 1/\sqrt{a}, 0) \\), so we obtain
 $$
-\frac {1} { \sqrt{Z\_0\^2 - Y\_0\^2}}
-\quad \text{or} \quad
-\frac {1} { \sqrt{Z\_0\^2 + X\_0\^2}}.
+(X : Y : Z : T ) = 
+\begin{cases}
+(X\_0 : Y\_0 : Z\_0 : T\_0) \\\\
+(\pm Y\_0 / \sqrt{a} : \mp X\_0 \sqrt{a} : Z\_0 : -T\_0) 
+\end{cases}
+.
 $$
-
-We can relate these using the identity
+This means we want to compute either of
 $$
-(a-d)X\^2Y\^2 = (Z\^2 - aX\^2)(Z\^2 - Y\^2),
+\frac {1} {\sqrt{Z^2 - Y^2}}
+=
+\begin{cases}
+1 / \sqrt{Z\_0^2 - Y\_0^2} \\\\
+1 / \sqrt{Z\_0^2 - aX\_0^2}
+\end{cases}
+.
 $$
-which is valid for all curve points.  To see this, recall from the curve equation that
+To relate these quantities, recall from the curve equation that
 $$
 -dX\^2Y\^2 = Z\^4 - aZ\^2X\^2 - Z\^2Y\^2,
 $$
-so that
+so
 $$
-(a-d)X\^2Y\^2 = Z\^4 - aZ\^2X\^2 - Z\^2Y\^2 + aX\^2Y\^2 = (Z\^2 - Y\^2)(Z\^2 + X\^2).
+(a-d)X\^2Y\^2 = Z\^4 - aZ\^2X\^2 - Z\^2Y\^2 + aX\^2Y\^2.
+$$
+Factoring the right-hand side gives
+$$
+(a-d)X\^2Y\^2 = (Z\^2 - Y\^2)(Z\^2 - aX\^2),
+$$
+which relates the two quantities we want to compute:
+$$
+\frac 1 {Z^2 - aX^2} = \frac 1 {a - d} \frac {Z^2 - Y^2} {X^2 Y^2}
+$$
+so
+$$
+\frac 1 {\sqrt{Z^2 - aX^2}} = \frac 1 {\sqrt{a - d}} \sqrt{ \frac {Z^2 - Y^2} {X^2 Y^2} }
 $$
 
-The encoding procedure is as follows:
+### Explicit Encoding Formulas
 
-1. \\(u\_1 \gets (Z\_0 + Y\_0)(Z\_0 - Y\_0) = Z\_0\^2 - Y\_0\^2 \\)
+Using this trick, we can write the encoding procedure explicitly:
+
+1. \\(u\_1 \gets (Z\_0 + Y\_0)(Z\_0 - Y\_0)
+    \textcolor{gray}{= Z\_0\^2 - Y\_0\^2}
+    \\)
 2. \\(u\_2 \gets X\_0 Y\_0 \\)
-3. \\(I \gets \mathrm{invsqrt}(u\_1 u\_2\^2) = 1/\sqrt{X\_0\^2 Y\_0\^2 (Z\_0\^2 - Y\_0\^2)} \\)
-4. \\(D\_1 \gets u\_1 I = \sqrt{(Z\_0\^2 - Y\_0\^2)/(X\_0\^2 Y\_0\^2)} \\)
-5. \\(D\_2 \gets u\_2 I = \pm \sqrt{1/(Z\_0\^2 - Y\_0\^2)} \\)
-6. \\(Z\_{inv} \gets D\_1 D\_2 T\_0 = (u\_1 u\_2)/(u\_1 u\_2\^2) T\_0 = T\_0 / X\_0 Y\_0 = 1/Z\_0 \\)
-7. If \\( T\_0 Z\_{inv} = x\_0 y\_0 \\) is negative:
-    1. \\( X \gets iY\_0 \\)
-    2. \\( Y \gets iX\_0 \\)
-    3. \\( D \gets D\_1 / \sqrt{a-d} = 1/\sqrt{Z\_0\^2 + X\_0\^2} \\)
+3. \\(I \gets \mathrm{invsqrt}(u\_1 u\_2\^2)
+    \textcolor{gray}{= 1/\sqrt{X\_0\^2 Y\_0\^2 (Z\_0\^2 - Y\_0\^2)}}
+   \\)
+4. \\(D\_1 \gets u\_1 I
+    \textcolor{gray}{= \sqrt{(Z\_0\^2 - Y\_0\^2)/(X\_0\^2 Y\_0\^2)} }
+   \\)
+5. \\(D\_2 \gets u\_2 I
+   \textcolor{gray}{= \pm \sqrt{1/(Z\_0\^2 - Y\_0\^2)} }
+   \\)
+6. \\(Z\_{inv} \gets D\_1 D\_2 T\_0
+   \textcolor{gray}{= (u\_1 u\_2)/(u\_1 u\_2\^2) T\_0 = T\_0 / X\_0 Y\_0 = 1/Z\_0}
+   \\)
+7. If \\( T\_0 Z\_{inv} \textcolor{gray}{= x\_0 y\_0 }\\) is negative:
+    1. \\( (X, Y) \gets (Y\_0 (\pm 1/\sqrt{a}), X\_0 (\mp \sqrt{a})) \\)
+    2. \\( D \gets D\_1 / \sqrt{a-d}
+           \textcolor{gray}{= 1/\sqrt{Z\_0\^2 - a X\_0\^2} = 1/\sqrt{Z^2 -Y^2} }
+       \\)
 8. Otherwise:
-    1. \\( X \gets X\_0 \\)
-    2. \\( Y \gets Y\_0 \\)
-    3. \\( D \gets D\_2 = \pm \sqrt{1/(Z\_0\^2 - Y\_0\^2)} \\)
-9. If \\( X Z\_{inv} = x \\) is negative, set \\( Y \gets - Y\\)
-10. Compute \\( s \gets (Z - Y) D = (Z - Y) / \sqrt{Z\^2 - Y\^2} \\) and return.
+    1. \\( (X, Y) \gets (X\_0, Y\_0) \\)
+    2. \\( D \gets D\_2
+           \textcolor{gray}{= \pm \sqrt{1/(Z\_0\^2 - Y\_0\^2)} = \pm 1/\sqrt{Z^2 - Y^2}}
+       \\)
+9. If \\( X Z\_{inv} \textcolor{gray}{= x} \\) is negative, set \\( Y \gets - Y\\)
+10. Compute \\( s \gets |\sqrt{-a} (Z - Y) D| \textcolor{gray}{= |\sqrt{-a} (Z - Y) / \sqrt{Z\^2 - Y\^2}| } \\)
+11. Return the canonical byte encoding of \\( s \\).
+
+The choice of \\( Q\_4 = (i, 0) \\) when \\( a = -1 \\) is convenient since it simplifies 7.1 to \\( (X,Y) \gets (iY_0, iX_0) \\).
 
 ## Decoding to Extended Coordinates
 

@@ -493,7 +493,7 @@ impl Scalar {
         bits
     }
 
-    /// Compute a width-5 "Non-Adjacent Form" of this scalar.
+    /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
     ///
     /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
     /// $$
@@ -507,37 +507,53 @@ impl Scalar {
     /// Intuitively, this is like a binary expansion, except that we
     /// allow some coefficients to grow up to \\(2\^{w-1}\\) so that the
     /// nonzero coefficients are as sparse as possible.
-    pub(crate) fn non_adjacent_form(&self) -> [i8; 256] {
-        // Step 1: write out bits of the scalar
-        let mut naf = self.bits();
+    pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256] {
+        use byteorder::{ByteOrder, LittleEndian};
 
-        // Step 2: zero coefficients by carrying them upwards or downwards
-        'bits: for i in 0..256 {
-            if naf[i] == 0 { continue 'bits; }
-            'window: for b in 1..6 {
-                if     i+b  >= 256  { break 'window; }
-                if naf[i+b] == 0    { continue 'window; }
-                let potential_carry = naf[i+b] << b;
-                if  naf[i+b] + potential_carry <= 15 {
-                    // Eliminate naf[i+b] by carrying its value onto naf[i]
-                    naf[i] += potential_carry;
-                    naf[i+b] = 0;
-                } else if naf[i+b] - potential_carry >= -15 {
-                    // Eliminate naf[i+b] by carrying its value upwards.
-                    naf[i] -= potential_carry; // Subtract 2^(i+b)
-                    'carry: for k in i+b..256 {
-                        if naf[k] != 0 {
-                            // Since naf[k] = 0 or 1 for k > i, naf[k] == 1.
-                            naf[k] = 0; // Subtract 2^k
-                        } else {
-                            // By now we have subtracted 2^k =
-                            // 2^(i+b) + 2^(i+b) + 2^(i+b+1) + ... + 2^(k-1).
-                            naf[k] = 1; // Add back 2^k.
-                            break 'carry;
-                        }
-                    }
-                }
+        let mut naf = [0i8; 256];
+
+        let mut x_u64 = [0u64; 5];
+        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+
+        let width = 1 << w;
+        let window_mask = width - 1;
+        
+        let mut pos = 0;
+        let mut carry = 0;
+        while pos < 256 {
+            // Construct a buffer of bits of the scalar, starting at bit `pos`
+            let u64_idx = pos / 64;
+            let bit_idx = pos % 64;
+            let bit_buf: u64;
+            if bit_idx < 64 - w {
+                // This window's bits are contained in a single u64
+                bit_buf = x_u64[u64_idx] >> bit_idx;
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
             }
+
+            // Add the carry into the current window
+            let window = carry + (bit_buf & window_mask);
+
+            if window & 1 == 0 {
+                // If the window value is even, preserve the carry and continue.
+                // Why is the carry preserved?
+                // If carry == 0 and window & 1 == 0, then the next carry should be 0
+                // If carry == 1 and window & 1 == 0, then bit_buf & 1 == 1 so the next carry should be 1
+                pos += 1;
+                continue;
+            }
+
+            if window < width/2 {
+                carry = 0;
+                naf[pos] = window as i8;
+            } else {
+                carry = 1;
+                naf[pos] = (window as i8) - (width as i8);
+            }
+
+            pos += w;
         }
 
         naf
@@ -789,7 +805,7 @@ mod test {
 
     #[test]
     fn non_adjacent_form() {
-        let naf = A_SCALAR.non_adjacent_form();
+        let naf = A_SCALAR.non_adjacent_form(5);
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
         }

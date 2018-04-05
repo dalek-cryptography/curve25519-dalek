@@ -27,7 +27,7 @@ where
 {
     let nafs: Vec<_> = scalars
         .into_iter()
-        .map(|c| c.borrow().non_adjacent_form())
+        .map(|c| c.borrow().non_adjacent_form(5))
         .collect();
     let lookup_tables: Vec<_> = points
         .into_iter()

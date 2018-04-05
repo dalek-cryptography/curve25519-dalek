@@ -5,6 +5,7 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+extern crate byteorder;
 extern crate clear_on_drop;
 extern crate core;
 extern crate digest;

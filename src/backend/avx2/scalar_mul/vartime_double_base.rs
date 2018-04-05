@@ -18,8 +18,8 @@ use backend::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-    let a_naf = a.non_adjacent_form();
-    let b_naf = b.non_adjacent_form();
+    let a_naf = a.non_adjacent_form(5);
+    let b_naf = b.non_adjacent_form(5);
 
     // Find starting index
     let mut i: usize = 255;

@@ -22,7 +22,7 @@ use subtle::ConditionallyAssignable;
 use subtle::Choice;
 
 use edwards;
-use scalar_mul::window::{LookupTable, NafLookupTable5};
+use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use traits::Identity;
 
@@ -304,6 +304,19 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
         NafLookupTable5(Ai)
+    }
+}
+
+impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let A = ExtendedPoint::from(*point);
+        let mut Ai = [CachedPoint::from(A); 64];
+        let A2 = A.double();
+        for i in 0..63 {
+            Ai[i + 1] = (&A2 + &Ai[i]).into();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
+        NafLookupTable8(Ai)
     }
 }
 

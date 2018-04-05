@@ -75,19 +75,19 @@ to be square), the curve is *complete*.  In this case the
 four-torsion subgroup is cyclic, and we
 can write it explicitly as
 $$
-\mathcal E\_{a,d}[4] = \\{ (0,1),\; (1/\sqrt a, 0),\; (0, -1),\; (-1/\sqrt{a}, 0)\\}.
+\mathcal E\_{a,d}[4] = \\{ (0,1),\\; (1/\sqrt a, 0),\\; (0, -1),\\; (-1/\sqrt{a}, 0)\\}.
 $$
 These are the only points with \\(xy = 0\\); the points with \\( y
 \neq 0 \\) are \\(2\\)-torsion.  The \\(\mathcal
 E\_{a,d}[4]\\)-coset of \\(P = (x,y)\\) is then
 $$
-P + \mathcal E\_{a,d}[4] = \\{ (x,y),\; (y/\sqrt a, -x\sqrt a),\; (-x, -y),\; (-y/\sqrt a, x\sqrt a)\\}.
+P + \mathcal E\_{a,d}[4] = \\{ (x,y),\\; (y/\sqrt a, -x\sqrt a),\\; (-x, -y),\\; (-y/\sqrt a, x\sqrt a)\\}.
 $$
 Notice that if \\(xy \neq 0 \\), then exactly two of
 these points have \\( xy \\) non-negative, and they differ by the
 \\(2\\)-torsion point \\( (0,-1) \\).  This means that we can select
-a representative modulo \\(\mathcal
-E\_{a,d}[2] \\) by requiring \\(xy\\) nonnegative and \\(y \neq
+a representative modulo \\(\mathcal E\_{a,d}[2] \\)
+by requiring \\(xy\\) nonnegative and \\(y \neq
 0\\), and we can ensure this condition by conditionally adding a
 \\(4\\)-torsion point if \\(xy\\) is negative or \\(y = 0\\).
 

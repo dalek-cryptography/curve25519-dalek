@@ -407,16 +407,25 @@ The choice of \\( Q\_4 = (i, 0) \\) when \\( a = -1 \\) is convenient since it s
 
 ## Decoding to Extended Coordinates
 
+## Batched Double-and-Encode Using \\( \hat \theta \\)
+
+The encoding is not batchable, since it requires an inverse square
+root.  However, since \\( \theta \circ \hat \theta = [2] P \\), it's
+possible to compute the encoding of \\( [2]P \\) by using \\( \hat
+\theta \\) instead of \\( \theta^{-1} \\).  Since \\( \hat \theta \\) only
+requires inversions, given \\( P\_1, \ldots, P\_n \\), it's possible
+to compute the encodings of \\( [2]P\_1, \ldots, [2]P\_n \\) in a
+batch.
+
+XXX write up details
+
 ## Equality Testing
+
+XXX write up details
 
 ## Elligator
 
-## The Double-Ristretto Encoding
-
-It's possible to do batch encoding of \\( [2]P \\) using the dual
-isogeny \\(\hat{\theta}\\).  Defer this for now.
-
-## ???
+XXX write up details
 
 [ristretto_sage]: https://sourceforge.net/p/ed448goldilocks/code/ci/master/tree/aux/ristretto/ristretto.sage
 [ristretto_libdecaf]: https://sourceforge.net/p/ed448goldilocks/code/ci/master/tree/

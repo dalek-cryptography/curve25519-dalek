@@ -403,9 +403,32 @@ Using this trick, we can write the encoding procedure explicitly:
 10. Compute \\( s \gets |\sqrt{-a} (Z - Y) D| \textcolor{gray}{= |\sqrt{-a} (Z - Y) / \sqrt{Z\^2 - Y\^2}| } \\)
 11. Return the canonical byte encoding of \\( s \\).
 
-The choice of \\( Q\_4 = (i, 0) \\) when \\( a = -1 \\) is convenient since it simplifies 7.1 to \\( (X,Y) \gets (iY_0, iX_0) \\).
+The choice of \\( Q\_4 = (i, 0) \\) when \\( a = -1 \\) is convenient
+since it simplifies 7.1 to \\( (X,Y) \gets (iY_0, iX_0) \\).
 
-## Decoding to Extended Coordinates
+### Explicit Decoding Formulas
+
+As with encoding, we want to batch operations to use only a single
+inverse square root.  However, the procedure is much simpler since
+there's no torquing.
+
+On input `s_bytes`:
+
+1. Check that `s_bytes` is the canonical byte-encoding of a field
+element \\(s\\), otherwise reject.
+2. Decode `s_bytes` to \\(s\\).
+3. Check that \\( s \\) is nonnegative, otherwise reject.
+4. \\( u_1 \gets 1 + as^2 \\)
+5. \\( u_2 \gets 1 - as^2 \\)
+6. \\( v \gets (ad)u_1^2 - u_2^2 \textcolor{gray}{= ad(1+as^2)^2 - (1-as^2)^2} \\)
+7. \\( I \gets \mathrm{invsqrt}( v u_2^2 ) \textcolor{gray}{= 1/\sqrt{v u_2^2} } \\)
+8. \\( D_x \gets Iu_2 \textcolor{gray}{= 1/\sqrt{v} } \\)
+9. \\( D_y \gets ID_x v \textcolor{gray}{= I^2 u_2 v = (v u_2) / (v u_2^2) = 1/u_2 } \\)
+10. \\( x \gets |2sD_x| \textcolor{gray}{= +\sqrt{ 4s^2 / (ad(1+as^2)^2 - (1-as^2)^2 )}}\\)
+11. \\( y \gets u_1 D_y \textcolor{gray}{= (1+as^2)/(1-as^2) } \\)
+12. \\( t \gets xy \\)
+12. Check that \\(t \\) is nonnegative and that \\( y \neq 0 \\), otherwise reject.
+13. Return \\( P = (x: y: 1: t) \\)
 
 ## Batched Double-and-Encode Using \\( \hat \theta \\)
 

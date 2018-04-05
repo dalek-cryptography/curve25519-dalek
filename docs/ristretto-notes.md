@@ -13,7 +13,7 @@ a different isogeny, but is otherwise similar.
 These notes only describe Ristretto, and focus on the cofactor-\\(8\\)
 case.
 
-## The Jacobi Quartic
+# The Jacobi Quartic
 
 The Jacobi quartic curve is parameterized by \\(e, A\\), and is of the
 form $$ \mathcal J\_{e,A} : t\^2 = es\^4 + 2As\^2 + 1, $$ with
@@ -39,7 +39,7 @@ Notice that replacing \\(a\\) by \\(-a\\) just swaps the last two
 points, so this set does not depend on the choice of \\(a\\).  In
 what follows we require \\(a = \pm 1\\).
 
-## Encoding \\(\mathcal J / \mathcal J[2]\\)
+# Encoding \\(\mathcal J / \mathcal J[2]\\)
 
 To encode points on \\(\mathcal J\\) modulo \\(\mathcal J[2]\\),
 we need to choose a canonical representative of the above coset.
@@ -50,7 +50,7 @@ non-negative and finite, and \\(t/s\\) non-negative or infinite.
 The encoding is then the (canonical byte encoding of the)
 \\(s\\)-value of the canonical representative.
 
-## The Edwards Curve
+# The Edwards Curve
 
 The primary internal model in `curve25519-dalek` for Curve25519 points
 is the [_Extended Twisted Edwards Coordinates_][hwcd_edwards] of
@@ -107,7 +107,7 @@ F\_p) \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), where \\( \ell
 = 2\^{252} + \cdots \\) is a large prime, and meets the requirements
 for the cofactor \\(8\\) case.
 
-## Torquing points to lift from \\(\mathcal E[4]\\) to \\(\mathcal E[2]\\)
+# Torquing points to lift from \\(\mathcal E[4]\\) to \\(\mathcal E[2]\\)
 
 To bridge the gap between the cofactor \\(4\\) and cofactor \\(8\\)
 cases, we need a way to canonically select a representative modulo
@@ -137,7 +137,7 @@ This procedure gives a canonical lift from \\(\mathcal E / \mathcal
 E[4]\\) to \\(\mathcal E / \mathcal E[2]\\).  Since it involves a
 conditional rotation, we refer to it as *torquing* the point.
 
-## The Isogeny
+# The Isogeny
 
 For \\(a = \pm 1\\), we have a \\(2\\)-isogeny
 $$
@@ -176,7 +176,7 @@ Let \\((x,y) = \theta(s,t)\\); then
 \\(\theta(1/as, -t/as\^2) = (-x, -y)\\),
 so that \\(\theta(\mathcal J[2]) = \mathcal E[2]\\).
 
-## Encoding with the Isogeny
+# Encoding with the Isogeny
 
 The Decaf paper recalls that, for a group \\( G \\) with normal
 subgroup \\(G' \leq G\\), a group homomorphism \\( \phi : G
@@ -208,13 +208,13 @@ Curve25519 case, we use the torquing procedure to lift \\(\mathcal E
 / \mathcal E[4]\\) to \\(\mathcal E / \mathcal E[2]\\), and then
 apply the encoding for \\( \[2\](\mathcal E) / \mathcal E[2] \\).
 
-## The Ristretto Encoding
+# The Ristretto Encoding
 
 We can write the above encoding/decoding procedure in affine
 coordinates, before describing optimized formulas to and from
 projective coordinates.
 
-### Encoding in Affine Coordinates
+## Encoding in Affine Coordinates
 
 On input \\( (x,y) \in \[2\](\mathcal E)\\), a representative for a
 coset in \\( \[2\](\mathcal E) / \mathcal E[4] \\):
@@ -235,7 +235,7 @@ If \\(\mathcal E\\) has cofactor \\(4\\), we skip the first step,
 since our input already represents a coset in
 \\( \[2\](\mathcal E) / \mathcal E[2] \\).
 
-### Interpreting the Encoding Procedure
+## Interpreting the Encoding Procedure
 
 How does this procedure correspond to the description involving
 \\( \theta \\)?
@@ -268,7 +268,7 @@ sign (by choosing the positive square root).  Finally, the check
 that \\(y \neq -1\\) prevents division-by-zero when encoding the
 identity; it falls out of the optimized formulas below.
 
-### Decoding to Affine Coordinates
+## Decoding to Affine Coordinates
 
 On input `s_bytes`, decoding proceeds as follows:
 
@@ -291,7 +291,7 @@ not exist.
 
 5. Check whether \\(xy\\) is negative or \\(y = 0\\); if so, reject.
 
-## Encoding in Extended Coordinates
+# Encoding in Extended Coordinates
 
 The formulas above are given in affine coordinates, but the usual
 internal representation is extended twisted Edwards coordinates \\(
@@ -311,7 +311,7 @@ representative is, but the choice of representative depends on the
 affine coordinates.  However, an ingenious trick (due to Mike Hamburg)
 allows recovering either of the inverse square roots we want.
 
-### Batching the Inversion and Inverse Square Root
+## Batching the Inversion and Inverse Square Root
 
 Write \\( (X\_0 : Y\_0 : Z\_0 : T\_0) \\)
 for the coordinates of the initial representative, and write 
@@ -369,7 +369,7 @@ $$
 \frac 1 {\sqrt{Z^2 - aX^2}} = \frac 1 {\sqrt{a - d}} \sqrt{ \frac {Z^2 - Y^2} {X^2 Y^2} }
 $$
 
-### Explicit Encoding Formulas
+## Explicit Encoding Formulas
 
 Using this trick, we can write the encoding procedure explicitly:
 
@@ -406,7 +406,7 @@ Using this trick, we can write the encoding procedure explicitly:
 The choice of \\( Q\_4 = (i, 0) \\) when \\( a = -1 \\) is convenient
 since it simplifies 7.1 to \\( (X,Y) \gets (iY_0, iX_0) \\).
 
-### Explicit Decoding Formulas
+## Explicit Decoding Formulas
 
 As with encoding, we want to batch operations to use only a single
 inverse square root.  However, the procedure is much simpler since
@@ -430,7 +430,7 @@ element \\(s\\), otherwise reject.
 12. Check that \\(t \\) is nonnegative and that \\( y \neq 0 \\), otherwise reject.
 13. Return \\( P = (x: y: 1: t) \\)
 
-## Batched Double-and-Encode Using \\( \hat \theta \\)
+# Batched Double-and-Encode Using \\( \hat \theta \\)
 
 The encoding is not batchable, since it requires an inverse square
 root.  However, since \\( \theta \circ \hat \theta = [2] P \\), it's
@@ -442,11 +442,11 @@ batch.
 
 XXX write up details
 
-## Equality Testing
+# Equality Testing
 
 XXX write up details
 
-## Elligator
+# Elligator
 
 XXX write up details
 

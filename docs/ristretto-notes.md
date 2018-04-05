@@ -179,10 +179,10 @@ apply the encoding for \\( \[2\](\mathcal E) / \mathcal E[2] \\).
 
 ## The Ristretto Encoding
 
-We can write the above encoding/decoding procedure concretely (in affine
-coordinates) as follows:
+We can write the above encoding/decoding procedure in affine
+coordinates as follows:
 
-### Encoding
+### Encoding in Affine Coordinates
 
 On input \\( (x,y) \in \[2\](\mathcal E)\\), a representative for a
 coset in \\( \[2\](\mathcal E) / \mathcal E[4] \\):
@@ -203,8 +203,12 @@ If \\(\mathcal E\\) has cofactor \\(4\\), we skip the first step,
 since our input already represents a coset in
 \\( \[2\](\mathcal E) / \mathcal E[2] \\).
 
-To see that this corresponds to the encoding procedure above, notice
-that the first step lifts from \\( \mathcal E / \mathcal E[4] \\) to
+### Interpreting the Encoding Procedure
+
+How does this procedure correspond to the description involving
+\\( \theta \\)?
+
+The first step lifts from \\( \mathcal E / \mathcal E[4] \\) to
 \\(\mathcal E / \mathcal E[2]\\).  To understand steps 2 and 3,
 notice that the \\(y\\)-coordinate of \\(\theta(s,t)\\) is
 $$
@@ -232,7 +236,7 @@ sign (by choosing the positive square root).  Finally, the check
 that \\(y \neq -1\\) prevents division-by-zero when encoding the
 identity; it falls out of the optimized formulas below.
 
-### Decoding
+### Decoding to Affine Coordinates
 
 On input `s_bytes`, decoding proceeds as follows:
 

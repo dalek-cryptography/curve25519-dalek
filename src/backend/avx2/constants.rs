@@ -12,7 +12,7 @@
 
 use core::simd::u32x8;
 
-use scalar_mul::window::OddLookupTable;
+use scalar_mul::window::NafLookupTable5;
 use backend::avx2::field::FieldElement32x4;
 use backend::avx2::edwards::{ExtendedPoint, CachedPoint};
 
@@ -53,8 +53,8 @@ pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
 ]);
 
 /// Odd multiples of the Ed25519 basepoint:
-pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: OddLookupTable<CachedPoint> =
-    OddLookupTable([
+pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable5<CachedPoint> =
+    NafLookupTable5([
         CachedPoint(FieldElement32x4([
             u32x8::new(3571425, 10045002, 19036563, 1096096, 243332, 65897020, 0, 28963681),
             u32x8::new(30896895, 63055514, 1614915, 5095970, 0, 53791688, 0, 31258312),

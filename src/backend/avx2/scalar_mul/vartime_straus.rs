@@ -14,7 +14,7 @@ use core::borrow::Borrow;
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use scalar_mul::window::OddLookupTable;
+use scalar_mul::window::NafLookupTable5;
 use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 
 /// Perform variable-time, variable-base scalar multiplication.
@@ -31,7 +31,7 @@ where
         .collect();
     let lookup_tables: Vec<_> = points
         .into_iter()
-        .map(|point| OddLookupTable::<CachedPoint>::from(point.borrow()))
+        .map(|point| NafLookupTable5::<CachedPoint>::from(point.borrow()))
         .collect();
 
     let mut Q = ExtendedPoint::identity();

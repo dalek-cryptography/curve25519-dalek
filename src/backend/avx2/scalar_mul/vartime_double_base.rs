@@ -12,7 +12,7 @@
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use scalar_mul::window::OddLookupTable;
+use scalar_mul::window::NafLookupTable5;
 use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 use backend::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
@@ -30,7 +30,7 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         }
     }
 
-    let table_A = OddLookupTable::<CachedPoint>::from(A);
+    let table_A = NafLookupTable5::<CachedPoint>::from(A);
     let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
 
     let mut Q = ExtendedPoint::identity();

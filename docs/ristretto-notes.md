@@ -80,10 +80,14 @@ $$
 These are the only points with \\(xy = 0\\); the points with
 \\( y \neq 0 \\) are \\(2\\)-torsion.
 
+# The Ristretto Group
+
 We consider two cases:
 
 * cofactor \\(4\\), where \\( \\# \mathcal E(\mathbb F_p) = 4\cdot \ell \\);
-* cofactor \\(8\\) with cyclic \\(8\\)-torsion, where \\( \\# \mathcal E(\mathbb F_p) = 8 \cdot \ell \\) and \\( \mathcal E[8] \cong \mathbb Z / 8 \\).
+* cofactor \\(8\\) with cyclic \\(8\\)-torsion,
+  where \\( \\# \mathcal E(\mathbb F_p) = 8 \cdot \ell \\)
+  and \\( \mathcal E[8] \cong \mathbb Z / 8 \\).
 
 In the cofactor \\(4\\) case, we have \\( \[2\](\mathcal E[4]) =
 \mathcal E[2] \\), so that \\( \mathcal E[2] \subseteq \[2\](\mathcal

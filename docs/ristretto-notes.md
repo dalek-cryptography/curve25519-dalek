@@ -123,10 +123,10 @@ Notice that if \\(xy \neq 0 \\), then exactly two of these points have
 \\( (0,-1) \\). This means that we can select a representative modulo
 \\(\mathcal E[2]\\) by requiring \\(xy\\) nonnegative and \\(y \neq
 0\\), and we can ensure that this condition holds by conditionally
-adding a \\(4\\)-torsion point \\(T_4\\) if \\(xy\\) is negative or
+adding a \\(4\\)-torsion point \\(Q_4\\) if \\(xy\\) is negative or
 \\(y = 0\\).
 
-Convenient choices for \\( T_4 \\) are \\((1,0)\\) when
+Convenient choices for \\( Q_4 \\) are \\((1,0)\\) when
 \\( a = 1 \\) and \\( (i, 0) \\) when \\( a = -1 \\).
 
 This procedure gives a canonical lift from \\(\mathcal E / \mathcal

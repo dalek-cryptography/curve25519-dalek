@@ -68,7 +68,7 @@ $$
 the _untwisted_ case; we only consider \\(a = \pm 1\\), and in
 particular we focus on the twisted Edwards form of Curve25519, which
 has \\(a = -1, d = -121665/121666\\).  When not otherwise specified,
-we write \\(\mathcal E\\) for \\(\mathcal E\_{-1, -121665/121666}\\).
+we write \\(\mathcal E\\) for \\(\mathcal E\_{a,d}\\).
 
 When both \\(d\\) and \\(ad\\) are nonsquare (which forces \\(a\\)
 to be square), the curve is *complete*.  In this case the
@@ -77,36 +77,61 @@ can write it explicitly as
 $$
 \mathcal E\_{a,d}[4] = \\{ (0,1),\\; (1/\sqrt a, 0),\\; (0, -1),\\; (-1/\sqrt{a}, 0)\\}.
 $$
-These are the only points with \\(xy = 0\\); the points with \\( y
-\neq 0 \\) are \\(2\\)-torsion.  The \\(\mathcal
-E\_{a,d}[4]\\)-coset of \\(P = (x,y)\\) is then
+These are the only points with \\(xy = 0\\); the points with
+\\( y \neq 0 \\) are \\(2\\)-torsion.
+
+We consider two cases:
+
+* cofactor \\(4\\), where \\( \\# \mathcal E(\mathbb F_p) = 4\cdot \ell \\);
+* cofactor \\(8\\) with cyclic \\(8\\)-torsion, where \\( \\# \mathcal E(\mathbb F_p) = 8 \cdot \ell \\) and \\( \mathcal E[8] \cong \mathbb Z / 8 \\).
+
+In the cofactor \\(4\\) case, we have \\( \[2\](\mathcal E[4]) =
+\mathcal E[2] \\), so that \\( \mathcal E[2] \subseteq \[2\](\mathcal
+E) \\), and the group we will construct is
+$$
+\frac{\[2\](\mathcal E)}{\mathcal E[2]}
+$$
+which has prime order \\( (4\ell/2)/2 = \ell \\).
+
+In the cofactor \\(8\\) case, since the \\(8\\)-torsion is cyclic, we
+have \\( \[2\](\mathcal E[8]) = \mathcal E[4] \\), so that \\(\mathcal
+E[4] \subseteq \[2\](\mathcal E)\\), and the group we will construct
+is
+$$
+\frac{\[2\](\mathcal E)}{\mathcal E[4]}
+$$
+which has prime order \\( (8\ell/2)/4 = \ell \\).
+
+In particular, Curve25519 has \\( \mathcal E(\mathbb
+F\_p) \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), where \\( \ell
+= 2\^{252} + \cdots \\) is a large prime, and meets the requirements
+for the cofactor \\(8\\) case.
+
+## Torquing points to lift from \\(\mathcal E[4]\\) to \\(\mathcal E[2]\\)
+
+To bridge the gap between the cofactor \\(4\\) and cofactor \\(8\\)
+cases, we need a way to canonically select a representative modulo
+\\(\mathcal E[2] \\), given a representative modulo \\(\mathcal E[4] \\).
+
+Using the description of \\(\mathcal E[4]\\) above, we can write the
+\\(\mathcal E[4]\\)-coset of a point \\(P = (x,y)\\) as
 $$
 P + \mathcal E\_{a,d}[4] = \\{ (x,y),\\; (y/\sqrt a, -x\sqrt a),\\; (-x, -y),\\; (-y/\sqrt a, x\sqrt a)\\}.
 $$
-Notice that if \\(xy \neq 0 \\), then exactly two of
-these points have \\( xy \\) non-negative, and they differ by the
-\\(2\\)-torsion point \\( (0,-1) \\).  This means that we can select
-a representative modulo \\(\mathcal E\_{a,d}[2] \\)
-by requiring \\(xy\\) nonnegative and \\(y \neq
-0\\), and we can ensure this condition by conditionally adding a
-\\(4\\)-torsion point if \\(xy\\) is negative or \\(y = 0\\).
+Notice that if \\(xy \neq 0 \\), then exactly two of these points have
+\\( xy \\) non-negative, and they differ by the \\(2\\)-torsion point
+\\( (0,-1) \\). This means that we can select a representative modulo
+\\(\mathcal E[2]\\) by requiring \\(xy\\) nonnegative and \\(y \neq
+0\\), and we can ensure that this condition holds by conditionally
+adding a \\(4\\)-torsion point \\(T_4\\) if \\(xy\\) is negative or
+\\(y = 0\\).
+
+Convenient choices for \\( T_4 \\) are \\((1,0)\\) when
+\\( a = 1 \\) and \\( (i, 0) \\) when \\( a = -1 \\).
 
 This procedure gives a canonical lift from \\(\mathcal E / \mathcal
 E[4]\\) to \\(\mathcal E / \mathcal E[2]\\).  Since it involves a
 conditional rotation, we refer to it as *torquing* the point.
-
-The structure of the Curve25519 group is \\( \mathcal E(\mathbb
-F\_p) \cong \mathbb Z / 8 \times \mathbb Z / \ell\\), where \\( \ell
-= 2\^{252} + \cdots \\) is a large prime.  Because \\(\mathcal E[8]
-\cong \mathbb Z / 8\\), we have \\(\[2\](\mathcal E[8]) = \mathcal
-E[4]\\), \\(\mathcal E[4] \cong \mathbb Z / 4
-\\) and \\( \mathcal E[2] \cong \mathbb Z / 2\\).  In particular
-this tells us that the group
-$$
-\frac{\[2\](\mathcal E)}{\mathcal E[4]}
-$$
-is well-defined and has prime order \\( (8\ell / 2) / 4 = \ell \\).
-This is the group we will construct using Ristretto.
 
 ## The Isogeny
 
@@ -146,6 +171,8 @@ Let \\((x,y) = \theta(s,t)\\); then
 \\(\theta(-s,-t) = (x,y)\\) and
 \\(\theta(1/as, -t/as\^2) = (-x, -y)\\),
 so that \\(\theta(\mathcal J[2]) = \mathcal E[2]\\).
+
+## Encoding with the Isogeny
 
 The Decaf paper recalls that, for a group \\( G \\) with normal
 subgroup \\(G' \leq G\\), a group homomorphism \\( \phi : G

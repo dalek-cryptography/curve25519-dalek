@@ -59,7 +59,7 @@ mod scalar_mul;
 
 use edwards::EdwardsBasepointTable;
 use curve_models::AffineNielsPoint;
-use scalar_mul::window::NafLookupTable5;
+use scalar_mul::window::NafLookupTable8;
 
 fn main() {
     // Enable the "precomputed_tables" feature in the main build stage
@@ -86,7 +86,7 @@ use edwards::EdwardsBasepointTable;
 use curve_models::AffineNielsPoint;
 
 use scalar_mul::window::LookupTable;
-use scalar_mul::window::NafLookupTable5;
+use scalar_mul::window::NafLookupTable8;
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\\\(B = (x, 4/5)\\\\).
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
@@ -101,13 +101,13 @@ pub const ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable = {:?}
 
     // Now generate AFFINE_ODD_MULTIPLES_OF_BASEPOINT
     let B = &constants::ED25519_BASEPOINT_POINT;
-    let odd_multiples = NafLookupTable5::<AffineNielsPoint>::from(B);
+    let odd_multiples = NafLookupTable8::<AffineNielsPoint>::from(B);
 
     f.write_all(
         format!(
             "\n
-/// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B]`.
-pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable5<AffineNielsPoint> = {:?};
+/// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> = {:?};
 \n\n",
             &odd_multiples
         ).as_bytes(),

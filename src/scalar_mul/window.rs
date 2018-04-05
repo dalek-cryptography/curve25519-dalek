@@ -163,3 +163,50 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
         NafLookupTable5(Ai)
     }
 }
+
+/// Holds stuff up to 8.
+#[derive(Copy, Clone)]
+pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
+
+impl<T: Copy> NafLookupTable8<T> {
+    pub fn select(&self, x: usize) -> T {
+        debug_assert_eq!(x & 1, 1);
+        debug_assert!(x < 256);
+
+        self.0[x / 2]
+    }
+}
+
+impl<T: Debug> Debug for NafLookupTable8<T> {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "NafLookupTable8([\n")?;
+        for i in 0..64 {
+            write!(f, "\t{:?},\n", &self.0[i])?;
+        }
+        write!(f, "])")
+    }
+}
+
+impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
+    fn from(A: &'a EdwardsPoint) -> Self {
+        let mut Ai = [A.to_projective_niels(); 64];
+        let A2 = A.double();
+        for i in 0..63 {
+            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
+        NafLookupTable8(Ai)
+    }
+}
+
+impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
+    fn from(A: &'a EdwardsPoint) -> Self {
+        let mut Ai = [A.to_affine_niels(); 64];
+        let A2 = A.double();
+        for i in 0..63 {
+            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_affine_niels();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
+        NafLookupTable8(Ai)
+    }
+}

@@ -14,8 +14,17 @@ use curve25519_dalek::constants;
 use curve25519_dalek::scalar::Scalar;
 
 static BATCH_SIZES: [usize; 5] = [1, 2, 4, 8, 16];
-static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024];
-
+static CONSTTIME_MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024];
+static VARTIME_MULTISCALAR_SIZES: [usize; 32] = [
+    1, 2, 4, 8,
+    16, 32, 64, 128,
+    152, 181, 215, 256,
+    304, 362, 431, 512,
+    609, 724, 861, 1024,
+    1218, 1448, 1722, 2048,
+    2435, 2896, 3444, 4096,
+    4871, 5793, 6889, 8192
+];
 mod edwards_benches {
     use super::*;
     use curve25519_dalek::edwards;
@@ -75,7 +84,7 @@ mod edwards_benches {
                     .collect();
                 b.iter(|| EdwardsPoint::multiscalar_mul(&scalars, &points));
             },
-            &MULTISCALAR_SIZES,
+            &CONSTTIME_MULTISCALAR_SIZES,
         );
     }
 
@@ -91,7 +100,50 @@ mod edwards_benches {
                     .collect();
                 b.iter(|| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points));
             },
-            &MULTISCALAR_SIZES,
+            &VARTIME_MULTISCALAR_SIZES,
+        );
+    }
+
+    // fn vartime_straus_pippenger_threshold(c: &mut Criterion) {
+    //     let sizes = (0..20).flat_map(|i| 90+i*10 ).collect::<Vec<_>>();
+    //     c.bench_function_over_inputs(
+    //         "Variable-time Straus-Pippenger threshold",
+    //         |b, &size| {
+    //             let mut rng = OsRng::new().unwrap();
+    //             let scalars: Vec<Scalar> = (0..size).map(|_| Scalar::random(&mut rng)).collect();
+    //             let points: Vec<EdwardsPoint> = scalars
+    //                 .iter()
+    //                 .map(|s| s * &constants::ED25519_BASEPOINT_TABLE)
+    //                 .collect();
+    //             b.iter(|| edwards::vartime::multiscalar_mul(&scalars, &points));
+    //         },
+    //         sizes,
+    //     );
+    // }
+
+    fn vartime_straus_pippenger_threshold(c: &mut Criterion) {
+        let sizes = [
+            (184, 0),   (184, 99999),
+            (185, 0),   (185, 99999),
+            (186, 0),   (186, 99999),
+            (187, 0),   (187, 99999),
+            (188, 0),   (188, 99999),
+            (189, 0),   (189, 99999),
+            (190, 0),   (190, 99999),
+            (191, 0),   (191, 99999),
+        ].to_vec();
+        c.bench_function_over_inputs(
+            "Variable-time Straus-Pippenger threshold",
+            |b, &(size, threshold)| {
+                let mut rng = OsRng::new().unwrap();
+                let scalars: Vec<Scalar> = (0..size).map(|_| Scalar::random(&mut rng)).collect();
+                let points: Vec<EdwardsPoint> = scalars
+                    .iter()
+                    .map(|s| s * &constants::ED25519_BASEPOINT_TABLE)
+                    .collect();
+                b.iter(|| edwards::vartime::multiscalar_mul_tuning(&scalars, &points, threshold));
+            },
+            sizes,
         );
     }
 
@@ -106,6 +158,7 @@ mod edwards_benches {
         vartime_double_base_scalar_mul,
         consttime_multiscalar_mul,
         vartime_multiscalar_mul,
+        vartime_straus_pippenger_threshold,
     }
 }
 
@@ -208,4 +261,5 @@ criterion_main!(
     montgomery_benches::montgomery_benches,
     ristretto_benches::ristretto_benches,
     edwards_benches::edwards_benches,
+    //pippenger_multiscalar_mul_tuning::pippenger_multiscalar_mul_tuning,
 );

@@ -24,6 +24,12 @@ use core::borrow::Borrow;
 
 use rand::{Rng, CryptoRng};
 
+#[cfg(feature = "std")]
+use std::vec::Vec;
+
+#[cfg(feature = "alloc")]
+use alloc::Vec;
+
 use digest::Digest;
 use generic_array::typenum::U64;
 
@@ -683,6 +689,65 @@ impl Scalar {
         output
     }
 
+    /// Write this scalar in radix \\(2\^r\\), with \\(n = ceil(256/r)\\) coefficients in \\([-(2\^r)/2,(2\^r)/2)\\),
+    /// i.e., compute \\(a\_i\\) such that
+    /// $$
+    ///    a = a\_0 + a\_1 2\^1r + \cdots + a_{n-1} 2\^{r*(n-1)},
+    /// $$
+    /// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
+    /// Radix power \\(r\\) can be between 1 and 15.
+    #[cfg(any(feature = "alloc", feature = "std"))]
+    pub(crate) fn to_arbitrary_radix(&self, mut radix_power: usize) -> Vec<i16> {
+        use byteorder::{ByteOrder, LittleEndian};
+        // The last word is half the size, so it always <= 2^r/2 including the carry
+        debug_assert!(self[31] <= 127);
+
+        // Ensure that radix is in [2^1, 2^15]
+        radix_power = if radix_power > 15 { 15 } else { radix_power };
+        radix_power = if radix_power < 1  { 1  } else { radix_power };
+
+        // Number of coefficients = ceil(256/r)
+        let coef_count = (256 + radix_power - 1)/radix_power;
+        let radix = 1 << radix_power;
+        let window_mask = radix - 1;
+
+        let mut output = vec![0i16; coef_count];
+
+        // Read 64-bit words of the scalar
+        let mut x_u64 = [0u64; 5]; // one extra zero u64 to read from w/o bounds checks
+        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+
+        let mut carry:u64 = 0;
+        for i in 0..coef_count {
+            // Construct a buffer of bits of the scalar, starting at bit `pos`
+            let pos = radix_power*i;
+            let u64_idx = pos / 64;
+            let bit_idx = pos % 64;
+            let bit_buf: u64;
+            if bit_idx < 64 - radix_power {
+                // This window's bits are contained in a single u64
+                bit_buf = x_u64[u64_idx] >> bit_idx;
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
+            }
+
+            // Read actual coefficient value from the window
+            let coef:u64 = carry + (bit_buf & (window_mask as u64)); // coef = [0, 2^r)
+
+            // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
+            carry = (coef + (radix/2) as u64) >> radix_power;
+            output[i] = ((coef as i64) - (carry << radix_power) as i64) as i16;
+        }
+        // Since the highest bit of the 256-bit integer is 0, 
+        // the last coefficient would always be in the lower half _inclusive_, 
+        // so the carry in the end can be 1 iff the word equals 2^r/2.
+        // Since ±2^r/2 values are valid, to avoid adding an extra word,
+        // we allow the last word to touch the value 2^r/2.
+        output[coef_count-1] += (carry << radix_power) as i16;
+        output
+    }
+
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
@@ -897,6 +962,28 @@ mod test {
         let naf = A_SCALAR.non_adjacent_form(5);
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
+        }
+    }
+
+    #[test]
+    fn to_arbitrary_radix() {
+        // For each valid radix it tests that 1000 random-ish scalars can be restored
+        // from the produced representation precisely.
+        for r in 1..16 {
+            for s in 2..100 {
+                let scalar = Scalar::from_u64(s).invert(); // pseudo-random
+                let naf = scalar.to_arbitrary_radix(r);
+
+                let radix = Scalar::from_u64(1<<r);
+                let mut term = Scalar::one();
+                let mut recovered_scalar = Scalar::zero();
+                for digit in naf.clone() {
+                    let sdigit = if digit < 0 { -Scalar::from_u64((-digit) as u64) } else { Scalar::from_u64(digit as u64) };
+                    recovered_scalar += term * sdigit;
+                    term *= radix;
+                }
+                assert_eq!(recovered_scalar, scalar);
+            }
         }
     }
 

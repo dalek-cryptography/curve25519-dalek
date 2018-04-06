@@ -20,7 +20,7 @@
 //
 // This means that missing docs will still fail CI, but means we can use
 // README.md as the crate documentation.
-#![cfg_attr(feature = "nightly", deny(missing_docs))]
+#![cfg_attr(all(feature = "nightly"), deny(missing_docs))]
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
@@ -39,6 +39,8 @@ extern crate alloc;
 
 extern crate rand;
 extern crate clear_on_drop;
+extern crate byteorder;
+
 extern crate byteorder;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it

@@ -15,7 +15,7 @@ use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
 use curve_models::{CompletedPoint, ProjectivePoint, ProjectiveNielsPoint};
-use scalar_mul::window::OddLookupTable;
+use scalar_mul::window::NafLookupTable5;
 
 /// Perform variable-time, variable-base scalar multiplication.
 pub(crate) fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
@@ -27,11 +27,11 @@ where
 {
     let nafs: Vec<_> = scalars
         .into_iter()
-        .map(|c| c.borrow().non_adjacent_form())
+        .map(|c| c.borrow().non_adjacent_form(5))
         .collect();
     let lookup_tables: Vec<_> = points
         .into_iter()
-        .map(|P| OddLookupTable::<ProjectiveNielsPoint>::from(P.borrow()))
+        .map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(P.borrow()))
         .collect();
 
     let mut r = ProjectivePoint::identity();

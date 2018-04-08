@@ -80,6 +80,7 @@ pub struct Scalar {
     ///
     /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or equivalently the high bit of `bytes[31]` must be zero.
     ///
+    /// This ensures that there is room for a carry bit when computing a NAF representation.
     // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
     pub(crate) bytes: [u8; 32],
 }
@@ -493,51 +494,130 @@ impl Scalar {
         bits
     }
 
-    /// Compute a width-5 "Non-Adjacent Form" of this scalar.
+    /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
     ///
     /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
     /// $$
-    /// k = \sum_{i=0}\^n k\_i 2\^i,
+    /// k = \sum_{i=0}\^m n\_i 2\^i,
     /// $$
     /// where each nonzero
-    /// coefficient \\(k\_i\\) is odd and bounded by \\(|k\_i| < 2\^{w-1}\\),
-    /// \\(k\_{n-1}\\) is nonzero, and at most one of any \\(w\\) consecutive
+    /// coefficient \\(n\_i\\) is odd and bounded by \\(|n\_i| < 2\^{w-1}\\),
+    /// \\(n\_{m-1}\\) is nonzero, and at most one of any \\(w\\) consecutive
     /// coefficients is nonzero.  (Hankerson, Menezes, Vanstone; def 3.32).
     ///
+    /// The length of the NAF is at most one more than the length of
+    /// the binary representation of \\(k\\).  This is why the
+    /// `Scalar` type maintains an invariant that the top bit is
+    /// \\(0\\), so that the NAF of a scalar has at most 256 digits.
+    ///
     /// Intuitively, this is like a binary expansion, except that we
-    /// allow some coefficients to grow up to \\(2\^{w-1}\\) so that the
-    /// nonzero coefficients are as sparse as possible.
-    pub(crate) fn non_adjacent_form(&self) -> [i8; 256] {
-        // Step 1: write out bits of the scalar
-        let mut naf = self.bits();
+    /// allow some coefficients to grow in magnitude up to
+    /// \\(2\^{w-1}\\) so that the nonzero coefficients are as sparse
+    /// as possible.
+    ///
+    /// When doing scalar multiplication, we can then use a lookup
+    /// table of precomputed multiples of a point to add the nonzero
+    /// terms \\( k_i P \\).  Using signed digits cuts the table size
+    /// in half, and using odd digits cuts the table size in half
+    /// again.
+    ///
+    /// To compute a \\(w\\)-NAF, we use a modification of Algorithm 3.35 of HMV:
+    ///
+    /// 1. \\( i \gets 0 \\)
+    /// 2. While \\( k \ge 1 \\):
+    ///     1. If \\(k\\) is odd, \\( n_i \gets k \operatorname{mods} 2^w \\), \\( k \gets k - n_i \\).
+    ///     2. If \\(k\\) is even, \\( n_i \gets 0 \\).
+    ///     3. \\( k \gets k / 2 \\), \\( i \gets i + 1 \\).
+    /// 3. Return \\( n_0, n_1, ... , \\)
+    ///
+    /// Here \\( \bar x = x \operatorname{mods} 2^w \\) means the
+    /// \\( \bar x \\) with \\( \bar x \equiv x \pmod{2^w} \\) and
+    /// \\( -2^{w-1} \leq \bar x < 2^w \\).
+    ///
+    /// We implement this by scanning across the bits of \\(k\\) from
+    /// least-significant bit to most-significant-bit.
+    /// Write the bits of \\(k\\) as
+    /// $$
+    /// k = \sum\_{i=0}\^m k\_i 2^i,
+    /// $$
+    /// and split the sum as  
+    /// $$
+    /// k = \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
+    /// $$
+    /// where the first part is \\( k \mod 2^w \\).
+    ///
+    /// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w < 2^{w-1} \\), then we emit
+    /// \\( n_0 = k \mod 2^w \\).  Instead of computing
+    /// \\( k - n_0 \\), we just advance \\(w\\) bits and reindex.
+    ///
+    /// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w \ge 2^{w-1} \\), then
+    /// \\( n_0 = k \operatorname{mods} 2^w = k \mod 2^w - 2^w \\).
+    /// The quantity \\( k - n_0 \\) is
+    /// $$
+    /// \begin{aligned}
+    /// k - n_0 &= \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
+    ///          - \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \\\\
+    /// &= 2^w + 2^w \sum\_{i=0} k\_{i+w} 2^i
+    /// \end{aligned}
+    /// $$
+    /// so instead of computing the subtraction, we can set a carry
+    /// bit, advance \\(w\\) bits, and reindex.
+    ///
+    /// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
+    /// and reindex.  In fact, by setting all digits to \\(0\\)
+    /// initially, we don't need to emit anything.
+    pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256] {
+        // required by the NAF definition
+        debug_assert!( w >= 2 );
+        // required so that the NAF digits fit in i8
+        debug_assert!( w <= 8 );
 
-        // Step 2: zero coefficients by carrying them upwards or downwards
-        'bits: for i in 0..256 {
-            if naf[i] == 0 { continue 'bits; }
-            'window: for b in 1..6 {
-                if     i+b  >= 256  { break 'window; }
-                if naf[i+b] == 0    { continue 'window; }
-                let potential_carry = naf[i+b] << b;
-                if  naf[i+b] + potential_carry <= 15 {
-                    // Eliminate naf[i+b] by carrying its value onto naf[i]
-                    naf[i] += potential_carry;
-                    naf[i+b] = 0;
-                } else if naf[i+b] - potential_carry >= -15 {
-                    // Eliminate naf[i+b] by carrying its value upwards.
-                    naf[i] -= potential_carry; // Subtract 2^(i+b)
-                    'carry: for k in i+b..256 {
-                        if naf[k] != 0 {
-                            // Since naf[k] = 0 or 1 for k > i, naf[k] == 1.
-                            naf[k] = 0; // Subtract 2^k
-                        } else {
-                            // By now we have subtracted 2^k =
-                            // 2^(i+b) + 2^(i+b) + 2^(i+b+1) + ... + 2^(k-1).
-                            naf[k] = 1; // Add back 2^k.
-                            break 'carry;
-                        }
-                    }
-                }
+        use byteorder::{ByteOrder, LittleEndian};
+
+        let mut naf = [0i8; 256];
+
+        let mut x_u64 = [0u64; 5];
+        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+
+        let width = 1 << w;
+        let window_mask = width - 1;
+        
+        let mut pos = 0;
+        let mut carry = 0;
+        while pos < 256 {
+            // Construct a buffer of bits of the scalar, starting at bit `pos`
+            let u64_idx = pos / 64;
+            let bit_idx = pos % 64;
+            let bit_buf: u64;
+            if bit_idx < 64 - w {
+                // This window's bits are contained in a single u64
+                bit_buf = x_u64[u64_idx] >> bit_idx;
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
             }
+
+            // Add the carry into the current window
+            let window = carry + (bit_buf & window_mask);
+
+            if window & 1 == 0 {
+                // If the window value is even, preserve the carry and continue.
+                // Why is the carry preserved?
+                // If carry == 0 and window & 1 == 0, then the next carry should be 0
+                // If carry == 1 and window & 1 == 0, then bit_buf & 1 == 1 so the next carry should be 1
+                pos += 1;
+                continue;
+            }
+
+            if window < width/2 {
+                carry = 0;
+                naf[pos] = window as i8;
+            } else {
+                carry = 1;
+                naf[pos] = (window as i8) - (width as i8);
+            }
+
+            pos += w;
         }
 
         naf
@@ -548,7 +628,7 @@ impl Scalar {
     /// $$
     ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
     /// $$
-    /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_63 \leq 8\\).
+    /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
     pub(crate) fn to_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
@@ -789,7 +869,7 @@ mod test {
 
     #[test]
     fn non_adjacent_form() {
-        let naf = A_SCALAR.non_adjacent_form();
+        let naf = A_SCALAR.non_adjacent_form(5);
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
         }

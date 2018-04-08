@@ -534,7 +534,8 @@ impl Scalar {
     /// \\( \bar x \\) with \\( \bar x \equiv x \pmod{2^w} \\) and
     /// \\( -2^{w-1} \leq \bar x < 2^w \\).
     ///
-    /// We implement this by scanning across the bits of \\(k\\) from LSB to MSB.
+    /// We implement this by scanning across the bits of \\(k\\) from
+    /// least-significant bit to most-significant-bit.
     /// Write the bits of \\(k\\) as
     /// $$
     /// k = \sum\_{i=0}\^m k\_i 2^i,

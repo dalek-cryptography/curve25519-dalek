@@ -1,7 +1,6 @@
 An implementation of group operations on the twisted Edwards form of
 Curve25519, using AVX2 to implement the 4-way parallel formulas of
 Hisil, Wong, Carter, and Dawson (HWCD).
-
 Their 2008 paper [_Twisted Edwards Curves Revisited_][hwcd08], which
 introduced the extended coordinates used in other parts of `-dalek`,
 also describes 4-way parallel formulas for point addition and
@@ -20,9 +19,26 @@ Here \\(\mathbf M\\) and \\(\mathbf S\\) represent the cost of
 multiplication and squaring of generic field elements and \\(\mathbf
 D\\) represents the cost of multiplication by a curve constant.
 
-Currently, this implementation uses only the first two algorithms.
+These formulas do not seem to have been implemented using SIMD before.
+A 2015 paper by Hernández and López mentions using AVX2 for the X25519
+Montgomery ladder, but neither the paper nor the code are publicly
+available, and it apparently gives only a [slight speedup][avx2trac].
+The 2008 HWCD paper also describes and analyzes a 2-wide variant of the
+Montgomery ladder (for comparison with parallel Edwards formulas); this
+strategy was used in 2015 by Tung Chou's `sandy2x` implementation, which
+used a 2-wide field implementation in 128-bit vector registers.
+Curiously, however, although the [`sandy2x` paper][sandy2x] also
+implements Edwards arithmetic, and cites the HWCD paper, it doesn't
+mention the parallel formulas from HWCD, suggesting that they have been
+overlooked for software implementations.
 
-# Parallel formulas
+The notes below describe a tweak to the \\( 2\mathbf M + 1\mathbf D \\)
+unified addition formulas to give \\( 2\mathbf M \\) readdition with
+\\(1\mathbf D\\) precomputation, and a tweak to the doubling formulas to
+avoid an extra reduction.  These tweaked formulas are the ones used by
+the `avx2` backend of `curve25519-dalek`.
+
+# Parallel formulas in HWCD'08
 
 The doubling formula is presented in the HWCD paper as follows:
 
@@ -46,25 +62,17 @@ and the unified addition algorithm is presented as follows:
 
 Here \\( k = 2d \\) is a curve constant.
 
-# Implementation strategy
-
-For a software implementation, each "processor"'s operations are too
+For a software implementation, each processor's operations are too
 low-latency to parallelize across threads.  However, the main cost
-is in the multiplication and squaring steps, which share a single
-instruction.
+is in the multiplication and squaring steps, which are uniform, while
+the divergent steps involve inexpensive additions and subtractions.
 
-Our strategy is to implement 4-wide multiplication and squaring
-using one 64-bit AVX2 lane for each field element.  Field elements
-are represented in the usual way as 10 `u32` limbs in radix
-\\(25.5\\) (i.e., alternating between \\(2\^{26}\\) for even limbs
-and \\(2\^{25}\\) for odd limbs).  This has the effect that passing
-between the parallel 32-bit AVX2 representation and the serial
-64-bit representation amounts to regrouping digits.
+This means we can use SIMD to implement the expensive portions in
+parallel, and handle the instruction divergence on the inexpensive parts
+using masking.
 
-The addition and subtraction steps are done largely serially, using
-masking to handle the instruction divergence.  The remaining
-obstacle to parallelism is the multiplication by the curve constant
-\\(k = 2d\\).  In the Curve25519 case, this is
+The remaining obstacle to parallelism is the multiplication by the curve
+constant \\(k = 2d\\).  In the Curve25519 case, this is
 
 $$ k \equiv 2 \frac{-121665}{121666} \\ \equiv 16295367250680780974490674513165176452449235426866156013048779062215315747161 \pmod p. $$
 
@@ -95,51 +103,18 @@ prevent accelerating Curve25519, so we don't make this choice.
 Instead, we just negate one lane, and move the \\(1 \mathbf D\\)
 into precomputation (see below).
 
-The 4-wide formulas of the HWCD paper do not seem to have been
-implemented using SIMD before.  The HWCD paper also describes and
-analyzes a 2-wide variant of the Montgomery ladder (for comparison
-with parallel Edwards formulas); this strategy was used in 2015 by
-Tung Chou's `sandy2x` implementation, which used a 2-wide field
-implementation in 128-bit vector registers.
-
-Curiously, however, although the [`sandy2x` paper][sandy2x] also
-implements Edwards arithmetic, and cites the HWCD paper, it doesn't
-mention or discuss the parallel formulas from HWCD, or that the
-2-wide Montgomery formulas it uses were previously published there.
-There is also a 2015 paper by Hernández and López on using AVX2 for
-the X25519 Montgomery ladder, but neither the paper nor the code are
-publicly available, and it apparently gives only a [slight
-speedup][avx2trac], suggesting that it also overlooked the
-HWCD formulas.
-
-HWCD also suggest using a mixed representation, passing between \\(
-\mathbb P\^3 \\) "extended" coordinates and \\( \mathbb P\^2 \\)
-"projective" coordinates, where doubling is slightly cheaper (saving
-about \\(\mathbf 1M\\).  This approach is used for the
-non-vectorized `u32` and `u64` backends, and more
-details on the different coordinate systems can be found in the
-`curve_models` module documentation.
-
-This optimization is not compatible with the parallel formulas, which are
-therefore slightly less efficient when counting the total number of
-field multiplications and squarings.  In particular, vectorized doublings
-are less efficient than serial doublings.
-In addition, the parallel formulas can only use a \\( 32 \times 32
-\rightarrow 64 \\)-bit integer multiplier, so the speedup from
-vectorization must overcome the disadvantage of losing the \\( 64
-\times 64 \rightarrow 128\\)-bit (serial) integer multiplier.
-
 # Tweaked formulas
 
 After tweaking the formulas as described above, we obtain the
 following.  To avoid confusion with the original HWCD formulas,
 temporary variables are named \\(S\\) instead of \\(R\\) and are in
-static single-assignment (SSA) form.
+static single-assignment form.
 
 ## Addition
 
-To add points \\(P_1 = (X_1 : Y_1 : Z_1 : T_1) \\) and \\(P_2 = (X_2
-: Y_2 : Z_2 : T_2 ) \\), we compute
+This implementation only implements readdition, but the tweaked addition
+formulas are described first.  To add points \\(P_1 = (X_1 : Y_1 : Z_1 :
+T_1) \\) and \\(P_2 = (X_2 : Y_2 : Z_2 : T_2 ) \\), we compute
 
 $$
 \begin{aligned}
@@ -293,6 +268,81 @@ $$
 
 to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = [2]P\_1 \\).
 
+Unlike the (re)addition formulas, the divergent parts of these formulas
+are less nice.  However, with some careful bounds-juggling, it is
+possible to implement them without inserting extra carry chains, as
+described below.
+
+# Field element representation
+
+Our strategy is to implement 4-wide multiplication and squaring by
+wordslicing, using one 64-bit AVX2 lane for each field element.  Field
+elements are represented in the usual way as 10 `u32` limbs in radix
+\\(25.5\\) (i.e., alternating between \\(2\^{26}\\) for even limbs and
+\\(2\^{25}\\) for odd limbs).  This has the effect that passing between
+the parallel 32-bit AVX2 representation and the serial 64-bit
+representation (which uses radix \\(2^{51}\\)) amounts to regrouping
+digits.
+
+The field element representation is oriented around the AVX2
+`vpmuluqdq` instruction, which multiplies the low 32 bits of each
+64-bit lane of each operand to produce a 64-bit result.
+
+```text,no_run
+(a1 ?? b1 ?? c1 ?? d1 ??)
+(a2 ?? b2 ?? c2 ?? d2 ??)
+
+(a1*a2 b1*b2 c1*c2 d1*d2)
+```
+
+To unpack 32-bit values into 64-bit lanes for use in multiplication
+it would be convenient to use the `vpunpck[lh]dq` instructions,
+which unpack and interleave the low and high 32-bit lanes of two
+source vectors.
+However, the AVX2 versions of these instructions are designed to
+operate only within 128-bit lanes of the 256-bit vectors, so that
+interleaving the low lanes of `(a0 b0 c0 d0 a1 b1 c1 d1)` with zero
+gives `(a0 00 b0 00 a1 00 b1 00)`.  Instead, we pre-shuffle the data
+layout as `(a0 b0 a1 b1 c0 d0 c1 d1)` so that we can unpack the
+"low" and "high" parts as
+
+```text,no_run
+(a0 00 b0 00 c0 00 d0 00)
+(a1 00 b1 00 c1 00 d1 00)
+```
+
+The data layout for a vector of four field elements \\( (a,b,c,d)
+\\) with limbs \\( a_0, a_1, \ldots, a_9 \\) is as `[u32x8; 5]` in
+the form
+
+```text,no_run
+(a0 b0 a1 b1 c0 d0 c1 d1)
+(a2 b2 a3 b3 c2 d2 c3 d3)
+(a4 b4 a5 b5 c4 d4 c5 d5)
+(a6 b6 a7 b7 c6 d6 c7 d7)
+(a8 b8 a9 b9 c8 d8 c9 d9)
+```
+
+Since this breaks cleanly into two 128-bit lanes, it may be possible
+to adapt it to 128-bit vector instructions such as NEON without too
+much difficulty.  Going the other direction, to extend this to AVX512,
+we could either run two point operations in parallel in lower and upper
+halves of the registers, or use 2-way parallelism within a field operation.
+
+# Handling the Doubling Formulas
+
+The non-parallel portion of the doubling formulas is
+
+$$
+\begin{aligned}
+S\_5 &\gets S\_1 + S\_2 \\\\
+S\_6 &\gets S\_1 - S\_2 \\\\
+S\_7 &\gets 2S\_3 \\\\
+S\_8 &\gets S\_7 + S\_6 = S\_1 + 2S\_3 - S\_2 \\\\
+S\_9 &\gets S\_5 - S\_4 = S\_1 + S\_2 - S\_4
+\end{aligned}
+$$
+
 Performing too many intermediate additions and subtractions grows
 the bounds beyond what is allowed as input to multiplication,
 forcing an extra carry pass.  However, it is just possible to avoid
@@ -300,8 +350,8 @@ this by rearranging signs.
 
 Assume that the bounds on the limbs of each field element are
 parameterized by \\( b \in \mathbb R \\) representing the excess
-bits, so that each limb is bounded by either \\( 2\^{25} \\) or \\(
-2\^{26} \\).
+bits, so that each limb is bounded by either 
+\\( 2\^{25+b} \\) or \\( 2\^{26+b} \\).
 
 The multiplication routine requires that its inputs are bounded by
 \\( b < 1.75 \\), in order to fit a multiplication by \\( 19 \\)
@@ -371,93 +421,43 @@ $$
 whose right-hand sides are all bounded with \\( b < 1.75 \\) and
 whose left-hand sides are all bounded with \\( b < 2.5 \\).
 
-# Field element representation
+# Comparison to non-vectorized formulas
 
-The field element representation is oriented around the AVX2
-`vpmuluqdq` instruction, which multiplies the low 32 bits of each
-64-bit lane of each operand to produce a 64-bit result.
+HWCD also suggest using a mixed representation, passing between \\(
+\mathbb P\^3 \\) "extended" coordinates and \\( \mathbb P\^2 \\)
+"projective" coordinates, where doubling is slightly cheaper (saving
+about \\(\mathbf 1M\\).  This approach is used for the
+non-vectorized `u32` and `u64` backends, and more
+details on the different coordinate systems can be found in the
+`curve_models` module documentation.
 
-```text,no_run
-(a1 ?? b1 ?? c1 ?? d1 ??)
-(a2 ?? b2 ?? c2 ?? d2 ??)
+This optimization is not compatible with the parallel formulas, which are
+therefore slightly less efficient when counting the total number of
+field multiplications and squarings.  In particular, vectorized doublings
+are less efficient than serial doublings.
 
-(a1*a2 b1*b2 c1*c2 d1*d2)
-```
-
-To unpack 32-bit values into 64-bit lanes for use in multiplication
-it would be convenient to use the `vpunpck[lh]dq` instructions,
-which unpack and interleave the low and high 32-bit lanes of two
-source vectors.
-However, the AVX2 versions of these instructions are designed to
-operate only within 128-bit lanes of the 256-bit vectors, so that
-interleaving the low lanes of `(a0 b0 c0 d0 a1 b1 c1 d1)` with zero
-gives `(a0 00 b0 00 a1 00 b1 00)`.  Instead, we pre-shuffle the data
-layout as `(a0 b0 a1 b1 c0 d0 c1 d1)` so that we can unpack the
-"low" and "high" parts as
-
-```text,no_run
-(a0 00 b0 00 c0 00 d0 00)
-(a1 00 b1 00 c1 00 d1 00)
-```
-
-The data layout for a vector of four field elements \\( (a,b,c,d)
-\\) with limbs \\( a_0, a_1, \ldots, a_9 \\) is as `[u32x8; 5]` in
-the form
-
-```text,no_run
-(a0 b0 a1 b1 c0 d0 c1 d1)
-(a2 b2 a3 b3 c2 d2 c3 d3)
-(a4 b4 a5 b5 c4 d4 c5 d5)
-(a6 b6 a7 b7 c6 d6 c7 d7)
-(a8 b8 a9 b9 c8 d8 c9 d9)
-```
-
-Since this breaks cleanly into two 128-bit lanes, it may be possible
-to adapt it to 128-bit vector instructions such as NEON without too
-much difficulty.
-
-Going the other direction, to extend this to AVX512, we could either
-run two point operations in parallel in lower and upper halves of
-the registers, or use 2-way parallelism within a field operation.
-
-We don't attempt to use AVX2 for serial field element computations
-such as inversion, since wherever we have AVX2 we also have `mulx`.
-However, it might be useful for batched inverse square-root
-computations, which can't be batched in the same way inversions can.
-
-# Implementation details
-
-The implementation uses the unstable `stdsimd` crate to provide AVX2
-intrinsics, and the code is not yet cleanly factored between the
-field element parts and the point parts.
+In addition, the parallel formulas can only use a \\( 32 \times 32
+\rightarrow 64 \\)-bit integer multiplier, so the speedup from
+vectorization must overcome the disadvantage of losing the \\( 64
+\times 64 \rightarrow 128\\)-bit (serial) integer multiplier.
 
 When compiling with AVX512VL, LLVM is able to use the extra
 `ymm16..ymm31` registers to reduce register pressure, and avoid
 spills during field multiplication.  This gives a small but
 noticeable speedup.
 
-The addition and subtraction steps involve masking, to apply
-operations to a single lane of the vector.  AVX512VL extends the
-predication features of AVX512 to AVX2 code and would probably be
-beneficial.  Unfortunately, LLVM is currently unable to lower `op +
-blend` into an AVX512VL masked operation.  However, the explicitly
-masked versions of the intrinsics seem to produce the same LLVM IR
-as an `op + blend`, so hopefully this will improve as the AVX512
-support in LLVM improves.
+Another concern with AVX2 is that currently-available Intel processors
+(particularly Skylake and Skylake-X microarchitectures) perform thermal
+throttling when using wide vector instructions.  For a mixed workload,
+where point operations are interspersed with other tasks, this can
+reduce overall performance.  This probably means that this
+implementation is not suitable for basic applications, like signatures,
+but could still be worthwhile for complex applications, like
+zero-knowledge proofs, which do enough work to make it worthwhile.
 
-When used for constant-time variable-base scalar multiplication,
-this strategy (using AVX2) gives a significant speedup over the
-serial implementation (using the \\(64 \times 64\\) multiplier) of
-approximately 1.6x for Skylake-X with `target_cpu=skylake` (using AVX2), of
-approximately 1.8x for Skylake-X with `target_cpu=skylake-avx512` (using the extra
-`ymm16..ymm31` registers from AVX512VL), and of approximately 1.0x
-for Ryzen (which implements AVX2 at half rate).
-
-When used for variable-time double-base scalar multiplication 
-\\( aA + bB \\) for fixed \\(B\\) (as in, e.g., signature verification),
-this strategy provides a 1.4x speedup on Skylake-X over the same
-operation as implemented in `ed25519-donna`, the fastest
-production-quality Ed25519 implementation.
+On AMD's Zen microarchitecture, thermal throttling is not a concern,
+since AVX2 is implemented at half rate, so there is no penalty for mixed
+workloads (but also no speedup).
 
 [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28

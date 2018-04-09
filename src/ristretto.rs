@@ -159,6 +159,8 @@
 // generating the lookup tables (in which case we're relative to the
 // location of build.rs, not lib.rs, so the markdown file appears
 // missing).
+//
+// This hack is also used in the avx2 notes.
 #[cfg_attr(all(feature = "nightly", feature="precomputed_tables"), doc(include = "../docs/ristretto-notes.md"))]
 mod notes {
 }

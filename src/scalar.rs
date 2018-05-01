@@ -19,7 +19,7 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Index};
 use core::cmp::{Eq, PartialEq};
-use core::iter::Product;
+use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
 #[cfg(feature = "std")]
@@ -304,6 +304,18 @@ where
         I: Iterator<Item = T>
     {
         iter.fold(Scalar::one(), |acc, item| acc * item.borrow())
+    }
+}
+
+impl<T> Sum<T> for Scalar
+where
+    T: Borrow<Scalar>
+{
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>
+    {
+        iter.fold(Scalar::zero(), |acc, item| acc + item.borrow())
     }
 }
 
@@ -955,6 +967,37 @@ mod test {
         assert_eq!(z_prod, Scalar::from_u64(60466176));
         assert_eq!(x_prod * y_prod, z_prod);
 
+    }
+
+    #[test]
+    fn impl_sum() {
+
+        // Test that sum works for non-empty iterators
+        let two = Scalar::from_u64(2);
+        let one_vector = vec![Scalar::one(), Scalar::one()];
+        let should_be_two: Scalar = one_vector.iter().sum();
+        assert_eq!(should_be_two, two);
+
+        // Test that sum works for the empty iterator
+        let zero = Scalar::zero();
+        let empty_vector = vec![];
+        let should_be_zero: Scalar = empty_vector.iter().sum();
+        assert_eq!(should_be_zero, zero);
+
+        // Test that sum works for owned types
+        let xs = [Scalar::from_u64(1); 10];
+        let ys = [Scalar::from_u64(2); 10];
+        // now zs is an iterator with Item = Scalar
+        let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x + y);
+
+        let x_sum: Scalar = xs.iter().sum();
+        let y_sum: Scalar = ys.iter().sum();
+        let z_sum: Scalar = zs.sum();
+
+        assert_eq!(x_sum, Scalar::from_u64(10));
+        assert_eq!(y_sum, Scalar::from_u64(20));
+        assert_eq!(z_sum, Scalar::from_u64(30));
+        assert_eq!(x_sum + y_sum, z_sum);
     }
 
     #[test]

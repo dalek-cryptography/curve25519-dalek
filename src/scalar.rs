@@ -19,6 +19,8 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Index};
 use core::cmp::{Eq, PartialEq};
+use core::iter::Product;
+use core::borrow::Borrow;
 
 #[cfg(feature = "std")]
 use rand::Rng;
@@ -290,6 +292,18 @@ impl<'de> Deserialize<'de> for Scalar {
         }
 
         deserializer.deserialize_bytes(ScalarVisitor)
+    }
+}
+
+impl<T> Product<T> for Scalar
+where
+    T: Borrow<Scalar>
+{
+    fn product<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>
+    {
+        iter.fold(Scalar::one(), |acc, item| acc * item.borrow())
     }
 }
 
@@ -910,6 +924,37 @@ mod test {
     fn impl_mul() {
         let should_be_X_times_Y = &X * &Y;
         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
+    }
+
+    #[allow(non_snake_case)]
+    #[test]
+    fn impl_product() {
+        // Test that product works for non-empty iterators
+        let X_Y_vector = vec![X, Y];
+        let should_be_X_times_Y: Scalar = X_Y_vector.iter().product();
+        assert_eq!(should_be_X_times_Y, X_TIMES_Y);
+
+        // Test that product works for the empty iterator
+        let one = Scalar::one();
+        let empty_vector = vec![];
+        let should_be_one: Scalar = empty_vector.iter().product();
+        assert_eq!(should_be_one, one);
+
+        // Test that product works for iterators where Item = Scalar
+        let xs = [Scalar::from_u64(2); 10];
+        let ys = [Scalar::from_u64(3); 10];
+        // now zs is an iterator with Item = Scalar
+        let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x * y);
+
+        let x_prod: Scalar = xs.iter().product();
+        let y_prod: Scalar = ys.iter().product();
+        let z_prod: Scalar = zs.product();
+
+        assert_eq!(x_prod, Scalar::from_u64(1024));
+        assert_eq!(y_prod, Scalar::from_u64(59049));
+        assert_eq!(z_prod, Scalar::from_u64(60466176));
+        assert_eq!(x_prod * y_prod, z_prod);
+
     }
 
     #[test]

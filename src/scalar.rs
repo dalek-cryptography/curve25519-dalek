@@ -566,7 +566,7 @@ impl Scalar {
     /// $$
     /// k = \sum\_{i=0}\^m k\_i 2^i,
     /// $$
-    /// and split the sum as  
+    /// and split the sum as
     /// $$
     /// k = \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
     /// $$
@@ -607,7 +607,7 @@ impl Scalar {
 
         let width = 1 << w;
         let window_mask = width - 1;
-        
+
         let mut pos = 0;
         let mut carry = 0;
         while pos < 256 {

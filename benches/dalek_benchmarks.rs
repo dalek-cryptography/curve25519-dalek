@@ -18,7 +18,10 @@ static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 
 
 mod edwards_benches {
     use super::*;
-    use curve25519_dalek::edwards::{self, EdwardsPoint};
+    use curve25519_dalek::edwards;
+    use curve25519_dalek::edwards::EdwardsPoint;
+    use curve25519_dalek::traits::MultiscalarMul;
+    use curve25519_dalek::traits::VartimeMultiscalarMul;
 
     fn compress(c: &mut Criterion) {
         let B = &constants::ED25519_BASEPOINT_POINT;
@@ -70,7 +73,7 @@ mod edwards_benches {
                     .iter()
                     .map(|s| s * &constants::ED25519_BASEPOINT_TABLE)
                     .collect();
-                b.iter(|| edwards::multiscalar_mul(&scalars, &points));
+                b.iter(|| EdwardsPoint::multiscalar_mul(&scalars, &points));
             },
             &MULTISCALAR_SIZES,
         );
@@ -86,7 +89,7 @@ mod edwards_benches {
                     .iter()
                     .map(|s| s * &constants::ED25519_BASEPOINT_TABLE)
                     .collect();
-                b.iter(|| edwards::vartime::multiscalar_mul(&scalars, &points));
+                b.iter(|| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points));
             },
             &MULTISCALAR_SIZES,
         );

@@ -98,6 +98,7 @@ use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
+use core::iter::Sum;
 use core::borrow::Borrow;
 
 use subtle::ConditionallyAssignable;
@@ -426,6 +427,19 @@ impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
 }
 
 define_sub_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
+
+impl<T> Sum<T> for EdwardsPoint
+where
+    T: Borrow<EdwardsPoint>
+{
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>
+    {
+        iter.fold(EdwardsPoint::identity(), |acc, item| acc + item.borrow())
+    }
+}
+
 
 // ------------------------------------------------------------------------
 // Negation
@@ -1091,6 +1105,38 @@ mod test {
         let bp16 = constants::ED25519_BASEPOINT_POINT.mul_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
+
+    #[test]
+    fn impl_sum() {
+
+        // Test that sum works for non-empty iterators
+        let BASE = constants::ED25519_BASEPOINT_POINT;
+
+        let s1 = Scalar::from_u64(999);
+        let P1 = &BASE * &s1;
+
+        let s2 = Scalar::from_u64(333);
+        let P2 = &BASE * &s2;
+
+        let vec = vec![P1.clone(), P2.clone()];
+        let sum: EdwardsPoint = vec.iter().sum();
+
+        assert_eq!(sum, P1 + P2);
+
+        // Test that sum works for the empty iterator
+        let empty_vector: Vec<EdwardsPoint> = vec![];
+        let sum: EdwardsPoint = empty_vector.iter().sum();
+
+        assert_eq!(sum, EdwardsPoint::identity());
+
+        // Test that sum works on owning iterators
+        let s = Scalar::from_u64(2);
+        let mapped = vec.iter().map(|x| x * &s);
+        let sum: EdwardsPoint = mapped.sum();
+
+        assert_eq!(sum, &P1 * &s + &P2 * &s);
+      }
+
 
     /// Test that the conditional assignment trait works for AffineNielsPoints.
     #[test]

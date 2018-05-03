@@ -121,3 +121,19 @@ macro_rules! define_mul_assign_variants {
     }
 }
 
+/// Define borrow and non-borrow variants of Sum for point types.
+macro_rules! define_point_sum_variants {
+    (PointType = $ptype:ident) => {
+        impl<T> Sum<T> for $ptype
+        where
+            T: Borrow<$ptype>
+        {
+            fn sum<I>(iter: I) -> Self
+            where
+                I: Iterator<Item = T>
+            {
+                iter.fold($ptype::identity(), |acc, item| acc + item.borrow())
+            }
+        }
+    }
+}

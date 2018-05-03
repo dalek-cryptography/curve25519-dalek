@@ -543,14 +543,14 @@ impl MultiscalarMul for EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
-            use backend::avx2::scalar_mul::straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
+            use backend::avx2::scalar_mul::straus::Straus;
+            Straus::multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
-            use scalar_mul::straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
+            use scalar_mul::straus::Straus;
+            Straus::multiscalar_mul(scalars, points)
         }
     }
 }
@@ -572,14 +572,14 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
-            use backend::avx2::scalar_mul::vartime_straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
+            use backend::avx2::scalar_mul::straus::Straus;
+            Straus::vartime_multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
-            use scalar_mul::vartime_straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
+            use scalar_mul::straus::Straus;
+            Straus::vartime_multiscalar_mul(scalars, points)
         }
     }
 }

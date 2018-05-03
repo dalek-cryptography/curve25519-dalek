@@ -149,8 +149,10 @@ impl ExtendedPoint {
                 // tmp0 = (0 0 2*S3 -S4)
                 let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into_bits(), t1.0[i].into_bits(), 0b10100000).into_bits();
                 t0.0[i] = (avx2::constants::P_TIMES_2_MASKED.0[i] + tmp0) + S1;
-                t0.0[i] = t0.0[i] + _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
-                t0.0[i] = t0.0[i] - _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
+                let S2_pos: u32x8 = _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
+                let S2_neg: u32x8 = _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
+                t0.0[i] = t0.0[i] + S2_pos;
+                t0.0[i] = t0.0[i] - S2_neg;
             }
 
             let c0 = u32x8::new(4,0,6,2,4,0,6,2).into_bits(); // (ABCD) -> (CACA)

@@ -169,6 +169,7 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub, Neg};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
+use core::iter::Sum;
 use core::borrow::Borrow;
 
 #[cfg(feature = "std")]
@@ -732,6 +733,18 @@ impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
 
 define_sub_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
+impl<T> Sum<T> for RistrettoPoint
+where
+    T: Borrow<RistrettoPoint>
+{
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>
+    {
+        iter.fold(RistrettoPoint::identity(), |acc, item| acc + item.borrow())
+    }
+}
+
 impl<'a> Neg for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
@@ -1031,6 +1044,37 @@ mod test {
         let P2 = &s * &P;
 
         assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
+    }
+
+    #[test]
+    fn impl_sum() {
+
+        // Test that sum works for non-empty iterators
+        let BASE = constants::RISTRETTO_BASEPOINT_POINT;
+
+        let s1 = Scalar::from_u64(999);
+        let P1 = &BASE * &s1;
+
+        let s2 = Scalar::from_u64(333);
+        let P2 = &BASE * &s2;
+
+        let vec = vec![P1.clone(), P2.clone()];
+        let sum: RistrettoPoint = vec.iter().sum();
+
+        assert_eq!(sum, P1 + P2);
+
+        // Test that sum works for the empty iterator
+        let empty_vector: Vec<RistrettoPoint> = vec![];
+        let sum: RistrettoPoint = empty_vector.iter().sum();
+
+        assert_eq!(sum, RistrettoPoint::identity());
+
+        // Test that sum works on owning iterators
+        let s = Scalar::from_u64(2);
+        let mapped = vec.iter().map(|x| x * &s);
+        let sum: RistrettoPoint = mapped.sum();
+
+        assert_eq!(sum, &P1 * &s + &P2 * &s);
     }
 
     #[test]

@@ -41,7 +41,7 @@ harness = false
 # match exactly, since the build.rs uses the crate itself as a library.
 
 [dependencies]
-byteorder = "1"
+byteorder = {version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"

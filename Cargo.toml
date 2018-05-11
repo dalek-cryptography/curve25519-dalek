@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "0.16.3"
+version = "0.16.4"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -41,7 +41,7 @@ harness = false
 # match exactly, since the build.rs uses the crate itself as a library.
 
 [dependencies]
-byteorder = "1"
+byteorder = {version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"

@@ -67,7 +67,10 @@ alloc = []
 yolocrypto = ["avx2_backend"]
 # Radix-51 arithmetic using u128
 radix_51 = []
-# Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
-precomputed_tables = []
 # experimental avx2 support
 avx2_backend = ["nightly"]
+# Signals that we're in the main build stage.  This is off by default,
+# to signal stage 1 of the build, where build.rs loads the library
+# into the build script. Then, the build.rs emits the stage2_build
+# feature before the main-stage compilation.
+stage2_build = []

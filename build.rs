@@ -62,8 +62,8 @@ use curve_models::AffineNielsPoint;
 use scalar_mul::window::NafLookupTable8;
 
 fn main() {
-    // Enable the "precomputed_tables" feature in the main build stage
-    println!("cargo:rustc-cfg=feature=\"precomputed_tables\"\n");
+    // Enable the "stage2_build" feature in the main build stage
+    println!("cargo:rustc-cfg=feature=\"stage2_build\"\n");
 
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("basepoint_table.rs");

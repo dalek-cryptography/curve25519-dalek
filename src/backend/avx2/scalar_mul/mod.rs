@@ -10,7 +10,7 @@
 
 pub mod variable_base;
 
-#[cfg(feature="precomputed_tables")]
+#[cfg(feature = "stage2_build")]
 pub mod vartime_double_base;
 
 #[cfg(any(feature = "alloc", feature = "std"))]

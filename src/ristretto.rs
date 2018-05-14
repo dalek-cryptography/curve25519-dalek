@@ -161,7 +161,7 @@
 // missing).
 //
 // This hack is also used in the avx2 notes.
-#[cfg_attr(all(feature = "nightly", feature="precomputed_tables"), doc(include = "../docs/ristretto-notes.md"))]
+#[cfg_attr(all(feature = "nightly", feature = "stage2_build"), doc(include = "../docs/ristretto-notes.md"))]
 mod notes {
 }
 
@@ -1014,7 +1014,7 @@ pub mod vartime {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "stage2_build"))]
 mod test {
     use rand::OsRng;
 
@@ -1152,7 +1152,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1215,7 +1214,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;

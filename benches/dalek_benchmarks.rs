@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 extern crate rand;
-use rand::OsRng;
+use rand::rngs::OsRng;
 
 #[macro_use]
 extern crate criterion;

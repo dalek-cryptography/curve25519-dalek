@@ -284,7 +284,7 @@ mod test {
     use constants;
     use super::*;
 
-    use rand::OsRng;
+    use rand::rngs::OsRng;
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
     #[test]

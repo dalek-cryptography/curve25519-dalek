@@ -172,8 +172,7 @@ use core::ops::{Mul, MulAssign};
 use core::iter::Sum;
 use core::borrow::Borrow;
 
-#[cfg(feature = "std")]
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use digest::Digest;
 use generic_array::typenum::U64;
@@ -406,7 +405,7 @@ impl RistrettoPoint {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// extern crate rand;
-    /// use rand::OsRng;
+    /// use rand::rngs::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
@@ -576,15 +575,14 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    #[cfg(feature = "std")]
-    pub fn random<T: Rng>(rng: &mut T) -> Self {
+    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut field_bytes = [0u8; 32];
 
-        rng.fill_bytes(&mut field_bytes);
+        rng.fill(&mut field_bytes);
         let r_1 = FieldElement::from_bytes(&field_bytes);
         let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
 
-        rng.fill_bytes(&mut field_bytes);
+        rng.fill(&mut field_bytes);
         let r_2 = FieldElement::from_bytes(&field_bytes);
         let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
 
@@ -1016,7 +1014,7 @@ pub mod vartime {
 
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
-    use rand::OsRng;
+    use rand::rngs::OsRng;
 
     use scalar::Scalar;
     use constants;

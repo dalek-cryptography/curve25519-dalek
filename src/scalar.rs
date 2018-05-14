@@ -22,8 +22,7 @@ use core::cmp::{Eq, PartialEq};
 use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
-#[cfg(feature = "std")]
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use digest::Digest;
 use generic_array::typenum::U64;
@@ -324,15 +323,15 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `rand::CryptoRng` interface.
     ///
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
     #[cfg(feature = "std")]
-    pub fn random<T: Rng>(rng: &mut T) -> Self {
+    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
+        rng.fill(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 

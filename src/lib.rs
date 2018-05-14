@@ -34,15 +34,11 @@
 
 #[cfg(feature = "std")]
 extern crate core;
-
-#[cfg(feature = "std")]
-extern crate rand;
-
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+extern crate rand;
 extern crate clear_on_drop;
-
 extern crate byteorder;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it

@@ -41,28 +41,27 @@ harness = false
 # match exactly, since the build.rs uses the crate itself as a library.
 
 [dependencies]
-byteorder = {version = "1", default-features = false }
+rand = { version = "0.5.0-pre.2", default-features = false }
+byteorder = { version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"
 subtle = { version = "0.6", features = ["generic-impls"], default-features = false }
 serde = { version = "1.0", optional = true }
-rand = { version = "0.4", optional = true }
 
 [build-dependencies]
-byteorder = "1"
+rand = { version = "0.5.0-pre.2", default-features = false }
+byteorder = { version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"
 subtle = { version = "0.6", features = ["generic-impls"], default-features = false }
 serde = { version = "1.0", optional = true }
-# Allowing rand to be optional during builds causes a build failure when compiling for no_std targets
-rand = { version = "0.4", optional = false }
 
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
 default = ["std", "u64_backend"]
-std = ["rand", "subtle/std"]
+std = ["subtle/std", "rand/std"]
 alloc = []
 yolocrypto = []
 

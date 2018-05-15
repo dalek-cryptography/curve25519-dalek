@@ -21,6 +21,7 @@ travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
 version = "^0.12"
+default-features = false
 
 [dependencies.rand]
 optional = true

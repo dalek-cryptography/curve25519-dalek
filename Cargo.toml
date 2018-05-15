@@ -35,6 +35,8 @@ name = "x25519"
 harness = false
 
 [features]
-default = ["std", "nightly"]
+default = ["std", "nightly", "u64_backend"]
 std = ["rand", "curve25519-dalek/std"]
 nightly = ["curve25519-dalek/nightly"]
+u64_backend = ["curve25519-dalek/u64_backend"]
+u32_backend = ["curve25519-dalek/u32_backend"]

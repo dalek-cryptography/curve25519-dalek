@@ -25,7 +25,7 @@ default-features = false
 
 [dependencies.rand]
 optional = true
-version = "^0.4"
+version = "=0.5.0-pre.2"
 
 [features]
 bench = []

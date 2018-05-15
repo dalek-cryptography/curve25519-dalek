@@ -584,6 +584,27 @@ impl VartimeMultiscalarMul for EdwardsPoint {
     }
 }
 
+impl EdwardsPoint {
+    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
+    ///
+    /// XXX eliminate this function when we have the precomputation API
+    #[cfg(feature = "stage2_build")]
+    pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
+        {
+            use backend::avx2::scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
+        }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
+        }
+    }
+}
+
 /// A precomputed table of multiples of a basepoint, for accelerating
 /// fixed-base scalar multiplication.  One table, for the Ed25519
 /// basepoint, is provided in the `constants` module.
@@ -780,37 +801,6 @@ impl Debug for EdwardsBasepointTable {
             write!(f, "\t{:?},\n", &self.0[i])?;
         }
         write!(f, "])")
-    }
-}
-
-// ------------------------------------------------------------------------
-// Variable-time functions
-// ------------------------------------------------------------------------
-
-/// Variable-time operations on curve points, useful for non-secret data.
-///
-/// XXX delete this whole module
-pub mod vartime {
-    //! Variable-time operations on curve points, useful for non-secret data.
-    use super::*;
-
-    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    ///
-    /// XXX eliminate this function when we have the precomputation API
-    #[cfg(feature = "stage2_build")]
-    pub fn double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
     }
 }
 
@@ -1143,7 +1133,7 @@ mod test {
         #[test]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
+            let result = EdwardsPoint::vartime_double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
         }
 

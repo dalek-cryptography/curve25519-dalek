@@ -59,7 +59,7 @@ mod edwards_benches {
             let a = Scalar::from_u64(298374928).invert();
             let b = Scalar::from_u64(897987897).invert();
             let A = B * (b * a);
-            bench.iter(|| edwards::vartime::double_scalar_mul_basepoint(&a, &A, &b));
+            bench.iter(|| EdwardsPoint::vartime_double_scalar_mul_basepoint(&a, &A, &b));
         });
     }
 

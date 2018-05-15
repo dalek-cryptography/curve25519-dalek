@@ -41,8 +41,6 @@ extern crate rand;
 extern crate clear_on_drop;
 extern crate byteorder;
 
-extern crate byteorder;
-
 // The `Digest` trait is implemented using `generic_array`, so we need it
 // too. Hopefully we can eliminate `generic_array` from `Digest` once const
 // generics land.

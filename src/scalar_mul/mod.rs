@@ -25,5 +25,4 @@ pub mod vartime_double_base;
 
 pub mod straus;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
-pub mod vartime_pippenger;
+pub mod pippenger;

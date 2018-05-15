@@ -15,4 +15,4 @@ pub mod vartime_double_base;
 
 pub mod straus;
 
-pub mod vartime_pippenger;
+pub mod pippenger;

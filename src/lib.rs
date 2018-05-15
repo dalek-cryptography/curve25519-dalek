@@ -12,7 +12,6 @@
 
 #![cfg_attr(feature = "alloc", feature(alloc))]
 
-#![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
 #![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]

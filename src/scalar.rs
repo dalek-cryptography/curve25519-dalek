@@ -39,14 +39,14 @@ use constants;
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 type UnpackedScalar = backend::u64::scalar::Scalar64;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 

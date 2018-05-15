@@ -33,9 +33,9 @@ use ristretto::CompressedRistretto;
 use montgomery::MontgomeryPoint;
 use scalar::Scalar;
 
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 pub use backend::u64::constants::*;
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 pub use backend::u32::constants::*;
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
@@ -149,8 +149,8 @@ mod test {
     }
 
     /// Test that d = -121665/121666
-    #[cfg(not(feature="radix_51"))]
     #[test]
+    #[cfg(feature = "u32_backend")]
     fn test_d_vs_ratio() {
         use backend::u32::field::FieldElement32;
         let a = -&FieldElement32([121665,0,0,0,0,0,0,0,0,0]);
@@ -162,8 +162,8 @@ mod test {
     }
 
     /// Test that d = -121665/121666
-    #[cfg(feature="radix_51")]
     #[test]
+    #[cfg(feature = "u64_backend")]
     fn test_d_vs_ratio() {
         use backend::u64::field::FieldElement64;
         let a = -&FieldElement64([121665,0,0,0,0]);

@@ -490,13 +490,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::variable_base::mul;
             mul(self, scalar)
         }
         // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::variable_base::mul;
             mul(self, scalar)
@@ -571,13 +571,13 @@ pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     // delegate based on the iter's size hint -- hdevalence
 
     // If we built with AVX2, use the AVX2 backend.
-    #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+    #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
     {
         use backend::avx2::scalar_mul::straus::multiscalar_mul;
         multiscalar_mul(scalars, points)
     }
     // Otherwise, proceed as normal:
-    #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+    #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
     {
         use scalar_mul::straus::multiscalar_mul;
         multiscalar_mul(scalars, points)
@@ -844,13 +844,13 @@ pub mod vartime {
         // XXX later when we do more fancy multiscalar mults, we can delegate
         // based on the iter's size hint -- hdevalence
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::vartime_straus::multiscalar_mul;
             multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::vartime_straus::multiscalar_mul;
             multiscalar_mul(scalars, points)
@@ -861,13 +861,13 @@ pub mod vartime {
     #[cfg(feature="stage2_build")]
     pub fn double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::vartime_double_base::mul;
             mul(a, A, b)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::vartime_double_base::mul;
             mul(a, A, b)
@@ -1169,7 +1169,7 @@ mod test {
     /// and enable `debug_assert!()`.  This performs many scalar
     /// multiplications to attempt to trigger possible overflows etc.
     ///
-    /// For instance, the `radix_51` `Mul` implementation for
+    /// For instance, the `u64` `Mul` implementation for
     /// `FieldElements` requires the input `Limb`s to be bounded by
     /// 2^54, but we cannot enforce this dynamically at runtime, or
     /// statically at compile time (until Rust gets type-level

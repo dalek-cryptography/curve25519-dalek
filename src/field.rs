@@ -32,24 +32,24 @@ use subtle::ConstantTimeEq;
 use constants;
 use backend;
 
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 pub use backend::u64::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 pub type FieldElement = backend::u64::field::FieldElement64;
 
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 pub use backend::u32::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 pub type FieldElement = backend::u32::field::FieldElement32;
 
 impl Eq for FieldElement {}

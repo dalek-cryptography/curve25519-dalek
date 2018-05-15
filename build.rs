@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
 #![allow(unused_variables)]
@@ -75,11 +74,11 @@ fn main() {
     f.write_all(
         format!(
             "\n
-#[cfg(feature=\"radix_51\")]
-use backend::u64::field::FieldElement64;
-
-#[cfg(not(feature=\"radix_51\"))]
+#[cfg(feature = \"u32_backend\")]
 use backend::u32::field::FieldElement32;
+
+#[cfg(feature = \"u64_backend\")]
+use backend::u64::field::FieldElement64;
 
 use edwards::EdwardsBasepointTable;
 

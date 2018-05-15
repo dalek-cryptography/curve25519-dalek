@@ -90,9 +90,13 @@ Documentation is available [here](https://docs.rs/x25519-dalek).
 
 To install, add the following to your project's `Cargo.toml`:
 
-    [dependencies.x25519-dalek]
-    version = "^0.1"
+```toml
+[dependencies.x25519-dalek]
+version = "^0.2"
+```
 
 Then, in your library or executable source, add:
 
-    extern crate x25519_dalek
+```rust
+extern crate x25519_dalek;
+```

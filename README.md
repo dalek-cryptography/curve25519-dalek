@@ -1,14 +1,14 @@
 
-# x25519-dalek  [![](https://img.shields.io/crates/v/x25519-dalek.svg)](https://crates.io/crates/x25519-dalek) [![](https://docs.rs/x25519-dalek/badge.svg)](https://docs.rs/x25519-dalek) [![](https://travis-ci.org/isislovecruft/x25519-dalek.svg?branch=master)](https://travis-ci.org/isislovecruft/x25519-dalek)
+# x25519-dalek  [![](https://img.shields.io/crates/v/x25519-dalek.svg)](https://crates.io/crates/x25519-dalek) [![](https://docs.rs/x25519-dalek/badge.svg)](https://docs.rs/x25519-dalek) [![](https://travis-ci.org/isislovecruft/x25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/x25519-dalek)
 
 A pure-Rust implementation of x25519 elliptic curve Diffie-Hellman key exchange,
 as specified by Mike Hamburg and Adam Langley in
 [RFC7748](https://tools.ietf.org/html/rfc7748), using
-[curve25519-dalek](https://github.com/isislovecruft/curve25519-dalek).
+[curve25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek).
 
 ## Examples
 
-[![](https://raw.githubusercontent.com/isislovecruft/x25519-dalek/master/res/bubblesort-zines-secret-messages-cover.jpeg)](https://shop.bubblesort.io)
+[![](https://raw.githubusercontent.com/dalek-cryptography/x25519-dalek/master/res/bubblesort-zines-secret-messages-cover.jpeg)](https://shop.bubblesort.io)
 
 "Secret Messages" cover image and [zine](https://shop.bubblesort.io/products/secret-messages-zine)
 copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
@@ -71,7 +71,7 @@ authenticated-encryption cipher.
 
 # Warnings
 
-[Our elliptic curve library](https://github.com/isislovecruft/curve25519-dalek)
+[Our elliptic curve library](https://github.com/dalek-cryptography/curve25519-dalek)
 (which this code uses) has received *one* formal cryptographic and security
 review.  It has not yet received what we would consider *sufficient* peer
 review by other qualified cryptographers to be considered in any way, shape,

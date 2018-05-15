@@ -2,34 +2,28 @@ language: rust
 
 rust:
   - stable
-  - beta
   - nightly
 
 env:
-  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES=''
+  # Tests the u32 backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u32_backend'
+  # Tests the u64 backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u64_backend'
+  # Tests the avx2 backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
+  # Tests serde support and default feature selection
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
-  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
-  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
+  # Tests building without std
   - TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
 
 matrix:
   exclude:
-    # Test nightly features, such as radix_51, only on nightly.
+    # Test the avx2 backend only on nightly
     - rust: stable
-      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
-    - rust: beta
-      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
-    - rust: stable
-      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
-    - rust: beta
-      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='yolocrypto nightly'
+      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
     # Test no_std only on nightly.
     - rust: stable
-      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES=''
-    - rust: beta
-      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES=''
-    - rust: nightly
-      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='alloc'
+      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
 
 script:
   - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS

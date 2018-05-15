@@ -490,13 +490,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::variable_base::mul;
             mul(self, scalar)
         }
         // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::variable_base::mul;
             mul(self, scalar)
@@ -571,13 +571,13 @@ pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     // delegate based on the iter's size hint -- hdevalence
 
     // If we built with AVX2, use the AVX2 backend.
-    #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+    #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
     {
         use backend::avx2::scalar_mul::straus::multiscalar_mul;
         multiscalar_mul(scalars, points)
     }
     // Otherwise, proceed as normal:
-    #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+    #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
     {
         use scalar_mul::straus::multiscalar_mul;
         multiscalar_mul(scalars, points)
@@ -844,13 +844,13 @@ pub mod vartime {
         // XXX later when we do more fancy multiscalar mults, we can delegate
         // based on the iter's size hint -- hdevalence
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::vartime_straus::multiscalar_mul;
             multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::vartime_straus::multiscalar_mul;
             multiscalar_mul(scalars, points)
@@ -858,16 +858,16 @@ pub mod vartime {
     }
 
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    #[cfg(feature="precomputed_tables")]
+    #[cfg(feature="stage2_build")]
     pub fn double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::vartime_double_base::mul;
             mul(a, A, b)
         }
         // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2"))))]
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::vartime_double_base::mul;
             mul(a, A, b)
@@ -879,7 +879,7 @@ pub mod vartime {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "stage2_build"))]
 mod test {
     use field::FieldElement;
     use scalar::Scalar;
@@ -971,7 +971,6 @@ mod test {
 
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
         let compressed = bp.compress();
@@ -980,7 +979,6 @@ mod test {
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn basepoint_table_basepoint_function_correct() {
         let bp = constants::ED25519_BASEPOINT_TABLE.basepoint();
         assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
@@ -1031,7 +1029,6 @@ mod test {
 
     /// Sanity check for conversion to precomputed points
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1043,7 +1040,6 @@ mod test {
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_vs_ed25519py() {
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
@@ -1051,7 +1047,6 @@ mod test {
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_by_basepoint_order() {
         let B = &constants::ED25519_BASEPOINT_TABLE;
         let should_be_id = B * &constants::BASEPOINT_ORDER;
@@ -1060,11 +1055,9 @@ mod test {
 
     /// Test precomputed basepoint mult
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn test_precomputed_basepoint_mult() {
-        let table = EdwardsBasepointTable::create(&constants::ED25519_BASEPOINT_POINT);
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
-        let aB_2 = &table * &A_SCALAR;
+        let aB_2 = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
         assert_eq!(aB_1.compress(), aB_2.compress());
     }
 
@@ -1084,7 +1077,6 @@ mod test {
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn basepoint_mult_two_vs_basepoint2() {
         let two = Scalar::from_u64(2);
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &two;
@@ -1177,7 +1169,7 @@ mod test {
     /// and enable `debug_assert!()`.  This performs many scalar
     /// multiplications to attempt to trigger possible overflows etc.
     ///
-    /// For instance, the `radix_51` `Mul` implementation for
+    /// For instance, the `u64` `Mul` implementation for
     /// `FieldElements` requires the input `Limb`s to be bounded by
     /// 2^54, but we cannot enforce this dynamically at runtime, or
     /// statically at compile time (until Rust gets type-level
@@ -1210,7 +1202,6 @@ mod test {
 
         /// Test double_scalar_mul_vartime vs ed25519.py
         #[test]
-        #[cfg(feature="precomputed_tables")]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);

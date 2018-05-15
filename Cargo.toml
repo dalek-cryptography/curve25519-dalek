@@ -60,14 +60,22 @@ serde = { version = "1.0", optional = true }
 rand = { version = "0.4", optional = false }
 
 [features]
-nightly = ["radix_51", "subtle/nightly", "clear_on_drop/nightly"]
-default = ["std"]
+nightly = ["subtle/nightly", "clear_on_drop/nightly"]
+default = ["std", "u64_backend"]
 std = ["rand", "subtle/std"]
 alloc = []
-yolocrypto = ["avx2_backend"]
-# Radix-51 arithmetic using u128
-radix_51 = []
-# Include precomputed basepoint tables.  This is off by default so that build.rs can generate the tables, and then re-enabled by build.rs in the main-stage compilation.
-precomputed_tables = []
-# experimental avx2 support
-avx2_backend = ["nightly"]
+yolocrypto = []
+
+# The u32 backend uses u32s with u64 products.
+u32_backend = []
+# The u64 backend uses u64s with u128 products.
+u64_backend = []
+# The AVX2 backend uses u32x8s with u64x4 products.
+# It uses the u64 code for serial operations.
+avx2_backend = ["nightly", "u64_backend"]
+
+# Signals that we're in the main build stage.  This is off by default,
+# to signal stage 1 of the build, where build.rs loads the library
+# into the build script. Then, the build.rs emits the stage2_build
+# feature before the main-stage compilation.
+stage2_build = []

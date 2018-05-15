@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
 #![allow(unused_variables)]
@@ -62,8 +61,8 @@ use curve_models::AffineNielsPoint;
 use scalar_mul::window::NafLookupTable8;
 
 fn main() {
-    // Enable the "precomputed_tables" feature in the main build stage
-    println!("cargo:rustc-cfg=feature=\"precomputed_tables\"\n");
+    // Enable the "stage2_build" feature in the main build stage
+    println!("cargo:rustc-cfg=feature=\"stage2_build\"\n");
 
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("basepoint_table.rs");
@@ -75,11 +74,11 @@ fn main() {
     f.write_all(
         format!(
             "\n
-#[cfg(feature=\"radix_51\")]
-use backend::u64::field::FieldElement64;
-
-#[cfg(not(feature=\"radix_51\"))]
+#[cfg(feature = \"u32_backend\")]
 use backend::u32::field::FieldElement32;
+
+#[cfg(feature = \"u64_backend\")]
+use backend::u64::field::FieldElement64;
 
 use edwards::EdwardsBasepointTable;
 

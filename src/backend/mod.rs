@@ -21,12 +21,12 @@
 //! `32bit` since identifiers can't start with letters, and the backends
 //! do use `u32`/`u64`, so this seems like a least-bad option.
 
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 pub mod u32;
 
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 pub mod u64;
 
-#[cfg(all(feature="nightly", all(feature="avx2_backend", target_feature="avx2")))]
+#[cfg(all(feature = "avx2_backend", feature = "yolocrypto", target_feature = "avx2"))]
 pub mod avx2;
 

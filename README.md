@@ -59,24 +59,37 @@ extern crate curve25519_dalek;
 
 # Backends and Features
 
+The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
+is meant to indicate that it is not considered production-ready, and we do not
+consider `yolocrypto` features to be covered by semver guarantees.
+
+The `std` feature is enabled by default, but it can be disabled.
+
+The `nightly` feature enables nightly-only features.  **It is recommended for security**.
+
 Curve arithmetic is implemented using one of the following backends:
 
 * a `u32` backend using `u64` products;
-* a `u64` backend using `u128` products, available using the `nightly` feature;
+* a `u64` backend using `u128` products;
 * an experimental AVX2 backend, available using the `yolocrypto` feature when
   compiling for a target with `target_feature=+avx2`.
+
+By default the `u64` backend is selected.  To select a specific backend, use:
+```sh
+cargo build --no-default-features --features "std u32_backend"
+cargo build --no-default-features --features "std u64_backend"
+cargo build --no-default-features --features "std avx2_backend yolocrypto"
+```
 
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench                                 # u32 backend
-cargo bench --features="nightly"            # u64 backend
-cargo bench --features="nightly yolocrypto" # u64 or avx2 if available
+# You must set RUSTFLAGS to enable AVX2 support.
+export RUSTFLAGS="-C target_cpu=native"
+cargo bench --no-default-features --features "std u32_backend"
+cargo bench --no-default-features --features "std u64_backend"
+cargo bench --no-default-features --features "std avx2_backend yolocrypto"
 ```
-
-The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
-is meant to indicate that it is not considered production-ready, and we do not
-consider `yolocrypto` features to be covered by semver guarantees.
 
 # Contributing
 

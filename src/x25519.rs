@@ -13,7 +13,6 @@
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
-use curve25519_dalek::montgomery::CompressedMontgomeryU;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
 
@@ -35,7 +34,7 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
     s[31] &= 127;
     s[31] |= 64;
 
-    Scalar(s)
+    Scalar::from_bits(s)
 }
 
 /// Generate an x25519 secret key.
@@ -47,22 +46,21 @@ pub fn generate_secret<T: Rng>(csprng: &mut T) -> [u8; 32] {
 }
 
 /// Given an x25519 secret key, compute its corresponding public key.
-pub fn generate_public(secret: &[u8; 32]) -> CompressedMontgomeryU {
-    (&decode_scalar(secret) * &ED25519_BASEPOINT_TABLE).to_montgomery().compress()
+pub fn generate_public(secret: &[u8; 32]) -> MontgomeryPoint {
+    (&decode_scalar(secret) * &ED25519_BASEPOINT_TABLE).to_montgomery()
 }
 
 /// The x25519 function, as specified in RFC7748.
-pub fn x25519(scalar: &Scalar, point: &CompressedMontgomeryU) -> CompressedMontgomeryU {
+pub fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
     let k: Scalar = decode_scalar(scalar.as_bytes());
-    let u: MontgomeryPoint = point.decompress();
 
-    (&k * &u).compress()
+    (&k * point)
 }
 
 /// Utility function to make it easier to call `x25519()` with byte arrays as
 /// inputs and outputs.
 pub fn diffie_hellman(my_secret: &[u8; 32], their_public: &[u8; 32]) -> [u8; 32] {
-    x25519(&Scalar(*my_secret), &CompressedMontgomeryU(*their_public)).to_bytes()
+    x25519(&Scalar::from_bits(*my_secret), &MontgomeryPoint(*their_public)).to_bytes()
 }
 
 
@@ -71,7 +69,7 @@ mod test {
     use super::*;
 
     fn do_rfc7748_ladder_test1(input_scalar: &Scalar,
-                               input_point: &CompressedMontgomeryU,
+                               input_point: &MontgomeryPoint,
                                expected: &[u8; 32]) {
         let result = x25519(&input_scalar, &input_point);
         
@@ -80,12 +78,12 @@ mod test {
 
     #[test]
     fn rfc7748_ladder_test1_vectorset1() {
-        let input_scalar: Scalar = Scalar([
+        let input_scalar: Scalar = Scalar::from_bits([
             0xa5, 0x46, 0xe3, 0x6b, 0xf0, 0x52, 0x7c, 0x9d,
             0x3b, 0x16, 0x15, 0x4b, 0x82, 0x46, 0x5e, 0xdd,
             0x62, 0x14, 0x4c, 0x0a, 0xc1, 0xfc, 0x5a, 0x18,
             0x50, 0x6a, 0x22, 0x44, 0xba, 0x44, 0x9a, 0xc4, ]);
-        let input_point: CompressedMontgomeryU = CompressedMontgomeryU([
+        let input_point: MontgomeryPoint = MontgomeryPoint([
             0xe6, 0xdb, 0x68, 0x67, 0x58, 0x30, 0x30, 0xdb,
             0x35, 0x94, 0xc1, 0xa4, 0x24, 0xb1, 0x5f, 0x7c,
             0x72, 0x66, 0x24, 0xec, 0x26, 0xb3, 0x35, 0x3b,
@@ -101,12 +99,12 @@ mod test {
 
     #[test]
     fn rfc7748_ladder_test1_vectorset2() {
-        let input_scalar: Scalar = Scalar([
+        let input_scalar: Scalar = Scalar::from_bits([
             0x4b, 0x66, 0xe9, 0xd4, 0xd1, 0xb4, 0x67, 0x3c,
             0x5a, 0xd2, 0x26, 0x91, 0x95, 0x7d, 0x6a, 0xf5,
             0xc1, 0x1b, 0x64, 0x21, 0xe0, 0xea, 0x01, 0xd4,
             0x2c, 0xa4, 0x16, 0x9e, 0x79, 0x18, 0xba, 0x0d, ]);
-        let input_point: CompressedMontgomeryU = CompressedMontgomeryU([
+        let input_point: MontgomeryPoint = MontgomeryPoint([
             0xe5, 0x21, 0x0f, 0x12, 0x78, 0x68, 0x11, 0xd3,
             0xf4, 0xb7, 0x95, 0x9d, 0x05, 0x38, 0xae, 0x2c,
             0x31, 0xdb, 0xe7, 0x10, 0x6f, 0xc0, 0x3c, 0x3e,
@@ -123,11 +121,11 @@ mod test {
     #[test]
     #[ignore] // Run only if you want to burn a lot of CPU doing 1,000,000 DH operations
     fn rfc7748_ladder_test2() {
-        use curve25519_dalek::constants::BASE_COMPRESSED_MONTGOMERY;
+        use curve25519_dalek::constants::X25519_BASEPOINT;
 
-        let mut k: Scalar = Scalar(BASE_COMPRESSED_MONTGOMERY.0);
-        let mut u: CompressedMontgomeryU = BASE_COMPRESSED_MONTGOMERY;
-        let mut result: CompressedMontgomeryU;
+        let mut k: Scalar = Scalar::from_bits(X25519_BASEPOINT.0);
+        let mut u: MontgomeryPoint = X25519_BASEPOINT;
+        let mut result: MontgomeryPoint;
 
         macro_rules! do_iterations {
             ($n:expr) => (
@@ -141,8 +139,8 @@ mod test {
                     // NEVER EVER TREAT SCALARS AS POINTS AND/OR VICE VERSA.
                     //
                     //                ↓↓ DON'T DO THIS ↓↓
-                    u = CompressedMontgomeryU(k.as_bytes().clone());
-                    k = Scalar(result.to_bytes());
+                    u = MontgomeryPoint(k.as_bytes().clone());
+                    k = Scalar::from_bits(result.to_bytes());
                 }
             )
         }

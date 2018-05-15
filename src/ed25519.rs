@@ -13,6 +13,8 @@
 use core::fmt::{Debug};
 
 #[cfg(feature = "std")]
+use rand::CryptoRng;
+#[cfg(feature = "std")]
 use rand::Rng;
 
 #[cfg(feature = "serde")]
@@ -310,7 +312,9 @@ impl SecretKey {
     /// from `rand::OsRng::new()` (in the `rand` crate).
     ///
     #[cfg(feature = "std")]
-    pub fn generate(csprng: &mut Rng) -> SecretKey {
+    pub fn generate<T>(csprng: &mut T) -> SecretKey
+        where T: CryptoRng + Rng,
+    {
         let mut sk: SecretKey = SecretKey([0u8; 32]);
 
         csprng.fill_bytes(&mut sk.0);
@@ -723,8 +727,6 @@ impl PublicKey {
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
             where D: Digest<OutputSize = U64> + Default
     {
-        use curve25519_dalek::edwards::vartime;
-
         let mut h: D = D::default();
         let mut a: EdwardsPoint;
         let ao:  Option<EdwardsPoint>;
@@ -746,7 +748,8 @@ impl PublicKey {
         digest.copy_from_slice(h.fixed_result().as_slice());
 
         let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&digest);
-        let r: EdwardsPoint = vartime::double_scalar_mul_basepoint(&digest_reduced, &a, &signature.s);
+        let r: EdwardsPoint = EdwardsPoint::vartime_double_scalar_mul_basepoint(&digest_reduced,
+                                                                                &a, &signature.s);
 
         (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
     }
@@ -856,7 +859,7 @@ impl Keypair {
     /// use ed25519_dalek::Signature;
     ///
     /// let mut cspring: OsRng = OsRng::new().unwrap();
-    /// let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+    /// let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
     ///
     /// # }
     /// ```
@@ -872,8 +875,10 @@ impl Keypair {
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     #[cfg(feature = "std")]
-    pub fn generate<D>(csprng: &mut Rng) -> Keypair
-            where D: Digest<OutputSize = U64> + Default {
+    pub fn generate<D, R>(csprng: &mut R) -> Keypair
+        where D: Digest<OutputSize = U64> + Default,
+              R: CryptoRng + Rng,
+    {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = PublicKey::from_secret::<D>(&sk);
 
@@ -981,7 +986,7 @@ mod test {
 
         // from_bytes() fails if vx²-u=0 and vx²+u=0
         loop {
-            keypair = Keypair::generate::<Sha512>(&mut cspring);
+            keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
             x = keypair.public.decompress();
 
             if x.is_some() {
@@ -1005,7 +1010,7 @@ mod test {
         let bad:  &[u8] = "wrong message".as_bytes();
 
         cspring  = OsRng::new().unwrap();
-        keypair  = Keypair::generate::<Sha512>(&mut cspring);
+        keypair  = Keypair::generate::<Sha512, OsRng>(&mut cspring);
         good_sig = keypair.sign::<Sha512>(&good);
         bad_sig  = keypair.sign::<Sha512>(&bad);
 

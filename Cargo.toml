@@ -16,7 +16,7 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "0.16"
+version = "0.17"
 default-features = false
 
 [dependencies.subtle]
@@ -25,7 +25,7 @@ default-features = false
 
 [dependencies.rand]
 optional = true
-version = "0.4"
+version = "0.5.0-pre.2"
 
 [dependencies.digest]
 version = "^0.7"
@@ -52,9 +52,12 @@ sha2 = "^0.7"
 bincode = "^0.9"
 
 [features]
-default = ["std"]
+default = ["std", "u64_backend"]
 std = ["rand", "subtle/std", "curve25519-dalek/std", "failure/std"]
 bench = []
 nightly = ["curve25519-dalek/nightly", "subtle/nightly"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]
+u64_backend = ["curve25519-dalek/u64_backend"]
+u32_backend = ["curve25519-dalek/u32_backend"]
+avx2_backend = ["curve25519-dalek/avx2_backend"]

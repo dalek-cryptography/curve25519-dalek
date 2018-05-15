@@ -82,7 +82,7 @@ impl VartimeMultiscalarMul for Pippenger {
             .collect();
         let ps: Vec<CachedPoint> = points
             .into_iter()
-            .map(|p| CachedPoint::from(p.borrow()))
+            .map(|p| CachedPoint::from(ExtendedPoint::from(*p.borrow())))
             .collect();
 
         // Iterate the digits from last to first so we can shift the result by w bits
@@ -96,9 +96,7 @@ impl VartimeMultiscalarMul for Pippenger {
 
             // Step 3. Prepare 2^w/2 buckets.
             // buckets[i] corresponds to a multiplication factor (i+1).
-            let mut buckets: Vec<_> = (0..buckets_count)
-                .map(|_| ExtendedPoint::identity())
-                .collect();
+            let mut buckets = vec![ExtendedPoint::identity(); buckets_count];
 
             // Step 4. Iterate over pairs of (point, scalar)
             // and add/sub the point to the corresponding bucket.
@@ -107,10 +105,10 @@ impl VartimeMultiscalarMul for Pippenger {
             for (digits, pt) in all_digits.iter().zip(ps.iter()) {
                 if digits[i] > 0 {
                     let b = (digits[i] - 1) as usize;
-                    buckets[b] = (&buckets[b] + pt);
+                    buckets[b] = &buckets[b] + pt;
                 } else if digits[i] < 0 {
                     let b = (-digits[i] - 1) as usize;
-                    buckets[b] = (&buckets[b] - pt);
+                    buckets[b] = &buckets[b] - pt;
                 }
             }
 
@@ -125,12 +123,12 @@ impl VartimeMultiscalarMul for Pippenger {
             let mut buckets_intermediate_sum = buckets[buckets_count - 1].clone();
             let mut buckets_sum = buckets[buckets_count - 1].clone();
             for i in (0..(buckets_count - 1)).rev() {
-                buckets_intermediate_sum += buckets[i];
-                buckets_sum += buckets_intermediate_sum;
+                buckets_intermediate_sum = &buckets_intermediate_sum + &buckets[i];
+                buckets_sum = &buckets_sum + &buckets_intermediate_sum;
             }
 
             // Step 5. Add to result
-            result += buckets_sum;
+            result = &result + &buckets_sum;
         }
 
         result.into()

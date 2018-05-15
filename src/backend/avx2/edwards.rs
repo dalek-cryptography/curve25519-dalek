@@ -233,6 +233,13 @@ impl<'a> Neg for &'a CachedPoint {
     }
 }
 
+impl<'a, 'b> Add<&'b ExtendedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+    fn add(self, other: &'b ExtendedPoint) -> ExtendedPoint {
+        self + &CachedPoint::from(*other)
+    }
+}
+
 impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -270,6 +277,13 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
             // return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
             ExtendedPoint(&t0 * &t1)
         }
+    }
+}
+
+impl<'a, 'b> Sub<&'b ExtendedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+    fn sub(self, other: &'b ExtendedPoint) -> ExtendedPoint {
+        self - &CachedPoint::from(*other)
     }
 }
 

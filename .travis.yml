@@ -13,8 +13,9 @@ env:
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
   # Tests serde support and default feature selection
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
-  # Tests building without std
-  - TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
+  # Tests building without std. We have to select a backend, so we select the one
+  # most likely to be useful in an embedded environment.
+  - TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='u32_backend'
 
 matrix:
   exclude:
@@ -23,7 +24,7 @@ matrix:
       env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
     # Test no_std only on nightly.
     - rust: stable
-      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='' 
+      env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='u32_backend'
 
 script:
   - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS

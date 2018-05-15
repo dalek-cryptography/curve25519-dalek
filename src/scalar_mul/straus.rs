@@ -7,77 +7,187 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
+//! Implementation of the interleaved window method, also known as Straus' method.
+
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
 
-use clear_on_drop::ClearOnDrop;
-
-use traits::Identity;
-use scalar::Scalar;
 use edwards::EdwardsPoint;
-use curve_models::ProjectiveNielsPoint;
-use scalar_mul::window::LookupTable;
+use scalar::Scalar;
+use traits::MultiscalarMul;
+use traits::VartimeMultiscalarMul;
 
-/// Perform constant-time, variable-base scalar multiplication.
-pub(crate) fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
-where
-    I: IntoIterator,
-    I::Item: Borrow<Scalar>,
-    J: IntoIterator,
-    J::Item: Borrow<EdwardsPoint>,
-{
-    // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-    // for each input point P
-    let lookup_tables: Vec<_> = points
-        .into_iter()
-        .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
-        .collect();
+/// Perform multiscalar multiplication by the interleaved window
+/// method, also known as Straus' method (since it was apparently
+/// [first published][solution] by Straus in 1964, as a solution to [a
+/// problem][problem] posted in the American Mathematical Monthly in
+/// 1963).
+///
+/// It is easy enough to reinvent, and has been repeatedly.  The basic
+/// idea is that when computing
+/// \\[
+/// Q = s_1 P_1 + \cdots + s_n P_n
+/// \\]
+/// by means of additions and doublings, the doublings can be shared
+/// across the \\( P_i \\\).
+///
+/// We implement two versions, a constant-time algorithm using fixed
+/// windows and a variable-time algorithm using sliding windows.  They
+/// are slight variations on the same idea, and are described in more
+/// detail in the respective implementations.
+///
+/// [solution]: https://www.jstor.org/stable/2310929
+/// [problem]: https://www.jstor.org/stable/2312273
+pub struct Straus {}
 
-    // Setting s_i = i-th scalar, compute
-    //
-    //    s_i = s_{i,0} + s_{i,1}*16^1 + ... + s_{i,63}*16^63,
-    //
-    // with `-8 ≤ s_{i,j} < 8` for `0 ≤ j < 63` and `-8 ≤ s_{i,63} ≤ 8`.
-    //
-    // This puts the scalar digits into a heap-allocated Vec.
-    // To ensure that these are erased, pass ownership of the Vec into a
-    // ClearOnDrop wrapper.
-    let scalar_digits_vec: Vec<_> = scalars
-        .into_iter()
-        .map(|s| s.borrow().to_radix_16())
-        .collect();
-    let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl MultiscalarMul for Straus {
+    type Point = EdwardsPoint;
 
-    // Compute s_1*P_1 + ... + s_n*P_n: since
-    //
-    //    s_i*P_i = P_i*(s_{i,0} +     s_{i,1}*16^1 + ... +     s_{i,63}*16^63)
-    //    s_i*P_i =  P_i*s_{i,0} + P_i*s_{i,1}*16^1 + ... + P_i*s_{i,63}*16^63
-    //    s_i*P_i =  P_i*s_{i,0} + 16*(P_i*s_{i,1} + 16*( ... + 16*P_i*s_{i,63})...)
-    //
-    // we have the two-dimensional sum
-    //
-    //    s_1*P_1 =   P_1*s_{1,0} + 16*(P_1*s_{1,1} + 16*( ... + 16*P_1*s_{1,63})...)
-    //  + s_2*P_2 = + P_2*s_{2,0} + 16*(P_2*s_{2,1} + 16*( ... + 16*P_2*s_{2,63})...)
-    //      ...
-    //  + s_n*P_n = + P_n*s_{n,0} + 16*(P_n*s_{n,1} + 16*( ... + 16*P_n*s_{n,63})...)
-    //
-    // We sum column-wise top-to-bottom, then right-to-left,
-    // multiplying by 16 only once per column.
-    //
-    // This provides the speedup over doing n independent scalar
-    // mults: we perform 63 multiplications by 16 instead of 63*n
-    // multiplications, saving 252*(n-1) doublings.
-    let mut Q = EdwardsPoint::identity();
-    for j in (0..64).rev() {
-        Q = Q.mul_by_pow_2(4);
-        let it = scalar_digits.iter().zip(lookup_tables.iter());
-        for (s_i, lookup_table_i) in it {
-            // R_i = s_{i,j} * P_i
-            let R_i = lookup_table_i.select(s_i[j]);
-            // Q = Q + R_i
-            Q = (&Q + &R_i).to_extended();
+    /// Constant-time Straus using a fixed window of size \\(4\\).
+    ///
+    /// Our goal is to compute
+    /// \\[
+    /// Q = s_1 P_1 + \cdots + s_n P_n.
+    /// \\]
+    ///
+    /// For each point \\( P_i \\), precompute a lookup table of
+    /// \\[
+    /// P_i, 2P_i, 3P_i, 4P_i, 5P_i, 6P_i, 7P_i, 8P_i.
+    /// \\]
+    ///
+    /// For each scalar \\( s_i \\), compute its radix-\\(2^4\\)
+    /// signed digits \\( s_{i,j} \\), i.e.,
+    /// \\[
+    ///    s_i = s_{i,0} + s_{i,1} 16^1 + ... + s_{i,63} 16^{63},
+    /// \\]
+    /// with \\( -8 \leq s_{i,j} < 8 \\).  Since \\( 0 \leq |s_{i,j}|
+    /// \leq 8 \\), we can retrieve \\( s_{i,j} P_i \\) from the
+    /// lookup table with a conditional negation: using signed
+    /// digits halves the required table size.
+    ///
+    /// Then as in the single-base fixed window case, we have
+    /// \\[
+    /// \begin{aligned}
+    /// s_i P_i &= P_i (s_{i,0} +     s_{i,1} 16^1 + \cdots +     s_{i,63} 16^{63})   \\\\
+    /// s_i P_i &= P_i s_{i,0} + P_i s_{i,1} 16^1 + \cdots + P_i s_{i,63} 16^{63}     \\\\
+    /// s_i P_i &= P_i s_{i,0} + 16(P_i s_{i,1} + 16( \cdots +16P_i s_{i,63})\cdots )
+    /// \end{aligned}
+    /// \\]
+    /// so each \\( s_i P_i \\) can be computed by alternately adding
+    /// a precomputed multiple \\( P_i s_{i,j} \\) of \\( P_i \\) and
+    /// repeatedly doubling.
+    ///
+    /// Now consider the two-dimensional sum
+    /// \\[
+    /// \begin{aligned}
+    /// s\_1 P\_1 &=& P\_1 s\_{1,0} &+& 16 (P\_1 s\_{1,1} &+& 16 ( \cdots &+& 16 P\_1 s\_{1,63}&) \cdots ) \\\\
+    ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+    /// s\_2 P\_2 &=& P\_2 s\_{2,0} &+& 16 (P\_2 s\_{2,1} &+& 16 ( \cdots &+& 16 P\_2 s\_{2,63}&) \cdots ) \\\\
+    ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+    /// \vdots    & &  \vdots       & &   \vdots          & &             & &  \vdots          &           \\\\
+    ///     +     & &      +        & &      +            & &             & &     +            &           \\\\
+    /// s\_n P\_n &=& P\_n s\_{n,0} &+& 16 (P\_n s\_{n,1} &+& 16 ( \cdots &+& 16 P\_n s\_{n,63}&) \cdots )
+    /// \end{aligned}
+    /// \\]
+    /// The sum of the left-hand column is the result \\( Q \\); by
+    /// computing the two-dimensional sum on the right column-wise,
+    /// top-to-bottom, then right-to-left, we need to multiply by \\(
+    /// 16\\) only once per column, sharing the doublings across all
+    /// of the input points.
+    fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<EdwardsPoint>,
+    {
+        use clear_on_drop::ClearOnDrop;
+
+        use curve_models::ProjectiveNielsPoint;
+        use scalar_mul::window::LookupTable;
+        use traits::Identity;
+
+        let lookup_tables: Vec<_> = points
+            .into_iter()
+            .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
+            .collect();
+
+        // This puts the scalar digits into a heap-allocated Vec.
+        // To ensure that these are erased, pass ownership of the Vec into a
+        // ClearOnDrop wrapper.
+        let scalar_digits_vec: Vec<_> = scalars
+            .into_iter()
+            .map(|s| s.borrow().to_radix_16())
+            .collect();
+        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+
+        let mut Q = EdwardsPoint::identity();
+        for j in (0..64).rev() {
+            Q = Q.mul_by_pow_2(4);
+            let it = scalar_digits.iter().zip(lookup_tables.iter());
+            for (s_i, lookup_table_i) in it {
+                // R_i = s_{i,j} * P_i
+                let R_i = lookup_table_i.select(s_i[j]);
+                // Q = Q + R_i
+                Q = (&Q + &R_i).to_extended();
+            }
         }
+        Q
     }
-    Q
+}
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl VartimeMultiscalarMul for Straus {
+    type Point = EdwardsPoint;
+
+    /// Variable-time Straus using a non-adjacent form of width \\(5\\).
+    ///
+    /// This is completely similar to the constant-time code, but we
+    /// use a non-adjacent form for the scalar, and do not do table
+    /// lookups in constant time.
+    ///
+    /// The non-adjacent form has signed, odd digits.  Using only odd
+    /// digits halves the table size (since we only need odd
+    /// multiples), or gives fewer additions for the same table size.
+    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<EdwardsPoint>,
+    {
+        use curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
+        use scalar_mul::window::NafLookupTable5;
+        use traits::Identity;
+
+        let nafs: Vec<_> = scalars
+            .into_iter()
+            .map(|c| c.borrow().non_adjacent_form(5))
+            .collect();
+        let lookup_tables: Vec<_> = points
+            .into_iter()
+            .map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(P.borrow()))
+            .collect();
+
+        let mut r = ProjectivePoint::identity();
+
+        for i in (0..255).rev() {
+            let mut t: CompletedPoint = r.double();
+
+            for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
+                if naf[i] > 0 {
+                    t = &t.to_extended() + &lookup_table.select(naf[i] as usize);
+                } else if naf[i] < 0 {
+                    t = &t.to_extended() - &lookup_table.select(-naf[i] as usize);
+                }
+            }
+
+            r = t.to_projective();
+        }
+
+        r.to_extended()
+    }
 }

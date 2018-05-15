@@ -112,6 +112,7 @@ use field::FieldElement;
 use scalar::Scalar;
 
 use montgomery::MontgomeryPoint;
+
 use curve_models::ProjectivePoint;
 use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
@@ -121,6 +122,8 @@ use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
+use traits::MultiscalarMul;
+use traits::VartimeMultiscalarMul;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -516,71 +519,89 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
     }
 }
 
-/// Given an iterator of (possibly secret) scalars and an iterator of
-/// (possibly secret) points, compute
-/// $$
-/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-/// $$
-///
-/// This function has the same behaviour as
-/// `vartime::multiscalar_mul` but is constant-time.
-///
-/// It is an error to call this function with two iterators of different lengths.
-///
-/// # Examples
-///
-/// The trait bound aims for maximum flexibility: the inputs must be
-/// convertable to iterators (`I: IntoIter`), and the iterator's items
-/// must be `Borrow<Scalar>` (or `Borrow<EdwardsPoint>`), to allow
-/// iterators returning either `Scalar`s or `&Scalar`s.
-///
-/// ```
-/// use curve25519_dalek::{constants, edwards};
-/// use curve25519_dalek::scalar::Scalar;
-///
-/// // Some scalars
-/// let a = Scalar::from_u64(87329482);
-/// let b = Scalar::from_u64(37264829);
-/// let c = Scalar::from_u64(98098098);
-///
-/// // Some points
-/// let P = constants::ED25519_BASEPOINT_POINT;
-/// let Q = P + P;
-/// let R = P + Q;
-///
-/// // A1 = a*P + b*Q + c*R
-/// let abc = [a,b,c];
-/// let A1 = edwards::multiscalar_mul(&abc, &[P,Q,R]);
-/// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
-///
-/// // A2 = (-a)*P + (-b)*Q + (-c)*R
-/// let minus_abc = abc.iter().map(|x| -x);
-/// let A2 = edwards::multiscalar_mul(minus_abc, &[P,Q,R]);
-/// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
-///
-/// assert_eq!(A1.compress(), (-A2).compress());
-/// ```
-#[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
-    where I: IntoIterator,
-          I::Item: Borrow<Scalar>,
-          J: IntoIterator,
-          J::Item: Borrow<EdwardsPoint>,
-{
-    // XXX later when we do more fancy multiscalar mults, we can
-    // delegate based on the iter's size hint -- hdevalence
+// ------------------------------------------------------------------------
+// Multiscalar Multiplication impls
+// ------------------------------------------------------------------------
 
-    // If we built with AVX2, use the AVX2 backend.
-    #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
+// These use the iterator's size hint and the target settings to
+// forward to a specific backend implementation.
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl MultiscalarMul for EdwardsPoint {
+    type Point = EdwardsPoint;
+    
+    fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<EdwardsPoint>,
     {
-        use backend::avx2::scalar_mul::straus::multiscalar_mul;
-        multiscalar_mul(scalars, points)
+        // XXX later when we do more fancy multiscalar mults, we can
+        // delegate based on the iter's size hint -- hdevalence
+
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
+        {
+            use backend::avx2::scalar_mul::straus::Straus;
+            Straus::multiscalar_mul(scalars, points)
+        }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use scalar_mul::straus::Straus;
+            Straus::multiscalar_mul(scalars, points)
+        }
     }
-    // Otherwise, proceed as normal:
-    #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
+}
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl VartimeMultiscalarMul for EdwardsPoint {
+    type Point = EdwardsPoint;
+    
+    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<EdwardsPoint>,
     {
-        use scalar_mul::straus::multiscalar_mul;
-        multiscalar_mul(scalars, points)
+        // XXX later when we do more fancy multiscalar mults, we can
+        // delegate based on the iter's size hint -- hdevalence
+
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
+        {
+            use backend::avx2::scalar_mul::straus::Straus;
+            Straus::vartime_multiscalar_mul(scalars, points)
+        }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use scalar_mul::straus::Straus;
+            Straus::vartime_multiscalar_mul(scalars, points)
+        }
+    }
+}
+
+impl EdwardsPoint {
+    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
+    ///
+    /// XXX eliminate this function when we have the precomputation API
+    #[cfg(feature = "stage2_build")]
+    pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
+        // If we built with AVX2, use the AVX2 backend.
+        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
+        {
+            use backend::avx2::scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
+        }
+        // Otherwise, proceed as normal:
+        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
+        {
+            use scalar_mul::vartime_double_base::mul;
+            mul(a, A, b)
+        }
     }
 }
 
@@ -780,98 +801,6 @@ impl Debug for EdwardsBasepointTable {
             write!(f, "\t{:?},\n", &self.0[i])?;
         }
         write!(f, "])")
-    }
-}
-
-// ------------------------------------------------------------------------
-// Variable-time functions
-// ------------------------------------------------------------------------
-
-pub mod vartime {
-    //! Variable-time operations on curve points, useful for non-secret data.
-    use super::*;
-
-    /// Given an iterator of public scalars and an iterator of public points, compute
-    /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-    /// $$
-    ///
-    /// This function has the same behaviour as
-    /// `edwards::multiscalar_mul` but operates on non-secret data.
-    ///
-    /// It is an error to call this function with two iterators of different lengths.
-    ///
-    /// # Examples
-    ///
-    /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
-    /// must be `Borrow<Scalar>` (or `Borrow<EdwardsPoint>`), to allow
-    /// iterators returning either `Scalar`s or `&Scalar`s.
-    ///
-    /// ```
-    /// use curve25519_dalek::{constants, edwards};
-    /// use curve25519_dalek::scalar::Scalar;
-    ///
-    /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
-    ///
-    /// // Some points
-    /// let P = constants::ED25519_BASEPOINT_POINT;
-    /// let Q = P + P;
-    /// let R = P + Q;
-    ///
-    /// // A1 = a*P + b*Q + c*R
-    /// let abc = [a,b,c];
-    /// let A1 = edwards::vartime::multiscalar_mul(&abc, &[P,Q,R]);
-    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
-    ///
-    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
-    /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = edwards::vartime::multiscalar_mul(minus_abc, &[P,Q,R]);
-    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
-    ///
-    /// assert_eq!(A1.compress(), (-A2).compress());
-    /// ```
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
-        where I: IntoIterator,
-              I::Item: Borrow<Scalar>,
-              J: IntoIterator,
-              J::Item: Borrow<EdwardsPoint>,
-    {
-        // XXX later when we do more fancy multiscalar mults, we can delegate
-        // based on the iter's size hint -- hdevalence
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
-        }
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_straus::multiscalar_mul;
-            multiscalar_mul(scalars, points)
-        }
-    }
-
-    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    #[cfg(feature="stage2_build")]
-    pub fn double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
     }
 }
 
@@ -1204,14 +1133,14 @@ mod test {
         #[test]
         fn double_scalar_mul_basepoint_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
+            let result = EdwardsPoint::vartime_double_scalar_mul_basepoint(&A_SCALAR, &A, &B_SCALAR);
             assert_eq!(result.compress(), DOUBLE_SCALAR_MULT_RESULT);
         }
 
         #[test]
         fn multiscalar_mul_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result = vartime::multiscalar_mul(
+            let result = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );
@@ -1221,11 +1150,11 @@ mod test {
         #[test]
         fn multiscalar_mul_vartime_vs_consttime() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
-            let result_vartime = vartime::multiscalar_mul(
+            let result_vartime = EdwardsPoint::vartime_multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );
-            let result_consttime = multiscalar_mul(
+            let result_consttime = EdwardsPoint::multiscalar_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT]
             );

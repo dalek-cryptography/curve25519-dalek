@@ -9,7 +9,9 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 // See the comment above the ristretto::notes module.
-#![cfg_attr(all(feature = "nightly", feature="precomputed_tables"), doc(include = "../docs/avx2-notes.md"))]
+#![cfg_attr(
+    all(feature = "nightly", feature = "stage2_build"), doc(include = "../docs/avx2-notes.md")
+)]
 
 pub(crate) mod field;
 

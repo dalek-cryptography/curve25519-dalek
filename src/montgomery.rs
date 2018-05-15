@@ -279,12 +279,12 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "stage2_build"))]
 mod test {
     use constants;
     use super::*;
 
-    use rand::OsRng;
+    use rand::rngs::OsRng;
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
     #[test]
@@ -338,7 +338,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng: OsRng = OsRng::new().unwrap();
 

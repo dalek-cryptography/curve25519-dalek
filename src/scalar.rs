@@ -22,8 +22,7 @@ use core::cmp::{Eq, PartialEq};
 use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
-#[cfg(feature = "std")]
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use digest::Digest;
 use generic_array::typenum::U64;
@@ -39,14 +38,14 @@ use constants;
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
-#[cfg(feature="radix_51")]
+#[cfg(feature = "u64_backend")]
 type UnpackedScalar = backend::u64::scalar::Scalar64;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
-#[cfg(not(feature="radix_51"))]
+#[cfg(feature = "u32_backend")]
 type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 
@@ -324,15 +323,15 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `rand::CryptoRng` interface.
     ///
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
     #[cfg(feature = "std")]
-    pub fn random<T: Rng>(rng: &mut T) -> Self {
+    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
+        rng.fill(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 

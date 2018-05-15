@@ -161,7 +161,7 @@
 // missing).
 //
 // This hack is also used in the avx2 notes.
-#[cfg_attr(all(feature = "nightly", feature="precomputed_tables"), doc(include = "../docs/ristretto-notes.md"))]
+#[cfg_attr(all(feature = "nightly", feature = "stage2_build"), doc(include = "../docs/ristretto-notes.md"))]
 mod notes {
 }
 
@@ -172,8 +172,7 @@ use core::ops::{Mul, MulAssign};
 use core::iter::Sum;
 use core::borrow::Borrow;
 
-#[cfg(feature = "std")]
-use rand::Rng;
+use rand::{Rng, CryptoRng};
 
 use digest::Digest;
 use generic_array::typenum::U64;
@@ -186,7 +185,6 @@ use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 use subtle::Choice;
 
-use edwards;
 use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
 
@@ -194,7 +192,7 @@ use scalar::Scalar;
 
 use curve_models::CompletedPoint;
 
-use traits::Identity;
+use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -406,7 +404,7 @@ impl RistrettoPoint {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// extern crate rand;
-    /// use rand::OsRng;
+    /// use rand::rngs::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
@@ -576,15 +574,14 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    #[cfg(feature = "std")]
-    pub fn random<T: Rng>(rng: &mut T) -> Self {
+    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut field_bytes = [0u8; 32];
 
-        rng.fill_bytes(&mut field_bytes);
+        rng.fill(&mut field_bytes);
         let r_1 = FieldElement::from_bytes(&field_bytes);
         let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
 
-        rng.fill_bytes(&mut field_bytes);
+        rng.fill(&mut field_bytes);
         let r_2 = FieldElement::from_bytes(&field_bytes);
         let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
 
@@ -790,60 +787,47 @@ define_mul_assign_variants!(LHS = RistrettoPoint, RHS = Scalar);
 define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint);
 define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint);
 
+// ------------------------------------------------------------------------
+// Multiscalar Multiplication impls
+// ------------------------------------------------------------------------
 
-/// Given an iterator of (possibly secret) scalars and an iterator of
-/// (possibly secret) points, compute
-/// $$
-/// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-/// $$
-///
-/// This function has the same behaviour as
-/// `vartime::multiscalar_mul` but is constant-time.
-///
-/// It is an error to call this function with two iterators of different lengths.
-///
-/// # Examples
-///
-/// The trait bound aims for maximum flexibility: the inputs must be
-/// convertable to iterators (`I: IntoIter`), and the iterator's items
-/// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
-/// iterators returning either `Scalar`s or `&Scalar`s.
-///
-/// ```
-/// use curve25519_dalek::{constants, ristretto};
-/// use curve25519_dalek::scalar::Scalar;
-///
-/// // Some scalars
-/// let a = Scalar::from_u64(87329482);
-/// let b = Scalar::from_u64(37264829);
-/// let c = Scalar::from_u64(98098098);
-///
-/// // Some points
-/// let P = constants::RISTRETTO_BASEPOINT_POINT;
-/// let Q = P + P;
-/// let R = P + Q;
-///
-/// // A1 = a*P + b*Q + c*R
-/// let abc = [a,b,c];
-/// let A1 = ristretto::multiscalar_mul(&abc, &[P,Q,R]);
-/// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
-///
-/// // A2 = (-a)*P + (-b)*Q + (-c)*R
-/// let minus_abc = abc.iter().map(|x| -x);
-/// let A2 = ristretto::multiscalar_mul(minus_abc, &[P,Q,R]);
-/// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
-///
-/// assert_eq!(A1.compress(), (-A2).compress());
-/// ```
+// These use iterator combinators to unwrap the underlying points and
+// forward to the EdwardsPoint implementations.
+
 #[cfg(any(feature = "alloc", feature = "std"))]
-pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
-    where I: IntoIterator,
-          I::Item: Borrow<Scalar>,
-          J: IntoIterator,
-          J::Item: Borrow<RistrettoPoint>,
-{
-    let extended_points = points.into_iter().map(|P| P.borrow().0);
-    RistrettoPoint(edwards::multiscalar_mul(scalars, extended_points))
+impl MultiscalarMul for RistrettoPoint {
+    type Point = RistrettoPoint;
+    
+    fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<RistrettoPoint>,
+    {
+        let extended_points = points.into_iter().map(|P| P.borrow().0);
+        RistrettoPoint(
+            EdwardsPoint::multiscalar_mul(scalars, extended_points)
+        )
+    }
+}
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl VartimeMultiscalarMul for RistrettoPoint {
+    type Point = RistrettoPoint;
+    
+    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<RistrettoPoint>,
+    {
+        let extended_points = points.into_iter().map(|P| P.borrow().0);
+        RistrettoPoint(
+            EdwardsPoint::vartime_multiscalar_mul(scalars, extended_points)
+        )
+    }
 }
 
 /// A precomputed table of multiples of a basepoint, used to accelerate
@@ -948,75 +932,12 @@ impl Debug for RistrettoPoint {
 }
 
 // ------------------------------------------------------------------------
-// Variable-time functions
-// ------------------------------------------------------------------------
-
-pub mod vartime {
-    //! Variable-time operations on ristretto points, useful for non-secret data.
-    use super::*;
-
-    /// Given an iterator of public scalars and an iterator of public points, compute
-    /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
-    /// $$
-    ///
-    /// This function has the same behaviour as
-    /// `vartime::multiscalar_mul` but is constant-time.
-    ///
-    /// It is an error to call this function with two iterators of different lengths.
-    ///
-    /// # Examples
-    ///
-    /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
-    /// must be `Borrow<Scalar>` (or `Borrow<RistrettoPoint>`), to allow
-    /// iterators returning either `Scalar`s or `&Scalar`s.
-    ///
-    /// ```
-    /// use curve25519_dalek::{constants, ristretto};
-    /// use curve25519_dalek::scalar::Scalar;
-    ///
-    /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
-    ///
-    /// // Some points
-    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
-    /// let Q = P + P;
-    /// let R = P + Q;
-    ///
-    /// // A1 = a*P + b*Q + c*R
-    /// let abc = [a,b,c];
-    /// let A1 = ristretto::vartime::multiscalar_mul(&abc, &[P,Q,R]);
-    /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
-    ///
-    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
-    /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = ristretto::vartime::multiscalar_mul(minus_abc, &[P,Q,R]);
-    /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
-    ///
-    /// assert_eq!(A1.compress(), (-A2).compress());
-    /// ```
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    pub fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
-        where I: IntoIterator,
-              I::Item: Borrow<Scalar>,
-              J: IntoIterator,
-              J::Item: Borrow<RistrettoPoint>,
-    {
-        let extended_points = points.into_iter().map(|P| P.borrow().0);
-        RistrettoPoint(edwards::vartime::multiscalar_mul(scalars, extended_points))
-    }
-}
-
-// ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(test)]
+#[cfg(all(test, feature = "stage2_build"))]
 mod test {
-    use rand::OsRng;
+    use rand::rngs::OsRng;
 
     use scalar::Scalar;
     use constants;
@@ -1152,7 +1073,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1215,7 +1135,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="precomputed_tables")]
     fn random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;

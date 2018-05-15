@@ -12,7 +12,6 @@
 
 #![cfg_attr(feature = "alloc", feature(alloc))]
 
-#![cfg_attr(feature = "nightly", feature(i128_type))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
 #![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
@@ -35,15 +34,11 @@
 
 #[cfg(feature = "std")]
 extern crate core;
-
-#[cfg(feature = "std")]
-extern crate rand;
-
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+extern crate rand;
 extern crate clear_on_drop;
-
 extern crate byteorder;
 
 // The `Digest` trait is implemented using `generic_array`, so we need it

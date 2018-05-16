@@ -12,9 +12,7 @@
 
 use core::fmt::{Debug};
 
-#[cfg(feature = "std")]
 use rand::CryptoRng;
-#[cfg(feature = "std")]
 use rand::Rng;
 
 #[cfg(feature = "serde")]
@@ -262,8 +260,9 @@ impl SecretKey {
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
+    /// # #[cfg(feature = "std")]
     /// # fn main() {
-    ///
+    /// #
     /// use rand::Rng;
     /// use rand::OsRng;
     /// use sha2::Sha512;
@@ -273,8 +272,10 @@ impl SecretKey {
     ///
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
-    ///
     /// # }
+    /// #
+    /// # #[cfg(not(feature = "std"))]
+    /// # fn main() { }
     /// ```
     ///
     /// Afterwards, you can generate the corresponding public—provided you also
@@ -289,13 +290,14 @@ impl SecretKey {
     /// # fn main() {
     /// #
     /// # use rand::Rng;
-    /// # use rand::OsRng;
+    /// # use rand::ChaChaRng;
+    /// # use rand::SeedableRng;
     /// # use sha2::Sha512;
     /// # use ed25519_dalek::PublicKey;
     /// # use ed25519_dalek::SecretKey;
     /// # use ed25519_dalek::Signature;
     /// #
-    /// # let mut csprng: OsRng = OsRng::new().unwrap();
+    /// # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
     /// # let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     ///
     /// let public_key: PublicKey = PublicKey::from_secret::<Sha512>(&secret_key);
@@ -308,10 +310,7 @@ impl SecretKey {
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
-    /// from `rand::OsRng::new()` (in the `rand` crate).
-    ///
-    #[cfg(feature = "std")]
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`
     pub fn generate<T>(csprng: &mut T) -> SecretKey
         where T: CryptoRng + Rng,
     {
@@ -402,6 +401,7 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
@@ -412,6 +412,9 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
     /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "std"), not(feature = "sha2")))]
+    /// # fn main() {}
     /// ```
     fn from(secret_key: &'a SecretKey) -> ExpandedSecretKey {
         ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key)
@@ -434,7 +437,7 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
-    /// # #[cfg(feature = "sha2")]
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
@@ -449,7 +452,7 @@ impl ExpandedSecretKey {
     /// assert!(&expanded_secret_key_bytes[..] != &[0u8; 64][..]);
     /// # }
     /// #
-    /// # #[cfg(not(feature = "sha2"))]
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
     /// # fn main() { }
     /// ```
     #[inline]
@@ -475,13 +478,13 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
+    /// # fn do_test() -> Result<ExpandedSecretKey, DecodingError> {
+    /// #
     /// use rand::{Rng, OsRng};
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     /// use ed25519_dalek::DecodingError;
     ///
-    /// # #[cfg(feature = "sha2")]
-    /// # fn do_test() -> Result<ExpandedSecretKey, DecodingError> {
-    /// #
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
@@ -491,14 +494,14 @@ impl ExpandedSecretKey {
     /// # Ok(expanded_secret_key_again)
     /// # }
     /// #
-    /// # #[cfg(feature = "sha2")]
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #     let result = do_test();
     /// #     assert!(result.is_ok());
     /// # }
     /// #
-    /// # #[cfg(not(feature = "sha2"))]
-    /// # fn main() {}
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, DecodingError> {
@@ -525,7 +528,8 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
-    /// # fn do_test() {
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
     /// use sha2::Sha512;
@@ -536,7 +540,8 @@ impl ExpandedSecretKey {
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key);
     /// # }
     /// #
-    /// # fn main() { do_test(); }
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     pub fn from_secret_key<D>(secret_key: &SecretKey) -> ExpandedSecretKey
             where D: Digest<OutputSize = U64> + Default {
@@ -850,6 +855,7 @@ impl Keypair {
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     ///
     /// use rand::Rng;
@@ -858,23 +864,24 @@ impl Keypair {
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     ///
-    /// let mut cspring: OsRng = OsRng::new().unwrap();
-    /// let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     ///
     /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
-    /// from `rand::OsRng::new()` (in the `rand` crate).
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`.
     ///
     /// The caller must also supply a hash function which implements the
     /// `Digest` and `Default` traits, and which returns 512 bits of output.
     /// The standard hash function used for most ed25519 libraries is SHA-512,
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
-    #[cfg(feature = "std")]
     pub fn generate<D, R>(csprng: &mut R) -> Keypair
         where D: Digest<OutputSize = U64> + Default,
               R: CryptoRng + Rng,
@@ -943,7 +950,8 @@ mod test {
     use std::string::String;
     use std::vec::Vec;
     use curve25519_dalek::edwards::EdwardsPoint;
-    use rand::OsRng;
+    use rand::ChaChaRng;
+    use rand::SeedableRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;
@@ -976,17 +984,17 @@ mod test {
 
     #[test]
     fn unmarshal_marshal() {  // TestUnmarshalMarshal
-        let mut cspring: OsRng;
+        let mut csprng: ChaChaRng;
         let mut keypair: Keypair;
         let mut x: Option<EdwardsPoint>;
         let a: EdwardsPoint;
         let public: PublicKey;
 
-        cspring = OsRng::new().unwrap();
+        csprng = ChaChaRng::from_seed([0u8; 32]);
 
         // from_bytes() fails if vx²-u=0 and vx²+u=0
         loop {
-            keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
+            keypair = Keypair::generate::<Sha512, _>(&mut csprng);
             x = keypair.public.decompress();
 
             if x.is_some() {
@@ -1001,7 +1009,7 @@ mod test {
 
     #[test]
     fn sign_verify() {  // TestSignVerify
-        let mut cspring: OsRng;
+        let mut csprng: ChaChaRng;
         let keypair: Keypair;
         let good_sig: Signature;
         let bad_sig:  Signature;
@@ -1009,8 +1017,8 @@ mod test {
         let good: &[u8] = "test message".as_bytes();
         let bad:  &[u8] = "wrong message".as_bytes();
 
-        cspring  = OsRng::new().unwrap();
-        keypair  = Keypair::generate::<Sha512, OsRng>(&mut cspring);
+        csprng  = ChaChaRng::from_seed([0u8; 32]);
+        keypair  = Keypair::generate::<Sha512, _>(&mut csprng);
         good_sig = keypair.sign::<Sha512>(&good);
         bad_sig  = keypair.sign::<Sha512>(&bad);
 
@@ -1125,7 +1133,7 @@ mod test {
 #[cfg(all(test, feature = "bench"))]
 mod bench {
     use test::Bencher;
-    use rand::OsRng;
+    use rand::ChaChaRng;
     use sha2::Sha512;
     use super::*;
 
@@ -1150,8 +1158,8 @@ mod bench {
 
     #[bench]
     fn sign(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let msg: &[u8] = b"";
 
         b.iter(| | keypair.sign::<Sha512>(msg));
@@ -1159,8 +1167,8 @@ mod bench {
 
     #[bench]
     fn sign_expanded_key(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
         let msg: &[u8] = b"";
 
@@ -1169,8 +1177,8 @@ mod bench {
 
     #[bench]
     fn verify(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign::<Sha512>(msg);
 
@@ -1181,7 +1189,7 @@ mod bench {
     fn key_generation(b: &mut Bencher) {
         let mut rng: ZeroRng = ZeroRng::new();
 
-        b.iter(| | Keypair::generate::<Sha512>(&mut rng));
+        b.iter(| | Keypair::generate::<Sha512, _>(&mut rng));
     }
 
     #[bench]

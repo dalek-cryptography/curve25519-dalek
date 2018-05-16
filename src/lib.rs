@@ -32,7 +32,7 @@
 //! use ed25519_dalek::Signature;
 //!
 //! let mut cspring: OsRng = OsRng::new().unwrap();
-//! let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! # }
 //! ```
 //!
@@ -49,7 +49,7 @@
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! let signature: Signature = keypair.sign::<Sha512>(message);
 //! # }
@@ -69,7 +69,7 @@
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! let verified: bool = keypair.verify::<Sha512>(message, &signature);
@@ -93,7 +93,7 @@
 //! # use ed25519_dalek::Signature;
 //! use ed25519_dalek::PublicKey;
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //!
@@ -122,7 +122,7 @@
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! # let public_key: PublicKey = keypair.public;
@@ -147,7 +147,7 @@
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), DecodingError> {
 //! # let mut cspring: OsRng = OsRng::new().unwrap();
-//! # let keypair_orig: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+//! # let keypair_orig: Keypair = Keypair::generate::<Sha512, OsRng>(&mut cspring);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature_orig: Signature = keypair_orig.sign::<Sha512>(message);
 //! # let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = keypair_orig.public.to_bytes();

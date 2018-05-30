@@ -1134,6 +1134,9 @@ mod test {
 mod bench {
     use test::Bencher;
     use rand::ChaChaRng;
+    use rand::Error;
+    use rand::RngCore;
+    use rand::SeedableRng;
     use sha2::Sha512;
     use super::*;
 
@@ -1146,19 +1149,27 @@ mod bench {
         }
     }
 
-    impl Rng for ZeroRng {
+    impl RngCore for ZeroRng {
         fn next_u32(&mut self) -> u32 { 0u32 }
+
+        fn next_u64(&mut self) -> u64 { 0u64 }
 
         fn fill_bytes(&mut self, bytes: &mut [u8]) {
             for i in 0 .. bytes.len() {
                 bytes[i] = 0;
             }
         }
+
+        fn try_fill_bytes(&mut self, bytes: &mut [u8]) -> Result<(), Error> {
+            Ok(self.fill_bytes(bytes))
+        }
     }
+
+    impl CryptoRng for ZeroRng { }
 
     #[bench]
     fn sign(b: &mut Bencher) {
-        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
         let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let msg: &[u8] = b"";
 
@@ -1167,7 +1178,7 @@ mod bench {
 
     #[bench]
     fn sign_expanded_key(b: &mut Bencher) {
-        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
         let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
         let msg: &[u8] = b"";
@@ -1177,7 +1188,7 @@ mod bench {
 
     #[bench]
     fn verify(b: &mut Bencher) {
-        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]).unwrap();
+        let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
         let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
         let msg: &[u8] = b"";
         let sig: Signature = keypair.sign::<Sha512>(msg);

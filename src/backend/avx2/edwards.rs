@@ -16,8 +16,6 @@
 use core::convert::From;
 use core::ops::{Add, Neg, Sub};
 
-use core::simd::{u32x8, IntoBits};
-
 use subtle::Choice;
 use subtle::ConditionallyAssignable;
 
@@ -27,8 +25,7 @@ use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 use traits::Identity;
 
 use backend::avx2::field::{FieldElement32x4, Lanes, Shuffle};
-
-use backend::avx2;
+use backend::avx2::constants;
 
 /// A point on Curve25519, represented in an AVX2-friendly format.
 #[derive(Copy, Clone, Debug)]
@@ -66,13 +63,7 @@ impl Default for ExtendedPoint {
 
 impl Identity for ExtendedPoint {
     fn identity() -> ExtendedPoint {
-        ExtendedPoint(FieldElement32x4([
-            u32x8::new(0, 1, 0, 0, 1, 0, 0, 0),
-            u32x8::splat(0),
-            u32x8::splat(0),
-            u32x8::splat(0),
-            u32x8::splat(0),
-        ]))
+        constants::EXTENDEDPOINT_IDENTITY
     }
 }
 
@@ -172,13 +163,7 @@ impl Default for CachedPoint {
 
 impl Identity for CachedPoint {
     fn identity() -> CachedPoint {
-        CachedPoint(FieldElement32x4([
-            u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
-            u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-            u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
-        ]))
+        constants::CACHEDPOINT_IDENTITY
     }
 }
 

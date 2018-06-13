@@ -526,8 +526,6 @@ impl FieldElement32x4 {
     ///
     /// Limbs must be bounded by bit-excess \\( b < 2.0 \\).
     pub fn square_and_negate_D(&self) -> FieldElement32x4 {
-        let neg_mask = D_LANES64;
-
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use core::arch::x86_64::_mm256_mul_epu32;

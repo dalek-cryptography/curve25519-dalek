@@ -94,14 +94,6 @@ pub(crate) static P_TIMES_16_HI: u32x8 = u32x8::new(
     33554431 << 4,
 );
 
-pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
-    u32x8::new(0, 134217690, 0, 67108862, 134217690, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-]);
-
 /// Odd multiples of the Ed25519 basepoint:
 pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
     CachedPoint(FieldElement32x4([

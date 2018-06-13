@@ -24,7 +24,7 @@ pub const D_LANES64: u8 = 0b11_00_00_00;
 
 pub const ALL_LANES: u8 = A_LANES | B_LANES | C_LANES | D_LANES;
 
-use core::ops::{Add, Mul};
+use core::ops::{Add, Mul, Neg};
 use core::simd::{i32x8, u32x8, u64x4, IntoBits};
 
 use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
@@ -195,73 +195,20 @@ impl FieldElement32x4 {
         return out;
     }
 
-    /// Negate the \\(D\\) variable of \\((A,B,C,D)\\).
+    /// Given \\((A,B,C,D)\\), compute \\((-A,-B,-C,-D)\\), without
+    /// performing a reduction.
     ///
     /// Input limbs must be less than the limbs of \\(2p\\), i.e., freshly reduced.
-    pub fn negate_D_lazy(&mut self) {
-        unsafe {
-            use core::arch::x86_64::_mm256_blend_epi32;
-            self.0[0] = _mm256_blend_epi32(
-                self.0[0].into_bits(),
-                (P_TIMES_2_LO - self.0[0]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[1] = _mm256_blend_epi32(
-                self.0[1].into_bits(),
-                (P_TIMES_2_HI - self.0[1]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[2] = _mm256_blend_epi32(
-                self.0[2].into_bits(),
-                (P_TIMES_2_HI - self.0[2]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[3] = _mm256_blend_epi32(
-                self.0[3].into_bits(),
-                (P_TIMES_2_HI - self.0[3]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[4] = _mm256_blend_epi32(
-                self.0[4].into_bits(),
-                (P_TIMES_2_HI - self.0[4]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-        }
-    }
-
-    /// Negate the \\(D\\) variable of \\((A,B,C,D)\\).
     ///
-    /// Input limbs must be less than the limbs of \\(2p\\), i.e., freshly reduced.
-    pub fn negate_D(&mut self) {
-        unsafe {
-            use core::arch::x86_64::_mm256_blend_epi32;
-            self.0[0] = _mm256_blend_epi32(
-                self.0[0].into_bits(),
-                (P_TIMES_16_LO - self.0[0]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[1] = _mm256_blend_epi32(
-                self.0[1].into_bits(),
-                (P_TIMES_16_HI - self.0[1]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[2] = _mm256_blend_epi32(
-                self.0[2].into_bits(),
-                (P_TIMES_16_HI - self.0[2]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[3] = _mm256_blend_epi32(
-                self.0[3].into_bits(),
-                (P_TIMES_16_HI - self.0[3]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-            self.0[4] = _mm256_blend_epi32(
-                self.0[4].into_bits(),
-                (P_TIMES_16_HI - self.0[4]).into_bits(),
-                D_LANES as i32,
-            ).into_bits();
-        }
-        self.reduce32();
+    /// The output limbs are bounded by \\(2p\\).
+    pub fn negate_lazy(&self) -> FieldElement32x4 {
+        FieldElement32x4([
+            P_TIMES_2_LO - self.0[0],
+            P_TIMES_2_HI - self.0[1],
+            P_TIMES_2_HI - self.0[2],
+            P_TIMES_2_HI - self.0[3],
+            P_TIMES_2_HI - self.0[4],
+        ])
     }
 
     /// Given `self = (A,B,C,D)`, set `self = (B,A,C,D)`
@@ -636,6 +583,30 @@ impl FieldElement32x4 {
         z9 = negate_D(z9, odd__p37);
 
         FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+    }
+}
+
+impl Neg for FieldElement32x4 {
+    type Output = FieldElement32x4;
+
+    /// Given \\((A,B,C,D)\\), compute \\((-A,-B,-C,-D)\\), and
+    /// perform a reduction.
+    ///
+    /// The input limbs can be any size.
+    ///
+    /// The output limbs are freshly reduced.
+    #[inline]
+    fn neg(self) -> FieldElement32x4 {
+        let mut neg = FieldElement32x4([
+            P_TIMES_16_LO - self.0[0],
+            P_TIMES_16_HI - self.0[1],
+            P_TIMES_16_HI - self.0[2],
+            P_TIMES_16_HI - self.0[3],
+            P_TIMES_16_HI - self.0[4],
+        ]);
+        neg.reduce32();
+
+        neg
     }
 }
 

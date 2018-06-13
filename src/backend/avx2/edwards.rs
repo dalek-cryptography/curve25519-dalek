@@ -176,7 +176,7 @@ impl From<ExtendedPoint> for CachedPoint {
         x.scale_by_curve_constants();
 
         // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
-        x.negate_D();
+        x = x.blend(-x, Lanes::D);
 
         CachedPoint(x)
     }
@@ -210,10 +210,9 @@ impl<'a> Neg for &'a CachedPoint {
     type Output = CachedPoint;
 
     fn neg(self) -> CachedPoint {
-        let mut neg = *self;
-        neg.0.swap_AB();
-        neg.0.negate_D_lazy();
-        neg
+        let mut coords = self.0;
+        coords.swap_AB();
+        CachedPoint(coords.blend(coords.negate_lazy(), Lanes::D))
     }
 }
 

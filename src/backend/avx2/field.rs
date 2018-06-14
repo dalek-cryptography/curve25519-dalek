@@ -28,6 +28,57 @@ use core::simd::{i32x8, u32x8, u64x4, IntoBits};
 use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
 use backend::u64::field::FieldElement64;
 
+/// Unpack
+/// ```
+/// (a0, b0, a1, b1, c0, d0, c1, d1)
+/// ```
+/// into
+/// ```
+/// (a0, 0, b0, 0, c0, 0, d0, 0)
+/// (a1, 0, b1, 0, c1, 0, d1, 0)
+/// ```
+#[inline(always)]
+fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
+    let a: u32x8;
+    let b: u32x8;
+    let zero = i32x8::new(0, 0, 0, 0, 0, 0, 0, 0);
+    unsafe {
+        use core::arch::x86_64::_mm256_unpackhi_epi32;
+        use core::arch::x86_64::_mm256_unpacklo_epi32;
+        a = _mm256_unpacklo_epi32(src.into_bits(), zero.into_bits()).into_bits();
+        b = _mm256_unpackhi_epi32(src.into_bits(), zero.into_bits()).into_bits();
+    }
+    (a, b)
+}
+
+/// Repack
+/// ```
+/// (a0, 0, b0, 0, c0, 0, d0, 0)
+/// (a1, 0, b1, 0, c1, 0, d1, 0)
+/// ```
+/// into
+/// ```
+/// (a0, b0, a1, b1, c0, d0, c1, d1)
+/// ```
+#[inline(always)]
+fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
+    unsafe {
+        use core::arch::x86_64::_mm256_blend_epi32;
+        use core::arch::x86_64::_mm256_shuffle_epi32;
+
+        // Input: x = (a0, 0, b0, 0, c0, 0, d0, 0)
+        // Input: y = (a1, 0, b1, 0, c1, 0, d1, 0)
+
+        let x_shuffled = _mm256_shuffle_epi32(x.into_bits(), 0b11_01_10_00);
+        let y_shuffled = _mm256_shuffle_epi32(y.into_bits(), 0b10_00_11_01);
+
+        // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
+        // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
+
+        return _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into_bits();
+    }
+}
+
 /// The `Lanes` enum represents a subset of the lanes `A,B,C,D` of a
 /// `FieldElement32x4`.
 ///
@@ -430,42 +481,7 @@ impl FieldElement32x4 {
             repack_pair(z[8].into_bits(), z[9].into_bits()),
         ])
     }
-}
 
-#[inline(always)]
-fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
-    let a: u32x8;
-    let b: u32x8;
-    let zero = i32x8::new(0, 0, 0, 0, 0, 0, 0, 0);
-    unsafe {
-        use core::arch::x86_64::_mm256_unpackhi_epi32;
-        use core::arch::x86_64::_mm256_unpacklo_epi32;
-        a = _mm256_unpacklo_epi32(src.into_bits(), zero.into_bits()).into_bits();
-        b = _mm256_unpackhi_epi32(src.into_bits(), zero.into_bits()).into_bits();
-    }
-    (a, b)
-}
-
-#[inline(always)]
-fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
-    unsafe {
-        use core::arch::x86_64::_mm256_blend_epi32;
-        use core::arch::x86_64::_mm256_shuffle_epi32;
-
-        // Input: x = (a0, 0, b0, 0, c0, 0, d0)
-        // Input: y = (a1, 0, b1, 0, c1, 0, d1)
-
-        let x_shuffled = _mm256_shuffle_epi32(x.into_bits(), 0b11_01_10_00);
-        let y_shuffled = _mm256_shuffle_epi32(y.into_bits(), 0b10_00_11_01);
-
-        // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
-        // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
-
-        return _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into_bits();
-    }
-}
-
-impl FieldElement32x4 {
     /// Square this field element, then conditionally negate according
     /// to `neg_mask`.  This parameter is hardcoded as `neg_mask =
     /// D_LANES64` to negate the \\( D \\) value.

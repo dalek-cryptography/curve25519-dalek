@@ -32,6 +32,8 @@ use backend::u64::field::FieldElement64;
 
 #[derive(Copy, Clone)]
 pub enum Lanes {
+    C,
+    D,
     AB,
     CD,
     ALL,
@@ -62,6 +64,18 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             }
         }
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum Shuffle {
+    AAAA,
+    BBBB,
+    CACA,
+    DBBD,
+    ADDA,
+    CBCB,
+    ABAB,
+    BADC,
 }
 
 /// A vector of four `FieldElements`, implemented using AVX2.
@@ -101,6 +115,50 @@ impl FieldElement32x4 {
         }
 
         out
+    }
+
+    #[inline(always)]
+    pub fn blend(&self, b: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
+        FieldElement32x4([
+            blend_lanes(self.0[0], b.0[0], control),
+            blend_lanes(self.0[1], b.0[1], control),
+            blend_lanes(self.0[2], b.0[2], control),
+            blend_lanes(self.0[3], b.0[3], control),
+            blend_lanes(self.0[4], b.0[4], control),
+        ])
+    }
+
+    #[inline(always)]
+    pub fn shuffle(&self, control: Shuffle) -> FieldElement32x4 {
+        #[inline(always)]
+        fn shuffle_lanes(x: u32x8, control: Shuffle) -> u32x8 {
+            unsafe {
+                use core::arch::x86_64::_mm256_permutevar8x32_epi32;
+
+                let c: u32x8 = match control {
+                    Shuffle::AAAA => u32x8::new(0, 0, 2, 2, 0, 0, 2, 2),
+                    Shuffle::BBBB => u32x8::new(1, 1, 3, 3, 1, 1, 3, 3),
+                    Shuffle::CACA => u32x8::new(4, 0, 6, 2, 4, 0, 6, 2),
+                    Shuffle::DBBD => u32x8::new(5, 1, 7, 3, 1, 5, 3, 7),
+                    Shuffle::ADDA => u32x8::new(0, 5, 2, 7, 5, 0, 7, 2),
+                    Shuffle::CBCB => u32x8::new(4, 1, 6, 3, 4, 1, 6, 3),
+                    Shuffle::ABAB => u32x8::new(0, 1, 2, 3, 0, 1, 2, 3),
+                    Shuffle::BADC => u32x8::new(1, 0, 3, 2, 5, 4, 7, 6),
+                };
+                // Note that this gets turned into a generic LLVM
+                // shuffle-by-constants, which can be lowered to a simpler
+                // instruction than a generic permute.
+                _mm256_permutevar8x32_epi32(x.into_bits(), c.into_bits()).into_bits()
+            }
+        }
+
+        FieldElement32x4([
+            shuffle_lanes(self.0[0], control),
+            shuffle_lanes(self.0[1], control),
+            shuffle_lanes(self.0[2], control),
+            shuffle_lanes(self.0[3], control),
+            shuffle_lanes(self.0[4], control),
+        ])
     }
 
     pub fn zero() -> FieldElement32x4 {

@@ -114,7 +114,7 @@ pub enum Shuffle {
 
 /// A vector of four `FieldElements`, implemented using AVX2.
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct FieldElement32x4(pub(crate) [u32x8; 5]);
+pub struct FieldElement32x4(pub(crate) [u32x8; 5]);
 
 use subtle::Choice;
 use subtle::ConditionallyAssignable;
@@ -130,7 +130,7 @@ impl ConditionallyAssignable for FieldElement32x4 {
 }
 
 impl FieldElement32x4 {
-    pub(crate) fn split(&self) -> [FieldElement64; 4] {
+    pub fn split(&self) -> [FieldElement64; 4] {
         let mut out = [FieldElement64::zero(); 4];
         for i in 0..5 {
             let a_2i   = self.0[i].extract(0) as u64; //
@@ -418,7 +418,7 @@ impl FieldElement32x4 {
         v[0] = v[0] + c9_19;
     }
 
-    pub fn reduce64(mut z: [u64x4; 10]) -> FieldElement32x4 {
+    fn reduce64(mut z: [u64x4; 10]) -> FieldElement32x4 {
         // These aren't const because splat isn't a const fn
         let LOW_25_BITS: u64x4 = u64x4::splat((1 << 25) - 1);
         let LOW_26_BITS: u64x4 = u64x4::splat((1 << 26) - 1);

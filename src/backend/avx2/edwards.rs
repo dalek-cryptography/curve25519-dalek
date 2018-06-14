@@ -78,78 +78,60 @@ impl Identity for ExtendedPoint {
 
 impl ExtendedPoint {
     pub fn double(&self) -> ExtendedPoint {
-        unsafe {
-            use core::arch::x86_64::_mm256_blend_epi32;
-            use core::arch::x86_64::_mm256_permute2x128_si256;
-            use core::arch::x86_64::_mm256_permutevar8x32_epi32;
-            use core::arch::x86_64::_mm256_shuffle_epi32;
+        // Want to compute (X1 Y1 Z1 X1+Y1).
+        // Not sure how to do this less expensively than computing
+        // (X1 Y1 Z1 T1) --(256bit shuffle)--> (X1 Y1 X1 Y1)
+        // (X1 Y1 X1 Y1) --(2x128b shuffle)--> (Y1 X1 Y1 X1)
+        // and then adding.
 
-            let P = &self.0;
+        // Set tmp0 = (X1 Y1 X1 Y1)
+        let mut tmp0 = self.0.shuffle(Shuffle::ABAB);
 
-            let mut t0 = FieldElement32x4::zero();
-            let mut t1 = FieldElement32x4::zero();
+        // Set tmp1 = (Y1 X1 Y1 X1)
+        let mut tmp1 = tmp0.shuffle(Shuffle::BADC);
 
-            // Want to compute (X1 Y1 Z1 X1+Y1).
-            // Not sure how to do this less expensively than computing
-            // (X1 Y1 Z1 T1) --(256bit shuffle)--> (X1 Y1 X1 Y1)
-            // (X1 Y1 X1 Y1) --(2x128b shuffle)--> (Y1 X1 Y1 X1)
-            // and then adding.
+        // Set tmp0 = (X1 Y1 Z1 X1+Y1)
+        tmp0 = self.0.blend(tmp0 + tmp1, Lanes::D);
 
-            // Set t0 = (X1 Y1 X1 Y1)
-            let mut t0 = P.shuffle(Shuffle::ABAB);
+        // Set tmp1 = tmp0^2, negating the D values
+        tmp1 = tmp0.square_and_negate_D();
+        // Now tmp1 = (S1 S2 S3 -S4)
 
-            // Set t1 = (Y1 X1 Y1 X1)
-            let mut t1 = t0.shuffle(Shuffle::BADC);
+        // See discussion of bounds in the module-level documentation.
+        // We want to compute
+        //
+        //    + | S1 | S1 | S1 | S1 |
+        //    + | S2 |    |    | S2 |
+        //    + |    |    | S3 |    |
+        //    + |    |    | S3 |    |
+        //    + |    |    |    |-S4 |
+        //    + |    | 2p | 2p |    |
+        //    - |    | S2 | S2 |    |
+        //    =======================
+        //        S5   S6   S8   S9
 
-            // Set t0 = (X1 Y1 Z1 X1+Y1)
-            t0 = P.blend(&t0 + &t1, Lanes::D);
+        let zero = FieldElement32x4::zero();
+        let S_1 = tmp1.shuffle(Shuffle::AAAA);
+        let S_2 = tmp1.shuffle(Shuffle::BBBB);
 
-            // Set t1 = t0^2, negating the D values
-            t1 = t0.square_and_negate_D();
+        // tmp0 = (0, 0, 2S_3, 0)
+        tmp0 = zero.blend(tmp1 + tmp1, Lanes::C);
+        // tmp0 = (0, 0, 2S_3, -S_4)
+        tmp0 = tmp0.blend(tmp1, Lanes::D);
+        // tmp0 = (S_1, S_1, S_1 + 2S_3, S_1 - S_4)
+        tmp0 = tmp0 + S_1;
+        // tmp0 = (S_1 + S_2, S_1, S_1 + 2S_3, S_1 + S_2 - S_4)
+        tmp0 = tmp0 + zero.blend(S_2, Lanes::AD);
+        // tmp0 = (S_1 + S_2, S_1 - S_2, S_1 - S_2 + 2S_3, S_1 + S_2 - S_4)
+        tmp0 = tmp0 + zero.blend(S_2.negate_lazy(), Lanes::BC);
+        // Now tmp0 = (S_5, S_6, S_8, S_9)
 
-            // Now t1 = (S1 S2 S3 -S4)
+        // Set tmp1 = (S_9, S_6, S_6, S_9)
+        tmp1 = tmp0.shuffle(Shuffle::DBBD);
+        // Set tmp1 = (S_8, S_5, S_8, S_5)
+        tmp0 = tmp0.shuffle(Shuffle::CACA);
 
-            let c0 = u32x8::new(0, 0, 2, 2, 0, 0, 2, 2).into_bits(); // (ABCD) -> (AAAA)
-            let c1 = u32x8::new(1, 1, 3, 3, 1, 1, 3, 3).into_bits(); // (ABCD) -> (BBBB)
-
-            // See discussion of bounds in the module-level documentation.
-            //
-            // We want to compute
-            //
-            //    + | S1 | S1 | S1 | S1 |
-            //    + | S2 |    |    | S2 |
-            //    + |    |    | S3 |    |
-            //    + |    |    | S3 |    |
-            //    + |    |    |    |-S4 |
-            //    + |    | 2p | 2p |    |
-            //    - |    | S2 | S2 |    |
-            //    =======================
-            //        S5   S6   S8   S9
-            for i in 0..5 {
-                let zero = u32x8::splat(0).into_bits();
-                let S1: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c0).into_bits();
-                let S2: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c1).into_bits();
-                let S3_2: u32x8 =
-                    _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into_bits(), 0b01010000)
-                        .into_bits();
-                // tmp0 = (0 0 2*S3 -S4)
-                let tmp0: u32x8 =
-                    _mm256_blend_epi32(S3_2.into_bits(), t1.0[i].into_bits(), 0b10100000)
-                        .into_bits();
-                t0.0[i] = (avx2::constants::P_TIMES_2_MASKED.0[i] + tmp0) + S1;
-                let S2_pos: u32x8 =
-                    _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
-                let S2_neg: u32x8 =
-                    _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
-                t0.0[i] = t0.0[i] + S2_pos;
-                t0.0[i] = t0.0[i] - S2_neg;
-            }
-
-            t1 = t0.shuffle(Shuffle::DBBD);
-            t0 = t0.shuffle(Shuffle::CACA);
-
-            ExtendedPoint(&t0 * &t1)
-        }
+        ExtendedPoint(&tmp0 * &tmp1)
     }
 
     pub fn mul_by_pow_2(&self, k: u32) -> ExtendedPoint {

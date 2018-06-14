@@ -287,9 +287,10 @@ impl FieldElement32x4 {
             buf[i] = u32x8::new(a_2i, b_2i, a_2i_1, b_2i_1, c_2i, d_2i, c_2i_1, d_2i_1);
         }
 
-        let mut out = FieldElement32x4(buf);
-        out.reduce32();
-        return out;
+        // We don't know that the original `FieldElement64`s were
+        // fully reduced, so the odd limbs may exceed 2^25.
+        // Reduce them to be sure.
+        FieldElement32x4(buf).reduce()
     }
 
     /// Given \\((A,B,C,D)\\), compute \\((-A,-B,-C,-D)\\), without
@@ -320,7 +321,9 @@ impl FieldElement32x4 {
         tmp1 + tmp2
     }
 
-    pub fn reduce32(&mut self) {
+    /// Compute the reduced form of the field elements.
+    #[inline]
+    pub fn reduce(&self) -> FieldElement32x4 {
         let shifts = i32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
         let masks = u32x8::new(
             (1 << 26) - 1,
@@ -333,6 +336,7 @@ impl FieldElement32x4 {
             (1 << 25) - 1,
         );
 
+        // Compute the carryout of v.
         let carry = |v: u32x8| -> u32x8 {
             unsafe {
                 use core::arch::x86_64::_mm256_srlv_epi32;
@@ -340,6 +344,7 @@ impl FieldElement32x4 {
             }
         };
 
+        // Swap adjacent 32-bit lanes.
         let swap_lanes = |v: u32x8| -> u32x8 {
             unsafe {
                 use core::arch::x86_64::_mm256_shuffle_epi32;
@@ -354,7 +359,7 @@ impl FieldElement32x4 {
             }
         };
 
-        let v = &mut self.0;
+        let mut v = self.0;
 
         let c10 = swap_lanes(carry(v[0]));
         v[0] = (v[0] & masks) + combine(u32x8::splat(0), c10);
@@ -380,6 +385,8 @@ impl FieldElement32x4 {
         }
 
         v[0] = v[0] + c9_19;
+
+        FieldElement32x4(v)
     }
 
     fn reduce64(mut z: [u64x4; 10]) -> FieldElement32x4 {
@@ -553,16 +560,13 @@ impl Neg for FieldElement32x4 {
     /// The output limbs are freshly reduced.
     #[inline]
     fn neg(self) -> FieldElement32x4 {
-        let mut neg = FieldElement32x4([
+        FieldElement32x4([
             P_TIMES_16_LO - self.0[0],
             P_TIMES_16_HI - self.0[1],
             P_TIMES_16_HI - self.0[2],
             P_TIMES_16_HI - self.0[3],
             P_TIMES_16_HI - self.0[4],
-        ]);
-        neg.reduce32();
-
-        neg
+        ]).reduce()
     }
 }
 

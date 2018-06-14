@@ -581,6 +581,20 @@ impl FieldElement32x4 {
     }
 }
 
+impl Add<FieldElement32x4> for FieldElement32x4 {
+    type Output = FieldElement32x4;
+    #[inline]
+    fn add(self, rhs: FieldElement32x4) -> FieldElement32x4 {
+        FieldElement32x4([
+            self.0[0] + rhs.0[0],
+            self.0[1] + rhs.0[1],
+            self.0[2] + rhs.0[2],
+            self.0[3] + rhs.0[3],
+            self.0[4] + rhs.0[4],
+        ])
+    }
+}
+
 impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
     type Output = FieldElement32x4;
     fn mul(self, _rhs: &'b FieldElement32x4) -> FieldElement32x4 {

@@ -46,67 +46,6 @@ pub enum Lanes {
     ABCD,
 }
 
-#[inline(always)]
-fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
-    unsafe {
-        use core::arch::x86_64::_mm256_blend_epi32;
-
-        // This would be much cleaner if we could factor out the match
-        // statement on the control. Unfortunately, rustc forgets
-        // constant-info very quickly, so we can't even write
-        // ```
-        // match control {
-        //     Lanes::C => {
-        //         let imm = C_LANES as i32;
-        //         _mm256_blend_epi32(..., imm)
-        // ```
-        // let alone
-        // ```
-        // let imm = match control {
-        //     Lanes::C => C_LANES as i32,
-        // }
-        // _mm256_blend_epi32(..., imm)
-        // ```
-        // even though both of these would be constant-folded by LLVM
-        // at a lower level (as happens in the shuffle implementation,
-        // which does not require a shuffle immediate but *is* lowered
-        // to immediate shuffles anyways).
-        match control {
-            Lanes::C => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), C_LANES as i32).into_bits()
-            }
-            Lanes::D => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), D_LANES as i32).into_bits()
-            }
-            Lanes::AD => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | D_LANES) as i32)
-                    .into_bits()
-            }
-            Lanes::AB => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | B_LANES) as i32)
-                    .into_bits()
-            }
-            Lanes::AC => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | C_LANES) as i32)
-                    .into_bits()
-            }
-            Lanes::CD => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (C_LANES | D_LANES) as i32)
-                    .into_bits()
-            }
-            Lanes::BC => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (B_LANES | C_LANES) as i32)
-                    .into_bits()
-            }
-            Lanes::ABCD => _mm256_blend_epi32(
-                x.into_bits(),
-                y.into_bits(),
-                (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
-            ).into_bits(),
-        }
-    }
-}
-
 /// The `Shuffle` enum represents a shuffle of a `FieldElement32x4`.
 #[derive(Copy, Clone, Debug)]
 pub enum Shuffle {
@@ -161,18 +100,7 @@ impl FieldElement32x4 {
         out
     }
 
-    #[inline(always)]
-    pub fn blend(&self, b: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
-        FieldElement32x4([
-            blend_lanes(self.0[0], b.0[0], control),
-            blend_lanes(self.0[1], b.0[1], control),
-            blend_lanes(self.0[2], b.0[2], control),
-            blend_lanes(self.0[3], b.0[3], control),
-            blend_lanes(self.0[4], b.0[4], control),
-        ])
-    }
-
-    #[inline(always)]
+    #[inline]
     pub fn shuffle(&self, control: Shuffle) -> FieldElement32x4 {
         #[inline(always)]
         fn shuffle_lanes(x: u32x8, control: Shuffle) -> u32x8 {
@@ -204,6 +132,78 @@ impl FieldElement32x4 {
             shuffle_lanes(self.0[2], control),
             shuffle_lanes(self.0[3], control),
             shuffle_lanes(self.0[4], control),
+        ])
+    }
+
+    #[inline]
+    pub fn blend(&self, b: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
+        #[inline(always)]
+        fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
+            unsafe {
+                use core::arch::x86_64::_mm256_blend_epi32;
+
+                // This would be much cleaner if we could factor out the match
+                // statement on the control. Unfortunately, rustc forgets
+                // constant-info very quickly, so we can't even write
+                // ```
+                // match control {
+                //     Lanes::C => {
+                //         let imm = C_LANES as i32;
+                //         _mm256_blend_epi32(..., imm)
+                // ```
+                // let alone
+                // ```
+                // let imm = match control {
+                //     Lanes::C => C_LANES as i32,
+                // }
+                // _mm256_blend_epi32(..., imm)
+                // ```
+                // even though both of these would be constant-folded by LLVM
+                // at a lower level (as happens in the shuffle implementation,
+                // which does not require a shuffle immediate but *is* lowered
+                // to immediate shuffles anyways).
+                match control {
+                    Lanes::C => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), C_LANES as i32).into_bits()
+                    }
+                    Lanes::D => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), D_LANES as i32).into_bits()
+                    }
+                    Lanes::AD => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | D_LANES) as i32)
+                            .into_bits()
+                    }
+                    Lanes::AB => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | B_LANES) as i32)
+                            .into_bits()
+                    }
+                    Lanes::AC => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | C_LANES) as i32)
+                            .into_bits()
+                    }
+                    Lanes::CD => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (C_LANES | D_LANES) as i32)
+                            .into_bits()
+                    }
+                    Lanes::BC => {
+                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (B_LANES | C_LANES) as i32)
+                            .into_bits()
+                    }
+                    Lanes::ABCD => _mm256_blend_epi32(
+                        x.into_bits(),
+                        y.into_bits(),
+                        (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
+                    ).into_bits(),
+                }
+            }
+        }
+
+        FieldElement32x4([
+            blend_lanes(self.0[0], b.0[0], control),
+            blend_lanes(self.0[1], b.0[1], control),
+            blend_lanes(self.0[2], b.0[2], control),
+            blend_lanes(self.0[3], b.0[3], control),
+            blend_lanes(self.0[4], b.0[4], control),
         ])
     }
 

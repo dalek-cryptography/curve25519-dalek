@@ -44,6 +44,26 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
     unsafe {
         use core::arch::x86_64::_mm256_blend_epi32;
 
+        // This would be much cleaner if we could factor out the match
+        // statement on the control. Unfortunately, rustc forgets
+        // constant-info very quickly, so we can't even write
+        // ```
+        // match control {
+        //     Lanes::C => {
+        //         let imm = C_LANES as i32;
+        //         _mm256_blend_epi32(..., imm)
+        // ```
+        // let alone
+        // ```
+        // let imm = match control {
+        //     Lanes::C => C_LANES as i32,
+        // }
+        // _mm256_blend_epi32(..., imm)
+        // ```
+        // even though both of these would be constant-folded by LLVM
+        // at a lower level (as happens in the shuffle implementation,
+        // which does not require a shuffle immediate but *is* lowered
+        // to immediate shuffles anyways).
         match control {
             Lanes::C => {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), C_LANES as i32).into_bits()

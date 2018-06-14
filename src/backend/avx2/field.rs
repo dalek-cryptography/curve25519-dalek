@@ -28,7 +28,13 @@ use core::simd::{i32x8, u32x8, u64x4, IntoBits};
 use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
 use backend::u64::field::FieldElement64;
 
-#[derive(Copy, Clone)]
+/// The `Lanes` enum represents a subset of the lanes `A,B,C,D` of a
+/// `FieldElement32x4`.
+///
+/// It's used to specify blend operations without
+/// having to know details about the data layout of the
+/// `FieldElement32x4`.
+#[derive(Copy, Clone, Debug)]
 pub enum Lanes {
     C,
     D,
@@ -96,7 +102,8 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
     }
 }
 
-#[derive(Copy, Clone)]
+/// The `Shuffle` enum represents a shuffle of a `FieldElement32x4`.
+#[derive(Copy, Clone, Debug)]
 pub enum Shuffle {
     AAAA,
     BBBB,

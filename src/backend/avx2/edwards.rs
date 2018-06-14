@@ -26,7 +26,7 @@ use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use traits::Identity;
 
-use backend::avx2::field::{FieldElement32x4, Lanes, Shuffle, D_LANES};
+use backend::avx2::field::{FieldElement32x4, Lanes, Shuffle};
 
 use backend::avx2;
 

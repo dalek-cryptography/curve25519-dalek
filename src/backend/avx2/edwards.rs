@@ -14,19 +14,19 @@
 #![allow(bad_style)]
 
 use core::convert::From;
-use core::ops::{Add, Sub, Neg};
+use core::ops::{Add, Neg, Sub};
 
-use core::simd::{IntoBits, u32x8};
+use core::simd::{u32x8, IntoBits};
 
-use subtle::ConditionallyAssignable;
 use subtle::Choice;
+use subtle::ConditionallyAssignable;
 
 use edwards;
 use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use traits::Identity;
 
-use backend::avx2::field::{D_LANES, Lanes, FieldElement32x4};
+use backend::avx2::field::{FieldElement32x4, Lanes, D_LANES};
 
 use backend::avx2;
 
@@ -43,7 +43,12 @@ impl From<edwards::EdwardsPoint> for ExtendedPoint {
 impl From<ExtendedPoint> for edwards::EdwardsPoint {
     fn from(P: ExtendedPoint) -> edwards::EdwardsPoint {
         let tmp = P.0.split();
-        edwards::EdwardsPoint{X: tmp[0], Y: tmp[1], Z: tmp[2], T: tmp[3]}
+        edwards::EdwardsPoint {
+            X: tmp[0],
+            Y: tmp[1],
+            Z: tmp[2],
+            T: tmp[3],
+        }
     }
 }
 
@@ -62,7 +67,7 @@ impl Default for ExtendedPoint {
 impl Identity for ExtendedPoint {
     fn identity() -> ExtendedPoint {
         ExtendedPoint(FieldElement32x4([
-            u32x8::new(0,1,0,0,1,0,0,0),
+            u32x8::new(0, 1, 0, 0, 1, 0, 0, 0),
             u32x8::splat(0),
             u32x8::splat(0),
             u32x8::splat(0),
@@ -74,9 +79,9 @@ impl Identity for ExtendedPoint {
 impl ExtendedPoint {
     pub fn double(&self) -> ExtendedPoint {
         unsafe {
+            use core::arch::x86_64::_mm256_blend_epi32;
             use core::arch::x86_64::_mm256_permute2x128_si256;
             use core::arch::x86_64::_mm256_permutevar8x32_epi32;
-            use core::arch::x86_64::_mm256_blend_epi32;
             use core::arch::x86_64::_mm256_shuffle_epi32;
 
             let P = &self.0;
@@ -140,17 +145,22 @@ impl ExtendedPoint {
             //    - |    | S2 | S2 |    |
             //    =======================
             //        S5   S6   S8   S9
-            //
             for i in 0..5 {
                 let zero = u32x8::splat(0).into_bits();
                 let S1: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c0).into_bits();
                 let S2: u32x8 = _mm256_permutevar8x32_epi32(t1.0[i].into_bits(), c1).into_bits();
-                let S3_2: u32x8 = _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into_bits(), 0b01010000).into_bits();
+                let S3_2: u32x8 =
+                    _mm256_blend_epi32(zero, (t1.0[i] + t1.0[i]).into_bits(), 0b01010000)
+                        .into_bits();
                 // tmp0 = (0 0 2*S3 -S4)
-                let tmp0: u32x8 = _mm256_blend_epi32(S3_2.into_bits(), t1.0[i].into_bits(), 0b10100000).into_bits();
+                let tmp0: u32x8 =
+                    _mm256_blend_epi32(S3_2.into_bits(), t1.0[i].into_bits(), 0b10100000)
+                        .into_bits();
                 t0.0[i] = (avx2::constants::P_TIMES_2_MASKED.0[i] + tmp0) + S1;
-                let S2_pos: u32x8 = _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
-                let S2_neg: u32x8 = _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
+                let S2_pos: u32x8 =
+                    _mm256_blend_epi32(zero, S2.into_bits(), 0b10100101).into_bits();
+                let S2_neg: u32x8 =
+                    _mm256_blend_epi32(S2.into_bits(), zero, 0b10100101).into_bits();
                 t0.0[i] = t0.0[i] + S2_pos;
                 t0.0[i] = t0.0[i] - S2_neg;
             }
@@ -290,7 +300,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
         let P = ExtendedPoint::from(*point);
         let mut points = [CachedPoint::from(P); 8];
         for i in 0..7 {
-            points[i+1] = (&P + &points[i]).into();
+            points[i + 1] = (&P + &points[i]).into();
         }
         LookupTable(points)
     }
@@ -335,23 +345,23 @@ mod test {
         macro_rules! print_var {
             ($x:ident) => {
                 println!("{} = {:?}", stringify!($x), $x.to_bytes());
-            }
+            };
         }
 
-        let S0  =  &Y1 - &X1; // R1
-        let S1  =  &Y1 + &X1; // R3
-        let S2  =  &Y2 - &X2; // R2
-        let S3  =  &Y2 + &X2; // R4
+        let S0 = &Y1 - &X1; // R1
+        let S1 = &Y1 + &X1; // R3
+        let S2 = &Y2 - &X2; // R2
+        let S3 = &Y2 + &X2; // R4
         print_var!(S0);
         print_var!(S1);
         print_var!(S2);
         print_var!(S3);
         println!("");
 
-        let S4  =  &S0 * &S2; // R5 = R1 * R2
-        let S5  =  &S1 * &S3; // R6 = R3 * R4
-        let S6  =  &Z1 * &Z2; // R8
-        let S7  =  &T1 * &T2; // R7
+        let S4 = &S0 * &S2; // R5 = R1 * R2
+        let S5 = &S1 * &S3; // R6 = R3 * R4
+        let S6 = &Z1 * &Z2; // R8
+        let S7 = &T1 * &T2; // R7
         print_var!(S4);
         print_var!(S5);
         print_var!(S6);
@@ -362,8 +372,8 @@ mod test {
         let S9  =  &S5 *    &FieldElement64([  121666,0,0,0,0]);  // R6
         let S10 =  &S6 *    &FieldElement64([2*121666,0,0,0,0]);  // R8
         let S11 =  &S7 * &(-&FieldElement64([2*121665,0,0,0,0])); // R7
-        print_var!(S8 );
-        print_var!(S9 );
+        print_var!(S8);
+        print_var!(S9);
         print_var!(S10);
         print_var!(S11);
         println!("");
@@ -378,12 +388,17 @@ mod test {
         print_var!(S15);
         println!("");
 
-        let X3  = &S12 * &S14; // R1 * R2
-        let Y3  = &S15 * &S13; // R3 * R4
-        let Z3  = &S15 * &S14; // R2 * R3
-        let T3  = &S12 * &S13; // R1 * R4
+        let X3 = &S12 * &S14; // R1 * R2
+        let Y3 = &S15 * &S13; // R3 * R4
+        let Z3 = &S15 * &S14; // R2 * R3
+        let T3 = &S12 * &S13; // R1 * R4
 
-        edwards::EdwardsPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+        edwards::EdwardsPoint {
+            X: X3,
+            Y: Y3,
+            Z: Z3,
+            T: T3,
+        }
     }
 
     fn addition_test_helper(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) {
@@ -442,10 +457,10 @@ mod test {
         macro_rules! print_var {
             ($x:ident) => {
                 println!("{} = {:?}", stringify!($x), $x.to_bytes());
-            }
+            };
         }
 
-        let S0 = &X1 + &Y1;  // R1
+        let S0 = &X1 + &Y1; // R1
         print_var!(S0);
         println!("");
 
@@ -476,7 +491,12 @@ mod test {
         let Z3 = &S8 * &S6;
         let T3 = &S5 * &S9;
 
-        edwards::EdwardsPoint{X: X3, Y: Y3, Z: Z3, T: T3}
+        edwards::EdwardsPoint {
+            X: X3,
+            Y: Y3,
+            Z: Z3,
+            T: T3,
+        }
     }
 
     fn doubling_test_helper(P: edwards::EdwardsPoint) {

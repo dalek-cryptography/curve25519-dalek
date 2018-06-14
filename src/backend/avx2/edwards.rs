@@ -143,7 +143,7 @@ impl From<ExtendedPoint> for CachedPoint {
         let mut x = P.0;
 
         // x = (S2 S3 Z2 T2)
-        x.diff_sum(Lanes::AB);
+        x = x.blend(x.diff_sum(), Lanes::AB);
 
         // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
         x.scale_by_curve_constants();
@@ -190,7 +190,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
         let mut tmp = self.0;
 
         // tmp = (Y1-X1 Y1+X1 Z1 T1) = (S0 S1 Z1 T1)
-        tmp.diff_sum(Lanes::AB);
+        tmp = tmp.blend(tmp.diff_sum(), Lanes::AB);
 
         // tmp = (S0*S2' S1*S3' Z1*Z2' T1*T2') = (S8 S9 S10 S11)
         tmp = &tmp * &other.0;
@@ -199,7 +199,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
         tmp = tmp.shuffle(Shuffle::ABDC);
 
         // tmp = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
-        tmp.diff_sum(Lanes::ABCD);
+        tmp = tmp.diff_sum();
 
         // set t0 = (S12 S15 S15 S12)
         let t0 = tmp.shuffle(Shuffle::ADDA);

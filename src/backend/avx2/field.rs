@@ -39,6 +39,7 @@ pub enum Lanes {
     C,
     D,
     AB,
+    AC,
     CD,
     AD,
     BC,
@@ -83,6 +84,10 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             }
             Lanes::AB => {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | B_LANES) as i32)
+                    .into_bits()
+            }
+            Lanes::AC => {
+                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | C_LANES) as i32)
                     .into_bits()
             }
             Lanes::CD => {
@@ -242,6 +247,7 @@ impl FieldElement32x4 {
     /// Input limbs must be less than the limbs of \\(2p\\), i.e., freshly reduced.
     ///
     /// The output limbs are bounded by \\(2p\\).
+    #[inline]
     pub fn negate_lazy(&self) -> FieldElement32x4 {
         FieldElement32x4([
             P_TIMES_2_LO - self.0[0],
@@ -252,58 +258,15 @@ impl FieldElement32x4 {
         ])
     }
 
-    /// Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)` according to `mask`.
-    ///
-    /// This is `#[inline(always)]` because the `mask` parameter should be an immediate.
-    #[inline(always)]
-    pub fn diff_sum(&mut self, control: Lanes) {
-        unsafe {
-            use core::arch::x86_64::{_mm256_blend_epi32, _mm256_shuffle_epi32};
-
-            let shuffle = |v: u32x8| -> u32x8 {
-                _mm256_shuffle_epi32(v.into_bits(), 0b10_11_00_01).into_bits()
-            };
-
-            let x01 = self.0[0];
-            let x01_shuf = shuffle(x01);
-            let v1 = (x01_shuf + P_TIMES_2_LO) - x01;
-            let v2 = x01_shuf + x01;
-            let diffsum01 =
-                _mm256_blend_epi32(v1.into_bits(), v2.into_bits(), 0b10101010).into_bits();
-            self.0[0] = blend_lanes(x01, diffsum01, control);
-
-            let x23 = self.0[1];
-            let x23_shuf = shuffle(x23);
-            let v1 = (x23_shuf + P_TIMES_2_HI) - x23;
-            let v2 = x23_shuf + x23;
-            let diffsum23 =
-                _mm256_blend_epi32(v1.into_bits(), v2.into_bits(), 0b10101010).into_bits();
-            self.0[1] = blend_lanes(x23, diffsum23, control);
-
-            let x45 = self.0[2];
-            let x45_shuf = shuffle(x45);
-            let v1 = (x45_shuf + P_TIMES_2_HI) - x45;
-            let v2 = x45_shuf + x45;
-            let diffsum45 =
-                _mm256_blend_epi32(v1.into_bits(), v2.into_bits(), 0b10101010).into_bits();
-            self.0[2] = blend_lanes(x45, diffsum45, control);
-
-            let x67 = self.0[3];
-            let x67_shuf = shuffle(x67);
-            let v1 = (x67_shuf + P_TIMES_2_HI) - x67;
-            let v2 = x67_shuf + x67;
-            let diffsum67 =
-                _mm256_blend_epi32(v1.into_bits(), v2.into_bits(), 0b10101010).into_bits();
-            self.0[3] = blend_lanes(x67, diffsum67, control);
-
-            let x89 = self.0[4];
-            let x89_shuf = shuffle(x89);
-            let v1 = (x89_shuf + P_TIMES_2_HI) - x89;
-            let v2 = x89_shuf + x89;
-            let diffsum89 =
-                _mm256_blend_epi32(v1.into_bits(), v2.into_bits(), 0b10101010).into_bits();
-            self.0[4] = blend_lanes(x89, diffsum89, control);
-        }
+    /// Given `self = (A,B,C,D)`, compute `(B - A, B + A, D - C, D + C)`.
+    #[inline]
+    pub fn diff_sum(&self) -> FieldElement32x4 {
+        // tmp1 = (B, A, D, C)
+        let tmp1 = self.shuffle(Shuffle::BADC);
+        // tmp2 = (-A, B, -C, D)
+        let tmp2 = self.blend(self.negate_lazy(), Lanes::AC);
+        // (B - A, B + A, D - C, D + C)
+        tmp1 + tmp2
     }
 
     /// Let `self` \\(= (A, B, C, D) \\).
@@ -721,8 +684,7 @@ mod test {
         let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
         let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
-        let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
-        vec.diff_sum(Lanes::ABCD);
+        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3).diff_sum();
 
         let result = vec.split();
 
@@ -730,16 +692,6 @@ mod test {
         assert_eq!(result[1], &x1 + &x0);
         assert_eq!(result[2], &x3 - &x2);
         assert_eq!(result[3], &x3 + &x2);
-
-        let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
-        vec.diff_sum(Lanes::AB); // leave C,D unchanged
-
-        let result = vec.split();
-
-        assert_eq!(result[0], &x1 - &x0);
-        assert_eq!(result[1], &x1 + &x0);
-        assert_eq!(result[2], x2);
-        assert_eq!(result[3], x3);
     }
 
     #[test]

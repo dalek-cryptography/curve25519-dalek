@@ -36,7 +36,7 @@ pub enum Lanes {
     CD,
     AD,
     BC,
-    ALL,
+    ABCD,
 }
 
 #[inline(always)]
@@ -67,7 +67,7 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), (B_LANES | C_LANES) as i32)
                     .into_bits()
             }
-            Lanes::ALL => _mm256_blend_epi32(
+            Lanes::ABCD => _mm256_blend_epi32(
                 x.into_bits(),
                 y.into_bits(),
                 (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
@@ -719,7 +719,7 @@ mod test {
         let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
 
         let mut vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
-        vec.diff_sum(Lanes::ALL);
+        vec.diff_sum(Lanes::ABCD);
 
         let result = vec.split();
 

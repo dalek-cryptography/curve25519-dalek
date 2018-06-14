@@ -215,7 +215,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
         tmp.swap_CD();
 
         // tmp = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
-        tmp.diff_sum(Lanes::ALL);
+        tmp.diff_sum(Lanes::ABCD);
 
         // set t0 = (S12 S15 S15 S12)
         let t0 = tmp.shuffle(Shuffle::ADDA);

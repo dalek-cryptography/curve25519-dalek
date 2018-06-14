@@ -470,7 +470,7 @@ impl FieldElement32x4 {
 }
 
 #[inline(always)]
-pub fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
+fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
     let b: u32x8;
     let zero = i32x8::new(0, 0, 0, 0, 0, 0, 0, 0);
@@ -484,7 +484,7 @@ pub fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
 }
 
 #[inline(always)]
-pub fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
+fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
     unsafe {
         use core::arch::x86_64::_mm256_blend_epi32;
         use core::arch::x86_64::_mm256_shuffle_epi32;

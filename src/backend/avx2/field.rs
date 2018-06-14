@@ -34,6 +34,8 @@ pub enum Lanes {
     D,
     AB,
     CD,
+    AD,
+    BC,
     ALL,
 }
 
@@ -49,6 +51,10 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             Lanes::D => {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), D_LANES as i32).into_bits()
             }
+            Lanes::AD => {
+                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | D_LANES) as i32)
+                    .into_bits()
+            }
             Lanes::AB => {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | B_LANES) as i32)
                     .into_bits()
@@ -57,9 +63,15 @@ fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
                 _mm256_blend_epi32(x.into_bits(), y.into_bits(), (C_LANES | D_LANES) as i32)
                     .into_bits()
             }
-            Lanes::ALL => {
-                _mm256_blend_epi32(x.into_bits(), y.into_bits(), ALL_LANES as i32).into_bits()
+            Lanes::BC => {
+                _mm256_blend_epi32(x.into_bits(), y.into_bits(), (B_LANES | C_LANES) as i32)
+                    .into_bits()
             }
+            Lanes::ALL => _mm256_blend_epi32(
+                x.into_bits(),
+                y.into_bits(),
+                (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
+            ).into_bits(),
         }
     }
 }

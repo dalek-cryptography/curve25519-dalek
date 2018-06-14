@@ -146,7 +146,7 @@ impl From<ExtendedPoint> for CachedPoint {
         x = x.blend(x.diff_sum(), Lanes::AB);
 
         // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
-        x.scale_by_curve_constants();
+        x = x * (121666, 121666, 2*121666, 2*121665);
 
         // x = (121666*S2 121666*S3 2*121666*Z2 -2*121665*T2)
         x = x.blend(-x, Lanes::D);

@@ -320,42 +320,6 @@ impl FieldElement32x4 {
         tmp1 + tmp2
     }
 
-    /// Let `self` \\(= (A, B, C, D) \\).
-    ///
-    /// Compute
-    /// $$( 121666A, 121666B, 2\cdot 121666C, 2\cdot 121665 D).$$
-    pub fn scale_by_curve_constants(&mut self) {
-        let mut b = [u64x4::splat(0); 10];
-
-        let consts = u32x8::new(121666, 0, 121666, 0, 2 * 121666, 0, 2 * 121665, 0);
-
-        unsafe {
-            use core::arch::x86_64::_mm256_mul_epu32;
-
-            let (b0, b1) = unpack_pair(self.0[0]);
-            b[0] = _mm256_mul_epu32(b0.into_bits(), consts.into_bits()).into_bits();
-            b[1] = _mm256_mul_epu32(b1.into_bits(), consts.into_bits()).into_bits();
-
-            let (b2, b3) = unpack_pair(self.0[1]);
-            b[2] = _mm256_mul_epu32(b2.into_bits(), consts.into_bits()).into_bits();
-            b[3] = _mm256_mul_epu32(b3.into_bits(), consts.into_bits()).into_bits();
-
-            let (b4, b5) = unpack_pair(self.0[2]);
-            b[4] = _mm256_mul_epu32(b4.into_bits(), consts.into_bits()).into_bits();
-            b[5] = _mm256_mul_epu32(b5.into_bits(), consts.into_bits()).into_bits();
-
-            let (b6, b7) = unpack_pair(self.0[3]);
-            b[6] = _mm256_mul_epu32(b6.into_bits(), consts.into_bits()).into_bits();
-            b[7] = _mm256_mul_epu32(b7.into_bits(), consts.into_bits()).into_bits();
-
-            let (b8, b9) = unpack_pair(self.0[4]);
-            b[8] = _mm256_mul_epu32(b8.into_bits(), consts.into_bits()).into_bits();
-            b[9] = _mm256_mul_epu32(b9.into_bits(), consts.into_bits()).into_bits();
-        }
-
-        *self = FieldElement32x4::reduce64(b);
-    }
-
     pub fn reduce32(&mut self) {
         let shifts = i32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
         let masks = u32x8::new(
@@ -616,6 +580,37 @@ impl Add<FieldElement32x4> for FieldElement32x4 {
     }
 }
 
+impl Mul<(u32, u32, u32, u32)> for FieldElement32x4 {
+    type Output = FieldElement32x4;
+    #[inline]
+    fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement32x4 {
+        unsafe {
+            use core::arch::x86_64::_mm256_mul_epu32;
+
+            let consts = u32x8::new(scalars.0, 0, scalars.1, 0, scalars.2, 0, scalars.3, 0);
+
+            let (b0, b1) = unpack_pair(self.0[0]);
+            let (b2, b3) = unpack_pair(self.0[1]);
+            let (b4, b5) = unpack_pair(self.0[2]);
+            let (b6, b7) = unpack_pair(self.0[3]);
+            let (b8, b9) = unpack_pair(self.0[4]);
+
+            FieldElement32x4::reduce64([
+                _mm256_mul_epu32(b0.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b1.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b2.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b3.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b4.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b5.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b6.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b7.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b8.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b9.into_bits(), consts.into_bits()).into_bits(),
+            ])
+        }
+    }
+}
+
 impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
     type Output = FieldElement32x4;
     fn mul(self, _rhs: &'b FieldElement32x4) -> FieldElement32x4 {
@@ -684,7 +679,8 @@ mod test {
     #[test]
     fn scale_by_curve_constants() {
         let mut x = FieldElement32x4::splat(&FieldElement64::one());
-        x.scale_by_curve_constants();
+
+        x = x * (121666, 121666, 2*121666, 2*121665);
 
         let xs = x.split();
         assert_eq!(xs[0], FieldElement64([121666, 0, 0, 0, 0]));

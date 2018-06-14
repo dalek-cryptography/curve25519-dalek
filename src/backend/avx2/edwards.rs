@@ -177,9 +177,8 @@ impl<'a> Neg for &'a CachedPoint {
     type Output = CachedPoint;
 
     fn neg(self) -> CachedPoint {
-        let mut coords = self.0;
-        coords.swap_AB();
-        CachedPoint(coords.blend(coords.negate_lazy(), Lanes::D))
+        let swapped = self.0.shuffle(Shuffle::BACD);
+        CachedPoint(swapped.blend(swapped.negate_lazy(), Lanes::D))
     }
 }
 
@@ -197,7 +196,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
         tmp = &tmp * &other.0;
 
         // tmp = (S8 S9 S11 S10)
-        tmp.swap_CD();
+        tmp = tmp.shuffle(Shuffle::ABDC);
 
         // tmp = (S9-S8 S9+S8 S10-S11 S10+S11) = (S12 S13 S14 S15)
         tmp.diff_sum(Lanes::ABCD);

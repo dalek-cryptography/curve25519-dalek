@@ -106,6 +106,8 @@ pub enum Shuffle {
     CBCB,
     ABAB,
     BADC,
+    BACD,
+    ABDC,
 }
 
 /// A vector of four `FieldElements`, implemented using AVX2.
@@ -174,6 +176,8 @@ impl FieldElement32x4 {
                     Shuffle::CBCB => u32x8::new(4, 1, 6, 3, 4, 1, 6, 3),
                     Shuffle::ABAB => u32x8::new(0, 1, 2, 3, 0, 1, 2, 3),
                     Shuffle::BADC => u32x8::new(1, 0, 3, 2, 5, 4, 7, 6),
+                    Shuffle::BACD => u32x8::new(1, 0, 3, 2, 4, 5, 6, 7),
+                    Shuffle::ABDC => u32x8::new(0, 1, 2, 3, 5, 4, 7, 6),
                 };
                 // Note that this gets turned into a generic LLVM
                 // shuffle-by-constants, which can be lowered to a simpler
@@ -239,32 +243,6 @@ impl FieldElement32x4 {
             P_TIMES_2_HI - self.0[3],
             P_TIMES_2_HI - self.0[4],
         ])
-    }
-
-    /// Given `self = (A,B,C,D)`, set `self = (B,A,C,D)`
-    pub fn swap_AB(&mut self) {
-        unsafe {
-            use core::arch::x86_64::_mm256_blend_epi32;
-            use core::arch::x86_64::_mm256_shuffle_epi32;
-            for i in 0..5 {
-                let swapped = _mm256_shuffle_epi32(self.0[i].into_bits(), 0b10_11_00_01);
-                self.0[i] =
-                    _mm256_blend_epi32(self.0[i].into_bits(), swapped, 0b00001111).into_bits();
-            }
-        }
-    }
-
-    /// Given `self = (A,B,C,D)`, set `self = (A,B,D,C)`
-    pub fn swap_CD(&mut self) {
-        unsafe {
-            use core::arch::x86_64::_mm256_blend_epi32;
-            use core::arch::x86_64::_mm256_shuffle_epi32;
-            for i in 0..5 {
-                let swapped = _mm256_shuffle_epi32(self.0[i].into_bits(), 0b10_11_00_01);
-                self.0[i] =
-                    _mm256_blend_epi32(self.0[i].into_bits(), swapped, 0b11110000).into_bits();
-            }
-        }
     }
 
     /// Given `self = (A,B,C,D)`, set `self = (B - A, B + A, D - C, D + C)` according to `mask`.

@@ -10,8 +10,7 @@
 
 //! Extended Twisted Edwards for Curve25519, using AVX2.
 
-// just going to own it
-#![allow(bad_style)]
+#![allow(non_snake_case)]
 
 use core::convert::From;
 use core::ops::{Add, Neg, Sub};
@@ -393,7 +392,7 @@ mod test {
     }
 
     fn serial_double(P: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
-        let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
+        let (X1, Y1, Z1, _T1) = (P.X, P.Y, P.Z, P.T);
 
         macro_rules! print_var {
             ($x:ident) => {

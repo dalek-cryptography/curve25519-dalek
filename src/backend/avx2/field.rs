@@ -10,16 +10,20 @@
 
 //! 4-way vectorized 32bit field arithmetic using AVX2.
 
-#![allow(bad_style)]
+#![allow(non_snake_case)]
 
 const A_LANES: u8 = 0b0000_0101;
 const B_LANES: u8 = 0b0000_1010;
 const C_LANES: u8 = 0b0101_0000;
 const D_LANES: u8 = 0b1010_0000;
 
+#[allow(unused)]
 const A_LANES64: u8 = 0b00_00_00_11;
+#[allow(unused)]
 const B_LANES64: u8 = 0b00_00_11_00;
+#[allow(unused)]
 const C_LANES64: u8 = 0b00_11_00_00;
+#[allow(unused)]
 const D_LANES64: u8 = 0b11_00_00_00;
 
 use core::ops::{Add, Mul, Neg};

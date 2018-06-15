@@ -8,7 +8,20 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! 4-way vectorized 32bit field arithmetic using AVX2.
+//! An implementation of 4-way vectorized 32bit field arithmetic using
+//! AVX2.
+//!
+//! The `FieldElement32x4` struct provides a vector of four field
+//! elements, implemented using AVX2 operations.  Its API is designed
+//! to abstract away the platform-dependent details, so that point
+//! arithmetic can be implemented only in terms of a vector of field
+//! elements.
+//!
+//! At this level, the API is optimized for speed and not safety.  The
+//! `FieldElement32x4` does not always perform reductions.  The pre-
+//! and post-conditions on the bounds of the coefficients are
+//! documented for each method, but it is the caller's responsibility
+//! to ensure that there are no overflows.
 
 #![allow(non_snake_case)]
 
@@ -32,7 +45,7 @@ use core::simd::{i32x8, u32x8, u64x4, IntoBits};
 use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
 use backend::u64::field::FieldElement64;
 
-/// Unpack
+/// Unpack 32-bit lanes into 64-bit lanes:
 /// ```
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
 /// ```
@@ -55,7 +68,7 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     (a, b)
 }
 
-/// Repack
+/// Repack 64-bit lanes into 32-bit lanes:
 /// ```
 /// (a0, 0, b0, 0, c0, 0, d0, 0)
 /// (a1, 0, b1, 0, c1, 0, d1, 0)
@@ -102,6 +115,10 @@ pub enum Lanes {
 }
 
 /// The `Shuffle` enum represents a shuffle of a `FieldElement32x4`.
+///
+/// The enum variants are named by what they do to a vector \\(
+/// (A,B,C,D) \\); for instance, `Shuffle::BADC` turns \\( (A, B, C,
+/// D) \\) into \\( (B, A, D, C) \\).
 #[derive(Copy, Clone, Debug)]
 pub enum Shuffle {
     AAAA,
@@ -116,7 +133,13 @@ pub enum Shuffle {
     ABDC,
 }
 
-/// A vector of four field elements, in an AVX2-friendly format.
+/// A vector of four field elements.
+///
+/// Each operation on a `FieldElement32x4` has documented effects on
+/// the bounds of the coefficients.  This API is designed for speed
+/// and not safety; it is the caller's responsibility to ensure that
+/// the post-conditions of one operation are compatible with the
+/// pre-conditions of the next.
 #[derive(Clone, Copy, Debug)]
 pub struct FieldElement32x4(pub(crate) [u32x8; 5]);
 
@@ -134,6 +157,8 @@ impl ConditionallyAssignable for FieldElement32x4 {
 }
 
 impl FieldElement32x4 {
+    /// Split this vector into an array of four (serial) field
+    /// elements.
     pub fn split(&self) -> [FieldElement64; 4] {
         let mut out = [FieldElement64::zero(); 4];
         for i in 0..5 {
@@ -155,6 +180,11 @@ impl FieldElement32x4 {
         out
     }
 
+    /// Rearrange the elements of this vector according to `control`.
+    ///
+    /// The `control` parameter should be a compile-time constant, so
+    /// that when this function is inlined, LLVM is able to lower the
+    /// shuffle using an immediate.
     #[inline]
     pub fn shuffle(&self, control: Shuffle) -> FieldElement32x4 {
         #[inline(always)]
@@ -190,8 +220,13 @@ impl FieldElement32x4 {
         ])
     }
 
+    /// Blend `self` with `other`, taking lanes specified in `control` from `other`.
+    ///
+    /// The `control` parameter should be a compile-time constant, so
+    /// that this function can be inlined and LLVM can lower it to a
+    /// blend instruction using an immediate.
     #[inline]
-    pub fn blend(&self, b: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
+    pub fn blend(&self, other: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
         #[inline(always)]
         fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             unsafe {
@@ -254,11 +289,11 @@ impl FieldElement32x4 {
         }
 
         FieldElement32x4([
-            blend_lanes(self.0[0], b.0[0], control),
-            blend_lanes(self.0[1], b.0[1], control),
-            blend_lanes(self.0[2], b.0[2], control),
-            blend_lanes(self.0[3], b.0[3], control),
-            blend_lanes(self.0[4], b.0[4], control),
+            blend_lanes(self.0[0], other.0[0], control),
+            blend_lanes(self.0[1], other.0[1], control),
+            blend_lanes(self.0[2], other.0[2], control),
+            blend_lanes(self.0[3], other.0[3], control),
+            blend_lanes(self.0[4], other.0[4], control),
         ])
     }
 

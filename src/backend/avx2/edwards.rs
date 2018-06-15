@@ -8,7 +8,29 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Extended Twisted Edwards for Curve25519, using AVX2.
+//! Parallel Edwards Arithmetic for Curve25519.
+//!
+//! This module currently has two point types:
+//!
+//! * `ExtendedPoint`: a point stored in vector-friendly format, with
+//! vectorized doubling and addition;
+//!
+//! * `CachedPoint`: used for readdition.
+//!
+//! Details on the formulas can be found in the documentation for the
+//! parent `avx2` module.
+//!
+//! This API is designed to be safe: vectorized points can only be
+//! created from serial points (which do validation on decompression),
+//! and operations on valid points return valid points, so invalid
+//! point states should be unrepresentable.
+//!
+//! This design goal is met, with one exception: the `Neg`
+//! implementation for the `CachedPoint` performs a lazy negation, so
+//! that subtraction can be efficiently implemented as a negation and
+//! an addition.  Repeatedly negating a `CachedPoint` will cause its
+//! coefficients to grow and eventually overflow.  Repeatedly negating
+//! a point should not be necessary anyways.
 
 #![allow(non_snake_case)]
 
@@ -26,7 +48,13 @@ use traits::Identity;
 use backend::avx2::field::{FieldElement32x4, Lanes, Shuffle};
 use backend::avx2::constants;
 
-/// A point on Curve25519, represented in an AVX2-friendly format.
+/// A point on Curve25519, using parallel Edwards formulas for curve
+/// operations.
+///
+/// # Invariant
+///
+/// The coefficients of an `ExtendedPoint` are bounded with
+/// \\( b < 0.007 \\).
 #[derive(Copy, Clone, Debug)]
 pub struct ExtendedPoint(pub(super) FieldElement32x4);
 
@@ -67,6 +95,7 @@ impl Identity for ExtendedPoint {
 }
 
 impl ExtendedPoint {
+    /// Compute the double of this point.
     pub fn double(&self) -> ExtendedPoint {
         // Want to compute (X1 Y1 Z1 X1+Y1).
         // Not sure how to do this less expensively than computing
@@ -138,6 +167,15 @@ impl ExtendedPoint {
 }
 
 /// A cached point with some precomputed variables used for readdition.
+///
+/// # Warning
+///
+/// It is not safe to negate this point more than once.
+///
+/// # Invariant
+///
+/// As long as the `CachedPoint` is not repeatedly negated, its
+/// coefficients will be bounded with \\( b < 1.0 \\).
 #[derive(Copy, Clone, Debug)]
 pub struct CachedPoint(pub(super) FieldElement32x4);
 
@@ -196,6 +234,12 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
 
     /// Add an `ExtendedPoint` and a `CachedPoint`.
     fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
+        // The coefficients of an `ExtendedPoint` are reduced after
+        // every operation.  If the `CachedPoint` was negated, its
+        // coefficients grow by one bit.  So on input, `self` is
+        // bounded with `b < 0.007` and `other` is bounded with
+        // `b < 1.0`.
+        
         let mut tmp = self.0;
 
         tmp = tmp.blend(tmp.diff_sum(), Lanes::AB);

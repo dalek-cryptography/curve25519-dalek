@@ -71,15 +71,17 @@ Curve arithmetic is implemented using one of the following backends:
 
 * a `u32` backend using `u64` products;
 * a `u64` backend using `u128` products;
-* an experimental AVX2 backend, available using the `yolocrypto` feature when
-  compiling for a target with `target_feature=+avx2`.
+* an `avx2` backend using parallel formulas, available when compiling for a
+  target with `target_feature=+avx2`.
 
 By default the `u64` backend is selected.  To select a specific backend, use:
 ```sh
 cargo build --no-default-features --features "std u32_backend"
 cargo build --no-default-features --features "std u64_backend"
-cargo build --no-default-features --features "std avx2_backend yolocrypto"
+cargo build --no-default-features --features "std avx2_backend"
 ```
+Crates using `curve25519-dalek` can either select a backend on behalf of their
+users, or expose feature flags that control the `curve25519-dalek` backend.
 
 Benchmarks are run using [`criterion.rs`][criterion]:
 
@@ -88,7 +90,7 @@ Benchmarks are run using [`criterion.rs`][criterion]:
 export RUSTFLAGS="-C target_cpu=native"
 cargo bench --no-default-features --features "std u32_backend"
 cargo bench --no-default-features --features "std u64_backend"
-cargo bench --no-default-features --features "std avx2_backend yolocrypto"
+cargo bench --no-default-features --features "std avx2_backend"
 ```
 
 # Contributing
@@ -117,7 +119,8 @@ to the Dalek race.*
 
 Portions of this library were originally a port of [Adam Langley's
 Golang ed25519 library](https://github.com/agl/ed25519), which was in
-turn a port of the reference `ref10` implementation.
+turn a port of the reference `ref10` implementation.  Most of this code,
+including the 32-bit field arithmetic, has since been rewritten.
 
 The fast `u32` and `u64` scalar arithmetic was implemented by Andrew Moon, and
 the addition chain for scalar inversion was provided by Brian Smith.

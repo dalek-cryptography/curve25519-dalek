@@ -14,7 +14,7 @@
 
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
-#![cfg_attr(all(feature = "nightly", feature = "yolocrypto"), feature(stdsimd))]
+#![cfg_attr(all(feature = "nightly", feature = "avx2_backend"), feature(stdsimd))]
 
 // Refuse to compile if documentation is missing, but only on nightly.
 //

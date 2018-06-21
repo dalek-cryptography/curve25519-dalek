@@ -1,4 +1,4 @@
-FEATURES := nightly yolocrypto
+FEATURES := nightly yolocrypto avx2_backend
 
 doc:
 	cargo rustdoc --features "$(FEATURES)" -- --html-in-header docs/assets/rustdoc-include-katex-header.html

@@ -10,7 +10,7 @@ env:
   # Tests the u64 backend
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u64_backend'
   # Tests the avx2 backend
-  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend'
   # Tests serde support and default feature selection
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
   # Tests building without std. We have to select a backend, so we select the one
@@ -21,7 +21,7 @@ matrix:
   exclude:
     # Test the avx2 backend only on nightly
     - rust: stable
-      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend yolocrypto'
+      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend'
     # Test no_std only on nightly.
     - rust: stable
       env: TEST_COMMAND=build EXTRA_FLAGS=--no-default-features FEATURES='u32_backend'

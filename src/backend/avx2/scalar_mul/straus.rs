@@ -8,6 +8,8 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+#![allow(non_snake_case)]
+
 use core::borrow::Borrow;
 
 use clear_on_drop::ClearOnDrop;

@@ -16,6 +16,24 @@ use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 use backend::avx2::field::FieldElement32x4;
 use scalar_mul::window::NafLookupTable8;
 
+/// The identity element as an `ExtendedPoint`.
+pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldElement32x4([
+    u32x8::new(0, 1, 0, 0, 1, 0, 0, 0),
+    u32x8::splat(0),
+    u32x8::splat(0),
+    u32x8::splat(0),
+    u32x8::splat(0),
+]));
+
+/// The identity element as a `CachedPoint`.
+pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(FieldElement32x4([
+    u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
+    u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+    u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+    u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+    u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
+]));
+
 /// The low limbs of (2p, 2p, 2p, 2p), so that
 /// ```no_run
 /// (2p, 2p, 2p, 2p) = [P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI]
@@ -75,14 +93,6 @@ pub(crate) static P_TIMES_16_HI: u32x8 = u32x8::new(
     33554431 << 4,
     33554431 << 4,
 );
-
-pub(crate) static P_TIMES_2_MASKED: FieldElement32x4 = FieldElement32x4([
-    u32x8::new(0, 134217690, 0, 67108862, 134217690, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-    u32x8::new(0, 134217726, 0, 67108862, 134217726, 0, 67108862, 0),
-]);
 
 /// Odd multiples of the Ed25519 basepoint:
 pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([

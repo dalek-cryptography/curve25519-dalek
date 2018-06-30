@@ -1138,4 +1138,20 @@ mod test {
         // This should panic in debug mode.
         Scalar::batch_invert(&mut xs);
     }
+
+    #[test]
+    fn batch_invert_consistency() {
+        let mut x = Scalar::from_u64(1);
+        let mut v1: Vec<_> = (0..16).map(|_| {let tmp = x; x = x + x; tmp}).collect();
+        let v2 = v1.clone();
+
+        let expected: Scalar = v1.iter().product();
+        let expected = expected.invert();
+        let ret = Scalar::batch_invert(&mut v1);
+        assert_eq!(ret, expected);
+
+        for (a, b) in v1.iter().zip(v2.iter()) {
+            assert_eq!(a * b, Scalar::one());
+        }
+    }
 }

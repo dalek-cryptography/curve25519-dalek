@@ -484,9 +484,14 @@ impl Scalar {
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
-        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
+        for (input, scratch) in inputs.iter_mut().zip(scratch.iter_mut()) {
             *scratch = acc;
-            acc = UnpackedScalar::montgomery_mul(&acc, &input.unpack().to_montgomery());
+
+            // Avoid unnecessary Montgomery multiplication in second pass by
+            // keeping inputs in Montgomery form
+            let tmp = input.unpack().to_montgomery();
+            *input = tmp.pack();
+            acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
         }
 
         // Compute the inverse of all products
@@ -501,7 +506,7 @@ impl Scalar {
         // Pass through the vector backwards to compute the inverses
         // in place
         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
-            let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack().to_montgomery());
+            let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
             *input = UnpackedScalar::montgomery_mul(&acc, &scratch).from_montgomery().pack();
             acc = tmp;
         }

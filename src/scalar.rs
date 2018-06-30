@@ -434,9 +434,6 @@ impl Scalar {
     /// *prove* that this is the case, you **SHOULD NOT USE THIS
     /// FUNCTION**.
     ///
-    /// This function is most efficient when the batch size (slice
-    /// length) is a power of 2.
-    ///
     /// # Example
     ///
     /// ```
@@ -474,38 +471,42 @@ impl Scalar {
         // Mark UnpackedScalars as zeroable.
         unsafe impl ZeroSafe for UnpackedScalar {}
 
-        let n = inputs.len().next_power_of_two();
+        let n = inputs.len();
         let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
 
-        // Wrap the tree storage in a ClearOnDrop to wipe it when we
-        // pass out of scope.
-        let tree_vec = vec![one; 2*n];
-        let mut tree = ClearOnDrop::new(tree_vec);
+        // Wrap the scratch storage in a ClearOnDrop to wipe it when
+        // we pass out of scope.
+        let scratch_vec = vec![one; n];
+        let mut scratch = ClearOnDrop::new(scratch_vec);
 
-        for i in 0..inputs.len() {
-            tree[n+i] = inputs[i].unpack().to_montgomery();
+        // Keep an accumulator of all of the previous products
+        let mut acc = Scalar::one().unpack().to_montgomery();
+
+        // Pass through the input vector, recording the previous
+        // products in the scratch space
+        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
+            *scratch = acc;
+            acc = UnpackedScalar::montgomery_mul(&acc, &input.unpack().to_montgomery());
         }
 
-        for i in (1..n).rev() {
-            tree[i] = UnpackedScalar::montgomery_mul(&tree[2*i], &tree[2*i+1]);
+        // Compute the inverse of all products
+        acc = acc.montgomery_invert();
+
+        // We need to return the product of all inverses later
+        let ret = acc.from_montgomery().pack();
+
+        // acc is nonzero iff all inputs are nonzero
+        debug_assert!(ret != Scalar::zero());
+
+        // Pass through the vector backwards to compute the inverses
+        // in place
+        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+            let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack().to_montgomery());
+            *input = UnpackedScalar::montgomery_mul(&acc, &scratch).from_montgomery().pack();
+            acc = tmp;
         }
 
-        // tree[1] is zero iff any of the inputs are zero.
-        debug_assert!(tree[1].from_montgomery().pack() != Scalar::zero());
-
-        let allinv = tree[1].montgomery_invert();
-
-        for i in 0..inputs.len() {
-            let mut inv = allinv;
-            let mut node = n + i;
-            while node > 1 {
-                inv = UnpackedScalar::montgomery_mul(&inv, &tree[node ^1]);
-                node = node >> 1;
-            }
-            inputs[i] = inv.from_montgomery().pack();
-        }
-
-        allinv.from_montgomery().pack()
+        ret
     }
 
     /// Get the bits of the scalar.

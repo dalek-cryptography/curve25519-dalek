@@ -1140,6 +1140,11 @@ mod test {
     }
 
     #[test]
+    fn batch_invert_empty() {
+        assert_eq!(Scalar::one(), Scalar::batch_invert(&mut []));
+    }
+
+    #[test]
     fn batch_invert_consistency() {
         let mut x = Scalar::from_u64(1);
         let mut v1: Vec<_> = (0..16).map(|_| {let tmp = x; x = x + x; tmp}).collect();

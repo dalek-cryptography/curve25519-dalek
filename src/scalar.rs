@@ -1136,6 +1136,7 @@ mod test {
         assert_eq!(parsed, X);
     }
 
+    #[cfg(debug_assertions)]
     #[test]
     #[should_panic]
     fn batch_invert_with_a_zero_input_panics() {

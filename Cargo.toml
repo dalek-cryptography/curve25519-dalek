@@ -46,7 +46,7 @@ byteorder = { version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"
-subtle = { version = "0.6", features = ["generic-impls"], default-features = false }
+subtle = { version = "0.7", features = ["generic-impls"], default-features = false }
 serde = { version = "1.0", optional = true }
 
 [build-dependencies]
@@ -55,7 +55,7 @@ byteorder = { version = "1", default-features = false }
 digest = "0.7"
 generic-array = "0.9"
 clear_on_drop = "=0.2.3"
-subtle = { version = "0.6", features = ["generic-impls"], default-features = false }
+subtle = { version = "0.7", features = ["generic-impls"], default-features = false }
 serde = { version = "1.0", optional = true }
 
 [features]

@@ -11,6 +11,28 @@
 // - Brian Smith <brian@briansmith.org>
 
 //! Arithmetic on scalars (integers mod the group order).
+//!
+//! Both the Ristretto group and the Ed25519 basepoint have prime order
+//! \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
+//!
+//! This code is intended to be useful with both the Ristretto group
+//! (where everything is done modulo \\( \ell \\)), and the X/Ed25519
+//! setting, which mandates specific bit-twiddles that are not
+//! well-defined modulo \\( \ell \\).
+//!
+//! To create a `Scalar` from a supposedly canonical encoding, use
+//! `Scalar::from_canonical_bytes`.
+//!
+//! To create a `Scalar` by reducing a \\(256\\)-bit integer mod \\( \ell \\),
+//! use `Scalar::from_bytes_mod_order`.
+//!
+//! To create a `Scalar` by reducing a \\(512\\)-bit integer mod \\( \ell \\),
+//! use `Scalar::from_bytes_mod_order_wide`.
+//!
+//! To create a `Scalar` with a specific bit-pattern (e.g., for
+//! compatibility with X25519 "clamping"), use `Scalar::from_bits`.
+//!
+//! All arithmetic on `Scalars` is done modulo \\( \ell \\).
 
 use core::fmt::Debug;
 use core::ops::Neg;
@@ -51,28 +73,6 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-///
-/// Both the Ristretto group and the Ed25519 basepoint have prime order
-/// \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
-///
-/// The code is intended to be useful with both the Ristretto group
-/// (where everything is done modulo \\( \ell \\)), and the X/Ed25519
-/// setting, which mandates specific bit-twiddles that are not
-/// well-defined modulo \\( \ell \\).
-///
-/// To create a `Scalar` from a supposedly canonical encoding, use
-/// `Scalar::from_canonical_bytes`.
-///
-/// To create a `Scalar` by reducing a \\(256\\)-bit integer mod \\( \ell \\),
-/// use `Scalar::from_bytes_mod_order`.
-///
-/// To create a `Scalar` by reducing a \\(512\\)-bit integer mod \\( \ell \\),
-/// use `Scalar::from_bytes_mod_order_wide`.
-///
-/// To create a `Scalar` with a specific bit-pattern (e.g., for
-/// compatibility with X25519 "clamping"), use `Scalar::from_bits`.
-///
-/// All arithmetic on `Scalars` is done modulo \\( \ell \\).
 #[derive(Copy, Clone)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.

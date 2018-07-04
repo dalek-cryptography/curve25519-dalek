@@ -59,10 +59,6 @@ extern crate curve25519_dalek;
 
 # Backends and Features
 
-The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
-is meant to indicate that it is not considered production-ready, and we do not
-consider `yolocrypto` features to be covered by semver guarantees.
-
 The `std` feature is enabled by default, but it can be disabled.
 
 The `nightly` feature enables nightly-only features.  **It is recommended for security**.
@@ -92,6 +88,13 @@ cargo bench --no-default-features --features "std u32_backend"
 cargo bench --no-default-features --features "std u64_backend"
 cargo bench --no-default-features --features "std avx2_backend"
 ```
+
+The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
+is meant to indicate that it is not considered production-ready, and we do not
+consider `yolocrypto` features to be covered by semver guarantees.
+This is designed to make it easier to test intended new features
+without having to stabilise them first.  Use `yolocrypto` at your own,
+obvious, risk.
 
 # Contributing
 

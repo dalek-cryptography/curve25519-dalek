@@ -20,19 +20,125 @@
 //! setting, which mandates specific bit-twiddles that are not
 //! well-defined modulo \\( \ell \\).
 //!
-//! To create a `Scalar` from a supposedly canonical encoding, use
-//! `Scalar::from_canonical_bytes`.
-//!
-//! To create a `Scalar` by reducing a \\(256\\)-bit integer mod \\( \ell \\),
-//! use `Scalar::from_bytes_mod_order`.
-//!
-//! To create a `Scalar` by reducing a \\(512\\)-bit integer mod \\( \ell \\),
-//! use `Scalar::from_bytes_mod_order_wide`.
-//!
-//! To create a `Scalar` with a specific bit-pattern (e.g., for
-//! compatibility with X25519 "clamping"), use `Scalar::from_bits`.
-//!
 //! All arithmetic on `Scalars` is done modulo \\( \ell \\).
+//!
+//! # Constructing a scalar
+//!
+//! To create a [`Scalar`](struct.Scalar.html) from a supposedly canonical encoding, use
+//! [`Scalar::from_canonical_bytes`](struct.Scalar.html#method.from_canonical_bytes).
+//!
+//! If the bytes are a canonical encoding of a scalar mod \ell, we'll get
+//! `Some(Scalar)` in return:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let one_as_bytes: [u8; 32] = Scalar::one().to_bytes();
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes);
+//!
+//! assert!(a.is_some());
+//! ```
+//!
+//! However, if we give it bytes representing a scalar larger than \\( \ell \\)
+//! (in this case, \\( \ell + 2 \\)), we'll get `None` back:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(l_plus_two_bytes);
+//!
+//! assert!(a.is_none());
+//! ```
+//!
+//! Another way to create a `Scalar` is by reducing a \\(256\\)-bit integer mod
+//! \\( \ell \\), for which one may use the
+//! [`Scalar::from_bytes_mod_order`](struct.Scalar.html#method.from_bytes_mod_order)
+//! method.  In the case of the second example above, this would reduce the
+//! resultant scalar \\( \mod \ell \\), producing \\( 2 \\):
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Scalar = Scalar::from_bytes_mod_order(l_plus_two_bytes);
+//!
+//! let two: Scalar = Scalar::one() + Scalar::one();
+//!
+//! assert!(a == two);
+//! ```
+//!
+//! Similarly, to create a `Scalar` by reducing a \\(512\\)-bit integer mod \\(
+//! \ell \\), use
+//! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
+//! This is most frequently used to produce a `Scalar` from the output of a
+//! 512-bit hash function:
+//!
+//! ```
+//! # extern crate curve25519_dalek;
+//! # extern crate digest;
+//! # extern crate sha2;
+//! #
+//! # fn main() {
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! use digest::Input;
+//!
+//! use sha2::Digest;
+//! use sha2::Sha512;
+//!
+//! let mut hasher: Sha512 = Sha512::default();
+//! let mut hash: [u8; 64] = [0u8; 64];
+//!
+//! hasher.input(b"Abolish ICE");
+//! hash.copy_from_slice(hasher.result().as_slice());
+//!
+//! let a: Scalar = Scalar::from_bytes_mod_order_wide(&hash);
+//! # }
+//! ```
+//!
+//! However, for hashes in particular, there are also the convenience methods
+//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash) and
+//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes).
+//!
+//! To create a `Scalar` with a specific bit-pattern (e.g., for compatibility
+//! with X25519
+//! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
+//! use [`Scalar::from_bits`](struct.Scalar.html#method.from_bits). This
+//! constructs a scalar with exactly the bit pattern given, without any
+//! assurances as to reduction modulo the group order:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Scalar = Scalar::from_bits(l_plus_two_bytes);
+//!
+//! let two: Scalar = Scalar::one() + Scalar::one();
+//!
+//! assert!(a != two);              // the scalar is not reduced (mod l)…
+//! assert!(! a.is_canonical());    // …and therefore is not canonical.
+//! assert!(a.reduce() == two);     // if we were to reduce it manually, it would be.
+//! ```
+//!
+//! In particular, the bit pattern for the resulting scalar is invariant,
+//! **except for the high bit, which will be unset** in order to preserve the
+//! condition that scalars are 255-bit integers.
 
 use core::fmt::Debug;
 use core::ops::Neg;

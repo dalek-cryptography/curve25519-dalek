@@ -75,14 +75,18 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 /// represents an element of \\(\mathbb Z / \ell\\).
 #[derive(Copy, Clone)]
 pub struct Scalar {
-    /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.
+    /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
+    /// group order.
     ///
     /// # Invariant
     ///
-    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or equivalently the high bit of `bytes[31]` must be zero.
+    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or
+    /// equivalently the high bit of `bytes[31]` must be zero.
     ///
     /// This ensures that there is room for a carry bit when computing a NAF representation.
-    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
+    //
+    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could
+    //     make the Scalar constructors const fns and use those instead.
     pub(crate) bytes: [u8; 32],
 }
 

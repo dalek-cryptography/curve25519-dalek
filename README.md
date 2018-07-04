@@ -126,7 +126,8 @@ turn a port of the reference `ref10` implementation.  Most of this code,
 including the 32-bit field arithmetic, has since been rewritten.
 
 The fast `u32` and `u64` scalar arithmetic was implemented by Andrew Moon, and
-the addition chain for scalar inversion was provided by Brian Smith.
+the addition chain for scalar inversion was provided by Brian Smith.  The
+optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
 The `no_std` support was contributed by Tony Arcieri.
 

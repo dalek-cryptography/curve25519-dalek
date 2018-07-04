@@ -61,7 +61,8 @@ extern crate curve25519_dalek;
 
 The `std` feature is enabled by default, but it can be disabled.
 
-The `nightly` feature enables nightly-only features.  **It is recommended for security**.
+The `nightly` feature enables features available only when using a Rust nightly
+compiler.  **It is recommended for security**.
 
 Curve arithmetic is implemented using one of the following backends:
 

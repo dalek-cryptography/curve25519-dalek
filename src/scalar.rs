@@ -535,6 +535,32 @@ impl Scalar {
     /// # Returns
     ///
     /// The multiplicative inverse of the this `Scalar`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
+    /// let X: Scalar = Scalar::from_bytes_mod_order([
+    ///         0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
+    ///         0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
+    ///         0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
+    ///         0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04,
+    ///     ]);
+    /// // 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
+    /// let XINV: Scalar = Scalar::from_bytes_mod_order([
+    ///         0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
+    ///         0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
+    ///         0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
+    ///         0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f,
+    ///     ]);
+    ///
+    /// let inv_X: Scalar = X.invert();
+    /// assert!(XINV == inv_X);
+    /// let should_be_one: Scalar = &inv_X * &X;
+    /// assert!(should_be_one == Scalar::one());
+    /// ```
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
     }

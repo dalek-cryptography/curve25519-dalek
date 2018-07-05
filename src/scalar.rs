@@ -525,6 +525,16 @@ impl Scalar {
     }
 
     /// Compute the multiplicative inverse of this scalar.
+    ///
+    /// # Warning
+    ///
+    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
+    ///
+    /// # Returns
+    ///
+    /// The multiplicative inverse of the this `Scalar`.
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
     }

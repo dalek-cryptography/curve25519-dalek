@@ -26,10 +26,10 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
-## WARNING
+## Stability
 
-We do not yet consider this code to be production-ready.  We intend to
-stabilize a production-ready version `1.0` soon.
+We have recently released a `1.0.0-pre.0` version of `curve25519-dalek` and
+would greatly appreciate testing and feedback on our API and performance.
 
 # Documentation
 
@@ -59,13 +59,8 @@ extern crate curve25519_dalek;
 
 # Backends and Features
 
-The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
-is meant to indicate that it is not considered production-ready, and we do not
-consider `yolocrypto` features to be covered by semver guarantees.
-
-The `std` feature is enabled by default, but it can be disabled.
-
-The `nightly` feature enables nightly-only features.  **It is recommended for security**.
+The `nightly` feature enables features available only when using a Rust nightly
+compiler.  **It is recommended for security**.
 
 Curve arithmetic is implemented using one of the following backends:
 
@@ -83,6 +78,11 @@ cargo build --no-default-features --features "std avx2_backend"
 Crates using `curve25519-dalek` can either select a backend on behalf of their
 users, or expose feature flags that control the `curve25519-dalek` backend.
 
+The `std` feature is enabled by default, but it can be disabled for no-`std`
+builds using `--no-default-features`.  Note that this requires explicitly
+selecting an arithmetic backend using one of the `_backend` features.
+If no backend is selected, compilation will fail.
+
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
@@ -92,6 +92,13 @@ cargo bench --no-default-features --features "std u32_backend"
 cargo bench --no-default-features --features "std u64_backend"
 cargo bench --no-default-features --features "std avx2_backend"
 ```
+
+The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
+is meant to indicate that it is not considered production-ready, and we do not
+consider `yolocrypto` features to be covered by semver guarantees.
+This is designed to make it easier to test intended new features
+without having to stabilise them first.  Use `yolocrypto` at your own,
+obvious, risk.
 
 # Contributing
 
@@ -123,7 +130,8 @@ turn a port of the reference `ref10` implementation.  Most of this code,
 including the 32-bit field arithmetic, has since been rewritten.
 
 The fast `u32` and `u64` scalar arithmetic was implemented by Andrew Moon, and
-the addition chain for scalar inversion was provided by Brian Smith.
+the addition chain for scalar inversion was provided by Brian Smith.  The
+optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
 The `no_std` support was contributed by Tony Arcieri.
 

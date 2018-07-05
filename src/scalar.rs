@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //
@@ -11,6 +11,132 @@
 // - Brian Smith <brian@briansmith.org>
 
 //! Arithmetic on scalars (integers mod the group order).
+//!
+//! Both the Ristretto group and the Ed25519 basepoint have prime order
+//! \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
+//!
+//! This code is intended to be useful with both the Ristretto group
+//! (where everything is done modulo \\( \ell \\)), and the X/Ed25519
+//! setting, which mandates specific bit-twiddles that are not
+//! well-defined modulo \\( \ell \\).
+//!
+//! All arithmetic on `Scalars` is done modulo \\( \ell \\).
+//!
+//! # Constructing a scalar
+//!
+//! To create a [`Scalar`](struct.Scalar.html) from a supposedly canonical encoding, use
+//! [`Scalar::from_canonical_bytes`](struct.Scalar.html#method.from_canonical_bytes).
+//!
+//! This function does input validation, ensuring that the input bytes
+//! are the canonical encoding of a `Scalar`.
+//! If they are, we'll get
+//! `Some(Scalar)` in return:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let one_as_bytes: [u8; 32] = Scalar::one().to_bytes();
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes);
+//!
+//! assert!(a.is_some());
+//! ```
+//!
+//! However, if we give it bytes representing a scalar larger than \\( \ell \\)
+//! (in this case, \\( \ell + 2 \\)), we'll get `None` back:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(l_plus_two_bytes);
+//!
+//! assert!(a.is_none());
+//! ```
+//!
+//! Another way to create a `Scalar` is by reducing a \\(256\\)-bit integer mod
+//! \\( \ell \\), for which one may use the
+//! [`Scalar::from_bytes_mod_order`](struct.Scalar.html#method.from_bytes_mod_order)
+//! method.  In the case of the second example above, this would reduce the
+//! resultant scalar \\( \mod \ell \\), producing \\( 2 \\):
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Scalar = Scalar::from_bytes_mod_order(l_plus_two_bytes);
+//!
+//! let two: Scalar = Scalar::one() + Scalar::one();
+//!
+//! assert!(a == two);
+//! ```
+//!
+//! There is also a constructor that reduces a \\(512\\)-bit integer, 
+//! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
+//!
+//! To construct a `Scalar` as the hash of some input data, use 
+//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes),
+//! which takes a buffer, or
+//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash),
+//! which allows an IUF API.
+//!
+//! ```
+//! # extern crate curve25519_dalek;
+//! # extern crate sha2;
+//! #
+//! # fn main() {
+//! use sha2::{Digest, Sha512};
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! // Hashing a single byte slice
+//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
+//!
+//! // Streaming data into a hash object
+//! let mut hasher = Sha512::default();
+//! hasher.input(b"Abolish ");
+//! hasher.input(b"ICE");
+//! let a2 = Scalar::from_hash(hasher);
+//!
+//! assert_eq!(a, a2);
+//! # }
+//! ```
+//!
+//! Finally, to create a `Scalar` with a specific bit-pattern
+//! (e.g., for compatibility with X/Ed25519
+//! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
+//! use [`Scalar::from_bits`](struct.Scalar.html#method.from_bits). This
+//! constructs a scalar with exactly the bit pattern given, without any
+//! assurances as to reduction modulo the group order:
+//!
+//! ```
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! let l_plus_two_bytes: [u8; 32] = [
+//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
+//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
+//! ];
+//! let a: Scalar = Scalar::from_bits(l_plus_two_bytes);
+//!
+//! let two: Scalar = Scalar::one() + Scalar::one();
+//!
+//! assert!(a != two);              // the scalar is not reduced (mod l)…
+//! assert!(! a.is_canonical());    // …and therefore is not canonical.
+//! assert!(a.reduce() == two);     // if we were to reduce it manually, it would be.
+//! ```
+//!
+//! The resulting `Scalar` has exactly the specified bit pattern,
+//! **except for the highest bit, which will be set to 0**.
 
 use core::fmt::Debug;
 use core::ops::Neg;
@@ -51,38 +177,20 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-///
-/// Both the Ristretto group and the Ed25519 basepoint have prime order
-/// \\( \ell = 2\^{252} + 27742317777372353535851937790883648493 \\).
-///
-/// The code is intended to be useful with both the Ristretto group
-/// (where everything is done modulo \\( \ell \\)), and the X/Ed25519
-/// setting, which mandates specific bit-twiddles that are not
-/// well-defined modulo \\( \ell \\).
-///
-/// To create a `Scalar` from a supposedly canonical encoding, use
-/// `Scalar::from_canonical_bytes`.
-///
-/// To create a `Scalar` by reducing a \\(256\\)-bit integer mod \\( \ell \\),
-/// use `Scalar::from_bytes_mod_order`.
-///
-/// To create a `Scalar` by reducing a \\(512\\)-bit integer mod \\( \ell \\),
-/// use `Scalar::from_bytes_mod_order_wide`.
-///
-/// To create a `Scalar` with a specific bit-pattern (e.g., for
-/// compatibility with X25519 "clamping"), use `Scalar::from_bits`.
-///
-/// All arithmetic on `Scalars` is done modulo \\( \ell \\).
 #[derive(Copy, Clone)]
 pub struct Scalar {
-    /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the group order.
+    /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
+    /// group order.
     ///
     /// # Invariant
     ///
-    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or equivalently the high bit of `bytes[31]` must be zero.
+    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or
+    /// equivalently the high bit of `bytes[31]` must be zero.
     ///
     /// This ensures that there is room for a carry bit when computing a NAF representation.
-    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could make the Scalar constructors const fns and use those instead.
+    //
+    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could
+    //     make the Scalar constructors const fns and use those instead.
     pub(crate) bytes: [u8; 32],
 }
 
@@ -414,7 +522,43 @@ impl Scalar {
         Scalar{ bytes: s_bytes }
     }
 
-    /// Compute the multiplicative inverse of this scalar.
+    /// Given a nonzero `Scalar`, compute its multiplicative inverse.
+    ///
+    /// # Warning
+    ///
+    /// `self` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
+    ///
+    /// # Returns
+    ///
+    /// The multiplicative inverse of the this `Scalar`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
+    /// let X: Scalar = Scalar::from_bytes_mod_order([
+    ///         0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
+    ///         0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
+    ///         0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
+    ///         0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04,
+    ///     ]);
+    /// // 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
+    /// let XINV: Scalar = Scalar::from_bytes_mod_order([
+    ///         0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
+    ///         0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
+    ///         0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
+    ///         0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f,
+    ///     ]);
+    ///
+    /// let inv_X: Scalar = X.invert();
+    /// assert!(XINV == inv_X);
+    /// let should_be_one: Scalar = &inv_X * &X;
+    /// assert!(should_be_one == Scalar::one());
+    /// ```
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
     }
@@ -440,7 +584,6 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// # fn main() {
-    ///
     /// let mut scalars = [
     ///     Scalar::from_u64(3),
     ///     Scalar::from_u64(5),

@@ -59,8 +59,6 @@ extern crate curve25519_dalek;
 
 # Backends and Features
 
-The `std` feature is enabled by default, but it can be disabled.
-
 The `nightly` feature enables features available only when using a Rust nightly
 compiler.  **It is recommended for security**.
 
@@ -79,6 +77,11 @@ cargo build --no-default-features --features "std avx2_backend"
 ```
 Crates using `curve25519-dalek` can either select a backend on behalf of their
 users, or expose feature flags that control the `curve25519-dalek` backend.
+
+The `std` feature is enabled by default, but it can be disabled for no-`std`
+builds using `--no-default-features`.  Note that this requires explicitly
+selecting an arithmetic backend using one of the `_backend` features.
+If no backend is selected, compilation will fail.
 
 Benchmarks are run using [`criterion.rs`][criterion]:
 

@@ -584,7 +584,6 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// # fn main() {
-    ///
     /// let mut scalars = [
     ///     Scalar::from_u64(3),
     ///     Scalar::from_u64(5),

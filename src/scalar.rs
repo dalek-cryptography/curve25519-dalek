@@ -522,11 +522,11 @@ impl Scalar {
         Scalar{ bytes: s_bytes }
     }
 
-    /// Compute the multiplicative inverse of this scalar.
+    /// Given a nonzero `Scalar`, compute its multiplicative inverse.
     ///
     /// # Warning
     ///
-    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// `self` **MUST** be nonzero.  If you cannot
     /// *prove* that this is the case, you **SHOULD NOT USE THIS
     /// FUNCTION**.
     ///

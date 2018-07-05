@@ -27,7 +27,9 @@
 //! To create a [`Scalar`](struct.Scalar.html) from a supposedly canonical encoding, use
 //! [`Scalar::from_canonical_bytes`](struct.Scalar.html#method.from_canonical_bytes).
 //!
-//! If the bytes are a canonical encoding of a scalar mod \ell, we'll get
+//! This function does input validation, ensuring that the input bytes
+//! are the canonical encoding of a `Scalar`.
+//! If they are, we'll get
 //! `Some(Scalar)` in return:
 //!
 //! ```
@@ -78,41 +80,38 @@
 //! assert!(a == two);
 //! ```
 //!
-//! Similarly, to create a `Scalar` by reducing a \\(512\\)-bit integer mod \\(
-//! \ell \\), use
+//! There is also a constructor that reduces a \\(512\\)-bit integer, 
 //! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
-//! This is most frequently used to produce a `Scalar` from the output of a
-//! 512-bit hash function:
+//!
+//! To construct a `Scalar` as the hash of some input data, use 
+//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes),
+//! which takes a buffer, or
+//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash),
+//! which allows an IUF API.
 //!
 //! ```
 //! # extern crate curve25519_dalek;
-//! # extern crate digest;
 //! # extern crate sha2;
 //! #
 //! # fn main() {
+//! use sha2::{Digest, Sha512};
 //! use curve25519_dalek::scalar::Scalar;
 //!
-//! use digest::Input;
+//! // Hashing a single byte slice
+//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
 //!
-//! use sha2::Digest;
-//! use sha2::Sha512;
+//! // Streaming data into a hash object
+//! let mut hasher = Sha512::default();
+//! hasher.input(b"Abolish ");
+//! hasher.input(b"ICE");
+//! let a2 = Scalar::from_hash(hasher);
 //!
-//! let mut hasher: Sha512 = Sha512::default();
-//! let mut hash: [u8; 64] = [0u8; 64];
-//!
-//! hasher.input(b"Abolish ICE");
-//! hash.copy_from_slice(hasher.result().as_slice());
-//!
-//! let a: Scalar = Scalar::from_bytes_mod_order_wide(&hash);
+//! assert_eq!(a, a2);
 //! # }
 //! ```
 //!
-//! However, for hashes in particular, there are also the convenience methods
-//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash) and
-//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes).
-//!
-//! To create a `Scalar` with a specific bit-pattern (e.g., for compatibility
-//! with X25519
+//! Finally, to create a `Scalar` with a specific bit-pattern
+//! (e.g., for compatibility with X/Ed25519
 //! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
 //! use [`Scalar::from_bits`](struct.Scalar.html#method.from_bits). This
 //! constructs a scalar with exactly the bit pattern given, without any
@@ -136,9 +135,8 @@
 //! assert!(a.reduce() == two);     // if we were to reduce it manually, it would be.
 //! ```
 //!
-//! In particular, the bit pattern for the resulting scalar is invariant,
-//! **except for the high bit, which will be unset** in order to preserve the
-//! condition that scalars are 255-bit integers.
+//! The resulting `Scalar` has exactly the specified bit pattern,
+//! **except for the highest bit, which will be set to 0**.
 
 use core::fmt::Debug;
 use core::ops::Neg;

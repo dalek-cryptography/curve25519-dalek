@@ -480,7 +480,6 @@ impl Scalar {
     /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
-    ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
@@ -497,7 +496,6 @@ impl Scalar {
     pub fn from_hash<D>(hash: D) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
-        // XXX this seems clumsy
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)

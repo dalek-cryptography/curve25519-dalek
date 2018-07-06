@@ -527,6 +527,26 @@ impl Scalar {
     }
 
     /// Construct a scalar from the given `u64`.
+    ///
+    /// # Inputs
+    ///
+    /// An `u64` to convert to a `Scalar`.
+    ///
+    /// # Returns
+    ///
+    /// A `Scalar` corresponding to the input `u64`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let fourtytwo = Scalar::from_u64(42);
+    /// let six = Scalar::from_u64(6);
+    /// let seven = Scalar::from_u64(7);
+    ///
+    /// assert!(fourtytwo == six * seven);
+    /// ```
     pub fn from_u64(x: u64) -> Scalar {
         let mut s_bytes = [0u8; 32];
         for i in 0..8 {

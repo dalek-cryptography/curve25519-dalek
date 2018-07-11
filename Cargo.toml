@@ -54,7 +54,7 @@ bincode = "^0.9"
 [features]
 default = ["std", "u64_backend"]
 # We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
-std = ["subtle/std", "curve25519-dalek/std", "failure/std"]
+std = ["subtle/std", "curve25519-dalek/std"]
 bench = []
 nightly = ["curve25519-dalek/nightly", "subtle/nightly", "rand/nightly"]
 asm = ["sha2/asm"]

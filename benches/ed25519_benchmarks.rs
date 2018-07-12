@@ -15,42 +15,8 @@ extern crate sha2;
 
 use criterion::Criterion;
 
-mod helpers {
-    use rand::CryptoRng;
-    use rand::Error;
-    use rand::RngCore;
-
-    /// A fake RNG which simply returns zeroes.
-    pub struct ZeroRng;
-
-    impl ZeroRng {
-        pub fn new() -> ZeroRng {
-            ZeroRng
-        }
-    }
-
-    impl RngCore for ZeroRng {
-        fn next_u32(&mut self) -> u32 { 0u32 }
-
-        fn next_u64(&mut self) -> u64 { 0u64 }
-
-        fn fill_bytes(&mut self, bytes: &mut [u8]) {
-            for i in 0 .. bytes.len() {
-                bytes[i] = 0;
-            }
-        }
-
-        fn try_fill_bytes(&mut self, bytes: &mut [u8]) -> Result<(), Error> {
-            Ok(self.fill_bytes(bytes))
-        }
-    }
-
-    impl CryptoRng for ZeroRng { }
-}
-
 mod ed25519_benches {
     use super::*;
-    use super::helpers::ZeroRng;
     use ed25519_dalek::ExpandedSecretKey;
     use ed25519_dalek::Keypair;
     use ed25519_dalek::Signature;
@@ -91,10 +57,10 @@ mod ed25519_benches {
     }
 
     fn key_generation(c: &mut Criterion) {
-        let mut rng: ZeroRng = ZeroRng::new();
+        let mut csprng: ThreadRng = thread_rng();
 
         c.bench_function("Ed25519 keypair generation", move |b| {
-                         b.iter(| | Keypair::generate::<Sha512, _>(&mut rng))
+                         b.iter(| | Keypair::generate::<Sha512, _>(&mut csprng))
         });
     }
 

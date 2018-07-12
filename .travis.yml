@@ -16,9 +16,9 @@ matrix:
     - rust: nightly
       env: TEST_COMMAND=test FEATURES=--features="nightly"
     - rust: nightly
-      env: TEST_COMMAND=bench FEATURES=--features="bench"
+      env: TEST_COMMAND=bench FEATURES=''
     - rust: nightly
-      env: TEST_COMMAND=bench FEATURES=--features="nightly bench"
+      env: TEST_COMMAND=bench FEATURES=--features="nightly"
 
 script:
   - cargo $TEST_COMMAND $FEATURES

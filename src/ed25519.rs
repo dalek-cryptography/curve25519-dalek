@@ -570,7 +570,7 @@ impl ExpandedSecretKey {
         let mut hash: [u8; 64] = [0u8; 64];
         let mesg_digest: Scalar;
         let hram_digest: Scalar;
-        let r: EdwardsPoint;
+        let r: CompressedEdwardsY;
         let s: Scalar;
 
         h.input(&self.nonce);
@@ -579,10 +579,10 @@ impl ExpandedSecretKey {
 
         mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
 
-        r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
+        r = (&mesg_digest * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = D::default();
-        h.input(r.compress().as_bytes());
+        h.input(r.as_bytes());
         h.input(public_key.as_bytes());
         h.input(&message);
         hash.copy_from_slice(h.fixed_result().as_slice());
@@ -591,7 +591,7 @@ impl ExpandedSecretKey {
 
         s = &(&hram_digest * &self.key) + &mesg_digest;
 
-        Signature{ r: r.compress(), s: s }
+        Signature{ r: r, s: s }
     }
 }
 

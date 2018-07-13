@@ -1056,7 +1056,86 @@ impl Keypair {
     ///
     /// An Ed25519ph [`Signature`] on the `prehashed_message`.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate ed25519_dalek;
+    /// extern crate rand;
+    /// extern crate sha2;
+    ///
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
+    /// use rand::thread_rng;
+    /// use rand::ThreadRng;
+    /// use sha2::Sha512;
+    ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// let mut csprng: ThreadRng = thread_rng();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// let message: &[u8] = b"All I want is to pet all of the dogs.";
+    ///
+    /// // Create a hash digest object which we'll feed the message into:
+    /// let prehashed: Sha512 = Sha512::default();
+    ///
+    /// prehashed.input(message);
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
+    ///
+    /// If you want, you can optionally pass a "context".  It is generally a
+    /// good idea to choose a context and try to make it unique to your project
+    /// and this specific usage of signatures.
+    ///
+    /// For example, without this, if you were to [convert your OpenPGP key
+    /// to a Bitcoin key][terrible_idea] (just as an example, and also Don't
+    /// Ever Do That) and someone tricked you into signing an "email" which was
+    /// actually a Bitcoin transaction moving all your magic internet money to
+    /// their address, it'd be a valid transaction.
+    ///
+    /// By adding a context, this trick becomes impossible, because the context
+    /// is concatenated into the hash, which is then signed.  So, going with the
+    /// previous example, if your bitcoin wallet used a context of
+    /// "BitcoinWalletAppTxnSigning" and OpenPGP used a context (this is likely
+    /// the least of their safety problems) of "GPGsCryptoIsntConstantTimeLol",
+    /// then the signatures produced by both could never match the other, even
+    /// if they signed the exact same message with the same key.
+    ///
+    /// Let's add a context for good measure (remember, you'll want to choose
+    /// your own!):
+    ///
+    /// ```
+    /// # extern crate ed25519_dalek;
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// #
+    /// # use ed25519_dalek::Keypair;
+    /// # use ed25519_dalek::Signature;
+    /// # use rand::thread_rng;
+    /// # use rand::ThreadRng;
+    /// # use sha2::Sha512;
+    /// #
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// # let mut csprng: ThreadRng = thread_rng();
+    /// # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
+    /// # let prehashed: Sha512 = Sha512::default();
+    /// # prehashed.input(message);
+    /// #
+    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    ///
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
+    ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    /// [terrible_idea]: https://github.com/isislovecruft/scripts/blob/master/gpgkey2bc.py
     pub fn sign_prehashed<D>(&self,
                              prehashed_message: D,
                              context: Option<&'static [u8]>) -> Signature
@@ -1087,6 +1166,45 @@ impl Keypair {
     ///
     /// Returns `true` if the `signature` was a valid signature created by this
     /// `Keypair` on the `prehashed_message`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate ed25519_dalek;
+    /// extern crate rand;
+    /// extern crate sha2;
+    ///
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
+    /// use rand::thread_rng;
+    /// use rand::ThreadRng;
+    /// use sha2::Sha512;
+    ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// let mut csprng: ThreadRng = thread_rng();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// let message: &[u8] = b"All I want is to pet all of the dogs.";
+    ///
+    /// let prehashed: Sha512 = Sha512::default();
+    /// prehashed.input(message);
+    ///
+    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    ///
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    ///
+    /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
+    /// let prehashed_again: Sha512 = Sha512::default();
+    /// prehashed_again.input(message);
+    ///
+    /// let valid: bool = keypair.public.verify_prehashed(prehashed_again, context, sig);
+    ///
+    /// assert!(valid);
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     pub fn verify_prehashed<D>(&self,

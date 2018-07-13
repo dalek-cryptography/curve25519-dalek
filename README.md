@@ -1,4 +1,4 @@
-# ed25519-dalek [![](https://img.shields.io/crates/v/ed25519-dalek.svg)](https://crates.io/crates/ed25519-dalek) [![](https://docs.rs/ed25519-dalek/badge.svg)](https://docs.rs/ed25519-dalek) [![](https://travis-ci.org/isislovecruft/ed25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/ed25519-dalek?branch=master)
+# ed25519-dalek [![](https://img.shields.io/crates/v/ed25519-dalek.svg)](https://crates.io/crates/ed25519-dalek) [![](https://docs.rs/ed25519-dalek/badge.svg)](https://docs.rs/ed25519-dalek) [![](https://travis-ci.org/dalek-cryptography/ed25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/ed25519-dalek?branch=master)
 
 Fast and efficient Rust implementation of ed25519 key generation, signing, and
 verification in Rust.
@@ -71,7 +71,7 @@ valuable than simply cycle counts alone.
 # Warnings
 
 ed25519-dalek and
-[our elliptic curve library](https://github.com/isislovecruft/curve25519-dalek)
+[our elliptic curve library](https://github.com/dalek-cryptography/curve25519-dalek)
 (which this code uses) have received *one* formal cryptographic and security
 review.  Neither have yet received what we would consider *sufficient* peer
 review by other qualified cryptographers to be considered in any way, shape,

@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -27,6 +27,6 @@ pub mod u32;
 #[cfg(feature = "u64_backend")]
 pub mod u64;
 
-#[cfg(all(feature = "avx2_backend", feature = "yolocrypto", target_feature = "avx2"))]
+#[cfg(all(feature = "avx2_backend", target_feature = "avx2"))]
 pub mod avx2;
 

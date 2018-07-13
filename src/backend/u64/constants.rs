@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -39,7 +39,7 @@ pub(crate) const APLUS2_OVER_FOUR: FieldElement64 = FieldElement64([121666, 0, 0
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar64 = Scalar64([ 0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000 ]);
 
-/// `L` * `LFACTOR` = -1 (mod 2^51)
+/// `L` * `LFACTOR` = -1 (mod 2^52)
 pub(crate) const LFACTOR: u64 = 0x51da312547e1b;
 
 /// `R` = R % L where R = 2^260

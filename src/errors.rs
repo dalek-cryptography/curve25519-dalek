@@ -20,7 +20,6 @@ use core::fmt::Display;
 /// need to pay any attention to these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub (crate) enum InternalError {
-    #[allow(dead_code)]
     PointDecompressionError,
     ScalarFormatError,
     /// An error in the length of bytes handed to a constructor.
@@ -29,55 +28,52 @@ pub (crate) enum InternalError {
     /// returning the error, and the `length` in bytes which its constructor
     /// expects.
     BytesLengthError{ name: &'static str, length: usize },
+    /// The verification equation wasn't satisfied
+    VerifyError,
 }
 
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InternalError::PointDecompressionError
-                => write!(f, "Cannot decompress extended twisted edwards point"),
+                => write!(f, "Cannot decompress Edwards point"),
             InternalError::ScalarFormatError
                 => write!(f, "Cannot use scalar with high-bit set"),
             InternalError::BytesLengthError{ name: n, length: l}
                 => write!(f, "{} must be {} bytes in length", n, l),
+            InternalError::VerifyError
+                => write!(f, "Verification equation was not satisfied"),
         }
     }
 }
 
 impl ::failure::Fail for InternalError {}
 
-/// Errors which may occur in the `from_bytes()` constructors of `PublicKey`,
-/// `SecretKey`, `ExpandedSecretKey`, `Keypair`, and `Signature`.
-///
-/// There was an internal problem due to parsing the `Signature`.
+/// Errors which may occur while processing signatures and keypairs.
 ///
 /// This error may arise due to:
 ///
+/// * Being given bytes with a length different to what was expected.
+///
 /// * A problem decompressing `r`, a curve point, in the `Signature`, or the
 ///   curve point for a `PublicKey`.
+///
 /// * A problem with the format of `s`, a scalar, in the `Signature`.  This
 ///   is only raised if the high-bit of the scalar was set.  (Scalars must
 ///   only be constructed from 255-bit integers.)
-/// * Being given bytes with a length different to what was expected.
+///
+/// * Failure of a signature to satisfy the verification equation.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
-pub struct DecodingError(pub (crate) InternalError);
+pub struct SignatureError(pub (crate) InternalError);
 
-impl Display for DecodingError {
+impl Display for SignatureError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.0 {
-            InternalError::PointDecompressionError                => write!(f, "{}", self.0),
-            InternalError::ScalarFormatError                      => write!(f, "{}", self.0),
-            InternalError::BytesLengthError{ name: _, length: _ } => write!(f, "{}", self.0),
-        }
+        write!(f, "{}", self.0)
     }
 }
 
-impl ::failure::Fail for DecodingError {
+impl ::failure::Fail for SignatureError {
     fn cause(&self) -> Option<&::failure::Fail> {
-        match self.0 {
-            InternalError::PointDecompressionError               => Some(&self.0),
-            InternalError::ScalarFormatError                     => Some(&self.0),
-            InternalError::BytesLengthError{ name: _, length: _} => Some(&self.0),
-        }
+        Some(&self.0)
     }
 }

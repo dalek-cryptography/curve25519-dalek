@@ -36,9 +36,7 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 
-use subtle::ConstantTimeEq;
-
-use errors::DecodingError;
+use errors::SignatureError;
 use errors::InternalError;
 
 /// The length of a curve25519 EdDSA `Signature`, in bytes.
@@ -132,9 +130,9 @@ impl Signature {
 
     /// Construct a `Signature` from a slice of bytes.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, SignatureError> {
         if bytes.len() != SIGNATURE_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "Signature", length: SIGNATURE_LENGTH }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
@@ -144,7 +142,7 @@ impl Signature {
         upper.copy_from_slice(&bytes[32..]);
 
         if upper[31] & 224 != 0 {
-            return Err(DecodingError(InternalError::ScalarFormatError));
+            return Err(SignatureError(InternalError::ScalarFormatError));
         }
 
         Ok(Signature{ r: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
@@ -215,9 +213,9 @@ impl SecretKey {
     /// #
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::SECRET_KEY_LENGTH;
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
-    /// # fn doctest() -> Result<SecretKey, DecodingError> {
+    /// # fn doctest() -> Result<SecretKey, SignatureError> {
     /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
     ///    157, 097, 177, 157, 239, 253, 090, 096,
     ///    186, 132, 074, 244, 146, 236, 044, 196,
@@ -238,11 +236,11 @@ impl SecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `SecretKey` or whose error value
-    /// is an `DecodingError` wrapping the internal error that occurred.
+    /// is an `SignatureError` wrapping the internal error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, SignatureError> {
         if bytes.len() != SECRET_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "SecretKey", length: SECRET_KEY_LENGTH }));
         }
         let mut bits: [u8; 32] = [0u8; 32];
@@ -469,7 +467,7 @@ impl ExpandedSecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `ExpandedSecretKey` or whose
-    /// error value is an `DecodingError` describing the error that occurred.
+    /// error value is an `SignatureError` describing the error that occurred.
     ///
     /// # Examples
     ///
@@ -479,11 +477,11 @@ impl ExpandedSecretKey {
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
-    /// # fn do_test() -> Result<ExpandedSecretKey, DecodingError> {
+    /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
     /// use rand::{Rng, OsRng};
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
@@ -504,9 +502,9 @@ impl ExpandedSecretKey {
     /// # fn main() { }
     /// ```
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "ExpandedSecretKey", length: EXPANDED_SECRET_KEY_LENGTH }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
@@ -746,9 +744,9 @@ impl PublicKey {
     /// #
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
-    /// # fn doctest() -> Result<PublicKey, DecodingError> {
+    /// # fn doctest() -> Result<PublicKey, SignatureError> {
     /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
@@ -766,23 +764,17 @@ impl PublicKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `PublicKey` or whose error value
-    /// is an `DecodingError` describing the error that occurred.
+    /// is an `SignatureError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, SignatureError> {
         if bytes.len() != PUBLIC_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "PublicKey", length: PUBLIC_KEY_LENGTH }));
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
 
         Ok(PublicKey(CompressedEdwardsY(bits)))
-    }
-
-    /// Convert this public key to its underlying extended twisted Edwards coordinate.
-    #[inline]
-    fn decompress(&self) -> Option<EdwardsPoint> {
-        self.0.decompress()
     }
 
     /// Derive this public key from its corresponding `SecretKey`.
@@ -812,36 +804,27 @@ impl PublicKey {
     ///
     /// # Return
     ///
-    /// Returns true if the signature was successfully verified, and
-    /// false otherwise.
-    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+    /// Returns `Ok(())` if the signature is valid, and `Err` otherwise.
+    #[allow(non_snake_case)]
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError>
             where D: Digest<OutputSize = U64> + Default
     {
-        let mut h: D = D::default();
-        let mut a: EdwardsPoint;
-        let ao:  Option<EdwardsPoint>;
-        let mut digest: [u8; 64] = [0u8; 64];
+        let A = self.0.decompress()
+            .ok_or_else(|| SignatureError(InternalError::PointDecompressionError))?;
 
-        ao = self.decompress();
-
-        if ao.is_some() {
-            a = ao.unwrap();
-        } else {
-            return false;
-        }
-        a = -(&a);
-
+        let mut h = D::default();
         h.input(signature.r.as_bytes());
         h.input(self.as_bytes());
         h.input(&message);
+        let k = Scalar::from_hash(h);
 
-        digest.copy_from_slice(h.fixed_result().as_slice());
+        let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
-        let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&digest);
-        let r: EdwardsPoint = EdwardsPoint::vartime_double_scalar_mul_basepoint(&digest_reduced,
-                                                                                &a, &signature.s);
-
-        (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
+        if R.compress() == signature.r {
+            Ok(())
+        } else {
+            Err(SignatureError(InternalError::VerifyError))
+        }
     }
 
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
@@ -862,43 +845,36 @@ impl PublicKey {
     /// `Keypair` on the `prehashed_message`.
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[allow(non_snake_case)]
     pub fn verify_prehashed<D>(&self,
                                prehashed_message: D,
                                context: Option<&[u8]>,
-                               signature: &Signature) -> bool
+                               signature: &Signature) -> Result<(), SignatureError>
         where D: Digest<OutputSize = U64> + Default
     {
-        let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-
-        let mut a: EdwardsPoint = match self.decompress() {
-            Some(x) => x,
-            None    => return false,
-        };
-        a = -(&a);
-
-        let ctx: &[u8] = match context {
-            Some(x) => x,
-            None    => b"",  // By default, the context is an empty string.
-        };
+        let ctx = context.unwrap_or(b"");
         debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
 
-        let ctx_len: u8 = ctx.len() as u8;
+        let A = self.0.decompress()
+            .ok_or_else(|| SignatureError(InternalError::PointDecompressionError))?;
 
+        let mut h = D::default();
         h.input(b"SigEd25519 no Ed25519 collisions");
         h.input(&[1]); // Ed25519ph
-        h.input(&[ctx_len]);
+        h.input(&[ctx.len() as u8]);
         h.input(ctx);
         h.input(signature.r.as_bytes());
         h.input(self.as_bytes());
         h.input(prehashed_message.fixed_result().as_slice());
-        hash.copy_from_slice(h.fixed_result().as_slice());
+        let k = Scalar::from_hash(h);
 
-        let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&hash);
-        let r: EdwardsPoint = EdwardsPoint::vartime_double_scalar_mul_basepoint(&digest_reduced,
-                                                                                &a, &signature.s);
+        let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
-        (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
+        if R.compress() == signature.r {
+            Ok(())
+        } else {
+            Err(SignatureError(InternalError::VerifyError))
+        }
     }
 }
 
@@ -976,10 +952,10 @@ impl Keypair {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `Keypair` or whose error value
-    /// is an `DecodingError` describing the error that occurred.
-    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, DecodingError> {
+    /// is an `SignatureError` describing the error that occurred.
+    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, SignatureError> {
         if bytes.len() != KEYPAIR_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "Keypair", length: KEYPAIR_LENGTH}));
         }
         let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
@@ -1145,7 +1121,7 @@ impl Keypair {
     }
 
     /// Verify a signature on a message with this keypair's public key.
-    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError>
             where D: Digest<OutputSize = U64> + Default {
         self.public.verify::<D>(message, signature)
     }
@@ -1210,7 +1186,7 @@ impl Keypair {
     pub fn verify_prehashed<D>(&self,
                                prehashed_message: D,
                                context: Option<&[u8]>,
-                               signature: &Signature) -> bool
+                               signature: &Signature) -> Result<(), SignatureError>
         where D: Digest<OutputSize = U64> + Default
     {
         self.public.verify_prehashed::<D>(prehashed_message, context, signature)
@@ -1261,7 +1237,6 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use curve25519_dalek::edwards::EdwardsPoint;
     use rand::ChaChaRng;
     use rand::SeedableRng;
     use hex::FromHex;
@@ -1295,32 +1270,7 @@ mod test {
         063, 120, 126, 100, 092, 059, 050, 011, ];
 
     #[test]
-    fn unmarshal_marshal() {  // TestUnmarshalMarshal
-        let mut csprng: ChaChaRng;
-        let mut keypair: Keypair;
-        let mut x: Option<EdwardsPoint>;
-        let a: EdwardsPoint;
-        let public: PublicKey;
-
-        csprng = ChaChaRng::from_seed([0u8; 32]);
-
-        // from_bytes() fails if vx²-u=0 and vx²+u=0
-        loop {
-            keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-            x = keypair.public.decompress();
-
-            if x.is_some() {
-                a = x.unwrap();
-                break;
-            }
-        }
-        public = PublicKey(a.compress());
-
-        assert!(keypair.public.0 == public.0);
-    }
-
-    #[test]
-    fn ed25519_sign_verify() {  // TestSignVerify
+    fn sign_verify() {  // TestSignVerify
         let mut csprng: ChaChaRng;
         let keypair: Keypair;
         let good_sig: Signature;
@@ -1334,11 +1284,11 @@ mod test {
         good_sig = keypair.sign::<Sha512>(&good);
         bad_sig  = keypair.sign::<Sha512>(&bad);
 
-        assert!(keypair.verify::<Sha512>(&good, &good_sig) == true,
+        assert!(keypair.verify::<Sha512>(&good, &good_sig).is_ok(),
                 "Verification of a valid signature failed!");
-        assert!(keypair.verify::<Sha512>(&good, &bad_sig)  == false,
+        assert!(keypair.verify::<Sha512>(&good, &bad_sig).is_err(),
                 "Verification of a signature on a different message passed!");
-        assert!(keypair.verify::<Sha512>(&bad,  &good_sig) == false,
+        assert!(keypair.verify::<Sha512>(&bad,  &good_sig).is_err(),
                 "Verification of a signature on a different message passed!");
     }
 
@@ -1383,7 +1333,7 @@ mod test {
             let sig2: Signature = keypair.sign::<Sha512>(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2),
+            assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2).is_ok(),
                     "Signature verification failed on line {}", lineno);
         }
     }
@@ -1417,7 +1367,7 @@ mod test {
         assert!(sig1 == sig2,
                 "Original signature from test vectors doesn't equal signature produced:\
                 \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
-        assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2),
+        assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2).is_ok(),
                 "Could not verify ed25519ph signature!");
     }
 
@@ -1451,18 +1401,18 @@ mod test {
         good_sig = keypair.sign_prehashed::<Sha512>(prehashed_good1, Some(context));
         bad_sig  = keypair.sign_prehashed::<Sha512>(prehashed_bad1,  Some(context));
 
-        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good2, Some(context), &good_sig) == true,
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good2, Some(context), &good_sig).is_ok(),
                 "Verification of a valid signature failed!");
-        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good3, Some(context), &bad_sig)  == false,
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good3, Some(context), &bad_sig).is_err(),
                 "Verification of a signature on a different message passed!");
-        assert!(keypair.verify_prehashed::<Sha512>(prehashed_bad2,  Some(context), &good_sig) == false,
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_bad2,  Some(context), &good_sig).is_err(),
                 "Verification of a signature on a different message passed!");
     }
 
     #[test]
     fn public_key_from_bytes() {
         // Make another function so that we can test the ? operator.
-        fn do_the_test() -> Result<PublicKey, DecodingError> {
+        fn do_the_test() -> Result<PublicKey, SignatureError> {
             let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
                 215, 090, 152, 001, 130, 177, 010, 183,
                 213, 075, 254, 211, 201, 100, 007, 058,

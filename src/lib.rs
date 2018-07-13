@@ -78,9 +78,7 @@
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
-//! let verified: bool = keypair.verify::<Sha512>(message, &signature);
-//!
-//! assert!(verified);
+//! assert!(keypair.verify::<Sha512>(message, &signature).is_ok());
 //! # }
 //! ```
 //!
@@ -105,9 +103,7 @@
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //!
 //! let public_key: PublicKey = keypair.public;
-//! let verified: bool = public_key.verify::<Sha512>(message, &signature);
-//!
-//! assert!(verified);
+//! assert!(public_key.verify::<Sha512>(message, &signature).is_ok());
 //! # }
 //! ```
 //!
@@ -133,7 +129,6 @@
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! # let public_key: PublicKey = keypair.public;
-//! # let verified: bool = public_key.verify::<Sha512>(message, &signature);
 //!
 //! let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = public_key.to_bytes();
 //! let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair.secret.to_bytes();
@@ -150,9 +145,9 @@
 //! # extern crate ed25519_dalek;
 //! # use rand::{Rng, ChaChaRng, SeedableRng};
 //! # use sha2::Sha512;
-//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, DecodingError};
+//! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), DecodingError> {
+//! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), SignatureError> {
 //! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
 //! # let keypair_orig: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
@@ -267,7 +262,6 @@
 extern crate curve25519_dalek;
 extern crate generic_array;
 extern crate digest;
-extern crate subtle;
 extern crate failure;
 extern crate rand;
 

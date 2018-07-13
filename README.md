@@ -55,12 +55,9 @@ nanoseconds to cycles per second on a 2591 Mhz CPU, that's 237660 cycles for
 verification and 102523 for signing, which for signing is competitive
 with optimised assembly versions.
 
-Additionally, if you're on the Rust nightly channel, be sure to build with
-`cargo build --features="nightly"` which enables more secure compiler
-optimisation protections in the
-[subtle](https://github.com/dalek-cryptography/subtle) crate.  Additionally, if
-you're using a CSPRNG from the `rand` crate, the `nightly` feature will enable
-`u128`/`i128` features there, resulting in potentially faster performance.
+Additionally, if you're using a CSPRNG from the `rand` crate, the `nightly`
+feature will enable `u128`/`i128` features there, resulting in potentially
+faster performance.
 
 Additionally, thanks to Rust, this implementation has both type and memory
 safety.  It's also easily readable by a much larger set of people than those who

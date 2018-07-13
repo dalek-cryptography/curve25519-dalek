@@ -593,6 +593,91 @@ impl ExpandedSecretKey {
 
         Signature{ r: r, s: s }
     }
+
+    /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
+    /// Ed25519ph algorithm defined in [RFC8032 §5.1][rfc8032].
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `public_key` is a [`PublicKey`] which corresponds to this secret key.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    ///
+    /// # Returns
+    ///
+    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    pub fn sign_prehashed<D>(&self,
+                             prehashed_message: D,
+                             public_key: &PublicKey,
+                             context: Option<&'static [u8]>) -> Signature
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut h: D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+        let mut prehash: [u8; 64] = [0u8; 64];
+        let mesg_digest: Scalar;
+        let hram_digest: Scalar;
+        let r: CompressedEdwardsY;
+        let s: Scalar;
+
+        let ctx: &[u8] = match context {
+            Some(x) => x,
+            None    => b"",  // By default, the context is an empty string.
+        };
+        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+
+        let ctx_len: u8 = ctx.len() as u8;
+
+        // Get the result of the pre-hashed message.
+        prehash.copy_from_slice(prehashed_message.fixed_result().as_slice());
+
+        // This is the dumbest, ten-years-late, non-admission of fucking up the
+        // domain separation I have ever seen.  Why am I still required to put
+        // the upper half "prefix" of the hashed "secret key" in here?  Why
+        // can't the user just supply their own nonce and decide for themselves
+        // whether or not they want a deterministic signature scheme?  Why does
+        // the message go into what's ostensibly the signature domain separation
+        // hash?  Why wasn't there always a way to provide a context string?
+        //
+        // ...
+        //
+        // This is a really fucking stupid bandaid, and the damned scheme is
+        // still bleeding from malleability, for fuck's sake.
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx_len]);
+        h.input(ctx);
+        h.input(&self.nonce);
+        h.input(&prehash);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
+
+        r = (&mesg_digest * &constants::ED25519_BASEPOINT_TABLE).compress();
+
+        h = D::default();
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx_len]);
+        h.input(ctx);
+        h.input(r.as_bytes());
+        h.input(public_key.as_bytes());
+        h.input(&prehash);
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        hram_digest = Scalar::from_bytes_mod_order_wide(&hash);
+
+        s = &(&hram_digest * &self.key) + &mesg_digest;
+
+        Signature{ r: r, s: s }
+    }
+
 }
 
 #[cfg(feature = "serde")]
@@ -758,6 +843,63 @@ impl PublicKey {
 
         (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
     }
+
+    /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    /// * `signature` is a purported Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the `signature` was a valid signature created by this
+    /// `Keypair` on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    pub fn verify_prehashed<D>(&self,
+                               prehashed_message: D,
+                               context: Option<&[u8]>,
+                               signature: &Signature) -> bool
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut h: D = D::default();
+        let mut hash: [u8; 64] = [0u8; 64];
+
+        let mut a: EdwardsPoint = match self.decompress() {
+            Some(x) => x,
+            None    => return false,
+        };
+        a = -(&a);
+
+        let ctx: &[u8] = match context {
+            Some(x) => x,
+            None    => b"",  // By default, the context is an empty string.
+        };
+        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+
+        let ctx_len: u8 = ctx.len() as u8;
+
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx_len]);
+        h.input(ctx);
+        h.input(signature.r.as_bytes());
+        h.input(self.as_bytes());
+        h.input(prehashed_message.fixed_result().as_slice());
+        hash.copy_from_slice(h.fixed_result().as_slice());
+
+        let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&hash);
+        let r: EdwardsPoint = EdwardsPoint::vartime_double_scalar_mul_basepoint(&digest_reduced,
+                                                                                &a, &signature.s);
+
+        (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -898,10 +1040,62 @@ impl Keypair {
         self.secret.expand::<D>().sign::<D>(&message, &self.public)
     }
 
+    /// Sign a `prehashed_message` with this `Keypair` using the
+    /// Ed25519ph algorithm defined in [RFC8032 §5.1][rfc8032].
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    ///
+    /// # Returns
+    ///
+    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    pub fn sign_prehashed<D>(&self,
+                             prehashed_message: D,
+                             context: Option<&'static [u8]>) -> Signature
+        where D: Digest<OutputSize = U64> + Default
+    {
+        self.secret.expand::<D>().sign_prehashed::<D>(prehashed_message, &self.public, context)
+    }
+
     /// Verify a signature on a message with this keypair's public key.
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
             where D: Digest<OutputSize = U64> + Default {
         self.public.verify::<D>(message, signature)
+    }
+
+    /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    /// * `signature` is a purported Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the `signature` was a valid signature created by this
+    /// `Keypair` on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    pub fn verify_prehashed<D>(&self,
+                               prehashed_message: D,
+                               context: Option<&[u8]>,
+                               signature: &Signature) -> bool
+        where D: Digest<OutputSize = U64> + Default
+    {
+        self.public.verify_prehashed::<D>(prehashed_message, context, signature)
     }
 }
 
@@ -1008,7 +1202,7 @@ mod test {
     }
 
     #[test]
-    fn sign_verify() {  // TestSignVerify
+    fn ed25519_sign_verify() {  // TestSignVerify
         let mut csprng: ChaChaRng;
         let keypair: Keypair;
         let good_sig: Signature;
@@ -1074,6 +1268,77 @@ mod test {
             assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2),
                     "Signature verification failed on line {}", lineno);
         }
+    }
+
+    // From https://tools.ietf.org/html/rfc8032#section-7.3
+    #[test]
+    fn ed25519ph_rf8032_test_vector() {
+        let secret_key: &[u8] = b"833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42";
+        let public_key: &[u8] = b"ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf";
+        let message: &[u8] = b"616263";
+        let signature: &[u8] = b"98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406";
+
+        let sec_bytes: Vec<u8> = FromHex::from_hex(secret_key).unwrap();
+        let pub_bytes: Vec<u8> = FromHex::from_hex(public_key).unwrap();
+        let msg_bytes: Vec<u8> = FromHex::from_hex(message).unwrap();
+        let sig_bytes: Vec<u8> = FromHex::from_hex(signature).unwrap();
+
+        let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+        let public: PublicKey = PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+        let keypair: Keypair  = Keypair{ secret: secret, public: public };
+        let sig1: Signature = Signature::from_bytes(&sig_bytes[..]).unwrap();
+
+        let mut prehash_for_signing: Sha512 = Sha512::default();
+        let mut prehash_for_verifying: Sha512 = Sha512::default();
+
+        prehash_for_signing.input(&msg_bytes[..]);
+        prehash_for_verifying.input(&msg_bytes[..]);
+
+        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None);
+
+        assert!(sig1 == sig2,
+                "Original signature from test vectors doesn't equal signature produced:\
+                \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
+        assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2),
+                "Could not verify ed25519ph signature!");
+    }
+
+    #[test]
+    fn ed25519ph_sign_verify() {
+        let mut csprng: ChaChaRng;
+        let keypair: Keypair;
+        let good_sig: Signature;
+        let bad_sig:  Signature;
+
+        let good: &[u8] = b"test message";
+        let bad:  &[u8] = b"wrong message";
+
+        // ugh… there's no `impl Copy for Sha512`… i hope we can all agree these are the same hashes
+        let mut prehashed_good1: Sha512 = Sha512::default();
+        prehashed_good1.input(good);
+        let mut prehashed_good2: Sha512 = Sha512::default();
+        prehashed_good2.input(good);
+        let mut prehashed_good3: Sha512 = Sha512::default();
+        prehashed_good3.input(good);
+
+        let mut prehashed_bad1: Sha512 = Sha512::default();
+        prehashed_bad1.input(bad);
+        let mut prehashed_bad2: Sha512 = Sha512::default();
+        prehashed_bad2.input(bad);
+
+        let context: &[u8] = b"testing testing 1 2 3";
+
+        csprng   = ChaChaRng::from_seed([0u8; 32]);
+        keypair  = Keypair::generate::<Sha512, _>(&mut csprng);
+        good_sig = keypair.sign_prehashed::<Sha512>(prehashed_good1, Some(context));
+        bad_sig  = keypair.sign_prehashed::<Sha512>(prehashed_bad1,  Some(context));
+
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good2, Some(context), &good_sig) == true,
+                "Verification of a valid signature failed!");
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good3, Some(context), &bad_sig)  == false,
+                "Verification of a signature on a different message passed!");
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_bad2,  Some(context), &good_sig) == false,
+                "Verification of a signature on a different message passed!");
     }
 
     #[test]

@@ -791,8 +791,8 @@ impl PublicKey {
         let k: Scalar;
 
         let A: EdwardsPoint = match self.0.decompress() {
-            Ok(x) => x,
-            Err   => Err(SignatureError(InternalError::PointDecompressionError))),
+            Some(x) => x,
+            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
         };
 
         h.input(signature.R.as_bytes());
@@ -842,8 +842,8 @@ impl PublicKey {
         debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
 
         let A: EdwardsPoint = match self.0.decompress() {
-            Ok(x) => x,
-            Err   => Err(SignatureError(InternalError::PointDecompressionError))),
+            Some(x) => x,
+            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
         };
 
         h.input(b"SigEd25519 no Ed25519 collisions");

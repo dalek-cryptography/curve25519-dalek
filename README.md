@@ -14,46 +14,47 @@ reason for feature-gating the benchmarks is that Rust's `test::Bencher` is
 unstable, and thus only works on the nightly channel.  (We'd like people to be
 able to compile and test on the stable and beta channels too!)
 
-On an Intel i5 Sandy Bridge running at 2.6 GHz, with TurboBoost enabled (and
-also running in QubesOS with *lots* of other VMs executing), this code
-achieves the following performance benchmarks:
+On an Intel i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
+the following performance benchmarks:
 
-    ∃!isisⒶwintermute:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --features="nightly bench"
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench
        Compiling ed25519-dalek v0.7.0 (file:///home/isis/code/rust/ed25519-dalek)
         Finished release [optimized] target(s) in 3.11s
-         Running target/release/deps/ed25519_dalek-ae92163eefd0cc80
+          Running target/release/deps/ed25519_benchmarks-721332beed423bce
 
-    running 9 tests
-    test ed25519::test::golden ... ignored
-    test ed25519::test::public_key_from_bytes ... ignored
-    test ed25519::test::sign_verify ... ignored
-    test ed25519::test::unmarshal_marshal ... ignored
-    test ed25519::bench::key_generation                   ... bench:      30,711 ns/iter (+/- 10,936)
-    test ed25519::bench::sign                             ... bench:      39,432 ns/iter (+/- 21,387)
-    test ed25519::bench::sign_expanded_key                ... bench:      45,753 ns/iter (+/- 25,261)
-    test ed25519::bench::underlying_scalar_mult_basepoint ... bench:      25,455 ns/iter (+/- 10,587)
-    test ed25519::bench::verify                           ... bench:      91,408 ns/iter (+/- 31,193)
+    Ed25519 signing                     time:   [15.617 us 15.630 us 15.647 us]
+    Ed25519 signature verification      time:   [45.930 us 45.968 us 46.011 us]
+    Ed25519 keypair generation          time:   [15.440 us 15.465 us 15.492 us]
 
-    test result: ok. 0 passed; 0 failed; 4 ignored; 5 measured; 0 filtered out
+By enabling the avx2 backend (on machines with compatible microarchitectures),
+the performance for signature verification is greatly improved:
+
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS="-C target_cpu=native"
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --no-default-features --features "std avx2_backend"
+       Compiling ed25519-dalek v0.7.0 (file:///home/isis/code/rust/ed25519-dalek)
+        Finished release [optimized] target(s) in 4.28s
+          Running target/release/deps/ed25519_benchmarks-e4866664de39c84d
+    Ed25519 signing                     time:   [15.923 us 15.945 us 15.967 us]
+    Ed25519 signature verification      time:   [33.382 us 33.411 us 33.445 us]
+    Ed25519 keypair generation          time:   [15.246 us 15.260 us 15.275 us]
 
 In comparison, the equivalent package in Golang performs as follows:
 
     ∃!isisⒶwintermute:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
-    PASS
-    BenchmarkKeyGeneration     20000             85880 ns/op
-    BenchmarkSigning           20000             89115 ns/op
-    BenchmarkVerification      10000            212585 ns/op
-    ok      github.com/agl/ed25519  7.500s
+    BenchmarkKeyGeneration     30000             47007 ns/op
+    BenchmarkSigning           30000             48820 ns/op
+    BenchmarkVerification      10000            119701 ns/op
+    ok      github.com/agl/ed25519  5.775s
 
-Making key generation, signing, and verification a rough average of 33%
-faster, 44% faster, and 43% faster respectively.  Of course, this
+Making key generation and signing a rough average of 2x faster, and
+verification 2.5-3x faster depending on the availability of avx2.  Of course, this
 is just my machine, and these results—nowhere near rigorous—should be taken
 with a handful of salt.
 
-Translating to a rough cycle count: we multiply by a factor of 2.6 to convert
-nanoseconds to cycles per second on a 2591 Mhz CPU, that's 237660 cycles for
-verification and 102523 for signing, which for signing is competitive
-with optimised assembly versions.
+Translating to a rough cycle count: we multiply by a factor of 3.3 to convert
+nanoseconds to cycles per second on a 3300 Mhz CPU, that's 110256 cycles for
+verification and 52618 for signing, which is competitive with hand-optimised
+assembly implementations.
 
 Additionally, if you're using a CSPRNG from the `rand` crate, the `nightly`
 feature will enable `u128`/`i128` features there, resulting in potentially

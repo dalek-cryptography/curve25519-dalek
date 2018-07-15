@@ -71,7 +71,7 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 #[derive(Copy, Eq, PartialEq)]
 #[repr(C)]
 pub struct Signature {
-    /// `r` is an `EdwardsPoint`, formed by using an hash function with
+    /// `R` is an `EdwardsPoint`, formed by using an hash function with
     /// 512-bits output to produce the digest of:
     ///
     /// - the nonce half of the `ExpandedSecretKey`, and
@@ -79,7 +79,7 @@ pub struct Signature {
     ///
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
-    /// basepoint to produce `r`, and `EdwardsPoint`.
+    /// basepoint to produce `R`, and `EdwardsPoint`.
     pub (crate) R: CompressedEdwardsY,
 
     /// `s` is a `Scalar`, formed by using an hash function with 512-bits output

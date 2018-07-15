@@ -67,6 +67,7 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 /// These signatures, unlike the ed25519 signature reference implementation, are
 /// "detached"—that is, they do **not** include a copy of the message which has
 /// been signed.
+#[allow(non_snake_case)]
 #[derive(Copy)]
 #[repr(C)]
 pub struct Signature {
@@ -79,7 +80,7 @@ pub struct Signature {
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
     /// basepoint to produce `r`, and `EdwardsPoint`.
-    pub (crate) r: CompressedEdwardsY,
+    pub (crate) R: CompressedEdwardsY,
 
     /// `s` is a `Scalar`, formed by using an hash function with 512-bits output
     /// to produce the digest of:
@@ -99,7 +100,7 @@ impl Clone for Signature {
 
 impl Debug for Signature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Signature( r: {:?}, s: {:?} )", &self.r, &self.s)
+        write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
     }
 }
 
@@ -110,7 +111,7 @@ impl PartialEq for Signature {
         let mut equal: u8 = 0;
 
         for i in 0..32 {
-            equal |= self.r.0[i] ^ other.r.0[i];
+            equal |= self.R.0[i] ^ other.R.0[i];
             equal |= self.s[i]   ^ other.s[i];
         }
         equal == 0
@@ -123,7 +124,7 @@ impl Signature {
     pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
         let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
 
-        signature_bytes[..32].copy_from_slice(&self.r.as_bytes()[..]);
+        signature_bytes[..32].copy_from_slice(&self.R.as_bytes()[..]);
         signature_bytes[32..].copy_from_slice(&self.s.as_bytes()[..]);
         signature_bytes
     }
@@ -145,7 +146,7 @@ impl Signature {
             return Err(SignatureError(InternalError::ScalarFormatError));
         }
 
-        Ok(Signature{ r: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
+        Ok(Signature{ R: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
     }
 }
 
@@ -562,34 +563,30 @@ impl ExpandedSecretKey {
     }
 
     /// Sign a message with this `ExpandedSecretKey`.
+    #[allow(non_snake_case)]
     pub fn sign<D>(&self, message: &[u8], public_key: &PublicKey) -> Signature
             where D: Digest<OutputSize = U64> + Default {
         let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mesg_digest: Scalar;
-        let hram_digest: Scalar;
-        let r: CompressedEdwardsY;
+        let R: CompressedEdwardsY;
+        let r: Scalar;
         let s: Scalar;
+        let k: Scalar;
 
         h.input(&self.nonce);
         h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
-
-        r = (&mesg_digest * &constants::ED25519_BASEPOINT_TABLE).compress();
+        r = Scalar::from_hash(h);
+        R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = D::default();
-        h.input(r.as_bytes());
+        h.input(R.as_bytes());
         h.input(public_key.as_bytes());
         h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        hram_digest = Scalar::from_bytes_mod_order_wide(&hash);
+        k = Scalar::from_hash(h);
+        s = &(&k * &self.key) + &r;
 
-        s = &(&hram_digest * &self.key) + &mesg_digest;
-
-        Signature{ r: r, s: s }
+        Signature{ R, s }
     }
 
     /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
@@ -610,6 +607,7 @@ impl ExpandedSecretKey {
     /// An Ed25519ph [`Signature`] on the `prehashed_message`.
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[allow(non_snake_case)]
     pub fn sign_prehashed<D>(&self,
                              prehashed_message: D,
                              public_key: &PublicKey,
@@ -617,17 +615,14 @@ impl ExpandedSecretKey {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
         let mut prehash: [u8; 64] = [0u8; 64];
-        let mesg_digest: Scalar;
-        let hram_digest: Scalar;
-        let r: CompressedEdwardsY;
+        let R: CompressedEdwardsY;
+        let r: Scalar;
         let s: Scalar;
+        let k: Scalar;
 
-        let ctx: &[u8] = match context {
-            Some(x) => x,
-            None    => b"",  // By default, the context is an empty string.
-        };
+        let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
+
         debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
 
         let ctx_len: u8 = ctx.len() as u8;
@@ -653,27 +648,23 @@ impl ExpandedSecretKey {
         h.input(ctx);
         h.input(&self.nonce);
         h.input(&prehash);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
-
-        r = (&mesg_digest * &constants::ED25519_BASEPOINT_TABLE).compress();
+        r = Scalar::from_hash(h);
+        R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = D::default();
         h.input(b"SigEd25519 no Ed25519 collisions");
         h.input(&[1]); // Ed25519ph
         h.input(&[ctx_len]);
         h.input(ctx);
-        h.input(r.as_bytes());
+        h.input(R.as_bytes());
         h.input(public_key.as_bytes());
         h.input(&prehash);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        hram_digest = Scalar::from_bytes_mod_order_wide(&hash);
+        k = Scalar::from_hash(h);
+        s = &(&k * &self.key) + &r;
 
-        s = &(&hram_digest * &self.key) + &mesg_digest;
-
-        Signature{ r: r, s: s }
+        Signature{ R, s }
     }
 
 }
@@ -813,14 +804,14 @@ impl PublicKey {
             .ok_or_else(|| SignatureError(InternalError::PointDecompressionError))?;
 
         let mut h = D::default();
-        h.input(signature.r.as_bytes());
+        h.input(signature.R.as_bytes());
         h.input(self.as_bytes());
         h.input(&message);
         let k = Scalar::from_hash(h);
 
         let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
-        if R.compress() == signature.r {
+        if R.compress() == signature.R {
             Ok(())
         } else {
             Err(SignatureError(InternalError::VerifyError))
@@ -863,14 +854,14 @@ impl PublicKey {
         h.input(&[1]); // Ed25519ph
         h.input(&[ctx.len() as u8]);
         h.input(ctx);
-        h.input(signature.r.as_bytes());
+        h.input(signature.R.as_bytes());
         h.input(self.as_bytes());
         h.input(prehashed_message.fixed_result().as_slice());
         let k = Scalar::from_hash(h);
 
         let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
-        if R.compress() == signature.r {
+        if R.compress() == signature.R {
             Ok(())
         } else {
             Err(SignatureError(InternalError::VerifyError))

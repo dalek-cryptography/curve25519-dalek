@@ -12,7 +12,7 @@
 
 use core::fmt::{Debug};
 
-#[cfg(feature = "std")]
+use rand::CryptoRng;
 use rand::Rng;
 
 #[cfg(feature = "serde")]
@@ -36,9 +36,7 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 
-use subtle::ConstantTimeEq;
-
-use errors::DecodingError;
+use errors::SignatureError;
 use errors::InternalError;
 
 /// The length of a curve25519 EdDSA `Signature`, in bytes.
@@ -69,10 +67,11 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 /// These signatures, unlike the ed25519 signature reference implementation, are
 /// "detached"—that is, they do **not** include a copy of the message which has
 /// been signed.
-#[derive(Copy)]
+#[allow(non_snake_case)]
+#[derive(Copy, Eq, PartialEq)]
 #[repr(C)]
 pub struct Signature {
-    /// `r` is an `EdwardsPoint`, formed by using an hash function with
+    /// `R` is an `EdwardsPoint`, formed by using an hash function with
     /// 512-bits output to produce the digest of:
     ///
     /// - the nonce half of the `ExpandedSecretKey`, and
@@ -80,8 +79,8 @@ pub struct Signature {
     ///
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
-    /// basepoint to produce `r`, and `EdwardsPoint`.
-    pub (crate) r: CompressedEdwardsY,
+    /// basepoint to produce `R`, and `EdwardsPoint`.
+    pub (crate) R: CompressedEdwardsY,
 
     /// `s` is a `Scalar`, formed by using an hash function with 512-bits output
     /// to produce the digest of:
@@ -101,21 +100,7 @@ impl Clone for Signature {
 
 impl Debug for Signature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "Signature( r: {:?}, s: {:?} )", &self.r, &self.s)
-    }
-}
-
-impl Eq for Signature {}
-
-impl PartialEq for Signature {
-    fn eq(&self, other: &Signature) -> bool {
-        let mut equal: u8 = 0;
-
-        for i in 0..32 {
-            equal |= self.r.0[i] ^ other.r.0[i];
-            equal |= self.s[i]   ^ other.s[i];
-        }
-        equal == 0
+        write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
     }
 }
 
@@ -125,16 +110,16 @@ impl Signature {
     pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
         let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
 
-        signature_bytes[..32].copy_from_slice(&self.r.as_bytes()[..]);
+        signature_bytes[..32].copy_from_slice(&self.R.as_bytes()[..]);
         signature_bytes[32..].copy_from_slice(&self.s.as_bytes()[..]);
         signature_bytes
     }
 
     /// Construct a `Signature` from a slice of bytes.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, SignatureError> {
         if bytes.len() != SIGNATURE_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "Signature", length: SIGNATURE_LENGTH }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
@@ -144,10 +129,10 @@ impl Signature {
         upper.copy_from_slice(&bytes[32..]);
 
         if upper[31] & 224 != 0 {
-            return Err(DecodingError(InternalError::ScalarFormatError));
+            return Err(SignatureError(InternalError::ScalarFormatError));
         }
 
-        Ok(Signature{ r: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
+        Ok(Signature{ R: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
     }
 }
 
@@ -215,9 +200,9 @@ impl SecretKey {
     /// #
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::SECRET_KEY_LENGTH;
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
-    /// # fn doctest() -> Result<SecretKey, DecodingError> {
+    /// # fn doctest() -> Result<SecretKey, SignatureError> {
     /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
     ///    157, 097, 177, 157, 239, 253, 090, 096,
     ///    186, 132, 074, 244, 146, 236, 044, 196,
@@ -238,11 +223,11 @@ impl SecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `SecretKey` or whose error value
-    /// is an `DecodingError` wrapping the internal error that occurred.
+    /// is an `SignatureError` wrapping the internal error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, SignatureError> {
         if bytes.len() != SECRET_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "SecretKey", length: SECRET_KEY_LENGTH }));
         }
         let mut bits: [u8; 32] = [0u8; 32];
@@ -260,8 +245,9 @@ impl SecretKey {
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
+    /// # #[cfg(feature = "std")]
     /// # fn main() {
-    ///
+    /// #
     /// use rand::Rng;
     /// use rand::OsRng;
     /// use sha2::Sha512;
@@ -271,8 +257,10 @@ impl SecretKey {
     ///
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
-    ///
     /// # }
+    /// #
+    /// # #[cfg(not(feature = "std"))]
+    /// # fn main() { }
     /// ```
     ///
     /// Afterwards, you can generate the corresponding public—provided you also
@@ -287,13 +275,14 @@ impl SecretKey {
     /// # fn main() {
     /// #
     /// # use rand::Rng;
-    /// # use rand::OsRng;
+    /// # use rand::ChaChaRng;
+    /// # use rand::SeedableRng;
     /// # use sha2::Sha512;
     /// # use ed25519_dalek::PublicKey;
     /// # use ed25519_dalek::SecretKey;
     /// # use ed25519_dalek::Signature;
     /// #
-    /// # let mut csprng: OsRng = OsRng::new().unwrap();
+    /// # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
     /// # let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     ///
     /// let public_key: PublicKey = PublicKey::from_secret::<Sha512>(&secret_key);
@@ -306,11 +295,10 @@ impl SecretKey {
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
-    /// from `rand::OsRng::new()` (in the `rand` crate).
-    ///
-    #[cfg(feature = "std")]
-    pub fn generate(csprng: &mut Rng) -> SecretKey {
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`
+    pub fn generate<T>(csprng: &mut T) -> SecretKey
+        where T: CryptoRng + Rng,
+    {
         let mut sk: SecretKey = SecretKey([0u8; 32]);
 
         csprng.fill_bytes(&mut sk.0);
@@ -398,6 +386,7 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
@@ -408,6 +397,9 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
     /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "std"), not(feature = "sha2")))]
+    /// # fn main() {}
     /// ```
     fn from(secret_key: &'a SecretKey) -> ExpandedSecretKey {
         ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key)
@@ -430,7 +422,7 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
-    /// # #[cfg(feature = "sha2")]
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
@@ -445,7 +437,7 @@ impl ExpandedSecretKey {
     /// assert!(&expanded_secret_key_bytes[..] != &[0u8; 64][..]);
     /// # }
     /// #
-    /// # #[cfg(not(feature = "sha2"))]
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
     /// # fn main() { }
     /// ```
     #[inline]
@@ -462,7 +454,7 @@ impl ExpandedSecretKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `ExpandedSecretKey` or whose
-    /// error value is an `DecodingError` describing the error that occurred.
+    /// error value is an `SignatureError` describing the error that occurred.
     ///
     /// # Examples
     ///
@@ -471,13 +463,13 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
+    /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
+    /// #
     /// use rand::{Rng, OsRng};
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
-    /// # #[cfg(feature = "sha2")]
-    /// # fn do_test() -> Result<ExpandedSecretKey, DecodingError> {
-    /// #
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
@@ -487,19 +479,19 @@ impl ExpandedSecretKey {
     /// # Ok(expanded_secret_key_again)
     /// # }
     /// #
-    /// # #[cfg(feature = "sha2")]
+    /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #     let result = do_test();
     /// #     assert!(result.is_ok());
     /// # }
     /// #
-    /// # #[cfg(not(feature = "sha2"))]
-    /// # fn main() {}
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "ExpandedSecretKey", length: EXPANDED_SECRET_KEY_LENGTH }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
@@ -521,7 +513,8 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
-    /// # fn do_test() {
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
     /// #
     /// use rand::{Rng, OsRng};
     /// use sha2::Sha512;
@@ -532,7 +525,8 @@ impl ExpandedSecretKey {
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key);
     /// # }
     /// #
-    /// # fn main() { do_test(); }
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     pub fn from_secret_key<D>(secret_key: &SecretKey) -> ExpandedSecretKey
             where D: Digest<OutputSize = U64> + Default {
@@ -555,35 +549,110 @@ impl ExpandedSecretKey {
     }
 
     /// Sign a message with this `ExpandedSecretKey`.
+    #[allow(non_snake_case)]
     pub fn sign<D>(&self, message: &[u8], public_key: &PublicKey) -> Signature
             where D: Digest<OutputSize = U64> + Default {
         let mut h: D = D::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mesg_digest: Scalar;
-        let hram_digest: Scalar;
-        let r: EdwardsPoint;
+        let R: CompressedEdwardsY;
+        let r: Scalar;
         let s: Scalar;
+        let k: Scalar;
 
         h.input(&self.nonce);
         h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        mesg_digest = Scalar::from_bytes_mod_order_wide(&hash);
-
-        r = &mesg_digest * &constants::ED25519_BASEPOINT_TABLE;
+        r = Scalar::from_hash(h);
+        R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = D::default();
-        h.input(r.compress().as_bytes());
+        h.input(R.as_bytes());
         h.input(public_key.as_bytes());
         h.input(&message);
-        hash.copy_from_slice(h.fixed_result().as_slice());
 
-        hram_digest = Scalar::from_bytes_mod_order_wide(&hash);
+        k = Scalar::from_hash(h);
+        s = &(&k * &self.key) + &r;
 
-        s = &(&hram_digest * &self.key) + &mesg_digest;
-
-        Signature{ r: r.compress(), s: s }
+        Signature{ R, s }
     }
+
+    /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
+    /// Ed25519ph algorithm defined in [RFC8032 §5.1][rfc8032].
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `public_key` is a [`PublicKey`] which corresponds to this secret key.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    ///
+    /// # Returns
+    ///
+    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[allow(non_snake_case)]
+    pub fn sign_prehashed<D>(&self,
+                             prehashed_message: D,
+                             public_key: &PublicKey,
+                             context: Option<&'static [u8]>) -> Signature
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut h: D = D::default();
+        let mut prehash: [u8; 64] = [0u8; 64];
+        let R: CompressedEdwardsY;
+        let r: Scalar;
+        let s: Scalar;
+        let k: Scalar;
+
+        let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
+
+        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+
+        let ctx_len: u8 = ctx.len() as u8;
+
+        // Get the result of the pre-hashed message.
+        prehash.copy_from_slice(prehashed_message.fixed_result().as_slice());
+
+        // This is the dumbest, ten-years-late, non-admission of fucking up the
+        // domain separation I have ever seen.  Why am I still required to put
+        // the upper half "prefix" of the hashed "secret key" in here?  Why
+        // can't the user just supply their own nonce and decide for themselves
+        // whether or not they want a deterministic signature scheme?  Why does
+        // the message go into what's ostensibly the signature domain separation
+        // hash?  Why wasn't there always a way to provide a context string?
+        //
+        // ...
+        //
+        // This is a really fucking stupid bandaid, and the damned scheme is
+        // still bleeding from malleability, for fuck's sake.
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx_len]);
+        h.input(ctx);
+        h.input(&self.nonce);
+        h.input(&prehash);
+
+        r = Scalar::from_hash(h);
+        R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
+
+        h = D::default();
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx_len]);
+        h.input(ctx);
+        h.input(R.as_bytes());
+        h.input(public_key.as_bytes());
+        h.input(&prehash);
+
+        k = Scalar::from_hash(h);
+        s = &(&k * &self.key) + &r;
+
+        Signature{ R, s }
+    }
+
 }
 
 #[cfg(feature = "serde")]
@@ -652,9 +721,9 @@ impl PublicKey {
     /// #
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
-    /// use ed25519_dalek::DecodingError;
+    /// use ed25519_dalek::SignatureError;
     ///
-    /// # fn doctest() -> Result<PublicKey, DecodingError> {
+    /// # fn doctest() -> Result<PublicKey, SignatureError> {
     /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
@@ -672,23 +741,17 @@ impl PublicKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `PublicKey` or whose error value
-    /// is an `DecodingError` describing the error that occurred.
+    /// is an `SignatureError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, DecodingError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, SignatureError> {
         if bytes.len() != PUBLIC_KEY_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "PublicKey", length: PUBLIC_KEY_LENGTH }));
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
 
         Ok(PublicKey(CompressedEdwardsY(bits)))
-    }
-
-    /// Convert this public key to its underlying extended twisted Edwards coordinate.
-    #[inline]
-    fn decompress(&self) -> Option<EdwardsPoint> {
-        self.0.decompress()
     }
 
     /// Derive this public key from its corresponding `SecretKey`.
@@ -718,37 +781,87 @@ impl PublicKey {
     ///
     /// # Return
     ///
-    /// Returns true if the signature was successfully verified, and
-    /// false otherwise.
-    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+    /// Returns `Ok(())` if the signature is valid, and `Err` otherwise.
+    #[allow(non_snake_case)]
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError>
             where D: Digest<OutputSize = U64> + Default
     {
-        use curve25519_dalek::edwards::vartime;
-
         let mut h: D = D::default();
-        let mut a: EdwardsPoint;
-        let ao:  Option<EdwardsPoint>;
-        let mut digest: [u8; 64] = [0u8; 64];
+        let R: EdwardsPoint;
+        let k: Scalar;
 
-        ao = self.decompress();
+        let A: EdwardsPoint = match self.0.decompress() {
+            Some(x) => x,
+            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
+        };
 
-        if ao.is_some() {
-            a = ao.unwrap();
-        } else {
-            return false;
-        }
-        a = -(&a);
-
-        h.input(signature.r.as_bytes());
+        h.input(signature.R.as_bytes());
         h.input(self.as_bytes());
         h.input(&message);
 
-        digest.copy_from_slice(h.fixed_result().as_slice());
+        k = Scalar::from_hash(h);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
-        let digest_reduced: Scalar = Scalar::from_bytes_mod_order_wide(&digest);
-        let r: EdwardsPoint = vartime::double_scalar_mul_basepoint(&digest_reduced, &a, &signature.s);
+        if R.compress() == signature.R {
+            Ok(())
+        } else {
+            Err(SignatureError(InternalError::VerifyError))
+        }
+    }
 
-        (signature.r.as_bytes()).ct_eq(r.compress().as_bytes()).unwrap_u8() == 1
+    /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    /// * `signature` is a purported Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the `signature` was a valid signature created by this
+    /// `Keypair` on the `prehashed_message`.
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[allow(non_snake_case)]
+    pub fn verify_prehashed<D>(&self,
+                               prehashed_message: D,
+                               context: Option<&[u8]>,
+                               signature: &Signature) -> Result<(), SignatureError>
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut h: D = D::default();
+        let R: EdwardsPoint;
+        let k: Scalar;
+
+        let ctx: &[u8] = context.unwrap_or(b"");
+        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+
+        let A: EdwardsPoint = match self.0.decompress() {
+            Some(x) => x,
+            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
+        };
+
+        h.input(b"SigEd25519 no Ed25519 collisions");
+        h.input(&[1]); // Ed25519ph
+        h.input(&[ctx.len() as u8]);
+        h.input(ctx);
+        h.input(signature.R.as_bytes());
+        h.input(self.as_bytes());
+        h.input(prehashed_message.fixed_result().as_slice());
+
+        k = Scalar::from_hash(h);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
+
+        if R.compress() == signature.R {
+            Ok(())
+        } else {
+            Err(SignatureError(InternalError::VerifyError))
+        }
     }
 }
 
@@ -826,10 +939,10 @@ impl Keypair {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA `Keypair` or whose error value
-    /// is an `DecodingError` describing the error that occurred.
-    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, DecodingError> {
+    /// is an `SignatureError` describing the error that occurred.
+    pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, SignatureError> {
         if bytes.len() != KEYPAIR_LENGTH {
-            return Err(DecodingError(InternalError::BytesLengthError{
+            return Err(SignatureError(InternalError::BytesLengthError{
                 name: "Keypair", length: KEYPAIR_LENGTH}));
         }
         let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
@@ -847,6 +960,7 @@ impl Keypair {
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     ///
     /// use rand::Rng;
@@ -855,25 +969,28 @@ impl Keypair {
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     ///
-    /// let mut cspring: OsRng = OsRng::new().unwrap();
-    /// let keypair: Keypair = Keypair::generate::<Sha512>(&mut cspring);
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     ///
     /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
     /// ```
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. the one returned
-    /// from `rand::OsRng::new()` (in the `rand` crate).
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`.
     ///
     /// The caller must also supply a hash function which implements the
     /// `Digest` and `Default` traits, and which returns 512 bits of output.
     /// The standard hash function used for most ed25519 libraries is SHA-512,
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
-    #[cfg(feature = "std")]
-    pub fn generate<D>(csprng: &mut Rng) -> Keypair
-            where D: Digest<OutputSize = U64> + Default {
+    pub fn generate<D, R>(csprng: &mut R) -> Keypair
+        where D: Digest<OutputSize = U64> + Default,
+              R: CryptoRng + Rng,
+    {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = PublicKey::from_secret::<D>(&sk);
 
@@ -886,10 +1003,180 @@ impl Keypair {
         self.secret.expand::<D>().sign::<D>(&message, &self.public)
     }
 
+    /// Sign a `prehashed_message` with this `Keypair` using the
+    /// Ed25519ph algorithm defined in [RFC8032 §5.1][rfc8032].
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    ///
+    /// # Returns
+    ///
+    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate ed25519_dalek;
+    /// extern crate rand;
+    /// extern crate sha2;
+    ///
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
+    /// use rand::thread_rng;
+    /// use rand::ThreadRng;
+    /// use sha2::Sha512;
+    ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// let mut csprng: ThreadRng = thread_rng();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// let message: &[u8] = b"All I want is to pet all of the dogs.";
+    ///
+    /// // Create a hash digest object which we'll feed the message into:
+    /// let prehashed: Sha512 = Sha512::default();
+    ///
+    /// prehashed.input(message);
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
+    ///
+    /// If you want, you can optionally pass a "context".  It is generally a
+    /// good idea to choose a context and try to make it unique to your project
+    /// and this specific usage of signatures.
+    ///
+    /// For example, without this, if you were to [convert your OpenPGP key
+    /// to a Bitcoin key][terrible_idea] (just as an example, and also Don't
+    /// Ever Do That) and someone tricked you into signing an "email" which was
+    /// actually a Bitcoin transaction moving all your magic internet money to
+    /// their address, it'd be a valid transaction.
+    ///
+    /// By adding a context, this trick becomes impossible, because the context
+    /// is concatenated into the hash, which is then signed.  So, going with the
+    /// previous example, if your bitcoin wallet used a context of
+    /// "BitcoinWalletAppTxnSigning" and OpenPGP used a context (this is likely
+    /// the least of their safety problems) of "GPGsCryptoIsntConstantTimeLol",
+    /// then the signatures produced by both could never match the other, even
+    /// if they signed the exact same message with the same key.
+    ///
+    /// Let's add a context for good measure (remember, you'll want to choose
+    /// your own!):
+    ///
+    /// ```
+    /// # extern crate ed25519_dalek;
+    /// # extern crate rand;
+    /// # extern crate sha2;
+    /// #
+    /// # use ed25519_dalek::Keypair;
+    /// # use ed25519_dalek::Signature;
+    /// # use rand::thread_rng;
+    /// # use rand::ThreadRng;
+    /// # use sha2::Sha512;
+    /// #
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// # let mut csprng: ThreadRng = thread_rng();
+    /// # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
+    /// # let prehashed: Sha512 = Sha512::default();
+    /// # prehashed.input(message);
+    /// #
+    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    ///
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    /// [terrible_idea]: https://github.com/isislovecruft/scripts/blob/master/gpgkey2bc.py
+    pub fn sign_prehashed<D>(&self,
+                             prehashed_message: D,
+                             context: Option<&'static [u8]>) -> Signature
+        where D: Digest<OutputSize = U64> + Default
+    {
+        self.secret.expand::<D>().sign_prehashed::<D>(prehashed_message, &self.public, context)
+    }
+
     /// Verify a signature on a message with this keypair's public key.
-    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> bool
+    pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError>
             where D: Digest<OutputSize = U64> + Default {
         self.public.verify::<D>(message, signature)
+    }
+
+    /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    /// * `signature` is a purported Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the `signature` was a valid signature created by this
+    /// `Keypair` on the `prehashed_message`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate ed25519_dalek;
+    /// extern crate rand;
+    /// extern crate sha2;
+    ///
+    /// use ed25519_dalek::Keypair;
+    /// use ed25519_dalek::Signature;
+    /// use rand::thread_rng;
+    /// use rand::ThreadRng;
+    /// use sha2::Sha512;
+    ///
+    /// # #[cfg(all(feature = "std", feature = "sha2"))]
+    /// # fn main() {
+    /// let mut csprng: ThreadRng = thread_rng();
+    /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+    /// let message: &[u8] = b"All I want is to pet all of the dogs.";
+    ///
+    /// let prehashed: Sha512 = Sha512::default();
+    /// prehashed.input(message);
+    ///
+    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    ///
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    ///
+    /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
+    /// let prehashed_again: Sha512 = Sha512::default();
+    /// prehashed_again.input(message);
+    ///
+    /// let valid: bool = keypair.public.verify_prehashed(prehashed_again, context, sig);
+    ///
+    /// assert!(valid);
+    /// # }
+    /// #
+    /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
+    /// # fn main() { }
+    /// ```
+    ///
+    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    pub fn verify_prehashed<D>(&self,
+                               prehashed_message: D,
+                               context: Option<&[u8]>,
+                               signature: &Signature) -> Result<(), SignatureError>
+        where D: Digest<OutputSize = U64> + Default
+    {
+        self.public.verify_prehashed::<D>(prehashed_message, context, signature)
     }
 }
 
@@ -937,8 +1224,8 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
-    use curve25519_dalek::edwards::EdwardsPoint;
-    use rand::OsRng;
+    use rand::ChaChaRng;
+    use rand::SeedableRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;
@@ -970,33 +1257,8 @@ mod test {
         063, 120, 126, 100, 092, 059, 050, 011, ];
 
     #[test]
-    fn unmarshal_marshal() {  // TestUnmarshalMarshal
-        let mut cspring: OsRng;
-        let mut keypair: Keypair;
-        let mut x: Option<EdwardsPoint>;
-        let a: EdwardsPoint;
-        let public: PublicKey;
-
-        cspring = OsRng::new().unwrap();
-
-        // from_bytes() fails if vx²-u=0 and vx²+u=0
-        loop {
-            keypair = Keypair::generate::<Sha512>(&mut cspring);
-            x = keypair.public.decompress();
-
-            if x.is_some() {
-                a = x.unwrap();
-                break;
-            }
-        }
-        public = PublicKey(a.compress());
-
-        assert!(keypair.public.0 == public.0);
-    }
-
-    #[test]
     fn sign_verify() {  // TestSignVerify
-        let mut cspring: OsRng;
+        let mut csprng: ChaChaRng;
         let keypair: Keypair;
         let good_sig: Signature;
         let bad_sig:  Signature;
@@ -1004,16 +1266,16 @@ mod test {
         let good: &[u8] = "test message".as_bytes();
         let bad:  &[u8] = "wrong message".as_bytes();
 
-        cspring  = OsRng::new().unwrap();
-        keypair  = Keypair::generate::<Sha512>(&mut cspring);
+        csprng  = ChaChaRng::from_seed([0u8; 32]);
+        keypair  = Keypair::generate::<Sha512, _>(&mut csprng);
         good_sig = keypair.sign::<Sha512>(&good);
         bad_sig  = keypair.sign::<Sha512>(&bad);
 
-        assert!(keypair.verify::<Sha512>(&good, &good_sig) == true,
+        assert!(keypair.verify::<Sha512>(&good, &good_sig).is_ok(),
                 "Verification of a valid signature failed!");
-        assert!(keypair.verify::<Sha512>(&good, &bad_sig)  == false,
+        assert!(keypair.verify::<Sha512>(&good, &bad_sig).is_err(),
                 "Verification of a signature on a different message passed!");
-        assert!(keypair.verify::<Sha512>(&bad,  &good_sig) == false,
+        assert!(keypair.verify::<Sha512>(&bad,  &good_sig).is_err(),
                 "Verification of a signature on a different message passed!");
     }
 
@@ -1058,15 +1320,86 @@ mod test {
             let sig2: Signature = keypair.sign::<Sha512>(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2),
+            assert!(keypair.verify::<Sha512>(&msg_bytes, &sig2).is_ok(),
                     "Signature verification failed on line {}", lineno);
         }
+    }
+
+    // From https://tools.ietf.org/html/rfc8032#section-7.3
+    #[test]
+    fn ed25519ph_rf8032_test_vector() {
+        let secret_key: &[u8] = b"833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42";
+        let public_key: &[u8] = b"ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf";
+        let message: &[u8] = b"616263";
+        let signature: &[u8] = b"98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406";
+
+        let sec_bytes: Vec<u8> = FromHex::from_hex(secret_key).unwrap();
+        let pub_bytes: Vec<u8> = FromHex::from_hex(public_key).unwrap();
+        let msg_bytes: Vec<u8> = FromHex::from_hex(message).unwrap();
+        let sig_bytes: Vec<u8> = FromHex::from_hex(signature).unwrap();
+
+        let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+        let public: PublicKey = PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+        let keypair: Keypair  = Keypair{ secret: secret, public: public };
+        let sig1: Signature = Signature::from_bytes(&sig_bytes[..]).unwrap();
+
+        let mut prehash_for_signing: Sha512 = Sha512::default();
+        let mut prehash_for_verifying: Sha512 = Sha512::default();
+
+        prehash_for_signing.input(&msg_bytes[..]);
+        prehash_for_verifying.input(&msg_bytes[..]);
+
+        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None);
+
+        assert!(sig1 == sig2,
+                "Original signature from test vectors doesn't equal signature produced:\
+                \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
+        assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2).is_ok(),
+                "Could not verify ed25519ph signature!");
+    }
+
+    #[test]
+    fn ed25519ph_sign_verify() {
+        let mut csprng: ChaChaRng;
+        let keypair: Keypair;
+        let good_sig: Signature;
+        let bad_sig:  Signature;
+
+        let good: &[u8] = b"test message";
+        let bad:  &[u8] = b"wrong message";
+
+        // ugh… there's no `impl Copy for Sha512`… i hope we can all agree these are the same hashes
+        let mut prehashed_good1: Sha512 = Sha512::default();
+        prehashed_good1.input(good);
+        let mut prehashed_good2: Sha512 = Sha512::default();
+        prehashed_good2.input(good);
+        let mut prehashed_good3: Sha512 = Sha512::default();
+        prehashed_good3.input(good);
+
+        let mut prehashed_bad1: Sha512 = Sha512::default();
+        prehashed_bad1.input(bad);
+        let mut prehashed_bad2: Sha512 = Sha512::default();
+        prehashed_bad2.input(bad);
+
+        let context: &[u8] = b"testing testing 1 2 3";
+
+        csprng   = ChaChaRng::from_seed([0u8; 32]);
+        keypair  = Keypair::generate::<Sha512, _>(&mut csprng);
+        good_sig = keypair.sign_prehashed::<Sha512>(prehashed_good1, Some(context));
+        bad_sig  = keypair.sign_prehashed::<Sha512>(prehashed_bad1,  Some(context));
+
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good2, Some(context), &good_sig).is_ok(),
+                "Verification of a valid signature failed!");
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_good3, Some(context), &bad_sig).is_err(),
+                "Verification of a signature on a different message passed!");
+        assert!(keypair.verify_prehashed::<Sha512>(prehashed_bad2,  Some(context), &good_sig).is_err(),
+                "Verification of a signature on a different message passed!");
     }
 
     #[test]
     fn public_key_from_bytes() {
         // Make another function so that we can test the ? operator.
-        fn do_the_test() -> Result<PublicKey, DecodingError> {
+        fn do_the_test() -> Result<PublicKey, SignatureError> {
             let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
                 215, 090, 152, 001, 130, 177, 010, 183,
                 213, 075, 254, 211, 201, 100, 007, 058,
@@ -1114,81 +1447,5 @@ mod test {
         for i in 0..32 {
             assert_eq!(SECRET_KEY.0[i], decoded_secret_key.0[i]);
         }
-    }
-}
-
-#[cfg(all(test, feature = "bench"))]
-mod bench {
-    use test::Bencher;
-    use rand::OsRng;
-    use sha2::Sha512;
-    use super::*;
-
-    /// A fake RNG which simply returns zeroes.
-    struct ZeroRng;
-
-    impl ZeroRng {
-        pub fn new() -> ZeroRng {
-            ZeroRng
-        }
-    }
-
-    impl Rng for ZeroRng {
-        fn next_u32(&mut self) -> u32 { 0u32 }
-
-        fn fill_bytes(&mut self, bytes: &mut [u8]) {
-            for i in 0 .. bytes.len() {
-                bytes[i] = 0;
-            }
-        }
-    }
-
-    #[bench]
-    fn sign(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
-        let msg: &[u8] = b"";
-
-        b.iter(| | keypair.sign::<Sha512>(msg));
-    }
-
-    #[bench]
-    fn sign_expanded_key(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
-        let expanded: ExpandedSecretKey = keypair.secret.expand::<Sha512>();
-        let msg: &[u8] = b"";
-
-        b.iter(| | expanded.sign::<Sha512>(msg, &keypair.public));
-    }
-
-    #[bench]
-    fn verify(b: &mut Bencher) {
-        let mut csprng: OsRng = OsRng::new().unwrap();
-        let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
-        let msg: &[u8] = b"";
-        let sig: Signature = keypair.sign::<Sha512>(msg);
-
-        b.iter(| | keypair.verify::<Sha512>(msg, &sig));
-    }
-
-    #[bench]
-    fn key_generation(b: &mut Bencher) {
-        let mut rng: ZeroRng = ZeroRng::new();
-
-        b.iter(| | Keypair::generate::<Sha512>(&mut rng));
-    }
-
-    #[bench]
-    fn underlying_scalar_mult_basepoint(b: &mut Bencher) {
-        use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
-
-        let scalar: Scalar = Scalar::from_bits([
-             20, 130, 129, 196, 247, 182, 211, 102,
-             11, 168, 169, 131, 159,  69, 126,  35,
-            109, 193, 175,  54, 118, 234, 138,  81,
-             60, 183,  80, 186,  92, 248, 132,  13, ]);
-
-        b.iter(| | &scalar * &ED25519_BASEPOINT_TABLE);
     }
 }

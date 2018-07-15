@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -16,16 +16,12 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "0.16"
-default-features = false
-
-[dependencies.subtle]
-version = "0.6"
+version = "0.18"
 default-features = false
 
 [dependencies.rand]
-optional = true
-version = "0.4"
+version = "0.5"
+default-features = false
 
 [dependencies.digest]
 version = "^0.7"
@@ -50,11 +46,19 @@ default-features = false
 hex = "^0.3"
 sha2 = "^0.7"
 bincode = "^0.9"
+criterion = "0.2"
+
+[[bench]]
+name = "ed25519_benchmarks"
+harness = false
 
 [features]
-default = ["std"]
-std = ["rand", "subtle/std", "curve25519-dalek/std", "failure/std"]
-bench = []
-nightly = ["curve25519-dalek/nightly", "subtle/nightly"]
+default = ["std", "u64_backend"]
+# We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
+std = ["curve25519-dalek/std"]
+nightly = ["curve25519-dalek/nightly", "rand/nightly"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]
+u64_backend = ["curve25519-dalek/u64_backend"]
+u32_backend = ["curve25519-dalek/u32_backend"]
+avx2_backend = ["curve25519-dalek/avx2_backend"]

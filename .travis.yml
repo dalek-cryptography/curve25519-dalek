@@ -7,23 +7,14 @@ rust:
 
 env:
   - TEST_COMMAND=test FEATURES=''
+  - TEST_COMMAND=test FEATURES=--features="serde"
 
 matrix:
   include:
-    - rust: stable
-      env: TEST_COMMAND=test FEATURES=--features="serde"
-    - rust: beta
-      env: TEST_COMMAND=test FEATURES=--features="serde"
     - rust: nightly
-      env: TEST_COMMAND=test FEATURES=--features="serde"
-    - rust: nightly
-      env: TEST_COMMAND=build FEATURES=--no-default-features
+      env: TEST_COMMAND=build FEATURES="--no-default-features --features=u32_backend"
     - rust: nightly
       env: TEST_COMMAND=test FEATURES=--features="nightly"
-    - rust: nightly
-      env: TEST_COMMAND=bench FEATURES=--features="bench"
-    - rust: nightly
-      env: TEST_COMMAND=bench FEATURES=--features="nightly bench"
 
 script:
   - cargo $TEST_COMMAND $FEATURES

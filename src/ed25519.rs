@@ -68,7 +68,7 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 /// "detached"—that is, they do **not** include a copy of the message which has
 /// been signed.
 #[allow(non_snake_case)]
-#[derive(Copy)]
+#[derive(Copy, Eq, PartialEq)]
 #[repr(C)]
 pub struct Signature {
     /// `r` is an `EdwardsPoint`, formed by using an hash function with
@@ -101,20 +101,6 @@ impl Clone for Signature {
 impl Debug for Signature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
-    }
-}
-
-impl Eq for Signature {}
-
-impl PartialEq for Signature {
-    fn eq(&self, other: &Signature) -> bool {
-        let mut equal: u8 = 0;
-
-        for i in 0..32 {
-            equal |= self.R.0[i] ^ other.R.0[i];
-            equal |= self.s[i]   ^ other.s[i];
-        }
-        equal == 0
     }
 }
 

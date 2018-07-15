@@ -809,16 +809,21 @@ impl PublicKey {
     pub fn verify<D>(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError>
             where D: Digest<OutputSize = U64> + Default
     {
-        let A = self.0.decompress()
-            .ok_or_else(|| SignatureError(InternalError::PointDecompressionError))?;
+        let mut h: D = D::default();
+        let R: EdwardsPoint;
+        let k: Scalar;
 
-        let mut h = D::default();
+        let A: EdwardsPoint = match self.0.decompress() {
+            Ok(x) => x,
+            Err   => Err(SignatureError(InternalError::PointDecompressionError))),
+        };
+
         h.input(signature.r.as_bytes());
         h.input(self.as_bytes());
         h.input(&message);
-        let k = Scalar::from_hash(h);
 
-        let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
+        k = Scalar::from_hash(h);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
         if R.compress() == signature.r {
             Ok(())
@@ -852,13 +857,18 @@ impl PublicKey {
                                signature: &Signature) -> Result<(), SignatureError>
         where D: Digest<OutputSize = U64> + Default
     {
-        let ctx = context.unwrap_or(b"");
+        let mut h: D = D::default();
+        let R: EdwardsPoint;
+        let k: Scalar;
+
+        let ctx: &[u8] = context.unwrap_or(b"");
         debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
 
-        let A = self.0.decompress()
-            .ok_or_else(|| SignatureError(InternalError::PointDecompressionError))?;
+        let A: EdwardsPoint = match self.0.decompress() {
+            Ok(x) => x,
+            Err   => Err(SignatureError(InternalError::PointDecompressionError))),
+        };
 
-        let mut h = D::default();
         h.input(b"SigEd25519 no Ed25519 collisions");
         h.input(&[1]); // Ed25519ph
         h.input(&[ctx.len() as u8]);
@@ -866,9 +876,9 @@ impl PublicKey {
         h.input(signature.r.as_bytes());
         h.input(self.as_bytes());
         h.input(prehashed_message.fixed_result().as_slice());
-        let k = Scalar::from_hash(h);
 
-        let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
+        k = Scalar::from_hash(h);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
 
         if R.compress() == signature.r {
             Ok(())

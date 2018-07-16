@@ -19,7 +19,9 @@ mod ed25519_benches {
     use super::*;
     use ed25519_dalek::ExpandedSecretKey;
     use ed25519_dalek::Keypair;
+    use ed25519_dalek::PublicKey;
     use ed25519_dalek::Signature;
+    use ed25519_dalek::verify_batch;
     use rand::thread_rng;
     use rand::ThreadRng;
     use sha2::Sha512;
@@ -56,6 +58,25 @@ mod ed25519_benches {
         });
     }
 
+    fn verify_batch_signatures(c: &mut Criterion) {
+        static BATCH_SIZES: [u8; 6] = [4, 8, 16, 32, 64, 96];
+
+        c.bench_function_over_inputs(
+            "Ed25519 batch signature verification",
+            |b, &&size| {
+                let mut csprng: ThreadRng = thread_rng();
+                let keypairs: Vec<Keypair> = (0..size).map(|_| Keypair::generate::<Sha512, _>(&mut csprng)).collect();
+                let msg: &[u8] = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                let messages: Vec<&[u8]> = (0..size).map(|_| msg).collect();
+                let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign::<Sha512>(&msg)).collect();
+                let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+
+                b.iter(|| verify_batch::<Sha512, _>(&messages[..], &signatures[..], &public_keys[..], &mut csprng));
+            },
+            &BATCH_SIZES,
+        );
+    }
+
     fn key_generation(c: &mut Criterion) {
         let mut csprng: ThreadRng = thread_rng();
 
@@ -71,6 +92,7 @@ mod ed25519_benches {
             sign,
             sign_expanded_key,
             verify,
+            verify_batch_signatures,
             key_generation,
     }
 }

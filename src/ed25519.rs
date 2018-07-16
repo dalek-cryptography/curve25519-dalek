@@ -865,6 +865,120 @@ impl PublicKey {
     }
 }
 
+/// Verify a batch of `signatures` on `messages` with their respective `public_keys`.
+///
+/// # Inputs
+///
+/// * `messages` is a slice of byte slices, one per signed message.
+/// * `signatures` is a slice of `Signature`s.
+/// * `public_keys` is a slice of `PublicKey`s.
+/// * `csprng` is an implementation of `Rng + CryptoRng`, such as `rand::ThreadRng`.
+///
+/// # Panics
+///
+/// This function will panic if the `messages, `signatures`, and `public_keys`
+/// slices are not equal length.
+///
+/// # Returns
+///
+/// * A `Result` whose `Ok` value is an emtpy tuple and whose `Err` value is a
+///   `SignatureError` containing a description of the internal error which
+///   occured.
+///
+/// # Examples
+///
+/// ```
+/// extern crate ed25519_dalek;
+/// extern crate rand;
+/// extern crate sha2;
+///
+/// use ed25519_dalek::verify_batch;
+/// use ed25519_dalek::Keypair;
+/// use ed25519_dalek::PublicKey;
+/// use ed25519_dalek::Signature;
+/// use rand::thread_rng;
+/// use rand::ThreadRng;
+/// use sha2::Sha512;
+///
+/// # fn main() {
+/// let mut csprng: ThreadRng = thread_rng();
+/// let keypairs: Vec<Keypair> = (0..64).map(|_| Keypair::generate::<Sha512, _>(&mut csprng)).collect();
+/// let msg: &[u8] = b"They're good dogs Brant";
+/// let messages: Vec<&[u8]> = (0..64).map(|_| msg).collect();
+/// let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign::<Sha512>(&msg)).collect();
+/// let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+///
+/// let result = verify_batch::<Sha512, _>(&messages[..], &signatures[..], &public_keys[..], &mut csprng);
+/// assert!(result.is_ok());
+/// # }
+/// ```
+#[cfg(any(feature = "alloc", feature = "std"))]
+#[allow(non_snake_case)]
+pub fn verify_batch<D, C>(messages: &[&[u8]],
+                          signatures: &[Signature],
+                          public_keys: &[PublicKey],
+                          csprng: &mut C) -> Result<(), SignatureError>
+    where D: Digest<OutputSize = U64> + Default,
+          C: Rng + CryptoRng,
+{
+    const ASSERT_MESSAGE: &'static [u8] = b"The number of messages, signatures, and public keys must be equal.";
+    assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
+    assert!(signatures.len()  == public_keys.len(), ASSERT_MESSAGE);
+    assert!(public_keys.len() == messages.len(),    ASSERT_MESSAGE);
+ 
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
+    #[cfg(feature = "std")]
+    use std::vec::Vec;
+
+    use core::iter::once;
+
+    use curve25519_dalek::traits::IsIdentity;
+    use curve25519_dalek::traits::VartimeMultiscalarMul;
+
+    let batch_size: usize = signatures.len();
+
+    let Rs: Vec<EdwardsPoint> = signatures.iter().map(|sig| sig.R.decompress().unwrap()).collect();
+    let ss: Vec<Scalar> = signatures.iter().map(|sig| sig.s).collect();
+    let zs: Vec<Scalar> = signatures.iter().map(|_| Scalar::random(csprng)).collect();
+
+    // Compute z $= ℤ/lℤ, (∑ s[i]z[i] (mod l))
+    let B_coefficient: Scalar = zs.iter().zip(ss.iter()).map(|(z,s)| z * s).sum();
+
+    // Compute H(R || A || M) for each (signature, public_key, message) triplet
+    let hrams = (0..batch_size).map(|i| {
+        let mut h: D = D::default();
+        h.input(signatures[i].R.as_bytes());
+        h.input(public_keys[i].as_bytes());
+        h.input(&messages[i]);
+        Scalar::from_hash(h)
+    });
+
+    // Multiple each H(R || A || M) by the random value
+    let zhrams = hrams.zip(zs.iter()).map(|(hram, z)| hram * z);
+
+    // Decompress the public keys and fail early if any one of them is invalid
+    let As: Vec<EdwardsPoint> = public_keys.iter()
+        .map(|pubkey|
+             pubkey.0.decompress()
+             .ok_or_else(|| SignatureError(InternalError::PointDecompressionError)))
+        .collect::<Result<Vec<EdwardsPoint>, _>>()?;
+
+    // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i] H(R||A||M)[i] (mod l)) A[i] = 0
+    if EdwardsPoint::vartime_multiscalar_mul(
+        once(-B_coefficient)                        // -∑ z[i]s[i] (mod l) ---------|
+            .chain(zs.iter().cloned())              // z[i]                  -----| |
+            .chain(zhrams),                         // z[i] H(R||A||M) (mod l) -| | |
+        once(&constants::ED25519_BASEPOINT_POINT)   // B                   -----|-|-|
+            .chain(Rs.iter())                       // R[i]                  ---|-|
+            .chain(As.iter()),                      // A[i]                    -|
+    ).is_identity() {
+        Ok(())
+    } else {
+        Err(SignatureError(InternalError::VerifyError))
+    }
+}
+
 #[cfg(feature = "serde")]
 impl Serialize for PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
@@ -1224,8 +1338,10 @@ mod test {
     use std::fs::File;
     use std::string::String;
     use std::vec::Vec;
+    use rand::thread_rng;
     use rand::ChaChaRng;
     use rand::SeedableRng;
+    use rand::ThreadRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;
@@ -1394,6 +1510,32 @@ mod test {
                 "Verification of a signature on a different message passed!");
         assert!(keypair.verify_prehashed::<Sha512>(prehashed_bad2,  Some(context), &good_sig).is_err(),
                 "Verification of a signature on a different message passed!");
+    }
+
+    #[test]
+    fn verify_batch_seven_signatures() {
+        let messages: [&[u8]; 7] = [
+            b"Watch closely everyone, I'm going to show you how to kill a god.",
+            b"I'm not a cryptographer I just encrypt a lot.",
+            b"Still not a cryptographer.",
+            b"This is a test of the tsunami alert system. This is only a test.",
+            b"Fuck dumbin' it down, spit ice, skip jewellery: Molotov cocktails on me like accessories.",
+            b"Hey, I never cared about your bucks, so if I run up with a mask on, probably got a gas can too.",
+            b"And I'm not here to fill 'er up. Nope, we came to riot, here to incite, we don't want any of your stuff.", ];
+        let mut csprng: ThreadRng = thread_rng();
+        let mut keypairs: Vec<Keypair> = Vec::new();
+        let mut signatures: Vec<Signature> = Vec::new();
+
+        for i in 0..messages.len() {
+            let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+            signatures.push(keypair.sign::<Sha512>(&messages[i]));
+            keypairs.push(keypair);
+        }
+        let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+
+        let result = verify_batch::<Sha512, _>(&messages, &signatures[..], &public_keys[..], &mut csprng);
+
+        assert!(result.is_ok());
     }
 
     #[test]

@@ -9,11 +9,6 @@ Documentation is available [here](https://docs.rs/ed25519-dalek).
 
 # Benchmarks
 
-You need to pass the `--features="bench"` flag to run the benchmarks.  The
-reason for feature-gating the benchmarks is that Rust's `test::Bencher` is
-unstable, and thus only works on the nightly channel.  (We'd like people to be
-able to compile and test on the stable and beta channels too!)
-
 On an Intel i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
 the following performance benchmarks:
 

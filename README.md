@@ -35,7 +35,7 @@ the performance for signature verification is greatly improved:
 
 In comparison, the equivalent package in Golang performs as follows:
 
-    ∃!isisⒶwintermute:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
+    ∃!isisⒶmistakenot:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
     BenchmarkKeyGeneration     30000             47007 ns/op
     BenchmarkSigning           30000             48820 ns/op
     BenchmarkVerification      10000            119701 ns/op

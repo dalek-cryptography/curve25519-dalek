@@ -102,13 +102,19 @@ group.
 All operations are implemented using constant-time logic (no
 secret-dependent branches, no secret-dependent memory accesses),
 unless specifically marked as being variable-time code.
-When using the `nightly` feature, we also insert an optimization
-barrier before every conditional move or assignment.
+We believe that our constant-time logic is lowered to constant-time
+assembly, at least on `x86_64` targets.
+
+As an additional guard against possible future compiler optimizations, the
+`nightly` feature places an optimization barrier before every
+conditional move or assignment.  More details can be found in [the
+documentation for the `subtle` crate][subtle_doc].  This is
+recommended, but not required.
 
 Some functionality (e.g., multiscalar multiplication or batch
-inversion) requires heap allocation for temporary buffers.  **All
+inversion) requires heap allocation for temporary buffers.  All
 heap-allocated buffers of potentially secret data are explicitly
-zeroed before release**.
+zeroed before release.
 
 However, we do not attempt to zero stack data, for two reasons.
 First, it's not possible to do so correctly: we don't have control
@@ -186,3 +192,4 @@ contributions.
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
 [parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/avx2/index.html
+[subtle_doc]: https://doc.dalek.rs/subtle/

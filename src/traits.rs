@@ -106,11 +106,12 @@ pub trait VartimeMultiscalarMul {
     /// The type of point being multiplied, e.g., `RistrettoPoint`.
     type Point;
 
-    /// Given an iterator of (possibly secret) scalars and an iterator of
+    /// Given an iterator of public scalars and an iterator of
     /// public points, compute
     /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
     /// $$
+    /// using variable-time operations.
     ///
     /// It is an error to call this function with two iterators of different lengths.
     ///
@@ -123,7 +124,7 @@ pub trait VartimeMultiscalarMul {
     ///
     /// ```
     /// use curve25519_dalek::constants;
-    /// use curve25519_dalek::traits::MultiscalarMul;
+    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
     /// use curve25519_dalek::ristretto::RistrettoPoint;
     /// use curve25519_dalek::scalar::Scalar;
     ///
@@ -139,12 +140,12 @@ pub trait VartimeMultiscalarMul {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = RistrettoPoint::multiscalar_mul(&abc, &[P,Q,R]);
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &[P,Q,R]);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = RistrettoPoint::multiscalar_mul(minus_abc, &[P,Q,R]);
+    /// let A2 = RistrettoPoint::vartime_multiscalar_mul(minus_abc, &[P,Q,R]);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());

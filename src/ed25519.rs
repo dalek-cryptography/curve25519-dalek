@@ -914,12 +914,15 @@ impl PublicKey {
 /// ```
 #[cfg(any(feature = "alloc", feature = "std"))]
 #[allow(non_snake_case)]
-pub fn verify_batch<D, C>(messages: &[&[u8]],
-                          signatures: &[Signature],
-                          public_keys: &[PublicKey],
-                          csprng: &mut C) -> Result<(), SignatureError>
-    where D: Digest<OutputSize = U64> + Default,
-          C: Rng + CryptoRng,
+pub fn verify_batch<D, C>(
+    messages: &[&[u8]],
+    signatures: &[Signature],
+    public_keys: &[PublicKey],
+    csprng: &mut C,
+) -> Result<(), SignatureError>
+where
+    D: Digest<OutputSize = U64> + Default,
+    C: Rng + CryptoRng,
 {
     const ASSERT_MESSAGE: &'static [u8] = b"The number of messages, signatures, and public keys must be equal.";
     assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
@@ -936,17 +939,18 @@ pub fn verify_batch<D, C>(messages: &[&[u8]],
     use curve25519_dalek::traits::IsIdentity;
     use curve25519_dalek::traits::VartimeMultiscalarMul;
 
-    let batch_size: usize = signatures.len();
-
-    let Rs: Vec<EdwardsPoint> = signatures.iter().map(|sig| sig.R.decompress().unwrap()).collect();
-    let ss: Vec<Scalar> = signatures.iter().map(|sig| sig.s).collect();
     let zs: Vec<Scalar> = signatures.iter().map(|_| Scalar::random(csprng)).collect();
 
     // Compute z $= ℤ/lℤ, (∑ s[i]z[i] (mod l))
-    let B_coefficient: Scalar = zs.iter().zip(ss.iter()).map(|(z,s)| z * s).sum();
+    let B_coefficient: Scalar = signatures
+        .iter()
+        .map(|sig| sig.s)
+        .zip(zs.iter())
+        .map(|(s, z)| z * s)
+        .sum();
 
     // Compute H(R || A || M) for each (signature, public_key, message) triplet
-    let hrams = (0..batch_size).map(|i| {
+    let hrams = (0..signatures.len()).map(|i| {
         let mut h: D = D::default();
         h.input(signatures[i].R.as_bytes());
         h.input(public_keys[i].as_bytes());
@@ -954,25 +958,20 @@ pub fn verify_batch<D, C>(messages: &[&[u8]],
         Scalar::from_hash(h)
     });
 
-    // Multiple each H(R || A || M) by the random value
+    // Multiply each H(R || A || M) by the random value
     let zhrams = hrams.zip(zs.iter()).map(|(hram, z)| hram * z);
 
-    // Decompress the public keys and fail early if any one of them is invalid
-    let As: Vec<EdwardsPoint> = public_keys.iter()
-        .map(|pubkey|
-             pubkey.0.decompress()
-             .ok_or_else(|| SignatureError(InternalError::PointDecompressionError)))
-        .collect::<Result<Vec<EdwardsPoint>, _>>()?;
+    let Rs = signatures.iter().map(|sig| sig.R.decompress());
+    let As = public_keys.iter().map(|pk| pk.0.decompress());
+    let B = once(Some(constants::ED25519_BASEPOINT_POINT));
 
-    // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i] H(R||A||M)[i] (mod l)) A[i] = 0
-    if EdwardsPoint::vartime_multiscalar_mul(
-        once(-B_coefficient)                        // -∑ z[i]s[i] (mod l) ---------|
-            .chain(zs.iter().cloned())              // z[i]                  -----| |
-            .chain(zhrams),                         // z[i] H(R||A||M) (mod l) -| | |
-        once(&constants::ED25519_BASEPOINT_POINT)   // B                   -----|-|-|
-            .chain(Rs.iter())                       // R[i]                  ---|-|
-            .chain(As.iter()),                      // A[i]                    -|
-    ).is_identity() {
+    // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i]H(R||A||M)[i] (mod l)) A[i] = 0
+    let id = EdwardsPoint::optional_multiscalar_mul(
+        once(-B_coefficient).chain(zs.iter().cloned()).chain(zhrams),
+        B.chain(Rs).chain(As),
+    ).ok_or_else(|| SignatureError(InternalError::VerifyError))?;
+
+    if id.is_identity() {
         Ok(())
     } else {
         Err(SignatureError(InternalError::VerifyError))

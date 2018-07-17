@@ -271,9 +271,11 @@ impl Identity for EdwardsPoint {
 // ------------------------------------------------------------------------
 
 impl ValidityCheck for EdwardsPoint {
-    // XXX this should also check that T is correct
     fn is_valid(&self) -> bool {
-        self.to_projective().is_valid()
+        let point_on_curve = self.to_projective().is_valid();
+        let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
+
+        point_on_curve && on_segre_image
     }
 }
 

@@ -556,12 +556,11 @@ impl MultiscalarMul for EdwardsPoint {
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         // XXX later when we do more fancy multiscalar mults, we can
         // delegate based on the iter's size hint -- hdevalence
@@ -570,13 +569,13 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
             use backend::avx2::scalar_mul::straus::Straus;
-            Straus::vartime_multiscalar_mul(scalars, points)
+            Straus::optional_multiscalar_mul(scalars, points)
         }
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
             use scalar_mul::straus::Straus;
-            Straus::vartime_multiscalar_mul(scalars, points)
+            Straus::optional_multiscalar_mul(scalars, points)
         }
     }
 }

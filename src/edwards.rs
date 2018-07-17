@@ -689,8 +689,6 @@ impl EdwardsBasepointTable {
     }
 
     /// Get the basepoint for this table as an `EdwardsPoint`.
-    ///
-    /// XXX maybe this would be better as a `From` impl
     pub fn basepoint(&self) -> EdwardsPoint {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.

@@ -471,6 +471,7 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// extern crate sha2;
+    ///
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -493,6 +494,36 @@ impl Scalar {
     /// Use this instead of `hash_from_bytes` if it is more convenient
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// extern crate sha2;
+    ///
+    /// use sha2::Digest;
+    /// use sha2::Sha512;
+    ///
+    /// # fn main() {
+    /// let mut h = Sha512::default();
+    ///
+    /// h.input(b"To really appreciate architecture, you may even need to commit a murder.");
+    /// h.input(b"While the programs used for The Manhattan Transcripts are of the most extreme");
+    /// h.input(b"nature, they also parallel the most common formula plot: the archetype of");
+    /// h.input(b"murder. Other phantasms were occasionally used to underline the fact that");
+    /// h.input(b"perhaps all architecture, rather than being about functional standards, is");
+    /// h.input(b"about love and death.");
+    ///
+    /// let s = Scalar::from_hash(h);
+    ///
+    /// println!("{:?}", s.to_bytes());
+    /// assert!(s == Scalar::from_bits([ 21,  88, 208, 252,  63, 122, 210, 152,
+    ///                                 154,  38,  15,  23,  16, 167,  80, 150,
+    ///                                 192, 221,  77, 226,  62,  25, 224, 148,
+    ///                                 239,  48, 176,  10, 185,  69, 168,  11, ]));
+    /// # }
+    /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {

@@ -587,16 +587,12 @@ impl EdwardsPoint {
     pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
-        // Otherwise, proceed as normal:
+        use backend::avx2::scalar_mul::vartime_double_base;
+        // Otherwise, use the serial backend:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
+        use scalar_mul::vartime_double_base;
+
+        vartime_double_base::mul(a, A, b)
     }
 }
 

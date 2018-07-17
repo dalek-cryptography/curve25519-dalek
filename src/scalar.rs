@@ -533,11 +533,31 @@ impl Scalar {
     }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.to_bytes() == [0u8; 32]);
+    /// ```
     pub fn to_bytes(&self) -> [u8; 32] {
         self.bytes
     }
 
-    /// View this `Scalar` as a sequence of bytes.
+    /// View this `Scalar` as its underlying sequence of bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.as_bytes() == &[0u8; 32]);
+    /// ```
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }

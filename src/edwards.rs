@@ -90,9 +90,6 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-#[cfg(feature = "alloc")]
-use alloc::Vec;
-
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};

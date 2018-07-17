@@ -1004,7 +1004,7 @@ mod test {
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
-        let two = Scalar::from_u64(2);
+        let two = Scalar::from(2u64);
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &two;
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
@@ -1030,10 +1030,10 @@ mod test {
         // Test that sum works for non-empty iterators
         let BASE = constants::ED25519_BASEPOINT_POINT;
 
-        let s1 = Scalar::from_u64(999);
+        let s1 = Scalar::from(999u64);
         let P1 = &BASE * &s1;
 
-        let s2 = Scalar::from_u64(333);
+        let s2 = Scalar::from(333u64);
         let P2 = &BASE * &s2;
 
         let vec = vec![P1.clone(), P2.clone()];
@@ -1048,7 +1048,7 @@ mod test {
         assert_eq!(sum, EdwardsPoint::identity());
 
         // Test that sum works on owning iterators
-        let s = Scalar::from_u64(2);
+        let s = Scalar::from(2u64);
         let mapped = vec.iter().map(|x| x * &s);
         let sum: EdwardsPoint = mapped.sum();
 

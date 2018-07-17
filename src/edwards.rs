@@ -583,8 +583,6 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    ///
-    /// XXX eliminate this function when we have the precomputation API
     #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.

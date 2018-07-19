@@ -436,7 +436,6 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
-    #[cfg(feature = "std")]
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill(&mut scalar_bytes);

@@ -212,12 +212,6 @@ impl Identity for ProjectivePoint {
     }
 }
 
-impl Default for ProjectivePoint {
-    fn default() -> ProjectivePoint {
-        ProjectivePoint::identity()
-    }
-}
-
 impl Identity for ProjectiveNielsPoint {
     fn identity() -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{

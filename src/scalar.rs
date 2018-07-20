@@ -426,6 +426,12 @@ where
     }
 }
 
+impl Default for Scalar {
+    fn default() -> Scalar {
+        Scalar::zero()
+    }
+}
+
 impl From<u8> for Scalar {
     fn from(x: u8) -> Scalar {
         let mut s_bytes = [0u8; 32];

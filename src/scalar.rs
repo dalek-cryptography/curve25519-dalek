@@ -436,6 +436,21 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate rand;
+    /// # extern crate curve25519_dalek;
+    /// #
+    /// # fn main() {
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// use rand::OsRng;
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let a: Scalar = Scalar::random(&mut csprng);
+    /// # }
     #[cfg(feature = "std")]
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
@@ -456,6 +471,7 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// extern crate sha2;
+    ///
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -465,7 +481,6 @@ impl Scalar {
     /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
-    ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
@@ -479,21 +494,70 @@ impl Scalar {
     /// Use this instead of `hash_from_bytes` if it is more convenient
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// extern crate sha2;
+    ///
+    /// use sha2::Digest;
+    /// use sha2::Sha512;
+    ///
+    /// # fn main() {
+    /// let mut h = Sha512::default();
+    ///
+    /// h.input(b"To really appreciate architecture, you may even need to commit a murder.");
+    /// h.input(b"While the programs used for The Manhattan Transcripts are of the most extreme");
+    /// h.input(b"nature, they also parallel the most common formula plot: the archetype of");
+    /// h.input(b"murder. Other phantasms were occasionally used to underline the fact that");
+    /// h.input(b"perhaps all architecture, rather than being about functional standards, is");
+    /// h.input(b"about love and death.");
+    ///
+    /// let s = Scalar::from_hash(h);
+    ///
+    /// println!("{:?}", s.to_bytes());
+    /// assert!(s == Scalar::from_bits([ 21,  88, 208, 252,  63, 122, 210, 152,
+    ///                                 154,  38,  15,  23,  16, 167,  80, 150,
+    ///                                 192, 221,  77, 226,  62,  25, 224, 148,
+    ///                                 239,  48, 176,  10, 185,  69, 168,  11, ]));
+    /// # }
+    /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
-        // XXX this seems clumsy
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)
     }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.to_bytes() == [0u8; 32]);
+    /// ```
     pub fn to_bytes(&self) -> [u8; 32] {
         self.bytes
     }
 
-    /// View this `Scalar` as a sequence of bytes.
+    /// View the little-endian byte encoding of the integer representing this Scalar.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.as_bytes() == &[0u8; 32]);
+    /// ```
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }
@@ -514,6 +578,26 @@ impl Scalar {
     }
 
     /// Construct a scalar from the given `u64`.
+    ///
+    /// # Inputs
+    ///
+    /// An `u64` to convert to a `Scalar`.
+    ///
+    /// # Returns
+    ///
+    /// A `Scalar` corresponding to the input `u64`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let fourtytwo = Scalar::from_u64(42);
+    /// let six = Scalar::from_u64(6);
+    /// let seven = Scalar::from_u64(7);
+    ///
+    /// assert!(fourtytwo == six * seven);
+    /// ```
     pub fn from_u64(x: u64) -> Scalar {
         let mut s_bytes = [0u8; 32];
         for i in 0..8 {

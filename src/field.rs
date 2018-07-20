@@ -145,7 +145,7 @@ impl FieldElement {
     ///
     /// This function is most efficient when the batch size (slice
     /// length) is a power of 2.
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     pub fn batch_invert(inputs: &mut [FieldElement]) {
         // First, compute the product of all inputs using a product
         // tree:

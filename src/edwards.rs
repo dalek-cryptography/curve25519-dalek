@@ -143,6 +143,15 @@ impl Debug for CompressedEdwardsY {
     }
 }
 
+impl Identity for CompressedEdwardsY {
+    fn identity() -> CompressedEdwardsY {
+        CompressedEdwardsY([
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ])
+    }
+}
+
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn as_bytes(&self) -> &[u8; 32] {

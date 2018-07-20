@@ -830,6 +830,21 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     }
 }
 
+impl RistrettoPoint {
+    /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the
+    /// Ristretto basepoint.
+    #[cfg(feature = "stage2_build")]
+    pub fn vartime_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &RistrettoPoint,
+        b: &Scalar,
+    ) -> RistrettoPoint {
+        RistrettoPoint(
+            EdwardsPoint::vartime_double_scalar_mul_basepoint(a, &A.0, b)
+        )
+    }
+}
+
 /// A precomputed table of multiples of a basepoint, used to accelerate
 /// scalar multiplication.
 ///

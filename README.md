@@ -66,13 +66,14 @@ Curve arithmetic is implemented using one of the following backends:
 
 * a `u32` backend using `u64` products;
 * a `u64` backend using `u128` products;
-* an `avx2` backend using parallel formulas, available when compiling for a
-  target with `target_feature=+avx2`.
+* an `avx2` backend using [parallel formulas][parallel_doc], available
+  when compiling for a target with `target_feature=+avx2`.
 
 By default the `u64` backend is selected.  To select a specific backend, use:
 ```sh
 cargo build --no-default-features --features "std u32_backend"
 cargo build --no-default-features --features "std u64_backend"
+# Requires RUSTFLAGS="-C target_feature=+avx2"
 cargo build --no-default-features --features "std avx2_backend"
 ```
 Crates using `curve25519-dalek` can either select a backend on behalf of their
@@ -82,6 +83,56 @@ The `std` feature is enabled by default, but it can be disabled for no-`std`
 builds using `--no-default-features`.  Note that this requires explicitly
 selecting an arithmetic backend using one of the `_backend` features.
 If no backend is selected, compilation will fail.
+
+The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
+is meant to indicate that it is not considered production-ready, and we do not
+consider `yolocrypto` features to be covered by semver guarantees.
+This is designed to make it easier to test intended new features
+without having to stabilise them first.  Use `yolocrypto` at your own,
+obvious, risk.
+
+# Safety
+
+The `curve25519-dalek` types are designed to make illegal states
+unrepresentable.  For example, any instance of an `EdwardsPoint` is
+guaranteed to hold a point on the Edwards curve, and any instance of a
+`RistrettoPoint` is guaranteed to hold a valid point in the Ristretto
+group.
+
+All operations are implemented using constant-time logic (no
+secret-dependent branches, no secret-dependent memory accesses),
+unless specifically marked as being variable-time code.
+We believe that our constant-time logic is lowered to constant-time
+assembly, at least on `x86_64` targets.
+
+As an additional guard against possible future compiler optimizations, the
+`nightly` feature places an optimization barrier before every
+conditional move or assignment.  More details can be found in [the
+documentation for the `subtle` crate][subtle_doc].  This is
+recommended, but not required.
+
+Some functionality (e.g., multiscalar multiplication or batch
+inversion) requires heap allocation for temporary buffers.  All
+heap-allocated buffers of potentially secret data are explicitly
+zeroed before release.
+
+However, we do not attempt to zero stack data, for two reasons.
+First, it's not possible to do so correctly: we don't have control
+over stack allocations, so there's no way to know how much data to
+wipe.  Second, because `curve25519-dalek` provides a mid-level API,
+the correct place to start zeroing stack data is likely not at the
+entrypoints of `curve25519-dalek` functions, but at the entrypoints of
+functions in other crates.
+
+The implementation is memory-safe, and contains no significant
+`unsafe` code.  The AVX2 backend uses `unsafe` internally to call AVX2
+intrinsics.  These are marked `unsafe` because invoking them on a
+non-AVX2 target would cause `SIGILL`, but the entire backend is only
+compiled for `target_feature=+avx2`.  Some types implement an `unsafe
+trait` to mark them as zeroable (for heap allocations), but this does
+not affect memory safety.
+
+# Performance
 
 Benchmarks are run using [`criterion.rs`][criterion]:
 
@@ -93,12 +144,8 @@ cargo bench --no-default-features --features "std u64_backend"
 cargo bench --no-default-features --features "std avx2_backend"
 ```
 
-The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
-is meant to indicate that it is not considered production-ready, and we do not
-consider `yolocrypto` features to be covered by semver guarantees.
-This is designed to make it easier to test intended new features
-without having to stabilise them first.  Use `yolocrypto` at your own,
-obvious, risk.
+Performance is a secondary goal behind correctness, safety, and
+clarity, but we aim to be competitive with other implementations.
 
 # Contributing
 
@@ -144,3 +191,5 @@ contributions.
 [docs-external]: https://doc.dalek.rs/curve25519_dalek/
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
+[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/avx2/index.html
+[subtle_doc]: https://doc.dalek.rs/subtle/

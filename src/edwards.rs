@@ -271,9 +271,11 @@ impl Identity for EdwardsPoint {
 // ------------------------------------------------------------------------
 
 impl ValidityCheck for EdwardsPoint {
-    // XXX this should also check that T is correct
     fn is_valid(&self) -> bool {
-        self.to_projective().is_valid()
+        let point_on_curve = self.to_projective().is_valid();
+        let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
+
+        point_on_curve && on_segre_image
     }
 }
 
@@ -583,22 +585,16 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    ///
-    /// XXX eliminate this function when we have the precomputation API
     #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
-        // Otherwise, proceed as normal:
+        use backend::avx2::scalar_mul::vartime_double_base;
+        // Otherwise, use the serial backend:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
+        use scalar_mul::vartime_double_base;
+
+        vartime_double_base::mul(a, A, b)
     }
 }
 
@@ -695,8 +691,6 @@ impl EdwardsBasepointTable {
     }
 
     /// Get the basepoint for this table as an `EdwardsPoint`.
-    ///
-    /// XXX maybe this would be better as a `From` impl
     pub fn basepoint(&self) -> EdwardsPoint {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.

@@ -173,6 +173,13 @@ impl Debug for SecretKey {
     }
 }
 
+/// Overwrite secret key material with null bytes when it goes out of scope.
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.0 = [0u8; SECRET_KEY_LENGTH];
+    }
+}
+
 impl SecretKey {
     /// Expand this `SecretKey` into an `ExpandedSecretKey`.
     pub fn expand<D>(&self) -> ExpandedSecretKey where D: Digest<OutputSize = U64> + Default {
@@ -373,6 +380,14 @@ impl<'d> Deserialize<'d> for SecretKey {
 pub struct ExpandedSecretKey {
     pub (crate) key: Scalar,
     pub (crate) nonce: [u8; 32],
+}
+
+/// Overwrite secret key material with null bytes when it goes out of scope.
+impl Drop for ExpandedSecretKey {
+    fn drop(&mut self) {
+        self.key = Scalar::zero();
+        self.nonce = [0u8; 32];
+    }
 }
 
 #[cfg(feature = "sha2")]

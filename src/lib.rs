@@ -37,9 +37,6 @@ extern crate core;
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-#[cfg(test)]
-extern crate sha2;
-
 extern crate rand;
 extern crate clear_on_drop;
 extern crate byteorder;

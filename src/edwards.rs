@@ -260,12 +260,24 @@ impl Identity for CompressedEdwardsY {
     }
 }
 
+impl Default for CompressedEdwardsY {
+    fn default() -> CompressedEdwardsY {
+        CompressedEdwardsY::identity()
+    }
+}
+
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
         EdwardsPoint{ X: FieldElement::zero(),
                        Y: FieldElement::one(),
                        Z: FieldElement::one(),
                        T: FieldElement::zero() }
+    }
+}
+
+impl Default for EdwardsPoint {
+    fn default() -> EdwardsPoint {
+        EdwardsPoint::identity()
     }
 }
 

@@ -816,17 +816,16 @@ impl MultiscalarMul for RistrettoPoint {
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
     
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<RistrettoPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<RistrettoPoint>,
+        J: IntoIterator<Item = Option<RistrettoPoint>>,
     {
-        let extended_points = points.into_iter().map(|P| P.borrow().0);
-        RistrettoPoint(
-            EdwardsPoint::vartime_multiscalar_mul(scalars, extended_points)
-        )
+        let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.borrow().0));
+
+        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points)
+            .map(|P| RistrettoPoint(P))
     }
 }
 

@@ -1,9 +1,12 @@
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(all(feature = "nightly", feature = "avx2_backend"), feature(stdsimd))]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+extern crate alloc;
 extern crate byteorder;
 extern crate clear_on_drop;
 extern crate core;
@@ -53,6 +56,8 @@ mod field;
 mod curve_models;
 #[path = "src/backend/mod.rs"]
 mod backend;
+#[path = "src/prelude.rs"]
+mod prelude;
 #[path = "src/scalar_mul/mod.rs"]
 mod scalar_mul;
 

@@ -115,6 +115,9 @@ use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
@@ -540,7 +543,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     
@@ -569,7 +572,7 @@ impl MultiscalarMul for EdwardsPoint {
     }
 }
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     

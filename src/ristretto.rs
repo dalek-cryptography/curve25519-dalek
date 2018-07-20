@@ -14,7 +14,8 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-//! An implementation of Ristretto, which provides a prime-order group.
+//! An implementation of [Ristretto][ristretto_main], which provides a
+//! prime-order group.
 //!
 //! # The Ristretto Group
 //!
@@ -50,8 +51,10 @@
 //! this [additional restriction][ristretto_coffee] gives the
 //! _Ristretto_ encoding.
 //!
-//! More details
-//! are described in the *Implementation* section below.  Ristretto
+//! More details on why Ristretto is necessary can be found in the
+//! [Why Ristretto?][why_ristretto] section of the Ristretto website.
+//!
+//! Ristretto
 //! points are provided in `curve25519-dalek` by the `RistrettoPoint`
 //! struct.
 //!
@@ -137,8 +140,7 @@
 //! using Edwards formulas.
 //!
 //! Notes on the details of the encoding can be found in the
-//! [`ristretto::notes`][ristretto_notes] submodule of the internal `curve25519-dalek`
-//! documentation.
+//! [Details][ristretto_notes] section of the Ristretto website.
 //!
 //! [cryptonote]:
 //! https://moderncrypto.org/mail-archive/curves/2017/000898.html
@@ -147,23 +149,11 @@
 //! [ristretto_coffee]:
 //! https://en.wikipedia.org/wiki/Ristretto
 //! [ristretto_notes]:
-//! https://doc-internal.dalek.rs/curve25519_dalek/ristretto/notes/index.html
-
-
-// Conditionally include the Ristretto notes if:
-// - we're on nightly (so we can include docs at all)
-// - we're in stage 2 of the build.
-// The latter point prevents a really silly and annoying problem,
-// where the location of ".." is different depending on whether we're
-// building the crate for real, or whether we're in build.rs
-// generating the lookup tables (in which case we're relative to the
-// location of build.rs, not lib.rs, so the markdown file appears
-// missing).
-//
-// This hack is also used in the avx2 notes.
-#[cfg_attr(all(feature = "nightly", feature = "stage2_build"), doc(include = "../docs/ristretto-notes.md"))]
-mod notes {
-}
+//! https://ristretto.group/details/index.html
+//! [why_ristretto]:
+//! https://ristretto.group/why_ristretto.html
+//! [ristretto_main]:
+//! https://ristretto.group/
 
 use core::fmt::Debug;
 use core::ops::{Add, Sub, Neg};

@@ -155,6 +155,12 @@ impl Identity for ProjectivePoint {
     }
 }
 
+impl Default for ProjectivePoint {
+    fn default() -> ProjectivePoint {
+        ProjectivePoint::identity()
+    }
+}
+
 impl ConditionallyAssignable for ProjectivePoint {
     fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
         self.U.conditional_assign(&that.U, choice);

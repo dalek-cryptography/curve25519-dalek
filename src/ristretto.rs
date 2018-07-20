@@ -279,6 +279,12 @@ impl Identity for CompressedRistretto {
     }
 }
 
+impl Default for CompressedRistretto {
+    fn default() -> CompressedRistretto {
+        CompressedRistretto::identity()
+    }
+}
+
 // ------------------------------------------------------------------------
 // Serde support
 // ------------------------------------------------------------------------
@@ -658,6 +664,12 @@ impl RistrettoPoint {
 impl Identity for RistrettoPoint {
     fn identity() -> RistrettoPoint {
         RistrettoPoint(EdwardsPoint::identity())
+    }
+}
+
+impl Default for RistrettoPoint {
+    fn default() -> RistrettoPoint {
+        RistrettoPoint::identity()
     }
 }
 

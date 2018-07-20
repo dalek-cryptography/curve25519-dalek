@@ -264,6 +264,7 @@ extern crate generic_array;
 extern crate digest;
 extern crate failure;
 extern crate rand;
+extern crate clear_on_drop;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]

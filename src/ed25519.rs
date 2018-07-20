@@ -10,6 +10,7 @@
 //! A Rust implementation of ed25519 EdDSA key generation, signing, and
 //! verification.
 
+use core::default::Default;
 use core::fmt::{Debug};
 
 use rand::CryptoRng;
@@ -26,6 +27,8 @@ use serde::de::Visitor;
 
 #[cfg(feature = "sha2")]
 use sha2::Sha512;
+
+use clear_on_drop::clear::Clear;
 
 use digest::Digest;
 
@@ -165,6 +168,7 @@ impl<'d> Deserialize<'d> for Signature {
 
 /// An EdDSA secret key.
 #[repr(C)]
+#[derive(Default)]
 pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
@@ -176,7 +180,7 @@ impl Debug for SecretKey {
 /// Overwrite secret key material with null bytes when it goes out of scope.
 impl Drop for SecretKey {
     fn drop(&mut self) {
-        self.0 = [0u8; SECRET_KEY_LENGTH];
+        self.0.clear();
     }
 }
 
@@ -377,6 +381,7 @@ impl<'d> Deserialize<'d> for SecretKey {
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
 #[repr(C)]
+#[derive(Default)]
 pub struct ExpandedSecretKey {
     pub (crate) key: Scalar,
     pub (crate) nonce: [u8; 32],
@@ -385,8 +390,8 @@ pub struct ExpandedSecretKey {
 /// Overwrite secret key material with null bytes when it goes out of scope.
 impl Drop for ExpandedSecretKey {
     fn drop(&mut self) {
-        self.key = Scalar::zero();
-        self.nonce = [0u8; 32];
+        self.key.clear();
+        self.nonce.clear();
     }
 }
 
@@ -698,7 +703,7 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
 }
 
 /// An ed25519 public key.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Default, Eq, PartialEq)]
 #[repr(C)]
 pub struct PublicKey(pub (crate) CompressedEdwardsY);
 
@@ -909,7 +914,7 @@ impl<'d> Deserialize<'d> for PublicKey {
 }
 
 /// An ed25519 keypair.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 #[repr(C)]
 pub struct Keypair {
     /// The secret half of this keypair.
@@ -1429,6 +1434,24 @@ mod test {
             213, 075, 254, 211, 201, 100, 007, 058,
             014, 225, 114, 243, 218, 166, 035, 037,
             175, 002, 026, 104, 247, 007, 081, 026, ]))))
+    }
+
+    #[test]
+    fn keypair_clear_on_drop() {
+        let mut keypair: Keypair = Keypair::from_bytes(&[15u8; KEYPAIR_LENGTH][..]).unwrap();
+
+        keypair.clear();
+
+        fn as_bytes<T>(x: &T) -> &[u8] {
+            use core::mem;
+            use core::slice;
+
+            unsafe {
+                slice::from_raw_parts(x as *const T as *const u8, mem::size_of_val(x))
+            }
+        }
+
+        assert!(!as_bytes(&keypair).contains(&0x15));
     }
 
     #[cfg(all(test, feature = "serde"))]

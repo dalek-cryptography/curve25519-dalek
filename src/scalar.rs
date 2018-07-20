@@ -453,7 +453,6 @@ impl From<u32> for Scalar {
 }
 
 impl From<u64> for Scalar {
-
     /// Construct a scalar from the given `u64`.
     ///
     /// # Inputs
@@ -469,9 +468,9 @@ impl From<u64> for Scalar {
     /// ```
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// let fourtytwo = Scalar::from_u64(42);
-    /// let six = Scalar::from_u64(6);
-    /// let seven = Scalar::from_u64(7);
+    /// let fourtytwo = Scalar::from(42u64);
+    /// let six = Scalar::from(6u64);
+    /// let seven = Scalar::from(7u64);
     ///
     /// assert!(fourtytwo == six * seven);
     /// ```

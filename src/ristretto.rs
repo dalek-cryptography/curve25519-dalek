@@ -854,7 +854,7 @@ impl RistrettoPoint {
 /// use curve25519_dalek::constants;
 /// use curve25519_dalek::scalar::Scalar;
 ///
-/// let a = Scalar::from_u64(87329482);
+/// let a = Scalar::from(87329482u64);
 /// let P = &a * &constants::RISTRETTO_BASEPOINT_TABLE;
 /// ```
 #[derive(Clone)]
@@ -974,7 +974,7 @@ mod test {
     #[test]
     fn scalarmult_ristrettopoint_works_both_ways() {
         let P = constants::RISTRETTO_BASEPOINT_POINT;
-        let s = Scalar::from_u64(999);
+        let s = Scalar::from(999u64);
 
         let P1 = &P * &s;
         let P2 = &s * &P;
@@ -988,10 +988,10 @@ mod test {
         // Test that sum works for non-empty iterators
         let BASE = constants::RISTRETTO_BASEPOINT_POINT;
 
-        let s1 = Scalar::from_u64(999);
+        let s1 = Scalar::from(999u64);
         let P1 = &BASE * &s1;
 
-        let s2 = Scalar::from_u64(333);
+        let s2 = Scalar::from(333u64);
         let P2 = &BASE * &s2;
 
         let vec = vec![P1.clone(), P2.clone()];
@@ -1006,7 +1006,7 @@ mod test {
         assert_eq!(sum, RistrettoPoint::identity());
 
         // Test that sum works on owning iterators
-        let s = Scalar::from_u64(2);
+        let s = Scalar::from(2u64);
         let mapped = vec.iter().map(|x| x * &s);
         let sum: RistrettoPoint = mapped.sum();
 

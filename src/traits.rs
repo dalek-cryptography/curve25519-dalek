@@ -72,9 +72,9 @@ pub trait MultiscalarMul {
     /// use curve25519_dalek::scalar::Scalar;
     ///
     /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
     ///
     /// // Some points
     /// let P = constants::RISTRETTO_BASEPOINT_POINT;
@@ -128,9 +128,9 @@ pub trait VartimeMultiscalarMul {
     /// use curve25519_dalek::scalar::Scalar;
     ///
     /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
     ///
     /// // Some points
     /// let P = constants::RISTRETTO_BASEPOINT_POINT;

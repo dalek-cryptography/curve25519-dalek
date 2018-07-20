@@ -547,7 +547,7 @@ impl Scalar {
         self.bytes
     }
 
-    /// View this `Scalar` as its underlying sequence of bytes.
+    /// View the little-endian byte encoding of the integer representing this Scalar.
     ///
     /// # Example
     ///

@@ -152,6 +152,12 @@ impl Identity for CompressedEdwardsY {
     }
 }
 
+impl Default for CompressedEdwardsY {
+    fn default() -> CompressedEdwardsY {
+        CompressedEdwardsY::identity()
+    }
+}
+
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn as_bytes(&self) -> &[u8; 32] {

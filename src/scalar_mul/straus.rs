@@ -12,11 +12,16 @@
 
 #![allow(non_snake_case)]
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 use core::borrow::Borrow;
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 use edwards::EdwardsPoint;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
 /// Perform multiscalar multiplication by the interleaved window
@@ -40,6 +45,7 @@ use traits::VartimeMultiscalarMul;
 ///
 /// [solution]: https://www.jstor.org/stable/2310929
 /// [problem]: https://www.jstor.org/stable/2312273
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct Straus {}
 
 #[cfg(any(feature = "alloc", feature = "std"))]

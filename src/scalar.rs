@@ -516,7 +516,6 @@ impl Scalar {
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    #[cfg(feature = "std")]
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill(&mut scalar_bytes);

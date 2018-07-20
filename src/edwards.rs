@@ -119,7 +119,10 @@ use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
+
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
 // ------------------------------------------------------------------------

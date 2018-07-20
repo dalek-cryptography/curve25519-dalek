@@ -192,7 +192,9 @@ use scalar::Scalar;
 
 use curve_models::CompletedPoint;
 
-use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
+use traits::Identity;
+#[cfg(any(feature = "alloc", feature = "std"))]
+use traits::{MultiscalarMul, VartimeMultiscalarMul};
 
 // ------------------------------------------------------------------------
 // Compressed points

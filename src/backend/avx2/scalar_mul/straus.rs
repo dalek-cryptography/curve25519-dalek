@@ -72,21 +72,24 @@ impl MultiscalarMul for Straus {
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         let nafs: Vec<_> = scalars
             .into_iter()
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect();
-        let lookup_tables: Vec<_> = points
+        let lookup_tables: Vec<_> = match points
             .into_iter()
-            .map(|point| NafLookupTable5::<CachedPoint>::from(point.borrow()))
-            .collect();
+            .map(|P_opt| P_opt.map(|P| NafLookupTable5::<CachedPoint>::from(&P)))
+            .collect::<Option<Vec<_>>>()
+        {
+            Some(x) => x,
+            None => return None,
+        };
 
         let mut Q = ExtendedPoint::identity();
 
@@ -101,6 +104,7 @@ impl VartimeMultiscalarMul for Straus {
                 }
             }
         }
-        Q.into()
+
+        Some(Q.into())
     }
 }

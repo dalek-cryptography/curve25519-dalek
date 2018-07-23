@@ -23,12 +23,13 @@ travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 version = "^0.18"
 default-features = false
 
-[dependencies.rand]
-optional = true
-version = "^0.5"
+[dependencies.rand_core]
+default-features = false
+version = "0.2"
 
 [dev-dependencies]
 criterion = "0.2"
+rand = "0.5"
 
 [[bench]]
 name = "x25519"
@@ -36,7 +37,7 @@ harness = false
 
 [features]
 default = ["std", "nightly", "u64_backend"]
-std = ["rand", "curve25519-dalek/std"]
+std = ["curve25519-dalek/std"]
 nightly = ["curve25519-dalek/nightly"]
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]

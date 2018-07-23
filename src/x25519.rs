@@ -16,8 +16,8 @@ use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
 
-#[cfg(feature = "std")]
-use rand::Rng;
+use rand_core::RngCore;
+use rand_core::CryptoRng;
 
 /// "Decode" a scalar from a 32-byte array.
 ///
@@ -38,8 +38,9 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
 }
 
 /// Generate an x25519 secret key.
-#[cfg(feature = "std")]
-pub fn generate_secret<T: Rng>(csprng: &mut T) -> [u8; 32] {
+pub fn generate_secret<T>(csprng: &mut T) -> [u8; 32]
+    where T: RngCore + CryptoRng
+{
     let mut bytes = [0u8; 32];
     csprng.fill_bytes(&mut bytes);
     bytes

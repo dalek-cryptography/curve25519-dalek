@@ -148,6 +148,9 @@ use core::cmp::{Eq, PartialEq};
 use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 use rand::{Rng, CryptoRng};
 
 use digest::Digest;

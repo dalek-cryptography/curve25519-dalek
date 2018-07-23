@@ -19,6 +19,9 @@ use scalar::Scalar;
 use traits::MultiscalarMul;
 use traits::VartimeMultiscalarMul;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 /// Perform multiscalar multiplication by the interleaved window
 /// method, also known as Straus' method (since it was apparently
 /// [first published][solution] by Straus in 1964, as a solution to [a
@@ -42,7 +45,7 @@ use traits::VartimeMultiscalarMul;
 /// [problem]: https://www.jstor.org/stable/2312273
 pub struct Straus {}
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -139,7 +142,7 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 

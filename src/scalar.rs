@@ -148,6 +148,9 @@ use core::cmp::{Eq, PartialEq};
 use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 use rand::{Rng, CryptoRng};
 
 use digest::Digest;
@@ -725,7 +728,7 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,

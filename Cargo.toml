@@ -61,7 +61,7 @@ serde = { version = "1.0", optional = true }
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
 default = ["std", "u64_backend"]
-std = ["alloc", "subtle/std", "rand/std"]
+std = ["subtle/std", "rand/std"]
 alloc = []
 yolocrypto = []
 

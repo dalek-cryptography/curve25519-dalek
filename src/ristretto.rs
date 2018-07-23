@@ -188,9 +188,6 @@ use subtle::Choice;
 use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
 
-#[allow(unused_imports)]
-use prelude::*;
-
 use scalar::Scalar;
 
 use curve_models::CompletedPoint;
@@ -423,7 +420,7 @@ impl RistrettoPoint {
     /// }
     /// # }
     /// ```
-    #[cfg(feature = "alloc")]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
         where I: IntoIterator<Item = &'a RistrettoPoint>
     {
@@ -797,7 +794,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 // These use iterator combinators to unwrap the underlying points and
 // forward to the EdwardsPoint implementations.
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
     
@@ -815,7 +812,7 @@ impl MultiscalarMul for RistrettoPoint {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
     
@@ -940,7 +937,6 @@ impl Debug for RistrettoPoint {
 
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
-    #[cfg(feature = "rand")]
     use rand::rngs::OsRng;
 
     use scalar::Scalar;
@@ -1076,7 +1072,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn four_torsion_random() {
         let mut rng = OsRng::new().unwrap();
@@ -1139,7 +1134,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn random_roundtrip() {
         let mut rng = OsRng::new().unwrap();
@@ -1152,7 +1146,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng::new().unwrap();
@@ -1167,7 +1160,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn random_is_valid() {
         let mut rng = OsRng::new().unwrap();

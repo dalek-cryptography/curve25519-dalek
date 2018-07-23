@@ -328,6 +328,7 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
+    #[cfg(feature = "std")]
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill(&mut scalar_bytes);
@@ -459,7 +460,7 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from_u64(11).invert());
     /// # }
     /// ```
-    #[cfg(feature = "alloc")]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,

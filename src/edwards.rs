@@ -90,6 +90,9 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+#[cfg(feature = "alloc")]
+use alloc::Vec;
+
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
@@ -114,9 +117,6 @@ use curve_models::ProjectivePoint;
 use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
-
-#[allow(unused_imports)]
-use prelude::*;
 
 use scalar_mul::window::LookupTable;
 
@@ -526,7 +526,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     
@@ -555,7 +555,7 @@ impl MultiscalarMul for EdwardsPoint {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     

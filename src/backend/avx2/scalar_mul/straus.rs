@@ -20,9 +20,6 @@ use scalar::Scalar;
 use scalar_mul::window::{LookupTable, NafLookupTable5};
 use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 
-#[allow(unused_imports)]
-use prelude::*;
-
 /// Multiscalar multiplication using interleaved window / Straus'
 /// method.  See the `Straus` struct in the serial backend for more
 /// details.
@@ -33,7 +30,7 @@ use prelude::*;
 /// point representation on the fly.
 pub struct Straus {}
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -71,7 +68,7 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 

@@ -1,6 +1,6 @@
 [package]
 name = "x25519-dalek"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -20,12 +20,12 @@ exclude = [
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "^0.17"
+version = "^0.18"
 default-features = false
 
 [dependencies.rand]
 optional = true
-version = "=0.5.0-pre.2"
+version = "^0.5"
 
 [dev-dependencies]
 criterion = "0.2"

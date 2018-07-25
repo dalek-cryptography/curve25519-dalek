@@ -646,7 +646,7 @@ impl RistrettoPoint {
         let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
 
         let mut r_2_bytes = [0u8; 32];
-        r_2_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        r_2_bytes.copy_from_slice(&output.as_slice()[32..64]);
         let r_2 = FieldElement::from_bytes(&r_2_bytes);
         let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
 

@@ -400,9 +400,6 @@ impl RistrettoPoint {
     /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
     /// in a batch.
     ///
-    /// This function has optimal performance when the batch size is a
-    /// power of two, but this is not a requirement.
-    ///
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;

@@ -57,11 +57,13 @@
 //! `EdwardsBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `edwards::multiscalar_mul` function, which performs
+//! * an implementation of the
+//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `edwards::vartime::multiscalar_mul` function, which
-//! performs variable-time variable-base multiscalar multiplication.
+//! * an implementation of the
+//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//! trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Implementation
 //!

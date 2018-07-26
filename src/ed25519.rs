@@ -168,7 +168,7 @@ impl<'d> Deserialize<'d> for Signature {
 
 /// An EdDSA secret key.
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
@@ -381,7 +381,7 @@ impl<'d> Deserialize<'d> for SecretKey {
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct ExpandedSecretKey {
     pub (crate) key: Scalar,
     pub (crate) nonce: [u8; 32],
@@ -914,7 +914,7 @@ impl<'d> Deserialize<'d> for PublicKey {
 }
 
 /// An ed25519 keypair.
-#[derive(Debug, Default)]
+#[derive(Debug, Default)] // we derive Default in order to use the clear() method in Drop
 #[repr(C)]
 pub struct Keypair {
     /// The secret half of this keypair.

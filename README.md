@@ -175,13 +175,3 @@ likely want to compile with
 If you're building for a machine with avx2 instructions, there's also the
 experimental `avx2_backend`.  To use it, compile with
 `RUSTFLAGS="-C target_cpu=native" cargo build --no-default-features --features="avx2_backend"`
-
-# TODO
-
- * Batch signature verification, maybe?
- * We can probably make this go even faster if we implement SHA512,
-   rather than using the rust-crypto implementation whose API requires
-   that we allocate memory and bzero it before mutating to store the
-   digest.
- * Incorporate ed25519-dalek into Brian Smith's
-   [crypto-bench](https://github.com/briansmith/crypto-bench).

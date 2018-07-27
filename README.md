@@ -9,12 +9,7 @@ Documentation is available [here](https://docs.rs/ed25519-dalek).
 
 # Benchmarks
 
-You need to pass the `--features="bench"` flag to run the benchmarks.  The
-reason for feature-gating the benchmarks is that Rust's `test::Bencher` is
-unstable, and thus only works on the nightly channel.  (We'd like people to be
-able to compile and test on the stable and beta channels too!)
-
-On an Intel i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
+On an Intel Skylake i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
 the following performance benchmarks:
 
     ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench
@@ -29,8 +24,8 @@ the following performance benchmarks:
 By enabling the avx2 backend (on machines with compatible microarchitectures),
 the performance for signature verification is greatly improved:
 
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS="-C target_cpu=native"
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --no-default-features --features "std avx2_backend"
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS=-Ctarget_cpu=native
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --features=avx2_backend
        Compiling ed25519-dalek v0.7.0 (file:///home/isis/code/rust/ed25519-dalek)
         Finished release [optimized] target(s) in 4.28s
           Running target/release/deps/ed25519_benchmarks-e4866664de39c84d
@@ -40,7 +35,7 @@ the performance for signature verification is greatly improved:
 
 In comparison, the equivalent package in Golang performs as follows:
 
-    ∃!isisⒶwintermute:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
+    ∃!isisⒶmistakenot:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
     BenchmarkKeyGeneration     30000             47007 ns/op
     BenchmarkSigning           30000             48820 ns/op
     BenchmarkVerification      10000            119701 ns/op
@@ -59,6 +54,34 @@ assembly implementations.
 Additionally, if you're using a CSPRNG from the `rand` crate, the `nightly`
 feature will enable `u128`/`i128` features there, resulting in potentially
 faster performance.
+
+If your protocol or application is able to batch signatures for verification,
+the `verify_batch()` function has greatly improved performance.  On the
+aforementioned Intel Skylake i9-7900X, verifying a batch of 96 signatures takes
+1.7673ms.  That's 18.4094us, or roughly 60750 cycles, per signature verification,
+more than double the speed of batch verification given in the original paper
+(this is likely not a fair comparison as that was a Nehalem machine).
+The numbers after the `/` in the test name refer to the size of the batch:
+
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS=-Ctarget_cpu=native
+    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --features=avx2_backend batch
+       Compiling ed25519-dalek v0.8.0 (file:///home/isis/code/rust/ed25519-dalek)
+        Finished release [optimized] target(s) in 34.16s
+          Running target/release/deps/ed25519_benchmarks-cf0daf7d68fc71b6
+    Ed25519 batch signature verification/4   time:   [105.20 us 106.04 us 106.99 us]
+    Ed25519 batch signature verification/8   time:   [178.66 us 179.01 us 179.39 us]
+    Ed25519 batch signature verification/16  time:   [325.65 us 326.67 us 327.90 us]
+    Ed25519 batch signature verification/32  time:   [617.96 us 620.74 us 624.12 us]
+    Ed25519 batch signature verification/64  time:   [1.1862 ms 1.1900 ms 1.1943 ms]
+    Ed25519 batch signature verification/96  time:   [1.7611 ms 1.7673 ms 1.7742 ms]
+    Ed25519 batch signature verification/128 time:   [2.3320 ms 2.3376 ms 2.3446 ms]
+    Ed25519 batch signature verification/256 time:   [5.0124 ms 5.0290 ms 5.0491 ms]
+
+As you can see, there's an optimal batch size for each machine, so you'll likely
+want to your the benchmarks on your target CPU to discover the best size.  For
+this machine, around 100 signatures per batch is the optimum:
+
+![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/batch-voilin-benchmark.svg)
 
 Additionally, thanks to Rust, this implementation has both type and memory
 safety.  It's also easily readable by a much larger set of people than those who
@@ -107,7 +130,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 ```
 
 Then, in your library or executable source, add:
@@ -123,7 +146,7 @@ enabled by default, instead do:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 features = ["nightly"]
 ```
 
@@ -140,7 +163,7 @@ To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 features = ["serde"]
 ```
 
@@ -152,13 +175,3 @@ likely want to compile with
 If you're building for a machine with avx2 instructions, there's also the
 experimental `avx2_backend`.  To use it, compile with
 `RUSTFLAGS="-C target_cpu=native" cargo build --no-default-features --features="avx2_backend"`
-
-# TODO
-
- * Batch signature verification, maybe?
- * We can probably make this go even faster if we implement SHA512,
-   rather than using the rust-crypto implementation whose API requires
-   that we allocate memory and bzero it before mutating to store the
-   digest.
- * Incorporate ed25519-dalek into Brian Smith's
-   [crypto-bench](https://github.com/briansmith/crypto-bench).

@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of ed25519-dalek.
-// Copyright (c) 2017 Isis Lovecruft
+// Copyright (c) 2017-2018 Isis Lovecruft
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -264,6 +264,7 @@ extern crate generic_array;
 extern crate digest;
 extern crate failure;
 extern crate rand;
+extern crate clear_on_drop;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]

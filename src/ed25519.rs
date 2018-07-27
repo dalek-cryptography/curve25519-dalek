@@ -935,13 +935,18 @@ where
     use std::vec::Vec;
 
     use core::iter::once;
+    use rand::thread_rng;
 
     use curve25519_dalek::traits::IsIdentity;
     use curve25519_dalek::traits::VartimeMultiscalarMul;
 
-    let zs: Vec<Scalar> = signatures.iter().map(|_| Scalar::random(csprng)).collect();
+    // Select a random 128-bit scalar for each signature.
+    let zs: Vec<Scalar> = signatures
+        .iter()
+        .map(|_| Scalar::from(thread_rng().gen::<u128>()))
+        .collect();
 
-    // Compute z $= ℤ/lℤ, (∑ s[i]z[i] (mod l))
+    // Compute the basepoint coefficient, ∑ s[i]z[i] (mod l)
     let B_coefficient: Scalar = signatures
         .iter()
         .map(|sig| sig.s)

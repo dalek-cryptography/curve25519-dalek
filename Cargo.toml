@@ -22,6 +22,7 @@ default-features = false
 [dependencies.rand]
 version = "0.5"
 default-features = false
+features = ["i128_support"]
 
 [dependencies.digest]
 version = "^0.7"

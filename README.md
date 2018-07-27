@@ -130,7 +130,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 ```
 
 Then, in your library or executable source, add:
@@ -146,7 +146,7 @@ enabled by default, instead do:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 features = ["nightly"]
 ```
 
@@ -163,7 +163,7 @@ To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.7"
+version = "^0.8"
 features = ["serde"]
 ```
 

@@ -81,7 +81,7 @@ As you can see, there's an optimal batch size for each machine, so you'll likely
 want to your the benchmarks on your target CPU to discover the best size.  For
 this machine, around 100 signatures per batch is the optimum:
 
-![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/batch-voilin-benchmark.svg)
+![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/batch-violin-benchmark.svg)
 
 Additionally, thanks to Rust, this implementation has both type and memory
 safety.  It's also easily readable by a much larger set of people than those who

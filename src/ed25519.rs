@@ -928,21 +928,16 @@ impl PublicKey {
 /// let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign::<Sha512>(&msg)).collect();
 /// let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
 ///
-/// let result = verify_batch::<Sha512, _>(&messages[..], &signatures[..], &public_keys[..], &mut csprng);
+/// let result = verify_batch::<Sha512>(&messages[..], &signatures[..], &public_keys[..]);
 /// assert!(result.is_ok());
 /// # }
 /// ```
 #[cfg(any(feature = "alloc", feature = "std"))]
 #[allow(non_snake_case)]
-pub fn verify_batch<D, C>(
-    messages: &[&[u8]],
-    signatures: &[Signature],
-    public_keys: &[PublicKey],
-    csprng: &mut C,
-) -> Result<(), SignatureError>
-where
-    D: Digest<OutputSize = U64> + Default,
-    C: Rng + CryptoRng,
+pub fn verify_batch<D>(messages: &[&[u8]],
+                       signatures: &[Signature],
+                       public_keys: &[PublicKey]) -> Result<(), SignatureError>
+    where D: Digest<OutputSize = U64> + Default
 {
     const ASSERT_MESSAGE: &'static [u8] = b"The number of messages, signatures, and public keys must be equal.";
     assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
@@ -1557,7 +1552,7 @@ mod test {
         }
         let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
 
-        let result = verify_batch::<Sha512, _>(&messages, &signatures[..], &public_keys[..], &mut csprng);
+        let result = verify_batch::<Sha512>(&messages, &signatures[..], &public_keys[..]);
 
         assert!(result.is_ok());
     }

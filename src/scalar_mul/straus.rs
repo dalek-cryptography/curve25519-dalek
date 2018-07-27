@@ -12,12 +12,20 @@
 
 #![allow(non_snake_case)]
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 use core::borrow::Borrow;
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 use edwards::EdwardsPoint;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
+
+#[allow(unused_imports)]
+use prelude::*;
 
 /// Perform multiscalar multiplication by the interleaved window
 /// method, also known as Straus' method (since it was apparently
@@ -40,9 +48,10 @@ use traits::VartimeMultiscalarMul;
 ///
 /// [solution]: https://www.jstor.org/stable/2310929
 /// [problem]: https://www.jstor.org/stable/2312273
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct Straus {}
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -139,7 +148,7 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -152,12 +161,11 @@ impl VartimeMultiscalarMul for Straus {
     /// The non-adjacent form has signed, odd digits.  Using only odd
     /// digits halves the table size (since we only need odd
     /// multiples), or gives fewer additions for the same table size.
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         use curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
         use scalar_mul::window::NafLookupTable5;
@@ -167,10 +175,15 @@ impl VartimeMultiscalarMul for Straus {
             .into_iter()
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect();
-        let lookup_tables: Vec<_> = points
+
+        let lookup_tables = match points
             .into_iter()
-            .map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(P.borrow()))
-            .collect();
+            .map(|P_opt| P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)))
+            .collect::<Option<Vec<_>>>()
+        {
+            Some(x) => x,
+            None => return None,
+        };
 
         let mut r = ProjectivePoint::identity();
 
@@ -188,6 +201,6 @@ impl VartimeMultiscalarMul for Straus {
             r = t.to_projective();
         }
 
-        r.to_extended()
+        Some(r.to_extended())
     }
 }

@@ -1,20 +1,18 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
-#![cfg_attr(feature = "alloc", feature(alloc))]
-
+#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
-#![cfg_attr(all(feature = "nightly", feature = "avx2_backend"), feature(stdsimd))]
 
 // Refuse to compile if documentation is missing, but only on nightly.
 //
@@ -32,10 +30,16 @@
 // External dependencies:
 //------------------------------------------------------------------------
 
-#[cfg(feature = "std")]
-extern crate core;
-#[cfg(feature = "alloc")]
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[macro_use]
 extern crate alloc;
+
+#[cfg(feature = "std")]
+#[macro_use]
+extern crate std;
+
+#[cfg(all(feature = "nightly", feature = "avx2_backend"))]
+extern crate packed_simd;
 
 extern crate rand;
 extern crate clear_on_drop;
@@ -93,6 +97,9 @@ pub(crate) mod backend;
 
 // Internal curve models which are not part of the public API.
 pub(crate) mod curve_models;
+
+// Crate-local prelude (for alloc-dependent features like `Vec`)
+pub(crate) mod prelude;
 
 // Implementations of scalar mul algorithms live here
 pub(crate) mod scalar_mul;

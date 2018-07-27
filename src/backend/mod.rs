@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -20,6 +20,12 @@
 //! `backend::u32::field` or similar.  Unfortunately we can't use
 //! `32bit` since identifiers can't start with letters, and the backends
 //! do use `u32`/`u64`, so this seems like a least-bad option.
+
+#[cfg(not(any(feature = "u32_backend", feature = "u64_backend", feature = "avx2_backend")))]
+compile_error!(
+    "no curve25519-dalek backend cargo feature enabled! \
+     please enable one of: u32_backend, u64_backend, avx2_backend"
+);
 
 #[cfg(feature = "u32_backend")]
 pub mod u32;

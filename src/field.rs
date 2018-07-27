@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -96,17 +96,10 @@ impl FieldElement {
 
     /// Compute (self^(2^250-1), self^11), used as a helper function
     /// within invert() and pow22523().
-    ///
-    /// XXX This returns an extra intermediate to save computation in
-    /// finding inverses, at the cost of an extra copy when it's not
-    /// used (e.g., when raising to (p-1)/2 or (p-5)/8). Good idea?
     fn pow22501(&self) -> (FieldElement, FieldElement) {
         // Instead of managing which temporary variables are used
-        // for what, we define as many as we need and trust the
-        // compiler to reuse stack space as appropriate.
-        //
-        // XXX testing some examples suggests that this does happen,
-        // but it would be good to check asm for this function.
+        // for what, we define as many as we need and leave stack
+        // allocation to the compiler
         //
         // Each temporary variable t_i is of the form (self)^e_i.
         // Squaring t_i corresponds to multiplying e_i by 2,
@@ -142,58 +135,34 @@ impl FieldElement {
     /// Given a slice of public `FieldElements`, replace each with its inverse.
     ///
     /// All input `FieldElements` **MUST** be nonzero.
-    ///
-    /// This function is most efficient when the batch size (slice
-    /// length) is a power of 2.
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     pub fn batch_invert(inputs: &mut [FieldElement]) {
-        // First, compute the product of all inputs using a product
-        // tree:
-        //
-        // Inputs: [x_0, x_1, x_2]
-        //
-        // Tree:
-        //
-        //                 x_0*x_1*x_2*1         tree[1]
-        //                   /       \
-        //               x_0*x_1     x_2*1       tree[2,3]
-        //                / \        / \
-        //              x_0  x_1   x_2  1        tree[4,5,6,7]
-        //
-        //  The leaves of the tree are the inputs.  We store the tree in
-        //  an array of length 2*n, similar to a binary heap.
-        //
-        //  To initialize the tree, set every node to 1, then fill in
-        //  the leaf nodes with the input variables.  Finally, set every
-        //  non-leaf node to be the product of its children.
+        // Montgomery’s Trick and Fast Implementation of Masked AES
+        // Genelle, Prouff and Quisquater
+        // Section 3.2
 
-        let n = inputs.len().next_power_of_two();
-        let mut tree = vec![FieldElement::one(); 2*n];
-        tree[n..n+inputs.len()].copy_from_slice(inputs);
-        for i in (1..n).rev() {
-            tree[i] = &tree[2*i] * &tree[2*i+1];
+        let n = inputs.len();
+        let mut scratch = vec![FieldElement::one(); n];
+
+        // Keep an accumulator of all of the previous products
+        let mut acc = FieldElement::one();
+
+        // Pass through the input vector, recording the previous
+        // products in the scratch space
+        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
+            *scratch = acc;
+            acc = &acc * input;
         }
 
-        // The root of the tree is the product of all inputs, and is
-        // stored at index 1.  Compute its inverse.
-        let allinv = tree[1].invert();
+        // Compute the inverse of all products
+        acc = acc.invert();
 
-        // To compute y_i = 1/x_i, start at the i-th leaf node of the
-        // tree, and walk up to the root of the tree, multiplying
-        // `allinv` by each sibling.  This computes
-        //
-        // y_i = y * (all x_j except x_i)
-        //
-        // using lg(n) multiplications for each y_i, taking n*lg(n) in
-        // total.
-        for i in 0..inputs.len() {
-            let mut inv = allinv;
-            let mut node = n + i;
-            while node > 1 {
-                inv *= &tree[node ^ 1];
-                node = node >> 1;
-            }
-            inputs[i] = inv;
+        // Pass through the vector backwards to compute the inverses
+        // in place
+        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+            let tmp = &acc * input;
+            *input = &acc * &scratch;
+            acc = tmp;
         }
     }
 
@@ -201,12 +170,9 @@ impl FieldElement {
     ///
     /// The inverse is computed as self^(p-2), since
     /// x^(p-2)x = x^(p-1) = 1 (mod p).
-    //
-    // XXX do we want the debug assertion to check for zero? it breaks behaviour
-    // such as that such as in curve25519_dalek::montgomery::test::identity_to_monty.
+    ///
+    /// This function returns zero on input zero.
     pub fn invert(&self) -> FieldElement {
-        // debug_assert!(*self != FieldElement::zero());
-
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
         //                                 nonzero bits of exponent
@@ -218,8 +184,7 @@ impl FieldElement {
     }
 
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
-    /// Used in decoding.
-    pub fn pow_p58(&self) -> FieldElement {
+    fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //
         //                                 nonzero bits of exponent
@@ -495,5 +460,10 @@ mod test {
         for i in 1..32 {
             assert_eq!(one_bytes[i], 0);
         }
+    }
+
+    #[test]
+    fn batch_invert_empty() {
+        FieldElement::batch_invert(&mut []);
     }
 }

@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -57,11 +57,13 @@
 //! `EdwardsBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `edwards::multiscalar_mul` function, which performs
+//! * an implementation of the
+//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `edwards::vartime::multiscalar_mul` function, which
-//! performs variable-time variable-base multiscalar multiplication.
+//! * an implementation of the
+//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//! trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Implementation
 //!
@@ -90,9 +92,6 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-#[cfg(feature = "alloc")]
-use alloc::Vec;
-
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::ops::{Add, Sub, Neg};
@@ -118,11 +117,17 @@ use curve_models::CompletedPoint;
 use curve_models::AffineNielsPoint;
 use curve_models::ProjectiveNielsPoint;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
+
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
 // ------------------------------------------------------------------------
@@ -260,6 +265,12 @@ impl Identity for CompressedEdwardsY {
     }
 }
 
+impl Default for CompressedEdwardsY {
+    fn default() -> CompressedEdwardsY {
+        CompressedEdwardsY::identity()
+    }
+}
+
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
         EdwardsPoint{ X: FieldElement::zero(),
@@ -269,14 +280,22 @@ impl Identity for EdwardsPoint {
     }
 }
 
+impl Default for EdwardsPoint {
+    fn default() -> EdwardsPoint {
+        EdwardsPoint::identity()
+    }
+}
+
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
 
 impl ValidityCheck for EdwardsPoint {
-    // XXX this should also check that T is correct
     fn is_valid(&self) -> bool {
-        self.to_projective().is_valid()
+        let point_on_curve = self.to_projective().is_valid();
+        let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
+
+        point_on_curve && on_segre_image
     }
 }
 
@@ -526,7 +545,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     
@@ -537,71 +556,84 @@ impl MultiscalarMul for EdwardsPoint {
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
     {
-        // XXX later when we do more fancy multiscalar mults, we can
-        // delegate based on the iter's size hint -- hdevalence
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.  When we do
+        // size-dependent algorithm dispatch, use this as the hint.
+        let _size = s_lo;
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::straus::Straus;
-            Straus::multiscalar_mul(scalars, points)
-        }
+        use backend::avx2::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::straus::Straus;
-            Straus::multiscalar_mul(scalars, points)
-        }
+        use scalar_mul::straus::Straus;
+
+        Straus::multiscalar_mul(scalars, points)
     }
 }
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
     
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        // XXX later when we do more fancy multiscalar mults, we can
-        // delegate based on the iter's size hint -- hdevalence
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.  When we do
+        // size-dependent algorithm dispatch, use this as the hint.
+        let _size = s_lo;
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::straus::Straus;
-            Straus::vartime_multiscalar_mul(scalars, points)
-        }
+        use backend::avx2::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::straus::Straus;
-            Straus::vartime_multiscalar_mul(scalars, points)
-        }
+        use scalar_mul::straus::Straus;
+
+        Straus::optional_multiscalar_mul(scalars, points)
     }
 }
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    ///
-    /// XXX eliminate this function when we have the precomputation API
     #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
-        // Otherwise, proceed as normal:
+        use backend::avx2::scalar_mul::vartime_double_base;
+        // Otherwise, use the serial backend:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::vartime_double_base::mul;
-            mul(a, A, b)
-        }
+        use scalar_mul::vartime_double_base;
+
+        vartime_double_base::mul(a, A, b)
     }
 }
 
@@ -698,8 +730,6 @@ impl EdwardsBasepointTable {
     }
 
     /// Get the basepoint for this table as an `EdwardsPoint`.
-    ///
-    /// XXX maybe this would be better as a `From` impl
     pub fn basepoint(&self) -> EdwardsPoint {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.
@@ -1007,7 +1037,7 @@ mod test {
     /// Test that computing 2*basepoint is the same as basepoint.double()
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
-        let two = Scalar::from_u64(2);
+        let two = Scalar::from(2u64);
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &two;
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
@@ -1033,10 +1063,10 @@ mod test {
         // Test that sum works for non-empty iterators
         let BASE = constants::ED25519_BASEPOINT_POINT;
 
-        let s1 = Scalar::from_u64(999);
+        let s1 = Scalar::from(999u64);
         let P1 = &BASE * &s1;
 
-        let s2 = Scalar::from_u64(333);
+        let s2 = Scalar::from(333u64);
         let P2 = &BASE * &s2;
 
         let vec = vec![P1.clone(), P2.clone()];
@@ -1051,7 +1081,7 @@ mod test {
         assert_eq!(sum, EdwardsPoint::identity());
 
         // Test that sum works on owning iterators
-        let s = Scalar::from_u64(2);
+        let s = Scalar::from(2u64);
         let mapped = vec.iter().map(|x| x * &s);
         let sum: EdwardsPoint = mapped.sum();
 

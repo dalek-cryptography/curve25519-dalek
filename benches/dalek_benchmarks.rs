@@ -39,7 +39,7 @@ mod edwards_benches {
 
     fn consttime_fixed_base_scalar_mul(c: &mut Criterion) {
         let B = &constants::ED25519_BASEPOINT_TABLE;
-        let s = Scalar::from_u64(897987897).invert();
+        let s = Scalar::from(897987897u64).invert();
         c.bench_function("Constant-time fixed-base scalar mul", move |b| {
             b.iter(|| B * &s)
         });
@@ -47,7 +47,7 @@ mod edwards_benches {
 
     fn consttime_variable_base_scalar_mul(c: &mut Criterion) {
         let B = &constants::ED25519_BASEPOINT_POINT;
-        let s = Scalar::from_u64(897987897).invert();
+        let s = Scalar::from(897987897u64).invert();
         c.bench_function("Constant-time variable-base scalar mul", move |b| {
             b.iter(|| B * &s)
         });
@@ -56,8 +56,8 @@ mod edwards_benches {
     fn vartime_double_base_scalar_mul(c: &mut Criterion) {
         c.bench_function("Variable-time aA+bB, A variable, B fixed", |bench| {
             let B = &constants::ED25519_BASEPOINT_POINT;
-            let a = Scalar::from_u64(298374928).invert();
-            let b = Scalar::from_u64(897987897).invert();
+            let a = Scalar::from(298374928u64).invert();
+            let b = Scalar::from(897987897u64).invert();
             let A = B * (b * a);
             bench.iter(|| EdwardsPoint::vartime_double_scalar_mul_basepoint(&a, &A, &b));
         });
@@ -157,7 +157,7 @@ mod montgomery_benches {
     fn montgomery_ladder(c: &mut Criterion) {
         c.bench_function("Montgomery pseudomultiplication", |b| {
             let B = constants::X25519_BASEPOINT;
-            let s = Scalar::from_u64(897987897).invert();
+            let s = Scalar::from(897987897u64).invert();
             b.iter(|| B * s);
         });
     }
@@ -174,7 +174,7 @@ mod scalar_benches {
 
     fn scalar_inversion(c: &mut Criterion) {
         c.bench_function("Scalar inversion", |b| {
-            let s = Scalar::from_u64(897987897).invert();
+            let s = Scalar::from(897987897u64).invert();
             b.iter(|| s.invert());
         });
     }

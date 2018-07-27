@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -155,6 +155,12 @@ impl Identity for ProjectivePoint {
     }
 }
 
+impl Default for ProjectivePoint {
+    fn default() -> ProjectivePoint {
+        ProjectivePoint::identity()
+    }
+}
+
 impl ConditionallyAssignable for ProjectivePoint {
     fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
         self.U.conditional_assign(&that.U, choice);
@@ -284,6 +290,7 @@ mod test {
     use constants;
     use super::*;
 
+    #[cfg(feature = "rand")]
     use rand::rngs::OsRng;
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
@@ -337,6 +344,7 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
+    #[cfg(feature = "rand")]
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng: OsRng = OsRng::new().unwrap();

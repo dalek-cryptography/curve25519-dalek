@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -10,7 +10,7 @@
 
 //! This module contains constants used by the AVX2 backend.
 
-use core::simd::u32x8;
+use packed_simd::u32x8;
 
 use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 use backend::avx2::field::FieldElement32x4;

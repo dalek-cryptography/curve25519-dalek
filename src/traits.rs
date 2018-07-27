@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2017 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -72,9 +72,9 @@ pub trait MultiscalarMul {
     /// use curve25519_dalek::scalar::Scalar;
     ///
     /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
     ///
     /// // Some points
     /// let P = constants::RISTRETTO_BASEPOINT_POINT;
@@ -106,11 +106,70 @@ pub trait VartimeMultiscalarMul {
     /// The type of point being multiplied, e.g., `RistrettoPoint`.
     type Point;
 
-    /// Given an iterator of (possibly secret) scalars and an iterator of
+    /// Given an iterator of public scalars and an iterator of
+    /// `Option`s of points, compute either `Some(Q)`, where
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
+    /// $$
+    /// if all points were `Some(P_i)`, or else return `None`.
+    ///
+    /// This function is particularly useful when verifying statements
+    /// involving compressed points.  Accepting `Option<Point>` allows
+    /// inlining point decompression into the multiscalar call,
+    /// avoiding the need for temporary buffers.
+    /// ```
+    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
+    /// use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
+    /// let abc = [a,b,c];
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    /// let PQR = [P, Q, R];
+    ///
+    /// let compressed = [P.compress(), Q.compress(), R.compress()];
+    ///
+    /// // Now we can compute A1 = a*P + b*Q + c*R using P, Q, R:
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &PQR);
+    ///
+    /// // Or using the compressed points:
+    /// let A2 = RistrettoPoint::optional_multiscalar_mul(
+    ///     &abc,
+    ///     compressed.iter().map(|pt| pt.decompress()),
+    /// );
+    ///
+    /// assert_eq!(A2, Some(A1));
+    ///
+    /// // It's also possible to mix compressed and uncompressed points:
+    /// let A3 = RistrettoPoint::optional_multiscalar_mul(
+    ///     abc.iter()
+    ///         .chain(abc.iter()),
+    ///     compressed.iter().map(|pt| pt.decompress())
+    ///         .chain(PQR.iter().map(|&pt| Some(pt))),
+    /// );
+    ///
+    /// assert_eq!(A3, Some(A1+A1));
+    /// ```
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<Self::Point>
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator<Item = Option<Self::Point>>;
+
+    /// Given an iterator of public scalars and an iterator of
     /// public points, compute
     /// $$
-    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n,
     /// $$
+    /// using variable-time operations.
     ///
     /// It is an error to call this function with two iterators of different lengths.
     ///
@@ -123,14 +182,14 @@ pub trait VartimeMultiscalarMul {
     ///
     /// ```
     /// use curve25519_dalek::constants;
-    /// use curve25519_dalek::traits::MultiscalarMul;
+    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
     /// use curve25519_dalek::ristretto::RistrettoPoint;
     /// use curve25519_dalek::scalar::Scalar;
     ///
     /// // Some scalars
-    /// let a = Scalar::from_u64(87329482);
-    /// let b = Scalar::from_u64(37264829);
-    /// let c = Scalar::from_u64(98098098);
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
     ///
     /// // Some points
     /// let P = constants::RISTRETTO_BASEPOINT_POINT;
@@ -139,22 +198,30 @@ pub trait VartimeMultiscalarMul {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = RistrettoPoint::multiscalar_mul(&abc, &[P,Q,R]);
+    /// let A1 = RistrettoPoint::vartime_multiscalar_mul(&abc, &[P,Q,R]);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = RistrettoPoint::multiscalar_mul(minus_abc, &[P,Q,R]);
+    /// let A2 = RistrettoPoint::vartime_multiscalar_mul(minus_abc, &[P,Q,R]);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// ```
+    #[allow(non_snake_case)]
     fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
-        J::Item: Borrow<Self::Point>;
+        J::Item: Borrow<Self::Point>,
+        Self::Point: Clone,
+    {
+        Self::optional_multiscalar_mul(
+            scalars,
+            points.into_iter().map(|P| Some(P.borrow().clone()))
+        ).unwrap()
+    }
 }
 
 // ------------------------------------------------------------------------

@@ -10,7 +10,7 @@
 
 //! This module contains constants used by the AVX2 backend.
 
-use core::simd::u32x8;
+use packed_simd::u32x8;
 
 use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
 use backend::avx2::field::FieldElement32x4;

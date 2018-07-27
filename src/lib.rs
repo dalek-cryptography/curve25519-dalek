@@ -13,7 +13,6 @@
 #![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
-#![cfg_attr(all(feature = "nightly", feature = "avx2_backend"), feature(stdsimd))]
 
 // Refuse to compile if documentation is missing, but only on nightly.
 //
@@ -38,6 +37,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 #[macro_use]
 extern crate std;
+
+#[cfg(all(feature = "nightly", feature = "avx2_backend"))]
+extern crate packed_simd;
 
 extern crate rand;
 extern crate clear_on_drop;

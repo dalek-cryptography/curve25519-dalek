@@ -71,7 +71,7 @@ mod ed25519_benches {
                 let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign::<Sha512>(&msg)).collect();
                 let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
 
-                b.iter(|| verify_batch::<Sha512, _>(&messages[..], &signatures[..], &public_keys[..], &mut csprng));
+                b.iter(|| verify_batch::<Sha512>(&messages[..], &signatures[..], &public_keys[..]));
             },
             &BATCH_SIZES,
         );

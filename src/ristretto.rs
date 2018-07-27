@@ -576,19 +576,10 @@ impl RistrettoPoint {
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
-        let mut field_bytes = [0u8; 32];
+        let mut uniform_bytes = [0u8; 64];
+        rng.fill(&mut uniform_bytes);
 
-        rng.fill(&mut field_bytes);
-        let r_1 = FieldElement::from_bytes(&field_bytes);
-        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
-
-        rng.fill(&mut field_bytes);
-        let r_2 = FieldElement::from_bytes(&field_bytes);
-        let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
-
-        // Applying Elligator twice and adding the results ensures a
-        // uniform distribution.
-        &R_1 + &R_2
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
 
     /// Hash a slice of bytes into a `RistrettoPoint`.
@@ -639,14 +630,31 @@ impl RistrettoPoint {
     {
         // dealing with generic arrays is clumsy, until const generics land
         let output = hash.result();
+        let mut output_bytes = [0u8; 64];
+        output_bytes.copy_from_slice(&output.as_slice());
 
+        RistrettoPoint::from_uniform_bytes(&output_bytes)
+    }
+
+    /// Construct a `RistrettoPoint` from 64 bytes of data.
+    ///
+    /// If the input bytes are uniformly distributed, the resulting
+    /// point will be uniformly distributed over the group, and its
+    /// discrete log with respect to other points should be unknown.
+    ///
+    /// # Implementation
+    ///
+    /// This function splits the input array into two 32-byte halves,
+    /// takes the low 255 bits of each half mod p, applies the
+    /// Ristretto-flavored Elligator map to each, and adds the results.
+    pub fn from_uniform_bytes(bytes: &[u8; 64]) -> RistrettoPoint {
         let mut r_1_bytes = [0u8; 32];
-        r_1_bytes.copy_from_slice(&output.as_slice()[0..32]);
+        r_1_bytes.copy_from_slice(&bytes[0..32]);
         let r_1 = FieldElement::from_bytes(&r_1_bytes);
         let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
 
         let mut r_2_bytes = [0u8; 32];
-        r_2_bytes.copy_from_slice(&output.as_slice()[32..64]);
+        r_2_bytes.copy_from_slice(&bytes[32..64]);
         let r_2 = FieldElement::from_bytes(&r_2_bytes);
         let R_2 = RistrettoPoint::elligator_ristretto_flavor(&r_2);
 

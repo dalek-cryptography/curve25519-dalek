@@ -98,11 +98,13 @@
 //! `RistrettoBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `ristretto::multiscalar_mul` function, which performs
+//! * an implementation of the
+//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `ristretto::vartime::multiscalar_mul` function, which
-//! performs variable-time variable-base multiscalar multiplication.
+//! * an implementation of the
+//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//! trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Random Points and Hashing to Ristretto
 //!
@@ -397,9 +399,6 @@ impl RistrettoPoint {
     /// it is possible to compute the encodings of their doubles \\(
     /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
     /// in a batch.
-    ///
-    /// This function has optimal performance when the batch size is a
-    /// power of two, but this is not a requirement.
     ///
     /// ```
     /// # extern crate curve25519_dalek;

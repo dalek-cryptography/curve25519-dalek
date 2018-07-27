@@ -57,11 +57,13 @@
 //! `EdwardsBasepointTable`, which performs constant-time fixed-base
 //! scalar multiplication;
 //!
-//! * the `edwards::multiscalar_mul` function, which performs
+//! * an implementation of the
+//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
 //! constant-time variable-base multiscalar multiplication;
 //!
-//! * the `edwards::vartime::multiscalar_mul` function, which
-//! performs variable-time variable-base multiscalar multiplication.
+//! * an implementation of the
+//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//! trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Implementation
 //!
@@ -554,21 +556,31 @@ impl MultiscalarMul for EdwardsPoint {
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
     {
-        // XXX later when we do more fancy multiscalar mults, we can
-        // delegate based on the iter's size hint -- hdevalence
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.  When we do
+        // size-dependent algorithm dispatch, use this as the hint.
+        let _size = s_lo;
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::straus::Straus;
-            Straus::multiscalar_mul(scalars, points)
-        }
+        use backend::avx2::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::straus::Straus;
-            Straus::multiscalar_mul(scalars, points)
-        }
+        use scalar_mul::straus::Straus;
+
+        Straus::multiscalar_mul(scalars, points)
     }
 }
 
@@ -582,21 +594,31 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        // XXX later when we do more fancy multiscalar mults, we can
-        // delegate based on the iter's size hint -- hdevalence
+        // Sanity-check lengths of input iterators
+        let mut scalars = scalars.into_iter();
+        let mut points = points.into_iter();
+
+        // Lower and upper bounds on iterators
+        let (s_lo, s_hi) = scalars.by_ref().size_hint();
+        let (p_lo, p_hi) = points.by_ref().size_hint();
+
+        // They should all be equal
+        assert_eq!(s_lo, p_lo);
+        assert_eq!(s_hi, Some(s_lo));
+        assert_eq!(p_hi, Some(p_lo));
+
+        // Now we know there's a single size.  When we do
+        // size-dependent algorithm dispatch, use this as the hint.
+        let _size = s_lo;
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::straus::Straus;
-            Straus::optional_multiscalar_mul(scalars, points)
-        }
+        use backend::avx2::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::straus::Straus;
-            Straus::optional_multiscalar_mul(scalars, points)
-        }
+        use scalar_mul::straus::Straus;
+
+        Straus::optional_multiscalar_mul(scalars, points)
     }
 }
 

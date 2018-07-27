@@ -22,6 +22,7 @@ default-features = false
 [dependencies.rand]
 version = "0.5"
 default-features = false
+features = ["i128_support"]
 
 [dependencies.digest]
 version = "^0.7"
@@ -59,6 +60,7 @@ harness = false
 default = ["std", "u64_backend"]
 # We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
 std = ["curve25519-dalek/std"]
+alloc = ["curve25519-dalek/alloc"]
 nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]

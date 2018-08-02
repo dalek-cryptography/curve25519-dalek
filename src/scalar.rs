@@ -985,7 +985,7 @@ impl Scalar {
         let mut output = vec![0i16; coef_count];
 
         // Read 64-bit words of the scalar
-        let mut x_u64 = [0u64; 5]; // one extra zero u64 to read from w/o bounds checks
+        let mut x_u64 = [0u64; 4];
         LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
 
         let mut carry:u64 = 0;
@@ -995,8 +995,10 @@ impl Scalar {
             let u64_idx = pos / 64;
             let bit_idx = pos % 64;
             let bit_buf: u64;
-            if bit_idx < 64 - radix_power {
-                // This window's bits are contained in a single u64
+
+            if bit_idx < 64 - radix_power || u64_idx == 3 {
+                // This window's bits are contained in a single u64,
+                // or it's the last u64 anyway.
                 bit_buf = x_u64[u64_idx] >> bit_idx;
             } else {
                 // Combine the current u64's bits with the bits from the next u64

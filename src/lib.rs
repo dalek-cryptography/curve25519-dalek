@@ -18,7 +18,7 @@
 //
 // This means that missing docs will still fail CI, but means we can use
 // README.md as the crate documentation.
-#![cfg_attr(all(feature = "nightly"), deny(missing_docs))]
+#![cfg_attr(feature = "nightly", deny(missing_docs))]
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]

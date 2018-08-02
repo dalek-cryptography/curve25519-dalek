@@ -155,6 +155,12 @@ impl Identity for ProjectivePoint {
     }
 }
 
+impl Default for ProjectivePoint {
+    fn default() -> ProjectivePoint {
+        ProjectivePoint::identity()
+    }
+}
+
 impl ConditionallyAssignable for ProjectivePoint {
     fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
         self.U.conditional_assign(&that.U, choice);
@@ -284,6 +290,7 @@ mod test {
     use constants;
     use super::*;
 
+    #[cfg(feature = "rand")]
     use rand::rngs::OsRng;
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
@@ -337,6 +344,7 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
+    #[cfg(feature = "rand")]
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng: OsRng = OsRng::new().unwrap();

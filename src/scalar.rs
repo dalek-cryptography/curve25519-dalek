@@ -148,13 +148,10 @@ use core::cmp::{Eq, PartialEq};
 use core::iter::{Product, Sum};
 use core::borrow::Borrow;
 
+#[allow(unused_imports)]
+use prelude::*;
+
 use rand::{Rng, CryptoRng};
-
-#[cfg(feature = "std")]
-use std::vec::Vec;
-
-#[cfg(feature = "alloc")]
-use alloc::Vec;
 
 use digest::Digest;
 use generic_array::typenum::U64;
@@ -432,6 +429,77 @@ where
     }
 }
 
+impl Default for Scalar {
+    fn default() -> Scalar {
+        Scalar::zero()
+    }
+}
+
+impl From<u8> for Scalar {
+    fn from(x: u8) -> Scalar {
+        let mut s_bytes = [0u8; 32];
+        s_bytes[0] = x;
+        Scalar{ bytes: s_bytes }
+    }
+}
+
+impl From<u16> for Scalar {
+    fn from(x: u16) -> Scalar {
+        use byteorder::{ByteOrder, LittleEndian};
+        let mut s_bytes = [0u8; 32];
+        LittleEndian::write_u16(&mut s_bytes, x);
+        Scalar{ bytes: s_bytes }
+    }
+}
+
+impl From<u32> for Scalar {
+    fn from(x: u32) -> Scalar {
+        use byteorder::{ByteOrder, LittleEndian};
+        let mut s_bytes = [0u8; 32];
+        LittleEndian::write_u32(&mut s_bytes, x);
+        Scalar{ bytes: s_bytes }
+    }
+}
+
+impl From<u64> for Scalar {
+    /// Construct a scalar from the given `u64`.
+    ///
+    /// # Inputs
+    ///
+    /// An `u64` to convert to a `Scalar`.
+    ///
+    /// # Returns
+    ///
+    /// A `Scalar` corresponding to the input `u64`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let fourtytwo = Scalar::from(42u64);
+    /// let six = Scalar::from(6u64);
+    /// let seven = Scalar::from(7u64);
+    ///
+    /// assert!(fourtytwo == six * seven);
+    /// ```
+    fn from(x: u64) -> Scalar {
+        use byteorder::{ByteOrder, LittleEndian};
+        let mut s_bytes = [0u8; 32];
+        LittleEndian::write_u64(&mut s_bytes, x);
+        Scalar{ bytes: s_bytes }
+    }
+}
+
+impl From<u128> for Scalar {
+    fn from(x: u128) -> Scalar {
+        use byteorder::{ByteOrder, LittleEndian};
+        let mut s_bytes = [0u8; 32];
+        LittleEndian::write_u128(&mut s_bytes, x);
+        Scalar{ bytes: s_bytes }
+    }
+}
+
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
@@ -442,7 +510,21 @@ impl Scalar {
     /// # Returns
     ///
     /// A random scalar within ℤ/lℤ.
-    #[cfg(feature = "std")]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// extern crate rand;
+    /// # extern crate curve25519_dalek;
+    /// #
+    /// # fn main() {
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// use rand::OsRng;
+    ///
+    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let a: Scalar = Scalar::random(&mut csprng);
+    /// # }
     pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill(&mut scalar_bytes);
@@ -462,6 +544,7 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// extern crate sha2;
+    ///
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -471,7 +554,6 @@ impl Scalar {
     /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
-    ///
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
@@ -485,21 +567,70 @@ impl Scalar {
     /// Use this instead of `hash_from_bytes` if it is more convenient
     /// to stream data into the `Digest` than to pass a single byte
     /// slice.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// extern crate sha2;
+    ///
+    /// use sha2::Digest;
+    /// use sha2::Sha512;
+    ///
+    /// # fn main() {
+    /// let mut h = Sha512::default();
+    ///
+    /// h.input(b"To really appreciate architecture, you may even need to commit a murder.");
+    /// h.input(b"While the programs used for The Manhattan Transcripts are of the most extreme");
+    /// h.input(b"nature, they also parallel the most common formula plot: the archetype of");
+    /// h.input(b"murder. Other phantasms were occasionally used to underline the fact that");
+    /// h.input(b"perhaps all architecture, rather than being about functional standards, is");
+    /// h.input(b"about love and death.");
+    ///
+    /// let s = Scalar::from_hash(h);
+    ///
+    /// println!("{:?}", s.to_bytes());
+    /// assert!(s == Scalar::from_bits([ 21,  88, 208, 252,  63, 122, 210, 152,
+    ///                                 154,  38,  15,  23,  16, 167,  80, 150,
+    ///                                 192, 221,  77, 226,  62,  25, 224, 148,
+    ///                                 239,  48, 176,  10, 185,  69, 168,  11, ]));
+    /// # }
+    /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
         where D: Digest<OutputSize = U64> + Default
     {
-        // XXX this seems clumsy
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)
     }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.to_bytes() == [0u8; 32]);
+    /// ```
     pub fn to_bytes(&self) -> [u8; 32] {
         self.bytes
     }
 
-    /// View this `Scalar` as a sequence of bytes.
+    /// View the little-endian byte encoding of the integer representing this Scalar.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let s: Scalar = Scalar::zero();
+    ///
+    /// assert!(s.as_bytes() == &[0u8; 32]);
+    /// ```
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }
@@ -517,15 +648,6 @@ impl Scalar {
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             ],
         }
-    }
-
-    /// Construct a scalar from the given `u64`.
-    pub fn from_u64(x: u64) -> Scalar {
-        let mut s_bytes = [0u8; 32];
-        for i in 0..8 {
-            s_bytes[i] = (x >> (i*8)) as u8;
-        }
-        Scalar{ bytes: s_bytes }
     }
 
     /// Given a nonzero `Scalar`, compute its multiplicative inverse.
@@ -591,22 +713,22 @@ impl Scalar {
     /// # use curve25519_dalek::scalar::Scalar;
     /// # fn main() {
     /// let mut scalars = [
-    ///     Scalar::from_u64(3),
-    ///     Scalar::from_u64(5),
-    ///     Scalar::from_u64(7),
-    ///     Scalar::from_u64(11),
+    ///     Scalar::from(3u64),
+    ///     Scalar::from(5u64),
+    ///     Scalar::from(7u64),
+    ///     Scalar::from(11u64),
     /// ];
     ///
     /// let allinv = Scalar::batch_invert(&mut scalars);
     ///
-    /// assert_eq!(allinv, Scalar::from_u64(3*5*7*11).invert());
-    /// assert_eq!(scalars[0], Scalar::from_u64(3).invert());
-    /// assert_eq!(scalars[1], Scalar::from_u64(5).invert());
-    /// assert_eq!(scalars[2], Scalar::from_u64(7).invert());
-    /// assert_eq!(scalars[3], Scalar::from_u64(11).invert());
+    /// assert_eq!(allinv, Scalar::from(3*5*7*11u64).invert());
+    /// assert_eq!(scalars[0], Scalar::from(3u64).invert());
+    /// assert_eq!(scalars[1], Scalar::from(5u64).invert());
+    /// assert_eq!(scalars[2], Scalar::from(7u64).invert());
+    /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
-    #[cfg(any(feature = "alloc", feature = "std"))]
+    #[cfg(feature = "alloc")]
     pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
@@ -1120,14 +1242,14 @@ mod test {
         // from the produced representation precisely.
         for r in 1..16 {
             for s in 2..100 {
-                let scalar = Scalar::from_u64(s).invert(); // pseudo-random
+                let scalar = Scalar::from(s as u64).invert(); // pseudo-random
                 let naf = scalar.to_arbitrary_radix(r);
 
-                let radix = Scalar::from_u64(1<<r);
+                let radix = Scalar::from((1<<r) as u64);
                 let mut term = Scalar::one();
                 let mut recovered_scalar = Scalar::zero();
                 for digit in naf.clone() {
-                    let sdigit = if digit < 0 { -Scalar::from_u64((-digit) as u64) } else { Scalar::from_u64(digit as u64) };
+                    let sdigit = if digit < 0 { -Scalar::from((-digit) as u64) } else { Scalar::from(digit as u64) };
                     recovered_scalar += term * sdigit;
                     term *= radix;
                 }
@@ -1137,9 +1259,9 @@ mod test {
     }
 
     #[test]
-    fn from_unsigned() {
-        let val = 0xdeadbeefdeadbeef;
-        let s = Scalar::from_u64(val);
+    fn from_u64() {
+        let val: u64 = 0xdeadbeefdeadbeef;
+        let s = Scalar::from(val);
         assert_eq!(s[7], 0xde);
         assert_eq!(s[6], 0xad);
         assert_eq!(s[5], 0xbe);
@@ -1160,7 +1282,7 @@ mod test {
 
     #[test]
     fn impl_add() {
-        let two = Scalar::from_u64(2);
+        let two = Scalar::from(2u64);
         let one = Scalar::one();
         let should_be_two = &one + &one;
         assert_eq!(should_be_two, two);
@@ -1188,8 +1310,8 @@ mod test {
         assert_eq!(should_be_one, one);
 
         // Test that product works for iterators where Item = Scalar
-        let xs = [Scalar::from_u64(2); 10];
-        let ys = [Scalar::from_u64(3); 10];
+        let xs = [Scalar::from(2u64); 10];
+        let ys = [Scalar::from(3u64); 10];
         // now zs is an iterator with Item = Scalar
         let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x * y);
 
@@ -1197,9 +1319,9 @@ mod test {
         let y_prod: Scalar = ys.iter().product();
         let z_prod: Scalar = zs.product();
 
-        assert_eq!(x_prod, Scalar::from_u64(1024));
-        assert_eq!(y_prod, Scalar::from_u64(59049));
-        assert_eq!(z_prod, Scalar::from_u64(60466176));
+        assert_eq!(x_prod, Scalar::from(1024u64));
+        assert_eq!(y_prod, Scalar::from(59049u64));
+        assert_eq!(z_prod, Scalar::from(60466176u64));
         assert_eq!(x_prod * y_prod, z_prod);
 
     }
@@ -1208,7 +1330,7 @@ mod test {
     fn impl_sum() {
 
         // Test that sum works for non-empty iterators
-        let two = Scalar::from_u64(2);
+        let two = Scalar::from(2u64);
         let one_vector = vec![Scalar::one(), Scalar::one()];
         let should_be_two: Scalar = one_vector.iter().sum();
         assert_eq!(should_be_two, two);
@@ -1220,8 +1342,8 @@ mod test {
         assert_eq!(should_be_zero, zero);
 
         // Test that sum works for owned types
-        let xs = [Scalar::from_u64(1); 10];
-        let ys = [Scalar::from_u64(2); 10];
+        let xs = [Scalar::from(1u64); 10];
+        let ys = [Scalar::from(2u64); 10];
         // now zs is an iterator with Item = Scalar
         let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x + y);
 
@@ -1229,9 +1351,9 @@ mod test {
         let y_sum: Scalar = ys.iter().sum();
         let z_sum: Scalar = zs.sum();
 
-        assert_eq!(x_sum, Scalar::from_u64(10));
-        assert_eq!(y_sum, Scalar::from_u64(20));
-        assert_eq!(z_sum, Scalar::from_u64(30));
+        assert_eq!(x_sum, Scalar::from(10u64));
+        assert_eq!(y_sum, Scalar::from(20u64));
+        assert_eq!(z_sum, Scalar::from(30u64));
         assert_eq!(x_sum + y_sum, z_sum);
     }
 
@@ -1383,7 +1505,7 @@ mod test {
 
     #[test]
     fn batch_invert_consistency() {
-        let mut x = Scalar::from_u64(1);
+        let mut x = Scalar::from(1u64);
         let mut v1: Vec<_> = (0..16).map(|_| {let tmp = x; x = x + x; tmp}).collect();
         let v2 = v1.clone();
 

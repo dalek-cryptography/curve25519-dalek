@@ -20,21 +20,23 @@ use scalar::Scalar;
 
 use traits::{Identity, VartimeMultiscalarMul};
 
+#[allow(unused_imports)]
+use prelude::*;
+
 /// Implements a version of Pippenger's algorithm.
 ///
-/// See the documentation in the serial `scalar_mul::pippenger` module for more info.
+/// See the documentation in the serial `scalar_mul::pippenger` module for details.
 pub struct Pippenger;
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
@@ -80,10 +82,13 @@ impl VartimeMultiscalarMul for Pippenger {
             .into_iter()
             .map(|c| c.borrow().to_arbitrary_radix(w))
             .collect();
-        let ps: Vec<CachedPoint> = points
+        let ps: Vec<CachedPoint> = match points
             .into_iter()
-            .map(|p| CachedPoint::from(ExtendedPoint::from(*p.borrow())))
-            .collect();
+            .map(|p| p.map(|P| CachedPoint::from(ExtendedPoint::from(P))))
+            .collect::<Option<Vec<_>>>() {
+                Some(x) => x,
+                None => return None
+            };
 
         // Iterate the digits from last to first so we can shift the result by w bits
         // at the end of each iteration (e.g. w doublings).
@@ -131,7 +136,7 @@ impl VartimeMultiscalarMul for Pippenger {
             result = &result + &buckets_sum;
         }
 
-        result.into()
+        Some(result.into())
     }
 }
 
@@ -146,10 +151,10 @@ mod test {
         // Reuse points across different tests
         let mut n = 256;
         let points: Vec<_> = (0..n)
-            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from_u64(1 + i as u64))
+            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
             .collect();
         let scalars: Vec<_> = (0..n)
-            .map(|i| Scalar::from_u64((i + 1) as u64).invert())
+            .map(|i| Scalar::from((i + 1) as u64).invert())
             .collect();
 
         while n > 0 {

@@ -8,70 +8,82 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 // - Oleg Andreev <oleganza@gmail.com>
-#![allow(non_snake_case)]
 
 //! Implements a version of Pippenger's algorithm.
 
+#![allow(non_snake_case)]
+
+#[cfg(any(feature = "alloc", feature = "std"))]
 use core::borrow::Borrow;
 
-use curve_models::ProjectiveNielsPoint;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use edwards::EdwardsPoint;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
 
-use traits::{Identity, VartimeMultiscalarMul};
+// TODO: add const-time version of pippenger
+// #[cfg(any(feature = "alloc", feature = "std"))]
+// use traits::MultiscalarMul;
+
+#[cfg(any(feature = "alloc", feature = "std"))]
+use traits::VartimeMultiscalarMul;
+
+#[allow(unused_imports)]
+use prelude::*;
+
+use curve_models::ProjectiveNielsPoint;
+
+use traits::{Identity};
 
 /// Implements a version of Pippenger's algorithm.
-/// See the trait implementation documentation for more details.
+///
+/// The algorithm works as follows:
+///
+/// Let `n` be a number of point-scalar pairs.
+/// Let `w` be a window of bits (5..15, chosen based on `n`, see cost factor).
+///
+/// 1. Prepare `2^(w-1) - 1` buckets with indices `[1..2^(w-1))` initialized with identity points.
+///    Bucket 0 is not needed as it would contain points multiplied by 0.
+/// 2. Convert scalars to a radix-`2^w` representation with signed digits in `[-2^w/2, 2^w/2]`.
+///    Note: all but last digit will never be equal `2^w/2`, but that's irrelevant to us here.
+/// 3. Starting with the last window, for each point `i=[0..n)` add it to a a bucket indexed by
+///    the point's scalar's value in the window.
+/// 4. Once all points in a window are sorted into buckets, add buckets by multiplying each
+///    by their index. Efficient way of doing it is to start with the last bucket and compute two sums:
+///    intermediate sum from the last to the first, and the full sum made of all intermediate sums.
+/// 5. Shift the resulting sum of buckets by `w` bits by using `w` doublings.
+/// 6. Add to the return value.
+/// 7. Repeat the loop.
+///
+/// Approximate cost w/o wNAF optimizations (A = addition, D = doubling):
+///
+/// ```ascii
+/// cost = (n*A + 2*(2^w/2)*A + w*D + A)*256/w
+///          |          |       |     |   |
+///          |          |       |     |   looping over 256/w windows
+///          |          |       |     adding to the result
+///    sorting points   |       shifting the sum by w bits (to the next window, starting from last window)
+///    one by one       |
+///    into buckets     adding/subtracting all buckets
+///                     multiplied by their indexes
+///                     using a sum of intermediate sums
+/// ```
+///
+/// For large `n`, dominant factor is (n*256/w) additions.
+/// However, if `w` is too big and `n` is not too big, then `(2^w/2)*A` could dominate.
+/// Therefore, the optimal choice of `w` grows slowly as `n` grows.
+///
 pub struct Pippenger;
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 
-    /// Perform variable-time, variable-base scalar multiplication using the Pippenger algorithm.
-    ///
-    /// The algorithm works as follows:
-    ///
-    /// Let `n` be a number of point-scalar pairs.
-    /// Let `w` be a window of bits (5..15, chosen based on `n`, see cost factor).
-    ///
-    /// 1. Prepare `2^(w-1) - 1` buckets with indices `[1..2^(w-1))` initialized with identity point.
-    ///    Bucket 0 is not needed as it will contain points multiplied by 0.
-    /// 2. Convert scalars to a radix-`2^w` representation with signed digits in `[-2^w/2, 2^w/2]`.
-    ///    Note: all but last digit will never be equal `2^w/2`, but that's irrelevant to us here.
-    /// 3. Starting with the last window, for each point `i=[0..n)` add it to a a bucket indexed by
-    ///    the point's scalar's value in the window.
-    /// 4. Once all points in a window are sorted into buckets, add buckets by multiplying each
-    ///    by their index. Efficient way of doing it is to start with the last bucket and compute two sums:
-    ///    intermediate sum from the last to the first, and the full sum made of all intermediate sums.
-    /// 5. Shift the resulting sum of buckets by `w` bits by using `w` doublings.
-    /// 6. Add to the return value.
-    /// 7. Repeat the loop.
-    ///
-    /// Approximate cost w/o wNAF optimizations (A = addition, D = doubling):
-    ///
-    /// ```ascii
-    /// cost = (n*A + 2*(2^w/2)*A + w*D + A)*256/w
-    ///          |          |       |     |   |
-    ///          |          |       |     |   looping over 256/w windows
-    ///          |          |       |     adding to the result
-    ///    sorting points   |       shifting the sum by w bits (to the next window, starting from last window)
-    ///    one by one       |
-    ///    into buckets     adding/subtracting all buckets
-    ///                     multiplied by their indexes
-    ///                     using a sum of intermediate sums
-    /// ```
-    ///
-    /// For large `n`, dominant factor is (n*256/w) additions.
-    /// However, if `w` is too big and `n` is not too big, then `(2^w/2)*A` could dominate.
-    /// Therefore, the optimal choice of `w` grows slowly as `n` grows.
-    ///
-    fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
@@ -117,10 +129,13 @@ impl VartimeMultiscalarMul for Pippenger {
             .into_iter()
             .map(|c| c.borrow().to_arbitrary_radix(w))
             .collect();
-        let ps: Vec<ProjectiveNielsPoint> = points
+        let ps: Vec<ProjectiveNielsPoint> = match points
             .into_iter()
-            .map(|p| p.borrow().to_projective_niels())
-            .collect();
+            .map(|p| p.map(|P| P.to_projective_niels()))
+            .collect::<Option<Vec<_>>>() {
+                Some(x) => x,
+                None => return None
+            };
 
         // Iterate the digits from last to first so we can shift the result by w bits
         // at the end of each iteration (e.g. w doublings).
@@ -170,7 +185,7 @@ impl VartimeMultiscalarMul for Pippenger {
             result += buckets_sum;
         }
 
-        result
+        Some(result)
     }
 }
 
@@ -185,10 +200,10 @@ mod test {
         // Reuse points across different tests
         let mut n = 256;
         let points: Vec<_> = (0..n)
-            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from_u64(1 + i as u64))
+            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
             .collect();
         let scalars: Vec<_> = (0..n)
-            .map(|i| Scalar::from_u64((i + 1) as u64).invert())
+            .map(|i| Scalar::from((i + 1) as u64).invert())
             .collect();
 
         while n > 0 {

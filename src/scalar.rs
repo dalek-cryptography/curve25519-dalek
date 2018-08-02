@@ -968,14 +968,14 @@ impl Scalar {
     /// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
     /// Radix power \\(r\\) can be between 1 and 15.
     #[cfg(any(feature = "alloc", feature = "std"))]
-    pub(crate) fn to_arbitrary_radix(&self, mut radix_power: usize) -> Vec<i16> {
+    pub(crate) fn to_arbitrary_radix(&self, radix_power: usize) -> Vec<i16> {
         use byteorder::{ByteOrder, LittleEndian};
         // The last word is half the size, so it always <= 2^r/2 including the carry
         debug_assert!(self[31] <= 127);
 
-        // Ensure that radix is in [2^1, 2^15]
-        radix_power = if radix_power > 15 { 15 } else { radix_power };
-        radix_power = if radix_power < 1  { 1  } else { radix_power };
+        // Make sure that radix is in [2^1, 2^15]
+        debug_assert!(radix_power >= 1);
+        debug_assert!(radix_power <= 15);
 
         // Number of coefficients = ceil(256/r)
         let coef_count = (256 + radix_power - 1)/radix_power;

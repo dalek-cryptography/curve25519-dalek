@@ -174,8 +174,8 @@ impl VartimeMultiscalarMul for Pippenger {
             //   C
             //   C B
             //   C B A   Sum = C + (C+B) + (C+B+A)
-            let mut buckets_intermediate_sum = buckets[buckets_count - 1].clone();
-            let mut buckets_sum = buckets[buckets_count - 1].clone();
+            let mut buckets_intermediate_sum = buckets[buckets_count - 1];
+            let mut buckets_sum = buckets[buckets_count - 1];
             for i in (0..(buckets_count - 1)).rev() {
                 buckets_intermediate_sum += buckets[i];
                 buckets_sum += buckets_intermediate_sum;

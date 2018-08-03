@@ -35,7 +35,7 @@ use prelude::*;
 
 use curve_models::ProjectiveNielsPoint;
 
-use traits::{Identity};
+use traits::Identity;
 
 /// Implements a version of Pippenger's algorithm.
 ///
@@ -134,9 +134,9 @@ impl VartimeMultiscalarMul for Pippenger {
             .into_iter()
             .map(|p| p.map(|P| P.to_projective_niels()))
             .collect::<Option<Vec<_>>>() {
-                Some(x) => x,
-                None => return None
-            };
+            Some(x) => x,
+            None => return None,
+        };
 
         // Prepare 2^w/2 buckets.
         // buckets[i] corresponds to a multiplication factor (i+1).
@@ -189,15 +189,10 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Add the intermediate per-digit results in hi->lo order
         // so that we can minimize doublings.
-        Some(columns[0..(digits_count-1)]
-            .iter()
-            .rev()
-            .fold(
-                columns[digits_count-1],
-                |total, &p| {
-                    total.mul_by_pow_2(w as u32) + p
-                })
-        )
+        Some(columns[0..(digits_count - 1)].iter().rev().fold(
+            columns[digits_count - 1],
+            |total, &p| total.mul_by_pow_2(w as u32) + p,
+        ))
     }
 }
 
@@ -214,7 +209,9 @@ mod test {
         let x = Scalar::from(2128506u64).invert();
         let y = Scalar::from(4443282u64).invert();
         let points: Vec<_> = (0..n)
-            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
+            .map(|i| {
+                constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64)
+            })
             .collect();
         let scalars: Vec<_> = (0..n)
             .map(|i| x + (Scalar::from(i as u64)*y)) // fast way to make ~random but deterministic scalars

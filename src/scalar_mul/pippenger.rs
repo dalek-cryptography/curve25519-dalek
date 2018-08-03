@@ -20,6 +20,8 @@ use core::borrow::Borrow;
 use edwards::EdwardsPoint;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
+#[cfg(any(feature = "alloc", feature = "std"))]
+use scalar::DigitsBatch;
 
 // TODO: add const-time version of pippenger
 // #[cfg(any(feature = "alloc", feature = "std"))]
@@ -87,7 +89,11 @@ impl VartimeMultiscalarMul for Pippenger {
     {
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
-        let w: usize = if size < 13 {
+
+        // Digit width in bits. As digit width grows,
+        // number of point additions goes down, but amount of
+        // buckets and bucket additions grows exponentially.
+        let w = if size < 13 {
             2
         } else if size < 27 {
             3
@@ -117,16 +123,13 @@ impl VartimeMultiscalarMul for Pippenger {
             15
         };
 
-        let window_size = 1 << w;
-        let windows_count = (256 + w - 1) / w; // == ceil(256/w)
-        let buckets_count = window_size / 2; // digits are signed+centered hence 2^w/2, excluding 0-th bucket
+        let max_digit: usize = 1 << w;
+        let digits_count: usize = (256 + w - 1) / w; // == ceil(256/w)
+        let buckets_count: usize = max_digit / 2; // digits are signed+centered hence 2^w/2, excluding 0-th bucket
 
         // Prepare scalar representation using signed digits radix 2^w.
         // Each digit will be in [-2^w/2, 2^w/2].
-        let mut all_digits: Vec<_> = scalars
-            .into_iter()
-            .map(|c| c.borrow().to_digits(w))
-            .collect();
+        let mut digits_batch = DigitsBatch::new(scalars, w);
         let ps: Vec<ProjectiveNielsPoint> = match points
             .into_iter()
             .map(|p| p.map(|P| P.to_projective_niels()))
@@ -141,7 +144,7 @@ impl VartimeMultiscalarMul for Pippenger {
             .map(|_| EdwardsPoint::identity())
             .collect();
 
-        let columns: Vec<_> = (0..windows_count).map(|_| {
+        let columns: Vec<_> = (0..digits_count).map(|_| {
 
             // Clear the buckets when processing another digit.
             for i in 0..buckets_count {
@@ -150,10 +153,9 @@ impl VartimeMultiscalarMul for Pippenger {
             
             // Iterate over pairs of (point, scalar)
             // and add/sub the point to the corresponding bucket.
-            // Note: when we add support for precomputed lookup tables,
+            // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
-            for (digits, pt) in all_digits.iter_mut().zip(ps.iter()) {
-                let digit = digits.next().unwrap();
+            for (digit, pt) in digits_batch.next_batch().zip(ps.iter()) {
                 if digit > 0 {
                     let b = (digit - 1) as usize;
                     buckets[b] = (&buckets[b] + pt).to_extended();
@@ -179,15 +181,19 @@ impl VartimeMultiscalarMul for Pippenger {
             }
 
             buckets_sum
-        }).collect();
+        })
+        .collect();
+        // ^ Note: we collect points because if we chain .rev().fold()
+        // then the .map() will run in reversed order, producing incorrect digit values
+        // (they can only be produced in lo->hi order).
 
-        // Add the intermediate per-digit results in order hi->lo
+        // Add the intermediate per-digit results in hi->lo order
         // so that we can minimize doublings.
-        Some(columns[0..(windows_count-1)]
+        Some(columns[0..(digits_count-1)]
             .iter()
             .rev()
             .fold(
-                columns[windows_count-1],
+                columns[digits_count-1],
                 |total, &p| {
                     total.mul_by_pow_2(w as u32) + p
                 })
@@ -205,24 +211,27 @@ mod test {
     fn test_vartime_pippenger() {
         // Reuse points across different tests
         let mut n = 512;
+        let x = Scalar::from(2128506u64).invert();
+        let y = Scalar::from(4443282u64).invert();
         let points: Vec<_> = (0..n)
             .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
             .collect();
         let scalars: Vec<_> = (0..n)
-            .map(|i| Scalar::from((i + 1) as u64).invert())
+            .map(|i| x + (Scalar::from(i as u64)*y)) // fast way to make ~random but deterministic scalars
+            .collect();
+
+        let premultiplied: Vec<EdwardsPoint> = scalars
+            .iter()
+            .zip(points.iter())
+            .map(|(sc, pt)| sc * pt)
             .collect();
 
         while n > 0 {
             let scalars = &scalars[0..n].to_vec();
             let points = &points[0..n].to_vec();
+            let control: EdwardsPoint = premultiplied[0..n].iter().sum();
 
             let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
-
-            let control: EdwardsPoint = scalars
-                .iter()
-                .zip(points.iter())
-                .map(|(sc, pt)| sc * pt)
-                .sum();
 
             assert_eq!(subject.compress(), control.compress());
 

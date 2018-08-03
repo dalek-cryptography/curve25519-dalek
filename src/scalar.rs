@@ -197,24 +197,6 @@ pub struct Scalar {
     pub(crate) bytes: [u8; 32],
 }
 
-/// The `ScalarDigitsIterator` iterates over digits of a `Scalar` in any base in \\([2, 2\^15]\\).
-/// The iterator allows producing digits on the fly, therefore avoiding allocating
-/// space dynamically for each scalar’s representation.
-/// See `Scalar::to_digits(r)` method that creates this iterator.
-#[derive(Copy, Clone, Debug)]
-pub(crate) struct ScalarDigitsIterator {
-    /// Scalar bits formatted as four u64s.
-    arr64: [u64; 4],
-    /// Current state of the iterator: index of the digit to be read.
-    digit_index: u8,
-    /// Base of the digits, in bits from 1 to 15.
-    /// TODO: ideally we'd not be storing this for all scalars.
-    radix_bits: u8,
-    /// Carry value to be added to the next digit.
-    /// TBD: change to u8 or even pack in one bit.
-    carry: i16,
-}
-
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
     /// modulo the group order \\( \ell \\).
@@ -978,98 +960,6 @@ impl Scalar {
         output
     }
 
-    /// Write this scalar in radix \\(2\^r\\), with \\(n = ceil(256/r)\\) coefficients in \\([-(2\^r)/2,(2\^r)/2)\\),
-    /// i.e., compute \\(a\_i\\) such that
-    /// $$
-    ///    a = a\_0 + a\_1 2\^1r + \cdots + a_{n-1} 2\^{r*(n-1)},
-    /// $$
-    /// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
-    /// Radix power \\(r\\) can be between 1 and 15.
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    pub(crate) fn to_arbitrary_radix(&self, radix_power: usize) -> Vec<i16> {
-        use byteorder::{ByteOrder, LittleEndian};
-        // The last word is half the size, so it always <= 2^r/2 including the carry
-        debug_assert!(self[31] <= 127);
-
-        // Make sure that radix is in [2^1, 2^15]
-        debug_assert!(radix_power >= 1);
-        debug_assert!(radix_power <= 15);
-
-        // Number of coefficients = ceil(256/r)
-        let coef_count = (256 + radix_power - 1)/radix_power;
-        let radix = 1 << radix_power;
-        let window_mask = radix - 1;
-
-        let mut output = vec![0i16; coef_count];
-
-        // Read 64-bit words of the scalar
-        let mut x_u64 = [0u64; 4];
-        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
-
-        let mut carry:u64 = 0;
-        for i in 0..coef_count {
-            // Construct a buffer of bits of the scalar, starting at bit `pos`
-            let pos = radix_power*i;
-            let u64_idx = pos / 64;
-            let bit_idx = pos % 64;
-            let bit_buf: u64;
-
-            if bit_idx < 64 - radix_power || u64_idx == 3 {
-                // This window's bits are contained in a single u64,
-                // or it's the last u64 anyway.
-                bit_buf = x_u64[u64_idx] >> bit_idx;
-            } else {
-                // Combine the current u64's bits with the bits from the next u64
-                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
-            }
-
-            // Read actual coefficient value from the window
-            let coef:u64 = carry + (bit_buf & (window_mask as u64)); // coef = [0, 2^r)
-
-            // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
-            carry = (coef + (radix/2) as u64) >> radix_power;
-            output[i] = ((coef as i64) - (carry << radix_power) as i64) as i16;
-        }
-        // Since the highest bit of the 256-bit integer is 0, 
-        // the last coefficient would always be in the lower half _inclusive_, 
-        // so the carry in the end can be 1 iff the word equals 2^r/2.
-        // Since ±2^r/2 values are valid, to avoid adding an extra word,
-        // we allow the last word to touch the value 2^r/2.
-        output[coef_count-1] += (carry << radix_power) as i16;
-        output
-    }
-
-    /// Write this scalar in radix \\(2\^r\\), with \\(n = ceil(256/r)\\) coefficients in \\([-(2\^r)/2,(2\^r)/2)\\),
-    /// i.e., compute \\(a\_i\\) such that
-    /// $$
-    ///    a = a\_0 + a\_1 2\^1r + \cdots + a_{n-1} 2\^{r*(n-1)},
-    /// $$
-    /// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
-    /// Radix size in bits \\(r\\) must belong to \\([1;15]\\).
-    #[cfg(any(feature = "alloc", feature = "std"))]
-    pub(crate) fn to_digits(&self, radix_bits: usize) -> ScalarDigitsIterator {
-        use byteorder::{ByteOrder, LittleEndian};
-        // The last word is half the size, so it always <= 2^r/2 including the carry
-        debug_assert!(self[31] <= 127);
-
-        // Make sure that radix is in [2^2, 2^15]
-        // Note: we disallow 1-bit windows not because they are useless,
-        // but because the digit index won't fit in u8 (the 256th value needed
-        // to indicate the end of iteration).
-        debug_assert!(radix_bits >= 2);
-        debug_assert!(radix_bits <= 15);
-
-        let mut iterator = ScalarDigitsIterator {
-            arr64: [0u64; 4], // Note: this array is filled below
-            digit_index: 0,
-            radix_bits: radix_bits as u8,
-            carry: 0,
-        };
-        // Read 64-bit words of the scalar
-        LittleEndian::read_u64_into(&self.bytes, &mut iterator.arr64[0..4]);
-        iterator
-    }
-
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
@@ -1107,63 +997,118 @@ impl Scalar {
     }
 }
 
-impl ScalarDigitsIterator {
-    fn length(&self) -> usize {
-        (256 + self.radix_bits as usize - 1)/self.radix_bits as usize
-    }
+/// The `DigitsBatch` produces iterators over digits of a collection of scalars
+/// in any base in \\([2\^2, 2\^15]\\).
+/// The iterators produce digits on the fly, therefore avoiding allocating
+/// space dynamically for each scalar’s representation.
+///
+/// ## Scalar representation
+///
+/// Radix \\(2\^r\\), with \\(n = ceil(256/r)\\) coefficients in \\([-(2\^r)/2,(2\^r)/2)\\),
+/// i.e., scalar is represented using digits \\(a\_i\\) such that
+/// $$
+///    a = a\_0 + a\_1 2\^1r + \cdots + a_{n-1} 2\^{r*(n-1)},
+/// $$
+/// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
+#[cfg(any(feature = "alloc", feature = "std"))]
+#[derive(Clone, Debug)]
+pub(crate) struct DigitsBatch {
+    /// Scalars formatted as four u64s with carry bit packed into the highest bit.
+    scalars: Vec<[u64; 4]>,
+    /// Current state of the iterator: index of the digit to be read.
+    digit_index: usize,
+    /// Base of the digits, in bits from 1 to 15.
+    radix_bits: usize,
 }
 
-impl Iterator for ScalarDigitsIterator {
-    type Item = i16;
-    
-    fn next(&mut self) -> Option<i16> {
-        let digits_count = self.length();
-        if self.digit_index as usize == digits_count {
-            return None;
+#[cfg(any(feature = "alloc", feature = "std"))]
+impl DigitsBatch {
+
+    /// Creates a batch of iterators of scalar digits in a given radix.
+    pub(crate) fn new<I>(scalars: I, radix_bits: usize) -> Self
+    where I: IntoIterator,
+        I::Item: Borrow<Scalar> 
+    {
+        use byteorder::{ByteOrder, LittleEndian};
+
+        debug_assert!(radix_bits >= 2);
+        debug_assert!(radix_bits <= 15);
+
+        Self {
+            scalars: scalars.into_iter().map(|s| {
+                let mut arr = [0u64; 4];
+                LittleEndian::read_u64_into(&s.borrow().bytes, &mut arr[0..4]);
+                arr
+            }).collect(),
+            digit_index: 0,
+            radix_bits
         }
+    }
+
+    /// Returns the next batch of digits for all the scalars.
+    pub(crate) fn next_batch<'a>(&'a mut self) -> impl Iterator<Item=i16> + 'a {
+        let digits_count = self.digits_count();
+        let final_digit = self.digit_index == digits_count;
+        let r = self.radix_bits;
         
-        let radix:u64 = 1 << self.radix_bits;
+        let radix:u64 = 1 << r;
         let window_mask:u64 = radix - 1;
 
         // Construct a buffer of bits of the scalar, starting at `bit_offset`.
-        let bit_offset = (self.digit_index as usize)*(self.radix_bits as usize);
-        let u64_idx = bit_offset as usize / 64;
-        let bit_idx = bit_offset as usize % 64;
-        let bit_buf: u64;
+        let bit_offset = self.digit_index*r;
+        let u64_idx = bit_offset / 64;
+        let bit_idx = bit_offset % 64;
 
-        if bit_idx < 64 - self.radix_bits as usize || u64_idx == 3 {
-            // This window's bits are contained in a single u64,
-            // or it's the last u64 anyway.
-            bit_buf = self.arr64[u64_idx] >> bit_idx;
-        } else {
-            // Combine the current u64's bits with the bits from the next u64
-            bit_buf = (self.arr64[u64_idx] >> bit_idx) | (self.arr64[1+u64_idx] << (64 - bit_idx));
-        }
+        // We do not want to unwrap, so we'll wrap around the digit count.
+        // This is correct as carry fully used up in the last digit,
+        // so if one loops, results will be consistent.
+        // If we could do `Iterator::Item = impl Iterator<Item=i16>`,
+        // then we'd return Option<impl Iterator> and implement standard iterator trait.
+        self.digit_index  = (self.digit_index+1) % digits_count;
 
-        // Read the actual coefficient value from the window
-        let coef:u64 = self.carry as u64 + (bit_buf & window_mask); // coef = [0, 2^r)
+        self.scalars.iter_mut().map(move |scalar| {
+            // First, extract carry from the high bit and clear it.
+            let mut carry = scalar[3] >> 63;
+            scalar[3] &= (1<<63)-1;
 
-        // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
-        self.carry = ((coef + (radix/2) as u64) >> self.radix_bits) as i16;
-        let mut digit = ((coef as i64) - (self.carry << self.radix_bits) as i64) as i16;
-        
-        self.digit_index += 1;
+            // Now, read the bits from the scalar
+            let bit_buf: u64;
+            if bit_idx < 64 - r || u64_idx == 3 {
+                // This window's bits are contained in a single u64,
+                // or it's the last u64 anyway.
+                bit_buf = scalar[u64_idx] >> bit_idx;
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                bit_buf = (scalar[u64_idx] >> bit_idx) | (scalar[1+u64_idx] << (64 - bit_idx));
+            }
 
-        // If we reach the last digit, apply the resulting carry to it.
-        if self.digit_index as usize == digits_count {
-            // Since the highest bit of the 256-bit integer is 0, 
-            // the last coefficient would always be in the lower half _inclusive_, 
-            // so the carry in the end can be 1 iff the word equals 2^r/2.
-            // Since ±2^r/2 values are valid, to avoid adding an extra word,
-            // we allow the last word to touch the value 2^r/2.
-            digit += (self.carry << self.radix_bits) as i16;
-        }
-        Some(digit)
+            // Read the actual coefficient value from the window
+            let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
+
+            // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
+            carry = (coef + (radix/2) as u64) >> r;
+            let mut digit = ((coef as i64) - (carry << r) as i64) as i16;
+            
+            // If we reach the last digit, apply the resulting carry to it.
+            if final_digit {
+                // Since the highest bit of the 256-bit integer is 0, 
+                // the last coefficient would always be in the lower half _inclusive_, 
+                // so the carry in the end can be 1 iff the word equals 2^r/2.
+                // Since ±2^r/2 values are valid, to avoid adding an extra word,
+                // we allow the last word to touch the value 2^r/2.
+                digit += (carry << r) as i16;
+                carry = 0;
+            }
+
+            // Put the updated carry back into the scalar's high bit.
+            scalar[3] |= carry << 63;
+
+            digit
+        })
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let count = self.length();
-        (count, Some(count))
+    fn digits_count(&self) -> usize {
+        (256 + self.radix_bits as usize - 1)/self.radix_bits as usize
     }
 }
 
@@ -1347,27 +1292,29 @@ mod test {
         }
     }
 
-    #[test]
-    fn to_arbitrary_radix() {
-        // For each valid radix it tests that 1000 random-ish scalars can be restored
-        // from the produced representation precisely.
-        for r in 1..16 {
-            for s in 2..100 {
-                let scalar = Scalar::from(s as u64).invert(); // pseudo-random
-                let naf = scalar.to_arbitrary_radix(r);
+    // #[test]
+    // fn to_arbitrary_radix() {
+    //     // For each valid radix it tests that 1000 random-ish scalars can be restored
+    //     // from the produced representation precisely.
+    //     for r in 1..16 {
+    //         for s in 2..100 {
+    //             let scalar = Scalar::from(s as u64).invert(); // pseudo-random
+    //             let digits: Vec<_> = DigitsBatch::new(vec![scalar], r);
 
-                let radix = Scalar::from((1<<r) as u64);
-                let mut term = Scalar::one();
-                let mut recovered_scalar = Scalar::zero();
-                for digit in naf.clone() {
-                    let sdigit = if digit < 0 { -Scalar::from((-digit) as u64) } else { Scalar::from(digit as u64) };
-                    recovered_scalar += term * sdigit;
-                    term *= radix;
-                }
-                assert_eq!(recovered_scalar, scalar);
-            }
-        }
-    }
+    //             let naf = scalar.to_arbitrary_radix(r);
+
+    //             let radix = Scalar::from((1<<r) as u64);
+    //             let mut term = Scalar::one();
+    //             let mut recovered_scalar = Scalar::zero();
+    //             for digit in naf.clone() {
+    //                 let sdigit = if digit < 0 { -Scalar::from((-digit) as u64) } else { Scalar::from(digit as u64) };
+    //                 recovered_scalar += term * sdigit;
+    //                 term *= radix;
+    //             }
+    //             assert_eq!(recovered_scalar, scalar);
+    //         }
+    //     }
+    // }
 
     #[test]
     fn from_u64() {

@@ -491,6 +491,7 @@ impl From<u64> for Scalar {
     }
 }
 
+#[cfg(feature = "byteorder/i128")]
 impl From<u128> for Scalar {
     fn from(x: u128) -> Scalar {
         use byteorder::{ByteOrder, LittleEndian};

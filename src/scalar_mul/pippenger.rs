@@ -47,7 +47,7 @@ use traits::Identity;
 /// 1. Prepare `2^(w-1) - 1` buckets with indices `[1..2^(w-1))` initialized with identity points.
 ///    Bucket 0 is not needed as it would contain points multiplied by 0.
 /// 2. Convert scalars to a radix-`2^w` representation with signed digits in `[-2^w/2, 2^w/2]`.
-///    Note: all but last digit will never be equal `2^w/2`, but that's irrelevant to us here.
+///    Note: only the last digit may equal `2^w/2`.
 /// 3. Starting with the last window, for each point `i=[0..n)` add it to a a bucket indexed by
 ///    the point's scalar's value in the window.
 /// 4. Once all points in a window are sorted into buckets, add buckets by multiplying each

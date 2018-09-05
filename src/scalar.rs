@@ -500,6 +500,34 @@ impl From<u128> for Scalar {
     }
 }
 
+impl From<usize> for Scalar {
+    /// Convert a `usize` into a `Scalar`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// let fourtytwo = Scalar::from(42usize);
+    /// let six = Scalar::from(6usize);
+    /// let seven = Scalar::from(7usize);
+    ///
+    /// assert!(fourtytwo == six * seven);
+    /// ```
+    fn from(x: usize) -> Scalar {
+        use byteorder::{ByteOrder, LittleEndian};
+        let mut s_bytes = [0u8; 32];
+
+        match ::core::mem::size_of::<usize>() {
+            4 => LittleEndian::write_u32(&mut s_bytes, x as u32),
+            8 => LittleEndian::write_u64(&mut s_bytes, x as u64),
+            _ => unsafe { ::core::hint::unreachable_unchecked() },
+        }
+
+        Scalar{ bytes: s_bytes }
+    }
+}
+
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///

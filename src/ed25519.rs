@@ -777,22 +777,36 @@ impl PublicKey {
     /// Derive this public key from its corresponding `SecretKey`.
     #[allow(unused_assignments)]
     pub fn from_secret<D>(secret_key: &SecretKey) -> PublicKey
-            where D: Digest<OutputSize = U64> + Default {
-
+        where D: Digest<OutputSize = U64> + Default
+    {
         let mut h:    D = D::default();
         let mut hash:   [u8; 64] = [0u8; 64];
         let mut digest: [u8; 32] = [0u8; 32];
-        let     pk:     [u8; 32];
 
         h.input(secret_key.as_bytes());
         hash.copy_from_slice(h.fixed_result().as_slice());
 
         digest.copy_from_slice(&hash[..32]);
-        digest[0]  &= 248;
-        digest[31] &= 127;
-        digest[31] |= 64;
 
-        pk = (&Scalar::from_bits(digest) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
+        PublicKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut digest)
+    }
+
+    /// Derive this public key from its corresponding `ExpandedSecretKey`.
+    pub fn from_expanded_secret(expanded_secret_key: &ExpandedSecretKey) -> PublicKey {
+        let mut bits: [u8; 32] = expanded_secret_key.key.to_bytes();
+
+        PublicKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut bits)
+    }
+
+    /// Internal utility function for mangling the bits of a (formerly
+    /// mathematically well-defined) "scalar" and multiplying it to produce a
+    /// public key.
+    fn mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(bits: &mut [u8; 32]) -> PublicKey {
+        bits[0]  &= 248;
+        bits[31] &= 127;
+        bits[31] |= 64;
+
+        let pk = (&Scalar::from_bits(*bits) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
 
         PublicKey(CompressedEdwardsY(pk))
     }
@@ -882,6 +896,12 @@ impl PublicKey {
         } else {
             Err(SignatureError(InternalError::VerifyError))
         }
+    }
+}
+
+impl From<ExpandedSecretKey> for PublicKey {
+    fn from(source: ExpandedSecretKey) -> PublicKey {
+        PublicKey::from_expanded_secret(&source)
     }
 }
 
@@ -1593,6 +1613,17 @@ mod test {
         }
 
         assert!(!as_bytes(&keypair).contains(&0x15));
+    }
+
+    #[test]
+    fn pubkey_from_secret_and_expanded_secret() {
+        let mut csprng = thread_rng();
+        let secret: SecretKey = SecretKey::generate::<_>(&mut csprng);
+        let expanded_secret: ExpandedSecretKey = ExpandedSecretKey::from_secret_key::<Sha512>(&secret);
+        let public_from_secret: PublicKey = PublicKey::from_secret::<Sha512>(&secret);
+        let public_from_expanded_secret: PublicKey = PublicKey::from_expanded_secret(&expanded_secret);
+
+        assert!(public_from_secret == public_from_expanded_secret);
     }
 
     #[cfg(all(test, feature = "serde"))]

@@ -97,7 +97,7 @@
 //! output of an addition or doubling always lies in \\( \mathbb P\^1 \times
 //! \mathbb P\^1\\), and the choice of which formula to use is replaced
 //! by a choice of whether to convert the result to \\( \mathbb P\^2 \\)
-//! or \\(\mathbb P\^2 \\).  However, this tweak is not described in
+//! or \\(\mathbb P\^3 \\).  However, this tweak is not described in
 //! their paper, only in their software.
 //!
 //! Our naming for the `CompletedPoint` (\\(\mathbb P\^1 \times \mathbb

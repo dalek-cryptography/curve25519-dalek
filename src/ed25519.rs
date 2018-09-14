@@ -1241,7 +1241,7 @@ impl Keypair {
     /// # let prehashed: Sha512 = Sha512::default();
     /// # prehashed.input(message);
     /// #
-    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
     /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
     /// # }
@@ -1305,7 +1305,7 @@ impl Keypair {
     /// let prehashed: Sha512 = Sha512::default();
     /// prehashed.input(message);
     ///
-    /// let context: &[u8] = "Ed25519DalekSignPrehashedDoctest";
+    /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
     /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
     ///

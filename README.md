@@ -26,11 +26,6 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
-## Stability
-
-We have recently released a `1.0.0-pre.0` version of `curve25519-dalek` and
-would greatly appreciate testing and feedback on our API and performance.
-
 # Documentation
 
 The semver-stable, public-facing `curve25519-dalek` API is documented

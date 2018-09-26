@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -16,7 +16,7 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "0.19"
+version = "0.20"
 default-features = false
 
 [dependencies.rand]

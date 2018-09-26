@@ -254,8 +254,6 @@
 //! ```
 
 #![no_std]
-#![cfg_attr(feature = "nightly", feature(rand))]
-#![cfg_attr(feature = "bench", feature(test))]
 #![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
@@ -275,9 +273,6 @@ extern crate sha2;
 
 #[cfg(test)]
 extern crate hex;
-
-#[cfg(all(test, feature = "bench"))]
-extern crate test;
 
 #[cfg(feature = "serde")]
 extern crate serde;

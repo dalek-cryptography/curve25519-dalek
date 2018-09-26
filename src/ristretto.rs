@@ -213,6 +213,19 @@ impl CompressedRistretto {
         &self.0
     }
 
+    /// Construct a `CompressedRistretto` from a slice of bytes.
+    ///
+    /// # Panics
+    ///
+    /// If the input `bytes` slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
+        let mut tmp = [0u8; 32];
+
+        tmp.copy_from_slice(bytes);
+
+        CompressedRistretto(tmp)
+    }
+
     /// Attempt to decompress to an `RistrettoPoint`.
     ///
     /// # Return

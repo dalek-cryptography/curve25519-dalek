@@ -57,7 +57,7 @@ extern crate subtle;
 #[cfg(feature = "serde")]
 extern crate serde;
 #[cfg(all(test, feature = "serde"))]
-extern crate serde_cbor;
+extern crate bincode;
 
 // Internal macros. Must come first!
 #[macro_use]

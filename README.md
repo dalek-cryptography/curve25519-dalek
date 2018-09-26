@@ -45,7 +45,7 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "0.20"
+curve25519-dalek = "0.21"
 ```
 Then import the crate as:
 ```rust,no_run

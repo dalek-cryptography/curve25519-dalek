@@ -206,6 +206,15 @@ impl Serialize for EdwardsPoint {
 }
 
 #[cfg(feature = "serde")]
+impl Serialize for CompressedEdwardsY {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for EdwardsPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
@@ -235,6 +244,37 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
         }
 
         deserializer.deserialize_bytes(EdwardsPointVisitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for CompressedEdwardsY {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct CompressedEdwardsYVisitor;
+
+        impl<'de> Visitor<'de> for CompressedEdwardsYVisitor {
+            type Value = CompressedEdwardsY;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("32 bytes of data")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedEdwardsY, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+                    Ok(CompressedEdwardsY(arr32))
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(CompressedEdwardsYVisitor)
     }
 }
 
@@ -1193,25 +1233,19 @@ mod test {
         }
     }
 
-    #[cfg(feature = "serde")]
-    use serde_cbor;
-
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_cbor_basepoint_roundtrip() {
-        let output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
-        let parsed: EdwardsPoint = serde_cbor::from_slice(&output).unwrap();
-        assert_eq!(parsed.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
-    }
+    fn serde_bincode_basepoint_roundtrip() {
+        use bincode;
 
-    #[test]
-    #[cfg(feature = "serde")]
-    fn serde_cbor_decode_invalid_fails() {
-        let mut output = serde_cbor::to_vec(&constants::ED25519_BASEPOINT_POINT).unwrap();
-        // CBOR apparently has two bytes of overhead for a 32-byte string.
-        // Set the low byte of the compressed point to 1 to make it invalid.
-        output[2] = 1;
-        let parsed: Result<EdwardsPoint, _> = serde_cbor::from_slice(&output);
-        assert!(parsed.is_err());
+        let encoded = bincode::serialize(&constants::ED25519_BASEPOINT_POINT).unwrap();
+        let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).unwrap();
+        assert_eq!(encoded, enc_compressed);
+
+        let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).unwrap();
+        let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
+        assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
     }
 }

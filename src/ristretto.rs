@@ -311,6 +311,15 @@ impl Serialize for RistrettoPoint {
 }
 
 #[cfg(feature = "serde")]
+impl Serialize for CompressedRistretto {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for RistrettoPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'de>
@@ -340,6 +349,37 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
         }
 
         deserializer.deserialize_bytes(RistrettoPointVisitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for CompressedRistretto {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct CompressedRistrettoVisitor;
+
+        impl<'de> Visitor<'de> for CompressedRistrettoVisitor {
+            type Value = CompressedRistretto;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("32 bytes of data")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedRistretto, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+                    Ok(CompressedRistretto(arr32))
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(CompressedRistrettoVisitor)
     }
 }
 
@@ -980,15 +1020,20 @@ mod test {
     use traits::{Identity, ValidityCheck};
     use super::*;
 
-    #[cfg(feature = "serde")]
-    use serde_cbor;
-
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_cbor_basepoint_roundtrip() {
-        let output = serde_cbor::to_vec(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
-        let parsed: RistrettoPoint = serde_cbor::from_slice(&output).unwrap();
-        assert_eq!(parsed, constants::RISTRETTO_BASEPOINT_POINT);
+    fn serde_bincode_basepoint_roundtrip() {
+        use bincode;
+
+        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
+        let enc_compressed = bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
+        assert_eq!(encoded, enc_compressed);
+
+        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
+        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
+        assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
     }
 
     #[test]

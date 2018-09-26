@@ -27,7 +27,7 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 
 [dev-dependencies]
 sha2 = "0.7"
-serde_cbor = "0.6"
+bincode = "1"
 criterion = "0.2"
 
 [[bench]]

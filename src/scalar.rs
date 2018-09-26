@@ -1399,11 +1399,10 @@ mod test {
 
     #[test]
     #[cfg(feature = "serde")]
-    fn serde_cbor_scalar_roundtrip() {
-        // XXX remove serde_cbor
-        use serde_cbor;
-        let output = serde_cbor::to_vec(&X).unwrap();
-        let parsed: Scalar = serde_cbor::from_slice(&output).unwrap();
+    fn serde_bincode_scalar_roundtrip() {
+        use bincode;
+        let output = bincode::serialize(&X).unwrap();
+        let parsed: Scalar = bincode::deserialize(&output).unwrap();
         assert_eq!(parsed, X);
     }
 

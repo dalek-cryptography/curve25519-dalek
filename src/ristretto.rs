@@ -242,24 +242,30 @@ impl CompressedRistretto {
             return None;
         }
 
-        // Step 2.  The rest.  (XXX write comments)
+        // Step 2.  Compute (X:Y:Z:T).
         let one = FieldElement::one();
         let ss = s.square();
-        let yden = &one + &ss; // 1 - a*s^2
-        let ynum = &one - &ss; // 1 + a*s^2
-        let yden_sqr = yden.square();
-        let xden_sqr = &(&(-&constants::EDWARDS_D) * &ynum.square()) - &yden_sqr;
+        let u1 = &one + &ss;      //  1 - as²    where a=-1
+        let u2 = &one - &ss;      //  1 + as²
+        let u1_sqr = u1.square(); // (1 + as²)²
 
-        let (ok, invsqrt) = (&xden_sqr * &yden_sqr).invsqrt();
+        // v == ad(1-as²)² - (1+as²)²            where d=-121665/121666
+        let v = &(&(-&constants::EDWARDS_D) * &u2.square()) - &u1_sqr;
 
-        let xden_inv = &invsqrt * &yden;
-        let yden_inv = &invsqrt * &(&xden_inv * &xden_sqr);
+        let (ok, I) = (&v * &u1_sqr).invsqrt(); // 1/sqrt(vu1²)
 
-        let mut x = &(&s + &s) * &xden_inv; // 2*s*xden_inv
-        let x_is_negative = x.is_negative();
-        x.conditional_negate(x_is_negative);
-        let y = &ynum * &yden_inv;
+        let Dx = &I * &u1;         // 1/sqrt(v)
+        let Dy = &I * &(&Dx * &v); // 1/u2
 
+        // x == | 2s/sqrt(v) | == + sqrt(4s²/(ad(1+as²)² - (1-as²)²))
+        let mut x = &(&s + &s) * &Dx;
+        let x_neg = x.is_negative();
+        x.conditional_negate(x_neg);
+
+        // y == (1-as²)/(1+as²)
+        let y = &u2 * &Dy;
+
+        // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
         if ok.unwrap_u8() == 0u8 || t.is_negative().unwrap_u8() == 1u8 || y.is_zero().unwrap_u8() == 1u8 {

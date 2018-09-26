@@ -26,11 +26,6 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
-## Stability
-
-We have recently released a `1.0.0-pre.0` version of `curve25519-dalek` and
-would greatly appreciate testing and feedback on our API and performance.
-
 # Documentation
 
 The semver-stable, public-facing `curve25519-dalek` API is documented
@@ -50,7 +45,7 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "^0.18"
+curve25519-dalek = "0.20"
 ```
 Then import the crate as:
 ```rust,no_run
@@ -146,6 +141,22 @@ cargo bench --no-default-features --features "std avx2_backend"
 
 Performance is a secondary goal behind correctness, safety, and
 clarity, but we aim to be competitive with other implementations.
+
+# FFI
+
+Unfortunately, we have no plans to add FFI to `curve25519-dalek` directly.  The
+reason is that we use Rust features to provide an API that maintains safety
+invariants, which are not possible to maintain across an FFI boundary.  For
+instance, as described in the _Safety_ section above, invalid points are
+impossible to construct, and this would not be the case if we exposed point
+operations over FFI.
+
+However, `curve25519-dalek` is designed as a *mid-level* API, aimed at
+implementing other, higher-level primitives.  Instead of providing FFI at the
+mid-level, our suggestion is to implement the higher-level primitive (a
+signature, PAKE, ZKP, etc) in Rust, using `curve25519-dalek` as a dependency,
+and have that crate provide a minimal, byte-buffer-oriented FFI specific to
+that primitive.
 
 # Contributing
 

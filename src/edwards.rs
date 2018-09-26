@@ -311,6 +311,21 @@ impl Default for CompressedEdwardsY {
     }
 }
 
+impl CompressedEdwardsY {
+    /// Construct a `CompressedEdwardsY` from a slice of bytes.
+    ///
+    /// # Panics
+    ///
+    /// If the input `bytes` slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
+        let mut tmp = [0u8; 32];
+
+        tmp.copy_from_slice(bytes);
+
+        CompressedEdwardsY(tmp)
+    }
+}
+
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
         EdwardsPoint{ X: FieldElement::zero(),

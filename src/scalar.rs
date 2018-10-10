@@ -251,8 +251,8 @@ impl Scalar {
 }
 
 use clear_on_drop::clear::ZeroSafe;
-// Scalars already implement Default, allowing clearing of individual scalars.
-// But to allow clearing `Vec<Scalar>` or `&[Scalar]` we need to mark Scalars as zeroable
+// `Scalar` already implements `Default`, allowing clearing of individual scalars.
+// But to allow clearing `Vec<Scalar>` or `&[Scalar]` we need to mark `Scalar` as zeroable
 // because ClearOnDrop zeroes the entire array in one call.
 unsafe impl ZeroSafe for Scalar {}
 

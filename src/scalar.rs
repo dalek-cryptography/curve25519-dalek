@@ -80,10 +80,10 @@
 //! assert!(a == two);
 //! ```
 //!
-//! There is also a constructor that reduces a \\(512\\)-bit integer, 
+//! There is also a constructor that reduces a \\(512\\)-bit integer,
 //! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
 //!
-//! To construct a `Scalar` as the hash of some input data, use 
+//! To construct a `Scalar` as the hash of some input data, use
 //! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes),
 //! which takes a buffer, or
 //! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash),
@@ -154,7 +154,7 @@ use prelude::*;
 use rand::{Rng, CryptoRng};
 
 use digest::Digest;
-use generic_array::typenum::U64;
+use digest::generic_array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallyAssignable;
@@ -579,14 +579,13 @@ impl Scalar {
     /// use sha2::Sha512;
     ///
     /// # fn main() {
-    /// let mut h = Sha512::default();
-    ///
-    /// h.input(b"To really appreciate architecture, you may even need to commit a murder.");
-    /// h.input(b"While the programs used for The Manhattan Transcripts are of the most extreme");
-    /// h.input(b"nature, they also parallel the most common formula plot: the archetype of");
-    /// h.input(b"murder. Other phantasms were occasionally used to underline the fact that");
-    /// h.input(b"perhaps all architecture, rather than being about functional standards, is");
-    /// h.input(b"about love and death.");
+    /// let mut h = Sha512::new()
+    ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
+    ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
+    ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
+    ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
+    ///     .chain("perhaps all architecture, rather than being about functional standards, is")
+    ///     .chain("about love and death.");
     ///
     /// let s = Scalar::from_hash(h);
     ///

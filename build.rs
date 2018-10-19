@@ -10,7 +10,6 @@ extern crate byteorder;
 extern crate clear_on_drop;
 extern crate core;
 extern crate digest;
-extern crate generic_array;
 extern crate rand;
 extern crate subtle;
 

@@ -198,11 +198,11 @@
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use bincode::{serialize, Infinite};
 //! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! # let public_key: PublicKey = keypair.public;
-//! # let verified: bool = public_key.verify::<Sha512>(message, &signature);
+//! # let verified: bool = public_key.verify::<Sha512>(message, &signature).is_ok();
 //!
 //! let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
 //! let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
@@ -232,11 +232,11 @@
 //! use bincode::{deserialize};
 //!
 //! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
+//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
 //! # let public_key: PublicKey = keypair.public;
-//! # let verified: bool = public_key.verify::<Sha512>(message, &signature);
+//! # let verified: bool = public_key.verify::<Sha512>(message, &signature).is_ok();
 //! # let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
 //! # let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
 //! let decoded_public_key: PublicKey = deserialize(&encoded_public_key).unwrap();
@@ -245,7 +245,7 @@
 //! # assert_eq!(public_key, decoded_public_key);
 //! # assert_eq!(signature, decoded_signature);
 //! #
-//! let verified: bool = decoded_public_key.verify::<Sha512>(&message, &decoded_signature);
+//! let verified: bool = decoded_public_key.verify::<Sha512>(&message, &decoded_signature).is_ok();
 //!
 //! assert!(verified);
 //! # }
@@ -257,10 +257,10 @@
 #![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
+extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
 extern crate rand;
-extern crate clear_on_drop;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]

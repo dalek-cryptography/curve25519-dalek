@@ -586,21 +586,14 @@ impl RistrettoPoint {
         let d_sq = d.square();
         let N = -&( &(&d_sq - &one) * &(&r + &one) );
 
-        let mut s = FieldElement::zero();
         let mut c = -&one;
+        let (N_over_D_is_square, mut s) = FieldElement::sqrt_ratio_i(&N, &D);
+        let mut s_prime = &s * r_0;
+        let s_prime_is_pos = !s_prime.is_negative();
+        s_prime.conditional_negate(s_prime_is_pos);
 
-        let (N_over_D_is_square, maybe_s) = FieldElement::sqrt_ratio(&N, &D);
-        // s = sqrt(N/D) if N/D is square
-        s.conditional_assign(&maybe_s, N_over_D_is_square);
-
-        // XXX how exactly do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
-        let (rN_over_D_is_square, mut maybe_s) = FieldElement::sqrt_ratio(&(&r*&N), &D);
-        maybe_s.negate();
-
-        // s = -sqrt(rN/D) if rN/D is square (should happen exactly when N/D is nonsquare)
-        debug_assert_eq!((N_over_D_is_square ^ rN_over_D_is_square).unwrap_u8(), 1u8);
-        s.conditional_assign(&maybe_s, rN_over_D_is_square);
-        c.conditional_assign(&r, rN_over_D_is_square);
+        s.conditional_assign(&s_prime, !N_over_D_is_square);
+        c.conditional_assign(&r, !N_over_D_is_square);
 
         // T = (c * (r - one) * (d-one).square()) - D;
         let T = &(&c * &(&(&r - &one) * &((d - &one).square()))) - &D;

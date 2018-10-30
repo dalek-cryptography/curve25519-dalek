@@ -129,12 +129,13 @@ mod test {
         }
     }
 
+    /// Test that SQRT_M1 is the positive square root of -1
     #[test]
-    /// Test that SQRT_M1 is a square root of -1
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement::minus_one();
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
         assert_eq!(minus_one,  sqrt_m1_sq);
+        assert_eq!(constants::SQRT_M1.is_negative().unwrap_u8(), 0);
     }
 
     #[test]
@@ -143,8 +144,6 @@ mod test {
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
         assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
         let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
-        // XXX it seems we have flipped the sign relative to
-        // the invsqrt function?
         assert_eq!(sign_test_sqrt, minus_one);
     }
 

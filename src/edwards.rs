@@ -169,9 +169,9 @@ impl CompressedEdwardsY {
         let YY = Y.square();
         let u = &YY - &Z;                            // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
+        let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
 
-        if is_nonzero_square.unwrap_u8() != 1u8 { return None; }
+        if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
 
         // Flip the sign of X if it's not correct
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);

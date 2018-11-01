@@ -577,37 +577,32 @@ impl RistrettoPoint {
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
+        let one_minus_d_sq = &one - &d.square();
+        let d_minus_one_sq = (d - &one).square();
 
         let r = i * &r_0.square();
-
-        // D = (dr -a)(ar-d) = -(dr+1)(r+d)
-        let D = -&( &(&(d * &r) + &one) * &(&r + d) );
-        // N = a(d-a)(d+a)(r+1) = -(r+1)(d^2 -1)
-        let d_sq = d.square();
-        let N = -&( &(&d_sq - &one) * &(&r + &one) );
-
+        let N_s = &(&r + &one) * &one_minus_d_sq;
         let mut c = -&one;
-        let (N_over_D_is_square, mut s) = FieldElement::sqrt_ratio_i(&N, &D);
+        let D = &(&c - &(d * &r)) * &(&r + d);
+
+        let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
         let mut s_prime = &s * r_0;
         let s_prime_is_pos = !s_prime.is_negative();
         s_prime.conditional_negate(s_prime_is_pos);
 
-        s.conditional_assign(&s_prime, !N_over_D_is_square);
-        c.conditional_assign(&r, !N_over_D_is_square);
+        s.conditional_assign(&s_prime, !Ns_D_is_sq);
+        c.conditional_assign(&r, !Ns_D_is_sq);
 
-        // T = (c * (r - one) * (d-one).square()) - D;
-        let T = &(&c * &(&(&r - &one) * &((d - &one).square()))) - &D;
-
+        let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
-        let P = CompletedPoint{
+
+        // The conversion from W_i is exactly the conversion from P1xP1.
+        RistrettoPoint(CompletedPoint{
             X: &(&s + &s) * &D,
-            Z: &T * &constants::SQRT_AD_MINUS_ONE,
+            Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
             Y: &FieldElement::one() - &s_sq,
             T: &FieldElement::one() + &s_sq,
-        };
-
-        // Convert to extended and return.
-        RistrettoPoint(P.to_extended())
+        }.to_extended())
     }
 
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.

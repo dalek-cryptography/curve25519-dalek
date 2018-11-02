@@ -167,7 +167,7 @@ use core::borrow::Borrow;
 use rand::{Rng, CryptoRng};
 
 use digest::Digest;
-use generic_array::typenum::U64;
+use digest::generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
@@ -870,7 +870,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 #[cfg(feature = "alloc")]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
-    
+
     fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
     where
         I: IntoIterator,
@@ -888,7 +888,7 @@ impl MultiscalarMul for RistrettoPoint {
 #[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
-    
+
     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<RistrettoPoint>
     where
         I: IntoIterator,

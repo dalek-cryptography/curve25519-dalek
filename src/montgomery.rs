@@ -29,7 +29,7 @@
 //!
 //! Scalar multiplication on `MontgomeryPoint`s is provided by the `*`
 //! operator, which implements the Montgomery ladder.
-//! 
+//!
 //! # Edwards Conversion
 //!
 //! The \\(2\\)-to-\\(1\\) map from the Edwards model to the Montgomery
@@ -57,10 +57,10 @@ use scalar::Scalar;
 
 use traits::Identity;
 
-use subtle::ConditionallyAssignable;
+use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConditionallySwappable;
 use subtle::ConstantTimeEq;
-use subtle::Choice;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -141,7 +141,7 @@ impl MontgomeryPoint {
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
 #[derive(Copy, Clone, Debug)]
-struct ProjectivePoint{
+struct ProjectivePoint {
     pub U: FieldElement,
     pub W: FieldElement,
 }
@@ -161,10 +161,16 @@ impl Default for ProjectivePoint {
     }
 }
 
-impl ConditionallyAssignable for ProjectivePoint {
-    fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
-        self.U.conditional_assign(&that.U, choice);
-        self.W.conditional_assign(&that.W, choice);
+impl ConditionallySelectable for ProjectivePoint {
+    fn conditional_select(
+        a: &ProjectivePoint,
+        b: &ProjectivePoint,
+        choice: Choice,
+    ) -> ProjectivePoint {
+        ProjectivePoint {
+            U: FieldElement::conditional_select(&a.U, &b.U, choice),
+            W: FieldElement::conditional_select(&a.W, &b.W, choice),
+        }
     }
 }
 
@@ -196,7 +202,7 @@ impl ProjectivePoint {
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
 fn differential_add_and_double(
-    P: &mut ProjectivePoint, 
+    P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
 ) {

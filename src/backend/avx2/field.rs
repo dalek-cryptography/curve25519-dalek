@@ -144,15 +144,23 @@ pub enum Shuffle {
 pub struct FieldElement32x4(pub(crate) [u32x8; 5]);
 
 use subtle::Choice;
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 
-impl ConditionallyAssignable for FieldElement32x4 {
-    fn conditional_assign(&mut self, other: &FieldElement32x4, choice: Choice) {
+impl ConditionallySelectable for FieldElement32x4 {
+    fn conditional_select(
+        a: &FieldElement32x4,
+        b: &FieldElement32x4,
+        choice: Choice,
+    ) -> FieldElement32x4 {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
         let mask_vec = u32x8::splat(mask);
-        for i in 0..5 {
-            self.0[i] = self.0[i] ^ (mask_vec & (self.0[i] ^ other.0[i]));
-        }
+        FieldElement32x4([
+            self.0[0] ^ (mask_vec & (self.0[0] ^ other.0[0])),
+            self.0[1] ^ (mask_vec & (self.0[1] ^ other.0[1])),
+            self.0[2] ^ (mask_vec & (self.0[2] ^ other.0[2])),
+            self.0[3] ^ (mask_vec & (self.0[3] ^ other.0[3])),
+            self.0[4] ^ (mask_vec & (self.0[4] ^ other.0[4])),
+        ])
     }
 }
 

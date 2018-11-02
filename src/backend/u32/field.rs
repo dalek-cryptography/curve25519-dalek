@@ -21,7 +21,7 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
 
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 use subtle::Choice;
 
 /// A `FieldElement32` represents an element of the field
@@ -219,11 +219,24 @@ impl<'a> Neg for &'a FieldElement32 {
     }
 }
 
-impl ConditionallyAssignable for FieldElement32 {
-    fn conditional_assign(&mut self, other: &FieldElement32, choice: Choice) {
-        for i in 0..10 {
-            self.0[i].conditional_assign(&other.0[i], choice);
-        }
+impl ConditionallySelectable for FieldElement32 {
+    fn conditional_select(
+        a: &FieldElement32,
+        b: &FieldElement32,
+        choice: Choice,
+    ) -> FieldElement32 {
+        FieldElement32([
+            u32::conditional_select(&a.0[0], &b.0[0], choice),
+            u32::conditional_select(&a.0[1], &b.0[1], choice),
+            u32::conditional_select(&a.0[2], &b.0[2], choice),
+            u32::conditional_select(&a.0[3], &b.0[3], choice),
+            u32::conditional_select(&a.0[4], &b.0[4], choice),
+            u32::conditional_select(&a.0[5], &b.0[5], choice),
+            u32::conditional_select(&a.0[6], &b.0[6], choice),
+            u32::conditional_select(&a.0[7], &b.0[7], choice),
+            u32::conditional_select(&a.0[8], &b.0[8], choice),
+            u32::conditional_select(&a.0[9], &b.0[9], choice),
+        ])
     }
 }
 

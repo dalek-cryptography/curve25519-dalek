@@ -38,7 +38,7 @@ use core::convert::From;
 use core::ops::{Add, Neg, Sub};
 
 use subtle::Choice;
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 
 use edwards;
 use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
@@ -76,9 +76,9 @@ impl From<ExtendedPoint> for edwards::EdwardsPoint {
     }
 }
 
-impl ConditionallyAssignable for ExtendedPoint {
-    fn conditional_assign(&mut self, other: &ExtendedPoint, choice: Choice) {
-        self.0.conditional_assign(&other.0, choice);
+impl ConditionallySelectable for ExtendedPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        ExtendedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
     }
 }
 
@@ -209,9 +209,9 @@ impl Identity for CachedPoint {
     }
 }
 
-impl ConditionallyAssignable for CachedPoint {
-    fn conditional_assign(&mut self, other: &CachedPoint, choice: Choice) {
-        self.0.conditional_assign(&other.0, choice);
+impl ConditionallySelectable for CachedPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        CachedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
     }
 }
 

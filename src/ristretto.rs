@@ -157,28 +157,28 @@
 //! [ristretto_main]:
 //! https://ristretto.group/
 
+use core::borrow::Borrow;
 use core::fmt::Debug;
-use core::ops::{Add, Sub, Neg};
+use core::iter::Sum;
+use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::iter::Sum;
-use core::borrow::Borrow;
 
-use rand::{Rng, CryptoRng};
+use rand::{CryptoRng, Rng};
 
-use digest::Digest;
 use digest::generic_array::typenum::U64;
+use digest::Digest;
 
 use constants;
 use field::FieldElement;
 
-use subtle::ConditionallyAssignable;
+use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
-use subtle::Choice;
 
-use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
+use edwards::EdwardsPoint;
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -949,11 +949,11 @@ impl RistrettoBasepointTable {
 }
 
 // ------------------------------------------------------------------------
-// Constant-time conditional assignment
+// Constant-time conditional selection
 // ------------------------------------------------------------------------
 
-impl ConditionallyAssignable for RistrettoPoint {
-    /// Conditionally assign `other` to `self`, if `choice == Choice(1)`.
+impl ConditionallySelectable for RistrettoPoint {
+    /// Conditionally select between `self` and `other`.
     ///
     /// # Example
     ///
@@ -961,7 +961,7 @@ impl ConditionallyAssignable for RistrettoPoint {
     /// # extern crate subtle;
     /// # extern crate curve25519_dalek;
     /// #
-    /// use subtle::ConditionallyAssignable;
+    /// use subtle::ConditionallySelectable;
     /// use subtle::Choice;
     /// #
     /// # use curve25519_dalek::traits::Identity;
@@ -974,17 +974,18 @@ impl ConditionallyAssignable for RistrettoPoint {
     ///
     /// let mut P = A;
     ///
-    /// P.conditional_assign(&B, Choice::from(0));
+    /// P = RistrettoPoint::conditional_select(&A, &B, Choice::from(0));
     /// assert_eq!(P, A);
-    /// P.conditional_assign(&B, Choice::from(1));
+    /// P = RistrettoPoint::conditional_select(&A, &B, Choice::from(1));
     /// assert_eq!(P, B);
     /// # }
     /// ```
-    fn conditional_assign(&mut self, other: &RistrettoPoint, choice: Choice) {
-        self.0.X.conditional_assign(&other.0.X, choice);
-        self.0.Y.conditional_assign(&other.0.Y, choice);
-        self.0.Z.conditional_assign(&other.0.Z, choice);
-        self.0.T.conditional_assign(&other.0.T, choice);
+    fn conditional_select(
+        a: &RistrettoPoint,
+        b: &RistrettoPoint,
+        choice: Choice,
+    ) -> RistrettoPoint {
+        RistrettoPoint(EdwardsPoint::conditional_select(&a.0, &b.0, choice))
     }
 }
 

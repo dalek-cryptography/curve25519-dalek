@@ -12,13 +12,13 @@
 //! limbs with \\(128\\)-bit products.
 
 use core::fmt::Debug;
-use core::ops::{Add, AddAssign};
-use core::ops::{Sub, SubAssign};
-use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
+use core::ops::{Add, AddAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Sub, SubAssign};
 
-use subtle::ConditionallyAssignable;
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 
 /// A `FieldElement64` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -209,11 +209,35 @@ impl<'a> Neg for &'a FieldElement64 {
     }
 }
 
-impl ConditionallyAssignable for FieldElement64 {
+impl ConditionallySelectable for FieldElement64 {
+    fn conditional_select(
+        a: &FieldElement64,
+        b: &FieldElement64,
+        choice: Choice,
+    ) -> FieldElement64 {
+        FieldElement64([
+            u64::conditional_select(&a.0[0], &b.0[0], choice),
+            u64::conditional_select(&a.0[1], &b.0[1], choice),
+            u64::conditional_select(&a.0[2], &b.0[2], choice),
+            u64::conditional_select(&a.0[3], &b.0[3], choice),
+            u64::conditional_select(&a.0[4], &b.0[4], choice),
+        ])
+    }
+
+    fn conditional_swap(a: &mut FieldElement64, b: &mut FieldElement64, choice: Choice) {
+        u64::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
+        u64::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
+        u64::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
+        u64::conditional_swap(&mut a.0[3], &mut b.0[3], choice);
+        u64::conditional_swap(&mut a.0[4], &mut b.0[4], choice);
+    }
+
     fn conditional_assign(&mut self, other: &FieldElement64, choice: Choice) {
-        for i in 0..5 {
-            self.0[i].conditional_assign(&other.0[i], choice);
-        }
+        self.0[0].conditional_assign(&other.0[0], choice);
+        self.0[1].conditional_assign(&other.0[1], choice);
+        self.0[2].conditional_assign(&other.0[2], choice);
+        self.0[3].conditional_assign(&other.0[3], choice);
+        self.0[4].conditional_assign(&other.0[4], choice);
     }
 }
 

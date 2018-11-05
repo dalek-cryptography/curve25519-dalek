@@ -29,7 +29,7 @@
 //!
 //! Scalar multiplication on `MontgomeryPoint`s is provided by the `*`
 //! operator, which implements the Montgomery ladder.
-//! 
+//!
 //! # Edwards Conversion
 //!
 //! The \\(2\\)-to-\\(1\\) map from the Edwards model to the Montgomery
@@ -51,16 +51,15 @@
 use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
+use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
-use edwards::{EdwardsPoint, CompressedEdwardsY};
 use scalar::Scalar;
 
 use traits::Identity;
 
-use subtle::ConditionallyAssignable;
-use subtle::ConditionallySwappable;
-use subtle::ConstantTimeEq;
 use subtle::Choice;
+use subtle::ConditionallySelectable;
+use subtle::ConstantTimeEq;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -141,7 +140,7 @@ impl MontgomeryPoint {
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
 #[derive(Copy, Clone, Debug)]
-struct ProjectivePoint{
+struct ProjectivePoint {
     pub U: FieldElement,
     pub W: FieldElement,
 }
@@ -161,10 +160,16 @@ impl Default for ProjectivePoint {
     }
 }
 
-impl ConditionallyAssignable for ProjectivePoint {
-    fn conditional_assign(&mut self, that: &ProjectivePoint, choice: Choice) {
-        self.U.conditional_assign(&that.U, choice);
-        self.W.conditional_assign(&that.W, choice);
+impl ConditionallySelectable for ProjectivePoint {
+    fn conditional_select(
+        a: &ProjectivePoint,
+        b: &ProjectivePoint,
+        choice: Choice,
+    ) -> ProjectivePoint {
+        ProjectivePoint {
+            U: FieldElement::conditional_select(&a.U, &b.U, choice),
+            W: FieldElement::conditional_select(&a.W, &b.W, choice),
+        }
     }
 }
 
@@ -196,7 +201,7 @@ impl ProjectivePoint {
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
 fn differential_add_and_double(
-    P: &mut ProjectivePoint, 
+    P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
 ) {
@@ -249,19 +254,22 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
-        let mut x1 = ProjectivePoint{ U: affine_u, W: FieldElement::one() };
+        let mut x1 = ProjectivePoint {
+            U: affine_u,
+            W: FieldElement::one(),
+        };
 
         let bits: [i8; 256] = scalar.bits();
 
         for i in (0..255).rev() {
-            let choice: u8 = (bits[i+1] ^ bits[i]) as u8;
+            let choice: u8 = (bits[i + 1] ^ bits[i]) as u8;
 
             debug_assert!(choice == 0 || choice == 1);
 
-            x0.conditional_swap(&mut x1, choice.into());
+            ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
             differential_add_and_double(&mut x0, &mut x1, &affine_u);
         }
-        x0.conditional_swap(&mut x1, Choice::from(bits[0] as u8));
+        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
 
         x0.to_affine()
     }

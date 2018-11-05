@@ -24,7 +24,7 @@
 
 use core::cmp::{Eq, PartialEq};
 
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::Choice;
 use subtle::ConstantTimeEq;

@@ -138,26 +138,26 @@
 //! The resulting `Scalar` has exactly the specified bit pattern,
 //! **except for the highest bit, which will be set to 0**.
 
+use core::borrow::Borrow;
+use core::cmp::{Eq, PartialEq};
 use core::fmt::Debug;
+use core::iter::{Product, Sum};
+use core::ops::Index;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
-use core::ops::{Sub, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::ops::{Index};
-use core::cmp::{Eq, PartialEq};
-use core::iter::{Product, Sum};
-use core::borrow::Borrow;
+use core::ops::{Sub, SubAssign};
 
 #[allow(unused_imports)]
 use prelude::*;
 
-use rand::{Rng, CryptoRng};
+use rand::{CryptoRng, Rng};
 
-use digest::Digest;
 use digest::generic_array::typenum::U64;
+use digest::Digest;
 
 use subtle::Choice;
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
 use backend;
@@ -343,11 +343,13 @@ impl<'a> Neg for Scalar {
     }
 }
 
-impl ConditionallyAssignable for Scalar {
-    fn conditional_assign(&mut self, other: &Scalar, choice: Choice) {
+impl ConditionallySelectable for Scalar {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        let mut bytes = [0u8; 32];
         for i in 0..32 {
-            self.bytes[i].conditional_assign(&other.bytes[i], choice);
+            bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
         }
+        Scalar { bytes }
     }
 }
 
@@ -981,7 +983,7 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # extern crate subtle;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::ConditionallyAssignable;
+    /// # use subtle::ConditionallySelectable;
     /// # fn main() {
     /// // 2^255 - 1, since `from_bits` clears the high bit
     /// let _2_255_minus_1 = Scalar::from_bits([0xff;32]);

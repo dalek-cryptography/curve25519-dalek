@@ -80,6 +80,10 @@ impl ConditionallySelectable for ExtendedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         ExtendedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
     }
+
+    fn conditional_assign(&mut self, other: &Self, choice: Choice) {
+        self.0.conditional_assign(&other.0, choice);
+    }
 }
 
 impl Default for ExtendedPoint {
@@ -212,6 +216,10 @@ impl Identity for CachedPoint {
 impl ConditionallySelectable for CachedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         CachedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
+    }
+
+    fn conditional_assign(&mut self, other: &Self, choice: Choice) {
+        self.0.conditional_assign(&other.0, choice);
     }
 }
 

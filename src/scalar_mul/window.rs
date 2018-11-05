@@ -15,7 +15,7 @@
 use core::fmt::Debug;
 
 use subtle::ConditionallyNegatable;
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::Choice;
 
@@ -59,7 +59,7 @@ unsafe impl<T> ZeroSafe for LookupTable<T> {}
 
 impl<T> LookupTable<T>
 where
-    T: Identity + ConditionallyAssignable + ConditionallyNegatable,
+    T: Identity + ConditionallySelectable + ConditionallyNegatable,
 {
     /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
     pub fn select(&self, x: i8) -> T {

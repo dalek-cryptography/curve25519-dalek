@@ -903,7 +903,7 @@ impl Debug for EdwardsBasepointTable {
 mod test {
     use field::FieldElement;
     use scalar::Scalar;
-    use subtle::ConditionallyAssignable;
+    use subtle::ConditionallySelectable;
     use constants;
     use super::*;
 

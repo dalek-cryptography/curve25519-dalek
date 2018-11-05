@@ -173,9 +173,8 @@ use constants;
 use field::FieldElement;
 
 use subtle::Choice;
-use subtle::ConditionallyAssignable;
-use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
+use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
 use edwards::EdwardsBasepointTable;

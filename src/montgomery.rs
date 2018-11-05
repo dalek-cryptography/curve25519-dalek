@@ -51,15 +51,14 @@
 use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
+use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
-use edwards::{EdwardsPoint, CompressedEdwardsY};
 use scalar::Scalar;
 
 use traits::Identity;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
-use subtle::ConditionallySwappable;
 use subtle::ConstantTimeEq;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
@@ -255,19 +254,22 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
-        let mut x1 = ProjectivePoint{ U: affine_u, W: FieldElement::one() };
+        let mut x1 = ProjectivePoint {
+            U: affine_u,
+            W: FieldElement::one(),
+        };
 
         let bits: [i8; 256] = scalar.bits();
 
         for i in (0..255).rev() {
-            let choice: u8 = (bits[i+1] ^ bits[i]) as u8;
+            let choice: u8 = (bits[i + 1] ^ bits[i]) as u8;
 
             debug_assert!(choice == 0 || choice == 1);
 
-            x0.conditional_swap(&mut x1, choice.into());
+            ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
             differential_add_and_double(&mut x0, &mut x1, &affine_u);
         }
-        x0.conditional_swap(&mut x1, Choice::from(bits[0] as u8));
+        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
 
         x0.to_affine()
     }

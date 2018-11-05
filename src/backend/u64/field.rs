@@ -223,6 +223,22 @@ impl ConditionallySelectable for FieldElement64 {
             u64::conditional_select(&a.0[4], &b.0[4], choice),
         ])
     }
+
+    fn conditional_swap(a: &mut FieldElement64, b: &mut FieldElement64, choice: Choice) {
+        u64::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
+        u64::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
+        u64::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
+        u64::conditional_swap(&mut a.0[3], &mut b.0[3], choice);
+        u64::conditional_swap(&mut a.0[4], &mut b.0[4], choice);
+    }
+
+    fn conditional_assign(&mut self, other: &FieldElement64, choice: Choice) {
+        self.0[0].conditional_assign(&other.0[0], choice);
+        self.0[1].conditional_assign(&other.0[1], choice);
+        self.0[2].conditional_assign(&other.0[2], choice);
+        self.0[3].conditional_assign(&other.0[3], choice);
+        self.0[4].conditional_assign(&other.0[4], choice);
+    }
 }
 
 impl FieldElement64 {

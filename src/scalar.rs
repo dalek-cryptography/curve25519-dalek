@@ -983,7 +983,7 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # extern crate subtle;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::ConditionallyAssignable;
+    /// # use subtle::ConditionallySelectable;
     /// # fn main() {
     /// // 2^255 - 1, since `from_bits` clears the high bit
     /// let _2_255_minus_1 = Scalar::from_bits([0xff;32]);

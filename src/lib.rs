@@ -44,12 +44,7 @@ extern crate packed_simd;
 extern crate rand;
 extern crate clear_on_drop;
 extern crate byteorder;
-
-// The `Digest` trait is implemented using `generic_array`, so we need it
-// too. Hopefully we can eliminate `generic_array` from `Digest` once const
-// generics land.
-extern crate digest;
-extern crate generic_array;
+pub extern crate digest;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

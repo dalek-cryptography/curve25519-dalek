@@ -16,13 +16,13 @@
 //! of signed limbs.
 
 use core::fmt::Debug;
-use core::ops::{Add, AddAssign};
-use core::ops::{Sub, SubAssign};
-use core::ops::{Mul, MulAssign};
 use core::ops::Neg;
+use core::ops::{Add, AddAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Sub, SubAssign};
 
-use subtle::ConditionallyAssignable;
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 
 /// A `FieldElement32` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -219,11 +219,50 @@ impl<'a> Neg for &'a FieldElement32 {
     }
 }
 
-impl ConditionallyAssignable for FieldElement32 {
+impl ConditionallySelectable for FieldElement32 {
+    fn conditional_select(
+        a: &FieldElement32,
+        b: &FieldElement32,
+        choice: Choice,
+    ) -> FieldElement32 {
+        FieldElement32([
+            u32::conditional_select(&a.0[0], &b.0[0], choice),
+            u32::conditional_select(&a.0[1], &b.0[1], choice),
+            u32::conditional_select(&a.0[2], &b.0[2], choice),
+            u32::conditional_select(&a.0[3], &b.0[3], choice),
+            u32::conditional_select(&a.0[4], &b.0[4], choice),
+            u32::conditional_select(&a.0[5], &b.0[5], choice),
+            u32::conditional_select(&a.0[6], &b.0[6], choice),
+            u32::conditional_select(&a.0[7], &b.0[7], choice),
+            u32::conditional_select(&a.0[8], &b.0[8], choice),
+            u32::conditional_select(&a.0[9], &b.0[9], choice),
+        ])
+    }
+
     fn conditional_assign(&mut self, other: &FieldElement32, choice: Choice) {
-        for i in 0..10 {
-            self.0[i].conditional_assign(&other.0[i], choice);
-        }
+        self.0[0].conditional_assign(&other.0[0], choice);
+        self.0[1].conditional_assign(&other.0[1], choice);
+        self.0[2].conditional_assign(&other.0[2], choice);
+        self.0[3].conditional_assign(&other.0[3], choice);
+        self.0[4].conditional_assign(&other.0[4], choice);
+        self.0[5].conditional_assign(&other.0[5], choice);
+        self.0[6].conditional_assign(&other.0[6], choice);
+        self.0[7].conditional_assign(&other.0[7], choice);
+        self.0[8].conditional_assign(&other.0[8], choice);
+        self.0[9].conditional_assign(&other.0[9], choice);
+    }
+
+    fn conditional_swap(a: &mut FieldElement32, b: &mut FieldElement32, choice: Choice) {
+        u32::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
+        u32::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
+        u32::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
+        u32::conditional_swap(&mut a.0[3], &mut b.0[3], choice);
+        u32::conditional_swap(&mut a.0[4], &mut b.0[4], choice);
+        u32::conditional_swap(&mut a.0[5], &mut b.0[5], choice);
+        u32::conditional_swap(&mut a.0[6], &mut b.0[6], choice);
+        u32::conditional_swap(&mut a.0[7], &mut b.0[7], choice);
+        u32::conditional_swap(&mut a.0[8], &mut b.0[8], choice);
+        u32::conditional_swap(&mut a.0[9], &mut b.0[9], choice);
     }
 }
 

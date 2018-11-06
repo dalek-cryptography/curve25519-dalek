@@ -70,7 +70,7 @@
 //! The Edwards arithmetic is implemented using the “extended twisted
 //! coordinates” of Hisil, Wong, Carter, and Dawson, and the
 //! corresponding complete formulas.  For more details,
-//! see the [`curve_models` submodule][curve_models] 
+//! see the [`curve_models` submodule][curve_models]
 //! of the internal documentation.
 //!
 //! ## Validity Checking
@@ -92,17 +92,17 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::Iterator;
-use core::ops::{Add, Sub, Neg};
+use core::iter::Sum;
+use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::iter::Sum;
-use core::borrow::Borrow;
 
-use subtle::ConditionallyAssignable;
-use subtle::ConditionallyNegatable;
 use subtle::Choice;
+use subtle::ConditionallyNegatable;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
 use constants;
@@ -169,9 +169,9 @@ impl CompressedEdwardsY {
         let YY = Y.square();
         let u = &YY - &Z;                            // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        let (is_nonzero_square, mut X) = FieldElement::sqrt_ratio(&u, &v);
+        let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
 
-        if is_nonzero_square.unwrap_u8() != 1u8 { return None; }
+        if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
 
         // Flip the sign of X if it's not correct
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
@@ -328,10 +328,12 @@ impl CompressedEdwardsY {
 
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
-        EdwardsPoint{ X: FieldElement::zero(),
-                       Y: FieldElement::one(),
-                       Z: FieldElement::one(),
-                       T: FieldElement::zero() }
+        EdwardsPoint {
+            X: FieldElement::zero(),
+            Y: FieldElement::one(),
+            Z: FieldElement::one(),
+            T: FieldElement::zero(),
+        }
     }
 }
 
@@ -358,12 +360,14 @@ impl ValidityCheck for EdwardsPoint {
 // Constant-time assignment
 // ------------------------------------------------------------------------
 
-impl ConditionallyAssignable for EdwardsPoint {
-    fn conditional_assign(&mut self, other: &EdwardsPoint, choice: Choice) {
-        self.X.conditional_assign(&other.X, choice);
-        self.Y.conditional_assign(&other.Y, choice);
-        self.Z.conditional_assign(&other.Z, choice);
-        self.T.conditional_assign(&other.T, choice);
+impl ConditionallySelectable for EdwardsPoint {
+    fn conditional_select(a: &EdwardsPoint, b: &EdwardsPoint, choice: Choice) -> EdwardsPoint {
+        EdwardsPoint {
+            X: FieldElement::conditional_select(&a.X, &b.X, choice),
+            Y: FieldElement::conditional_select(&a.Y, &b.Y, choice),
+            Z: FieldElement::conditional_select(&a.Z, &b.Z, choice),
+            T: FieldElement::conditional_select(&a.T, &b.T, choice),
+        }
     }
 }
 
@@ -373,7 +377,9 @@ impl ConditionallyAssignable for EdwardsPoint {
 
 impl ConstantTimeEq for EdwardsPoint {
     fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
-        self.compress().as_bytes().ct_eq(other.compress().as_bytes())
+        self.compress()
+            .as_bytes()
+            .ct_eq(other.compress().as_bytes())
     }
 }
 
@@ -897,7 +903,7 @@ impl Debug for EdwardsBasepointTable {
 mod test {
     use field::FieldElement;
     use scalar::Scalar;
-    use subtle::ConditionallyAssignable;
+    use subtle::ConditionallySelectable;
     use constants;
     use super::*;
 

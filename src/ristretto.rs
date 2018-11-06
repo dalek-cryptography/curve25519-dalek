@@ -157,28 +157,28 @@
 //! [ristretto_main]:
 //! https://ristretto.group/
 
+use core::borrow::Borrow;
 use core::fmt::Debug;
-use core::ops::{Add, Sub, Neg};
+use core::iter::Sum;
+use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use core::iter::Sum;
-use core::borrow::Borrow;
 
-use rand::{Rng, CryptoRng};
+use rand::{CryptoRng, Rng};
 
+use digest::generic_array::typenum::U64;
 use digest::Digest;
-use generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
 
-use subtle::ConditionallyAssignable;
+use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
-use subtle::Choice;
 
-use edwards::EdwardsPoint;
 use edwards::EdwardsBasepointTable;
+use edwards::EdwardsPoint;
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -577,44 +577,32 @@ impl RistrettoPoint {
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
         let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
         let one = FieldElement::one();
+        let one_minus_d_sq = &one - &d.square();
+        let d_minus_one_sq = (d - &one).square();
 
         let r = i * &r_0.square();
-
-        // D = (dr -a)(ar-d) = -(dr+1)(r+d)
-        let D = -&( &(&(d * &r) + &one) * &(&r + d) );
-        // N = a(d-a)(d+a)(r+1) = -(r+1)(d^2 -1)
-        let d_sq = d.square();
-        let N = -&( &(&d_sq - &one) * &(&r + &one) );
-
-        let mut s = FieldElement::zero();
+        let N_s = &(&r + &one) * &one_minus_d_sq;
         let mut c = -&one;
+        let D = &(&c - &(d * &r)) * &(&r + d);
 
-        let (N_over_D_is_square, maybe_s) = FieldElement::sqrt_ratio(&N, &D);
-        // s = sqrt(N/D) if N/D is square
-        s.conditional_assign(&maybe_s, N_over_D_is_square);
+        let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
+        let mut s_prime = &s * r_0;
+        let s_prime_is_pos = !s_prime.is_negative();
+        s_prime.conditional_negate(s_prime_is_pos);
 
-        // XXX how exactly do we reuse the computation of sqrt(N/D) to find sqrt(rN/D) ?
-        let (rN_over_D_is_square, mut maybe_s) = FieldElement::sqrt_ratio(&(&r*&N), &D);
-        maybe_s.negate();
+        s.conditional_assign(&s_prime, !Ns_D_is_sq);
+        c.conditional_assign(&r, !Ns_D_is_sq);
 
-        // s = -sqrt(rN/D) if rN/D is square (should happen exactly when N/D is nonsquare)
-        debug_assert_eq!((N_over_D_is_square ^ rN_over_D_is_square).unwrap_u8(), 1u8);
-        s.conditional_assign(&maybe_s, rN_over_D_is_square);
-        c.conditional_assign(&r, rN_over_D_is_square);
-
-        // T = (c * (r - one) * (d-one).square()) - D;
-        let T = &(&c * &(&(&r - &one) * &((d - &one).square()))) - &D;
-
+        let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
-        let P = CompletedPoint{
+
+        // The conversion from W_i is exactly the conversion from P1xP1.
+        RistrettoPoint(CompletedPoint{
             X: &(&s + &s) * &D,
-            Z: &T * &constants::SQRT_AD_MINUS_ONE,
+            Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
             Y: &FieldElement::one() - &s_sq,
             T: &FieldElement::one() + &s_sq,
-        };
-
-        // Convert to extended and return.
-        RistrettoPoint(P.to_extended())
+        }.to_extended())
     }
 
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
@@ -870,7 +858,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 #[cfg(feature = "alloc")]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
-    
+
     fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
     where
         I: IntoIterator,
@@ -888,7 +876,7 @@ impl MultiscalarMul for RistrettoPoint {
 #[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
-    
+
     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<RistrettoPoint>
     where
         I: IntoIterator,
@@ -961,11 +949,11 @@ impl RistrettoBasepointTable {
 }
 
 // ------------------------------------------------------------------------
-// Constant-time conditional assignment
+// Constant-time conditional selection
 // ------------------------------------------------------------------------
 
-impl ConditionallyAssignable for RistrettoPoint {
-    /// Conditionally assign `other` to `self`, if `choice == Choice(1)`.
+impl ConditionallySelectable for RistrettoPoint {
+    /// Conditionally select between `self` and `other`.
     ///
     /// # Example
     ///
@@ -973,7 +961,7 @@ impl ConditionallyAssignable for RistrettoPoint {
     /// # extern crate subtle;
     /// # extern crate curve25519_dalek;
     /// #
-    /// use subtle::ConditionallyAssignable;
+    /// use subtle::ConditionallySelectable;
     /// use subtle::Choice;
     /// #
     /// # use curve25519_dalek::traits::Identity;
@@ -986,17 +974,18 @@ impl ConditionallyAssignable for RistrettoPoint {
     ///
     /// let mut P = A;
     ///
-    /// P.conditional_assign(&B, Choice::from(0));
+    /// P = RistrettoPoint::conditional_select(&A, &B, Choice::from(0));
     /// assert_eq!(P, A);
-    /// P.conditional_assign(&B, Choice::from(1));
+    /// P = RistrettoPoint::conditional_select(&A, &B, Choice::from(1));
     /// assert_eq!(P, B);
     /// # }
     /// ```
-    fn conditional_assign(&mut self, other: &RistrettoPoint, choice: Choice) {
-        self.0.X.conditional_assign(&other.0.X, choice);
-        self.0.Y.conditional_assign(&other.0.Y, choice);
-        self.0.Z.conditional_assign(&other.0.Z, choice);
-        self.0.T.conditional_assign(&other.0.T, choice);
+    fn conditional_select(
+        a: &RistrettoPoint,
+        b: &RistrettoPoint,
+        choice: Choice,
+    ) -> RistrettoPoint {
+        RistrettoPoint(EdwardsPoint::conditional_select(&a.0, &b.0, choice))
     }
 }
 

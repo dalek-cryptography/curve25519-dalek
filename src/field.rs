@@ -24,7 +24,7 @@
 
 use core::cmp::{Eq, PartialEq};
 
-use subtle::ConditionallyAssignable;
+use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::Choice;
 use subtle::ConstantTimeEq;
@@ -195,40 +195,19 @@ impl FieldElement {
         t21
     }
 
-    /// Given `FieldElements` `u` and `v`, attempt to compute
-    /// `sqrt(u/v)` in constant time.
+    /// Given `FieldElements` `u` and `v`, compute either `sqrt(u/v)`
+    /// or `sqrt(i*u/v)` in constant time.
     ///
-    /// This function always returns the nonnegative square root, if it exists.
-    ///
-    /// It would be much better to use an `Option` type here, but
-    /// doing so forces the caller to branch, which we don't want to
-    /// do.  This seems like the least bad solution.
+    /// This function always returns the nonnegative square root.
     ///
     /// # Return
     ///
-    /// - `(1u8, sqrt(u/v))` if `v` is nonzero and `u/v` is square;
-    /// - `(0u8, zero)`      if `v` is zero;
-    /// - `(0u8, garbage)`   if `u/v` is nonsquare.
+    /// - `(Choice(1), +sqrt(u/v))  ` if `v` is nonzero and `u/v` is square;
+    /// - `(Choice(1), zero)        ` if `u` is zero;
+    /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
+    /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
     ///
-    /// # Example
-    ///
-    /// ```ignore
-    /// let one = FieldElement::one();
-    /// let two = &one + &one;
-    /// let four = &two * &two;
-    ///
-    /// // two is nonsquare mod p
-    /// let (two_is_square, two_sqrt) = FieldElement::sqrt_ratio(&two, &one);
-    /// assert_eq!(two_is_square.unwrap_u8(), 0u8);
-    ///
-    /// // four is square mod p
-    /// let (four_is_square, four_sqrt) = FieldElement::sqrt_ratio(&four, &one);
-    ///
-    /// assert_eq!(four_is_square.unwrap_u8(), 1u8);
-    /// assert_eq!(four_sqrt.is_negative().unwrap_u8
-    /// ```
-    ///
-    pub fn sqrt_ratio(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
+    pub fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.
         //
@@ -258,11 +237,14 @@ impl FieldElement {
         let mut r = &(u * &v3) * &(u * &v7).pow_p58();
         let check = v * &r.square();
 
-        let correct_sign_sqrt = check.ct_eq(   u);
-        let flipped_sign_sqrt = check.ct_eq(&(-u));
+        let i = &constants::SQRT_M1;
+
+        let correct_sign_sqrt   = check.ct_eq(        u);
+        let flipped_sign_sqrt   = check.ct_eq(     &(-u));
+        let flipped_sign_sqrt_i = check.ct_eq(&(&(-u)*i));
 
         let r_prime = &constants::SQRT_M1 * &r;
-        r.conditional_assign(&r_prime, flipped_sign_sqrt);
+        r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
 
         // Choose the nonnegative square root.
         let r_is_negative = r.is_negative();
@@ -273,42 +255,20 @@ impl FieldElement {
         (was_nonzero_square, r)
     }
 
-    /// For `self` a nonzero square, compute 1/sqrt(self) in
-    /// constant time.
+    /// Attempt to compute `1/sqrt(self)` in constant time.
     ///
-    /// It would be much better to use an `Option` type here, but
-    /// doing so forces the caller to branch, which we don't want to
-    /// do.  This seems like the least bad solution.
+    /// Convenience wrapper around `sqrt_ratio_i`.
+    ///
+    /// This function always returns the nonnegative square root.
     ///
     /// # Return
     ///
-    /// - `(1u8, 1/sqrt(self))` if `self` is a nonzero square;
-    /// - `(0u8, zero)`         if `self` is zero;
-    /// - `(0u8, garbage)`      if `self` is nonsquare.
+    /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
+    /// - `(Choice(0), zero)           ` if `self` is zero;
+    /// - `(Choice(0), +sqrt(i*u/v))   ` if `self` is a nonzero nonsquare;
     ///
     pub fn invsqrt(&self) -> (Choice, FieldElement) {
-        FieldElement::sqrt_ratio(&FieldElement::one(), self)
-    }
-
-    /// chi calculates `self^((p-1)/2)`.
-    ///
-    /// # Return
-    ///
-    /// * If this element is a non-zero square, returns `1`.
-    /// * If it is zero, returns `0`.
-    /// * If it is non-square, returns `-1`.
-    pub fn chi(&self) -> FieldElement {  // extra25519.chi
-        // The bits of (p-1)/2 = 2^254 -10 are 0110111111...11.
-        //
-        //                                 nonzero bits of exponent
-        let (t19, _) = self.pow22501();    // 249..0
-        let t20 = t19.pow2k(4);            // 253..4
-        let t21 = self.square();           // 1
-        let t22 = t21.square();            // 2
-        let t23 = &t22 * &t21;             // 2,1
-        let t24 = &t20 * &t23;             // 253..4,2,1
-
-        t24
+        FieldElement::sqrt_ratio_i(&FieldElement::one(), self)
     }
 }
 
@@ -393,21 +353,49 @@ mod test {
     }
 
     #[test]
+    fn sqrt_ratio_behavior() {
+        let zero = FieldElement::zero();
+        let one = FieldElement::one();
+        let i = constants::SQRT_M1;
+        let two = &one + &one; // 2 is nonsquare mod p.
+        let four = &two + &two; // 4 is square mod p.
+
+        // 0/0 should return (1, 0) since u is 0
+        let (choice, sqrt) = FieldElement::sqrt_ratio_i(&zero, &zero);
+        assert_eq!(choice.unwrap_u8(), 1);
+        assert_eq!(sqrt, zero);
+        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+
+        // 1/0 should return (0, 0) since v is 0, u is nonzero
+        let (choice, sqrt) = FieldElement::sqrt_ratio_i(&one, &zero);
+        assert_eq!(choice.unwrap_u8(), 0);
+        assert_eq!(sqrt, zero);
+        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+
+        // 2/1 is nonsquare, so we expect (0, sqrt(i*2))
+        let (choice, sqrt) = FieldElement::sqrt_ratio_i(&two, &one);
+        assert_eq!(choice.unwrap_u8(), 0);
+        assert_eq!(sqrt.square(), &two * &i);
+        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+
+        // 4/1 is square, so we expect (1, sqrt(4))
+        let (choice, sqrt) = FieldElement::sqrt_ratio_i(&four, &one);
+        assert_eq!(choice.unwrap_u8(), 1);
+        assert_eq!(sqrt.square(), four);
+        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+
+        // 1/4 is square, so we expect (1, 1/sqrt(4))
+        let (choice, sqrt) = FieldElement::sqrt_ratio_i(&one, &four);
+        assert_eq!(choice.unwrap_u8(), 1);
+        assert_eq!(&sqrt.square() * &four, one);
+        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+    }
+
+    #[test]
     fn a_p58_vs_ap58_constant() {
         let a    = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
         assert_eq!(ap58, a.pow_p58());
-    }
-
-    #[test]
-    fn chi_on_square_and_nonsquare() {
-        let a = FieldElement::from_bytes(&A_BYTES);
-        // a is square
-        assert_eq!(a.chi(), FieldElement::one());
-        let mut two_bytes = [0u8; 32]; two_bytes[0] = 2;
-        let two = FieldElement::from_bytes(&two_bytes);
-        // 2 is nonsquare
-        assert_eq!(two.chi(), FieldElement::minus_one());
     }
 
     #[test]

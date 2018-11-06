@@ -94,9 +94,9 @@ pub fn generate_public(secret: &SecretKey) -> MontgomeryPoint {
 
 /// The x25519 function, as specified in RFC7748.
 pub fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
-    //let k: Scalar = decode_scalar(scalar);
+    let k: Scalar = decode_scalar(scalar.as_bytes());
 
-    (scalar * point)
+    (k * point)
 }
 
 /// Utility function to make it easier to call `x25519()` with byte arrays as

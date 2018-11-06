@@ -43,6 +43,32 @@ impl Drop for SecretKey {
         self.0.clear();
     }
 }
+
+impl SecretKey {
+    /// Convert this secret key to a byte array.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; SECRET_KEY_LENGTH] {
+        self.0
+    }
+
+    /// View this secret key as a byte array.
+    #[inline]
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; SECRET_KEY_LENGTH] {
+        &self.0
+    }
+
+    /// Generate an x25519 secret key.
+    pub fn generate<T>(csprng: &mut T) -> SecretKey
+        where T: RngCore + CryptoRng
+    {
+        let mut sk: SecretKey = SecretKey([0u8; 32]);
+
+        csprng.fill_bytes(&mut sk.0);
+        
+        sk
+    }
+
+}
 /// "Decode" a scalar from a 32-byte array.
 ///
 /// By "decode" here, what is really meant is applying key clamping by twiddling
@@ -61,31 +87,22 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
     Scalar::from_bits(s)
 }
 
-/// Generate an x25519 secret key.
-pub fn generate_secret<T>(csprng: &mut T) -> [u8; 32]
-    where T: RngCore + CryptoRng
-{
-    let mut bytes = [0u8; 32];
-    csprng.fill_bytes(&mut bytes);
-    bytes
-}
-
 /// Given an x25519 secret key, compute its corresponding public key.
-pub fn generate_public(secret: &[u8; 32]) -> MontgomeryPoint {
-    (&decode_scalar(secret) * &ED25519_BASEPOINT_TABLE).to_montgomery()
+pub fn generate_public(secret: &SecretKey) -> MontgomeryPoint {
+    (&decode_scalar(secret.as_bytes()) * &ED25519_BASEPOINT_TABLE).to_montgomery()
 }
 
 /// The x25519 function, as specified in RFC7748.
 pub fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
-    let k: Scalar = decode_scalar(scalar.as_bytes());
+    //let k: Scalar = decode_scalar(scalar);
 
-    (&k * point)
+    (scalar * point)
 }
 
 /// Utility function to make it easier to call `x25519()` with byte arrays as
 /// inputs and outputs.
-pub fn diffie_hellman(my_secret: &[u8; 32], their_public: &[u8; 32]) -> [u8; 32] {
-    x25519(&Scalar::from_bits(*my_secret), &MontgomeryPoint(*their_public)).to_bytes()
+pub fn diffie_hellman(my_secret: &SecretKey, their_public: &[u8; 32]) -> [u8; 32] {
+    x25519(&decode_scalar(my_secret.as_bytes()), &MontgomeryPoint(*their_public)).to_bytes()
 }
 
 

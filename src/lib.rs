@@ -126,6 +126,8 @@
 #![cfg_attr(feature = "bench", feature(test))]
 #![deny(missing_docs)]
 
+extern crate clear_on_drop;
+
 extern crate curve25519_dalek;
 
 extern crate rand_core;

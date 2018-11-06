@@ -27,6 +27,9 @@ default-features = false
 default-features = false
 version = "0.2"
 
+[dependencies.clear_on_drop]
+version = "0.2"
+
 [dev-dependencies]
 criterion = "0.2"
 rand = "0.5"
@@ -38,6 +41,6 @@ harness = false
 [features]
 default = ["std", "nightly", "u64_backend"]
 std = ["curve25519-dalek/std"]
-nightly = ["curve25519-dalek/nightly"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]

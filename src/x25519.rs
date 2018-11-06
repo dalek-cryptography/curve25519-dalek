@@ -12,6 +12,10 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
+use core::fmt::{Debug};
+
+use clear_on_drop::clear::Clear;
+
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
@@ -19,6 +23,26 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
+/// The length of a curve25519 EdDSA `SecretKey`, in bytes.
+pub const SECRET_KEY_LENGTH: usize = 32;
+
+/// An EdDSA secret key.
+#[repr(C)]
+#[derive(Default)] // we derive Default in order to use the clear() method in Drop
+pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
+
+impl Debug for SecretKey {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "SecretKey: {:?}", &self.0[..])
+    }
+}
+
+/// Overwrite secret key material with null bytes when it goes out of scope.
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.0.clear();
+    }
+}
 /// "Decode" a scalar from a 32-byte array.
 ///
 /// By "decode" here, what is really meant is applying key clamping by twiddling

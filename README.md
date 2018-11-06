@@ -89,18 +89,6 @@ can read qhasm, making it more readily and more easily auditable.  We're of
 the opinion that, ultimately, these features—combined with speed—are more
 valuable than simply cycle counts alone.
 
-# Warnings
-
-ed25519-dalek and
-[our elliptic curve library](https://github.com/dalek-cryptography/curve25519-dalek)
-(which this code uses) have received *one* formal cryptographic and security
-review.  Neither have yet received what we would consider *sufficient* peer
-review by other qualified cryptographers to be considered in any way, shape,
-or form, safe.
-
-**USE AT YOUR OWN RISK.**
-
-
 ### A Note on Signature Malleability
 
 The signatures produced by this library are malleable, as discussed in
@@ -130,7 +118,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.8"
+version = "1"
 ```
 
 Then, in your library or executable source, add:
@@ -146,7 +134,7 @@ enabled by default, instead do:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.8"
+version = "1"
 features = ["nightly"]
 ```
 
@@ -163,7 +151,7 @@ To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
 
 ```toml
 [dependencies.ed25519-dalek]
-version = "^0.8"
+version = "1"
 features = ["serde"]
 ```
 

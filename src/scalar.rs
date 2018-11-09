@@ -168,14 +168,14 @@ use constants;
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u64_backend")]
-type UnpackedScalar = backend::u64::scalar::Scalar64;
+type UnpackedScalar = backend::u64::scalar::Scalar52;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u32_backend")]
-type UnpackedScalar = backend::u32::scalar::Scalar32;
+type UnpackedScalar = backend::u32::scalar::Scalar29;
 
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which

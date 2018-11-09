@@ -151,9 +151,9 @@ mod test {
     #[test]
     #[cfg(feature = "u32_backend")]
     fn test_d_vs_ratio() {
-        use backend::u32::field::FieldElement32;
-        let a = -&FieldElement32([121665,0,0,0,0,0,0,0,0,0]);
-        let b =   FieldElement32([121666,0,0,0,0,0,0,0,0,0]);
+        use backend::u32::field::FieldElement2625;
+        let a = -&FieldElement2625([121665,0,0,0,0,0,0,0,0,0]);
+        let b =   FieldElement2625([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
         assert_eq!(d, constants::EDWARDS_D);
@@ -164,9 +164,9 @@ mod test {
     #[test]
     #[cfg(feature = "u64_backend")]
     fn test_d_vs_ratio() {
-        use backend::u64::field::FieldElement64;
-        let a = -&FieldElement64([121665,0,0,0,0]);
-        let b =   FieldElement64([121666,0,0,0,0]);
+        use backend::u64::field::FieldElement51;
+        let a = -&FieldElement51([121665,0,0,0,0]);
+        let b =   FieldElement51([121666,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
         assert_eq!(d, constants::EDWARDS_D);

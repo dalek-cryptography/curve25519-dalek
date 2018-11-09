@@ -11,14 +11,14 @@
 //! An implementation of 4-way vectorized 32bit field arithmetic using
 //! AVX2.
 //!
-//! The `FieldElement32x4` struct provides a vector of four field
+//! The `FieldElement2625x4` struct provides a vector of four field
 //! elements, implemented using AVX2 operations.  Its API is designed
 //! to abstract away the platform-dependent details, so that point
 //! arithmetic can be implemented only in terms of a vector of field
 //! elements.
 //!
 //! At this level, the API is optimized for speed and not safety.  The
-//! `FieldElement32x4` does not always perform reductions.  The pre-
+//! `FieldElement2625x4` does not always perform reductions.  The pre-
 //! and post-conditions on the bounds of the coefficients are
 //! documented for each method, but it is the caller's responsibility
 //! to ensure that there are no overflows.
@@ -43,7 +43,7 @@ use core::ops::{Add, Mul, Neg};
 use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 
 use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
-use backend::u64::field::FieldElement64;
+use backend::u64::field::FieldElement51;
 
 /// Unpack 32-bit lanes into 64-bit lanes:
 /// ```
@@ -97,11 +97,11 @@ fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
 }
 
 /// The `Lanes` enum represents a subset of the lanes `A,B,C,D` of a
-/// `FieldElement32x4`.
+/// `FieldElement2625x4`.
 ///
 /// It's used to specify blend operations without
 /// having to know details about the data layout of the
-/// `FieldElement32x4`.
+/// `FieldElement2625x4`.
 #[derive(Copy, Clone, Debug)]
 pub enum Lanes {
     C,
@@ -114,7 +114,7 @@ pub enum Lanes {
     ABCD,
 }
 
-/// The `Shuffle` enum represents a shuffle of a `FieldElement32x4`.
+/// The `Shuffle` enum represents a shuffle of a `FieldElement2625x4`.
 ///
 /// The enum variants are named by what they do to a vector \\(
 /// (A,B,C,D) \\); for instance, `Shuffle::BADC` turns \\( (A, B, C,
@@ -135,26 +135,26 @@ pub enum Shuffle {
 
 /// A vector of four field elements.
 ///
-/// Each operation on a `FieldElement32x4` has documented effects on
+/// Each operation on a `FieldElement2625x4` has documented effects on
 /// the bounds of the coefficients.  This API is designed for speed
 /// and not safety; it is the caller's responsibility to ensure that
 /// the post-conditions of one operation are compatible with the
 /// pre-conditions of the next.
 #[derive(Clone, Copy, Debug)]
-pub struct FieldElement32x4(pub(crate) [u32x8; 5]);
+pub struct FieldElement2625x4(pub(crate) [u32x8; 5]);
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-impl ConditionallySelectable for FieldElement32x4 {
+impl ConditionallySelectable for FieldElement2625x4 {
     fn conditional_select(
-        a: &FieldElement32x4,
-        b: &FieldElement32x4,
+        a: &FieldElement2625x4,
+        b: &FieldElement2625x4,
         choice: Choice,
-    ) -> FieldElement32x4 {
+    ) -> FieldElement2625x4 {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
         let mask_vec = u32x8::splat(mask);
-        FieldElement32x4([
+        FieldElement2625x4([
             a.0[0] ^ (mask_vec & (a.0[0] ^ b.0[0])),
             a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
             a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
@@ -165,7 +165,7 @@ impl ConditionallySelectable for FieldElement32x4 {
 
     fn conditional_assign(
         &mut self,
-        other: &FieldElement32x4,
+        other: &FieldElement2625x4,
         choice: Choice,
     ) {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
@@ -178,11 +178,11 @@ impl ConditionallySelectable for FieldElement32x4 {
     }
 }
 
-impl FieldElement32x4 {
+impl FieldElement2625x4 {
     /// Split this vector into an array of four (serial) field
     /// elements.
-    pub fn split(&self) -> [FieldElement64; 4] {
-        let mut out = [FieldElement64::zero(); 4];
+    pub fn split(&self) -> [FieldElement51; 4] {
+        let mut out = [FieldElement51::zero(); 4];
         for i in 0..5 {
             let a_2i   = self.0[i].extract(0) as u64; //
             let b_2i   = self.0[i].extract(1) as u64; //
@@ -208,7 +208,7 @@ impl FieldElement32x4 {
     /// that when this function is inlined, LLVM is able to lower the
     /// shuffle using an immediate.
     #[inline]
-    pub fn shuffle(&self, control: Shuffle) -> FieldElement32x4 {
+    pub fn shuffle(&self, control: Shuffle) -> FieldElement2625x4 {
         #[inline(always)]
         fn shuffle_lanes(x: u32x8, control: Shuffle) -> u32x8 {
             unsafe {
@@ -233,7 +233,7 @@ impl FieldElement32x4 {
             }
         }
 
-        FieldElement32x4([
+        FieldElement2625x4([
             shuffle_lanes(self.0[0], control),
             shuffle_lanes(self.0[1], control),
             shuffle_lanes(self.0[2], control),
@@ -248,7 +248,7 @@ impl FieldElement32x4 {
     /// that this function can be inlined and LLVM can lower it to a
     /// blend instruction using an immediate.
     #[inline]
-    pub fn blend(&self, other: FieldElement32x4, control: Lanes) -> FieldElement32x4 {
+    pub fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
         #[inline(always)]
         fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             unsafe {
@@ -310,7 +310,7 @@ impl FieldElement32x4 {
             }
         }
 
-        FieldElement32x4([
+        FieldElement2625x4([
             blend_lanes(self.0[0], other.0[0], control),
             blend_lanes(self.0[1], other.0[1], control),
             blend_lanes(self.0[2], other.0[2], control),
@@ -320,26 +320,26 @@ impl FieldElement32x4 {
     }
 
     /// Construct a vector of zeros.
-    pub fn zero() -> FieldElement32x4 {
-        FieldElement32x4([u32x8::splat(0); 5])
+    pub fn zero() -> FieldElement2625x4 {
+        FieldElement2625x4([u32x8::splat(0); 5])
     }
 
     /// Convenience wrapper around `new(x,x,x,x)`.
-    pub fn splat(x: &FieldElement64) -> FieldElement32x4 {
-        FieldElement32x4::new(x, x, x, x)
+    pub fn splat(x: &FieldElement51) -> FieldElement2625x4 {
+        FieldElement2625x4::new(x, x, x, x)
     }
 
-    /// Create a `FieldElement32x4` from four `FieldElement64`s.
+    /// Create a `FieldElement2625x4` from four `FieldElement51`s.
     ///
     /// # Postconditions
     ///
-    /// The resulting `FieldElement32x4` is bounded with \\( b < 0.0002 \\).
+    /// The resulting `FieldElement2625x4` is bounded with \\( b < 0.0002 \\).
     pub fn new(
-        x0: &FieldElement64,
-        x1: &FieldElement64,
-        x2: &FieldElement64,
-        x3: &FieldElement64,
-    ) -> FieldElement32x4 {
+        x0: &FieldElement51,
+        x1: &FieldElement51,
+        x2: &FieldElement51,
+        x3: &FieldElement51,
+    ) -> FieldElement2625x4 {
         let mut buf = [u32x8::splat(0); 5];
         let low_26_bits = (1 << 26) - 1;
         for i in 0..5 {
@@ -355,10 +355,10 @@ impl FieldElement32x4 {
             buf[i] = u32x8::new(a_2i, b_2i, a_2i_1, b_2i_1, c_2i, d_2i, c_2i_1, d_2i_1);
         }
 
-        // We don't know that the original `FieldElement64`s were
+        // We don't know that the original `FieldElement51`s were
         // fully reduced, so the odd limbs may exceed 2^25.
         // Reduce them to be sure.
-        FieldElement32x4(buf).reduce()
+        FieldElement2625x4(buf).reduce()
     }
 
     /// Given \\((A,B,C,D)\\), compute \\((-A,-B,-C,-D)\\), without
@@ -372,11 +372,11 @@ impl FieldElement32x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 1 \\).
     #[inline]
-    pub fn negate_lazy(&self) -> FieldElement32x4 {
+    pub fn negate_lazy(&self) -> FieldElement2625x4 {
         // The limbs of self are bounded with b < 0.999, while the
         // smallest limb of 2*p is 67108845 > 2^{26+0.9999}, so
         // underflows are not possible.
-        FieldElement32x4([
+        FieldElement2625x4([
             P_TIMES_2_LO - self.0[0],
             P_TIMES_2_HI - self.0[1],
             P_TIMES_2_HI - self.0[2],
@@ -395,7 +395,7 @@ impl FieldElement32x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 1.6 \\).
     #[inline]
-    pub fn diff_sum(&self) -> FieldElement32x4 {
+    pub fn diff_sum(&self) -> FieldElement2625x4 {
         // tmp1 = (B, A, D, C)
         let tmp1 = self.shuffle(Shuffle::BADC);
         // tmp2 = (-A, B, -C, D)
@@ -410,7 +410,7 @@ impl FieldElement32x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.0002 \\).
     #[inline]
-    pub fn reduce(&self) -> FieldElement32x4 {
+    pub fn reduce(&self) -> FieldElement2625x4 {
         let shifts = i32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
         let masks = u32x8::new(
             (1 << 26) - 1,
@@ -509,16 +509,16 @@ impl FieldElement32x4 {
         // c_odd  < 2^25 + 2^11.25 < 25.0001  < 2^{25+b}
         //
         // where b = 0.0002.
-        FieldElement32x4(v)
+        FieldElement2625x4(v)
     }
 
-    /// Given an array of wide coefficients, reduce them to a `FieldElement32x4`.
+    /// Given an array of wide coefficients, reduce them to a `FieldElement2625x4`.
     ///
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[inline]
-    fn reduce64(mut z: [u64x4; 10]) -> FieldElement32x4 {
+    fn reduce64(mut z: [u64x4; 10]) -> FieldElement2625x4 {
         // These aren't const because splat isn't a const fn
         let LOW_25_BITS: u64x4 = u64x4::splat((1 << 25) - 1);
         let LOW_26_BITS: u64x4 = u64x4::splat((1 << 26) - 1);
@@ -578,7 +578,7 @@ impl FieldElement32x4 {
         // b = 0      for other z[i].
         //
         // So the packed result is bounded with b = 0.007.
-        FieldElement32x4([
+        FieldElement2625x4([
             repack_pair(z[0].into_bits(), z[1].into_bits()),
             repack_pair(z[2].into_bits(), z[3].into_bits()),
             repack_pair(z[4].into_bits(), z[5].into_bits()),
@@ -596,7 +596,7 @@ impl FieldElement32x4 {
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
-    pub fn square_and_negate_D(&self) -> FieldElement32x4 {
+    pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use core::arch::x86_64::_mm256_mul_epu32;
@@ -681,12 +681,12 @@ impl FieldElement32x4 {
         z8 = negate_D(z8, even_p37);
         z9 = negate_D(z9, odd__p37);
 
-        FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+        FieldElement2625x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 
-impl Neg for FieldElement32x4 {
-    type Output = FieldElement32x4;
+impl Neg for FieldElement2625x4 {
+    type Output = FieldElement2625x4;
 
     /// Negate this field element, performing a reduction.
     ///
@@ -701,8 +701,8 @@ impl Neg for FieldElement32x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.0002 \\).
     #[inline]
-    fn neg(self) -> FieldElement32x4 {
-        FieldElement32x4([
+    fn neg(self) -> FieldElement2625x4 {
+        FieldElement2625x4([
             P_TIMES_16_LO - self.0[0],
             P_TIMES_16_HI - self.0[1],
             P_TIMES_16_HI - self.0[2],
@@ -712,12 +712,12 @@ impl Neg for FieldElement32x4 {
     }
 }
 
-impl Add<FieldElement32x4> for FieldElement32x4 {
-    type Output = FieldElement32x4;
-    /// Add two `FieldElement32x4`s, without performing a reduction.
+impl Add<FieldElement2625x4> for FieldElement2625x4 {
+    type Output = FieldElement2625x4;
+    /// Add two `FieldElement2625x4`s, without performing a reduction.
     #[inline]
-    fn add(self, rhs: FieldElement32x4) -> FieldElement32x4 {
-        FieldElement32x4([
+    fn add(self, rhs: FieldElement2625x4) -> FieldElement2625x4 {
+        FieldElement2625x4([
             self.0[0] + rhs.0[0],
             self.0[1] + rhs.0[1],
             self.0[2] + rhs.0[2],
@@ -727,15 +727,15 @@ impl Add<FieldElement32x4> for FieldElement32x4 {
     }
 }
 
-impl Mul<(u32, u32, u32, u32)> for FieldElement32x4 {
-    type Output = FieldElement32x4;
+impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
+    type Output = FieldElement2625x4;
     /// Perform a multiplication by a vector of small constants.
     ///
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[inline]
-    fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement32x4 {
+    fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement2625x4 {
         unsafe {
             use core::arch::x86_64::_mm256_mul_epu32;
 
@@ -747,7 +747,7 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement32x4 {
             let (b6, b7) = unpack_pair(self.0[3]);
             let (b8, b9) = unpack_pair(self.0[4]);
 
-            FieldElement32x4::reduce64([
+            FieldElement2625x4::reduce64([
                 _mm256_mul_epu32(b0.into_bits(), consts.into_bits()).into_bits(),
                 _mm256_mul_epu32(b1.into_bits(), consts.into_bits()).into_bits(),
                 _mm256_mul_epu32(b2.into_bits(), consts.into_bits()).into_bits(),
@@ -763,8 +763,8 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement32x4 {
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
-    type Output = FieldElement32x4;
+impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
+    type Output = FieldElement2625x4;
     /// Multiply `self` by `rhs`.
     ///
     /// # Preconditions
@@ -777,7 +777,7 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     ///
-    fn mul(self, rhs: &'b FieldElement32x4) -> FieldElement32x4 {
+    fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use core::arch::x86_64::_mm256_mul_epu32;
@@ -869,7 +869,7 @@ impl<'a, 'b> Mul<&'b FieldElement32x4> for &'a FieldElement32x4 {
         // multiplications by 19 into a u32.  The tighter bound on b_y
         // means we could get a tighter bound on the outputs, or a
         // looser bound on b_x.
-        FieldElement32x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+        FieldElement2625x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 
@@ -880,25 +880,25 @@ mod test {
 
     #[test]
     fn scale_by_curve_constants() {
-        let mut x = FieldElement32x4::splat(&FieldElement64::one());
+        let mut x = FieldElement2625x4::splat(&FieldElement51::one());
 
         x = x * (121666, 121666, 2*121666, 2*121665);
 
         let xs = x.split();
-        assert_eq!(xs[0], FieldElement64([121666, 0, 0, 0, 0]));
-        assert_eq!(xs[1], FieldElement64([121666, 0, 0, 0, 0]));
-        assert_eq!(xs[2], FieldElement64([2 * 121666, 0, 0, 0, 0]));
-        assert_eq!(xs[3], FieldElement64([2 * 121665, 0, 0, 0, 0]));
+        assert_eq!(xs[0], FieldElement51([121666, 0, 0, 0, 0]));
+        assert_eq!(xs[1], FieldElement51([121666, 0, 0, 0, 0]));
+        assert_eq!(xs[2], FieldElement51([2 * 121666, 0, 0, 0, 0]));
+        assert_eq!(xs[3], FieldElement51([2 * 121665, 0, 0, 0, 0]));
     }
 
     #[test]
     fn diff_sum_vs_serial() {
-        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
-        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
-        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
-        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
+        let x0 = FieldElement51([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement51([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement51([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement51([10300, 10301, 10302, 10303, 10304]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3).diff_sum();
+        let vec = FieldElement2625x4::new(&x0, &x1, &x2, &x3).diff_sum();
 
         let result = vec.split();
 
@@ -910,12 +910,12 @@ mod test {
 
     #[test]
     fn square_vs_serial() {
-        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
-        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
-        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
-        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
+        let x0 = FieldElement51([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement51([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement51([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement51([10300, 10301, 10302, 10303, 10304]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        let vec = FieldElement2625x4::new(&x0, &x1, &x2, &x3);
 
         let result = vec.square_and_negate_D().split();
 
@@ -927,12 +927,12 @@ mod test {
 
     #[test]
     fn multiply_vs_serial() {
-        let x0 = FieldElement64([10000, 10001, 10002, 10003, 10004]);
-        let x1 = FieldElement64([10100, 10101, 10102, 10103, 10104]);
-        let x2 = FieldElement64([10200, 10201, 10202, 10203, 10204]);
-        let x3 = FieldElement64([10300, 10301, 10302, 10303, 10304]);
+        let x0 = FieldElement51([10000, 10001, 10002, 10003, 10004]);
+        let x1 = FieldElement51([10100, 10101, 10102, 10103, 10104]);
+        let x2 = FieldElement51([10200, 10201, 10202, 10203, 10204]);
+        let x3 = FieldElement51([10300, 10301, 10302, 10303, 10304]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        let vec = FieldElement2625x4::new(&x0, &x1, &x2, &x3);
         let vecprime = vec.clone();
 
         let result = (&vec * &vecprime).split();
@@ -945,12 +945,12 @@ mod test {
 
     #[test]
     fn test_unpack_repack_pair() {
-        let x0 = FieldElement64([10000 + (10001 << 26), 0, 0, 0, 0]);
-        let x1 = FieldElement64([10100 + (10101 << 26), 0, 0, 0, 0]);
-        let x2 = FieldElement64([10200 + (10201 << 26), 0, 0, 0, 0]);
-        let x3 = FieldElement64([10300 + (10301 << 26), 0, 0, 0, 0]);
+        let x0 = FieldElement51([10000 + (10001 << 26), 0, 0, 0, 0]);
+        let x1 = FieldElement51([10100 + (10101 << 26), 0, 0, 0, 0]);
+        let x2 = FieldElement51([10200 + (10201 << 26), 0, 0, 0, 0]);
+        let x3 = FieldElement51([10300 + (10301 << 26), 0, 0, 0, 0]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        let vec = FieldElement2625x4::new(&x0, &x1, &x2, &x3);
 
         let src = vec.0[0];
 
@@ -969,12 +969,12 @@ mod test {
 
     #[test]
     fn new_split_roundtrips() {
-        let x0 = FieldElement64::from_bytes(&[0x10; 32]);
-        let x1 = FieldElement64::from_bytes(&[0x11; 32]);
-        let x2 = FieldElement64::from_bytes(&[0x12; 32]);
-        let x3 = FieldElement64::from_bytes(&[0x13; 32]);
+        let x0 = FieldElement51::from_bytes(&[0x10; 32]);
+        let x1 = FieldElement51::from_bytes(&[0x11; 32]);
+        let x2 = FieldElement51::from_bytes(&[0x12; 32]);
+        let x3 = FieldElement51::from_bytes(&[0x13; 32]);
 
-        let vec = FieldElement32x4::new(&x0, &x1, &x2, &x3);
+        let vec = FieldElement2625x4::new(&x0, &x1, &x2, &x3);
 
         let splits = vec.split();
 

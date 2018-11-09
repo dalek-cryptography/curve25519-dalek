@@ -13,11 +13,11 @@
 use packed_simd::u32x8;
 
 use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
-use backend::avx2::field::FieldElement32x4;
+use backend::avx2::field::FieldElement2625x4;
 use scalar_mul::window::NafLookupTable8;
 
 /// The identity element as an `ExtendedPoint`.
-pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldElement32x4([
+pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldElement2625x4([
     u32x8::new(0, 1, 0, 0, 1, 0, 0, 0),
     u32x8::splat(0),
     u32x8::splat(0),
@@ -26,7 +26,7 @@ pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldEle
 ]));
 
 /// The identity element as a `CachedPoint`.
-pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(FieldElement32x4([
+pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(FieldElement2625x4([
     u32x8::new(121647, 121666, 0, 0, 243332, 67108845, 0, 33554431),
     u32x8::new(67108864, 0, 33554431, 0, 0, 67108863, 0, 33554431),
     u32x8::new(67108863, 0, 33554431, 0, 0, 67108863, 0, 33554431),
@@ -96,7 +96,7 @@ pub(crate) static P_TIMES_16_HI: u32x8 = u32x8::new(
 
 /// Odd multiples of the Ed25519 basepoint:
 pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             3571425,
             10045002,
@@ -148,7 +148,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             4846528,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             47099681,
             31447946,
@@ -200,7 +200,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             31366585,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             18147205,
             62587998,
@@ -252,7 +252,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             31948344,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             10625852,
             15193821,
@@ -304,7 +304,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             11531760,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             22176662,
             3984313,
@@ -356,7 +356,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             9686767,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             21157200,
             39156966,
@@ -408,7 +408,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             17395963,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             63153652,
             32195955,
@@ -460,7 +460,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10289708,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             1401265,
             58846825,
@@ -512,7 +512,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             11976112,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             39849808,
             44781685,
@@ -564,7 +564,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             27313245,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             58237774,
             15917425,
@@ -616,7 +616,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             22487864,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             12671134,
             56419053,
@@ -668,7 +668,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             2606889,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             55082775,
             45300503,
@@ -720,7 +720,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             5956424,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             8211442,
             8014184,
@@ -772,7 +772,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             1824195,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             59402443,
             17056879,
@@ -824,7 +824,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             11687259,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             12521903,
             26014045,
@@ -876,7 +876,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             32973409,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             30654745,
             51286025,
@@ -928,7 +928,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             32228854,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             49518649,
             59119280,
@@ -980,7 +980,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             27003505,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             28286608,
             10767548,
@@ -1032,7 +1032,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             18292949,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             13869851,
             31448904,
@@ -1084,7 +1084,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             17277037,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             43287109,
             27900723,
@@ -1136,7 +1136,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             30748046,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             16441817,
             36111849,
@@ -1188,7 +1188,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10930179,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             28319289,
             40734650,
@@ -1240,7 +1240,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10938429,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             8373273,
             49064494,
@@ -1292,7 +1292,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             15812027,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             30741269,
             38648744,
@@ -1344,7 +1344,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10839820,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             18672548,
             57660959,
@@ -1396,7 +1396,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             30432268,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             12179834,
             41005450,
@@ -1448,7 +1448,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             24862543,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             59523541,
             62195428,
@@ -1500,7 +1500,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             27449522,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             19770733,
             26478685,
@@ -1552,7 +1552,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             1776722,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             36719806,
             20827965,
@@ -1604,7 +1604,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             29334408,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             42307254,
             57217102,
@@ -1656,7 +1656,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             11292096,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             7071115,
             46444090,
@@ -1708,7 +1708,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             26285185,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             963440,
             63742255,
@@ -1760,7 +1760,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             4928058,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             63655588,
             17883670,
@@ -1812,7 +1812,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             32462955,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             39158670,
             15322548,
@@ -1864,7 +1864,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             20307815,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             2863373,
             40876242,
@@ -1916,7 +1916,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             21388876,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             59276548,
             49972346,
@@ -1968,7 +1968,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             27257051,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             52951491,
             66542164,
@@ -2020,7 +2020,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             26001714,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             66783087,
             5234346,
@@ -2072,7 +2072,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10065424,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             42822326,
             57678669,
@@ -2124,7 +2124,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             4170709,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             26535281,
             60238317,
@@ -2176,7 +2176,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             33286062,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             54863941,
             67016431,
@@ -2228,7 +2228,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             347423,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             41391822,
             34336880,
@@ -2280,7 +2280,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             4942942,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             31956192,
             59570132,
@@ -2332,7 +2332,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             32932252,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             29885826,
             51028067,
@@ -2384,7 +2384,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             9101885,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             43331297,
             18431341,
@@ -2436,7 +2436,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             201203,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             20548943,
             14334571,
@@ -2488,7 +2488,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             25177079,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             41186817,
             46681702,
@@ -2540,7 +2540,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             7976478,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             46509314,
             55327128,
@@ -2592,7 +2592,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             22687008,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             15091184,
             32550863,
@@ -2644,7 +2644,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             542137,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             62776018,
             32835413,
@@ -2696,7 +2696,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             21024049,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             60835961,
             48209103,
@@ -2748,7 +2748,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             20924342,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             18135013,
             20358426,
@@ -2800,7 +2800,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             14572399,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             10785787,
             46564798,
@@ -2852,7 +2852,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             24110612,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             39907267,
             45940262,
@@ -2904,7 +2904,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             29853825,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             66303987,
             36060363,
@@ -2956,7 +2956,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             23261841,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             51218008,
             5070126,
@@ -3008,7 +3008,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             18326047,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             64176557,
             3912400,
@@ -3060,7 +3060,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             12655016,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             38372660,
             57101970,
@@ -3112,7 +3112,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             13421882,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             22917795,
             22088359,
@@ -3164,7 +3164,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             13175986,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             16185025,
             61537525,
@@ -3216,7 +3216,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             21409233,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             59411973,
             57437124,
@@ -3268,7 +3268,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             4211851,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             6757410,
             65455566,
@@ -3320,7 +3320,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             10524446,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             1497507,
             33054449,
@@ -3372,7 +3372,7 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
             29687002,
         ),
     ])),
-    CachedPoint(FieldElement32x4([
+    CachedPoint(FieldElement2625x4([
         u32x8::new(
             35889734,
             23047226,

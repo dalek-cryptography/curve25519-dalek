@@ -444,7 +444,7 @@ There are several directions for future improvement:
   particularly NEON.  The current point arithmetic code is written in
   terms of field element vectors, which are in turn implemented using
   platform SIMD vectors.  It should be possible to write an alternate
-  implementation of the `FieldElement32x4` using NEON without changing
+  implementation of the `FieldElement2625x4` using NEON without changing
   the point arithmetic.  NEON has 128-bit vectors rather than 256-bit
   vectors, but this may still be worthwhile compared to a serial
   implementation.

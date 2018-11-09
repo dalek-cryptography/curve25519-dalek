@@ -81,10 +81,10 @@ fn main() {
         format!(
             "\n
 #[cfg(feature = \"u32_backend\")]
-use backend::u32::field::FieldElement32;
+use backend::u32::field::FieldElement2625;
 
 #[cfg(feature = \"u64_backend\")]
-use backend::u64::field::FieldElement64;
+use backend::u64::field::FieldElement51;
 
 use edwards::EdwardsBasepointTable;
 

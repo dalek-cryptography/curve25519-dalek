@@ -45,7 +45,7 @@ use scalar_mul::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use traits::Identity;
 
-use backend::avx2::field::{FieldElement32x4, Lanes, Shuffle};
+use backend::avx2::field::{FieldElement2625x4, Lanes, Shuffle};
 use backend::avx2::constants;
 
 /// A point on Curve25519, using parallel Edwards formulas for curve
@@ -56,11 +56,11 @@ use backend::avx2::constants;
 /// The coefficients of an `ExtendedPoint` are bounded with
 /// \\( b < 0.007 \\).
 #[derive(Copy, Clone, Debug)]
-pub struct ExtendedPoint(pub(super) FieldElement32x4);
+pub struct ExtendedPoint(pub(super) FieldElement2625x4);
 
 impl From<edwards::EdwardsPoint> for ExtendedPoint {
     fn from(P: edwards::EdwardsPoint) -> ExtendedPoint {
-        ExtendedPoint(FieldElement32x4::new(&P.X, &P.Y, &P.Z, &P.T))
+        ExtendedPoint(FieldElement2625x4::new(&P.X, &P.Y, &P.Z, &P.T))
     }
 }
 
@@ -78,7 +78,7 @@ impl From<ExtendedPoint> for edwards::EdwardsPoint {
 
 impl ConditionallySelectable for ExtendedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        ExtendedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
+        ExtendedPoint(FieldElement2625x4::conditional_select(&a.0, &b.0, choice))
     }
 
     fn conditional_assign(&mut self, other: &Self, choice: Choice) {
@@ -133,7 +133,7 @@ impl ExtendedPoint {
         //    =======================
         //        S5   S6   S8   S9
 
-        let zero = FieldElement32x4::zero();
+        let zero = FieldElement2625x4::zero();
         let S_1 = tmp1.shuffle(Shuffle::AAAA);
         let S_2 = tmp1.shuffle(Shuffle::BBBB);
 
@@ -181,7 +181,7 @@ impl ExtendedPoint {
 /// As long as the `CachedPoint` is not repeatedly negated, its
 /// coefficients will be bounded with \\( b < 1.0 \\).
 #[derive(Copy, Clone, Debug)]
-pub struct CachedPoint(pub(super) FieldElement32x4);
+pub struct CachedPoint(pub(super) FieldElement2625x4);
 
 impl From<ExtendedPoint> for CachedPoint {
     fn from(P: ExtendedPoint) -> CachedPoint {
@@ -215,7 +215,7 @@ impl Identity for CachedPoint {
 
 impl ConditionallySelectable for CachedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        CachedPoint(FieldElement32x4::conditional_select(&a.0, &b.0, choice))
+        CachedPoint(FieldElement2625x4::conditional_select(&a.0, &b.0, choice))
     }
 
     fn conditional_assign(&mut self, other: &Self, choice: Choice) {
@@ -329,7 +329,7 @@ mod test {
     use super::*;
 
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
-        use backend::u64::field::FieldElement64;
+        use backend::u64::field::FieldElement51;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
         let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);
@@ -360,10 +360,10 @@ mod test {
         print_var!(S7);
         println!("");
 
-        let S8  =  &S4 *    &FieldElement64([  121666,0,0,0,0]);  // R5
-        let S9  =  &S5 *    &FieldElement64([  121666,0,0,0,0]);  // R6
-        let S10 =  &S6 *    &FieldElement64([2*121666,0,0,0,0]);  // R8
-        let S11 =  &S7 * &(-&FieldElement64([2*121665,0,0,0,0])); // R7
+        let S8  =  &S4 *    &FieldElement51([  121666,0,0,0,0]);  // R5
+        let S9  =  &S5 *    &FieldElement51([  121666,0,0,0,0]);  // R6
+        let S10 =  &S6 *    &FieldElement51([2*121666,0,0,0,0]);  // R8
+        let S11 =  &S7 * &(-&FieldElement51([2*121665,0,0,0,0])); // R7
         print_var!(S8);
         print_var!(S9);
         print_var!(S10);

@@ -42,8 +42,8 @@ const D_LANES64: u8 = 0b11_00_00_00;
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 
-use backend::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
-use backend::u64::field::FieldElement51;
+use backend::vector::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
+use backend::serial::u64::field::FieldElement51;
 
 /// Unpack 32-bit lanes into 64-bit lanes:
 /// ```

@@ -22,8 +22,8 @@ use subtle::Choice;
 use traits::Identity;
 
 use edwards::EdwardsPoint;
-use curve_models::ProjectiveNielsPoint;
-use curve_models::AffineNielsPoint;
+use backend::serial::curve_models::ProjectiveNielsPoint;
+use backend::serial::curve_models::AffineNielsPoint;
 
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).

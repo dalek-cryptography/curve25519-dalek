@@ -12,8 +12,8 @@
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
 
-use backend::u32::field::FieldElement2625;
-use backend::u32::scalar::Scalar29;
+use backend::serial::u32::field::FieldElement2625;
+use backend::serial::u32::scalar::Scalar29;
 use edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.

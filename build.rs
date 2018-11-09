@@ -53,18 +53,16 @@ mod traits;
 
 #[path = "src/field.rs"]
 mod field;
-#[path = "src/curve_models/mod.rs"]
-mod curve_models;
 #[path = "src/backend/mod.rs"]
 mod backend;
 #[path = "src/prelude.rs"]
 mod prelude;
-#[path = "src/scalar_mul/mod.rs"]
-mod scalar_mul;
+#[path = "src/window.rs"]
+mod window;
 
 use edwards::EdwardsBasepointTable;
-use curve_models::AffineNielsPoint;
-use scalar_mul::window::NafLookupTable8;
+use backend::serial::curve_models::AffineNielsPoint;
+use window::NafLookupTable8;
 
 fn main() {
     // Enable the "stage2_build" feature in the main build stage
@@ -81,17 +79,17 @@ fn main() {
         format!(
             "\n
 #[cfg(feature = \"u32_backend\")]
-use backend::u32::field::FieldElement2625;
+use backend::serial::u32::field::FieldElement2625;
 
 #[cfg(feature = \"u64_backend\")]
-use backend::u64::field::FieldElement51;
+use backend::serial::u64::field::FieldElement51;
 
 use edwards::EdwardsBasepointTable;
 
-use curve_models::AffineNielsPoint;
+use backend::serial::curve_models::AffineNielsPoint;
 
-use scalar_mul::window::LookupTable;
-use scalar_mul::window::NafLookupTable8;
+use window::LookupTable;
+use window::NafLookupTable8;
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\\\(B = (x, 4/5)\\\\).
 pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;

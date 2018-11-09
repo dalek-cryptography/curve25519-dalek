@@ -10,8 +10,8 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
-use backend::u64::field::FieldElement51;
-use backend::u64::scalar::Scalar52;
+use backend::serial::u64::field::FieldElement51;
+use backend::serial::u64::scalar::Scalar52;
 use edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.

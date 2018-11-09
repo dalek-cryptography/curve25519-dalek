@@ -112,15 +112,15 @@ use scalar::Scalar;
 
 use montgomery::MontgomeryPoint;
 
-use curve_models::ProjectivePoint;
-use curve_models::CompletedPoint;
-use curve_models::AffineNielsPoint;
-use curve_models::ProjectiveNielsPoint;
+use backend::serial::curve_models::ProjectivePoint;
+use backend::serial::curve_models::CompletedPoint;
+use backend::serial::curve_models::AffineNielsPoint;
+use backend::serial::curve_models::ProjectiveNielsPoint;
+
+use window::LookupTable;
 
 #[allow(unused_imports)]
 use prelude::*;
-
-use scalar_mul::window::LookupTable;
 
 use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
@@ -575,13 +575,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
         {
-            use backend::avx2::scalar_mul::variable_base::mul;
+            use backend::vector::scalar_mul::variable_base::mul;
             mul(self, scalar)
         }
         // Otherwise, use the serial backend:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
         {
-            use scalar_mul::variable_base::mul;
+            use backend::serial::scalar_mul::variable_base::mul;
             mul(self, scalar)
         }
     }
@@ -636,10 +636,10 @@ impl MultiscalarMul for EdwardsPoint {
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::straus::Straus;
+        use backend::vector::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::straus::Straus;
+        use backend::serial::scalar_mul::straus::Straus;
 
         Straus::multiscalar_mul(scalars, points)
     }
@@ -674,10 +674,10 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::straus::Straus;
+        use backend::vector::scalar_mul::straus::Straus;
         // Otherwise, proceed as normal:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::straus::Straus;
+        use backend::serial::scalar_mul::straus::Straus;
 
         Straus::optional_multiscalar_mul(scalars, points)
     }
@@ -689,10 +689,10 @@ impl EdwardsPoint {
     pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         // If we built with AVX2, use the AVX2 backend.
         #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::vartime_double_base;
+        use backend::vector::scalar_mul::vartime_double_base;
         // Otherwise, use the serial backend:
         #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::vartime_double_base;
+        use backend::serial::scalar_mul::vartime_double_base;
 
         vartime_double_base::mul(a, A, b)
     }

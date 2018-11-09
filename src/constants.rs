@@ -34,9 +34,9 @@ use montgomery::MontgomeryPoint;
 use scalar::Scalar;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::u64::constants::*;
+pub use backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]
-pub use backend::u32::constants::*;
+pub use backend::serial::u32::constants::*;
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
 ///
@@ -151,7 +151,7 @@ mod test {
     #[test]
     #[cfg(feature = "u32_backend")]
     fn test_d_vs_ratio() {
-        use backend::u32::field::FieldElement2625;
+        use backend::serial::u32::field::FieldElement2625;
         let a = -&FieldElement2625([121665,0,0,0,0,0,0,0,0,0]);
         let b =   FieldElement2625([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
@@ -164,7 +164,7 @@ mod test {
     #[test]
     #[cfg(feature = "u64_backend")]
     fn test_d_vs_ratio() {
-        use backend::u64::field::FieldElement51;
+        use backend::serial::u64::field::FieldElement51;
         let a = -&FieldElement51([121665,0,0,0,0]);
         let b =   FieldElement51([121666,0,0,0,0]);
         let d = &a * &b.invert();

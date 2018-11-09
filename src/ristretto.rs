@@ -185,8 +185,6 @@ use prelude::*;
 
 use scalar::Scalar;
 
-use curve_models::CompletedPoint;
-
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::{MultiscalarMul, VartimeMultiscalarMul};
@@ -595,6 +593,8 @@ impl RistrettoPoint {
 
         let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
+
+        use backend::serial::curve_models::CompletedPoint;
 
         // The conversion from W_i is exactly the conversion from P1xP1.
         RistrettoPoint(CompletedPoint{

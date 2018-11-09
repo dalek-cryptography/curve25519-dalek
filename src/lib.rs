@@ -90,11 +90,9 @@ pub(crate) mod field;
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;
 
-// Internal curve models which are not part of the public API.
-pub(crate) mod curve_models;
-
 // Crate-local prelude (for alloc-dependent features like `Vec`)
 pub(crate) mod prelude;
 
-// Implementations of scalar mul algorithms live here
-pub(crate) mod scalar_mul;
+// Generic code for window lookups
+pub(crate) mod window;
+

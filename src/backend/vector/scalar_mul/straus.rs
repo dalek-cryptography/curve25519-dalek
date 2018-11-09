@@ -14,10 +14,10 @@ use core::borrow::Borrow;
 
 use clear_on_drop::ClearOnDrop;
 
-use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
+use backend::vector::{CachedPoint, ExtendedPoint};
 use edwards::EdwardsPoint;
 use scalar::Scalar;
-use scalar_mul::window::{LookupTable, NafLookupTable5};
+use window::{LookupTable, NafLookupTable5};
 use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 
 #[allow(unused_imports)]

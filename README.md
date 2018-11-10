@@ -25,28 +25,27 @@ up on modern public key cryptography and have learned a nifty trick called
 kittens will be able to secretly organise to find their mittens, and then spend
 the rest of the afternoon nomming some yummy pie!
 
-First, Alice uses `x25519_dalek::generate_secret()` and then
-`x25519_dalek::generate_public()` to produce her secret and public keys:
+First, Alice uses `x25519_dalek::Ephemeral::generate_secret()` and then
+`x25519_dalek::Ephemeral::generate_public()` to produce her secret and public keys:
 
 ```rust
 extern crate x25519_dalek;
 extern crate rand;
 
-use x25519_dalek::generate_secret;
-use x25519_dalek::generate_public;
+use x25519_dalek::Ephemeral;
 use rand::OsRng;
 
 let mut alice_csprng = OsRng::new().unwrap();
-let     alice_secret = generate_secret(&mut alice_csprng);
-let     alice_public = generate_public(&alice_secret);
+let     alice_secret = Ephemeral::generate_secret(&mut alice_csprng);
+let     alice_public = Ephemeral::generate_public(&alice_secret);
 ```
 
 Bob does the same:
 
 ```rust
 let mut bob_csprng = OsRng::new().unwrap();
-let     bob_secret = generate_secret(&mut bob_csprng);
-let     bob_public = generate_public(&bob_secret);
+let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
+let     bob_public = Ephemeral::generate_public(&bob_secret);
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob
@@ -54,15 +53,15 @@ loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
 ```rust
-use x25519_dalek::diffie_hellman;
+use x25519_dalek::Ephemeral;
 
-let shared_secret = diffie_hellman(&alice_secret, &bob_public.as_bytes());
+let shared_secret = Ephemeral::diffie_hellman(&alice_secret, &bob_public);
 ```
 
 Similarly, Bob computes the same shared secret by doing:
 
 ```rust
-let shared_secret = diffie_hellman(&bob_secret, &alice_public.as_bytes());
+let shared_secret = Ephemeral::diffie_hellman(&bob_secret, &alice_public);
 ```
 
 Voilá!  Alice and Bob can now use their shared secret to encrypt their

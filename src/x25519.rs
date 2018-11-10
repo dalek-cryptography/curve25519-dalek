@@ -12,7 +12,8 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use core::fmt::{Debug};
+use core::mem;
+use core::ops::Mul;
 
 use clear_on_drop::clear::Clear;
 
@@ -23,52 +24,80 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
-/// The length of a curve25519 EdDSA `SecretKey`, in bytes.
-pub const SECRET_KEY_LENGTH: usize = 32;
-
-/// An EdDSA secret key.
+/// A DH ephemeral key.
 #[repr(C)]
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
-pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
+pub struct Ephemeral(pub (crate) Scalar);
 
-impl Debug for SecretKey {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "SecretKey: {:?}", &self.0[..])
-    }
-}
-
-/// Overwrite secret key material with null bytes when it goes out of scope.
-impl Drop for SecretKey {
+/// Overwrite ephemeral key material with null bytes when it goes out of scope.
+impl Drop for Ephemeral {
     fn drop(&mut self) {
         self.0.clear();
     }
 }
 
-impl SecretKey {
-    /// Convert this secret key to a byte array.
+/// Multiply this `Ephemeral` key by a `MontgomeryPoint`.
+impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Ephemeral {
+    type Output = Ephemeral;
+
+    fn mul(self, point: &'b MontgomeryPoint) -> Ephemeral {
+        Ephemeral(Scalar::from_bits((point * self.to_bytes()).to_bytes()))
+    }
+}
+
+impl Ephemeral {
+    /// Convert this `Ephemeral` key to a `Scalar`.
     #[inline]
-    pub fn to_bytes(&self) -> [u8; SECRET_KEY_LENGTH] {
+    pub fn to_bytes(&self) -> Scalar {
         self.0
     }
 
-    /// View this secret key as a byte array.
+    /// View this `Ephemeral` key as a `Scalar`.
     #[inline]
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; SECRET_KEY_LENGTH] {
+    pub fn as_bytes<'a>(&'a self) -> &'a Scalar {
         &self.0
     }
 
-    /// Generate an x25519 secret key.
-    pub fn generate<T>(csprng: &mut T) -> SecretKey
+    /// Utility function to make it easier to call `x25519()` with
+    /// an ephemeral secret key and montegomery point as input and
+    /// a shared secret as the output.
+    pub fn diffie_hellman(&self, their_public: &MontgomeryPoint) -> SharedSecret {
+        SharedSecret(x25519(self.as_bytes(), &MontgomeryPoint(*their_public.as_bytes())))
+    }
+
+    /// Generate an x25519 `Ephemeral` secret key.
+    pub fn generate_secret<T>(csprng: &mut T) -> Self
         where T: RngCore + CryptoRng
     {
-        let mut sk: SecretKey = SecretKey([0u8; 32]);
+        let mut bytes = [0u8; 32];
 
-        csprng.fill_bytes(&mut sk.0);
+        csprng.fill_bytes(&mut bytes);
         
-        sk
+        Ephemeral(decode_scalar(&bytes))
+    }
+
+    /// Given an x25519 `Ephemeral` secret key, compute its corresponding public key.
+    pub fn generate_public(&self) -> MontgomeryPoint {
+        (self.as_bytes() * &ED25519_BASEPOINT_TABLE).to_montgomery()
     }
 
 }
+
+#[repr(C)]
+/// A DH SharedSecret
+pub struct SharedSecret(pub (crate) MontgomeryPoint);
+
+/// Overwrite shared secret material with null bytes when it goes out of scope.
+impl Drop for SharedSecret {
+    fn drop(&mut self) {
+        let bytes: &mut [u8; 32] = unsafe {
+            mem::transmute::<&mut MontgomeryPoint, &mut [u8; 32]>
+            (&mut self.0)
+        };
+        bytes.clear();
+    }
+}
+
 /// "Decode" a scalar from a 32-byte array.
 ///
 /// By "decode" here, what is really meant is applying key clamping by twiddling
@@ -87,24 +116,12 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
     Scalar::from_bits(s)
 }
 
-/// Given an x25519 secret key, compute its corresponding public key.
-pub fn generate_public(secret: &SecretKey) -> MontgomeryPoint {
-    (&decode_scalar(secret.as_bytes()) * &ED25519_BASEPOINT_TABLE).to_montgomery()
-}
-
 /// The x25519 function, as specified in RFC7748.
 pub fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
     let k: Scalar = decode_scalar(scalar.as_bytes());
 
     (k * point)
 }
-
-/// Utility function to make it easier to call `x25519()` with byte arrays as
-/// inputs and outputs.
-pub fn diffie_hellman(my_secret: &SecretKey, their_public: &[u8; 32]) -> [u8; 32] {
-    x25519(&decode_scalar(my_secret.as_bytes()), &MontgomeryPoint(*their_public)).to_bytes()
-}
-
 
 #[cfg(test)]
 mod test {

@@ -72,6 +72,7 @@ u64_backend = []
 # The AVX2 backend uses u32x8s with u64x4 products.
 # It uses the u64 code for serial operations.
 avx2_backend = ["nightly", "u64_backend", "packed_simd"]
+ifma_backend = ["nightly", "u64_backend", "packed_simd", "yolocrypto"]
 
 # Signals that we're in the main build stage.  This is off by default,
 # to signal stage 1 of the build, where build.rs loads the library

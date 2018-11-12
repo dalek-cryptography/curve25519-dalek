@@ -21,7 +21,11 @@
 //! `32bit` since identifiers can't start with letters, and the backends
 //! do use `u32`/`u64`, so this seems like a least-bad option.
 
-#[cfg(not(any(feature = "u32_backend", feature = "u64_backend", feature = "avx2_backend")))]
+#[cfg(not(any(
+    feature = "u32_backend",
+    feature = "u64_backend",
+    feature = "avx2_backend"
+)))]
 compile_error!(
     "no curve25519-dalek backend cargo feature enabled! \
      please enable one of: u32_backend, u64_backend, avx2_backend"
@@ -29,5 +33,8 @@ compile_error!(
 
 pub mod serial;
 
-#[cfg(all(feature = "avx2_backend", target_feature = "avx2"))]
+#[cfg(any(
+    all(feature = "ifma_backend", target_feature = "avx512ifma"),
+    all(feature = "avx2_backend", target_feature = "avx2"),
+))]
 pub mod vector;

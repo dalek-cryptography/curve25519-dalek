@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "ifma_backend", feature(simd_ffi))]
+#![cfg_attr(feature = "ifma_backend", feature(link_llvm_intrinsics))]
 #![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![allow(unused_variables)]
@@ -13,7 +15,7 @@ extern crate digest;
 extern crate rand;
 extern crate subtle;
 
-#[cfg(all(feature = "nightly", feature = "avx2_backend"))]
+#[cfg(all(feature = "nightly", any(feature = "avx2_backend", feature = "ifma_backend")))]
 extern crate packed_simd;
 
 use std::env;

@@ -10,6 +10,9 @@
 
 #![no_std]
 
+#![cfg_attr(feature = "ifma_backend", feature(simd_ffi))]
+#![cfg_attr(feature = "ifma_backend", feature(link_llvm_intrinsics))]
+
 #![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
@@ -38,7 +41,7 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
-#[cfg(all(feature = "nightly", feature = "avx2_backend"))]
+#[cfg(all(feature = "nightly", any(feature = "avx2_backend", feature = "ifma_backend")))]
 extern crate packed_simd;
 
 extern crate rand;

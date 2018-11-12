@@ -98,8 +98,67 @@ impl FieldElement51x4 {
     }
 }
 
+impl<'a> Mul<(u32, u32, u32, u32)> for &'a FieldElement51x4 {
+    type Output = FieldElement51x4;
+    #[inline]
+    fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement51x4 {
+        unsafe {
+            let x = &self.0;
+            let y = u64x4::new(
+                scalars.0 as u64,
+                scalars.1 as u64,
+                scalars.2 as u64,
+                scalars.3 as u64,
+            );
+            let mask = u64x4::splat((1 << 51) - 1);
+            let r19 = u64x4::splat(19);
+
+            let mut z0lo = u64x4::splat(0);
+            let mut z1lo = u64x4::splat(0);
+            let mut z2lo = u64x4::splat(0);
+            let mut z3lo = u64x4::splat(0);
+            let mut z4lo = u64x4::splat(0);
+            let mut z1hi = u64x4::splat(0);
+            let mut z2hi = u64x4::splat(0);
+            let mut z3hi = u64x4::splat(0);
+            let mut z4hi = u64x4::splat(0);
+            let mut z5hi = u64x4::splat(0);
+
+            // Wave 0
+            z4hi = madd52hi(z4hi, y, x[3]);
+            z5hi = madd52hi(z5hi, y, x[4]);
+            z4lo = madd52lo(z4lo, y, x[4]);
+            z0lo = madd52lo(z0lo, y, x[0]);
+            z3lo = madd52lo(z3lo, y, x[3]);
+            z2lo = madd52lo(z2lo, y, x[2]);
+            z1lo = madd52lo(z1lo, y, x[1]);
+            z3hi = madd52hi(z3hi, y, x[2]);
+
+            // Wave 2
+            z2hi = madd52hi(z2hi, y, x[1]);
+            z1hi = madd52hi(z1hi, y, x[0]);
+
+            let z4 = z4hi + z4hi + z4lo;
+            let c4 = z4 >> 51;
+            let z5 = z5hi + z5hi + c4;
+            let z3 = z3hi + z3hi + z3lo;
+            let z2 = z2hi + z2hi + z2lo;
+            let z1 = z1hi + z1hi + z1lo;
+
+            FieldElement51x4([
+                madd52lo(z0lo & mask, z5, r19),
+                (z1 & mask) + (z0lo >> 51),
+                (z2 & mask) + (z1lo >> 51),
+                (z3 & mask) + (z2lo >> 51),
+                (z4 & mask) + (z3lo >> 51),
+            ])
+        }
+    }
+}
+
 impl<'a, 'b> Mul<&'b FieldElement51x4> for &'a FieldElement51x4 {
     type Output = FieldElement51x4;
+    #[inline]
     fn mul(self, rhs: &'b FieldElement51x4) -> FieldElement51x4 {
         unsafe {
             // Inputs
@@ -322,6 +381,30 @@ mod test {
         for i in 0..1024 {
             cx4 = &ax4 * &cx4;
             cx4 = &bx4 * &cx4;
+        }
+
+        let splits = cx4.split();
+
+        for i in 0..4 {
+            assert_eq!(c, splits[i]);
+        }
+    }
+
+    #[test]
+    fn iterated_u32_mul_matches_serial() {
+        // Invert a small field element to get a big one
+        let a = FieldElement51([2438, 24, 243, 0, 0]).invert();
+        let b = FieldElement51([121665, 0, 0, 0, 0]);
+        let mut c = &a * &b;
+        for i in 0..1024 {
+            c = &b * &c;
+        }
+
+        let ax4 = FieldElement51x4::new(&a, &a, &a, &a);
+        let bx4 = (121665u32, 121665u32, 121665u32, 121665u32);
+        let mut cx4 = &ax4 * bx4;
+        for i in 0..1024 {
+            cx4 = &cx4 * bx4;
         }
 
         let splits = cx4.split();

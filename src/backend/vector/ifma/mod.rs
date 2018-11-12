@@ -7,5 +7,5 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-pub(crate) mod field;
+pub mod field;
 

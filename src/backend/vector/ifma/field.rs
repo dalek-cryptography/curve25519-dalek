@@ -185,6 +185,7 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
 
             // Accumulators for hi-sourced terms
             // Need to be doubled before adding
+            let mut z0hi = u64x4::splat(0);
             let mut z1hi = u64x4::splat(0);
             let mut z2hi = u64x4::splat(0);
             let mut z3hi = u64x4::splat(0);
@@ -263,37 +264,37 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             z2hi = madd52hi(z2hi, x[0], y[1]);
             z3hi = madd52hi(z3hi, x[0], y[2]);
 
+            let mut t0 = u64x4::splat(0);
+            let mut t1 = u64x4::splat(0);
             let r19 = u64x4::splat(19);
-            let r38 = u64x4::splat(38);
-            let r1938 = u64x4::splat(19 * 38);
-            let mut z919hi = u64x4::splat(0);
+
 
             // Wave 6
+            t0 = madd52hi(t0, r19, z9);
+            t1 = madd52lo(t1, r19, z9 >> 52);
             z3lo = madd52lo(z3lo, x[0], y[3]);
-            z919hi = madd52hi(z919hi, r19, z9);
-            z0lo = madd52lo(z0lo, r19, z5);
-            z4lo = madd52lo(z4lo, r19, z9);
-            z1lo = madd52lo(z1lo, r19, z6);
-            z2lo = madd52lo(z2lo, r19, z7);
-            z1hi = madd52hi(z1hi, r19, z5);
             z4hi = madd52hi(z4hi, x[0], y[3]);
+            z1hi = madd52lo(z1hi, r19, z5 >> 52);
+            z2hi = madd52lo(z2hi, r19, z6 >> 52);
+            z3hi = madd52lo(z3hi, r19, z7 >> 52);
+            z0lo = madd52lo(z0lo, r19, z5);
 
             // Wave 7
-            z3lo = madd52lo(z3lo, r19, z8);
-            z2hi = madd52hi(z2hi, r19, z6);
-            z0lo = madd52lo(z0lo, r38, z919hi);
-            z4lo = madd52lo(z4lo, r38, z8 >> 52);
-            z1lo = madd52lo(z1lo, r38, z5 >> 52);
-            z2lo = madd52lo(z2lo, r38, z6 >> 52);
-            z3hi = madd52hi(z3hi, r19, z7);
+            z4lo = madd52lo(z4lo, r19, z9);
+            z1lo = madd52lo(z1lo, r19, z6);
+            z0hi = madd52lo(z0hi, r19, t0 + t1);
             z4hi = madd52hi(z4hi, r19, z8);
+            z2lo = madd52lo(z2lo, r19, z7);
+            z1hi = madd52hi(z1hi, r19, z5);
+            z2hi = madd52hi(z2hi, r19, z6);
+            z3hi = madd52hi(z3hi, r19, z7);
 
             // Wave 8
-            z3lo = madd52lo(z3lo, r38, z7 >> 52);
-            z0lo = madd52lo(z0lo, r1938, z9 >> 52);
+            z3lo = madd52lo(z3lo, r19, z8);
+            z4hi = madd52lo(z4hi, r19, z8 >> 52);
 
             F51x4Unreduced([
-                z0lo,
+                z0lo + z0hi + z0hi,
                 z1lo + z1hi + z1hi,
                 z2lo + z2hi + z2hi,
                 z3lo + z3hi + z3hi,

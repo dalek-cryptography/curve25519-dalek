@@ -358,17 +358,17 @@ mod test {
         let a = FieldElement51([2438, 24, 243, 0, 0]).invert();
         // ... but now multiply it by 128 without reducing coeffs
         let abig = FieldElement51([
-            a.0[0] << 8,
-            a.0[1] << 8,
-            a.0[2] << 8,
-            a.0[3] << 8,
-            a.0[4] << 8,
+            a.0[0] << 4,
+            a.0[1] << 4,
+            a.0[2] << 4,
+            a.0[3] << 4,
+            a.0[4] << 4,
         ]);
 
         let abigx4: F51x4Reduced = F51x4Unreduced::new(&abig, &abig, &abig, &abig).into();
 
         let splits = F51x4Unreduced::from(abigx4).split();
-        let c = &a * &FieldElement51([128, 0, 0, 0, 0]);
+        let c = &a * &FieldElement51([(1 << 4), 0, 0, 0, 0]);
 
         for i in 0..4 {
             assert_eq!(c, splits[i]);

@@ -197,8 +197,8 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             let mut z9hi = u64x4::splat(0);
 
             // Wave 0
-            z4lo = madd52lo(z4lo, x[4], y[0]);
-            z5hi = madd52hi(z5hi, x[4], y[0]);
+            z4lo = madd52lo(z4lo, x[2], y[2]);
+            z5hi = madd52hi(z5hi, x[2], y[2]);
             z5lo = madd52lo(z5lo, x[4], y[1]);
             z6hi = madd52hi(z6hi, x[4], y[1]);
             z6lo = madd52lo(z6lo, x[4], y[2]);
@@ -219,8 +219,8 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             // Wave 2
             z8lo = madd52lo(z8lo, x[4], y[4]);
             z9hi = madd52hi(z9hi, x[4], y[4]);
-            z4lo = madd52lo(z4lo, x[2], y[2]);
-            z5hi = madd52hi(z5hi, x[2], y[2]);
+            z4lo = madd52lo(z4lo, x[4], y[0]);
+            z5hi = madd52hi(z5hi, x[4], y[0]);
             z5lo = madd52lo(z5lo, x[2], y[3]);
             z6hi = madd52hi(z6hi, x[2], y[3]);
             z6lo = madd52lo(z6lo, x[2], y[4]);

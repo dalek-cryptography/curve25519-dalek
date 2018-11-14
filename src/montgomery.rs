@@ -76,6 +76,18 @@ impl ConstantTimeEq for MontgomeryPoint {
     }
 }
 
+impl Default for MontgomeryPoint {
+    fn default() -> MontgomeryPoint {
+        MontgomeryPoint::identity()
+    }
+}
+
+impl Identity for MontgomeryPoint {
+    fn identity() -> MontgomeryPoint {
+       EdwardsPoint::identity().to_montgomery()
+    }
+}
+
 impl PartialEq for MontgomeryPoint {
     fn eq(&self, other: &MontgomeryPoint) -> bool {
         self.ct_eq(other).unwrap_u8() == 1u8

@@ -78,13 +78,7 @@ impl ConstantTimeEq for MontgomeryPoint {
 
 impl Default for MontgomeryPoint {
     fn default() -> MontgomeryPoint {
-        MontgomeryPoint::identity()
-    }
-}
-
-impl Identity for MontgomeryPoint {
-    fn identity() -> MontgomeryPoint {
-       EdwardsPoint::identity().to_montgomery()
+        MontgomeryPoint([0u8; 32])
     }
 }
 

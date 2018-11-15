@@ -8,7 +8,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 use core::ops::{Add, Mul, Neg};
-use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
+use packed_simd::{u64x4, FromBits, IntoBits};
 
 use backend::serial::u64::field::FieldElement51;
 
@@ -27,6 +27,38 @@ pub struct F51x4Unreduced(pub(crate) [u64x4; 5]);
 /// A vector of four field elements in radix 2^51, with reduced coefficients.
 #[derive(Copy, Clone, Debug)]
 pub struct F51x4Reduced(pub(crate) [u64x4; 5]);
+
+#[derive(Copy, Clone)]
+pub enum Lanes {
+    AB,
+}
+
+#[derive(Copy, Clone)]
+pub enum Shuffle {
+    AAAA,
+}
+
+#[inline(always)]
+fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
+    unsafe {
+        use core::arch::x86_64::_mm256_permute4x64_epi64 as perm;
+
+        match control {
+            Shuffle::AAAA => perm(x.into_bits(), 0b00_00_00_00).into_bits(),
+        }
+    }
+}
+
+#[inline]
+fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
+    unsafe {
+        use core::arch::x86_64::_mm256_blend_epi32 as blend;
+
+        match control {
+            Lanes::AB => blend(x.into_bits(), y.into_bits(), 0b00_00_11_11).into_bits(),
+        }
+    }
+}
 
 impl F51x4Unreduced {
     pub fn new(
@@ -76,6 +108,52 @@ impl F51x4Unreduced {
                 x[4].extract(3),
             ]),
         ]
+    }
+
+    #[inline]
+    pub fn shuffle(&self, control: Shuffle) -> F51x4Unreduced {
+        F51x4Unreduced([
+            shuffle_lanes(self.0[0], control),
+            shuffle_lanes(self.0[1], control),
+            shuffle_lanes(self.0[2], control),
+            shuffle_lanes(self.0[3], control),
+            shuffle_lanes(self.0[4], control),
+        ])
+    }
+
+    #[inline]
+    pub fn blend(&self, other: &F51x4Unreduced, control: Lanes) -> F51x4Unreduced {
+        F51x4Unreduced([
+            blend_lanes(self.0[0], other.0[0], control),
+            blend_lanes(self.0[1], other.0[1], control),
+            blend_lanes(self.0[2], other.0[2], control),
+            blend_lanes(self.0[3], other.0[3], control),
+            blend_lanes(self.0[4], other.0[4], control),
+        ])
+    }
+}
+
+impl F51x4Reduced {
+    #[inline]
+    pub fn shuffle(&self, control: Shuffle) -> F51x4Reduced {
+        F51x4Reduced([
+            shuffle_lanes(self.0[0], control),
+            shuffle_lanes(self.0[1], control),
+            shuffle_lanes(self.0[2], control),
+            shuffle_lanes(self.0[3], control),
+            shuffle_lanes(self.0[4], control),
+        ])
+    }
+
+    #[inline]
+    pub fn blend(&self, other: &F51x4Reduced, control: Lanes) -> F51x4Reduced {
+        F51x4Reduced([
+            blend_lanes(self.0[0], other.0[0], control),
+            blend_lanes(self.0[1], other.0[1], control),
+            blend_lanes(self.0[2], other.0[2], control),
+            blend_lanes(self.0[3], other.0[3], control),
+            blend_lanes(self.0[4], other.0[4], control),
+        ])
     }
 }
 
@@ -268,7 +346,6 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             let mut t1 = u64x4::splat(0);
             let r19 = u64x4::splat(19);
 
-
             // Wave 6
             t0 = madd52hi(t0, r19, z9);
             t1 = madd52lo(t1, r19, z9 >> 52);
@@ -442,5 +519,42 @@ mod test {
         for i in 0..4 {
             assert_eq!(c, splits[i]);
         }
+    }
+
+    #[test]
+    fn shuffle_AAAA() {
+        let x0 = FieldElement51::from_bytes(&[0x10; 32]);
+        let x1 = FieldElement51::from_bytes(&[0x11; 32]);
+        let x2 = FieldElement51::from_bytes(&[0x12; 32]);
+        let x3 = FieldElement51::from_bytes(&[0x13; 32]);
+
+        let x = F51x4Unreduced::new(&x0, &x1, &x2, &x3);
+
+        let y = x.shuffle(Shuffle::AAAA);
+        let splits = y.split();
+
+        assert_eq!(splits[0], x0);
+        assert_eq!(splits[1], x0);
+        assert_eq!(splits[2], x0);
+        assert_eq!(splits[3], x0);
+    }
+
+    #[test]
+    fn blend_AB() {
+        let x0 = FieldElement51::from_bytes(&[0x10; 32]);
+        let x1 = FieldElement51::from_bytes(&[0x11; 32]);
+        let x2 = FieldElement51::from_bytes(&[0x12; 32]);
+        let x3 = FieldElement51::from_bytes(&[0x13; 32]);
+
+        let x = F51x4Unreduced::new(&x0, &x1, &x2, &x3);
+        let z = F51x4Unreduced::new(&x3, &x2, &x1, &x0);
+
+        let y = x.blend(&z, Lanes::AB);
+        let splits = y.split();
+
+        assert_eq!(splits[0], x3);
+        assert_eq!(splits[1], x2);
+        assert_eq!(splits[2], x2);
+        assert_eq!(splits[3], x3);
     }
 }

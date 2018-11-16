@@ -30,12 +30,18 @@ pub struct F51x4Reduced(pub(crate) [u64x4; 5]);
 
 #[derive(Copy, Clone)]
 pub enum Lanes {
+    D,
     AB,
+    AC,
 }
 
 #[derive(Copy, Clone)]
 pub enum Shuffle {
     AAAA,
+    BADC,
+    ADDA,
+    CBCB,
+    ABDC,
 }
 
 #[inline(always)]
@@ -45,6 +51,10 @@ fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
 
         match control {
             Shuffle::AAAA => perm(x.into_bits(), 0b00_00_00_00).into_bits(),
+            Shuffle::BADC => perm(x.into_bits(), 0b10_11_00_01).into_bits(),
+            Shuffle::ADDA => perm(x.into_bits(), 0b00_11_11_00).into_bits(),
+            Shuffle::CBCB => perm(x.into_bits(), 0b01_10_01_10).into_bits(),
+            Shuffle::ABDC => perm(x.into_bits(), 0b10_11_01_00).into_bits(),
         }
     }
 }
@@ -55,7 +65,9 @@ fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
         use core::arch::x86_64::_mm256_blend_epi32 as blend;
 
         match control {
+            Lanes::D => blend(x.into_bits(), y.into_bits(), 0b11_00_00_00).into_bits(),
             Lanes::AB => blend(x.into_bits(), y.into_bits(), 0b00_00_11_11).into_bits(),
+            Lanes::AC => blend(x.into_bits(), y.into_bits(), 0b00_11_00_11).into_bits(),
         }
     }
 }
@@ -108,6 +120,29 @@ impl F51x4Unreduced {
                 x[4].extract(3),
             ]),
         ]
+    }
+
+    #[inline]
+    pub fn diff_sum(&self) -> F51x4Unreduced {
+        // tmp1 = (B, A, D, C)
+        let tmp1 = self.shuffle(Shuffle::BADC);
+        // tmp2 = (-A, B, -C, D)
+        let tmp2 = self.blend(&self.negate_lazy(), Lanes::AC);
+        // (B - A, B + A, D - C, D + C)
+        tmp1 + tmp2
+    }
+
+    #[inline]
+    pub fn negate_lazy(&self) -> F51x4Unreduced {
+        let lo = u64x4::splat(36028797018963664u64);
+        let hi = u64x4::splat(36028797018963952u64);
+        F51x4Unreduced([
+            lo - self.0[0],
+            hi - self.0[1],
+            hi - self.0[2],
+            hi - self.0[3],
+            hi - self.0[4],
+        ])
     }
 
     #[inline]
@@ -186,6 +221,20 @@ impl From<F51x4Unreduced> for F51x4Reduced {
                 (x.0[4] & mask) + c3,
             ])
         }
+    }
+}
+
+impl Add<F51x4Unreduced> for F51x4Unreduced {
+    type Output = F51x4Unreduced;
+    #[inline]
+    fn add(self, rhs: F51x4Unreduced) -> F51x4Unreduced {
+        F51x4Unreduced([
+            self.0[0] + rhs.0[0],
+            self.0[1] + rhs.0[1],
+            self.0[2] + rhs.0[2],
+            self.0[3] + rhs.0[3],
+            self.0[4] + rhs.0[4],
+        ])
     }
 }
 

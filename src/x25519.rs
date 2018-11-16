@@ -12,7 +12,6 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use core::mem;
 use core::ops::Mul;
 
 use clear_on_drop::clear::Clear;
@@ -72,7 +71,7 @@ impl Ephemeral {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
-        
+
         Ephemeral(decode_scalar(&bytes))
     }
 
@@ -83,18 +82,15 @@ impl Ephemeral {
 
 }
 
-#[repr(C)]
 /// A DH SharedSecret
+#[repr(C)]
+#[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct SharedSecret(pub (crate) MontgomeryPoint);
 
 /// Overwrite shared secret material with null bytes when it goes out of scope.
 impl Drop for SharedSecret {
     fn drop(&mut self) {
-        let bytes: &mut [u8; 32] = unsafe {
-            mem::transmute::<&mut MontgomeryPoint, &mut [u8; 32]>
-            (&mut self.0)
-        };
-        bytes.clear();
+        self.0.clear();
     }
 }
 
@@ -131,7 +127,7 @@ mod test {
                                input_point: &MontgomeryPoint,
                                expected: &[u8; 32]) {
         let result = x25519(&input_scalar, &input_point);
-        
+
         assert_eq!(result.0, *expected);
     }
 
@@ -210,7 +206,7 @@ mod test {
         //     684cf59ba83309552800ef566f2f4d3c1c3887c49360e3875f2eb94d99532c51
         // After 1,000,000 iterations:
         //     7c3911e0ab2586fd864497297e575e6f3bc601c0883c30df5f4dd2d24f665424
-            
+
         do_iterations!(1);
         assert_eq!(k.as_bytes(), &[ 0x42, 0x2c, 0x8e, 0x7a, 0x62, 0x27, 0xd7, 0xbc,
                                     0xa1, 0x35, 0x0b, 0x3e, 0x2b, 0xb7, 0x27, 0x9f,

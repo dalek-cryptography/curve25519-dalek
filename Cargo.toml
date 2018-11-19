@@ -32,7 +32,7 @@ version = "0.2"
 
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.5"
+rand = "0.6"
 
 [[bench]]
 name = "x25519"

@@ -93,6 +93,14 @@ impl ExtendedPoint {
 
         ExtendedPoint(&tmp2.shuffle(Shuffle::DBBD) * &tmp2.shuffle(Shuffle::CACA))
     }
+
+    pub fn mul_by_pow_2(&self, k: u32) -> ExtendedPoint {
+        let mut tmp: ExtendedPoint = *self;
+        for _ in 0..k {
+            tmp = tmp.double();
+        }
+        tmp
+    }
 }
 
 impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {

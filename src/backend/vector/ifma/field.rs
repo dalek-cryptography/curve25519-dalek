@@ -196,6 +196,39 @@ impl Neg for F51x4Reduced {
     }
 }
 
+use subtle::Choice;
+use subtle::ConditionallySelectable;
+
+impl ConditionallySelectable for F51x4Reduced {
+    #[inline]
+    fn conditional_select(
+        a: &F51x4Reduced,
+        b: &F51x4Reduced,
+        choice: Choice,
+    ) -> F51x4Reduced {
+        let mask = (-(choice.unwrap_u8() as i64)) as u64;
+        let mask_vec = u64x4::splat(mask);
+        F51x4Reduced([
+            a.0[0] ^ (mask_vec & (a.0[0] ^ b.0[0])),
+            a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
+            a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
+            a.0[3] ^ (mask_vec & (a.0[3] ^ b.0[3])),
+            a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4])),
+        ])
+    }
+
+    #[inline]
+    fn conditional_assign(&mut self, other: &F51x4Reduced, choice: Choice) {
+        let mask = (-(choice.unwrap_u8() as i64)) as u64;
+        let mask_vec = u64x4::splat(mask);
+        self.0[0] ^= mask_vec & (self.0[0] ^ other.0[0]);
+        self.0[1] ^= mask_vec & (self.0[1] ^ other.0[1]);
+        self.0[2] ^= mask_vec & (self.0[2] ^ other.0[2]);
+        self.0[3] ^= mask_vec & (self.0[3] ^ other.0[3]);
+        self.0[4] ^= mask_vec & (self.0[4] ^ other.0[4]);
+    }
+}
+
 impl F51x4Reduced {
     #[inline]
     pub fn shuffle(&self, control: Shuffle) -> F51x4Reduced {

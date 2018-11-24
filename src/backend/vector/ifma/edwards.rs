@@ -11,7 +11,11 @@ use traits::Identity;
 
 use std::ops::{Add, Neg, Sub};
 
+use subtle::Choice;
+use subtle::ConditionallySelectable;
+
 use edwards;
+use window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use super::field::{F51x4Reduced, F51x4Unreduced, Lanes, Shuffle};
 
@@ -132,6 +136,16 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl ConditionallySelectable for CachedPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        CachedPoint(F51x4Reduced::conditional_select(&a.0, &b.0, choice))
+    }
+
+    fn conditional_assign(&mut self, other: &Self, choice: Choice) {
+        self.0.conditional_assign(&other.0, choice);
+    }
+}
+
 impl<'a> Neg for &'a CachedPoint {
     type Output = CachedPoint;
 
@@ -147,6 +161,43 @@ impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     /// Implement subtraction by negating the point and adding.
     fn sub(self, other: &'b CachedPoint) -> ExtendedPoint {
         self + &(-other)
+    }
+}
+
+impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let P = ExtendedPoint::from(*point);
+        let mut points = [CachedPoint::from(P); 8];
+        for i in 0..7 {
+            points[i + 1] = (&P + &points[i]).into();
+        }
+        LookupTable(points)
+    }
+}
+
+impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let A = ExtendedPoint::from(*point);
+        let mut Ai = [CachedPoint::from(A); 8];
+        let A2 = A.double();
+        for i in 0..7 {
+            Ai[i + 1] = (&A2 + &Ai[i]).into();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
+        NafLookupTable5(Ai)
+    }
+}
+
+impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
+    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+        let A = ExtendedPoint::from(*point);
+        let mut Ai = [CachedPoint::from(A); 64];
+        let A2 = A.double();
+        for i in 0..63 {
+            Ai[i + 1] = (&A2 + &Ai[i]).into();
+        }
+        // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
+        NafLookupTable8(Ai)
     }
 }
 

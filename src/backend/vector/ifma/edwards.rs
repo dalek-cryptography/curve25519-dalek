@@ -9,7 +9,7 @@
 
 use traits::Identity;
 
-use std::ops::Add;
+use std::ops::{Add, Neg, Sub};
 
 use edwards;
 
@@ -132,6 +132,24 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
+impl<'a> Neg for &'a CachedPoint {
+    type Output = CachedPoint;
+
+    fn neg(self) -> CachedPoint {
+        let swapped = self.0.shuffle(Shuffle::BACD);
+        CachedPoint(swapped.blend(&(-self.0), Lanes::D))
+    }
+}
+
+impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
+    type Output = ExtendedPoint;
+
+    /// Implement subtraction by negating the point and adding.
+    fn sub(self, other: &'b CachedPoint) -> ExtendedPoint {
+        self + &(-other)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -143,7 +161,7 @@ mod test {
         // Test the vector implementation of the parallel readdition formulas
         let cached_Q = CachedPoint::from(ExtendedPoint::from(Q));
         let R_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) + &cached_Q).into();
-         //et S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &cached_Q).into();
+        let S_vector: edwards::EdwardsPoint = (&ExtendedPoint::from(P) - &cached_Q).into();
 
         println!("Testing point addition:");
         println!("P = {:?}", P);
@@ -152,11 +170,11 @@ mod test {
         println!("R = P + Q = {:?}", &P + &Q);
         //println!("R_serial = {:?}", R_serial);
         println!("R_vector = {:?}", R_vector);
-        //println!("S = P - Q = {:?}", &P - &Q);
-        //println!("S_vector = {:?}", S_vector);
+        println!("S = P - Q = {:?}", &P - &Q);
+        println!("S_vector = {:?}", S_vector);
         //assert_eq!(R_serial.compress(), (&P + &Q).compress());
         assert_eq!(R_vector.compress(), (&P + &Q).compress());
-        //assert_eq!(S_vector.compress(), (&P - &Q).compress());
+        assert_eq!(S_vector.compress(), (&P - &Q).compress());
         println!("OK!\n");
     }
 

@@ -33,6 +33,7 @@ pub enum Shuffle {
     AAAA,
     BBBB,
     BADC,
+    BACD,
     ADDA,
     CBCB,
     ABDC,
@@ -50,6 +51,7 @@ fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
             Shuffle::AAAA => perm(x.into_bits(), 0b00_00_00_00).into_bits(),
             Shuffle::BBBB => perm(x.into_bits(), 0b01_01_01_01).into_bits(),
             Shuffle::BADC => perm(x.into_bits(), 0b10_11_00_01).into_bits(),
+            Shuffle::BACD => perm(x.into_bits(), 0b11_10_00_01).into_bits(),
             Shuffle::ADDA => perm(x.into_bits(), 0b00_11_11_00).into_bits(),
             Shuffle::CBCB => perm(x.into_bits(), 0b01_10_01_10).into_bits(),
             Shuffle::ABDC => perm(x.into_bits(), 0b10_11_01_00).into_bits(),
@@ -183,6 +185,14 @@ impl F51x4Unreduced {
             blend_lanes(self.0[3], other.0[3], control),
             blend_lanes(self.0[4], other.0[4], control),
         ])
+    }
+}
+
+impl Neg for F51x4Reduced {
+    type Output = F51x4Reduced;
+
+    fn neg(self) -> F51x4Reduced {
+        F51x4Unreduced::from(self).negate_lazy().into()
     }
 }
 

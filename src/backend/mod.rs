@@ -24,17 +24,17 @@
 #[cfg(not(any(
     feature = "u32_backend",
     feature = "u64_backend",
-    feature = "avx2_backend"
+    feature = "simd_backend",
 )))]
 compile_error!(
     "no curve25519-dalek backend cargo feature enabled! \
-     please enable one of: u32_backend, u64_backend, avx2_backend"
+     please enable one of: u32_backend, u64_backend, simd_backend"
 );
 
 pub mod serial;
 
-#[cfg(any(
-    all(feature = "ifma_backend", target_feature = "avx512ifma"),
-    all(feature = "avx2_backend", target_feature = "avx2"),
+#[cfg(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
 ))]
 pub mod vector;

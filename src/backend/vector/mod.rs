@@ -21,15 +21,17 @@
 //! `32bit` since identifiers can't start with letters, and the backends
 //! do use `u32`/`u64`, so this seems like a least-bad option.
 
-#[cfg(all(feature = "avx2_backend", target_feature = "avx2"))]
+#[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma",)))]
+compile_error!("simd_backend selected without target_feature=+avx2 or +avx512ifma");
+
+#[cfg(all(target_feature = "avx2", not(target_feature = "avx512ifma")))]
 pub mod avx2;
-#[cfg(all(feature = "avx2_backend", target_feature = "avx2"))]
+#[cfg(all(target_feature = "avx2", not(target_feature = "avx512ifma")))]
 pub(crate) use self::avx2::{
     constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
 };
 
-#[cfg(all(feature = "ifma_backend", target_feature = "avx512ifma"))]
+#[cfg(all(target_feature = "avx512ifma"))]
 pub mod ifma;
 
 pub mod scalar_mul;
-

@@ -69,10 +69,10 @@ yolocrypto = []
 u32_backend = []
 # The u64 backend uses u64s with u128 products.
 u64_backend = []
-# The AVX2 backend uses u32x8s with u64x4 products.
-# It uses the u64 code for serial operations.
-avx2_backend = ["nightly", "u64_backend", "packed_simd"]
-ifma_backend = ["nightly", "u64_backend", "packed_simd", "yolocrypto"]
+# The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
+simd_backend = ["nightly", "u64_backend", "packed_simd"]
+# Old name for the SIMD backend, preserved for compatibility
+avx2_backend = ["simd_backend"]
 
 # Signals that we're in the main build stage.  This is off by default,
 # to signal stage 1 of the build, where build.rs loads the library

@@ -130,6 +130,17 @@ use traits::MultiscalarMul;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
+#[cfg(not(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+)))]
+use backend::serial::scalar_mul;
+#[cfg(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+))]
+use backend::vector::scalar_mul;
+
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
@@ -572,18 +583,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::vector::scalar_mul::variable_base::mul;
-            mul(self, scalar)
-        }
-        // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use backend::serial::scalar_mul::variable_base::mul;
-            mul(self, scalar)
-        }
+        scalar_mul::variable_base::mul(self, scalar)
     }
 }
 
@@ -609,7 +609,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 #[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
-    
+
     fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     where
         I: IntoIterator,
@@ -634,21 +634,14 @@ impl MultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::vector::scalar_mul::straus::Straus;
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use backend::serial::scalar_mul::straus::Straus;
-
-        Straus::multiscalar_mul(scalars, points)
+        scalar_mul::straus::Straus::multiscalar_mul(scalars, points)
     }
 }
 
 #[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
-    
+
     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
@@ -672,29 +665,19 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::vector::scalar_mul::straus::Straus;
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use backend::serial::scalar_mul::straus::Straus;
-
-        Straus::optional_multiscalar_mul(scalars, points)
+        scalar_mul::straus::Straus::optional_multiscalar_mul(scalars, points)
     }
 }
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
     #[cfg(feature = "stage2_build")]
-    pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::vector::scalar_mul::vartime_double_base;
-        // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use backend::serial::scalar_mul::vartime_double_base;
-
-        vartime_double_base::mul(a, A, b)
+    pub fn vartime_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &EdwardsPoint,
+        b: &Scalar,
+    ) -> EdwardsPoint {
+        scalar_mul::vartime_double_base::mul(a, A, b)
     }
 }
 

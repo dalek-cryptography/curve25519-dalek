@@ -113,7 +113,7 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
 }
 
 /// The x25519 function, as specified in RFC7748.
-pub fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
+fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
     let k: Scalar = decode_scalar(scalar.as_bytes());
 
     (k * point)

@@ -35,5 +35,9 @@ pub mod u64;
 
 pub mod curve_models;
 
+#[cfg(not(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+)))]
 pub mod scalar_mul;
 

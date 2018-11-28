@@ -85,7 +85,7 @@
 //! # let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
 //! # let     bob_public = Ephemeral::generate_public(&bob_secret);
 //! #
-//!
+//! #
 //! let shared_secret = Ephemeral::diffie_hellman(&alice_secret, &bob_public);
 //! # }
 //! ```

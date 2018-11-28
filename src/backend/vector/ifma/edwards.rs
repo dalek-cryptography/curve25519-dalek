@@ -7,6 +7,8 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+#![allow(non_snake_case)]
+
 use traits::Identity;
 
 use std::ops::{Add, Neg, Sub};

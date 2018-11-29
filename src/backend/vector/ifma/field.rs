@@ -429,38 +429,38 @@ impl<'a> Mul<(u32, u32, u32, u32)> for &'a F51x4Reduced {
             );
             let r19 = u64x4::splat(19);
 
-            let mut z0lo = u64x4::splat(0);
-            let mut z1lo = u64x4::splat(0);
-            let mut z2lo = u64x4::splat(0);
-            let mut z3lo = u64x4::splat(0);
-            let mut z4lo = u64x4::splat(0);
-            let mut z1hi = u64x4::splat(0);
-            let mut z2hi = u64x4::splat(0);
-            let mut z3hi = u64x4::splat(0);
-            let mut z4hi = u64x4::splat(0);
-            let mut z5hi = u64x4::splat(0);
+            let mut z0_1 = u64x4::splat(0);
+            let mut z1_1 = u64x4::splat(0);
+            let mut z2_1 = u64x4::splat(0);
+            let mut z3_1 = u64x4::splat(0);
+            let mut z4_1 = u64x4::splat(0);
+            let mut z1_2 = u64x4::splat(0);
+            let mut z2_2 = u64x4::splat(0);
+            let mut z3_2 = u64x4::splat(0);
+            let mut z4_2 = u64x4::splat(0);
+            let mut z5_2 = u64x4::splat(0);
 
             // Wave 0
-            z4hi = madd52hi(z4hi, y, x[3]);
-            z5hi = madd52hi(z5hi, y, x[4]);
-            z4lo = madd52lo(z4lo, y, x[4]);
-            z0lo = madd52lo(z0lo, y, x[0]);
-            z3lo = madd52lo(z3lo, y, x[3]);
-            z2lo = madd52lo(z2lo, y, x[2]);
-            z1lo = madd52lo(z1lo, y, x[1]);
-            z3hi = madd52hi(z3hi, y, x[2]);
+            z4_2 = madd52hi(z4_2, y, x[3]);
+            z5_2 = madd52hi(z5_2, y, x[4]);
+            z4_1 = madd52lo(z4_1, y, x[4]);
+            z0_1 = madd52lo(z0_1, y, x[0]);
+            z3_1 = madd52lo(z3_1, y, x[3]);
+            z2_1 = madd52lo(z2_1, y, x[2]);
+            z1_1 = madd52lo(z1_1, y, x[1]);
+            z3_2 = madd52hi(z3_2, y, x[2]);
 
             // Wave 2
-            z2hi = madd52hi(z2hi, y, x[1]);
-            z1hi = madd52hi(z1hi, y, x[0]);
-            z0lo = madd52lo(z0lo, z5hi + z5hi, r19);
+            z2_2 = madd52hi(z2_2, y, x[1]);
+            z1_2 = madd52hi(z1_2, y, x[0]);
+            z0_1 = madd52lo(z0_1, z5_2 + z5_2, r19);
 
             F51x4Unreduced([
-                z0lo,
-                z1hi + z1hi + z1lo,
-                z2hi + z2hi + z2lo,
-                z3hi + z3hi + z3lo,
-                z4hi + z4hi + z4lo,
+                z0_1,
+                z1_1 + z1_2 + z1_2,
+                z2_1 + z2_2 + z2_2,
+                z3_1 + z3_2 + z3_2,
+                z4_1 + z4_2 + z4_2,
             ])
         }
     }
@@ -475,97 +475,101 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             let x = &self.0;
             let y = &rhs.0;
 
-            // Accumulators for lo-sourced terms
-            let mut z0lo = u64x4::splat(0);
-            let mut z1lo = u64x4::splat(0);
-            let mut z2lo = u64x4::splat(0);
-            let mut z3lo = u64x4::splat(0);
-            let mut z4lo = u64x4::splat(0);
-            let mut z5lo = u64x4::splat(0);
-            let mut z6lo = u64x4::splat(0);
-            let mut z7lo = u64x4::splat(0);
-            let mut z8lo = u64x4::splat(0);
+            // Accumulators for terms with coeff 1
+            let mut z0_1 = u64x4::splat(0);
+            let mut z1_1 = u64x4::splat(0);
+            let mut z2_1 = u64x4::splat(0);
+            let mut z3_1 = u64x4::splat(0);
+            let mut z4_1 = u64x4::splat(0);
+            let mut z5_1 = u64x4::splat(0);
+            let mut z6_1 = u64x4::splat(0);
+            let mut z7_1 = u64x4::splat(0);
+            let mut z8_1 = u64x4::splat(0);
 
-            // Accumulators for hi-sourced terms
-            // Need to be doubled before adding
-            let mut z0hi = u64x4::splat(0);
-            let mut z1hi = u64x4::splat(0);
-            let mut z2hi = u64x4::splat(0);
-            let mut z3hi = u64x4::splat(0);
-            let mut z4hi = u64x4::splat(0);
-            let mut z5hi = u64x4::splat(0);
-            let mut z6hi = u64x4::splat(0);
-            let mut z7hi = u64x4::splat(0);
-            let mut z8hi = u64x4::splat(0);
-            let mut z9hi = u64x4::splat(0);
+            // Accumulators for terms with coeff 2
+            let mut z0_2 = u64x4::splat(0);
+            let mut z1_2 = u64x4::splat(0);
+            let mut z2_2 = u64x4::splat(0);
+            let mut z3_2 = u64x4::splat(0);
+            let mut z4_2 = u64x4::splat(0);
+            let mut z5_2 = u64x4::splat(0);
+            let mut z6_2 = u64x4::splat(0);
+            let mut z7_2 = u64x4::splat(0);
+            let mut z8_2 = u64x4::splat(0);
+            let mut z9_2 = u64x4::splat(0);
+
+            // LLVM doesn't seem to do much work reordering IFMA
+            // instructions, so try to organize them into "waves" of 8
+            // independent operations (4c latency, 0.5 c throughput
+            // means 8 in flight)
 
             // Wave 0
-            z4lo = madd52lo(z4lo, x[2], y[2]);
-            z5hi = madd52hi(z5hi, x[2], y[2]);
-            z5lo = madd52lo(z5lo, x[4], y[1]);
-            z6hi = madd52hi(z6hi, x[4], y[1]);
-            z6lo = madd52lo(z6lo, x[4], y[2]);
-            z7hi = madd52hi(z7hi, x[4], y[2]);
-            z7lo = madd52lo(z7lo, x[4], y[3]);
-            z8hi = madd52hi(z8hi, x[4], y[3]);
+            z4_1 = madd52lo(z4_1, x[2], y[2]);
+            z5_2 = madd52hi(z5_2, x[2], y[2]);
+            z5_1 = madd52lo(z5_1, x[4], y[1]);
+            z6_2 = madd52hi(z6_2, x[4], y[1]);
+            z6_1 = madd52lo(z6_1, x[4], y[2]);
+            z7_2 = madd52hi(z7_2, x[4], y[2]);
+            z7_1 = madd52lo(z7_1, x[4], y[3]);
+            z8_2 = madd52hi(z8_2, x[4], y[3]);
 
             // Wave 1
-            z4lo = madd52lo(z4lo, x[3], y[1]);
-            z5hi = madd52hi(z5hi, x[3], y[1]);
-            z5lo = madd52lo(z5lo, x[3], y[2]);
-            z6hi = madd52hi(z6hi, x[3], y[2]);
-            z6lo = madd52lo(z6lo, x[3], y[3]);
-            z7hi = madd52hi(z7hi, x[3], y[3]);
-            z7lo = madd52lo(z7lo, x[3], y[4]);
-            z8hi = madd52hi(z8hi, x[3], y[4]);
+            z4_1 = madd52lo(z4_1, x[3], y[1]);
+            z5_2 = madd52hi(z5_2, x[3], y[1]);
+            z5_1 = madd52lo(z5_1, x[3], y[2]);
+            z6_2 = madd52hi(z6_2, x[3], y[2]);
+            z6_1 = madd52lo(z6_1, x[3], y[3]);
+            z7_2 = madd52hi(z7_2, x[3], y[3]);
+            z7_1 = madd52lo(z7_1, x[3], y[4]);
+            z8_2 = madd52hi(z8_2, x[3], y[4]);
 
             // Wave 2
-            z8lo = madd52lo(z8lo, x[4], y[4]);
-            z9hi = madd52hi(z9hi, x[4], y[4]);
-            z4lo = madd52lo(z4lo, x[4], y[0]);
-            z5hi = madd52hi(z5hi, x[4], y[0]);
-            z5lo = madd52lo(z5lo, x[2], y[3]);
-            z6hi = madd52hi(z6hi, x[2], y[3]);
-            z6lo = madd52lo(z6lo, x[2], y[4]);
-            z7hi = madd52hi(z7hi, x[2], y[4]);
+            z8_1 = madd52lo(z8_1, x[4], y[4]);
+            z9_2 = madd52hi(z9_2, x[4], y[4]);
+            z4_1 = madd52lo(z4_1, x[4], y[0]);
+            z5_2 = madd52hi(z5_2, x[4], y[0]);
+            z5_1 = madd52lo(z5_1, x[2], y[3]);
+            z6_2 = madd52hi(z6_2, x[2], y[3]);
+            z6_1 = madd52lo(z6_1, x[2], y[4]);
+            z7_2 = madd52hi(z7_2, x[2], y[4]);
 
-            let z8 = z8lo + z8hi + z8hi;
-            let z9 = z9hi + z9hi;
+            let z8 = z8_1 + z8_2 + z8_2;
+            let z9 = z9_2 + z9_2;
 
             // Wave 3
-            z3lo = madd52lo(z3lo, x[3], y[0]);
-            z4hi = madd52hi(z4hi, x[3], y[0]);
-            z4lo = madd52lo(z4lo, x[1], y[3]);
-            z5hi = madd52hi(z5hi, x[1], y[3]);
-            z5lo = madd52lo(z5lo, x[1], y[4]);
-            z6hi = madd52hi(z6hi, x[1], y[4]);
-            z2lo = madd52lo(z2lo, x[2], y[0]);
-            z3hi = madd52hi(z3hi, x[2], y[0]);
+            z3_1 = madd52lo(z3_1, x[3], y[0]);
+            z4_2 = madd52hi(z4_2, x[3], y[0]);
+            z4_1 = madd52lo(z4_1, x[1], y[3]);
+            z5_2 = madd52hi(z5_2, x[1], y[3]);
+            z5_1 = madd52lo(z5_1, x[1], y[4]);
+            z6_2 = madd52hi(z6_2, x[1], y[4]);
+            z2_1 = madd52lo(z2_1, x[2], y[0]);
+            z3_2 = madd52hi(z3_2, x[2], y[0]);
 
-            let z6 = z6lo + z6hi + z6hi;
-            let z7 = z7lo + z7hi + z7hi;
+            let z6 = z6_1 + z6_2 + z6_2;
+            let z7 = z7_1 + z7_2 + z7_2;
 
             // Wave 4
-            z3lo = madd52lo(z3lo, x[2], y[1]);
-            z4hi = madd52hi(z4hi, x[2], y[1]);
-            z4lo = madd52lo(z4lo, x[0], y[4]);
-            z5hi = madd52hi(z5hi, x[0], y[4]);
-            z1lo = madd52lo(z1lo, x[1], y[0]);
-            z2hi = madd52hi(z2hi, x[1], y[0]);
-            z2lo = madd52lo(z2lo, x[1], y[1]);
-            z3hi = madd52hi(z3hi, x[1], y[1]);
+            z3_1 = madd52lo(z3_1, x[2], y[1]);
+            z4_2 = madd52hi(z4_2, x[2], y[1]);
+            z4_1 = madd52lo(z4_1, x[0], y[4]);
+            z5_2 = madd52hi(z5_2, x[0], y[4]);
+            z1_1 = madd52lo(z1_1, x[1], y[0]);
+            z2_2 = madd52hi(z2_2, x[1], y[0]);
+            z2_1 = madd52lo(z2_1, x[1], y[1]);
+            z3_2 = madd52hi(z3_2, x[1], y[1]);
 
-            let z5 = z5lo + z5hi + z5hi;
+            let z5 = z5_1 + z5_2 + z5_2;
 
             // Wave 5
-            z3lo = madd52lo(z3lo, x[1], y[2]);
-            z4hi = madd52hi(z4hi, x[1], y[2]);
-            z0lo = madd52lo(z0lo, x[0], y[0]);
-            z1hi = madd52hi(z1hi, x[0], y[0]);
-            z1lo = madd52lo(z1lo, x[0], y[1]);
-            z2lo = madd52lo(z2lo, x[0], y[2]);
-            z2hi = madd52hi(z2hi, x[0], y[1]);
-            z3hi = madd52hi(z3hi, x[0], y[2]);
+            z3_1 = madd52lo(z3_1, x[1], y[2]);
+            z4_2 = madd52hi(z4_2, x[1], y[2]);
+            z0_1 = madd52lo(z0_1, x[0], y[0]);
+            z1_2 = madd52hi(z1_2, x[0], y[0]);
+            z1_1 = madd52lo(z1_1, x[0], y[1]);
+            z2_1 = madd52lo(z2_1, x[0], y[2]);
+            z2_2 = madd52hi(z2_2, x[0], y[1]);
+            z3_2 = madd52hi(z3_2, x[0], y[2]);
 
             let mut t0 = u64x4::splat(0);
             let mut t1 = u64x4::splat(0);
@@ -574,33 +578,33 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
             // Wave 6
             t0 = madd52hi(t0, r19, z9);
             t1 = madd52lo(t1, r19, z9 >> 52);
-            z3lo = madd52lo(z3lo, x[0], y[3]);
-            z4hi = madd52hi(z4hi, x[0], y[3]);
-            z1hi = madd52lo(z1hi, r19, z5 >> 52);
-            z2hi = madd52lo(z2hi, r19, z6 >> 52);
-            z3hi = madd52lo(z3hi, r19, z7 >> 52);
-            z0lo = madd52lo(z0lo, r19, z5);
+            z3_1 = madd52lo(z3_1, x[0], y[3]);
+            z4_2 = madd52hi(z4_2, x[0], y[3]);
+            z1_2 = madd52lo(z1_2, r19, z5 >> 52);
+            z2_2 = madd52lo(z2_2, r19, z6 >> 52);
+            z3_2 = madd52lo(z3_2, r19, z7 >> 52);
+            z0_1 = madd52lo(z0_1, r19, z5);
 
             // Wave 7
-            z4lo = madd52lo(z4lo, r19, z9);
-            z1lo = madd52lo(z1lo, r19, z6);
-            z0hi = madd52lo(z0hi, r19, t0 + t1);
-            z4hi = madd52hi(z4hi, r19, z8);
-            z2lo = madd52lo(z2lo, r19, z7);
-            z1hi = madd52hi(z1hi, r19, z5);
-            z2hi = madd52hi(z2hi, r19, z6);
-            z3hi = madd52hi(z3hi, r19, z7);
+            z4_1 = madd52lo(z4_1, r19, z9);
+            z1_1 = madd52lo(z1_1, r19, z6);
+            z0_2 = madd52lo(z0_2, r19, t0 + t1);
+            z4_2 = madd52hi(z4_2, r19, z8);
+            z2_1 = madd52lo(z2_1, r19, z7);
+            z1_2 = madd52hi(z1_2, r19, z5);
+            z2_2 = madd52hi(z2_2, r19, z6);
+            z3_2 = madd52hi(z3_2, r19, z7);
 
             // Wave 8
-            z3lo = madd52lo(z3lo, r19, z8);
-            z4hi = madd52lo(z4hi, r19, z8 >> 52);
+            z3_1 = madd52lo(z3_1, r19, z8);
+            z4_2 = madd52lo(z4_2, r19, z8 >> 52);
 
             F51x4Unreduced([
-                z0lo + z0hi + z0hi,
-                z1lo + z1hi + z1hi,
-                z2lo + z2hi + z2hi,
-                z3lo + z3hi + z3hi,
-                z4lo + z4hi + z4hi,
+                z0_1 + z0_2 + z0_2,
+                z1_1 + z1_2 + z1_2,
+                z2_1 + z2_2 + z2_2,
+                z3_1 + z3_2 + z3_2,
+                z4_1 + z4_2 + z4_2,
             ])
         }
     }

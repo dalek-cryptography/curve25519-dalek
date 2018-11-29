@@ -10,7 +10,7 @@
 #![allow(non_snake_case)]
 
 use core::ops::{Add, Mul, Neg};
-use packed_simd::{u64x4, FromBits, IntoBits};
+use packed_simd::{u64x4, IntoBits};
 
 use backend::serial::u64::field::FieldElement51;
 
@@ -706,7 +706,7 @@ mod test {
         let a = FieldElement51([2438, 24, 243, 0, 0]).invert();
         let b = FieldElement51([98098, 87987897, 0, 1, 0]).invert();
         let mut c = &a * &b;
-        for i in 0..1024 {
+        for _i in 0..1024 {
             c = &a * &c;
             c = &b * &c;
         }
@@ -714,7 +714,7 @@ mod test {
         let ax4: F51x4Reduced = F51x4Unreduced::new(&a, &a, &a, &a).into();
         let bx4: F51x4Reduced = F51x4Unreduced::new(&b, &b, &b, &b).into();
         let mut cx4 = &ax4 * &bx4;
-        for i in 0..1024 {
+        for _i in 0..1024 {
             cx4 = &ax4 * &F51x4Reduced::from(cx4);
             cx4 = &bx4 * &F51x4Reduced::from(cx4);
         }
@@ -732,8 +732,8 @@ mod test {
         let a = FieldElement51([2438, 24, 243, 0, 0]).invert();
 
         let ax4: F51x4Reduced = F51x4Unreduced::new(&a, &a, &a, &a).into();
-        let mut cx4 = &ax4 * &ax4;
-        let mut cx4_sq = ax4.square();
+        let cx4 = &ax4 * &ax4;
+        let cx4_sq = ax4.square();
 
         let splits = cx4.split();
         let splits_sq = cx4_sq.split();
@@ -748,7 +748,7 @@ mod test {
         // Invert a small field element to get a big one
         let mut a = FieldElement51([2438, 24, 243, 0, 0]).invert();
         let mut ax4 = F51x4Unreduced::new(&a, &a, &a, &a);
-        for j in 0..1024 {
+        for _j in 0..1024 {
             a = a.square();
             ax4 = F51x4Reduced::from(ax4).square();
 
@@ -765,14 +765,14 @@ mod test {
         let a = FieldElement51([2438, 24, 243, 0, 0]).invert();
         let b = FieldElement51([121665, 0, 0, 0, 0]);
         let mut c = &a * &b;
-        for i in 0..1024 {
+        for _i in 0..1024 {
             c = &b * &c;
         }
 
         let ax4 = F51x4Unreduced::new(&a, &a, &a, &a);
         let bx4 = (121665u32, 121665u32, 121665u32, 121665u32);
         let mut cx4 = &F51x4Reduced::from(ax4) * bx4;
-        for i in 0..1024 {
+        for _i in 0..1024 {
             cx4 = &F51x4Reduced::from(cx4) * bx4;
         }
 

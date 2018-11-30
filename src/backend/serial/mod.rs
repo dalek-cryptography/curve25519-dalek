@@ -8,18 +8,19 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Pluggable implementations for different architectures.
+//! Serial implementations of field, scalar, point arithmetic.
 //!
-//! The naming of the `u32` and `u64` modules is somewhat unfortunate,
-//! since these are also the names of primitive types.  Since types have
-//! a different namespace than modules, this isn't a problem to the
-//! compiler, but it could cause confusion.
+//! When the vector backend is disabled, the crate uses the
+//! mixed-model strategy for implementing point operations and scalar
+//! multiplication; see the [`curve_models`](self::curve_models) and
+//! [`scalar_mul`](self::scalar_mul) documentation for more
+//! information.
 //!
-//! However, it's unlikely that the names of those modules would be
-//! brought into scope directly, instead of used as
-//! `backend::u32::field` or similar.  Unfortunately we can't use
-//! `32bit` since identifiers can't start with letters, and the backends
-//! do use `u32`/`u64`, so this seems like a least-bad option.
+//! When the vector backend is enabled, the field and scalar
+//! implementations are still used for non-vectorized operations.
+//!
+//! Note: at this time the `u32` and `u64` backends cannot be built
+//! together.
 
 #[cfg(not(any(feature = "u32_backend", feature = "u64_backend")))]
 compile_error!(
@@ -40,4 +41,3 @@ pub mod curve_models;
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
 pub mod scalar_mul;
-

@@ -10,16 +10,16 @@
 
 #![no_std]
 #![cfg_attr(
-    all(feature = "simd_backend", target_feature = "avx512ifma"),
-    feature(simd_ffi)
-)]
-#![cfg_attr(
-    all(feature = "simd_backend", target_feature = "avx512ifma"),
-    feature(link_llvm_intrinsics)
+    any(
+        all(feature = "simd_backend", target_feature = "avx512ifma"),
+        all(rustdoc, feature = "nightly")
+    ),
+    feature(simd_ffi, link_llvm_intrinsics)
 )]
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
+#![cfg_attr(feature = "nightly", feature(doc_cfg))]
 // Refuse to compile if documentation is missing, but only on nightly.
 //
 // This means that missing docs will still fail CI, but means we can use

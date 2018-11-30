@@ -10,16 +10,28 @@
 
 //! Pluggable implementations for different architectures.
 //!
-//! The naming of the `u32` and `u64` modules is somewhat unfortunate,
-//! since these are also the names of primitive types.  Since types have
-//! a different namespace than modules, this isn't a problem to the
-//! compiler, but it could cause confusion.
+//! The backend code is split into two parts: a serial backend,
+//! and a vector backend.
 //!
-//! However, it's unlikely that the names of those modules would be
-//! brought into scope directly, instead of used as
-//! `backend::u32::field` or similar.  Unfortunately we can't use
-//! `32bit` since identifiers can't start with letters, and the backends
-//! do use `u32`/`u64`, so this seems like a least-bad option.
+//! The [`serial`] backend contains 32- and 64-bit implementations of
+//! field arithmetic and scalar arithmetic, as well as implementations
+//! of point operations using the mixed-model strategy (passing
+//! between different curve models depending on the operation).
+//!
+//! The [`vector`] backend contains implementations of vectorized
+//! field arithmetic, used to implement point operations using a novel
+//! implementation strategy derived from parallel formulas of Hisil,
+//! Wong, Carter, and Dawson.
+//!
+//! Because the two strategies give rise to different curve models,
+//! it's not possible to reuse exactly the same scalar multiplication
+//! code (or to write it generically), so both serial and vector
+//! backends contain matching implementations of scalar multiplication
+//! algorithms.  These are intended to be selected by a `#[cfg]`-based
+//! type alias.
+//!
+//! The [`vector`] backend is selected by the `simd_backend` cargo
+//! feature; it uses the [`serial`] backend for non-vectorized operations.
 
 #[cfg(not(any(
     feature = "u32_backend",
@@ -33,8 +45,18 @@ compile_error!(
 
 pub mod serial;
 
-#[cfg(all(
-    feature = "simd_backend",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
+#[cfg(any(
+    all(
+        feature = "simd_backend",
+        any(target_feature = "avx2", target_feature = "avx512ifma")
+    ),
+    rustdoc
 ))]
+#[cfg_attr(
+    feature = "nightly",
+    doc(cfg(any(all(
+        feature = "simd_backend",
+        any(target_feature = "avx2", target_feature = "avx512ifma")
+    ))))
+)]
 pub mod vector;

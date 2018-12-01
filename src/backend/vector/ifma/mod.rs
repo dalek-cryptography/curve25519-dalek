@@ -7,6 +7,11 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+#![cfg_attr(
+    all(feature = "nightly", feature = "stage2_build"),
+    doc(include = "../docs/ifma-notes.md")
+)]
+
 pub mod field;
 
 pub mod edwards;

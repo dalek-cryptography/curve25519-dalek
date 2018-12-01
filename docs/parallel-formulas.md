@@ -2,6 +2,10 @@ Vectorized implementations of field and point operations, using a
 modification of the 4-way parallel formulas of Hisil, Wong, Carter,
 and Dawson.
 
+These notes explain the parallel formulas and our strategy for using
+them with SIMD operations.  There are two backend implementations: one
+using AVX2, and the other using AVX512-IFMA.
+
 # Overview
 
 The 2008 paper [_Twisted Edwards Curves Revisited_][hwcd08] by Hisil,
@@ -310,13 +314,13 @@ There are several directions for future improvement:
   the only available CPU which runs IFMA operations executes them at
   256-bits wide anyways, so this isn't yet important.
 
-* Generalizing the implementation to non-AVX2 instructions,
-  particularly NEON.  The current point arithmetic code is written in
-  terms of field element vectors, which are in turn implemented using
-  platform SIMD vectors.  It should be possible to write an alternate
-  implementation of the `FieldElement2625x4` using NEON without changing
-  the point arithmetic.  NEON has 128-bit vectors rather than 256-bit
-  vectors, but this may still be worthwhile compared to a serial
+* Generalizing the implementation to NEON instructions.  The current
+  point arithmetic code is written in terms of field element vectors,
+  which are in turn implemented using platform SIMD vectors.  It
+  should be possible to write an alternate implementation of the
+  `FieldElement2625x4` using NEON without changing the point
+  arithmetic.  NEON has 128-bit vectors rather than 256-bit vectors,
+  but this may still be worthwhile compared to a serial
   implementation.
 
 

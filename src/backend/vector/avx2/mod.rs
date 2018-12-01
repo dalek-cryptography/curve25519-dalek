@@ -18,7 +18,8 @@
 // location of build.rs, not lib.rs, so the markdown file appears
 // missing).
 #![cfg_attr(
-    all(feature = "nightly", feature = "stage2_build"), doc(include = "../docs/avx2-notes.md")
+    all(feature = "nightly", feature = "stage2_build"),
+    doc(include = "../docs/avx2-notes.md")
 )]
 
 pub(crate) mod field;
@@ -26,4 +27,3 @@ pub(crate) mod field;
 pub(crate) mod edwards;
 
 pub(crate) mod constants;
-

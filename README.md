@@ -26,18 +26,19 @@ kittens will be able to secretly organise to find their mittens, and then spend
 the rest of the afternoon nomming some yummy pie!
 
 First, Alice uses `x25519_dalek::EphemeralSecret::new()` and then
-`x25519_dalek::EphemeralPublic::generate_public()` to produce her secret and public keys:
+`x25519_dalek::EphemeralPublic::from()` to produce her secret and public keys:
 
 ```rust
 extern crate x25519_dalek;
 extern crate rand;
 
-use x25519_dalek::Ephemeral;
+use x25519_dalek::EphemeralPublic;
+use x25519_dalek::EphemeralSecret;
 use rand::OsRng;
 
 let mut alice_csprng = OsRng::new().unwrap();
 let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-let     alice_public = EphemeralPublic::generate_public(&alice_secret);
+let     alice_public = EphemeralPublic::from(&alice_secret);
 ```
 
 Bob does the same:
@@ -45,7 +46,7 @@ Bob does the same:
 ```rust
 let mut bob_csprng = OsRng::new().unwrap();
 let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-let     bob_public = EphemeralPublic::generate_public(&bob_secret);
+let     bob_public = EphemeralPublic::from(&bob_secret);
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob
@@ -53,15 +54,16 @@ loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
 ```rust
-use x25519_dalek::Ephemeral;
+use x25519_dalek::EphemeralPublic;
+use x25519_dalek::EphemeralSecret;
 
-let shared_secret = Ephemeral::diffie_hellman(&alice_secret, &bob_public);
+let shared_secret = EphemeralSecret::diffie_hellman(&alice_secret, &bob_public);
 ```
 
 Similarly, Bob computes the same shared secret by doing:
 
 ```rust
-let shared_secret = Ephemeral::diffie_hellman(&bob_secret, &alice_public);
+let shared_secret = EphemeralSecret::diffie_hellman(&bob_secret, &alice_public);
 ```
 
 Voilá!  Alice and Bob can now use their shared secret to encrypt their

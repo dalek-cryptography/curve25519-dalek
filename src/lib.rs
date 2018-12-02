@@ -32,20 +32,21 @@
 //! incantations, the kittens will be able to secretly organise to find their
 //! mittens, and then spend the rest of the afternoon nomming some yummy pie!
 //!
-//! First, Alice uses `x25519_dalek::Ephemeral::generate_secret()` and
-//! `x25519_dalek::Ephemeral::generate_public()` to produce her secret and public keys:
+//! First, Alice uses `x25519_dalek::EphemeralSecret::new()` and
+//! `x25519_dalek::EphemeralPublic::from()` to produce her secret and public keys:
 //!
 //! ```
 //! extern crate x25519_dalek;
 //! extern crate rand;
 //!
 //! # fn main() {
-//! use x25519_dalek::Ephemeral;
+//! use x25519_dalek::EphemeralPublic;
+//! use x25519_dalek::EphemeralSecret;
 //! use rand::thread_rng;
 //!
 //! let mut alice_csprng = thread_rng();
-//! let     alice_secret = Ephemeral::generate_secret(&mut alice_csprng);
-//! let     alice_public = Ephemeral::generate_public(&alice_secret);
+//! let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
+//! let     alice_public = EphemeralPublic::from(&alice_secret);
 //! # }
 //! ```
 //!
@@ -56,12 +57,13 @@
 //! # extern crate rand;
 //! #
 //! # fn main() {
-//! # use x25519_dalek::Ephemeral;
+//! # use x25519_dalek::EphemeralPublic;
+//! # use x25519_dalek::EphemeralSecret;
 //! # use rand::thread_rng;
 //! #
 //! let mut bob_csprng = thread_rng();
-//! let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
-//! let     bob_public = Ephemeral::generate_public(&bob_secret);
+//! let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
+//! let     bob_public = EphemeralPublic::from(&bob_secret);
 //! # }
 //! ```
 //!
@@ -74,19 +76,20 @@
 //! # extern crate rand;
 //! #
 //! # fn main() {
-//! # use x25519_dalek::Ephemeral;
+//! # use x25519_dalek::EphemeralPublic;
+//! # use x25519_dalek::EphemeralSecret;
 //! # use rand::thread_rng;
 //! #
 //! # let mut alice_csprng = thread_rng();
-//! # let     alice_secret = Ephemeral::generate_secret(&mut alice_csprng);
-//! # let     alice_public = Ephemeral::generate_public(&alice_secret);
+//! # let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
+//! # let     alice_public = EphemeralPublic::from(&alice_secret);
 //! #
 //! # let mut bob_csprng = thread_rng();
-//! # let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
-//! # let     bob_public = Ephemeral::generate_public(&bob_secret);
+//! # let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
+//! # let     bob_public = EphemeralPublic::from(&bob_secret);
 //! #
 //!
-//! let shared_secret = Ephemeral::diffie_hellman(&alice_secret, &bob_public);
+//! let shared_secret = EphemeralSecret::diffie_hellman(&alice_secret, &bob_public);
 //! # }
 //! ```
 //!
@@ -97,18 +100,19 @@
 //! # extern crate rand;
 //! #
 //! # fn main() {
-//! # use x25519_dalek::Ephemeral;
+//! # use x25519_dalek::EphemeralPublic;
+//! # use x25519_dalek::EphemeralSecret;
 //! # use rand::thread_rng;
 //! #
 //! # let mut alice_csprng = thread_rng();
-//! # let     alice_secret = Ephemeral::generate_secret(&mut alice_csprng);
-//! # let     alice_public = Ephemeral::generate_public(&alice_secret);
+//! # let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
+//! # let     alice_public = EphemeralPublic::from(&alice_secret);
 //! #
 //! # let mut bob_csprng = thread_rng();
-//! # let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
-//! # let     bob_public = Ephemeral::generate_public(&bob_secret);
+//! # let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
+//! # let     bob_public = EphemeralPublic::from(&bob_secret);
 //! #
-//! let shared_secret = Ephemeral::diffie_hellman(&bob_secret, &alice_public);
+//! let shared_secret = EphemeralSecret::diffie_hellman(&bob_secret, &alice_public);
 //! # }
 //! ```
 //!

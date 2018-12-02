@@ -21,17 +21,18 @@ use curve25519_dalek::montgomery::MontgomeryPoint;
 
 use rand::OsRng;
 
-use x25519_dalek::Ephemeral;
+use x25519_dalek::EphemeralPublic;
+use x25519_dalek::EphemeralSecret;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
     let mut csprng: OsRng = OsRng::new().unwrap();
-    let alice_secret: Ephemeral = Ephemeral::generate_secret(&mut csprng);
-    let bob_secret: Ephemeral = Ephemeral::generate_secret(&mut csprng);
-    let bob_public: MontgomeryPoint = Ephemeral::generate_public(&bob_secret);
+    let alice_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
+    let bob_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
+    let bob_public: EphemeralPublic = EphemeralPublic::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
         b.iter(||
-               Ephemeral::diffie_hellman(&alice_secret, &bob_public)
+               EphemeralSecret::diffie_hellman(&alice_secret, &bob_public)
         )
     });
 }

@@ -25,8 +25,8 @@ up on modern public key cryptography and have learned a nifty trick called
 kittens will be able to secretly organise to find their mittens, and then spend
 the rest of the afternoon nomming some yummy pie!
 
-First, Alice uses `x25519_dalek::Ephemeral::generate_secret()` and then
-`x25519_dalek::Ephemeral::generate_public()` to produce her secret and public keys:
+First, Alice uses `x25519_dalek::EphemeralSecret::new()` and then
+`x25519_dalek::EphemeralPublic::generate_public()` to produce her secret and public keys:
 
 ```rust
 extern crate x25519_dalek;
@@ -36,16 +36,16 @@ use x25519_dalek::Ephemeral;
 use rand::OsRng;
 
 let mut alice_csprng = OsRng::new().unwrap();
-let     alice_secret = Ephemeral::generate_secret(&mut alice_csprng);
-let     alice_public = Ephemeral::generate_public(&alice_secret);
+let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
+let     alice_public = EphemeralPublic::generate_public(&alice_secret);
 ```
 
 Bob does the same:
 
 ```rust
 let mut bob_csprng = OsRng::new().unwrap();
-let     bob_secret = Ephemeral::generate_secret(&mut bob_csprng);
-let     bob_public = Ephemeral::generate_public(&bob_secret);
+let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
+let     bob_public = EphemeralPublic::generate_public(&bob_secret);
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob

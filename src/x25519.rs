@@ -23,61 +23,57 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
-/// A DH ephemeral key.
+/// A DH ephemeral public key.
+#[repr(C)]
+pub struct EphemeralPublic(pub (crate) MontgomeryPoint);
+
+/// A DH ephemeral secret key.
 #[repr(C)]
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
-pub struct Ephemeral(pub (crate) Scalar);
+pub struct EphemeralSecret(pub (crate) Scalar);
 
-/// Overwrite ephemeral key material with null bytes when it goes out of scope.
-impl Drop for Ephemeral {
+/// Overwrite ephemeral secret key material with null bytes when it goes out of scope.
+impl Drop for EphemeralSecret {
     fn drop(&mut self) {
         self.0.clear();
     }
 }
 
-/// Multiply this `Ephemeral` key by a `MontgomeryPoint`.
-impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Ephemeral {
-    type Output = Ephemeral;
+/// Multiply this `EphemeralPublic` key by a `EphemeralSecret` key.
+impl<'a, 'b> Mul<&'b EphemeralSecret> for &'a EphemeralPublic {
+    type Output = EphemeralPublic;
 
-    fn mul(self, point: &'b MontgomeryPoint) -> Ephemeral {
-        Ephemeral(Scalar::from_bits((point * self.to_bytes()).to_bytes()))
+    fn mul(self, secret: &'b EphemeralSecret) -> EphemeralPublic {
+        EphemeralPublic(self.0 * secret.0)
     }
 }
 
-impl Ephemeral {
-    /// Convert this `Ephemeral` key to a `Scalar`.
-    #[inline]
-    pub fn to_bytes(&self) -> Scalar {
-        self.0
-    }
-
-    /// View this `Ephemeral` key as a `Scalar`.
-    #[inline]
-    pub fn as_bytes<'a>(&'a self) -> &'a Scalar {
-        &self.0
-    }
-
+impl EphemeralSecret {
     /// Utility function to make it easier to call `x25519()` with
     /// an ephemeral secret key and montegomery point as input and
     /// a shared secret as the output.
-    pub fn diffie_hellman(&self, their_public: &MontgomeryPoint) -> SharedSecret {
-        SharedSecret(x25519(self.as_bytes(), &MontgomeryPoint(*their_public.as_bytes())))
+    pub fn diffie_hellman(&self, their_public: &EphemeralPublic) -> SharedSecret {
+        SharedSecret(x25519(&self.0, &MontgomeryPoint(*their_public.0.as_bytes())))
     }
 
-    /// Generate an x25519 `Ephemeral` secret key.
-    pub fn generate_secret<T>(csprng: &mut T) -> Self
+    /// Generate an x25519 `EphemeralSecret` key.
+    pub fn new<T>(csprng: &mut T) -> Self
         where T: RngCore + CryptoRng
     {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
 
-        Ephemeral(decode_scalar(&bytes))
+        EphemeralSecret(decode_scalar(&bytes))
     }
 
-    /// Given an x25519 `Ephemeral` secret key, compute its corresponding public key.
-    pub fn generate_public(&self) -> MontgomeryPoint {
-        (self.as_bytes() * &ED25519_BASEPOINT_TABLE).to_montgomery()
+}
+
+impl From<&EphemeralSecret> for EphemeralPublic {
+    /// Given an x25519 `EphemeralSecret` key, compute its corresponding
+    /// `EphemeralPublic` key.
+    fn from(secret: &EphemeralSecret) -> EphemeralPublic {
+        EphemeralPublic((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 
 }
@@ -91,6 +87,15 @@ pub struct SharedSecret(pub (crate) MontgomeryPoint);
 impl Drop for SharedSecret {
     fn drop(&mut self) {
         self.0.clear();
+    }
+}
+
+impl SharedSecret {
+
+    /// View this shared secret key as a byte array.
+    #[inline]
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+        &self.0.as_bytes()
     }
 }
 

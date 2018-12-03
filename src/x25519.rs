@@ -12,8 +12,6 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use core::ops::Mul;
-
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
@@ -39,15 +37,6 @@ impl Drop for EphemeralSecret {
     }
 }
 
-/// Multiply this `EphemeralPublic` key by a `EphemeralSecret` key.
-impl<'a, 'b> Mul<&'b EphemeralSecret> for &'a EphemeralPublic {
-    type Output = EphemeralPublic;
-
-    fn mul(self, secret: &'b EphemeralSecret) -> EphemeralPublic {
-        EphemeralPublic(self.0 * secret.0)
-    }
-}
-
 impl EphemeralSecret {
     /// Utility function to make it easier to call `x25519()` with
     /// an ephemeral secret key and montegomery point as input and
@@ -64,7 +53,7 @@ impl EphemeralSecret {
 
         csprng.fill_bytes(&mut bytes);
 
-        EphemeralSecret(decode_scalar(&bytes))
+        EphemeralSecret(clamp_scalar(&bytes))
     }
 
 }
@@ -80,7 +69,6 @@ impl<'a> From<&'a EphemeralSecret> for EphemeralPublic {
 
 /// A DH SharedSecret
 #[repr(C)]
-#[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct SharedSecret(pub (crate) MontgomeryPoint);
 
 /// Overwrite shared secret material with null bytes when it goes out of scope.
@@ -94,7 +82,7 @@ impl SharedSecret {
 
     /// View this shared secret key as a byte array.
     #[inline]
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0.as_bytes()
     }
 }
@@ -107,7 +95,7 @@ impl SharedSecret {
 /// # Returns
 ///
 /// A `Scalar`.
-fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
+fn clamp_scalar(scalar: &[u8; 32]) -> Scalar {
     let mut s: [u8; 32] = scalar.clone();
 
     s[0]  &= 248;
@@ -119,7 +107,7 @@ fn decode_scalar(scalar: &[u8; 32]) -> Scalar {
 
 /// The x25519 function, as specified in RFC7748.
 fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
-    let k: Scalar = decode_scalar(scalar.as_bytes());
+    let k: Scalar = clamp_scalar(scalar.as_bytes());
 
     (k * point)
 }

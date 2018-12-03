@@ -69,10 +69,10 @@ impl EphemeralSecret {
 
 }
 
-impl From<&EphemeralSecret> for EphemeralPublic {
+impl<'a> From<&'a EphemeralSecret> for EphemeralPublic {
     /// Given an x25519 `EphemeralSecret` key, compute its corresponding
     /// `EphemeralPublic` key.
-    fn from(secret: &EphemeralSecret) -> EphemeralPublic {
+    fn from(secret: &'a EphemeralSecret) -> EphemeralPublic {
         EphemeralPublic((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 

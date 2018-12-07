@@ -26,13 +26,14 @@ use x25519_dalek::EphemeralSecret;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
     let mut csprng: OsRng = OsRng::new().unwrap();
-    let alice_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
     let bob_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
     let bob_public: EphemeralPublic = EphemeralPublic::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
-        b.iter(||
-               EphemeralSecret::diffie_hellman(&alice_secret, &bob_public)
+        let alice_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
+        b.iter_with_setup(
+            || EphemeralSecret::new(&mut csprng),
+            |alice_secret| EphemeralSecret::diffie_hellman(alice_secret, &bob_public),
         )
     });
 }

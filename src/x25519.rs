@@ -38,11 +38,13 @@ impl Drop for EphemeralSecret {
 }
 
 impl EphemeralSecret {
-    /// Utility function to make it easier to call `x25519()` with
-    /// an ephemeral secret key and montegomery point as input and
-    /// a shared secret as the output.
-    pub fn diffie_hellman(&self, their_public: &EphemeralPublic) -> SharedSecret {
-        SharedSecret(x25519(&self.0, &MontgomeryPoint(*their_public.0.as_bytes())))
+    /// The diffie_hellman function performs scalar multipication on a montegomery point.
+    /// This is the implementation for the x25519 function, as specified in RFC7748.
+    pub fn diffie_hellman(self, their_public: &EphemeralPublic) -> SharedSecret {
+        let k: Scalar = clamp_scalar(self.0.as_bytes());
+        let point: MontgomeryPoint = MontgomeryPoint(*their_public.0.as_bytes());
+
+        SharedSecret(k * point)
     }
 
     /// Generate an x25519 `EphemeralSecret` key.
@@ -105,13 +107,6 @@ fn clamp_scalar(scalar: &[u8; 32]) -> Scalar {
     Scalar::from_bits(s)
 }
 
-/// The x25519 function, as specified in RFC7748.
-fn x25519(scalar: &Scalar, point: &MontgomeryPoint) -> MontgomeryPoint {
-    let k: Scalar = clamp_scalar(scalar.as_bytes());
-
-    (k * point)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -119,9 +114,9 @@ mod test {
     fn do_rfc7748_ladder_test1(input_scalar: &Scalar,
                                input_point: &MontgomeryPoint,
                                expected: &[u8; 32]) {
-        let result = x25519(&input_scalar, &input_point);
+        let result = EphemeralSecret::diffie_hellman(EphemeralSecret(*input_scalar), &EphemeralPublic(*input_point));
 
-        assert_eq!(result.0, *expected);
+        assert_eq!(result.0, MontgomeryPoint(*expected));
     }
 
     #[test]
@@ -173,12 +168,12 @@ mod test {
 
         let mut k: Scalar = Scalar::from_bits(X25519_BASEPOINT.0);
         let mut u: MontgomeryPoint = X25519_BASEPOINT;
-        let mut result: MontgomeryPoint;
+        let mut result: SharedSecret;
 
         macro_rules! do_iterations {
             ($n:expr) => (
                 for _ in 0..$n {
-                    result = x25519(&k, &u);
+                    result = EphemeralSecret::diffie_hellman(EphemeralSecret(k), &EphemeralPublic(u));
                     // OBVIOUS THING THAT I'M GOING TO NOTE ANYWAY BECAUSE I'VE
                     // SEEN PEOPLE DO THIS WITH GOLANG'S STDLIB AND YOU SURE AS
                     // HELL SHOULDN'T DO HORRIBLY STUPID THINGS LIKE THIS WITH
@@ -188,7 +183,7 @@ mod test {
                     //
                     //                ↓↓ DON'T DO THIS ↓↓
                     u = MontgomeryPoint(k.as_bytes().clone());
-                    k = Scalar::from_bits(result.to_bytes());
+                    k = Scalar::from_bits(result.0.to_bytes());
                 }
             )
         }

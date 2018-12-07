@@ -57,13 +57,13 @@ shared secret with Bob by doing:
 use x25519_dalek::EphemeralPublic;
 use x25519_dalek::EphemeralSecret;
 
-let shared_secret = EphemeralSecret::diffie_hellman(&alice_secret, &bob_public);
+let shared_secret = EphemeralSecret::diffie_hellman(alice_secret, &bob_public);
 ```
 
 Similarly, Bob computes the same shared secret by doing:
 
 ```rust
-let shared_secret = EphemeralSecret::diffie_hellman(&bob_secret, &alice_public);
+let shared_secret = EphemeralSecret::diffie_hellman(bob_secret, &alice_public);
 ```
 
 Voilá!  Alice and Bob can now use their shared secret to encrypt their

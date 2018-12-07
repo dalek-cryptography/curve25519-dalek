@@ -30,7 +30,6 @@ fn bench_diffie_hellman(c: &mut Criterion) {
     let bob_public: EphemeralPublic = EphemeralPublic::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
-        let alice_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
         b.iter_with_setup(
             || EphemeralSecret::new(&mut csprng),
             |alice_secret| EphemeralSecret::diffie_hellman(alice_secret, &bob_public),

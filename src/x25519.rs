@@ -25,6 +25,14 @@ use rand_core::CryptoRng;
 #[repr(C)]
 pub struct EphemeralPublic(pub (crate) MontgomeryPoint);
 
+impl From<[u8; 32]> for EphemeralPublic {
+    /// Given a byte array, construct an x25519 `EphemeralPublic` key
+    fn from(bytes: [u8; 32]) -> EphemeralPublic {
+        EphemeralPublic(MontgomeryPoint(bytes))
+    }
+
+}
+
 /// A DH ephemeral secret key.
 #[repr(C)]
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop

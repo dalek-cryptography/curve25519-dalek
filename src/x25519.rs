@@ -35,7 +35,6 @@ impl From<[u8; 32]> for EphemeralPublic {
 
 /// A DH ephemeral secret key.
 #[repr(C)]
-#[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct EphemeralSecret(pub (crate) Scalar);
 
 /// Overwrite ephemeral secret key material with null bytes when it goes out of scope.

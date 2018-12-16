@@ -32,7 +32,7 @@ fn bench_diffie_hellman(c: &mut Criterion) {
     c.bench_function("diffie_hellman", move |b| {
         b.iter_with_setup(
             || EphemeralSecret::new(&mut csprng),
-            |alice_secret| EphemeralSecret::diffie_hellman(alice_secret, &bob_public),
+            |alice_secret| alice_secret.diffie_hellman(&bob_public),
         )
     });
 }

@@ -16,11 +16,11 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "1.0.0-pre.0"
+version = "1.0.0-pre.1"
 default-features = false
 
 [dependencies.rand]
-version = "0.5"
+version = "0.6.0"
 default-features = false
 features = ["i128_support"]
 
@@ -44,6 +44,7 @@ hex = "^0.3"
 sha2 = "^0.8"
 bincode = "^0.9"
 criterion = "0.2"
+rand_chacha = "0.1.0"
 
 [[bench]]
 name = "ed25519_benchmarks"

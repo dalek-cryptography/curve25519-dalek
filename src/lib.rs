@@ -44,11 +44,12 @@
 //!
 //! ```
 //! # extern crate rand;
+//! # extern crate rand_chacha;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
+//! # use rand_chacha::ChaChaRng;
 //! # use rand::SeedableRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
@@ -67,9 +68,10 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
+//! # extern crate rand_chacha;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
+//! # use rand_chacha::ChaChaRng;
 //! # use rand::SeedableRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
@@ -89,9 +91,10 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
+//! # extern crate rand_chacha;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
+//! # use rand_chacha::ChaChaRng;
 //! # use rand::SeedableRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
@@ -119,8 +122,10 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
+//! # extern crate rand_chacha;
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
+//! # use rand::{Rng, SeedableRng};
+//! # use rand_chacha::ChaChaRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
@@ -142,8 +147,10 @@
 //! ```
 //! # extern crate rand;
 //! # extern crate sha2;
+//! # extern crate rand_chacha;
 //! # extern crate ed25519_dalek;
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
+//! # use rand::{Rng, SeedableRng};
+//! # use rand_chacha::ChaChaRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
@@ -186,6 +193,7 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
+//! # extern crate rand_chacha;
 //! # #[cfg(feature = "serde")]
 //! extern crate serde;
 //! # #[cfg(feature = "serde")]
@@ -193,7 +201,8 @@
 //!
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
+//! # use rand::{Rng, SeedableRng};
+//! # use rand_chacha::ChaChaRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use bincode::{serialize, Infinite};
@@ -218,6 +227,7 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
+//! # extern crate rand_chacha;
 //! # #[cfg(feature = "serde")]
 //! # extern crate serde;
 //! # #[cfg(feature = "serde")]
@@ -225,7 +235,8 @@
 //! #
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
+//! # use rand::{Rng, SeedableRng};
+//! # use rand_chacha::ChaChaRng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! # use bincode::{serialize, Infinite};
@@ -271,6 +282,9 @@ extern crate sha2;
 
 #[cfg(test)]
 extern crate hex;
+
+#[cfg(test)]
+extern crate rand_chacha;
 
 #[cfg(feature = "serde")]
 extern crate serde;

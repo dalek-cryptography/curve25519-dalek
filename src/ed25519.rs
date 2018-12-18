@@ -287,13 +287,14 @@ impl SecretKey {
     ///
     /// ```
     /// # extern crate rand;
+    /// # extern crate rand_chacha;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # fn main() {
     /// #
     /// # use rand::Rng;
-    /// # use rand::ChaChaRng;
+    /// # use rand_chacha::ChaChaRng;
     /// # use rand::SeedableRng;
     /// # use sha2::Sha512;
     /// # use ed25519_dalek::PublicKey;
@@ -313,7 +314,7 @@ impl SecretKey {
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_chacha::ChaChaRng`
     pub fn generate<T>(csprng: &mut T) -> SecretKey
         where T: CryptoRng + Rng,
     {
@@ -951,7 +952,7 @@ impl From<ExpandedSecretKey> for PublicKey {
 /// use ed25519_dalek::PublicKey;
 /// use ed25519_dalek::Signature;
 /// use rand::thread_rng;
-/// use rand::ThreadRng;
+/// use rand::rngs::ThreadRng;
 /// use sha2::Sha512;
 ///
 /// # fn main() {
@@ -1147,7 +1148,7 @@ impl Keypair {
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`.
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_chacha::ChaChaRng`.
     ///
     /// The caller must also supply a hash function which implements the
     /// `Digest` and `Default` traits, and which returns 512 bits of output.
@@ -1392,9 +1393,9 @@ mod test {
     use std::string::String;
     use std::vec::Vec;
     use rand::thread_rng;
-    use rand::ChaChaRng;
+    use rand_chacha::ChaChaRng;
     use rand::SeedableRng;
-    use rand::ThreadRng;
+    use rand::rngs::ThreadRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;

@@ -183,6 +183,12 @@ impl Drop for SecretKey {
     }
 }
 
+impl AsRef<[u8]> for SecretKey {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
 impl SecretKey {
     /// Expand this `SecretKey` into an `ExpandedSecretKey`.
     pub fn expand<D>(&self) -> ExpandedSecretKey
@@ -712,6 +718,12 @@ pub struct PublicKey(pub (crate) CompressedEdwardsY);
 impl Debug for PublicKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "PublicKey( CompressedEdwardsY( {:?} ))", self.0)
+    }
+}
+
+impl AsRef<[u8]> for PublicKey {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
 

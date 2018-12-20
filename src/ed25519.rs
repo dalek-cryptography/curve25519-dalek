@@ -718,11 +718,14 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
 /// An ed25519 public key.
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 #[repr(C)]
-pub struct PublicKey(pub (crate) CompressedEdwardsY);
+pub struct PublicKey(
+    pub (crate) CompressedEdwardsY,
+    pub (crate) EdwardsPoint,
+);
 
 impl Debug for PublicKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "PublicKey( CompressedEdwardsY( {:?} ))", self.0)
+        write!(f, "PublicKey({:?}), {:?})", self.0, self.1)
     }
 }
 
@@ -790,7 +793,10 @@ impl PublicKey {
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
 
-        Ok(PublicKey(CompressedEdwardsY(bits)))
+        let compressed = CompressedEdwardsY(bits);
+        let point = compressed.decompress().ok_or(SignatureError(InternalError::PointDecompressionError))?;
+
+        Ok(PublicKey(compressed, point))
     }
 
     /// Derive this public key from its corresponding `SecretKey`.
@@ -825,9 +831,10 @@ impl PublicKey {
         bits[31] &= 127;
         bits[31] |= 64;
 
-        let pk = (&Scalar::from_bits(*bits) * &constants::ED25519_BASEPOINT_TABLE).compress().to_bytes();
+        let point = &Scalar::from_bits(*bits) * &constants::ED25519_BASEPOINT_TABLE;
+        let compressed = point.compress();
 
-        PublicKey(CompressedEdwardsY(pk))
+        PublicKey(compressed, point)
     }
 
     /// Verify a signature on a message with this keypair's public key.
@@ -842,18 +849,14 @@ impl PublicKey {
         let mut h: D = D::default();
         let R: EdwardsPoint;
         let k: Scalar;
-
-        let A: EdwardsPoint = match self.0.decompress() {
-            Some(x) => x,
-            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
-        };
+        let minus_A: EdwardsPoint = -self.1;
 
         h.input(signature.R.as_bytes());
         h.input(self.as_bytes());
         h.input(&message);
 
         k = Scalar::from_hash(h);
-        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
 
         if R.compress() == signature.R {
             Ok(())
@@ -894,10 +897,7 @@ impl PublicKey {
         let ctx: &[u8] = context.unwrap_or(b"");
         debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
 
-        let A: EdwardsPoint = match self.0.decompress() {
-            Some(x) => x,
-            None    => return Err(SignatureError(InternalError::PointDecompressionError)),
-        };
+        let minus_A: EdwardsPoint = -self.1;
 
         h.input(b"SigEd25519 no Ed25519 collisions");
         h.input(&[1]); // Ed25519ph
@@ -908,7 +908,7 @@ impl PublicKey {
         h.input(prehashed_message.result().as_slice());
 
         k = Scalar::from_hash(h);
-        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(-A), &signature.s);
+        R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
 
         if R.compress() == signature.R {
             Ok(())
@@ -1022,7 +1022,7 @@ pub fn verify_batch<D>(messages: &[&[u8]],
     let zhrams = hrams.zip(zs.iter()).map(|(hram, z)| hram * z);
 
     let Rs = signatures.iter().map(|sig| sig.R.decompress());
-    let As = public_keys.iter().map(|pk| pk.0.decompress());
+    let As = public_keys.iter().map(|pk| Some(pk.1));
     let B = once(Some(constants::ED25519_BASEPOINT_POINT));
 
     // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i]H(R||A||M)[i] (mod l)) A[i] = 0
@@ -1404,11 +1404,11 @@ mod test {
     use super::*;
 
     #[cfg(all(test, feature = "serde"))]
-    static PUBLIC_KEY: PublicKey = PublicKey(CompressedEdwardsY([
+    static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
         130, 039, 155, 015, 062, 076, 188, 063,
         124, 122, 026, 251, 233, 253, 225, 220,
         014, 041, 166, 120, 108, 035, 254, 077,
-        160, 083, 172, 058, 219, 042, 086, 120, ]));
+        160, 083, 172, 058, 219, 042, 086, 120, ];
 
     #[cfg(all(test, feature = "serde"))]
     static SECRET_KEY: SecretKey = SecretKey([
@@ -1612,12 +1612,17 @@ mod test {
             215, 090, 152, 001, 130, 177, 010, 183,
             213, 075, 254, 211, 201, 100, 007, 058,
             014, 225, 114, 243, 218, 166, 035, 037,
-            175, 002, 026, 104, 247, 007, 081, 026, ]))))
+            175, 002, 026, 104, 247, 007, 081, 026, ]),
+                                               CompressedEdwardsY([
+            215, 090, 152, 001, 130, 177, 010, 183,
+            213, 075, 254, 211, 201, 100, 007, 058,
+            014, 225, 114, 243, 218, 166, 035, 037,
+            175, 002, 026, 104, 247, 007, 081, 026, ]).decompress().unwrap())))
     }
 
     #[test]
     fn keypair_clear_on_drop() {
-        let mut keypair: Keypair = Keypair::from_bytes(&[15u8; KEYPAIR_LENGTH][..]).unwrap();
+        let mut keypair: Keypair = Keypair::from_bytes(&[1u8; KEYPAIR_LENGTH][..]).unwrap();
 
         keypair.clear();
 
@@ -1660,10 +1665,12 @@ mod test {
     #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_deserialize_public_key() {
-        let encoded_public_key: Vec<u8> = serialize(&PUBLIC_KEY, Infinite).unwrap();
+        let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
+        let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
         let decoded_public_key: PublicKey = deserialize(&encoded_public_key).unwrap();
 
-        assert_eq!(PUBLIC_KEY, decoded_public_key);
+        assert_eq!(&PUBLIC_KEY_BYTES[..], &encoded_public_key[encoded_public_key.len() - 32..]);
+        assert_eq!(public_key, decoded_public_key);
     }
 
     #[cfg(all(test, feature = "serde"))]
@@ -1680,7 +1687,8 @@ mod test {
     #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_public_key_size() {
-        assert_eq!(serialized_size(&PUBLIC_KEY) as usize, 40); // These sizes are specific to bincode==1.0.1
+        let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
+        assert_eq!(serialized_size(&public_key) as usize, 40); // These sizes are specific to bincode==1.0.1
     }
 
     #[cfg(all(test, feature = "serde"))]

@@ -491,6 +491,8 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
+    /// # use ed25519_dalek::{ExpandedSecretKey, SignatureError};
+    /// #
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
@@ -1200,17 +1202,17 @@ impl Keypair {
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     /// use rand::thread_rng;
-    /// use rand::ThreadRng;
+    /// use sha2::Digest;
     /// use sha2::Sha512;
     ///
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
-    /// let mut csprng: ThreadRng = thread_rng();
+    /// let mut csprng = thread_rng();
     /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
     /// // Create a hash digest object which we'll feed the message into:
-    /// let prehashed: Sha512 = Sha512::default();
+    /// let mut prehashed: Sha512 = Sha512::default();
     ///
     /// prehashed.input(message);
     /// # }
@@ -1248,15 +1250,15 @@ impl Keypair {
     /// # use ed25519_dalek::Keypair;
     /// # use ed25519_dalek::Signature;
     /// # use rand::thread_rng;
-    /// # use rand::ThreadRng;
+    /// # use sha2::Digest;
     /// # use sha2::Sha512;
     /// #
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
-    /// # let mut csprng: ThreadRng = thread_rng();
+    /// # let mut csprng = thread_rng();
     /// # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
-    /// # let prehashed: Sha512 = Sha512::default();
+    /// # let mut prehashed: Sha512 = Sha512::default();
     /// # prehashed.input(message);
     /// #
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
@@ -1311,16 +1313,16 @@ impl Keypair {
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     /// use rand::thread_rng;
-    /// use rand::ThreadRng;
+    /// use sha2::Digest;
     /// use sha2::Sha512;
     ///
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
-    /// let mut csprng: ThreadRng = thread_rng();
+    /// let mut csprng = thread_rng();
     /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
-    /// let prehashed: Sha512 = Sha512::default();
+    /// let mut prehashed: Sha512 = Sha512::default();
     /// prehashed.input(message);
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
@@ -1328,12 +1330,12 @@ impl Keypair {
     /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
     ///
     /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
-    /// let prehashed_again: Sha512 = Sha512::default();
+    /// let mut prehashed_again: Sha512 = Sha512::default();
     /// prehashed_again.input(message);
     ///
-    /// let valid: bool = keypair.public.verify_prehashed(prehashed_again, context, sig);
+    /// let verified = keypair.public.verify_prehashed(prehashed_again, Some(context), &sig);
     ///
-    /// assert!(valid);
+    /// assert!(verified.is_ok());
     /// # }
     /// #
     /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]

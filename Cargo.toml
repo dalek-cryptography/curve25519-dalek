@@ -20,8 +20,7 @@ version = "1"
 default-features = false
 
 [dependencies.rand]
-version = "0.6.0"
-default-features = false
+version = "0.6"
 features = ["i128_support"]
 
 [dependencies.serde]

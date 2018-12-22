@@ -1646,9 +1646,6 @@ mod test {
     use bincode::{serialize, serialized_size, deserialize, Infinite};
 
     #[cfg(all(test, feature = "serde"))]
-    use std::mem::size_of;
-
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_deserialize_signature() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
@@ -1681,25 +1678,19 @@ mod test {
     #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_public_key_size() {
-        assert_eq!(
-            serialized_size(&PUBLIC_KEY) as usize,
-            size_of::<PublicKey>()
-        );
+        assert_eq!(serialized_size(&PUBLIC_KEY) as usize, 40); // These sizes are specific to bincode==1.0.1
     }
 
     #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
-        assert_eq!(serialized_size(&signature) as usize, size_of::<Signature>());
+        assert_eq!(serialized_size(&signature) as usize, 72); // These sizes are specific to bincode==1.0.1
     }
 
     #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_secret_key_size() {
-        assert_eq!(
-            serialized_size(&SECRET_KEY) as usize,
-            size_of::<SecretKey>()
-        );
+        assert_eq!(serialized_size(&SECRET_KEY) as usize, 40); // These sizes are specific to bincode==1.0.1
     }
 }

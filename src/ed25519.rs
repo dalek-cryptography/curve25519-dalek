@@ -71,7 +71,6 @@ pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + E
 /// been signed.
 #[allow(non_snake_case)]
 #[derive(Copy, Eq, PartialEq)]
-#[repr(C)]
 pub struct Signature {
     /// `R` is an `EdwardsPoint`, formed by using an hash function with
     /// 512-bits output to produce the digest of:
@@ -166,7 +165,6 @@ impl<'d> Deserialize<'d> for Signature {
 }
 
 /// An EdDSA secret key.
-#[repr(C)]
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
 
@@ -386,7 +384,6 @@ impl<'d> Deserialize<'d> for SecretKey {
 // same signature scheme, and which both fail in exactly the same way.  For a
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
-#[repr(C)]
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct ExpandedSecretKey {
     pub (crate) key: Scalar,
@@ -717,7 +714,6 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
 
 /// An ed25519 public key.
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
-#[repr(C)]
 pub struct PublicKey(
     pub (crate) CompressedEdwardsY,
     pub (crate) EdwardsPoint,
@@ -1068,7 +1064,6 @@ impl<'d> Deserialize<'d> for PublicKey {
 
 /// An ed25519 keypair.
 #[derive(Debug, Default)] // we derive Default in order to use the clear() method in Drop
-#[repr(C)]
 pub struct Keypair {
     /// The secret half of this keypair.
     pub secret: SecretKey,

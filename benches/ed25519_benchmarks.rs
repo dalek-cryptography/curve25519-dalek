@@ -23,7 +23,7 @@ mod ed25519_benches {
     use ed25519_dalek::Signature;
     use ed25519_dalek::verify_batch;
     use rand::thread_rng;
-    use rand::ThreadRng;
+    use rand::rngs::ThreadRng;
     use sha2::Sha512;
 
     fn sign(c: &mut Criterion) {

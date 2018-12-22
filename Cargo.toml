@@ -43,7 +43,6 @@ hex = "^0.3"
 sha2 = "^0.8"
 bincode = "^0.9"
 criterion = "0.2"
-rand_chacha = "0.1.0"
 
 [[bench]]
 name = "ed25519_benchmarks"

@@ -33,7 +33,7 @@
 //! use ed25519_dalek::Signature;
 //!
 //! let mut csprng: OsRng = OsRng::new().unwrap();
-//! let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+//! let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng); // The `_` can be the type of `csprng`
 //! # }
 //! #
 //! # #[cfg(any(not(feature = "std"), not(feature = "sha2")))]
@@ -44,17 +44,15 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate rand_chacha;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand_chacha::ChaChaRng;
-//! # use rand::SeedableRng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! let signature: Signature = keypair.sign::<Sha512>(message);
@@ -68,15 +66,13 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # extern crate rand_chacha;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand_chacha::ChaChaRng;
-//! # use rand::SeedableRng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
@@ -91,16 +87,14 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # extern crate rand_chacha;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand_chacha::ChaChaRng;
-//! # use rand::SeedableRng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
 //! use ed25519_dalek::PublicKey;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
@@ -122,14 +116,13 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # extern crate rand_chacha;
 //! # fn main() {
-//! # use rand::{Rng, SeedableRng};
-//! # use rand_chacha::ChaChaRng;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
@@ -147,15 +140,14 @@
 //! ```
 //! # extern crate rand;
 //! # extern crate sha2;
-//! # extern crate rand_chacha;
 //! # extern crate ed25519_dalek;
-//! # use rand::{Rng, SeedableRng};
-//! # use rand_chacha::ChaChaRng;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), SignatureError> {
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair_orig: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature_orig: Signature = keypair_orig.sign::<Sha512>(message);
@@ -193,7 +185,6 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # extern crate rand_chacha;
 //! # #[cfg(feature = "serde")]
 //! extern crate serde;
 //! # #[cfg(feature = "serde")]
@@ -201,12 +192,12 @@
 //!
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, SeedableRng};
-//! # use rand_chacha::ChaChaRng;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use bincode::{serialize, Infinite};
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
@@ -227,7 +218,6 @@
 //! # extern crate rand;
 //! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # extern crate rand_chacha;
 //! # #[cfg(feature = "serde")]
 //! # extern crate serde;
 //! # #[cfg(feature = "serde")]
@@ -235,14 +225,14 @@
 //! #
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, SeedableRng};
-//! # use rand_chacha::ChaChaRng;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use sha2::Sha512;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! # use bincode::{serialize, Infinite};
 //! use bincode::{deserialize};
 //!
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
+//! # let mut csprng = thread_rng();
 //! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
 //! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
 //! # let signature: Signature = keypair.sign::<Sha512>(message);
@@ -282,9 +272,6 @@ extern crate sha2;
 
 #[cfg(test)]
 extern crate hex;
-
-#[cfg(test)]
-extern crate rand_chacha;
 
 #[cfg(feature = "serde")]
 extern crate serde;

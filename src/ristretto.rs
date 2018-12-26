@@ -505,12 +505,12 @@ impl RistrettoPoint {
 
     /// Compress into the `RistrettoBoth` format that also retains the
     /// uncompressed form.
-    pub fn compress_to_both(&self) -> Option<RistrettoBoth> {
-		Some(RistrettoBoth {
-			compressed: self.compress(),
-			point: self.clone(),
-		})
-	}
+    pub fn compress_to_both(&self) -> RistrettoBoth {
+        RistrettoBoth {
+            compressed: self.compress(),
+            point: self.clone(),
+        }
+    }
 
     /// Double-and-compress a batch of points.  The Ristretto encoding
     /// is not batchable, since it requires an inverse square root.
@@ -804,6 +804,15 @@ impl RistrettoBoth {
 
     /// Reference to `RistrettoPoint` form.
     pub fn as_point(&self) -> &RistrettoPoint { &self.point }
+}
+
+impl From<RistrettoPoint> for RistrettoBoth {
+    pub fn from(self) -> Option<RistrettoBoth> {
+        Some(RistrettoBoth {
+            compressed: self.compress(),
+            point: self,
+        })
+    }
 }
 
 impl AsRef<CompressedRistretto> for RistrettoBoth {

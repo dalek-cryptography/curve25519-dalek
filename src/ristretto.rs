@@ -810,8 +810,24 @@ impl AsRef<CompressedRistretto> for RistrettoBoth {
 	fn as_ref(&self) -> &CompressedRistretto { &self.compressed }
 }
 
+impl Borrow<CompressedRistretto> for RistrettoBoth {
+	fn borrow(&self) -> &CompressedRistretto { &self.compressed }
+}
+
+impl<'a> Borrow<CompressedRistretto> for &'a RistrettoBoth {
+	fn borrow(&self) -> &CompressedRistretto { &self.compressed }
+}
+
 impl AsRef<RistrettoPoint> for RistrettoBoth {
 	fn as_ref(&self) -> &RistrettoPoint { &self.point }
+}
+
+impl Borrow<RistrettoPoint> for RistrettoBoth {
+	fn borrow(&self) -> &RistrettoPoint { &self.point }
+}
+
+impl<'a> Borrow<RistrettoPoint> for &'a RistrettoBoth {
+	fn borrow(&self) -> &RistrettoPoint { &self.point }
 }
 
 impl Identity for RistrettoBoth {

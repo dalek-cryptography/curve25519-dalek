@@ -287,6 +287,15 @@ impl CompressedRistretto {
             return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
         }
     }
+
+	/// Decompress into the `RistrettoBoth` format that also retains the
+	/// compressed form.
+	pub fn decompress_to_both(&self) -> Option<RistrettoBoth> {
+		Some(RistrettoBoth {
+			compressed: self.clone(),
+			point: self.decompress() ?,
+		})
+	}
 }
 
 impl Identity for CompressedRistretto {
@@ -329,6 +338,15 @@ impl Serialize for CompressedRistretto {
         where S: Serializer
     {
         serializer.serialize_bytes(self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for RistrettoBoth {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_bytes(self.compressed.as_bytes())
     }
 }
 
@@ -396,6 +414,40 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
     }
 }
 
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for RistrettoBoth {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        struct RistrettoPointVisitor;
+
+        impl<'de> Visitor<'de> for RistrettoPointVisitor {
+            type Value = RistrettoPoint;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                formatter.write_str("a valid point in Ristretto format")
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<RistrettoBoth, E>
+                where E: serde::de::Error
+            {
+                if v.len() == 32 {
+                    let mut arr32 = [0u8; 32];
+                    arr32[0..32].copy_from_slice(v);
+					let compressed = CompressedRistretto(arr32);
+                    let point = compressed.decompress()
+                        .ok_or(serde::de::Error::custom("decompression failed"));
+                    RistrettoBoth { compressed, point }
+                } else {
+                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                }
+            }
+        }
+
+        deserializer.deserialize_bytes(RistrettoPointVisitor)
+    }
+}
+
 // ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------
@@ -450,6 +502,15 @@ impl RistrettoPoint {
 
         CompressedRistretto(s.to_bytes())
     }
+
+    /// Compress into the `RistrettoBoth` format that also retains the
+	/// uncompressed form.
+    pub fn compress_to_both(&self) -> Option<RistrettoBoth> {
+		Some(RistrettoBoth {
+			compressed: self.compress(),
+			point: self.clone(),
+		})
+	}
 
     /// Double-and-compress a batch of points.  The Ristretto encoding
     /// is not batchable, since it requires an inverse square root.
@@ -721,6 +782,103 @@ impl Default for RistrettoPoint {
         RistrettoPoint::identity()
     }
 }
+
+// ------------------------------------------------------------------------
+// Convenience representations
+// ------------------------------------------------------------------------
+
+/// A `RistrettoBoth` contains both a `CompressedRistretto` as well as the
+/// corresponding `RistrettoPoint`.  It provides a convenient middle ground
+/// for protocols that both hash compressed points to derive scalars for
+/// use with uncompressed points.
+///
+#[derive(Debug, Copy, Clone)]
+pub struct RistrettoBoth {
+	pub(crate) compressed: CompressedRistretto,
+	pub(crate) point: RistrettoPoint,
+}
+
+impl RistrettoBoth {
+    /// Reference to `CompressedRistretto` form.
+	fn as_compressed(&self) -> &CompressedRistretto { &self.compressed }
+
+    /// Reference to `RistrettoPoint` form.
+	fn as_point(&self) -> &RistrettoPoint { &self.point }
+}
+
+impl AsRef<CompressedRistretto> for RistrettoBoth {
+	fn as_ref(&self) -> &CompressedRistretto { &self.compressed }
+}
+
+impl AsRef<RistrettoPoint> for RistrettoBoth {
+	fn as_ref(&self) -> &RistrettoPoint { &self.point }
+}
+
+impl Identity for RistrettoBoth {
+    fn identity() -> RistrettoBoth {
+		RistrettoBoth {
+			compressed: CompressedRistretto::identity(),
+			point: RistrettoPoint::identity(),
+		}
+    }
+}
+
+impl Default for RistrettoBoth {
+    fn default() -> RistrettoBoth {
+        RistrettoBoth::identity()
+    }
+}
+
+impl ::core::hash::Hash for RistrettoBoth {
+    fn hash<H: ::core::hash::Hasher>(&self, state: &mut H) {
+        self.compressed.hash(state);
+    }
+}
+
+impl PartialEq<Self> for RistrettoBoth {
+	fn eq(&self, other: &Self) -> bool {
+        self.compressed.eq(&other.compressed)
+	}
+
+    // fn ne(&self, other: &Rhs) -> bool {
+    //   self.compressed.ne(&other.compressed)
+    // }
+}
+
+impl Eq for RistrettoBoth {}
+
+impl PartialOrd<RistrettoBoth> for RistrettoBoth {
+	fn partial_cmp(&self, other: &RistrettoBoth) -> Option<::core::cmp::Ordering> {
+        self.compressed.partial_cmp(&other.compressed)
+    }
+
+    // fn lt(&self, other: &Rhs) -> bool {
+    //    self.compressed.lt(&other.compressed)
+    // }
+    // fn le(&self, other: &Rhs) -> bool {
+    //    self.compressed.le(&other.compressed)
+    // }
+    // fn gt(&self, other: &Rhs) -> bool {
+    //    self.compressed.gt(&other.compressed)
+    // }
+    // fn ge(&self, other: &Rhs) -> bool {
+    //    self.compressed.ge(&other.compressed)
+    // }
+}
+
+impl Ord for RistrettoBoth {
+    fn cmp(&self, other: &Self) -> ::core::cmp::Ordering {
+        self.compressed.cmp(&other.compressed)
+    }
+
+    // fn max(self, other: Self) -> Self {
+    //    self.compressed.max(other.compressed)
+    // }
+    // fn min(self, other: Self) -> Self {
+    //    self.compressed.min(other.compressed)
+    // }
+}
+
 
 // ------------------------------------------------------------------------
 // Equality

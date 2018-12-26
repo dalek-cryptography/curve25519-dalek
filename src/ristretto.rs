@@ -199,7 +199,7 @@ use traits::{MultiscalarMul, VartimeMultiscalarMul};
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 impl CompressedRistretto {

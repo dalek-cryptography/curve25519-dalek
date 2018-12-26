@@ -621,7 +621,7 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
+    pub fn random<T: Rng + CryptoRng>(mut rng: T) -> Self {
         let mut uniform_bytes = [0u8; 64];
         rng.fill(&mut uniform_bytes);
 

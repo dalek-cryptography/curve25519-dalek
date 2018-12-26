@@ -504,7 +504,7 @@ impl RistrettoPoint {
     }
 
     /// Compress into the `RistrettoBoth` format that also retains the
-	/// uncompressed form.
+    /// uncompressed form.
     pub fn compress_to_both(&self) -> Option<RistrettoBoth> {
 		Some(RistrettoBoth {
 			compressed: self.compress(),
@@ -800,34 +800,34 @@ pub struct RistrettoBoth {
 
 impl RistrettoBoth {
     /// Reference to `CompressedRistretto` form.
-	fn as_compressed(&self) -> &CompressedRistretto { &self.compressed }
+    pub fn as_compressed(&self) -> &CompressedRistretto { &self.compressed }
 
     /// Reference to `RistrettoPoint` form.
-	fn as_point(&self) -> &RistrettoPoint { &self.point }
+    pub fn as_point(&self) -> &RistrettoPoint { &self.point }
 }
 
 impl AsRef<CompressedRistretto> for RistrettoBoth {
-	fn as_ref(&self) -> &CompressedRistretto { &self.compressed }
+    fn as_ref(&self) -> &CompressedRistretto { &self.compressed }
 }
 
 impl Borrow<CompressedRistretto> for RistrettoBoth {
-	fn borrow(&self) -> &CompressedRistretto { &self.compressed }
+    fn borrow(&self) -> &CompressedRistretto { &self.compressed }
 }
 
 impl<'a> Borrow<CompressedRistretto> for &'a RistrettoBoth {
-	fn borrow(&self) -> &CompressedRistretto { &self.compressed }
+    fn borrow(&self) -> &CompressedRistretto { &self.compressed }
 }
 
 impl AsRef<RistrettoPoint> for RistrettoBoth {
-	fn as_ref(&self) -> &RistrettoPoint { &self.point }
+    fn as_ref(&self) -> &RistrettoPoint { &self.point }
 }
 
 impl Borrow<RistrettoPoint> for RistrettoBoth {
-	fn borrow(&self) -> &RistrettoPoint { &self.point }
+    fn borrow(&self) -> &RistrettoPoint { &self.point }
 }
 
 impl<'a> Borrow<RistrettoPoint> for &'a RistrettoBoth {
-	fn borrow(&self) -> &RistrettoPoint { &self.point }
+    fn borrow(&self) -> &RistrettoPoint { &self.point }
 }
 
 impl Identity for RistrettoBoth {
@@ -852,9 +852,9 @@ impl ::core::hash::Hash for RistrettoBoth {
 }
 
 impl PartialEq<Self> for RistrettoBoth {
-	fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         self.compressed.eq(&other.compressed)
-	}
+    }
 
     // fn ne(&self, other: &Rhs) -> bool {
     //   self.compressed.ne(&other.compressed)
@@ -864,7 +864,7 @@ impl PartialEq<Self> for RistrettoBoth {
 impl Eq for RistrettoBoth {}
 
 impl PartialOrd<RistrettoBoth> for RistrettoBoth {
-	fn partial_cmp(&self, other: &RistrettoBoth) -> Option<::core::cmp::Ordering> {
+    fn partial_cmp(&self, other: &RistrettoBoth) -> Option<::core::cmp::Ordering> {
         self.compressed.partial_cmp(&other.compressed)
     }
 

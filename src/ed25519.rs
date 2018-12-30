@@ -7,7 +7,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-//! A Rust implementation of ed25519 key generation, signing, and verification.
+//! ed25519 keypairs and batch verification.
 
 use core::default::Default;
 

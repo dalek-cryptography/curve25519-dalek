@@ -7,7 +7,7 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 
-//! ed25519 signatures and verification
+//! A Rust implementation of ed25519 key generation, signing, and verification.
 //!
 //! # Example
 //!

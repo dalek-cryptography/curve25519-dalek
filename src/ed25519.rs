@@ -36,16 +36,16 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 
-pub use constants::*;
-pub use errors::*;
-pub use signature::*;
+pub use crate::constants::*;
+pub use crate::errors::*;
+pub use crate::signature::*;
 
 /// An EdDSA secret key.
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "SecretKey: {:?}", &self.0[..])
     }
 }
@@ -198,7 +198,7 @@ impl<'d> Deserialize<'d> for SecretKey {
         impl<'d> Visitor<'d> for SecretKeyVisitor {
             type Value = SecretKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("An ed25519 secret key as 32 bytes, as specified in RFC8032.")
             }
 
@@ -528,7 +528,7 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
         impl<'d> Visitor<'d> for ExpandedSecretKeyVisitor {
             type Value = ExpandedSecretKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("An ed25519 expanded secret key as 64 bytes, as specified in RFC8032.")
             }
 
@@ -548,7 +548,7 @@ pub struct PublicKey(
 );
 
 impl Debug for PublicKey {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "PublicKey({:?}), {:?})", self.0, self.1)
     }
 }
@@ -880,7 +880,7 @@ impl<'d> Deserialize<'d> for PublicKey {
         impl<'d> Visitor<'d> for PublicKeyVisitor {
             type Value = PublicKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("An ed25519 public key as a 32-byte compressed point, as specified in RFC8032")
             }
 
@@ -1202,7 +1202,7 @@ impl<'d> Deserialize<'d> for Keypair {
         impl<'d> Visitor<'d> for KeypairVisitor {
             type Value = Keypair;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("An ed25519 keypair, 64 bytes in total where the secret key is \
                                      the first 32 bytes and is in unexpanded form, and the second \
                                      32 bytes is a compressed point for a public key.")

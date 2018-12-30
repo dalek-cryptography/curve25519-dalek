@@ -238,6 +238,9 @@
 //! ```
 
 #![no_std]
+#![warn(future_incompatible)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 extern crate clear_on_drop;
@@ -251,14 +254,8 @@ extern crate std;
 
 extern crate sha2;
 
-#[cfg(test)]
-extern crate hex;
-
 #[cfg(feature = "serde")]
 extern crate serde;
-
-#[cfg(all(test, feature = "serde"))]
-extern crate bincode;
 
 mod constants;
 mod ed25519;
@@ -267,5 +264,4 @@ mod signature;
 pub mod errors;
 
 // Export everything public in ed25519.
-pub use ed25519::*;
-pub use errors::*;
+pub use crate::ed25519::*;

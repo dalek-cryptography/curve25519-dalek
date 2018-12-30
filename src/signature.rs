@@ -23,8 +23,8 @@ use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 
-use constants::*;
-use errors::*;
+use crate::constants::*;
+use crate::errors::*;
 
 /// An ed25519 signature.
 ///
@@ -64,7 +64,7 @@ impl Clone for Signature {
 }
 
 impl Debug for Signature {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
     }
 }
@@ -116,7 +116,7 @@ impl<'d> Deserialize<'d> for Signature {
         impl<'d> Visitor<'d> for SignatureVisitor {
             type Value = Signature;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("An ed25519 signature as 64 bytes, as specified in RFC8032.")
             }
 

@@ -33,7 +33,7 @@ pub (crate) enum InternalError {
 }
 
 impl Display for InternalError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             InternalError::PointDecompressionError
                 => write!(f, "Cannot decompress Edwards point"),
@@ -67,13 +67,13 @@ impl ::failure::Fail for InternalError {}
 pub struct SignatureError(pub (crate) InternalError);
 
 impl Display for SignatureError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
 impl ::failure::Fail for SignatureError {
-    fn cause(&self) -> Option<&::failure::Fail> {
+    fn cause(&self) -> Option<&dyn (::failure::Fail)> {
         Some(&self.0)
     }
 }

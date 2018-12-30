@@ -7,7 +7,7 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 
-//! ed25519 signatures and verification
+//! A Rust implementation of ed25519 key generation, signing, and verification.
 //!
 //! # Example
 //!
@@ -238,33 +238,29 @@
 //! ```
 
 #![no_std]
-#![allow(unused_features)]
+#![warn(future_incompatible)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
-
-extern crate clear_on_drop;
-extern crate curve25519_dalek;
-extern crate failure;
-extern crate rand;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
 
-extern crate sha2;
-
-#[cfg(test)]
-extern crate hex;
-
+extern crate clear_on_drop;
+extern crate curve25519_dalek;
+extern crate failure;
+extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
+extern crate sha2;
 
-#[cfg(all(test, feature = "serde"))]
-extern crate bincode;
-
+mod constants;
 mod ed25519;
-
-pub mod errors;
+mod errors;
+mod public;
+mod secret;
+mod signature;
 
 // Export everything public in ed25519.
-pub use ed25519::*;
-pub use errors::*;
+pub use crate::ed25519::*;

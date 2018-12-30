@@ -35,9 +35,8 @@ use serde::de::Visitor;
 
 use crate::constants::*;
 use crate::errors::*;
+use crate::public::*;
 use crate::signature::*;
-
-use crate::PublicKey;
 
 /// An EdDSA secret key.
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop

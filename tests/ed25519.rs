@@ -9,17 +9,13 @@
 
 //! Integration tests for ed25519-dalek.
 
+#[cfg(all(test, feature = "serde"))]
+extern crate bincode;
 extern crate clear_on_drop;
 extern crate ed25519_dalek;
 extern crate hex;
 extern crate rand;
 extern crate sha2;
-
-use std::io::BufReader;
-use std::io::BufRead;
-use std::fs::File;
-use std::string::String;
-use std::vec::Vec;
 
 use ed25519_dalek::*;
 
@@ -31,65 +27,18 @@ use rand::rngs::ThreadRng;
 use sha2::Sha512;
 
 #[cfg(test)]
-mod integrations {
+mod vectors {
+    use std::io::BufReader;
+    use std::io::BufRead;
+    use std::fs::File;
+
     use super::*;
-
-    #[cfg(all(test, feature = "serde"))]
-    static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
-        130, 039, 155, 015, 062, 076, 188, 063,
-        124, 122, 026, 251, 233, 253, 225, 220,
-        014, 041, 166, 120, 108, 035, 254, 077,
-        160, 083, 172, 058, 219, 042, 086, 120, ];
-
-    #[cfg(all(test, feature = "serde"))]
-    static SECRET_KEY: SecretKey = SecretKey([
-        062, 070, 027, 163, 092, 182, 011, 003,
-        077, 234, 098, 004, 011, 127, 079, 228,
-        243, 187, 150, 073, 201, 137, 076, 022,
-        085, 251, 152, 002, 241, 042, 072, 054, ]);
-
-    /// Signature with the above keypair of a blank message.
-    #[cfg(all(test, feature = "serde"))]
-    static SIGNATURE_BYTES: [u8; SIGNATURE_LENGTH] = [
-        010, 126, 151, 143, 157, 064, 047, 001,
-        196, 140, 179, 058, 226, 152, 018, 102,
-        160, 123, 080, 016, 210, 086, 196, 028,
-        053, 231, 012, 157, 169, 019, 158, 063,
-        045, 154, 238, 007, 053, 185, 227, 229,
-        079, 108, 213, 080, 124, 252, 084, 167,
-        216, 085, 134, 144, 129, 149, 041, 081,
-        063, 120, 126, 100, 092, 059, 050, 011, ];
-
-    #[test]
-    fn sign_verify() {  // TestSignVerify
-        let mut csprng: ThreadRng;
-        let keypair: Keypair;
-        let good_sig: Signature;
-        let bad_sig:  Signature;
-
-        let good: &[u8] = "test message".as_bytes();
-        let bad:  &[u8] = "wrong message".as_bytes();
-
-        csprng  = thread_rng();
-        keypair  = Keypair::generate(&mut csprng);
-        good_sig = keypair.sign(&good);
-        bad_sig  = keypair.sign(&bad);
-
-        assert!(keypair.verify(&good, &good_sig).is_ok(),
-                "Verification of a valid signature failed!");
-        assert!(keypair.verify(&good, &bad_sig).is_err(),
-                "Verification of a signature on a different message passed!");
-        assert!(keypair.verify(&bad,  &good_sig).is_err(),
-                "Verification of a signature on a different message passed!");
-    }
 
     // TESTVECTORS is taken from sign.input.gz in agl's ed25519 Golang
     // package. It is a selection of test cases from
     // http://ed25519.cr.yp.to/python/sign.input
-    #[cfg(test)]
-    #[cfg(not(release))]
     #[test]
-    fn golden() { // TestGolden
+    fn against_reference_implementation() { // TestGolden
         let mut line: String;
         let mut lineno: usize = 0;
 
@@ -160,6 +109,34 @@ mod integrations {
                 \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
         assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2).is_ok(),
                 "Could not verify ed25519ph signature!");
+    }
+}
+
+#[cfg(test)]
+mod integrations {
+    use super::*;
+
+    #[test]
+    fn sign_verify() {  // TestSignVerify
+        let mut csprng: ThreadRng;
+        let keypair: Keypair;
+        let good_sig: Signature;
+        let bad_sig:  Signature;
+
+        let good: &[u8] = "test message".as_bytes();
+        let bad:  &[u8] = "wrong message".as_bytes();
+
+        csprng  = thread_rng();
+        keypair  = Keypair::generate(&mut csprng);
+        good_sig = keypair.sign(&good);
+        bad_sig  = keypair.sign(&bad);
+
+        assert!(keypair.verify(&good, &good_sig).is_ok(),
+                "Verification of a valid signature failed!");
+        assert!(keypair.verify(&good, &bad_sig).is_err(),
+                "Verification of a signature on a different message passed!");
+        assert!(keypair.verify(&bad,  &good_sig).is_err(),
+                "Verification of a signature on a different message passed!");
     }
 
     #[test]
@@ -236,11 +213,37 @@ mod integrations {
 
         assert!(public_from_secret == public_from_expanded_secret);
     }
+}
 
-    #[cfg(all(test, feature = "serde"))]
-    use bincode::{serialize, serialized_size, deserialize, Infinite};
+#[cfg(all(test, feature = "serde"))]
+mod serialisation {
+    use super::*;
 
-    #[cfg(all(test, feature = "serde"))]
+    use self::bincode::{serialize, serialized_size, deserialize, Infinite};
+
+    static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
+        130, 039, 155, 015, 062, 076, 188, 063,
+        124, 122, 026, 251, 233, 253, 225, 220,
+        014, 041, 166, 120, 108, 035, 254, 077,
+        160, 083, 172, 058, 219, 042, 086, 120, ];
+
+    static SECRET_KEY_BYTES: [u8; SECRET_KEY_LENGTH] = [
+        062, 070, 027, 163, 092, 182, 011, 003,
+        077, 234, 098, 004, 011, 127, 079, 228,
+        243, 187, 150, 073, 201, 137, 076, 022,
+        085, 251, 152, 002, 241, 042, 072, 054, ];
+
+    /// Signature with the above keypair of a blank message.
+    static SIGNATURE_BYTES: [u8; SIGNATURE_LENGTH] = [
+        010, 126, 151, 143, 157, 064, 047, 001,
+        196, 140, 179, 058, 226, 152, 018, 102,
+        160, 123, 080, 016, 210, 086, 196, 028,
+        053, 231, 012, 157, 169, 019, 158, 063,
+        045, 154, 238, 007, 053, 185, 227, 229,
+        079, 108, 213, 080, 124, 252, 084, 167,
+        216, 085, 134, 144, 129, 149, 041, 081,
+        063, 120, 126, 100, 092, 059, 050, 011, ];
+
     #[test]
     fn serialize_deserialize_signature() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
@@ -250,7 +253,6 @@ mod integrations {
         assert_eq!(signature, decoded_signature);
     }
 
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_deserialize_public_key() {
         let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
@@ -261,34 +263,32 @@ mod integrations {
         assert_eq!(public_key, decoded_public_key);
     }
 
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_deserialize_secret_key() {
-        let encoded_secret_key: Vec<u8> = serialize(&SECRET_KEY, Infinite).unwrap();
+        let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
+        let encoded_secret_key: Vec<u8> = serialize(&secret_key, Infinite).unwrap();
         let decoded_secret_key: SecretKey = deserialize(&encoded_secret_key).unwrap();
 
         for i in 0..32 {
-            assert_eq!(SECRET_KEY.0[i], decoded_secret_key.0[i]);
+            assert_eq!(SECRET_KEY_BYTES[i], decoded_secret_key.as_bytes()[i]);
         }
     }
 
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_public_key_size() {
         let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
         assert_eq!(serialized_size(&public_key) as usize, 40); // These sizes are specific to bincode==1.0.1
     }
 
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
         assert_eq!(serialized_size(&signature) as usize, 72); // These sizes are specific to bincode==1.0.1
     }
 
-    #[cfg(all(test, feature = "serde"))]
     #[test]
     fn serialize_secret_key_size() {
-        assert_eq!(serialized_size(&SECRET_KEY) as usize, 40); // These sizes are specific to bincode==1.0.1
+        let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
+        assert_eq!(serialized_size(&secret_key) as usize, 40); // These sizes are specific to bincode==1.0.1
     }
 }

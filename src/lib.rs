@@ -251,9 +251,9 @@ extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
 extern crate rand;
-extern crate sha2;
 #[cfg(feature = "serde")]
 extern crate serde;
+extern crate sha2;
 
 mod constants;
 mod ed25519;

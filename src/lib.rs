@@ -243,17 +243,15 @@
 #![warn(rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
-extern crate clear_on_drop;
-extern crate curve25519_dalek;
-extern crate failure;
-extern crate rand;
-
 #[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
 
+extern crate clear_on_drop;
+extern crate curve25519_dalek;
+extern crate failure;
+extern crate rand;
 extern crate sha2;
-
 #[cfg(feature = "serde")]
 extern crate serde;
 

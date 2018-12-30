@@ -14,8 +14,8 @@ use core::fmt::Debug;
 use clear_on_drop::clear::Clear;
 
 use curve25519_dalek::constants;
-use curve25519_dalek::digest::Digest;
 use curve25519_dalek::digest::generic_array::typenum::U64;
+use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 
@@ -25,13 +25,13 @@ use rand::Rng;
 use sha2::Sha512;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
-#[cfg(feature = "serde")]
-use serde::{Serializer, Deserializer};
-#[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde::{Deserializer, Serializer};
 
 use crate::constants::*;
 use crate::errors::*;
@@ -40,7 +40,7 @@ use crate::signature::*;
 
 /// An EdDSA secret key.
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
-pub struct SecretKey(pub (crate) [u8; SECRET_KEY_LENGTH]);
+pub struct SecretKey(pub(crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -110,8 +110,10 @@ impl SecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, SignatureError> {
         if bytes.len() != SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError{
-                name: "SecretKey", length: SECRET_KEY_LENGTH }));
+            return Err(SignatureError(InternalError::BytesLengthError {
+                name: "SecretKey",
+                length: SECRET_KEY_LENGTH,
+            }));
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
@@ -171,7 +173,8 @@ impl SecretKey {
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::OsRng`
     pub fn generate<T>(csprng: &mut T) -> SecretKey
-        where T: CryptoRng + Rng,
+    where
+        T: CryptoRng + Rng,
     {
         let mut sk: SecretKey = SecretKey([0u8; 32]);
 
@@ -183,14 +186,20 @@ impl SecretKey {
 
 #[cfg(feature = "serde")]
 impl Serialize for SecretKey {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_bytes(self.as_bytes())
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'d> Deserialize<'d> for SecretKey {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'d>,
+    {
         struct SecretKeyVisitor;
 
         impl<'d> Visitor<'d> for SecretKeyVisitor {
@@ -200,7 +209,10 @@ impl<'d> Deserialize<'d> for SecretKey {
                 formatter.write_str("An ed25519 secret key as 32 bytes, as specified in RFC8032.")
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<SecretKey, E> where E: SerdeError {
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<SecretKey, E>
+            where
+                E: SerdeError,
+            {
                 SecretKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
             }
         }
@@ -245,8 +257,8 @@ impl<'d> Deserialize<'d> for SecretKey {
 // "generalised EdDSA" and "VXEdDSA".
 #[derive(Default)] // we derive Default in order to use the clear() method in Drop
 pub struct ExpandedSecretKey {
-    pub (crate) key: Scalar,
-    pub (crate) nonce: [u8; 32],
+    pub(crate) key: Scalar,
+    pub(crate) nonce: [u8; 32],
 }
 
 /// Overwrite secret key material with null bytes when it goes out of scope.
@@ -388,8 +400,10 @@ impl ExpandedSecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError{
-                name: "ExpandedSecretKey", length: EXPANDED_SECRET_KEY_LENGTH }));
+            return Err(SignatureError(InternalError::BytesLengthError {
+                name: "ExpandedSecretKey",
+                length: EXPANDED_SECRET_KEY_LENGTH,
+            }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -397,8 +411,10 @@ impl ExpandedSecretKey {
         lower.copy_from_slice(&bytes[00..32]);
         upper.copy_from_slice(&bytes[32..64]);
 
-        Ok(ExpandedSecretKey{ key:   Scalar::from_bits(lower),
-                              nonce:                   upper  })
+        Ok(ExpandedSecretKey {
+            key: Scalar::from_bits(lower),
+            nonce: upper,
+        })
     }
 
     /// Sign a message with this `ExpandedSecretKey`.
@@ -424,7 +440,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature{ R, s }
+        Signature { R, s }
     }
 
     /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
@@ -452,8 +468,8 @@ impl ExpandedSecretKey {
         public_key: &PublicKey,
         context: Option<&'static [u8]>,
     ) -> Signature
-        where
-            D: Digest<OutputSize = U64>,
+    where
+        D: Digest<OutputSize = U64>,
     {
         let mut h: Sha512;
         let mut prehash: [u8; 64] = [0u8; 64];
@@ -506,32 +522,43 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature{ R, s }
+        Signature { R, s }
     }
-
 }
 
 #[cfg(feature = "serde")]
 impl Serialize for ExpandedSecretKey {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_bytes(&self.to_bytes()[..])
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'d> Deserialize<'d> for ExpandedSecretKey {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'d>,
+    {
         struct ExpandedSecretKeyVisitor;
 
         impl<'d> Visitor<'d> for ExpandedSecretKeyVisitor {
             type Value = ExpandedSecretKey;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str("An ed25519 expanded secret key as 64 bytes, as specified in RFC8032.")
+                formatter.write_str(
+                    "An ed25519 expanded secret key as 64 bytes, as specified in RFC8032.",
+                )
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<ExpandedSecretKey, E> where E: SerdeError {
-                ExpandedSecretKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<ExpandedSecretKey, E>
+            where
+                E: SerdeError,
+            {
+                ExpandedSecretKey::from_bytes(bytes)
+                    .or(Err(SerdeError::invalid_length(bytes.len(), &self)))
             }
         }
         deserializer.deserialize_bytes(ExpandedSecretKeyVisitor)

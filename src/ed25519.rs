@@ -39,25 +39,25 @@ use curve25519_dalek::scalar::Scalar;
 use errors::SignatureError;
 use errors::InternalError;
 
-/// The length of a curve25519 EdDSA `Signature`, in bytes.
+/// The length of a ed25519 `Signature`, in bytes.
 pub const SIGNATURE_LENGTH: usize = 64;
 
-/// The length of a curve25519 EdDSA `SecretKey`, in bytes.
+/// The length of a ed25519 `SecretKey`, in bytes.
 pub const SECRET_KEY_LENGTH: usize = 32;
 
-/// The length of an ed25519 EdDSA `PublicKey`, in bytes.
+/// The length of an ed25519 `PublicKey`, in bytes.
 pub const PUBLIC_KEY_LENGTH: usize = 32;
 
-/// The length of an ed25519 EdDSA `Keypair`, in bytes.
+/// The length of an ed25519 `Keypair`, in bytes.
 pub const KEYPAIR_LENGTH: usize = SECRET_KEY_LENGTH + PUBLIC_KEY_LENGTH;
 
-/// The length of the "key" portion of an "expanded" curve25519 EdDSA secret key, in bytes.
+/// The length of the "key" portion of an "expanded" ed25519 secret key, in bytes.
 const EXPANDED_SECRET_KEY_KEY_LENGTH: usize = 32;
 
-/// The length of the "nonce" portion of an "expanded" curve25519 EdDSA secret key, in bytes.
+/// The length of the "nonce" portion of an "expanded" ed25519 secret key, in bytes.
 const EXPANDED_SECRET_KEY_NONCE_LENGTH: usize = 32;
 
-/// The length of an "expanded" curve25519 EdDSA key, `ExpandedSecretKey`, in bytes.
+/// The length of an "expanded" ed25519 key, `ExpandedSecretKey`, in bytes.
 pub const EXPANDED_SECRET_KEY_LENGTH: usize = EXPANDED_SECRET_KEY_KEY_LENGTH + EXPANDED_SECRET_KEY_NONCE_LENGTH;
 
 /// An EdDSA signature.

@@ -15,13 +15,13 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
-#[cfg(feature = "serde")]
-use serde::{Serializer, Deserializer};
-#[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde::{Deserializer, Serializer};
 
 use crate::constants::*;
 use crate::errors::*;
@@ -45,7 +45,7 @@ pub struct Signature {
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.  The scalar is then multiplied by the distinguished
     /// basepoint to produce `R`, and `EdwardsPoint`.
-    pub (crate) R: CompressedEdwardsY,
+    pub(crate) R: CompressedEdwardsY,
 
     /// `s` is a `Scalar`, formed by using an hash function with 512-bits output
     /// to produce the digest of:
@@ -56,11 +56,13 @@ pub struct Signature {
     ///
     /// This digest is then interpreted as a `Scalar` and reduced into an
     /// element in ℤ/lℤ.
-    pub (crate) s: Scalar,
+    pub(crate) s: Scalar,
 }
 
 impl Clone for Signature {
-    fn clone(&self) -> Self { *self }
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl Debug for Signature {
@@ -84,8 +86,10 @@ impl Signature {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<Signature, SignatureError> {
         if bytes.len() != SIGNATURE_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError{
-                name: "Signature", length: SIGNATURE_LENGTH }));
+            return Err(SignatureError(InternalError::BytesLengthError {
+                name: "Signature",
+                length: SIGNATURE_LENGTH,
+            }));
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -97,20 +101,29 @@ impl Signature {
             return Err(SignatureError(InternalError::ScalarFormatError));
         }
 
-        Ok(Signature{ R: CompressedEdwardsY(lower), s: Scalar::from_bits(upper) })
+        Ok(Signature {
+            R: CompressedEdwardsY(lower),
+            s: Scalar::from_bits(upper),
+        })
     }
 }
 
 #[cfg(feature = "serde")]
 impl Serialize for Signature {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_bytes(&self.to_bytes()[..])
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'d> Deserialize<'d> for Signature {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'d>,
+    {
         struct SignatureVisitor;
 
         impl<'d> Visitor<'d> for SignatureVisitor {
@@ -120,7 +133,10 @@ impl<'d> Deserialize<'d> for Signature {
                 formatter.write_str("An ed25519 signature as 64 bytes, as specified in RFC8032.")
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Signature, E> where E: SerdeError{
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Signature, E>
+            where
+                E: SerdeError,
+            {
                 Signature::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
             }
         }

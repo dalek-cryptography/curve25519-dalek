@@ -259,6 +259,7 @@ extern crate serde;
 
 mod constants;
 mod ed25519;
+mod secret;
 mod signature;
 
 pub mod errors;

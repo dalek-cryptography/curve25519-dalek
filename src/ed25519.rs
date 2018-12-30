@@ -15,18 +15,18 @@ use rand::CryptoRng;
 use rand::Rng;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
-#[cfg(feature = "serde")]
-use serde::{Serializer, Deserializer};
-#[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde::{Deserializer, Serializer};
 
 pub use sha2::Sha512;
 
-pub use curve25519_dalek::digest::Digest;
 use curve25519_dalek::digest::generic_array::typenum::U64;
+pub use curve25519_dalek::digest::Digest;
 
 use curve25519_dalek::constants;
 use curve25519_dalek::edwards::EdwardsPoint;
@@ -199,8 +199,10 @@ impl Keypair {
     /// is an `SignatureError` describing the error that occurred.
     pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, SignatureError> {
         if bytes.len() != KEYPAIR_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError{
-                name: "Keypair", length: KEYPAIR_LENGTH}));
+            return Err(SignatureError(InternalError::BytesLengthError {
+                name: "Keypair",
+                length: KEYPAIR_LENGTH,
+            }));
         }
         let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
         let public = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..])?;
@@ -243,7 +245,8 @@ impl Keypair {
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     pub fn generate<R>(csprng: &mut R) -> Keypair
-        where R: CryptoRng + Rng,
+    where
+        R: CryptoRng + Rng,
     {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = (&sk).into();
@@ -252,8 +255,7 @@ impl Keypair {
     }
 
     /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature
-    {
+    pub fn sign(&self, message: &[u8]) -> Signature {
         let expanded: ExpandedSecretKey = (&self.secret).into();
 
         expanded.sign(&message, &self.public)
@@ -356,12 +358,12 @@ impl Keypair {
     pub fn sign_prehashed<D>(
         &self,
         prehashed_message: D,
-        context: Option<&'static [u8]>
+        context: Option<&'static [u8]>,
     ) -> Signature
-        where
-            D: Digest<OutputSize = U64>,
+    where
+        D: Digest<OutputSize = U64>,
     {
-        let expanded: ExpandedSecretKey = (&self.secret).into();  // xxx thanks i hate this
+        let expanded: ExpandedSecretKey = (&self.secret).into(); // xxx thanks i hate this
 
         expanded.sign_prehashed(prehashed_message, &self.public, context)
     }
@@ -436,10 +438,10 @@ impl Keypair {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-        signature: &Signature
+        signature: &Signature,
     ) -> Result<(), SignatureError>
-        where
-            D: Digest<OutputSize = U64>,
+    where
+        D: Digest<OutputSize = U64>,
     {
         self.public.verify_prehashed(prehashed_message, context, signature)
     }
@@ -447,15 +449,20 @@ impl Keypair {
 
 #[cfg(feature = "serde")]
 impl Serialize for Keypair {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         serializer.serialize_bytes(&self.to_bytes()[..])
     }
 }
 
 #[cfg(feature = "serde")]
 impl<'d> Deserialize<'d> for Keypair {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'d> {
-
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'d>,
+    {
         struct KeypairVisitor;
 
         impl<'d> Visitor<'d> for KeypairVisitor {
@@ -467,7 +474,10 @@ impl<'d> Deserialize<'d> for Keypair {
                                      32 bytes is a compressed point for a public key.")
             }
 
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Keypair, E> where E: SerdeError {
+            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Keypair, E>
+            where
+                E: SerdeError,
+            {
                 let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
                 let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
 
@@ -498,9 +508,7 @@ mod test {
             use std::mem;
             use std::slice;
 
-            unsafe {
-                slice::from_raw_parts(x as *const T as *const u8, mem::size_of_val(x))
-            }
+            unsafe { slice::from_raw_parts(x as *const T as *const u8, mem::size_of_val(x)) }
         }
 
         assert!(!as_bytes(&keypair).contains(&0x15));

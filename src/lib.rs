@@ -261,6 +261,7 @@ extern crate serde;
 #[cfg(all(test, feature = "serde"))]
 extern crate bincode;
 
+mod constants;
 mod ed25519;
 
 pub mod errors;

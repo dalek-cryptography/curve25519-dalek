@@ -1083,7 +1083,7 @@ impl Keypair {
     /// # fn main() {
     ///
     /// use rand::Rng;
-    /// use rand::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     ///

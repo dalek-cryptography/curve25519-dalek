@@ -263,6 +263,7 @@ extern crate bincode;
 
 mod constants;
 mod ed25519;
+mod signature;
 
 pub mod errors;
 

@@ -11,7 +11,6 @@
 
 #[cfg(all(test, feature = "serde"))]
 extern crate bincode;
-extern crate clear_on_drop;
 extern crate ed25519_dalek;
 extern crate hex;
 extern crate rand;

@@ -238,7 +238,6 @@
 //! ```
 
 #![no_std]
-#![allow(unused_features)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 extern crate clear_on_drop;

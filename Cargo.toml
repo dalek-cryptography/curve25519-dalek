@@ -62,7 +62,7 @@ packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
 default = ["std", "u64_backend"]
-std = ["alloc", "subtle/std"]
+std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = []
 yolocrypto = []
 

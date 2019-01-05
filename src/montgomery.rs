@@ -305,7 +305,7 @@ mod test {
     use super::*;
 
     #[cfg(feature = "rand")]
-    use rand::rngs::OsRng;
+    use rand_os::OsRng;
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
     #[test]

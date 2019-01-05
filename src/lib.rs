@@ -41,10 +41,12 @@ extern crate std;
 #[cfg(all(feature = "nightly", feature = "avx2_backend"))]
 extern crate packed_simd;
 
-extern crate rand;
+extern crate rand_core;
 extern crate clear_on_drop;
 extern crate byteorder;
 pub extern crate digest;
+#[cfg(all(test, feature = "stage2_build"))]
+extern crate rand_os;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

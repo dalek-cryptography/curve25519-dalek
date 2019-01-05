@@ -19,10 +19,13 @@ travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"
 version = "1.0.0-pre.0"
 default-features = false
 
-[dependencies.rand]
-version = "0.5"
+[dependencies.rand_core]
+version = "0.3"
 default-features = false
-features = ["i128_support"]
+
+[dependencies.rand]
+version = "0.6"
+optional = true
 
 [dependencies.serde]
 version = "^1.0"
@@ -44,6 +47,8 @@ hex = "^0.3"
 sha2 = "^0.8"
 bincode = "^0.9"
 criterion = "0.2"
+rand_os = "0.1.0"
+rand_chacha = "0.1.0"
 
 [[bench]]
 name = "ed25519_benchmarks"
@@ -52,9 +57,9 @@ harness = false
 [features]
 default = ["std", "u64_backend"]
 # We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
-std = ["curve25519-dalek/std"]
+std = ["curve25519-dalek/std", "rand"]
 alloc = ["curve25519-dalek/alloc"]
-nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]
 u64_backend = ["curve25519-dalek/u64_backend"]

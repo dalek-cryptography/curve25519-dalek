@@ -13,8 +13,7 @@
 use core::default::Default;
 use core::fmt::{Debug};
 
-use rand::CryptoRng;
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
@@ -253,15 +252,15 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
+    /// extern crate rand_os;
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
-    /// use rand::Rng;
-    /// use rand::OsRng;
+    /// use rand_os::OsRng;
+
     /// use sha2::Sha512;
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::SecretKey;
@@ -280,15 +279,15 @@ impl SecretKey {
     /// traits, and which returns 512 bits of output—via:
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_chacha;
+    /// # extern crate rand_core;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # fn main() {
     /// #
-    /// # use rand::Rng;
-    /// # use rand::ChaChaRng;
-    /// # use rand::SeedableRng;
+    /// # use rand_core::SeedableRng;
+    /// # use rand_chacha::ChaChaRng;
     /// # use sha2::Sha512;
     /// # use ed25519_dalek::PublicKey;
     /// # use ed25519_dalek::SecretKey;
@@ -309,7 +308,7 @@ impl SecretKey {
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`
     pub fn generate<T>(csprng: &mut T) -> SecretKey
-        where T: CryptoRng + Rng,
+        where T: CryptoRng + RngCore,
     {
         let mut sk: SecretKey = SecretKey([0u8; 32]);
 
@@ -403,14 +402,14 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     /// #
-    /// use rand::{Rng, OsRng};
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
@@ -439,14 +438,14 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #
-    /// use rand::{Rng, OsRng};
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
@@ -480,16 +479,17 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
+    /// #
+    /// use rand_os::OsRng;
+    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
+    /// use ed25519_dalek::SignatureError;
     /// #
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
-    /// use rand::{Rng, OsRng};
-    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
-    /// use ed25519_dalek::SignatureError;
     ///
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
@@ -530,14 +530,14 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     /// #
-    /// use rand::{Rng, OsRng};
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
@@ -914,7 +914,7 @@ impl From<ExpandedSecretKey> for PublicKey {
 /// * `messages` is a slice of byte slices, one per signed message.
 /// * `signatures` is a slice of `Signature`s.
 /// * `public_keys` is a slice of `PublicKey`s.
-/// * `csprng` is an implementation of `Rng + CryptoRng`, such as `rand::ThreadRng`.
+/// * `csprng` is an implementation of `Rng + CryptoRng`, such as `rand::rngs::ThreadRng`.
 ///
 /// # Panics
 ///
@@ -939,7 +939,7 @@ impl From<ExpandedSecretKey> for PublicKey {
 /// use ed25519_dalek::PublicKey;
 /// use ed25519_dalek::Signature;
 /// use rand::thread_rng;
-/// use rand::ThreadRng;
+/// use rand::rngs::ThreadRng;
 /// use sha2::Sha512;
 ///
 /// # fn main() {
@@ -972,7 +972,7 @@ pub fn verify_batch<D>(messages: &[&[u8]],
     use std::vec::Vec;
 
     use core::iter::once;
-    use rand::thread_rng;
+    use rand::{Rng, thread_rng};
 
     use curve25519_dalek::traits::IsIdentity;
     use curve25519_dalek::traits::VartimeMultiscalarMul;
@@ -1111,15 +1111,14 @@ impl Keypair {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
+    /// extern crate rand_os;
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     ///
-    /// use rand::Rng;
-    /// use rand::OsRng;
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
@@ -1135,7 +1134,7 @@ impl Keypair {
     ///
     /// # Input
     ///
-    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::ChaChaRng`.
+    /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_chacha::ChaChaRng`.
     ///
     /// The caller must also supply a hash function which implements the
     /// `Digest` and `Default` traits, and which returns 512 bits of output.
@@ -1144,7 +1143,7 @@ impl Keypair {
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     pub fn generate<D, R>(csprng: &mut R) -> Keypair
         where D: Digest<OutputSize = U64> + Default,
-              R: CryptoRng + Rng,
+              R: CryptoRng + RngCore,
     {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = PublicKey::from_secret::<D>(&sk);
@@ -1184,8 +1183,8 @@ impl Keypair {
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     /// use rand::thread_rng;
-    /// use rand::ThreadRng;
-    /// use sha2::Sha512;
+    /// use rand::rngs::ThreadRng;
+    /// use sha2::{Sha512, Digest};
     ///
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
@@ -1194,7 +1193,7 @@ impl Keypair {
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
     /// // Create a hash digest object which we'll feed the message into:
-    /// let prehashed: Sha512 = Sha512::default();
+    /// let mut prehashed: Sha512 = Sha512::default();
     ///
     /// prehashed.input(message);
     /// # }
@@ -1232,15 +1231,15 @@ impl Keypair {
     /// # use ed25519_dalek::Keypair;
     /// # use ed25519_dalek::Signature;
     /// # use rand::thread_rng;
-    /// # use rand::ThreadRng;
-    /// # use sha2::Sha512;
+    /// # use rand::rngs::ThreadRng;
+    /// # use sha2::{Sha512, Digest};
     /// #
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
     /// # let mut csprng: ThreadRng = thread_rng();
     /// # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
-    /// # let prehashed: Sha512 = Sha512::default();
+    /// # let mut prehashed: Sha512 = Sha512::default();
     /// # prehashed.input(message);
     /// #
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
@@ -1294,9 +1293,10 @@ impl Keypair {
     ///
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
+    /// use ed25519_dalek::SignatureError;
     /// use rand::thread_rng;
-    /// use rand::ThreadRng;
-    /// use sha2::Sha512;
+    /// use rand::rngs::ThreadRng;
+    /// use sha2::{Sha512, Digest};
     ///
     /// # #[cfg(all(feature = "std", feature = "sha2"))]
     /// # fn main() {
@@ -1304,7 +1304,7 @@ impl Keypair {
     /// let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
-    /// let prehashed: Sha512 = Sha512::default();
+    /// let mut prehashed: Sha512 = Sha512::new();
     /// prehashed.input(message);
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
@@ -1312,12 +1312,12 @@ impl Keypair {
     /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
     ///
     /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
-    /// let prehashed_again: Sha512 = Sha512::default();
+    /// let mut prehashed_again: Sha512 = Sha512::default();
     /// prehashed_again.input(message);
     ///
-    /// let valid: bool = keypair.public.verify_prehashed(prehashed_again, context, sig);
+    /// let res: Result<(), SignatureError> = keypair.public.verify_prehashed(prehashed_again, Some(context), &sig);
     ///
-    /// assert!(valid);
+    /// assert!(res.is_ok());
     /// # }
     /// #
     /// # #[cfg(any(not(feature = "sha2"), not(feature = "std")))]
@@ -1380,9 +1380,9 @@ mod test {
     use std::string::String;
     use std::vec::Vec;
     use rand::thread_rng;
-    use rand::ChaChaRng;
-    use rand::SeedableRng;
-    use rand::ThreadRng;
+    use rand::rngs::ThreadRng;
+    use rand_chacha::ChaChaRng;
+    use rand_core::SeedableRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;

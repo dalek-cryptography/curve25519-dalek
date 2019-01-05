@@ -259,8 +259,12 @@
 
 extern crate curve25519_dalek;
 extern crate failure;
-extern crate rand;
+extern crate rand_core;
 extern crate clear_on_drop;
+#[cfg(any(feature = "std", test))]
+extern crate rand;
+#[cfg(test)]
+extern crate rand_chacha;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]

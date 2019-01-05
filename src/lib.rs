@@ -37,14 +37,14 @@
 //!
 //! ```
 //! extern crate x25519_dalek;
-//! extern crate rand;
+//! extern crate rand_os;
 //!
 //! # fn main() {
 //! use x25519_dalek::generate_secret;
 //! use x25519_dalek::generate_public;
-//! use rand::thread_rng;
+//! use rand_os::OsRng;
 //!
-//! let mut alice_csprng = thread_rng();
+//! let mut alice_csprng = OsRng::new().unwrap();
 //! let     alice_secret = generate_secret(&mut alice_csprng);
 //! let     alice_public = generate_public(&alice_secret);
 //! # }
@@ -54,14 +54,14 @@
 //!
 //! ```
 //! # extern crate x25519_dalek;
-//! # extern crate rand;
+//! # extern crate rand_os;
 //! #
 //! # fn main() {
 //! # use x25519_dalek::generate_secret;
 //! # use x25519_dalek::generate_public;
-//! # use rand::thread_rng;
+//! # use rand_os::OsRng;
 //! #
-//! let mut bob_csprng = thread_rng();
+//! let mut bob_csprng = OsRng::new().unwrap();
 //! let     bob_secret = generate_secret(&mut bob_csprng);
 //! let     bob_public = generate_public(&bob_secret);
 //! # }
@@ -73,18 +73,18 @@
 //!
 //! ```
 //! # extern crate x25519_dalek;
-//! # extern crate rand;
+//! # extern crate rand_os;
 //! #
 //! # fn main() {
 //! # use x25519_dalek::generate_secret;
 //! # use x25519_dalek::generate_public;
-//! # use rand::thread_rng;
+//! # use rand_os::OsRng;
 //! #
-//! # let mut alice_csprng = thread_rng();
+//! # let mut alice_csprng = OsRng::new().unwrap();
 //! # let     alice_secret = generate_secret(&mut alice_csprng);
 //! # let     alice_public = generate_public(&alice_secret);
 //! #
-//! # let mut bob_csprng = thread_rng();
+//! # let mut bob_csprng = OsRng::new().unwrap();
 //! # let     bob_secret = generate_secret(&mut bob_csprng);
 //! # let     bob_public = generate_public(&bob_secret);
 //! #
@@ -98,19 +98,19 @@
 //!
 //! ```
 //! # extern crate x25519_dalek;
-//! # extern crate rand;
+//! # extern crate rand_os;
 //! #
 //! # fn main() {
 //! # use x25519_dalek::diffie_hellman;
 //! # use x25519_dalek::generate_secret;
 //! # use x25519_dalek::generate_public;
-//! # use rand::thread_rng;
+//! # use rand_os::OsRng;
 //! #
-//! # let mut alice_csprng = thread_rng();
+//! # let mut alice_csprng = OsRng::new().unwrap();
 //! # let     alice_secret = generate_secret(&mut alice_csprng);
 //! # let     alice_public = generate_public(&alice_secret);
 //! #
-//! # let mut bob_csprng = thread_rng();
+//! # let mut bob_csprng = OsRng::new().unwrap();
 //! # let     bob_secret = generate_secret(&mut bob_csprng);
 //! # let     bob_public = generate_public(&bob_secret);
 //! #
@@ -129,9 +129,6 @@
 extern crate curve25519_dalek;
 
 extern crate rand_core;
-
-#[cfg(test)]
-extern crate rand;
 
 mod x25519;
 

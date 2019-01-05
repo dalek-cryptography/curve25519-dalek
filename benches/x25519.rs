@@ -11,12 +11,12 @@
 
 #[macro_use]
 extern crate criterion;
-extern crate rand;
+extern crate rand_os;
 extern crate x25519_dalek;
 
 use criterion::Criterion;
 
-use rand::OsRng;
+use rand_os::OsRng;
 
 use x25519_dalek::generate_public;
 use x25519_dalek::generate_secret;

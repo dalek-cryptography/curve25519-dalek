@@ -30,11 +30,11 @@ First, Alice uses `x25519_dalek::generate_secret()` and then
 
 ```rust
 extern crate x25519_dalek;
-extern crate rand;
+extern crate rand_os;
 
 use x25519_dalek::generate_secret;
 use x25519_dalek::generate_public;
-use rand::OsRng;
+use rand_os::OsRng;
 
 let mut alice_csprng = OsRng::new().unwrap();
 let     alice_secret = generate_secret(&mut alice_csprng);

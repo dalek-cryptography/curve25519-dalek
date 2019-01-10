@@ -7,122 +7,20 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 
-//! x25519 Diffie-Hellman key exchange
-//!
-//! A pure-Rust implementation of x25519 elliptic curve Diffie-Hellman key
-//! exchange as specified by Mike Hamburg and Adam Langley in
-//! [RFC7748](https://tools.ietf.org/html/rfc7748).
-//!
-//! # Examples
-//!
-//! [![](https://raw.githubusercontent.com/isislovecruft/x25519-dalek/master/res/bubblesort-zines-secret-messages-cover.jpeg)](https://shop.bubblesort.io)
-//!
-//! "Secret Messages" cover image and [zine](https://shop.bubblesort.io/products/secret-messages-zine)
-//! copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
-//!
-//! Alice and Bob are two adorable kittens who have lost their mittens, and they
-//! wish to be able to send secret messages to each other to coordinate finding
-//! them, otherwise—if their caretaker cat finds out—they will surely be called
-//! naughty kittens and be given no pie!
-//!
-//! But the two kittens are quite clever.  Even though their paws are still too
-//! big and the rest of them is 90% fuzziness, these clever kittens have been
-//! studying up on modern public key cryptography and have learned a nifty trick
-//! called *elliptic curve Diffie-Hellman key exchange*.  With the right
-//! incantations, the kittens will be able to secretly organise to find their
-//! mittens, and then spend the rest of the afternoon nomming some yummy pie!
-//!
-//! First, Alice uses `x25519_dalek::EphemeralSecret::new()` and
-//! `x25519_dalek::EphemeralPublic::from()` to produce her secret and public keys:
-//!
-//! ```
-//! extern crate x25519_dalek;
-//! extern crate rand;
-//!
-//! # fn main() {
-//! use x25519_dalek::EphemeralPublic;
-//! use x25519_dalek::EphemeralSecret;
-//! use rand::thread_rng;
-//!
-//! let mut alice_csprng = thread_rng();
-//! let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-//! let     alice_public = EphemeralPublic::from(&alice_secret);
-//! # }
-//! ```
-//!
-//! Bob does the same:
-//!
-//! ```
-//! # extern crate x25519_dalek;
-//! # extern crate rand;
-//! #
-//! # fn main() {
-//! # use x25519_dalek::EphemeralPublic;
-//! # use x25519_dalek::EphemeralSecret;
-//! # use rand::thread_rng;
-//! #
-//! let mut bob_csprng = thread_rng();
-//! let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-//! let     bob_public = EphemeralPublic::from(&bob_secret);
-//! # }
-//! ```
-//!
-//! Alice meows across the room, telling `alice_public` to Bob, and Bob
-//! loudly meows `bob_public` back to Alice.  Alice now computes her
-//! shared secret with Bob by doing:
-//!
-//! ```
-//! # extern crate x25519_dalek;
-//! # extern crate rand;
-//! #
-//! # fn main() {
-//! # use x25519_dalek::EphemeralPublic;
-//! # use x25519_dalek::EphemeralSecret;
-//! # use rand::thread_rng;
-//! #
-//! # let mut alice_csprng = thread_rng();
-//! # let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-//! # let     alice_public = EphemeralPublic::from(&alice_secret);
-//! #
-//! # let mut bob_csprng = thread_rng();
-//! # let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-//! # let     bob_public = EphemeralPublic::from(&bob_secret);
-//! #
-//! #
-//! let shared_secret = EphemeralSecret::diffie_hellman(alice_secret, &bob_public);
-//! # }
-//! ```
-//!
-//! Similarly, Bob computes the same shared secret by doing:
-//!
-//! ```
-//! # extern crate x25519_dalek;
-//! # extern crate rand;
-//! #
-//! # fn main() {
-//! # use x25519_dalek::EphemeralPublic;
-//! # use x25519_dalek::EphemeralSecret;
-//! # use rand::thread_rng;
-//! #
-//! # let mut alice_csprng = thread_rng();
-//! # let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-//! # let     alice_public = EphemeralPublic::from(&alice_secret);
-//! #
-//! # let mut bob_csprng = thread_rng();
-//! # let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-//! # let     bob_public = EphemeralPublic::from(&bob_secret);
-//! #
-//! let shared_secret = EphemeralSecret::diffie_hellman(bob_secret, &alice_public);
-//! # }
-//! ```
-//!
-//! Voilá!  Alice and Bob can now use their shared secret to encrypt their
-//! meows, for example, by using it to generate a key and nonce for an
-//! authenticated-encryption cipher.
+// Refuse to compile if documentation is missing, but only on nightly.
+//
+// This means that missing docs will still fail CI, but means we can use
+// README.md as the crate documentation.
 
 #![no_std]
 #![cfg_attr(feature = "bench", feature(test))]
-#![deny(missing_docs)]
+#![cfg_attr(feature = "nightly", feature(external_doc))]
+#![cfg_attr(feature = "nightly", deny(missing_docs))]
+#![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
+#![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
+
+//! Note that docs will only build on nightly Rust until
+//! `feature(external_doc)` is stabilized.
 
 extern crate clear_on_drop;
 

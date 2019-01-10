@@ -20,16 +20,19 @@ exclude = [
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [dependencies.curve25519-dalek]
-version = "^0.19"
+version = "1"
 default-features = false
 
 [dependencies.rand_core]
 default-features = false
 version = "0.2"
 
+[dependencies.clear_on_drop]
+version = "0.2"
+
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.5"
+rand = "0.6"
 
 [[bench]]
 name = "x25519"
@@ -38,6 +41,6 @@ harness = false
 [features]
 default = ["std", "nightly", "u64_backend"]
 std = ["curve25519-dalek/std"]
-nightly = ["curve25519-dalek/nightly"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]

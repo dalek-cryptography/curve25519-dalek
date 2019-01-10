@@ -11,26 +11,28 @@
 
 #[macro_use]
 extern crate criterion;
+extern crate curve25519_dalek;
 extern crate rand;
 extern crate x25519_dalek;
 
 use criterion::Criterion;
 
+use curve25519_dalek::montgomery::MontgomeryPoint;
+
 use rand::OsRng;
 
-use x25519_dalek::generate_public;
-use x25519_dalek::generate_secret;
-use x25519_dalek::diffie_hellman;
+use x25519_dalek::EphemeralPublic;
+use x25519_dalek::EphemeralSecret;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
     let mut csprng: OsRng = OsRng::new().unwrap();
-    let alice_secret: [u8; 32] = generate_secret(&mut csprng);
-    let bob_secret: [u8; 32] = generate_secret(&mut csprng);
-    let bob_public: [u8; 32] = generate_public(&bob_secret).to_bytes();
+    let bob_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
+    let bob_public: EphemeralPublic = EphemeralPublic::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
-        b.iter(||
-               diffie_hellman(&alice_secret, &bob_public)
+        b.iter_with_setup(
+            || EphemeralSecret::new(&mut csprng),
+            |alice_secret| alice_secret.diffie_hellman(&bob_public),
         )
     });
 }

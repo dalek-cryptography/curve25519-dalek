@@ -1,11 +1,13 @@
 // -*- mode: rust; -*-
 //
 // This file is part of x25519-dalek.
-// Copyright (c) 2017 Isis Lovecruft
+// Copyright (c) 2017-2019 isis agora lovecruft
+// Copyright (c) 2019 DebugSteven
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
+// - DebugSteven <debugsteven@gmail.com>
 
 //! Benchmark the Diffie-Hellman operation.
 

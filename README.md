@@ -79,7 +79,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.x25519-dalek]
-version = "^0.3"
+version = "^0.4"
 ```
 
 # Documentation

@@ -46,7 +46,7 @@ let     alice_public = EphemeralPublic::from(&alice_secret);
 
 Bob does the same:
 
-```rust
+```rust,ignore
 let mut bob_csprng = OsRng::new().unwrap();
 let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
 let     bob_public = EphemeralPublic::from(&bob_secret);
@@ -56,7 +56,7 @@ Alice meows across the room, telling `alice_public` to Bob, and Bob
 loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
-```rust
+```rust,ignore
 use x25519_dalek::EphemeralPublic;
 use x25519_dalek::EphemeralSecret;
 
@@ -65,7 +65,7 @@ let shared_secret = EphemeralSecret::diffie_hellman(alice_secret, &bob_public);
 
 Similarly, Bob computes the same shared secret by doing:
 
-```rust
+```rust,ignore
 let shared_secret = EphemeralSecret::diffie_hellman(bob_secret, &alice_public);
 ```
 

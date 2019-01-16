@@ -111,18 +111,43 @@ fn clamp_scalar(scalar: [u8; 32]) -> Scalar {
     Scalar::from_bits(s)
 }
 
-/// The x25519 function, as specified in RFC7748.
+/// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.
+///
+/// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
+/// cannot use the better, safer, and faster ephemeral DH API.
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
     (clamp_scalar(k) * MontgomeryPoint(u)).to_bytes()
 }
+
+/// The X25519 basepoint, for use with the bare, byte-oriented x25519
+/// function.  This is provided for people who cannot use the typed
+/// ephemeral DH API for some reason.
+pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
+    9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
 
 #[cfg(test)]
 mod test {
     use super::*;
 
-    fn do_rfc7748_ladder_test1(input_scalar: [u8; 32],
-                               input_point: [u8; 32],
-                               expected: [u8; 32]) {
+    #[test]
+    fn byte_basepoint_matches_edwards_scalar_mul() {
+        let mut scalar_bytes = [0x37; 32];
+
+        for i in 0..32 {
+            scalar_bytes[i] += 2;
+
+            let result = x25519(scalar_bytes, X25519_BASEPOINT_BYTES);
+
+            let expected = (&ED25519_BASEPOINT_TABLE * &clamp_scalar(scalar_bytes))
+                .to_montgomery()
+                .to_bytes();
+
+            assert_eq!(result, expected);
+        }
+    }
+
+    fn do_rfc7748_ladder_test1(input_scalar: [u8; 32], input_point: [u8; 32], expected: [u8; 32]) {
         let result = x25519(input_scalar, input_point);
 
         assert_eq!(result, expected);

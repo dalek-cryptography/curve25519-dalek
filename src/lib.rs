@@ -30,9 +30,6 @@ extern crate curve25519_dalek;
 
 extern crate rand_core;
 
-#[cfg(test)]
-extern crate rand;
-
 mod x25519;
 
 pub use x25519::*;

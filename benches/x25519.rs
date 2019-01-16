@@ -14,14 +14,14 @@
 #[macro_use]
 extern crate criterion;
 extern crate curve25519_dalek;
-extern crate rand;
+extern crate rand_os;
 extern crate x25519_dalek;
 
 use criterion::Criterion;
 
 use curve25519_dalek::montgomery::MontgomeryPoint;
 
-use rand::OsRng;
+use rand_os::OsRng;
 
 use x25519_dalek::EphemeralPublic;
 use x25519_dalek::EphemeralSecret;

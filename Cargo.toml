@@ -30,7 +30,7 @@ clear_on_drop = { version = "0.2" }
 
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.6"
+rand_os = "0.1"
 
 [[bench]]
 name = "x25519"

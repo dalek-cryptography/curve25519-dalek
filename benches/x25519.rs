@@ -1,25 +1,27 @@
 // -*- mode: rust; -*-
 //
 // This file is part of x25519-dalek.
-// Copyright (c) 2017 Isis Lovecruft
+// Copyright (c) 2017-2019 isis agora lovecruft
+// Copyright (c) 2019 DebugSteven
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
+// - DebugSteven <debugsteven@gmail.com>
 
 //! Benchmark the Diffie-Hellman operation.
 
 #[macro_use]
 extern crate criterion;
 extern crate curve25519_dalek;
-extern crate rand;
+extern crate rand_os;
 extern crate x25519_dalek;
 
 use criterion::Criterion;
 
 use curve25519_dalek::montgomery::MontgomeryPoint;
 
-use rand::OsRng;
+use rand_os::OsRng;
 
 use x25519_dalek::EphemeralPublic;
 use x25519_dalek::EphemeralSecret;

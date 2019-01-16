@@ -1,7 +1,7 @@
 [package]
 name = "x25519-dalek"
-version = "0.3.0"
-authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+version = "0.4.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>", "DebugSteven <debugsteven@gmail.com>"]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/x25519-dalek"
@@ -30,7 +30,7 @@ clear_on_drop = { version = "0.2" }
 
 [dev-dependencies]
 criterion = "0.2"
-rand = "0.6"
+rand_os = "0.1"
 
 [[bench]]
 name = "x25519"

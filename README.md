@@ -33,11 +33,11 @@ First, Alice uses `EphemeralSecret::new()` and then
 
 ```rust
 extern crate x25519_dalek;
-extern crate rand;
+extern crate rand_os;
 
 use x25519_dalek::EphemeralPublic;
 use x25519_dalek::EphemeralSecret;
-use rand::OsRng;
+use rand_os::OsRng;
 
 let mut alice_csprng = OsRng::new().unwrap();
 let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
@@ -79,7 +79,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.x25519-dalek]
-version = "^0.3"
+version = "^0.4"
 ```
 
 # Documentation

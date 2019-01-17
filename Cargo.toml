@@ -20,7 +20,7 @@ version = "1.0.0-pre.0"
 default-features = false
 
 [dependencies.rand]
-version = "0.5"
+version = "0.6"
 default-features = false
 features = ["i128_support"]
 

@@ -939,11 +939,10 @@ impl From<ExpandedSecretKey> for PublicKey {
 /// use ed25519_dalek::PublicKey;
 /// use ed25519_dalek::Signature;
 /// use rand::thread_rng;
-/// use rand::ThreadRng;
 /// use sha2::Sha512;
 ///
 /// # fn main() {
-/// let mut csprng: ThreadRng = thread_rng();
+/// let mut csprng = thread_rng();
 /// let keypairs: Vec<Keypair> = (0..64).map(|_| Keypair::generate::<Sha512, _>(&mut csprng)).collect();
 /// let msg: &[u8] = b"They're good dogs Brant";
 /// let messages: Vec<&[u8]> = (0..64).map(|_| msg).collect();
@@ -1382,7 +1381,6 @@ mod test {
     use rand::thread_rng;
     use rand::ChaChaRng;
     use rand::SeedableRng;
-    use rand::ThreadRng;
     use hex::FromHex;
     use sha2::Sha512;
     use super::*;
@@ -1563,7 +1561,7 @@ mod test {
             b"Fuck dumbin' it down, spit ice, skip jewellery: Molotov cocktails on me like accessories.",
             b"Hey, I never cared about your bucks, so if I run up with a mask on, probably got a gas can too.",
             b"And I'm not here to fill 'er up. Nope, we came to riot, here to incite, we don't want any of your stuff.", ];
-        let mut csprng: ThreadRng = thread_rng();
+        let mut csprng = thread_rng();
         let mut keypairs: Vec<Keypair> = Vec::new();
         let mut signatures: Vec<Signature> = Vec::new();
 

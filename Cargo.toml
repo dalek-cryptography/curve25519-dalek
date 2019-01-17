@@ -49,7 +49,6 @@ harness = false
 
 [features]
 default = ["std", "u64_backend"]
-# We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
 std = ["curve25519-dalek/std", "rand/std", "sha2/std"]
 alloc = ["curve25519-dalek/alloc"]
 nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]

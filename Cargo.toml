@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "1.0.0-pre.0"
+version = "0.9.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -20,7 +20,7 @@ version = "1.0.0-pre.0"
 default-features = false
 
 [dependencies.rand]
-version = "0.5"
+version = "0.6"
 default-features = false
 features = ["i128_support"]
 

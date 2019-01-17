@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of ed25519-dalek.
-// Copyright (c) 2017-2018 isis lovecruft
+// Copyright (c) 2017-2019 isis lovecruft
 // See LICENSE for licensing information.
 //
 // Authors:

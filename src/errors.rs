@@ -1,11 +1,11 @@
 // -*- mode: rust; -*-
 //
 // This file is part of ed25519-dalek.
-// Copyright (c) 2017 Isis Lovecruft
+// Copyright (c) 2017-2019 isis lovecruft
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 
 //! Errors which may occur when parsing keys and/or signatures to or from wire formats.
 

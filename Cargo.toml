@@ -1,7 +1,7 @@
 [package]
 name = "ed25519-dalek"
 version = "1.0.0-pre.1"
-authors = ["Isis Lovecruft <isis@patternsinthevoid.net>"]
+authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/ed25519-dalek"

@@ -33,5 +33,9 @@ pub(crate) use self::avx2::{
 
 #[cfg(all(target_feature = "avx512ifma"))]
 pub mod ifma;
+#[cfg(all(target_feature = "avx512ifma"))]
+pub(crate) use self::ifma::{
+    constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
+};
 
 pub mod scalar_mul;

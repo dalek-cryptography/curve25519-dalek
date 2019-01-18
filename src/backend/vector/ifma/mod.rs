@@ -11,3 +11,4 @@ pub mod field;
 
 pub mod edwards;
 
+pub mod constants;

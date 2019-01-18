@@ -17,6 +17,7 @@ use subtle::ConditionallySelectable;
 use edwards;
 use window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
+use super::constants;
 use super::field::{F51x4Reduced, F51x4Unreduced, Lanes, Shuffle};
 
 #[derive(Copy, Clone, Debug)]

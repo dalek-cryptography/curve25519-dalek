@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"

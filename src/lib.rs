@@ -1,13 +1,13 @@
 // -*- mode: rust; -*-
 //
 // This file is part of ed25519-dalek.
-// Copyright (c) 2017-2018 Isis Lovecruft
+// Copyright (c) 2017-2019 isis lovecruft
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 
-//! ed25519 signatures and verification
+//! A Rust implementation of ed25519 key generation, signing, and verification.
 //!
 //! # Example
 //!
@@ -15,28 +15,25 @@
 //!
 //! First, we need to generate a `Keypair`, which includes both public and
 //! secret halves of an asymmetric key.  To do so, we need a cryptographically
-//! secure pseudorandom number generator (CSPRNG), and a hash function which
-//! has 512 bits of output.  For this example, we'll use the operating
-//! system's builtin PRNG and SHA-512 to generate a keypair:
+//! secure pseudorandom number generator (CSPRNG). For this example, we'll use
+//! the operating system's builtin PRNG:
 //!
 //! ```
 //! extern crate rand;
-//! extern crate sha2;
 //! extern crate ed25519_dalek;
 //!
-//! # #[cfg(all(feature = "std", feature = "sha2"))]
+//! # #[cfg(feature = "std")]
 //! # fn main() {
 //! use rand::Rng;
-//! use rand::OsRng;
-//! use sha2::Sha512;
+//! use rand::rngs::OsRng;
 //! use ed25519_dalek::Keypair;
 //! use ed25519_dalek::Signature;
 //!
 //! let mut csprng: OsRng = OsRng::new().unwrap();
-//! let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
+//! let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # }
 //! #
-//! # #[cfg(any(not(feature = "std"), not(feature = "sha2")))]
+//! # #[cfg(not(feature = "std"))]
 //! # fn main() { }
 //! ```
 //!
@@ -44,19 +41,16 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
-//! # use rand::SeedableRng;
-//! # use sha2::Sha512;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-//! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! let signature: Signature = keypair.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! let signature: Signature = keypair.sign(message);
 //! # }
 //! ```
 //!
@@ -65,20 +59,17 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
-//! # use rand::SeedableRng;
-//! # use sha2::Sha512;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign::<Sha512>(message);
-//! assert!(keypair.verify::<Sha512>(message, &signature).is_ok());
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! # let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature: Signature = keypair.sign(message);
+//! assert!(keypair.verify(message, &signature).is_ok());
 //! # }
 //! ```
 //!
@@ -87,23 +78,20 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::Rng;
-//! # use rand::ChaChaRng;
-//! # use rand::SeedableRng;
-//! # use sha2::Sha512;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
 //! use ed25519_dalek::PublicKey;
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! # let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature: Signature = keypair.sign(message);
 //!
 //! let public_key: PublicKey = keypair.public;
-//! assert!(public_key.verify::<Sha512>(message, &signature).is_ok());
+//! assert!(public_key.verify(message, &signature).is_ok());
 //! # }
 //! ```
 //!
@@ -117,17 +105,16 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
-//! # use sha2::Sha512;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! # let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature: Signature = keypair.sign(message);
 //! # let public_key: PublicKey = keypair.public;
 //!
 //! let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = public_key.to_bytes();
@@ -141,17 +128,16 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
-//! # use sha2::Sha512;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), SignatureError> {
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair_orig: Keypair = Keypair::generate::<Sha512, _>(&mut csprng);
-//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature_orig: Signature = keypair_orig.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair_orig: Keypair = Keypair::generate(&mut csprng);
+//! # let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature_orig: Signature = keypair_orig.sign(message);
 //! # let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = keypair_orig.public.to_bytes();
 //! # let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair_orig.secret.to_bytes();
 //! # let keypair_bytes:    [u8; KEYPAIR_LENGTH]    = keypair_orig.to_bytes();
@@ -184,7 +170,6 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # #[cfg(feature = "serde")]
 //! extern crate serde;
@@ -193,16 +178,16 @@
 //!
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
-//! # use sha2::Sha512;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use bincode::{serialize, Infinite};
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
-//! # let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! # let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature: Signature = keypair.sign(message);
 //! # let public_key: PublicKey = keypair.public;
-//! # let verified: bool = public_key.verify::<Sha512>(message, &signature);
+//! # let verified: bool = public_key.verify(message, &signature).is_ok();
 //!
 //! let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
 //! let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
@@ -216,7 +201,6 @@
 //!
 //! ```
 //! # extern crate rand;
-//! # extern crate sha2;
 //! # extern crate ed25519_dalek;
 //! # #[cfg(feature = "serde")]
 //! # extern crate serde;
@@ -225,18 +209,18 @@
 //! #
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::{Rng, ChaChaRng, SeedableRng};
-//! # use sha2::Sha512;
+//! # use rand::Rng;
+//! # use rand::thread_rng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! # use bincode::{serialize, Infinite};
 //! use bincode::{deserialize};
 //!
-//! # let mut csprng: ChaChaRng = ChaChaRng::from_seed([0u8; 32]);
-//! # let keypair: Keypair = Keypair::generate::<Sha512>(&mut csprng);
-//! let message: &[u8] = "This is a test of the tsunami alert system.".as_bytes();
-//! # let signature: Signature = keypair.sign::<Sha512>(message);
+//! # let mut csprng = thread_rng();
+//! # let keypair: Keypair = Keypair::generate(&mut csprng);
+//! let message: &[u8] = b"This is a test of the tsunami alert system.";
+//! # let signature: Signature = keypair.sign(message);
 //! # let public_key: PublicKey = keypair.public;
-//! # let verified: bool = public_key.verify::<Sha512>(message, &signature);
+//! # let verified: bool = public_key.verify(message, &signature).is_ok();
 //! # let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
 //! # let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
 //! let decoded_public_key: PublicKey = deserialize(&encoded_public_key).unwrap();
@@ -245,7 +229,7 @@
 //! # assert_eq!(public_key, decoded_public_key);
 //! # assert_eq!(signature, decoded_signature);
 //! #
-//! let verified: bool = decoded_public_key.verify::<Sha512>(&message, &decoded_signature);
+//! let verified: bool = decoded_public_key.verify(&message, &decoded_signature).is_ok();
 //!
 //! assert!(verified);
 //! # }
@@ -254,34 +238,29 @@
 //! ```
 
 #![no_std]
-#![allow(unused_features)]
+#![warn(future_incompatible)]
+#![warn(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
-
-extern crate curve25519_dalek;
-extern crate failure;
-extern crate rand;
-extern crate clear_on_drop;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
 
-#[cfg(any(test, feature = "sha2"))]
-extern crate sha2;
-
-#[cfg(test)]
-extern crate hex;
-
+extern crate clear_on_drop;
+extern crate curve25519_dalek;
+extern crate failure;
+extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
+extern crate sha2;
 
-#[cfg(all(test, feature = "serde"))]
-extern crate bincode;
-
+mod constants;
 mod ed25519;
-
-pub mod errors;
+mod errors;
+mod public;
+mod secret;
+mod signature;
 
 // Export everything public in ed25519.
-pub use ed25519::*;
-pub use errors::*;
+pub use crate::ed25519::*;

@@ -20,9 +20,6 @@ matrix:
     # Test serde support on stable, assuming that if it works there it'll work everywhere:
     - rust: stable
       env: TEST_COMMAND=test FEATURE='--features=serde'
-    # Test with the optional sha2 feature enabled:
-    - rust: stable
-      env: TEST_COMMAND=test FEATURE='--features=sha2'
 
 script:
   - cargo $TEST_COMMAND $FEATURES

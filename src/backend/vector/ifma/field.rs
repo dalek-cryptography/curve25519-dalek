@@ -29,19 +29,16 @@ pub struct F51x4Unreduced(pub(crate) [u64x4; 5]);
 pub struct F51x4Reduced(pub(crate) [u64x4; 5]);
 
 #[derive(Copy, Clone)]
-pub enum Lanes {
-    D,
-    AB,
-    AC,
-}
-
-#[derive(Copy, Clone)]
 pub enum Shuffle {
     AAAA,
+    BBBB,
     BADC,
     ADDA,
     CBCB,
     ABDC,
+    ABAB,
+    DBBD,
+    CACA,
 }
 
 #[inline(always)]
@@ -51,12 +48,26 @@ fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
 
         match control {
             Shuffle::AAAA => perm(x.into_bits(), 0b00_00_00_00).into_bits(),
+            Shuffle::BBBB => perm(x.into_bits(), 0b01_01_01_01).into_bits(),
             Shuffle::BADC => perm(x.into_bits(), 0b10_11_00_01).into_bits(),
             Shuffle::ADDA => perm(x.into_bits(), 0b00_11_11_00).into_bits(),
             Shuffle::CBCB => perm(x.into_bits(), 0b01_10_01_10).into_bits(),
             Shuffle::ABDC => perm(x.into_bits(), 0b10_11_01_00).into_bits(),
+            Shuffle::ABAB => perm(x.into_bits(), 0b01_00_01_00).into_bits(),
+            Shuffle::DBBD => perm(x.into_bits(), 0b11_01_01_11).into_bits(),
+            Shuffle::CACA => perm(x.into_bits(), 0b00_10_00_10).into_bits(),
         }
     }
+}
+
+#[derive(Copy, Clone)]
+pub enum Lanes {
+    D,
+    C,
+    AB,
+    AC,
+    AD,
+    BCD,
 }
 
 #[inline]
@@ -66,13 +77,20 @@ fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
 
         match control {
             Lanes::D => blend(x.into_bits(), y.into_bits(), 0b11_00_00_00).into_bits(),
+            Lanes::C => blend(x.into_bits(), y.into_bits(), 0b00_11_00_00).into_bits(),
             Lanes::AB => blend(x.into_bits(), y.into_bits(), 0b00_00_11_11).into_bits(),
             Lanes::AC => blend(x.into_bits(), y.into_bits(), 0b00_11_00_11).into_bits(),
+            Lanes::AD => blend(x.into_bits(), y.into_bits(), 0b11_00_00_11).into_bits(),
+            Lanes::BCD => blend(x.into_bits(), y.into_bits(), 0b11_11_11_00).into_bits(),
         }
     }
 }
 
 impl F51x4Unreduced {
+    pub fn zero() -> F51x4Unreduced {
+        F51x4Unreduced([u64x4::splat(0); 5])
+    }
+
     pub fn new(
         x0: &FieldElement51,
         x1: &FieldElement51,

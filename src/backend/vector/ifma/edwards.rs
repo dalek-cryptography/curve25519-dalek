@@ -51,7 +51,50 @@ impl From<ExtendedPoint> for CachedPoint {
         CachedPoint(F51x4Reduced::from(x))
     }
 }
-    
+
+impl ExtendedPoint {
+    pub fn double(&self) -> ExtendedPoint {
+        // Set tmp0 = (X1 Y1 X1 Y1)
+        let mut tmp0 = self.0.shuffle(Shuffle::ABAB);
+
+        // Set tmp1 = (Y1 X1 Y1 X1)
+        let mut tmp1 = tmp0.shuffle(Shuffle::BADC);
+
+        // Set tmp0 = (X1 Y1 Z1 X1+Y1)
+        tmp0 = self.0.blend(&(tmp0 + tmp1), Lanes::D);
+
+        tmp1 = F51x4Reduced::from(tmp0).square();
+        // Now tmp1 = (S1 S2 S3 S4)
+
+        // We want to compute
+        //
+        //    + | S1 | S1 | S1 | S1 |
+        //    + | S2 |    |    | S2 |
+        //    + |    |    | S3 |    |
+        //    + |    |    | S3 |    |
+        //    + |    |16p |16p |16p |
+        //    - |    | S2 | S2 |    |
+        //    - |    |    |    | S4 |
+        //    =======================
+        //        S5   S6   S8   S9
+
+        let zero = F51x4Unreduced::zero();
+
+        let S1_S1_S1_S1 = tmp1.shuffle(Shuffle::AAAA);
+        let S2_S2_S2_S2 = tmp1.shuffle(Shuffle::BBBB);
+
+        let S2_S2_S2_S4 = S2_S2_S2_S2.blend(&tmp1, Lanes::D).negate_lazy();
+
+        tmp0 = S1_S1_S1_S1 + zero.blend(&(tmp1 + tmp1), Lanes::C);
+        tmp0 = tmp0 + zero.blend(&S2_S2_S2_S2, Lanes::AD);
+        tmp0 = tmp0 + zero.blend(&S2_S2_S2_S4, Lanes::BCD);
+
+        let tmp2 = F51x4Reduced::from(tmp0);
+
+        ExtendedPoint(&tmp2.shuffle(Shuffle::DBBD) * &tmp2.shuffle(Shuffle::CACA))
+    }
+}
+
 impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -133,5 +176,36 @@ mod test {
         let P = constants::ED25519_BASEPOINT_POINT;
         let Q = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
         addition_test_helper(P, Q);
+    }
+
+    fn doubling_test_helper(P: edwards::EdwardsPoint) {
+        //let R1: edwards::EdwardsPoint = serial_double(P.into()).into();
+        let R2: edwards::EdwardsPoint = ExtendedPoint::from(P).double().into();
+        println!("Testing point doubling:");
+        println!("P = {:?}", P);
+        //println!("(serial) R1 = {:?}", R1);
+        println!("(vector) R2 = {:?}", R2);
+        println!("P + P = {:?}", &P + &P);
+        //assert_eq!(R1.compress(), (&P + &P).compress());
+        assert_eq!(R2.compress(), (&P + &P).compress());
+        println!("OK!\n");
+    }
+
+    #[test]
+    fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
+        use constants;
+        use scalar::Scalar;
+
+        println!("Testing [2]id");
+        let P = edwards::EdwardsPoint::identity();
+        doubling_test_helper(P);
+
+        println!("Testing [2]B");
+        let P = constants::ED25519_BASEPOINT_POINT;
+        doubling_test_helper(P);
+
+        println!("Testing [2]([k]B)");
+        let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
+        doubling_test_helper(P);
     }
 }

@@ -20,7 +20,7 @@ exclude = [
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
+rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-1.0.1/docs/assets/rustdoc-include-katex-header.html"]
 features = ["nightly"]
 
 [dependencies]

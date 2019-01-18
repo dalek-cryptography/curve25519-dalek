@@ -56,6 +56,18 @@ impl From<ExtendedPoint> for CachedPoint {
     }
 }
 
+impl Default for ExtendedPoint {
+    fn default() -> ExtendedPoint {
+        ExtendedPoint::identity()
+    }
+}
+
+impl Identity for ExtendedPoint {
+    fn identity() -> ExtendedPoint {
+        constants::EXTENDEDPOINT_IDENTITY
+    }
+}
+
 impl ExtendedPoint {
     pub fn double(&self) -> ExtendedPoint {
         // Set tmp0 = (X1 Y1 X1 Y1)
@@ -133,6 +145,18 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
 
         // Return (S12*S14 S15*S13 S15*S14 S12*S13) = (X3 Y3 Z3 T3)
         ExtendedPoint(&t0 * &t1)
+    }
+}
+
+impl Default for CachedPoint {
+    fn default() -> CachedPoint {
+        CachedPoint::identity()
+    }
+}
+
+impl Identity for CachedPoint {
+    fn identity() -> CachedPoint {
+        constants::CACHEDPOINT_IDENTITY
     }
 }
 

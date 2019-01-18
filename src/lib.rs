@@ -12,7 +12,7 @@
 #![cfg_attr(
     any(
         all(feature = "simd_backend", target_feature = "avx512ifma"),
-        all(rustdoc, feature = "nightly")
+        all(feature = "nightly", rustdoc)
     ),
     feature(simd_ffi, link_llvm_intrinsics)
 )]

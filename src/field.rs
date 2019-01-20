@@ -12,8 +12,8 @@
 //!
 //! The `curve25519_dalek::field` module provides a type alias
 //! `curve25519_dalek::field::FieldElement` to a field element type
-//! defined in the `backend` module; either `FieldElement64` or
-//! `FieldElement32`.
+//! defined in the `backend` module; either `FieldElement51` or
+//! `FieldElement2625`.
 //!
 //! Field operations defined in terms of machine
 //! operations, such as field multiplication or squaring, are defined in
@@ -33,24 +33,24 @@ use constants;
 use backend;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::u64::field::*;
+pub use backend::serial::u64::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u64_backend")]
-pub type FieldElement = backend::u64::field::FieldElement64;
+pub type FieldElement = backend::serial::u64::field::FieldElement51;
 
 #[cfg(feature = "u32_backend")]
-pub use backend::u32::field::*;
+pub use backend::serial::u32::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u32_backend")]
-pub type FieldElement = backend::u32::field::FieldElement32;
+pub type FieldElement = backend::serial::u32::field::FieldElement2625;
 
 impl Eq for FieldElement {}
 

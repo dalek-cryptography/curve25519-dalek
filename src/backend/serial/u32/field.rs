@@ -24,7 +24,7 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-/// A `FieldElement32` represents an element of the field
+/// A `FieldElement2625` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// In the 32-bit implementation, a `FieldElement` is represented in
@@ -41,44 +41,44 @@ use subtle::ConditionallySelectable;
 /// # Note
 ///
 /// The `curve25519_dalek::field` module provides a type alias
-/// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
-/// or `FieldElement32`.
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement51`
+/// or `FieldElement2625`.
 ///
-/// The backend-specific type `FieldElement32` should not be used
+/// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement32(pub (crate) [u32; 10]);
+pub struct FieldElement2625(pub (crate) [u32; 10]);
 
-impl Debug for FieldElement32 {
+impl Debug for FieldElement2625 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement32({:?})", &self.0[..])
+        write!(f, "FieldElement2625({:?})", &self.0[..])
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement32> for FieldElement32 {
-    fn add_assign(&mut self, _rhs: &'b FieldElement32) {
+impl<'b> AddAssign<&'b FieldElement2625> for FieldElement2625 {
+    fn add_assign(&mut self, _rhs: &'b FieldElement2625) {
         for i in 0..10 {
             self.0[i] += _rhs.0[i];
         }
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement32> for &'a FieldElement32 {
-    type Output = FieldElement32;
-    fn add(self, _rhs: &'b FieldElement32) -> FieldElement32 {
+impl<'a, 'b> Add<&'b FieldElement2625> for &'a FieldElement2625 {
+    type Output = FieldElement2625;
+    fn add(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
         let mut output = *self;
         output += _rhs;
         output
     }
 }
 
-impl<'b> SubAssign<&'b FieldElement32> for FieldElement32 {
-    fn sub_assign(&mut self, _rhs: &'b FieldElement32) {
-        // See comment in FieldElement64::Sub
+impl<'b> SubAssign<&'b FieldElement2625> for FieldElement2625 {
+    fn sub_assign(&mut self, _rhs: &'b FieldElement2625) {
+        // See comment in FieldElement51::Sub
         //
         // Compute a - b as ((a + 2^4 * p) - b) to avoid underflow.
         let b = &_rhs.0;
-        self.0 = FieldElement32::reduce([
+        self.0 = FieldElement2625::reduce([
             ((self.0[0] + (0x3ffffed << 4)) - b[0]) as u64,
             ((self.0[1] + (0x1ffffff << 4)) - b[1]) as u64,
             ((self.0[2] + (0x3ffffff << 4)) - b[2]) as u64,
@@ -93,25 +93,25 @@ impl<'b> SubAssign<&'b FieldElement32> for FieldElement32 {
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement32> for &'a FieldElement32 {
-    type Output = FieldElement32;
-    fn sub(self, _rhs: &'b FieldElement32) -> FieldElement32 {
+impl<'a, 'b> Sub<&'b FieldElement2625> for &'a FieldElement2625 {
+    type Output = FieldElement2625;
+    fn sub(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
         let mut output = *self;
         output -= _rhs;
         output
     }
 }
 
-impl<'b> MulAssign<&'b FieldElement32> for FieldElement32 {
-    fn mul_assign(&mut self, _rhs: &'b FieldElement32) {
-        let result = (self as &FieldElement32) * _rhs;
+impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
+    fn mul_assign(&mut self, _rhs: &'b FieldElement2625) {
+        let result = (self as &FieldElement2625) * _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement32> for &'a FieldElement32 {
-    type Output = FieldElement32;
-    fn mul(self, _rhs: &'b FieldElement32) -> FieldElement32 {
+impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
+    type Output = FieldElement2625;
+    fn mul(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
         /// Helper function to multiply two 32-bit integers with 64 bits
         /// of output.
         #[inline(always)]
@@ -206,26 +206,26 @@ impl<'a, 'b> Mul<&'b FieldElement32> for &'a FieldElement32 {
         //
         // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
         //                         if b < 2.5.
-        FieldElement32::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+        FieldElement2625::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 
-impl<'a> Neg for &'a FieldElement32 {
-    type Output = FieldElement32;
-    fn neg(self) -> FieldElement32 {
+impl<'a> Neg for &'a FieldElement2625 {
+    type Output = FieldElement2625;
+    fn neg(self) -> FieldElement2625 {
         let mut output = *self;
         output.negate();
         output
     }
 }
 
-impl ConditionallySelectable for FieldElement32 {
+impl ConditionallySelectable for FieldElement2625 {
     fn conditional_select(
-        a: &FieldElement32,
-        b: &FieldElement32,
+        a: &FieldElement2625,
+        b: &FieldElement2625,
         choice: Choice,
-    ) -> FieldElement32 {
-        FieldElement32([
+    ) -> FieldElement2625 {
+        FieldElement2625([
             u32::conditional_select(&a.0[0], &b.0[0], choice),
             u32::conditional_select(&a.0[1], &b.0[1], choice),
             u32::conditional_select(&a.0[2], &b.0[2], choice),
@@ -239,7 +239,7 @@ impl ConditionallySelectable for FieldElement32 {
         ])
     }
 
-    fn conditional_assign(&mut self, other: &FieldElement32, choice: Choice) {
+    fn conditional_assign(&mut self, other: &FieldElement2625, choice: Choice) {
         self.0[0].conditional_assign(&other.0[0], choice);
         self.0[1].conditional_assign(&other.0[1], choice);
         self.0[2].conditional_assign(&other.0[2], choice);
@@ -252,7 +252,7 @@ impl ConditionallySelectable for FieldElement32 {
         self.0[9].conditional_assign(&other.0[9], choice);
     }
 
-    fn conditional_swap(a: &mut FieldElement32, b: &mut FieldElement32, choice: Choice) {
+    fn conditional_swap(a: &mut FieldElement2625, b: &mut FieldElement2625, choice: Choice) {
         u32::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
         u32::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
         u32::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
@@ -266,11 +266,11 @@ impl ConditionallySelectable for FieldElement32 {
     }
 }
 
-impl FieldElement32 {
+impl FieldElement2625 {
     /// Invert the sign of this field element
     pub fn negate(&mut self) {
         // Compute -b as ((2^4 * p) - b) to avoid underflow.
-        let neg = FieldElement32::reduce([
+        let neg = FieldElement2625::reduce([
             ((0x3ffffed << 4) - self.0[0]) as u64,
             ((0x1ffffff << 4) - self.0[1]) as u64,
             ((0x3ffffff << 4) - self.0[2]) as u64,
@@ -286,25 +286,25 @@ impl FieldElement32 {
     }
 
     /// Construct zero.
-    pub fn zero() -> FieldElement32 {
-        FieldElement32([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+    pub fn zero() -> FieldElement2625 {
+        FieldElement2625([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
     /// Construct one.
-    pub fn one() -> FieldElement32 {
-        FieldElement32([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+    pub fn one() -> FieldElement2625 {
+        FieldElement2625([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
     }
 
     /// Construct -1.
-    pub fn minus_one() -> FieldElement32 {
-        FieldElement32([
+    pub fn minus_one() -> FieldElement2625 {
+        FieldElement2625([
             0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff,
             0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
         ])
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
-    pub fn pow2k(&self, k: u32) -> FieldElement32 {
+    pub fn pow2k(&self, k: u32) -> FieldElement2625 {
         debug_assert!( k > 0 );
         let mut z = self.square();
         for _ in 1..k {
@@ -314,12 +314,12 @@ impl FieldElement32 {
     }
 
     /// Given unreduced coefficients `z[0], ..., z[9]` of any size,
-    /// carry and reduce them mod p to obtain a `FieldElement32`
+    /// carry and reduce them mod p to obtain a `FieldElement2625`
     /// whose coefficients have excess `b < 0.007`.
     ///
     /// In other words, each coefficient of the result is bounded by
     /// either `2^(25 + 0.007)` or `2^(26 + 0.007)`, as appropriate.
-    fn reduce(mut z: [u64; 10]) -> FieldElement32 {
+    fn reduce(mut z: [u64; 10]) -> FieldElement2625 {
 
         const LOW_25_BITS: u64 = (1 << 25) - 1;
         const LOW_26_BITS: u64 = (1 << 26) - 1;
@@ -361,13 +361,13 @@ impl FieldElement32 {
         //          < 2^25.007 (good enough)
         // and we're done.
 
-        FieldElement32([
+        FieldElement2625([
             z[0] as u32, z[1] as u32, z[2] as u32, z[3] as u32, z[4] as u32,
             z[5] as u32, z[6] as u32, z[7] as u32, z[8] as u32, z[9] as u32,
         ])
     }
 
-    /// Load a `FieldElement64` from the low 255 bits of a 256-bit
+    /// Load a `FieldElement51` from the low 255 bits of a 256-bit
     /// input.
     ///
     /// # Warning
@@ -378,7 +378,7 @@ impl FieldElement32 {
     /// encoding of every field element should decode, re-encode to
     /// the canonical encoding, and check that the input was
     /// canonical.
-    pub fn from_bytes(data: &[u8; 32]) -> FieldElement32 { //FeFromBytes
+    pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 { //FeFromBytes
         #[inline]
         fn load3(b: &[u8]) -> u64 {
            (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16)
@@ -402,16 +402,16 @@ impl FieldElement32 {
         h[8] =  load3(&data[26..]) << 4;
         h[9] = (load3(&data[29..]) & LOW_23_BITS) << 2;
 
-        FieldElement32::reduce(h)
+        FieldElement2625::reduce(h)
     }
 
-    /// Serialize this `FieldElement64` to a 32-byte array.  The
+    /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
 
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
-        let mut h: [u32; 10] = FieldElement32::reduce([
+        let mut h: [u32; 10] = FieldElement2625::reduce([
             // XXX this cast is annoying
             inp[0] as u64, inp[1] as u64, inp[2] as u64, inp[3] as u64, inp[4] as u64,
             inp[5] as u64, inp[6] as u64, inp[7] as u64, inp[8] as u64, inp[9] as u64,
@@ -554,16 +554,16 @@ impl FieldElement32 {
     }
 
     /// Compute `self^2`.
-    pub fn square(&self) -> FieldElement32 {
-        FieldElement32::reduce(self.square_inner())
+    pub fn square(&self) -> FieldElement2625 {
+        FieldElement2625::reduce(self.square_inner())
     }
 
     /// Compute `2*self^2`.
-    pub fn square2(&self) -> FieldElement32 {
+    pub fn square2(&self) -> FieldElement2625 {
         let mut coeffs = self.square_inner();
         for i in 0..self.0.len() {
             coeffs[i] += coeffs[i];
         }
-        FieldElement32::reduce(coeffs)
+        FieldElement2625::reduce(coeffs)
     }
 }

@@ -9,11 +9,17 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-
+#![cfg_attr(
+    any(
+        all(feature = "simd_backend", target_feature = "avx512ifma"),
+        all(feature = "nightly", rustdoc)
+    ),
+    feature(simd_ffi, link_llvm_intrinsics)
+)]
+#![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
-#![cfg_attr(feature = "nightly", feature(cfg_target_feature))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
-
+#![cfg_attr(feature = "nightly", feature(doc_cfg))]
 // Refuse to compile if documentation is missing, but only on nightly.
 //
 // This means that missing docs will still fail CI, but means we can use
@@ -38,21 +44,21 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
-#[cfg(all(feature = "nightly", feature = "avx2_backend"))]
+#[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;
 
-extern crate rand;
-extern crate clear_on_drop;
 extern crate byteorder;
+extern crate clear_on_drop;
 pub extern crate digest;
+extern crate rand;
 
 // Used for traits related to constant-time code.
 extern crate subtle;
 
-#[cfg(feature = "serde")]
-extern crate serde;
 #[cfg(all(test, feature = "serde"))]
 extern crate bincode;
+#[cfg(feature = "serde")]
+extern crate serde;
 
 // Internal macros. Must come first!
 #[macro_use]
@@ -90,11 +96,8 @@ pub(crate) mod field;
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;
 
-// Internal curve models which are not part of the public API.
-pub(crate) mod curve_models;
-
 // Crate-local prelude (for alloc-dependent features like `Vec`)
 pub(crate) mod prelude;
 
-// Implementations of scalar mul algorithms live here
-pub(crate) mod scalar_mul;
+// Generic code for window lookups
+pub(crate) mod window;

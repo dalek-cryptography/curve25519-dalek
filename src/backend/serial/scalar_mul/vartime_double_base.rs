@@ -9,12 +9,12 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 #![allow(non_snake_case)]
 
+use constants;
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use scalar_mul::window::NafLookupTable5;
-use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
-use backend::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+use backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
+use window::NafLookupTable5;
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
@@ -30,25 +30,26 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         }
     }
 
-    let table_A = NafLookupTable5::<CachedPoint>::from(A);
-    let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
+    let table_A = NafLookupTable5::<ProjectiveNielsPoint>::from(A);
+    let table_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
 
-    let mut Q = ExtendedPoint::identity();
-
+    let mut r = ProjectivePoint::identity();
     loop {
-        Q = Q.double();
+        let mut t = r.double();
 
         if a_naf[i] > 0 {
-            Q = &Q + &table_A.select(a_naf[i] as usize);
+            t = &t.to_extended() + &table_A.select(a_naf[i] as usize);
         } else if a_naf[i] < 0 {
-            Q = &Q - &table_A.select(-a_naf[i] as usize);
+            t = &t.to_extended() - &table_A.select(-a_naf[i] as usize);
         }
 
         if b_naf[i] > 0 {
-            Q = &Q + &table_B.select(b_naf[i] as usize);
+            t = &t.to_extended() + &table_B.select(b_naf[i] as usize);
         } else if b_naf[i] < 0 {
-            Q = &Q - &table_B.select(-b_naf[i] as usize);
+            t = &t.to_extended() - &table_B.select(-b_naf[i] as usize);
         }
+
+        r = t.to_projective();
 
         if i == 0 {
             break;
@@ -56,5 +57,5 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         i -= 1;
     }
 
-    Q.into()
+    r.to_extended()
 }

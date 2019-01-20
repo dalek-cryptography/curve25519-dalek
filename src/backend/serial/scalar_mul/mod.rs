@@ -16,8 +16,6 @@
 //! scalar multiplication implementations, since it only uses one
 //! curve model.
 
-pub mod window;
-
 pub mod variable_base;
 
 #[cfg(feature = "stage2_build")]

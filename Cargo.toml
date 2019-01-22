@@ -1,6 +1,6 @@
 [package]
 name = "x25519-dalek"
-version = "0.4.3"
+version = "0.4.4"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>", 
     "DebugSteven <debugsteven@gmail.com>",

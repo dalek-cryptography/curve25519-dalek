@@ -31,7 +31,14 @@ impl From<[u8; 32]> for EphemeralPublic {
     fn from(bytes: [u8; 32]) -> EphemeralPublic {
         EphemeralPublic(MontgomeryPoint(bytes))
     }
+}
 
+impl EphemeralPublic {
+    /// View this ephemeral public key as a byte array.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        self.0.as_bytes()
+    }
 }
 
 /// A DH ephemeral secret key.
@@ -85,11 +92,10 @@ impl Drop for SharedSecret {
 }
 
 impl SharedSecret {
-
     /// View this shared secret key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
-        &self.0.as_bytes()
+        self.0.as_bytes()
     }
 }
 

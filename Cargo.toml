@@ -1,7 +1,11 @@
 [package]
 name = "x25519-dalek"
-version = "0.4.3"
-authors = ["Isis Lovecruft <isis@patternsinthevoid.net>", "DebugSteven <debugsteven@gmail.com>"]
+version = "0.4.4"
+authors = [
+    "Isis Lovecruft <isis@patternsinthevoid.net>", 
+    "DebugSteven <debugsteven@gmail.com>",
+    "Henry de Valence <hdevalence@hdevalence.ca>",
+]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/x25519-dalek"
@@ -20,7 +24,7 @@ exclude = [
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-1.0.1/docs/assets/rustdoc-include-katex-header.html"]
+#rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-1.0.1/docs/assets/rustdoc-include-katex-header.html"]
 features = ["nightly"]
 
 [dependencies]

@@ -255,7 +255,7 @@ impl FieldElement {
         (was_nonzero_square, r)
     }
 
-    /// Attempt to compute `1/sqrt(self)` in constant time.
+    /// Attempt to compute `sqrt(1/self)` in constant time.
     ///
     /// Convenience wrapper around `sqrt_ratio_i`.
     ///
@@ -265,7 +265,7 @@ impl FieldElement {
     ///
     /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
     /// - `(Choice(0), zero)           ` if `self` is zero;
-    /// - `(Choice(0), +sqrt(i*u/v))   ` if `self` is a nonzero nonsquare;
+    /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
     ///
     pub fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::one(), self)

@@ -394,7 +394,14 @@ impl ConditionallySelectable for EdwardsPoint {
 
 impl ConstantTimeEq for EdwardsPoint {
     fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
-        self.compress().ct_eq(&other.compress())
+        // We would like to check that the point (X/Z, Y/Z) is equal to
+        // the point (X'/Z', Y'/Z') without converting into affine
+        // coordinates (x, y) and (x', y'), which requires two inversions.
+        // We have that X = xZ and X' = x'Z'. Thus, x = x' is equivalent to
+        // (xZ)Z' = (x'Z')Z, and similarly for the y-coordinate.
+
+        (&self.X * &other.Z).ct_eq(&(&other.X * &self.Z))
+            & (&self.Y * &other.Z).ct_eq(&(&other.Y * &self.Z))
     }
 }
 

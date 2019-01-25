@@ -121,6 +121,37 @@ fn clamp_scalar(scalar: [u8; 32]) -> Scalar {
 ///
 /// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
 /// cannot use the better, safer, and faster ephemeral DH API.
+/// # Example
+/// ```
+/// extern crate rand_os;
+///
+/// use x25519_dalek::{ x25519, X25519_BASEPOINT_BYTES };
+/// use rand_os::OsRng;
+/// use rand_os::rand_core::RngCore;
+///
+/// let mut rng = OsRng::new().unwrap();
+///
+/// // Generate Alice key pair
+/// let mut alice_private = [0u8; 32];
+/// rng.fill_bytes(&mut alice_private);
+///
+/// let alice_public = x25519(alice_private.clone(), X25519_BASEPOINT_BYTES);
+///
+/// // Generate bob key pair
+/// let mut bob_private = [0u8; 32];
+/// rng.fill_bytes(&mut bob_private);
+///
+/// let bob_public = x25519(bob_private.clone(), X25519_BASEPOINT_BYTES);
+///
+/// // Exchange the public keys
+/// // ...
+/// // Generate shared secret
+///
+/// let alice_shared = x25519(alice_private, bob_public);
+/// let bob_shared = x25519(bob_private, alice_public);
+///
+/// assert_eq!(alice_shared, bob_shared);
+/// ```
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
     (clamp_scalar(k) * MontgomeryPoint(u)).to_bytes()
 }
@@ -128,6 +159,7 @@ pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
 /// The X25519 basepoint, for use with the bare, byte-oriented x25519
 /// function.  This is provided for people who cannot use the typed
 /// ephemeral DH API for some reason.
+/// See [`x25519`] for example usage.
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];

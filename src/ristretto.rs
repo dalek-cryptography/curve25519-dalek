@@ -200,6 +200,12 @@ use traits::{MultiscalarMul, VartimeMultiscalarMul};
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
+impl ConstantTimeEq for CompressedRistretto {
+    fn ct_eq(&self, other: &CompressedRistretto) -> Choice {
+        self.as_bytes().ct_eq(other.as_bytes())
+    }
+}
+
 impl CompressedRistretto {
     /// Copy the bytes of this `CompressedRistretto`.
     pub fn to_bytes(&self) -> [u8; 32] {

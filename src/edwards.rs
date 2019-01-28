@@ -142,6 +142,12 @@ use traits::VartimeMultiscalarMul;
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
+impl ConstantTimeEq for CompressedEdwardsY {
+    fn ct_eq(&self, other: &CompressedEdwardsY) -> Choice {
+        self.as_bytes().ct_eq(other.as_bytes())
+    }
+}
+
 impl Debug for CompressedEdwardsY {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
@@ -377,9 +383,7 @@ impl ConditionallySelectable for EdwardsPoint {
 
 impl ConstantTimeEq for EdwardsPoint {
     fn ct_eq(&self, other: &EdwardsPoint) -> Choice {
-        self.compress()
-            .as_bytes()
-            .ct_eq(other.compress().as_bytes())
+        self.compress().ct_eq(&other.compress())
     }
 }
 

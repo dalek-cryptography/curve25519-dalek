@@ -1,6 +1,6 @@
 [package]
 name = "x25519-dalek"
-version = "0.4.4"
+version = "0.4.5"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>", 
     "DebugSteven <debugsteven@gmail.com>",
@@ -41,7 +41,7 @@ name = "x25519"
 harness = false
 
 [features]
-default = ["std", "nightly", "u64_backend"]
+default = ["std", "u64_backend"]
 std = ["curve25519-dalek/std"]
 nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
 u64_backend = ["curve25519-dalek/u64_backend"]

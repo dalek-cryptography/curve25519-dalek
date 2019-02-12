@@ -112,23 +112,23 @@ use scalar::Scalar;
 
 use montgomery::MontgomeryPoint;
 
-use backend::serial::curve_models::ProjectivePoint;
-use backend::serial::curve_models::CompletedPoint;
 use backend::serial::curve_models::AffineNielsPoint;
+use backend::serial::curve_models::CompletedPoint;
 use backend::serial::curve_models::ProjectiveNielsPoint;
+use backend::serial::curve_models::ProjectivePoint;
 
 use window::LookupTable;
 
 #[allow(unused_imports)]
 use prelude::*;
 
-use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
+use traits::{Identity, IsIdentity};
 
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::MultiscalarMul;
+use traits::{MultiscalarMul, PrecomputedMultiscalarMul};
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::VartimeMultiscalarMul;
+use traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
     feature = "simd_backend",
@@ -673,6 +673,84 @@ impl VartimeMultiscalarMul for EdwardsPoint {
     }
 }
 
+/// Precomputation for multiscalar multiplication with `EdwardsPoint`s.
+// This wraps the inner implementation in a facade type so that we can
+// decouple stability of the inner type from the stability of the
+// outer type.
+#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+pub struct EdwardsPrecomputation(scalar_mul::precomputed_straus::PrecomputedStraus);
+
+/// Precomputation for variable-time multiscalar multiplication with `EdwardsPoint`s.
+// This wraps the inner implementation in a facade type so that we can
+// decouple stability of the inner type from the stability of the
+// outer type.
+#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
+
+#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+impl PrecomputedMultiscalarMul for EdwardsPrecomputation {
+    type Point = EdwardsPoint;
+
+    fn new<I>(static_points: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Self::Point>,
+    {
+        Self(scalar_mul::precomputed_straus::PrecomputedStraus::new(
+            static_points,
+        ))
+    }
+
+    fn mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Self::Point
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator,
+        K::Item: Borrow<Self::Point>,
+    {
+        self.0
+            .mixed_multiscalar_mul(static_scalars, dynamic_scalars, dynamic_points)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
+    type Point = EdwardsPoint;
+
+    fn new<I>(static_points: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Self::Point>,
+    {
+        Self(scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
+    }
+
+    fn vartime_mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Self::Point
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator,
+        K::Item: Borrow<Self::Point>,
+    {
+        self.0
+            .vartime_mixed_multiscalar_mul(static_scalars, dynamic_scalars, dynamic_points)
+    }
+}
+
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
     #[cfg(feature = "stage2_build")]
@@ -1201,6 +1279,94 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "yolocrypto")]
+    fn precomputed_vs_nonprecomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let B = &::constants::ED25519_BASEPOINT_TABLE;
+
+        let static_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let check_scalar: Scalar = static_scalars
+            .iter()
+            .chain(dynamic_scalars.iter())
+            .map(|s| s * s)
+            .sum();
+
+        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+
+        let precomputation = EdwardsPrecomputation::new(static_points.iter());
+
+        let P = precomputation.mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        use traits::MultiscalarMul;
+        let Q = EdwardsPoint::multiscalar_mul(
+            static_scalars.iter().chain(dynamic_scalars.iter()),
+            static_points.iter().chain(dynamic_points.iter()),
+        );
+
+        let R = &check_scalar * B;
+
+        assert_eq!(P.compress(), R.compress());
+        assert_eq!(Q.compress(), R.compress());
+    }
+
+    #[test]
+    #[cfg(feature = "yolocrypto")]
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let B = &::constants::ED25519_BASEPOINT_TABLE;
+
+        let static_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let check_scalar: Scalar = static_scalars
+            .iter()
+            .chain(dynamic_scalars.iter())
+            .map(|s| s * s)
+            .sum();
+
+        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+
+        let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
+
+        let P = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        use traits::VartimeMultiscalarMul;
+        let Q = EdwardsPoint::vartime_multiscalar_mul(
+            static_scalars.iter().chain(dynamic_scalars.iter()),
+            static_points.iter().chain(dynamic_points.iter()),
+        );
+
+        let R = &check_scalar * B;
+
+        assert_eq!(P.compress(), R.compress());
+        assert_eq!(Q.compress(), R.compress());
     }
 
     mod vartime {

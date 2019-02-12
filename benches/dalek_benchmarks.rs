@@ -20,8 +20,6 @@ mod edwards_benches {
     use super::*;
     use curve25519_dalek::edwards;
     use curve25519_dalek::edwards::EdwardsPoint;
-    use curve25519_dalek::traits::MultiscalarMul;
-    use curve25519_dalek::traits::VartimeMultiscalarMul;
 
     fn compress(c: &mut Criterion) {
         let B = &constants::ED25519_BASEPOINT_POINT;
@@ -126,10 +124,10 @@ mod multiscalar_benches {
                 let (static_scalars, static_points) = construct(static_size);
                 let (dynamic_scalars, dynamic_points) = construct(dynamic_size);
 
-                use curve25519_dalek::edwards::PrecomputedStraus;
+                use curve25519_dalek::edwards::EdwardsPrecomputation;
                 use curve25519_dalek::traits::PrecomputedMultiscalarMul;
 
-                let precomp = PrecomputedStraus::new(&static_points);
+                let precomp = EdwardsPrecomputation::new(&static_points);
 
                 b.iter(|| {
                     precomp.mixed_multiscalar_mul(
@@ -157,10 +155,10 @@ mod multiscalar_benches {
                 let (static_scalars, static_points) = construct(static_size);
                 let (dynamic_scalars, dynamic_points) = construct(dynamic_size);
 
-                use curve25519_dalek::edwards::VartimePrecomputedStraus;
+                use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
                 use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
 
-                let precomp = VartimePrecomputedStraus::new(&static_points);
+                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
 
                 b.iter(|| {
                     precomp.vartime_mixed_multiscalar_mul(

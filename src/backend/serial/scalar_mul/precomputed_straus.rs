@@ -61,43 +61,33 @@ impl PrecomputedMultiscalarMul for PrecomputedStraus {
         K: IntoIterator,
         K::Item: Borrow<Self::Point>,
     {
-        let mut static_scalars = static_scalars.into_iter();
-        let mut dynamic_scalars = dynamic_scalars.into_iter();
-        let mut dynamic_points = dynamic_points.into_iter();
-
-        // Check that the input lengths are consistent with each other:
-        let (ss_lo, ss_hi) = static_scalars.by_ref().size_hint();
-        let (ds_lo, ds_hi) = dynamic_scalars.by_ref().size_hint();
-        let (dp_lo, dp_hi) = dynamic_points.by_ref().size_hint();
-
-        // Static points match static scalars
-        let sp = self.static_lookup_tables.len();
-        assert_eq!(ss_lo, sp);
-        assert_eq!(ss_hi, Some(sp));
-
-        // Dynamic points match dynamic scalars
-        assert_eq!(ds_lo, dp_lo);
-        assert_eq!(ds_hi, Some(ds_lo));
-        assert_eq!(ds_hi, dp_hi);
-        let dp = dp_lo;
-
         // This does two allocs for the scalar digits instead of
         // putting them in a contiguous array, which makes handling
         // the two kinds of lookup tables slightly easier.
         // Use a ClearOnDrop wrapper.
 
-        let static_scalar_digits_vec: Vec<_> =
-            static_scalars.map(|s| s.borrow().to_radix_16()).collect();
+        let static_scalar_digits_vec: Vec<_> = static_scalars
+            .into_iter()
+            .map(|s| s.borrow().to_radix_16())
+            .collect();
         let static_scalar_digits = ClearOnDrop::new(static_scalar_digits_vec);
 
-        let dynamic_scalar_digits_vec: Vec<_> =
-            dynamic_scalars.map(|s| s.borrow().to_radix_16()).collect();
+        let dynamic_scalar_digits_vec: Vec<_> = dynamic_scalars
+            .into_iter()
+            .map(|s| s.borrow().to_radix_16())
+            .collect();
         let dynamic_scalar_digits = ClearOnDrop::new(dynamic_scalar_digits_vec);
 
         // Build lookup tables for dynamic points
         let dynamic_lookup_tables: Vec<_> = dynamic_points
+            .into_iter()
             .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
             .collect();
+
+        let sp = self.static_lookup_tables.len();
+        let dp = dynamic_lookup_tables.len();
+        assert_eq!(sp, static_scalar_digits.len());
+        assert_eq!(dp, dynamic_scalar_digits.len());
 
         let mut R = EdwardsPoint::identity();
         for j in (0..64).rev() {

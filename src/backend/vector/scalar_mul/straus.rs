@@ -33,7 +33,6 @@ use prelude::*;
 /// point representation on the fly.
 pub struct Straus {}
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -71,7 +70,6 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 

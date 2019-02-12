@@ -219,8 +219,9 @@ pub trait VartimeMultiscalarMul {
     {
         Self::optional_multiscalar_mul(
             scalars,
-            points.into_iter().map(|P| Some(P.borrow().clone()))
-        ).unwrap()
+            points.into_iter().map(|P| Some(P.borrow().clone())),
+        )
+        .unwrap()
     }
 }
 
@@ -313,9 +314,26 @@ pub trait PrecomputedMultiscalarMul: Sized {
 /// where the \\(B_i\\) are *static* points, for which precomputation
 /// is possible, and the \\(A_j\\) are *dynamic* points, for which
 /// precomputation is not possible.
+///
+/// This trait has three methods for performing this computation:
+///
+/// * [`vartime_multiscalar_mul`], which handles the special case
+/// where \\(n = 0\\) and there are no dynamic points;
+///
+/// * [`vartime_mixed_multiscalar_mul`], which takes the dynamic
+/// points as already-validated `Point`s and is infallible;
+///
+/// * [`optional_mixed_multiscalar_mul`], which takes the dynamic
+/// points as `Option<Point>`s and returns an `Option<Point>`,
+/// allowing decompression to be composed into the input iterators.
+///
+/// All methods require that the lengths of the input iterators be
+/// known and matching, as if they were `ExactSizeIterator`s.  (It
+/// does not require `ExactSizeIterator` only because that trait is
+/// broken).
 pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// The type of point to be multiplied, e.g., `RistrettoPoint`.
-    type Point;
+    type Point: Clone;
 
     /// Given the static points \\( B_i \\), perform precomputation
     /// and return the precomputation data.
@@ -323,36 +341,6 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     where
         I: IntoIterator,
         I::Item: Borrow<Self::Point>;
-
-    /// Given `static_scalars`, an iterator of public scalars
-    /// \\(b_i\\), `dynamic_scalars`, an iterator of public scalars
-    /// \\(a_i\\), and `dynamic_points`, an iterator of points
-    /// \\(A_i\\), compute
-    /// $$
-    /// Q = a_1 A_1 + \cdots + a_n A_n + b_1 B_1 + \cdots + b_m B_m,
-    /// $$
-    /// where the \\(B_j\\) are the points that were supplied to `new`.
-    ///
-    /// It is an error to call this function with iterators of
-    /// inconsistent lengths.
-    ///
-    /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
-    /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
-    /// iterators returning either `Scalar`s or `&Scalar`s.
-    fn vartime_mixed_multiscalar_mul<I, J, K>(
-        &self,
-        static_scalars: I,
-        dynamic_scalars: J,
-        dynamic_points: K,
-    ) -> Self::Point
-    where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<Scalar>,
-        K: IntoIterator,
-        K::Item: Borrow<Self::Point>;
 
     /// Given `static_scalars`, an iterator of public scalars
     /// \\(b_i\\), compute
@@ -382,6 +370,76 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
             iter::empty::<Self::Point>(),
         )
     }
+
+    /// Given `static_scalars`, an iterator of public scalars
+    /// \\(b_i\\), `dynamic_scalars`, an iterator of public scalars
+    /// \\(a_i\\), and `dynamic_points`, an iterator of points
+    /// \\(A_i\\), compute
+    /// $$
+    /// Q = a_1 A_1 + \cdots + a_n A_n + b_1 B_1 + \cdots + b_m B_m,
+    /// $$
+    /// where the \\(B_j\\) are the points that were supplied to `new`.
+    ///
+    /// It is an error to call this function with iterators of
+    /// inconsistent lengths.
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    fn vartime_mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Self::Point
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator,
+        K::Item: Borrow<Self::Point>,
+    {
+        Self::optional_mixed_multiscalar_mul(
+            self,
+            static_scalars,
+            dynamic_scalars,
+            dynamic_points.into_iter().map(|P| Some(P.borrow().clone())),
+        )
+        .unwrap()
+    }
+
+    /// Given `static_scalars`, an iterator of public scalars
+    /// \\(b_i\\), `dynamic_scalars`, an iterator of public scalars
+    /// \\(a_i\\), and `dynamic_points`, an iterator of points
+    /// \\(A_i\\), compute
+    /// $$
+    /// Q = a_1 A_1 + \cdots + a_n A_n + b_1 B_1 + \cdots + b_m B_m,
+    /// $$
+    /// where the \\(B_j\\) are the points that were supplied to `new`.
+    ///
+    /// If any of the dynamic points were `None`, return `None`.
+    ///
+    /// It is an error to call this function with iterators of
+    /// inconsistent lengths.
+    ///
+    /// This function is particularly useful when verifying statements
+    /// involving compressed points.  Accepting `Option<Point>` allows
+    /// inlining point decompression into the multiscalar call,
+    /// avoiding the need for temporary buffers.
+    fn optional_mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Option<Self::Point>
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator<Item = Option<Self::Point>>;
 }
 
 // ------------------------------------------------------------------------

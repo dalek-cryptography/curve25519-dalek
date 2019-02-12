@@ -136,19 +136,18 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
         }
     }
 
-    fn vartime_mixed_multiscalar_mul<I, J, K>(
+    fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,
         dynamic_scalars: J,
         dynamic_points: K,
-    ) -> Self::Point
+    ) -> Option<Self::Point>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
         J::Item: Borrow<Scalar>,
-        K: IntoIterator,
-        K::Item: Borrow<Self::Point>,
+        K: IntoIterator<Item = Option<Self::Point>>,
     {
         let static_nafs = static_scalars
             .into_iter()
@@ -159,10 +158,14 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect::<Vec<_>>();
 
-        let dynamic_lookup_tables = dynamic_points
+        let dynamic_lookup_tables = match dynamic_points
             .into_iter()
-            .map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(P.borrow()))
-            .collect::<Vec<_>>();
+            .map(|P_opt| P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)))
+            .collect::<Option<Vec<_>>>()
+        {
+            Some(x) => x,
+            None => return None,
+        };
 
         let sp = self.static_lookup_tables.len();
         let dp = dynamic_lookup_tables.len();
@@ -197,6 +200,6 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
             S = R.to_projective();
         }
 
-        S.to_extended()
+        Some(S.to_extended())
     }
 }

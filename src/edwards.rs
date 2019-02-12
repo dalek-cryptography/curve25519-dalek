@@ -732,22 +732,21 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
         Self(scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
     }
 
-    fn vartime_mixed_multiscalar_mul<I, J, K>(
+    fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,
         dynamic_scalars: J,
         dynamic_points: K,
-    ) -> Self::Point
+    ) -> Option<Self::Point>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
         J::Item: Borrow<Scalar>,
-        K: IntoIterator,
-        K::Item: Borrow<Self::Point>,
+        K: IntoIterator<Item = Option<Self::Point>>,
     {
         self.0
-            .vartime_mixed_multiscalar_mul(static_scalars, dynamic_scalars, dynamic_points)
+            .optional_mixed_multiscalar_mul(static_scalars, dynamic_scalars, dynamic_points)
     }
 }
 

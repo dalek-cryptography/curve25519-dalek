@@ -677,17 +677,17 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
-#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+#[cfg(feature = "alloc")]
 pub struct EdwardsPrecomputation(scalar_mul::precomputed_straus::PrecomputedStraus);
 
 /// Precomputation for variable-time multiscalar multiplication with `EdwardsPoint`s.
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
-#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+#[cfg(feature = "alloc")]
 pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
-#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+#[cfg(feature = "alloc")]
 impl PrecomputedMultiscalarMul for EdwardsPrecomputation {
     type Point = EdwardsPoint;
 
@@ -720,7 +720,7 @@ impl PrecomputedMultiscalarMul for EdwardsPrecomputation {
     }
 }
 
-#[cfg(all(feature = "alloc", feature = "yolocrypto"))]
+#[cfg(feature = "alloc")]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     type Point = EdwardsPoint;
 
@@ -1281,7 +1281,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "yolocrypto")]
     fn precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
@@ -1325,7 +1324,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "yolocrypto")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 

@@ -46,11 +46,11 @@ use backend::vector::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_H
 use backend::serial::u64::field::FieldElement51;
 
 /// Unpack 32-bit lanes into 64-bit lanes:
-/// ```
+/// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
 /// ```
 /// into
-/// ```
+/// ```ascii,no_run
 /// (a0, 0, b0, 0, c0, 0, d0, 0)
 /// (a1, 0, b1, 0, c1, 0, d1, 0)
 /// ```
@@ -69,12 +69,12 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
 }
 
 /// Repack 64-bit lanes into 32-bit lanes:
-/// ```
+/// ```ascii,no_run
 /// (a0, 0, b0, 0, c0, 0, d0, 0)
 /// (a1, 0, b1, 0, c1, 0, d1, 0)
 /// ```
 /// into
-/// ```
+/// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
 /// ```
 #[inline(always)]

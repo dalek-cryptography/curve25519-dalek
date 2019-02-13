@@ -187,10 +187,7 @@ use scalar::Scalar;
 
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::{
-    MultiscalarMul, PrecomputedMultiscalarMul, VartimeMultiscalarMul,
-    VartimePrecomputedMultiscalarMul,
-};
+use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
     feature = "simd_backend",
@@ -909,55 +906,12 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     }
 }
 
-/// Precomputation for multiscalar multiplication with `RistrettoPoint`s.
-// This wraps the inner implementation in a facade type so that we can
-// decouple stability of the inner type from the stability of the
-// outer type.
-#[cfg(feature = "alloc")]
-pub struct RistrettoPrecomputation(scalar_mul::precomputed_straus::PrecomputedStraus);
-
 /// Precomputation for variable-time multiscalar multiplication with `RistrettoPoint`s.
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
 pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
-
-#[cfg(feature = "alloc")]
-impl PrecomputedMultiscalarMul for RistrettoPrecomputation {
-    type Point = RistrettoPoint;
-
-    fn new<I>(static_points: I) -> Self
-    where
-        I: IntoIterator,
-        I::Item: Borrow<Self::Point>,
-    {
-        Self(scalar_mul::precomputed_straus::PrecomputedStraus::new(
-            static_points.into_iter().map(|P| P.borrow().0),
-        ))
-    }
-
-    fn mixed_multiscalar_mul<I, J, K>(
-        &self,
-        static_scalars: I,
-        dynamic_scalars: J,
-        dynamic_points: K,
-    ) -> Self::Point
-    where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<Scalar>,
-        K: IntoIterator,
-        K::Item: Borrow<Self::Point>,
-    {
-        RistrettoPoint(self.0.mixed_multiscalar_mul(
-            static_scalars,
-            dynamic_scalars,
-            dynamic_points.into_iter().map(|P| P.borrow().0),
-        ))
-    }
-}
 
 #[cfg(feature = "alloc")]
 impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
@@ -1364,49 +1318,6 @@ mod test {
             // Check that P is in the image of the ristretto map
             P.compress();
         }
-    }
-
-    #[test]
-    fn precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
-
-        let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
-
-        let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let check_scalar: Scalar = static_scalars
-            .iter()
-            .chain(dynamic_scalars.iter())
-            .map(|s| s * s)
-            .sum();
-
-        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
-        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
-
-        let precomputation = RistrettoPrecomputation::new(static_points.iter());
-
-        let P = precomputation.mixed_multiscalar_mul(
-            &static_scalars,
-            &dynamic_scalars,
-            &dynamic_points,
-        );
-
-        use traits::MultiscalarMul;
-        let Q = RistrettoPoint::multiscalar_mul(
-            static_scalars.iter().chain(dynamic_scalars.iter()),
-            static_points.iter().chain(dynamic_points.iter()),
-        );
-
-        let R = &check_scalar * B;
-
-        assert_eq!(P.compress(), R.compress());
-        assert_eq!(Q.compress(), R.compress());
     }
 
     #[test]

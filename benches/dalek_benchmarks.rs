@@ -110,37 +110,6 @@ mod multiscalar_benches {
         );
     }
 
-    fn precomputed_ct_straus_helper(c: &mut Criterion, dynamic_fraction: f64) {
-        let label = format!(
-            "Constant-time mixed-base Straus ({:.2}pct dyn)",
-            100.0*dynamic_fraction,
-        );
-        c.bench_function_over_inputs(
-            &label,
-            move |b, &&total_size| {
-                let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
-                let static_size = total_size - dynamic_size;
-
-                let (static_scalars, static_points) = construct(static_size);
-                let (dynamic_scalars, dynamic_points) = construct(dynamic_size);
-
-                use curve25519_dalek::edwards::EdwardsPrecomputation;
-                use curve25519_dalek::traits::PrecomputedMultiscalarMul;
-
-                let precomp = EdwardsPrecomputation::new(&static_points);
-
-                b.iter(|| {
-                    precomp.mixed_multiscalar_mul(
-                        &static_scalars,
-                        &dynamic_scalars,
-                        &dynamic_points,
-                    )
-                });
-            },
-            &MULTISCALAR_SIZES,
-        );
-    }
-
     fn precomputed_vt_straus_helper(c: &mut Criterion, dynamic_fraction: f64) {
         let label = format!(
             "Variable-time mixed-base Straus ({:.2}pct dyn)",
@@ -172,18 +141,6 @@ mod multiscalar_benches {
         );
     }
 
-    fn precomputed_ct_straus_00_pct_dynamic(c: &mut Criterion) {
-        precomputed_ct_straus_helper(c, 0.0);
-    }
-
-    fn precomputed_ct_straus_20_pct_dynamic(c: &mut Criterion) {
-        precomputed_ct_straus_helper(c, 0.2);
-    }
-
-    fn precomputed_ct_straus_50_pct_dynamic(c: &mut Criterion) {
-        precomputed_ct_straus_helper(c, 0.5);
-    }
-
     fn precomputed_vt_straus_00_pct_dynamic(c: &mut Criterion) {
         precomputed_vt_straus_helper(c, 0.0);
     }
@@ -203,9 +160,6 @@ mod multiscalar_benches {
         targets =
         consttime_multiscalar_mul,
         vartime_multiscalar_mul,
-        precomputed_ct_straus_00_pct_dynamic,
-        precomputed_ct_straus_20_pct_dynamic,
-        precomputed_ct_straus_50_pct_dynamic,
         precomputed_vt_straus_00_pct_dynamic,
         precomputed_vt_straus_20_pct_dynamic,
         precomputed_vt_straus_50_pct_dynamic,

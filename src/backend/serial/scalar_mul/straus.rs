@@ -12,16 +12,11 @@
 
 #![allow(non_snake_case)]
 
-#[cfg(any(feature = "alloc", feature = "std"))]
 use core::borrow::Borrow;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
 use edwards::EdwardsPoint;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
 #[allow(unused_imports)]
@@ -48,10 +43,8 @@ use prelude::*;
 ///
 /// [solution]: https://www.jstor.org/stable/2310929
 /// [problem]: https://www.jstor.org/stable/2312273
-#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct Straus {}
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -115,8 +108,8 @@ impl MultiscalarMul for Straus {
     {
         use clear_on_drop::ClearOnDrop;
 
-        use curve_models::ProjectiveNielsPoint;
-        use scalar_mul::window::LookupTable;
+        use backend::serial::curve_models::ProjectiveNielsPoint;
+        use window::LookupTable;
         use traits::Identity;
 
         let lookup_tables: Vec<_> = points
@@ -148,7 +141,6 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -167,8 +159,8 @@ impl VartimeMultiscalarMul for Straus {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
-        use scalar_mul::window::NafLookupTable5;
+        use backend::serial::curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
+        use window::NafLookupTable5;
         use traits::Identity;
 
         let nafs: Vec<_> = scalars

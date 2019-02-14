@@ -12,8 +12,8 @@
 //!
 //! The `curve25519_dalek::field` module provides a type alias
 //! `curve25519_dalek::field::FieldElement` to a field element type
-//! defined in the `backend` module; either `FieldElement64` or
-//! `FieldElement32`.
+//! defined in the `backend` module; either `FieldElement51` or
+//! `FieldElement2625`.
 //!
 //! Field operations defined in terms of machine
 //! operations, such as field multiplication or squaring, are defined in
@@ -33,24 +33,24 @@ use constants;
 use backend;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::u64::field::*;
+pub use backend::serial::u64::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u64_backend")]
-pub type FieldElement = backend::u64::field::FieldElement64;
+pub type FieldElement = backend::serial::u64::field::FieldElement51;
 
 #[cfg(feature = "u32_backend")]
-pub use backend::u32::field::*;
+pub use backend::serial::u32::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u32_backend")]
-pub type FieldElement = backend::u32::field::FieldElement32;
+pub type FieldElement = backend::serial::u32::field::FieldElement2625;
 
 impl Eq for FieldElement {}
 
@@ -255,7 +255,7 @@ impl FieldElement {
         (was_nonzero_square, r)
     }
 
-    /// Attempt to compute `1/sqrt(self)` in constant time.
+    /// Attempt to compute `sqrt(1/self)` in constant time.
     ///
     /// Convenience wrapper around `sqrt_ratio_i`.
     ///
@@ -265,7 +265,7 @@ impl FieldElement {
     ///
     /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
     /// - `(Choice(0), zero)           ` if `self` is zero;
-    /// - `(Choice(0), +sqrt(i*u/v))   ` if `self` is a nonzero nonsquare;
+    /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
     ///
     pub fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::one(), self)
@@ -280,7 +280,7 @@ mod test {
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
     ///     2228051251926706380353716438957572
-    pub static A_BYTES: [u8; 32] =
+    static A_BYTES: [u8; 32] =
         [ 0x04, 0xfe, 0xdf, 0x98, 0xa7, 0xfa, 0x0a, 0x68,
           0x84, 0x92, 0xbd, 0x59, 0x08, 0x07, 0xa7, 0x03,
           0x9e, 0xd1, 0xf6, 0xf2, 0xe1, 0xd9, 0xe2, 0xa4,

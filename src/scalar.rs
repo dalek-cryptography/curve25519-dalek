@@ -151,7 +151,7 @@ use core::ops::{Sub, SubAssign};
 #[allow(unused_imports)]
 use prelude::*;
 
-use rand::{CryptoRng, Rng};
+use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
 use digest::Digest;
@@ -168,14 +168,14 @@ use constants;
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u64_backend")]
-type UnpackedScalar = backend::u64::scalar::Scalar64;
+type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u32_backend")]
-type UnpackedScalar = backend::u32::scalar::Scalar32;
+type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
@@ -507,7 +507,7 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `rand::CryptoRng` interface.
+    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -516,20 +516,20 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
+    /// extern crate rand_os;
     /// # extern crate curve25519_dalek;
     /// #
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand::OsRng;
+    /// use rand_os::OsRng;
     ///
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
+    pub fn random<T: RngCore + CryptoRng>(mut rng: T) -> Self {
         let mut scalar_bytes = [0u8; 64];
-        rng.fill(&mut scalar_bytes);
+        rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 

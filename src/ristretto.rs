@@ -164,7 +164,7 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-use rand::{CryptoRng, Rng};
+use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
 use digest::Digest;
@@ -185,11 +185,20 @@ use prelude::*;
 
 use scalar::Scalar;
 
-use curve_models::CompletedPoint;
-
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::{MultiscalarMul, VartimeMultiscalarMul};
+use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+
+#[cfg(not(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+)))]
+use backend::serial::scalar_mul;
+#[cfg(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+))]
+use backend::vector::scalar_mul;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -468,8 +477,8 @@ impl RistrettoPoint {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand;
-    /// use rand::rngs::OsRng;
+    /// extern crate rand_os;
+    /// use rand_os::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
@@ -602,6 +611,8 @@ impl RistrettoPoint {
         let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
 
+        use backend::serial::curve_models::CompletedPoint;
+
         // The conversion from W_i is exactly the conversion from P1xP1.
         RistrettoPoint(CompletedPoint{
             X: &(&s + &s) * &D,
@@ -615,7 +626,7 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -627,9 +638,9 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
+    pub fn random<T: RngCore + CryptoRng>(mut rng: T) -> Self {
         let mut uniform_bytes = [0u8; 64];
-        rng.fill(&mut uniform_bytes);
+        rng.fill_bytes(&mut uniform_bytes);
 
         RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
@@ -891,8 +902,53 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     {
         let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.borrow().0));
 
-        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points)
-            .map(|P| RistrettoPoint(P))
+        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(|P| RistrettoPoint(P))
+    }
+}
+
+/// Precomputation for variable-time multiscalar multiplication with `RistrettoPoint`s.
+// This wraps the inner implementation in a facade type so that we can
+// decouple stability of the inner type from the stability of the
+// outer type.
+#[cfg(feature = "alloc")]
+pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
+
+#[cfg(feature = "alloc")]
+impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
+    type Point = RistrettoPoint;
+
+    fn new<I>(static_points: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Self::Point>,
+    {
+        Self(
+            scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(
+                static_points.into_iter().map(|P| P.borrow().0),
+            ),
+        )
+    }
+
+    fn optional_mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Option<Self::Point>
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator<Item = Option<Self::Point>>,
+    {
+        self.0
+            .optional_mixed_multiscalar_mul(
+                static_scalars,
+                dynamic_scalars,
+                dynamic_points.into_iter().map(|P_opt| P_opt.map(|P| P.0)),
+            )
+            .map(|P_ed| RistrettoPoint(P_ed))
     }
 }
 
@@ -1020,7 +1076,7 @@ impl Debug for RistrettoPoint {
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
     #[cfg(feature = "rand")]
-    use rand::rngs::OsRng;
+    use rand_os::OsRng;
 
     use scalar::Scalar;
     use constants;
@@ -1262,5 +1318,48 @@ mod test {
             // Check that P is in the image of the ristretto map
             P.compress();
         }
+    }
+
+    #[test]
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
+
+        let static_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let check_scalar: Scalar = static_scalars
+            .iter()
+            .chain(dynamic_scalars.iter())
+            .map(|s| s * s)
+            .sum();
+
+        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+
+        let P = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        use traits::VartimeMultiscalarMul;
+        let Q = RistrettoPoint::vartime_multiscalar_mul(
+            static_scalars.iter().chain(dynamic_scalars.iter()),
+            static_points.iter().chain(dynamic_points.iter()),
+        );
+
+        let R = &check_scalar * B;
+
+        assert_eq!(P.compress(), R.compress());
+        assert_eq!(Q.compress(), R.compress());
     }
 }

@@ -14,10 +14,10 @@ use core::borrow::Borrow;
 
 use clear_on_drop::ClearOnDrop;
 
-use backend::avx2::edwards::{CachedPoint, ExtendedPoint};
+use backend::vector::{CachedPoint, ExtendedPoint};
 use edwards::EdwardsPoint;
 use scalar::Scalar;
-use scalar_mul::window::{LookupTable, NafLookupTable5};
+use window::{LookupTable, NafLookupTable5};
 use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 
 #[allow(unused_imports)]
@@ -33,7 +33,6 @@ use prelude::*;
 /// point representation on the fly.
 pub struct Straus {}
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -71,7 +70,6 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 

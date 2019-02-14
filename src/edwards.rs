@@ -112,23 +112,34 @@ use scalar::Scalar;
 
 use montgomery::MontgomeryPoint;
 
-use curve_models::ProjectivePoint;
-use curve_models::CompletedPoint;
-use curve_models::AffineNielsPoint;
-use curve_models::ProjectiveNielsPoint;
+use backend::serial::curve_models::AffineNielsPoint;
+use backend::serial::curve_models::CompletedPoint;
+use backend::serial::curve_models::ProjectiveNielsPoint;
+use backend::serial::curve_models::ProjectivePoint;
+
+use window::LookupTable;
 
 #[allow(unused_imports)]
 use prelude::*;
 
-use scalar_mul::window::LookupTable;
-
-use traits::{Identity, IsIdentity};
 use traits::ValidityCheck;
+use traits::{Identity, IsIdentity};
 
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::VartimeMultiscalarMul;
+use traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+
+#[cfg(not(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+)))]
+use backend::serial::scalar_mul;
+#[cfg(all(
+    feature = "simd_backend",
+    any(target_feature = "avx2", target_feature = "avx512ifma")
+))]
+use backend::vector::scalar_mul;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -439,6 +450,10 @@ impl EdwardsPoint {
     /// Convert this `EdwardsPoint` on the Edwards model to the
     /// corresponding `MontgomeryPoint` on the Montgomery model.
     ///
+    /// This function has one exceptional case; the identity point of
+    /// the Edwards curve is sent to the 2-torsion point \\((0,0)\\)
+    /// on the Montgomery curve.
+    ///
     /// Note that this is a one-way conversion, since the Montgomery
     /// model does not retain sign information.
     pub fn to_montgomery(&self) -> MontgomeryPoint {
@@ -446,7 +461,7 @@ impl EdwardsPoint {
         //
         // The denominator is zero only when y=1, the identity point of
         // the Edwards curve.  Since 0.invert() = 0, in this case we
-        // compute u = 0, the identity point of the Montgomery line.
+        // compute the 2-torsion point (0,0).
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();
@@ -576,18 +591,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        {
-            use backend::avx2::scalar_mul::variable_base::mul;
-            mul(self, scalar)
-        }
-        // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        {
-            use scalar_mul::variable_base::mul;
-            mul(self, scalar)
-        }
+        scalar_mul::variable_base::mul(self, scalar)
     }
 }
 
@@ -613,7 +617,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 #[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
-    
+
     fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     where
         I: IntoIterator,
@@ -638,21 +642,14 @@ impl MultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::straus::Straus;
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::straus::Straus;
-
-        Straus::multiscalar_mul(scalars, points)
+        scalar_mul::straus::Straus::multiscalar_mul(scalars, points)
     }
 }
 
 #[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
-    
+
     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
@@ -676,29 +673,56 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::straus::Straus;
-        // Otherwise, proceed as normal:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::straus::Straus;
+        scalar_mul::straus::Straus::optional_multiscalar_mul(scalars, points)
+    }
+}
 
-        Straus::optional_multiscalar_mul(scalars, points)
+/// Precomputation for variable-time multiscalar multiplication with `EdwardsPoint`s.
+// This wraps the inner implementation in a facade type so that we can
+// decouple stability of the inner type from the stability of the
+// outer type.
+#[cfg(feature = "alloc")]
+pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
+
+#[cfg(feature = "alloc")]
+impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
+    type Point = EdwardsPoint;
+
+    fn new<I>(static_points: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Self::Point>,
+    {
+        Self(scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
+    }
+
+    fn optional_mixed_multiscalar_mul<I, J, K>(
+        &self,
+        static_scalars: I,
+        dynamic_scalars: J,
+        dynamic_points: K,
+    ) -> Option<Self::Point>
+    where
+        I: IntoIterator,
+        I::Item: Borrow<Scalar>,
+        J: IntoIterator,
+        J::Item: Borrow<Scalar>,
+        K: IntoIterator<Item = Option<Self::Point>>,
+    {
+        self.0
+            .optional_mixed_multiscalar_mul(static_scalars, dynamic_scalars, dynamic_points)
     }
 }
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
     #[cfg(feature = "stage2_build")]
-    pub fn vartime_double_scalar_mul_basepoint(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
-        // If we built with AVX2, use the AVX2 backend.
-        #[cfg(all(feature="avx2_backend", target_feature="avx2"))]
-        use backend::avx2::scalar_mul::vartime_double_base;
-        // Otherwise, use the serial backend:
-        #[cfg(not(all(feature="avx2_backend", target_feature="avx2")))]
-        use scalar_mul::vartime_double_base;
-
-        vartime_double_base::mul(a, A, b)
+    pub fn vartime_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &EdwardsPoint,
+        b: &Scalar,
+    ) -> EdwardsPoint {
+        scalar_mul::vartime_double_base::mul(a, A, b)
     }
 }
 
@@ -1218,6 +1242,49 @@ mod test {
         let P2 = &s * &G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
+    }
+
+    #[test]
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let B = &::constants::ED25519_BASEPOINT_TABLE;
+
+        let static_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let check_scalar: Scalar = static_scalars
+            .iter()
+            .chain(dynamic_scalars.iter())
+            .map(|s| s * s)
+            .sum();
+
+        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+
+        let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
+
+        let P = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        use traits::VartimeMultiscalarMul;
+        let Q = EdwardsPoint::vartime_multiscalar_mul(
+            static_scalars.iter().chain(dynamic_scalars.iter()),
+            static_points.iter().chain(dynamic_points.iter()),
+        );
+
+        let R = &check_scalar * B;
+
+        assert_eq!(P.compress(), R.compress());
+        assert_eq!(Q.compress(), R.compress());
     }
 
     mod vartime {

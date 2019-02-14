@@ -3,13 +3,13 @@
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use backend::avx2::edwards::{ExtendedPoint, CachedPoint};
-use scalar_mul::window::LookupTable;
+use backend::serial::curve_models::ProjectiveNielsPoint;
+use window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
-pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
-    let lookup_table = LookupTable::<CachedPoint>::from(point);
+    let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(point);
     // Setting s = scalar, compute
     //
     //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
@@ -23,10 +23,10 @@ pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     //    s*P = P*s_0 + 16*(P*s_1 + 16*(P*s_2 + 16*( ... + P*s_63)...))
     //
     // We sum right-to-left.
-    let mut Q = ExtendedPoint::identity();
+    let mut Q = EdwardsPoint::identity();
     for i in (0..64).rev() {
         Q = Q.mul_by_pow_2(4);
-        Q = &Q + &lookup_table.select(scalar_digits[i]);
+        Q = (&Q + &lookup_table.select(scalar_digits[i])).to_extended();
     }
-    Q.into()
+    Q
 }

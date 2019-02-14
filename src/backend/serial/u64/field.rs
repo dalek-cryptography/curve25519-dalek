@@ -20,7 +20,7 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-/// A `FieldElement64` represents an element of the field
+/// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
 /// In the 64-bit implementation, a `FieldElement` is represented in
@@ -30,57 +30,57 @@ use subtle::ConditionallySelectable;
 /// # Note
 ///
 /// The `curve25519_dalek::field` module provides a type alias
-/// `curve25519_dalek::field::FieldElement` to either `FieldElement64`
-/// or `FieldElement32`.
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement51`
+/// or `FieldElement2625`.
 ///
-/// The backend-specific type `FieldElement64` should not be used
+/// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement64(pub (crate) [u64; 5]);
+pub struct FieldElement51(pub (crate) [u64; 5]);
 
-impl Debug for FieldElement64 {
+impl Debug for FieldElement51 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement64({:?})", &self.0[..])
+        write!(f, "FieldElement51({:?})", &self.0[..])
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement64> for FieldElement64 {
-    fn add_assign(&mut self, _rhs: &'b FieldElement64) {
+impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
+    fn add_assign(&mut self, _rhs: &'b FieldElement51) {
         for i in 0..5 {
             self.0[i] += _rhs.0[i];
         }
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement64> for &'a FieldElement64 {
-    type Output = FieldElement64;
-    fn add(self, _rhs: &'b FieldElement64) -> FieldElement64 {
+impl<'a, 'b> Add<&'b FieldElement51> for &'a FieldElement51 {
+    type Output = FieldElement51;
+    fn add(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         let mut output = *self;
         output += _rhs;
         output
     }
 }
 
-impl<'b> SubAssign<&'b FieldElement64> for FieldElement64 {
-    fn sub_assign(&mut self, _rhs: &'b FieldElement64) {
-        let result = (self as &FieldElement64) - _rhs;
+impl<'b> SubAssign<&'b FieldElement51> for FieldElement51 {
+    fn sub_assign(&mut self, _rhs: &'b FieldElement51) {
+        let result = (self as &FieldElement51) - _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement64> for &'a FieldElement64 {
-    type Output = FieldElement64;
-    fn sub(self, _rhs: &'b FieldElement64) -> FieldElement64 {
+impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
+    type Output = FieldElement51;
+    fn sub(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //
         // If we could statically track the bitlengths of the limbs
-        // of every FieldElement64, we could choose a multiple of p
+        // of every FieldElement51, we could choose a multiple of p
         // just bigger than _rhs and avoid having to do a reduction.
         //
         // Since we don't yet have type-level integers to do this, we
         // have to add an explicit reduction call here.
-        FieldElement64::reduce([
+        FieldElement51::reduce([
             (self.0[0] + 36028797018963664u64) - _rhs.0[0],
             (self.0[1] + 36028797018963952u64) - _rhs.0[1],
             (self.0[2] + 36028797018963952u64) - _rhs.0[2],
@@ -90,16 +90,16 @@ impl<'a, 'b> Sub<&'b FieldElement64> for &'a FieldElement64 {
     }
 }
 
-impl<'b> MulAssign<&'b FieldElement64> for FieldElement64 {
-    fn mul_assign(&mut self, _rhs: &'b FieldElement64) {
-        let result = (self as &FieldElement64) * _rhs;
+impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
+    fn mul_assign(&mut self, _rhs: &'b FieldElement51) {
+        let result = (self as &FieldElement51) * _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
-    type Output = FieldElement64;
-    fn mul(self, _rhs: &'b FieldElement64) -> FieldElement64 {
+impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+    type Output = FieldElement51;
+    fn mul(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
         #[inline(always)]
@@ -196,26 +196,26 @@ impl<'a, 'b> Mul<&'b FieldElement64> for &'a FieldElement64 {
         out[0] &= LOW_51_BIT_MASK;
 
         // Now out[i] < 2^(51 + epsilon) for all i.
-        FieldElement64(out)
+        FieldElement51(out)
     }
 }
 
-impl<'a> Neg for &'a FieldElement64 {
-    type Output = FieldElement64;
-    fn neg(self) -> FieldElement64 {
+impl<'a> Neg for &'a FieldElement51 {
+    type Output = FieldElement51;
+    fn neg(self) -> FieldElement51 {
         let mut output = *self;
         output.negate();
         output
     }
 }
 
-impl ConditionallySelectable for FieldElement64 {
+impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(
-        a: &FieldElement64,
-        b: &FieldElement64,
+        a: &FieldElement51,
+        b: &FieldElement51,
         choice: Choice,
-    ) -> FieldElement64 {
-        FieldElement64([
+    ) -> FieldElement51 {
+        FieldElement51([
             u64::conditional_select(&a.0[0], &b.0[0], choice),
             u64::conditional_select(&a.0[1], &b.0[1], choice),
             u64::conditional_select(&a.0[2], &b.0[2], choice),
@@ -224,7 +224,7 @@ impl ConditionallySelectable for FieldElement64 {
         ])
     }
 
-    fn conditional_swap(a: &mut FieldElement64, b: &mut FieldElement64, choice: Choice) {
+    fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice) {
         u64::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
         u64::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
         u64::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
@@ -232,7 +232,7 @@ impl ConditionallySelectable for FieldElement64 {
         u64::conditional_swap(&mut a.0[4], &mut b.0[4], choice);
     }
 
-    fn conditional_assign(&mut self, other: &FieldElement64, choice: Choice) {
+    fn conditional_assign(&mut self, other: &FieldElement51, choice: Choice) {
         self.0[0].conditional_assign(&other.0[0], choice);
         self.0[1].conditional_assign(&other.0[1], choice);
         self.0[2].conditional_assign(&other.0[2], choice);
@@ -241,11 +241,11 @@ impl ConditionallySelectable for FieldElement64 {
     }
 }
 
-impl FieldElement64 {
+impl FieldElement51 {
     /// Invert the sign of this field element
     pub fn negate(&mut self) {
         // See commentary in the Sub impl
-        let neg = FieldElement64::reduce([
+        let neg = FieldElement51::reduce([
             36028797018963664u64 - self.0[0],
             36028797018963952u64 - self.0[1],
             36028797018963952u64 - self.0[2],
@@ -256,23 +256,23 @@ impl FieldElement64 {
     }
 
     /// Construct zero.
-    pub fn zero() -> FieldElement64 {
-        FieldElement64([ 0, 0, 0, 0, 0 ])
+    pub fn zero() -> FieldElement51 {
+        FieldElement51([ 0, 0, 0, 0, 0 ])
     }
 
     /// Construct one.
-    pub fn one() -> FieldElement64 {
-        FieldElement64([ 1, 0, 0, 0, 0 ])
+    pub fn one() -> FieldElement51 {
+        FieldElement51([ 1, 0, 0, 0, 0 ])
     }
 
     /// Construct -1.
-    pub fn minus_one() -> FieldElement64 {
-        FieldElement64([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
+    pub fn minus_one() -> FieldElement51 {
+        FieldElement51([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
     }
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]
-    fn reduce(mut limbs: [u64; 5]) -> FieldElement64 {
+    fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
         const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
 
         // Since the input limbs are bounded by 2^64, the biggest
@@ -304,10 +304,10 @@ impl FieldElement64 {
         limbs[3] += c2;
         limbs[4] += c3;
 
-        FieldElement64(limbs)
+        FieldElement51(limbs)
     }
 
-    /// Load a `FieldElement64` from the low 255 bits of a 256-bit
+    /// Load a `FieldElement51` from the low 255 bits of a 256-bit
     /// input.
     ///
     /// # Warning
@@ -319,7 +319,7 @@ impl FieldElement64 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     ///
-    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement64 {
+    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
         let load8 = |input: &[u8]| -> u64 {
                (input[0] as u64)
             | ((input[1] as u64) << 8)
@@ -332,7 +332,7 @@ impl FieldElement64 {
         };
 
         let low_51_bit_mask = (1u64 << 51) - 1;
-        FieldElement64(
+        FieldElement51(
         // load bits [  0, 64), no shift
         [  load8(&bytes[ 0..])        & low_51_bit_mask
         // load bits [ 48,112), shift to [ 51,112)
@@ -346,7 +346,7 @@ impl FieldElement64 {
         ])
     }
 
-    /// Serialize this `FieldElement64` to a 32-byte array.  The
+    /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
@@ -365,7 +365,7 @@ impl FieldElement64 {
         // Therefore q can be computed as the carry bit of h + 19.
 
         // First, reduce the limbs to ensure h < 2*p.
-        let mut limbs = FieldElement64::reduce(self.0).0;
+        let mut limbs = FieldElement51::reduce(self.0).0;
 
         let mut q = (limbs[0] + 19) >> 51;
         q = (limbs[1] + q) >> 51;
@@ -433,7 +433,7 @@ impl FieldElement64 {
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
-    pub fn pow2k(&self, mut k: u32) -> FieldElement64 {
+    pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
 
         debug_assert!( k > 0 );
 
@@ -535,16 +535,16 @@ impl FieldElement64 {
             }
         }
 
-        FieldElement64(a)
+        FieldElement51(a)
     }
 
     /// Returns the square of this field element.
-    pub fn square(&self) -> FieldElement64 {
+    pub fn square(&self) -> FieldElement51 {
         self.pow2k(1)
     }
 
     /// Returns 2 times the square of this field element.
-    pub fn square2(&self) -> FieldElement64 {
+    pub fn square2(&self) -> FieldElement51 {
         let mut square = self.pow2k(1);
         for i in 0..5 {
             square.0[i] *= 2;

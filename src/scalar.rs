@@ -527,7 +527,7 @@ impl Scalar {
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<T: RngCore + CryptoRng>(rng: &mut T) -> Self {
+    pub fn random<T: RngCore + CryptoRng>(mut rng: T) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)

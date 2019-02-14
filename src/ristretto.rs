@@ -164,7 +164,7 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-use rand::{CryptoRng, Rng};
+use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
 use digest::Digest;
@@ -477,8 +477,8 @@ impl RistrettoPoint {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand;
-    /// use rand::rngs::OsRng;
+    /// extern crate rand_os;
+    /// use rand_os::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
@@ -626,7 +626,7 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `rand::Rng` interface.
+    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -638,9 +638,9 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<T: Rng + CryptoRng>(rng: &mut T) -> Self {
+    pub fn random<T: RngCore + CryptoRng>(rng: &mut T) -> Self {
         let mut uniform_bytes = [0u8; 64];
-        rng.fill(&mut uniform_bytes);
+        rng.fill_bytes(&mut uniform_bytes);
 
         RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
@@ -1076,7 +1076,7 @@ impl Debug for RistrettoPoint {
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
     #[cfg(feature = "rand")]
-    use rand::rngs::OsRng;
+    use rand_os::OsRng;
 
     use scalar::Scalar;
     use constants;

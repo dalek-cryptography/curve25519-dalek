@@ -2,10 +2,12 @@
 
 extern crate rand;
 use rand::rngs::OsRng;
+use rand::thread_rng;
 
 #[macro_use]
 extern crate criterion;
 
+use criterion::BatchSize;
 use criterion::Criterion;
 
 extern crate curve25519_dalek;
@@ -51,11 +53,13 @@ mod edwards_benches {
 
     fn vartime_double_base_scalar_mul(c: &mut Criterion) {
         c.bench_function("Variable-time aA+bB, A variable, B fixed", |bench| {
-            let B = &constants::ED25519_BASEPOINT_POINT;
-            let a = Scalar::from(298374928u64).invert();
-            let b = Scalar::from(897987897u64).invert();
-            let A = B * (b * a);
-            bench.iter(|| EdwardsPoint::vartime_double_scalar_mul_basepoint(&a, &A, &b));
+            let mut rng = thread_rng();
+            let A = &Scalar::random(&mut rng) * &constants::ED25519_BASEPOINT_TABLE;
+            bench.iter_batched(
+                || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
+                |(a, b)| EdwardsPoint::vartime_double_scalar_mul_basepoint(&a, &A, &b),
+                BatchSize::SmallInput,
+            );
         });
     }
 
@@ -75,25 +79,39 @@ mod multiscalar_benches {
     use super::*;
     use curve25519_dalek::edwards;
     use curve25519_dalek::edwards::EdwardsPoint;
+    use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
     use curve25519_dalek::traits::MultiscalarMul;
     use curve25519_dalek::traits::VartimeMultiscalarMul;
+    use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
+
+    fn construct_scalars(n: usize) -> Vec<Scalar> {
+        let mut rng = thread_rng();
+        (0..n).map(|_| Scalar::random(&mut rng)).collect()
+    }
+
+    fn construct_points(n: usize) -> Vec<EdwardsPoint> {
+        let mut rng = thread_rng();
+        (0..n)
+            .map(|_| &Scalar::random(&mut rng) * &constants::ED25519_BASEPOINT_TABLE)
+            .collect()
+    }
 
     fn construct(n: usize) -> (Vec<Scalar>, Vec<EdwardsPoint>) {
-        let mut rng = OsRng::new().unwrap();
-        let scalars: Vec<Scalar> = (0..n).map(|_| Scalar::random(&mut rng)).collect();
-        let points: Vec<EdwardsPoint> = scalars
-            .iter()
-            .map(|s| s * &constants::ED25519_BASEPOINT_TABLE)
-            .collect();
-        (scalars, points)
+        (construct_scalars(n), construct_points(n))
     }
 
     fn consttime_multiscalar_mul(c: &mut Criterion) {
         c.bench_function_over_inputs(
             "Constant-time variable-base multiscalar multiplication",
             |b, &&size| {
-                let (scalars, points) = construct(size);
-                b.iter(|| EdwardsPoint::multiscalar_mul(&scalars, &points));
+                let points = construct_points(size);
+                // This is supposed to be constant-time, but we might as well
+                // rerandomize the scalars for every call just in case.
+                b.iter_batched(
+                    || construct_scalars(size),
+                    |scalars| EdwardsPoint::multiscalar_mul(&scalars, &points),
+                    BatchSize::SmallInput,
+                );
             },
             &MULTISCALAR_SIZES,
         );
@@ -103,8 +121,16 @@ mod multiscalar_benches {
         c.bench_function_over_inputs(
             "Variable-time variable-base multiscalar multiplication",
             |b, &&size| {
-                let (scalars, points) = construct(size);
-                b.iter(|| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points));
+                let points = construct_points(size);
+                // Rerandomize the scalars for every call to prevent
+                // false timings from better caching (e.g., the CPU
+                // cache lifts exactly the right table entries for the
+                // benchmark into the highest cache levels).
+                b.iter_batched(
+                    || construct_scalars(size),
+                    |scalars| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points),
+                    BatchSize::SmallInput,
+                );
             },
             &MULTISCALAR_SIZES,
         );
@@ -116,14 +142,17 @@ mod multiscalar_benches {
             move |b, &&total_size| {
                 let static_size = total_size;
 
-                let (static_scalars, static_points) = construct(static_size);
-
-                use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
-                use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
-
+                let static_points = construct_points(static_size);
                 let precomp = VartimeEdwardsPrecomputation::new(&static_points);
-
-                b.iter(|| precomp.vartime_multiscalar_mul(&static_scalars));
+                // Rerandomize the scalars for every call to prevent
+                // false timings from better caching (e.g., the CPU
+                // cache lifts exactly the right table entries for the
+                // benchmark into the highest cache levels).
+                b.iter_batched(
+                    || construct_scalars(static_size),
+                    |scalars| precomp.vartime_multiscalar_mul(&scalars),
+                    BatchSize::SmallInput,
+                );
             },
             &MULTISCALAR_SIZES,
         );
@@ -140,21 +169,31 @@ mod multiscalar_benches {
                 let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
                 let static_size = total_size - dynamic_size;
 
-                let (static_scalars, static_points) = construct(static_size);
-                let (dynamic_scalars, dynamic_points) = construct(dynamic_size);
-
-                use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
-                use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
-
+                let static_points = construct_points(static_size);
+                let dynamic_points = construct_points(dynamic_size);
                 let precomp = VartimeEdwardsPrecomputation::new(&static_points);
-
-                b.iter(|| {
-                    precomp.vartime_mixed_multiscalar_mul(
-                        &static_scalars,
-                        &dynamic_scalars,
-                        &dynamic_points,
-                    )
-                });
+                // Rerandomize the scalars for every call to prevent
+                // false timings from better caching (e.g., the CPU
+                // cache lifts exactly the right table entries for the
+                // benchmark into the highest cache levels).  Timings
+                // should be independent of points so we don't
+                // randomize them.
+                b.iter_batched(
+                    || {
+                        (
+                            construct_scalars(static_size),
+                            construct_scalars(dynamic_size),
+                        )
+                    },
+                    |(static_scalars, dynamic_scalars)| {
+                        precomp.vartime_mixed_multiscalar_mul(
+                            &static_scalars,
+                            &dynamic_scalars,
+                            &dynamic_points,
+                        )
+                    },
+                    BatchSize::SmallInput,
+                );
             },
             &MULTISCALAR_SIZES,
         );

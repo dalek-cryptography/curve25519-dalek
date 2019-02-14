@@ -2,6 +2,18 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.0-pre.0
+
+* Restructures the source tree into `serial` and `vector` backends.
+* Adds a new IFMA backend which sets speed records.
+* Adds support for precomputation for multiscalar multiplication.
+* Replaces the `rand` dependency with `rand_core`.
+* Generalizes trait bounds on 
+  - `RistrettoPoint::random()`
+  - `Scalar::random()`
+  to allow owned and borrowed RNGs and to allow `RngCore` instead of
+  `Rng`.
+
 ## 1.0.3
 
 * Adds `ConstantTimeEq` implementation for compressed points.

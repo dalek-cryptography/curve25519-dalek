@@ -12,16 +12,11 @@
 
 #![allow(non_snake_case)]
 
-#[cfg(any(feature = "alloc", feature = "std"))]
 use core::borrow::Borrow;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
 use edwards::EdwardsPoint;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use scalar::Scalar;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::MultiscalarMul;
-#[cfg(any(feature = "alloc", feature = "std"))]
 use traits::VartimeMultiscalarMul;
 
 #[allow(unused_imports)]
@@ -48,10 +43,8 @@ use prelude::*;
 ///
 /// [solution]: https://www.jstor.org/stable/2310929
 /// [problem]: https://www.jstor.org/stable/2312273
-#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct Straus {}
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
@@ -148,7 +141,6 @@ impl MultiscalarMul for Straus {
     }
 }
 
-#[cfg(feature = "alloc")]
 impl VartimeMultiscalarMul for Straus {
     type Point = EdwardsPoint;
 

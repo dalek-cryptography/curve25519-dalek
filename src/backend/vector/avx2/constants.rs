@@ -35,7 +35,7 @@ pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(FieldElement26
 ]));
 
 /// The low limbs of (2p, 2p, 2p, 2p), so that
-/// ```no_run
+/// ```ascii,no_run
 /// (2p, 2p, 2p, 2p) = [P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI]
 /// ```
 pub(crate) static P_TIMES_2_LO: u32x8 = u32x8::new(
@@ -50,7 +50,7 @@ pub(crate) static P_TIMES_2_LO: u32x8 = u32x8::new(
 );
 
 /// The high limbs of (2p, 2p, 2p, 2p), so that
-/// ```no_run
+/// ```ascii,no_run
 /// (2p, 2p, 2p, 2p) = [P_TIMES_2_LO, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI, P_TIMES_2_HI]
 /// ```
 pub(crate) static P_TIMES_2_HI: u32x8 = u32x8::new(
@@ -65,7 +65,7 @@ pub(crate) static P_TIMES_2_HI: u32x8 = u32x8::new(
 );
 
 /// The low limbs of (16p, 16p, 16p, 16p), so that
-/// ```no_run
+/// ```ascii,no_run
 /// (16p, 16p, 16p, 16p) = [P_TIMES_16_LO, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI]
 /// ```
 pub(crate) static P_TIMES_16_LO: u32x8 = u32x8::new(
@@ -80,7 +80,7 @@ pub(crate) static P_TIMES_16_LO: u32x8 = u32x8::new(
 );
 
 /// The high limbs of (16p, 16p, 16p, 16p), so that
-/// ```no_run
+/// ```ascii,no_run
 /// (16p, 16p, 16p, 16p) = [P_TIMES_16_LO, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI, P_TIMES_16_HI]
 /// ```
 pub(crate) static P_TIMES_16_HI: u32x8 = u32x8::new(

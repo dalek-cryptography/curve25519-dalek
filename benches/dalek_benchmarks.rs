@@ -59,7 +59,7 @@ mod edwards_benches {
         });
     }
 
-    criterion_group!{
+    criterion_group! {
         name = edwards_benches;
         config = Criterion::default();
         targets =
@@ -110,10 +110,29 @@ mod multiscalar_benches {
         );
     }
 
-    fn precomputed_vt_straus_helper(c: &mut Criterion, dynamic_fraction: f64) {
+    fn vartime_precomputed_pure_static(c: &mut Criterion) {
+        c.bench_function_over_inputs(
+            "Variable-time fixed-base multiscalar multiplication",
+            move |b, &&total_size| {
+                let static_size = total_size;
+
+                let (static_scalars, static_points) = construct(static_size);
+
+                use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
+                use curve25519_dalek::traits::VartimePrecomputedMultiscalarMul;
+
+                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+
+                b.iter(|| precomp.vartime_multiscalar_mul(&static_scalars));
+            },
+            &MULTISCALAR_SIZES,
+        );
+    }
+
+    fn vartime_precomputed_helper(c: &mut Criterion, dynamic_fraction: f64) {
         let label = format!(
-            "Variable-time mixed-base Straus ({:.2}pct dyn)",
-            100.0*dynamic_fraction,
+            "Variable-time mixed-base multiscalar multiplication ({:.0}pct dyn)",
+            100.0 * dynamic_fraction,
         );
         c.bench_function_over_inputs(
             &label,
@@ -141,28 +160,29 @@ mod multiscalar_benches {
         );
     }
 
-    fn precomputed_vt_straus_00_pct_dynamic(c: &mut Criterion) {
-        precomputed_vt_straus_helper(c, 0.0);
+    fn vartime_precomputed_00_pct_dynamic(c: &mut Criterion) {
+        vartime_precomputed_helper(c, 0.0);
     }
 
-    fn precomputed_vt_straus_20_pct_dynamic(c: &mut Criterion) {
-        precomputed_vt_straus_helper(c, 0.2);
+    fn vartime_precomputed_20_pct_dynamic(c: &mut Criterion) {
+        vartime_precomputed_helper(c, 0.2);
     }
 
-    fn precomputed_vt_straus_50_pct_dynamic(c: &mut Criterion) {
-        precomputed_vt_straus_helper(c, 0.5);
+    fn vartime_precomputed_50_pct_dynamic(c: &mut Criterion) {
+        vartime_precomputed_helper(c, 0.5);
     }
 
-    criterion_group!{
+    criterion_group! {
         name = multiscalar_benches;
         // Lower the sample size to run the benchmarks faster
         config = Criterion::default().sample_size(15);
         targets =
         consttime_multiscalar_mul,
         vartime_multiscalar_mul,
-        precomputed_vt_straus_00_pct_dynamic,
-        precomputed_vt_straus_20_pct_dynamic,
-        precomputed_vt_straus_50_pct_dynamic,
+        vartime_precomputed_pure_static,
+        vartime_precomputed_00_pct_dynamic,
+        vartime_precomputed_20_pct_dynamic,
+        vartime_precomputed_50_pct_dynamic,
     }
 }
 
@@ -198,7 +218,7 @@ mod ristretto_benches {
         );
     }
 
-    criterion_group!{
+    criterion_group! {
         name = ristretto_benches;
         config = Criterion::default();
         targets =
@@ -219,7 +239,7 @@ mod montgomery_benches {
         });
     }
 
-    criterion_group!{
+    criterion_group! {
         name = montgomery_benches;
         config = Criterion::default();
         targets = montgomery_ladder,
@@ -251,7 +271,7 @@ mod scalar_benches {
         );
     }
 
-    criterion_group!{
+    criterion_group! {
         name = scalar_benches;
         config = Criterion::default();
         targets =

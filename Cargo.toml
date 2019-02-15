@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -19,7 +19,8 @@ exclude = [
 build = "build.rs"
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
+# Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
+# rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
 features = ["nightly", "simd_backend"]
 
 [badges]

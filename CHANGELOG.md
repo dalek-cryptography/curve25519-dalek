@@ -2,6 +2,14 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.2
+
+* Disabled KaTeX on `docs.rs` pending proper [support upstream](https://github.com/rust-lang/docs.rs/issues/302).
+
+## 1.1.1
+
+* Fixed an issue related to `#[cfg(rustdoc)]` which prevented documenting multiple backends.
+
 ## 1.1.0
 
 * Adds support for precomputation for multiscalar multiplication.

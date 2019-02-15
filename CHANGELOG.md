@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.3
+
+* Reverts the change in 1.1.0 to allow owned and borrowed RNGs, which caused a breakage due to a subtle interaction with ownership rules.  (The `RngCore` change is retained).
+
 ## 1.1.2
 
 * Disabled KaTeX on `docs.rs` pending proper [support upstream](https://github.com/rust-lang/docs.rs/issues/302).

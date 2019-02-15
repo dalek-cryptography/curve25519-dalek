@@ -2,17 +2,14 @@
 
 Entries are listed in reverse chronological order.
 
-## 1.1.0-pre.0
+## 1.1.0
 
-* Restructures the source tree into `serial` and `vector` backends.
-* Adds a new IFMA backend which sets speed records.
 * Adds support for precomputation for multiscalar multiplication.
+* Restructures the internal source tree into `serial` and `vector` backends (no change to external API).
+* Adds a new IFMA backend which sets speed records.
+* The `avx2_backend` feature is now an alias for the `simd_backend` feature, which autoselects an appropriate vector backend (currently AVX2 or IFMA).
 * Replaces the `rand` dependency with `rand_core`.
-* Generalizes trait bounds on 
-  - `RistrettoPoint::random()`
-  - `Scalar::random()`
-  to allow owned and borrowed RNGs and to allow `RngCore` instead of
-  `Rng`.
+* Generalizes trait bounds on `RistrettoPoint::random()` and `Scalar::random()` to allow owned and borrowed RNGs and to allow `RngCore` instead of `Rng`.
 
 ## 1.0.3
 

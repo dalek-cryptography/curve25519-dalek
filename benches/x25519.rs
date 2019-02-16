@@ -23,13 +23,13 @@ use curve25519_dalek::montgomery::MontgomeryPoint;
 
 use rand_os::OsRng;
 
-use x25519_dalek::EphemeralPublic;
+use x25519_dalek::PublicKey;
 use x25519_dalek::EphemeralSecret;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
     let mut csprng: OsRng = OsRng::new().unwrap();
-    let bob_secret: EphemeralSecret = EphemeralSecret::new(&mut csprng);
-    let bob_public: EphemeralPublic = EphemeralPublic::from(&bob_secret);
+    let bob_secret = EphemeralSecret::new(&mut csprng);
+    let bob_public = PublicKey::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
         b.iter_with_setup(

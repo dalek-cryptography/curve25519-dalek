@@ -5,6 +5,7 @@ rust:
 
 env:
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='default'
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
   - TEST_COMMAND=bench EXTRA_FLAGS='' FEATURES='default'
   - TEST_COMMAND=build EXTRA_FLAGS='--no-default-features' FEATURES='u32_backend nightly'
   - TEST_COMMAND=build EXTRA_FLAGS='--no-default-features' FEATURES='u64_backend nightly'

@@ -81,6 +81,46 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 
 }
 
+/// A DH static secret key.
+pub struct StaticSecret(pub (crate) Scalar);
+
+/// Overwrite static secret key material with null bytes when it goes out of scope.
+impl Drop for StaticSecret {
+    fn drop(&mut self) {
+        self.0.clear();
+    }
+}
+
+impl StaticSecret {
+    /// Utility function to make it easier to call `x25519()` with
+    /// a static secret key and montegomery point as input and
+    /// a shared secret as the output.
+    pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
+        SharedSecret(&self.0 * their_public.0)
+    }
+
+    /// Generate a x25519 `StaticSecret` key.
+    pub fn new<T>(csprng: &mut T) -> Self
+        where T: RngCore + CryptoRng
+    {
+        let mut bytes = [0u8; 32];
+
+        csprng.fill_bytes(&mut bytes);
+
+        StaticSecret(clamp_scalar(bytes))
+    }
+
+}
+
+impl<'a> From<&'a StaticSecret> for PublicKey {
+    /// Given an x25519 `StaticSecret` key, compute its corresponding
+    /// `PublicKey` key.
+    fn from(secret: &'a StaticSecret) -> PublicKey {
+        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+    }
+
+}
+
 /// A DH SharedSecret
 pub struct SharedSecret(pub (crate) MontgomeryPoint);
 

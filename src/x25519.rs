@@ -52,9 +52,8 @@ impl Drop for EphemeralSecret {
 }
 
 impl EphemeralSecret {
-    /// Utility function to make it easier to call `x25519()` with
-    /// an ephemeral secret key and montegomery point as input and
-    /// a shared secret as the output.
+    /// Perform a Diffie-Hellman key agreement between `self` and
+    /// `their_public` key to produce a `SharedSecret`.
     pub fn diffie_hellman(self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(self.0 * their_public.0)
     }
@@ -81,7 +80,9 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 
 }
 
-/// A DH static secret key.
+/// A static secret key for Diffie-Hellman. Unlike an EphemeralSecret, this key
+/// does not enforce that it's used only once, and can be saved and loaded from
+/// a byte array.
 pub struct StaticSecret(pub (crate) Scalar);
 
 /// Overwrite static secret key material with null bytes when it goes out of scope.
@@ -92,9 +93,8 @@ impl Drop for StaticSecret {
 }
 
 impl StaticSecret {
-    /// Utility function to make it easier to call `x25519()` with
-    /// a static secret key and montegomery point as input and
-    /// a shared secret as the output.
+    /// Perform a Diffie-Hellman key agreement between `self` and
+    /// `their_public` key to produce a `SharedSecret`.
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(&self.0 * their_public.0)
     }
@@ -110,7 +110,7 @@ impl StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 
-    /// Convert a x25519 `StaticSecret` key to its underlying sequence of bytes.
+    /// Save a x25519 `StaticSecret` key's bytes.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
     }
@@ -118,7 +118,7 @@ impl StaticSecret {
 }
 
 impl From<[u8; 32]> for StaticSecret {
-    /// Given a byte array, construct a x25519 `StaticSecret`.
+    /// Load a `StaticSecret` from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
         StaticSecret(Scalar::from_bits(bytes))
     }
@@ -172,14 +172,14 @@ fn clamp_scalar(scalar: [u8; 32]) -> Scalar {
 /// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.
 ///
 /// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
-/// cannot use the better, safer, and faster ephemeral DH API.
+/// cannot use the better, safer, and faster DH API.
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
     (clamp_scalar(k) * MontgomeryPoint(u)).to_bytes()
 }
 
 /// The X25519 basepoint, for use with the bare, byte-oriented x25519
 /// function.  This is provided for people who cannot use the typed
-/// ephemeral DH API for some reason.
+/// DH API for some reason.
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];

@@ -122,7 +122,7 @@ impl StaticSecret {
 impl From<[u8; 32]> for StaticSecret {
     /// Load a `StaticSecret` from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
-        StaticSecret(Scalar::from_bits(bytes))
+        StaticSecret(clamp_scalar(bytes))
     }
 }
 

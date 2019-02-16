@@ -6,7 +6,7 @@ with curve operations provided by
 
 This crate provides two levels of API: a bare byte-oriented `x25519`
 function which matches the function specified in [RFC7748][rfc7748], as
-well as a higher-level Rust API for ephemeral Diffie-Hellman.
+well as a higher-level Rust API for static and ephemeral Diffie-Hellman.
 
 ## Examples
 
@@ -29,49 +29,110 @@ kittens will be able to secretly organise to find their mittens, and then spend
 the rest of the afternoon nomming some yummy pie!
 
 First, Alice uses `EphemeralSecret::new()` and then
-`EphemeralPublic::from()` to produce her secret and public keys:
+`PublicKey::from()` to produce her secret and public keys:
 
 ```rust
-extern crate x25519_dalek;
 extern crate rand_os;
-
-use x25519_dalek::EphemeralPublic;
-use x25519_dalek::EphemeralSecret;
 use rand_os::OsRng;
 
+extern crate x25519_dalek;
+use x25519_dalek::EphemeralSecret;
+use x25519_dalek::PublicKey;
+
+# fn main() {
 let mut alice_csprng = OsRng::new().unwrap();
 let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-let     alice_public = EphemeralPublic::from(&alice_secret);
+let     alice_public = PublicKey::from(&alice_secret);
+# }
 ```
 
 Bob does the same:
 
-```rust,ignore
+```rust
+# extern crate rand_os;
+# use rand_os::OsRng;
+# 
+# extern crate x25519_dalek;
+# use x25519_dalek::EphemeralSecret;
+# use x25519_dalek::PublicKey;
+# fn main() {
 let mut bob_csprng = OsRng::new().unwrap();
 let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-let     bob_public = EphemeralPublic::from(&bob_secret);
+let     bob_public = PublicKey::from(&bob_secret);
+# }
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob
 loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
-```rust,ignore
-use x25519_dalek::EphemeralPublic;
-use x25519_dalek::EphemeralSecret;
-
-let shared_secret = EphemeralSecret::diffie_hellman(alice_secret, &bob_public);
+```rust
+# extern crate rand_os;
+# use rand_os::OsRng;
+# 
+# extern crate x25519_dalek;
+# use x25519_dalek::EphemeralSecret;
+# use x25519_dalek::PublicKey;
+# 
+# fn main() {
+# let mut csprng = OsRng::new().unwrap();
+# let alice_secret = EphemeralSecret::new(&mut csprng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(&mut csprng);
+# let bob_public = PublicKey::from(&bob_secret);
+let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
+# }
 ```
 
-Similarly, Bob computes the same shared secret by doing:
+Similarly, Bob computes a shared secret by doing:
 
-```rust,ignore
-let shared_secret = EphemeralSecret::diffie_hellman(bob_secret, &alice_public);
+```rust
+# extern crate rand_os;
+# use rand_os::OsRng;
+# 
+# extern crate x25519_dalek;
+# use x25519_dalek::EphemeralSecret;
+# use x25519_dalek::PublicKey;
+# 
+# fn main() {
+# let mut csprng = OsRng::new().unwrap();
+# let alice_secret = EphemeralSecret::new(&mut csprng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(&mut csprng);
+# let bob_public = PublicKey::from(&bob_secret);
+let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
+# }
+```
+
+These secrets are the same:
+
+```rust
+# extern crate rand_os;
+# use rand_os::OsRng;
+# 
+# extern crate x25519_dalek;
+# use x25519_dalek::EphemeralSecret;
+# use x25519_dalek::PublicKey;
+# 
+# fn main() {
+# let mut csprng = OsRng::new().unwrap();
+# let alice_secret = EphemeralSecret::new(&mut csprng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(&mut csprng);
+# let bob_public = PublicKey::from(&bob_secret);
+# let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
+# let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
+assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
+# }
 ```
 
 Voilá!  Alice and Bob can now use their shared secret to encrypt their
 meows, for example, by using it to generate a key and nonce for an
 authenticated-encryption cipher.
+
+This example used the ephemeral DH API, which ensures that secret keys
+cannot be reused; Alice and Bob could instead use the static DH API
+and load a long-term secret key.
 
 # Installation
 

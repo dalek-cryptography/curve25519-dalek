@@ -23,25 +23,27 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
-/// A DH ephemeral public key.
-pub struct EphemeralPublic(pub (crate) MontgomeryPoint);
+/// A `PublicKey` is the corresponding public key converted from
+/// an `EphemeralSecret` or a `StaticSecret` key.
+pub struct PublicKey(pub (crate) MontgomeryPoint);
 
-impl From<[u8; 32]> for EphemeralPublic {
-    /// Given a byte array, construct an x25519 `EphemeralPublic` key
-    fn from(bytes: [u8; 32]) -> EphemeralPublic {
-        EphemeralPublic(MontgomeryPoint(bytes))
+impl From<[u8; 32]> for PublicKey {
+    /// Given a byte array, construct a x25519 `PublicKey`.
+    fn from(bytes: [u8; 32]) -> PublicKey {
+        PublicKey(MontgomeryPoint(bytes))
     }
 }
 
-impl EphemeralPublic {
-    /// View this ephemeral public key as a byte array.
+impl PublicKey {
+    /// View this public key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_bytes()
     }
 }
 
-/// A DH ephemeral secret key.
+/// A `EphemeralSecret` is a short lived Diffie-Hellman secret key
+/// used to create a `SharedSecret` when given their `PublicKey`.
 pub struct EphemeralSecret(pub (crate) Scalar);
 
 /// Overwrite ephemeral secret key material with null bytes when it goes out of scope.
@@ -52,10 +54,9 @@ impl Drop for EphemeralSecret {
 }
 
 impl EphemeralSecret {
-    /// Utility function to make it easier to call `x25519()` with
-    /// an ephemeral secret key and montegomery point as input and
-    /// a shared secret as the output.
-    pub fn diffie_hellman(self, their_public: &EphemeralPublic) -> SharedSecret {
+    /// Perform a Diffie-Hellman key agreement between `self` and
+    /// `their_public` key to produce a `SharedSecret`.
+    pub fn diffie_hellman(self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
@@ -72,16 +73,70 @@ impl EphemeralSecret {
 
 }
 
-impl<'a> From<&'a EphemeralSecret> for EphemeralPublic {
+impl<'a> From<&'a EphemeralSecret> for PublicKey {
     /// Given an x25519 `EphemeralSecret` key, compute its corresponding
-    /// `EphemeralPublic` key.
-    fn from(secret: &'a EphemeralSecret) -> EphemeralPublic {
-        EphemeralPublic((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+    /// `PublicKey` key.
+    fn from(secret: &'a EphemeralSecret) -> PublicKey {
+        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 
 }
 
-/// A DH SharedSecret
+/// A `StaticSecret` is a static Diffie-Hellman secret key that
+/// can be saved and loaded to create a `SharedSecret` when given
+/// their `PublicKey`.
+pub struct StaticSecret(pub (crate) Scalar);
+
+/// Overwrite static secret key material with null bytes when it goes out of scope.
+impl Drop for StaticSecret {
+    fn drop(&mut self) {
+        self.0.clear();
+    }
+}
+
+impl StaticSecret {
+    /// Perform a Diffie-Hellman key agreement between `self` and
+    /// `their_public` key to produce a `SharedSecret`.
+    pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
+        SharedSecret(&self.0 * their_public.0)
+    }
+
+    /// Generate a x25519 `StaticSecret` key.
+    pub fn new<T>(csprng: &mut T) -> Self
+        where T: RngCore + CryptoRng
+    {
+        let mut bytes = [0u8; 32];
+
+        csprng.fill_bytes(&mut bytes);
+
+        StaticSecret(clamp_scalar(bytes))
+    }
+
+    /// Save a x25519 `StaticSecret` key's bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
+}
+
+impl From<[u8; 32]> for StaticSecret {
+    /// Load a `StaticSecret` from a byte array.
+    fn from(bytes: [u8; 32]) -> StaticSecret {
+        StaticSecret(clamp_scalar(bytes))
+    }
+}
+
+impl<'a> From<&'a StaticSecret> for PublicKey {
+    /// Given an x25519 `StaticSecret` key, compute its corresponding
+    /// `PublicKey` key.
+    fn from(secret: &'a StaticSecret) -> PublicKey {
+        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+    }
+
+}
+
+/// A `SharedSecret` is a Diffie-Hellman shared secret that’s generated
+/// from your `EphemeralSecret` or `StaticSecret` and their `PublicKey`.
 pub struct SharedSecret(pub (crate) MontgomeryPoint);
 
 /// Overwrite shared secret material with null bytes when it goes out of scope.
@@ -120,14 +175,14 @@ fn clamp_scalar(scalar: [u8; 32]) -> Scalar {
 /// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.
 ///
 /// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
-/// cannot use the better, safer, and faster ephemeral DH API.
+/// cannot use the better, safer, and faster DH API.
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
     (clamp_scalar(k) * MontgomeryPoint(u)).to_bytes()
 }
 
 /// The X25519 basepoint, for use with the bare, byte-oriented x25519
 /// function.  This is provided for people who cannot use the typed
-/// ephemeral DH API for some reason.
+/// DH API for some reason.
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];

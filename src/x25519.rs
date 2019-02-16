@@ -110,6 +110,18 @@ impl StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 
+    /// Convert a x25519 `StaticSecret` key to its underlying sequence of bytes.
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
+}
+
+impl From<[u8; 32]> for StaticSecret {
+    /// Given a byte array, construct a x25519 `StaticSecret`.
+    fn from(bytes: [u8; 32]) -> StaticSecret {
+        StaticSecret(Scalar::from_bits(bytes))
+    }
 }
 
 impl<'a> From<&'a StaticSecret> for PublicKey {

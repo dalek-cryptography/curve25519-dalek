@@ -23,7 +23,8 @@ use curve25519_dalek::scalar::Scalar;
 use rand_core::RngCore;
 use rand_core::CryptoRng;
 
-/// A DH public key.
+/// A `PublicKey` is the corresponding public key converted from
+/// an `EphemeralSecret` or a `StaticSecret` key.
 pub struct PublicKey(pub (crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {
@@ -41,7 +42,8 @@ impl PublicKey {
     }
 }
 
-/// A DH ephemeral secret key.
+/// A `EphemeralSecret` is a short lived Diffie-Hellman secret key
+/// used to create a `SharedSecret` when given their `PublicKey`.
 pub struct EphemeralSecret(pub (crate) Scalar);
 
 /// Overwrite ephemeral secret key material with null bytes when it goes out of scope.
@@ -80,9 +82,9 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 
 }
 
-/// A static secret key for Diffie-Hellman. Unlike an EphemeralSecret, this key
-/// does not enforce that it's used only once, and can be saved and loaded from
-/// a byte array.
+/// A `StaticSecret` is a static Diffie-Hellman secret key that
+/// can be saved and loaded to create a `SharedSecret` when given
+/// their `PublicKey`.
 pub struct StaticSecret(pub (crate) Scalar);
 
 /// Overwrite static secret key material with null bytes when it goes out of scope.
@@ -133,7 +135,8 @@ impl<'a> From<&'a StaticSecret> for PublicKey {
 
 }
 
-/// A DH SharedSecret
+/// A `SharedSecret` is a Diffie-Hellman shared secret that’s generated
+/// from your `EphemeralSecret` or `StaticSecret` and their `PublicKey`.
 pub struct SharedSecret(pub (crate) MontgomeryPoint);
 
 /// Overwrite shared secret material with null bytes when it goes out of scope.

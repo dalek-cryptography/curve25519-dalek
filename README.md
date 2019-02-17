@@ -1,7 +1,7 @@
 # x25519-dalek  [![](https://img.shields.io/crates/v/x25519-dalek.svg)](https://crates.io/crates/x25519-dalek) [![](https://docs.rs/x25519-dalek/badge.svg)](https://docs.rs/x25519-dalek) [![](https://travis-ci.org/dalek-cryptography/x25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/x25519-dalek)
 
 A pure-Rust implementation of x25519 elliptic curve Diffie-Hellman key exchange,
-with curve operations provided by 
+with curve operations provided by
 [curve25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek).
 
 This crate provides two levels of API: a bare byte-oriented `x25519`
@@ -11,7 +11,7 @@ well as a higher-level Rust API for static and ephemeral Diffie-Hellman.
 ## Examples
 
 <a href="https://shop.bubblesort.io">
-<img 
+<img
   style="float: right; width: auto; height: 300px;"
   src="https://raw.githubusercontent.com/dalek-cryptography/x25519-dalek/master/res/bubblesort-zines-secret-messages-cover.jpeg"/>
 </a>
@@ -51,7 +51,7 @@ Bob does the same:
 ```rust
 # extern crate rand_os;
 # use rand_os::OsRng;
-# 
+#
 # extern crate x25519_dalek;
 # use x25519_dalek::EphemeralSecret;
 # use x25519_dalek::PublicKey;
@@ -69,11 +69,11 @@ shared secret with Bob by doing:
 ```rust
 # extern crate rand_os;
 # use rand_os::OsRng;
-# 
+#
 # extern crate x25519_dalek;
 # use x25519_dalek::EphemeralSecret;
 # use x25519_dalek::PublicKey;
-# 
+#
 # fn main() {
 # let mut csprng = OsRng::new().unwrap();
 # let alice_secret = EphemeralSecret::new(&mut csprng);
@@ -89,11 +89,11 @@ Similarly, Bob computes a shared secret by doing:
 ```rust
 # extern crate rand_os;
 # use rand_os::OsRng;
-# 
+#
 # extern crate x25519_dalek;
 # use x25519_dalek::EphemeralSecret;
 # use x25519_dalek::PublicKey;
-# 
+#
 # fn main() {
 # let mut csprng = OsRng::new().unwrap();
 # let alice_secret = EphemeralSecret::new(&mut csprng);
@@ -109,11 +109,11 @@ These secrets are the same:
 ```rust
 # extern crate rand_os;
 # use rand_os::OsRng;
-# 
+#
 # extern crate x25519_dalek;
 # use x25519_dalek::EphemeralSecret;
 # use x25519_dalek::PublicKey;
-# 
+#
 # fn main() {
 # let mut csprng = OsRng::new().unwrap();
 # let alice_secret = EphemeralSecret::new(&mut csprng);
@@ -140,7 +140,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies.x25519-dalek]
-version = "^0.4"
+version = "^0.5"
 ```
 
 # Documentation

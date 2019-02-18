@@ -611,15 +611,17 @@ impl RistrettoPoint {
         let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
 
-        use backend::serial::curve_models::CompletedPoint;
+        let W0 = &(&s + &s) * &D;
+        let W1 = &N_t * &constants::SQRT_AD_MINUS_ONE;
+        let W2 = &FieldElement::one() - &s_sq;
+        let W3 = &FieldElement::one() + &s_sq;
 
-        // The conversion from W_i is exactly the conversion from P1xP1.
-        RistrettoPoint(CompletedPoint{
-            X: &(&s + &s) * &D,
-            Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
-            Y: &FieldElement::one() - &s_sq,
-            T: &FieldElement::one() + &s_sq,
-        }.to_extended())
+        RistrettoPoint(EdwardsPoint{
+            X: &W0 * &W3,
+            Y: &W2 * &W1,
+            Z: &W1 * &W3,
+            T: &W0 * &W2,
+        })
     }
 
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.

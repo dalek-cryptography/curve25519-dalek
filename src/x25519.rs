@@ -25,6 +25,7 @@ use rand_core::CryptoRng;
 
 /// A `PublicKey` is the corresponding public key converted from
 /// an `EphemeralSecret` or a `StaticSecret` key.
+#[derive(Copy, Clone, Debug)]
 pub struct PublicKey(pub (crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {

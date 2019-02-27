@@ -33,33 +33,24 @@ First, Alice uses `EphemeralSecret::new()` and then
 
 ```rust
 extern crate rand_os;
+extern crate x25519_dalek;
+
 use rand_os::OsRng;
 
-extern crate x25519_dalek;
 use x25519_dalek::EphemeralSecret;
 use x25519_dalek::PublicKey;
 
-# fn main() {
 let mut alice_csprng = OsRng::new().unwrap();
 let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
 let     alice_public = PublicKey::from(&alice_secret);
-# }
 ```
 
 Bob does the same:
 
 ```rust
-# extern crate rand_os;
-# use rand_os::OsRng;
-#
-# extern crate x25519_dalek;
-# use x25519_dalek::EphemeralSecret;
-# use x25519_dalek::PublicKey;
-# fn main() {
 let mut bob_csprng = OsRng::new().unwrap();
 let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
 let     bob_public = PublicKey::from(&bob_secret);
-# }
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob
@@ -67,63 +58,19 @@ loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
 ```rust
-# extern crate rand_os;
-# use rand_os::OsRng;
-#
-# extern crate x25519_dalek;
-# use x25519_dalek::EphemeralSecret;
-# use x25519_dalek::PublicKey;
-#
-# fn main() {
-# let mut csprng = OsRng::new().unwrap();
-# let alice_secret = EphemeralSecret::new(&mut csprng);
-# let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(&mut csprng);
-# let bob_public = PublicKey::from(&bob_secret);
 let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
-# }
 ```
 
 Similarly, Bob computes a shared secret by doing:
 
 ```rust
-# extern crate rand_os;
-# use rand_os::OsRng;
-#
-# extern crate x25519_dalek;
-# use x25519_dalek::EphemeralSecret;
-# use x25519_dalek::PublicKey;
-#
-# fn main() {
-# let mut csprng = OsRng::new().unwrap();
-# let alice_secret = EphemeralSecret::new(&mut csprng);
-# let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(&mut csprng);
-# let bob_public = PublicKey::from(&bob_secret);
 let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
-# }
 ```
 
 These secrets are the same:
 
 ```rust
-# extern crate rand_os;
-# use rand_os::OsRng;
-#
-# extern crate x25519_dalek;
-# use x25519_dalek::EphemeralSecret;
-# use x25519_dalek::PublicKey;
-#
-# fn main() {
-# let mut csprng = OsRng::new().unwrap();
-# let alice_secret = EphemeralSecret::new(&mut csprng);
-# let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(&mut csprng);
-# let bob_public = PublicKey::from(&bob_secret);
-# let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
-# let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
-# }
 ```
 
 Voilá!  Alice and Bob can now use their shared secret to encrypt their

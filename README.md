@@ -31,7 +31,7 @@ the rest of the afternoon nomming some yummy pie!
 First, Alice uses `EphemeralSecret::new()` and then
 `PublicKey::from()` to produce her secret and public keys:
 
-```rust
+```rust,ignore
 extern crate rand_os;
 extern crate x25519_dalek;
 
@@ -47,7 +47,7 @@ let     alice_public = PublicKey::from(&alice_secret);
 
 Bob does the same:
 
-```rust
+```rust,ignore
 let mut bob_csprng = OsRng::new().unwrap();
 let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
 let     bob_public = PublicKey::from(&bob_secret);
@@ -57,19 +57,19 @@ Alice meows across the room, telling `alice_public` to Bob, and Bob
 loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
-```rust
+```rust,ignore
 let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 ```
 
 Similarly, Bob computes a shared secret by doing:
 
-```rust
+```rust,ignore
 let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 ```
 
 These secrets are the same:
 
-```rust
+```rust,ignore
 assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
 ```
 

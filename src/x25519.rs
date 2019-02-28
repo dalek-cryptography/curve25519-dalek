@@ -25,6 +25,7 @@ use rand_core::CryptoRng;
 
 /// A `PublicKey` is the corresponding public key converted from
 /// an `EphemeralSecret` or a `StaticSecret` key.
+#[derive(Copy, Clone, Debug)]
 pub struct PublicKey(pub (crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {
@@ -190,6 +191,24 @@ pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use rand_os::OsRng;
+
+    // This was previously a doctest but it got moved to the README to
+    // avoid duplication where it then wasn't being run, so now it
+    // lives here.
+    #[test]
+    fn alice_and_bob() {
+        let mut csprng = OsRng::new().unwrap();
+        let alice_secret = EphemeralSecret::new(&mut csprng);
+        let alice_public = PublicKey::from(&alice_secret);
+        let bob_secret = EphemeralSecret::new(&mut csprng);
+        let bob_public = PublicKey::from(&bob_secret);
+        let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
+        let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
+
+        assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
+    }
 
     #[test]
     fn byte_basepoint_matches_edwards_scalar_mul() {

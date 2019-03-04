@@ -160,6 +160,8 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use backend;
 use constants;
 
@@ -499,6 +501,12 @@ impl From<u128> for Scalar {
         let mut s_bytes = [0u8; 32];
         LittleEndian::write_u128(&mut s_bytes, x);
         Scalar{ bytes: s_bytes }
+    }
+}
+
+impl Zeroize for Scalar {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
     }
 }
 

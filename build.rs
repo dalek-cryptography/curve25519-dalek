@@ -16,6 +16,8 @@ extern crate subtle;
 #[cfg(all(feature = "nightly", feature = "avx2_backend"))]
 extern crate packed_simd;
 
+extern crate zeroize;
+
 use std::env;
 use std::fs::File;
 use std::io::Write;

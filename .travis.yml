@@ -14,6 +14,9 @@ matrix:
     # the 32-bit backend (this also exercises testing with `no_std`):
     - rust: nightly
       env: TEST_COMMAND=build FEATURES='--no-default-features --features=u32_backend'
+    # Also test the `alloc` feature with `no_std`:
+    - rust: nightly
+      env: TEST_COMMAND=build FEATURES='--no-default-features --features="u64_backend alloc"'
     # Test any nightly gated features on nightly:
     - rust: nightly
       env: TEST_COMMAND=test FEATURES='--features=nightly'

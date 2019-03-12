@@ -12,8 +12,7 @@
 #[allow(unused_imports)]
 use core::default::Default;
 
-use rand::CryptoRng;
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
@@ -49,8 +48,7 @@ pub use crate::signature::*;
 /// * `messages` is a slice of byte slices, one per signed message.
 /// * `signatures` is a slice of `Signature`s.
 /// * `public_keys` is a slice of `PublicKey`s.
-/// * `csprng` is an implementation of `Rng + CryptoRng`, such as
-///   `rand::rngs::ThreadRng`.
+/// * `csprng` is an implementation of `Rng + CryptoRng`, such as `rand::rngs::ThreadRng`.
 ///
 /// # Panics
 ///
@@ -107,7 +105,7 @@ pub fn verify_batch(
     use std::vec::Vec;
 
     use core::iter::once;
-    use rand::thread_rng;
+    use rand::{Rng, thread_rng};
 
     use curve25519_dalek::traits::IsIdentity;
     use curve25519_dalek::traits::VartimeMultiscalarMul;
@@ -219,14 +217,13 @@ impl Keypair {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
+    /// extern crate rand_os;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     ///
-    /// use rand::Rng;
-    /// use rand::rngs::OsRng;
+    /// use rand_os::OsRng;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     ///
@@ -250,7 +247,7 @@ impl Keypair {
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     pub fn generate<R>(csprng: &mut R) -> Keypair
     where
-        R: CryptoRng + Rng,
+        R: CryptoRng + RngCore,
     {
         let sk: SecretKey = SecretKey::generate(csprng);
         let pk: PublicKey = (&sk).into();
@@ -417,7 +414,7 @@ impl Keypair {
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
-    /// let mut prehashed: Sha512 = Sha512::default();
+    /// let mut prehashed: Sha512 = Sha512::new();
     /// prehashed.input(message);
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";

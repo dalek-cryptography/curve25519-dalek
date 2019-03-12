@@ -19,13 +19,13 @@
 //! the operating system's builtin PRNG:
 //!
 //! ```
-//! extern crate rand;
+//! extern crate rand_os;
 //! extern crate ed25519_dalek;
 //!
 //! # #[cfg(feature = "std")]
 //! # fn main() {
 //! use rand::Rng;
-//! use rand::rngs::OsRng;
+//! use rand_os::OsRng;
 //! use ed25519_dalek::Keypair;
 //! use ed25519_dalek::Signature;
 //!
@@ -250,7 +250,11 @@ extern crate std;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
+#[cfg(any(feature = "std", test))]
 extern crate rand;
+#[cfg(test)]
+extern crate rand_chacha;
+extern crate rand_core;
 #[cfg(feature = "serde")]
 extern crate serde;
 extern crate sha2;

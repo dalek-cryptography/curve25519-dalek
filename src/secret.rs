@@ -19,8 +19,7 @@ use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 
-use rand::CryptoRng;
-use rand::Rng;
+use rand_core::{CryptoRng, RngCore};
 
 use sha2::Sha512;
 
@@ -126,15 +125,14 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
+    /// extern crate rand_os;
     /// extern crate sha2;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
-    /// use rand::Rng;
-    /// use rand::rngs::OsRng;
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::SecretKey;
@@ -323,15 +321,14 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn main() {
     /// #
-    /// use rand::Rng;
-    /// use rand::rngs::OsRng;
+    /// use rand_os::OsRng;
     /// use sha2::Sha512;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
@@ -365,7 +362,7 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand;
+    /// # extern crate rand_os;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
@@ -374,8 +371,7 @@ impl ExpandedSecretKey {
     /// # #[cfg(all(feature = "sha2", feature = "std"))]
     /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
-    /// use rand::Rng;
-    /// use rand::rngs::OsRng;
+    /// use rand_os::OsRng;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     /// use ed25519_dalek::SignatureError;
     ///

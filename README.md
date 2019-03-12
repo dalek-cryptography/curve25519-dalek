@@ -78,7 +78,7 @@ The numbers after the `/` in the test name refer to the size of the batch:
     Ed25519 batch signature verification/256 time:   [5.0124 ms 5.0290 ms 5.0491 ms]
 
 As you can see, there's an optimal batch size for each machine, so you'll likely
-want to your the benchmarks on your target CPU to discover the best size.  For
+want to test the benchmarks on your target CPU to discover the best size.  For
 this machine, around 100 signatures per batch is the optimum:
 
 ![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/batch-violin-benchmark.svg)

@@ -9,6 +9,7 @@
 
 //! ed25519 keypairs and batch verification.
 
+#[allow(unused_imports)]
 use core::default::Default;
 
 use rand::CryptoRng;
@@ -28,8 +29,11 @@ pub use sha2::Sha512;
 use curve25519_dalek::digest::generic_array::typenum::U64;
 pub use curve25519_dalek::digest::Digest;
 
+#[cfg(any(feature = "alloc", feature = "std"))]
 use curve25519_dalek::constants;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use curve25519_dalek::edwards::EdwardsPoint;
+#[cfg(any(feature = "alloc", feature = "std"))]
 use curve25519_dalek::scalar::Scalar;
 
 pub use crate::constants::*;
@@ -96,7 +100,7 @@ pub fn verify_batch(
     assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
     assert!(signatures.len()  == public_keys.len(), ASSERT_MESSAGE);
     assert!(public_keys.len() == messages.len(),    ASSERT_MESSAGE);
- 
+
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
     #[cfg(feature = "std")]

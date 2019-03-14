@@ -577,9 +577,9 @@ impl RistrettoPoint {
     /// Return the coset self + E[4], for debugging.
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
-        , &self.0 + &constants::EIGHT_TORSION[2]
-        , &self.0 + &constants::EIGHT_TORSION[4]
-        , &self.0 + &constants::EIGHT_TORSION[6]
+        , constants::EIGHT_TORSION_PRECOMP[0]
+        , constants::EIGHT_TORSION_PRECOMP[1]
+        , constants::EIGHT_TORSION_PRECOMP[2]
         ]
     }
 

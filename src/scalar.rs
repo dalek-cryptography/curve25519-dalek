@@ -1233,6 +1233,33 @@ mod test {
          0,0,0,11,0,0,0,0,0,15,0,0,0,0,0,-9,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,7,
          0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
 
+    static LARGEST_ED25519_S: Scalar = Scalar {
+        bytes: [
+            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+        ],
+    };
+
+    static CANONICAL_LARGEST_ED25519_S_PLUS_ONE: Scalar = Scalar {
+        bytes: [
+            0x7e, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
+            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+        ],
+    };
+
+    static CANONICAL_LARGEST_ED25519_S_MINUS_ONE: Scalar = Scalar {
+        bytes: [
+            0x7c, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
+            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+        ],
+    };
+
     #[test]
     fn fuzzer_testcase_reduction() {
         // LE bytes of 24519928653854221733733552434404946937899825954937634815
@@ -1320,6 +1347,34 @@ mod test {
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
+    }
+
+    #[test]
+    fn add_reduces() {
+        // Check that the addition works
+        assert_eq!(
+            (LARGEST_ED25519_S + Scalar::one()).reduce(),
+            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
+        );
+        // Check that the addition reduces
+        assert_eq!(
+            LARGEST_ED25519_S + Scalar::one(),
+            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
+        );
+    }
+
+    #[test]
+    fn sub_reduces() {
+        // Check that the subtraction works
+        assert_eq!(
+            (LARGEST_ED25519_S - Scalar::one()).reduce(),
+            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
+        );
+        // Check that the subtraction reduces
+        assert_eq!(
+            LARGEST_ED25519_S - Scalar::one(),
+            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
+        );
     }
 
     #[test]

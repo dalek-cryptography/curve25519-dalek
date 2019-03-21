@@ -599,7 +599,7 @@ impl Scalar {
     /// # }
     /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
-        where D: Digest<OutputSize = U64> + Default
+        where D: Digest<OutputSize = U64>
     {
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.result().as_slice());

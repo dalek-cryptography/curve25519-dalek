@@ -86,6 +86,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// A `StaticSecret` is a static Diffie-Hellman secret key that
 /// can be saved and loaded to create a `SharedSecret` when given
 /// their `PublicKey`.
+#[derive(Clone)]
 pub struct StaticSecret(pub (crate) Scalar);
 
 /// Overwrite static secret key material with null bytes when it goes out of scope.

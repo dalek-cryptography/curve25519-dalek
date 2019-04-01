@@ -65,7 +65,7 @@ packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
 default = ["std", "u64_backend"]
 std = ["subtle/std", "rand_core/std", "serde/std"]
-alloc = ["subtle/std", "rand_core/std", "serde/alloc"]
+alloc = ["subtle/alloc", "rand_core/alloc", "serde/alloc"]
 yolocrypto = []
 
 # The u32 backend uses u32s with u64 products.

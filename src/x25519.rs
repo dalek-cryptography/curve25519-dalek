@@ -164,14 +164,12 @@ impl SharedSecret {
 /// # Returns
 ///
 /// A `Scalar`.
-fn clamp_scalar(scalar: [u8; 32]) -> Scalar {
-    let mut s: [u8; 32] = scalar.clone();
+fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
+    scalar[0]  &= 248;
+    scalar[31] &= 127;
+    scalar[31] |= 64;
 
-    s[0]  &= 248;
-    s[31] &= 127;
-    s[31] |= 64;
-
-    Scalar::from_bits(s)
+    Scalar::from_bits(scalar)
 }
 
 /// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.

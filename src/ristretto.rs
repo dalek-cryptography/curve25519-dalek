@@ -266,7 +266,7 @@ impl CompressedRistretto {
             &s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
+        if (s_encoding_is_canonical.unwrap_u8() == 0u8) | (s_is_negative.unwrap_u8() == 1u8) {
             return None;
         }
 
@@ -296,7 +296,7 @@ impl CompressedRistretto {
         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
-        if ok.unwrap_u8() == 0u8 || t.is_negative().unwrap_u8() == 1u8 || y.is_zero().unwrap_u8() == 1u8 {
+        if (ok.unwrap_u8() == 0u8) | (t.is_negative().unwrap_u8() == 1u8) | (y.is_zero().unwrap_u8() == 1u8) {
             return None;
         } else {
             return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));

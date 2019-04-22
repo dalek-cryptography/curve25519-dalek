@@ -65,7 +65,7 @@ use zeroize::Zeroize;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Zeroize)]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
@@ -91,12 +91,6 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
-
-impl Zeroize for MontgomeryPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
 
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.

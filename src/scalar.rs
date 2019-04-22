@@ -182,7 +182,7 @@ type UnpackedScalar = backend::u32::scalar::Scalar32;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Zeroize)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -501,12 +501,6 @@ impl From<u128> for Scalar {
         let mut s_bytes = [0u8; 32];
         LittleEndian::write_u128(&mut s_bytes, x);
         Scalar{ bytes: s_bytes }
-    }
-}
-
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
     }
 }
 

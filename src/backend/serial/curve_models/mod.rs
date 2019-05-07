@@ -47,8 +47,7 @@
 //! so that the curve is given by the pair of equations
 //! $$
 //! \begin{aligned}
-//!     -W\_1\^2 + W\_2\^2 &= W\_3\^2 + dW\_0\^2, \\\\
-//!     W_0 W_3 &= W_1 W_2.
+//!     -W\_1\^2 + W\_2\^2 &= W\_3\^2 + dW\_0\^2, \\\\  W_0 W_3 &= W_1 W_2.
 //! \end{aligned}
 //! $$
 //! Up to variable naming, this is exactly the "extended" curve model

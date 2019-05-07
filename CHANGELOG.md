@@ -2,6 +2,11 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.4
+
+* Fix typos in documentation comments.
+* Remove unnecessary `Default` bound on `Scalar::from_hash`.
+
 ## 1.1.3
 
 * Reverts the change in 1.1.0 to allow owned and borrowed RNGs, which caused a breakage due to a subtle interaction with ownership rules.  (The `RngCore` change is retained).

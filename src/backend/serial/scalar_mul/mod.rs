@@ -21,8 +21,8 @@ pub mod variable_base;
 #[cfg(feature = "stage2_build")]
 pub mod vartime_double_base;
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub mod straus;
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub mod precomputed_straus;

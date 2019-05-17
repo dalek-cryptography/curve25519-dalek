@@ -614,7 +614,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -646,7 +646,7 @@ impl MultiscalarMul for EdwardsPoint {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -681,10 +681,10 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     type Point = EdwardsPoint;
 

@@ -494,7 +494,7 @@ impl RistrettoPoint {
     /// }
     /// # }
     /// ```
-    #[cfg(feature = "alloc")]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
         where I: IntoIterator<Item = &'a RistrettoPoint>
     {
@@ -872,7 +872,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 // These use iterator combinators to unwrap the underlying points and
 // forward to the EdwardsPoint implementations.
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -890,7 +890,7 @@ impl MultiscalarMul for RistrettoPoint {
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -910,10 +910,10 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
     type Point = RistrettoPoint;
 

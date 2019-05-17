@@ -135,7 +135,7 @@ impl FieldElement {
     /// Given a slice of public `FieldElements`, replace each with its inverse.
     ///
     /// All input `FieldElements` **MUST** be nonzero.
-    #[cfg(feature = "alloc")]
+    #[cfg(any(feature = "alloc", feature = "std"))]
     pub fn batch_invert(inputs: &mut [FieldElement]) {
         // Montgomery’s Trick and Fast Implementation of Masked AES
         // Genelle, Prouff and Quisquater

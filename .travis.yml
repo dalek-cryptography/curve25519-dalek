@@ -1,8 +1,12 @@
 language: rust
+cache: cargo
 
 rust:
   - stable
   - nightly
+
+install:
+  - rustup target add thumbv7em-none-eabihf
 
 env:
   # Tests the u32 backend
@@ -20,6 +24,9 @@ env:
   - TEST_COMMAND=test EXTRA_FLAGS='--lib --no-default-features' FEATURES='alloc u32_backend'
 
 matrix:
+  include:
+    - name: "build (no_std target)"
+      cargo build --release --target thumbv7em-none-eabihf --no-default-features --features=u32_backend
   exclude:
     # Test the avx2 backend only on nightly
     - rust: stable

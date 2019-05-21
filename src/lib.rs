@@ -47,9 +47,9 @@ extern crate std;
 #[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;
 
-extern crate byteorder;
 extern crate clear_on_drop;
 pub extern crate digest;
+#[cfg(feature = "std")]
 extern crate rand_core;
 #[cfg(all(test, feature = "stage2_build"))]
 extern crate rand_os;

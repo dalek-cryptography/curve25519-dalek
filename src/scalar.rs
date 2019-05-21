@@ -151,6 +151,7 @@ use core::ops::{Sub, SubAssign};
 #[allow(unused_imports)]
 use prelude::*;
 
+#[cfg(feature = "std")]
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -447,18 +448,16 @@ impl From<u8> for Scalar {
 
 impl From<u16> for Scalar {
     fn from(x: u16) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u16(&mut s_bytes, x);
+        s_bytes[..2].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
 
 impl From<u32> for Scalar {
     fn from(x: u32) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u32(&mut s_bytes, x);
+        s_bytes[..4].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
@@ -486,18 +485,16 @@ impl From<u64> for Scalar {
     /// assert!(fourtytwo == six * seven);
     /// ```
     fn from(x: u64) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u64(&mut s_bytes, x);
+        s_bytes[..8].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
 
 impl From<u128> for Scalar {
     fn from(x: u128) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u128(&mut s_bytes, x);
+        s_bytes[..16].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
@@ -527,6 +524,7 @@ impl Scalar {
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
+    #[cfg(feature = "std")]
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
@@ -875,12 +873,14 @@ impl Scalar {
         // required so that the NAF digits fit in i8
         debug_assert!( w <= 8 );
 
-        use byteorder::{ByteOrder, LittleEndian};
-
         let mut naf = [0i8; 256];
 
         let mut x_u64 = [0u64; 5];
-        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+        for (i, chunk) in self.bytes.chunks(8).enumerate() {
+            let mut arr = [0u8; 8];
+            arr.copy_from_slice(chunk);
+            x_u64[i] = u64::from_le_bytes(arr);
+        }
 
         let width = 1 << w;
         let window_mask = width - 1;

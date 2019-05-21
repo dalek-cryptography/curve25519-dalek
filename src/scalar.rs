@@ -961,6 +961,80 @@ impl Scalar {
         output
     }
 
+    /// Creates a representation of a Scalar in radix 64, 128 or 256 for use with the Pippenger algorithm.
+    /// For lower radix, use `to_radix_16`, which is used by the Straus multi-scalar multiplication.
+    /// Higher radixes are not supported to save cache space. Radix 256 is near-optimal even for very
+    /// large inputs.
+    ///
+    /// Radix below 64 or above 256 is prohibited.
+    /// This method returns digits in a fixed-sized array, excess digits are zeroes.
+    /// The second returned value is the number of digits.
+    ///
+    /// ## Scalar representation
+    ///
+    /// Radix \\(2\^r\\), with \\(n = ceil(256/r)\\) coefficients in \\([-(2\^r)/2,(2\^r)/2)\\),
+    /// i.e., scalar is represented using digits \\(a\_i\\) such that
+    /// $$
+    ///    a = a\_0 + a\_1 2\^1r + \cdots + a_{n-1} 2\^{r*(n-1)},
+    /// $$
+    /// with \\(-2\^r/2 \leq a_i < 2\^r/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^r/2 \leq a_{n-1} \leq 2\^r/2\\).
+    ///
+    pub(crate) fn to_pippenger_radix(&self, r: usize) -> ([i8; 43], usize) {
+        debug_assert!(r >= 6);
+        debug_assert!(r <= 8);
+
+        let digits_count = (256 + r - 1)/r as usize;
+        debug_assert!(digits_count <= 43);
+
+        use byteorder::{ByteOrder, LittleEndian};
+
+        // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
+        let mut scalar64x4 = [0u64; 4];
+        LittleEndian::read_u64_into(&self.bytes, &mut scalar64x4[0..4]);
+
+        let radix: u64 = 1 << r;
+        let window_mask: u64 = radix - 1;
+
+        let mut carry = 0u64;
+        let mut digits = [0i8; 43];
+        for i in 0..digits_count {
+            // Construct a buffer of bits of the scalar, starting at `bit_offset`.
+            let bit_offset = i*r;
+            let u64_idx = bit_offset / 64;
+            let bit_idx = bit_offset % 64;
+
+            // Read the bits from the scalar
+            let bit_buf: u64;
+            if bit_idx < 64 - r  || u64_idx == 3 {
+                // This window's bits are contained in a single u64,
+                // or it's the last u64 anyway.
+                bit_buf = scalar64x4[u64_idx] >> bit_idx;
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                bit_buf = (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1+u64_idx] << (64 - bit_idx));
+            }
+
+            // Read the actual coefficient value from the window
+            let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
+
+             // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
+            carry = (coef + (radix/2) as u64) >> r;
+            digits[i] = ((coef as i64) - (carry << r) as i64) as i8;
+        }
+
+        // Apply the resulting carry to the last digit
+        // Since the highest bit of the 256-bit integer is 0,
+        // the last coefficient would always be in the lower half _inclusive_,
+        // so the carry in the end can be 1 iff the word equals 2^r/2.
+        // Since ±2^r/2 values are valid, to avoid adding an extra word,
+        // we allow the last word to touch the value 2^r/2.
+        // XXX: make sure tests cover this case, so the carry is non-zero and this line matters.
+        // Maybe it never happens to be non-zero for r=6/7/8?...
+        digits[digits_count-1] += (carry << r) as i8;
+
+        (digits, digits_count)
+    }
+
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
@@ -1435,6 +1509,35 @@ mod test {
 
         for (a, b) in v1.iter().zip(v2.iter()) {
             assert_eq!(a * b, Scalar::one());
+        }
+    }
+
+    #[test]
+    fn test_pippenger_radix() {
+        use std::iter;
+        // For each valid radix it tests that 1000 random-ish scalars can be restored
+        // from the produced representation precisely.
+        for r in 6..9 {
+            for scalar in (2..100).map(|s| Scalar::from(s as u64).invert() ).chain(iter::once(-Scalar::one())) {
+                let (digits, digits_count) = scalar.to_pippenger_radix(r);
+
+                let radix = Scalar::from((1<<r) as u64);
+                let mut term = Scalar::one();
+                let mut recovered_scalar = Scalar::zero();
+                for digit in &digits[0..digits_count] {
+                    let digit = *digit;
+                    if digit != 0 {
+                        let sdigit = if digit < 0 {
+                            -Scalar::from((-(digit as i64)) as u64)
+                        } else {
+                            Scalar::from(digit as u64)
+                        };
+                        recovered_scalar += term * sdigit;
+                    }
+                    term *= radix;
+                }
+                assert_eq!(recovered_scalar, scalar);
+            }
         }
     }
 }

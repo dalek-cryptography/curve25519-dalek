@@ -17,3 +17,6 @@ pub mod straus;
 
 #[cfg(feature = "alloc")]
 pub mod precomputed_straus;
+
+#[cfg(feature = "alloc")]
+pub mod pippenger;

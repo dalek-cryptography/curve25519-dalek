@@ -676,11 +676,15 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         assert_eq!(s_hi, Some(s_lo));
         assert_eq!(p_hi, Some(p_lo));
 
-        // Now we know there's a single size.  When we do
-        // size-dependent algorithm dispatch, use this as the hint.
-        let _size = s_lo;
+        // Now we know there's a single size.
+        // Use this as the hint to decide which algorithm to use.
+        let size = s_lo;
 
-        scalar_mul::straus::Straus::optional_multiscalar_mul(scalars, points)
+        if size < 190 {
+            scalar_mul::straus::Straus::optional_multiscalar_mul(scalars, points)
+        } else {
+            scalar_mul::pippenger::Pippenger::optional_multiscalar_mul(scalars, points)
+        }
     }
 }
 

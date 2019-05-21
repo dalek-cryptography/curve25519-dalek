@@ -6,7 +6,6 @@
     all(feature = "simd_backend", target_feature = "avx512ifma"),
     feature(link_llvm_intrinsics)
 )]
-#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(doc_cfg))]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]

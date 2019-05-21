@@ -17,7 +17,6 @@
     feature(simd_ffi, link_llvm_intrinsics)
 )]
 #![cfg_attr(feature = "nightly", feature(test))]
-#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
 #![cfg_attr(feature = "nightly", feature(doc_cfg))]
 // Refuse to compile if documentation is missing, but only on nightly.

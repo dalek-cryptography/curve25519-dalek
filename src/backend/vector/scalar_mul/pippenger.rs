@@ -13,13 +13,10 @@
 
 use core::borrow::Borrow;
 
-use clear_on_drop::ClearOnDrop;
-
 use backend::vector::{CachedPoint, ExtendedPoint};
 use edwards::EdwardsPoint;
 use scalar::Scalar;
-use window::{LookupTable, NafLookupTable5};
-use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
+use traits::{Identity, VartimeMultiscalarMul};
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -68,7 +65,7 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Prepare 2^w/2 buckets.
         // buckets[i] corresponds to a multiplication factor (i+1).
-        let mut buckets: Vec<_> = (0..buckets_count)
+        let mut buckets: Vec<ExtendedPoint> = (0..buckets_count)
             .map(|_| ExtendedPoint::identity())
             .collect();
 
@@ -105,8 +102,8 @@ impl VartimeMultiscalarMul for Pippenger {
             let mut buckets_intermediate_sum = buckets[buckets_count - 1];
             let mut buckets_sum = buckets[buckets_count - 1];
             for i in (0..(buckets_count - 1)).rev() {
-                buckets_intermediate_sum = &buckets_intermediate_sum + &buckets[i];
-                buckets_sum = &buckets_sum + &buckets_intermediate_sum;
+                buckets_intermediate_sum = &buckets_intermediate_sum + &CachedPoint::from(buckets[i]);
+                buckets_sum = &buckets_sum + &CachedPoint::from(buckets_intermediate_sum);
             }
 
             buckets_sum
@@ -123,7 +120,7 @@ impl VartimeMultiscalarMul for Pippenger {
                 .iter()
                 .rev()
                 .fold(columns[digits_count - 1], |total, &p| {
-                    &total.mul_by_pow_2(w as u32) + &p
+                    &total.mul_by_pow_2(w as u32) + &CachedPoint::from(p)
                 })
                 .into(),
         )

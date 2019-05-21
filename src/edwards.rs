@@ -1244,6 +1244,8 @@ mod test {
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
     }
 
+    // TODO(tarcieri): find a way to run these without breaking `no_std`
+    #[cfg(feature = "fixme")]
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();

@@ -48,10 +48,10 @@ extern crate packed_simd;
 
 extern crate clear_on_drop;
 pub extern crate digest;
-#[cfg(feature = "std")]
 extern crate rand_core;
-#[cfg(all(test, feature = "stage2_build"))]
-extern crate rand_os;
+// TODO(tarcieri): find a way to run `rand`-dependent tests without breaking `no_std`
+//#[cfg(all(test, feature = "stage2_build"))]
+//extern crate rand_os;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

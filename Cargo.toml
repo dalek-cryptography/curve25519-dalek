@@ -27,15 +27,8 @@ features = ["nightly", "simd_backend"]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
-rand_os = "0.1.0"
 sha2 = { version = "0.8", default-features = false }
 bincode = "1"
-criterion = "0.2"
-rand = "0.6"
-
-[[bench]]
-name = "dalek_benchmarks"
-harness = false
 
 # Note: we generate precomputed tables by building the crate twice: once as
 # part of build.rs, and then once "for real".
@@ -44,7 +37,7 @@ harness = false
 # match exactly, since the build.rs uses the crate itself as a library.
 
 [dependencies]
-rand_core = { version = "0.3.0", default-features = false, optional = true }
+rand_core = { version = "0.3.0", default-features = false }
 digest = { version = "0.8", default-features = false }
 clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
@@ -63,7 +56,7 @@ packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
 default = ["std", "u64_backend"]
-std = ["alloc", "subtle/std", "rand_core"]
+std = ["alloc", "subtle/std"]
 alloc = []
 yolocrypto = []
 
@@ -82,3 +75,5 @@ avx2_backend = ["simd_backend"]
 # feature before the main-stage compilation.
 stage2_build = []
 
+[workspace]
+members = [".", "benchmarks"]

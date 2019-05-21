@@ -151,7 +151,6 @@ use core::ops::{Sub, SubAssign};
 #[allow(unused_imports)]
 use prelude::*;
 
-#[cfg(feature = "std")]
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -524,7 +523,6 @@ impl Scalar {
     /// let mut csprng: OsRng = OsRng::new().unwrap();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    #[cfg(feature = "std")]
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);

@@ -1,12 +1,10 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2019 Oleg Andreev
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
-// - Henry de Valence <hdevalence@hdevalence.ca>
 // - Oleg Andreev <oleganza@gmail.com>
 
 #![allow(non_snake_case)]
@@ -52,13 +50,15 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
-        let scalars = scalars.into_iter()
-        	.map(|s| s.borrow().to_pippenger_radix(w).0 )
-        	.collect::<Vec<_>>();
+        let scalars = scalars
+            .into_iter()
+            .map(|s| s.borrow().to_pippenger_radix(w).0)
+            .collect::<Vec<_>>();
         let points: Vec<CachedPoint> = match points
             .into_iter()
             .map(|p| p.map(|P| CachedPoint::from(ExtendedPoint::from(P))))
-            .collect::<Option<Vec<_>>>() {
+            .collect::<Option<Vec<_>>>()
+        {
             Some(x) => x,
             None => return None,
         };
@@ -70,18 +70,17 @@ impl VartimeMultiscalarMul for Pippenger {
             .collect();
 
         let mut columns = (0..digits_count).rev().map(|digit_index| {
-
             // Clear the buckets when processing another digit.
             for i in 0..buckets_count {
                 buckets[i] = ExtendedPoint::identity();
             }
-            
+
             // Iterate over pairs of (point, scalar)
             // and add/sub the point to the corresponding bucket.
             // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
             for (digits, pt) in scalars.iter().zip(points.iter()) {
-            	let digit = digits[digit_index];
+                let digit = digits[digit_index];
                 if digit > 0 {
                     let b = (digit - 1) as usize;
                     buckets[b] = &buckets[b] + pt;
@@ -102,7 +101,8 @@ impl VartimeMultiscalarMul for Pippenger {
             let mut buckets_intermediate_sum = buckets[buckets_count - 1];
             let mut buckets_sum = buckets[buckets_count - 1];
             for i in (0..(buckets_count - 1)).rev() {
-                buckets_intermediate_sum = &buckets_intermediate_sum + &CachedPoint::from(buckets[i]);
+                buckets_intermediate_sum =
+                    &buckets_intermediate_sum + &CachedPoint::from(buckets[i]);
                 buckets_sum = &buckets_sum + &CachedPoint::from(buckets_intermediate_sum);
             }
 
@@ -114,9 +114,11 @@ impl VartimeMultiscalarMul for Pippenger {
         let hi_column = columns.next().unwrap();
 
         Some(
-            columns.fold(hi_column, |total, p| {
-                &total.mul_by_pow_2(w as u32) + &CachedPoint::from(p)
-            }).into()
+            columns
+                .fold(hi_column, |total, p| {
+                    &total.mul_by_pow_2(w as u32) + &CachedPoint::from(p)
+                })
+                .into(),
         )
     }
 }
@@ -134,12 +136,10 @@ mod test {
         let x = Scalar::from(2128506u64).invert();
         let y = Scalar::from(4443282u64).invert();
         let points: Vec<_> = (0..n)
-            .map(|i| {
-                constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64)
-            })
+            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
             .collect();
         let scalars: Vec<_> = (0..n)
-            .map(|i| x + (Scalar::from(i as u64)*y)) // fast way to make ~random but deterministic scalars
+            .map(|i| x + (Scalar::from(i as u64) * y)) // fast way to make ~random but deterministic scalars
             .collect();
 
         let premultiplied: Vec<EdwardsPoint> = scalars

@@ -69,7 +69,7 @@ impl VartimeMultiscalarMul for Pippenger {
             .map(|_| ExtendedPoint::identity())
             .collect();
 
-        let columns: Vec<ExtendedPoint> = (0..digits_count).map(|digit_index| {
+        let mut columns = (0..digits_count).rev().map(|digit_index| {
 
             // Clear the buckets when processing another digit.
             for i in 0..buckets_count {
@@ -107,22 +107,16 @@ impl VartimeMultiscalarMul for Pippenger {
             }
 
             buckets_sum
-        })
-        .collect();
-        // ^ Note: we collect points because if we chain .rev().fold()
-        // then the .map() will run in reversed order, producing incorrect digit values
-        // (they can only be produced in lo->hi order).
+        });
 
-        // Add the intermediate per-digit results in hi->lo order
-        // so that we can minimize doublings.
+        // Take the high column as an initial value to avoid wasting time doubling the identity element in `fold()`.
+        // `unwrap()` always succeeds because we know we have more than zero digits.
+        let hi_column = columns.next().unwrap();
+
         Some(
-            columns[0..(digits_count - 1)]
-                .iter()
-                .rev()
-                .fold(columns[digits_count - 1], |total, &p| {
-                    &total.mul_by_pow_2(w as u32) + &CachedPoint::from(p)
-                })
-                .into(),
+            columns.fold(hi_column, |total, p| {
+                &total.mul_by_pow_2(w as u32) + &CachedPoint::from(p)
+            }).into()
         )
     }
 }

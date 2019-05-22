@@ -48,18 +48,20 @@ impl VartimeMultiscalarMul for Pippenger {
         let digits_count: usize = (256 + w - 1) / w; // == ceil(256/w)
         let buckets_count: usize = max_digit / 2; // digits are signed+centered hence 2^w/2, excluding 0-th bucket
 
-        // Collect optimized scalars and points in buffers for repeated access
-        // (scanning the whole set per digit position).
+        // Collect optimized scalars and points in a buffer for repeated access
+        // (scanning the whole collection per each digit position).
         let scalars = scalars
             .into_iter()
-            .map(|s| s.borrow().to_pippenger_radix(w).0)
-            .collect::<Vec<_>>();
-        let points: Vec<CachedPoint> = match points
+            .map(|s| s.borrow().to_pippenger_radix(w).0);
+
+        let points = points
             .into_iter()
-            .map(|p| p.map(|P| CachedPoint::from(ExtendedPoint::from(P))))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
+            .map(|p| p.map(|P| CachedPoint::from(ExtendedPoint::from(P))));
+
+        let scalars_points = scalars.zip(points).map(|(s,maybe_p)| maybe_p.map(|p| (s,p) ) )
+            .collect::<Option<Vec<_>>>();
+        let scalars_points = match scalars_points {
+            Some(sp) => sp,
             None => return None,
         };
 
@@ -79,7 +81,7 @@ impl VartimeMultiscalarMul for Pippenger {
             // and add/sub the point to the corresponding bucket.
             // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
-            for (digits, pt) in scalars.iter().zip(points.iter()) {
+            for (digits, pt) in scalars_points.iter() {
                 let digit = digits[digit_index];
                 if digit > 0 {
                     let b = (digit - 1) as usize;

@@ -70,7 +70,6 @@ impl VartimeMultiscalarMul for Pippenger {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use backend::serial::curve_models::ProjectiveNielsPoint;
         use traits::Identity;
 
         let mut scalars = scalars.into_iter();
@@ -95,14 +94,16 @@ impl VartimeMultiscalarMul for Pippenger {
         // (scanning the whole set per digit position).
         let scalars = scalars
             .into_iter()
-            .map(|s| s.borrow().to_pippenger_radix(w).0)
-            .collect::<Vec<_>>();
-        let points: Vec<ProjectiveNielsPoint> = match points
+            .map(|s| s.borrow().to_pippenger_radix(w).0);
+
+        let points = points
             .into_iter()
-            .map(|p| p.map(|P| P.to_projective_niels()))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
+            .map(|p| p.map(|P| P.to_projective_niels()));
+
+        let scalars_points = scalars.zip(points).map(|(s,maybe_p)| maybe_p.map(|p| (s,p) ) )
+            .collect::<Option<Vec<_>>>();
+        let scalars_points = match scalars_points {
+            Some(sp) => sp,
             None => return None,
         };
 
@@ -122,7 +123,7 @@ impl VartimeMultiscalarMul for Pippenger {
             // and add/sub the point to the corresponding bucket.
             // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
-            for (digits, pt) in scalars.iter().zip(points.iter()) {
+            for (digits, pt) in scalars_points.iter() {
                 let digit = digits[digit_index];
                 if digit > 0 {
                     let b = (digit - 1) as usize;

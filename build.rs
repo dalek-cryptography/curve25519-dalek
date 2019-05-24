@@ -18,6 +18,7 @@ extern crate byteorder;
 extern crate clear_on_drop;
 extern crate core;
 extern crate digest;
+#[cfg(feature = "rand_core")]
 extern crate rand_core;
 extern crate subtle;
 

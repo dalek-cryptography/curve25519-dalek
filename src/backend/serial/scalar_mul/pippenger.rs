@@ -94,7 +94,7 @@ impl VartimeMultiscalarMul for Pippenger {
         // (scanning the whole set per digit position).
         let scalars = scalars
             .into_iter()
-            .map(|s| s.borrow().to_pippenger_radix(w).0);
+            .map(|s| s.borrow().to_radix_2w(w).0);
 
         let points = points
             .into_iter()

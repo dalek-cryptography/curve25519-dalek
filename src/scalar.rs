@@ -979,7 +979,7 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_pippenger_radix(&self, w: usize) -> ([i8; 43], usize) {
+    pub(crate) fn to_radix_2w(&self, w: usize) -> ([i8; 43], usize) {
         debug_assert!(w >= 6);
         debug_assert!(w <= 8);
 
@@ -1519,7 +1519,7 @@ mod test {
         // from the produced representation precisely.
         for w in 6..9 {
             for scalar in (2..100).map(|s| Scalar::from(s as u64).invert() ).chain(iter::once(-Scalar::one())) {
-                let (digits, digits_count) = scalar.to_pippenger_radix(w);
+                let (digits, digits_count) = scalar.to_radix_2w(w);
 
                 let radix = Scalar::from((1<<w) as u64);
                 let mut term = Scalar::one();

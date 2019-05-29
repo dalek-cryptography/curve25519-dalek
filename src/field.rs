@@ -203,9 +203,9 @@ impl FieldElement {
     /// # Return
     ///
     /// - `(Choice(1), +sqrt(u/v))  ` if `v` is nonzero and `u/v` is square;
-    /// - `(Choice(1), zero)        ` if `u` is zero;
-    /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
-    /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
+    /// - `(Choice(1), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square);
+    /// - `(Choice(0), zero)        ` if `u` is zero;
+    /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero.
     ///
     pub fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
         // Using the same trick as in ed25519 decoding, we merge the

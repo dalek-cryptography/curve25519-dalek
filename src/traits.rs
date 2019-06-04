@@ -10,6 +10,8 @@
 
 //! Module for common traits.
 
+#![allow(non_snake_case)]
+
 use core::borrow::Borrow;
 
 use subtle;
@@ -208,7 +210,6 @@ pub trait VartimeMultiscalarMul {
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// ```
-    #[allow(non_snake_case)]
     fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
     where
         I: IntoIterator,

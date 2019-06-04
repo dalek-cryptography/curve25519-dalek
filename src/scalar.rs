@@ -1514,7 +1514,7 @@ mod test {
 
     #[test]
     fn test_pippenger_radix() {
-        use std::iter;
+        use core::iter;
         // For each valid radix it tests that 1000 random-ish scalars can be restored
         // from the produced representation precisely.
         for w in 6..9 {

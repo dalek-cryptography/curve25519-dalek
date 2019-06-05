@@ -27,16 +27,16 @@
 
 #![allow(non_snake_case)]
 
-use edwards::CompressedEdwardsY;
-use ristretto::RistrettoPoint;
-use ristretto::CompressedRistretto;
-use montgomery::MontgomeryPoint;
-use scalar::Scalar;
+use crate::edwards::CompressedEdwardsY;
+use crate::ristretto::RistrettoPoint;
+use crate::ristretto::CompressedRistretto;
+use crate::montgomery::MontgomeryPoint;
+use crate::scalar::Scalar;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::serial::u64::constants::*;
+pub use crate::backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]
-pub use backend::serial::u32::constants::*;
+pub use crate::backend::serial::u32::constants::*;
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
 ///
@@ -89,7 +89,7 @@ pub const BASEPOINT_ORDER: Scalar = Scalar{
 include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
 
 #[cfg(feature = "stage2_build")]
-use ristretto::RistrettoBasepointTable;
+use crate::ristretto::RistrettoBasepointTable;
 
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
 #[cfg(feature = "stage2_build")]
@@ -98,14 +98,14 @@ pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
 
 #[cfg(test)]
 mod test {
-    use field::FieldElement;
-    use traits::{IsIdentity, ValidityCheck};
-    use constants;
+    use crate::field::FieldElement;
+    use crate::traits::{IsIdentity, ValidityCheck};
+    use crate::constants;
 
     #[test]
     fn test_eight_torsion() {
         for i in 0..8 {
-            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(3);
+            let Q = crate::constants::EIGHT_TORSION[i].mul_by_pow_2(3);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -114,7 +114,7 @@ mod test {
     #[test]
     fn test_four_torsion() {
         for i in (0..8).filter(|i| i % 2 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(2);
+            let Q = crate::constants::EIGHT_TORSION[i].mul_by_pow_2(2);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -123,7 +123,7 @@ mod test {
     #[test]
     fn test_two_torsion() {
         for i in (0..8).filter(|i| i % 4 == 0) {
-            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(1);
+            let Q = crate::constants::EIGHT_TORSION[i].mul_by_pow_2(1);
             assert!(Q.is_valid());
             assert!(Q.is_identity());
         }
@@ -133,9 +133,9 @@ mod test {
     #[test]
     fn test_sqrt_minus_one() {
         let minus_one = FieldElement::minus_one();
-        let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
+        let sqrt_m1_sq = &crate::constants::SQRT_M1 * &constants::SQRT_M1;
         assert_eq!(minus_one,  sqrt_m1_sq);
-        assert_eq!(constants::SQRT_M1.is_negative().unwrap_u8(), 0);
+        assert_eq!(crate::constants::SQRT_M1.is_negative().unwrap_u8(), 0);
     }
 
     #[test]
@@ -143,7 +143,7 @@ mod test {
         let minus_one = FieldElement::minus_one();
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
         assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
-        let sign_test_sqrt  = &invsqrt_m1 * &constants::SQRT_M1;
+        let sign_test_sqrt  = &invsqrt_m1 * &crate::constants::SQRT_M1;
         assert_eq!(sign_test_sqrt, minus_one);
     }
 
@@ -151,33 +151,33 @@ mod test {
     #[test]
     #[cfg(feature = "u32_backend")]
     fn test_d_vs_ratio() {
-        use backend::serial::u32::field::FieldElement2625;
+        use crate::backend::serial::u32::field::FieldElement2625;
         let a = -&FieldElement2625([121665,0,0,0,0,0,0,0,0,0]);
         let b =   FieldElement2625([121666,0,0,0,0,0,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
-        assert_eq!(d, constants::EDWARDS_D);
-        assert_eq!(d2, constants::EDWARDS_D2);
+        assert_eq!(d, crate::constants::EDWARDS_D);
+        assert_eq!(d2, crate::constants::EDWARDS_D2);
     }
 
     /// Test that d = -121665/121666
     #[test]
     #[cfg(feature = "u64_backend")]
     fn test_d_vs_ratio() {
-        use backend::serial::u64::field::FieldElement51;
+        use crate::backend::serial::u64::field::FieldElement51;
         let a = -&FieldElement51([121665,0,0,0,0]);
         let b =   FieldElement51([121666,0,0,0,0]);
         let d = &a * &b.invert();
         let d2 = &d + &d;
-        assert_eq!(d, constants::EDWARDS_D);
-        assert_eq!(d2, constants::EDWARDS_D2);
+        assert_eq!(d, crate::constants::EDWARDS_D);
+        assert_eq!(d2, crate::constants::EDWARDS_D2);
     }
 
     #[test]
     fn test_sqrt_ad_minus_one() {
         let a = FieldElement::minus_one();
-        let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
-        let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
+        let ad_minus_one = &(&a * &crate::constants::EDWARDS_D) + &a;
+        let should_be_ad_minus_one = crate::constants::SQRT_AD_MINUS_ONE.square();
         assert_eq!(should_be_ad_minus_one, ad_minus_one);
     }
 

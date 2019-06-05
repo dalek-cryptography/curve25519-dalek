@@ -13,15 +13,15 @@
 
 use core::borrow::Borrow;
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use traits::VartimePrecomputedMultiscalarMul;
-use window::{NafLookupTable5, NafLookupTable8};
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::traits::VartimePrecomputedMultiscalarMul;
+use crate::window::{NafLookupTable5, NafLookupTable8};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 
 pub struct VartimePrecomputedStraus {

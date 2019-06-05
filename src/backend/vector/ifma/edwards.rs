@@ -9,15 +9,15 @@
 
 #![allow(non_snake_case)]
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use std::ops::{Add, Neg, Sub};
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use super::constants;
 use super::field::{F51x4Reduced, F51x4Unreduced, Lanes, Shuffle};

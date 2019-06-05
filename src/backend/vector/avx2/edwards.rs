@@ -40,10 +40,10 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use super::constants;
 use super::field::{FieldElement2625x4, Lanes, Shuffle};
@@ -329,7 +329,7 @@ mod test {
     use super::*;
 
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
-        use backend::serial::u64::field::FieldElement51;
+        use crate::backend::serial::u64::field::FieldElement51;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
         let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);

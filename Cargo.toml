@@ -17,6 +17,7 @@ exclude = [
     ".travis.yml",
 ]
 build = "build.rs"
+edition = "2018"
 
 [package.metadata.docs.rs]
 # Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
@@ -51,6 +52,8 @@ clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+zeroize = "0.9.1"
+
 
 [build-dependencies]
 rand_core = { version = "0.3.0", default-features = false }
@@ -60,6 +63,8 @@ clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+zeroize = { version = "0.9.1", optional = true }
+
 
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]
@@ -67,6 +72,9 @@ default = ["std", "u64_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = []
 yolocrypto = []
+
+# Clear Types
+zeromem = ["zeroize"]
 
 # The u32 backend uses u32s with u64 products.
 u32_backend = []

@@ -14,14 +14,14 @@ use core::borrow::Borrow;
 
 use clear_on_drop::ClearOnDrop;
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use window::{LookupTable, NafLookupTable5};
-use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::window::{LookupTable, NafLookupTable5};
+use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 /// Multiscalar multiplication using interleaved window / Straus'
 /// method.  See the `Straus` struct in the serial backend for more

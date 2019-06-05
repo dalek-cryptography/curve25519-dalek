@@ -12,7 +12,7 @@
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{u64x4, IntoBits};
 
-use backend::serial::u64::field::FieldElement51;
+use crate::backend::serial::u64::field::FieldElement51;
 
 #[allow(improper_ctypes)]
 extern "C" {

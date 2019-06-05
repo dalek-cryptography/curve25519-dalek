@@ -47,6 +47,11 @@ extern crate std;
 #[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;
 
+
+#[cfg(feature = "zeromem")]
+extern crate zeroize;
+
+
 extern crate byteorder;
 extern crate clear_on_drop;
 pub extern crate digest;

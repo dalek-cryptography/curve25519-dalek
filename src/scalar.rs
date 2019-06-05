@@ -149,7 +149,7 @@ use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 use rand_core::{CryptoRng, RngCore};
 
@@ -160,22 +160,24 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-use backend;
-use constants;
+use crate::backend;
+use crate::constants;
+
+
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u64_backend")]
-type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
+type UnpackedScalar = crate::backend::serial::u64::scalar::Scalar52;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
 #[cfg(feature = "u32_backend")]
-type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+type UnpackedScalar = crate::backend::serial::u32::scalar::Scalar29;
 
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
@@ -406,6 +408,18 @@ impl<'de> Deserialize<'de> for Scalar {
         deserializer.deserialize_bytes(ScalarVisitor)
     }
 }
+
+#[cfg(feature = "zeromem")]
+use zeroize::Zeroize;
+
+#[cfg(feature = "zeromem")]
+impl Zeroize for Scalar {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
+        debug_assert!(self.bytes.iter().all(|b| *b == 0));
+    }
+}
+
 
 impl<T> Product<T> for Scalar
 where

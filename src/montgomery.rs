@@ -50,12 +50,12 @@
 
 use core::ops::{Mul, MulAssign};
 
-use constants::APLUS2_OVER_FOUR;
-use edwards::{CompressedEdwardsY, EdwardsPoint};
-use field::FieldElement;
-use scalar::Scalar;
+use crate::constants::APLUS2_OVER_FOUR;
+use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
+use crate::field::FieldElement;
+use crate::scalar::Scalar;
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -89,6 +89,18 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
+
+#[cfg(feature = "zeromem")]
+use zeroize::Zeroize;
+
+#[cfg(feature = "zeromem")]
+impl Zeroize for MontgomeryPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+        debug_assert!(self.0.iter().all(|b| *b == 0));
+    }
+}
+
 
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.
@@ -301,7 +313,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
-    use constants;
+    use crate::constants;
     use super::*;
 
     #[cfg(feature = "rand")]

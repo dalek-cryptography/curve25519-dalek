@@ -12,9 +12,9 @@
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
 
-use backend::serial::u32::field::FieldElement2625;
-use backend::serial::u32::scalar::Scalar29;
-use edwards::EdwardsPoint;
+use crate::backend::serial::u32::field::FieldElement2625;
+use crate::backend::serial::u32::scalar::Scalar29;
+use crate::edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement2625       = FieldElement2625([

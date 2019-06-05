@@ -169,36 +169,36 @@ use rand_core::{CryptoRng, RngCore};
 use digest::generic_array::typenum::U64;
 use digest::Digest;
 
-use constants;
-use field::FieldElement;
+use crate::constants;
+use crate::field::FieldElement;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
-use edwards::EdwardsBasepointTable;
-use edwards::EdwardsPoint;
+use crate::edwards::EdwardsBasepointTable;
+use crate::edwards::EdwardsPoint;
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
-use scalar::Scalar;
+use crate::scalar::Scalar;
 
-use traits::Identity;
+use crate::traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
-use backend::serial::scalar_mul;
+use crate::backend::serial::scalar_mul;
 #[cfg(all(
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 ))]
-use backend::vector::scalar_mul;
+use crate::backend::vector::scalar_mul;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -278,7 +278,7 @@ impl CompressedRistretto {
         let u2_sqr = u2.square(); // (1 - as²)²
 
         // v == ad(1+as²)² - (1-as²)²            where d=-121665/121666
-        let v = &(&(-&constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
+        let v = &(&(-&crate::constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
 
         let (ok, I) = (&v * &u2_sqr).invsqrt(); // 1/sqrt(v*u_2²)
 
@@ -446,9 +446,9 @@ impl RistrettoPoint {
         let z_inv = &i1 * &(&i2 * T);
         let mut den_inv = i2;
 
-        let iX = &X * &constants::SQRT_M1;
-        let iY = &Y * &constants::SQRT_M1;
-        let ristretto_magic = &constants::INVSQRT_A_MINUS_D;
+        let iX = &X * &crate::constants::SQRT_M1;
+        let iY = &Y * &crate::constants::SQRT_M1;
+        let ristretto_magic = &crate::constants::INVSQRT_A_MINUS_D;
         let enchanted_denominator = &i1 * ristretto_magic;
 
         let rotate = (T * &z_inv).is_negative();
@@ -519,7 +519,7 @@ impl RistrettoPoint {
                 let XX = P.0.X.square();
                 let YY = P.0.Y.square();
                 let ZZ = P.0.Z.square();
-                let dTT = &P.0.T.square() * &constants::EDWARDS_D;
+                let dTT = &P.0.T.square() * &crate::constants::EDWARDS_D;
 
                 let e = &P.0.X * &(&P.0.Y + &P.0.Y); // = 2*X*Y
                 let f = &ZZ + &dTT;                  // = Z^2 + d*T^2
@@ -543,7 +543,7 @@ impl RistrettoPoint {
             let Zinv = &state.eg * &inv;
             let Tinv = &state.fh * &inv;
 
-            let mut magic = constants::INVSQRT_A_MINUS_D;
+            let mut magic = crate::constants::INVSQRT_A_MINUS_D;
 
             let negcheck1 = (&state.eg * &Zinv).is_negative();
 
@@ -552,13 +552,13 @@ impl RistrettoPoint {
             let mut h = state.h;
 
             let minus_e = -&e;
-            let f_times_sqrta = &state.f * &constants::SQRT_M1;
+            let f_times_sqrta = &state.f * &crate::constants::SQRT_M1;
 
             e.conditional_assign(&state.g,       negcheck1);
             g.conditional_assign(&minus_e,       negcheck1);
             h.conditional_assign(&f_times_sqrta, negcheck1);
 
-            magic.conditional_assign(&constants::SQRT_M1, negcheck1);
+            magic.conditional_assign(&crate::constants::SQRT_M1, negcheck1);
 
             let negcheck2 = (&(&h * &e) * &Zinv).is_negative();
 
@@ -577,9 +577,9 @@ impl RistrettoPoint {
     /// Return the coset self + E[4], for debugging.
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
-        , &self.0 + &constants::EIGHT_TORSION[2]
-        , &self.0 + &constants::EIGHT_TORSION[4]
-        , &self.0 + &constants::EIGHT_TORSION[6]
+        , &self.0 + &crate::constants::EIGHT_TORSION[2]
+        , &self.0 + &crate::constants::EIGHT_TORSION[4]
+        , &self.0 + &crate::constants::EIGHT_TORSION[6]
         ]
     }
 
@@ -590,7 +590,7 @@ impl RistrettoPoint {
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
-        let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
+        let (i, d) = (&crate::constants::SQRT_M1, &crate::constants::EDWARDS_D);
         let one = FieldElement::one();
         let one_minus_d_sq = &one - &d.square();
         let d_minus_one_sq = (d - &one).square();
@@ -611,12 +611,12 @@ impl RistrettoPoint {
         let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
 
-        use backend::serial::curve_models::CompletedPoint;
+        use crate::backend::serial::curve_models::CompletedPoint;
 
         // The conversion from W_i is exactly the conversion from P1xP1.
         RistrettoPoint(CompletedPoint{
             X: &(&s + &s) * &D,
-            Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
+            Z: &N_t * &crate::constants::SQRT_AD_MINUS_ONE,
             Y: &FieldElement::one() - &s_sq,
             T: &FieldElement::one() + &s_sq,
         }.to_extended())
@@ -1078,10 +1078,10 @@ mod test {
     #[cfg(feature = "rand")]
     use rand_os::OsRng;
 
-    use scalar::Scalar;
-    use constants;
-    use edwards::CompressedEdwardsY;
-    use traits::{Identity, ValidityCheck};
+    use crate::scalar::Scalar;
+    use crate::constants;
+    use crate::edwards::CompressedEdwardsY;
+    use crate::traits::{Identity, ValidityCheck};
     use super::*;
 
     #[test]
@@ -1324,7 +1324,7 @@ mod test {
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
-        let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
+        let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1351,7 +1351,7 @@ mod test {
             &dynamic_points,
         );
 
-        use traits::VartimeMultiscalarMul;
+        use crate::traits::VartimeMultiscalarMul;
         let Q = RistrettoPoint::vartime_multiscalar_mul(
             static_scalars.iter().chain(dynamic_scalars.iter()),
             static_points.iter().chain(dynamic_points.iter()),

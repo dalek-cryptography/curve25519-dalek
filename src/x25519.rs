@@ -36,6 +36,12 @@ impl From<[u8; 32]> for PublicKey {
 }
 
 impl PublicKey {
+    /// Convert this public key to a byte array.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
     /// View this public key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
@@ -149,6 +155,12 @@ impl Drop for SharedSecret {
 }
 
 impl SharedSecret {
+    /// Convert this shared secret to a byte array.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
     /// View this shared secret key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {

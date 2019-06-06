@@ -82,7 +82,8 @@ impl VartimeMultiscalarMul for Pippenger {
             // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtractiong point premultiplied by `digits[i]` to buckets[0].
             for (digits, pt) in scalars_points.iter() {
-                let digit = digits[digit_index];
+                // Widen digit so that we don't run into edge cases when w=8.
+                let digit = digits[digit_index] as i16;
                 if digit > 0 {
                     let b = (digit - 1) as usize;
                     buckets[b] = &buckets[b] + pt;

@@ -2,6 +2,15 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.2.1
+
+* Fix a bug in bucket index calculations in the Pippenger multiscalar algorithm
+  for very large input sizes.
+* Add a more extensive randomized multiscalar multiplication consistency check
+  to the test suite to prevent regressions.
+* Ensure that that multiscalar and NAF computations work correctly on extremal
+  `Scalar` values constructed via `from_bits`.
+
 ## 1.2.0
 
 * New multiscalar multiplication algorithm with better performance for

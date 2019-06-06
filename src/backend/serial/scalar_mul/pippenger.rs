@@ -88,14 +88,14 @@ impl VartimeMultiscalarMul for Pippenger {
         };
 
         let max_digit: usize = 1 << w;
-        let digits_count: usize = (256 + w - 1) / w; // == ceil(256/w)
+        let digits_count: usize = Scalar::to_radix_2w_size_hint(w);
         let buckets_count: usize = max_digit / 2; // digits are signed+centered hence 2^w/2, excluding 0-th bucket
 
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
         let scalars = scalars
             .into_iter()
-            .map(|s| s.borrow().to_radix_2w(w).0);
+            .map(|s| s.borrow().to_radix_2w(w));
 
         let points = points
             .into_iter()
@@ -125,7 +125,8 @@ impl VartimeMultiscalarMul for Pippenger {
             // Note: if we add support for precomputed lookup tables,
             // we'll be adding/subtracting point premultiplied by `digits[i]` to buckets[0].
             for (digits, pt) in scalars_points.iter() {
-                let digit = digits[digit_index];
+                // Widen digit so that we don't run into edge cases when w=8.
+                let digit = digits[digit_index] as i16;
                 if digit > 0 {
                     let b = (digit - 1) as usize;
                     buckets[b] = (&buckets[b] + pt).to_extended();

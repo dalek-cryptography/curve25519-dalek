@@ -84,7 +84,7 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
         // nonzero NAF coefficient, but since we might have a lot of
         // them to search, it's not clear it's worthwhile to check.
         let mut R = ExtendedPoint::identity();
-        for j in (0..255).rev() {
+        for j in (0..256).rev() {
             R = R.double();
 
             for i in 0..dp {

@@ -94,7 +94,7 @@ impl VartimeMultiscalarMul for Straus {
 
         let mut Q = ExtendedPoint::identity();
 
-        for i in (0..255).rev() {
+        for i in (0..256).rev() {
             Q = Q.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {

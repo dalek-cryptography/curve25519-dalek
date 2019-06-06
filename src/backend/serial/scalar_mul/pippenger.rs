@@ -88,14 +88,14 @@ impl VartimeMultiscalarMul for Pippenger {
         };
 
         let max_digit: usize = 1 << w;
-        let digits_count: usize = (256 + w - 1) / w; // == ceil(256/w)
+        let digits_count: usize = Scalar::to_radix_2w_size_hint(w);
         let buckets_count: usize = max_digit / 2; // digits are signed+centered hence 2^w/2, excluding 0-th bucket
 
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
         let scalars = scalars
             .into_iter()
-            .map(|s| s.borrow().to_radix_2w(w).0);
+            .map(|s| s.borrow().to_radix_2w(w));
 
         let points = points
             .into_iter()

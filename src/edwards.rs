@@ -1264,6 +1264,8 @@ mod test {
         // followed by some extra hardcoded ones.
         let xs = (0..n)
             .map(|_| Scalar::random(&mut rng))
+            // The largest scalar allowed by the type system, 2^255-1
+            .chain(iter::once(Scalar::from_bits([0xff; 32])))
             .collect::<Vec<_>>();
         let check = xs.iter()
             .map(|xi| xi * xi)

@@ -85,7 +85,7 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
         // nonzero NAF coefficient, but since we might have a lot of
         // them to search, it's not clear it's worthwhile to check.
         let mut S = ProjectivePoint::identity();
-        for j in (0..255).rev() {
+        for j in (0..256).rev() {
             let mut R: CompletedPoint = S.double();
 
             for i in 0..dp {

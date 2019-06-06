@@ -961,6 +961,24 @@ impl Scalar {
         output
     }
 
+    /// Returns a size hint indicating how many entries of the return
+    /// value of `to_radix_2w` are nonzero.
+    pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
+        debug_assert!(w >= 6);
+        debug_assert!(w <= 8);
+
+        let digits_count = match w {
+            6 => (256 + w - 1)/w as usize,
+            7 => (256 + w - 1)/w as usize,
+            // See comment in to_radix_2w on handling the terminal carry.
+            8 => (256 + w - 1)/w + 1 as usize,
+            _ => panic!("invalid radix parameter"),
+        };
+
+        debug_assert!(digits_count <= 43);
+        digits_count
+    }
+
     /// Creates a representation of a Scalar in radix 64, 128 or 256 for use with the Pippenger algorithm.
     /// For lower radix, use `to_radix_16`, which is used by the Straus multi-scalar multiplication.
     /// Higher radixes are not supported to save cache space. Radix 256 is near-optimal even for very
@@ -979,12 +997,9 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> ([i8; 43], usize) {
+    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 43] {
         debug_assert!(w >= 6);
         debug_assert!(w <= 8);
-
-        let digits_count = (256 + w - 1)/w as usize;
-        debug_assert!(digits_count <= 43);
 
         use byteorder::{ByteOrder, LittleEndian};
 
@@ -997,6 +1012,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 43];
+        let digits_count = (256 + w - 1)/w as usize;
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
             let bit_offset = i*w;
@@ -1017,22 +1033,25 @@ impl Scalar {
             // Read the actual coefficient value from the window
             let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
 
-             // Recenter coefficients from [0,2^r) to [-2^r/2, 2^r/2)
+             // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
             carry = (coef + (radix/2) as u64) >> w;
             digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
         }
 
-        // Apply the resulting carry to the last digit
-        // Since the highest bit of the 256-bit integer is 0,
-        // the last coefficient would always be in the lower half _inclusive_,
-        // so the carry in the end can be 1 iff the word equals 2^r/2.
-        // Since ±2^r/2 values are valid, to avoid adding an extra word,
-        // we allow the last word to touch the value 2^r/2.
-        // XXX: make sure tests cover this case, so the carry is non-zero and this line matters.
-        // Maybe it never happens to be non-zero for r=6/7/8?...
-        digits[digits_count-1] += (carry << w) as i8;
+        // When w < 8, we can fold the final carry onto the last digit d,
+        // because d < 2^w/2 so d + carry*2^w = d + 1*2^w < 2^(w+1) < 2^8.
+        //
+        // When w = 8, we can't fit carry*2^w into an i8.  This should
+        // not happen anyways, because the final carry will be 0 for
+        // reduced scalars, but the Scalar invariant allows 255-bit scalars.
+        // To handle this, we expand the size_hint by 1 when w=8,
+        // and accumulate the final carry onto another digit.
+        match w {
+            8 => digits[digits_count] += carry as i8,
+            _ => digits[digits_count-1] += (carry << w) as i8,
+        }
 
-        (digits, digits_count)
+        digits
     }
 
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
@@ -1512,32 +1531,43 @@ mod test {
         }
     }
 
+    fn test_pippenger_radix_iter(scalar: Scalar, w: usize) {
+        let digits_count = Scalar::to_radix_2w_size_hint(w);
+        let digits = scalar.to_radix_2w(w);
+
+        let radix = Scalar::from((1<<w) as u64);
+        let mut term = Scalar::one();
+        let mut recovered_scalar = Scalar::zero();
+        for digit in &digits[0..digits_count] {
+            let digit = *digit;
+            if digit != 0 {
+                let sdigit = if digit < 0 {
+                    -Scalar::from((-(digit as i64)) as u64)
+                } else {
+                    Scalar::from(digit as u64)
+                };
+                recovered_scalar += term * sdigit;
+            }
+            term *= radix;
+        }
+        // When the input is unreduced, we may only recover the scalar mod l.
+        assert_eq!(recovered_scalar, scalar.reduce());
+    }
+
     #[test]
     fn test_pippenger_radix() {
         use core::iter;
         // For each valid radix it tests that 1000 random-ish scalars can be restored
         // from the produced representation precisely.
-        for w in 6..9 {
-            for scalar in (2..100).map(|s| Scalar::from(s as u64).invert() ).chain(iter::once(-Scalar::one())) {
-                let (digits, digits_count) = scalar.to_radix_2w(w);
+        let cases = (2..100)
+            .map(|s| Scalar::from(s as u64).invert())
+            // The largest unreduced scalar, s = 2^255-1
+            .chain(iter::once(Scalar::from_bits([0xff; 32])));
 
-                let radix = Scalar::from((1<<w) as u64);
-                let mut term = Scalar::one();
-                let mut recovered_scalar = Scalar::zero();
-                for digit in &digits[0..digits_count] {
-                    let digit = *digit;
-                    if digit != 0 {
-                        let sdigit = if digit < 0 {
-                            -Scalar::from((-(digit as i64)) as u64)
-                        } else {
-                            Scalar::from(digit as u64)
-                        };
-                        recovered_scalar += term * sdigit;
-                    }
-                    term *= radix;
-                }
-                assert_eq!(recovered_scalar, scalar);
-            }
+        for scalar in cases {
+            test_pippenger_radix_iter(scalar, 6);
+            test_pippenger_radix_iter(scalar, 7);
+            test_pippenger_radix_iter(scalar, 8);
         }
     }
 }

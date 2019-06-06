@@ -1255,6 +1255,73 @@ mod test {
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
     }
 
+    // A single iteration of a consistency check for MSM.
+    fn multiscalar_consistency_iter(n: usize) {
+        use core::iter;
+        let mut rng = rand::thread_rng();
+
+        // Construct random coefficients x0, ..., x_{n-1},
+        // followed by some extra hardcoded ones.
+        let xs = (0..n)
+            .map(|_| Scalar::random(&mut rng))
+            // The largest scalar allowed by the type system, 2^255-1
+            .chain(iter::once(Scalar::from_bits([0xff; 32])))
+            .collect::<Vec<_>>();
+        let check = xs.iter()
+            .map(|xi| xi * xi)
+            .sum::<Scalar>();
+
+        // Construct points G_i = x_i * B
+        let Gs = xs.iter()
+            .map(|xi| xi * &constants::ED25519_BASEPOINT_TABLE)
+            .collect::<Vec<_>>();
+
+        // Compute H1 = <xs, Gs> (consttime)
+        let H1 = EdwardsPoint::multiscalar_mul(&xs, &Gs);
+        // Compute H2 = <xs, Gs> (vartime)
+        let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
+        // Compute H3 = <xs, Gs> = sum(xi^2) * B
+        let H3 = &check * &constants::ED25519_BASEPOINT_TABLE;
+
+        assert_eq!(H1, H3);
+        assert_eq!(H2, H3);
+    }
+
+    // Use different multiscalar sizes to hit different internal
+    // parameters.
+
+    #[test]
+    fn multiscalar_consistency_n_100() {
+        let iters = 50;
+        for _ in 0..iters {
+            multiscalar_consistency_iter(100);
+        }
+    }
+
+    #[test]
+    fn multiscalar_consistency_n_250() {
+        let iters = 50;
+        for _ in 0..iters {
+            multiscalar_consistency_iter(250);
+        }
+    }
+
+    #[test]
+    fn multiscalar_consistency_n_500() {
+        let iters = 50;
+        for _ in 0..iters {
+            multiscalar_consistency_iter(500);
+        }
+    }
+
+    #[test]
+    fn multiscalar_consistency_n_1000() {
+        let iters = 50;
+        for _ in 0..iters {
+            multiscalar_consistency_iter(1000);
+        }
+    }
+
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();

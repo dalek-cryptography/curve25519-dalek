@@ -1258,8 +1258,8 @@ mod test {
     // A single iteration of a consistency check for MSM.
     fn multiscalar_consistency_iter(n: usize) {
         use core::iter;
-        let mut rng = rand::thread_rng();
-
+        use rand_os::OsRng;
+        let mut rng = OsRng;
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
         let xs = (0..n)
@@ -1324,7 +1324,8 @@ mod test {
 
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        use rand_os::OsRng;
+        let mut rng = OsRng;
 
         let B = &::constants::ED25519_BASEPOINT_TABLE;
 

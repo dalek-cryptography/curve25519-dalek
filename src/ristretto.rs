@@ -483,7 +483,7 @@ impl RistrettoPoint {
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng::new().unwrap();
+    /// let mut rng = OsRng;
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -1322,7 +1322,8 @@ mod test {
 
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        use rand_os::OsRng;
+        let mut rng = OsRng;
 
         let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
 

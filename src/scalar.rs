@@ -524,7 +524,7 @@ impl Scalar {
     ///
     /// use rand_os::OsRng;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng: OsRng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {

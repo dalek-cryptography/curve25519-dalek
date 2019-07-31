@@ -2,6 +2,13 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.2.2
+
+* Fix a typo in an internal doc-comment.
+* Add the "crypto" tag to crate metadata.
+* Fix compilation on nightly broken due to changes to the `#[doc(include)]` path
+  root.
+
 ## 1.2.1
 
 * Fix a bug in bucket index calculations in the Pippenger multiscalar algorithm

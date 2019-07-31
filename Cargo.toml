@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek"
-version = "1.2.1"
+version = "1.2.2"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -9,7 +9,7 @@ repository = "https://github.com/dalek-cryptography/curve25519-dalek"
 homepage = "https://dalek.rs/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
-keywords = ["cryptography", "crypto", "ristretto", "curve25519", "elliptic curve"]
+keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
 description = "A pure-Rust implementation of group operations on ristretto255 and Curve25519"
 exclude = [
     "**/.gitignore",

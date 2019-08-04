@@ -447,18 +447,16 @@ impl From<u8> for Scalar {
 
 impl From<u16> for Scalar {
     fn from(x: u16) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u16(&mut s_bytes, x);
+        s_bytes[0..2].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
 
 impl From<u32> for Scalar {
     fn from(x: u32) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u32(&mut s_bytes, x);
+        s_bytes[0..4].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
@@ -486,18 +484,16 @@ impl From<u64> for Scalar {
     /// assert!(fourtytwo == six * seven);
     /// ```
     fn from(x: u64) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u64(&mut s_bytes, x);
+        s_bytes[0..8].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
 
 impl From<u128> for Scalar {
     fn from(x: u128) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u128(&mut s_bytes, x);
+        s_bytes[0..16].copy_from_slice(&x.to_le_bytes());
         Scalar{ bytes: s_bytes }
     }
 }
@@ -875,12 +871,20 @@ impl Scalar {
         // required so that the NAF digits fit in i8
         debug_assert!( w <= 8 );
 
-        use byteorder::{ByteOrder, LittleEndian};
-
         let mut naf = [0i8; 256];
 
-        let mut x_u64 = [0u64; 5];
-        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+        macro_rules! read_u64 {
+            ($e: expr, $i: expr) => {
+                u64::from_le_bytes([$e[$i*8+0], $e[$i*8+1], $e[$i*8+2], $e[$i*8+3], $e[$i*8+4], $e[$i*8+5], $e[$i*8+6], $e[$i*8+7]])
+            }
+        };
+        let x_u64 = [
+            read_u64!(&self.bytes, 0),
+            read_u64!(&self.bytes, 1),
+            read_u64!(&self.bytes, 2),
+            read_u64!(&self.bytes, 3),
+            0,
+        ];
 
         let width = 1 << w;
         let window_mask = width - 1;
@@ -1001,11 +1005,18 @@ impl Scalar {
         debug_assert!(w >= 6);
         debug_assert!(w <= 8);
 
-        use byteorder::{ByteOrder, LittleEndian};
-
         // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
-        let mut scalar64x4 = [0u64; 4];
-        LittleEndian::read_u64_into(&self.bytes, &mut scalar64x4[0..4]);
+        macro_rules! read_u64 {
+            ($e: expr, $i: expr) => {
+                u64::from_le_bytes([$e[$i*8+0], $e[$i*8+1], $e[$i*8+2], $e[$i*8+3], $e[$i*8+4], $e[$i*8+5], $e[$i*8+6], $e[$i*8+7]])
+            }
+        };
+        let scalar64x4 = [
+            read_u64!(&self.bytes, 0),
+            read_u64!(&self.bytes, 1),
+            read_u64!(&self.bytes, 2),
+            read_u64!(&self.bytes, 3),
+        ];
 
         let radix: u64 = 1 << w;
         let window_mask: u64 = radix - 1;

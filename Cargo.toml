@@ -45,7 +45,6 @@ harness = false
 
 [dependencies]
 rand_core = { version = "0.3.0", default-features = false }
-byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.8", default-features = false }
 clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
@@ -54,7 +53,6 @@ packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 
 [build-dependencies]
 rand_core = { version = "0.3.0", default-features = false }
-byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.8", default-features = false }
 clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }

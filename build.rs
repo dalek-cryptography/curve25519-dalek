@@ -14,7 +14,6 @@
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;
-extern crate byteorder;
 extern crate clear_on_drop;
 extern crate core;
 extern crate digest;

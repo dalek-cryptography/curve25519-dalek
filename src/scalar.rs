@@ -917,7 +917,7 @@ impl Scalar {
                 naf[pos] = window as i8;
             } else {
                 carry = 1;
-                naf[pos] = (window as i8) - (width as i8);
+                naf[pos] = (window as i8).wrapping_sub(width as i8);
             }
 
             pos += w;
@@ -1264,10 +1264,39 @@ mod test {
     }
 
     #[test]
-    fn non_adjacent_form() {
+    fn non_adjacent_form_test_vector() {
         let naf = A_SCALAR.non_adjacent_form(5);
         for i in 0..256 {
             assert_eq!(naf[i], A_NAF[i]);
+        }
+    }
+
+    fn non_adjacent_form_iter(w: usize, x: &Scalar) {
+        let naf = x.non_adjacent_form(w);
+
+        // Reconstruct the scalar from the computed NAF
+        let mut y = Scalar::zero();
+        for i in (0..256).rev() {
+            y += y;
+            let digit = if naf[i] < 0 {
+                -Scalar::from((-naf[i]) as u64)
+            } else {
+                Scalar::from(naf[i] as u64)
+            };
+            y += digit;
+        }
+
+        assert_eq!(*x, y);
+    }
+
+    #[test]
+    fn non_adjacent_form_random() {
+        let mut rng = rand::thread_rng();
+        for _ in 0..1_000 {
+            let x = Scalar::random(&mut rng);
+            for w in &[5, 6, 7, 8] {
+                non_adjacent_form_iter(*w, &x);
+            }
         }
     }
 

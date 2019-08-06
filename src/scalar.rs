@@ -297,7 +297,7 @@ define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'b> AddAssign<&'b Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'b Scalar) {
-        *self = UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack();
+        *self = *self + _rhs;
     }
 }
 
@@ -305,8 +305,17 @@ define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
+    #[allow(non_snake_case)]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
-        UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
+        // The UnpackedScalar::add function produces reduced outputs
+        // if the inputs are reduced.  However, these inputs may not
+        // be reduced -- they might come from Scalar::from_bits.  So
+        // after computing the sum, we explicitly reduce it mod l
+        // before repacking.
+        let sum = UnpackedScalar::add(&self.unpack(), &_rhs.unpack());
+        let sum_R = UnpackedScalar::mul_internal(&sum, &constants::R);
+        let sum_mod_l = UnpackedScalar::montgomery_reduce(&sum_R);
+        sum_mod_l.pack()
     }
 }
 
@@ -314,7 +323,7 @@ define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'b> SubAssign<&'b Scalar> for Scalar {
     fn sub_assign(&mut self, _rhs: &'b Scalar) {
-        *self = UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack();
+        *self = *self - _rhs;
     }
 }
 
@@ -322,8 +331,18 @@ define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
-    fn sub(self, _rhs: &'b Scalar) -> Scalar {
-        UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack()
+    #[allow(non_snake_case)]
+    fn sub(self, rhs: &'b Scalar) -> Scalar {
+        // The UnpackedScalar::sub function requires reduced inputs
+        // and produces reduced output. However, these inputs may not
+        // be reduced -- they might come from Scalar::from_bits.  So
+        // we explicitly reduce the inputs.
+        let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
+        let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
+        let rhs_R = UnpackedScalar::mul_internal(&rhs.unpack(), &constants::R);
+        let rhs_mod_l = UnpackedScalar::montgomery_reduce(&rhs_R);
+
+        UnpackedScalar::sub(&self_mod_l, &rhs_mod_l).pack()
     }
 }
 
@@ -331,8 +350,11 @@ define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
+    #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
-        &Scalar::zero() - self
+        let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
+        let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
+        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack() 
     }
 }
 
@@ -1233,6 +1255,33 @@ mod test {
          0,0,0,11,0,0,0,0,0,15,0,0,0,0,0,-9,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,7,
          0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
 
+    static LARGEST_ED25519_S: Scalar = Scalar {
+        bytes: [
+            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+        ],
+    };
+
+    static CANONICAL_LARGEST_ED25519_S_PLUS_ONE: Scalar = Scalar {
+        bytes: [
+            0x7e, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
+            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+        ],
+    };
+
+    static CANONICAL_LARGEST_ED25519_S_MINUS_ONE: Scalar = Scalar {
+        bytes: [
+            0x7c, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
+            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+        ],
+    };
+
     #[test]
     fn fuzzer_testcase_reduction() {
         // LE bytes of 24519928653854221733733552434404946937899825954937634815
@@ -1320,6 +1369,82 @@ mod test {
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
+    }
+
+    #[test]
+    fn add_reduces() {
+        // Check that the addition works
+        assert_eq!(
+            (LARGEST_ED25519_S + Scalar::one()).reduce(),
+            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
+        );
+        // Check that the addition reduces
+        assert_eq!(
+            LARGEST_ED25519_S + Scalar::one(),
+            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
+        );
+    }
+
+    #[test]
+    fn sub_reduces() {
+        // Check that the subtraction works
+        assert_eq!(
+            (LARGEST_ED25519_S - Scalar::one()).reduce(),
+            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
+        );
+        // Check that the subtraction reduces
+        assert_eq!(
+            LARGEST_ED25519_S - Scalar::one(),
+            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
+        );
+    }
+
+    #[test]
+    fn quarkslab_scalar_overflow_does_not_occur() {
+        // Check that manually-constructing large Scalars with
+        // from_bits cannot produce incorrect results.
+        //
+        // The from_bits function is required to implement X/Ed25519,
+        // while all other methods of constructing a Scalar produce
+        // reduced Scalars.  However, this "invariant loophole" allows
+        // constructing large scalars which are not reduced mod l.
+        //
+        // This issue was discovered independently by both Jack
+        // "str4d" Grigg (issue #238), who noted that reduction was
+        // not performed on addition, and Laurent Grémy & Nicolas
+        // Surbayrole of Quarkslab, who noted that it was possible to
+        // cause an overflow and compute incorrect results.
+        //
+        // This test is adapted from the one suggested by Quarkslab.
+
+        let large_bytes = [
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+        ];
+
+        let a = Scalar::from_bytes_mod_order(large_bytes);
+        let b = Scalar::from_bits(large_bytes);
+
+        assert_eq!(a, b.reduce());
+
+        let a_3 = a + a + a;
+        let b_3 = b + b + b;
+
+        assert_eq!(a_3, b_3);
+
+        let neg_a = -a;
+        let neg_b = -b;
+
+        assert_eq!(neg_a, neg_b);
+
+        let minus_a_3 = Scalar::zero() - a - a - a;
+        let minus_b_3 = Scalar::zero() - b - b - b;
+
+        assert_eq!(minus_a_3, minus_b_3);
+        assert_eq!(minus_a_3, -a_3);
+        assert_eq!(minus_b_3, -b_3);
     }
 
     #[test]

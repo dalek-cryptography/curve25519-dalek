@@ -171,7 +171,7 @@ pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
 impl<T: Copy> NafLookupTable8<T> {
     pub fn select(&self, x: usize) -> T {
         debug_assert_eq!(x & 1, 1);
-        debug_assert!(x < 256);
+        debug_assert!(x < 128);
 
         self.0[x / 2]
     }

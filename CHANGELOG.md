@@ -2,6 +2,20 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.2.3
+
+* Fix an issue identified by a Quarkslab audit (and Jack Grigg), where manually
+  constructing unreduced `Scalar` values, as needed for X/Ed25519, and then
+  performing scalar/scalar arithmetic could compute incorrect results.
+* Switch to upstream Rust intrinsics for the IFMA backend now that they exist in
+  Rust and don't need to be defined locally.
+* Ensure that the NAF computation works correctly, even for parameters never
+  used elsewhere in the codebase.
+* Minor refactoring to EdwardsPoint decompression.
+* Fix broken links in documentation.
+* Fix compilation on nightly broken due to changes to the `#[doc(include)]` path
+  root (not quite correctly done in 1.2.2).
+
 ## 1.2.2
 
 * Fix a typo in an internal doc-comment.

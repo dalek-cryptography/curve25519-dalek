@@ -190,7 +190,8 @@ impl CompressedEdwardsY {
 
         if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
 
-        // Flip the sign of X if it's not correct
+         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
+         // so we negate according to the supplied sign bit.
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
         X.conditional_negate(compressed_sign_bit);
 

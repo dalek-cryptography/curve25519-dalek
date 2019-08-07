@@ -154,6 +154,9 @@ impl FieldElement {
             acc = &acc * input;
         }
 
+	// acc is nonzero iff all inputs are nonzero
+        assert_eq!(acc.is_zero().unwrap_u8(), 0);
+
         // Compute the inverse of all products
         acc = acc.invert();
 

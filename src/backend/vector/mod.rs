@@ -19,7 +19,7 @@
 // missing).
 #![cfg_attr(
     all(feature = "nightly", feature = "stage2_build"),
-    doc(include = "../../docs/parallel-formulas.md")
+    doc(include = "../../../docs/parallel-formulas.md")
 )]
 
 #[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", rustdoc)))]

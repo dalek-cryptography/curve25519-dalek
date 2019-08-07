@@ -14,12 +14,18 @@ use packed_simd::{u64x4, IntoBits};
 
 use backend::serial::u64::field::FieldElement51;
 
-#[allow(improper_ctypes)]
-extern "C" {
-    #[link_name = "llvm.x86.avx512.vpmadd52l.uq.256"]
-    fn madd52lo(z: u64x4, x: u64x4, y: u64x4) -> u64x4;
-    #[link_name = "llvm.x86.avx512.vpmadd52h.uq.256"]
-    fn madd52hi(z: u64x4, x: u64x4, y: u64x4) -> u64x4;
+/// A wrapper around `vpmadd52luq` that works on `u64x4`.
+#[inline(always)]
+unsafe fn madd52lo(z: u64x4, x: u64x4, y: u64x4) -> u64x4 {
+    use core::arch::x86_64::_mm256_madd52lo_epu64;
+    _mm256_madd52lo_epu64(z.into_bits(), x.into_bits(), y.into_bits()).into_bits()
+}
+
+/// A wrapper around `vpmadd52huq` that works on `u64x4`.
+#[inline(always)]
+unsafe fn madd52hi(z: u64x4, x: u64x4, y: u64x4) -> u64x4 {
+    use core::arch::x86_64::_mm256_madd52hi_epu64;
+    _mm256_madd52hi_epu64(z.into_bits(), x.into_bits(), y.into_bits()).into_bits()
 }
 
 /// A vector of four field elements in radix 2^51, with unreduced coefficients.
@@ -203,11 +209,7 @@ use subtle::ConditionallySelectable;
 
 impl ConditionallySelectable for F51x4Reduced {
     #[inline]
-    fn conditional_select(
-        a: &F51x4Reduced,
-        b: &F51x4Reduced,
-        choice: Choice,
-    ) -> F51x4Reduced {
+    fn conditional_select(a: &F51x4Reduced, b: &F51x4Reduced, choice: Choice) -> F51x4Reduced {
         let mask = (-(choice.unwrap_u8() as i64)) as u64;
         let mask_vec = u64x4::splat(mask);
         F51x4Reduced([

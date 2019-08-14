@@ -28,7 +28,7 @@ use std::path::Path;
 //
 // For instance, this shouldn't exist here at all, but it does.
 #[cfg(feature = "serde")]
-extern crate serde;
+extern crate serde_crate as serde;
 
 // Macros come first!
 #[path = "src/macros.rs"]

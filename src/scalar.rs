@@ -386,14 +386,7 @@ impl Serialize for Scalar {
         where S: Serializer
     {
         if serializer.is_human_readable() {
-            #[cfg(feature = "hex")]
-            {
-                serializer.serialize_str(&hex::encode(self.reduce().as_bytes()))
-            }
-            #[cfg(not(feature = "hex"))]
-            {
-                serializer.serialize_bytes(self.reduce().as_bytes())
-            }
+            serializer.serialize_str(&hex::encode(self.reduce().as_bytes()))
         } else {
             serializer.serialize_bytes(self.reduce().as_bytes())
         }
@@ -414,7 +407,6 @@ impl<'de> Deserialize<'de> for Scalar {
                 formatter.write_str("a canonically-encoded 32-byte scalar value")
             }
 
-            #[cfg(feature = "hex")]
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
                 where E: serde::de::Error
             {

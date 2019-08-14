@@ -385,7 +385,18 @@ impl Serialize for Scalar {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.reduce().as_bytes())
+        if serializer.is_human_readable() {
+            #[cfg(feature = "hex")]
+            {
+                serializer.serialize_str(&hex::encode(self.reduce().as_bytes()))
+            }
+            #[cfg(not(feature = "hex"))]
+            {
+                serializer.serialize_bytes(self.reduce().as_bytes())
+            }
+        } else {
+            serializer.serialize_bytes(self.reduce().as_bytes())
+        }
     }
 }
 
@@ -401,6 +412,13 @@ impl<'de> Deserialize<'de> for Scalar {
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 formatter.write_str("a canonically-encoded 32-byte scalar value")
+            }
+
+            #[cfg(feature = "hex")]
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                self.visit_bytes(&hex::decode(value).map_err(serde::de::Error::custom)?)
             }
 
             fn visit_bytes<E>(self, v: &[u8]) -> Result<Scalar, E>
@@ -425,7 +443,11 @@ impl<'de> Deserialize<'de> for Scalar {
             }
         }
 
-        deserializer.deserialize_bytes(ScalarVisitor)
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(ScalarVisitor)
+        } else {
+            deserializer.deserialize_bytes(ScalarVisitor)
+        }
     }
 }
 
@@ -1651,6 +1673,16 @@ mod test {
         use bincode;
         let output = bincode::serialize(&X).unwrap();
         let parsed: Scalar = bincode::deserialize(&output).unwrap();
+        assert_eq!(parsed, X);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_json_scalar_roundtrip() {
+        use serde_json;
+        let output = serde_json::to_string(&X).unwrap();
+        assert_eq!(&output, "\"4e5ab4345d4708845913b4641bc27d5252a585101bcc4244d449f4a879d9f204\"");
+        let parsed: Scalar = serde_json::from_str(&output).unwrap();
         assert_eq!(parsed, X);
     }
 

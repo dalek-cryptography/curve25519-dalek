@@ -55,6 +55,10 @@ extern crate subtle;
 extern crate bincode;
 #[cfg(feature = "serde")]
 extern crate serde;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_json;
+#[cfg(all(feature = "serde", feature = "hex"))]
+extern crate hex;
 
 // Internal macros. Must come first!
 #[macro_use]

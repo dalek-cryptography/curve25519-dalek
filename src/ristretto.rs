@@ -334,7 +334,11 @@ impl Serialize for RistrettoPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&hex::encode(self.compress().as_bytes()))
+        } else {
+            serializer.serialize_bytes(self.compress().as_bytes())
+        }
     }
 }
 
@@ -343,7 +347,11 @@ impl Serialize for CompressedRistretto {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&hex::encode(self.as_bytes()))
+        } else {
+            serializer.serialize_bytes(self.as_bytes())
+        }
     }
 }
 
@@ -361,6 +369,12 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 formatter.write_str("a valid point in Ristretto format")
             }
 
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                self.visit_bytes(&hex::decode(value).map_err(serde::de::Error::custom)?)
+            }
+
             fn visit_bytes<E>(self, v: &[u8]) -> Result<RistrettoPoint, E>
                 where E: serde::de::Error
             {
@@ -376,7 +390,11 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
             }
         }
 
-        deserializer.deserialize_bytes(RistrettoPointVisitor)
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(RistrettoPointVisitor)
+        } else {
+            deserializer.deserialize_bytes(RistrettoPointVisitor)
+        }
     }
 }
 
@@ -394,6 +412,12 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 formatter.write_str("32 bytes of data")
             }
 
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                self.visit_bytes(&hex::decode(value).map_err(serde::de::Error::custom)?)
+            }
+
             fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedRistretto, E>
                 where E: serde::de::Error
             {
@@ -407,7 +431,11 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
             }
         }
 
-        deserializer.deserialize_bytes(CompressedRistrettoVisitor)
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(CompressedRistrettoVisitor)
+        } else {
+            deserializer.deserialize_bytes(CompressedRistrettoVisitor)
+        }
     }
 }
 
@@ -1081,7 +1109,7 @@ mod test {
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use traits::{Identity, ValidityCheck};
+    use traits::Identity;
     use super::*;
 
     #[test]
@@ -1095,6 +1123,23 @@ mod test {
 
         let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
+        assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_json_basepoint_roundtrip() {
+        use serde_json;
+
+        let encoded = serde_json::to_string(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
+        let enc_compressed = serde_json::to_string(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
+        assert_eq!(encoded, enc_compressed);
+        assert_eq!(encoded, "\"e2f2ae0a6abc4e71a884a961c500515f58e30b6aa582dd8db6a65945e08d2d76\"");
+
+        let dec_uncompressed: RistrettoPoint = serde_json::from_str(&encoded).unwrap();
+        let dec_compressed: CompressedRistretto = serde_json::from_str(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);

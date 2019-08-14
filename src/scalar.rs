@@ -1673,7 +1673,7 @@ mod test {
     fn serde_json_scalar_roundtrip() {
         use serde_json;
         let output = serde_json::to_string(&X).unwrap();
-        assert_eq!(&output, "\"4e5ab4345d4708845913b4641bc27d5252a585101bcc4244d449f4a879d9f204\"");
+        assert_eq!(output, "\"4e5ab4345d4708845913b4641bc27d5252a585101bcc4244d449f4a879d9f204\"");
         let parsed: Scalar = serde_json::from_str(&output).unwrap();
         assert_eq!(parsed, X);
     }

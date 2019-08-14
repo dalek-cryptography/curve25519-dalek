@@ -217,7 +217,11 @@ impl Serialize for EdwardsPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&hex::encode(self.compress().as_bytes()))
+        } else {
+            serializer.serialize_bytes(self.compress().as_bytes())
+        }
     }
 }
 
@@ -226,7 +230,11 @@ impl Serialize for CompressedEdwardsY {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&hex::encode(self.as_bytes()))
+        } else {
+            serializer.serialize_bytes(self.as_bytes())
+        }
     }
 }
 
@@ -244,6 +252,12 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                self.visit_bytes(&hex::decode(value).map_err(serde::de::Error::custom)?)
+            }
+
             fn visit_bytes<E>(self, v: &[u8]) -> Result<EdwardsPoint, E>
                 where E: serde::de::Error
             {
@@ -259,7 +273,11 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
             }
         }
 
-        deserializer.deserialize_bytes(EdwardsPointVisitor)
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(EdwardsPointVisitor)
+        } else {
+            deserializer.deserialize_bytes(EdwardsPointVisitor)
+        }
     }
 }
 
@@ -277,6 +295,12 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
                 formatter.write_str("32 bytes of data")
             }
 
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                where E: serde::de::Error
+            {
+                self.visit_bytes(&hex::decode(value).map_err(serde::de::Error::custom)?)
+            }
+
             fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedEdwardsY, E>
                 where E: serde::de::Error
             {
@@ -290,7 +314,11 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
             }
         }
 
-        deserializer.deserialize_bytes(CompressedEdwardsYVisitor)
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_str(CompressedEdwardsYVisitor)
+        } else {
+            deserializer.deserialize_bytes(CompressedEdwardsYVisitor)
+        }
     }
 }
 
@@ -1413,6 +1441,23 @@ mod test {
 
         let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
+        assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_json_basepoint_roundtrip() {
+        use serde_json;
+
+        let encoded = serde_json::to_string(&constants::ED25519_BASEPOINT_POINT).unwrap();
+        let enc_compressed = serde_json::to_string(&constants::ED25519_BASEPOINT_COMPRESSED).unwrap();
+        assert_eq!(encoded, enc_compressed);
+        assert_eq!(encoded, "\"5866666666666666666666666666666666666666666666666666666666666666\"");
+
+        let dec_uncompressed: EdwardsPoint = serde_json::from_str(&encoded).unwrap();
+        let dec_compressed: CompressedEdwardsY = serde_json::from_str(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);

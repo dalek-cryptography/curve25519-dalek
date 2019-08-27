@@ -10,9 +10,9 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
+use super::field::FieldElement51;
+use super::scalar::Scalar52;
 use backend::serial::curve_models::AffineNielsPoint;
-use backend::serial::u64::field::FieldElement51;
-use backend::serial::u64::scalar::Scalar52;
 use edwards::{EdwardsBasepointTable, EdwardsPoint};
 use window::{LookupTable, NafLookupTable8};
 
@@ -22,7 +22,7 @@ pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51([
     2251799813685247,
     2251799813685247,
     2251799813685247,
-    2251799813685247
+    2251799813685247,
 ]);
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
@@ -49,7 +49,7 @@ pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement51 = FieldElement51([
     1998550399581263,
     496427632559748,
     118527312129759,
-    45110755273534
+    45110755273534,
 ]);
 
 /// Edwards `d` value minus one squared, equal to `(((-121665/121666) mod p) - 1) pow 2`
@@ -58,7 +58,7 @@ pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement51 = FieldElement51([
     1572317787530805,
     683053064812840,
     317374165784489,
-    1572899562415810
+    1572899562415810,
 ]);
 
 /// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.

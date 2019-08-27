@@ -169,6 +169,13 @@ use constants;
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
+#[cfg(feature = "fiat_u64_backend")]
+type UnpackedScalar = backend::serial::fiat::scalar::Scalar52;
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+///
+/// This is a type alias for one of the scalar types in the `backend`
+/// module.
 #[cfg(feature = "u64_backend")]
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 

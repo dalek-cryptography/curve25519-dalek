@@ -12,7 +12,7 @@ representation (which uses radix \\(2^{51}\\)) amounts to regrouping
 digits.
 
 The field element representation is oriented around the AVX2
-`vpmuluqdq` instruction, which multiplies the low 32 bits of each
+`vpmuludq` instruction, which multiplies the low 32 bits of each
 64-bit lane of each operand to produce a 64-bit result.
 
 ```text,no_run

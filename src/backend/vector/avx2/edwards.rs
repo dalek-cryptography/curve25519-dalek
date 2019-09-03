@@ -153,7 +153,7 @@ impl ExtendedPoint {
         // Set tmp1 = ( S_9,  S_6,  S_6,  S_9)
         //        b < ( 1.6,  1.6,  1.6,  1.6)
         tmp1 = tmp0.shuffle(Shuffle::DBBD);
-        // Set tmp1 = ( S_8,  S_5,  S_8,  S_5)
+        // Set tmp0 = ( S_8,  S_5,  S_8,  S_5)
         //        b < (2.33, 1.01, 2.33, 1.01)
         tmp0 = tmp0.shuffle(Shuffle::CACA);
 

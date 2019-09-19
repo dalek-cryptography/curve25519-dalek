@@ -235,9 +235,13 @@ impl CompressedRistretto {
     /// If the input `bytes` slice does not have a length of 32.
     pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
         let mut tmp = [0u8; 32];
-
-        tmp.copy_from_slice(bytes);
-
+        if bytes.len() != 32 {
+            let byte_tmp =&[0u8; 32];
+            tmp.copy_from_slice(byte_tmp);
+        }
+        else {
+            tmp.copy_from_slice(bytes);
+        }
         CompressedRistretto(tmp)
     }
 

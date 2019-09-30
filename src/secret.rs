@@ -462,11 +462,11 @@ impl ExpandedSecretKey {
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[allow(non_snake_case)]
-    pub fn sign_prehashed<D>(
+    pub fn sign_prehashed<'a, D>(
         &self,
         prehashed_message: D,
         public_key: &PublicKey,
-        context: Option<&'static [u8]>,
+        context: Option<&'a [u8]>,
     ) -> Signature
     where
         D: Digest<OutputSize = U64>,

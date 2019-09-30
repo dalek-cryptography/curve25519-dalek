@@ -358,7 +358,7 @@ impl Keypair {
     pub fn sign_prehashed<D>(
         &self,
         prehashed_message: D,
-        context: Option<&'static [u8]>,
+        context: Option<&[u8]>,
     ) -> Signature
     where
         D: Digest<OutputSize = U64>,

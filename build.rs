@@ -8,11 +8,11 @@
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;
 extern crate byteorder;
-extern crate clear_on_drop;
 extern crate core;
 extern crate digest;
 extern crate rand_core;
 extern crate subtle;
+extern crate zeroize;
 
 #[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;

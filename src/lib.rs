@@ -42,11 +42,11 @@ extern crate std;
 extern crate packed_simd;
 
 extern crate byteorder;
-extern crate clear_on_drop;
 pub extern crate digest;
 extern crate rand_core;
 #[cfg(test)]
 extern crate rand_os;
+extern crate zeroize;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

@@ -354,7 +354,7 @@ impl<'a> Neg for &'a Scalar {
     fn neg(self) -> Scalar {
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack() 
+        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack()
     }
 }
 
@@ -760,18 +760,15 @@ impl Scalar {
         // externally, but there's no corresponding distinction for
         // field elements.
 
-        use clear_on_drop::ClearOnDrop;
-        use clear_on_drop::clear::ZeroSafe;
-        // Mark UnpackedScalars as zeroable.
-        unsafe impl ZeroSafe for UnpackedScalar {}
+        use zeroize::Zeroizing;
 
         let n = inputs.len();
         let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
 
-        // Wrap the scratch storage in a ClearOnDrop to wipe it when
+        // Place scratch storage in a Zeroizing wrapper to wipe it when
         // we pass out of scope.
         let scratch_vec = vec![one; n];
-        let mut scratch = ClearOnDrop::new(scratch_vec);
+        let mut scratch = Zeroizing::new(scratch_vec);
 
         // Keep an accumulator of all of the previous products
         let mut acc = Scalar::one().unpack().to_montgomery();

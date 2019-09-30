@@ -41,6 +41,7 @@ const D_LANES64: u8 = 0b11_00_00_00;
 
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
+use zeroize::Zeroize;
 
 use backend::vector::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
 use backend::serial::u64::field::FieldElement51;
@@ -449,7 +450,7 @@ impl FieldElement2625x4 {
         // hi  (c(x3), c(y3), c(x2), c(y2), c(z3), c(w3), c(z2), c(w2))
         // ->  (c(x1), c(y1), c(x2), c(y2), c(z1), c(w1), c(z2), c(w2))
         //
-        // which is exactly the vector of carryins for 
+        // which is exactly the vector of carryins for
         //
         //     (   x2,    y2,    x3,    y3,    z2,    w2,    z3,    w3).
         //
@@ -462,7 +463,7 @@ impl FieldElement2625x4 {
 
         let mut v = self.0;
 
-        let c10 = rotated_carryout(v[0]); 
+        let c10 = rotated_carryout(v[0]);
         v[0] = (v[0] & masks) + combine(u32x8::splat(0), c10);
 
         let c32 = rotated_carryout(v[1]);
@@ -873,6 +874,11 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     }
 }
 
+impl Zeroize for FieldElement2625x4 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 #[cfg(test)]
 mod test {

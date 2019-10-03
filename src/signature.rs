@@ -71,6 +71,31 @@ impl Debug for Signature {
     }
 }
 
+#[cfg(feature = "legacy_compatibility")]
+#[inline(always)]
+fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
+    // The highest 3 bits must not be set.  No other checking for the
+    // remaining 2^253 - 2^252 + 27742317777372353535851937790883648493
+    // potential non-reduced scalars is performed.
+    //
+    // This is compatible with ed25519-donna and libsodium when
+    // -DED25519_COMPAT is NOT specified.
+    if bytes[31] & 224 != 0 {
+        return Err(SignatureError(InternalError::ScalarFormatError));
+    }
+
+    Ok(Scalar::from_bits(bytes))
+}
+
+#[cfg(not(feature = "legacy_compatibility"))]
+#[inline(always)]
+fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
+    match Scalar::from_canonical_bytes(bytes) {
+        None => return Err(SignatureError(InternalError::ScalarFormatError)),
+        Some(x) => return Ok(x),
+    };
+}
+
 impl Signature {
     /// Convert this `Signature` to a byte array.
     #[inline]
@@ -97,13 +122,16 @@ impl Signature {
         lower.copy_from_slice(&bytes[..32]);
         upper.copy_from_slice(&bytes[32..]);
 
-        if upper[31] & 224 != 0 {
-            return Err(SignatureError(InternalError::ScalarFormatError));
+        let s: Scalar;
+
+        match check_scalar(upper) {
+            Ok(x)  => s = x,
+            Err(x) => return Err(x),
         }
 
         Ok(Signature {
             R: CompressedEdwardsY(lower),
-            s: Scalar::from_bits(upper),
+            s: s,
         })
     }
 }

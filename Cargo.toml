@@ -69,6 +69,8 @@ alloc = ["curve25519-dalek/alloc", "rand_os"]
 nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
 batch = ["rand"]
 asm = ["sha2/asm"]
+# This features turns off stricter checking for scalar malleability in signatures
+legacy_compatibility = []
 yolocrypto = ["curve25519-dalek/yolocrypto"]
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]

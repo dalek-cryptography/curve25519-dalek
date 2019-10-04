@@ -255,6 +255,8 @@
 #[macro_use]
 extern crate std;
 
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;

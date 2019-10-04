@@ -322,7 +322,7 @@ impl ExpandedSecretKey {
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
-    /// # #[cfg(all(feature = "sha2", feature = "std"))]
+    /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
     /// use rand_os::OsRng;
@@ -364,7 +364,7 @@ impl ExpandedSecretKey {
     /// #
     /// # use ed25519_dalek::{ExpandedSecretKey, SignatureError};
     /// #
-    /// # #[cfg(all(feature = "sha2", feature = "std"))]
+    /// # #[cfg(feature = "std")]
     /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
     /// use rand_os::OsRng;

@@ -6,23 +6,26 @@ rust:
   - nightly
 
 env:
-  - TEST_COMMAND=test FEATURES=''
+  - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES=''
 
 matrix:
   include:
     # We use the 64-bit optimised curve backend by default, so also test with
     # the 32-bit backend (this also exercises testing with `no_std`):
     - rust: nightly
-      env: TEST_COMMAND=build FEATURES='--no-default-features --features=u32_backend'
+      env: TEST_COMMAND=build EXTRA_FLAGS='--no-default-features' FEATURES='u32_backend alloc'
+    # Also test the batch feature:
+    - rust: nightly
+      env: TEST_COMMAND=build EXTRA_FLAGS='--no-default-features' FEATURES='u64_backend alloc batch'
     # Test any nightly gated features on nightly:
     - rust: nightly
-      env: TEST_COMMAND=test FEATURES='--features=nightly'
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='nightly'
     # Test serde support on stable, assuming that if it works there it'll work everywhere:
     - rust: stable
-      env: TEST_COMMAND=test FEATURE='--features=serde'
+      env: TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
 
 script:
-  - cargo $TEST_COMMAND $FEATURES
+  - cargo $TEST_COMMAND --features="$FEATURES" $EXTRA_FLAGS
 
 notifications:
   slack:

@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "1.0.0-pre.1"
+version = "1.0.0-pre.2"
 authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -19,9 +19,19 @@ travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"
 version = "1"
 default-features = false
 
+[dependencies.rand_core]
+version = "0.3"
+default-features = false
+
 [dependencies.rand]
 version = "0.6"
 features = ["i128_support"]
+default-features = false
+optional = true
+
+[dependencies.rand_os]
+version = "0.1"
+optional = true
 
 [dependencies.serde]
 version = "^1.0"
@@ -42,16 +52,22 @@ version = "0.2"
 hex = "^0.3"
 bincode = "^0.9"
 criterion = "0.2"
+rand = "0.6"
+rand_os = "0.1"
 
 [[bench]]
 name = "ed25519_benchmarks"
 harness = false
+# This doesn't seem to work with criterion, cf. https://github.com/bheisler/criterion.rs/issues/344
+# For now, we have to bench by doing `cargo bench --features="batch"`.
+# required-features = ["batch"]
 
 [features]
 default = ["std", "u64_backend"]
-std = ["curve25519-dalek/std", "rand/std", "sha2/std"]
-alloc = ["curve25519-dalek/alloc"]
-nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
+std = ["curve25519-dalek/std", "rand_os", "sha2/std"]
+alloc = ["curve25519-dalek/alloc", "rand_os"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
+batch = ["rand"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]
 u64_backend = ["curve25519-dalek/u64_backend"]

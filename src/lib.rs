@@ -19,13 +19,14 @@
 //! the operating system's builtin PRNG:
 //!
 //! ```
-//! extern crate rand;
+//! extern crate rand_core;
+//! extern crate rand_os;
 //! extern crate ed25519_dalek;
 //!
 //! # #[cfg(feature = "std")]
 //! # fn main() {
-//! use rand::Rng;
-//! use rand::rngs::OsRng;
+//! use rand_core::RngCore;
+//! use rand_os::OsRng;
 //! use ed25519_dalek::Keypair;
 //! use ed25519_dalek::Signature;
 //!
@@ -40,14 +41,15 @@
 //! We can now use this `keypair` to sign a message:
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! let signature: Signature = keypair.sign(message);
@@ -58,14 +60,15 @@
 //! that `message`:
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
@@ -77,15 +80,16 @@
 //! verify this signature:
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::Keypair;
 //! # use ed25519_dalek::Signature;
 //! use ed25519_dalek::PublicKey;
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
@@ -104,14 +108,15 @@
 //! verify your signatures!)
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
@@ -127,14 +132,15 @@
 //! And similarly, decoded from bytes with `::from_bytes()`:
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), SignatureError> {
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair_orig: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature_orig: Signature = keypair_orig.sign(message);
@@ -169,7 +175,8 @@
 //! For example, using [bincode](https://github.com/TyOverby/bincode):
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # #[cfg(feature = "serde")]
 //! extern crate serde;
@@ -178,11 +185,11 @@
 //!
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! use bincode::{serialize, Infinite};
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
@@ -200,7 +207,8 @@
 //! recipient may deserialise them and verify:
 //!
 //! ```
-//! # extern crate rand;
+//! # extern crate rand_core;
+//! # extern crate rand_os;
 //! # extern crate ed25519_dalek;
 //! # #[cfg(feature = "serde")]
 //! # extern crate serde;
@@ -209,13 +217,13 @@
 //! #
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
-//! # use rand::Rng;
-//! # use rand::thread_rng;
+//! # use rand_core::RngCore;
+//! # use rand_os::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, PublicKey};
 //! # use bincode::{serialize, Infinite};
 //! use bincode::{deserialize};
 //!
-//! # let mut csprng = thread_rng();
+//! # let mut csprng = OsRng::new().unwrap();
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
@@ -247,10 +255,16 @@
 #[macro_use]
 extern crate std;
 
+#[cfg(all(feature = "alloc", not(feature = "std")))]
+extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
 extern crate failure;
+#[cfg(all(feature = "batch", any(feature = "std", feature = "alloc", test)))]
 extern crate rand;
+#[cfg(any(feature = "std", test))]
+extern crate rand_os;
+extern crate rand_core;
 #[cfg(feature = "serde")]
 extern crate serde;
 extern crate sha2;

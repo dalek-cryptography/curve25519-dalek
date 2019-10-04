@@ -22,7 +22,7 @@ mod ed25519_benches {
     use ed25519_dalek::Signature;
     use ed25519_dalek::verify_batch;
     use rand::thread_rng;
-    use rand::rngs::ThreadRng;
+    use rand::prelude::ThreadRng;
 
     fn sign(c: &mut Criterion) {
         let mut csprng: ThreadRng = thread_rng();

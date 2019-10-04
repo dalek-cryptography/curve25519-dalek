@@ -93,7 +93,7 @@ pub fn verify_batch(
     public_keys: &[PublicKey],
 ) -> Result<(), SignatureError>
 {
-    const ASSERT_MESSAGE: &'static [u8] = b"The number of messages, signatures, and public keys must be equal.";
+    const ASSERT_MESSAGE: &'static str = "The number of messages, signatures, and public keys must be equal.";
     assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
     assert!(signatures.len()  == public_keys.len(), ASSERT_MESSAGE);
     assert!(public_keys.len() == messages.len(),    ASSERT_MESSAGE);

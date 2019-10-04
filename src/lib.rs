@@ -262,8 +262,6 @@ extern crate curve25519_dalek;
 extern crate failure;
 #[cfg(all(feature = "batch", any(feature = "std", feature = "alloc", test)))]
 extern crate rand;
-#[cfg(any(feature = "std", test))]
-extern crate rand_os;
 extern crate rand_core;
 #[cfg(feature = "serde")]
 extern crate serde;

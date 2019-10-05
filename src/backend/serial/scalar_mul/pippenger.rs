@@ -94,7 +94,6 @@ impl VartimeMultiscalarMul for Pippenger {
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
         let scalars = scalars
-            .into_iter()
             .map(|s| s.borrow().to_radix_2w(w));
 
         let points = points
@@ -158,8 +157,7 @@ impl VartimeMultiscalarMul for Pippenger {
 
         Some(
             columns
-                .fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p)
-                .into(),
+                .fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p),
         )
     }
 }

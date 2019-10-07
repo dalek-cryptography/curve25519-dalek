@@ -297,9 +297,9 @@ impl CompressedRistretto {
         let t = &x * &y;
 
         if ok.unwrap_u8() == 0u8 || t.is_negative().unwrap_u8() == 1u8 || y.is_zero().unwrap_u8() == 1u8 {
-            return None;
+            None
         } else {
-            return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
+            Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}))
         }
     }
 }
@@ -529,11 +529,11 @@ impl RistrettoPoint {
                 let eg = &e * &g;
                 let fh = &f * &h;
 
-                BatchCompressState{ e: e, f: f, g: g, h: h, eg: eg, fh: fh }
+                BatchCompressState{ e, f, g, h, eg, fh }
             }
         }
 
-        let states: Vec<BatchCompressState> = points.into_iter().map(|P| BatchCompressState::from(P)).collect();
+        let states: Vec<BatchCompressState> = points.into_iter().map(BatchCompressState::from).collect();
 
         let mut invs: Vec<FieldElement> = states.iter().map(|state| state.efgh()).collect();
 
@@ -847,7 +847,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
-        RistrettoPoint(&self.0 * scalar)
+        RistrettoPoint(self.0 * scalar)
     }
 }
 
@@ -856,7 +856,7 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
 
     /// Scalar multiplication: compute `self * scalar`.
     fn mul(self, point: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(self * &point.0)
+        RistrettoPoint(self * point.0)
     }
 }
 
@@ -902,7 +902,7 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     {
         let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.borrow().0));
 
-        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(|P| RistrettoPoint(P))
+        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(RistrettoPoint)
     }
 }
 
@@ -948,7 +948,7 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
                 dynamic_scalars,
                 dynamic_points.into_iter().map(|P_opt| P_opt.map(|P| P.0)),
             )
-            .map(|P_ed| RistrettoPoint(P_ed))
+            .map(RistrettoPoint)
     }
 }
 
@@ -1081,7 +1081,7 @@ mod test {
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use traits::{Identity, ValidityCheck};
+    use traits::{Identity};
     use super::*;
 
     #[test]
@@ -1136,7 +1136,7 @@ mod test {
 
         // Test that sum works on owning iterators
         let s = Scalar::from(2u64);
-        let mapped = vec.iter().map(|x| x * &s);
+        let mapped = vec.iter().map(|x| x * s);
         let sum: RistrettoPoint = mapped.sum();
 
         assert_eq!(sum, &P1 * &s + &P2 * &s);

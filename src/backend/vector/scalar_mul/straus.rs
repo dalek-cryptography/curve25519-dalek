@@ -83,14 +83,10 @@ impl VartimeMultiscalarMul for Straus {
             .into_iter()
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect();
-        let lookup_tables: Vec<_> = match points
+        let lookup_tables: Vec<_> = points
             .into_iter()
             .map(|P_opt| P_opt.map(|P| NafLookupTable5::<CachedPoint>::from(&P)))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
-            None => return None,
-        };
+            .collect::<Option<Vec<_>>>()?;
 
         let mut Q = ExtendedPoint::identity();
 

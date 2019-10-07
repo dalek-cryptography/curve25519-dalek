@@ -202,7 +202,7 @@ impl Scalar {
     /// modulo the group order \\( \ell \\).
     pub fn from_bytes_mod_order(bytes: [u8; 32]) -> Scalar {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
-        let s_unreduced = Scalar{bytes: bytes};
+        let s_unreduced = Scalar{bytes};
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
@@ -242,7 +242,7 @@ impl Scalar {
     /// require specific bit-patterns when performing scalar
     /// multiplication.
     pub fn from_bits(bytes: [u8; 32]) -> Scalar {
-        let mut s = Scalar{bytes: bytes};
+        let mut s = Scalar{bytes};
         // Ensure that s < 2^255 by masking the high bit
         s.bytes[31] &= 0b0111_1111;
 
@@ -799,7 +799,7 @@ impl Scalar {
 
         // Pass through the vector backwards to compute the inverses
         // in place
-        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
             *input = UnpackedScalar::montgomery_mul(&acc, &scratch).pack();
             acc = tmp;

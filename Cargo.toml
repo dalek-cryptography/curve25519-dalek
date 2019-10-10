@@ -1,5 +1,5 @@
 [package]
-name = "curve25519-dalek"
+name = "curve25519-dalek-organism"
 version = "1.2.3"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]

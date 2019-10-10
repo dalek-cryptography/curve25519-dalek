@@ -128,11 +128,11 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use constants;
+use crate::constants;
 
-use edwards::EdwardsPoint;
-use field::FieldElement;
-use traits::ValidityCheck;
+use crate::edwards::EdwardsPoint;
+use crate::field::FieldElement;
+use crate::traits::ValidityCheck;
 
 // ------------------------------------------------------------------------
 // Internal point representations
@@ -199,7 +199,7 @@ pub struct ProjectiveNielsPoint {
 // Constructors
 // ------------------------------------------------------------------------
 
-use traits::Identity;
+use crate::traits::Identity;
 
 impl Identity for ProjectivePoint {
     fn identity() -> ProjectivePoint {

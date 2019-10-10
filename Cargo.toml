@@ -16,6 +16,7 @@ exclude = [
     ".gitignore",
     ".travis.yml",
 ]
+edition = "2018"
 build = "build.rs"
 
 [package.metadata.docs.rs]

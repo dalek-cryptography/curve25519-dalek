@@ -129,8 +129,8 @@ impl VartimeMultiscalarMul for Pippenger {
 #[cfg(test)]
 mod test {
     use super::*;
-    use constants;
-    use scalar::Scalar;
+    use crate::constants;
+    use crate::scalar::Scalar;
 
     #[test]
     fn test_vartime_pippenger() {

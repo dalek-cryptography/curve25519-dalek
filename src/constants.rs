@@ -27,16 +27,16 @@
 
 #![allow(non_snake_case)]
 
-use edwards::CompressedEdwardsY;
-use ristretto::RistrettoPoint;
-use ristretto::CompressedRistretto;
-use montgomery::MontgomeryPoint;
-use scalar::Scalar;
+use crate::edwards::CompressedEdwardsY;
+use crate::ristretto::RistrettoPoint;
+use crate::ristretto::CompressedRistretto;
+use crate::montgomery::MontgomeryPoint;
+use crate::scalar::Scalar;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::serial::u64::constants::*;
+pub use crate::backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]
-pub use backend::serial::u32::constants::*;
+pub use crate::backend::serial::u32::constants::*;
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
 ///
@@ -89,7 +89,7 @@ pub const BASEPOINT_ORDER: Scalar = Scalar{
 include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
 
 #[cfg(feature = "stage2_build")]
-use ristretto::RistrettoBasepointTable;
+use crate::ristretto::RistrettoBasepointTable;
 
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
 #[cfg(feature = "stage2_build")]
@@ -98,9 +98,9 @@ pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
 
 #[cfg(test)]
 mod test {
-    use field::FieldElement;
-    use traits::{IsIdentity, ValidityCheck};
-    use constants;
+    use crate::field::FieldElement;
+    use crate::traits::{IsIdentity, ValidityCheck};
+    use crate::constants;
 
     #[test]
     fn test_eight_torsion() {
@@ -164,7 +164,7 @@ mod test {
     #[test]
     #[cfg(feature = "u64_backend")]
     fn test_d_vs_ratio() {
-        use backend::serial::u64::field::FieldElement51;
+        use crate::backend::serial::u64::field::FieldElement51;
         let a = -&FieldElement51([121665,0,0,0,0]);
         let b =   FieldElement51([121666,0,0,0,0]);
         let d = &a * &b.invert();

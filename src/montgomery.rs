@@ -50,12 +50,12 @@
 
 use core::ops::{Mul, MulAssign};
 
-use constants::APLUS2_OVER_FOUR;
-use edwards::{CompressedEdwardsY, EdwardsPoint};
-use field::FieldElement;
-use scalar::Scalar;
+use crate::constants::APLUS2_OVER_FOUR;
+use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
+use crate::field::FieldElement;
+use crate::scalar::Scalar;
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -301,7 +301,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
-    use constants;
+    use crate::constants;
     use super::*;
 
     #[cfg(feature = "rand")]
@@ -312,13 +312,13 @@ mod test {
     fn basepoint_montgomery_to_edwards() {
         // sign bit = 0 => basepoint
         assert_eq!(
-            constants::ED25519_BASEPOINT_POINT,
-            constants::X25519_BASEPOINT.to_edwards(0).unwrap()
+            crate::constants::ED25519_BASEPOINT_POINT,
+            crate::constants::X25519_BASEPOINT.to_edwards(0).unwrap()
         );
         // sign bit = 1 => minus basepoint
         assert_eq!(
-            - constants::ED25519_BASEPOINT_POINT,
-            constants::X25519_BASEPOINT.to_edwards(1).unwrap()
+            - crate::constants::ED25519_BASEPOINT_POINT,
+            crate::constants::X25519_BASEPOINT.to_edwards(1).unwrap()
         );
     }
 
@@ -326,8 +326,8 @@ mod test {
     #[test]
     fn basepoint_edwards_to_montgomery() {
         assert_eq!(
-            constants::ED25519_BASEPOINT_POINT.to_montgomery(),
-            constants::X25519_BASEPOINT
+            crate::constants::ED25519_BASEPOINT_POINT.to_montgomery(),
+            crate::constants::X25519_BASEPOINT
         );
     }
 
@@ -364,7 +364,7 @@ mod test {
         let mut csprng: OsRng = OsRng::new().unwrap();
 
         let s: Scalar = Scalar::random(&mut csprng);
-        let p_edwards: EdwardsPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
+        let p_edwards: EdwardsPoint = &crate::constants::ED25519_BASEPOINT_TABLE * &s;
         let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = s * p_edwards;

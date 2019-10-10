@@ -41,13 +41,6 @@ extern crate std;
 #[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;
 
-extern crate byteorder;
-extern crate clear_on_drop;
-pub extern crate digest;
-
-extern crate rand_core;
-// Used for traits related to constant-time code.
-extern crate subtle;
 
 #[cfg(all(test, feature = "serde"))]
 extern crate bincode;

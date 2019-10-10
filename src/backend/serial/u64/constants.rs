@@ -10,9 +10,9 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
-use backend::serial::u64::field::FieldElement51;
-use backend::serial::u64::scalar::Scalar52;
-use edwards::EdwardsPoint;
+use crate::backend::serial::u64::field::FieldElement51;
+use crate::backend::serial::u64::scalar::Scalar52;
+use crate::edwards::EdwardsPoint;
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement51 = FieldElement51([929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575]);

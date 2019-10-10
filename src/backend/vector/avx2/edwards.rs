@@ -43,7 +43,7 @@ use subtle::ConditionallySelectable;
 use edwards;
 use window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use super::constants;
 use super::field::{FieldElement2625x4, Lanes, Shuffle};

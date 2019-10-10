@@ -1,5 +1,5 @@
 [package]
-name = "curve25519-dalek-organism"
+name = "curve25519-dalek"
 version = "1.2.3"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
@@ -27,11 +27,10 @@ features = ["nightly", "simd_backend"]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
-rand_os = "0.1.0"
 sha2 = { version = "0.8", default-features = false }
 bincode = "1"
 criterion = "0.2"
-rand = "0.6"
+rand = "0.7"
 
 [[bench]]
 name = "dalek_benchmarks"

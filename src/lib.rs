@@ -247,8 +247,6 @@
 
 #![no_std]
 #![warn(future_incompatible)]
-#![warn(rust_2018_compatibility)]
-#![warn(rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
 #[cfg(any(feature = "std", test))]

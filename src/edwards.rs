@@ -944,6 +944,7 @@ mod test {
     use subtle::ConditionallySelectable;
     use constants;
     use super::*;
+    
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -1257,7 +1258,7 @@ mod test {
     // A single iteration of a consistency check for MSM.
     fn multiscalar_consistency_iter(n: usize) {
         use core::iter;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand_core::OsRng;
 
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
@@ -1323,7 +1324,7 @@ mod test {
 
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand_core::OsRng;
 
         let B = &::constants::ED25519_BASEPOINT_TABLE;
 

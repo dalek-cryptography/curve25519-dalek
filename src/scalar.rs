@@ -538,15 +538,15 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// extern crate rand_os;
+    /// extern crate rand_core;
     /// # extern crate curve25519_dalek;
     /// #
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_os::OsRng;
+    /// use rand_core::OsRng;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng: OsRng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
@@ -1340,7 +1340,7 @@ mod test {
 
     #[test]
     fn non_adjacent_form_random() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand_core::OsRng;
         for _ in 0..1_000 {
             let x = Scalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {

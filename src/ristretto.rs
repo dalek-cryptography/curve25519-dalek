@@ -477,13 +477,13 @@ impl RistrettoPoint {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand_os;
-    /// use rand_os::OsRng;
+    /// extern crate rand_core;
+    /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng::new().unwrap();
+    /// let mut rng = OsRng;
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -1076,12 +1076,12 @@ impl Debug for RistrettoPoint {
 #[cfg(all(test, feature = "stage2_build"))]
 mod test {
     #[cfg(feature = "rand")]
-    use rand_os::OsRng;
+    use rand_core::OsRng;
 
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use traits::{Identity, ValidityCheck};
+    use traits::Identity;
     use super::*;
 
     #[test]
@@ -1322,7 +1322,7 @@ mod test {
 
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand_core::OsRng;
 
         let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
 

@@ -90,6 +90,18 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
 #[cfg(not(feature = "legacy_compatibility"))]
 #[inline(always)]
 fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
+    // Since this is only used in signature deserialisation (i.e. upon
+    // verification), we can do a "succeed fast" trick by checking that the most
+    // significant 4 bits are unset.  If they are unset, we can succeed fast
+    // because we are guaranteed that the scalar is fully reduced.  However, if
+    // the 4th most significant bit is set, we must do the full reduction check,
+    // as the order of the basepoint is roughly a 2^(252.5) bit number.
+    //
+    // This succeed-fast trick should succeed for roughly half of all scalars.
+    if bytes[31] & 240 == 0 {
+        return Ok(Scalar::from_bits(bytes))
+    }
+
     match Scalar::from_canonical_bytes(bytes) {
         None => return Err(SignatureError(InternalError::ScalarFormatError)),
         Some(x) => return Ok(x),

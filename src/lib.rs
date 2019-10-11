@@ -41,7 +41,7 @@ extern crate std;
 #[cfg(all(feature = "nightly", feature = "packed_simd"))]
 extern crate packed_simd;
 
-pub extern crate digest;
+pub use digest;
 
 #[cfg(all(test, feature = "serde"))]
 extern crate bincode;

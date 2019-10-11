@@ -108,9 +108,45 @@ after the fact, breaking compatibility with every other implementation.
 In short, if malleable signatures are bad for your protocol, don't use them.
 Consider using a curve25519-based Verifiable Random Function (VRF), such as
 [Trevor Perrin's VXEdDSA](https://www.whispersystems.org/docs/specifications/xeddsa/),
-instead.  We
-[plan](https://github.com/dalek-cryptography/curve25519-dalek/issues/9) to
-eventually support VXEdDSA in curve25519-dalek.
+instead.
+
+#### The `legacy_compatibility` Feature
+
+By default, this library performs a stricter check for malleability in the
+scalar component of a signature, upon signature deserialisation.  This stricter
+check, that `s < \ell` where `\ell` is the order of the basepoint, is
+[mandated by RFC8032](https://tools.ietf.org/html/rfc8032#section-5.1.7).
+However, that RFC was standardised a decade after the original paper, which, as
+described above, (usually, falsely) stated that malleability was inconsequential.
+
+Because of this, most ed25519 implementations only perform a limited, hackier
+check that the most significant three bits of the scalar are unset.  If you need
+compatibility with legacy implementations, including:
+
+* ed25519-donna
+* Golang's /x/crypto ed25519
+* libsodium (only when built with `-DED25519_COMPAT`)
+* NaCl's "ref" implementation
+* probably a bunch of others
+
+then enable `ed25519-dalek`'s `legacy_compatibility` feature.  Please note and
+be forewarned that doing so allows for signature malleability, meaning that
+there may be two different and "valid" signatures with the same key for the same
+message, which is obviously incredibly dangerous in a number of contexts,
+including—but not limited to—identification protocols and cryptocurrency
+transactions.
+
+#### The `verify_strict()` Function
+
+The scalar component of a signature is not the only source of signature
+malleability, however.  Both the public key used for signature verification and
+the group element component of the signature are malleable, as they may contain
+a small torsion component as a consquence of the curve25519 group not being of
+prime order, but having a small cofactor of 8.
+
+If you wish to also eliminate this source of signature malleability, please
+review the
+[documentation for the `verify_strict()` function](https://doc.dalek.rs/ed25519_dalek/struct.PublicKey.html#method.verify_strict).
 
 # Installation
 

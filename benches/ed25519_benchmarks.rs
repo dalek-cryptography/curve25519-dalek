@@ -56,6 +56,17 @@ mod ed25519_benches {
         });
     }
 
+    fn verify_strict(c: &mut Criterion) {
+        let mut csprng: ThreadRng = thread_rng();
+        let keypair: Keypair = Keypair::generate(&mut csprng);
+        let msg: &[u8] = b"";
+        let sig: Signature = keypair.sign(msg);
+
+        c.bench_function("Ed25519 strict signature verification", move |b| {
+                         b.iter(| | keypair.verify_strict(msg, &sig))
+        });
+    }
+
     fn verify_batch_signatures(c: &mut Criterion) {
         static BATCH_SIZES: [usize; 8] = [4, 8, 16, 32, 64, 96, 128, 256];
 
@@ -90,6 +101,7 @@ mod ed25519_benches {
             sign,
             sign_expanded_key,
             verify,
+            verify_strict,
             verify_batch_signatures,
             key_generation,
     }

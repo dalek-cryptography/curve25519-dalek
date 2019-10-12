@@ -8,7 +8,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![cfg_attr(
-    all(feature = "nightly", feature = "stage2_build"),
+    feature = "nightly",
     doc(include = "../../../../docs/ifma-notes.md")
 )]
 

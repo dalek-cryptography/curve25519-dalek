@@ -955,7 +955,6 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
 impl RistrettoPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the
     /// Ristretto basepoint.
-    #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(
         a: &Scalar,
         A: &RistrettoPoint,
@@ -1073,7 +1072,7 @@ impl Debug for RistrettoPoint {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     #[cfg(feature = "rand")]
     use rand_os::OsRng;

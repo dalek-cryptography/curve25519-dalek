@@ -726,7 +726,6 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(
         a: &Scalar,
         A: &EdwardsPoint,
@@ -937,7 +936,7 @@ impl Debug for EdwardsBasepointTable {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     use field::FieldElement;
     use scalar::Scalar;

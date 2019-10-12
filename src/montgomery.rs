@@ -299,7 +299,7 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     use constants;
     use super::*;

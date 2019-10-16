@@ -33,6 +33,11 @@ pub(crate) enum InternalError {
     },
     /// The verification equation wasn't satisfied
     VerifyError,
+    /// Two arrays did not match in size, making the called signature
+    /// verification method impossible.
+    ArrayLengthError{ name_a: &'static str, length_a: usize,
+                      name_b: &'static str, length_b: usize,
+                      name_c: &'static str, length_c: usize, },
 }
 
 impl Display for InternalError {
@@ -46,6 +51,11 @@ impl Display for InternalError {
                 => write!(f, "{} must be {} bytes in length", n, l),
             InternalError::VerifyError
                 => write!(f, "Verification equation was not satisfied"),
+            InternalError::ArrayLengthError{ name_a: na, length_a: la,
+                                             name_b: nb, length_b: lb,
+                                             name_c: nc, length_c: lc, }
+                => write!(f, "Arrays must be the same length: {} has length {},
+                              {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
         }
     }
 }

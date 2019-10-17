@@ -195,7 +195,7 @@ impl CompressedEdwardsY {
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
         X.conditional_negate(compressed_sign_bit);
 
-        Some(EdwardsPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
+        Some(EdwardsPoint{ X, Y, Z, T: &X * &Y })
     }
 }
 
@@ -449,7 +449,7 @@ impl EdwardsPoint {
         AffineNielsPoint{
             y_plus_x:  &y + &x,
             y_minus_x: &y - &x,
-            xy2d:      xy2d
+            xy2d
         }
     }
 
@@ -726,7 +726,6 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(
         a: &Scalar,
         A: &EdwardsPoint,
@@ -810,7 +809,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> EdwardsPoint {
-        basepoint_table * &self
+        basepoint_table * self
     }
 }
 
@@ -908,7 +907,7 @@ impl EdwardsPoint {
     /// assert_eq!((P+Q).is_torsion_free(), false);
     /// ```
     pub fn is_torsion_free(&self) -> bool {
-        (self * &constants::BASEPOINT_ORDER).is_identity()
+        (self * constants::BASEPOINT_ORDER).is_identity()
     }
 }
 
@@ -937,14 +936,14 @@ impl Debug for EdwardsBasepointTable {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     use crate::field::FieldElement;
     use crate::scalar::Scalar;
     use subtle::ConditionallySelectable;
     use crate::constants;
     use super::*;
-    
+
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -1182,7 +1181,7 @@ mod test {
 
         // Test that sum works on owning iterators
         let s = Scalar::from(2u64);
-        let mapped = vec.iter().map(|x| x * &s);
+        let mapped = vec.iter().map(|x| x * s);
         let sum: EdwardsPoint = mapped.sum();
 
         assert_eq!(sum, &P1 * &s + &P2 * &s);
@@ -1205,10 +1204,10 @@ mod test {
     #[test]
     fn is_small_order() {
         // The basepoint has large prime order
-        assert!(crate::constants::ED25519_BASEPOINT_POINT.is_small_order() == false);
+        assert!(!crate::constants::ED25519_BASEPOINT_POINT.is_small_order());
         // constants::EIGHT_TORSION has all points of small order.
         for torsion_point in &crate::constants::EIGHT_TORSION {
-            assert!(torsion_point.is_small_order() == true);
+            assert!(torsion_point.is_small_order());
         }
     }
 
@@ -1220,8 +1219,8 @@ mod test {
 
     #[test]
     fn is_identity() {
-        assert!(   EdwardsPoint::identity().is_identity() == true);
-        assert!(crate::constants::ED25519_BASEPOINT_POINT.is_identity() == false);
+        assert!(   EdwardsPoint::identity().is_identity());
+        assert!(!crate::constants::ED25519_BASEPOINT_POINT.is_identity());
     }
 
     /// Rust's debug builds have overflow and underflow trapping,

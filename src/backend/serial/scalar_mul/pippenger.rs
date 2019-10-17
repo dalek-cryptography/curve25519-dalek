@@ -94,19 +94,16 @@ impl VartimeMultiscalarMul for Pippenger {
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
         let scalars = scalars
-            .into_iter()
             .map(|s| s.borrow().to_radix_2w(w));
 
         let points = points
             .into_iter()
             .map(|p| p.map(|P| P.to_projective_niels()));
 
-        let scalars_points = scalars.zip(points).map(|(s,maybe_p)| maybe_p.map(|p| (s,p) ) )
-            .collect::<Option<Vec<_>>>();
-        let scalars_points = match scalars_points {
-            Some(sp) => sp,
-            None => return None,
-        };
+        let scalars_points = scalars
+            .zip(points)
+            .map(|(s, maybe_p)| maybe_p.map(|p| (s, p)))
+            .collect::<Option<Vec<_>>>()?;
 
         // Prepare 2^w/2 buckets.
         // buckets[i] corresponds to a multiplication factor (i+1).
@@ -160,8 +157,7 @@ impl VartimeMultiscalarMul for Pippenger {
 
         Some(
             columns
-                .fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p)
-                .into(),
+                .fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p),
         )
     }
 }

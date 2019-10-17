@@ -49,7 +49,7 @@ curve25519-dalek = "1"
 ```
 Then import the crate as:
 ```rust,no_run
-extern crate curve25519_dalek;
+extern crate curve25519_dalek_organism;
 ```
 
 # Backends and Features

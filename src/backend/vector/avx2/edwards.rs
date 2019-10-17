@@ -40,8 +40,8 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use crate::traits::Identity;
 

@@ -11,13 +11,13 @@
 
 use core::borrow::Borrow;
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::{Identity, VartimeMultiscalarMul};
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::{Identity, VartimeMultiscalarMul};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 /// Implements a version of Pippenger's algorithm.
 ///

@@ -63,7 +63,7 @@ zeroize = { version = "1.0.0", default-features = false }
 
 [features]
 nightly = ["subtle/nightly"]
-default = ["std", "u64_backend"]
+default = ["std", "simd_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 yolocrypto = []

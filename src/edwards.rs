@@ -84,7 +84,7 @@
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
 //!
-//! [curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/backend/serial/curve_models/index.html
+//! [curve_models]: https://doc-internal.dalek.rs/curve25519_dalek_organism/backend/serial/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -864,7 +864,7 @@ impl EdwardsPoint {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek_organism::constants;
     ///
     /// // Generator of the prime-order subgroup
     /// let P = constants::ED25519_BASEPOINT_POINT;
@@ -894,7 +894,7 @@ impl EdwardsPoint {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek_organism::constants;
     ///
     /// // Generator of the prime-order subgroup
     /// let P = constants::ED25519_BASEPOINT_POINT;

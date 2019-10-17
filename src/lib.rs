@@ -53,7 +53,7 @@ extern crate serde;
 pub(crate) mod macros;
 
 //------------------------------------------------------------------------
-// curve25519-dalek public modules
+// curve25519-dalek-organism public modules
 //------------------------------------------------------------------------
 
 // Scalar arithmetic mod l = 2^252 + ..., the order of the Ristretto group
@@ -75,7 +75,7 @@ pub mod constants;
 pub mod traits;
 
 //------------------------------------------------------------------------
-// curve25519-dalek internal modules
+// curve25519-dalek-organism internal modules
 //------------------------------------------------------------------------
 
 // Finite field arithmetic mod p = 2^255 - 19

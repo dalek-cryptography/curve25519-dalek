@@ -15,8 +15,8 @@
 //! scope using a `let` binding:
 //!
 //! ```
-//! use curve25519_dalek::constants;
-//! use curve25519_dalek::traits::IsIdentity;
+//! use curve25519_dalek_organism::constants;
+//! use curve25519_dalek_organism::traits::IsIdentity;
 //!
 //! let B = &constants::RISTRETTO_BASEPOINT_TABLE;
 //! let l = &constants::BASEPOINT_ORDER;

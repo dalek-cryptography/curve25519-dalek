@@ -33,7 +33,7 @@
 //! `Some(Scalar)` in return:
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_organism::scalar::Scalar;
 //!
 //! let one_as_bytes: [u8; 32] = Scalar::one().to_bytes();
 //! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes);
@@ -45,7 +45,7 @@
 //! (in this case, \\( \ell + 2 \\)), we'll get `None` back:
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_organism::scalar::Scalar;
 //!
 //! let l_plus_two_bytes: [u8; 32] = [
 //!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -65,7 +65,7 @@
 //! resultant scalar \\( \mod \ell \\), producing \\( 2 \\):
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_organism::scalar::Scalar;
 //!
 //! let l_plus_two_bytes: [u8; 32] = [
 //!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -90,12 +90,12 @@
 //! which allows an IUF API.
 //!
 //! ```
-//! # extern crate curve25519_dalek;
+//! # extern crate curve25519_dalek_organism;
 //! # extern crate sha2;
 //! #
 //! # fn main() {
 //! use sha2::{Digest, Sha512};
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_organism::scalar::Scalar;
 //!
 //! // Hashing a single byte slice
 //! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
@@ -118,7 +118,7 @@
 //! assurances as to reduction modulo the group order:
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_organism::scalar::Scalar;
 //!
 //! let l_plus_two_bytes: [u8; 32] = [
 //!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -499,7 +499,7 @@ impl From<u64> for Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_organism::scalar::Scalar;
     ///
     /// let fourtytwo = Scalar::from(42u64);
     /// let six = Scalar::from(6u64);
@@ -539,10 +539,10 @@ impl Scalar {
     ///
     /// ```
     /// extern crate rand_core;
-    /// # extern crate curve25519_dalek;
+    /// # extern crate curve25519_dalek_organism;
     /// #
     /// # fn main() {
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_organism::scalar::Scalar;
     ///
     /// use rand_core::OsRng;
     ///
@@ -565,8 +565,8 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # extern crate curve25519_dalek_organism;
+    /// # use curve25519_dalek_organism::scalar::Scalar;
     /// extern crate sha2;
     ///
     /// use sha2::Sha512;
@@ -595,8 +595,8 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # extern crate curve25519_dalek_organism;
+    /// # use curve25519_dalek_organism::scalar::Scalar;
     /// extern crate sha2;
     ///
     /// use sha2::Digest;
@@ -633,7 +633,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_organism::scalar::Scalar;
     ///
     /// let s: Scalar = Scalar::zero();
     ///
@@ -648,7 +648,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_organism::scalar::Scalar;
     ///
     /// let s: Scalar = Scalar::zero();
     ///
@@ -688,7 +688,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_organism::scalar::Scalar;
     ///
     /// // x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     /// let X: Scalar = Scalar::from_bytes_mod_order([
@@ -732,8 +732,8 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # extern crate curve25519_dalek_organism;
+    /// # use curve25519_dalek_organism::scalar::Scalar;
     /// # fn main() {
     /// let mut scalars = [
     ///     Scalar::from(3u64),
@@ -1092,9 +1092,9 @@ impl Scalar {
     /// This is intended for uses like input validation, where variable-time code is acceptable.
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
+    /// # extern crate curve25519_dalek_organism;
     /// # extern crate subtle;
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # use curve25519_dalek_organism::scalar::Scalar;
     /// # use subtle::ConditionallySelectable;
     /// # fn main() {
     /// // 2^255 - 1, since `from_bits` clears the high bit

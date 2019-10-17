@@ -475,8 +475,8 @@ impl RistrettoPoint {
     /// in a batch.
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// # extern crate curve25519_dalek_organism;
+    /// # use curve25519_dalek_organism::ristretto::RistrettoPoint;
     /// extern crate rand_core;
     /// use rand_core::OsRng;
     ///
@@ -662,8 +662,8 @@ impl RistrettoPoint {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// # extern crate curve25519_dalek_organism;
+    /// # use curve25519_dalek_organism::ristretto::RistrettoPoint;
     /// extern crate sha2;
     /// use sha2::Sha512;
     ///
@@ -973,8 +973,8 @@ impl RistrettoPoint {
 /// A precomputed table of multiples of the Ristretto basepoint is
 /// available in the `constants` module:
 /// ```
-/// use curve25519_dalek::constants;
-/// use curve25519_dalek::scalar::Scalar;
+/// use curve25519_dalek_organism::constants;
+/// use curve25519_dalek_organism::scalar::Scalar;
 ///
 /// let a = Scalar::from(87329482u64);
 /// let P = &a * &constants::RISTRETTO_BASEPOINT_TABLE;
@@ -1021,14 +1021,14 @@ impl ConditionallySelectable for RistrettoPoint {
     ///
     /// ```
     /// # extern crate subtle;
-    /// # extern crate curve25519_dalek;
+    /// # extern crate curve25519_dalek_organism;
     /// #
     /// use subtle::ConditionallySelectable;
     /// use subtle::Choice;
     /// #
-    /// # use curve25519_dalek::traits::Identity;
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// # use curve25519_dalek::constants;
+    /// # use curve25519_dalek_organism::traits::Identity;
+    /// # use curve25519_dalek_organism::ristretto::RistrettoPoint;
+    /// # use curve25519_dalek_organism::constants;
     /// # fn main() {
     ///
     /// let A = RistrettoPoint::identity();

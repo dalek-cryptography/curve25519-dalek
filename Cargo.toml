@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek-organism"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -50,7 +50,7 @@ zeroize = { version = "1.0.0", default-features = false }
 nightly = ["subtle/nightly"]
 default = ["std", "simd_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
-alloc = []
+alloc = ["zeroize/alloc"]
 
 # The u32 backend uses u32s with u64 products.
 u32_backend = []

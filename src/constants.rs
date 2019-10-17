@@ -83,8 +83,9 @@ pub const BASEPOINT_ORDER: Scalar = Scalar{
     ],
 };
 
-/// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
 use crate::ristretto::RistrettoBasepointTable;
+
+/// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 

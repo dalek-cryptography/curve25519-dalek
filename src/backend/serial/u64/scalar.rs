@@ -15,6 +15,8 @@ use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
 use crate::constants;
+use zeroize::Zeroize;
+
 
 /// The `Scalar52` struct represents an element in
 /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
@@ -24,6 +26,12 @@ pub struct Scalar52(pub [u64; 5]);
 impl Debug for Scalar52 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
+    }
+}
+
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

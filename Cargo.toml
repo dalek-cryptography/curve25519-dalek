@@ -1,6 +1,6 @@
 [package]
 name = "curve25519-dalek-organism"
-version = "0.0.2"
+version = "0.0.4"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -47,25 +47,25 @@ harness = false
 rand_core = { version = "0.5.1", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.8", default-features = false }
-clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+zeroize = { version = "1.0.0", default-features = false }
 
 [build-dependencies]
 rand_core = { version = "0.5.1", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.8", default-features = false }
-clear_on_drop = "=0.2.3"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+zeroize = { version = "1.0.0", default-features = false }
 
 [features]
-nightly = ["subtle/nightly", "clear_on_drop/nightly"]
+nightly = ["subtle/nightly"]
 default = ["std", "u64_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
-alloc = []
+alloc = ["zeroize/alloc"]
 yolocrypto = []
 
 # The u32 backend uses u32s with u64 products.
@@ -82,4 +82,3 @@ avx2_backend = ["simd_backend"]
 # into the build script. Then, the build.rs emits the stage2_build
 # feature before the main-stage compilation.
 stage2_build = []
-

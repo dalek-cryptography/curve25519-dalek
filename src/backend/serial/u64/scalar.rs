@@ -27,6 +27,12 @@ impl Debug for Scalar52 {
     }
 }
 
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
 impl Index<usize> for Scalar52 {
     type Output = u64;
     fn index(&self, _index: usize) -> &u64 {

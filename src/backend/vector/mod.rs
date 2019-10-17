@@ -8,18 +8,10 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-// Conditionally include the notes if:
-// - we're on nightly (so we can include docs at all)
-// - we're in stage 2 of the build.
-// The latter point prevents a really silly and annoying problem,
-// where the location of ".." is different depending on whether we're
-// building the crate for real, or whether we're in build.rs
-// generating the lookup tables (in which case we're relative to the
-// location of build.rs, not lib.rs, so the markdown file appears
-// missing).
+// Conditionally include the notes if we're on nightly (so we can include docs at all).
 #![cfg_attr(
-    all(feature = "nightly", feature = "stage2_build"),
-    doc(include = "../../../../../docs/parallel-formulas.md")
+    feature = "nightly",
+    doc(include = "../../../docs/parallel-formulas.md")
 )]
 
 #[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", rustdoc)))]

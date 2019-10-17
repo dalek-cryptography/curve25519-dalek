@@ -20,7 +20,7 @@ static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 
 
 mod edwards_benches {
     use super::*;
-    use curve25519_dalek::edwards;
+
     use curve25519_dalek::edwards::EdwardsPoint;
 
     fn compress(c: &mut Criterion) {
@@ -47,7 +47,7 @@ mod edwards_benches {
         let B = &constants::ED25519_BASEPOINT_POINT;
         let s = Scalar::from(897987897u64).invert();
         c.bench_function("Constant-time variable-base scalar mul", move |b| {
-            b.iter(|| B * &s)
+            b.iter(|| B * s)
         });
     }
 
@@ -77,7 +77,7 @@ mod edwards_benches {
 
 mod multiscalar_benches {
     use super::*;
-    use curve25519_dalek::edwards;
+
     use curve25519_dalek::edwards::EdwardsPoint;
     use curve25519_dalek::edwards::VartimeEdwardsPrecomputation;
     use curve25519_dalek::traits::MultiscalarMul;

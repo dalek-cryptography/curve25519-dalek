@@ -58,12 +58,10 @@ impl VartimeMultiscalarMul for Pippenger {
             .into_iter()
             .map(|p| p.map(|P| CachedPoint::from(ExtendedPoint::from(P))));
 
-        let scalars_points = scalars.zip(points).map(|(s,maybe_p)| maybe_p.map(|p| (s,p) ) )
-            .collect::<Option<Vec<_>>>();
-        let scalars_points = match scalars_points {
-            Some(sp) => sp,
-            None => return None,
-        };
+        let scalars_points = scalars
+            .zip(points)
+            .map(|(s, maybe_p)| maybe_p.map(|p| (s, p)))
+            .collect::<Option<Vec<_>>>()?;
 
         // Prepare 2^w/2 buckets.
         // buckets[i] corresponds to a multiplication factor (i+1).

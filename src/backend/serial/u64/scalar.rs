@@ -15,6 +15,8 @@ use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
 use crate::constants;
+use zeroize::Zeroize;
+
 
 /// The `Scalar52` struct represents an element in
 /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.

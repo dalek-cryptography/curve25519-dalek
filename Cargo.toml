@@ -46,6 +46,10 @@ serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 zeroize = { version = "1.0.0", default-features = false }
 
+[dev-dependencies]
+rustc_version = "0.2.3"
+
+
 [features]
 nightly = ["subtle/nightly"]
 default = ["std", "simd_backend"]

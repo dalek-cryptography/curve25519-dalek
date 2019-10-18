@@ -14,10 +14,7 @@ use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
 use crate::constants;
-use zeroize::{
-    Zeroize,
-    DefaultIsZeroes
-};
+use zeroize::Zeroize;
 
 
 /// The `Scalar29` struct represents an element in ℤ/lℤ as 9 29-bit limbs

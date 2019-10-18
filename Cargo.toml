@@ -41,7 +41,7 @@ harness = false
 rand_core = { version = "0.5.1", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.8", default-features = false }
-subtle = { version = "2", default-features = false }
+subtle = { version = "2.2.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
 packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
 zeroize = { version = "1.0.0", default-features = false }

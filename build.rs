@@ -6,14 +6,6 @@
 // };
 use std_detect::is_x86_feature_detected;
 
-
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub fn native_features() {
-    if is_x86_feature_detected!("avx2") | is_x86_feature_detected!("avx512ifma") {
-        println!("cargo:rustc-cfg=feature=\"simd_backend\"\n");
-    } 
-}
-
 fn main() {
     if cfg!(target_pointer_width = "64") {
             println!("cargo:rustc-cfg=feature=\"u64_backend\"\n");
@@ -21,7 +13,10 @@ fn main() {
             println!("cargo:rustc-cfg=feature=\"u32_backend\"\n");
     }
 
-    native_features();
+    if is_x86_feature_detected!("avx2") || is_x86_feature_detected!("avx512ifma") {
+        println!("cargo:rustc-cfg=feature=\"simd_backend\"\n");
+    } 
+
     // // XXX this should be replaced with autoselection logic.
     // // Enable the "stage2_build" feature in the main build stage
     // //println!("cargo:rustc-cfg=feature=\"stage2_build\"\n");

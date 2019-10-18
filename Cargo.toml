@@ -39,6 +39,8 @@ harness = false
 
 [build-dependencies]
 rustc_version = "~0.2.3"
+std_detect = "0.1.5"
+
 
 [dependencies]
 rand_core = { version = "0.5.1", default-features = false }
@@ -52,7 +54,7 @@ zeroize = { version = "1.0.0", default-features = false }
 
 [features]
 nightly = ["subtle/nightly"]
-default = ["std", "simd_backend"]
+default = ["std"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 

@@ -34,9 +34,9 @@ use crate::montgomery::MontgomeryPoint;
 use crate::scalar::Scalar;
 
 #[cfg(feature = "u64_backend")]
-pub use crate::backend::serial::u64::constants::{self, *};
+pub use crate::backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]
-pub use crate::backend::serial::u32::constants::{self, *};
+pub use crate::backend::serial::u32::constants::*;
 
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.

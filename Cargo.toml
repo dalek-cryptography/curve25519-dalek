@@ -38,8 +38,8 @@ name = "dalek_benchmarks"
 harness = false
 
 [build-dependencies]
-rustc_version = "~0.2.3"
-std_detect = "0.1.5"
+# rustc_version = "~0.2.3"
+# std_detect = "0.1.5"
 
 
 [dependencies]
@@ -54,7 +54,7 @@ zeroize = { version = "1.0.0", default-features = false }
 
 [features]
 nightly = ["subtle/nightly"]
-default = ["std"]
+default = ["std", "u64_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 

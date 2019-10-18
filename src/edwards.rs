@@ -93,6 +93,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::iter::Sum;
@@ -335,12 +336,26 @@ impl Default for CompressedEdwardsY {
     }
 }
 
+impl TryFrom<&[u8]> for CompressedEdwardsY {
+    type Error = ();
+
+    fn try_from(bytes: &[u8]) -> Result<CompressedEdwardsY, ()> {
+        if bytes.len() != 32 {
+            return Err(());
+        }
+
+        Ok(CompressedEdwardsY::from_slice(bytes))
+    }
+}
+
 impl CompressedEdwardsY {
     /// Construct a `CompressedEdwardsY` from a slice of bytes.
     ///
     /// # Panics
     ///
-    /// If the input `bytes` slice does not have a length of 32.
+    /// If the input `bytes` slice does not have a length of 32.  For
+    /// a panic-safe version of this API, see the implementation of
+    /// `TryFrom<&[u8]`.
     pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
         let mut tmp = [0u8; 32];
 

@@ -158,6 +158,7 @@
 //! https://ristretto.group/
 
 use core::borrow::Borrow;
+use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
@@ -217,6 +218,18 @@ impl ConstantTimeEq for CompressedRistretto {
     }
 }
 
+impl TryFrom<&[u8]> for CompressedRistretto {
+    type Error = ();
+
+    fn try_from(bytes: &[u8]) -> Result<CompressedRistretto, ()> {
+        if bytes.len() != 32 {
+            return Err(());
+        }
+
+        Ok(CompressedRistretto::from_slice(bytes))
+    }
+}
+
 impl CompressedRistretto {
     /// Copy the bytes of this `CompressedRistretto`.
     pub fn to_bytes(&self) -> [u8; 32] {
@@ -232,7 +245,9 @@ impl CompressedRistretto {
     ///
     /// # Panics
     ///
-    /// If the input `bytes` slice does not have a length of 32.
+    /// If the input `bytes` slice does not have a length of 32.  For a
+    /// panic-safe version of this API, see the implementation of
+    /// `TryFrom<&[u8]>`.
     pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
         let mut tmp = [0u8; 32];
 

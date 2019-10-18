@@ -7,10 +7,11 @@
 use std_detect::is_x86_feature_detected;
 
 fn main() {
-    if cfg!(target_pointer_width = "64") {
-            println!("cargo:rustc-cfg=feature=\"u64_backend\"\n");
+
+    if cfg!(target_pointer_width = "32") {
+        println!("cargo:rustc-cfg=feature=\"u32_backend\"\n");
     } else {
-            println!("cargo:rustc-cfg=feature=\"u32_backend\"\n");
+        println!("cargo:rustc-cfg=feature=\"u64_backend\"\n");
     }
 
     if is_x86_feature_detected!("avx2") || is_x86_feature_detected!("avx512ifma") {

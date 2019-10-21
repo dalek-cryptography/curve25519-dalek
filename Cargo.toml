@@ -19,18 +19,9 @@ travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"
 version = "1"
 default-features = false
 
-[dependencies.rand_core]
-version = "0.3"
-default-features = false
-
 [dependencies.rand]
-version = "0.6"
-features = ["i128_support"]
+version = "0.7"
 default-features = false
-optional = true
-
-[dependencies.rand_os]
-version = "0.1"
 optional = true
 
 [dependencies.serde]
@@ -49,11 +40,10 @@ default-features = false
 version = "0.2"
 
 [dev-dependencies]
-hex = "^0.3"
+hex = "^0.4"
 bincode = "^0.9"
-criterion = "0.2"
-rand = "0.6"
-rand_os = "0.1"
+criterion = "0.3"
+rand = "0.7"
 
 [[bench]]
 name = "ed25519_benchmarks"
@@ -64,9 +54,9 @@ harness = false
 
 [features]
 default = ["std", "u64_backend"]
-std = ["curve25519-dalek/std", "rand_os", "sha2/std"]
-alloc = ["curve25519-dalek/alloc", "rand_os"]
-nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
+std = ["curve25519-dalek/std", "sha2/std", "rand/std"]
+alloc = ["curve25519-dalek/alloc", "rand/alloc"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly", "rand/nightly"]
 batch = ["rand"]
 asm = ["sha2/asm"]
 yolocrypto = ["curve25519-dalek/yolocrypto"]

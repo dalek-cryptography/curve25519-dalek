@@ -355,7 +355,7 @@ impl CompressedEdwardsY {
     ///
     /// If the input `bytes` slice does not have a length of 32.  For
     /// a panic-safe version of this API, see the implementation of
-    /// `TryFrom<&[u8]`.
+    /// `TryFrom<&[u8]>`.
     pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
         let mut tmp = [0u8; 32];
 

@@ -217,7 +217,12 @@ impl Serialize for EdwardsPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.compress().as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -226,7 +231,12 @@ impl Serialize for CompressedEdwardsY {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -244,22 +254,21 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<EdwardsPoint, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<EdwardsPoint, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    CompressedEdwardsY(arr32)
-                        .decompress()
-                        .ok_or(serde::de::Error::custom("decompression failed"))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                CompressedEdwardsY(bytes)
+                    .decompress()
+                    .ok_or(serde::de::Error::custom("decompression failed"))
             }
         }
 
-        deserializer.deserialize_bytes(EdwardsPointVisitor)
+        deserializer.deserialize_tuple(32, EdwardsPointVisitor)
     }
 }
 
@@ -277,20 +286,19 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
                 formatter.write_str("32 bytes of data")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedEdwardsY, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<CompressedEdwardsY, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    Ok(CompressedEdwardsY(arr32))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Ok(CompressedEdwardsY(bytes))
             }
         }
 
-        deserializer.deserialize_bytes(CompressedEdwardsYVisitor)
+        deserializer.deserialize_tuple(32, CompressedEdwardsYVisitor)
     }
 }
 
@@ -1410,10 +1418,18 @@ mod test {
         let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).unwrap();
         assert_eq!(encoded, enc_compressed);
 
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
         let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
+
+        // Check that the encoding itself matches the usual one
+        let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
+        let bp: EdwardsPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
     }
 }

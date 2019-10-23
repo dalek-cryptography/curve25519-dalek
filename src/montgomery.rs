@@ -64,6 +64,7 @@ use subtle::ConstantTimeEq;
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
@@ -311,6 +312,22 @@ mod test {
 
     #[cfg(feature = "rand")]
     use rand_os::OsRng;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_bincode_basepoint_roundtrip() {
+        use bincode;
+
+        let encoded = bincode::serialize(&constants::X25519_BASEPOINT).unwrap();
+        let decoded: MontgomeryPoint = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(encoded.len(), 32);
+        assert_eq!(decoded, constants::X25519_BASEPOINT);
+
+        let raw_bytes = constants::X25519_BASEPOINT.as_bytes();
+        let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::X25519_BASEPOINT);
+    }
 
     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
     #[test]

@@ -43,8 +43,6 @@ extern crate packed_simd;
 
 extern crate byteorder;
 pub extern crate digest;
-#[cfg(feature = "failure")]
-extern crate failure;
 extern crate rand_core;
 #[cfg(test)]
 extern crate rand_os;

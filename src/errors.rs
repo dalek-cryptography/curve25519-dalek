@@ -11,11 +11,14 @@
 //!
 //! Currently, these are only used in the implementations of `TryFrom`.
 //!
-//! This module optionally implements support for the types in the `failure`
-//! crate.  This can be enabled by building with `--features failure`.
+//! If used with `std` support, this public types in this module implement the
+//! `std::error::Error` trait.
 
 use core::fmt;
 use core::fmt::Display;
+
+#[cfg(feature = "std")]
+use std::error::Error;
 
 /// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.
@@ -41,8 +44,8 @@ impl Display for InternalError {
     }
 }
 
-#[cfg(feature = "failure")]
-impl ::failure::Fail for InternalError {}
+#[cfg(feature = "std")]
+impl Error for InternalError { }
 
 /// Errors which may occur.
 ///
@@ -58,9 +61,9 @@ impl Display for CurveError {
     }
 }
 
-#[cfg(feature = "failure")]
-impl ::failure::Fail for CurveError {
-    fn cause(&self) -> Option<&dyn (::failure::Fail)> {
+#[cfg(feature = "std")]
+impl Error for CurveError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.0)
     }
 }

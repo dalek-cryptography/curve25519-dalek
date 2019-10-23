@@ -48,6 +48,7 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+use core::convert::TryFrom;
 use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
@@ -56,6 +57,7 @@ use field::FieldElement;
 use scalar::Scalar;
 
 use traits::Identity;
+use traits::ValidityCheck;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -90,6 +92,45 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
+
+impl ValidityCheck for MontgomeryPoint {
+    /// Decode the \\(u\\)-coordinate field element and re-encode it
+    /// to its canonical form to check whether the original was valid.
+    ///
+    /// There are no other required checks for the Mongomery form of the curve,
+    /// as every element in \\( \mathbb{F}\_{q} \\) lies either on the curve or
+    /// its quadratic twist.  (cf. §5.2 of "Montgomery Curves and Their
+    /// Arithmetic" by [Costello and Smith][costello-smith].)
+    ///
+    /// [costello-smith]: https://eprint.iacr.org/2017/212.pdf
+    fn is_valid(&self) -> bool {
+        let maybe_u: FieldElement = FieldElement::from_bytes(&self.0);
+        let u: [u8; 32] = maybe_u.to_bytes();
+
+        u.ct_eq(&self.0).into()
+    }
+}
+
+impl TryFrom<&[u8]> for MontgomeryPoint {
+    type Error = ();
+
+    fn try_from(bytes: &[u8]) -> Result<MontgomeryPoint, ()> {
+        if bytes.len() != 32 {
+            return Err(());
+        }
+
+        let mut array = [0u8; 32];
+        array.copy_from_slice(&bytes[..32]);
+
+        let P = MontgomeryPoint(array);
+
+        if P.is_valid() {
+            return Ok(P);
+        }
+
+        Err(())
+    }
+}
 
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.

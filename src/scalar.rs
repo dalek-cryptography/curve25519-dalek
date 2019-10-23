@@ -385,7 +385,12 @@ impl Serialize for Scalar {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.reduce().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -400,32 +405,25 @@ impl<'de> Deserialize<'de> for Scalar {
             type Value = Scalar;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("a canonically-encoded 32-byte scalar value")
+                formatter.write_str("a valid point in Edwards y + sign format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<Scalar, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut bytes = [0u8;32];
-                    bytes.copy_from_slice(v);
-
-                    static ERRMSG: &'static str = "encoding was not canonical";
-
-                    Scalar::from_canonical_bytes(bytes)
-                        .ok_or(
-                            serde::de::Error::invalid_value(
-                                serde::de::Unexpected::Bytes(v),
-                                &ERRMSG,
-                            )
-                        )
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Scalar::from_canonical_bytes(bytes)
+                    .ok_or(serde::de::Error::custom(
+                        &"scalar was not canonically encoded"
+                    ))
             }
         }
 
-        deserializer.deserialize_bytes(ScalarVisitor)
+        deserializer.deserialize_tuple(32, ScalarVisitor)
     }
 }
 

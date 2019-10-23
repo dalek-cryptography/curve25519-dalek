@@ -334,7 +334,12 @@ impl Serialize for RistrettoPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.compress().as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -343,7 +348,12 @@ impl Serialize for CompressedRistretto {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -361,22 +371,21 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 formatter.write_str("a valid point in Ristretto format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<RistrettoPoint, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<RistrettoPoint, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    CompressedRistretto(arr32)
-                        .decompress()
-                        .ok_or(serde::de::Error::custom("decompression failed"))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                CompressedRistretto(bytes)
+                    .decompress()
+                    .ok_or(serde::de::Error::custom("decompression failed"))
             }
         }
 
-        deserializer.deserialize_bytes(RistrettoPointVisitor)
+        deserializer.deserialize_tuple(32, RistrettoPointVisitor)
     }
 }
 
@@ -394,20 +403,19 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 formatter.write_str("32 bytes of data")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedRistretto, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<CompressedRistretto, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    Ok(CompressedRistretto(arr32))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Ok(CompressedRistretto(bytes))
             }
         }
 
-        deserializer.deserialize_bytes(CompressedRistrettoVisitor)
+        deserializer.deserialize_tuple(32, CompressedRistrettoVisitor)
     }
 }
 

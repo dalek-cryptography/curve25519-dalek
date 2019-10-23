@@ -104,6 +104,11 @@ impl MontgomeryPoint {
     /// Attempt to convert to an `EdwardsPoint`, using the supplied
     /// choice of sign for the `EdwardsPoint`.
     ///
+    /// # Inputs
+    ///
+    /// * `sign`: a `u8` donating the desired sign of the resulting
+    ///   `EdwardsPoint`.  `0` denotes positive and `1` negative.
+    ///
     /// # Return
     ///
     /// * `Some(EdwardsPoint)` if `self` is the \\(u\\)-coordinate of a

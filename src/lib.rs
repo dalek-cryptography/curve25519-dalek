@@ -45,7 +45,7 @@ extern crate byteorder;
 extern crate clear_on_drop;
 pub extern crate digest;
 extern crate rand_core;
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 extern crate rand_os;
 
 // Used for traits related to constant-time code.

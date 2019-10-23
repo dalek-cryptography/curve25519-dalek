@@ -83,16 +83,8 @@ pub const BASEPOINT_ORDER: Scalar = Scalar{
     ],
 };
 
-// Precomputed basepoint table is generated into a file by build.rs
-
-#[cfg(feature = "stage2_build")]
-include!(concat!(env!("OUT_DIR"), "/basepoint_table.rs"));
-
-#[cfg(feature = "stage2_build")]
 use ristretto::RistrettoBasepointTable;
-
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
-#[cfg(feature = "stage2_build")]
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 

@@ -1649,9 +1649,18 @@ mod test {
     #[cfg(feature = "serde")]
     fn serde_bincode_scalar_roundtrip() {
         use bincode;
-        let output = bincode::serialize(&X).unwrap();
-        let parsed: Scalar = bincode::deserialize(&output).unwrap();
+        let encoded = bincode::serialize(&X).unwrap();
+        let parsed: Scalar = bincode::deserialize(&encoded).unwrap();
         assert_eq!(parsed, X);
+
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
+        // Check that the encoding itself matches the usual one
+        assert_eq!(
+            X,
+            bincode::deserialize(X.as_bytes()).unwrap(),
+        );
     }
 
     #[cfg(debug_assertions)]

@@ -1092,11 +1092,19 @@ mod test {
         let enc_compressed = bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
         assert_eq!(encoded, enc_compressed);
 
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
         let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
+
+        // Check that the encoding itself matches the usual one
+        let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
+        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
     }
 
     #[test]

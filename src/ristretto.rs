@@ -181,6 +181,8 @@ use subtle::ConstantTimeEq;
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
 
+use errors::{CurveError, InternalError};
+
 #[allow(unused_imports)]
 use prelude::*;
 
@@ -219,11 +221,12 @@ impl ConstantTimeEq for CompressedRistretto {
 }
 
 impl TryFrom<&[u8]> for CompressedRistretto {
-    type Error = ();
+    type Error = CurveError;
 
-    fn try_from(bytes: &[u8]) -> Result<CompressedRistretto, ()> {
+    fn try_from(bytes: &[u8]) -> Result<CompressedRistretto, CurveError> {
         if bytes.len() != 32 {
-            return Err(());
+            return Err(CurveError(
+                InternalError::BytesLengthError{name: "CompressedRistretto", length: 32}));
         }
 
         Ok(CompressedRistretto::from_slice(bytes))

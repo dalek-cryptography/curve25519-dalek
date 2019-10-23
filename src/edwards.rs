@@ -108,6 +108,8 @@ use subtle::ConstantTimeEq;
 
 use constants;
 
+use errors::{CurveError, InternalError};
+
 use field::FieldElement;
 use scalar::Scalar;
 
@@ -337,11 +339,12 @@ impl Default for CompressedEdwardsY {
 }
 
 impl TryFrom<&[u8]> for CompressedEdwardsY {
-    type Error = ();
+    type Error = CurveError;
 
-    fn try_from(bytes: &[u8]) -> Result<CompressedEdwardsY, ()> {
+    fn try_from(bytes: &[u8]) -> Result<CompressedEdwardsY, CurveError> {
         if bytes.len() != 32 {
-            return Err(());
+            return Err(CurveError(
+                InternalError::BytesLengthError{name: "CompressedEdwardsY", length: 32}));
         }
 
         Ok(CompressedEdwardsY::from_slice(bytes))

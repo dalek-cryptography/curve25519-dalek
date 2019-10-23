@@ -53,6 +53,7 @@ use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
 use edwards::{CompressedEdwardsY, EdwardsPoint};
+use errors::{CurveError, InternalError};
 use field::FieldElement;
 use scalar::Scalar;
 
@@ -112,11 +113,12 @@ impl ValidityCheck for MontgomeryPoint {
 }
 
 impl TryFrom<&[u8]> for MontgomeryPoint {
-    type Error = ();
+    type Error = CurveError;
 
-    fn try_from(bytes: &[u8]) -> Result<MontgomeryPoint, ()> {
+    fn try_from(bytes: &[u8]) -> Result<MontgomeryPoint, CurveError> {
         if bytes.len() != 32 {
-            return Err(());
+            return Err(CurveError(
+                InternalError::BytesLengthError{name: "MontgomeryPoint", length: 32}));
         }
 
         let mut array = [0u8; 32];
@@ -128,7 +130,8 @@ impl TryFrom<&[u8]> for MontgomeryPoint {
             return Ok(P);
         }
 
-        Err(())
+        Err(CurveError(
+            InternalError::BytesLengthError{name: "MontgomeryPoint", length: 32}))
     }
 }
 

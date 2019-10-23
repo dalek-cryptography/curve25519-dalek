@@ -240,7 +240,7 @@ impl Scalar52 {
             (sum >> 52, w)
         }
 
-        // note: l3 is zero, so its multiplies can be skipped
+        // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
 
         // the first half computes the Montgomery adjustment factor n, and begins adding n*l to make limbs divisible by R

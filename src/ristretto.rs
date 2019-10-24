@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -297,9 +297,9 @@ impl CompressedRistretto {
         let t = &x * &y;
 
         if ok.unwrap_u8() == 0u8 || t.is_negative().unwrap_u8() == 1u8 || y.is_zero().unwrap_u8() == 1u8 {
-            return None;
+            None
         } else {
-            return Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}));
+            Some(RistrettoPoint(EdwardsPoint{X: x, Y: y, Z: one, T: t}))
         }
     }
 }
@@ -334,7 +334,12 @@ impl Serialize for RistrettoPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.compress().as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -343,7 +348,12 @@ impl Serialize for CompressedRistretto {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -361,22 +371,21 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 formatter.write_str("a valid point in Ristretto format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<RistrettoPoint, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<RistrettoPoint, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    CompressedRistretto(arr32)
-                        .decompress()
-                        .ok_or(serde::de::Error::custom("decompression failed"))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                CompressedRistretto(bytes)
+                    .decompress()
+                    .ok_or(serde::de::Error::custom("decompression failed"))
             }
         }
 
-        deserializer.deserialize_bytes(RistrettoPointVisitor)
+        deserializer.deserialize_tuple(32, RistrettoPointVisitor)
     }
 }
 
@@ -394,20 +403,19 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 formatter.write_str("32 bytes of data")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedRistretto, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<CompressedRistretto, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    Ok(CompressedRistretto(arr32))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Ok(CompressedRistretto(bytes))
             }
         }
 
-        deserializer.deserialize_bytes(CompressedRistrettoVisitor)
+        deserializer.deserialize_tuple(32, CompressedRistrettoVisitor)
     }
 }
 
@@ -529,11 +537,11 @@ impl RistrettoPoint {
                 let eg = &e * &g;
                 let fh = &f * &h;
 
-                BatchCompressState{ e: e, f: f, g: g, h: h, eg: eg, fh: fh }
+                BatchCompressState{ e, f, g, h, eg, fh }
             }
         }
 
-        let states: Vec<BatchCompressState> = points.into_iter().map(|P| BatchCompressState::from(P)).collect();
+        let states: Vec<BatchCompressState> = points.into_iter().map(BatchCompressState::from).collect();
 
         let mut invs: Vec<FieldElement> = states.iter().map(|state| state.efgh()).collect();
 
@@ -847,7 +855,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
-        RistrettoPoint(&self.0 * scalar)
+        RistrettoPoint(self.0 * scalar)
     }
 }
 
@@ -856,7 +864,7 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
 
     /// Scalar multiplication: compute `self * scalar`.
     fn mul(self, point: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(self * &point.0)
+        RistrettoPoint(self * point.0)
     }
 }
 
@@ -902,7 +910,7 @@ impl VartimeMultiscalarMul for RistrettoPoint {
     {
         let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.borrow().0));
 
-        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(|P| RistrettoPoint(P))
+        EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(RistrettoPoint)
     }
 }
 
@@ -948,14 +956,13 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
                 dynamic_scalars,
                 dynamic_points.into_iter().map(|P_opt| P_opt.map(|P| P.0)),
             )
-            .map(|P_ed| RistrettoPoint(P_ed))
+            .map(RistrettoPoint)
     }
 }
 
 impl RistrettoPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the
     /// Ristretto basepoint.
-    #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(
         a: &Scalar,
         A: &RistrettoPoint,
@@ -1073,7 +1080,7 @@ impl Debug for RistrettoPoint {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     #[cfg(feature = "rand")]
     use rand_os::OsRng;
@@ -1081,7 +1088,7 @@ mod test {
     use scalar::Scalar;
     use constants;
     use edwards::CompressedEdwardsY;
-    use traits::{Identity, ValidityCheck};
+    use traits::{Identity};
     use super::*;
 
     #[test]
@@ -1093,11 +1100,19 @@ mod test {
         let enc_compressed = bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
         assert_eq!(encoded, enc_compressed);
 
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
         let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
+
+        // Check that the encoding itself matches the usual one
+        let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
+        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
     }
 
     #[test]
@@ -1136,7 +1151,7 @@ mod test {
 
         // Test that sum works on owning iterators
         let s = Scalar::from(2u64);
-        let mapped = vec.iter().map(|x| x * &s);
+        let mapped = vec.iter().map(|x| x * s);
         let sum: RistrettoPoint = mapped.sum();
 
         assert_eq!(sum, &P1 * &s + &P2 * &s);

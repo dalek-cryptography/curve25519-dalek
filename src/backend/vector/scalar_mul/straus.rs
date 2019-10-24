@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -12,7 +12,7 @@
 
 use core::borrow::Borrow;
 
-use clear_on_drop::ClearOnDrop;
+use zeroize::Zeroizing;
 
 use backend::vector::{CachedPoint, ExtendedPoint};
 use edwards::EdwardsPoint;
@@ -54,8 +54,8 @@ impl MultiscalarMul for Straus {
             .into_iter()
             .map(|s| s.borrow().to_radix_16())
             .collect();
-        // Pass ownership to a ClearOnDrop wrapper
-        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+        // Pass ownership to a `Zeroizing` wrapper
+        let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
         let mut Q = ExtendedPoint::identity();
         for j in (0..64).rev() {
@@ -83,14 +83,10 @@ impl VartimeMultiscalarMul for Straus {
             .into_iter()
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect();
-        let lookup_tables: Vec<_> = match points
+        let lookup_tables: Vec<_> = points
             .into_iter()
             .map(|P_opt| P_opt.map(|P| NafLookupTable5::<CachedPoint>::from(&P)))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
-            None => return None,
-        };
+            .collect::<Option<Vec<_>>>()?;
 
         let mut Q = ExtendedPoint::identity();
 

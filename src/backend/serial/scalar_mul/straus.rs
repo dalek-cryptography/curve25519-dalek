@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -106,7 +106,7 @@ impl MultiscalarMul for Straus {
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
     {
-        use clear_on_drop::ClearOnDrop;
+        use zeroize::Zeroizing;
 
         use backend::serial::curve_models::ProjectiveNielsPoint;
         use window::LookupTable;
@@ -119,12 +119,12 @@ impl MultiscalarMul for Straus {
 
         // This puts the scalar digits into a heap-allocated Vec.
         // To ensure that these are erased, pass ownership of the Vec into a
-        // ClearOnDrop wrapper.
+        // Zeroizing wrapper.
         let scalar_digits_vec: Vec<_> = scalars
             .into_iter()
             .map(|s| s.borrow().to_radix_16())
             .collect();
-        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+        let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
         let mut Q = EdwardsPoint::identity();
         for j in (0..64).rev() {
@@ -137,6 +137,7 @@ impl MultiscalarMul for Straus {
                 Q = (&Q + &R_i).to_extended();
             }
         }
+
         Q
     }
 }
@@ -168,14 +169,10 @@ impl VartimeMultiscalarMul for Straus {
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect();
 
-        let lookup_tables = match points
+        let lookup_tables = points
             .into_iter()
             .map(|P_opt| P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
-            None => return None,
-        };
+            .collect::<Option<Vec<_>>>()?;
 
         let mut r = ProjectivePoint::identity();
 

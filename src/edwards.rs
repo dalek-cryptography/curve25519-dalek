@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -195,7 +195,7 @@ impl CompressedEdwardsY {
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
         X.conditional_negate(compressed_sign_bit);
 
-        Some(EdwardsPoint{ X: X, Y: Y, Z: Z, T: &X * &Y })
+        Some(EdwardsPoint{ X, Y, Z, T: &X * &Y })
     }
 }
 
@@ -217,7 +217,12 @@ impl Serialize for EdwardsPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.compress().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.compress().as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -226,7 +231,12 @@ impl Serialize for CompressedEdwardsY {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -244,22 +254,21 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<EdwardsPoint, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<EdwardsPoint, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    CompressedEdwardsY(arr32)
-                        .decompress()
-                        .ok_or(serde::de::Error::custom("decompression failed"))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                CompressedEdwardsY(bytes)
+                    .decompress()
+                    .ok_or(serde::de::Error::custom("decompression failed"))
             }
         }
 
-        deserializer.deserialize_bytes(EdwardsPointVisitor)
+        deserializer.deserialize_tuple(32, EdwardsPointVisitor)
     }
 }
 
@@ -277,20 +286,19 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
                 formatter.write_str("32 bytes of data")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<CompressedEdwardsY, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<CompressedEdwardsY, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut arr32 = [0u8; 32];
-                    arr32[0..32].copy_from_slice(v);
-                    Ok(CompressedEdwardsY(arr32))
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Ok(CompressedEdwardsY(bytes))
             }
         }
 
-        deserializer.deserialize_bytes(CompressedEdwardsYVisitor)
+        deserializer.deserialize_tuple(32, CompressedEdwardsYVisitor)
     }
 }
 
@@ -449,7 +457,7 @@ impl EdwardsPoint {
         AffineNielsPoint{
             y_plus_x:  &y + &x,
             y_minus_x: &y - &x,
-            xy2d:      xy2d
+            xy2d
         }
     }
 
@@ -726,7 +734,6 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
 
 impl EdwardsPoint {
     /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
-    #[cfg(feature = "stage2_build")]
     pub fn vartime_double_scalar_mul_basepoint(
         a: &Scalar,
         A: &EdwardsPoint,
@@ -810,7 +817,7 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
     /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
     fn mul(self, basepoint_table: &'a EdwardsBasepointTable) -> EdwardsPoint {
-        basepoint_table * &self
+        basepoint_table * self
     }
 }
 
@@ -908,7 +915,7 @@ impl EdwardsPoint {
     /// assert_eq!((P+Q).is_torsion_free(), false);
     /// ```
     pub fn is_torsion_free(&self) -> bool {
-        (self * &constants::BASEPOINT_ORDER).is_identity()
+        (self * constants::BASEPOINT_ORDER).is_identity()
     }
 }
 
@@ -937,7 +944,7 @@ impl Debug for EdwardsBasepointTable {
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
     use field::FieldElement;
     use scalar::Scalar;
@@ -1181,7 +1188,7 @@ mod test {
 
         // Test that sum works on owning iterators
         let s = Scalar::from(2u64);
-        let mapped = vec.iter().map(|x| x * &s);
+        let mapped = vec.iter().map(|x| x * s);
         let sum: EdwardsPoint = mapped.sum();
 
         assert_eq!(sum, &P1 * &s + &P2 * &s);
@@ -1204,10 +1211,10 @@ mod test {
     #[test]
     fn is_small_order() {
         // The basepoint has large prime order
-        assert!(constants::ED25519_BASEPOINT_POINT.is_small_order() == false);
+        assert!(!constants::ED25519_BASEPOINT_POINT.is_small_order());
         // constants::EIGHT_TORSION has all points of small order.
         for torsion_point in &constants::EIGHT_TORSION {
-            assert!(torsion_point.is_small_order() == true);
+            assert!(torsion_point.is_small_order());
         }
     }
 
@@ -1219,8 +1226,8 @@ mod test {
 
     #[test]
     fn is_identity() {
-        assert!(   EdwardsPoint::identity().is_identity() == true);
-        assert!(constants::ED25519_BASEPOINT_POINT.is_identity() == false);
+        assert!(   EdwardsPoint::identity().is_identity());
+        assert!(!constants::ED25519_BASEPOINT_POINT.is_identity());
     }
 
     /// Rust's debug builds have overflow and underflow trapping,
@@ -1411,10 +1418,18 @@ mod test {
         let enc_compressed = bincode::serialize(&constants::ED25519_BASEPOINT_COMPRESSED).unwrap();
         assert_eq!(encoded, enc_compressed);
 
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
         let dec_uncompressed: EdwardsPoint = bincode::deserialize(&encoded).unwrap();
         let dec_compressed: CompressedEdwardsY = bincode::deserialize(&encoded).unwrap();
 
         assert_eq!(dec_uncompressed, constants::ED25519_BASEPOINT_POINT);
         assert_eq!(dec_compressed, constants::ED25519_BASEPOINT_COMPRESSED);
+
+        // Check that the encoding itself matches the usual one
+        let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
+        let bp: EdwardsPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
     }
 }

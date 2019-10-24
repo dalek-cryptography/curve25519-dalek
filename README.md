@@ -202,5 +202,5 @@ contributions.
 [docs-external]: https://doc.dalek.rs/curve25519_dalek/
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
-[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/avx2/index.html
+[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
 [subtle_doc]: https://doc.dalek.rs/subtle/

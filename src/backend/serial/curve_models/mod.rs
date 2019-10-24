@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -128,6 +128,8 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+use zeroize::Zeroize;
+
 use constants;
 
 use edwards::EdwardsPoint;
@@ -182,6 +184,14 @@ pub struct AffineNielsPoint {
     pub xy2d:      FieldElement,
 }
 
+impl Zeroize for AffineNielsPoint {
+    fn zeroize(&mut self) {
+        self.y_plus_x.zeroize();
+        self.y_minus_x.zeroize();
+        self.xy2d.zeroize();
+    }
+}
+
 /// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
 /// curve, represented as \\((Y+X, Y-X, Z, 2dXY)\\) in "Niels coordinates".
 ///
@@ -193,6 +203,15 @@ pub struct ProjectiveNielsPoint {
     pub Y_minus_X: FieldElement,
     pub Z:         FieldElement,
     pub T2d:       FieldElement,
+}
+
+impl Zeroize for ProjectiveNielsPoint {
+    fn zeroize(&mut self) {
+        self.Y_plus_X.zeroize();
+        self.Y_minus_X.zeroize();
+        self.Z.zeroize();
+        self.T2d.zeroize();
+    }
 }
 
 // ------------------------------------------------------------------------

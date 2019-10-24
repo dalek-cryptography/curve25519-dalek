@@ -14,6 +14,8 @@
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
+use zeroize::Zeroize;
+
 use constants;
 
 /// The `Scalar52` struct represents an element in
@@ -24,6 +26,12 @@ pub struct Scalar52(pub [u64; 5]);
 impl Debug for Scalar52 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
+    }
+}
+
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 
@@ -240,7 +248,7 @@ impl Scalar52 {
             (sum >> 52, w)
         }
 
-        // note: l3 is zero, so its multiplies can be skipped
+        // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
 
         // the first half computes the Montgomery adjustment factor n, and begins adding n*l to make limbs divisible by R

@@ -1,7 +1,7 @@
 // -*- mode: rust; coding: utf-8; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -23,6 +23,8 @@ use core::ops::{Sub, SubAssign};
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
+
+use zeroize::Zeroize;
 
 /// A `FieldElement2625` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -52,6 +54,12 @@ pub struct FieldElement2625(pub (crate) [u32; 10]);
 impl Debug for FieldElement2625 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "FieldElement2625({:?})", &self.0[..])
+    }
+}
+
+impl Zeroize for FieldElement2625 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

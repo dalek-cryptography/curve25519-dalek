@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -25,6 +25,8 @@ use edwards::EdwardsPoint;
 use backend::serial::curve_models::ProjectiveNielsPoint;
 use backend::serial::curve_models::AffineNielsPoint;
 
+use zeroize::Zeroize;
+
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
 ///
@@ -39,23 +41,6 @@ use backend::serial::curve_models::AffineNielsPoint;
 /// XXX make this generic with respect to table size
 #[derive(Copy, Clone)]
 pub struct LookupTable<T>(pub(crate) [T; 8]);
-
-use clear_on_drop::clear::ZeroSafe;
-
-/// This type isn't actually zeroable (all zero bytes are not valid
-/// points), but we want to be able to use `clear_on_drop` to erase slices
-/// of `LookupTable`.
-///
-/// Since the `ZeroSafe` trait is only used by `clear_on_drop`, the only
-/// situation where this would be a problem is if code attempted to use
-/// a `ClearOnDrop` to erase a `LookupTable` and then used the table
-/// afterwards.
-///
-/// Normally this is not a problem, since the table's storage is usually
-/// dropped too.
-///
-/// XXX is this a good compromise?
-unsafe impl<T> ZeroSafe for LookupTable<T> {}
 
 impl<T> LookupTable<T>
 where
@@ -117,6 +102,15 @@ impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
             points[j + 1] = (P + &points[j]).to_extended().to_affine_niels()
         }
         LookupTable(points)
+    }
+}
+
+impl<T> Zeroize for LookupTable<T>
+where
+    T: Copy + Default + Zeroize
+{
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

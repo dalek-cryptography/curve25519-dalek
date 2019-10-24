@@ -67,14 +67,10 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
             .map(|c| c.borrow().non_adjacent_form(5))
             .collect::<Vec<_>>();
 
-        let dynamic_lookup_tables = match dynamic_points
+        let dynamic_lookup_tables = dynamic_points
             .into_iter()
             .map(|P_opt| P_opt.map(|P| NafLookupTable5::<ProjectiveNielsPoint>::from(&P)))
-            .collect::<Option<Vec<_>>>()
-        {
-            Some(x) => x,
-            None => return None,
-        };
+            .collect::<Option<Vec<_>>>()?;
 
         let sp = self.static_lookup_tables.len();
         let dp = dynamic_lookup_tables.len();

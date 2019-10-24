@@ -1,7 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //
@@ -202,7 +202,7 @@ impl Scalar {
     /// modulo the group order \\( \ell \\).
     pub fn from_bytes_mod_order(bytes: [u8; 32]) -> Scalar {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
-        let s_unreduced = Scalar{bytes: bytes};
+        let s_unreduced = Scalar{bytes};
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
@@ -242,7 +242,7 @@ impl Scalar {
     /// require specific bit-patterns when performing scalar
     /// multiplication.
     pub fn from_bits(bytes: [u8; 32]) -> Scalar {
-        let mut s = Scalar{bytes: bytes};
+        let mut s = Scalar{bytes};
         // Ensure that s < 2^255 by masking the high bit
         s.bytes[31] &= 0b0111_1111;
 
@@ -354,7 +354,7 @@ impl<'a> Neg for &'a Scalar {
     fn neg(self) -> Scalar {
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack() 
+        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack()
     }
 }
 
@@ -385,7 +385,12 @@ impl Serialize for Scalar {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_bytes(self.reduce().as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -400,32 +405,25 @@ impl<'de> Deserialize<'de> for Scalar {
             type Value = Scalar;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("a canonically-encoded 32-byte scalar value")
+                formatter.write_str("a valid point in Edwards y + sign format")
             }
 
-            fn visit_bytes<E>(self, v: &[u8]) -> Result<Scalar, E>
-                where E: serde::de::Error
+            fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
+                where A: serde::de::SeqAccess<'de>
             {
-                if v.len() == 32 {
-                    let mut bytes = [0u8;32];
-                    bytes.copy_from_slice(v);
-
-                    static ERRMSG: &'static str = "encoding was not canonical";
-
-                    Scalar::from_canonical_bytes(bytes)
-                        .ok_or(
-                            serde::de::Error::invalid_value(
-                                serde::de::Unexpected::Bytes(v),
-                                &ERRMSG,
-                            )
-                        )
-                } else {
-                    Err(serde::de::Error::invalid_length(v.len(), &self))
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq.next_element()?
+                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+                Scalar::from_canonical_bytes(bytes)
+                    .ok_or(serde::de::Error::custom(
+                        &"scalar was not canonically encoded"
+                    ))
             }
         }
 
-        deserializer.deserialize_bytes(ScalarVisitor)
+        deserializer.deserialize_tuple(32, ScalarVisitor)
     }
 }
 
@@ -760,18 +758,15 @@ impl Scalar {
         // externally, but there's no corresponding distinction for
         // field elements.
 
-        use clear_on_drop::ClearOnDrop;
-        use clear_on_drop::clear::ZeroSafe;
-        // Mark UnpackedScalars as zeroable.
-        unsafe impl ZeroSafe for UnpackedScalar {}
+        use zeroize::Zeroizing;
 
         let n = inputs.len();
         let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
 
-        // Wrap the scratch storage in a ClearOnDrop to wipe it when
+        // Place scratch storage in a Zeroizing wrapper to wipe it when
         // we pass out of scope.
         let scratch_vec = vec![one; n];
-        let mut scratch = ClearOnDrop::new(scratch_vec);
+        let mut scratch = Zeroizing::new(scratch_vec);
 
         // Keep an accumulator of all of the previous products
         let mut acc = Scalar::one().unpack().to_montgomery();
@@ -799,7 +794,7 @@ impl Scalar {
 
         // Pass through the vector backwards to compute the inverses
         // in place
-        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
             *input = UnpackedScalar::montgomery_mul(&acc, &scratch).pack();
             acc = tmp;
@@ -1649,9 +1644,18 @@ mod test {
     #[cfg(feature = "serde")]
     fn serde_bincode_scalar_roundtrip() {
         use bincode;
-        let output = bincode::serialize(&X).unwrap();
-        let parsed: Scalar = bincode::deserialize(&output).unwrap();
+        let encoded = bincode::serialize(&X).unwrap();
+        let parsed: Scalar = bincode::deserialize(&encoded).unwrap();
         assert_eq!(parsed, X);
+
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
+        // Check that the encoding itself matches the usual one
+        assert_eq!(
+            X,
+            bincode::deserialize(X.as_bytes()).unwrap(),
+        );
     }
 
     #[cfg(debug_assertions)]

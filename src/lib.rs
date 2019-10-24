@@ -35,4 +35,4 @@ extern crate rand_os;
 
 mod x25519;
 
-pub use x25519::*;
+pub use crate::x25519::*;

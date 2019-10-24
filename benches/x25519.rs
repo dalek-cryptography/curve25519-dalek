@@ -19,7 +19,7 @@ extern crate x25519_dalek;
 
 use criterion::Criterion;
 
-use curve25519_dalek::montgomery::MontgomeryPoint;
+
 
 use rand_os::OsRng;
 

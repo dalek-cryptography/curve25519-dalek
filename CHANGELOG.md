@@ -2,6 +2,20 @@
 
 Entries are listed in reverse chronological order.
 
+## 2.0.0-alpha.0
+
+* Fix a data modeling error in the `serde` feature pointed out by Trevor Perrin
+  which caused points and scalars to be serialized with length fields rather
+  than as fixed-size 32-byte arrays.  This is a breaking change, but it fixes
+  compatibility with `serde-json` and ensures that the `serde-bincode` encoding
+  matches the conventional encoding for X/Ed25519.
+* Update `rand_core` to `0.5`, allowing use with new `rand` versions.
+* Remove the `build.rs` hack which loaded the entire crate into its own
+  `build.rs` to generate constants, and keep the constants in the source code.
+
+The only significant change is the data model change to the `serde` feature;
+besides the `rand_core` version bump, there are no other user-visible changes.
+
 ## 1.2.3
 
 * Fix an issue identified by a Quarkslab audit (and Jack Grigg), where manually

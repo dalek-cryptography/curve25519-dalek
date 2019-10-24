@@ -106,7 +106,7 @@ impl MultiscalarMul for Straus {
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
     {
-        use clear_on_drop::ClearOnDrop;
+        use zeroize::Zeroizing;
 
         use backend::serial::curve_models::ProjectiveNielsPoint;
         use window::LookupTable;
@@ -119,12 +119,12 @@ impl MultiscalarMul for Straus {
 
         // This puts the scalar digits into a heap-allocated Vec.
         // To ensure that these are erased, pass ownership of the Vec into a
-        // ClearOnDrop wrapper.
+        // Zeroizing wrapper.
         let scalar_digits_vec: Vec<_> = scalars
             .into_iter()
             .map(|s| s.borrow().to_radix_16())
             .collect();
-        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+        let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
         let mut Q = EdwardsPoint::identity();
         for j in (0..64).rev() {
@@ -137,6 +137,7 @@ impl MultiscalarMul for Straus {
                 Q = (&Q + &R_i).to_extended();
             }
         }
+
         Q
     }
 }

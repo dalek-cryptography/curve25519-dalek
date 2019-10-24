@@ -12,7 +12,7 @@
 
 use core::borrow::Borrow;
 
-use clear_on_drop::ClearOnDrop;
+use zeroize::Zeroizing;
 
 use backend::vector::{CachedPoint, ExtendedPoint};
 use edwards::EdwardsPoint;
@@ -54,8 +54,8 @@ impl MultiscalarMul for Straus {
             .into_iter()
             .map(|s| s.borrow().to_radix_16())
             .collect();
-        // Pass ownership to a ClearOnDrop wrapper
-        let scalar_digits = ClearOnDrop::new(scalar_digits_vec);
+        // Pass ownership to a `Zeroizing` wrapper
+        let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
         let mut Q = ExtendedPoint::identity();
         for j in (0..64).rev() {

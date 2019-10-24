@@ -13,6 +13,8 @@
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
+use zeroize::Zeroize;
+
 use constants;
 
 /// The `Scalar29` struct represents an element in ℤ/lℤ as 9 29-bit limbs
@@ -22,6 +24,12 @@ pub struct Scalar29(pub [u32; 9]);
 impl Debug for Scalar29 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Scalar29: {:?}", &self.0[..])
+    }
+}
+
+impl Zeroize for Scalar29 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

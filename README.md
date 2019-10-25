@@ -48,6 +48,18 @@ your project's `Cargo.toml`:
 curve25519-dalek = "2"
 ```
 
+The `2.x` series has API almost entirely unchanged from the `1.x` series,
+except that:
+
+* an error in the data modeling for the (optional) `serde` feature was
+  corrected, so that when the `2.x`-series `serde` implementation is used
+  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
+  formats;
+
+* the `rand` version was updated.
+
+See `CHANGELOG.md` for more details.
+
 # Backends and Features
 
 The `nightly` feature enables features available only when using a Rust nightly

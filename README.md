@@ -45,12 +45,20 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "1"
+curve25519-dalek = "2"
 ```
-Then import the crate as:
-```rust,no_run
-extern crate curve25519_dalek;
-```
+
+The `2.x` series has API almost entirely unchanged from the `1.x` series,
+except that:
+
+* an error in the data modeling for the (optional) `serde` feature was
+  corrected, so that when the `2.x`-series `serde` implementation is used
+  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
+  formats;
+
+* the `rand` version was updated.
+
+See `CHANGELOG.md` for more details.
 
 # Backends and Features
 
@@ -59,17 +67,19 @@ compiler.  **It is recommended for security**.
 
 Curve arithmetic is implemented using one of the following backends:
 
-* a `u32` backend using `u64` products;
-* a `u64` backend using `u128` products;
-* an `avx2` backend using [parallel formulas][parallel_doc], available
-  when compiling for a target with `target_feature=+avx2`.
+* a `u32` backend using serial formulas and `u64` products;
+* a `u64` backend using serial formulas and `u128` products;
+* an `avx2` backend using [parallel formulas][parallel_doc] and `avx2` instructions (sets speed records);
+* an `ifma` backend using [parallel formulas][parallel_doc] and `ifma` instructions (sets speed records);
 
 By default the `u64` backend is selected.  To select a specific backend, use:
 ```sh
 cargo build --no-default-features --features "std u32_backend"
 cargo build --no-default-features --features "std u64_backend"
-# Requires RUSTFLAGS="-C target_feature=+avx2"
-cargo build --no-default-features --features "std avx2_backend"
+# Requires nightly, RUSTFLAGS="-C target_feature=+avx2" to use avx2
+cargo build --no-default-features --features "std simd_backend"
+# Requires nightly, RUSTFLAGS="-C target_feature=+avx512ifma" to use ifma
+cargo build --no-default-features --features "std simd_backend"
 ```
 Crates using `curve25519-dalek` can either select a backend on behalf of their
 users, or expose feature flags that control the `curve25519-dalek` backend.
@@ -78,13 +88,6 @@ The `std` feature is enabled by default, but it can be disabled for no-`std`
 builds using `--no-default-features`.  Note that this requires explicitly
 selecting an arithmetic backend using one of the `_backend` features.
 If no backend is selected, compilation will fail.
-
-The `yolocrypto` feature enables experimental features.  The name `yolocrypto`
-is meant to indicate that it is not considered production-ready, and we do not
-consider `yolocrypto` features to be covered by semver guarantees.
-This is designed to make it easier to test intended new features
-without having to stabilise them first.  Use `yolocrypto` at your own,
-obvious, risk.
 
 # Safety
 
@@ -120,23 +123,21 @@ entrypoints of `curve25519-dalek` functions, but at the entrypoints of
 functions in other crates.
 
 The implementation is memory-safe, and contains no significant
-`unsafe` code.  The AVX2 backend uses `unsafe` internally to call AVX2
-intrinsics.  These are marked `unsafe` because invoking them on a
-non-AVX2 target would cause `SIGILL`, but the entire backend is only
-compiled for `target_feature=+avx2`.  Some types implement an `unsafe
-trait` to mark them as zeroable (for heap allocations), but this does
-not affect memory safety.
+`unsafe` code.  The SIMD backend uses `unsafe` internally to call SIMD
+intrinsics.  These are marked `unsafe` because invoking them on an
+inappropriate CPU would cause `SIGILL`, but the entire backend is only
+compiled with appropriate `target_feature`s. 
 
 # Performance
 
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-# You must set RUSTFLAGS to enable AVX2 support.
-export RUSTFLAGS="-C target_cpu=native"
 cargo bench --no-default-features --features "std u32_backend"
 cargo bench --no-default-features --features "std u64_backend"
-cargo bench --no-default-features --features "std avx2_backend"
+# Uses avx2 or ifma only if compiled for an appropriate target.
+export RUSTFLAGS="-C target_cpu=native"
+cargo bench --no-default-features --features "std simd_backend"
 ```
 
 Performance is a secondary goal behind correctness, safety, and
@@ -191,7 +192,7 @@ The fast `u32` and `u64` scalar arithmetic was implemented by Andrew Moon, and
 the addition chain for scalar inversion was provided by Brian Smith.  The
 optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
-The `no_std` support was contributed by Tony Arcieri.
+The `no_std` and `zeroize` support was contributed by Tony Arcieri.
 
 Thanks also to Ashley Hauck, Lucas Salibian, and Manish Goregaokar for their
 contributions.

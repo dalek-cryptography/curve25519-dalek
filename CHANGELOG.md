@@ -2,6 +2,11 @@
 
 Entries are listed in reverse chronological order.
 
+## 2.0.0-alpha.1
+
+* Update `README.md` for `2.x` series.
+* Fix a `Zeroize`-related build issue in the AVX2 backend.
+
 ## 2.0.0-alpha.0
 
 * Fix a data modeling error in the `serde` feature pointed out by Trevor Perrin

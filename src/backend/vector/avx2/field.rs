@@ -41,7 +41,6 @@ const D_LANES64: u8 = 0b11_00_00_00;
 
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
-use zeroize::Zeroize;
 
 use backend::vector::avx2::constants::{P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO};
 use backend::serial::u64::field::FieldElement51;
@@ -871,12 +870,6 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         // means we could get a tighter bound on the outputs, or a
         // looser bound on b_x.
         FieldElement2625x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
-    }
-}
-
-impl Zeroize for FieldElement2625x4 {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

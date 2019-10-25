@@ -47,10 +47,6 @@ your project's `Cargo.toml`:
 ```toml
 curve25519-dalek = "2"
 ```
-Then import the crate as:
-```rust,no_run
-extern crate curve25519_dalek;
-```
 
 # Backends and Features
 

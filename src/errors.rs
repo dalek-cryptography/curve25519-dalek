@@ -16,6 +16,9 @@
 use core::fmt;
 use core::fmt::Display;
 
+#[cfg(feature = "std")]
+use std::error::Error;
+
 /// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -50,7 +53,8 @@ impl Display for InternalError {
     }
 }
 
-impl ::failure::Fail for InternalError {}
+#[cfg(feature = "std")]
+impl Error for InternalError { }
 
 /// Errors which may occur while processing signatures and keypairs.
 ///
@@ -75,8 +79,9 @@ impl Display for SignatureError {
     }
 }
 
-impl ::failure::Fail for SignatureError {
-    fn cause(&self) -> Option<&dyn (::failure::Fail)> {
+#[cfg(feature = "std")]
+impl Error for SignatureError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.0)
     }
 }

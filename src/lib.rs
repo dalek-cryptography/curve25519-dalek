@@ -241,7 +241,6 @@ extern crate std;
 extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
-extern crate failure;
 #[cfg(any(feature = "batch", feature = "std", feature = "alloc", test))]
 extern crate rand;
 #[cfg(feature = "serde")]

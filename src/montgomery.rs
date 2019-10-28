@@ -17,7 +17,7 @@
 //! Montgomery arithmetic works not on the curve itself, but on the
 //! \\(u\\)-line, which discards sign information and unifies the curve
 //! and its quadratic twist.  See [_Montgomery curves and their
-//! arithmetic_][costello-smith] by Costello and Smith for more details.  
+//! arithmetic_][costello-smith] by Costello and Smith for more details.
 //!
 //! The `MontgomeryPoint` struct contains the affine \\(u\\)-coordinate
 //! \\(u\_0(P)\\) of a point \\(P\\) on either the curve or the twist.
@@ -61,6 +61,8 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug)]
@@ -90,6 +92,12 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
+
+impl Zeroize for MontgomeryPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.
@@ -356,7 +364,7 @@ mod test {
     #[test]
     fn montgomery_to_edwards_rejects_twist() {
         let one = FieldElement::one();
-        
+
         // u = 2 corresponds to a point on the twist.
         let two = MontgomeryPoint((&one+&one).to_bytes());
 

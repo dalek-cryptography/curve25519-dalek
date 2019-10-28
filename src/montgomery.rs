@@ -310,8 +310,7 @@ mod test {
     use constants;
     use super::*;
 
-    #[cfg(feature = "rand")]
-    use rand_os::OsRng;
+    use rand_core::OsRng;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -380,10 +379,9 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng: OsRng = OsRng::new().unwrap();
+        let mut csprng: OsRng = OsRng;
 
         let s: Scalar = Scalar::random(&mut csprng);
         let p_edwards: EdwardsPoint = &constants::ED25519_BASEPOINT_TABLE * &s;

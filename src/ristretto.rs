@@ -1324,19 +1324,6 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
-    #[test]
-    fn random_is_valid() {
-        let mut rng = OsRng::new().unwrap();
-        for _ in 0..100 {
-            let P = RistrettoPoint::random(&mut rng);
-            // Check that P is on the curve
-            assert!(P.0.is_valid());
-            // Check that P is in the image of the ristretto map
-            P.compress();
-        }
-    }
-
     #[test]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();

@@ -598,14 +598,16 @@ impl RistrettoPoint {
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
-        let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
+        let i = &constants::SQRT_M1;
+        let d = &constants::EDWARDS_D;
+        let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;
+        let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
+        let mut c = constants::MINUS_ONE;
+
         let one = FieldElement::one();
-        let one_minus_d_sq = &one - &d.square();
-        let d_minus_one_sq = (d - &one).square();
 
         let r = i * &r_0.square();
         let N_s = &(&r + &one) * &one_minus_d_sq;
-        let mut c = -&one;
         let D = &(&c - &(d * &r)) * &(&r + d);
 
         let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);

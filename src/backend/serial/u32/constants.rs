@@ -18,6 +18,11 @@ use backend::serial::u32::scalar::Scalar29;
 use edwards::{EdwardsBasepointTable, EdwardsPoint};
 use window::{LookupTable, NafLookupTable8};
 
+/// The value of minus one, equal to `-&FieldElement::one()`
+pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625([
+    67108844, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431
+]);
+
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement2625 = FieldElement2625([
     56195235, 13857412, 51736253, 6949390, 114729, 24766616, 60832955, 30306712, 48412415, 21499315,
@@ -26,6 +31,16 @@ pub(crate) const EDWARDS_D: FieldElement2625 = FieldElement2625([
 /// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
 pub(crate) const EDWARDS_D2: FieldElement2625 = FieldElement2625([
     45281625, 27714825, 36363642, 13898781, 229458, 15978800, 54557047, 27058993, 29715967, 9444199,
+]);
+
+/// One minus edwards `d` value squared, equal to `(1 - (-121665/121666) mod p) pow 2`
+pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement2625 =  FieldElement2625([
+    6275446, 16937061, 44170319, 29780721, 11667076, 7397348, 39186143, 1766194, 42675006, 672202
+]);
+
+/// Edwards `d` value minus one squared, equal to `(((-121665/121666) mod p) - 1) pow 2`
+pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement2625 =  FieldElement2625([
+    15551776, 22456977, 53683765, 23429360, 55212328, 10178283, 40474537, 4729243, 61826754, 23438029
 ]);
 
 /// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.

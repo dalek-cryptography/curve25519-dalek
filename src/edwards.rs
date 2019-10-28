@@ -93,7 +93,6 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
-use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::iter::Iterator;
 use core::iter::Sum;
@@ -107,8 +106,6 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
 use constants;
-
-use errors::{CurveError, InternalError};
 
 use field::FieldElement;
 use scalar::Scalar;
@@ -338,33 +335,23 @@ impl Default for CompressedEdwardsY {
     }
 }
 
-impl TryFrom<&[u8]> for CompressedEdwardsY {
-    type Error = CurveError;
-
-    fn try_from(bytes: &[u8]) -> Result<CompressedEdwardsY, CurveError> {
-        if bytes.len() != 32 {
-            return Err(CurveError(
-                InternalError::BytesLengthError{name: "CompressedEdwardsY", length: 32}));
-        }
-
-        Ok(CompressedEdwardsY::from_slice(bytes))
-    }
-}
-
 impl CompressedEdwardsY {
     /// Construct a `CompressedEdwardsY` from a slice of bytes.
     ///
-    /// # Panics
+    /// # Returns
     ///
-    /// If the input `bytes` slice does not have a length of 32.  For
-    /// a panic-safe version of this API, see the implementation of
-    /// `TryFrom<&[u8]>`.
-    pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
+    /// An `Option<CompressedEdwardsY>` which is `None` if the input `bytes`
+    /// slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> Option<CompressedEdwardsY> {
+        if bytes.len() != 32 {
+            return None;
+        }
+
         let mut tmp = [0u8; 32];
 
         tmp.copy_from_slice(bytes);
 
-        CompressedEdwardsY(tmp)
+        Some(CompressedEdwardsY(tmp))
     }
 }
 

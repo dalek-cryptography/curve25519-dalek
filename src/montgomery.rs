@@ -48,12 +48,10 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-use core::convert::TryFrom;
 use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
 use edwards::{CompressedEdwardsY, EdwardsPoint};
-use errors::{CurveError, InternalError};
 use field::FieldElement;
 use scalar::Scalar;
 
@@ -112,29 +110,6 @@ impl ValidityCheck for MontgomeryPoint {
     }
 }
 
-impl TryFrom<&[u8]> for MontgomeryPoint {
-    type Error = CurveError;
-
-    fn try_from(bytes: &[u8]) -> Result<MontgomeryPoint, CurveError> {
-        if bytes.len() != 32 {
-            return Err(CurveError(
-                InternalError::BytesLengthError{name: "MontgomeryPoint", length: 32}));
-        }
-
-        let mut array = [0u8; 32];
-        array.copy_from_slice(&bytes[..32]);
-
-        let P = MontgomeryPoint(array);
-
-        if P.is_valid() {
-            return Ok(P);
-        }
-
-        Err(CurveError(
-            InternalError::BytesLengthError{name: "MontgomeryPoint", length: 32}))
-    }
-}
-
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.
     pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
@@ -144,6 +119,29 @@ impl MontgomeryPoint {
     /// Convert this `MontgomeryPoint` to an array of bytes.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0
+    }
+
+    /// Attempt to create a `MontgomeryPoint` from a slice of bytes.
+    ///
+    /// # Returns
+    ///
+    /// An `Option<MontgomeryPoint>` which is `None` if the length of the slice
+    /// of bytes is not 32, or if the bytes did not represent a canonical
+    /// `FieldElement`.
+    pub fn from_slice(bytes: &[u8]) -> Option<MontgomeryPoint> {
+        if bytes.len() != 32 {
+            return None;
+        }
+
+        let mut array = [0u8; 32];
+        array.copy_from_slice(&bytes[..32]);
+
+        let P = MontgomeryPoint(array);
+
+        if P.is_valid() {
+            return Some(P);
+        }
+        None
     }
 
     /// Attempt to convert to an `EdwardsPoint`, using the supplied

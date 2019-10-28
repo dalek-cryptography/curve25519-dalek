@@ -158,7 +158,6 @@
 //! https://ristretto.group/
 
 use core::borrow::Borrow;
-use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
@@ -180,8 +179,6 @@ use subtle::ConstantTimeEq;
 
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
-
-use errors::{CurveError, InternalError};
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -220,19 +217,6 @@ impl ConstantTimeEq for CompressedRistretto {
     }
 }
 
-impl TryFrom<&[u8]> for CompressedRistretto {
-    type Error = CurveError;
-
-    fn try_from(bytes: &[u8]) -> Result<CompressedRistretto, CurveError> {
-        if bytes.len() != 32 {
-            return Err(CurveError(
-                InternalError::BytesLengthError{name: "CompressedRistretto", length: 32}));
-        }
-
-        Ok(CompressedRistretto::from_slice(bytes))
-    }
-}
-
 impl CompressedRistretto {
     /// Copy the bytes of this `CompressedRistretto`.
     pub fn to_bytes(&self) -> [u8; 32] {
@@ -246,17 +230,20 @@ impl CompressedRistretto {
 
     /// Construct a `CompressedRistretto` from a slice of bytes.
     ///
-    /// # Panics
+    /// # Returns
     ///
-    /// If the input `bytes` slice does not have a length of 32.  For a
-    /// panic-safe version of this API, see the implementation of
-    /// `TryFrom<&[u8]>`.
-    pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
+    /// An `Option<CompressedRistretto>` which is `None` if the input `bytes`
+    /// slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> Option<CompressedRistretto> {
+        if bytes.len() != 32 {
+            return None;
+        }
+
         let mut tmp = [0u8; 32];
 
         tmp.copy_from_slice(bytes);
 
-        CompressedRistretto(tmp)
+        Some(CompressedRistretto(tmp))
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.

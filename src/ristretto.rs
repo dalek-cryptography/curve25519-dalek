@@ -485,13 +485,13 @@ impl RistrettoPoint {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand_os;
-    /// use rand_os::OsRng;
+    /// extern crate rand_core;
+    /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng::new().unwrap();
+    /// let mut rng = OsRng;
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -1084,8 +1084,7 @@ impl Debug for RistrettoPoint {
 
 #[cfg(test)]
 mod test {
-    #[cfg(feature = "rand")]
-    use rand_os::OsRng;
+    use rand_core::OsRng;
 
     use scalar::Scalar;
     use constants;
@@ -1233,10 +1232,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn four_torsion_random() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
@@ -1296,10 +1294,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn random_roundtrip() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
             let P = B * &Scalar::random(&mut rng);
@@ -1309,10 +1306,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn double_and_compress_1024_random_points() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
 
         let points: Vec<RistrettoPoint> =
             (0..1024).map(|_| RistrettoPoint::random(&mut rng)).collect();

@@ -475,8 +475,8 @@ impl Keypair {
     /// §5.1.7, for small torsion components in the `R` value of the signature,
     /// *which is not strictly required*, as they state:
     ///
-    /// > Check the group equation [8][S]B = [8]R + [8][k]A'.  It's
-    /// > sufficient, but not required, to instead check [S]B = R + [k]A'.
+    /// > Check the group equation \[8\]\[S\]B = \[8\]R + \[8\]\[k\]A'.  It's
+    /// > sufficient, but not required, to instead check \[S\]B = R + \[k\]A'.
     ///
     /// # History of Malleability Checks
     ///

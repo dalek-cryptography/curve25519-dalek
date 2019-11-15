@@ -25,7 +25,7 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     // We sum right-to-left.
 
     // Unwrap first loop iteration to save computing 16*identity
-    let mut tmp2 = ProjectivePoint::identity();
+    let mut tmp2;
     let mut tmp3 = EdwardsPoint::identity();
     let mut tmp1 = &tmp3 + &lookup_table.select(scalar_digits[63]);
     // Now tmp1 = s_63*P in P1xP1 coords

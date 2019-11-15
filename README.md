@@ -63,7 +63,8 @@ See `CHANGELOG.md` for more details.
 # Backends and Features
 
 The `nightly` feature enables features available only when using a Rust nightly
-compiler.  **It is recommended for security**.
+compiler.  In particular, it is required for rendering documentation and for
+the SIMD backends.
 
 Curve arithmetic is implemented using one of the following backends:
 
@@ -103,11 +104,10 @@ unless specifically marked as being variable-time code.
 We believe that our constant-time logic is lowered to constant-time
 assembly, at least on `x86_64` targets.
 
-As an additional guard against possible future compiler optimizations, the
-`nightly` feature places an optimization barrier before every
+As an additional guard against possible future compiler optimizations,
+the `subtle` crate places an optimization barrier before every
 conditional move or assignment.  More details can be found in [the
-documentation for the `subtle` crate][subtle_doc].  This is
-recommended, but not required.
+documentation for the `subtle` crate][subtle_doc].
 
 Some functionality (e.g., multiscalar multiplication or batch
 inversion) requires heap allocation for temporary buffers.  All
@@ -124,9 +124,9 @@ functions in other crates.
 
 The implementation is memory-safe, and contains no significant
 `unsafe` code.  The SIMD backend uses `unsafe` internally to call SIMD
-intrinsics.  These are marked `unsafe` because invoking them on an
+intrinsics.  These are marked `unsafe` only because invoking them on an
 inappropriate CPU would cause `SIGILL`, but the entire backend is only
-compiled with appropriate `target_feature`s. 
+compiled with appropriate `target_feature`s, so this cannot occur.
 
 # Performance
 

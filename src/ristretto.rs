@@ -485,13 +485,13 @@ impl RistrettoPoint {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand_os;
-    /// use rand_os::OsRng;
+    /// extern crate rand_core;
+    /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng::new().unwrap();
+    /// let mut rng = OsRng;
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -598,14 +598,16 @@ impl RistrettoPoint {
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
     pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
-        let (i, d) = (&constants::SQRT_M1, &constants::EDWARDS_D);
+        let i = &constants::SQRT_M1;
+        let d = &constants::EDWARDS_D;
+        let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;
+        let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
+        let mut c = constants::MINUS_ONE;
+
         let one = FieldElement::one();
-        let one_minus_d_sq = &one - &d.square();
-        let d_minus_one_sq = (d - &one).square();
 
         let r = i * &r_0.square();
         let N_s = &(&r + &one) * &one_minus_d_sq;
-        let mut c = -&one;
         let D = &(&c - &(d * &r)) * &(&r + d);
 
         let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
@@ -1082,8 +1084,7 @@ impl Debug for RistrettoPoint {
 
 #[cfg(test)]
 mod test {
-    #[cfg(feature = "rand")]
-    use rand_os::OsRng;
+    use rand_core::OsRng;
 
     use scalar::Scalar;
     use constants;
@@ -1231,10 +1232,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn four_torsion_random() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
@@ -1294,10 +1294,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn random_roundtrip() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
             let P = B * &Scalar::random(&mut rng);
@@ -1307,10 +1306,9 @@ mod test {
         }
     }
 
-    #[cfg(feature = "rand")]
     #[test]
     fn double_and_compress_1024_random_points() {
-        let mut rng = OsRng::new().unwrap();
+        let mut rng = OsRng;
 
         let points: Vec<RistrettoPoint> =
             (0..1024).map(|_| RistrettoPoint::random(&mut rng)).collect();
@@ -1319,19 +1317,6 @@ mod test {
 
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
             assert_eq!(*P2_compressed, (P + P).compress());
-        }
-    }
-
-    #[cfg(feature = "rand")]
-    #[test]
-    fn random_is_valid() {
-        let mut rng = OsRng::new().unwrap();
-        for _ in 0..100 {
-            let P = RistrettoPoint::random(&mut rng);
-            // Check that P is on the curve
-            assert!(P.0.is_valid());
-            // Check that P is in the image of the ristretto map
-            P.compress();
         }
     }
 

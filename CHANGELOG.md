@@ -2,6 +2,12 @@
 
 Entries are listed in reverse chronological order.
 
+## 2.0.0-alpha.2
+
+* Require `subtle = ^2.2.1` and remove the note advising nightly Rust, which is
+  no longer required as of that version of `subtle`.  See the `subtle`
+  changelog for more details.
+
 ## 2.0.0-alpha.1
 
 * Update `README.md` for `2.x` series.

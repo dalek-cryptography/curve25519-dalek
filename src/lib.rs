@@ -247,6 +247,8 @@ extern crate rand;
 extern crate serde;
 extern crate sha2;
 
+#[cfg(all(feature = "batch", any(feature = "std", feature = "alloc")))]
+mod batch;
 mod constants;
 mod ed25519;
 mod errors;

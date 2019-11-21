@@ -50,11 +50,6 @@ pub use crate::signature::*;
 /// * `public_keys` is a slice of `PublicKey`s.
 /// * `csprng` is an implementation of `Rng + CryptoRng`.
 ///
-/// # Panics
-///
-/// This function will panic if the `messages, `signatures`, and `public_keys`
-/// slices are not equal length.
-///
 /// # Returns
 ///
 /// * A `Result` whose `Ok` value is an emtpy tuple and whose `Err` value is a
@@ -93,10 +88,15 @@ pub fn verify_batch(
     public_keys: &[PublicKey],
 ) -> Result<(), SignatureError>
 {
-    const ASSERT_MESSAGE: &'static str = "The number of messages, signatures, and public keys must be equal.";
-    assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
-    assert!(signatures.len()  == public_keys.len(), ASSERT_MESSAGE);
-    assert!(public_keys.len() == messages.len(),    ASSERT_MESSAGE);
+    if signatures.len() != messages.len() ||
+        signatures.len() != public_keys.len() ||
+        public_keys.len() != messages.len() {
+        return Err(SignatureError(InternalError::ArrayLengthError{
+            name_a: "signatures", length_a: signatures.len(),
+            name_b: "messages", length_b: messages.len(),
+            name_c: "public_keys", length_c: public_keys.len(),
+        }));
+    }
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;

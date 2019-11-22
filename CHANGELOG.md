@@ -2,18 +2,7 @@
 
 Entries are listed in reverse chronological order.
 
-## 2.0.0-alpha.2
-
-* Require `subtle = ^2.2.1` and remove the note advising nightly Rust, which is
-  no longer required as of that version of `subtle`.  See the `subtle`
-  changelog for more details.
-
-## 2.0.0-alpha.1
-
-* Update `README.md` for `2.x` series.
-* Fix a `Zeroize`-related build issue in the AVX2 backend.
-
-## 2.0.0-alpha.0
+## 2.0.0
 
 * Fix a data modeling error in the `serde` feature pointed out by Trevor Perrin
   which caused points and scalars to be serialized with length fields rather
@@ -21,6 +10,11 @@ Entries are listed in reverse chronological order.
   compatibility with `serde-json` and ensures that the `serde-bincode` encoding
   matches the conventional encoding for X/Ed25519.
 * Update `rand_core` to `0.5`, allowing use with new `rand` versions.
+* Switch from `clear_on_drop` to `zeroize` (by Tony Arcieri).
+* Require `subtle = ^2.2.1` and remove the note advising nightly Rust, which is
+  no longer required as of that version of `subtle`.  See the `subtle`
+  changelog for more details.
+* Update `README.md` for `2.x` series.
 * Remove the `build.rs` hack which loaded the entire crate into its own
   `build.rs` to generate constants, and keep the constants in the source code.
 

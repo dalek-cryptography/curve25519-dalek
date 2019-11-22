@@ -40,6 +40,7 @@ use crate::signature::Signature;
 
 trait BatchTranscript {
     fn append_hrams(&mut self, hrams: &Vec<Scalar>);
+    fn append_message_lengths(&mut self, message_lengths: &Vec<usize>);
 }
 
 impl BatchTranscript for Transcript {
@@ -48,8 +49,16 @@ impl BatchTranscript for Transcript {
     /// Each is also prefixed with their index in the vector.
     fn append_hrams(&mut self, hrams: &Vec<Scalar>) {
         for (i, hram) in hrams.iter().enumerate() {
+            // XXX add message length into transcript
             self.append_u64(b"", i as u64);
             self.append_message(b"hram", hram.as_bytes());
+        }
+    }
+
+    fn append_message_lengths(&mut self, message_lengths: &Vec<usize>) {
+        for (i, len) in message_lengths.iter().enumerate() {
+            self.append_u64(b"", i as u64);
+            self.append_u64(b"mlen", len as u64);
         }
     }
 }
@@ -154,6 +163,9 @@ pub fn verify_batch(
         Scalar::from_hash(h)
     }).collect();
 
+    // Collect the message lengths to add into the transcript.
+    let message_lengths: Vec<usize> = messages.iter().map(|i| i.len()).collect();
+
     // Build a PRNG based on a transcript of the H(R || A || M)s seen thus far.
     // This provides synthethic randomness in the default configuration, and
     // purely deterministic in the case of compiling with the
@@ -161,6 +173,7 @@ pub fn verify_batch(
     let transcript: Transcript = Transcript::new(b"ed25519 batch verification");
 
     transcript.append_hrams(&hrams);
+    transcript.append_message_lengths(&message_lengths);
 
     #[cfg(all(feature = "batch", not(feature = "batch_deterministic")))]
     let mut prng = transcript.build_rng().finalize(&mut thread_rng());

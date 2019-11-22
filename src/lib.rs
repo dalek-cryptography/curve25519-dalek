@@ -241,6 +241,8 @@ extern crate std;
 extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+extern crate merlin;
 #[cfg(any(feature = "batch", feature = "std", feature = "alloc", test))]
 extern crate rand;
 #[cfg(feature = "serde")]

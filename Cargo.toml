@@ -23,7 +23,8 @@ features = ["nightly", "batch"]
 
 [dependencies]
 clear_on_drop = { version = "0.2" }
-curve25519-dalek = { version = "1", default-features = false }
+curve25519-dalek = { version = "2.0.0-alpha.1", default-features = false }
+merlin = { version = "1", default-features = false, optional = true }
 rand = { version = "0.7", default-features = false, optional = true }
 serde = { version = "1.0", optional = true }
 sha2 = { version = "0.8", default-features = false }
@@ -46,11 +47,14 @@ default = ["std", "u64_backend"]
 std = ["curve25519-dalek/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc"]
 nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly", "rand/nightly"]
-batch = ["rand"]
+batch = ["merlin", "rand"]
+# This feature enables deterministic batch verification.
+batch_deterministic = ["merlin", "rand"]
 asm = ["sha2/asm"]
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []
-yolocrypto = ["curve25519-dalek/yolocrypto"]
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]
+# Deprecated curve25519-dalek feature, use "simd_backend" instead:
 avx2_backend = ["curve25519-dalek/avx2_backend"]
+simd_backend = ["curve25519-dalek/simd_backend"]

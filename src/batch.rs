@@ -170,7 +170,7 @@ pub fn verify_batch(
     // Select a random 128-bit scalar for each signature.
     let zs: Vec<Scalar> = signatures
         .iter()
-        .map(|_| Scalar::from(thread_rng().gen::<u128>()))
+        .map(|_| Scalar::from(prng.gen::<u128>()))
         .collect();
 
 

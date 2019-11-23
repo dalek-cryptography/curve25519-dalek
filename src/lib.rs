@@ -249,7 +249,7 @@ extern crate rand;
 extern crate serde;
 extern crate sha2;
 
-#[cfg(all(feature = "batch", any(feature = "std", feature = "alloc")))]
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
 mod batch;
 mod constants;
 mod ed25519;
@@ -260,3 +260,5 @@ mod signature;
 
 // Export everything public in ed25519.
 pub use crate::ed25519::*;
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+pub use crate::batch::*;

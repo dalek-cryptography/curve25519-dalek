@@ -26,10 +26,11 @@ pub use curve25519_dalek::digest::Digest;
 
 use merlin::Transcript;
 
+use rand::Rng;
 #[cfg(all(feature = "batch", not(feature = "batch_deterministic")))]
-use rand::{Rng, thread_rng};
+use rand::thread_rng;
 #[cfg(all(not(feature = "batch"), feature = "batch_deterministic"))]
-use rand::{CryptoRng, RngCore};
+use rand_core;
 
 use sha2::Sha512;
 
@@ -58,7 +59,7 @@ impl BatchTranscript for Transcript {
     fn append_message_lengths(&mut self, message_lengths: &Vec<usize>) {
         for (i, len) in message_lengths.iter().enumerate() {
             self.append_u64(b"", i as u64);
-            self.append_u64(b"mlen", len as u64);
+            self.append_u64(b"mlen", *len as u64);
         }
     }
 }
@@ -79,7 +80,15 @@ impl rand_core::RngCore for ZeroRng {
         rand_core::impls::next_u64_via_fill(self)
     }
 
-    fn fill_bytes(&mut self, dest: &mut [u8]) { }
+    /// A no-op function which leaves the destination bytes for randomness unchanged.
+    ///
+    /// In this case, the internal merlin code is initialising the destination
+    /// by doing `[0u8; …]`, which means that when we call
+    /// `merlin::TranscriptRngBuilder.finalize()`, rather than rekeying the
+    /// STROBE state based on external randomness, we're doing an
+    /// `ENC_{state}(00000000000000000000000000000000)` operation, which is
+    /// identical to the STROBE `MAC` operation.
+    fn fill_bytes(&mut self, _dest: &mut [u8]) { }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
         self.fill_bytes(dest);
@@ -92,7 +101,7 @@ impl rand_core::CryptoRng for ZeroRng {}
 
 #[cfg(all(not(feature = "batch"), feature = "batch_deterministic"))]
 fn zero_rng() -> ZeroRng {
-    ZeroRng
+    ZeroRng {}
 }
 
 /// Verify a batch of `signatures` on `messages` with their respective `public_keys`.
@@ -170,7 +179,7 @@ pub fn verify_batch(
     // This provides synthethic randomness in the default configuration, and
     // purely deterministic in the case of compiling with the
     // "batch_deterministic" feature.
-    let transcript: Transcript = Transcript::new(b"ed25519 batch verification");
+    let mut transcript: Transcript = Transcript::new(b"ed25519 batch verification");
 
     transcript.append_hrams(&hrams);
     transcript.append_message_lengths(&message_lengths);

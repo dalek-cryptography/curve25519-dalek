@@ -14,14 +14,14 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use clear_on_drop::clear::Clear;
-
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
+
+use zeroize::Zeroize;
 
 /// A `PublicKey` is the corresponding public key converted from
 /// an `EphemeralSecret` or a `StaticSecret` key.
@@ -50,14 +50,9 @@ impl PublicKey {
 
 /// A `EphemeralSecret` is a short lived Diffie-Hellman secret key
 /// used to create a `SharedSecret` when given their `PublicKey`.
+#[derive(Zeroize)]
+#[zeroize(drop)]
 pub struct EphemeralSecret(pub(crate) Scalar);
-
-/// Overwrite ephemeral secret key material with null bytes when it goes out of scope.
-impl Drop for EphemeralSecret {
-    fn drop(&mut self) {
-        self.0.clear();
-    }
-}
 
 impl EphemeralSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
@@ -95,17 +90,11 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
     feature = "serde",
     derive(our_serde::Serialize, our_serde::Deserialize)
 )]
-#[derive(Clone)]
+#[derive(Clone, Zeroize)]
+#[zeroize(drop)]
 pub struct StaticSecret(
     #[cfg_attr(feature = "serde", serde(with = "AllowUnreducedScalarBytes"))] pub(crate) Scalar,
 );
-
-/// Overwrite static secret key material with null bytes when it goes out of scope.
-impl Drop for StaticSecret {
-    fn drop(&mut self) {
-        self.0.clear();
-    }
-}
 
 impl StaticSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
@@ -149,14 +138,9 @@ impl<'a> From<&'a StaticSecret> for PublicKey {
 
 /// A `SharedSecret` is a Diffie-Hellman shared secret that’s generated
 /// from your `EphemeralSecret` or `StaticSecret` and their `PublicKey`.
+#[derive(Zeroize)]
+#[zeroize(drop)]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
-
-/// Overwrite shared secret material with null bytes when it goes out of scope.
-impl Drop for SharedSecret {
-    fn drop(&mut self) {
-        self.0.clear();
-    }
-}
 
 impl SharedSecret {
     /// View this shared secret key as a byte array.

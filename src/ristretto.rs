@@ -230,15 +230,20 @@ impl CompressedRistretto {
 
     /// Construct a `CompressedRistretto` from a slice of bytes.
     ///
-    /// # Panics
+    /// # Returns
     ///
-    /// If the input `bytes` slice does not have a length of 32.
-    pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
+    /// An `Option<CompressedRistretto>` which is `None` if the input `bytes`
+    /// slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> Option<CompressedRistretto> {
+        if bytes.len() != 32 {
+            return None;
+        }
+
         let mut tmp = [0u8; 32];
 
         tmp.copy_from_slice(bytes);
 
-        CompressedRistretto(tmp)
+        Some(CompressedRistretto(tmp))
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.

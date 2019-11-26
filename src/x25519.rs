@@ -203,17 +203,16 @@ impl From<AllowUnreducedScalarBytes> for Scalar {
 mod test {
     use super::*;
 
-    use rand_os::OsRng;
+    use rand_core::OsRng;
 
     // This was previously a doctest but it got moved to the README to
     // avoid duplication where it then wasn't being run, so now it
     // lives here.
     #[test]
     fn alice_and_bob() {
-        let mut csprng = OsRng::new().unwrap();
-        let alice_secret = EphemeralSecret::new(&mut csprng);
+        let alice_secret = EphemeralSecret::new(&mut OsRng);
         let alice_public = PublicKey::from(&alice_secret);
-        let bob_secret = EphemeralSecret::new(&mut csprng);
+        let bob_secret = EphemeralSecret::new(&mut OsRng);
         let bob_public = PublicKey::from(&bob_secret);
         let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
         let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);

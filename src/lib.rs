@@ -30,9 +30,6 @@ extern crate rand_core;
 
 extern crate zeroize;
 
-#[cfg(test)]
-extern crate rand_os;
-
 mod x25519;
 
 pub use crate::x25519::*;

@@ -241,12 +241,16 @@ extern crate std;
 extern crate alloc;
 extern crate clear_on_drop;
 extern crate curve25519_dalek;
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+extern crate merlin;
 #[cfg(any(feature = "batch", feature = "std", feature = "alloc", test))]
 extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
 extern crate sha2;
 
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+mod batch;
 mod constants;
 mod ed25519;
 mod errors;
@@ -256,3 +260,5 @@ mod signature;
 
 // Export everything public in ed25519.
 pub use crate::ed25519::*;
+#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+pub use crate::batch::*;

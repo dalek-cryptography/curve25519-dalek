@@ -24,15 +24,12 @@
 //! Note that docs will only build on nightly Rust until
 //! `feature(external_doc)` is stabilized.
 
-extern crate clear_on_drop;
-
 extern crate curve25519_dalek;
 
 extern crate rand_core;
 
-#[cfg(test)]
-extern crate rand_os;
+extern crate zeroize;
 
 mod x25519;
 
-pub use x25519::*;
+pub use crate::x25519::*;

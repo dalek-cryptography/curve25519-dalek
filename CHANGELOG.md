@@ -2,6 +2,13 @@
 
 Entries are listed in reverse chronological order.
 
+## 0.6.0
+
+* Updates `rand_core` version to `0.5`.
+* Adds `serde` support.
+* Replaces `clear_on_drop` with `zeroize`.
+* Use Rust 2018.
+
 ## 0.5.2
 
 * Implement `Clone` for `StaticSecret`.

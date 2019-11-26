@@ -247,7 +247,7 @@ mod ristretto_benches {
         c.bench_function_over_inputs(
             "Batch Ristretto double-and-encode",
             |b, &&size| {
-                let mut rng = OsRng::new().unwrap();
+                let mut rng = OsRng;
                 let points: Vec<RistrettoPoint> = (0..size)
                     .map(|_| RistrettoPoint::random(&mut rng))
                     .collect();
@@ -299,7 +299,7 @@ mod scalar_benches {
         c.bench_function_over_inputs(
             "Batch scalar inversion",
             |b, &&size| {
-                let mut rng = OsRng::new().unwrap();
+                let mut rng = OsRng;
                 let scalars: Vec<Scalar> = (0..size).map(|_| Scalar::random(&mut rng)).collect();
                 b.iter(|| {
                     let mut s = scalars.clone();

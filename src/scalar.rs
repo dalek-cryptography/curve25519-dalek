@@ -160,6 +160,8 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use backend;
 use constants;
 
@@ -522,6 +524,12 @@ impl From<u128> for Scalar {
     }
 }
 
+impl Zeroize for Scalar {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
+    }
+}
+
 impl Scalar {
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
@@ -536,15 +544,15 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// extern crate rand_os;
+    /// extern crate rand_core;
     /// # extern crate curve25519_dalek;
     /// #
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_os::OsRng;
+    /// use rand_core::OsRng;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
     pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {

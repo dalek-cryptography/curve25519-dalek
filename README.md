@@ -7,6 +7,15 @@ verification in Rust.
 
 Documentation is available [here](https://docs.rs/ed25519-dalek).
 
+# Installation
+
+To install, add the following to your project's `Cargo.toml`:
+
+```toml
+[dependencies.ed25519-dalek]
+version = "1"
+```
+
 # Benchmarks
 
 On an Intel Skylake i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
@@ -89,14 +98,20 @@ can read qhasm, making it more readily and more easily auditable.  We're of
 the opinion that, ultimately, these features—combined with speed—are more
 valuable than simply cycle counts alone.
 
-### A Note on Signature Malleability
+# A Note on Signature Malleability
 
 The signatures produced by this library are malleable, as discussed in
 [the original paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf):
 
 ![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/ed25519-malleability.png)
 
-We could eliminate the malleability property by multiplying by the curve
+While the scalar component of our `Signature` struct is strictly *not*
+malleable, because reduction checks are put in place upon `Signature`
+deserialisation from bytes, for all types of signatures in this crate,
+there is still the question of potential malleability due to the group
+element components.
+
+We could eliminate the latter malleability property by multiplying by the curve
 cofactor, however, this would cause our implementation to *not* match the
 behaviour of every other implementation in existence.  As of this writing,
 [RFC 8032](https://tools.ietf.org/html/rfc8032), "Edwards-Curve Digital
@@ -105,29 +120,97 @@ While we agree that the stronger check should be done, it is our opinion that
 one shouldn't get to change the definition of "ed25519 verification" a decade
 after the fact, breaking compatibility with every other implementation.
 
-In short, if malleable signatures are bad for your protocol, don't use them.
-Consider using a curve25519-based Verifiable Random Function (VRF), such as
-[Trevor Perrin's VXEdDSA](https://www.whispersystems.org/docs/specifications/xeddsa/),
-instead.  We
-[plan](https://github.com/dalek-cryptography/curve25519-dalek/issues/9) to
-eventually support VXEdDSA in curve25519-dalek.
+However, if you require this, please see the documentation for the
+`verify_strict()` function, which does the full checks for the group elements.
+This functionality is available by default.
 
-# Installation
+If for some reason—although we strongely advise you not to—you need to conform
+to the original specification of ed25519 signatures as in the excerpt from the
+paper above, you can disable scalar malleability checking via
+`--features='legacy_compatibility'`.  **WE STRONGLY ADVISE AGAINST THIS.**
 
-To install, add the following to your project's `Cargo.toml`:
+## The `legacy_compatibility` Feature
 
-```toml
-[dependencies.ed25519-dalek]
-version = "1"
-```
+By default, this library performs a stricter check for malleability in the
+scalar component of a signature, upon signature deserialisation.  This stricter
+check, that `s < \ell` where `\ell` is the order of the basepoint, is
+[mandated by RFC8032](https://tools.ietf.org/html/rfc8032#section-5.1.7).
+However, that RFC was standardised a decade after the original paper, which, as
+described above, (usually, falsely) stated that malleability was inconsequential.
 
-Then, in your library or executable source, add:
+Because of this, most ed25519 implementations only perform a limited, hackier
+check that the most significant three bits of the scalar are unset.  If you need
+compatibility with legacy implementations, including:
 
-```rust
-extern crate ed25519_dalek;
-```
+* ed25519-donna
+* Golang's /x/crypto ed25519
+* libsodium (only when built with `-DED25519_COMPAT`)
+* NaCl's "ref" implementation
+* probably a bunch of others
+
+then enable `ed25519-dalek`'s `legacy_compatibility` feature.  Please note and
+be forewarned that doing so allows for signature malleability, meaning that
+there may be two different and "valid" signatures with the same key for the same
+message, which is obviously incredibly dangerous in a number of contexts,
+including—but not limited to—identification protocols and cryptocurrency
+transactions.
+
+## The `verify_strict()` Function
+
+The scalar component of a signature is not the only source of signature
+malleability, however.  Both the public key used for signature verification and
+the group element component of the signature are malleable, as they may contain
+a small torsion component as a consquence of the curve25519 group not being of
+prime order, but having a small cofactor of 8.
+
+If you wish to also eliminate this source of signature malleability, please
+review the
+[documentation for the `verify_strict()` function](https://doc.dalek.rs/ed25519_dalek/struct.PublicKey.html#method.verify_strict).
+
+# A Note on Randomness Generation
+
+The original paper's specification and the standarisation of RFC8032 do not
+specify precisely how randomness is to be generated, other than using a CSPRNG
+(Cryptographically Secure Random Number Generator).  Particularly in the case of
+signature verification, where the security proof _relies_ on the uniqueness of
+the blinding factors/nonces, it is paramount that these samples of randomness be
+unguessable to an adversary.  Because of this, a current growing belief among
+cryptographers is that it is safer to prefer _synthetic randomness_.
+
+To explain synthetic randomness, we should first explain how `ed25519-dalek`
+handles generation of _deterministic randomness_.  This mode is disabled by
+default due to a tiny-but-not-nonexistent chance that this mode will open users
+up to fault attacks, wherein an adversary who controls all of the inputs to
+batch verification (i.e. the public keys, signatures, and messages) can craft
+them in a specialised manner such as to induce a fault (e.g. causing a
+mistakenly flipped bit in RAM, overheating a processor, etc.).  In the
+deterministic mode, we seed the PRNG which generates our blinding factors/nonces
+by creating
+[a PRNG based on the Fiat-Shamir transform of the public inputs](https://merlin.cool/transcript/rng.html).
+This mode is potentially useful to protocols which require strong auditability
+guarantees, as well as those which do not have access to secure system-/chip-
+provided randomness.  This feature can be enabled via
+`--features='batch_deterministic'`.  Note that we _do not_ support deterministic
+signing, due to the numerous pitfalls therein, including a re-used nonce
+accidentally revealing the secret key.
+
+In the default mode, we do as above in the fully deterministic mode, but we
+ratchet the underlying keccak-f1600 function (used for the provided
+transcript-based PRNG) forward additionally based on some system-/chip- provided
+randomness.  This provides _synthetic randomness_, that is, randomness based on
+both deterministic and undeterinistic data.  The reason for doing this is to
+prevent badly seeded system RNGs from ruining the security of the signature
+verification scheme.
 
 # Features
+
+## #![no_std]
+
+This library aims to be `#![no_std]` compliant.  If batch verification is
+required (`--features='batch'`), please enable either of the `std` or `alloc`
+features.
+
+## Nightly Compilers
 
 To cause your application to build `ed25519-dalek` with the nightly feature
 enabled by default, instead do:
@@ -147,19 +230,31 @@ to the `Cargo.toml`:
 nightly = ["ed25519-dalek/nightly"]
 ```
 
-To enable [serde](https://serde.rs) support, build `ed25519-dalek` with:
+## Serde
 
-```toml
-[dependencies.ed25519-dalek]
-version = "1"
-features = ["serde"]
-```
+To enable [serde](https://serde.rs) support, build `ed25519-dalek` with the
+`serde` feature.
+
+## (Micro)Architecture Specific Backends
 
 By default, `ed25519-dalek` builds against `curve25519-dalek`'s `u64_backend`
 feature, which uses Rust's `i128` feature to achieve roughly double the speed as
 the `u32_backend` feature.  When targetting 32-bit systems, however, you'll
-likely want to compile with
- `cargo build --no-default-features --features="u32_backend"`.
-If you're building for a machine with avx2 instructions, there's also the
-experimental `avx2_backend`.  To use it, compile with
-`RUSTFLAGS="-C target_cpu=native" cargo build --no-default-features --features="avx2_backend"`
+likely want to compile with `cargo build --no-default-features
+--features="u32_backend"`.  If you're building for a machine with avx2
+instructions, there's also the experimental `simd_backend`s, currently
+comprising either avx2 or avx512 backends.  To use them, compile with
+`RUSTFLAGS="-C target_cpu=native" cargo build --no-default-features
+--features="simd_backend"`
+
+## Batch Signature Verification
+
+The standard variants of batch signature verification (i.e. many signatures made
+with potentially many different public keys over potentially many different
+message) is available via the `batch` feature.  It uses synthetic randomness, as
+noted above.
+
+### Deterministic Batch Signature Verification
+
+The same notion of batch signature verification as above, but with purely
+deterministic randomness can be enabled via the `batch_deterministic` feature.

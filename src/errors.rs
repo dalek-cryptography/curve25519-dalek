@@ -16,6 +16,9 @@
 use core::fmt;
 use core::fmt::Display;
 
+#[cfg(feature = "std")]
+use std::error::Error;
+
 /// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -33,6 +36,11 @@ pub(crate) enum InternalError {
     },
     /// The verification equation wasn't satisfied
     VerifyError,
+    /// Two arrays did not match in size, making the called signature
+    /// verification method impossible.
+    ArrayLengthError{ name_a: &'static str, length_a: usize,
+                      name_b: &'static str, length_b: usize,
+                      name_c: &'static str, length_c: usize, },
 }
 
 impl Display for InternalError {
@@ -46,11 +54,17 @@ impl Display for InternalError {
                 => write!(f, "{} must be {} bytes in length", n, l),
             InternalError::VerifyError
                 => write!(f, "Verification equation was not satisfied"),
+            InternalError::ArrayLengthError{ name_a: na, length_a: la,
+                                             name_b: nb, length_b: lb,
+                                             name_c: nc, length_c: lc, }
+                => write!(f, "Arrays must be the same length: {} has length {},
+                              {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
         }
     }
 }
 
-impl ::failure::Fail for InternalError {}
+#[cfg(feature = "std")]
+impl Error for InternalError { }
 
 /// Errors which may occur while processing signatures and keypairs.
 ///
@@ -75,8 +89,9 @@ impl Display for SignatureError {
     }
 }
 
-impl ::failure::Fail for SignatureError {
-    fn cause(&self) -> Option<&dyn (::failure::Fail)> {
+#[cfg(feature = "std")]
+impl Error for SignatureError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&self.0)
     }
 }

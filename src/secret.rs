@@ -19,7 +19,7 @@ use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 
-use rand_core::{CryptoRng, RngCore};
+use rand::{CryptoRng, RngCore};
 
 use sha2::Sha512;
 
@@ -125,18 +125,18 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// extern crate rand_os;
+    /// extern crate rand;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::PublicKey;
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::Signature;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// # }
     /// #
@@ -147,17 +147,17 @@ impl SecretKey {
     /// Afterwards, you can generate the corresponding public:
     ///
     /// ```
-    /// # extern crate rand_os;
+    /// # extern crate rand;
     /// # extern crate ed25519_dalek;
     /// #
     /// # fn main() {
     /// #
-    /// # use rand_os::OsRng;
+    /// # use rand::rngs::OsRng;
     /// # use ed25519_dalek::PublicKey;
     /// # use ed25519_dalek::SecretKey;
     /// # use ed25519_dalek::Signature;
     /// #
-    /// # let mut csprng = OsRng::new().unwrap();
+    /// # let mut csprng = OsRng{};
     /// # let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     ///
     /// let public_key: PublicKey = (&secret_key).into();
@@ -270,18 +270,16 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand_core;
-    /// # extern crate rand_os;
+    /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # fn main() {
     /// #
-    /// use rand_core::RngCore;
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
-    /// let mut csprng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
     /// # }
@@ -318,17 +316,17 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand_os;
+    /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
     /// let expanded_secret_key_bytes: [u8; 64] = expanded_secret_key.to_bytes();
@@ -358,7 +356,7 @@ impl ExpandedSecretKey {
     /// # Examples
     ///
     /// ```
-    /// # extern crate rand_os;
+    /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
     /// #
@@ -367,11 +365,11 @@ impl ExpandedSecretKey {
     /// # #[cfg(feature = "std")]
     /// # fn do_test() -> Result<ExpandedSecretKey, SignatureError> {
     /// #
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
     /// use ed25519_dalek::SignatureError;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
     /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
     /// let bytes: [u8; 64] = expanded_secret_key.to_bytes();
@@ -454,11 +452,11 @@ impl ExpandedSecretKey {
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[allow(non_snake_case)]
-    pub fn sign_prehashed<D>(
+    pub fn sign_prehashed<'a, D>(
         &self,
         prehashed_message: D,
         public_key: &PublicKey,
-        context: Option<&'static [u8]>,
+        context: Option<&'a [u8]>,
     ) -> Signature
     where
         D: Digest<OutputSize = U64>,

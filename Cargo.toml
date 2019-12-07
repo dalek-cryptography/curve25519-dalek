@@ -1,6 +1,7 @@
 [package]
 name = "ed25519-dalek"
-version = "1.0.0-pre.2"
+version = "1.0.0-pre.3"
+edition = "2018"
 authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -15,45 +16,25 @@ exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
 [badges]
 travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
 
-[dependencies.curve25519-dalek]
-version = "1"
-default-features = false
+[package.metadata.docs.rs]
+# Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
+# rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
+features = ["nightly", "batch"]
 
-[dependencies.rand_core]
-version = "0.3"
-default-features = false
-
-[dependencies.rand]
-version = "0.6"
-features = ["i128_support"]
-default-features = false
-optional = true
-
-[dependencies.rand_os]
-version = "0.1"
-optional = true
-
-[dependencies.serde]
-version = "^1.0"
-optional = true
-
-[dependencies.sha2]
-version = "^0.8"
-default-features = false
-
-[dependencies.failure]
-version = "^0.1.1"
-default-features = false
-
-[dependencies.clear_on_drop]
-version = "0.2"
+[dependencies]
+clear_on_drop = { version = "0.2" }
+curve25519-dalek = { version = "2", default-features = false }
+merlin = { version = "1", default-features = false, optional = true, git = "https://github.com/isislovecruft/merlin", branch = "develop" }
+rand = { version = "0.7", default-features = false, optional = true }
+rand_core = { version = "0.5", default-features = false, optional = true }
+serde = { version = "1.0", optional = true }
+sha2 = { version = "0.8", default-features = false }
 
 [dev-dependencies]
-hex = "^0.3"
+hex = "^0.4"
 bincode = "^0.9"
-criterion = "0.2"
-rand = "0.6"
-rand_os = "0.1"
+criterion = "0.3"
+rand = "0.7"
 
 [[bench]]
 name = "ed25519_benchmarks"
@@ -64,12 +45,15 @@ harness = false
 
 [features]
 default = ["std", "u64_backend"]
-std = ["curve25519-dalek/std", "rand_os", "sha2/std"]
-alloc = ["curve25519-dalek/alloc", "rand_os"]
-nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly"]
-batch = ["rand"]
+std = ["curve25519-dalek/std", "sha2/std", "rand/std"]
+alloc = ["curve25519-dalek/alloc", "rand/alloc"]
+nightly = ["curve25519-dalek/nightly", "clear_on_drop/nightly", "rand/nightly"]
+batch = ["merlin", "rand"]
+# This feature enables deterministic batch verification.
+batch_deterministic = ["merlin", "rand", "rand_core"]
 asm = ["sha2/asm"]
-yolocrypto = ["curve25519-dalek/yolocrypto"]
+# This features turns off stricter checking for scalar malleability in signatures
+legacy_compatibility = []
 u64_backend = ["curve25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend"]
-avx2_backend = ["curve25519-dalek/avx2_backend"]
+simd_backend = ["curve25519-dalek/simd_backend"]

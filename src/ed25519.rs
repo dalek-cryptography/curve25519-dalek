@@ -7,150 +7,31 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-//! ed25519 keypairs and batch verification.
+//! ed25519 keypairs.
 
-#[allow(unused_imports)]
 use core::default::Default;
 
-use rand_core::{CryptoRng, RngCore};
+use rand::{CryptoRng, RngCore};
 
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use serde::{Deserializer, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub use sha2::Sha512;
 
 use curve25519_dalek::digest::generic_array::typenum::U64;
 pub use curve25519_dalek::digest::Digest;
 
-#[cfg(all(feature = "batch", any(feature = "alloc", feature = "std")))]
-use curve25519_dalek::constants;
-#[cfg(all(feature = "batch", any(feature = "alloc", feature = "std")))]
-use curve25519_dalek::edwards::EdwardsPoint;
-#[cfg(all(feature = "batch", any(feature = "alloc", feature = "std")))]
-use curve25519_dalek::scalar::Scalar;
-
+#[cfg(all(feature = "batch", any(feature = "std", feature = "alloc")))]
+pub use crate::batch::*;
 pub use crate::constants::*;
 pub use crate::errors::*;
 pub use crate::public::*;
 pub use crate::secret::*;
 pub use crate::signature::*;
-
-/// Verify a batch of `signatures` on `messages` with their respective `public_keys`.
-///
-/// # Inputs
-///
-/// * `messages` is a slice of byte slices, one per signed message.
-/// * `signatures` is a slice of `Signature`s.
-/// * `public_keys` is a slice of `PublicKey`s.
-/// * `csprng` is an implementation of `Rng + CryptoRng`.
-///
-/// # Panics
-///
-/// This function will panic if the `messages, `signatures`, and `public_keys`
-/// slices are not equal length.
-///
-/// # Returns
-///
-/// * A `Result` whose `Ok` value is an emtpy tuple and whose `Err` value is a
-///   `SignatureError` containing a description of the internal error which
-///   occured.
-///
-/// # Examples
-///
-/// ```
-/// extern crate ed25519_dalek;
-/// extern crate rand_os;
-///
-/// use ed25519_dalek::verify_batch;
-/// use ed25519_dalek::Keypair;
-/// use ed25519_dalek::PublicKey;
-/// use ed25519_dalek::Signature;
-/// use rand_os::OsRng;
-///
-/// # fn main() {
-/// let mut csprng: OsRng = OsRng::new().unwrap();
-/// let keypairs: Vec<Keypair> = (0..64).map(|_| Keypair::generate(&mut csprng)).collect();
-/// let msg: &[u8] = b"They're good dogs Brant";
-/// let messages: Vec<&[u8]> = (0..64).map(|_| msg).collect();
-/// let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign(&msg)).collect();
-/// let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
-///
-/// let result = verify_batch(&messages[..], &signatures[..], &public_keys[..]);
-/// assert!(result.is_ok());
-/// # }
-/// ```
-#[cfg(all(feature = "batch", any(feature = "alloc", feature = "std")))]
-#[allow(non_snake_case)]
-pub fn verify_batch(
-    messages: &[&[u8]],
-    signatures: &[Signature],
-    public_keys: &[PublicKey],
-) -> Result<(), SignatureError>
-{
-    const ASSERT_MESSAGE: &'static str = "The number of messages, signatures, and public keys must be equal.";
-    assert!(signatures.len()  == messages.len(),    ASSERT_MESSAGE);
-    assert!(signatures.len()  == public_keys.len(), ASSERT_MESSAGE);
-    assert!(public_keys.len() == messages.len(),    ASSERT_MESSAGE);
-
-    #[cfg(feature = "alloc")]
-    use alloc::vec::Vec;
-    #[cfg(feature = "std")]
-    use std::vec::Vec;
-
-    use core::iter::once;
-    use rand::{Rng, thread_rng};
-
-    use curve25519_dalek::traits::IsIdentity;
-    use curve25519_dalek::traits::VartimeMultiscalarMul;
-
-    // Select a random 128-bit scalar for each signature.
-    let zs: Vec<Scalar> = signatures
-        .iter()
-        .map(|_| Scalar::from(thread_rng().gen::<u128>()))
-        .collect();
-
-    // Compute the basepoint coefficient, ∑ s[i]z[i] (mod l)
-    let B_coefficient: Scalar = signatures
-        .iter()
-        .map(|sig| sig.s)
-        .zip(zs.iter())
-        .map(|(s, z)| z * s)
-        .sum();
-
-    // Compute H(R || A || M) for each (signature, public_key, message) triplet
-    let hrams = (0..signatures.len()).map(|i| {
-        let mut h: Sha512 = Sha512::default();
-        h.input(signatures[i].R.as_bytes());
-        h.input(public_keys[i].as_bytes());
-        h.input(&messages[i]);
-        Scalar::from_hash(h)
-    });
-
-    // Multiply each H(R || A || M) by the random value
-    let zhrams = hrams.zip(zs.iter()).map(|(hram, z)| hram * z);
-
-    let Rs = signatures.iter().map(|sig| sig.R.decompress());
-    let As = public_keys.iter().map(|pk| Some(pk.1));
-    let B = once(Some(constants::ED25519_BASEPOINT_POINT));
-
-    // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i]H(R||A||M)[i] (mod l)) A[i] = 0
-    let id = EdwardsPoint::optional_multiscalar_mul(
-        once(-B_coefficient).chain(zs.iter().cloned()).chain(zhrams),
-        B.chain(Rs).chain(As),
-    ).ok_or_else(|| SignatureError(InternalError::VerifyError))?;
-
-    if id.is_identity() {
-        Ok(())
-    } else {
-        Err(SignatureError(InternalError::VerifyError))
-    }
-}
 
 /// An ed25519 keypair.
 #[derive(Debug, Default)] // we derive Default in order to use the clear() method in Drop
@@ -216,19 +97,17 @@ impl Keypair {
     /// # Example
     ///
     /// ```
-    /// extern crate rand_core;
-    /// extern crate rand_os;
+    /// extern crate rand;
     /// extern crate ed25519_dalek;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     ///
-    /// use rand_core::{CryptoRng, RngCore};
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     ///
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     ///
     /// # }
@@ -283,17 +162,17 @@ impl Keypair {
     ///
     /// ```
     /// extern crate ed25519_dalek;
-    /// extern crate rand_os;
+    /// extern crate rand;
     ///
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Sha512;
     /// use ed25519_dalek::Signature;
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
-    /// let mut csprng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -330,17 +209,17 @@ impl Keypair {
     ///
     /// ```
     /// # extern crate ed25519_dalek;
-    /// # extern crate rand_os;
+    /// # extern crate rand;
     /// #
     /// # use ed25519_dalek::Digest;
     /// # use ed25519_dalek::Keypair;
     /// # use ed25519_dalek::Signature;
     /// # use ed25519_dalek::Sha512;
-    /// # use rand_os::OsRng;
+    /// # use rand::rngs::OsRng;
     /// #
     /// # #[cfg(feature = "std")]
     /// # fn main() {
-    /// # let mut csprng: OsRng = OsRng::new().unwrap();
+    /// # let mut csprng = OsRng{};
     /// # let keypair: Keypair = Keypair::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
     /// # let mut prehashed: Sha512 = Sha512::new();
@@ -360,7 +239,7 @@ impl Keypair {
     pub fn sign_prehashed<D>(
         &self,
         prehashed_message: D,
-        context: Option<&'static [u8]>,
+        context: Option<&[u8]>,
     ) -> Signature
     where
         D: Digest<OutputSize = U64>,
@@ -401,17 +280,17 @@ impl Keypair {
     ///
     /// ```
     /// extern crate ed25519_dalek;
-    /// extern crate rand_os;
+    /// extern crate rand;
     ///
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
     /// use ed25519_dalek::Sha512;
-    /// use rand_os::OsRng;
+    /// use rand::rngs::OsRng;
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
-    /// let mut csprng: OsRng = OsRng::new().unwrap();
+    /// let mut csprng = OsRng{};
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -446,6 +325,78 @@ impl Keypair {
         D: Digest<OutputSize = U64>,
     {
         self.public.verify_prehashed(prehashed_message, context, signature)
+    }
+
+    /// Strictly verify a signature on a message with this keypair's public key.
+    ///
+    /// # On The (Multiple) Sources of Malleability in Ed25519 Signatures
+    ///
+    /// This version of verification is technically non-RFC8032 compliant.  The
+    /// following explains why.
+    ///
+    /// 1. Scalar Malleability
+    ///
+    /// The authors of the RFC explicitly stated that verification of an ed25519
+    /// signature must fail if the scalar `s` is not properly reduced mod \ell:
+    ///
+    /// > To verify a signature on a message M using public key A, with F
+    /// > being 0 for Ed25519ctx, 1 for Ed25519ph, and if Ed25519ctx or
+    /// > Ed25519ph is being used, C being the context, first split the
+    /// > signature into two 32-octet halves.  Decode the first half as a
+    /// > point R, and the second half as an integer S, in the range
+    /// > 0 <= s < L.  Decode the public key A as point A'.  If any of the
+    /// > decodings fail (including S being out of range), the signature is
+    /// > invalid.)
+    ///
+    /// All `verify_*()` functions within ed25519-dalek perform this check.
+    ///
+    /// 2. Point malleability
+    ///
+    /// The authors of the RFC added in a malleability check to step #3 in
+    /// §5.1.7, for small torsion components in the `R` value of the signature,
+    /// *which is not strictly required*, as they state:
+    ///
+    /// > Check the group equation \[8\]\[S\]B = \[8\]R + \[8\]\[k\]A'.  It's
+    /// > sufficient, but not required, to instead check \[S\]B = R + \[k\]A'.
+    ///
+    /// # History of Malleability Checks
+    ///
+    /// As originally defined (cf. the "Malleability" section in the README of
+    /// this repo), ed25519 signatures didn't consider *any* form of
+    /// malleability to be an issue.  Later the scalar malleability was
+    /// considered important.  Still later, particularly with interests in
+    /// cryptocurrency design and in unique identities (e.g. for Signal users,
+    /// Tor onion services, etc.), the group element malleability became a
+    /// concern.
+    ///
+    /// However, libraries had already been created to conform to the original
+    /// definition.  One well-used library in particular even implemented the
+    /// group element malleability check, *but only for batch verification*!
+    /// Which meant that even using the same library, a single signature could
+    /// verify fine individually, but suddenly, when verifying it with a bunch
+    /// of other signatures, the whole batch would fail!
+    ///
+    /// # "Strict" Verification
+    ///
+    /// This method performs *both* of the above signature malleability checks.
+    ///
+    /// It must be done as a separate method because one doesn't simply get to
+    /// change the definition of a cryptographic primitive ten years
+    /// after-the-fact with zero consideration for backwards compatibility in
+    /// hardware and protocols which have it already have the older definition
+    /// baked in.
+    ///
+    /// # Return
+    ///
+    /// Returns `Ok(())` if the signature is valid, and `Err` otherwise.
+    #[allow(non_snake_case)]
+    pub fn verify_strict(
+        &self,
+        message: &[u8],
+        signature: &Signature,
+    ) -> Result<(), SignatureError>
+    {
+        self.public.verify_strict(message, signature)
     }
 }
 

@@ -34,7 +34,7 @@ pub use crate::secret::*;
 pub use crate::signature::*;
 
 /// An ed25519 keypair.
-#[derive(Debug, Default)] // we derive Default in order to use the clear() method in Drop
+#[derive(Debug)]
 pub struct Keypair {
     /// The secret half of this keypair.
     pub secret: SecretKey,
@@ -442,28 +442,5 @@ impl<'d> Deserialize<'d> for Keypair {
             }
         }
         deserializer.deserialize_bytes(KeypairVisitor)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    use clear_on_drop::clear::Clear;
-
-    #[test]
-    fn keypair_clear_on_drop() {
-        let mut keypair: Keypair = Keypair::from_bytes(&[1u8; KEYPAIR_LENGTH][..]).unwrap();
-
-        keypair.clear();
-
-        fn as_bytes<T>(x: &T) -> &[u8] {
-            use std::mem;
-            use std::slice;
-
-            unsafe { slice::from_raw_parts(x as *const T as *const u8, mem::size_of_val(x)) }
-        }
-
-        assert!(!as_bytes(&keypair).contains(&0x15));
     }
 }

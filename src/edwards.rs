@@ -338,20 +338,15 @@ impl Default for CompressedEdwardsY {
 impl CompressedEdwardsY {
     /// Construct a `CompressedEdwardsY` from a slice of bytes.
     ///
-    /// # Returns
+    /// # Panics
     ///
-    /// An `Option<CompressedEdwardsY>` which is `None` if the input `bytes`
-    /// slice does not have a length of 32.
-    pub fn from_slice(bytes: &[u8]) -> Option<CompressedEdwardsY> {
-        if bytes.len() != 32 {
-            return None;
-        }
-
+    /// If the input `bytes` slice does not have a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
         let mut tmp = [0u8; 32];
 
         tmp.copy_from_slice(bytes);
 
-        Some(CompressedEdwardsY(tmp))
+        CompressedEdwardsY(tmp)
     }
 }
 

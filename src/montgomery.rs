@@ -56,7 +56,6 @@ use field::FieldElement;
 use scalar::Scalar;
 
 use traits::Identity;
-use traits::ValidityCheck;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -94,24 +93,6 @@ impl PartialEq for MontgomeryPoint {
 
 impl Eq for MontgomeryPoint {}
 
-impl ValidityCheck for MontgomeryPoint {
-    /// Decode the \\(u\\)-coordinate field element and re-encode it
-    /// to its canonical form to check whether the original was valid.
-    ///
-    /// There are no other required checks for the Mongomery form of the curve,
-    /// as every element in \\( \mathbb{F}\_{q} \\) lies either on the curve or
-    /// its quadratic twist.  (cf. §5.2 of "Montgomery Curves and Their
-    /// Arithmetic" by [Costello and Smith][costello-smith].)
-    ///
-    /// [costello-smith]: https://eprint.iacr.org/2017/212.pdf
-    fn is_valid(&self) -> bool {
-        let maybe_u: FieldElement = FieldElement::from_bytes(&self.0);
-        let u: [u8; 32] = maybe_u.to_bytes();
-
-        u.ct_eq(&self.0).into()
-    }
-}
-
 impl Zeroize for MontgomeryPoint {
     fn zeroize(&mut self) {
         self.0.zeroize();
@@ -127,29 +108,6 @@ impl MontgomeryPoint {
     /// Convert this `MontgomeryPoint` to an array of bytes.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0
-    }
-
-    /// Attempt to create a `MontgomeryPoint` from a slice of bytes.
-    ///
-    /// # Returns
-    ///
-    /// An `Option<MontgomeryPoint>` which is `None` if the length of the slice
-    /// of bytes is not 32, or if the bytes did not represent a canonical
-    /// `FieldElement`.
-    pub fn from_slice(bytes: &[u8]) -> Option<MontgomeryPoint> {
-        if bytes.len() != 32 {
-            return None;
-        }
-
-        let mut array = [0u8; 32];
-        array.copy_from_slice(&bytes[..32]);
-
-        let P = MontgomeryPoint(array);
-
-        if P.is_valid() {
-            return Some(P);
-        }
-        None
     }
 
     /// Attempt to convert to an `EdwardsPoint`, using the supplied

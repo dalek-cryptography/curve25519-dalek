@@ -239,7 +239,6 @@ extern crate std;
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
 extern crate alloc;
-extern crate clear_on_drop;
 extern crate curve25519_dalek;
 #[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
 extern crate merlin;
@@ -248,6 +247,7 @@ extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde;
 extern crate sha2;
+extern crate zeroize;
 
 #[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
 mod batch;

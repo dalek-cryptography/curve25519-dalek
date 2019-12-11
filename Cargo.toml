@@ -45,7 +45,7 @@ harness = false
 
 [features]
 default = ["std", "u64_backend"]
-std = ["curve25519-dalek/std", "sha2/std", "rand/std"]
+std = ["curve25519-dalek/std", "serde/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc", "zeroize/alloc"]
 nightly = ["curve25519-dalek/nightly", "rand/nightly"]
 batch = ["merlin", "rand"]

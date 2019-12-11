@@ -111,7 +111,6 @@ fn zero_rng() -> ZeroRng {
 /// * `messages` is a slice of byte slices, one per signed message.
 /// * `signatures` is a slice of `Signature`s.
 /// * `public_keys` is a slice of `PublicKey`s.
-/// * `csprng` is an implementation of `Rng + CryptoRng`.
 ///
 /// # Returns
 ///
@@ -194,7 +193,6 @@ pub fn verify_batch(
         .iter()
         .map(|_| Scalar::from(prng.gen::<u128>()))
         .collect();
-
 
     // Compute the basepoint coefficient, ∑ s[i]z[i] (mod l)
     let B_coefficient: Scalar = signatures

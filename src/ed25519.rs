@@ -11,6 +11,7 @@
 
 use core::default::Default;
 
+#[cfg(feature = "rand")]
 use rand::{CryptoRng, RngCore};
 
 #[cfg(feature = "serde")]

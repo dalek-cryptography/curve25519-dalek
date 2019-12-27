@@ -185,6 +185,7 @@ use prelude::*;
 
 use scalar::Scalar;
 
+use traits::BasepointTable;
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};

@@ -989,10 +989,11 @@ impl Scalar {
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
     pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-        debug_assert!(w >= 6);
+        debug_assert!(w == 4 || w >= 6);
         debug_assert!(w <= 8);
 
         let digits_count = match w {
+            4 => (256 + w - 1)/w as usize,
             6 => (256 + w - 1)/w as usize,
             7 => (256 + w - 1)/w as usize,
             // See comment in to_radix_2w on handling the terminal carry.
@@ -1000,7 +1001,7 @@ impl Scalar {
             _ => panic!("invalid radix parameter"),
         };
 
-        debug_assert!(digits_count <= 43);
+        debug_assert!(digits_count <= 64);
         digits_count
     }
 
@@ -1022,9 +1023,13 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 43] {
-        debug_assert!(w >= 6);
+    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 64] {
+        debug_assert!(w == 4 || w >= 6);
         debug_assert!(w <= 8);
+
+        if w == 4 {
+            return self.to_radix_16();
+        }
 
         use byteorder::{ByteOrder, LittleEndian};
 
@@ -1036,7 +1041,7 @@ impl Scalar {
         let window_mask: u64 = radix - 1;
 
         let mut carry = 0u64;
-        let mut digits = [0i8; 43];
+        let mut digits = [0i8; 64];
         let digits_count = (256 + w - 1)/w as usize;
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.

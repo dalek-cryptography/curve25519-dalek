@@ -47,6 +47,21 @@ where
     }
 }
 
+/// A precomputed table of basepoints, for optimising scalar multiplications.
+pub trait BasepointTable {
+    /// The type of point contained within this table.
+    type Point;
+
+    /// Generate a new precomputed basepoint table from the given basepoint.
+    fn create(basepoint: &Self::Point) -> Self;
+
+    /// Retrieve the original basepoint from this table.
+    fn basepoint(&self) -> Self::Point;
+
+    /// Multiply a `scalar` by this precomputed basepoint table, in constant time.
+    fn basepoint_mul(&self, scalar: &Scalar) -> Self::Point;
+}
+
 /// A trait for constant-time multiscalar multiplication without precomputation.
 pub trait MultiscalarMul {
     /// The type of point being multiplied, e.g., `RistrettoPoint`.

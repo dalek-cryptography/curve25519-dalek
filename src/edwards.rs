@@ -911,6 +911,29 @@ impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = Looku
 // it.
 pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
 
+macro_rules! impl_basepoint_table_conversions {
+    (LHS = $lhs:ty, RHS = $rhs:ty) => {
+        impl<'a> From<&'a $lhs> for $rhs {
+            fn from(table: &'a $lhs) -> $rhs {
+                <$rhs>::create(&table.basepoint())
+            }
+        }
+
+        impl<'a> From<&'a $rhs> for $lhs {
+            fn from(table: &'a $rhs) -> $lhs {
+                <$lhs>::create(&table.basepoint())
+            }
+        }
+    }
+}
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix256}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
+
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\([8]P\\).
     pub fn mul_by_cofactor(&self) -> EdwardsPoint {

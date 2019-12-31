@@ -118,6 +118,7 @@ use backend::serial::curve_models::ProjectiveNielsPoint;
 use backend::serial::curve_models::ProjectivePoint;
 
 use window::LookupTableRadix16;
+use window::LookupTableRadix32;
 use window::LookupTableRadix64;
 use window::LookupTableRadix128;
 use window::LookupTableRadix256;
@@ -899,6 +900,7 @@ impl Debug for $name {
 
 // The number of additions required is ceil(256/w) where w is the radix representation.
 impl_basepoint_table! {Name = EdwardsBasepointTable, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
 impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
 impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
 impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
@@ -927,11 +929,18 @@ macro_rules! impl_basepoint_table_conversions {
     }
 }
 
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix32}
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix256}
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix64}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix256}
+
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix128}
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
+
 impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
 
 impl EdwardsPoint {
@@ -1236,18 +1245,21 @@ mod test {
         let a = A_SCALAR;
 
         let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
         let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
         let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
         let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
 
         let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
         let aP16 = (&table_radix16 * &a).compress();
+        let aP32 = (&table_radix32 * &a).compress();
         let aP64 = (&table_radix64 * &a).compress();
         let aP128 = (&table_radix128 * &a).compress();
         let aP256 = (&table_radix256 * &a).compress();
 
         assert_eq!(aP, aP16);
-        assert_eq!(aP16, aP64);
+        assert_eq!(aP16, aP32);
+        assert_eq!(aP32, aP64);
         assert_eq!(aP64, aP128);
         assert_eq!(aP128, aP256);
     }

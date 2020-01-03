@@ -989,7 +989,7 @@ impl Scalar {
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
     pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-        debug_assert!(w == 4 || w >= 6);
+        debug_assert!(w >= 4);
         debug_assert!(w <= 8);
 
         let digits_count = match w {

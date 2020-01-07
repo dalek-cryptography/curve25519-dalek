@@ -1264,6 +1264,37 @@ mod test {
         assert_eq!(aP128, aP256);
     }
 
+    // Check a unreduced scalar multiplication by the basepoint tables.
+    #[test]
+    fn basepoint_tables_unreduced_scalar() {
+        let P = &constants::ED25519_BASEPOINT_POINT;
+        let a = Scalar::from_bits([
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        ]);
+
+        let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
+        let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
+        let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
+        let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
+
+        let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
+        let aP16 = (&table_radix16 * &a).compress();
+        let aP32 = (&table_radix32 * &a).compress();
+        let aP64 = (&table_radix64 * &a).compress();
+        let aP128 = (&table_radix128 * &a).compress();
+        let aP256 = (&table_radix256 * &a).compress();
+
+        assert_eq!(aP, aP16);
+        assert_eq!(aP16, aP32);
+        assert_eq!(aP32, aP64);
+        assert_eq!(aP64, aP128);
+        assert_eq!(aP128, aP256);
+    }
+
     /// Check that converting to projective and then back to extended round-trips.
     #[test]
     fn basepoint_projective_extended_round_trip() {

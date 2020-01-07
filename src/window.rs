@@ -53,8 +53,8 @@ where
         debug_assert!(x as i16 <= $size as i16); // XXX We have to convert to i16s here for the radix-256 case.. this is wrong.
 
         // Compute xabs = |x|
-        let xmask = x >> 7;
-        let xabs = (x + xmask) ^ xmask;
+        let xmask = x  as i16 >> 7;
+        let xabs = (x as i16 + xmask) ^ xmask;
 
         // Set t = 0 * P = identity
         let mut t = T::identity();

@@ -18,6 +18,8 @@ use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
+use serde::de::SeqAccess;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub use sha2::Sha512;
@@ -431,15 +433,47 @@ impl<'d> Deserialize<'d> for Keypair {
             where
                 E: SerdeError,
             {
+                if bytes.len() != KEYPAIR_LENGTH {
+                    return Err(SerdeError::invalid_length(bytes.len(), &self));
+                }
+
                 let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
                 let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
 
-                if secret_key.is_ok() && public_key.is_ok() {
-                    Ok(Keypair{ secret: secret_key.unwrap(), public: public_key.unwrap() })
+                if let (Ok(secret), Ok(public)) = (secret_key, public_key) {
+                    Ok(Keypair{ secret, public })
                 } else {
                     Err(SerdeError::invalid_length(bytes.len(), &self))
                 }
             }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Keypair, A::Error>
+            where
+                A: SeqAccess<'d>
+            {
+                if let Some(len) = seq.size_hint() {
+                    if len != KEYPAIR_LENGTH {
+                        return Err(SerdeError::invalid_length(len, &self));
+                    }
+                }
+
+                // TODO: We could do this with `MaybeUninit` to avoid unnecessary initialization costs
+                let mut bytes: [u8; KEYPAIR_LENGTH] = [0u8; KEYPAIR_LENGTH];
+
+                for i in 0..KEYPAIR_LENGTH {
+                    bytes[i] = seq.next_element()?.ok_or_else(|| SerdeError::invalid_length(i, &self))?;
+                }
+
+                let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
+                let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
+
+                if let (Ok(secret), Ok(public)) = (secret_key, public_key) {
+                    Ok(Keypair{ secret, public })
+                } else {
+                    Err(SerdeError::invalid_length(bytes.len(), &self))
+                }
+            }
+
         }
         deserializer.deserialize_bytes(KeypairVisitor)
     }

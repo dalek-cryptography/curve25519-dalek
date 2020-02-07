@@ -85,6 +85,35 @@ jobs:
         command: test
         args: --lib --no-default-features --features "alloc u32_backend"
 
+  nightly:
+    name: Test nightly compiler
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+    - uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --features "nightly"
+
+  msrv:
+    name: Current MSRV is 1.41
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: 1.41
+        override: true
+    - uses: actions-rs/cargo@v1
+      with:
+        command: build
+
   bench:
     name: Check that benchmarks compile
     runs-on: ubuntu-latest

@@ -185,6 +185,8 @@ use prelude::*;
 
 use scalar::Scalar;
 
+use montgomery::MontgomeryPoint;
+
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
@@ -472,6 +474,19 @@ impl RistrettoPoint {
         s.conditional_negate(s_is_negative);
 
         CompressedRistretto(s.to_bytes())
+    }
+
+    /// Convert this `RistrettoPoint` to the corresponding
+    /// `MontgomeryPoint` on the Montgomery model.
+    ///
+    /// This function has one exceptional case; the identity point of
+    /// the Ristretto curve is sent to the 2-torsion point \\((0,0)\\)
+    /// on the Montgomery curve.
+    ///
+    /// Note that this is a one-way conversion, since the Montgomery
+    /// model does not retain sign information.
+    pub fn to_montgomery(&self) -> MontgomeryPoint {
+        self.0.to_montgomery()
     }
 
     /// Double-and-compress a batch of points.  The Ristretto encoding

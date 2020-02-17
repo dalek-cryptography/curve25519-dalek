@@ -49,7 +49,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 # https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
-curve25519-fiat = { git="https://github.com/calibra/rust-curve25519-fiat.git", version = "0.1.0", optional = true}
+fiat-crypto = { version = "0.1.0", optional = true}
 
 [features]
 nightly = ["subtle/nightly"]
@@ -62,7 +62,7 @@ u32_backend = []
 # The u64 backend uses u64s with u128 products.
 u64_backend = []
 # The fiat-u64 backend uses u64s with u128 products.
-fiat_u64_backend = ["curve25519-fiat"]
+fiat_u64_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
 simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # DEPRECATED: this is now an alias for `simd_backend` and may be removed

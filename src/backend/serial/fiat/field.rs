@@ -22,7 +22,7 @@ use subtle::ConditionallySelectable;
 
 use zeroize::Zeroize;
 
-use curve25519_fiat::curve25519_64::*;
+use fiat_crypto::curve25519_64::*;
 
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).

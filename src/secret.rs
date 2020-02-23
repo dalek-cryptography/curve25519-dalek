@@ -231,7 +231,7 @@ impl<'d> Deserialize<'d> for SecretKey {
 // you'd like to complain about me, again) that this is "ill-designed" because
 // this doesn't actually provide true hash domain separation, in that in many
 // real-world applications a user wishes to have one key which is used in
-// several contexts (such as within tor, which does does domain separation
+// several contexts (such as within tor, which does domain separation
 // manually by pre-concatenating static strings to messages to achieve more
 // robust domain separation).  In other real-world applications, such as
 // bitcoind, a user might wish to have one master keypair from which others are

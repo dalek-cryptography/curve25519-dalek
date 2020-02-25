@@ -105,3 +105,11 @@ attempt to prevent software side-channels.
 copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
 
 [rfc7748]: https://tools.ietf.org/html/rfc7748
+
+# See also
+
+- [crypto_box]: pure Rust public-key authenticated encryption compatible with
+  the NaCl family of encryption libraries (libsodium, TweetNaCl) which uses
+  `x25519-dalek` for key agreement
+
+[crypto_box]: https://github.com/RustCrypto/AEADs/tree/master/crypto_box

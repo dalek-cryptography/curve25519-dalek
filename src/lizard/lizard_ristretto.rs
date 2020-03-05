@@ -75,6 +75,29 @@ impl RistrettoPoint {
         }
     }
 
+    pub fn encode_253_bits(data: &[u8; 32]) -> Option<RistrettoPoint>
+    {
+        if data.len() != 32 || data[0] & 1 != 0 || (data[31] & 0xC0) != 0 {
+            return None;
+        }
+
+        let fe = FieldElement::from_bytes(data);
+        let p = RistrettoPoint::elligator_ristretto_flavor(&fe);
+        Some(p)
+    }
+
+
+    pub fn decode_253_bits(&self) -> (u8, [[u8; 32]; 8]) 
+    {
+        let mut ret = [ [0u8; 32]; 8];
+        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
+
+        for j in 0..8 {
+            ret[j] = fes[j].to_bytes();
+        }
+        (mask, ret)
+    }
+
     /// Return the coset self + E[4], for debugging.
     pub fn xcoset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
@@ -111,10 +134,7 @@ impl RistrettoPoint {
 
         let mut mask : u8 = 0;
         let jcs = self.to_jacobi_quartic_ristretto();
-        let mut ret = [ // XXX shorten this
-            FieldElement::one(), FieldElement::one(), FieldElement::one(),
-            FieldElement::one(), FieldElement::one(), FieldElement::one(),
-            FieldElement::one(), FieldElement::one()];
+        let mut ret = [FieldElement::one(); 8];
         
         for i in 0..4 {
             let (ok, fe) = jcs[i].elligator_inv();

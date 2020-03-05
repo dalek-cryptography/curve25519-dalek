@@ -77,7 +77,7 @@ impl RistrettoPoint {
 
     pub fn encode_253_bits(data: &[u8; 32]) -> Option<RistrettoPoint>
     {
-        if data.len() != 32 || data[0] & 1 != 0 || (data[31] & 0xC0) != 0 {
+        if data.len() != 32 {
             return None;
         }
 

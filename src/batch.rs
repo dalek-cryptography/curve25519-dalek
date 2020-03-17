@@ -14,6 +14,7 @@ use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
+use core::convert::TryFrom;
 use core::iter::once;
 
 use curve25519_dalek::constants;
@@ -37,7 +38,7 @@ use sha2::Sha512;
 use crate::errors::InternalError;
 use crate::errors::SignatureError;
 use crate::public::PublicKey;
-use crate::signature::Signature;
+use crate::signature::InternalSignature;
 
 trait BatchTranscript {
     fn append_hrams(&mut self, hrams: &Vec<Scalar>);
@@ -127,6 +128,7 @@ fn zero_rng() -> ZeroRng {
 /// use ed25519_dalek::verify_batch;
 /// use ed25519_dalek::Keypair;
 /// use ed25519_dalek::PublicKey;
+/// use ed25519_dalek::Signer;
 /// use ed25519_dalek::Signature;
 /// use rand::rngs::OsRng;
 ///
@@ -147,7 +149,7 @@ fn zero_rng() -> ZeroRng {
 #[allow(non_snake_case)]
 pub fn verify_batch(
     messages: &[&[u8]],
-    signatures: &[Signature],
+    signatures: &[ed25519::Signature],
     public_keys: &[PublicKey],
 ) -> Result<(), SignatureError>
 {
@@ -155,12 +157,18 @@ pub fn verify_batch(
     if signatures.len() != messages.len() ||
         signatures.len() != public_keys.len() ||
         public_keys.len() != messages.len() {
-        return Err(SignatureError(InternalError::ArrayLengthError{
+        return Err(InternalError::ArrayLengthError{
             name_a: "signatures", length_a: signatures.len(),
             name_b: "messages", length_b: messages.len(),
             name_c: "public_keys", length_c: public_keys.len(),
-        }));
+        }.into());
     }
+
+    // Convert all signatures to `InternalSignature`
+    let signatures = signatures
+        .iter()
+        .map(InternalSignature::try_from)
+        .collect::<Result<Vec<_>, _>>()?;
 
     // Compute H(R || A || M) for each (signature, public_key, message) triplet
     let hrams: Vec<Scalar> = (0..signatures.len()).map(|i| {
@@ -213,11 +221,11 @@ pub fn verify_batch(
     let id = EdwardsPoint::optional_multiscalar_mul(
         once(-B_coefficient).chain(zs.iter().cloned()).chain(zhrams),
         B.chain(Rs).chain(As),
-    ).ok_or_else(|| SignatureError(InternalError::VerifyError))?;
+    ).ok_or(InternalError::VerifyError)?;
 
     if id.is_identity() {
         Ok(())
     } else {
-        Err(SignatureError(InternalError::VerifyError))
+        Err(InternalError::VerifyError.into())
     }
 }

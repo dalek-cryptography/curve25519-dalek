@@ -24,6 +24,8 @@ use sha2::Sha512;
 
 #[cfg(test)]
 mod vectors {
+    use ed25519::signature::Signature as _;
+
     use std::io::BufReader;
     use std::io::BufRead;
     use std::fs::File;
@@ -219,6 +221,8 @@ mod serialisation {
 
     use self::bincode::{serialize, serialized_size, deserialize, Infinite};
 
+    use ed25519::signature::Signature as _;
+
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
         130, 039, 155, 015, 062, 076, 188, 063,
         124, 122, 026, 251, 233, 253, 225, 220,
@@ -281,7 +285,7 @@ mod serialisation {
     #[test]
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
-        assert_eq!(serialized_size(&signature) as usize, 72); // These sizes are specific to bincode==1.0.1
+        assert_eq!(serialized_size(&signature) as usize, 64); // These sizes are specific to bincode==1.0.1
     }
 
     #[test]

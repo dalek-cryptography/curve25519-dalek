@@ -106,10 +106,10 @@ impl SecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, SignatureError> {
         if bytes.len() != SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "SecretKey",
                 length: SECRET_KEY_LENGTH,
-            }));
+            }.into());
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
@@ -383,10 +383,10 @@ impl ExpandedSecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "ExpandedSecretKey",
                 length: EXPANDED_SECRET_KEY_LENGTH,
-            }));
+            }.into());
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -402,7 +402,7 @@ impl ExpandedSecretKey {
 
     /// Sign a message with this `ExpandedSecretKey`.
     #[allow(non_snake_case)]
-    pub fn sign(&self, message: &[u8], public_key: &PublicKey) -> Signature {
+    pub fn sign(&self, message: &[u8], public_key: &PublicKey) -> ed25519::Signature {
         let mut h: Sha512 = Sha512::new();
         let R: CompressedEdwardsY;
         let r: Scalar;
@@ -423,7 +423,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature { R, s }
+        InternalSignature { R, s }.into()
     }
 
     /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
@@ -450,7 +450,7 @@ impl ExpandedSecretKey {
         prehashed_message: D,
         public_key: &PublicKey,
         context: Option<&'a [u8]>,
-    ) -> Signature
+    ) -> ed25519::Signature
     where
         D: Digest<OutputSize = U64>,
     {
@@ -505,7 +505,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature { R, s }
+        InternalSignature { R, s }.into()
     }
 }
 

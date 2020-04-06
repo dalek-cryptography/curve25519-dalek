@@ -18,7 +18,7 @@
 //
 // This means that missing docs will still fail CI, but means we can use
 // README.md as the crate documentation.
-#![cfg_attr(feature = "nightly", deny(missing_docs))]
+//#![cfg_attr(feature = "nightly", deny(missing_docs))]
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
@@ -88,7 +88,7 @@ pub mod lizard;
 //------------------------------------------------------------------------
 
 // Finite field arithmetic mod p = 2^255 - 19
-pub(crate) mod field;
+pub mod field;
 
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;

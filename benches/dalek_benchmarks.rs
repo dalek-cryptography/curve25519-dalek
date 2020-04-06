@@ -14,6 +14,7 @@ extern crate curve25519_dalek;
 
 use curve25519_dalek::constants;
 use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::field::FieldElement;
 
 static BATCH_SIZES: [usize; 5] = [1, 2, 4, 8, 16];
 static MULTISCALAR_SIZES: [usize; 13] = [1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 512, 768, 1024];
@@ -243,6 +244,15 @@ mod ristretto_benches {
         });
     }
 
+    fn elligator(c: &mut Criterion) {
+        let fe_bytes = [0u8; 32];
+        let fe = FieldElement::from_bytes(&fe_bytes);
+
+        c.bench_function("RistrettoPoint Elligator", |b| {
+            b.iter(|| RistrettoPoint::elligator_ristretto_flavor(&fe));
+        });
+    }
+
     fn double_and_compress_batch(c: &mut Criterion) {
         c.bench_function_over_inputs(
             "Batch Ristretto double-and-encode",
@@ -263,6 +273,7 @@ mod ristretto_benches {
         targets =
         compress,
         decompress,
+        elligator,
         double_and_compress_batch,
     }
 }

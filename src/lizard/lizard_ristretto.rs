@@ -25,7 +25,7 @@ use digest::generic_array::typenum::U32;
 impl RistrettoPoint {
 
     /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method
-    pub fn lizard_encode<D: Digest>(data: &[u8; 16]) -> Option<RistrettoPoint>
+    pub fn lizard_encode<D: Digest>(data: &[u8; 16]) -> RistrettoPoint
         where D: Digest<OutputSize = U32>
     {
         let mut fe_bytes: [u8;32] = Default::default();
@@ -36,14 +36,7 @@ impl RistrettoPoint {
         fe_bytes[0] &= 254;
         fe_bytes[31] &= 63;
         let fe = FieldElement::from_bytes(&fe_bytes);
-        let p = RistrettoPoint::elligator_ristretto_flavor(&fe);
-
-        // This check is expensive; consider removing
-        if data == &p.lizard_decode::<D>()? {
-            Some(p)
-        } else {
-            None
-        }
+        RistrettoPoint::elligator_ristretto_flavor(&fe)
     }
 
     /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method

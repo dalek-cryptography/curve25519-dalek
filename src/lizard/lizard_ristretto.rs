@@ -3,6 +3,8 @@
 #![allow(non_snake_case)]
 
 use digest::Digest;
+use digest::generic_array::typenum::U32;
+use digest::generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
@@ -20,9 +22,37 @@ use lizard::lizard_constants;
 use prelude::*;
 use ristretto::RistrettoPoint;
 
-use digest::generic_array::typenum::U32;
 
 impl RistrettoPoint {
+
+    // These functions describe a more-efficient hash-to-curve: 
+    pub fn hash_from_bytes_single_elligator<D>(input: &[u8]) -> RistrettoPoint
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut hash = D::default();
+        hash.input(input);
+        RistrettoPoint::from_hash_single_elligator(hash)
+    }
+
+    pub fn from_hash_single_elligator<D>(hash: D) -> RistrettoPoint
+        where D: Digest<OutputSize = U64> + Default
+    {
+        // dealing with generic arrays is clumsy, until const generics land
+        let output = hash.result();
+        let mut output_bytes = [0u8; 64];
+        output_bytes.copy_from_slice(&output.as_slice());
+
+        RistrettoPoint::from_uniform_bytes_single_elligator(&output_bytes)
+    }
+
+    pub fn from_uniform_bytes_single_elligator(bytes: &[u8; 64]) -> RistrettoPoint {
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&bytes[0..32]);
+        let r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
+
+        R_1
+    }
 
     /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method
     pub fn lizard_encode<D: Digest>(data: &[u8; 16]) -> RistrettoPoint
@@ -33,7 +63,7 @@ impl RistrettoPoint {
         let digest = D::digest(data);
         fe_bytes[0..32].copy_from_slice(digest.as_slice());
         fe_bytes[8..24].copy_from_slice(data);
-        fe_bytes[0] &= 254;
+        fe_bytes[0] &= 254; // make positive since Elligator on r and -r is the same
         fe_bytes[31] &= 63;
         let fe = FieldElement::from_bytes(&fe_bytes);
         RistrettoPoint::elligator_ristretto_flavor(&fe)

@@ -4,7 +4,6 @@
 
 use digest::Digest;
 use digest::generic_array::typenum::U32;
-use digest::generic_array::typenum::U64;
 
 use constants;
 use field::FieldElement;
@@ -25,33 +24,8 @@ use ristretto::RistrettoPoint;
 
 impl RistrettoPoint {
 
-    // These functions describe a more-efficient hash-to-curve: 
-    pub fn hash_from_bytes_single_elligator<D>(input: &[u8]) -> RistrettoPoint
-        where D: Digest<OutputSize = U64> + Default
-    {
-        let mut hash = D::default();
-        hash.input(input);
-        RistrettoPoint::from_hash_single_elligator(hash)
-    }
-
-    pub fn from_hash_single_elligator<D>(hash: D) -> RistrettoPoint
-        where D: Digest<OutputSize = U64> + Default
-    {
-        // dealing with generic arrays is clumsy, until const generics land
-        let output = hash.result();
-        let mut output_bytes = [0u8; 64];
-        output_bytes.copy_from_slice(&output.as_slice());
-
-        RistrettoPoint::from_uniform_bytes_single_elligator(&output_bytes)
-    }
-
-    pub fn from_uniform_bytes_single_elligator(bytes: &[u8; 64]) -> RistrettoPoint {
-        let mut r_1_bytes = [0u8; 32];
-        r_1_bytes.copy_from_slice(&bytes[0..32]);
-        let r_1 = FieldElement::from_bytes(&r_1_bytes);
-        let R_1 = RistrettoPoint::elligator_ristretto_flavor(&r_1);
-
-        R_1
+    pub fn from_uniform_bytes_single_elligator(bytes: &[u8; 32]) -> RistrettoPoint {
+        RistrettoPoint::elligator_ristretto_flavor(&FieldElement::from_bytes(&bytes))
     }
 
     /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method

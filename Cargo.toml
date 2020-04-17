@@ -24,7 +24,7 @@ features = ["nightly", "batch"]
 [dependencies]
 clear_on_drop = { version = "0.2" }
 curve25519-dalek = { version = "2", default-features = false }
-merlin = { version = "1", default-features = false, optional = true, git = "https://github.com/isislovecruft/merlin", branch = "develop" }
+merlin = { version = "2", default-features = false, optional = true }
 rand = { version = "0.7", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, optional = true }
 serde = { version = "1.0", optional = true }

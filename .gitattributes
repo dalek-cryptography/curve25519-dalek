@@ -1,0 +1,2 @@
+curve25519-dalek/src/backend/serial/u32/constants/affine_odd_multiples_of_b_shl_128.rs linguist-generated=true
+curve25519-dalek/src/backend/serial/u64/constants/affine_odd_multiples_of_b_shl_128.rs linguist-generated=true

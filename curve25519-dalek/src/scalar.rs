@@ -111,6 +111,8 @@
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
 
+pub(crate) mod lattice_reduction;
+
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};

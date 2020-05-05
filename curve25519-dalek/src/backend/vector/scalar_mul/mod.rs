@@ -11,6 +11,8 @@
 
 //! Implementations of various multiplication algorithms for the SIMD backends.
 
+pub mod abglsv_pornin;
+
 #[allow(missing_docs)]
 pub mod variable_base;
 

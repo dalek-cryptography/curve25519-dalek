@@ -567,4 +567,32 @@ mod test {
             assert_eq!(base_splits[3], b_splits[3]);
         }
     }
+
+    #[test]
+    fn b_shl_128_odd_lookup_table_verify() {
+        use crate::backend::vector::avx2::constants::B_SHL_128_ODD_LOOKUP_TABLE;
+        use crate::constants;
+        use crate::scalar::Scalar;
+
+        let b_shl_128_odd_table = NafLookupTable8::<CachedPoint>::from(
+            &(constants::ED25519_BASEPOINT_POINT
+                * Scalar::from_canonical_bytes([
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                ])
+                .unwrap()),
+        );
+        println!("b_shl_128_odd_lookup_table = {:?}", b_shl_128_odd_table);
+
+        let table_B = &B_SHL_128_ODD_LOOKUP_TABLE;
+        for (b_vec, base_vec) in table_B.0.iter().zip(b_shl_128_odd_table.0.iter()) {
+            let b_splits = b_vec.0.split();
+            let base_splits = base_vec.0.split();
+
+            assert_eq!(base_splits[0], b_splits[0]);
+            assert_eq!(base_splits[1], b_splits[1]);
+            assert_eq!(base_splits[2], b_splits[2]);
+            assert_eq!(base_splits[3], b_splits[3]);
+        }
+    }
 }

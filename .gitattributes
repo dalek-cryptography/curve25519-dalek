@@ -1,2 +1,4 @@
 curve25519-dalek/src/backend/serial/u32/constants/affine_odd_multiples_of_b_shl_128.rs linguist-generated=true
 curve25519-dalek/src/backend/serial/u64/constants/affine_odd_multiples_of_b_shl_128.rs linguist-generated=true
+curve25519-dalek/src/backend/vector/avx2/constants/b_shl_128_odd_lookup_table.rs linguist-generated=true
+curve25519-dalek/src/backend/vector/ifma/constants/b_shl_128_odd_lookup_table.rs linguist-generated=true

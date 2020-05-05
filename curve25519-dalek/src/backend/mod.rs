@@ -265,5 +265,13 @@ pub fn scalar_mul_abglsv_pornin(
     b: &Scalar,
     C: &EdwardsPoint,
 ) -> EdwardsPoint {
-    serial::scalar_mul::abglsv_pornin::mul(a, A, b, C)
+    match get_selected_backend() {
+        #[cfg(curve25519_dalek_backend = "simd")]
+        BackendKind::Avx2 => vector::scalar_mul::abglsv_pornin::spec_avx2::mul(a, A, b, C),
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        BackendKind::Avx512 => {
+            vector::scalar_mul::abglsv_pornin::spec_avx512ifma_avx512vl::mul(a, A, b, C)
+        }
+        BackendKind::Serial => serial::scalar_mul::abglsv_pornin::mul(a, A, b, C),
+    }
 }

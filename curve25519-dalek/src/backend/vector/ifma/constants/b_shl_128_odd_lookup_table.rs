@@ -1,48 +1,15 @@
-// -*- mode: rust; -*-
-//
-// This file is part of curve25519-dalek.
-// Copyright (c) 2018-2019 Henry de Valence
-// See LICENSE for licensing information.
-//
-// Authors:
-// - Henry de Valence <hdevalence@hdevalence.ca>
+//! Generated file, do not alter!
 
-//! This module contains constants used by the IFMA backend.
+use crate::{
+    backend::vector::{
+        ifma::{edwards::CachedPoint, field::F51x4Reduced},
+        packed_simd::u64x4,
+    },
+    window::NafLookupTable8,
+};
 
-use crate::backend::vector::packed_simd::u64x4;
-
-#[cfg(feature = "precomputed-tables")]
-use crate::window::NafLookupTable8;
-
-use super::edwards::{CachedPoint, ExtendedPoint};
-use super::field::{F51x4Reduced, F51x4Unreduced};
-
-#[cfg(feature = "precomputed-tables")]
-mod b_shl_128_odd_lookup_table;
-#[cfg(feature = "precomputed-tables")]
-pub(crate) use b_shl_128_odd_lookup_table::B_SHL_128_ODD_LOOKUP_TABLE;
-
-/// The identity element as an `ExtendedPoint`.
-pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(F51x4Unreduced([
-    u64x4::new_const(0, 1, 1, 0),
-    u64x4::new_const(0, 0, 0, 0),
-    u64x4::new_const(0, 0, 0, 0),
-    u64x4::new_const(0, 0, 0, 0),
-    u64x4::new_const(0, 0, 0, 0),
-]));
-
-/// The identity element as a `CachedPoint`.
-pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(F51x4Reduced([
-    u64x4::new_const(121647, 121666, 243332, 2251799813685229),
-    u64x4::new_const(2251799813685248, 0, 0, 2251799813685247),
-    u64x4::new_const(2251799813685247, 0, 0, 2251799813685247),
-    u64x4::new_const(2251799813685247, 0, 0, 2251799813685247),
-    u64x4::new_const(2251799813685247, 0, 0, 2251799813685247),
-]));
-
-/// Odd multiples of the Ed25519 basepoint:
-#[cfg(feature = "precomputed-tables")]
-pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
+/// Odd multiples of `[2^128]B`: `[[2^128]B, [3 2^128]B, [5 2^128]B, [7 2^128]B, ..., [127 2^128]B]`.
+pub(crate) static B_SHL_128_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
     CachedPoint(F51x4Reduced([
         u64x4::new_const(1277522120965857, 73557767439946, 243332, 1943719795065404),
         u64x4::new_const(108375142003455, 341984820733594, 0, 2097709862669256),
@@ -2067,59 +2034,3 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
         ),
     ])),
 ]);
-
-#[cfg(all(test, feature = "precomputed-tables", curve25519_dalek_generate_tables))]
-mod table_generators {
-    use std::fs::File;
-    use std::io::Write;
-
-    use crate::{
-        backend::vector::ifma::edwards::CachedPoint, constants::ED25519_BASEPOINT_SHL_128,
-        window::NafLookupTable8,
-    };
-
-    #[test]
-    fn b_shl_128_odd_lookup_table() {
-        let table = NafLookupTable8::<CachedPoint>::from(&ED25519_BASEPOINT_SHL_128);
-        let mut table_file = File::create(format!(
-            "{}/src/backend/vector/ifma/constants/b_shl_128_odd_lookup_table.rs",
-            env!("CARGO_MANIFEST_DIR")
-        ))
-        .expect("can open file");
-
-        writeln!(
-            table_file,
-            "//! Generated file, do not alter!
-
-            use crate::{{
-                backend::vector::{{
-                    ifma::{{edwards::CachedPoint, field::F51x4Reduced}},
-                    packed_simd::u64x4,
-                }},
-                window::NafLookupTable8,
-            }};
-
-            /// Odd multiples of `[2^128]B`: `[[2^128]B, [3 2^128]B, [5 2^128]B, [7 2^128]B, ..., [127 2^128]B]`.
-            pub(crate) static B_SHL_128_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([",
-        )
-        .expect("can write file");
-
-        for row in table.0 {
-            writeln!(table_file, "CachedPoint(F51x4Reduced([").expect("can write file");
-            for vector in row.0 .0 {
-                writeln!(
-                    table_file,
-                    "u64x4::new_const({}, {}, {}, {}),",
-                    vector.extract::<0>(),
-                    vector.extract::<1>(),
-                    vector.extract::<2>(),
-                    vector.extract::<3>(),
-                )
-                .expect("can write file");
-            }
-            writeln!(table_file, "])),").expect("can write file");
-        }
-
-        writeln!(table_file, "]);").expect("can write file");
-    }
-}

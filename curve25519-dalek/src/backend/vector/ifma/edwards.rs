@@ -334,4 +334,25 @@ mod test {
         let P = constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
         doubling_test_helper(P);
     }
+
+    #[test]
+    fn basepoint_odd_lookup_table_verify() {
+        use crate::backend::vector::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+        use crate::constants;
+
+        let basepoint_odd_table =
+            NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
+        println!("basepoint_odd_lookup_table = {:?}", basepoint_odd_table);
+
+        let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
+        for (b_vec, base_vec) in table_B.0.iter().zip(basepoint_odd_table.0.iter()) {
+            let b_splits = b_vec.0.split();
+            let base_splits = base_vec.0.split();
+
+            assert_eq!(base_splits[0], b_splits[0]);
+            assert_eq!(base_splits[1], b_splits[1]);
+            assert_eq!(base_splits[2], b_splits[2]);
+            assert_eq!(base_splits[3], b_splits[3]);
+        }
+    }
 }

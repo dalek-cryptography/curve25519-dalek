@@ -19,6 +19,11 @@ use crate::backend::vector::avx2::field::FieldElement2625x4;
 #[cfg(feature = "precomputed-tables")]
 use crate::window::NafLookupTable8;
 
+#[cfg(feature = "precomputed-tables")]
+mod b_shl_128_odd_lookup_table;
+#[cfg(feature = "precomputed-tables")]
+pub(crate) use b_shl_128_odd_lookup_table::B_SHL_128_ODD_LOOKUP_TABLE;
+
 /// The identity element as an `ExtendedPoint`.
 pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldElement2625x4([
     u32x8::new_const(0, 1, 0, 0, 1, 0, 0, 0),
@@ -1189,3 +1194,63 @@ pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = Naf
         ),
     ])),
 ]);
+
+#[cfg(all(test, feature = "precomputed-tables", curve25519_dalek_generate_tables))]
+mod table_generators {
+    use std::fs::File;
+    use std::io::Write;
+
+    use crate::{
+        backend::vector::avx2::edwards::CachedPoint, constants::ED25519_BASEPOINT_SHL_128,
+        window::NafLookupTable8,
+    };
+
+    #[test]
+    fn b_shl_128_odd_lookup_table() {
+        let table = NafLookupTable8::<CachedPoint>::from(&ED25519_BASEPOINT_SHL_128);
+        let mut table_file = File::create(format!(
+            "{}/src/backend/vector/avx2/constants/b_shl_128_odd_lookup_table.rs",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .expect("can open file");
+
+        writeln!(
+            table_file,
+            "//! Generated file, do not alter!
+
+            use crate::{{
+                backend::vector::{{
+                    avx2::{{edwards::CachedPoint, field::FieldElement2625x4}},
+                    packed_simd::u32x8,
+                }},
+                window::NafLookupTable8,
+            }};
+
+            /// Odd multiples of `[2^128]B`: `[[2^128]B, [3 2^128]B, [5 2^128]B, [7 2^128]B, ..., [127 2^128]B]`.
+            pub(crate) static B_SHL_128_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([",
+        )
+        .expect("can write file");
+
+        for row in table.0 {
+            writeln!(table_file, "CachedPoint(FieldElement2625x4([").expect("can write file");
+            for vector in row.0 .0 {
+                writeln!(
+                    table_file,
+                    "u32x8::new_const({}, {}, {}, {}, {}, {}, {}, {}),",
+                    vector.extract::<0>(),
+                    vector.extract::<1>(),
+                    vector.extract::<2>(),
+                    vector.extract::<3>(),
+                    vector.extract::<4>(),
+                    vector.extract::<5>(),
+                    vector.extract::<6>(),
+                    vector.extract::<7>(),
+                )
+                .expect("can write file");
+            }
+            writeln!(table_file, "])),").expect("can write file");
+        }
+
+        writeln!(table_file, "]);").expect("can write file");
+    }
+}

@@ -8,6 +8,7 @@ major series.
 ### Unreleased
 
 * Add `EdwardsPoint::vartime_check_double_scalar_mul_basepoint`.
+* Add `RistrettoPoint::vartime_check_double_scalar_mul_basepoint`.
 
 ### 4.1.2
 

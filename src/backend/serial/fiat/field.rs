@@ -141,11 +141,14 @@ impl ConditionallySelectable for FieldElement51 {
     }
 
     fn conditional_assign(&mut self, _rhs: &FieldElement51, choice: Choice) {
-        self.0[0].conditional_assign(&_rhs.0[0], choice);
-        self.0[1].conditional_assign(&_rhs.0[1], choice);
-        self.0[2].conditional_assign(&_rhs.0[2], choice);
-        self.0[3].conditional_assign(&_rhs.0[3], choice);
-        self.0[4].conditional_assign(&_rhs.0[4], choice);
+        let mut output = [0u64; 5];
+        let choicebit = choice.unwrap_u8() as fiat_25519_u1;
+        fiat_25519_cmovznz_u64(&mut output[0], choicebit, self.0[0], _rhs.0[0]);
+        fiat_25519_cmovznz_u64(&mut output[1], choicebit, self.0[1], _rhs.0[1]);
+        fiat_25519_cmovznz_u64(&mut output[2], choicebit, self.0[2], _rhs.0[2]);
+        fiat_25519_cmovznz_u64(&mut output[3], choicebit, self.0[3], _rhs.0[3]);
+        fiat_25519_cmovznz_u64(&mut output[4], choicebit, self.0[4], _rhs.0[4]);
+        *self = FieldElement51(output);
     }
 }
 

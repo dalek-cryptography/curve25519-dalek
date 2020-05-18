@@ -43,6 +43,8 @@ subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
+sha2 = "0.8.1"
+rand = "0.7"
 
 [features]
 nightly = ["subtle/nightly"]

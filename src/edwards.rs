@@ -110,6 +110,11 @@ use constants;
 use field::FieldElement;
 use scalar::Scalar;
 
+use rand_core::{CryptoRng, RngCore};
+
+use digest::generic_array::typenum::U64;
+use digest::Digest;
+
 use montgomery::MontgomeryPoint;
 
 use backend::serial::curve_models::AffineNielsPoint;
@@ -492,6 +497,146 @@ impl EdwardsPoint {
         s = y.to_bytes();
         s[31] ^= x.is_negative().unwrap_u8() << 7;
         CompressedEdwardsY(s)
+    }
+
+
+    /// Return a `EdwardsPoint` chosen uniformly at random using a user-provided RNG.
+    ///
+    /// # Inputs
+    ///
+    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
+    ///
+    /// # Returns
+    ///
+    /// A random element of the Edwards group.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Montgomery-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
+    pub fn random<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
+        let mut uniform_bytes = [0u8; 64];
+        rng.fill_bytes(&mut uniform_bytes);
+
+        EdwardsPoint::from_uniform_bytes(&uniform_bytes)
+    }
+
+
+    /// Construct a `EdwardsPoint` from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    pub fn from_hash<D>(hash: D) -> EdwardsPoint
+        where D: Digest<OutputSize = U64> + Default
+    {
+        // dealing with generic arrays is clumsy, until const generics land
+        let output = hash.result();
+        let mut output_bytes = [0u8; 64];
+        output_bytes.copy_from_slice(&output.as_slice());
+
+        EdwardsPoint::from_uniform_bytes(&output_bytes)
+    }
+
+
+    /// Hash a slice of bytes into a `EdwardsPoint`.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes of output.
+    ///
+    /// Convenience wrapper around `from_hash`.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Montgomery-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # extern crate curve25519_dalek;
+    /// # use curve25519_dalek::edwards::EdwardsPoint;
+    /// extern crate sha2;
+    /// use sha2::Sha512;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let P = EdwardsPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
+    /// # }
+    /// ```
+    ///
+    pub fn hash_from_bytes<D>(input: &[u8]) -> EdwardsPoint
+        where D: Digest<OutputSize = U64> + Default
+    {
+        let mut hash = D::default();
+        hash.input(input);
+        EdwardsPoint::from_hash(hash)
+    }
+
+
+    /// Construct a `EdwardsPoint` from 64 bytes of data.
+    ///
+    /// If the input bytes are uniformly distributed, the resulting
+    /// point will be uniformly distributed over the group, and its
+    /// discrete log with respect to other points should be unknown.
+    ///
+    /// # Implementation
+    ///
+    /// This function splits the input array into two 32-byte halves,
+    /// takes the low 255 bits of each half mod p, applies the
+    /// Montgomery-flavored Elligator map to each, and adds the results.
+    /// 
+    /// Note that when the conversion from Montgomery to Edwards point
+    /// returns `None`, We slightly modify the input array and keep 
+    /// doing it until we get a valid `EdwardsPoint` as the output.
+    pub fn from_uniform_bytes(bytes: &[u8; 64]) -> EdwardsPoint {
+        let mut r_1_bytes = [0u8; 32];
+        r_1_bytes.copy_from_slice(&bytes[0..32]);
+        let mut r_1 = FieldElement::from_bytes(&r_1_bytes);
+        let mut M_1 = MontgomeryPoint::elligator_montgomery_flavor(&r_1);
+        let mut E_1_opt = M_1.to_edwards(0);        
+
+        let mut index = 0 as usize;
+        let mut value = 0u8;
+        while E_1_opt.is_none() {
+            // replace the first byte in r_1 by a FIXED u8 integer
+            r_1_bytes[index] = value;
+            r_1 = FieldElement::from_bytes(&r_1_bytes);
+            M_1 = MontgomeryPoint::elligator_montgomery_flavor(&r_1);
+            E_1_opt = M_1.to_edwards(0);
+
+            index = (index + 1)/255;
+            value = (value + 1)%255;
+        }
+
+        let mut r_2_bytes = [0u8; 32];
+        r_2_bytes.copy_from_slice(&bytes[32..64]);
+        let mut r_2 = FieldElement::from_bytes(&r_2_bytes);
+        let mut M_2 = MontgomeryPoint::elligator_montgomery_flavor(&r_2);
+        
+        let mut index = 0 as usize;
+        let mut value = 0u8;
+        let mut E_2_opt = M_2.to_edwards(0);
+        while E_2_opt.is_none() {
+            // replace the first byte in r_1 by a random u8 integer
+            r_2_bytes[index] = value;
+            r_2 = FieldElement::from_bytes(&r_2_bytes);
+            M_2 = MontgomeryPoint::elligator_montgomery_flavor(&r_2);
+            E_2_opt = M_2.to_edwards(0);
+
+            index = (index + 1)/255;
+            value = (value + 1)%255;
+        }
+
+        // Applying Elligator twice and adding the results ensures a
+        // uniform distribution.
+        &E_1_opt.expect("First Edwards point!") + &E_2_opt.expect("Second Edwards point!")
     }
 }
 
@@ -950,6 +1095,7 @@ mod test {
     use scalar::Scalar;
     use subtle::ConditionallySelectable;
     use constants;
+    use sha2::Sha512;
     use super::*;
 
     /// X coordinate of the basepoint.
@@ -1161,6 +1307,14 @@ mod test {
     fn basepoint16_vs_mul_by_pow_2_4() {
         let bp16 = constants::ED25519_BASEPOINT_POINT.mul_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
+    }
+
+    /// Test the montgomery elligator 
+    #[test]
+    fn random_edwards(){
+        let msg = "This would work irrespective of what this is!1";
+        let P = EdwardsPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
+        println!("P: {:?}", P);
     }
 
     #[test]

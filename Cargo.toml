@@ -1,6 +1,10 @@
 [package]
 name = "curve25519-dalek"
-version = "2.0.0"
+# Before incrementing:
+# - update CHANGELOG
+# - update html_root_url
+# - update README if required by semver
+version = "2.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"

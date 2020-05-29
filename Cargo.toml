@@ -1,6 +1,10 @@
 [package]
 name = "curve25519-dalek"
-version = "2.0.0"
+# Before incrementing:
+# - update CHANGELOG
+# - update html_root_url
+# - update README if required by semver
+version = "2.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -28,7 +32,7 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 [dev-dependencies]
 sha2 = { version = "0.8", default-features = false }
 bincode = "1"
-criterion = "0.2"
+criterion = "0.3.0"
 rand = "0.7"
 
 [[bench]]

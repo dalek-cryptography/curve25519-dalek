@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## 2.1.0
+
+* Make `Scalar::from_bits` a `const fn`, allowing its use in `const` contexts.
+
 ## 2.0.0
 
 * Fix a data modeling error in the `serde` feature pointed out by Trevor Perrin

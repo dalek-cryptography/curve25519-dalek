@@ -161,7 +161,13 @@ impl MontgomeryPoint {
     /// # Note
     ///
     /// This method is not public because it's just used for hashing
-    /// to a point -- proper elligator support is deferred for now.
+    /// to a point (similar to the ristretto elligator) -- proper
+    /// elligator support is deferred for now.
+    /// 
+    /// Based on the paper: Elligator: Elliptic-curve points 
+    /// indistinguishable from uniform random strings.
+    /// Link: http://elligator.cr.yp.to/elligator-20130828.pdf
+    /// Section 5.5: Application of ψ to Curve25519
     pub(crate) fn elligator_montgomery_flavor(r_0: &FieldElement) -> MontgomeryPoint {
 
         let minus_a = -&MONT_A;

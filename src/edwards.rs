@@ -636,7 +636,10 @@ impl EdwardsPoint {
 
         // Applying Elligator twice and adding the results ensures a
         // uniform distribution.
-        &E_1_opt.expect("First Edwards point!") + &E_2_opt.expect("Second Edwards point!")
+        // 
+        // We multiply the result by 8 to ensure that the new point lies in the
+        // prime order subgroup of Edwards curve.
+        &Scalar::from(8u8)*(&E_1_opt.expect("First Edwards point!") + &E_2_opt.expect("Second Edwards point!"))
     }
 }
 
@@ -1309,12 +1312,13 @@ mod test {
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
     }
 
-    /// Test the montgomery elligator 
+    /// Test the random edwards point generation using montgomery elligator 
     #[test]
     fn random_edwards(){
-        let msg = "This would work irrespective of what this is!1";
+        let msg = "A seed to test random point generation on Edwards!
+                   This should work for any input string";
         let P = EdwardsPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
-        println!("P: {:?}", P);
+        assert!(ValidityCheck::is_valid(&P));
     }
 
     #[test]

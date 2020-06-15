@@ -102,8 +102,8 @@
 //!
 //! // Streaming data into a hash object
 //! let mut hasher = Sha512::default();
-//! hasher.input(b"Abolish ");
-//! hasher.input(b"ICE");
+//! hasher.update(b"Abolish ");
+//! hasher.update(b"ICE");
 //! let a2 = Scalar::from_hash(hasher);
 //!
 //! assert_eq!(a, a2);
@@ -588,7 +588,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
-        hash.input(input);
+        hash.update(input);
         Scalar::from_hash(hash)
     }
 
@@ -630,7 +630,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64>
     {
         let mut output = [0u8; 64];
-        output.copy_from_slice(hash.result().as_slice());
+        output.copy_from_slice(hash.finalize().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)
     }
 

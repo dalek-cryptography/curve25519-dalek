@@ -15,6 +15,10 @@ extern crate ed25519_dalek;
 extern crate hex;
 extern crate sha2;
 extern crate rand;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde;
+#[cfg(all(test, feature = "serde"))]
+extern crate toml;
 
 use ed25519_dalek::*;
 
@@ -213,11 +217,19 @@ mod integrations {
     }
 }
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Demo {
+    keypair: Keypair
+}
+
 #[cfg(all(test, feature = "serde"))]
 mod serialisation {
     use super::*;
 
     use self::bincode::{serialize, serialized_size, deserialize, Infinite};
+    use self::toml;
 
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
         130, 039, 155, 015, 062, 076, 188, 063,
@@ -241,6 +253,16 @@ mod serialisation {
         079, 108, 213, 080, 124, 252, 084, 167,
         216, 085, 134, 144, 129, 149, 041, 081,
         063, 120, 126, 100, 092, 059, 050, 011, ];
+
+    static KEYPAIR_BYTES: [u8; KEYPAIR_LENGTH] = [
+        239, 085, 017, 235, 167, 103, 034, 062,
+        007, 010, 032, 146, 113, 039, 096, 174,
+        003, 219, 232, 166, 240, 121, 167, 013,
+        098, 238, 122, 116, 193, 114, 215, 213,
+        175, 181, 075, 166, 224, 164, 140, 146,
+        053, 120, 010, 037, 104, 094, 136, 225,
+        249, 102, 171, 160, 097, 132, 015, 071,
+        035, 056, 000, 074, 130, 168, 225, 071, ];
 
     #[test]
     fn serialize_deserialize_signature() {
@@ -270,6 +292,28 @@ mod serialisation {
         for i in 0..32 {
             assert_eq!(SECRET_KEY_BYTES[i], decoded_secret_key.as_bytes()[i]);
         }
+    }
+
+    #[test]
+    fn serialize_deserialize_keypair_bincode() {
+        let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
+        let encoded_keypair: Vec<u8> = serialize(&keypair, Infinite).unwrap();
+        let decoded_keypair: Keypair = deserialize(&encoded_keypair).unwrap();
+
+        for i in 0..64 {
+            assert_eq!(KEYPAIR_BYTES[i], decoded_keypair.to_bytes()[i]);
+        }
+    }
+
+    #[test]
+    fn serialize_deserialize_keypair_toml() {
+        let demo = Demo { keypair: Keypair::from_bytes(&KEYPAIR_BYTES).unwrap() };
+
+        println!("\n\nWrite to toml");
+        let demo_toml = toml::to_string(&demo).unwrap();
+        println!("{}", demo_toml);
+        let demo_toml_rebuild: Result<Demo, _> = toml::from_str(&demo_toml);
+        println!("{:?}", demo_toml_rebuild);
     }
 
     #[test]

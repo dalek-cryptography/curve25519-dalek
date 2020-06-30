@@ -10,8 +10,10 @@
 //! Batch signature verification.
 
 #[cfg(feature = "alloc")]
+extern crate alloc;
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-#[cfg(feature = "std")]
+#[cfg(all(not(feature = "alloc"), feature = "std"))]
 use std::vec::Vec;
 
 use core::iter::once;

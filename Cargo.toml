@@ -23,10 +23,11 @@ features = ["nightly", "batch"]
 
 [dependencies]
 curve25519-dalek = { version = "2", default-features = false }
-merlin = { version = "2", default-features = false, optional = true }
+ed25519 = { version = "1", default-features = false }
+merlin = { version = "1", default-features = false, optional = true, git = "https://github.com/isislovecruft/merlin", branch = "develop" }
 rand = { version = "0.7", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, optional = true }
-serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+serde_crate = { package = "serde", version = "1.0", default-features = false, optional = true }
 sha2 = { version = "0.8", default-features = false }
 zeroize = { version = "1", default-features = false, features = ["zeroize_derive"] }
 
@@ -35,7 +36,6 @@ hex = "^0.4"
 bincode = "^0.9"
 criterion = "0.3"
 rand = "0.7"
-toml = "0.5"
 
 [[bench]]
 name = "ed25519_benchmarks"
@@ -46,9 +46,10 @@ harness = false
 
 [features]
 default = ["std", "u64_backend"]
-std = ["curve25519-dalek/std", "serde/std", "sha2/std", "rand/std"]
+std = ["curve25519-dalek/std", "ed25519/std", "serde_crate/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc", "zeroize/alloc"]
 nightly = ["curve25519-dalek/nightly", "rand/nightly"]
+serde = ["serde_crate", "ed25519/serde"]
 batch = ["merlin", "rand"]
 # This feature enables deterministic batch verification.
 batch_deterministic = ["merlin", "rand", "rand_core"]

@@ -80,18 +80,16 @@ impl Error for InternalError { }
 ///   only be constructed from 255-bit integers.)
 ///
 /// * Failure of a signature to satisfy the verification equation.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
-pub struct SignatureError(pub(crate) InternalError);
+pub type SignatureError = ed25519::signature::Error;
 
-impl Display for SignatureError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+impl From<InternalError> for SignatureError {
+    #[cfg(not(feature = "std"))]
+    fn from(_err: InternalError) -> SignatureError {
+        SignatureError::new()
     }
-}
 
-#[cfg(feature = "std")]
-impl Error for SignatureError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.0)
+    #[cfg(feature = "std")]
+    fn from(err: InternalError) -> SignatureError {
+        SignatureError::from_source(err)
     }
 }

@@ -20,6 +20,7 @@ mod ed25519_benches {
     use ed25519_dalek::Keypair;
     use ed25519_dalek::PublicKey;
     use ed25519_dalek::Signature;
+    use ed25519_dalek::Signer;
     use ed25519_dalek::verify_batch;
     use rand::thread_rng;
     use rand::prelude::ThreadRng;

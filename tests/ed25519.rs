@@ -16,7 +16,7 @@ extern crate hex;
 extern crate sha2;
 extern crate rand;
 #[cfg(all(test, feature = "serde"))]
-extern crate serde;
+extern crate serde_crate;
 #[cfg(all(test, feature = "serde"))]
 extern crate toml;
 
@@ -219,8 +219,10 @@ mod integrations {
     }
 }
 
+#[cfg(all(test, feature = "serde"))]
 use serde::{Deserialize, Serialize};
 
+#[cfg(all(test, feature = "serde"))]
 #[derive(Debug, Serialize, Deserialize)]
 struct Demo {
     keypair: Keypair

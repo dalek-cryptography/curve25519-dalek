@@ -93,6 +93,3 @@ impl From<InternalError> for SignatureError {
         SignatureError::from_source(err)
     }
 }
-
-#[cfg(feature = "std")]
-impl Error for SignatureError { }

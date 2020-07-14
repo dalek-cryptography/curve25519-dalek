@@ -220,7 +220,7 @@ mod integrations {
 }
 
 #[cfg(all(test, feature = "serde"))]
-use serde::{Deserialize, Serialize};
+use serde_crate::{Deserialize, Serialize};
 
 #[cfg(all(test, feature = "serde"))]
 #[derive(Debug, Serialize, Deserialize)]

@@ -441,7 +441,9 @@ impl ExpandedSecretKey {
     ///
     /// # Returns
     ///
-    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    /// A `Result` whose `Ok` value is an Ed25519ph [`Signature`] on the
+    /// `prehashed_message` if the context was 255 bytes or less, otherwise
+    /// a `SignatureError`.
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[allow(non_snake_case)]
@@ -450,7 +452,7 @@ impl ExpandedSecretKey {
         prehashed_message: D,
         public_key: &PublicKey,
         context: Option<&'a [u8]>,
-    ) -> ed25519::Signature
+    ) -> Result<ed25519::Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {
@@ -463,7 +465,9 @@ impl ExpandedSecretKey {
 
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
 
-        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+        if ctx.len() > 255 {
+            return Err(SignatureError(InternalError::PrehashedContextError));
+        }
 
         let ctx_len: u8 = ctx.len() as u8;
 
@@ -505,7 +509,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        InternalSignature { R, s }.into()
+        Ok(InternalSignature { R, s }.into())
     }
 }
 

@@ -219,11 +219,9 @@ mod integrations {
     }
 }
 
+#[serde(crate = "serde_crate")]
 #[cfg(all(test, feature = "serde"))]
-use serde_crate::{Deserialize, Serialize};
-
-#[cfg(all(test, feature = "serde"))]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, serde_crate::Serialize, serde_crate::Deserialize)]
 struct Demo {
     keypair: Keypair
 }

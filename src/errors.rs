@@ -41,6 +41,8 @@ pub(crate) enum InternalError {
     ArrayLengthError{ name_a: &'static str, length_a: usize,
                       name_b: &'static str, length_b: usize,
                       name_c: &'static str, length_c: usize, },
+    /// An ed25519ph signature can only take up to 255 octets of context.
+    PrehashedContextLengthError,
 }
 
 impl Display for InternalError {
@@ -59,6 +61,8 @@ impl Display for InternalError {
                                              name_c: nc, length_c: lc, }
                 => write!(f, "Arrays must be the same length: {} has length {},
                               {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
+            InternalError::PrehashedContextError
+                => write!(f, "An ed25519ph signature can only take up to 255 octets of context"),
         }
     }
 }

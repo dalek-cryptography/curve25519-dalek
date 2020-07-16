@@ -466,7 +466,7 @@ impl ExpandedSecretKey {
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
 
         if ctx.len() > 255 {
-            return Err(SignatureError(InternalError::PrehashedContextError));
+            return Err(SignatureError(InternalError::PrehashedContextLengthError));
         }
 
         let ctx_len: u8 = ctx.len() as u8;

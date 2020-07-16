@@ -207,11 +207,11 @@ impl Keypair {
     /// # use ed25519_dalek::Digest;
     /// # use ed25519_dalek::Keypair;
     /// # use ed25519_dalek::Signature;
+    /// # use ed25519_dalek::SignatureError;
     /// # use ed25519_dalek::Sha512;
     /// # use rand::rngs::OsRng;
     /// #
-    /// # #[cfg(feature = "std")]
-    /// # fn main() {
+    /// # fn do_test() -> Result<Signature, SignatureError> {
     /// # let mut csprng = OsRng{};
     /// # let keypair: Keypair = Keypair::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
@@ -220,7 +220,13 @@ impl Keypair {
     /// #
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
-    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context))?;
+    /// #
+    /// # Ok(sig)
+    /// # }
+    /// # #[cfg(feature = "std")]
+    /// # fn main() {
+    /// #     do_test();
     /// # }
     /// #
     /// # #[cfg(not(feature = "std"))]
@@ -233,7 +239,7 @@ impl Keypair {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-    ) -> ed25519::Signature
+    ) -> Result<ed25519::Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {
@@ -278,11 +284,11 @@ impl Keypair {
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
+    /// use ed25519_dalek::SignatureError;
     /// use ed25519_dalek::Sha512;
     /// use rand::rngs::OsRng;
     ///
-    /// # #[cfg(feature = "std")]
-    /// # fn main() {
+    /// # fn do_test() -> Result<(), SignatureError> {
     /// let mut csprng = OsRng{};
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
@@ -292,7 +298,7 @@ impl Keypair {
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
-    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context))?;
     ///
     /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
     /// let mut prehashed_again: Sha512 = Sha512::default();
@@ -301,6 +307,13 @@ impl Keypair {
     /// let verified = keypair.public.verify_prehashed(prehashed_again, Some(context), &sig);
     ///
     /// assert!(verified.is_ok());
+    ///
+    /// # verified
+    /// # }
+    /// #
+    /// # #[cfg(feature = "std")]
+    /// # fn main() {
+    /// #     do_test();
     /// # }
     /// #
     /// # #[cfg(not(feature = "std"))]

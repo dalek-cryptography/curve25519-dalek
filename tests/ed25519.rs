@@ -104,7 +104,7 @@ mod vectors {
         prehash_for_signing.input(&msg_bytes[..]);
         prehash_for_verifying.input(&msg_bytes[..]);
 
-        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None);
+        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None).unwrap();
 
         assert!(sig1 == sig2,
                 "Original signature from test vectors doesn't equal signature produced:\
@@ -169,8 +169,8 @@ mod integrations {
         let context: &[u8] = b"testing testing 1 2 3";
 
         keypair  = Keypair::generate(&mut csprng);
-        good_sig = keypair.sign_prehashed(prehashed_good1, Some(context));
-        bad_sig  = keypair.sign_prehashed(prehashed_bad1,  Some(context));
+        good_sig = keypair.sign_prehashed(prehashed_good1, Some(context)).unwrap();
+        bad_sig  = keypair.sign_prehashed(prehashed_bad1,  Some(context)).unwrap();
 
         assert!(keypair.verify_prehashed(prehashed_good2, Some(context), &good_sig).is_ok(),
                 "Verification of a valid signature failed!");

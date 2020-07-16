@@ -45,6 +45,9 @@ pub(crate) enum InternalError {
     PrehashedContextLengthError,
 }
 
+unsafe impl Send for InternalError {}
+unsafe impl Sync for InternalError {}
+
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
@@ -61,7 +64,7 @@ impl Display for InternalError {
                                              name_c: nc, length_c: lc, }
                 => write!(f, "Arrays must be the same length: {} has length {},
                               {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
-            InternalError::PrehashedContextError
+            InternalError::PrehashedContextLengthError
                 => write!(f, "An ed25519ph signature can only take up to 255 octets of context"),
         }
     }

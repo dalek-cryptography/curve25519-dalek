@@ -9,19 +9,12 @@
 
 //! An ed25519 signature.
 
+use core::convert::TryFrom;
 use core::fmt::Debug;
 
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
-
-#[cfg(feature = "serde")]
-use serde::de::Error as SerdeError;
-#[cfg(feature = "serde")]
-use serde::de::Visitor;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use serde::{Deserializer, Serializer};
+use ed25519::signature::Signature as _;
 
 use crate::constants::*;
 use crate::errors::*;
@@ -35,7 +28,7 @@ use crate::errors::*;
 /// been signed.
 #[allow(non_snake_case)]
 #[derive(Copy, Eq, PartialEq)]
-pub struct Signature {
+pub(crate) struct InternalSignature {
     /// `R` is an `EdwardsPoint`, formed by using an hash function with
     /// 512-bits output to produce the digest of:
     ///
@@ -59,13 +52,13 @@ pub struct Signature {
     pub(crate) s: Scalar,
 }
 
-impl Clone for Signature {
+impl Clone for InternalSignature {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl Debug for Signature {
+impl Debug for InternalSignature {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
     }
@@ -103,12 +96,12 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     }
 
     match Scalar::from_canonical_bytes(bytes) {
-        None => return Err(SignatureError(InternalError::ScalarFormatError)),
+        None => return Err(InternalError::ScalarFormatError.into()),
         Some(x) => return Ok(x),
     };
 }
 
-impl Signature {
+impl InternalSignature {
     /// Convert this `Signature` to a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
@@ -170,12 +163,12 @@ impl Signature {
     /// only checking the most significant three bits.  (See also the
     /// documentation for `PublicKey.verify_strict`.)
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Signature, SignatureError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<InternalSignature, SignatureError> {
         if bytes.len() != SIGNATURE_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "Signature",
                 length: SIGNATURE_LENGTH,
-            }));
+            }.into());
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -190,45 +183,23 @@ impl Signature {
             Err(x) => return Err(x),
         }
 
-        Ok(Signature {
+        Ok(InternalSignature {
             R: CompressedEdwardsY(lower),
             s: s,
         })
     }
 }
 
-#[cfg(feature = "serde")]
-impl Serialize for Signature {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_bytes(&self.to_bytes()[..])
+impl TryFrom<&ed25519::Signature> for InternalSignature {
+    type Error = SignatureError;
+
+    fn try_from(sig: &ed25519::Signature) -> Result<InternalSignature, SignatureError> {
+        InternalSignature::from_bytes(sig.as_bytes())
     }
 }
 
-#[cfg(feature = "serde")]
-impl<'d> Deserialize<'d> for Signature {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'d>,
-    {
-        struct SignatureVisitor;
-
-        impl<'d> Visitor<'d> for SignatureVisitor {
-            type Value = Signature;
-
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str("An ed25519 signature as 64 bytes, as specified in RFC8032.")
-            }
-
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<Signature, E>
-            where
-                E: SerdeError,
-            {
-                Signature::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
-            }
-        }
-        deserializer.deserialize_bytes(SignatureVisitor)
+impl From<InternalSignature> for ed25519::Signature {
+    fn from(sig: InternalSignature) -> ed25519::Signature {
+        ed25519::Signature::from_bytes(&sig.to_bytes()).unwrap()
     }
 }

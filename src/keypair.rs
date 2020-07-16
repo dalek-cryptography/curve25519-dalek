@@ -9,14 +9,15 @@
 
 //! ed25519 keypairs.
 
-use core::default::Default;
-
+#[cfg(feature = "rand")]
 use rand::{CryptoRng, RngCore};
 
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::de::SeqAccess;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -25,16 +26,15 @@ pub use sha2::Sha512;
 use curve25519_dalek::digest::generic_array::typenum::U64;
 pub use curve25519_dalek::digest::Digest;
 
-#[cfg(all(feature = "batch", any(feature = "std", feature = "alloc")))]
-pub use crate::batch::*;
-pub use crate::constants::*;
-pub use crate::errors::*;
-pub use crate::public::*;
-pub use crate::secret::*;
-pub use crate::signature::*;
+use ed25519::signature::{Signer, Verifier};
+
+use crate::constants::*;
+use crate::errors::*;
+use crate::public::*;
+use crate::secret::*;
 
 /// An ed25519 keypair.
-#[derive(Debug, Default)] // we derive Default in order to use the clear() method in Drop
+#[derive(Debug)]
 pub struct Keypair {
     /// The secret half of this keypair.
     pub secret: SecretKey,
@@ -81,10 +81,10 @@ impl Keypair {
     /// is an `SignatureError` describing the error that occurred.
     pub fn from_bytes<'a>(bytes: &'a [u8]) -> Result<Keypair, SignatureError> {
         if bytes.len() != KEYPAIR_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "Keypair",
                 length: KEYPAIR_LENGTH,
-            }));
+            }.into());
         }
         let secret = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH])?;
         let public = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..])?;
@@ -133,13 +133,6 @@ impl Keypair {
         let pk: PublicKey = (&sk).into();
 
         Keypair{ public: pk, secret: sk }
-    }
-
-    /// Sign a message with this keypair's secret key.
-    pub fn sign(&self, message: &[u8]) -> Signature {
-        let expanded: ExpandedSecretKey = (&self.secret).into();
-
-        expanded.sign(&message, &self.public)
     }
 
     /// Sign a `prehashed_message` with this `Keypair` using the
@@ -214,11 +207,11 @@ impl Keypair {
     /// # use ed25519_dalek::Digest;
     /// # use ed25519_dalek::Keypair;
     /// # use ed25519_dalek::Signature;
+    /// # use ed25519_dalek::SignatureError;
     /// # use ed25519_dalek::Sha512;
     /// # use rand::rngs::OsRng;
     /// #
-    /// # #[cfg(feature = "std")]
-    /// # fn main() {
+    /// # fn do_test() -> Result<Signature, SignatureError> {
     /// # let mut csprng = OsRng{};
     /// # let keypair: Keypair = Keypair::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
@@ -227,7 +220,13 @@ impl Keypair {
     /// #
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
-    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context))?;
+    /// #
+    /// # Ok(sig)
+    /// # }
+    /// # #[cfg(feature = "std")]
+    /// # fn main() {
+    /// #     do_test();
     /// # }
     /// #
     /// # #[cfg(not(feature = "std"))]
@@ -240,20 +239,20 @@ impl Keypair {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-    ) -> Signature
+    ) -> Result<ed25519::Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {
         let expanded: ExpandedSecretKey = (&self.secret).into(); // xxx thanks i hate this
 
-        expanded.sign_prehashed(prehashed_message, &self.public, context)
+        expanded.sign_prehashed(prehashed_message, &self.public, context).into()
     }
 
     /// Verify a signature on a message with this keypair's public key.
     pub fn verify(
         &self,
         message: &[u8],
-        signature: &Signature
+        signature: &ed25519::Signature
     ) -> Result<(), SignatureError>
     {
         self.public.verify(message, signature)
@@ -285,11 +284,11 @@ impl Keypair {
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::Keypair;
     /// use ed25519_dalek::Signature;
+    /// use ed25519_dalek::SignatureError;
     /// use ed25519_dalek::Sha512;
     /// use rand::rngs::OsRng;
     ///
-    /// # #[cfg(feature = "std")]
-    /// # fn main() {
+    /// # fn do_test() -> Result<(), SignatureError> {
     /// let mut csprng = OsRng{};
     /// let keypair: Keypair = Keypair::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
@@ -299,7 +298,7 @@ impl Keypair {
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
-    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context));
+    /// let sig: Signature = keypair.sign_prehashed(prehashed, Some(context))?;
     ///
     /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
     /// let mut prehashed_again: Sha512 = Sha512::default();
@@ -308,6 +307,13 @@ impl Keypair {
     /// let verified = keypair.public.verify_prehashed(prehashed_again, Some(context), &sig);
     ///
     /// assert!(verified.is_ok());
+    ///
+    /// # verified
+    /// # }
+    /// #
+    /// # #[cfg(feature = "std")]
+    /// # fn main() {
+    /// #     do_test();
     /// # }
     /// #
     /// # #[cfg(not(feature = "std"))]
@@ -319,7 +325,7 @@ impl Keypair {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-        signature: &Signature,
+        signature: &ed25519::Signature,
     ) -> Result<(), SignatureError>
     where
         D: Digest<OutputSize = U64>,
@@ -393,10 +399,25 @@ impl Keypair {
     pub fn verify_strict(
         &self,
         message: &[u8],
-        signature: &Signature,
+        signature: &ed25519::Signature,
     ) -> Result<(), SignatureError>
     {
         self.public.verify_strict(message, signature)
+    }
+}
+
+impl Signer<ed25519::Signature> for Keypair {
+    /// Sign a message with this keypair's secret key.
+    fn try_sign(&self, message: &[u8]) -> Result<ed25519::Signature, SignatureError> {
+        let expanded: ExpandedSecretKey = (&self.secret).into();
+        Ok(expanded.sign(&message, &self.public).into())
+    }
+}
+
+impl Verifier<ed25519::Signature> for Keypair {
+    /// Verify a signature on a message with this keypair's public key.
+    fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
+        self.public.verify(message, signature)
     }
 }
 
@@ -431,39 +452,48 @@ impl<'d> Deserialize<'d> for Keypair {
             where
                 E: SerdeError,
             {
+                if bytes.len() != KEYPAIR_LENGTH {
+                    return Err(SerdeError::invalid_length(bytes.len(), &self));
+                }
+
                 let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
                 let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
 
-                if secret_key.is_ok() && public_key.is_ok() {
-                    Ok(Keypair{ secret: secret_key.unwrap(), public: public_key.unwrap() })
+                if let (Ok(secret), Ok(public)) = (secret_key, public_key) {
+                    Ok(Keypair{ secret, public })
                 } else {
                     Err(SerdeError::invalid_length(bytes.len(), &self))
                 }
             }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Keypair, A::Error>
+            where
+                A: SeqAccess<'d>
+            {
+                if let Some(len) = seq.size_hint() {
+                    if len != KEYPAIR_LENGTH {
+                        return Err(SerdeError::invalid_length(len, &self));
+                    }
+                }
+
+                // TODO: We could do this with `MaybeUninit` to avoid unnecessary initialization costs
+                let mut bytes: [u8; KEYPAIR_LENGTH] = [0u8; KEYPAIR_LENGTH];
+
+                for i in 0..KEYPAIR_LENGTH {
+                    bytes[i] = seq.next_element()?.ok_or_else(|| SerdeError::invalid_length(i, &self))?;
+                }
+
+                let secret_key = SecretKey::from_bytes(&bytes[..SECRET_KEY_LENGTH]);
+                let public_key = PublicKey::from_bytes(&bytes[SECRET_KEY_LENGTH..]);
+
+                if let (Ok(secret), Ok(public)) = (secret_key, public_key) {
+                    Ok(Keypair{ secret, public })
+                } else {
+                    Err(SerdeError::invalid_length(bytes.len(), &self))
+                }
+            }
+
         }
         deserializer.deserialize_bytes(KeypairVisitor)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    use clear_on_drop::clear::Clear;
-
-    #[test]
-    fn keypair_clear_on_drop() {
-        let mut keypair: Keypair = Keypair::from_bytes(&[1u8; KEYPAIR_LENGTH][..]).unwrap();
-
-        keypair.clear();
-
-        fn as_bytes<T>(x: &T) -> &[u8] {
-            use std::mem;
-            use std::slice;
-
-            unsafe { slice::from_raw_parts(x as *const T as *const u8, mem::size_of_val(x)) }
-        }
-
-        assert!(!as_bytes(&keypair).contains(&0x15));
     }
 }

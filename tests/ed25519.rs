@@ -15,6 +15,10 @@ extern crate ed25519_dalek;
 extern crate hex;
 extern crate sha2;
 extern crate rand;
+#[cfg(all(test, feature = "serde"))]
+extern crate serde_crate;
+#[cfg(all(test, feature = "serde"))]
+extern crate toml;
 
 use ed25519_dalek::*;
 
@@ -24,6 +28,8 @@ use sha2::Sha512;
 
 #[cfg(test)]
 mod vectors {
+    use ed25519::signature::Signature as _;
+
     use std::io::BufReader;
     use std::io::BufRead;
     use std::fs::File;
@@ -98,7 +104,7 @@ mod vectors {
         prehash_for_signing.input(&msg_bytes[..]);
         prehash_for_verifying.input(&msg_bytes[..]);
 
-        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None);
+        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None).unwrap();
 
         assert!(sig1 == sig2,
                 "Original signature from test vectors doesn't equal signature produced:\
@@ -163,8 +169,8 @@ mod integrations {
         let context: &[u8] = b"testing testing 1 2 3";
 
         keypair  = Keypair::generate(&mut csprng);
-        good_sig = keypair.sign_prehashed(prehashed_good1, Some(context));
-        bad_sig  = keypair.sign_prehashed(prehashed_bad1,  Some(context));
+        good_sig = keypair.sign_prehashed(prehashed_good1, Some(context)).unwrap();
+        bad_sig  = keypair.sign_prehashed(prehashed_bad1,  Some(context)).unwrap();
 
         assert!(keypair.verify_prehashed(prehashed_good2, Some(context), &good_sig).is_ok(),
                 "Verification of a valid signature failed!");
@@ -213,11 +219,21 @@ mod integrations {
     }
 }
 
+#[serde(crate = "serde_crate")]
+#[cfg(all(test, feature = "serde"))]
+#[derive(Debug, serde_crate::Serialize, serde_crate::Deserialize)]
+struct Demo {
+    keypair: Keypair
+}
+
 #[cfg(all(test, feature = "serde"))]
 mod serialisation {
     use super::*;
 
     use self::bincode::{serialize, serialized_size, deserialize, Infinite};
+    use self::toml;
+
+    use ed25519::signature::Signature as _;
 
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
         130, 039, 155, 015, 062, 076, 188, 063,
@@ -241,6 +257,16 @@ mod serialisation {
         079, 108, 213, 080, 124, 252, 084, 167,
         216, 085, 134, 144, 129, 149, 041, 081,
         063, 120, 126, 100, 092, 059, 050, 011, ];
+
+    static KEYPAIR_BYTES: [u8; KEYPAIR_LENGTH] = [
+        239, 085, 017, 235, 167, 103, 034, 062,
+        007, 010, 032, 146, 113, 039, 096, 174,
+        003, 219, 232, 166, 240, 121, 167, 013,
+        098, 238, 122, 116, 193, 114, 215, 213,
+        175, 181, 075, 166, 224, 164, 140, 146,
+        053, 120, 010, 037, 104, 094, 136, 225,
+        249, 102, 171, 160, 097, 132, 015, 071,
+        035, 056, 000, 074, 130, 168, 225, 071, ];
 
     #[test]
     fn serialize_deserialize_signature() {
@@ -273,6 +299,28 @@ mod serialisation {
     }
 
     #[test]
+    fn serialize_deserialize_keypair_bincode() {
+        let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
+        let encoded_keypair: Vec<u8> = serialize(&keypair, Infinite).unwrap();
+        let decoded_keypair: Keypair = deserialize(&encoded_keypair).unwrap();
+
+        for i in 0..64 {
+            assert_eq!(KEYPAIR_BYTES[i], decoded_keypair.to_bytes()[i]);
+        }
+    }
+
+    #[test]
+    fn serialize_deserialize_keypair_toml() {
+        let demo = Demo { keypair: Keypair::from_bytes(&KEYPAIR_BYTES).unwrap() };
+
+        println!("\n\nWrite to toml");
+        let demo_toml = toml::to_string(&demo).unwrap();
+        println!("{}", demo_toml);
+        let demo_toml_rebuild: Result<Demo, _> = toml::from_str(&demo_toml);
+        println!("{:?}", demo_toml_rebuild);
+    }
+
+    #[test]
     fn serialize_public_key_size() {
         let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
         assert_eq!(serialized_size(&public_key) as usize, 40); // These sizes are specific to bincode==1.0.1
@@ -281,7 +329,7 @@ mod serialisation {
     #[test]
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
-        assert_eq!(serialized_size(&signature) as usize, 72); // These sizes are specific to bincode==1.0.1
+        assert_eq!(serialized_size(&signature) as usize, 64); // These sizes are specific to bincode==1.0.1
     }
 
     #[test]

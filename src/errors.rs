@@ -41,6 +41,8 @@ pub(crate) enum InternalError {
     ArrayLengthError{ name_a: &'static str, length_a: usize,
                       name_b: &'static str, length_b: usize,
                       name_c: &'static str, length_c: usize, },
+    /// An ed25519ph signature can only take up to 255 octets of context.
+    PrehashedContextLengthError,
 }
 
 impl Display for InternalError {
@@ -59,6 +61,8 @@ impl Display for InternalError {
                                              name_c: nc, length_c: lc, }
                 => write!(f, "Arrays must be the same length: {} has length {},
                               {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
+            InternalError::PrehashedContextLengthError
+                => write!(f, "An ed25519ph signature can only take up to 255 octets of context"),
         }
     }
 }
@@ -80,18 +84,16 @@ impl Error for InternalError { }
 ///   only be constructed from 255-bit integers.)
 ///
 /// * Failure of a signature to satisfy the verification equation.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Debug)]
-pub struct SignatureError(pub(crate) InternalError);
+pub type SignatureError = ed25519::signature::Error;
 
-impl Display for SignatureError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+impl From<InternalError> for SignatureError {
+    #[cfg(not(feature = "std"))]
+    fn from(_err: InternalError) -> SignatureError {
+        SignatureError::new()
     }
-}
 
-#[cfg(feature = "std")]
-impl Error for SignatureError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.0)
+    #[cfg(feature = "std")]
+    fn from(err: InternalError) -> SignatureError {
+        SignatureError::from_source(err)
     }
 }

@@ -11,8 +11,6 @@
 
 use core::fmt::Debug;
 
-use clear_on_drop::clear::Clear;
-
 use curve25519_dalek::constants;
 use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
@@ -32,25 +30,24 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "serde")]
 use serde::{Deserializer, Serializer};
 
+use zeroize::Zeroize;
+
 use crate::constants::*;
 use crate::errors::*;
 use crate::public::*;
 use crate::signature::*;
 
 /// An EdDSA secret key.
-#[derive(Default)] // we derive Default in order to use the clear() method in Drop
+///
+/// Instances of this secret are automatically overwritten with zeroes when they
+/// fall out of scope.
+#[derive(Zeroize)]
+#[zeroize(drop)] // Overwrite secret key material with null bytes when it goes out of scope.
 pub struct SecretKey(pub(crate) [u8; SECRET_KEY_LENGTH]);
 
 impl Debug for SecretKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "SecretKey: {:?}", &self.0[..])
-    }
-}
-
-/// Overwrite secret key material with null bytes when it goes out of scope.
-impl Drop for SecretKey {
-    fn drop(&mut self) {
-        self.0.clear();
     }
 }
 
@@ -109,10 +106,10 @@ impl SecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<SecretKey, SignatureError> {
         if bytes.len() != SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "SecretKey",
                 length: SECRET_KEY_LENGTH,
-            }));
+            }.into());
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
@@ -223,6 +220,9 @@ impl<'d> Deserialize<'d> for SecretKey {
 /// upper half is used a sort of half-baked, ill-designed² pseudo-domain-separation
 /// "nonce"-like thing, which is used during signature production by
 /// concatenating it with the message to be signed before the message is hashed.
+///
+/// Instances of this secret are automatically overwritten with zeroes when they
+/// fall out of scope.
 //
 // ¹ This results in a slight bias towards non-uniformity at one spectrum of
 // the range of valid keys.  Oh well: not my idea; not my problem.
@@ -250,18 +250,11 @@ impl<'d> Deserialize<'d> for SecretKey {
 // same signature scheme, and which both fail in exactly the same way.  For a
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
-#[derive(Default)] // we derive Default in order to use the clear() method in Drop
+#[derive(Zeroize)]
+#[zeroize(drop)] // Overwrite secret key material with null bytes when it goes out of scope.
 pub struct ExpandedSecretKey {
     pub(crate) key: Scalar,
     pub(crate) nonce: [u8; 32],
-}
-
-/// Overwrite secret key material with null bytes when it goes out of scope.
-impl Drop for ExpandedSecretKey {
-    fn drop(&mut self) {
-        self.key.clear();
-        self.nonce.clear();
-    }
 }
 
 impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
@@ -390,10 +383,10 @@ impl ExpandedSecretKey {
     #[inline]
     pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
-            return Err(SignatureError(InternalError::BytesLengthError {
+            return Err(InternalError::BytesLengthError {
                 name: "ExpandedSecretKey",
                 length: EXPANDED_SECRET_KEY_LENGTH,
-            }));
+            }.into());
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -409,7 +402,7 @@ impl ExpandedSecretKey {
 
     /// Sign a message with this `ExpandedSecretKey`.
     #[allow(non_snake_case)]
-    pub fn sign(&self, message: &[u8], public_key: &PublicKey) -> Signature {
+    pub fn sign(&self, message: &[u8], public_key: &PublicKey) -> ed25519::Signature {
         let mut h: Sha512 = Sha512::new();
         let R: CompressedEdwardsY;
         let r: Scalar;
@@ -430,7 +423,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature { R, s }
+        InternalSignature { R, s }.into()
     }
 
     /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
@@ -448,7 +441,9 @@ impl ExpandedSecretKey {
     ///
     /// # Returns
     ///
-    /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    /// A `Result` whose `Ok` value is an Ed25519ph [`Signature`] on the
+    /// `prehashed_message` if the context was 255 bytes or less, otherwise
+    /// a `SignatureError`.
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[allow(non_snake_case)]
@@ -457,7 +452,7 @@ impl ExpandedSecretKey {
         prehashed_message: D,
         public_key: &PublicKey,
         context: Option<&'a [u8]>,
-    ) -> Signature
+    ) -> Result<ed25519::Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {
@@ -470,7 +465,9 @@ impl ExpandedSecretKey {
 
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
 
-        debug_assert!(ctx.len() <= 255, "The context must not be longer than 255 octets.");
+        if ctx.len() > 255 {
+            return Err(SignatureError::from(InternalError::PrehashedContextLengthError));
+        }
 
         let ctx_len: u8 = ctx.len() as u8;
 
@@ -512,7 +509,7 @@ impl ExpandedSecretKey {
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
 
-        Signature { R, s }
+        Ok(InternalSignature { R, s }.into())
     }
 }
 
@@ -552,5 +549,25 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
             }
         }
         deserializer.deserialize_bytes(ExpandedSecretKeyVisitor)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn secret_key_zeroize_on_drop() {
+        let secret_ptr: *const u8;
+
+        { // scope for the secret to ensure it's been dropped
+            let secret = SecretKey::from_bytes(&[0x15u8; 32][..]).unwrap();
+
+            secret_ptr = secret.0.as_ptr();
+        }
+
+        let memory: &[u8] = unsafe { ::std::slice::from_raw_parts(secret_ptr, 32) };
+
+        assert!(!memory.contains(&0x15));
     }
 }

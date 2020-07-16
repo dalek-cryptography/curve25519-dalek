@@ -45,9 +45,6 @@ pub(crate) enum InternalError {
     PrehashedContextLengthError,
 }
 
-unsafe impl Send for InternalError {}
-unsafe impl Sync for InternalError {}
-
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {

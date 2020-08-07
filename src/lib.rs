@@ -59,6 +59,9 @@ extern crate serde;
 #[macro_use]
 pub(crate) mod macros;
 
+#[macro_use]
+extern crate engine25519_as;
+
 //------------------------------------------------------------------------
 // curve25519-dalek public modules
 //------------------------------------------------------------------------

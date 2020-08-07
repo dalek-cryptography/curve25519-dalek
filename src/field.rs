@@ -457,4 +457,70 @@ mod test {
     fn batch_invert_empty() {
         FieldElement::batch_invert(&mut []);
     }
+
+    #[test]
+    fn make_vectors() {
+        use std::fs::File;
+        use std::io::prelude::*;
+        use std::path::Path;
+        use engine25519_as::*;
+
+        fn write_helper(file: &mut File, elem: FieldElement) {
+            let elem_bytes = elem.to_bytes();
+            let _ = file.write(&elem_bytes);
+            /*
+            for i in 0..elem_bytes.len()/4 {
+                let word: u32 = elem_bytes.pread::<u32>(i).unwrap();
+                let _ = write!(file, "{:02x}", elem_bytes[i]);
+            }
+            let _ = write!(file, " ");*/
+        }
+
+        let a = FieldElement::one();
+        let b = FieldElement::minus_one();
+        let q = &a + &b;
+
+        let mcode = assemble_engine25519!(
+            start:
+                add %0, %1, %2
+        );
+
+        let path = Path::new("test_vectors.bin");
+        let mut file = File::create(&path).unwrap();
+
+        // insert machine code
+        // Metadata record:
+        //   0x0 [31   load address   16]                                 [15  length of code  0]
+        //   0x4 [31  N registers to load  27] [26 W window 23] [22  X number of vectors sets  0]
+        //   0x8 [microcode] (variable length)
+        //   [ padding of 0x0 until 0x20 * align ]
+        //   0x20*align [X test vectors]
+        // Convention:
+        //   Check result is always in r31
+        //   N Registers loaded starting at r0 into window W
+        let mcode_len = mcode.len();
+        let _ = file.write(&( ((0x0 & 0xFFFF << 16)
+                             | (mcode_len & 0xFFFF)
+                             ) as u32)
+                            .to_le_bytes() ); // load address 0 + code length
+        let _ = file.write(&( ((2 & 0x1F) << 27
+                             | (0 & 0xF) << 23
+                             | (1 & 0x3F_FFFF)
+                             ) as u32)
+                            .to_le_bytes() ); // 2 registers, window 0, 1 vector
+        // the actual microcode
+        for i in 0..mcode_len {
+            let _ = file.write(&(mcode[i] as u32).to_le_bytes());
+        }
+
+        // pad with 0's to a 256-bit stride
+        for _ in 0..(8 - ((2 + mcode_len) % 8)) {  // 2 words for metadata + code length
+            let _ = file.write(&[0,0,0,0]); // write out 32-bit words of 0 (as array of u8)
+        }
+
+        // test vectors
+        write_helper(&mut file, a);
+        write_helper(&mut file, b);
+        write_helper(&mut file, q);
+    }
 }

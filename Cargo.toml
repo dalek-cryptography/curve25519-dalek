@@ -47,7 +47,7 @@ subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
-engine25519-as = { path="../engine25519-as" }
+engine25519-as = { path="../engine25519-as", default-features = false, features = [] }
 
 [features]
 nightly = ["subtle/nightly"]

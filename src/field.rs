@@ -464,6 +464,7 @@ mod test {
         use std::io::prelude::*;
         use std::path::Path;
         use engine25519_as::*;
+        use rand::Rng;
 
         fn write_helper(file: &mut File, elem: FieldElement) {
             let elem_bytes = elem.to_bytes();
@@ -476,62 +477,76 @@ mod test {
             let _ = write!(file, " ");*/
         }
 
-        let a = FieldElement::one();
-        let b = FieldElement::minus_one();
-        let q = &a + &b;
-
-        let mcode = assemble_engine25519!(
-            start:
-                add %2, %0, %1
-                trd %3, %2
-                sub %31, %2, %3
-                fin
-        );
-
         let path = Path::new("test_vectors.bin");
         let mut file = File::create(&path).unwrap();
 
-        // insert machine code
-        // Metadata record:
-        //   0x0 0x56454354   "VECT" - indicates a valid vector set
-        //   0x4 [31   load address   16]                                 [15  length of code  0]
-        //   0x8 [31  N registers to load  27] [26 W window 23] [22  X number of vectors sets  0]
-        //   0xC [microcode] (variable length)
-        //   [ padding of 0x0 until 0x20 * align ]
-        //   0x20*align [X test vectors]
-        // Records can repeat, and each one represents a new test
-        // End of records MUST end with a word that is NOT 0x56454354
-        //    This is because the ROM read can "wrap around" and the test will run forever
-        //    We use 0xFFFF_FFFF to indicate this
-        // Convention:
-        //   Check result is always in r31
-        //   N Registers loaded starting at r0 into window W
-        let mcode_len = mcode.len();
-        let _ = file.write(&(0x5645_4354 as u32).to_le_bytes());
-        let _ = file.write(&( ((0x0 & 0xFFFF << 16)
-                             | (mcode_len & 0xFFFF)
-                             ) as u32)
-                            .to_le_bytes() ); // load address 0 + code length
-        let _ = file.write(&( ((2 & 0x1F) << 27
-                             | (0 & 0xF) << 23
-                             | (1 & 0x3F_FFFF)
-                             ) as u32)
-                            .to_le_bytes() ); // 2 registers, window 0, 1 vector
-        // the actual microcode
-        for i in 0..mcode_len {
-            let _ = file.write(&(mcode[i] as u32).to_le_bytes());
+        fn test_add(mut file: &mut File) {
+            let mcode = assemble_engine25519!(
+                start:
+                    add %2, %0, %1
+                    trd %3, %2
+                    sub %31, %2, %3
+                    fin
+            );
+
+            // insert machine code
+            // Metadata record:
+            //   0x0 0x56454354   "VECT" - indicates a valid vector set
+            //   0x4 [31   load address   16]                                 [15  length of code  0]
+            //   0x8 [31  N registers to load  27] [26 W window 23] [22  X number of vectors sets  0]
+            //   0xC [microcode] (variable length)
+            //   [ padding of 0x0 until 0x20 * align ]
+            //   0x20*align [X test vectors]
+            // Records can repeat, and each one represents a new test
+            // End of records MUST end with a word that is NOT 0x56454354
+            //    This is because the ROM read can "wrap around" and the test will run forever
+            //    We use 0xFFFF_FFFF to indicate this
+            // Convention:
+            //   Check result is always in r31
+            //   N Registers loaded starting at r0 into window W
+            let mcode_len = mcode.len();
+            let _ = file.write(&(0x5645_4354 as u32).to_le_bytes());
+            let _ = file.write(&( ((0x0 & 0xFFFF << 16)
+                                | (mcode_len & 0xFFFF)
+                                ) as u32)
+                                .to_le_bytes() ); // load address 0 + code length
+            let _ = file.write(&( ((2 & 0x1F) << 27 // number of source registers per test
+                                | (0 & 0xF) << 23   // register window to use
+                                | (5 & 0x3F_FFFF)   // number of tests
+                                ) as u32)
+                                .to_le_bytes() ); // 2 registers, window 0, 1 vector
+            // the actual microcode
+            for i in 0..mcode_len {
+                let _ = file.write(&(mcode[i] as u32).to_le_bytes());
+            }
+
+            // pad with 0's to a 256-bit stride
+            for _ in 0..(8 - ((3 + mcode_len) % 8)) {  // 3 words for metadata + code length
+                let _ = file.write(&[0,0,0,0]); // write out 32-bit words of 0 (as array of u8)
+            }
+
+            // test vectors
+            // 1 plus -1 = 0 -> this works overflow path
+            let a = FieldElement::one();
+            let b = FieldElement::minus_one();
+            let q = &a + &b;
+
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // four random numbers
+            for _ in 0..4 {
+                let a = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let b = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let q = &a + &b;
+                write_helper(&mut file, a);
+                write_helper(&mut file, b);
+                write_helper(&mut file, q);
+            }
         }
 
-        // pad with 0's to a 256-bit stride
-        for _ in 0..(8 - ((3 + mcode_len) % 8)) {  // 3 words for metadata + code length
-            let _ = file.write(&[0,0,0,0]); // write out 32-bit words of 0 (as array of u8)
-        }
-
-        // test vectors
-        write_helper(&mut file, a);
-        write_helper(&mut file, b);
-        write_helper(&mut file, q);
-
+        test_add(&mut file);
         // end sequence
         let _ = file.write(&(0xFFFF_FFFF as u32).to_le_bytes());
     }

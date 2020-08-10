@@ -48,6 +48,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
 engine25519-as = { path="../engine25519-as", default-features = false, features = [] }
+rand = { version = "0.7" }
 
 [features]
 nightly = ["subtle/nightly"]

@@ -477,10 +477,61 @@ mod test {
             let _ = write!(file, " ");*/
         }
 
+        fn write_test_header(file: &mut File,
+            loading_address: u32,
+            mcode: &[i32],
+            num_src_regs: u32,
+            reg_window: u32,
+            num_tests: u32,
+        ) {
+            let mcode_len: u32 = mcode.len() as u32;
+            let _ = file.write(&(0x5645_4354 as u32).to_le_bytes());
+            let _ = file.write(&( ((loading_address & 0xFFFF << 16)
+                                | (mcode_len & 0xFFFF)
+                                ) as u32)
+                                .to_le_bytes() ); // load address 0 + code length
+            let _ = file.write(&( ((num_src_regs & 0x1F) << 27 // number of source registers per test
+                                | (reg_window & 0xF) << 23   // register window to use
+                                | (num_tests & 0x3F_FFFF)   // number of tests
+                                ) as u32)
+                                .to_le_bytes() ); // 2 registers, window 0, 1 vector
+            // the actual microcode
+            for i in 0..mcode_len {
+                let _ = file.write(&(mcode[i as usize] as u32).to_le_bytes());
+            }
+
+            // pad with 0's to a 256-bit stride
+            for _ in 0..(8 - ((3 + mcode_len) % 8)) {  // 3 words for metadata + code length
+                let _ = file.write(&[0,0,0,0]); // write out 32-bit words of 0 (as array of u8)
+            }
+        }
+
         let path = Path::new("test_vectors.bin");
         let mut file = File::create(&path).unwrap();
 
+        // Metadata record format. Each test should have the following layout:
+        //   0x0 0x56454354   "VECT" - indicates a valid vector set
+        //   0x4 [31   load address   16]                                 [15  length of code  0]
+        //   0x8 [31  N registers to load  27] [26 W window 23] [22  X number of vectors sets  0]
+        //   0xC [microcode] (variable length)
+        //   [ padding of 0x0 until 0x20 * align ]
+        //   0x20*align [X test vectors]
+        // Records can repeat; as long as "VECT" is found, the test framework will attemp to load and run the test
+        //
+        // End of records MUST end with a word that is NOT 0x56454354
+        //    This is because the ROM read can "wrap around" and the test will run forever
+        //    We use 0xFFFF_FFFF to indicate this
+        //
+        // For each test, vectors are storted with the following convention:
+        //   Check result is always in r31
+        //   N Registers loaded starting at r0 into window W
         fn test_add(mut file: &mut File) {
+            // test addition. two input registers (r0, r1), one output register (r31).
+            let num_src_regs = 2;
+            let reg_window = 0;
+            let num_tests = 5; // one manual test + 4 random vectors
+            let loading_address = 0; // microcode loading address
+
             let mcode = assemble_engine25519!(
                 start:
                     add %2, %0, %1
@@ -489,41 +540,7 @@ mod test {
                     fin
             );
 
-            // insert machine code
-            // Metadata record:
-            //   0x0 0x56454354   "VECT" - indicates a valid vector set
-            //   0x4 [31   load address   16]                                 [15  length of code  0]
-            //   0x8 [31  N registers to load  27] [26 W window 23] [22  X number of vectors sets  0]
-            //   0xC [microcode] (variable length)
-            //   [ padding of 0x0 until 0x20 * align ]
-            //   0x20*align [X test vectors]
-            // Records can repeat, and each one represents a new test
-            // End of records MUST end with a word that is NOT 0x56454354
-            //    This is because the ROM read can "wrap around" and the test will run forever
-            //    We use 0xFFFF_FFFF to indicate this
-            // Convention:
-            //   Check result is always in r31
-            //   N Registers loaded starting at r0 into window W
-            let mcode_len = mcode.len();
-            let _ = file.write(&(0x5645_4354 as u32).to_le_bytes());
-            let _ = file.write(&( ((0x0 & 0xFFFF << 16)
-                                | (mcode_len & 0xFFFF)
-                                ) as u32)
-                                .to_le_bytes() ); // load address 0 + code length
-            let _ = file.write(&( ((2 & 0x1F) << 27 // number of source registers per test
-                                | (0 & 0xF) << 23   // register window to use
-                                | (5 & 0x3F_FFFF)   // number of tests
-                                ) as u32)
-                                .to_le_bytes() ); // 2 registers, window 0, 1 vector
-            // the actual microcode
-            for i in 0..mcode_len {
-                let _ = file.write(&(mcode[i] as u32).to_le_bytes());
-            }
-
-            // pad with 0's to a 256-bit stride
-            for _ in 0..(8 - ((3 + mcode_len) % 8)) {  // 3 words for metadata + code length
-                let _ = file.write(&[0,0,0,0]); // write out 32-bit words of 0 (as array of u8)
-            }
+            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
 
             // test vectors
             // 1 plus -1 = 0 -> this works overflow path
@@ -546,7 +563,246 @@ mod test {
             }
         }
 
+        fn test_cswap(mut file: &mut File) {
+            // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
+            let num_src_regs = 3;
+            let reg_window = 15;
+            let num_tests = 4;
+            let loading_address = 0; // microcode loading address
+
+            // psa is used to move %0 to %31 mostly to test that psa works
+            let mcode = assemble_engine25519!(
+                start:
+                    xor %30, %0, %1
+                    msk %30, %2, %30
+                    xor %0, %30, %0
+                    xor %1, %30, %1
+                    psa %31, %0
+                    fin
+            );
+            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
+
+            // test vectors
+            for i in 0..4 {
+                let a = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let b = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let swap: FieldElement;
+                let q: FieldElement;
+                if i % 2 == 0 {
+                    swap = FieldElement::zero();
+                    q = a;
+                } else {
+                    swap = FieldElement::one();
+                    q = b;
+                }
+                write_helper(&mut file, a);
+                write_helper(&mut file, b);
+                write_helper(&mut file, swap);
+                write_helper(&mut file, q);
+            }
+        }
+
+        fn test_mul(mut file: &mut File) {
+            // test multiplier. two input registers: (r0, r1), one output register (r31).
+            let num_src_regs = 2;
+            let reg_window = 0;
+            let num_tests = 15;
+            let loading_address = 0; // microcode loading address
+
+            let mcode = assemble_engine25519!(
+                start:
+                    mul %31, %1, %0
+                    fin
+            );
+            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
+
+            // 1: 1*1 - simple case
+            let a = FieldElement::one();
+            let b = FieldElement::one();
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 2: 1*-1 - simple case
+            let a = FieldElement::one();
+            let b = FieldElement::minus_one();
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 3
+            let a = FieldElement::from_bytes(&[
+                0xEB, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7f,]);
+            let b = FieldElement::one();
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 4
+            let a = FieldElement::from_bytes(&[
+                0xA4, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x2A,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                3, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 5
+            let a = FieldElement::from_bytes(&[
+                0xED, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7f,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 6
+            let a = FieldElement::from_bytes(&[
+                0xF7, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3f,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                2, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 7
+            let a = FieldElement::from_bytes(&[
+                0xA5, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x2A,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                3, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 8
+            let a = FieldElement::from_bytes(&[
+                0xA5, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+                0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0x2A,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                3, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 9: not normalized input!
+            let a = FieldElement::from_bytes(&[
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7f,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 10
+            let a = FieldElement::from_bytes(&[
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3f,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                2, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 11
+            let a = FieldElement::from_bytes(&[
+                0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
+                0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
+                0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
+                0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x19,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                5, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 12-15
+            for _ in 0..4 {
+                let a = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let b = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let q = &a * &b;
+                write_helper(&mut file, a);
+                write_helper(&mut file, b);
+                write_helper(&mut file, q);
+            }
+        }
+
         test_add(&mut file);
+        test_cswap(&mut file);
+        test_mul(&mut file);
+
         // end sequence
         let _ = file.write(&(0xFFFF_FFFF as u32).to_le_bytes());
     }

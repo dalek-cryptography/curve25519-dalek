@@ -563,6 +563,54 @@ mod test {
             }
         }
 
+        fn ref_fact(n: usize) -> FieldElement {
+            let mut a = FieldElement::one();
+            let mut result = FieldElement::one();
+            for _ in 0..n {
+                result = &result * &a;
+                a = &a + &FieldElement::one();
+            }
+            result
+        }
+
+        fn test_loop(mut file: &mut File) {
+            // test addition. two input registers (r0, r1), one output register (r31).
+            let num_src_regs = 1;
+            let reg_window = 0;
+            let num_tests = 5; // 5 sequential tests
+            let loading_address = 0; // microcode loading address
+
+            // compute a factorial using a loop
+            // also tests psa/psb with constants
+            // %0 is the argument, %31 is the result
+            // %10 is the multiplicand for the factorial
+            // %0 is re-used as the loop counter
+            let mcode = assemble_engine25519!(
+                start:
+                    psa %10, #1
+                    psb %31, #1
+                loop:
+                    mul %31, %31, %10
+                    add %10, %10, #1
+                    sub %0, %0, #1
+                    brz end, %0
+                    brz loop, #0
+                end:
+                    fin
+            );
+
+            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
+
+            // test vectors
+            let mut n = FieldElement::one();
+            for i in 1..6 {
+                write_helper(&mut file, n);
+                n = &n + &FieldElement::one(); // mirror i's progression
+                let q = ref_fact(i);
+                write_helper(&mut file, q);
+            }
+        }
+
         fn test_cswap(mut file: &mut File) {
             // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
             let num_src_regs = 3;
@@ -863,6 +911,7 @@ mod test {
         }
 
         test_add(&mut file);
+        test_loop(&mut file);
         test_cswap(&mut file);
         test_mul(&mut file);
 

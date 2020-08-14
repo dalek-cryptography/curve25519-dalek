@@ -608,7 +608,7 @@ mod test {
             // test multiplier. two input registers: (r0, r1), one output register (r31).
             let num_src_regs = 2;
             let reg_window = 0;
-            let num_tests = 21 + extra_tests;
+            let num_tests = 22 + extra_tests;
             let loading_address = 0; // microcode loading address
 
             let mcode = assemble_engine25519!(
@@ -774,6 +774,24 @@ mod test {
 
             // 11
             let a = FieldElement::from_bytes(&[
+                0xF8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x3f,
+                ]);
+            let b = FieldElement::from_bytes(&[
+                4, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0,
+            ]);
+            let q = &a * &b;
+            write_helper(&mut file, a);
+            write_helper(&mut file, b);
+            write_helper(&mut file, q);
+
+            // 12
+            let a = FieldElement::from_bytes(&[
                 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
                 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
                 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99, 0x99,
@@ -790,7 +808,7 @@ mod test {
             write_helper(&mut file, b);
             write_helper(&mut file, q);
 
-            // 12
+            // 13
             let a = FieldElement::from_bytes(&[
                 0x94, 0xc2, 0xf9, 0x3b, 0xb7, 0xe7, 0xe5, 0x78,
                 0x22, 0x23, 0x00, 0x14, 0x55, 0x41, 0x56, 0x05,
@@ -810,7 +828,7 @@ mod test {
             write_helper(&mut file, b);
             write_helper(&mut file, q);
 
-            // 13
+            // 14
             let a = FieldElement::from_bytes(&[
                 0x6d, 0xad, 0x72, 0xf8, 0x64, 0x1b, 0x8f, 0x43,
                 0xba, 0x50, 0xb5, 0x83, 0xe1, 0x5f, 0xd6, 0x43,
@@ -833,7 +851,7 @@ mod test {
             // 0xa5, 0x2c, 0x13, 0x23, 0x6f, 0xfe, 0x43, 0x2e,
             // 0x8d, 0xdd, 0x74, 0xbc, 0xa6, 0x02, 0x00, 0x00,
 
-            // 14-21
+            // 15-22
             for _ in 0..(8+extra_tests) {
                 let a = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
                 let b = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());

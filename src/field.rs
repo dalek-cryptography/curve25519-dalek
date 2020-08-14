@@ -603,10 +603,12 @@ mod test {
         }
 
         fn test_mul(mut file: &mut File) {
+            let extra_tests = 100; // vary this to add more random vectors at the end
+
             // test multiplier. two input registers: (r0, r1), one output register (r31).
             let num_src_regs = 2;
             let reg_window = 0;
-            let num_tests = 21;
+            let num_tests = 21 + extra_tests;
             let loading_address = 0; // microcode loading address
 
             let mcode = assemble_engine25519!(
@@ -832,7 +834,7 @@ mod test {
             // 0x8d, 0xdd, 0x74, 0xbc, 0xa6, 0x02, 0x00, 0x00,
 
             // 14-21
-            for _ in 0..8 {
+            for _ in 0..(8+extra_tests) {
                 let a = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
                 let b = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
                 let q = &a * &b;

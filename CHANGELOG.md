@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.0.1
+
+* Update underlying `curve25519_dalek` library to `3.0`.
+
 ## 1.0.0
 
 * Widen generic bound on `EphemeralSecret::new` and `StaticSecret::new` to

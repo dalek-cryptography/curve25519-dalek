@@ -62,10 +62,7 @@ impl EphemeralSecret {
     }
 
     /// Generate an x25519 `EphemeralSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
@@ -104,10 +101,7 @@ impl StaticSecret {
     }
 
     /// Generate a x25519 `StaticSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);

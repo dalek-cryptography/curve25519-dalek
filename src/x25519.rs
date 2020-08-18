@@ -23,8 +23,7 @@ use rand_core::RngCore;
 
 use zeroize::Zeroize;
 
-/// A `PublicKey` is the corresponding public key converted from
-/// an `EphemeralSecret` or a `StaticSecret` key.
+/// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or [`StaticSecret`] key.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
@@ -54,20 +53,26 @@ impl PublicKey {
     }
 }
 
-/// A `EphemeralSecret` is a short lived Diffie-Hellman secret key
-/// used to create a `SharedSecret` when given their `PublicKey`.
+/// A short-lived Diffie-Hellman secret key that can only be used to compute a single
+/// [`SharedSecret`].
+///
+/// This type is identical to the [`StaticSecret`] type, except that the
+/// [`EphemeralSecret::diffie_hellman`] method consumes and then wipes the secret key, and there
+/// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
+/// generated from fresh randomness by [`EphemeralSecret::new`] and the compiler statically checks
+/// that the resulting secret is used at most once.
 #[derive(Zeroize)]
 #[zeroize(drop)]
 pub struct EphemeralSecret(pub(crate) Scalar);
 
 impl EphemeralSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
-    /// `their_public` key to produce a `SharedSecret`.
+    /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate an x25519 `EphemeralSecret` key.
+    /// Generate an x25519 [`EphemeralSecret`] key.
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
@@ -78,16 +83,27 @@ impl EphemeralSecret {
 }
 
 impl<'a> From<&'a EphemeralSecret> for PublicKey {
-    /// Given an x25519 `EphemeralSecret` key, compute its corresponding
-    /// `PublicKey` key.
+    /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a EphemeralSecret) -> PublicKey {
         PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 }
 
-/// A `StaticSecret` is a static Diffie-Hellman secret key that
-/// can be saved and loaded to create a `SharedSecret` when given
-/// their `PublicKey`.
+/// A Diffie-Hellman secret key that can be used to compute multiple [`SharedSecret`]s.
+///
+/// This type is identical to the [`EphemeralSecret`] type, except that the
+/// [`StaticSecret::diffie_hellman`] method does not consume the secret key, and the type provides
+/// serialization methods to save and load key material.  This means that the secret may be used
+/// multiple times (but does not *have to be*).
+///
+/// Some protocols, such as Noise, already handle the static/ephemeral distinction, so the
+/// additional guarantees provided by [`EphemeralSecret`] are not helpful or would cause duplicate
+/// code paths.  In this case, it may be useful to
+/// ```rust,ignore
+/// use x25519_dalek::StaticSecret as SecretKey;
+/// ```
+/// since the only difference between the two is that [`StaticSecret`] does not enforce at
+/// compile-time that the key is only used once.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
@@ -106,7 +122,7 @@ impl StaticSecret {
         SharedSecret(&self.0 * their_public.0)
     }
 
-    /// Generate a x25519 `StaticSecret` key.
+    /// Generate an x25519 key.
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
@@ -115,29 +131,30 @@ impl StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 
-    /// Save a x25519 `StaticSecret` key's bytes.
+    /// Extract this key's bytes for serialization.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
     }
 }
 
 impl From<[u8; 32]> for StaticSecret {
-    /// Load a `StaticSecret` from a byte array.
+    /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 }
 
 impl<'a> From<&'a StaticSecret> for PublicKey {
-    /// Given an x25519 `StaticSecret` key, compute its corresponding
-    /// `PublicKey` key.
+    /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
         PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 }
 
-/// A `SharedSecret` is a Diffie-Hellman shared secret that’s generated
-/// from your `EphemeralSecret` or `StaticSecret` and their `PublicKey`.
+/// The result of a Diffie-Hellman key exchange.
+///
+/// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
+/// counterparty's [`PublicKey`].
 #[derive(Zeroize)]
 #[zeroize(drop)]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);

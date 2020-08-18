@@ -2,6 +2,12 @@
 
 Entries are listed in reverse chronological order.
 
+## 3.0.0
+
+* Update the `digest` dependency to `0.9`.  This requires a major version
+  because the `digest` traits are part of the public API, but there are
+  otherwise no changes to the API.
+
 ## 2.1.0
 
 * Make `Scalar::from_bits` a `const fn`, allowing its use in `const` contexts.
@@ -24,6 +30,12 @@ Entries are listed in reverse chronological order.
 
 The only significant change is the data model change to the `serde` feature;
 besides the `rand_core` version bump, there are no other user-visible changes.
+
+## 1.2.4
+
+* Specify a semver bound for `clear_on_drop` rather than an exact version,
+  addressing an issue where changes to inline assembly in rustc prevented
+  `clear_on_drop` from working without an update.
 
 ## 1.2.3
 

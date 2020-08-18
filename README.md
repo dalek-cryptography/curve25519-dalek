@@ -31,45 +31,60 @@ the rest of the afternoon nomming some yummy pie!
 First, Alice uses `EphemeralSecret::new()` and then
 `PublicKey::from()` to produce her secret and public keys:
 
-```rust,ignore
-extern crate rand_os;
-extern crate x25519_dalek;
+```rust
+use rand_core::OsRng;
+use x25519_dalek::{EphemeralSecret, PublicKey};
 
-use rand_os::OsRng;
-
-use x25519_dalek::EphemeralSecret;
-use x25519_dalek::PublicKey;
-
-let mut alice_csprng = OsRng::new().unwrap();
-let     alice_secret = EphemeralSecret::new(&mut alice_csprng);
-let     alice_public = PublicKey::from(&alice_secret);
+let alice_secret = EphemeralSecret::new(OsRng);
+let alice_public = PublicKey::from(&alice_secret);
 ```
 
 Bob does the same:
 
-```rust,ignore
-let mut bob_csprng = OsRng::new().unwrap();
-let     bob_secret = EphemeralSecret::new(&mut bob_csprng);
-let     bob_public = PublicKey::from(&bob_secret);
+```rust
+# use rand_core::OsRng;
+# use x25519_dalek::{EphemeralSecret, PublicKey};
+let bob_secret = EphemeralSecret::new(OsRng);
+let bob_public = PublicKey::from(&bob_secret);
 ```
 
 Alice meows across the room, telling `alice_public` to Bob, and Bob
 loudly meows `bob_public` back to Alice.  Alice now computes her
 shared secret with Bob by doing:
 
-```rust,ignore
+```rust
+# use rand_core::OsRng;
+# use x25519_dalek::{EphemeralSecret, PublicKey};
+# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_public = PublicKey::from(&bob_secret);
 let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 ```
 
 Similarly, Bob computes a shared secret by doing:
 
-```rust,ignore
+```rust
+# use rand_core::OsRng;
+# use x25519_dalek::{EphemeralSecret, PublicKey};
+# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_public = PublicKey::from(&bob_secret);
 let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 ```
 
 These secrets are the same:
 
-```rust,ignore
+```rust
+# use rand_core::OsRng;
+# use x25519_dalek::{EphemeralSecret, PublicKey};
+# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_public = PublicKey::from(&alice_secret);
+# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_public = PublicKey::from(&bob_secret);
+# let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
+# let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
 ```
 

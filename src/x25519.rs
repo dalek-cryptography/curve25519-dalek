@@ -68,10 +68,7 @@ impl EphemeralSecret {
     }
 
     /// Generate an x25519 `EphemeralSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
@@ -110,10 +107,7 @@ impl StaticSecret {
     }
 
     /// Generate a x25519 `StaticSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
@@ -216,21 +210,6 @@ mod test {
     use super::*;
 
     use rand_core::OsRng;
-
-    // This was previously a doctest but it got moved to the README to
-    // avoid duplication where it then wasn't being run, so now it
-    // lives here.
-    #[test]
-    fn alice_and_bob() {
-        let alice_secret = EphemeralSecret::new(&mut OsRng);
-        let alice_public = PublicKey::from(&alice_secret);
-        let bob_secret = EphemeralSecret::new(&mut OsRng);
-        let bob_public = PublicKey::from(&bob_secret);
-        let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
-        let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
-
-        assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
-    }
 
     #[test]
     fn byte_basepoint_matches_edwards_scalar_mul() {

@@ -4,7 +4,7 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update html_root_url
 # - update README if required by semver
-version = "2.1.0"
+version = "3.0.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -30,7 +30,7 @@ features = ["nightly", "simd_backend"]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
-sha2 = { version = "0.8", default-features = false }
+sha2 = { version = "0.9", default-features = false }
 bincode = "1"
 criterion = "0.3.0"
 rand = "0.7"
@@ -42,7 +42,7 @@ harness = false
 [dependencies]
 rand_core = { version = "0.5", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
-digest = { version = "0.8", default-features = false }
+digest = { version = "0.9", default-features = false }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }

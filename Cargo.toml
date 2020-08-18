@@ -1,8 +1,11 @@
 [package]
 name = "x25519-dalek"
 edition = "2018"
-# Be sure to update the version in README.md
-version = "0.6.0"
+# Before changing this:
+# - update version in README.md
+# - update html_root_url
+# - update CHANGELOG
+version = "1.0.0"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>", 
     "DebugSteven <debugsteven@gmail.com>",

@@ -5,7 +5,7 @@ edition = "2018"
 # - update version in README.md
 # - update html_root_url
 # - update CHANGELOG
-version = "1.0.0"
+version = "1.0.1"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>", 
     "DebugSteven <debugsteven@gmail.com>",
@@ -33,7 +33,7 @@ travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 features = ["nightly"]
 
 [dependencies]
-curve25519-dalek = { version = "2", default-features = false }
+curve25519-dalek = { version = "3", default-features = false }
 rand_core = { version = "0.5", default-features = false }
 # `serde` is renamed to `our_serde` in order to avoid a name collision between
 # importing the serde dependency and enabling the curve25519-dalek/serde feature

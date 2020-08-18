@@ -23,8 +23,7 @@ use rand_core::RngCore;
 
 use zeroize::Zeroize;
 
-/// A `PublicKey` is the corresponding public key converted from
-/// an `EphemeralSecret` or a `StaticSecret` key.
+/// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or [`StaticSecret`] key.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
@@ -41,6 +40,12 @@ impl From<[u8; 32]> for PublicKey {
 }
 
 impl PublicKey {
+    /// Convert this public key to a byte array.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
     /// View this public key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
@@ -48,24 +53,27 @@ impl PublicKey {
     }
 }
 
-/// A `EphemeralSecret` is a short lived Diffie-Hellman secret key
-/// used to create a `SharedSecret` when given their `PublicKey`.
+/// A short-lived Diffie-Hellman secret key that can only be used to compute a single
+/// [`SharedSecret`].
+///
+/// This type is identical to the [`StaticSecret`] type, except that the
+/// [`EphemeralSecret::diffie_hellman`] method consumes and then wipes the secret key, and there
+/// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
+/// generated from fresh randomness by [`EphemeralSecret::new`] and the compiler statically checks
+/// that the resulting secret is used at most once.
 #[derive(Zeroize)]
 #[zeroize(drop)]
 pub struct EphemeralSecret(pub(crate) Scalar);
 
 impl EphemeralSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
-    /// `their_public` key to produce a `SharedSecret`.
+    /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate an x25519 `EphemeralSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    /// Generate an x25519 [`EphemeralSecret`] key.
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
@@ -75,16 +83,27 @@ impl EphemeralSecret {
 }
 
 impl<'a> From<&'a EphemeralSecret> for PublicKey {
-    /// Given an x25519 `EphemeralSecret` key, compute its corresponding
-    /// `PublicKey` key.
+    /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a EphemeralSecret) -> PublicKey {
         PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 }
 
-/// A `StaticSecret` is a static Diffie-Hellman secret key that
-/// can be saved and loaded to create a `SharedSecret` when given
-/// their `PublicKey`.
+/// A Diffie-Hellman secret key that can be used to compute multiple [`SharedSecret`]s.
+///
+/// This type is identical to the [`EphemeralSecret`] type, except that the
+/// [`StaticSecret::diffie_hellman`] method does not consume the secret key, and the type provides
+/// serialization methods to save and load key material.  This means that the secret may be used
+/// multiple times (but does not *have to be*).
+///
+/// Some protocols, such as Noise, already handle the static/ephemeral distinction, so the
+/// additional guarantees provided by [`EphemeralSecret`] are not helpful or would cause duplicate
+/// code paths.  In this case, it may be useful to
+/// ```rust,ignore
+/// use x25519_dalek::StaticSecret as SecretKey;
+/// ```
+/// since the only difference between the two is that [`StaticSecret`] does not enforce at
+/// compile-time that the key is only used once.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
@@ -103,11 +122,8 @@ impl StaticSecret {
         SharedSecret(&self.0 * their_public.0)
     }
 
-    /// Generate a x25519 `StaticSecret` key.
-    pub fn new<T>(csprng: &mut T) -> Self
-    where
-        T: RngCore + CryptoRng,
-    {
+    /// Generate an x25519 key.
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
@@ -115,34 +131,41 @@ impl StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 
-    /// Save a x25519 `StaticSecret` key's bytes.
+    /// Extract this key's bytes for serialization.
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
     }
 }
 
 impl From<[u8; 32]> for StaticSecret {
-    /// Load a `StaticSecret` from a byte array.
+    /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
         StaticSecret(clamp_scalar(bytes))
     }
 }
 
 impl<'a> From<&'a StaticSecret> for PublicKey {
-    /// Given an x25519 `StaticSecret` key, compute its corresponding
-    /// `PublicKey` key.
+    /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
         PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 }
 
-/// A `SharedSecret` is a Diffie-Hellman shared secret that’s generated
-/// from your `EphemeralSecret` or `StaticSecret` and their `PublicKey`.
+/// The result of a Diffie-Hellman key exchange.
+///
+/// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
+/// counterparty's [`PublicKey`].
 #[derive(Zeroize)]
 #[zeroize(drop)]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
 
 impl SharedSecret {
+    /// Convert this shared secret to a byte array.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }
+
     /// View this shared secret key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
@@ -204,21 +227,6 @@ mod test {
     use super::*;
 
     use rand_core::OsRng;
-
-    // This was previously a doctest but it got moved to the README to
-    // avoid duplication where it then wasn't being run, so now it
-    // lives here.
-    #[test]
-    fn alice_and_bob() {
-        let alice_secret = EphemeralSecret::new(&mut OsRng);
-        let alice_public = PublicKey::from(&alice_secret);
-        let bob_secret = EphemeralSecret::new(&mut OsRng);
-        let bob_public = PublicKey::from(&bob_secret);
-        let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
-        let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
-
-        assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
-    }
 
     #[test]
     fn byte_basepoint_matches_edwards_scalar_mul() {

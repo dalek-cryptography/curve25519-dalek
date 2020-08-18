@@ -101,8 +101,8 @@ and load a long-term secret key.
 To install, add the following to your project's `Cargo.toml`:
 
 ```toml
-[dependencies.x25519-dalek]
-version = "0.6"
+[dependencies]
+x25519-dalek = "1"
 ```
 
 # Documentation

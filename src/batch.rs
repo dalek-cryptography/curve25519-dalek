@@ -175,9 +175,9 @@ pub fn verify_batch(
     // Compute H(R || A || M) for each (signature, public_key, message) triplet
     let hrams: Vec<Scalar> = (0..signatures.len()).map(|i| {
         let mut h: Sha512 = Sha512::default();
-        h.input(signatures[i].R.as_bytes());
-        h.input(public_keys[i].as_bytes());
-        h.input(&messages[i]);
+        h.update(signatures[i].R.as_bytes());
+        h.update(public_keys[i].as_bytes());
+        h.update(&messages[i]);
         Scalar::from_hash(h)
     }).collect();
 

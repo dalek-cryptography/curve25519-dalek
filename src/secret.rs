@@ -283,8 +283,8 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
 
-        h.input(secret_key.as_bytes());
-        hash.copy_from_slice(h.result().as_slice());
+        h.update(secret_key.as_bytes());
+        hash.copy_from_slice(h.finalize().as_slice());
 
         lower.copy_from_slice(&hash[00..32]);
         upper.copy_from_slice(&hash[32..64]);
@@ -409,16 +409,16 @@ impl ExpandedSecretKey {
         let s: Scalar;
         let k: Scalar;
 
-        h.input(&self.nonce);
-        h.input(&message);
+        h.update(&self.nonce);
+        h.update(&message);
 
         r = Scalar::from_hash(h);
         R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = Sha512::new();
-        h.input(R.as_bytes());
-        h.input(public_key.as_bytes());
-        h.input(&message);
+        h.update(R.as_bytes());
+        h.update(public_key.as_bytes());
+        h.update(&message);
 
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;
@@ -472,7 +472,7 @@ impl ExpandedSecretKey {
         let ctx_len: u8 = ctx.len() as u8;
 
         // Get the result of the pre-hashed message.
-        prehash.copy_from_slice(prehashed_message.result().as_slice());
+        prehash.copy_from_slice(prehashed_message.finalize().as_slice());
 
         // This is the dumbest, ten-years-late, non-admission of fucking up the
         // domain separation I have ever seen.  Why am I still required to put

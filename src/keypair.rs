@@ -172,7 +172,7 @@ impl Keypair {
     /// // Create a hash digest object which we'll feed the message into:
     /// let mut prehashed: Sha512 = Sha512::new();
     ///
-    /// prehashed.input(message);
+    /// prehashed.update(message);
     /// # }
     /// #
     /// # #[cfg(not(feature = "std"))]
@@ -216,7 +216,7 @@ impl Keypair {
     /// # let keypair: Keypair = Keypair::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
     /// # let mut prehashed: Sha512 = Sha512::new();
-    /// # prehashed.input(message);
+    /// # prehashed.update(message);
     /// #
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
@@ -294,7 +294,7 @@ impl Keypair {
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
     /// let mut prehashed: Sha512 = Sha512::new();
-    /// prehashed.input(message);
+    /// prehashed.update(message);
     ///
     /// let context: &[u8] = b"Ed25519DalekSignPrehashedDoctest";
     ///
@@ -302,7 +302,7 @@ impl Keypair {
     ///
     /// // The sha2::Sha512 struct doesn't implement Copy, so we'll have to create a new one:
     /// let mut prehashed_again: Sha512 = Sha512::default();
-    /// prehashed_again.input(message);
+    /// prehashed_again.update(message);
     ///
     /// let verified = keypair.public.verify_prehashed(prehashed_again, Some(context), &sig);
     ///

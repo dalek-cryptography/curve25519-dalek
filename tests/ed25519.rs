@@ -101,8 +101,8 @@ mod vectors {
         let mut prehash_for_signing: Sha512 = Sha512::default();
         let mut prehash_for_verifying: Sha512 = Sha512::default();
 
-        prehash_for_signing.input(&msg_bytes[..]);
-        prehash_for_verifying.input(&msg_bytes[..]);
+        prehash_for_signing.update(&msg_bytes[..]);
+        prehash_for_verifying.update(&msg_bytes[..]);
 
         let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None).unwrap();
 
@@ -155,16 +155,16 @@ mod integrations {
 
         // ugh… there's no `impl Copy for Sha512`… i hope we can all agree these are the same hashes
         let mut prehashed_good1: Sha512 = Sha512::default();
-        prehashed_good1.input(good);
+        prehashed_good1.update(good);
         let mut prehashed_good2: Sha512 = Sha512::default();
-        prehashed_good2.input(good);
+        prehashed_good2.update(good);
         let mut prehashed_good3: Sha512 = Sha512::default();
-        prehashed_good3.input(good);
+        prehashed_good3.update(good);
 
         let mut prehashed_bad1: Sha512 = Sha512::default();
-        prehashed_bad1.input(bad);
+        prehashed_bad1.update(bad);
         let mut prehashed_bad2: Sha512 = Sha512::default();
-        prehashed_bad2.input(bad);
+        prehashed_bad2.update(bad);
 
         let context: &[u8] = b"testing testing 1 2 3";
 

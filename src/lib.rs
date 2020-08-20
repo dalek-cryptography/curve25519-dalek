@@ -27,6 +27,8 @@
 //! Note that docs will only build on nightly Rust until
 //! [RFC 1990 stabilizes](https://github.com/rust-lang/rust/issues/44732).
 
+#![recursion_limit="256"]
+
 //------------------------------------------------------------------------
 // External dependencies:
 //------------------------------------------------------------------------

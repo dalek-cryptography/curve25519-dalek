@@ -1042,6 +1042,228 @@ mod test {
             }
         }
 
+        fn test_scalar_mul(mut file: &mut File) {
+            use montgomery::ProjectivePoint;
+
+            // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
+            let num_src_regs = 7;
+            let reg_window = 0;
+            let num_tests = 1;
+            let loading_address = 0; // microcode loading address
+
+            let mcode = assemble_engine25519!(
+                start:
+                    psa %25, %0  // x0.U
+                    psa %26, %1  // x0.W
+                    psa %27, %2  // x1.U
+                    psa %28, %3  // x1.W
+                    psa %24, %4  // affine point
+                    psa %31, %5  // scalar
+                    psa %19, %6  // the number 254
+
+                    // P.U in %20
+                    // P.W in %21
+                    // Q.U in %22
+                    // Q.W in %23
+                    // affine_PmQ in %24
+                    // %30 is the TRD scratch register and cswap dummy
+                    // %29 is the subtraction temporary value register and k_t
+                    // x0.U in %25
+                    // x0.W in %26
+                    // x1.U in %27
+                    // x1.W in %28
+                    // %19 is the loop counter, starts with 254 (if 0, loop runs exactly once)
+                    // %31 is the scalar
+                    // %18 is the swap variable
+                    psa %18, #0
+
+                    // for i in (0..255).rev()
+                mainloop:
+                    // let choice: u8 = (bits[i + 1] ^ bits[i]) as u8;
+                    // ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
+                    xbt %29, %31        // orignally[k_t = (k>>t) & 1] now[k_t = k[254]]
+                    shl %31, %31        // k = k<<1
+                    xor %18, %18, %29   // swap ^= k_t
+
+                    // cswap x0.U (%25), x1.U (%27)
+                    xor %30, %25, %27
+                    msk %30, %18, %30
+                    xor %25, %30, %25
+                    xor %27, %30, %27
+                    // cswap x0.W (%26), x1.W (%28)
+                    xor %30, %26, %28
+                    msk %30, %18, %30
+                    xor %26, %30, %26
+                    xor %28, %30, %28
+
+                    psa %18, %29  // swap = k_t
+
+                        // differential_add_and_double(&mut x0, &mut x1, &affine_u);
+                        psa %20, %25
+                        psa %21, %26
+                        psa %22, %27
+                        psa %23, %28
+                        // affine_u is already in %24
+
+                        // let t0 = &P.U + &P.W;
+                        add %0, %20, %21
+                        trd %30, %0
+                        sub %0, %0, %30
+                        // let t1 = &P.U - &P.W;
+                        sub %21, #3, %21    // negate &P.W using #FIELDPRIME (#3)
+                        add %1, %20, %21
+                        trd %30, %1
+                        sub %1, %1, %30
+                        // let t2 = &Q.U + &Q.W;
+                        add %2, %22, %23
+                        trd %30, %2
+                        sub %2, %2, %30
+                        // let t3 = &Q.U - &Q.W;
+                        sub %23, #3, %23
+                        add %3, %22, %23
+                        trd %30, %3
+                        sub %3, %3, %30
+                        // let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+                        mul %4, %0, %0
+                        // let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+                        mul %5, %1, %1
+                        // let t6 = &t4 - &t5;     // 4 U_P W_P
+                        sub %29, #3, %5
+                        add %6, %4, %29
+                        trd %30, %6
+                        sub %6, %6, %30
+                        // let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+                        mul %7, %0, %3
+                        // let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+                        mul %8, %1, %2
+                        // let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+                        add %9, %7, %8
+                        trd %30, %9
+                        sub %9, %9, %30
+                        // let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+                        sub %29, #3, %8
+                        add %10, %7, %29
+                        trd %30, %10
+                        sub %10, %10, %30
+                        // let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+                        mul %11, %9, %9
+                        // let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
+                        mul %12, %10, %10
+                        // let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
+                        mul %13, #4, %6   // #4 is A+2/4
+                        // let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+                        mul %14, %4, %5
+                        // let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+                        add %15, %13, %5
+                        trd %30, %15
+                        sub %15, %15, %30
+                        // let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+                        mul %16, %6, %15
+                        // let t17 = affine_PmQ * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+                        mul %17, %24, %12    // affine_PmQ loaded into %24
+
+                        ///// these can be eliminated down the road, but included for 1:1 algorithm correspodence to reference in early testing
+                        // P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+                        psa %20, %14
+                        // P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+                        psa %21, %16
+                        // let t18 = t11;               // W_D * 4 (U_P U_Q - W_P W_Q)^2
+                        // Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
+                        psa %22, %11   // collapsed two to save a register
+                        // Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+                        psa %23, %17
+
+                        ///// 'return' arguments for next iteration, can be optimized out later
+                        psa %25, %20
+                        psa %26, %21
+                        psa %27, %22
+                        psa %28, %23
+
+                    brz end, %19     // if loop counter is 0, quit
+                    sub %19, %19, #1 // subtract one from the loop counter and run again
+                    brz mainloop, #0    // go back to the top
+                end:
+                    // ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
+                    // cswap x0.U (%25), x1.U (%27)
+                    xor %30, %25, %27
+                    msk %30, %18, %30
+                    xor %25, %30, %25
+                    xor %27, %30, %27
+                    // cswap x0.W (%26), x1.W (%28)
+                    xor %30, %26, %28
+                    msk %30, %18, %30
+                    xor %26, %30, %26
+                    xor %28, %30, %28
+
+                    //// test post-amble
+                    // test postamble -- sum together the points to create a single composite test output
+                    add %31, %25, %26
+                    trd %30, %31
+                    sub %31, %31, %30
+
+                    fin  // finish execution
+            );
+
+            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
+
+            use scalar::Scalar;
+            use montgomery::MontgomeryPoint;
+            use montgomery::differential_add_and_double;
+
+            fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
+                scalar[0] &= 248;
+                scalar[31] &= 127;
+                scalar[31] |= 64;
+                Scalar::from_bits(scalar)
+            }
+
+            let scalar: Scalar = clamp_scalar(rand::thread_rng().gen::<[u8; 32]>());
+            let mp: MontgomeryPoint = MontgomeryPoint {0: rand::thread_rng().gen::<[u8; 32]>() };
+
+            // Algorithm 8 of Costello-Smith 2017
+            let affine_u = FieldElement::from_bytes(&mp.0);
+            let mut x0 = ProjectivePoint {
+                U: FieldElement::one(),
+                W: FieldElement::zero(),
+            };
+            let mut x1 = ProjectivePoint {
+                U: affine_u,
+                W: FieldElement::one(),
+            };
+
+            // test vectors input to test routine
+            write_helper(&mut file, x0.U);
+            write_helper(&mut file, x0.W);
+            write_helper(&mut file, x1.U);
+            write_helper(&mut file, x1.W);
+            write_helper(&mut file, affine_u);
+            file.write(&scalar.bytes);
+            let number254 = FieldElement::from_bytes(&[
+                 254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            ]);
+            write_helper(&mut file, number254);
+
+            let bits: [i8; 256] = scalar.bits();
+
+            for i in (0..255).rev() {
+                let choice: u8 = (bits[i + 1] ^ bits[i]) as u8;
+
+                debug_assert!(choice == 0 || choice == 1);
+
+                ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
+                differential_add_and_double(&mut x0, &mut x1, &affine_u);
+            }
+            ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
+
+            // result is in x0
+            // result vector
+            write_helper(&mut file, &x0.U + &x0.W);
+        }
+
+        test_scalar_mul(&mut file);
         test_add(&mut file);
         test_loop(&mut file);
         test_cswap(&mut file);

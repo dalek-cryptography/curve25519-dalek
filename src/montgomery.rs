@@ -296,7 +296,7 @@ pub fn differential_add_and_double_hw(
     affine_PmQ: &FieldElement,
 ) {
     use volatile::Volatile;
-    let p = unsafe { pac::Peripherals::steal() };
+    let p = unsafe { betrusted_pac::Peripherals::steal() };
     let mcode = assemble_engine25519!(
         start:
             // P.U in %20
@@ -443,9 +443,16 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         copy_to_rf(x1.W.to_bytes(), 28);
         copy_to_rf(affine_u.to_bytes(), 24);
         copy_to_rf(scalar.bytes, 31);
+        // load the number 254 into the loop index register
+        copy_to_rf([
+            254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+       ], 19);
 
         use volatile::Volatile;
-        let p = unsafe { pac::Peripherals::steal() };
+        let p = unsafe { betrusted_pac::Peripherals::steal() };
         let mcode = assemble_engine25519!(
             start:
                 // P.U in %20

@@ -48,9 +48,11 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
 engine25519-as = { path="../engine25519-as", default-features = false, features = [] }
-rand = { version = "0.7" }
+rand = { version = "0.7", default-features = false, features = [] }
 volatile = "0.2.6"
-pac = { path = "../../../../sim_support/rust/pac" }
+#pac = { path = "../../../../sim_support/rust/pac" }  # used in test simulation environment, need to figure out how to make a switch for this
+betrusted-pac = { path = "../betrusted-pac" }
+#pac = { package = "betrusted-pac" }
 
 [features]
 nightly = ["subtle/nightly"]

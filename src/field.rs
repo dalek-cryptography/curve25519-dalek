@@ -910,10 +910,143 @@ mod test {
             }
         }
 
+
+        fn test_diff_add_and_double(mut file: &mut File) {
+            use montgomery::ProjectivePoint;
+
+            // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
+            let num_src_regs = 5;
+            let reg_window = 0;
+            let num_tests = 8;
+            let loading_address = 0; // microcode loading address
+
+            let mcode = assemble_engine25519!(
+                start:
+                    // test preamble
+                    psa %20, %0
+                    psa %21, %1
+                    psa %22, %2
+                    psa %23, %3
+                    psa %24, %4
+
+                    // P.U in %20
+                    // P.W in %21
+                    // Q.U in %22
+                    // Q.W in %23
+                    // affine_PmQ in %24
+                    // %30 is the TRD scratch register
+                    // %29 is the subtraction temporary value register
+
+                    // let t0 = &P.U + &P.W;
+                    add %0, %20, %21
+                    trd %30, %0
+                    sub %0, %0, %30
+                    // let t1 = &P.U - &P.W;
+                    sub %21, #3, %21    // negate &P.W using #FIELDPRIME (#3)
+                    add %1, %20, %21
+                    trd %30, %1
+                    sub %1, %1, %30
+                    // let t2 = &Q.U + &Q.W;
+                    add %2, %22, %23
+                    trd %30, %2
+                    sub %2, %2, %30
+                    // let t3 = &Q.U - &Q.W;
+                    sub %23, #3, %23
+                    add %3, %22, %23
+                    trd %30, %3
+                    sub %3, %3, %30
+                    // let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+                    mul %4, %0, %0
+                    // let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+                    mul %5, %1, %1
+                    // let t6 = &t4 - &t5;     // 4 U_P W_P
+                    sub %29, #3, %5
+                    add %6, %4, %29
+                    trd %30, %6
+                    sub %6, %6, %30
+                    // let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+                    mul %7, %0, %3
+                    // let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+                    mul %8, %1, %2
+                    // let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+                    add %9, %7, %8
+                    trd %30, %9
+                    sub %9, %9, %30
+                    // let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+                    sub %29, #3, %8
+                    add %10, %7, %29
+                    trd %30, %10
+                    sub %10, %10, %30
+                    // let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+                    mul %11, %9, %9
+                    // let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
+                    mul %12, %10, %10
+                    // let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
+                    mul %13, #4, %6   // #4 is A+2/4
+                    // let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+                    mul %14, %4, %5
+                    // let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+                    add %15, %13, %5
+                    trd %30, %15
+                    sub %15, %15, %30
+                    // let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+                    mul %16, %6, %15
+                    // let t17 = affine_PmQ * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+                    mul %17, %24, %12    // affine_PmQ loaded into %24
+
+                    ///// these can be eliminated down the road, but included for 1:1 algorithm correspodence to reference in early testing
+                    // let t18 = t11;               // W_D * 4 (U_P U_Q - W_P W_Q)^2
+                    psa %18, %11
+
+                    // P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+                    psa %20, %14
+                    // P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+                    psa %21, %16
+                    // Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
+                    psa %22, %18
+                    // Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+                    psa %23, %17
+
+                    // test postamble -- sum together the points to create a single composite test output
+                    add %31, %20, %21
+                    trd %30, %31
+                    sub %31, %31, %30
+                    add %31, %31, %22
+                    trd %30, %31
+                    sub %31, %31, %30
+                    add %31, %31, %23
+                    trd %30, %31
+                    sub %31, %31, %30 // leave result in r31
+
+                    fin  // finish execution
+            );            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
+
+            use montgomery::differential_add_and_double;
+
+            // test vectors
+            for _ in 0..8 {
+                let pu = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let pw = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let qu = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let qw = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                let pmq = FieldElement::from_bytes(&rand::thread_rng().gen::<[u8; 32]>());
+                write_helper(&mut file, pu);
+                write_helper(&mut file, pw);
+                write_helper(&mut file, qu);
+                write_helper(&mut file, qw);
+                write_helper(&mut file, pmq);
+                let mut P: ProjectivePoint = ProjectivePoint{U:pu, W:pw};
+                let mut Q: ProjectivePoint = ProjectivePoint{U:qu, W:qw};
+                differential_add_and_double(&mut P, &mut Q, &pmq);
+                write_helper(&mut file, &(&P.U + &P.W) + &(&Q.U + &Q.W));
+            }
+        }
+
         test_add(&mut file);
         test_loop(&mut file);
         test_cswap(&mut file);
         test_mul(&mut file);
+        test_diff_add_and_double(&mut file);
 
         // end sequence
         let _ = file.write(&(0xFFFF_FFFF as u32).to_le_bytes());

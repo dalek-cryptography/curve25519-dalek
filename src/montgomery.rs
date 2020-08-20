@@ -160,7 +160,7 @@ impl MontgomeryPoint {
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
 #[derive(Copy, Clone, Debug)]
-struct ProjectivePoint {
+pub struct ProjectivePoint {
     pub U: FieldElement,
     pub W: FieldElement,
 }
@@ -220,7 +220,7 @@ impl ProjectivePoint {
 /// $$
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
-fn differential_add_and_double(
+pub fn differential_add_and_double(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
@@ -258,6 +258,161 @@ fn differential_add_and_double(
     P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
     Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+}
+
+pub fn differential_add_and_double_hw(
+    P: &mut ProjectivePoint,
+    Q: &mut ProjectivePoint,
+    affine_PmQ: &FieldElement,
+) {
+    use volatile::Volatile;
+    let p = unsafe { pac::Peripherals::steal() };
+    let mcode = assemble_engine25519!(
+        start:
+            // P.U in %20
+            // P.W in %21
+            // Q.U in %22
+            // Q.W in %23
+            // affine_PmQ in %24
+            // %30 is the TRD scratch register
+            // %29 is the subtraction temporary value register
+
+            // let t0 = &P.U + &P.W;
+            add %0, %20, %21
+            trd %30, %0
+            sub %0, %0, %30
+            // let t1 = &P.U - &P.W;
+            sub %21, #3, %21    // negate &P.W using #FIELDPRIME (#3)
+            add %1, %20, %21
+            trd %30, %1
+            sub %1, %1, %30
+            // let t2 = &Q.U + &Q.W;
+            add %2, %22, %23
+            trd %30, %2
+            sub %2, %2, %30
+            // let t3 = &Q.U - &Q.W;
+            sub %23, #3, %23
+            add %3, %22, %23
+            trd %30, %3
+            sub %3, %3, %30
+            // let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+            mul %4, %0, %0
+            // let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+            mul %5, %1, %1
+            // let t6 = &t4 - &t5;     // 4 U_P W_P
+            sub %29, #3, %5
+            add %6, %4, %29
+            trd %30, %6
+            sub %6, %6, %30
+            // let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+            mul %7, %0, %3
+            // let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+            mul %8, %1, %2
+            // let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+            add %9, %7, %8
+            trd %30, %9
+            sub %9, %9, %30
+            // let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+            sub %29, #3, %8
+            add %10, %7, %29
+            trd %30, %10
+            sub %10, %10, %30
+            // let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+            mul %11, %9, %9
+            // let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
+            mul %12, %10, %10
+            // let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
+            mul %13, #4, %6   // #4 is A+2/4
+            // let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+            mul %14, %4, %5
+            // let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+            add %15, %13, %5
+            trd %30, %15
+            sub %15, %15, %30
+            // let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+            mul %16, %6, %15
+            // let t17 = affine_PmQ * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+            mul %17, %24, %12    // affine_PmQ loaded into %24
+
+            ///// these can be eliminated down the road, but included for 1:1 algorithm correspodence to reference in early testing
+            // let t18 = t11;               // W_D * 4 (U_P U_Q - W_P W_Q)^2
+            psa %18, %11
+            // P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+            psa %20, %14
+            // P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+            psa %21, %16
+            // Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
+            psa %22, %18
+            // Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+            psa %23, %17
+
+            fin  // finish execution
+    );
+    let microcode_ptr: *mut u32 = 0xe002_0000 as *mut u32;
+    let microcode = microcode_ptr as *mut Volatile<u32>;
+
+    // copy the microcode in -- later on we can optimize this so it's only done once?
+    for i in 0..mcode.len() as usize {
+        unsafe { (*(microcode.add(i))).write( mcode[i] ); }
+    }
+    // setup the engine microcode parameters
+    unsafe{
+        p.ENGINE.window.write(|w| w.bits(0));
+        p.ENGINE.mpstart.write(|w| w.bits(0));
+        p.ENGINE.mplen.write(|w| w.bits(mcode.len() as u32));
+    }
+
+    fn copy_to_rf(bytes: [u8; 32], register: usize) {
+        let rf_ptr: *mut u32 = 0xe003_0000 as *mut u32;
+        let rf = rf_ptr as *mut Volatile<u32>;
+        for word in 0..8 {
+            let mut temp: [u8; 4] = [0; 4];
+            for i in 0..4 {
+                temp[i] = bytes[word*4 + i];
+            }
+            unsafe { (*( rf.add( (register * 8 + word) as usize )) ).write( u32::from_le_bytes(temp) ); }
+        }
+    }
+
+    // P.U in %20
+    // P.W in %21
+    // Q.U in %22
+    // Q.W in %23
+    // affine_PmQ in %24
+    copy_to_rf(P.U.to_bytes(), 20);
+    copy_to_rf(P.W.to_bytes(), 21);
+    copy_to_rf(Q.U.to_bytes(), 22);
+    copy_to_rf(Q.W.to_bytes(), 23);
+    copy_to_rf(affine_PmQ.to_bytes(), 24);
+
+    // start the run
+    p.ENGINE.control.write(|w| w.go().set_bit());
+    loop {
+        let status = p.ENGINE.status.read().bits();
+        if (status & 1) == 0 {
+            break;
+        }
+    }
+
+    fn copy_from_rf(register: usize) -> [u8; 32] {
+        let rf_ptr: *mut u32 = 0xe003_0000 as *mut u32;
+        let rf = rf_ptr as *mut Volatile<u32>;
+        let mut bytes: [u8; 32] = [0; 32];
+        for word in 0..8 {
+            unsafe{
+                let value: u32 = (*( rf.add( (register * 8 + word) as usize ))).read();
+                let b = value.to_le_bytes();
+                for i in 0..4 {
+                    bytes[word*4 + i] = b[i];
+                }
+            }
+        }
+        bytes
+    }
+    P.U = FieldElement::from_bytes(&copy_from_rf(20));
+    P.W = FieldElement::from_bytes(&copy_from_rf(21));
+    Q.U = FieldElement::from_bytes(&copy_from_rf(22));
+    Q.W = FieldElement::from_bytes(&copy_from_rf(23));
 }
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);

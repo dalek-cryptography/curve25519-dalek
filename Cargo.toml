@@ -49,6 +49,8 @@ packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
 engine25519-as = { path="../engine25519-as", default-features = false, features = [] }
 rand = { version = "0.7" }
+volatile = "0.2.6"
+pac = { path = "../../../../sim_support/rust/pac" }
 
 [features]
 nightly = ["subtle/nightly"]

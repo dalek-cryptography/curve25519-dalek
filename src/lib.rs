@@ -62,6 +62,8 @@ pub(crate) mod macros;
 #[macro_use]
 extern crate engine25519_as;
 extern crate rand;
+extern crate volatile;
+extern crate pac;
 
 //------------------------------------------------------------------------
 // curve25519-dalek public modules

@@ -617,6 +617,9 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         x0.U = FieldElement::from_bytes(&copy_from_rf(25));
         x0.W = FieldElement::from_bytes(&copy_from_rf(26));
 
+        // TODO: optimize this relatively innocuous looking call.
+        // this consumes about 100ms runtime -- need to implement this using
+        // curve25519 acceleration!
         x0.to_affine()
     }
     /*

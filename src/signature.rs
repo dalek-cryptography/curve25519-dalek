@@ -74,7 +74,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     // This is compatible with ed25519-donna and libsodium when
     // -DED25519_COMPAT is NOT specified.
     if bytes[31] & 224 != 0 {
-        return Err(SignatureError(InternalError::ScalarFormatError));
+        return Err(InternalError::ScalarFormatError.into());
     }
 
     Ok(Scalar::from_bits(bytes))

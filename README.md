@@ -102,7 +102,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "1"
+x25519-dalek = "1.1"
 ```
 
 # Documentation

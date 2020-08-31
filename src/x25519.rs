@@ -29,7 +29,7 @@ use zeroize::Zeroize;
     feature = "serde",
     derive(our_serde::Serialize, our_serde::Deserialize)
 )]
-#[derive(Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct PublicKey(pub(crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {

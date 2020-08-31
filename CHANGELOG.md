@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.0
+
+* Add impls of `PartialEq`, `Eq`, and `Hash` for `PublicKey` (by @jack-michaud)
+
 ## 1.0.1
 
 * Update underlying `curve25519_dalek` library to `3.0`.

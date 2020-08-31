@@ -20,7 +20,7 @@
 #![cfg_attr(feature = "nightly", deny(missing_docs))]
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
-#![doc(html_root_url = "https://docs.rs/x25519-dalek/1.0.1")]
+#![doc(html_root_url = "https://docs.rs/x25519-dalek/1.1.0")]
 
 //! Note that docs will only build on nightly Rust until
 //! `feature(external_doc)` is stabilized.

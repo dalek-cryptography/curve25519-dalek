@@ -58,12 +58,17 @@ impl BatchTranscript for Transcript {
     /// Each is also prefixed with their index in the vector.
     fn append_scalars(&mut self, scalars: &Vec<Scalar>) {
         for (i, scalar) in scalars.iter().enumerate() {
-            // XXX add message length into transcript
             self.append_u64(b"", i as u64);
             self.append_message(b"hram", scalar.as_bytes());
         }
     }
 
+    /// Append the lengths of the messages into the transcript.
+    ///
+    /// This is done out of an (potential over-)abundance of caution, to guard
+    /// against the unlikely event of collisions.  However, a nicer way to do
+    /// this would be to append the message length before the message, but this
+    /// is messy w.r.t. the calculations of the `H(R||A||M)`s above.
     fn append_message_lengths(&mut self, message_lengths: &Vec<usize>) {
         for (i, len) in message_lengths.iter().enumerate() {
             self.append_u64(b"", i as u64);

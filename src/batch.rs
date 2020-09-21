@@ -43,19 +43,24 @@ use crate::public::PublicKey;
 use crate::signature::InternalSignature;
 
 trait BatchTranscript {
-    fn append_hrams(&mut self, hrams: &Vec<Scalar>);
+    fn append_scalars(&mut self, scalars: &Vec<Scalar>);
     fn append_message_lengths(&mut self, message_lengths: &Vec<usize>);
 }
 
 impl BatchTranscript for Transcript {
-    /// Add all the computed `H(R||A||M)`s to the protocol transcript.
+    /// Append some `scalars` to this batch verification sigma protocol transcript.
+    ///
+    /// For ed25519 batch verification, we include the following as scalars:
+    ///
+    /// * All of the computed `H(R||A||M)`s to the protocol transcript, and
+    /// * All of the `s` components of each signature.
     ///
     /// Each is also prefixed with their index in the vector.
-    fn append_hrams(&mut self, hrams: &Vec<Scalar>) {
-        for (i, hram) in hrams.iter().enumerate() {
+    fn append_scalars(&mut self, scalars: &Vec<Scalar>) {
+        for (i, scalar) in scalars.iter().enumerate() {
             // XXX add message length into transcript
             self.append_u64(b"", i as u64);
-            self.append_message(b"hram", hram.as_bytes());
+            self.append_message(b"hram", scalar.as_bytes());
         }
     }
 
@@ -121,6 +126,65 @@ fn zero_rng() -> ZeroRng {
 ///   `SignatureError` containing a description of the internal error which
 ///   occured.
 ///
+/// # Notes on Nonce Generation & Malleability
+///
+/// ## On Synthetic Nonces
+///
+/// This library defaults to using what is called "synthetic" nonces, which
+/// means that a mixture of deterministic (per any unique set of inputs to this
+/// function) data and system randomness is used to seed the CSPRNG for nonce
+/// generation.  For more of the background theory on why many cryptographers
+/// currently believe this to be superior to either purely deterministic
+/// generation or purely relying on the system's randomness, see [this section
+/// of the Merlin design](https://merlin.cool/transcript/rng.html) by Henry de
+/// Valence, isis lovecruft, and Oleg Andreev, as well as Trevor Perrin's
+/// [designs for generalised
+/// EdDSA](https://moderncrypto.org/mail-archive/curves/2017/000925.html).
+///
+/// ## On Deterministic Nonces
+///
+/// In order to be ammenable to protocols which require stricter third-party
+/// auditability trails, such as in some financial cryptographic settings, this
+/// library also supports a `--features=batch_deterministic` setting, where the
+/// nonces for batch signature verification are derived purely from the inputs
+/// to this function themselves.
+///
+/// **This is not recommended for use unless you have several cryptographers on
+///   staff who can advise you in its usage and all the horrible, terrible,
+///   awful ways it can go horribly, terribly, awfully wrong.**
+///
+/// In any sigma protocol it is wise to include as much context pertaining
+/// to the public state in the protocol as possible, to avoid malleability
+/// attacks where an adversary alters publics in an algebraic manner that
+/// manages to satisfy the equations for the protocol in question.
+///
+/// For ed25519 batch verification (both with synthetic and deterministic nonce
+/// generation), we include the following as scalars in the protocol transcript:
+///
+/// * All of the computed `H(R||A||M)`s to the protocol transcript, and
+/// * All of the `s` components of each signature.
+///
+/// Each is also prefixed with their index in the vector.
+///
+/// The former, while not quite as elegant as adding the `R`s, `A`s, and
+/// `M`s separately, saves us a bit of context hashing since the
+/// `H(R||A||M)`s need to be computed for the verification equation anyway.
+///
+/// The latter prevents a malleability attack only found in deterministic batch
+/// signature verification (i.e. only when compiling `ed25519-dalek` with
+/// `--features batch_deterministic`) wherein an adversary, without access
+/// to the signing key(s), can take any valid signature, `(s,R)`, and swap
+/// `s` with `s' = -z1`.  This doesn't contitute a signature forgery, merely
+/// a vulnerability, as the resulting signature will not pass single
+/// signature verification.  (Thanks to Github users @real_or_random and
+/// @jonasnick for pointing out this malleability issue.)
+///
+/// For an additional way in which signatures can be made to probablistically
+/// falsely "pass" the synthethic batch verification equation *for the same
+/// inputs*, but *only some crafted inputs* will pass the deterministic batch
+/// single, and neither of these will ever pass single signature verification,
+/// see the documentation for [`PublicKey.validate()`].
+///
 /// # Examples
 ///
 /// ```
@@ -181,8 +245,10 @@ pub fn verify_batch(
         Scalar::from_hash(h)
     }).collect();
 
-    // Collect the message lengths to add into the transcript.
+    // Collect the message lengths and the scalar portions of the signatures,
+    // and add them into the transcript.
     let message_lengths: Vec<usize> = messages.iter().map(|i| i.len()).collect();
+    let scalars: Vec<Scalar> = signatures.iter().map(|i| i.s).collect();
 
     // Build a PRNG based on a transcript of the H(R || A || M)s seen thus far.
     // This provides synthethic randomness in the default configuration, and
@@ -190,8 +256,9 @@ pub fn verify_batch(
     // "batch_deterministic" feature.
     let mut transcript: Transcript = Transcript::new(b"ed25519 batch verification");
 
-    transcript.append_hrams(&hrams);
+    transcript.append_scalars(&hrams);
     transcript.append_message_lengths(&message_lengths);
+    transcript.append_scalars(&scalars);
 
     #[cfg(all(feature = "batch", not(feature = "batch_deterministic")))]
     let mut prng = transcript.build_rng().finalize(&mut thread_rng());

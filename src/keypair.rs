@@ -125,6 +125,7 @@ impl Keypair {
     /// The standard hash function used for most ed25519 libraries is SHA-512,
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
+    #[cfg(feature = "rand")]
     pub fn generate<R>(csprng: &mut R) -> Keypair
     where
         R: CryptoRng + RngCore,

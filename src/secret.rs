@@ -165,6 +165,7 @@ impl SecretKey {
     /// # Input
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::OsRng`
+    #[cfg(feature = "rand")]
     pub fn generate<T>(csprng: &mut T) -> SecretKey
     where
         T: CryptoRng + RngCore,

@@ -50,7 +50,7 @@ harness = false
 default = ["std", "u64_backend"]
 std = ["curve25519-dalek/std", "ed25519/std", "serde_crate/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc", "zeroize/alloc"]
-nightly = ["curve25519-dalek/nightly", "rand/nightly"]
+nightly = ["curve25519-dalek/nightly"]
 serde = ["serde_crate", "ed25519/serde"]
 batch = ["merlin", "rand"]
 # This feature enables deterministic batch verification.

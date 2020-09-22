@@ -176,7 +176,7 @@
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, Signer, Verifier, PublicKey};
-//! use bincode::{serialize, Infinite};
+//! use bincode::serialize;
 //! # let mut csprng = OsRng{};
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
@@ -184,8 +184,8 @@
 //! # let public_key: PublicKey = keypair.public;
 //! # let verified: bool = public_key.verify(message, &signature).is_ok();
 //!
-//! let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
-//! let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
+//! let encoded_public_key: Vec<u8> = serialize(&public_key).unwrap();
+//! let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
 //! # }
 //! # #[cfg(not(feature = "serde"))]
 //! # fn main() {}
@@ -206,7 +206,7 @@
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, Signer, Verifier, PublicKey};
-//! # use bincode::{serialize, Infinite};
+//! # use bincode::serialize;
 //! use bincode::deserialize;
 //!
 //! # let mut csprng = OsRng{};
@@ -215,8 +215,8 @@
 //! # let signature: Signature = keypair.sign(message);
 //! # let public_key: PublicKey = keypair.public;
 //! # let verified: bool = public_key.verify(message, &signature).is_ok();
-//! # let encoded_public_key: Vec<u8> = serialize(&public_key, Infinite).unwrap();
-//! # let encoded_signature: Vec<u8> = serialize(&signature, Infinite).unwrap();
+//! # let encoded_public_key: Vec<u8> = serialize(&public_key).unwrap();
+//! # let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
 //! let decoded_public_key: PublicKey = deserialize(&encoded_public_key).unwrap();
 //! let decoded_signature: Signature = deserialize(&encoded_signature).unwrap();
 //!

@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2018"
 authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
 readme = "README.md"
@@ -28,12 +28,14 @@ merlin = { version = "2", default-features = false, optional = true }
 rand = { version = "0.7", default-features = false, optional = true }
 rand_core = { version = "0.5", default-features = false, optional = true }
 serde_crate = { package = "serde", version = "1.0", default-features = false, optional = true }
+serde_bytes = { version = "0.11", optional = true }
 sha2 = { version = "0.9", default-features = false }
 zeroize = { version = "1", default-features = false, features = ["zeroize_derive"] }
 
 [dev-dependencies]
 hex = "^0.4"
-bincode = "^0.9"
+bincode = "1.0"
+serde_json = "1.0"
 criterion = "0.3"
 rand = "0.7"
 serde_crate = { package = "serde", version = "1.0", features = ["derive"] }
@@ -47,11 +49,11 @@ harness = false
 # required-features = ["batch"]
 
 [features]
-default = ["std", "u64_backend"]
+default = ["std", "rand", "u64_backend"]
 std = ["curve25519-dalek/std", "ed25519/std", "serde_crate/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc", "zeroize/alloc"]
-nightly = ["curve25519-dalek/nightly", "rand/nightly"]
-serde = ["serde_crate", "ed25519/serde"]
+nightly = ["curve25519-dalek/nightly"]
+serde = ["serde_crate", "serde_bytes", "ed25519/serde"]
 batch = ["merlin", "rand"]
 # This feature enables deterministic batch verification.
 batch_deterministic = ["merlin", "rand", "rand_core"]

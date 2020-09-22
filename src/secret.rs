@@ -17,6 +17,7 @@ use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
 
+#[cfg(feature = "rand")]
 use rand::{CryptoRng, RngCore};
 
 use sha2::Sha512;
@@ -24,11 +25,9 @@ use sha2::Sha512;
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
-use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use serde::{Deserializer, Serializer};
+use serde_bytes::{Bytes as SerdeBytes, ByteBuf as SerdeByteBuf};
 
 use zeroize::Zeroize;
 
@@ -164,6 +163,7 @@ impl SecretKey {
     /// # Input
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand::OsRng`
+    #[cfg(feature = "rand")]
     pub fn generate<T>(csprng: &mut T) -> SecretKey
     where
         T: CryptoRng + RngCore,
@@ -182,7 +182,7 @@ impl Serialize for SecretKey {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(self.as_bytes())
+        SerdeBytes::new(self.as_bytes()).serialize(serializer)
     }
 }
 
@@ -192,23 +192,8 @@ impl<'d> Deserialize<'d> for SecretKey {
     where
         D: Deserializer<'d>,
     {
-        struct SecretKeyVisitor;
-
-        impl<'d> Visitor<'d> for SecretKeyVisitor {
-            type Value = SecretKey;
-
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str("An ed25519 secret key as 32 bytes, as specified in RFC8032.")
-            }
-
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<SecretKey, E>
-            where
-                E: SerdeError,
-            {
-                SecretKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
-            }
-        }
-        deserializer.deserialize_bytes(SecretKeyVisitor)
+        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
+        SecretKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
     }
 }
 
@@ -519,7 +504,8 @@ impl Serialize for ExpandedSecretKey {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(&self.to_bytes()[..])
+        let bytes = &self.to_bytes()[..];
+        SerdeBytes::new(bytes).serialize(serializer)
     }
 }
 
@@ -529,26 +515,8 @@ impl<'d> Deserialize<'d> for ExpandedSecretKey {
     where
         D: Deserializer<'d>,
     {
-        struct ExpandedSecretKeyVisitor;
-
-        impl<'d> Visitor<'d> for ExpandedSecretKeyVisitor {
-            type Value = ExpandedSecretKey;
-
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str(
-                    "An ed25519 expanded secret key as 64 bytes, as specified in RFC8032.",
-                )
-            }
-
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<ExpandedSecretKey, E>
-            where
-                E: SerdeError,
-            {
-                ExpandedSecretKey::from_bytes(bytes)
-                    .or(Err(SerdeError::invalid_length(bytes.len(), &self)))
-            }
-        }
-        deserializer.deserialize_bytes(ExpandedSecretKeyVisitor)
+        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
+        ExpandedSecretKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
     }
 }
 

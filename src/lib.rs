@@ -234,6 +234,8 @@
 #![no_std]
 #![warn(future_incompatible)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
+
+#![cfg(not(test))]
 #![forbid(unsafe_code)]
 
 #[cfg(any(feature = "std", test))]

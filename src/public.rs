@@ -26,11 +26,9 @@ pub use sha2::Sha512;
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
-use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde")]
-use serde::{Deserializer, Serializer};
+use serde_bytes::{Bytes as SerdeBytes, ByteBuf as SerdeByteBuf};
 
 use crate::constants::*;
 use crate::errors::*;
@@ -362,7 +360,7 @@ impl Serialize for PublicKey {
     where
         S: Serializer,
     {
-        serializer.serialize_bytes(self.as_bytes())
+        SerdeBytes::new(self.as_bytes()).serialize(serializer)
     }
 }
 
@@ -372,24 +370,7 @@ impl<'d> Deserialize<'d> for PublicKey {
     where
         D: Deserializer<'d>,
     {
-        struct PublicKeyVisitor;
-
-        impl<'d> Visitor<'d> for PublicKeyVisitor {
-            type Value = PublicKey;
-
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str(
-                    "An ed25519 public key as a 32-byte compressed point, as specified in RFC8032",
-                )
-            }
-
-            fn visit_bytes<E>(self, bytes: &[u8]) -> Result<PublicKey, E>
-            where
-                E: SerdeError,
-            {
-                PublicKey::from_bytes(bytes).or(Err(SerdeError::invalid_length(bytes.len(), &self)))
-            }
-        }
-        deserializer.deserialize_bytes(PublicKeyVisitor)
+        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
+        PublicKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
     }
 }

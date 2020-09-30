@@ -45,7 +45,7 @@ byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] 
 digest = { version = "0.8", default-features = false }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
-packed_simd = { version = "0.3", features = ["into_bits"], optional = true }
+packed_simd = { package = "packed_simd_2", version = "*", git = "https://github.com/rust-lang/packed_simd", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
 
 [features]

@@ -50,7 +50,7 @@ digest = { version = "0.8", default-features = false }
 clear_on_drop = "0.2"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
-packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+packed_simd = { package = "packed_simd_2", version = "*", git = "https://github.com/rust-lang/packed_simd", features = ["into_bits"], optional = true }
 
 [build-dependencies]
 rand_core = { version = "0.3.0", default-features = false }
@@ -59,7 +59,7 @@ digest = { version = "0.8", default-features = false }
 clear_on_drop = "0.2"
 subtle = { version = "2", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true }
-packed_simd = { version = "0.3.0", features = ["into_bits"], optional = true }
+packed_simd = { package = "packed_simd_2", version = "*", git = "https://github.com/rust-lang/packed_simd", features = ["into_bits"], optional = true }
 
 [features]
 nightly = ["subtle/nightly", "clear_on_drop/nightly"]

@@ -91,6 +91,9 @@ pub(crate) const SQRT_M1: FieldElement51 = FieldElement51([
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub(crate) const APLUS2_OVER_FOUR: FieldElement51 = FieldElement51([121666, 0, 0, 0, 0]);
 
+/// `MONT_A` is a constant of Curve25519. (This is used internally within the Elligator map.)
+pub(crate) const MONT_A: FieldElement51 = FieldElement51([486662, 0, 0, 0, 0]);
+
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52([
     0x0002631a5cf5d3ed,

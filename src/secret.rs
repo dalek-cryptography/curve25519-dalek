@@ -40,9 +40,13 @@ use crate::signature::*;
 ///
 /// Instances of this secret are automatically overwritten with zeroes when they
 /// fall out of scope.
-#[derive(Zeroize)]
-#[zeroize(drop)] // Overwrite secret key material with null bytes when it goes out of scope.
 pub struct SecretKey(pub(crate) [u8; SECRET_KEY_LENGTH]);
+
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.0.zeroize()
+    }
+}
 
 impl Debug for SecretKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
@@ -235,11 +239,16 @@ impl<'d> Deserialize<'d> for SecretKey {
 // same signature scheme, and which both fail in exactly the same way.  For a
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
-#[derive(Zeroize)]
-#[zeroize(drop)] // Overwrite secret key material with null bytes when it goes out of scope.
 pub struct ExpandedSecretKey {
     pub(crate) key: Scalar,
     pub(crate) nonce: [u8; 32],
+}
+
+impl Drop for ExpandedSecretKey {
+    fn drop(&mut self) {
+        self.key.zeroize();
+        self.nonce.zeroize()
+    }
 }
 
 impl<'a> From<&'a SecretKey> for ExpandedSecretKey {

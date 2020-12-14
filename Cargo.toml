@@ -34,7 +34,7 @@ features = ["nightly"]
 
 [dependencies]
 curve25519-dalek = { version = "3", default-features = false }
-rand_core = { version = "0.5", default-features = false }
+rand_core = { version = "0.6", default-features = false }
 # `serde` is renamed to `our_serde` in order to avoid a name collision between
 # importing the serde dependency and enabling the curve25519-dalek/serde feature
 our_serde = { package = "serde", version = "1", default-features = false, optional = true, features = ["derive"] }

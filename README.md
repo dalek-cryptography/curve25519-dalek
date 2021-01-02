@@ -197,6 +197,8 @@ optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
 The `no_std` and `zeroize` support was contributed by Tony Arcieri.
 
+The `num_traits` support was contributed by Cargodog.
+
 Thanks also to Ashley Hauck, Lucas Salibian, and Manish Goregaokar for their
 contributions.
 

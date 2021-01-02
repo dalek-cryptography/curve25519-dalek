@@ -148,6 +148,9 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
+use num_traits::identities::{One, Zero};
+use num_traits::pow::*;
+
 #[allow(unused_imports)]
 use prelude::*;
 
@@ -1115,6 +1118,80 @@ impl Scalar {
         *self == self.reduce()
     }
 }
+
+impl Zero for Scalar {
+    /// Construct the scalar \\( 0 \\).
+    fn zero() -> Self {
+        Scalar::zero()
+    }
+
+    /// Test if number is equal to zero
+    fn is_zero(&self) -> bool {
+        *self == Scalar::zero()
+    }
+}
+
+impl One for Scalar {
+    /// Construct the scalar \\( 1 \\).
+    fn one() -> Self {
+        Scalar::one()
+    }
+}
+
+/// Macro to implement Pow trait. Copied from
+/// https://docs.rs/num-traits/0.2.8/src/num_traits/pow.rs.html#21
+macro_rules! pow_impl {
+    ($t:ty) => {
+        pow_impl!($t, u8);
+        pow_impl!($t, usize);
+
+        // FIXME: these should be possible
+        // pow_impl!($t, u16);
+        // pow_impl!($t, u32);
+        // pow_impl!($t, u64);
+    };
+    ($t:ty, $rhs:ty) => {
+        pow_impl!($t, $rhs, usize, pow);
+    };
+    ($t:ty, $rhs:ty, $desired_rhs:ty, $method:expr) => {
+        impl Pow<$rhs> for $t {
+            type Output = $t;
+            #[inline]
+            fn pow(self, rhs: $rhs) -> $t {
+                ($method)(self, <$desired_rhs>::from(rhs))
+            }
+        }
+
+        impl<'a> Pow<&'a $rhs> for $t {
+            type Output = $t;
+            #[inline]
+            fn pow(self, rhs: &'a $rhs) -> $t {
+                ($method)(self, <$desired_rhs>::from(*rhs))
+            }
+        }
+
+        impl<'a> Pow<$rhs> for &'a $t {
+            type Output = $t;
+            #[inline]
+            fn pow(self, rhs: $rhs) -> $t {
+                ($method)(*self, <$desired_rhs>::from(rhs))
+            }
+        }
+
+        impl<'a, 'b> Pow<&'a $rhs> for &'b $t {
+            type Output = $t;
+            #[inline]
+            fn pow(self, rhs: &'a $rhs) -> $t {
+                ($method)(*self, <$desired_rhs>::from(*rhs))
+            }
+        }
+    };
+}
+
+pow_impl!(Scalar, u8, u32, Scalar::pow);
+pow_impl!(Scalar, u16, u32, Scalar::pow);
+pow_impl!(Scalar, u32, u32, Scalar::pow);
+pow_impl!(Scalar, usize);
 
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.

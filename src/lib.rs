@@ -46,6 +46,7 @@ extern crate byteorder;
 pub extern crate digest;
 extern crate rand_core;
 extern crate zeroize;
+extern crate num_traits;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

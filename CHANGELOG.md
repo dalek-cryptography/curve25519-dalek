@@ -3,6 +3,11 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+### 1.2.4
+
+* Update the `clear_on_drop` dependency to use any version in the
+  0.2.x series, rather than =0.2.3.
+
 ### 1.2.3
 
 * Fix an issue identified by a Quarkslab audit (and Jack Grigg), where manually

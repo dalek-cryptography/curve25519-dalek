@@ -9,8 +9,8 @@ env:
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u32_backend'
   # Tests the u64 backend
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u64_backend'
-  # Tests the avx2 backend
-  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend'
+  # Tests the simd backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std simd_backend'
   # Tests serde support and default feature selection
   - TEST_COMMAND=test EXTRA_FLAGS='' FEATURES='serde'
   # Tests building without std. We have to select a backend, so we select the one
@@ -21,9 +21,9 @@ env:
 
 matrix:
   exclude:
-    # Test the avx2 backend only on nightly
+    # Test the simd backend only on nightly
     - rust: stable
-      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std avx2_backend'
+      env: TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std simd_backend'
     # Test no_std+alloc only on nightly
     - rust: stable
       env: TEST_COMMAND=test EXTRA_FLAGS='--lib --no-default-features' FEATURES='alloc u32_backend'

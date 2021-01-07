@@ -5,6 +5,11 @@ major series.
 
 ## 2.x series
 
+### 2.1.1
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
+
 ### 2.1.0
 
 * Make `Scalar::from_bits` a `const fn`, allowing its use in `const` contexts.

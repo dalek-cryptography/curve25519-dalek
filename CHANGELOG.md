@@ -2,6 +2,11 @@
 
 Entries are listed in reverse chronological order.
 
+## 3.0.1
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
+
 ## 3.0.0
 
 * Update the `digest` dependency to `0.9`.  This requires a major version

@@ -3,6 +3,11 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+### 1.2.5
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
+
 ### 1.2.4
 
 * Update the `clear_on_drop` dependency to use any version in the

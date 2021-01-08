@@ -526,8 +526,8 @@ mod test {
     fn basepoint_odd_lookup_table_verify() {
         use constants;
         use backend::vector::avx2::constants::{BASEPOINT_ODD_LOOKUP_TABLE};
-        
-	    let basepoint_odd_table = NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
+
+        let basepoint_odd_table = NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
         println!("basepoint_odd_lookup_table = {:?}", basepoint_odd_table);
 
         let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;

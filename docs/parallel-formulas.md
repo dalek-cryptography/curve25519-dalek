@@ -327,7 +327,7 @@ There are several directions for future improvement:
 [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28
 [hwcd08]: https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf
-[curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/curve_models/index.html
+[curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/backend/serial/curve_models/index.html
 [bbjlp08]: https://eprint.iacr.org/2008/013
 [cmo98]: https://link.springer.com/content/pdf/10.1007%2F3-540-49649-1_6.pdf
 [intel]: https://software.intel.com/sites/default/files/managed/9e/bc/64-ia-32-architectures-optimization-manual.pdf

@@ -5,6 +5,10 @@ major series.
 
 ## 3.x series
 
+### 3.0.2
+
+* Fixes to make using alloc+no_std possible for stable Rust.
+
 ### 3.0.1
 
 * Update the optional `packed-simd` dependency to rely on a newer,
@@ -17,6 +21,15 @@ major series.
   otherwise no changes to the API.
 
 ## 2.x series
+
+### 2.1.2
+
+* Fixes to make using alloc+no_std possible for stable Rust.
+
+### 2.1.1
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
 
 ### 2.1.0
 
@@ -42,6 +55,15 @@ The only significant change is the data model change to the `serde` feature;
 besides the `rand_core` version bump, there are no other user-visible changes.
 
 ## 1.x series
+
+### 1.2.6
+
+* Fixes to make using alloc+no_std possible for stable Rust.
+
+### 1.2.5
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
 
 ### 1.2.4
 

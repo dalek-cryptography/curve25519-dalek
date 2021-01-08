@@ -10,7 +10,6 @@
 
 #![no_std]
 #![cfg_attr(feature = "nightly", feature(test))]
-#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 #![cfg_attr(feature = "nightly", feature(external_doc))]
 #![cfg_attr(feature = "nightly", feature(doc_cfg))]
 #![cfg_attr(feature = "simd_backend", feature(stdsimd))]
@@ -22,7 +21,7 @@
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
-#![doc(html_root_url = "https://docs.rs/curve25519-dalek/3.0.0")]
+#![doc(html_root_url = "https://docs.rs/curve25519-dalek/3.0.2")]
 
 //! Note that docs will only build on nightly Rust until
 //! [RFC 1990 stabilizes](https://github.com/rust-lang/rust/issues/44732).

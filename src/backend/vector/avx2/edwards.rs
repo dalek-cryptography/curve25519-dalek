@@ -153,7 +153,7 @@ impl ExtendedPoint {
         // Set tmp1 = ( S_9,  S_6,  S_6,  S_9)
         //        b < ( 1.6,  1.6,  1.6,  1.6)
         tmp1 = tmp0.shuffle(Shuffle::DBBD);
-        // Set tmp1 = ( S_8,  S_5,  S_8,  S_5)
+        // Set tmp0 = ( S_8,  S_5,  S_8,  S_5)
         //        b < (2.33, 1.01, 2.33, 1.01)
         tmp0 = tmp0.shuffle(Shuffle::CACA);
 
@@ -188,7 +188,7 @@ impl From<ExtendedPoint> for CachedPoint {
         let mut x = P.0;
 
         x = x.blend(x.diff_sum(), Lanes::AB);
-        // x = (X1 - Y1, X2 + Y2, Z2, T2) = (S2 S3 Z2 T2)
+        // x = (Y2 - X2, Y2 + X2, Z2, T2) = (S2 S3 Z2 T2)
 
         x = x * (121666, 121666, 2 * 121666, 2 * 121665);
         // x = (121666*S2 121666*S3 2*121666*Z2 2*121665*T2)
@@ -520,5 +520,25 @@ mod test {
         println!("Testing [2]([k]B)");
         let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
         doubling_test_helper(P);
+    }
+
+    #[test]
+    fn basepoint_odd_lookup_table_verify() {
+        use constants;
+        use backend::vector::avx2::constants::{BASEPOINT_ODD_LOOKUP_TABLE};
+
+        let basepoint_odd_table = NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
+        println!("basepoint_odd_lookup_table = {:?}", basepoint_odd_table);
+
+        let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
+        for (b_vec, base_vec) in table_B.0.iter().zip(basepoint_odd_table.0.iter()) {
+            let b_splits = b_vec.0.split();
+            let base_splits = base_vec.0.split();
+
+            assert_eq!(base_splits[0], b_splits[0]);
+            assert_eq!(base_splits[1], b_splits[1]);
+            assert_eq!(base_splits[2], b_splits[2]);
+            assert_eq!(base_splits[3], b_splits[3]);
+        }
     }
 }

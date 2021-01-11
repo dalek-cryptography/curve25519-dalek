@@ -61,8 +61,10 @@ alloc = ["zeroize/alloc"]
 u32_backend = []
 # The u64 backend uses u64s with u128 products.
 u64_backend = []
-# The fiat-u64 backend uses u64s with u128 products.
+# fiat-u64 backend (with formally-verified field arith) uses u64s with u128 products.
 fiat_u64_backend = ["fiat-crypto"]
+# fiat-u32 backend (with formally-verified field arith) uses u64s with u128 products.
+fiat_u32_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
 simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # DEPRECATED: this is now an alias for `simd_backend` and may be removed

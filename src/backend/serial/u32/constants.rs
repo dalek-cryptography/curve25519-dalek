@@ -13,8 +13,8 @@
 //! lookup tables of pre-computed points.
 
 use backend::serial::curve_models::AffineNielsPoint;
-use backend::serial::u32::field::FieldElement2625;
-use backend::serial::u32::scalar::Scalar29;
+use super::field::FieldElement2625;
+use super::scalar::Scalar29;
 use edwards::{EdwardsBasepointTable, EdwardsPoint};
 use window::{LookupTable, NafLookupTable8};
 

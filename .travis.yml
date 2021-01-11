@@ -9,6 +9,10 @@ env:
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u32_backend'
   # Tests the u64 backend
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std u64_backend'
+  # Tests the fiat_u32 backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std fiat_u32_backend'
+  # Tests the fiat_u64 backend
+  - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std fiat_u64_backend'
   # Tests the simd backend
   - TEST_COMMAND=test EXTRA_FLAGS='--no-default-features' FEATURES='std simd_backend'
   # Tests serde support and default feature selection

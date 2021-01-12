@@ -512,7 +512,7 @@ impl EdwardsPoint {
 
         let fe = FieldElement::from_bytes(&res);
 
-        let M1 = crate::montgomery::elligator_map(&fe);
+        let M1 = crate::montgomery::elligator_encode(&fe);
         let E1_opt = M1.to_edwards(sign_bit);
 
         E1_opt

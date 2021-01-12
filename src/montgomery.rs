@@ -160,7 +160,7 @@ impl MontgomeryPoint {
 ///
 /// See
 /// https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
-pub(crate) fn elligator_map(r_0: &FieldElement) -> MontgomeryPoint {
+pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let minus_a = -&MONT_A; /* A = 486662 */
     let one = FieldElement::one();
     let d_1 = &one + &r_0.square2(); /* 2r^2 */
@@ -442,7 +442,7 @@ mod test {
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);
-        let eg = elligator_map(&fe);
+        let eg = elligator_encode(&fe);
         assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
     }
 
@@ -450,7 +450,7 @@ mod test {
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
         let fe = FieldElement::from_bytes(&zero);
-        let eg = elligator_map(&fe);
+        let eg = elligator_encode(&fe);
         assert_eq!(eg.to_bytes(), zero);
     }
 }

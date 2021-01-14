@@ -1,5 +1,5 @@
 [package]
-name = "curve25519-dalek"
+name = "curve25519-dalek-ng"
 # Before incrementing:
 # - update CHANGELOG
 # - update html_root_url
@@ -9,9 +9,8 @@ authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/curve25519-dalek"
-homepage = "https://dalek.rs/curve25519-dalek"
-documentation = "https://docs.rs/curve25519-dalek"
+repository = "https://github.com/zkcrypto/curve25519-dalek-ng"
+documentation = "https://docs.rs/curve25519-dalek-ng"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
 description = "A pure-Rust implementation of group operations on ristretto255 and Curve25519"
@@ -25,9 +24,6 @@ exclude = [
 # Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
 # rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
 features = ["nightly", "simd_backend"]
-
-[badges]
-travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
 sha2 = { version = "0.9", default-features = false }
@@ -43,7 +39,7 @@ harness = false
 rand_core = { version = "0.5", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.9", default-features = false }
-subtle = { version = "^2.2.1", default-features = false }
+subtle = { package = "subtle-ng", version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 # The original packed_simd package was orphaned, see
 # https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161

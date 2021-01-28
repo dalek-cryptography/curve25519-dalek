@@ -20,7 +20,7 @@
 #![cfg_attr(feature = "nightly", deny(missing_docs))]
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
-#![doc(html_root_url = "https://docs.rs/curve25519-dalek-ng/3.0.3")]
+#![doc(html_root_url = "https://docs.rs/curve25519-dalek-ng/4.0.0")]
 
 //! Note that docs will only build on nightly Rust until
 //! [RFC 1990 stabilizes](https://github.com/rust-lang/rust/issues/44732).

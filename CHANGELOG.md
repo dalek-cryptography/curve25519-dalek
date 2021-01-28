@@ -1,9 +1,12 @@
 # Changelog
 
-Entries are listed in reverse chronological order per undeprecated
-major series.
+Entries are listed in reverse chronological order per major series.
 
 ## 3.x series
+
+### 3.0.3
+
+* Add note about package naming and crate seizure.
 
 ### 3.0.2
 

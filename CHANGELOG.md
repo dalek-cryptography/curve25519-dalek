@@ -4,6 +4,10 @@ Entries are listed in reverse chronological order per major series.
 
 ## 4.x series
 
+### 4.0.1
+
+* Update README.
+
 ### 4.0.0
 
 * Update the `rand_core` dependency to `0.6`.  This requires a major version

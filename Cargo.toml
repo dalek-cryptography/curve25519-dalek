@@ -4,7 +4,7 @@ name = "curve25519-dalek-ng"
 # - update CHANGELOG
 # - update html_root_url
 # - update README if required by semver
-version = "3.0.3"
+version = "4.0.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -29,14 +29,14 @@ features = ["nightly", "simd_backend"]
 sha2 = { version = "0.9", default-features = false }
 bincode = "1"
 criterion = "0.3.0"
-rand = "0.7"
+rand = "0.8"
 
 [[bench]]
 name = "dalek_benchmarks"
 harness = false
 
 [dependencies]
-rand_core = { version = "0.5", default-features = false }
+rand_core = { version = "0.6", default-features = false }
 byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.9", default-features = false }
 subtle = { package = "subtle-ng", version = "^2.2.1", default-features = false }

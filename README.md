@@ -45,13 +45,13 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek-ng = "3"
+curve25519-dalek-ng = "4"
 ```
 
 To switch from the previous `curve25519-dalek` crate without changing your code,
 use the following:
 ```toml
-curve25519-dalek = { package = "curve25519-dalek-ng", version = "3" }
+curve25519-dalek = { package = "curve25519-dalek-ng", version = "4" }
 ```
 
 This crate continues the `curve25519-dalek` series under a different package name.
@@ -59,11 +59,14 @@ Unfortunately, one of the maintainers of the previous crate seized control of th
 `dalek-cryptography` GitHub organization and the `subtle` and `curve25519-dalek`
 crates by silently removing all other co-maintainers.
 
+The `4.x` series has API almost entirely unchanged from the `3.x` series,
+except that the `rand_core` version was updated.
+
 The `3.x` series has API almost entirely unchanged from the `2.x` series,
 except that the `digest` version was updated.
 
-The `2.x` series has API almost entirely unchanged from the `1.x` series,
-except that:
+The `2.x` series (unsupported) has API almost entirely unchanged from the
+`1.x` series, except that:
 
 * an error in the data modeling for the (optional) `serde` feature was
   corrected, so that when the `2.x`-series `serde` implementation is used

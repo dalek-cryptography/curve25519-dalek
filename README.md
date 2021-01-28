@@ -48,6 +48,17 @@ your project's `Cargo.toml`:
 curve25519-dalek-ng = "3"
 ```
 
+To switch from the previous `curve25519-dalek` crate without changing your code,
+use the following:
+```toml
+curve25519-dalek = { package = "curve25519-dalek-ng", version = "3" }
+```
+
+This crate continues the `curve25519-dalek` series under a different package name.
+Unfortunately, one of the maintainers of the previous crate seized control of the
+`dalek-cryptography` GitHub organization and the `subtle` and `curve25519-dalek`
+crates by silently removing all other co-maintainers.
+
 The `3.x` series has API almost entirely unchanged from the `2.x` series,
 except that the `digest` version was updated.
 

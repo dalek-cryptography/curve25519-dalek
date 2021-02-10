@@ -177,6 +177,8 @@ use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
 
@@ -208,7 +210,7 @@ use backend::vector::scalar_mul;
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Zeroize)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedRistretto {
@@ -434,7 +436,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
 /// operations on `RistrettoPoint`s are exactly as fast as operations on
 /// `EdwardsPoint`s.
 ///
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Zeroize)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {

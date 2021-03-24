@@ -105,6 +105,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use constants;
 
 use field::FieldElement;
@@ -150,7 +152,7 @@ use backend::vector::scalar_mul;
 ///
 /// The first 255 bits of a `CompressedEdwardsY` represent the
 /// \\(y\\)-coordinate.  The high bit of the 32nd byte gives the sign of \\(x\\).
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Zeroize)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedEdwardsY {
@@ -307,7 +309,7 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
 // ------------------------------------------------------------------------
 
 /// An `EdwardsPoint` represents a point on the Edwards form of Curve25519.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Zeroize)]
 #[allow(missing_docs)]
 pub struct EdwardsPoint {
     pub(crate) X: FieldElement,

@@ -200,6 +200,8 @@ use backend::serial::scalar_mul;
 ))]
 use backend::vector::scalar_mul;
 
+use zeroize::Zeroize;
+
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
@@ -1075,6 +1077,25 @@ impl Debug for RistrettoPoint {
         let coset = self.coset4();
         write!(f, "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])
+    }
+}
+
+// ------------------------------------------------------------------------
+// Zeroize traits
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedRistretto {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+impl Zeroize for RistrettoPoint {
+    fn zeroize(&mut self) {
+        self.0.X.zeroize();
+        self.0.Y.zeroize();
+        self.0.Z.zeroize();
+        self.0.T.zeroize();
     }
 }
 

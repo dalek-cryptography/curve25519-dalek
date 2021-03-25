@@ -202,8 +202,6 @@ use backend::serial::scalar_mul;
 ))]
 use backend::vector::scalar_mul;
 
-use zeroize::Zeroize;
-
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
@@ -212,7 +210,7 @@ use zeroize::Zeroize;
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Zeroize)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedRistretto {
@@ -438,7 +436,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
 /// operations on `RistrettoPoint`s are exactly as fast as operations on
 /// `EdwardsPoint`s.
 ///
-#[derive(Copy, Clone, Zeroize)]
+#[derive(Copy, Clone)]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
@@ -1094,10 +1092,7 @@ impl Zeroize for CompressedRistretto {
 
 impl Zeroize for RistrettoPoint {
     fn zeroize(&mut self) {
-        self.0.X.zeroize();
-        self.0.Y.zeroize();
-        self.0.Z.zeroize();
-        self.0.T.zeroize();
+        self.0.zeroize();
     }
 }
 

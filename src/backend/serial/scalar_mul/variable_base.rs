@@ -3,7 +3,7 @@
 use traits::Identity;
 use scalar::Scalar;
 use edwards::EdwardsPoint;
-use backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
+use backend::serial::curve_models::ProjectiveNielsPoint;
 use window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.

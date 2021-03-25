@@ -105,6 +105,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use constants;
 
 use field::FieldElement;
@@ -364,6 +366,28 @@ impl Identity for EdwardsPoint {
 impl Default for EdwardsPoint {
     fn default() -> EdwardsPoint {
         EdwardsPoint::identity()
+    }
+}
+
+// ------------------------------------------------------------------------
+// Zeroize implementations for wiping points from memory
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedEdwardsY {
+    /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+        self.0[0] = 1;
+    }
+}
+
+impl Zeroize for EdwardsPoint {
+    /// Reset this `CompressedEdwardsPoint` to the identity element.
+    fn zeroize(&mut self) {
+        self.X.zeroize();
+        self.Y = FieldElement::one();
+        self.Z = FieldElement::one();
+        self.T.zeroize();
     }
 }
 

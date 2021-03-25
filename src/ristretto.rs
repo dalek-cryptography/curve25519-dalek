@@ -177,6 +177,8 @@ use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
 
@@ -199,8 +201,6 @@ use backend::serial::scalar_mul;
     any(target_feature = "avx2", target_feature = "avx512ifma")
 ))]
 use backend::vector::scalar_mul;
-
-use zeroize::Zeroize;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -1092,10 +1092,7 @@ impl Zeroize for CompressedRistretto {
 
 impl Zeroize for RistrettoPoint {
     fn zeroize(&mut self) {
-        self.0.X.zeroize();
-        self.0.Y.zeroize();
-        self.0.Z.zeroize();
-        self.0.T.zeroize();
+        self.0.zeroize();
     }
 }
 

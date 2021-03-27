@@ -45,6 +45,8 @@ extern crate byteorder;
 pub extern crate digest;
 extern crate rand_core;
 extern crate zeroize;
+extern crate sha2;
+extern crate rand;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

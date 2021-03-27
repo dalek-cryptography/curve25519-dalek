@@ -51,6 +51,7 @@
 use core::ops::{Mul, MulAssign};
 
 use constants::APLUS2_OVER_FOUR;
+use constants::MONT_A;
 use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
 use scalar::Scalar;
@@ -153,6 +154,42 @@ impl MontgomeryPoint {
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
+    }
+
+    /// Computes the Montgomery Elligator map.
+    ///
+    /// # Note
+    ///
+    /// This method is not public because it's just used for hashing
+    /// to a point (similar to the ristretto elligator) -- proper
+    /// elligator support is deferred for now.
+    /// 
+    /// Based on the paper: Elligator: Elliptic-curve points 
+    /// indistinguishable from uniform random strings.
+    /// Link: http://elligator.cr.yp.to/elligator-20130828.pdf
+    /// Section 5.5: Application of ψ to Curve25519
+    pub(crate) fn elligator_montgomery_flavor(r_0: &FieldElement) -> MontgomeryPoint {
+
+        let minus_a = -&MONT_A;
+        let one = FieldElement::one();
+        let d_1 = &one + &r_0.square2();
+
+        let d = &minus_a * &(d_1.invert());
+
+        let d_sq = &d.square();
+        let d_cube = &d * &d_sq;
+        let eps_1 = &d_cube + &(&MONT_A * &d_sq);
+        let eps_2 = &eps_1 + &d;
+
+        let (_one_eps_2_is_sq, eps) = FieldElement::sqrt_ratio_i(&one, &eps_2);
+
+        let u_1 = &eps * &d;
+        let u_2 = &(&eps - &one) * &MONT_A;
+        let two = &one + &one;
+        let u_3 = &u_2 * &(&two.invert());
+        let u = &u_1 + &u_3;
+
+        MontgomeryPoint(u.to_bytes())
     }
 }
 

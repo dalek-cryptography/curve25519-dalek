@@ -51,7 +51,7 @@
 
 use core::ops::{Mul, MulAssign};
 
-use constants::{APLUS2_OVER_FOUR, MONT_A};
+use constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
 use scalar::Scalar;
@@ -157,19 +157,21 @@ impl MontgomeryPoint {
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point
+/// Perform the Elligator2 mapping to a Montgomery point.
 ///
-/// See
-/// https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+/// See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+//
+// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
+//      draft gets into a more polished/accepted state.
+#[allow(unused)]
 pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
-    let minus_a = -&MONT_A; /* A = 486662 */
     let one = FieldElement::one();
     let d_1 = &one + &r_0.square2(); /* 2r^2 */
 
-    let d = &minus_a * &(d_1.invert()); /* A/(1+2r^2) */
+    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
 
     let d_sq = &d.square();
-    let au = &MONT_A * &d;
+    let au = &MONTGOMERY_A * &d;
 
     let inner = &(d_sq + &au) + &one;
     let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
@@ -177,7 +179,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
 
     let zero = FieldElement::zero();
-    let Atemp = FieldElement::conditional_select(&MONT_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
+    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 

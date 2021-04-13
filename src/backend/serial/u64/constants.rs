@@ -92,8 +92,20 @@ pub(crate) const SQRT_M1: FieldElement51 = FieldElement51([
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub(crate) const APLUS2_OVER_FOUR: FieldElement51 = FieldElement51([121666, 0, 0, 0, 0]);
 
-/// `MONT_A` is a constant of Curve25519. (This is used internally within the Elligator map.)
-pub(crate) const MONT_A: FieldElement51 = FieldElement51([486662, 0, 0, 0, 0]);
+/// `MONTGOMERY_A` is equal to 486662, which is a constant of the curve equation
+/// for Curve25519 in its Montgomery form. (This is used internally within the
+/// Elligator map.)
+pub(crate) const MONTGOMERY_A: FieldElement51 = FieldElement51([486662, 0, 0, 0, 0]);
+
+/// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
+/// Elligator map.)
+pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51([
+    2251799813198567,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+]);
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52([

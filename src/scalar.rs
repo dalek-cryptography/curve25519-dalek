@@ -990,10 +990,12 @@ impl Scalar {
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
     pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-        debug_assert!(w >= 6);
+        debug_assert!(w >= 4);
         debug_assert!(w <= 8);
 
         let digits_count = match w {
+            4 => (256 + w - 1)/w as usize,
+            5 => (256 + w - 1)/w as usize,
             6 => (256 + w - 1)/w as usize,
             7 => (256 + w - 1)/w as usize,
             // See comment in to_radix_2w on handling the terminal carry.
@@ -1001,18 +1003,17 @@ impl Scalar {
             _ => panic!("invalid radix parameter"),
         };
 
-        debug_assert!(digits_count <= 43);
+        debug_assert!(digits_count <= 64);
         digits_count
     }
 
-    /// Creates a representation of a Scalar in radix 64, 128 or 256 for use with the Pippenger algorithm.
+    /// Creates a representation of a Scalar in radix 32, 64, 128 or 256 for use with the Pippenger algorithm.
     /// For lower radix, use `to_radix_16`, which is used by the Straus multi-scalar multiplication.
     /// Higher radixes are not supported to save cache space. Radix 256 is near-optimal even for very
     /// large inputs.
     ///
-    /// Radix below 64 or above 256 is prohibited.
+    /// Radix below 32 or above 256 is prohibited.
     /// This method returns digits in a fixed-sized array, excess digits are zeroes.
-    /// The second returned value is the number of digits.
     ///
     /// ## Scalar representation
     ///
@@ -1023,9 +1024,13 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 43] {
-        debug_assert!(w >= 6);
+    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 64] {
+        debug_assert!(w >= 4);
         debug_assert!(w <= 8);
+
+        if w == 4 {
+            return self.to_radix_16();
+        }
 
         use byteorder::{ByteOrder, LittleEndian};
 
@@ -1037,7 +1042,7 @@ impl Scalar {
         let window_mask: u64 = radix - 1;
 
         let mut carry = 0u64;
-        let mut digits = [0i8; 43];
+        let mut digits = [0i8; 64];
         let digits_count = (256 + w - 1)/w as usize;
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.

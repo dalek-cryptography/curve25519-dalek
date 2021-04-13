@@ -7,8 +7,10 @@ use rand::thread_rng;
 #[macro_use]
 extern crate criterion;
 
+use criterion::measurement::Measurement;
 use criterion::BatchSize;
 use criterion::Criterion;
+use criterion::{BenchmarkGroup, BenchmarkId};
 
 extern crate curve25519_dalek;
 
@@ -100,115 +102,136 @@ mod multiscalar_benches {
         (construct_scalars(n), construct_points(n))
     }
 
-    fn consttime_multiscalar_mul(c: &mut Criterion) {
-        c.bench_function_over_inputs(
-            "Constant-time variable-base multiscalar multiplication",
-            |b, &&size| {
-                let points = construct_points(size);
-                // This is supposed to be constant-time, but we might as well
-                // rerandomize the scalars for every call just in case.
-                b.iter_batched(
-                    || construct_scalars(size),
-                    |scalars| EdwardsPoint::multiscalar_mul(&scalars, &points),
-                    BatchSize::SmallInput,
-                );
-            },
-            &MULTISCALAR_SIZES,
-        );
+    fn consttime_multiscalar_mul<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for multiscalar_size in &MULTISCALAR_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "Constant-time variable-base multiscalar multiplication",
+                    *multiscalar_size,
+                ),
+                &multiscalar_size,
+                |b, &&size| {
+                    let points = construct_points(size);
+                    // This is supposed to be constant-time, but we might as well
+                    // rerandomize the scalars for every call just in case.
+                    b.iter_batched(
+                        || construct_scalars(size),
+                        |scalars| EdwardsPoint::multiscalar_mul(&scalars, &points),
+                        BatchSize::SmallInput,
+                    );
+                },
+            );
+        }
     }
 
-    fn vartime_multiscalar_mul(c: &mut Criterion) {
-        c.bench_function_over_inputs(
-            "Variable-time variable-base multiscalar multiplication",
-            |b, &&size| {
-                let points = construct_points(size);
-                // Rerandomize the scalars for every call to prevent
-                // false timings from better caching (e.g., the CPU
-                // cache lifts exactly the right table entries for the
-                // benchmark into the highest cache levels).
-                b.iter_batched(
-                    || construct_scalars(size),
-                    |scalars| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points),
-                    BatchSize::SmallInput,
-                );
-            },
-            &MULTISCALAR_SIZES,
-        );
+    fn vartime_multiscalar_mul<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for multiscalar_size in &MULTISCALAR_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "Variable-time variable-base multiscalar multiplication",
+                    *multiscalar_size,
+                ),
+                &multiscalar_size,
+                |b, &&size| {
+                    let points = construct_points(size);
+                    // Rerandomize the scalars for every call to prevent
+                    // false timings from better caching (e.g., the CPU
+                    // cache lifts exactly the right table entries for the
+                    // benchmark into the highest cache levels).
+                    b.iter_batched(
+                        || construct_scalars(size),
+                        |scalars| EdwardsPoint::vartime_multiscalar_mul(&scalars, &points),
+                        BatchSize::SmallInput,
+                    );
+                },
+            );
+        }
     }
 
-    fn vartime_precomputed_pure_static(c: &mut Criterion) {
-        c.bench_function_over_inputs(
-            "Variable-time fixed-base multiscalar multiplication",
-            move |b, &&total_size| {
-                let static_size = total_size;
+    fn vartime_precomputed_pure_static<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for multiscalar_size in &MULTISCALAR_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "Variable-time fixed-base multiscalar multiplication",
+                    &multiscalar_size,
+                ),
+                &multiscalar_size,
+                move |b, &&total_size| {
+                    let static_size = total_size;
 
-                let static_points = construct_points(static_size);
-                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
-                // Rerandomize the scalars for every call to prevent
-                // false timings from better caching (e.g., the CPU
-                // cache lifts exactly the right table entries for the
-                // benchmark into the highest cache levels).
-                b.iter_batched(
-                    || construct_scalars(static_size),
-                    |scalars| precomp.vartime_multiscalar_mul(&scalars),
-                    BatchSize::SmallInput,
-                );
-            },
-            &MULTISCALAR_SIZES,
-        );
+                    let static_points = construct_points(static_size);
+                    let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+                    // Rerandomize the scalars for every call to prevent
+                    // false timings from better caching (e.g., the CPU
+                    // cache lifts exactly the right table entries for the
+                    // benchmark into the highest cache levels).
+                    b.iter_batched(
+                        || construct_scalars(static_size),
+                        |scalars| precomp.vartime_multiscalar_mul(&scalars),
+                        BatchSize::SmallInput,
+                    );
+                },
+            );
+        }
     }
 
-    fn vartime_precomputed_helper(c: &mut Criterion, dynamic_fraction: f64) {
-        let label = format!(
-            "Variable-time mixed-base multiscalar multiplication ({:.0}pct dyn)",
-            100.0 * dynamic_fraction,
-        );
-        c.bench_function_over_inputs(
-            &label,
-            move |b, &&total_size| {
-                let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
-                let static_size = total_size - dynamic_size;
+    fn vartime_precomputed_helper<M: Measurement>(
+        c: &mut BenchmarkGroup<M>,
+        dynamic_fraction: f64,
+    ) {
+        for multiscalar_size in &MULTISCALAR_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new(
+                    "Variable-time mixed-base multiscalar multiplication ({:.0}pct dyn)",
+                    format!("({:.0}pct dyn)", 100.0 * dynamic_fraction),
+                ),
+                &multiscalar_size,
+                move |b, &&total_size| {
+                    let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
+                    let static_size = total_size - dynamic_size;
 
-                let static_points = construct_points(static_size);
-                let dynamic_points = construct_points(dynamic_size);
-                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
-                // Rerandomize the scalars for every call to prevent
-                // false timings from better caching (e.g., the CPU
-                // cache lifts exactly the right table entries for the
-                // benchmark into the highest cache levels).  Timings
-                // should be independent of points so we don't
-                // randomize them.
-                b.iter_batched(
-                    || {
-                        (
-                            construct_scalars(static_size),
-                            construct_scalars(dynamic_size),
-                        )
-                    },
-                    |(static_scalars, dynamic_scalars)| {
-                        precomp.vartime_mixed_multiscalar_mul(
-                            &static_scalars,
-                            &dynamic_scalars,
-                            &dynamic_points,
-                        )
-                    },
-                    BatchSize::SmallInput,
-                );
-            },
-            &MULTISCALAR_SIZES,
-        );
+                    let static_points = construct_points(static_size);
+                    let dynamic_points = construct_points(dynamic_size);
+                    let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+                    // Rerandomize the scalars for every call to prevent
+                    // false timings from better caching (e.g., the CPU
+                    // cache lifts exactly the right table entries for the
+                    // benchmark into the highest cache levels).  Timings
+                    // should be independent of points so we don't
+                    // randomize them.
+                    b.iter_batched(
+                        || {
+                            (
+                                construct_scalars(static_size),
+                                construct_scalars(dynamic_size),
+                            )
+                        },
+                        |(static_scalars, dynamic_scalars)| {
+                            precomp.vartime_mixed_multiscalar_mul(
+                                &static_scalars,
+                                &dynamic_scalars,
+                                &dynamic_points,
+                            )
+                        },
+                        BatchSize::SmallInput,
+                    );
+                },
+            );
+        }
     }
 
-    fn vartime_precomputed_00_pct_dynamic(c: &mut Criterion) {
-        vartime_precomputed_helper(c, 0.0);
-    }
+    fn multiscalar_multiplications(c: &mut Criterion) {
+        let mut group: BenchmarkGroup<_> = c.benchmark_group("Multiscalar muls");
 
-    fn vartime_precomputed_20_pct_dynamic(c: &mut Criterion) {
-        vartime_precomputed_helper(c, 0.2);
-    }
+        consttime_multiscalar_mul(&mut group);
+        vartime_multiscalar_mul(&mut group);
+        vartime_precomputed_pure_static(&mut group);
 
-    fn vartime_precomputed_50_pct_dynamic(c: &mut Criterion) {
-        vartime_precomputed_helper(c, 0.5);
+        let dynamic_fracs = [0.0, 0.2, 0.5];
+        for frac in dynamic_fracs.iter() {
+            vartime_precomputed_helper(&mut group, *frac);
+        }
+        group.finish();
     }
 
     criterion_group! {
@@ -216,12 +239,7 @@ mod multiscalar_benches {
         // Lower the sample size to run the benchmarks faster
         config = Criterion::default().sample_size(15);
         targets =
-        consttime_multiscalar_mul,
-        vartime_multiscalar_mul,
-        vartime_precomputed_pure_static,
-        vartime_precomputed_00_pct_dynamic,
-        vartime_precomputed_20_pct_dynamic,
-        vartime_precomputed_50_pct_dynamic,
+        multiscalar_multiplications,
     }
 }
 
@@ -243,18 +261,26 @@ mod ristretto_benches {
         });
     }
 
-    fn double_and_compress_batch(c: &mut Criterion) {
-        c.bench_function_over_inputs(
-            "Batch Ristretto double-and-encode",
-            |b, &&size| {
-                let mut rng = OsRng;
-                let points: Vec<RistrettoPoint> = (0..size)
-                    .map(|_| RistrettoPoint::random(&mut rng))
-                    .collect();
-                b.iter(|| RistrettoPoint::double_and_compress_batch(&points));
-            },
-            &BATCH_SIZES,
-        );
+    fn double_and_compress_batch<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for batch_size in &BATCH_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new("Batch Ristretto double-and-encode", *batch_size),
+                &batch_size,
+                |b, &&size| {
+                    let mut rng = OsRng;
+                    let points: Vec<RistrettoPoint> = (0..size)
+                        .map(|_| RistrettoPoint::random(&mut rng))
+                        .collect();
+                    b.iter(|| RistrettoPoint::double_and_compress_batch(&points));
+                },
+            );
+        }
+    }
+
+    fn double_and_compress_group(c: &mut Criterion) {
+        let mut group: BenchmarkGroup<_> = c.benchmark_group("double & compress batched");
+        double_and_compress_batch(&mut group);
+        group.finish();
     }
 
     criterion_group! {
@@ -263,7 +289,7 @@ mod ristretto_benches {
         targets =
         compress,
         decompress,
-        double_and_compress_batch,
+        double_and_compress_group,
     }
 }
 
@@ -295,19 +321,28 @@ mod scalar_benches {
         });
     }
 
-    fn batch_scalar_inversion(c: &mut Criterion) {
-        c.bench_function_over_inputs(
-            "Batch scalar inversion",
-            |b, &&size| {
-                let mut rng = OsRng;
-                let scalars: Vec<Scalar> = (0..size).map(|_| Scalar::random(&mut rng)).collect();
-                b.iter(|| {
-                    let mut s = scalars.clone();
-                    Scalar::batch_invert(&mut s);
-                });
-            },
-            &BATCH_SIZES,
-        );
+    fn batch_scalar_inversion<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for batch_size in &BATCH_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new("Batch scalar inversion", *batch_size),
+                &batch_size,
+                |b, &&size| {
+                    let mut rng = OsRng;
+                    let scalars: Vec<Scalar> =
+                        (0..size).map(|_| Scalar::random(&mut rng)).collect();
+                    b.iter(|| {
+                        let mut s = scalars.clone();
+                        Scalar::batch_invert(&mut s);
+                    });
+                },
+            );
+        }
+    }
+
+    fn batch_scalar_inversion_group(c: &mut Criterion) {
+        let mut group: BenchmarkGroup<_> = c.benchmark_group("batch scalar inversion");
+        batch_scalar_inversion(&mut group);
+        group.finish();
     }
 
     criterion_group! {
@@ -315,7 +350,7 @@ mod scalar_benches {
         config = Criterion::default();
         targets =
         scalar_inversion,
-        batch_scalar_inversion,
+        batch_scalar_inversion_group,
     }
 }
 

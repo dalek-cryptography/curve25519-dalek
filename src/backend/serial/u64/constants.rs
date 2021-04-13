@@ -12,8 +12,8 @@
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
 use backend::serial::curve_models::AffineNielsPoint;
-use backend::serial::u64::field::FieldElement51;
-use backend::serial::u64::scalar::Scalar52;
+use super::field::FieldElement51;
+use super::scalar::Scalar52;
 use edwards::{EdwardsBasepointTable, EdwardsPoint};
 use window::{LookupTable, NafLookupTable8};
 

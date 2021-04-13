@@ -47,6 +47,9 @@ pub extern crate digest;
 extern crate rand_core;
 extern crate zeroize;
 
+#[cfg(any(feature = "fiat_u64_backend", feature = "fiat_u32_backend"))]
+extern crate fiat_crypto;
+
 // Used for traits related to constant-time code.
 extern crate subtle;
 

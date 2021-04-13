@@ -33,6 +33,21 @@ use subtle::ConstantTimeEq;
 use constants;
 use backend;
 
+#[cfg(feature = "fiat_u32_backend")]
+pub use backend::serial::fiat_u32::field::*;
+#[cfg(feature = "fiat_u64_backend")]
+pub use backend::serial::fiat_u64::field::*;
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
+/// Using formally-verified field arithmetic from fiat-crypto
+#[cfg(feature = "fiat_u32_backend")]
+pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+#[cfg(feature = "fiat_u64_backend")]
+pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+
 #[cfg(feature = "u64_backend")]
 pub use backend::serial::u64::field::*;
 /// A `FieldElement` represents an element of the field

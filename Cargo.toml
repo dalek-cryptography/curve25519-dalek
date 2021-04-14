@@ -5,7 +5,7 @@ edition = "2018"
 # - update version in README.md
 # - update html_root_url
 # - update CHANGELOG
-version = "1.1.0"
+version = "1.1.1"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>", 
     "DebugSteven <debugsteven@gmail.com>",

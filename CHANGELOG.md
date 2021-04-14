@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## 1.1.1
+
+* Fix a typo in the README.
+
 ## 1.1.0
 
 * Add impls of `PartialEq`, `Eq`, and `Hash` for `PublicKey` (by @jack-michaud)

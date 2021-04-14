@@ -88,7 +88,7 @@ These secrets are the same:
 assert_eq!(alice_shared_secret.as_bytes(), bob_shared_secret.as_bytes());
 ```
 
-Voilá!  Alice and Bob can now use their shared secret to encrypt their
+Voilà!  Alice and Bob can now use their shared secret to encrypt their
 meows, for example, by using it to generate a key and nonce for an
 authenticated-encryption cipher.
 

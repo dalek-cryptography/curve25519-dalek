@@ -1,8 +1,8 @@
 // -*- mode: rust; -*-
 //
 // This file is part of x25519-dalek.
-// Copyright (c) 2017-2019 isis lovecruft
-// Copyright (c) 2019 DebugSteven
+// Copyright (c) 2017-2021 isis lovecruft
+// Copyright (c) 2019-2021 DebugSteven
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -20,7 +20,7 @@
 #![cfg_attr(feature = "nightly", deny(missing_docs))]
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
-#![doc(html_root_url = "https://docs.rs/x25519-dalek/1.1.0")]
+#![doc(html_root_url = "https://docs.rs/x25519-dalek/1.1.1")]
 
 //! Note that docs will only build on nightly Rust until
 //! `feature(external_doc)` is stabilized.

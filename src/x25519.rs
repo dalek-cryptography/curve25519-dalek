@@ -23,13 +23,19 @@ use rand_core::RngCore;
 
 use zeroize::Zeroize;
 
-/// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or [`StaticSecret`] key.
+/// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or
+/// [`StaticSecret`] key.
+///
+/// We implement `Zeroize` so that downstream consumers may derive it for `Drop`
+/// should they wish to erase public keys from memory.  Note that this erasure
+/// (in this crate) does *not* automatically happen, but either must be derived
+/// for Drop or explicitly called.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
     derive(our_serde::Serialize, our_serde::Deserialize)
 )]
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug, Zeroize)]
 pub struct PublicKey(pub(crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {

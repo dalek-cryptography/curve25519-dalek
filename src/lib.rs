@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
@@ -21,7 +22,7 @@
 
 #![cfg_attr(feature = "nightly", doc(include = "../README.md"))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
-#![doc(html_root_url = "https://docs.rs/curve25519-dalek/3.0.2")]
+#![doc(html_root_url = "https://docs.rs/curve25519-dalek/3.1.0")]
 
 //! Note that docs will only build on nightly Rust until
 //! [RFC 1990 stabilizes](https://github.com/rust-lang/rust/issues/44732).
@@ -45,6 +46,9 @@ extern crate byteorder;
 pub extern crate digest;
 extern crate rand_core;
 extern crate zeroize;
+
+#[cfg(any(feature = "fiat_u64_backend", feature = "fiat_u32_backend"))]
+extern crate fiat_crypto;
 
 // Used for traits related to constant-time code.
 extern crate subtle;

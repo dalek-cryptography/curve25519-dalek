@@ -4,7 +4,7 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update html_root_url
 # - update README if required by semver
-version = "3.0.2"
+version = "3.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
@@ -33,6 +33,7 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 sha2 = { version = "0.9", default-features = false }
 bincode = "1"
 criterion = "0.3.0"
+hex = "0.4.2"
 rand = "0.7"
 
 [[bench]]
@@ -49,6 +50,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 # https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
+fiat-crypto = { version = "0.1.6", optional = true}
 
 [features]
 nightly = ["subtle/nightly"]
@@ -60,6 +62,10 @@ alloc = ["zeroize/alloc"]
 u32_backend = []
 # The u64 backend uses u64s with u128 products.
 u64_backend = []
+# fiat-u64 backend (with formally-verified field arith) uses u64s with u128 products.
+fiat_u64_backend = ["fiat-crypto"]
+# fiat-u32 backend (with formally-verified field arith) uses u32s with u64 products.
+fiat_u32_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
 simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # DEPRECATED: this is now an alias for `simd_backend` and may be removed

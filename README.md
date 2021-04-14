@@ -48,8 +48,19 @@ your project's `Cargo.toml`:
 curve25519-dalek = "3"
 ```
 
-The `3.x` series has API almost entirely unchanged from the `2.x` series,
-except that the `digest` version was updated.
+The sole breaking change in the `3.x` series was an update to the `digest`
+version, and in terms of non-breaking changes it includes:
+
+* support for using `alloc` instead of `std` on stable Rust,
+* the Elligator2 encoding for Edwards points,
+* a fix to use `packed_simd2`,
+* various documentation fixes and improvements,
+* support for configurably-sized, precomputed lookup tables for basepoint scalar
+  multiplication,
+* two new formally-verified field arithmetic backends which use the Fiat Crypto
+  Rust code, which is generated from proofs of functional correctness checked by
+  the Coq theorem proving system, and
+* support for explicitly calling the `zeroize` traits for all point types.
 
 The `2.x` series has API almost entirely unchanged from the `1.x` series,
 except that:
@@ -58,7 +69,6 @@ except that:
   corrected, so that when the `2.x`-series `serde` implementation is used
   with `serde-bincode`, the derived serialization matches the usual X/Ed25519
   formats;
-
 * the `rand` version was updated.
 
 See `CHANGELOG.md` for more details.

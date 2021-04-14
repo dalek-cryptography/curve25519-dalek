@@ -5,6 +5,21 @@ major series.
 
 ## 3.x series
 
+### 3.1.0
+
+* Add support for the Elligator2 encoding for Edwards points.
+* Add two optional formally-verified field arithmetic backends which
+  use the Fiat Crypto project's Rust code, which is generated from
+  proofs of functional correctness checked by the Coq theorem proving
+  system.
+* Add support for additional sizes of precomputed tables for basepoint
+  scalar multiplication.
+* Fix an unused import.
+* Add support for using the `zeroize` traits with all point types.
+  Note that points are not automatically zeroized on Drop, but that
+  consumers of `curve25519-dalek` should call these methods manually
+  when needed.
+
 ### 3.0.2
 
 * Fixes to make using alloc+no_std possible for stable Rust.

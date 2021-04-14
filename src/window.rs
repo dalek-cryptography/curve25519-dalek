@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Code for fixed- and sliding-window functionality
@@ -27,6 +28,9 @@ use backend::serial::curve_models::AffineNielsPoint;
 
 use zeroize::Zeroize;
 
+macro_rules! impl_lookup_table {
+    (Name = $name:ident, Size = $size:expr, SizeNeg = $neg:expr, SizeRange = $range:expr, ConversionRange = $conv_range:expr) => {
+
 /// A lookup table of precomputed multiples of a point \\(P\\), used to
 /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
 ///
@@ -37,29 +41,27 @@ use zeroize::Zeroize;
 /// only `pub(crate)` so that we can write hardcoded constants, so it's
 /// still technically possible.  It would be nice to prevent direct
 /// access to the table.
-///
-/// XXX make this generic with respect to table size
 #[derive(Copy, Clone)]
-pub struct LookupTable<T>(pub(crate) [T; 8]);
+pub struct $name<T>(pub(crate) [T; $size]);
 
-impl<T> LookupTable<T>
+impl<T> $name<T>
 where
     T: Identity + ConditionallySelectable + ConditionallyNegatable,
 {
     /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
     pub fn select(&self, x: i8) -> T {
-        debug_assert!(x >= -8);
-        debug_assert!(x <= 8);
+        debug_assert!(x >= $neg);
+        debug_assert!(x as i16 <= $size as i16); // XXX We have to convert to i16s here for the radix-256 case.. this is wrong.
 
         // Compute xabs = |x|
-        let xmask = x >> 7;
-        let xabs = (x + xmask) ^ xmask;
+        let xmask = x  as i16 >> 7;
+        let xabs = (x as i16 + xmask) ^ xmask;
 
         // Set t = 0 * P = identity
         let mut t = T::identity();
-        for j in 1..9 {
+        for j in $range {
             // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
-            let c = (xabs as u8).ct_eq(&(j as u8));
+            let c = (xabs as u16).ct_eq(&(j as u16));
             t.conditional_assign(&self.0[j - 1], c);
         }
         // Now t == |x| * P.
@@ -72,47 +74,67 @@ where
     }
 }
 
-impl<T: Copy + Default> Default for LookupTable<T> {
-    fn default() -> LookupTable<T> {
-        LookupTable([T::default(); 8])
+impl<T: Copy + Default> Default for $name<T> {
+    fn default() -> $name<T> {
+        $name([T::default(); $size])
     }
 }
 
-impl<T: Debug> Debug for LookupTable<T> {
+impl<T: Debug> Debug for $name<T> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "LookupTable({:?})", self.0)
+        write!(f, "{:?}(", stringify!($name))?;
+
+        for x in self.0.iter() {
+            write!(f, "{:?}", x)?;
+        }
+
+        write!(f, ")")
     }
 }
 
-impl<'a> From<&'a EdwardsPoint> for LookupTable<ProjectiveNielsPoint> {
+impl<'a> From<&'a EdwardsPoint> for $name<ProjectiveNielsPoint> {
     fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_projective_niels(); 8];
-        for j in 0..7 {
+        let mut points = [P.to_projective_niels(); $size];
+        for j in $conv_range {
             points[j + 1] = (P + &points[j]).to_extended().to_projective_niels();
         }
-        LookupTable(points)
+        $name(points)
     }
 }
 
-impl<'a> From<&'a EdwardsPoint> for LookupTable<AffineNielsPoint> {
+impl<'a> From<&'a EdwardsPoint> for $name<AffineNielsPoint> {
     fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_affine_niels(); 8];
+        let mut points = [P.to_affine_niels(); $size];
         // XXX batch inversion would be good if perf mattered here
-        for j in 0..7 {
+        for j in $conv_range {
             points[j + 1] = (P + &points[j]).to_extended().to_affine_niels()
         }
-        LookupTable(points)
+        $name(points)
     }
 }
 
-impl<T> Zeroize for LookupTable<T>
+impl<T> Zeroize for $name<T>
 where
     T: Copy + Default + Zeroize
 {
     fn zeroize(&mut self) {
-        self.0.zeroize();
+        for x in self.0.iter_mut() {
+            x.zeroize();
+        }
     }
 }
+
+}}  // End macro_rules! impl_lookup_table
+
+// The first one has to be named "LookupTable" because it's used as a constructor for consts.
+impl_lookup_table! {Name = LookupTable,         Size =   8, SizeNeg =   -8, SizeRange = 1 ..   9, ConversionRange = 0 ..   7} // radix-16
+impl_lookup_table! {Name = LookupTableRadix32,  Size =  16, SizeNeg =  -16, SizeRange = 1 ..  17, ConversionRange = 0 ..  15} // radix-32
+impl_lookup_table! {Name = LookupTableRadix64,  Size =  32, SizeNeg =  -32, SizeRange = 1 ..  33, ConversionRange = 0 ..  31} // radix-64
+impl_lookup_table! {Name = LookupTableRadix128, Size =  64, SizeNeg =  -64, SizeRange = 1 ..  65, ConversionRange = 0 ..  63} // radix-128
+impl_lookup_table! {Name = LookupTableRadix256, Size = 128, SizeNeg = -128, SizeRange = 1 .. 129, ConversionRange = 0 .. 127} // radix-256
+
+// For homogeneity we then alias it to "LookupTableRadix16".
+pub type LookupTableRadix16<T> = LookupTable<T>;
 
 /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
 #[derive(Copy, Clone)]

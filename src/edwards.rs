@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Group operations for Curve25519, in Edwards form.
@@ -118,10 +119,16 @@ use backend::serial::curve_models::ProjectiveNielsPoint;
 use backend::serial::curve_models::ProjectivePoint;
 
 use window::LookupTable;
+use window::LookupTableRadix16;
+use window::LookupTableRadix32;
+use window::LookupTableRadix64;
+use window::LookupTableRadix128;
+use window::LookupTableRadix256;
 
 #[allow(unused_imports)]
 use prelude::*;
 
+use traits::BasepointTable;
 use traits::ValidityCheck;
 use traits::{Identity, IsIdentity};
 
@@ -743,16 +750,207 @@ impl EdwardsPoint {
     }
 }
 
+macro_rules! impl_basepoint_table {
+    (Name = $name:ident, LookupTable = $table:ident, Point = $point:ty, Radix = $radix:expr, Additions = $adds:expr) => {
+
 /// A precomputed table of multiples of a basepoint, for accelerating
 /// fixed-base scalar multiplication.  One table, for the Ed25519
 /// basepoint, is provided in the `constants` module.
 ///
-/// The basepoint tables are reasonably large (30KB), so they should
-/// probably be boxed.
+/// The basepoint tables are reasonably large, so they should probably be boxed.
+///
+/// The sizes for the tables and the number of additions required for one scalar
+/// multiplication are as follows:
+///
+/// * [`EdwardsBasepointTableRadix16`]: 30KB, 64A
+///   (this is the default size, and is used for [`ED25519_BASEPOINT_TABLE`])
+/// * [`EdwardsBasepointTableRadix64`]: 120KB, 43A
+/// * [`EdwardsBasepointTableRadix128`]: 240KB, 37A
+/// * [`EdwardsBasepointTableRadix256`]: 480KB, 33A
+///
+/// # Why 33 additions for radix-256?
+///
+/// Normally, the radix-256 tables would allow for only 32 additions per scalar
+/// multiplication.  However, due to the fact that standardised definitions of
+/// legacy protocols—such as x25519—require allowing unreduced 255-bit scalar
+/// invariants, when converting such an unreduced scalar's representation to
+/// radix-\\(2^{8}\\), we cannot guarantee the carry bit will fit in the last
+/// coefficient (the coefficients are `i8`s).  When, \\(w\\), the power-of-2 of
+/// the radix, is \\(w < 8\\), we can fold the final carry onto the last
+/// coefficient, \\(d\\), because \\(d < 2^{w/2}\\), so
+/// $$
+///     d + carry \cdot 2^{w} = d + 1 \cdot 2^{w} < 2^{w+1} < 2^{8}
+/// $$
+/// When \\(w = 8\\), we can't fit \\(carry \cdot 2^{w}\\) into an `i8`, so we
+/// add the carry bit onto an additional coefficient.
+#[derive(Clone)]
+pub struct $name(pub(crate) [$table<AffineNielsPoint>; 32]);
+
+impl BasepointTable for $name {
+    type Point = $point;
+
+    /// Create a table of precomputed multiples of `basepoint`.
+    fn create(basepoint: &$point) -> $name {
+        // XXX use init_with
+        let mut table = $name([$table::default(); 32]);
+        let mut P = *basepoint;
+        for i in 0..32 {
+            // P = (2w)^i * B
+            table.0[i] = $table::from(&P);
+            P = P.mul_by_pow_2($radix + $radix);
+        }
+        table
+    }
+
+    /// Get the basepoint for this table as an `EdwardsPoint`.
+    fn basepoint(&self) -> $point {
+        // self.0[0].select(1) = 1*(16^2)^0*B
+        // but as an `AffineNielsPoint`, so add identity to convert to extended.
+        (&<$point>::identity() + &self.0[0].select(1)).to_extended()
+    }
+
+    /// The computation uses Pippeneger's algorithm, as described for the
+    /// specific case of radix-16 on page 13 of the Ed25519 paper.
+    ///
+    /// # Piggenger's Algorithm Generalised
+    ///
+    /// Write the scalar \\(a\\) in radix-\\(w\\), where \\(w\\) is a power of
+    /// 2, with coefficients in \\([\frac{-w}{2},\frac{w}{2})\\), i.e.,
+    /// $$
+    ///     a = a\_0 + a\_1 w\^1 + \cdots + a\_{x} w\^{x},
+    /// $$
+    /// with
+    /// $$
+    ///     \frac{-w}{2} \leq a_i < \frac{w}{2}, \cdots, \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+    /// $$
+    /// and the number of additions, \\(x\\), is given by \\(x = \lceil \frac{256}{w} \rceil\\).
+    /// Then
+    /// $$
+    ///     a B = a\_0 B + a\_1 w\^1 B + \cdots + a\_{x-1} w\^{x-1} B.
+    /// $$
+    /// Grouping even and odd coefficients gives
+    /// $$
+    /// \begin{aligned}
+    ///     a B = \quad a\_0 w\^0 B +& a\_2 w\^2 B + \cdots + a\_{x-2} w\^{x-2} B    \\\\
+    ///               + a\_1 w\^1 B +& a\_3 w\^3 B + \cdots + a\_{x-1} w\^{x-1} B    \\\\
+    ///         = \quad(a\_0 w\^0 B +& a\_2 w\^2 B + \cdots + a\_{x-2} w\^{x-2} B)   \\\\
+    ///             + w(a\_1 w\^0 B +& a\_3 w\^2 B + \cdots + a\_{x-1} w\^{x-2} B).  \\\\
+    /// \end{aligned}
+    /// $$
+    /// For each \\(i = 0 \ldots 31\\), we create a lookup table of
+    /// $$
+    /// [w\^{2i} B, \ldots, \frac{w}{2}\cdotw\^{2i} B],
+    /// $$
+    /// and use it to select \\( y \cdot w\^{2i} \cdot B \\) in constant time.
+    ///
+    /// The radix-\\(w\\) representation requires that the scalar is bounded
+    /// by \\(2\^{255}\\), which is always the case.
+    ///
+    /// The above algorithm is trivially generalised to other powers-of-2 radices.
+    fn basepoint_mul(&self, scalar: &Scalar) -> $point {
+        let a = scalar.to_radix_2w($radix);
+
+        let tables = &self.0;
+        let mut P = <$point>::identity();
+
+        for i in (0..$adds).filter(|x| x % 2 == 1) {
+            P = (&P + &tables[i/2].select(a[i])).to_extended();
+        }
+
+        P = P.mul_by_pow_2($radix);
+
+        for i in (0..$adds).filter(|x| x % 2 == 0) {
+            P = (&P + &tables[i/2].select(a[i])).to_extended();
+        }
+
+        P
+    }
+}
+
+impl<'a, 'b> Mul<&'b Scalar> for &'a $name {
+    type Output = $point;
+
+    /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
+    fn mul(self, scalar: &'b Scalar) -> $point {
+        // delegate to a private function so that its documentation appears in internal docs
+        self.basepoint_mul(scalar)
+    }
+}
+
+impl<'a, 'b> Mul<&'a $name> for &'b Scalar {
+    type Output = $point;
+
+    /// Construct an `EdwardsPoint` from a `Scalar` \\(a\\) by
+    /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
+    fn mul(self, basepoint_table: &'a $name) -> $point {
+        basepoint_table * self
+    }
+}
+
+impl Debug for $name {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+        write!(f, "{:?}([\n", stringify!($name))?;
+        for i in 0..32 {
+            write!(f, "\t{:?},\n", &self.0[i])?;
+        }
+        write!(f, "])")
+    }
+}
+
+}} // End macro_rules! impl_basepoint_table
+
+// The number of additions required is ceil(256/w) where w is the radix representation.
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix16, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
+impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
+
+// -------------------------------------------------------------------------------------
+// BEGIN legacy 3.x series code for backwards compatibility with BasepointTable trait
+// -------------------------------------------------------------------------------------
+
+/// A precomputed table of multiples of a basepoint, for accelerating
+/// fixed-base scalar multiplication.  One table, for the Ed25519
+/// basepoint, is provided in the `constants` module.
+///
+/// The basepoint tables are reasonably large, so they should probably be boxed.
+///
+/// The sizes for the tables and the number of additions required for one scalar
+/// multiplication are as follows:
+///
+/// * [`EdwardsBasepointTableRadix16`]: 30KB, 64A
+///   (this is the default size, and is used for [`ED25519_BASEPOINT_TABLE`])
+/// * [`EdwardsBasepointTableRadix64`]: 120KB, 43A
+/// * [`EdwardsBasepointTableRadix128`]: 240KB, 37A
+/// * [`EdwardsBasepointTableRadix256`]: 480KB, 33A
+///
+/// # Why 33 additions for radix-256?
+///
+/// Normally, the radix-256 tables would allow for only 32 additions per scalar
+/// multiplication.  However, due to the fact that standardised definitions of
+/// legacy protocols—such as x25519—require allowing unreduced 255-bit scalar
+/// invariants, when converting such an unreduced scalar's representation to
+/// radix-\\(2^{8}\\), we cannot guarantee the carry bit will fit in the last
+/// coefficient (the coefficients are `i8`s).  When, \\(w\\), the power-of-2 of
+/// the radix, is \\(w < 8\\), we can fold the final carry onto the last
+/// coefficient, \\(d\\), because \\(d < 2^{w/2}\\), so
+/// $$
+///     d + carry \cdot 2^{w} = d + 1 \cdot 2^{w} < 2^{w+1} < 2^{8}
+/// $$
+/// When \\(w = 8\\), we can't fit \\(carry \cdot 2^{w}\\) into an `i8`, so we
+/// add the carry bit onto an additional coefficient.
 #[derive(Clone)]
 pub struct EdwardsBasepointTable(pub(crate) [LookupTable<AffineNielsPoint>; 32]);
 
 impl EdwardsBasepointTable {
+    /// Create a table of precomputed multiples of `basepoint`.
+    #[allow(warnings)]
+    pub fn create(basepoint: &EdwardsPoint) -> EdwardsBasepointTable {
+        Self(EdwardsBasepointTableRadix16::create(basepoint).0)
+    }
+
     /// The computation uses Pippenger's algorithm, as described on
     /// page 13 of the Ed25519 paper.  Write the scalar \\(a\\) in radix \\(16\\) with
     /// coefficients in \\([-8,8)\\), i.e.,
@@ -780,7 +978,8 @@ impl EdwardsBasepointTable {
     ///
     /// The radix-\\(16\\) representation requires that the scalar is bounded
     /// by \\(2\^{255}\\), which is always the case.
-    fn basepoint_mul(&self, scalar: &Scalar) -> EdwardsPoint {
+    #[allow(warnings)]
+    pub fn basepoint_mul(&self, scalar: &Scalar) -> EdwardsPoint {
         let a = scalar.to_radix_16();
 
         let tables = &self.0;
@@ -797,6 +996,12 @@ impl EdwardsBasepointTable {
         }
 
         P
+    }
+
+    /// Get the basepoint for this table as an `EdwardsPoint`.
+    #[allow(warnings)]
+    pub fn basepoint(&self) -> EdwardsPoint {
+        (&EdwardsPoint::identity() + &self.0[0].select(1)).to_extended()
     }
 }
 
@@ -821,27 +1026,39 @@ impl<'a, 'b> Mul<&'a EdwardsBasepointTable> for &'b Scalar {
     }
 }
 
-impl EdwardsBasepointTable {
-    /// Create a table of precomputed multiples of `basepoint`.
-    pub fn create(basepoint: &EdwardsPoint) -> EdwardsBasepointTable {
-        // XXX use init_with
-        let mut table = EdwardsBasepointTable([LookupTable::default(); 32]);
-        let mut P = *basepoint;
-        for i in 0..32 {
-            // P = (16^2)^i * B
-            table.0[i] = LookupTable::from(&P);
-            P = P.mul_by_pow_2(8);
-        }
-        table
-    }
+// -------------------------------------------------------------------------------------
+// END legacy 3.x series code for backwards compatibility with BasepointTable trait
+// -------------------------------------------------------------------------------------
 
-    /// Get the basepoint for this table as an `EdwardsPoint`.
-    pub fn basepoint(&self) -> EdwardsPoint {
-        // self.0[0].select(1) = 1*(16^2)^0*B
-        // but as an `AffineNielsPoint`, so add identity to convert to extended.
-        (&EdwardsPoint::identity() + &self.0[0].select(1)).to_extended()
+macro_rules! impl_basepoint_table_conversions {
+    (LHS = $lhs:ty, RHS = $rhs:ty) => {
+        impl<'a> From<&'a $lhs> for $rhs {
+            fn from(table: &'a $lhs) -> $rhs {
+                <$rhs>::create(&table.basepoint())
+            }
+        }
+
+        impl<'a> From<&'a $rhs> for $lhs {
+            fn from(table: &'a $rhs) -> $lhs {
+                <$lhs>::create(&table.basepoint())
+            }
+        }
     }
 }
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix32}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix256}
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix64}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix256}
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix128}
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
+
+impl_basepoint_table_conversions!{LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
 
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\([8]P\\).
@@ -927,16 +1144,6 @@ impl Debug for EdwardsPoint {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
-    }
-}
-
-impl Debug for EdwardsBasepointTable {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "EdwardsBasepointTable([\n")?;
-        for i in 0..32 {
-            write!(f, "\t{:?},\n", &self.0[i])?;
-        }
-        write!(f, "])")
     }
 }
 
@@ -1146,6 +1353,63 @@ mod test {
         let two = Scalar::from(2u64);
         let bp2 = &constants::ED25519_BASEPOINT_TABLE * &two;
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
+    }
+
+    /// Test that all the basepoint table types compute the same results.
+    #[test]
+    fn basepoint_tables() {
+        let P = &constants::ED25519_BASEPOINT_POINT;
+        let a = A_SCALAR;
+
+        let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
+        let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
+        let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
+        let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
+
+        let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
+        let aP16 = (&table_radix16 * &a).compress();
+        let aP32 = (&table_radix32 * &a).compress();
+        let aP64 = (&table_radix64 * &a).compress();
+        let aP128 = (&table_radix128 * &a).compress();
+        let aP256 = (&table_radix256 * &a).compress();
+
+        assert_eq!(aP, aP16);
+        assert_eq!(aP16, aP32);
+        assert_eq!(aP32, aP64);
+        assert_eq!(aP64, aP128);
+        assert_eq!(aP128, aP256);
+    }
+
+    // Check a unreduced scalar multiplication by the basepoint tables.
+    #[test]
+    fn basepoint_tables_unreduced_scalar() {
+        let P = &constants::ED25519_BASEPOINT_POINT;
+        let a = Scalar::from_bits([
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+        ]);
+
+        let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
+        let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
+        let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
+        let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
+
+        let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
+        let aP16 = (&table_radix16 * &a).compress();
+        let aP32 = (&table_radix32 * &a).compress();
+        let aP64 = (&table_radix64 * &a).compress();
+        let aP128 = (&table_radix128 * &a).compress();
+        let aP256 = (&table_radix256 * &a).compress();
+
+        assert_eq!(aP, aP16);
+        assert_eq!(aP16, aP32);
+        assert_eq!(aP32, aP64);
+        assert_eq!(aP64, aP128);
+        assert_eq!(aP128, aP256);
     }
 
     /// Check that converting to projective and then back to extended round-trips.

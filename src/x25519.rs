@@ -260,8 +260,6 @@ impl From<AllowUnreducedScalarBytes> for Scalar {
 mod test {
     use super::*;
 
-    use rand_core::OsRng;
-
     #[test]
     fn byte_basepoint_matches_edwards_scalar_mul() {
         let mut scalar_bytes = [0x37; 32];

@@ -9,6 +9,8 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+pub mod abglsv_pornin;
+
 pub mod variable_base;
 
 pub mod vartime_double_base;

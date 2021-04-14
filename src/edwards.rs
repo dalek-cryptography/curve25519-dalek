@@ -748,6 +748,21 @@ impl EdwardsPoint {
     ) -> EdwardsPoint {
         scalar_mul::vartime_double_base::mul(a, A, b)
     }
+
+    /// Checks whether \\([8a]A + [8b]B = [8]C\\) in variable time.
+    ///
+    /// This can be used to implement [RFC 8032]-compatible Ed25519 signature validation.
+    /// Note that it includes a multiplication by the cofactor.
+    ///
+    /// [RFC 8032]: https://tools.ietf.org/html/rfc8032
+    pub fn vartime_check_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &EdwardsPoint,
+        b: &Scalar,
+        C: &EdwardsPoint,
+    ) -> bool {
+        scalar_mul::abglsv_pornin::mul(a, A, b, C).mul_by_cofactor().is_identity()
+    }
 }
 
 macro_rules! impl_basepoint_table {

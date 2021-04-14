@@ -29,7 +29,9 @@ pub mod avx2;
     rustdoc
 ))]
 pub(crate) use self::avx2::{
-    constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
+    constants::{BASEPOINT_ODD_LOOKUP_TABLE, B_SHL_128_ODD_LOOKUP_TABLE},
+    edwards::CachedPoint,
+    edwards::ExtendedPoint,
 };
 
 #[cfg(any(target_feature = "avx512ifma", rustdoc))]

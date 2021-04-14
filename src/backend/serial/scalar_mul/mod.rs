@@ -17,6 +17,8 @@
 //! scalar multiplication implementations, since it only uses one
 //! curve model.
 
+pub mod abglsv_pornin;
+
 pub mod variable_base;
 
 pub mod vartime_double_base;

@@ -3,6 +3,11 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+## 4.x series
+
+* Update the `rand_core` dependency version and the `rand` dev-dependency
+  version.
+
 ## 3.x series
 
 ### 3.1.0

@@ -45,8 +45,25 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "3"
+curve25519-dalek = "4.0.0-pre.0"
 ```
+
+## Major Version API Changes
+
+See `CHANGELOG.md` for more details.
+
+### 2.x
+
+The `2.x` series has API almost entirely unchanged from the `1.x` series,
+except that:
+
+* an error in the data modeling for the (optional) `serde` feature was
+  corrected, so that when the `2.x`-series `serde` implementation is used
+  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
+  formats;
+* the `rand` version was updated.
+
+### 3.x (current stable)
 
 The sole breaking change in the `3.x` series was an update to the `digest`
 version, and in terms of non-breaking changes it includes:
@@ -62,16 +79,12 @@ version, and in terms of non-breaking changes it includes:
   the Coq theorem proving system, and
 * support for explicitly calling the `zeroize` traits for all point types.
 
-The `2.x` series has API almost entirely unchanged from the `1.x` series,
-except that:
+### 4.x (current alpha)
 
-* an error in the data modeling for the (optional) `serde` feature was
-  corrected, so that when the `2.x`-series `serde` implementation is used
-  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
-  formats;
-* the `rand` version was updated.
-
-See `CHANGELOG.md` for more details.
+The `4.x` series has an API largely unchanged from `3.x`, with a breaking change
+to update the `rand` dependency crates.  It also requires including a new trait,
+`use curve25519_dalek::traits::BasepointTable`, whenever using `EdwardsBasepointTable`
+or `RistrettoBasepointTable`.
 
 # Backends and Features
 

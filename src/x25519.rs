@@ -193,34 +193,31 @@ fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
 ///
 /// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
 /// cannot use the better, safer, and faster ephemeral DH API.
+///
 /// # Example
 /// ```
-/// extern crate rand_os;
+/// # extern crate rand_core;
+/// #
+/// use rand_core::OsRng;
+/// use rand_core::RngCore;
 ///
-/// use x25519_dalek::{ x25519, X25519_BASEPOINT_BYTES };
-/// use rand_os::OsRng;
-/// use rand_os::rand_core::RngCore;
+/// use x25519_dalek::x25519;
+/// use x25519_dalek::StaticSecret;
+/// use x25519_dalek::PublicKey;
 ///
-/// let mut rng = OsRng::new().unwrap();
+/// // Generate Alice's key pair.
+/// let alice_secret = StaticSecret::new(&mut OsRng);
+/// let alice_public = PublicKey::from(&alice_secret);
 ///
-/// // Generate Alice key pair
-/// let mut alice_private = [0u8; 32];
-/// rng.fill_bytes(&mut alice_private);
+/// // Generate Bob's key pair.
+/// let bob_secret = StaticSecret::new(&mut OsRng);
+/// let bob_public = PublicKey::from(&bob_secret);
 ///
-/// let alice_public = x25519(alice_private.clone(), X25519_BASEPOINT_BYTES);
+/// // Alice and Bob should now exchange their public keys.
 ///
-/// // Generate bob key pair
-/// let mut bob_private = [0u8; 32];
-/// rng.fill_bytes(&mut bob_private);
-///
-/// let bob_public = x25519(bob_private.clone(), X25519_BASEPOINT_BYTES);
-///
-/// // Exchange the public keys
-/// // ...
-/// // Generate shared secret
-///
-/// let alice_shared = x25519(alice_private, bob_public);
-/// let bob_shared = x25519(bob_private, alice_public);
+/// // Once they've done so, they may generate a shared secret.
+/// let alice_shared = x25519(alice_secret.to_bytes(), bob_public.to_bytes());
+/// let bob_shared = x25519(bob_secret.to_bytes(), alice_public.to_bytes());
 ///
 /// assert_eq!(alice_shared, bob_shared);
 /// ```

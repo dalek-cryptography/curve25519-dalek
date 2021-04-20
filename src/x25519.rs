@@ -107,11 +107,13 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
+#[cfg(feature = "reusable_secrets")]
 #[derive(Zeroize)]
 #[zeroize(drop)]
-pub struct NonSerializeableSecret(pub(crate) Scalar);
+pub struct ReusableSecret(pub(crate) Scalar);
 
-impl NonSerializeableSecret {
+#[cfg(feature = "reusable_secrets")]
+impl ReusableSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
@@ -124,13 +126,14 @@ impl NonSerializeableSecret {
 
         csprng.fill_bytes(&mut bytes);
 
-        NonSerializeableSecret(clamp_scalar(bytes))
+        ReusableSecret(clamp_scalar(bytes))
     }
 }
 
-impl<'a> From<&'a NonSerializeableSecret> for PublicKey {
-    /// Given an x25519 [`NonSerializeableSecret`] key, compute its corresponding [`PublicKey`].
-    fn from(secret: &'a NonSerializeableSecret) -> PublicKey {
+#[cfg(feature = "reusable_secrets")]
+impl<'a> From<&'a ReusableSecret> for PublicKey {
+    /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicKey`].
+    fn from(secret: &'a ReusableSecret) -> PublicKey {
         PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
     }
 }

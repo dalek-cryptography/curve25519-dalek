@@ -367,6 +367,11 @@ mod test {
     }
 
     #[test]
+    fn identity_in_different_models() {
+        assert!(EdwardsPoint::identity().to_montgomery() == MontgomeryPoint::identity());
+    }
+
+    #[test]
     #[cfg(feature = "serde")]
     fn serde_bincode_basepoint_roundtrip() {
         use bincode;

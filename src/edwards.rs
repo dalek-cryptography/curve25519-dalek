@@ -99,6 +99,7 @@ use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
+use core::convert::TryFrom;
 
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
@@ -366,6 +367,27 @@ impl Default for EdwardsPoint {
         EdwardsPoint::identity()
     }
 }
+
+impl TryFrom<[u8; 32]> for EdwardsPoint {
+    type Error = InvalidYCoordinate;
+
+    fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
+        CompressedEdwardsY(bytes).decompress().ok_or(InvalidYCoordinate)
+    }
+}
+
+/// Error type in case the provided bytes don't represent a valid Y coordinate of a curve point.
+#[derive(Debug)]
+pub struct InvalidYCoordinate;
+
+impl fmt::Display for InvalidYCoordinate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "given bytes are not a valid Y coordinate of a curve point")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidYCoordinate { }
 
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)

@@ -147,6 +147,7 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use core::convert::TryFrom;
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -251,6 +252,27 @@ impl Scalar {
         s
     }
 }
+
+impl TryFrom<[u8; 32]> for Scalar {
+    type Error = NonCanonicalScalar;
+
+    fn try_from(bytes: [u8; 32]) -> Result<Self, Self::Error> {
+        Self::from_canonical_bytes(bytes).ok_or(NonCanonicalScalar)
+    }
+}
+
+/// Error type in case the provided bytes don't represent a canonical scalar.
+#[derive(Debug)]
+pub struct NonCanonicalScalar;
+
+impl fmt::Display for NonCanonicalScalar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "given bytes don't represent a canonical scalar")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for NonCanonicalScalar { }
 
 impl fmt::Debug for Scalar {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

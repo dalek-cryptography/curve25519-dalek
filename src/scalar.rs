@@ -417,7 +417,7 @@ impl<'de> Deserialize<'de> for Scalar {
             type Value = Scalar;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("a valid point in Edwards y + sign format")
+                formatter.write_str("a valid scalar")
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>

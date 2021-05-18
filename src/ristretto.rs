@@ -158,7 +158,7 @@
 //! https://ristretto.group/
 
 use core::borrow::Borrow;
-use core::fmt::Debug;
+use core::fmt;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
@@ -367,7 +367,7 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
         impl<'de> Visitor<'de> for RistrettoPointVisitor {
             type Value = RistrettoPoint;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a valid point in Ristretto format")
             }
 
@@ -399,7 +399,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
         impl<'de> Visitor<'de> for CompressedRistrettoVisitor {
             type Value = CompressedRistretto;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("32 bytes of data")
             }
 
@@ -1064,14 +1064,14 @@ impl ConditionallySelectable for RistrettoPoint {
 // Debug traits
 // ------------------------------------------------------------------------
 
-impl Debug for CompressedRistretto {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for CompressedRistretto {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "CompressedRistretto: {:?}", self.as_bytes())
     }
 }
 
-impl Debug for RistrettoPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for RistrettoPoint {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let coset = self.coset4();
         write!(f, "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])

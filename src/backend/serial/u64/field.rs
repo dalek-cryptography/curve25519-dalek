@@ -11,7 +11,7 @@
 //! Field arithmetic modulo \\(p = 2\^{255} - 19\\), using \\(64\\)-bit
 //! limbs with \\(128\\)-bit products.
 
-use core::fmt::Debug;
+use core::fmt;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
@@ -40,8 +40,8 @@ use zeroize::Zeroize;
 #[derive(Copy, Clone)]
 pub struct FieldElement51(pub (crate) [u64; 5]);
 
-impl Debug for FieldElement51 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for FieldElement51 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "FieldElement51({:?})", &self.0[..])
     }
 }

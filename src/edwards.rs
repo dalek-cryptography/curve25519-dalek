@@ -93,7 +93,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
-use core::fmt::Debug;
+use core::fmt;
 use core::iter::Iterator;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
@@ -159,8 +159,8 @@ impl ConstantTimeEq for CompressedEdwardsY {
     }
 }
 
-impl Debug for CompressedEdwardsY {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for CompressedEdwardsY {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
     }
 }
@@ -250,7 +250,7 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
         impl<'de> Visitor<'de> for EdwardsPointVisitor {
             type Value = EdwardsPoint;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
@@ -282,7 +282,7 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
         impl<'de> Visitor<'de> for CompressedEdwardsYVisitor {
             type Value = CompressedEdwardsY;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("32 bytes of data")
             }
 
@@ -923,8 +923,8 @@ impl EdwardsPoint {
 // Debug traits
 // ------------------------------------------------------------------------
 
-impl Debug for EdwardsPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for EdwardsPoint {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
                &self.X, &self.Y, &self.Z, &self.T)
     }

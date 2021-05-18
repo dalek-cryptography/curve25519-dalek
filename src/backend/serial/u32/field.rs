@@ -15,7 +15,7 @@
 //! implementation, and was then rewritten to use unsigned limbs instead
 //! of signed limbs.
 
-use core::fmt::Debug;
+use core::fmt;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
@@ -51,8 +51,8 @@ use zeroize::Zeroize;
 #[derive(Copy, Clone)]
 pub struct FieldElement2625(pub (crate) [u32; 10]);
 
-impl Debug for FieldElement2625 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for FieldElement2625 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "FieldElement2625({:?})", &self.0[..])
     }
 }

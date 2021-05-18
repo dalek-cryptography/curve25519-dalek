@@ -11,7 +11,7 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-use core::fmt::Debug;
+use core::fmt;
 use core::ops::{Index, IndexMut};
 
 use zeroize::Zeroize;
@@ -23,8 +23,8 @@ use constants;
 #[derive(Copy,Clone)]
 pub struct Scalar52(pub [u64; 5]);
 
-impl Debug for Scalar52 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for Scalar52 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
     }
 }

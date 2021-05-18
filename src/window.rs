@@ -12,7 +12,7 @@
 
 #![allow(non_snake_case)]
 
-use core::fmt::Debug;
+use core::fmt;
 
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -78,8 +78,8 @@ impl<T: Copy + Default> Default for LookupTable<T> {
     }
 }
 
-impl<T: Debug> Debug for LookupTable<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for LookupTable<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "LookupTable({:?})", self.0)
     }
 }
@@ -128,8 +128,8 @@ impl<T: Copy> NafLookupTable5<T> {
     }
 }
 
-impl<T: Debug> Debug for NafLookupTable5<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for NafLookupTable5<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "NafLookupTable5({:?})", self.0)
     }
 }
@@ -171,8 +171,8 @@ impl<T: Copy> NafLookupTable8<T> {
     }
 }
 
-impl<T: Debug> Debug for NafLookupTable8<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for NafLookupTable8<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "NafLookupTable8([\n")?;
         for i in 0..64 {
             write!(f, "\t{:?},\n", &self.0[i])?;

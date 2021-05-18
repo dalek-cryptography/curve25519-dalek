@@ -10,7 +10,7 @@
 //! -0x1ffffffe00000008 (62 bits with sign bit) to
 //! 0x43fffffbc0000011 (63 bits), which is still safe.
 
-use core::fmt::Debug;
+use core::fmt;
 use core::ops::{Index, IndexMut};
 
 use zeroize::Zeroize;
@@ -21,8 +21,8 @@ use constants;
 #[derive(Copy,Clone)]
 pub struct Scalar29(pub [u32; 9]);
 
-impl Debug for Scalar29 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+impl fmt::Debug for Scalar29 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Scalar29: {:?}", &self.0[..])
     }
 }

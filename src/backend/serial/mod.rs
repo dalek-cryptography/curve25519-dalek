@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Serial implementations of field, scalar, point arithmetic.
@@ -22,10 +23,15 @@
 //! Note: at this time the `u32` and `u64` backends cannot be built
 //! together.
 
-#[cfg(not(any(feature = "u32_backend", feature = "u64_backend")))]
+#[cfg(not(any(
+    feature = "u32_backend",
+    feature = "u64_backend",
+    feature = "fiat_u32_backend",
+    feature = "fiat_u64_backend"
+)))]
 compile_error!(
     "no curve25519-dalek backend cargo feature enabled! \
-     please enable one of: u32_backend, u64_backend"
+     please enable one of: u32_backend, u64_backend, fiat_u32_backend, fiat_u64_backend"
 );
 
 #[cfg(feature = "u32_backend")]
@@ -33,6 +39,12 @@ pub mod u32;
 
 #[cfg(feature = "u64_backend")]
 pub mod u64;
+
+#[cfg(feature = "fiat_u32_backend")]
+pub mod fiat_u32;
+
+#[cfg(feature = "fiat_u64_backend")]
+pub mod fiat_u64;
 
 pub mod curve_models;
 

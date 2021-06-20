@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 // We allow non snake_case names because coordinates in projective space are
@@ -689,7 +690,7 @@ impl RistrettoPoint {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
-        hash.input(input);
+        hash.update(input);
         RistrettoPoint::from_hash(hash)
     }
 
@@ -702,7 +703,7 @@ impl RistrettoPoint {
         where D: Digest<OutputSize = U64> + Default
     {
         // dealing with generic arrays is clumsy, until const generics land
-        let output = hash.result();
+        let output = hash.finalize();
         let mut output_bytes = [0u8; 64];
         output_bytes.copy_from_slice(&output.as_slice());
 

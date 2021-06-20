@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Various constants, such as the Ristretto and Ed25519 basepoints.
@@ -33,6 +34,10 @@ use ristretto::CompressedRistretto;
 use montgomery::MontgomeryPoint;
 use scalar::Scalar;
 
+#[cfg(feature = "fiat_u32_backend")]
+pub use backend::serial::fiat_u32::constants::*;
+#[cfg(feature = "fiat_u64_backend")]
+pub use backend::serial::fiat_u64::constants::*;
 #[cfg(feature = "u64_backend")]
 pub use backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]

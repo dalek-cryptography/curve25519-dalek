@@ -224,7 +224,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
 /// # Returns
 ///
 /// Either `None`, if the point couldn't be mapped, or `Some(fe)` such
-/// that `elligator_encode(&fe) == point`.
+/// that `fe` is nonnegative and `elligator_encode(&fe) == point`.
 ///
 /// [elligator] https://elligator.cr.yp.to/elligator-20130828.pdf
 ///
@@ -248,25 +248,24 @@ pub(crate) fn elligator_decode(point: &MontgomeryPoint, v_is_negative: Choice) -
     }
 
     // Condition: -2u(u+A) is a square
-    let minus_uu2_minus_uA2 = -&(&uu_plus_uA + &uu_plus_uA);
-    let (is_square, _) = FieldElement::sqrt_ratio_i(&minus_uu2_minus_uA2, &one);
-    if (!bool::from(is_square)) {
+    let uu2_plus_uA2 = &uu_plus_uA + &uu_plus_uA;
+    // We compute root = sqrt(-1/2u(u+A)) to speed up the calculation.
+    // This is a square if and only if -2u(u+A) is.
+    let (is_square, root) = FieldElement::sqrt_ratio_i(&FieldElement::minus_one(),
+                                                       &uu2_plus_uA2);
+    if (!bool::from(is_square | root.is_zero())) {
         return None;
     }
 
-    let mut t1 = u;
-    let mut t2 = u_plus_A;
-    FieldElement::conditional_swap(&mut t1, &mut t2, v_is_negative);
-    t1.negate();
-    t2 = &t2 + &t2;
+    // if !v_is_negative: r = sqrt(-u / 2(u + a)) = root * u
+    // if  v_is_negative: r = sqrt(-(u+A) / 2u)   = root * (u + A)
+    let add = FieldElement::conditional_select(&u, &u_plus_A, v_is_negative);
+    let r = &root * &add;
 
-    // if !v_is_negative: r = sqrt(-u / 2(u + a))
-    // if  v_is_negative: r = sqrt(-(u+A) / 2u)
-    let (r_is_square, r) = FieldElement::sqrt_ratio_i(&t1, &t2);
-    // r_is_square can be false if u = 0 and v_is_negative. Even then
-    // r = 0, which we want.
+    // Both r and -r are valid results. Pick the nonnegative one.
+    let result = FieldElement::conditional_select(&r, &-&r, r.is_negative());
 
-    return Some(r);
+    return Some(result);
 }
 
 /// A `ProjectivePoint` holds a point on the projective line

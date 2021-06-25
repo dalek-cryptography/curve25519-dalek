@@ -64,6 +64,9 @@ use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 use zeroize::Zeroize;
 
+#[macro_use]
+use engine25519_as;
+
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Hash)]

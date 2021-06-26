@@ -293,34 +293,23 @@ pub fn differential_add_and_double(
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
-fn copy_to_rf(bytes: [u8; 32], register: usize) {
-    use volatile::Volatile;
-    let rf_ptr: *mut u32 = 0xe003_0000 as *mut u32;
-    let rf = rf_ptr as *mut Volatile<u32>;
-    for word in 0..8 {
-        let mut temp: [u8; 4] = [0; 4];
-        for i in 0..4 {
-            temp[i] = bytes[word*4 + i];
-        }
-        unsafe { (*( rf.add( (register * 8 + word) as usize )) ).write( u32::from_le_bytes(temp) ); }
+fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; xous_engine_25519::RF_SIZE_IN_U32]) {
+    use core::convert::TryInto;
+    for (byte, rf_dst) in bytes.chunks_exact(4).zip(rf[register * 8..(register+1)*8].iter_mut()) {
+        *rf_dst = u32::from_le_bytes(byte.try_into().expect("chunks_exact failed us"));
     }
 }
 
-fn copy_from_rf(register: usize) -> [u8; 32] {
-    use volatile::Volatile;
-    let rf_ptr: *mut u32 = 0xe003_0000 as *mut u32;
-    let rf = rf_ptr as *mut Volatile<u32>;
-    let mut bytes: [u8; 32] = [0; 32];
-    for word in 0..8 {
-        unsafe{
-            let value: u32 = (*( rf.add( (register * 8 + word) as usize ))).read();
-            let b = value.to_le_bytes();
-            for i in 0..4 {
-                bytes[word*4 + i] = b[i];
-            }
+fn copy_from_rf(register: usize, rf: &[u32; xous_engine_25519::RF_SIZE_IN_U32]) -> [u8; 32] {
+    let mut ret: [u8; 32] = [0; 32];
+
+    for (src, dst) in rf[register*8 .. (register+1)*8].iter().zip(ret.chunks_exact_mut(4).into_iter()) {
+        for (&src_byte, dst_byte) in src.to_le_bytes().iter().zip(dst.iter_mut()) {
+            *dst_byte = src_byte;
         }
     }
-    bytes
+
+    ret
 }
 
 pub fn differential_add_and_double_hw(
@@ -328,8 +317,6 @@ pub fn differential_add_and_double_hw(
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
 ) {
-    use volatile::Volatile;
-    let p = unsafe { betrusted_pac::Peripherals::steal() };
     let mcode = assemble_engine25519!(
         start:
             // P.U in %20
@@ -411,18 +398,20 @@ pub fn differential_add_and_double_hw(
 
             fin  // finish execution
     );
-    let microcode_ptr: *mut u32 = 0xe002_0000 as *mut u32;
-    let microcode = microcode_ptr as *mut Volatile<u32>;
+    //let mut engine = xous_engine_25519::XousEngine25519::new();
+    let mut engine = engine_25519::Engine25519::new();
 
-    // copy the microcode in -- later on we can optimize this so it's only done once?
-    for i in 0..mcode.len() as usize {
-        unsafe { (*(microcode.add(i))).write( mcode[i] ); }
-    }
-    // setup the engine microcode parameters
-    unsafe{
-        p.ENGINE.window.write(|w| w.bits(0));
-        p.ENGINE.mpstart.write(|w| w.bits(0));
-        p.ENGINE.mplen.write(|w| w.bits(mcode.len() as u32));
+    let mut job = xous_engine_25519::Job {
+        id: None,
+        ucode: [0; 1024],
+        uc_len: mcode.len() as u32,
+        uc_start: 0,
+        window: Some(0),
+        rf: [0; xous_engine_25519::RF_SIZE_IN_U32],
+    };
+
+    for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {
+        *dst = src;
     }
 
     // P.U in %20
@@ -430,25 +419,19 @@ pub fn differential_add_and_double_hw(
     // Q.U in %22
     // Q.W in %23
     // affine_PmQ in %24
-    copy_to_rf(P.U.to_bytes(), 20);
-    copy_to_rf(P.W.to_bytes(), 21);
-    copy_to_rf(Q.U.to_bytes(), 22);
-    copy_to_rf(Q.W.to_bytes(), 23);
-    copy_to_rf(affine_PmQ.to_bytes(), 24);
+    copy_to_rf(P.U.to_bytes(), 20, &mut job.rf);
+    copy_to_rf(P.W.to_bytes(), 21, &mut job.rf);
+    copy_to_rf(Q.U.to_bytes(), 22, &mut job.rf);
+    copy_to_rf(Q.W.to_bytes(), 23, &mut job.rf);
+    copy_to_rf(affine_PmQ.to_bytes(), 24, &mut job.rf);
 
     // start the run
-    p.ENGINE.control.write(|w| w.go().set_bit());
-    loop {
-        let status = p.ENGINE.status.read().bits();
-        if (status & 1) == 0 {
-            break;
-        }
-    }
+    let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
 
-    P.U = FieldElement::from_bytes(&copy_from_rf(20));
-    P.W = FieldElement::from_bytes(&copy_from_rf(21));
-    Q.U = FieldElement::from_bytes(&copy_from_rf(22));
-    Q.W = FieldElement::from_bytes(&copy_from_rf(23));
+    P.U = FieldElement::from_bytes(&copy_from_rf(20, &result_rf));
+    P.W = FieldElement::from_bytes(&copy_from_rf(21, &result_rf));
+    Q.U = FieldElement::from_bytes(&copy_from_rf(22, &result_rf));
+    Q.W = FieldElement::from_bytes(&copy_from_rf(23, &result_rf));
 }
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);
@@ -470,22 +453,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             W: FieldElement::one(),
         };
 
-        copy_to_rf(x0.U.to_bytes(), 25);
-        copy_to_rf(x0.W.to_bytes(), 26);
-        copy_to_rf(x1.U.to_bytes(), 27);
-        copy_to_rf(x1.W.to_bytes(), 28);
-        copy_to_rf(affine_u.to_bytes(), 24);
-        copy_to_rf(scalar.bytes, 31);
-        // load the number 254 into the loop index register
-        copy_to_rf([
-            254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-       ], 19);
 
-        use volatile::Volatile;
-        let p = unsafe { betrusted_pac::Peripherals::steal() };
         let mcode = assemble_engine25519!(
             start:
                 // P.U in %20
@@ -624,31 +592,40 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
 
                 fin  // finish execution
         );
-        let microcode_ptr: *mut u32 = 0xe002_0000 as *mut u32;
-        let microcode = microcode_ptr as *mut Volatile<u32>;
+        let mut engine = engine_25519::Engine25519::new();
+        let mut job = xous_engine_25519::Job {
+            id: None,
+            ucode: [0; 1024],
+            uc_len: mcode.len() as u32,
+            uc_start: 0,
+            window: Some(0),
+            rf: [0; xous_engine_25519::RF_SIZE_IN_U32],
+        };
 
-        // copy the microcode in -- later on we can optimize this so it's only done once?
-        for i in 0..mcode.len() as usize {
-            unsafe { (*(microcode.add(i))).write( mcode[i] as u32 ); }
+        for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {
+            *dst = src as u32;
         }
-        // setup the engine microcode parameters
-        unsafe{
-            p.ENGINE.window.write(|w| w.bits(0));
-            p.ENGINE.mpstart.write(|w| w.bits(0));
-            p.ENGINE.mplen.write(|w| w.bits(mcode.len() as u32));
-        }
+
+        copy_to_rf(x0.U.to_bytes(), 25, &mut job.rf);
+        copy_to_rf(x0.W.to_bytes(), 26, &mut job.rf);
+        copy_to_rf(x1.U.to_bytes(), 27, &mut job.rf);
+        copy_to_rf(x1.W.to_bytes(), 28, &mut job.rf);
+        copy_to_rf(affine_u.to_bytes(), 24, &mut job.rf);
+        copy_to_rf(scalar.bytes, 31, &mut job.rf);
+        // load the number 254 into the loop index register
+        copy_to_rf([
+            254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ], 19, &mut job.rf);
 
         // start the run
-        p.ENGINE.control.write(|w| w.go().set_bit());
-        loop {
-            let status = p.ENGINE.status.read().bits();
-            if (status & 1) == 0 {
-                break;
-            }
-        }
+        let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
 
-        x0.U = FieldElement::from_bytes(&copy_from_rf(25));
-        x0.W = FieldElement::from_bytes(&copy_from_rf(26));
+
+        x0.U = FieldElement::from_bytes(&copy_from_rf(25, &result_rf));
+        x0.W = FieldElement::from_bytes(&copy_from_rf(26, &result_rf));
 
         // TODO: optimize this relatively innocuous looking call.
         // this consumes about 100ms runtime -- need to implement this using

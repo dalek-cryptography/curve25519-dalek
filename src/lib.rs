@@ -64,6 +64,7 @@ extern crate serde;
 #[macro_use]
 pub(crate) mod macros;
 
+#[allow(unused_imports)]
 #[cfg(any(feature = "betrusted", test))]
 #[macro_use]
 extern crate engine25519_as;

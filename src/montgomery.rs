@@ -293,14 +293,14 @@ pub fn differential_add_and_double(
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
-fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; xous_engine_25519::RF_SIZE_IN_U32]) {
+fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; engine_25519::RF_SIZE_IN_U32]) {
     use core::convert::TryInto;
     for (byte, rf_dst) in bytes.chunks_exact(4).zip(rf[register * 8..(register+1)*8].iter_mut()) {
         *rf_dst = u32::from_le_bytes(byte.try_into().expect("chunks_exact failed us"));
     }
 }
 
-fn copy_from_rf(register: usize, rf: &[u32; xous_engine_25519::RF_SIZE_IN_U32]) -> [u8; 32] {
+fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u8; 32] {
     let mut ret: [u8; 32] = [0; 32];
 
     for (src, dst) in rf[register*8 .. (register+1)*8].iter().zip(ret.chunks_exact_mut(4).into_iter()) {
@@ -398,16 +398,15 @@ pub fn differential_add_and_double_hw(
 
             fin  // finish execution
     );
-    //let mut engine = xous_engine_25519::XousEngine25519::new();
     let mut engine = engine_25519::Engine25519::new();
 
-    let mut job = xous_engine_25519::Job {
+    let mut job = engine_25519::Job {
         id: None,
         ucode: [0; 1024],
         uc_len: mcode.len() as u32,
         uc_start: 0,
         window: Some(0),
-        rf: [0; xous_engine_25519::RF_SIZE_IN_U32],
+        rf: [0; engine_25519::RF_SIZE_IN_U32],
     };
 
     for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {
@@ -593,13 +592,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
                 fin  // finish execution
         );
         let mut engine = engine_25519::Engine25519::new();
-        let mut job = xous_engine_25519::Job {
+        let mut job = engine_25519::Job {
             id: None,
             ucode: [0; 1024],
             uc_len: mcode.len() as u32,
             uc_start: 0,
             window: Some(0),
-            rf: [0; xous_engine_25519::RF_SIZE_IN_U32],
+            rf: [0; engine_25519::RF_SIZE_IN_U32],
         };
 
         for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {

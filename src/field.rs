@@ -479,6 +479,8 @@ mod test {
 
     #[test]
     fn make_vectors() {
+        // reminder to self: to create just this vector, run
+        // cargo test field::test::make_vectors
         use std::fs::File;
         use std::io::prelude::*;
         use std::path::Path;

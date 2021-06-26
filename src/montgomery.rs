@@ -64,8 +64,6 @@ use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 use zeroize::Zeroize;
 
-#[macro_use]
-use engine25519_as;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -293,6 +291,7 @@ pub fn differential_add_and_double(
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
+#[cfg(betrusted)]
 fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; engine_25519::RF_SIZE_IN_U32]) {
     use core::convert::TryInto;
     for (byte, rf_dst) in bytes.chunks_exact(4).zip(rf[register * 8..(register+1)*8].iter_mut()) {
@@ -300,6 +299,7 @@ fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; engine_25519::RF_
     }
 }
 
+#[cfg(betrusted)]
 fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u8; 32] {
     let mut ret: [u8; 32] = [0; 32];
 
@@ -312,6 +312,7 @@ fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u
     ret
 }
 
+#[cfg(betrusted)]
 pub fn differential_add_and_double_hw(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
@@ -443,11 +444,12 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0([n]P) \\).
+    #[cfg(betrusted)]
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
-        let mut x1 = ProjectivePoint {
+        let x1 = ProjectivePoint {
             U: affine_u,
             W: FieldElement::one(),
         };
@@ -631,7 +633,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         // curve25519 acceleration!
         x0.to_affine()
     }
-    /*
+    #[cfg(not(betrusted))]
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
@@ -654,7 +656,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
 
         x0.to_affine()
-    }*/
+    }
 }
 
 impl<'b> MulAssign<&'b Scalar> for MontgomeryPoint {

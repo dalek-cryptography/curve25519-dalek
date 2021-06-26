@@ -292,6 +292,9 @@ impl FieldElement {
 }
 
 #[cfg(test)]
+extern crate rand;
+
+#[cfg(test)]
 mod test {
     use field::*;
     use subtle::ConditionallyNegatable;
@@ -480,7 +483,7 @@ mod test {
         use std::io::prelude::*;
         use std::path::Path;
         use engine25519_as::*;
-        use rand::Rng;
+        use self::rand::Rng;
 
         fn write_helper(file: &mut File, elem: FieldElement) {
             let elem_bytes = elem.to_bytes();
@@ -1051,7 +1054,9 @@ mod test {
                 write_helper(&mut file, qu);
                 write_helper(&mut file, qw);
                 write_helper(&mut file, pmq);
+                #[allow(non_snake_case)]
                 let mut P: ProjectivePoint = ProjectivePoint{U:pu, W:pw};
+                #[allow(non_snake_case)]
                 let mut Q: ProjectivePoint = ProjectivePoint{U:qu, W:qw};
                 differential_add_and_double(&mut P, &mut Q, &pmq);
                 write_helper(&mut file, &(&P.U + &P.W) + &(&Q.U + &Q.W));
@@ -1253,7 +1258,7 @@ mod test {
             write_helper(&mut file, x1.U);
             write_helper(&mut file, x1.W);
             write_helper(&mut file, affine_u);
-            file.write(&scalar.bytes);
+            file.write(&scalar.bytes).unwrap();
             let number254 = FieldElement::from_bytes(&[
                  254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

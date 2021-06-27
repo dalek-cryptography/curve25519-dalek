@@ -53,6 +53,7 @@ zeroize = { version = "1", default-features = false }
 fiat-crypto = { version = "0.1.6", optional = true}
 
 # Betrusted/Precursor dependency set
+log = {version = "0.4", optional = true}
 [dependencies.engine-25519]
 git="https://github.com/betrusted-io/xous-engine-25519.git"
 rev="63d3d1f30736022e791deaacf4dd62c00b42fe2e"
@@ -89,6 +90,6 @@ simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # in some future release.
 avx2_backend = ["simd_backend"]
 # the betrusted backend uses the curve25519 hardware accelerator in betrusted-soc
-betrusted = ["engine-25519", "engine25519-as"]
+betrusted = ["engine-25519", "engine25519-as", "log"]
 
 [workspace]

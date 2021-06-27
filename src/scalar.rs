@@ -822,6 +822,7 @@ impl Scalar {
     }
 
     /// Get the bits of the scalar.
+    #[cfg(not(feature = "betrusted"))]
     pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
         for i in 0..256 {

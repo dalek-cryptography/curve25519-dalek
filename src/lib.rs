@@ -27,7 +27,9 @@
 //! Note that docs will only build on nightly Rust until
 //! [RFC 1990 stabilizes](https://github.com/rust-lang/rust/issues/44732).
 
-#![recursion_limit="256"]
+// needed for engine25519-as. Note vscode is still broken:
+// https://github.com/rust-analyzer/rust-analyzer/issues/8640
+#![recursion_limit="512"]
 
 //------------------------------------------------------------------------
 // External dependencies:

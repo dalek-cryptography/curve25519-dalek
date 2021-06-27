@@ -51,7 +51,11 @@
 
 use core::ops::{Mul, MulAssign};
 
+#[cfg(not(feature = "betrusted"))]
 use constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+#[cfg(feature = "betrusted")]
+use constants::{MONTGOMERY_A, MONTGOMERY_A_NEG}; // eliminate constants absorbed into the microcode engine
+
 use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
 use scalar::Scalar;
@@ -63,7 +67,6 @@ use subtle::ConstantTimeEq;
 use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 use zeroize::Zeroize;
-
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -191,7 +194,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
 #[derive(Copy, Clone, Debug)]
-pub struct ProjectivePoint {
+pub(crate) struct ProjectivePoint {
     pub U: FieldElement,
     pub W: FieldElement,
 }
@@ -231,9 +234,162 @@ impl ProjectivePoint {
     ///
     /// * \\( u = U / W \\) if \\( W \neq 0 \\);
     /// * \\( 0 \\) if \\( W \eq 0 \\);
+    #[cfg(not(feature = "betrusted"))]
     pub fn to_affine(&self) -> MontgomeryPoint {
+        #[cfg(not(test))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
+        log::warn!("sw to_affine being used - check for build config errors!");
+
         let u = &self.U * &self.W.invert();
         MontgomeryPoint(u.to_bytes())
+    }
+    #[allow(dead_code)]
+    #[cfg(feature = "betrusted")]
+    pub fn to_affine(&self) -> MontgomeryPoint {
+        let mcode = assemble_engine25519!(
+            start:
+                // W.invert() in %21
+                // U in %29
+                // W in %30
+                // result in %31
+                // loop counter in %28
+
+                // from FieldElement.invert()
+                    // let (t19, t3) = self.pow22501();   // t19: 249..0 ; t3: 3,1,0
+                    // let t0  = self.square();           // 1         e_0 = 2^1
+                    mul %0, %30, %30  // self is W, e.g. %30
+                    // let t1  = t0.square().square();    // 3         e_1 = 2^3
+                    mul %1, %0, %0
+                    mul %1, %1, %1
+                    // let t2  = self * &t1;              // 3,0       e_2 = 2^3 + 2^0
+                    mul %2, %30, %1
+                    // let t3  = &t0 * &t2;               // 3,1,0
+                    mul %3, %0, %2
+                    // let t4  = t3.square();             // 4,2,1
+                    mul %4, %3, %3
+                    // let t5  = &t2 * &t4;               // 4,3,2,1,0
+                    mul %5, %2, %4
+
+                    // let t6  = t5.pow2k(5);             // 9,8,7,6,5
+                    psa %28, #5       // coincidentally, constant #5 is the number 5
+                    mul %6, %5, %5
+                pow2k_5:
+                    sub %28, %28, #1  // %28 = %28 - 1
+                    brz pow2k_5_exit, %28
+                    mul %6, %6, %6
+                    brz pow2k_5, #0
+                pow2k_5_exit:
+                    // let t7  = &t6 * &t5;               // 9,8,7,6,5,4,3,2,1,0
+                    mul %7, %6, %5
+
+                    // let t8  = t7.pow2k(10);            // 19..10
+                    psa %28, #6        // constant #6 is the number 10
+                    mul %8, %7, %7
+                pow2k_10:
+                    sub %28, %28, #1
+                    brz pow2k_10_exit, %28
+                    mul %8, %8, %8
+                    brz pow2k_10, #0
+                pow2k_10_exit:
+                    // let t9  = &t8 * &t7;               // 19..0
+                    mul %9, %8, %7
+
+                    // let t10 = t9.pow2k(20);            // 39..20
+                    psa %28, #7         // constant #7 is the number 20
+                    mul %10, %9, %9
+                pow2k_20:
+                    sub %28, %28, #1
+                    brz pow2k_20_exit, %28
+                    mul %10, %10, %10
+                    brz pow2k_20, #0
+                pow2k_20_exit:
+                    // let t11 = &t10 * &t9;              // 39..0
+                    mul %11, %10, %9
+
+                    // let t12 = t11.pow2k(10);           // 49..10
+                    psa %28, #6         // constant #6 is the number 10
+                    mul %12, %11, %11
+                pow2k_10b:
+                    sub %28, %28, #1
+                    brz pow2k_10b_exit, %28
+                    mul %12, %12, %12
+                    brz pow2k_10b, #0
+                pow2k_10b_exit:
+                    // let t13 = &t12 * &t7;              // 49..0
+                    mul %13, %12, %7
+
+                    // let t14 = t13.pow2k(50);           // 99..50
+                    psa %28, #8         // constant #8 is the number 50
+                    mul %14, %13, %13
+                pow2k_50a:
+                    sub %28, %28, #1
+                    brz pow2k_50a_exit, %28
+                    mul %14, %14, %14
+                    brz pow2k_50a, #0
+                pow2k_50a_exit:
+                    // let t15 = &t14 * &t13;             // 99..0
+                    mul %15, %14, %13
+
+                    // let t16 = t15.pow2k(100);          // 199..100
+                    psa %28, #9         // constant #9 is the number 100
+                    mul %16, %15, %15
+                pow2k_100:
+                    sub %28, %28, #1
+                    brz pow2k_100_exit, %28
+                    mul %16, %16, %16
+                    brz pow2k_100, #0
+                pow2k_100_exit:
+                    // let t17 = &t16 * &t15;             // 199..0
+                    mul %17, %16, %15
+
+                    // let t18 = t17.pow2k(50);           // 249..50
+                    psa %28, #8         // constant #8 is the number 50
+                    mul %18, %17, %17
+                pow2k_50b:
+                    sub %28, %28, #1
+                    brz pow2k_50b_exit, %28
+                    mul %18, %18, %18
+                    brz pow2k_50b, #0
+                pow2k_50b_exit:
+                    // let t19 = &t18 * &t13;             // 249..0
+                    mul %19, %18, %13
+                    //(t19, t3) // just a return value, values are already there, do nothing
+
+                    //let t20 = t19.pow2k(5);            // 254..5
+                    psa %28, #5
+                    mul %20, %19, %19
+                pow2k_5_last:
+                    sub %28, %28, #1
+                    brz pow2k_5_last_exit, %28
+                    mul %20, %20, %20
+                    brz pow2k_5_last, #0
+                pow2k_5_last_exit:
+
+                    //let t21 = &t20 * &t3;              // 254..5,3,1,0
+                    mul %21, %20, %3
+
+                // u = &self.U * &self.W.invert()
+                mul %31, %29, %21
+                fin  // finish execution
+        );
+        let mut engine = engine_25519::Engine25519::new();
+        let mut job = engine_25519::Job {
+            id: None,
+            ucode: [0; 1024],
+            uc_len: mcode.len() as u32,
+            uc_start: 0,
+            window: Some(0),
+            rf: [0; engine_25519::RF_SIZE_IN_U32],
+        };
+        for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {
+            *dst = src as u32;
+        }
+        copy_to_rf(self.U.to_bytes(), 29, &mut job.rf);
+        copy_to_rf(self.W.to_bytes(), 30, &mut job.rf);
+
+        // start the run
+        let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
+
+        MontgomeryPoint(copy_from_rf(31, &result_rf))
     }
 }
 
@@ -251,7 +407,8 @@ impl ProjectivePoint {
 /// $$
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
-pub fn differential_add_and_double(
+#[cfg(not(feature = "betrusted"))]
+pub(crate) fn differential_add_and_double(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
@@ -312,8 +469,9 @@ fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u
     ret
 }
 
+#[allow(dead_code)] // absorbed into mul, but might be useful later on as a subroutine for something else
 #[cfg(feature = "betrusted")]
-pub fn differential_add_and_double_hw(
+pub(crate) fn differential_add_and_double_hw(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
@@ -591,6 +749,131 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
                 xor %26, %30, %26
                 xor %28, %30, %28
 
+                // AFFINE SPLICE -- pass arguments to the affine block
+                psa %29, %25
+                psa %30, %26
+                // W.invert() in %21
+                // U in %29
+                // W in %30
+                // result in %31
+                // loop counter in %28
+
+                // from FieldElement.invert()
+                    // let (t19, t3) = self.pow22501();   // t19: 249..0 ; t3: 3,1,0
+                    // let t0  = self.square();           // 1         e_0 = 2^1
+                    mul %0, %30, %30  // self is W, e.g. %30
+                    // let t1  = t0.square().square();    // 3         e_1 = 2^3
+                    mul %1, %0, %0
+                    mul %1, %1, %1
+                    // let t2  = self * &t1;              // 3,0       e_2 = 2^3 + 2^0
+                    mul %2, %30, %1
+                    // let t3  = &t0 * &t2;               // 3,1,0
+                    mul %3, %0, %2
+                    // let t4  = t3.square();             // 4,2,1
+                    mul %4, %3, %3
+                    // let t5  = &t2 * &t4;               // 4,3,2,1,0
+                    mul %5, %2, %4
+
+                    // let t6  = t5.pow2k(5);             // 9,8,7,6,5
+                    psa %28, #5       // coincidentally, constant #5 is the number 5
+                    mul %6, %5, %5
+                pow2k_5:
+                    sub %28, %28, #1  // %28 = %28 - 1
+                    brz pow2k_5_exit, %28
+                    mul %6, %6, %6
+                    brz pow2k_5, #0
+                pow2k_5_exit:
+                    // let t7  = &t6 * &t5;               // 9,8,7,6,5,4,3,2,1,0
+                    mul %7, %6, %5
+
+                    // let t8  = t7.pow2k(10);            // 19..10
+                    psa %28, #6        // constant #6 is the number 10
+                    mul %8, %7, %7
+                pow2k_10:
+                    sub %28, %28, #1
+                    brz pow2k_10_exit, %28
+                    mul %8, %8, %8
+                    brz pow2k_10, #0
+                pow2k_10_exit:
+                    // let t9  = &t8 * &t7;               // 19..0
+                    mul %9, %8, %7
+
+                    // let t10 = t9.pow2k(20);            // 39..20
+                    psa %28, #7         // constant #7 is the number 20
+                    mul %10, %9, %9
+                pow2k_20:
+                    sub %28, %28, #1
+                    brz pow2k_20_exit, %28
+                    mul %10, %10, %10
+                    brz pow2k_20, #0
+                pow2k_20_exit:
+                    // let t11 = &t10 * &t9;              // 39..0
+                    mul %11, %10, %9
+
+                    // let t12 = t11.pow2k(10);           // 49..10
+                    psa %28, #6         // constant #6 is the number 10
+                    mul %12, %11, %11
+                pow2k_10b:
+                    sub %28, %28, #1
+                    brz pow2k_10b_exit, %28
+                    mul %12, %12, %12
+                    brz pow2k_10b, #0
+                pow2k_10b_exit:
+                    // let t13 = &t12 * &t7;              // 49..0
+                    mul %13, %12, %7
+
+                    // let t14 = t13.pow2k(50);           // 99..50
+                    psa %28, #8         // constant #8 is the number 50
+                    mul %14, %13, %13
+                pow2k_50a:
+                    sub %28, %28, #1
+                    brz pow2k_50a_exit, %28
+                    mul %14, %14, %14
+                    brz pow2k_50a, #0
+                pow2k_50a_exit:
+                    // let t15 = &t14 * &t13;             // 99..0
+                    mul %15, %14, %13
+
+                    // let t16 = t15.pow2k(100);          // 199..100
+                    psa %28, #9         // constant #9 is the number 100
+                    mul %16, %15, %15
+                pow2k_100:
+                    sub %28, %28, #1
+                    brz pow2k_100_exit, %28
+                    mul %16, %16, %16
+                    brz pow2k_100, #0
+                pow2k_100_exit:
+                    // let t17 = &t16 * &t15;             // 199..0
+                    mul %17, %16, %15
+
+                    // let t18 = t17.pow2k(50);           // 249..50
+                    psa %28, #8         // constant #8 is the number 50
+                    mul %18, %17, %17
+                pow2k_50b:
+                    sub %28, %28, #1
+                    brz pow2k_50b_exit, %28
+                    mul %18, %18, %18
+                    brz pow2k_50b, #0
+                pow2k_50b_exit:
+                    // let t19 = &t18 * &t13;             // 249..0
+                    mul %19, %18, %13
+                    //(t19, t3) // just a return value, values are already there, do nothing
+
+                    //let t20 = t19.pow2k(5);            // 254..5
+                    psa %28, #5
+                    mul %20, %19, %19
+                pow2k_5_last:
+                    sub %28, %28, #1
+                    brz pow2k_5_last_exit, %28
+                    mul %20, %20, %20
+                    brz pow2k_5_last, #0
+                pow2k_5_last_exit:
+
+                    //let t21 = &t20 * &t3;              // 254..5,3,1,0
+                    mul %21, %20, %3
+
+                // u = &self.U * &self.W.invert()
+                mul %31, %29, %21
                 fin  // finish execution
         );
         let mut engine = engine_25519::Engine25519::new();
@@ -624,14 +907,17 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         // start the run
         let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
 
+        if false { // unmerged affine path
+            x0.U = FieldElement::from_bytes(&copy_from_rf(25, &result_rf));
+            x0.W = FieldElement::from_bytes(&copy_from_rf(26, &result_rf));
 
-        x0.U = FieldElement::from_bytes(&copy_from_rf(25, &result_rf));
-        x0.W = FieldElement::from_bytes(&copy_from_rf(26, &result_rf));
-
-        // TODO: optimize this relatively innocuous looking call.
-        // this consumes about 100ms runtime -- need to implement this using
-        // curve25519 acceleration!
-        x0.to_affine()
+            // TODO: optimize this relatively innocuous looking call.
+            // this consumes about 100ms runtime -- need to implement this using
+            // curve25519 acceleration!
+            x0.to_affine()
+        } else {
+            MontgomeryPoint(copy_from_rf(31, &result_rf))
+        }
     }
     #[cfg(not(feature = "betrusted"))]
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {

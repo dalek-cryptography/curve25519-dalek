@@ -61,6 +61,7 @@ pub(crate) const SQRT_M1: FieldElement2625 = FieldElement2625([
 ]);
 
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
+#[cfg(not(feature = "betrusted"))]
 pub(crate) const APLUS2_OVER_FOUR: FieldElement2625 =
     FieldElement2625([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 

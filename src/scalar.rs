@@ -915,8 +915,11 @@ impl Scalar {
 
         let mut naf = [0i8; 256];
 
+        // work-around for https://github.com/rust-lang/rust/issues/86693
+        // riscv32i targets mis-align u64 types, leading to the lower 32 bits being aliased to the upper 32 bits
+        // the AlignedU64Slice wrapper forces the enclosed structure to be aligned, thus avoiding this problem.
         #[repr(align(32))]
-        struct AlignedU64Slice<const N: usize>([u64; N]);
+        struct AlignedU64Slice([u64; 5]);
 
         let mut x_u64 = AlignedU64Slice([0u64; 5]);
         LittleEndian::read_u64_into(&self.bytes, &mut x_u64.0[0..4]);

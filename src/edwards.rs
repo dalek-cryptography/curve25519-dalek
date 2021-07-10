@@ -172,9 +172,6 @@ impl Debug for CompressedEdwardsY {
     }
 }
 
-#[macro_use]
-use debug;
-
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn as_bytes(&self) -> &[u8; 32] {
@@ -191,36 +188,21 @@ impl CompressedEdwardsY {
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
     pub fn decompress(&self) -> Option<EdwardsPoint> {
-        println!("self.bytes: {:?}", self.as_bytes());
         let Y = FieldElement::from_bytes(self.as_bytes());
-        println!("Y: {:?}", Y.to_bytes());
         let Z = FieldElement::one();
-        println!("Z: {:?}", Z.to_bytes());
         let YY = Y.square();
-        println!("YY: {:?}", YY.to_bytes());
         let u = &YY - &Z;                            // u =  y²-1
-        println!("u: {:?}", u.to_bytes());
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        println!("v: {:?}", v.to_bytes());
         let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
-        println!("isvalid: {:?}", is_valid_y_coord);
-        println!("X: {:?}", X.to_bytes());
 
         if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
 
-        println!("valid");
          // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
          // so we negate according to the supplied sign bit.
         let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
         X.conditional_negate(compressed_sign_bit);
-        println!("negate");
 
-        println!("X: {:?}", X.to_bytes());
-        println!("Y: {:?}", Y.to_bytes());
-        println!("Z: {:?}", Z.to_bytes());
-        let t = &X * &Y;
-        println!("T: {:?}", t.to_bytes());
-        Some(EdwardsPoint{ X, Y, Z, T: t })
+        Some(EdwardsPoint{ X, Y, Z, T: &X * &Y })
     }
 }
 

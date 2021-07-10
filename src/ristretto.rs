@@ -194,7 +194,7 @@ use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscala
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
-#[cfg(not(feature = "betrusted"))]
+#[cfg(all(not(feature = "betrusted"), not(feature = "u32e_backend")))]
 use backend::serial::scalar_mul;
 #[cfg(all(
     feature = "simd_backend",

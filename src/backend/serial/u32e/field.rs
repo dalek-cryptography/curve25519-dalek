@@ -16,7 +16,6 @@
 //! implementation, and was then rewritten to use unsigned limbs instead
 //! of signed limbs.
 
-use core::fmt::Debug;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
@@ -50,17 +49,10 @@ use zeroize::Zeroize;
 /// The backend-specific type `Engine25519` should not be used
 /// outside of the `curve25519_dalek::field` module.
 
-//#[macro_use]
-//mod debug;
-
-#[macro_use]
-use debug;
-
 #[derive(Copy, Clone, Debug)]
 pub struct Engine25519(
     pub (crate) [u8; 32]
 );
-#[derive(Debug)]
 pub(crate) enum EngineOp {
     Mul,
     Add,
@@ -68,7 +60,6 @@ pub(crate) enum EngineOp {
 }
 
 pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
-    use core::convert::TryInto;
     use utralib::generated::*;
     let mut engine = utralib::CSR::new(utra::engine::HW_ENGINE_BASE as *mut u32);
     let mcode: &'static mut [u32] = unsafe{ core::slice::from_raw_parts_mut(utralib::HW_ENGINE_MEM as *mut u32, 1024) };
@@ -121,12 +112,17 @@ pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
     }
     // copy a arg
     for (src, dst) in a.chunks_exact(4).zip(rf[0].iter_mut()) {
-        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(src[0..4].try_into().unwrap()));}
+        let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
+        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));}
+        /* this is a bad idea: src[0..4].try_into().unwrap()
+           because "unwrap()" adds in a whole bunch of string formatting stuff, adds +16k or so to the binary size
+        */
     }
 
     // copy b arg
     for (src, dst) in b.chunks_exact(4).zip(rf[1].iter_mut()) {
-        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(src[0..4].try_into().unwrap()));}
+        let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
+        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));}
     }
 
     engine.wfo(utra::engine::CONTROL_GO, 1);
@@ -192,7 +188,6 @@ impl<'a, 'b> Mul<&'b Engine25519> for &'a Engine25519 {
     type Output = Engine25519;
     fn mul(self, _rhs: &'b Engine25519) -> Engine25519 {
         let ret = engine(&self.0, &_rhs.0, EngineOp::Mul);
-        //println!("a:{:?}\n\rb:{:?}\n\rout:{:?}", self.0, _rhs.0, ret.0);
         ret
     }
 }

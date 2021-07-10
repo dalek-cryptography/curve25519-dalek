@@ -27,9 +27,6 @@ use subtle::ConditionallySelectable;
 
 use zeroize::Zeroize;
 
-#[macro_use]
-use debug;
-
 /// A `FieldElement2625` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -218,9 +215,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
         //
         // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
         //                         if b < 2.5.
-        let ret = FieldElement2625::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9]);
-        //println!("a:{:?}\n\rb:{:?}\n\rout:{:?}", self.to_bytes(), _rhs.to_bytes(), ret.to_bytes());
-        ret
+        FieldElement2625::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 

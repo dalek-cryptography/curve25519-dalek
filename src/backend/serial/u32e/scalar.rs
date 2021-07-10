@@ -10,7 +10,6 @@
 //! -0x1ffffffe00000008 (62 bits with sign bit) to
 //! 0x43fffffbc0000011 (63 bits), which is still safe.
 
-use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
 use zeroize::Zeroize;

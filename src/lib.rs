@@ -73,12 +73,8 @@ extern crate engine25519_as;
 #[cfg(feature = "betrusted")]
 extern crate engine_25519;
 
-//#[cfg(feature = "u32e_backend")]
+#[cfg(feature = "u32e_backend")]
 extern crate utralib;
-
-//#[cfg(feature = "u32e_backend")]
-#[macro_use]
-mod debug;
 
 //------------------------------------------------------------------------
 // curve25519-dalek public modules

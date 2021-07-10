@@ -81,7 +81,7 @@ std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 
 # The u32 backend uses u32s with u64 products.
-u32_backend = []
+u32_backend = ["utralib"]
 # The u32e backend uses u32s with u64 products + field25519 accelerator.
 u32e_backend = ["engine25519-as", "utralib"]
 # The u64 backend uses u64s with u128 products.

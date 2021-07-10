@@ -50,14 +50,17 @@ use zeroize::Zeroize;
 /// The backend-specific type `Engine25519` should not be used
 /// outside of the `curve25519_dalek::field` module.
 
+//#[macro_use]
+//mod debug;
+
 #[macro_use]
-mod debug;
+use debug;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Engine25519(
     pub (crate) [u8; 32]
 );
-
+#[derive(Debug)]
 pub(crate) enum EngineOp {
     Mul,
     Add,
@@ -65,17 +68,16 @@ pub(crate) enum EngineOp {
 }
 
 pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
-    println!("engine");
-
+    use core::convert::TryInto;
     use utralib::generated::*;
     let mut engine = utralib::CSR::new(utra::engine::HW_ENGINE_BASE as *mut u32);
     let mcode: &'static mut [u32] = unsafe{ core::slice::from_raw_parts_mut(utralib::HW_ENGINE_MEM as *mut u32, 1024) };
     // allocate the first three registers
-    let rf: [&'static mut [u8]; 3] =
+    let rf: [&'static mut [u32]; 3] =
     unsafe { [
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 0 * 32) as *mut u8, 32),
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 1 * 32) as *mut u8, 32),
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 2 * 32) as *mut u8, 32),
+        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 0 * 32) as *mut u32, 8),
+        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 1 * 32) as *mut u32, 8),
+        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 2 * 32) as *mut u32, 8),
     ] };
     match op {
         EngineOp::Mul => {
@@ -105,7 +107,8 @@ pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
         EngineOp::Sub => {
             let prog = assemble_engine25519!(
             start:
-                sub %2, %0, %1
+                sub %1, #3, %1
+                add %2, %0, %1
                 trd %30, %2
                 sub %2, %2, %30
                 fin
@@ -117,12 +120,13 @@ pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
         },
     }
     // copy a arg
-    for (&src, dest) in a.iter().zip(rf[0].iter_mut()) {
-        *dest = src;
+    for (src, dst) in a.chunks_exact(4).zip(rf[0].iter_mut()) {
+        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(src[0..4].try_into().unwrap()));}
     }
+
     // copy b arg
-    for (&src, dest) in b.iter().zip(rf[1].iter_mut()) {
-        *dest = src;
+    for (src, dst) in b.chunks_exact(4).zip(rf[1].iter_mut()) {
+        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(src[0..4].try_into().unwrap()));}
     }
 
     engine.wfo(utra::engine::CONTROL_GO, 1);
@@ -130,9 +134,12 @@ pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
 
     // return result, always in reg 2
     let mut result: [u8; 32] = [0; 32];
-    for (&src, dest) in rf[2].iter().zip(result.iter_mut()) {
-        *dest = src;
+    for (&src, dst) in rf[2].iter().zip(result.chunks_exact_mut(4)) {
+        for (&sb, db) in src.to_le_bytes().iter().zip(dst.iter_mut()) {
+            *db = sb;
+        }
     }
+
     Engine25519 {
         0: result
     }
@@ -184,7 +191,9 @@ impl<'b> MulAssign<&'b Engine25519> for Engine25519 {
 impl<'a, 'b> Mul<&'b Engine25519> for &'a Engine25519 {
     type Output = Engine25519;
     fn mul(self, _rhs: &'b Engine25519) -> Engine25519 {
-        engine(&self.0, &_rhs.0, EngineOp::Mul)
+        let ret = engine(&self.0, &_rhs.0, EngineOp::Mul);
+        //println!("a:{:?}\n\rb:{:?}\n\rout:{:?}", self.0, _rhs.0, ret.0);
+        ret
     }
 }
 
@@ -314,7 +323,7 @@ impl Engine25519 {
     /// Invert the sign of this field element
     pub fn negate(&mut self) {
         let zero: [u8; 32] = [0; 32];
-        engine(&zero, &self.0, EngineOp::Sub);
+        *self = engine(&zero, &self.0, EngineOp::Sub);
     }
 
     /// Construct zero.
@@ -346,7 +355,7 @@ impl Engine25519 {
         z
     }
 
-    /// Load a `FieldElement51` from the low 255 bits of a 256-bit
+    /// Load a `Engine25519` from the low 255 bits of a 256-bit
     /// input.
     ///
     /// # Warning
@@ -358,8 +367,10 @@ impl Engine25519 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     pub fn from_bytes(data: &[u8; 32]) -> Engine25519 { //FeFromBytes
+        let mut mask_data = data.clone();
+        mask_data[31] &= 0x7F; // mask off the high bit per comment above
         Engine25519 {
-            0: (*data).clone(),
+            0: mask_data,
         }
     }
 

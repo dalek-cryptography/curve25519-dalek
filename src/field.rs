@@ -94,6 +94,8 @@ impl ConstantTimeEq for FieldElement {
         self.to_bytes().ct_eq(&other.to_bytes())
     }
 }
+#[macro_use]
+use debug;
 
 impl FieldElement {
     /// Determine if this `FieldElement` is negative, in the sense
@@ -262,25 +264,41 @@ impl FieldElement {
         // If v is zero, r is also zero.
 
         let v3 = &v.square()  * v;
+        println!("v3: {:?}", v3.to_bytes());
         let v7 = &v3.square() * v;
+        println!("v7: {:?}", v7.to_bytes());
         let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+        println!("r: {:?}", r.to_bytes());
         let check = v * &r.square();
+        println!("check: {:?}", check.to_bytes());
 
         let i = &constants::SQRT_M1;
+        println!("i: {:?}", i.to_bytes());
 
         let correct_sign_sqrt   = check.ct_eq(        u);
         let flipped_sign_sqrt   = check.ct_eq(     &(-u));
         let flipped_sign_sqrt_i = check.ct_eq(&(&(-u)*i));
+        println!("correct_sign_sqrt: {:?}", correct_sign_sqrt);
+        println!("u: {:?}", u.to_bytes());
+        println!("flipped_sign_sqrt: {:?}", flipped_sign_sqrt);
+        println!("-u: {:?}", &(-u).to_bytes());
+        println!("flipped_sign_sqrt_i: {:?}", flipped_sign_sqrt_i);
+        println!("-u * i: {:?}", &(&(-u)*i));
 
         let r_prime = &constants::SQRT_M1 * &r;
+        println!("r_prime: {:?}", r_prime.to_bytes());
         r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
+        println!("r_assign1: {:?}", r.to_bytes());
+
 
         // Choose the nonnegative square root.
         let r_is_negative = r.is_negative();
         r.conditional_negate(r_is_negative);
+        println!("r_assign2: {:?}", r.to_bytes());
 
         let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
 
+        println!("final r: {:?}", r.to_bytes());
         (was_nonzero_square, r)
     }
 

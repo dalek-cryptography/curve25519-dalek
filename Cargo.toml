@@ -60,7 +60,8 @@ rev="63d3d1f30736022e791deaacf4dd62c00b42fe2e"
 optional = true
 
 [dependencies.utralib]
-path="../betrusted-soc/boot/utralib/"
+version = "0.1.0" # this is bogus -- must be patched in the invoking build environment
+#path="../betrusted-soc/boot/utralib/"
 optional = true
 
 [dependencies.engine25519-as]

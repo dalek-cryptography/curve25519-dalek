@@ -42,6 +42,8 @@ pub use backend::serial::fiat_u64::constants::*;
 pub use backend::serial::u64::constants::*;
 #[cfg(feature = "u32_backend")]
 pub use backend::serial::u32::constants::*;
+#[cfg(feature = "u32e_backend")]
+pub use backend::serial::u32e::constants::*;
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
 ///

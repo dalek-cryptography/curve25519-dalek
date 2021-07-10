@@ -67,11 +67,14 @@ extern crate serde;
 pub(crate) mod macros;
 
 #[allow(unused_imports)]
-#[cfg(any(feature = "betrusted", test))]
+#[cfg(any(feature = "betrusted", test, feature = "u32e_backend"))]
 #[macro_use]
 extern crate engine25519_as;
 #[cfg(feature = "betrusted")]
 extern crate engine_25519;
+
+#[cfg(feature = "u32e_backend")]
+extern crate utralib;
 
 //------------------------------------------------------------------------
 // curve25519-dalek public modules

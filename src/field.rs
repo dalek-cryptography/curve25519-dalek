@@ -68,6 +68,16 @@ pub use backend::serial::u32::field::*;
 #[cfg(feature = "u32_backend")]
 pub type FieldElement = backend::serial::u32::field::FieldElement2625;
 
+#[cfg(feature = "u32e_backend")]
+pub use backend::serial::u32e::field::*;
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
+#[cfg(feature = "u32e_backend")]
+pub type FieldElement = backend::serial::u32e::field::Engine25519;
+
 impl Eq for FieldElement {}
 
 impl PartialEq for FieldElement {

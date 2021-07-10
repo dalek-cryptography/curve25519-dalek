@@ -40,10 +40,11 @@
     feature = "fiat_u32_backend",
     feature = "fiat_u64_backend",
     feature = "simd_backend",
+    feature = "u32e_backend",
 )))]
 compile_error!(
     "no curve25519-dalek backend cargo feature enabled! \
-     please enable one of: u32_backend, u64_backend, fiat_u32_backend, fiat_u64_backend, simd_backend"
+     please enable one of: u32_backend, u64_backend, fiat_u32_backend, fiat_u64_backend, simd_backend, u32e_backend"
 );
 
 pub mod serial;

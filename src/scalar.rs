@@ -188,6 +188,8 @@ type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 /// module.
 #[cfg(feature = "u32_backend")]
 type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+#[cfg(feature = "u32e_backend")]
+type UnpackedScalar = backend::serial::u32e::scalar::Scalar29;
 
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which

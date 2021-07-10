@@ -236,7 +236,7 @@ impl ProjectivePoint {
     /// * \\( 0 \\) if \\( W \eq 0 \\);
     #[cfg(not(feature = "betrusted"))]
     pub fn to_affine(&self) -> MontgomeryPoint {
-        #[cfg(not(test))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
+        #[cfg(all(not(test),not(feature="u32e_backend")))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
         log::warn!("sw to_affine being used - check for build config errors!");
 
         let u = &self.U * &self.W.invert();
@@ -941,7 +941,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     #[cfg(not(feature = "betrusted"))]
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
-        #[cfg(not(test))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
+        #[cfg(all(not(test),not(feature="u32e_backend")))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
         log::warn!("sw montgomery multiply being used - check for build config errors!");
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();

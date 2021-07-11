@@ -917,17 +917,8 @@ impl Scalar {
 
         let mut naf = [0i8; 256];
 
-        // work-around for https://github.com/rust-lang/rust/issues/86693
-        // riscv32i targets mis-align u64 types, leading to the lower 32 bits being aliased to the upper 32 bits
-        // the AlignedU64Slice wrapper forces the enclosed structure to be aligned, thus avoiding this problem.
-        #[repr(align(32))]
-        struct AlignedU64Slice([u64; 5]);
-
-        let mut x_u64 = AlignedU64Slice([0u64; 5]);
-        LittleEndian::read_u64_into(&self.bytes, &mut x_u64.0[0..4]);
-
-        #[cfg(feature = "betrusted")]
-        log::trace!("x_u64: {:?}", x_u64.0);
+        let mut x_u64 = [0u64; 5];
+        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
 
         let width = 1 << w;
         let window_mask = width - 1;
@@ -941,10 +932,10 @@ impl Scalar {
             let bit_buf: u64;
             if bit_idx < 64 - w {
                 // This window's bits are contained in a single u64
-                bit_buf = x_u64.0[u64_idx] >> bit_idx;
+                bit_buf = x_u64[u64_idx] >> bit_idx;
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                bit_buf = (x_u64.0[u64_idx] >> bit_idx) | (x_u64.0[1+u64_idx] << (64 - bit_idx));
+                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
             }
 
             // Add the carry into the current window
@@ -960,17 +951,9 @@ impl Scalar {
             }
 
             if window < width/2 {
-                #[cfg(feature = "betrusted")]
-                log::trace!("carry 0 width {} naf[{}] = {}; c.{} bb.{:x} wm.{} idx64.{} idxbit.{} xu64[0].{:x}", width, pos, window,
-                    carry, bit_buf, window_mask, u64_idx, bit_idx, x_u64.0[0],
-                );
                 carry = 0;
                 naf[pos] = window as i8;
             } else {
-                #[cfg(feature = "betrusted")]
-                log::trace!("carry 1 width {} naf[{}] = {}/{}; c.{} bb.{:x} wm.{} idx64.{} idxbit.{} xu64[0].{:x}", width, pos, window, (window as i8).wrapping_sub(width as i8),
-                    carry, bit_buf, window_mask, u64_idx, bit_idx, x_u64.0[0]
-                );
                 carry = 1;
                 naf[pos] = (window as i8).wrapping_sub(width as i8);
             }

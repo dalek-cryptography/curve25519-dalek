@@ -5,6 +5,12 @@ major series.
 
 ## 3.x series
 
+### 3.2.0
+
+* Add support for getting the identity element for the Montgomery
+  form of curve25519, which is useful in certain protocols for
+  checking contributory behaviour in derivation of shared secrets.
+
 ### 3.1.0
 
 * Add support for the Elligator2 encoding for Edwards points.

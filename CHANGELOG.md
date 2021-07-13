@@ -5,6 +5,11 @@ major series.
 
 ## 2.x series
 
+### 2.1.2
+
+* Multiple documenation typo fixes.
+* Fix `alloc` feature working with stable rust.
+
 ### 2.1.1
 
 * Update the optional `packed-simd` dependency to rely on a newer,

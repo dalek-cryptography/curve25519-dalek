@@ -18,6 +18,21 @@ major series.
 
 ## 2.x series
 
+### 2.1.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
+### 2.1.2
+
+* Multiple documenation typo fixes.
+* Fix `alloc` feature working with stable rust.
+
+### 2.1.1
+
+* Update the optional `packed-simd` dependency to rely on a newer,
+  maintained version of the `packed-simd-2` crate.
+
 ### 2.1.0
 
 * Make `Scalar::from_bits` a `const fn`, allowing its use in `const` contexts.

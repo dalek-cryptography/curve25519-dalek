@@ -5,6 +5,11 @@ major series.
 
 ## 3.x series
 
+### 3.0.2
+
+* Multiple documenation typo fixes.
+* Fixes to make using `alloc`+`no_std` possible for stable Rust.
+
 ### 3.0.1
 
 * Update the optional `packed-simd` dependency to rely on a newer,

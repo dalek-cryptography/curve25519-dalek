@@ -5,6 +5,11 @@ major series.
 
 ## 3.x series
 
+### 3.1.1
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.1.0
 
 * Add support for the Elligator2 encoding for Edwards points.
@@ -23,7 +28,7 @@ major series.
 ### 3.0.3
 
 * Fix documentation builds on nightly due to syntax changes to
-  `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
 
 ### 3.0.2
 

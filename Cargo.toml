@@ -4,6 +4,7 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update html_root_url
 # - update README if required by semver
+# - if README was updated, also update module documenation in src/lib.rs
 version = "3.1.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]

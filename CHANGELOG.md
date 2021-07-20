@@ -5,6 +5,11 @@ major series.
 
 ## 3.x series
 
+### 3.0.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.0.2
 
 * Multiple documenation typo fixes.

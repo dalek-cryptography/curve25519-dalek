@@ -235,7 +235,7 @@
 #![warn(future_incompatible)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 
-#![forbid(unsafe_code)]
+#![cfg_attr(not(test), forbid(unsafe_code))]
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]

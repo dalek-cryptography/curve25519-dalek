@@ -94,6 +94,13 @@ impl PartialEq for MontgomeryPoint {
 
 impl Eq for MontgomeryPoint {}
 
+impl Identity for MontgomeryPoint {
+    /// Return the group identity element, which has order 4.
+    fn identity() -> MontgomeryPoint {
+        MontgomeryPoint([0u8; 32])
+    }
+}
+
 impl Zeroize for MontgomeryPoint {
     fn zeroize(&mut self) {
         self.0.zeroize();
@@ -159,7 +166,7 @@ impl MontgomeryPoint {
 
 /// Perform the Elligator2 mapping to a Montgomery point.
 ///
-/// See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
 //
 // TODO Determine how much of the hash-to-group API should be exposed after the CFRG
 //      draft gets into a more polished/accepted state.
@@ -350,6 +357,19 @@ mod test {
     use core::convert::TryInto;
 
     use rand_core::OsRng;
+
+    #[test]
+    fn identity_in_different_coordinates() {
+        let id_projective = ProjectivePoint::identity();
+        let id_montgomery = id_projective.to_affine();
+
+        assert!(id_montgomery == MontgomeryPoint::identity());
+    }
+
+    #[test]
+    fn identity_in_different_models() {
+        assert!(EdwardsPoint::identity().to_montgomery() == MontgomeryPoint::identity());
+    }
 
     #[test]
     #[cfg(feature = "serde")]

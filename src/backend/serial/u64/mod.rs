@@ -1,12 +1,11 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2021 isis lovecruft
-// Copyright (c) 2016-2018 Henry de Valence
+// Copyright (c) 2016-2018 Isis Lovecruft, Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - isis agora lovecruft <isis@patternsinthevoid.net>
+// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! The `u64` backend uses `u64`s and a `(u64, u64) -> u128` multiplier.

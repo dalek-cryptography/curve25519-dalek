@@ -1,8 +1,7 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2021 isis lovecruft
-// Copyright (c) 2016-2019 Henry de Valence
+// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
 // Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //

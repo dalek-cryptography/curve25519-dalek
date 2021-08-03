@@ -101,10 +101,13 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+use digest::{generic_array::typenum::U64, Digest};
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
+
+use zeroize::Zeroize;
 
 use constants;
 
@@ -375,6 +378,28 @@ impl Default for EdwardsPoint {
 }
 
 // ------------------------------------------------------------------------
+// Zeroize implementations for wiping points from memory
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedEdwardsY {
+    /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+        self.0[0] = 1;
+    }
+}
+
+impl Zeroize for EdwardsPoint {
+    /// Reset this `CompressedEdwardsPoint` to the identity element.
+    fn zeroize(&mut self) {
+        self.X.zeroize();
+        self.Y = FieldElement::one();
+        self.Z = FieldElement::one();
+        self.T.zeroize();
+    }
+}
+
+// ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
 
@@ -499,6 +524,31 @@ impl EdwardsPoint {
         s = y.to_bytes();
         s[31] ^= x.is_negative().unwrap_u8() << 7;
         CompressedEdwardsY(s)
+    }
+
+    /// Perform hashing to the group using the Elligator2 map
+    ///
+    /// See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+    pub fn hash_from_bytes<D>(bytes: &[u8]) -> EdwardsPoint
+    where
+        D: Digest<OutputSize = U64> + Default,
+    {
+        let mut hash = D::new();
+        hash.update(bytes);
+        let h = hash.finalize();
+        let mut res = [0u8; 32];
+        res.copy_from_slice(&h[..32]);
+
+        let sign_bit = (res[31] & 0x80) >> 7;
+
+        let fe = FieldElement::from_bytes(&res);
+
+        let M1 = crate::montgomery::elligator_encode(&fe);
+        let E1_opt = M1.to_edwards(sign_bit);
+
+        E1_opt
+            .expect("Montgomery conversion to Edwards point in Elligator failed")
+            .mul_by_cofactor()
     }
 }
 
@@ -1695,5 +1745,66 @@ mod test {
         let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
         let bp: EdwardsPoint = bincode::deserialize(raw_bytes).unwrap();
         assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
+    }
+
+    ////////////////////////////////////////////////////////////
+    // Signal tests from                                      //
+    //     https://github.com/signalapp/libsignal-protocol-c/ //
+    ////////////////////////////////////////////////////////////
+
+    fn test_vectors() -> Vec<Vec<&'static str>> {
+        vec![
+            vec![
+                "214f306e1576f5a7577636fe303ca2c625b533319f52442b22a9fa3b7ede809f",
+                "c95becf0f93595174633b9d4d6bbbeb88e16fa257176f877ce426e1424626052",
+            ],
+            vec![
+                "2eb10d432702ea7f79207da95d206f82d5a3b374f5f89f17a199531f78d3bea6",
+                "d8f8b508edffbb8b6dab0f602f86a9dd759f800fe18f782fdcac47c234883e7f",
+            ],
+            vec![
+                "84cbe9accdd32b46f4a8ef51c85fd39d028711f77fb00e204a613fc235fd68b9",
+                "93c73e0289afd1d1fc9e4e78a505d5d1b2642fbdf91a1eff7d281930654b1453",
+            ],
+            vec![
+                "c85165952490dc1839cb69012a3d9f2cc4b02343613263ab93a26dc89fd58267",
+                "43cbe8685fd3c90665b91835debb89ff1477f906f5170f38a192f6a199556537",
+            ],
+            vec![
+                "26e7fc4a78d863b1a4ccb2ce0951fbcd021e106350730ee4157bacb4502e1b76",
+                "b6fc3d738c2c40719479b2f23818180cdafa72a14254d4016bbed8f0b788a835",
+            ],
+            vec![
+                "1618c08ef0233f94f0f163f9435ec7457cd7a8cd4bb6b160315d15818c30f7a2",
+                "da0b703593b29dbcd28ebd6e7baea17b6f61971f3641cae774f6a5137a12294c",
+            ],
+            vec![
+                "48b73039db6fcdcb6030c4a38e8be80b6390d8ae46890e77e623f87254ef149c",
+                "ca11b25acbc80566603eabeb9364ebd50e0306424c61049e1ce9385d9f349966",
+            ],
+            vec![
+                "a744d582b3a34d14d311b7629da06d003045ae77cebceeb4e0e72734d63bd07d",
+                "fad25a5ea15d4541258af8785acaf697a886c1b872c793790e60a6837b1adbc0",
+            ],
+            vec![
+                "80a6ff33494c471c5eff7efb9febfbcf30a946fe6535b3451cda79f2154a7095",
+                "57ac03913309b3f8cd3c3d4c49d878bb21f4d97dc74a1eaccbe5c601f7f06f47",
+            ],
+            vec![
+                "f06fc939bc10551a0fd415aebf107ef0b9c4ee1ef9a164157bdd089127782617",
+                "785b2a6a00a5579cc9da1ff997ce8339b6f9fb46c6f10cf7a12ff2986341a6e0",
+            ],
+        ]
+    }
+
+    #[test]
+    fn elligator_signal_test_vectors() {
+        for vector in test_vectors().iter() {
+            let input = hex::decode(vector[0]).unwrap();
+            let output = hex::decode(vector[1]).unwrap();
+
+            let point = EdwardsPoint::hash_from_bytes::<sha2::Sha512>(&input);
+            assert_eq!(point.compress().to_bytes(), output[..]);
+        }
     }
 }

@@ -5,6 +5,11 @@ major series.
 
 ## 3.x series
 
+### 3.1.1
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.1.0
 
 * Add support for the Elligator2 encoding for Edwards points.
@@ -20,9 +25,15 @@ major series.
   consumers of `curve25519-dalek` should call these methods manually
   when needed.
 
+### 3.0.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.0.2
 
-* Fixes to make using alloc+no_std possible for stable Rust.
+* Multiple documenation typo fixes.
+* Fixes to make using `alloc`+`no_std` possible for stable Rust.
 
 ### 3.0.1
 
@@ -37,9 +48,15 @@ major series.
 
 ## 2.x series
 
+### 2.1.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 2.1.2
 
-* Fixes to make using alloc+no_std possible for stable Rust.
+* Multiple documenation typo fixes.
+* Fix `alloc` feature working with stable rust.
 
 ### 2.1.1
 

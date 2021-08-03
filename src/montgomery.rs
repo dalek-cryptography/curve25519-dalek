@@ -159,7 +159,7 @@ impl MontgomeryPoint {
 
 /// Perform the Elligator2 mapping to a Montgomery point.
 ///
-/// See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
 //
 // TODO Determine how much of the hash-to-group API should be exposed after the CFRG
 //      draft gets into a more polished/accepted state.

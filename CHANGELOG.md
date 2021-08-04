@@ -11,6 +11,11 @@ major series.
   form of curve25519, which is useful in certain protocols for
   checking contributory behaviour in derivation of shared secrets.
 
+### 3.1.2
+
+* Revert a commit which mistakenly removed support for `zeroize` traits
+  for some point types, as well as elligator2 support for Edwards points.
+
 ### 3.1.1
 
 * Fix documentation builds on nightly due to syntax changes to

@@ -178,6 +178,8 @@ use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
 
@@ -1076,6 +1078,22 @@ impl Debug for RistrettoPoint {
         let coset = self.coset4();
         write!(f, "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])
+    }
+}
+
+// ------------------------------------------------------------------------
+// Zeroize traits
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedRistretto {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+impl Zeroize for RistrettoPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

@@ -180,12 +180,12 @@ mod multiscalar_benches {
         dynamic_fraction: f64,
     ) {
         for multiscalar_size in &MULTISCALAR_SIZES {
-            c.bench_with_input(
-                BenchmarkId::new(
-                    "Variable-time mixed-base multiscalar multiplication ({:.0}pct dyn)",
-                    format!("({:.0}pct dyn)", 100.0 * dynamic_fraction),
-                ),
-                &multiscalar_size,
+            let bench_id = BenchmarkId::new(
+                "Variable-time mixed-base",
+                format!("(size: {:?}), ({:.0}pct dyn)", multiscalar_size, 100.0 * dynamic_fraction),
+            );
+
+            c.bench_with_input(bench_id, &multiscalar_size,
                 move |b, &&total_size| {
                     let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
                     let static_size = total_size - dynamic_size;
@@ -221,16 +221,18 @@ mod multiscalar_benches {
     }
 
     fn multiscalar_multiplications(c: &mut Criterion) {
-        let mut group: BenchmarkGroup<_> = c.benchmark_group("Multiscalar muls");
+        let mut group: BenchmarkGroup<_> = c.benchmark_group("Multiscalar multiplications");
 
         consttime_multiscalar_mul(&mut group);
         vartime_multiscalar_mul(&mut group);
         vartime_precomputed_pure_static(&mut group);
 
         let dynamic_fracs = [0.0, 0.2, 0.5];
+
         for frac in dynamic_fracs.iter() {
             vartime_precomputed_helper(&mut group, *frac);
         }
+
         group.finish();
     }
 

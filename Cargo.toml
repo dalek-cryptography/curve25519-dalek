@@ -33,7 +33,7 @@ travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "mast
 [dev-dependencies]
 sha2 = { version = "0.9", default-features = false }
 bincode = "1"
-criterion = "0.3.0"
+criterion = { version = "0.3.0", features = ["html_reports"] }
 hex = "0.4.2"
 rand = "0.7"
 

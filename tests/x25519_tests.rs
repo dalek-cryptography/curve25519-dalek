@@ -59,8 +59,7 @@ fn serde_bincode_public_key_matches_from_bytes() {
 fn serde_bincode_static_secret_roundtrip() {
     use bincode;
 
-    let static_secret = StaticSecret(clamp_scalar([0x24; 32]));
-
+    let static_secret = StaticSecret::from([0x24; 32]);
     let encoded = bincode::serialize(&static_secret).unwrap();
     let decoded: StaticSecret = bincode::deserialize(&encoded).unwrap();
 
@@ -73,7 +72,7 @@ fn serde_bincode_static_secret_roundtrip() {
 fn serde_bincode_static_secret_matches_from_bytes() {
     use bincode;
 
-    let expected = StaticSecret(clamp_scalar([0x24; 32]));
+    let expected = StaticSecret::from([0x24; 32]);
     let clamped_bytes = clamp_scalar([0x24; 32]).to_bytes();
     let decoded: StaticSecret = bincode::deserialize(&clamped_bytes).unwrap();
 

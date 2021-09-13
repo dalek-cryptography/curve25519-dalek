@@ -105,6 +105,10 @@ To install, add the following to your project's `Cargo.toml`:
 x25519-dalek = "1.1"
 ```
 
+# MSRV
+
+Current MSRV is 1.41 for production builds, and 1.48 for running tests.
+
 # Documentation
 
 Documentation is available [here](https://docs.rs/x25519-dalek).

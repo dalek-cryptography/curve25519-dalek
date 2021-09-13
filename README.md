@@ -124,7 +124,7 @@ However, if you require this, please see the documentation for the
 `verify_strict()` function, which does the full checks for the group elements.
 This functionality is available by default.
 
-If for some reason—although we strongely advise you not to—you need to conform
+If for some reason—although we strongly advise you not to—you need to conform
 to the original specification of ed25519 signatures as in the excerpt from the
 paper above, you can disable scalar malleability checking via
 `--features='legacy_compatibility'`.  **WE STRONGLY ADVISE AGAINST THIS.**

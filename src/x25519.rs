@@ -17,6 +17,7 @@
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::traits::IsIdentity;
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
@@ -176,6 +177,43 @@ impl SharedSecret {
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_bytes()
+    }
+
+    /// Ensure in constant-time that this shared secret did not result from a
+    /// key exchange with non-contributory behaviour.
+    ///
+    /// In some more exotic protocols which need to guarantee "contributory"
+    /// behaviour for both parties, that is, that each party contibuted a public
+    /// value which increased the security of the resulting shared secret.
+    /// To take an example protocol attack where this could lead to undesireable
+    /// results [from Thái "thaidn" Dương](https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html):
+    ///
+    /// > If Mallory replaces Alice's and Bob's public keys with zero, which is
+    /// > a valid Curve25519 public key, he would be able to force the ECDH
+    /// > shared value to be zero, which is the encoding of the point at infinity,
+    /// > and thus get to dictate some publicly known values as the shared
+    /// > keys. It still requires an active man-in-the-middle attack to pull the
+    /// > trick, after which, however, not only Mallory can decode Alice's data,
+    /// > but everyone too! It is also impossible for Alice and Bob to detect the
+    /// > intrusion, as they still share the same keys, and can communicate with
+    /// > each other as normal.
+    ///
+    /// The original Curve25519 specification argues that checks for
+    /// non-contributory behaviour are "unnecessary for Diffie-Hellman".
+    /// Whether this check is necessary for any particular given protocol is
+    /// often a matter of debate, which we will not re-hash here, but simply
+    /// cite some of the [relevant] [public] [discussions].
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the key exchange was contributory (good), and `false`
+    /// otherwise (can be bad for some protocols).
+    ///
+    /// [relevant]: https://tools.ietf.org/html/rfc7748#page-15
+    /// [public]: https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html
+    /// [discussions]: https://vnhacker.blogspot.com/2016/08/the-internet-of-broken-protocols.html
+    pub fn was_contributory(&self) -> bool {
+        !self.0.is_identity()
     }
 }
 

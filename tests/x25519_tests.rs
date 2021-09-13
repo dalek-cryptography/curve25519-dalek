@@ -1,5 +1,16 @@
 
+use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+use curve25519_dalek::scalar::Scalar;
+
 use x25519_dalek::*;
+
+fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
+    scalar[0] &= 248;
+    scalar[31] &= 127;
+    scalar[31] |= 64;
+
+    Scalar::from_bits(scalar)
+}
 
 #[test]
 fn byte_basepoint_matches_edwards_scalar_mul() {

@@ -102,6 +102,10 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// Diffie-Hellman operation multiple times throughout the protocol, while the
 /// protocol run at a higher level is only conducted once per key.
 ///
+/// Similarly to [`EphemeralSecret`], this type does _not_ have serialisation
+/// methods, in order to discourage long-term usage of secret key material. (For
+/// long-term secret keys, see [`StaticSecret`].)
+///
 /// # Warning
 ///
 /// If you're uncertain about whether you should use this, then you likely
@@ -146,15 +150,6 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// [`StaticSecret::diffie_hellman`] method does not consume the secret key, and the type provides
 /// serialization methods to save and load key material.  This means that the secret may be used
 /// multiple times (but does not *have to be*).
-///
-/// Some protocols, such as Noise, already handle the static/ephemeral distinction, so the
-/// additional guarantees provided by [`EphemeralSecret`] are not helpful or would cause duplicate
-/// code paths.  In this case, it may be useful to
-/// ```rust,ignore
-/// use x25519_dalek::StaticSecret as SecretKey;
-/// ```
-/// since the only difference between the two is that [`StaticSecret`] does not enforce at
-/// compile-time that the key is only used once.
 ///
 /// # Warning
 ///

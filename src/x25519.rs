@@ -102,6 +102,8 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// Diffie-Hellman operation multiple times throughout the protocol, while the
 /// protocol run at a higher level is only conducted once per key.
 ///
+/// # Warning
+///
 /// If you're uncertain about whether you should use this, then you likely
 /// should not be using this.  Our strongly recommended advice is to use
 /// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
@@ -153,6 +155,14 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// ```
 /// since the only difference between the two is that [`StaticSecret`] does not enforce at
 /// compile-time that the key is only used once.
+///
+/// # Warning
+///
+/// If you're uncertain about whether you should use this, then you likely
+/// should not be using this.  Our strongly recommended advice is to use
+/// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
+/// secret keys are never reused, which can have very serious security
+/// implications for many protocols.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",

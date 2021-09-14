@@ -110,7 +110,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
 #[cfg(feature = "reusable_secrets")]
-#[derive(Zeroize)]
+#[derive(Clone, Zeroize)]
 #[zeroize(drop)]
 pub struct ReusableSecret(pub(crate) Scalar);
 

@@ -28,7 +28,10 @@ use sha2::Sha512;
 
 #[cfg(test)]
 mod vectors {
+    use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar};
     use ed25519::signature::Signature as _;
+    use sha2::{digest::Digest, Sha512};
+    use std::convert::TryFrom;
 
     use std::io::BufReader;
     use std::io::BufRead;
@@ -111,6 +114,77 @@ mod vectors {
                 \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
         assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2).is_ok(),
                 "Could not verify ed25519ph signature!");
+    }
+
+    // Taken from curve25519_dalek::constants::EIGHT_TORSION[4]
+    const EIGHT_TORSION_4: [u8; 32] = [
+        236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127,
+    ];
+
+    fn compute_hram(message: &[u8], pub_key: &EdwardsPoint, signature_r: &EdwardsPoint) -> Scalar {
+        let k_bytes = Sha512::default()
+            .chain(&signature_r.compress().as_bytes())
+            .chain(&pub_key.compress().as_bytes()[..])
+            .chain(&message);
+        let mut k_output = [0u8; 64];
+        k_output.copy_from_slice(k_bytes.finalize().as_slice());
+        Scalar::from_bytes_mod_order_wide(&k_output)
+    }
+
+    fn serialize_signature(r: &EdwardsPoint, s: &Scalar) -> Vec<u8> {
+        [&r.compress().as_bytes()[..], &s.as_bytes()[..]].concat()
+    }
+
+    #[test]
+    fn repudiation() {
+        use curve25519_dalek::traits::IsIdentity;
+        use std::ops::Neg;
+
+        let message1 = b"Send 100 USD to Alice";
+        let message2 = b"Send 100000 USD to Alice";
+
+        // Pick a random Scalar
+        fn non_null_scalar() -> Scalar {
+            let mut rng = rand::rngs::OsRng;
+            let mut s_candidate = Scalar::random(&mut rng);
+            while s_candidate == Scalar::zero() {
+                s_candidate = Scalar::random(&mut rng);
+            }
+            s_candidate
+        }
+        let mut s: Scalar = non_null_scalar();
+
+        fn pick_r_and_pubkey(s: Scalar) -> (EdwardsPoint, EdwardsPoint) {
+            let r0 = s * curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
+            // Pick a torsion point of order 2
+            let pub_key = curve25519_dalek::edwards::CompressedEdwardsY(EIGHT_TORSION_4)
+                .decompress()
+                .unwrap();
+            let r = r0 + pub_key.neg();
+            (r, pub_key)
+        }
+
+        let (mut r, mut pub_key) = pick_r_and_pubkey(s);
+
+        while !(pub_key.neg() + compute_hram(message1, &pub_key, &r) * pub_key).is_identity()
+            || !(pub_key.neg() + compute_hram(message2, &pub_key, &r) * pub_key).is_identity()
+        {
+            s = non_null_scalar();
+            let key = pick_r_and_pubkey(s);
+            r = key.0;
+            pub_key = key.1;
+        }
+
+        let signature = serialize_signature(&r, &s);
+        let pk = PublicKey::from_bytes(&pub_key.compress().as_bytes()[..]).unwrap();
+        let sig = Signature::try_from(&signature[..]).unwrap();
+        // The same signature verifies for both messages
+        assert!(pk.verify(message1, &sig).is_ok() && pk.verify(message2, &sig).is_ok());
+        // But not with a strict signature: verify_strict refuses small order keys
+        assert!(
+            pk.verify_strict(message1, &sig).is_err() || pk.verify_strict(message2, &sig).is_err()
+        );
     }
 }
 

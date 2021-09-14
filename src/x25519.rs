@@ -212,6 +212,7 @@ impl SharedSecret {
     /// [relevant]: https://tools.ietf.org/html/rfc7748#page-15
     /// [public]: https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html
     /// [discussions]: https://vnhacker.blogspot.com/2016/08/the-internet-of-broken-protocols.html
+    #[must_use]
     pub fn was_contributory(&self) -> bool {
         !self.0.is_identity()
     }

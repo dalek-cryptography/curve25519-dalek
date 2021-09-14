@@ -17,6 +17,7 @@
 use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::traits::IsIdentity;
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
@@ -95,6 +96,55 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
     }
 }
 
+/// A Diffie-Hellman secret key which may be used more than once, but is
+/// purposefully not serialiseable in order to discourage key-reuse.  This is
+/// implemented to facilitate protocols such as Noise (e.g. Noise IK key usage,
+/// etc.) and X3DH which require an "ephemeral" key to conduct the
+/// Diffie-Hellman operation multiple times throughout the protocol, while the
+/// protocol run at a higher level is only conducted once per key.
+///
+/// Similarly to [`EphemeralSecret`], this type does _not_ have serialisation
+/// methods, in order to discourage long-term usage of secret key material. (For
+/// long-term secret keys, see [`StaticSecret`].)
+///
+/// # Warning
+///
+/// If you're uncertain about whether you should use this, then you likely
+/// should not be using this.  Our strongly recommended advice is to use
+/// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
+/// secret keys are never reused, which can have very serious security
+/// implications for many protocols.
+#[cfg(feature = "reusable_secrets")]
+#[derive(Clone, Zeroize)]
+#[zeroize(drop)]
+pub struct ReusableSecret(pub(crate) Scalar);
+
+#[cfg(feature = "reusable_secrets")]
+impl ReusableSecret {
+    /// Perform a Diffie-Hellman key agreement between `self` and
+    /// `their_public` key to produce a [`SharedSecret`].
+    pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
+        SharedSecret(&self.0 * their_public.0)
+    }
+
+    /// Generate a non-serializeable x25519 [`ReuseableSecret`] key.
+    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        let mut bytes = [0u8; 32];
+
+        csprng.fill_bytes(&mut bytes);
+
+        ReusableSecret(clamp_scalar(bytes))
+    }
+}
+
+#[cfg(feature = "reusable_secrets")]
+impl<'a> From<&'a ReusableSecret> for PublicKey {
+    /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicKey`].
+    fn from(secret: &'a ReusableSecret) -> PublicKey {
+        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+    }
+}
+
 /// A Diffie-Hellman secret key that can be used to compute multiple [`SharedSecret`]s.
 ///
 /// This type is identical to the [`EphemeralSecret`] type, except that the
@@ -102,14 +152,13 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// serialization methods to save and load key material.  This means that the secret may be used
 /// multiple times (but does not *have to be*).
 ///
-/// Some protocols, such as Noise, already handle the static/ephemeral distinction, so the
-/// additional guarantees provided by [`EphemeralSecret`] are not helpful or would cause duplicate
-/// code paths.  In this case, it may be useful to
-/// ```rust,ignore
-/// use x25519_dalek::StaticSecret as SecretKey;
-/// ```
-/// since the only difference between the two is that [`StaticSecret`] does not enforce at
-/// compile-time that the key is only used once.
+/// # Warning
+///
+/// If you're uncertain about whether you should use this, then you likely
+/// should not be using this.  Our strongly recommended advice is to use
+/// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
+/// secret keys are never reused, which can have very serious security
+/// implications for many protocols.
 #[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
 #[cfg_attr(
     feature = "serde",
@@ -176,6 +225,44 @@ impl SharedSecret {
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
         self.0.as_bytes()
+    }
+
+    /// Ensure in constant-time that this shared secret did not result from a
+    /// key exchange with non-contributory behaviour.
+    ///
+    /// In some more exotic protocols which need to guarantee "contributory"
+    /// behaviour for both parties, that is, that each party contibuted a public
+    /// value which increased the security of the resulting shared secret.
+    /// To take an example protocol attack where this could lead to undesireable
+    /// results [from Thái "thaidn" Dương](https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html):
+    ///
+    /// > If Mallory replaces Alice's and Bob's public keys with zero, which is
+    /// > a valid Curve25519 public key, he would be able to force the ECDH
+    /// > shared value to be zero, which is the encoding of the point at infinity,
+    /// > and thus get to dictate some publicly known values as the shared
+    /// > keys. It still requires an active man-in-the-middle attack to pull the
+    /// > trick, after which, however, not only Mallory can decode Alice's data,
+    /// > but everyone too! It is also impossible for Alice and Bob to detect the
+    /// > intrusion, as they still share the same keys, and can communicate with
+    /// > each other as normal.
+    ///
+    /// The original Curve25519 specification argues that checks for
+    /// non-contributory behaviour are "unnecessary for Diffie-Hellman".
+    /// Whether this check is necessary for any particular given protocol is
+    /// often a matter of debate, which we will not re-hash here, but simply
+    /// cite some of the [relevant] [public] [discussions].
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the key exchange was contributory (good), and `false`
+    /// otherwise (can be bad for some protocols).
+    ///
+    /// [relevant]: https://tools.ietf.org/html/rfc7748#page-15
+    /// [public]: https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html
+    /// [discussions]: https://vnhacker.blogspot.com/2016/08/the-internet-of-broken-protocols.html
+    #[must_use]
+    pub fn was_contributory(&self) -> bool {
+        !self.0.is_identity()
     }
 }
 

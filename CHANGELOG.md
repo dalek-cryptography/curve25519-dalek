@@ -2,6 +2,12 @@
 
 Entries are listed in reverse chronological order.
 
+# 2.x Series
+
+## 2.0.0-pre.0
+
+* Update `rand_core` dependency to `0.6`.
+
 # 1.x Series
 
 ## 1.2

@@ -18,7 +18,7 @@
 #![cfg_attr(feature = "bench", feature(test))]
 #![cfg_attr(feature = "nightly", deny(missing_docs))]
 #![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
-#![doc(html_root_url = "https://docs.rs/x25519-dalek/1.2.0")]
+#![doc(html_root_url = "https://docs.rs/x25519-dalek/2.0.0-pre.0")]
 
 //! # x25519-dalek  [![](https://img.shields.io/crates/v/x25519-dalek.svg)](https://crates.io/crates/x25519-dalek) [![](https://docs.rs/x25519-dalek/badge.svg)](https://docs.rs/x25519-dalek) [![](https://travis-ci.org/dalek-cryptography/x25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/x25519-dalek)
 //!
@@ -124,7 +124,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! x25519-dalek = "1"
+//! x25519-dalek = "2.0.0-pre.0"
 //! ```
 //!
 //! # MSRV

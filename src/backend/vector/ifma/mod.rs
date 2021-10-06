@@ -9,7 +9,7 @@
 
 #![cfg_attr(
     feature = "nightly",
-    doc(include = "../../../../docs/ifma-notes.md")
+    doc = include_str!("../../../../docs/ifma-notes.md")
 )]
 
 pub mod field;

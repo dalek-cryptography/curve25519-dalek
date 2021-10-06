@@ -11,7 +11,7 @@
 
 #![cfg_attr(
     feature = "nightly",
-    doc(include = "../../../../docs/avx2-notes.md")
+    doc = include_str!("../../../../docs/avx2-notes.md")
 )]
 
 pub(crate) mod field;

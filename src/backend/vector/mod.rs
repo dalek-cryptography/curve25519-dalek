@@ -12,27 +12,21 @@
 // Conditionally include the notes if we're on nightly (so we can include docs at all).
 #![cfg_attr(
     feature = "nightly",
-    doc(include = "../../../docs/parallel-formulas.md")
+    doc = include_str!("../../../docs/parallel-formulas.md")
 )]
 
-#[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", rustdoc)))]
+#[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", doc)))]
 compile_error!("simd_backend selected without target_feature=+avx2 or +avx512ifma");
 
-#[cfg(any(
-    all(target_feature = "avx2", not(target_feature = "avx512ifma")),
-    rustdoc
-))]
+#[cfg(any(all(target_feature = "avx2", not(target_feature = "avx512ifma")), doc))]
 #[doc(cfg(all(target_feature = "avx2", not(target_feature = "avx512ifma"))))]
 pub mod avx2;
-#[cfg(any(
-    all(target_feature = "avx2", not(target_feature = "avx512ifma")),
-    rustdoc
-))]
+#[cfg(any(all(target_feature = "avx2", not(target_feature = "avx512ifma")), doc))]
 pub(crate) use self::avx2::{
     constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
 };
 
-#[cfg(any(target_feature = "avx512ifma", rustdoc))]
+#[cfg(any(target_feature = "avx512ifma", doc))]
 #[doc(cfg(target_feature = "avx512ifma"))]
 pub mod ifma;
 #[cfg(target_feature = "avx512ifma")]

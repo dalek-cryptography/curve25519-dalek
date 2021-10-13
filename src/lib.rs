@@ -276,6 +276,8 @@ extern crate subtle;
 extern crate bincode;
 #[cfg(feature = "serde")]
 extern crate serde;
+#[cfg(feature = "elliptic-curve")]
+extern crate group;
 
 // Internal macros. Must come first!
 #[macro_use]

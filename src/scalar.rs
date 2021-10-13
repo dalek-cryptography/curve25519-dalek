@@ -166,6 +166,9 @@ use zeroize::Zeroize;
 use backend;
 use constants;
 
+#[cfg(feature = "elliptic-curve")]
+use digest::generic_array::{typenum::U32, GenericArray};
+
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
 /// This is a type alias for one of the scalar types in the `backend`
@@ -537,6 +540,80 @@ impl From<u128> for Scalar {
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
         self.bytes.zeroize();
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl group::ff::Field for Scalar {
+    fn random(mut rng: impl RngCore) -> Self {
+        let mut scalar_bytes = [0u8; 64];
+        rng.fill_bytes(&mut scalar_bytes);
+        Self::from_bytes_mod_order_wide(&scalar_bytes)
+    }
+
+    fn zero() -> Self {
+        Self::zero()
+    }
+
+    fn one() -> Self {
+        Self::one()
+    }
+
+    fn square(&self) -> Self {
+        self * self
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+
+    fn invert(&self) -> subtle::CtOption<Self> {
+        let result = self.invert();
+        subtle::CtOption::new(result, !self.is_zero())
+    }
+
+    /// Unimplemented!
+    fn sqrt(&self) -> subtle::CtOption<Self> {
+        unimplemented!()
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl group::ff::PrimeField for Scalar {
+    type Repr = GenericArray<u8, U32>;
+
+    fn from_repr(repr: Self::Repr) -> subtle::CtOption<Self> {
+        let s = Scalar { bytes: repr.into() };
+        // Ensure that s < 2^255 by masking the high bit
+        let valid = subtle::ConstantTimeLess::ct_lt(&s.bytes[31], &0b0111_1111);
+        subtle::CtOption::new(s, valid)
+    }
+
+    fn to_repr(&self) -> Self::Repr {
+        self.to_bytes().into()
+    }
+
+    fn is_odd(&self) -> Choice {
+        self.bytes[0].ct_eq(&1)
+    }
+
+    const NUM_BITS: u32 = 256;
+
+    const CAPACITY: u32 = 255;
+
+    fn multiplicative_generator() -> Self {
+        7_u8.into()
+    }
+
+    const S: u32 = 2;
+
+    fn root_of_unity() -> Self {
+        Self {
+            bytes: [
+                212, 7, 190, 235, 223, 117, 135, 190, 254, 131, 206, 66, 83, 86, 240, 14, 122, 194,
+                193, 171, 96, 109, 61, 125, 231, 129, 121, 224, 16, 115, 74, 9,
+            ],
+        }
     }
 }
 

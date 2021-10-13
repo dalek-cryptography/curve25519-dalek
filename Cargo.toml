@@ -52,12 +52,14 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"], optional = true }
 zeroize = { version = "=1.3.0", default-features = false }
 fiat-crypto = { version = "0.1.6", optional = true}
+group = { version = "0.11", default-features = false, optional = true }
 
 [features]
 nightly = ["subtle/nightly"]
 default = ["std", "u64_backend"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
+elliptic-curve = ["group"]
 
 # The u32 backend uses u32s with u64 products.
 u32_backend = []

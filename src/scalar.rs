@@ -1828,4 +1828,37 @@ mod test {
             test_pippenger_radix_iter(scalar, 8);
         }
     }
+
+    #[cfg(feature = "elliptic-curve")]
+    #[test]
+    fn test_prime_field_valid() {
+        use group::ff::PrimeField;
+
+        assert!(bool::from(Scalar::from_repr([0xff; 32].into()).is_none()));
+        assert!(bool::from(Scalar::from_repr([0x7f; 32].into()).is_none()));
+        assert!(bool::from(Scalar::from_repr([0x7e; 32].into()).is_some()));
+    }
+
+    #[cfg(feature = "elliptic-curve")]
+    #[test]
+    fn test_prime_field_repr_round_trip() {
+        use group::ff::PrimeField;
+
+        let mut rng = rand::thread_rng();
+        let scalar = Scalar::random(&mut rng);
+
+        assert_eq!(Scalar::from_repr(scalar.to_repr()).unwrap(), scalar);
+    }
+
+    #[cfg(feature = "elliptic-curve")]
+    #[test]
+    fn test_field_invert() {
+        use group::ff::Field;
+
+        let mut rng = rand::thread_rng();
+        let scalar = Scalar::random(&mut rng);
+
+        assert!(bool::from(Field::invert(&scalar).is_some()));
+        assert!(bool::from(Field::invert(&Scalar::zero()).is_none()));
+    }
 }

@@ -597,9 +597,9 @@ impl group::ff::PrimeField for Scalar {
         self.bytes[0].ct_eq(&1)
     }
 
-    const NUM_BITS: u32 = 256;
+    const NUM_BITS: u32 = 253;
 
-    const CAPACITY: u32 = 255;
+    const CAPACITY: u32 = Self::NUM_BITS - 1;
 
     fn multiplicative_generator() -> Self {
         7_u8.into()

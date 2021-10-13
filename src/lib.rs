@@ -123,6 +123,13 @@
 //! builds using `--no-default-features`.  Note that this requires explicitly
 //! selecting an arithmetic backend using one of the `_backend` features.
 //! If no backend is selected, compilation will fail.
+//! 
+//! The `elliptic-curve` feature can be enabled to implement traits from the
+//! [elliptic-curve][elliptic-curve_doc] for some types. Specifically
+//! [`Field`](group::ff::Field) and [`PrimeField`](group::ff::PrimeField) for
+//! [`Scalar`](scalar::Scalar) and [`Group`](group::Group) and
+//! [`GroupEncoding`](group::GroupEncoding) for
+//! [`RistrettoPoint`](ristretto::RistrettoPoint).
 //!
 //! # Safety
 //!
@@ -245,6 +252,7 @@
 //! [criterion]: https://github.com/japaric/criterion.rs
 //! [parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
 //! [subtle_doc]: https://doc.dalek.rs/subtle/
+//! [elliptic-curve_doc]: https://docs.rs/elliptic-curve/
 
 //------------------------------------------------------------------------
 // External dependencies:

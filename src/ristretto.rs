@@ -191,6 +191,8 @@ use scalar::Scalar;
 use traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
 use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+#[cfg(feature = "elliptic-curve")]
+use digest::generic_array::{typenum::U32, GenericArray};
 
 #[cfg(not(all(
     feature = "simd_backend",
@@ -1094,6 +1096,61 @@ impl Zeroize for CompressedRistretto {
 impl Zeroize for RistrettoPoint {
     fn zeroize(&mut self) {
         self.0.zeroize();
+    }
+}
+
+// ------------------------------------------------------------------------
+// elliptic-curve traits
+// ------------------------------------------------------------------------
+
+#[cfg(feature = "elliptic-curve")]
+impl group::Group for RistrettoPoint {
+    type Scalar = Scalar;
+
+    fn random(mut rng: impl RngCore) -> Self {
+        let mut uniform_bytes = [0u8; 64];
+        rng.fill_bytes(&mut uniform_bytes);
+
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+    }
+
+    fn identity() -> Self {
+        Identity::identity()
+    }
+
+    fn generator() -> Self {
+        constants::RISTRETTO_BASEPOINT_POINT
+    }
+
+    fn is_identity(&self) -> Choice {
+        self.ct_eq(&Identity::identity())
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl group::GroupEncoding for RistrettoPoint {
+    type Repr = GenericArray<u8, U32>;
+
+    /// Attempts to deserialize a group element from its encoding.
+    /// 
+    /// # Warning
+    /// Despite the return type this isn't constant-time.
+    fn from_bytes(bytes: &Self::Repr) -> subtle::CtOption<Self> {
+        let result = CompressedRistretto::from_slice(bytes).decompress();
+        let choice = (result.is_some() as u8).into();
+        subtle::CtOption::new(result.unwrap_or_default(), choice)
+    }
+
+    fn from_bytes_unchecked(bytes: &Self::Repr) -> subtle::CtOption<Self> {
+        Self::from_bytes(bytes)
+    }
+
+    fn to_bytes(&self) -> Self::Repr {
+        self.compress().to_bytes().into()
     }
 }
 

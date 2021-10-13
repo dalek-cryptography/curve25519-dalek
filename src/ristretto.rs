@@ -1438,4 +1438,23 @@ mod test {
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());
     }
+
+    #[cfg(feature = "elliptic-curve")]
+    #[test]
+    fn test_group_encoding_invalid() {
+        use group::GroupEncoding;
+
+        assert!(bool::from(RistrettoPoint::from_bytes(&constants::EDWARDS_D.to_bytes().into()).is_none()));
+    }
+
+    #[cfg(feature = "elliptic-curve")]
+    #[test]
+    fn test_group_encoding_round_trip() {
+        use group::GroupEncoding;
+
+        let mut rng = rand::thread_rng();
+        let point = RistrettoPoint::random(&mut rng);
+
+        assert_eq!(RistrettoPoint::from_bytes(&point.to_bytes()).unwrap(), point);
+    }
 }

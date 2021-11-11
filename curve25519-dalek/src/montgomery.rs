@@ -252,14 +252,16 @@ impl MontgomeryPoint {
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point.
+/// Perform the Elligator2 mapping to a Montgomery point. Returns a Montgomery point and a `Choice`
+/// determining whether eps is a square. This is required by the standard to determine the
+/// sign of the v coordinate.
 ///
 /// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
 //
 // TODO Determine how much of the hash-to-group API should be exposed after the CFRG
 //      draft gets into a more polished/accepted state.
 #[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
+pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) {
     let one = FieldElement::ONE;
     let d_1 = &one + &r_0.square2(); /* 2r^2 */
 
@@ -278,7 +280,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 
-    MontgomeryPoint(u.to_bytes())
+    (MontgomeryPoint(u.to_bytes()), eps_is_sq)
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -652,7 +654,7 @@ mod test {
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);
-        let eg = elligator_encode(&fe);
+        let (eg, _) = elligator_encode(&fe);
         assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
     }
 
@@ -660,7 +662,7 @@ mod test {
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
         let fe = FieldElement::from_bytes(&zero);
-        let eg = elligator_encode(&fe);
+        let (eg, _) = elligator_encode(&fe);
         assert_eq!(eg.to_bytes(), zero);
     }
 }

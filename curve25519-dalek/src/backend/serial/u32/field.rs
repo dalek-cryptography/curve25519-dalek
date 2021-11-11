@@ -428,6 +428,26 @@ impl FieldElement2625 {
         FieldElement2625::reduce(h)
     }
 
+    /// Load a `FieldElement51` from 64 bytes, by reducing modulo q.
+    pub fn from_bytes_wide(hash: &[u8; 64]) -> FieldElement2625 {
+        let mut fl = [0u8; 32];
+        let mut gl = [0u8; 32];
+        fl.copy_from_slice(&hash[..32]);
+        gl.copy_from_slice(&hash[32..]);
+        fl[31] &= 0x7f;
+        gl[31] &= 0x7f;
+
+        let fe_f = Self::from_bytes(&fl);
+        let fe_g = Self::from_bytes(&gl);
+        let mut fe_f64 = fe_f.0.map(|i| i as u64);
+        let fe_g64 = fe_g.0.map(|i| i as u64);
+        fe_f64[0] = fe_f64[0] + (hash[31] >> 7) as u64 * 19 + (hash[63] >> 7) as u64 * 722;
+        for i in 0..10 {
+            fe_f64[i] += 38 * fe_g64[i];
+        }
+        Self::reduce(fe_f64)
+    }
+
     /// Renamed to `to_bytes`.
     #[deprecated(since = "4.1.4", note = "use `to_bytes` instead")]
     pub fn as_bytes(&self) -> [u8; 32] {

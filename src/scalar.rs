@@ -620,12 +620,12 @@ impl Scalar {
     ///
     /// # fn main() {
     /// let mut h = Sha512::new()
-    ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
-    ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
-    ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
-    ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
-    ///     .chain("perhaps all architecture, rather than being about functional standards, is")
-    ///     .chain("about love and death.");
+    ///     .chain_update("To really appreciate architecture, you may even need to commit a murder.")
+    ///     .chain_update("While the programs used for The Manhattan Transcripts are of the most extreme")
+    ///     .chain_update("nature, they also parallel the most common formula plot: the archetype of")
+    ///     .chain_update("murder. Other phantasms were occasionally used to underline the fact that")
+    ///     .chain_update("perhaps all architecture, rather than being about functional standards, is")
+    ///     .chain_update("about love and death.");
     ///
     /// let s = Scalar::from_hash(h);
     ///

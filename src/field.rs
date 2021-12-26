@@ -227,22 +227,21 @@ impl FieldElement {
     /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
     ///
     pub fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
-        // Using the same trick as in ed25519 decoding, we merge the
-        // inversion, the square root, and the square test as follows.
+        // This formula is a simpler variant of the one from RFC8032,
+        // that saves several multiplications.  It was described by
+        // Mark Wooding at [1] and proposed as RFC errata at [2].
+        // Working group consensus [3] seems to be that it's correct,
+        // but faster.
         //
-        // To compute sqrt(α), we can compute β = α^((p+3)/8).
-        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
-        // gives sqrt(α).
+        // Here we let w = (u*v), and compute r = u * w ^ ((p-5)/8).
+        // That gives:
         //
-        // To compute 1/sqrt(α), we observe that
-        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
-        //                            = α^3 * (α^7)^((p-5)/8).
+        //   r^4 = u^4 * w^((p-5)/2)
+        //       = u^4 * w^((p-1)/2 - 2)
+        //       = u^4 * w^(-2)
+        //       = (u/v)^2
         //
-        // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
-        // by first computing
-        //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
-        //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
-        //      = (uv^3) (uv^7)^((p-5)/8).
+        // And so we can use r to compute sqrt(u/v):
         //
         // If v is nonzero and u/v is square, then r^2 = ±u/v,
         //                                     so vr^2 = ±u.
@@ -250,10 +249,12 @@ impl FieldElement {
         // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
         //
         // If v is zero, r is also zero.
-
-        let v3 = &v.square()  * v;
-        let v7 = &v3.square() * v;
-        let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+        //
+        // [1] https://vox.distorted.org.uk/mdw/2017/05/simpler-quosqrt.html
+        // [2] https://www.rfc-editor.org/errata/eid5758
+        // [3] https://mailarchive.ietf.org/arch/msg/cfrg/qlKpMBqxXZYmDpXXIx6LO3Oznv4/
+        let w = u * v;
+        let mut r = u * &w.pow_p58();
         let check = v * &r.square();
 
         let i = &constants::SQRT_M1;

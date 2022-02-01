@@ -400,11 +400,11 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 CompressedRistretto(bytes)
                     .decompress()
-                    .ok_or(serde::de::Error::custom("decompression failed"))
+                    .ok_or_else(|| serde::de::Error::custom("decompression failed"))
             }
         }
 
@@ -435,7 +435,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Ok(CompressedRistretto(bytes))
             }

@@ -615,6 +615,8 @@ impl Scalar {
     /// # use curve25519_dalek::scalar::Scalar;
     /// extern crate sha2;
     ///
+    /// use curve25519_dalek::digest::Update;
+    ///
     /// use sha2::Digest;
     /// use sha2::Sha512;
     ///

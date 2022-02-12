@@ -1136,9 +1136,6 @@ impl group::GroupEncoding for RistrettoPoint {
     type Repr = GenericArray<u8, U32>;
 
     /// Attempts to deserialize a group element from its encoding.
-    /// 
-    /// # Warning
-    /// Despite the return type this isn't constant-time.
     fn from_bytes(bytes: &Self::Repr) -> subtle::CtOption<Self> {
         let result = CompressedRistretto::from_slice(bytes).decompress();
         let choice = (result.is_some() as u8).into();

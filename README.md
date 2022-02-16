@@ -177,7 +177,7 @@ that primitive.
 Please see [CONTRIBUTING.md][contributing].
 
 Patches and pull requests should be make against the `develop`
-branch, **not** `master`.
+branch, **not** `main`.
 
 # About
 

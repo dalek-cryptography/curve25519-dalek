@@ -193,6 +193,81 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     MontgomeryPoint(u.to_bytes())
 }
 
+/// Perform the inverse Elligator2 mapping from a Montgomery point to
+/// field element. This algorithm is based on [Elligator:
+/// Elliptic-curve points indistinguishable from uniform random
+/// strings][elligator], Section 5.3.
+///
+/// This function is a partial right inverse of `elligator_encode`: if
+/// `elligator_decode(&p, sign) == Some(fe)` then `elligator_encode(&fe)
+/// == p`.
+///
+/// This function does _not_ operate in constant time: if `point`
+/// cannot be mapped to a field element, the function exits early. In
+/// typical usage this function is combined with rejection sampling
+/// and called repeatedly until a mappable point is found.
+///
+/// Note: the output field elements of this function are uniformly
+/// distributed among the nonnegative field elements, but only if the
+/// input points are also uniformly distributed among all points of
+/// the curve. In particular, if the inputs are only selected from
+/// members of the prime order group, then the outputs are
+/// distinguishable from random.
+///
+/// # Inputs
+///
+/// * `point`: the \\(u\\)-coordinate of a point on the curve. Not all
+/// points map to field elements.
+///
+/// * `v_is_negative`: true if the \\(v\\)-coordinate of the point is negative.
+///
+/// # Returns
+///
+/// Either `None`, if the point couldn't be mapped, or `Some(fe)` such
+/// that `fe` is nonnegative and `elligator_encode(&fe) == point`.
+///
+/// [elligator] https://elligator.cr.yp.to/elligator-20130828.pdf
+///
+#[allow(unused)]
+pub(crate) fn elligator_decode(point: &MontgomeryPoint, v_is_negative: Choice) -> Option<FieldElement> {
+    let one = FieldElement::one();
+    let u = FieldElement::from_bytes(&point.to_bytes());
+    let u_plus_A = &u + &MONTGOMERY_A;
+    let uu_plus_uA = &u * &u_plus_A;
+
+    // Condition: u is on the curve
+    let vv = &(&u * &uu_plus_uA) + &u;
+    let (u_is_on_curve, _v) = FieldElement::sqrt_ratio_i(&vv, &one);
+    if (!bool::from(u_is_on_curve)) {
+        return None
+    }
+
+    // Condition: u != -A
+    if (u == MONTGOMERY_A_NEG) {
+        return None
+    }
+
+    // Condition: -2u(u+A) is a square
+    let uu2_plus_uA2 = &uu_plus_uA + &uu_plus_uA;
+    // We compute root = sqrt(-1/2u(u+A)) to speed up the calculation.
+    // This is a square if and only if -2u(u+A) is.
+    let (is_square, root) = FieldElement::sqrt_ratio_i(&FieldElement::minus_one(),
+                                                       &uu2_plus_uA2);
+    if (!bool::from(is_square | root.is_zero())) {
+        return None;
+    }
+
+    // if !v_is_negative: r = sqrt(-u / 2(u + a)) = root * u
+    // if  v_is_negative: r = sqrt(-(u+A) / 2u)   = root * (u + A)
+    let add = FieldElement::conditional_select(&u, &u_plus_A, v_is_negative);
+    let r = &root * &add;
+
+    // Both r and -r are valid results. Pick the nonnegative one.
+    let result = FieldElement::conditional_select(&r, &-&r, r.is_negative());
+
+    return Some(result);
+}
+
 /// A `ProjectivePoint` holds a point on the projective line
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
@@ -356,7 +431,7 @@ mod test {
     use constants;
     use core::convert::TryInto;
 
-    use rand_core::OsRng;
+    use rand_core::{OsRng, RngCore};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -470,10 +545,103 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "std")] // Vec
+    fn montgomery_elligator_decode_correct() {
+        let bytes: std::vec::Vec<u8> = (0u8..32u8).collect();
+        let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
+
+        let fe = FieldElement::from_bytes(&bits_in);
+        let eg = MontgomeryPoint(ELLIGATOR_CORRECT_OUTPUT);
+        let result = elligator_decode(&eg, 0.into());
+        assert_eq!(result, Some(fe));
+    }
+
+    #[test]
+    fn montgomery_elligator_encode_decode() {
+        for _i in 0..4096 {
+            let mut bits = [0u8; 32];
+            OsRng.fill_bytes(&mut bits);
+
+            let fe = FieldElement::from_bytes(&bits);
+            let eg = elligator_encode(&fe);
+
+            // Up to four different field values may encode to a
+            // single MontgomeryPoint. Firstly, the MontgomeryPoint
+            // loses the v-coordinate, so it may represent two
+            // different curve points, (u, v) and (u, -v). The
+            // elligator_decode function is given a sign argument to
+            // indicate which one is meant.
+            //
+            // Second, for each curve point (except zero), two
+            // distinct field elements encode to it, r and -r. The
+            // elligator_decode function returns the nonnegative one.
+            //
+            // We check here that one of these four values is equal to
+            // the original input to elligator_encode.
+
+            let mut found = false;
+
+            for i in 0..=1 {
+                let decoded = elligator_decode(&eg, i.into())
+                    .expect("Elligator decode failed");
+                for j in &[fe, -&fe] {
+                    found |= decoded == *j;
+                }
+            }
+
+            assert!(found);
+        }
+    }
+
+    #[test]
+    fn montgomery_elligator_decode_encode() {
+        for i in 0..4096 {
+            let mut bits = [0u8; 32];
+            OsRng.fill_bytes(&mut bits);
+
+            let point = MontgomeryPoint(bits);
+
+            let result = elligator_decode(&point, ((i % 2) as u8).into());
+
+            if let Some(fe) = result {
+                let encoded = elligator_encode(&fe);
+
+                assert_eq!(encoded, point);
+            }
+        }
+    }
+
+    /// Test that Elligator decoding will fail on a point that is not on the curve.
+    #[test]
+    fn montgomery_elligator_decode_noncurve() {
+        let one = FieldElement::one();
+
+        // u = 2 corresponds to a point on the twist.
+        let two = MontgomeryPoint((&one+&one).to_bytes());
+
+        for i in 0..=1 {
+            let result = elligator_decode(&two, i.into());
+            assert_eq!(None, result);
+        }
+    }
+
+    #[test]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
         let fe = FieldElement::from_bytes(&zero);
         let eg = elligator_encode(&fe);
         assert_eq!(eg.to_bytes(), zero);
+    }
+
+    #[test]
+    fn montgomery_elligator_decode_zero_zero() {
+        let zero = [0u8; 32];
+        let eg = MontgomeryPoint(zero);
+
+        let fe = elligator_decode(&eg, 0.into()).expect("Elligator decode failed");
+        assert_eq!(fe.to_bytes(), zero);
+
+        let fe_neg = elligator_decode(&eg, 1.into()).expect("Elligator decode failed");
+        assert_eq!(fe_neg.to_bytes(), zero);
     }
 }

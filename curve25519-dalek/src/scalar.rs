@@ -132,10 +132,8 @@ use digest::generic_array::typenum::U64;
 #[cfg(feature = "digest")]
 use digest::Digest;
 
-use subtle::Choice;
-use subtle::ConditionallySelectable;
-use subtle::ConstantTimeEq;
-use subtle::CtOption;
+use subtle::{Choice, CtOption};
+use subtle::{ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -253,9 +251,8 @@ impl Scalar {
     ///   if `bytes` is a canonical byte representation modulo the group order \\( \ell \\);
     /// - `None` if `bytes` is not a canonical byte representation.
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
-        let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
         let candidate = Scalar { bytes };
-        CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
+        CtOption::new(candidate, candidate.is_canonical())
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
@@ -1125,7 +1122,15 @@ impl Scalar {
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {
-        self.ct_eq(&self.reduce())
+        let mut over = Choice::from(0);
+        let mut under = Choice::from(0);
+        for (this, l) in self.unpack().0.iter().zip(&constants::L.0).rev() {
+            let gt = this.ct_gt(l);
+            let eq = this.ct_eq(l);
+            under |= (!gt & !eq) & !over;
+            over |= gt;
+        }
+        under
     }
 }
 

@@ -1650,15 +1650,42 @@ pub(crate) mod test {
             0, 0, 128,
         ];
 
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(canonical_bytes).is_some()
-        ));
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none()
-        ));
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none()
-        ));
+        let canonical_l_minus_one = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15,
+        ];
+        let canonical_zero = [0u8; 32];
+        let canonical_255_minus_1 = [
+            132, 52, 71, 117, 71, 74, 127, 151, 35, 182, 58, 139, 233, 42, 231, 109, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15,
+        ];
+        let non_canonical_l = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+        ];
+        let non_canonical_l_plus_one = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17,
+        ];
+        let non_canonical_full = [0xFF; 32];
+        let non_canonical_255_minus_1 = {
+            let mut non_canonical_255_minus_1 = [0xFF; 32];
+            non_canonical_255_minus_1[31] = 0b0111_1111;
+            non_canonical_255_minus_1
+        };
+
+        let from_canonical_option = |b| Option::<Scalar>::from(Scalar::from_canonical_bytes(b));
+
+        assert!(from_canonical_option(canonical_bytes).is_some());
+        assert!(from_canonical_option(canonical_l_minus_one).is_some());
+        assert!(from_canonical_option(canonical_zero).is_some());
+        assert!(from_canonical_option(canonical_255_minus_1).is_some());
+        assert!(from_canonical_option(non_canonical_bytes_because_unreduced).is_none());
+        assert!(from_canonical_option(non_canonical_bytes_because_highbit).is_none());
+        assert!(from_canonical_option(non_canonical_l).is_none());
+        assert!(from_canonical_option(non_canonical_l_plus_one).is_none());
+        assert!(from_canonical_option(non_canonical_full).is_none());
+        assert!(from_canonical_option(non_canonical_255_minus_1).is_none());
     }
 
     #[test]

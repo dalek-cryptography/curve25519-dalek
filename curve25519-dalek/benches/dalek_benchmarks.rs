@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use rand::{rngs::OsRng, thread_rng};
+use rand::{thread_rng, Rng};
 
 use criterion::{
     criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
@@ -249,7 +249,7 @@ mod ristretto_benches {
                 BenchmarkId::new("Batch Ristretto double-and-encode", *batch_size),
                 &batch_size,
                 |b, &&size| {
-                    let mut rng = OsRng;
+                    let mut rng = thread_rng();
                     let points: Vec<RistrettoPoint> = (0..size)
                         .map(|_| RistrettoPoint::random(&mut rng))
                         .collect();
@@ -336,7 +336,7 @@ mod scalar_benches {
                 BenchmarkId::new("Batch scalar inversion", *batch_size),
                 &batch_size,
                 |b, &&size| {
-                    let mut rng = OsRng;
+                    let mut rng = thread_rng();
                     let scalars: Vec<Scalar> =
                         (0..size).map(|_| Scalar::random(&mut rng)).collect();
                     b.iter(|| {
@@ -347,6 +347,24 @@ mod scalar_benches {
             );
         }
     }
+    fn scalar_from_canonical_bytes<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let bytes = [0xFF; 32];
+        c.bench_function("Max scalar from_canonical_bytes", move |b| {
+            b.iter(|| Scalar::from_canonical_bytes(bytes))
+        });
+        let bytes = [0u8; 32];
+        c.bench_function("Zero scalar from_canonical_bytes", move |b| {
+            b.iter(|| Scalar::from_canonical_bytes(bytes))
+        });
+        c.bench_function("Rand scalar from_canonical_bytes", |bench| {
+            let mut rng = thread_rng();
+            bench.iter_batched(
+                || rng.gen(),
+                Scalar::from_canonical_bytes,
+                BatchSize::SmallInput,
+            );
+        });
+    }
 
     pub(crate) fn scalar_benches() {
         let mut c = Criterion::default();
@@ -354,6 +372,7 @@ mod scalar_benches {
 
         scalar_arith(&mut g);
         batch_scalar_inversion(&mut g);
+        scalar_from_canonical_bytes(&mut g);
     }
 }
 

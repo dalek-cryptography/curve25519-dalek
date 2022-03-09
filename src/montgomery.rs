@@ -98,6 +98,13 @@ impl PartialEq for MontgomeryPoint {
 
 impl Eq for MontgomeryPoint {}
 
+impl Identity for MontgomeryPoint {
+    /// Return the group identity element, which has order 4.
+    fn identity() -> MontgomeryPoint {
+        MontgomeryPoint([0u8; 32])
+    }
+}
+
 impl Zeroize for MontgomeryPoint {
     fn zeroize(&mut self) {
         self.0.zeroize();

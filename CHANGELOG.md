@@ -5,6 +5,22 @@ major series.
 
 ## 3.x series
 
+### 3.2.0
+
+* Add support for getting the identity element for the Montgomery
+  form of curve25519, which is useful in certain protocols for
+  checking contributory behaviour in derivation of shared secrets.
+
+### 3.1.2
+
+* Revert a commit which mistakenly removed support for `zeroize` traits
+  for some point types, as well as elligator2 support for Edwards points.
+
+### 3.1.1
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.1.0
 
 * Add support for the Elligator2 encoding for Edwards points.
@@ -20,9 +36,15 @@ major series.
   consumers of `curve25519-dalek` should call these methods manually
   when needed.
 
+### 3.0.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![cfg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 3.0.2
 
-* Fixes to make using alloc+no_std possible for stable Rust.
+* Multiple documentation typo fixes.
+* Fixes to make using `alloc`+`no_std` possible for stable Rust.
 
 ### 3.0.1
 
@@ -37,9 +59,15 @@ major series.
 
 ## 2.x series
 
+### 2.1.3
+
+* Fix documentation builds on nightly due to syntax changes to
+  `#![fg_attr(feature = "nightly", doc = include_str!("../README.md"))]`.
+
 ### 2.1.2
 
-* Fixes to make using alloc+no_std possible for stable Rust.
+* Multiple documenation typo fixes.
+* Fix `alloc` feature working with stable rust.
 
 ### 2.1.1
 

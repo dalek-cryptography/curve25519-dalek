@@ -102,8 +102,8 @@
 //!
 //! // Streaming data into a hash object
 //! let mut hasher = Sha512::default();
-//! hasher.input(b"Abolish ");
-//! hasher.input(b"ICE");
+//! hasher.update(b"Abolish ");
+//! hasher.update(b"ICE");
 //! let a2 = Scalar::from_hash(hasher);
 //!
 //! assert_eq!(a, a2);
@@ -182,7 +182,7 @@ type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -243,7 +243,7 @@ impl Scalar {
     /// This function is intended for applications like X25519 which
     /// require specific bit-patterns when performing scalar
     /// multiplication.
-    pub fn from_bits(bytes: [u8; 32]) -> Scalar {
+    pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar{bytes};
         // Ensure that s < 2^255 by masking the high bit
         s.bytes[31] &= 0b0111_1111;
@@ -416,10 +416,10 @@ impl<'de> Deserialize<'de> for Scalar {
                 let mut bytes = [0u8; 32];
                 for i in 0..32 {
                     bytes[i] = seq.next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Scalar::from_canonical_bytes(bytes)
-                    .ok_or(serde::de::Error::custom(
+                    .ok_or_else(|| serde::de::Error::custom(
                         &"scalar was not canonically encoded"
                     ))
             }
@@ -588,7 +588,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
-        hash.input(input);
+        hash.update(input);
         Scalar::from_hash(hash)
     }
 
@@ -630,7 +630,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64>
     {
         let mut output = [0u8; 64];
-        output.copy_from_slice(hash.result().as_slice());
+        output.copy_from_slice(hash.finalize().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)
     }
 

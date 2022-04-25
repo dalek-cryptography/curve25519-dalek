@@ -45,8 +45,11 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "2"
+curve25519-dalek = "3"
 ```
+
+The `3.x` series has API almost entirely unchanged from the `2.x` series,
+except that the `digest` version was updated.
 
 The `2.x` series has API almost entirely unchanged from the `1.x` series,
 except that:

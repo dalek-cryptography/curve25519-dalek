@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Module for common traits.
@@ -45,6 +46,21 @@ where
     fn is_identity(&self) -> bool {
         self.ct_eq(&T::identity()).unwrap_u8() == 1u8
     }
+}
+
+/// A precomputed table of basepoints, for optimising scalar multiplications.
+pub trait BasepointTable {
+    /// The type of point contained within this table.
+    type Point;
+
+    /// Generate a new precomputed basepoint table from the given basepoint.
+    fn create(basepoint: &Self::Point) -> Self;
+
+    /// Retrieve the original basepoint from this table.
+    fn basepoint(&self) -> Self::Point;
+
+    /// Multiply a `scalar` by this precomputed basepoint table, in constant time.
+    fn basepoint_mul(&self, scalar: &Scalar) -> Self::Point;
 }
 
 /// A trait for constant-time multiscalar multiplication without precomputation.

@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Scalar multiplication on the Montgomery form of Curve25519.
@@ -50,7 +51,7 @@
 
 use core::ops::{Mul, MulAssign};
 
-use constants::APLUS2_OVER_FOUR;
+use constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use edwards::{CompressedEdwardsY, EdwardsPoint};
 use field::FieldElement;
 use scalar::Scalar;
@@ -58,8 +59,8 @@ use scalar::Scalar;
 use traits::Identity;
 
 use subtle::Choice;
-use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
+use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 use zeroize::Zeroize;
 
@@ -92,6 +93,13 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
+
+impl Identity for MontgomeryPoint {
+    /// Return the group identity element, which has order 4.
+    fn identity() -> MontgomeryPoint {
+        MontgomeryPoint([0u8; 32])
+    }
+}
 
 impl Zeroize for MontgomeryPoint {
     fn zeroize(&mut self) {
@@ -154,6 +162,35 @@ impl MontgomeryPoint {
 
         CompressedEdwardsY(y_bytes).decompress()
     }
+}
+
+/// Perform the Elligator2 mapping to a Montgomery point.
+///
+/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
+//
+// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
+//      draft gets into a more polished/accepted state.
+#[allow(unused)]
+pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
+    let one = FieldElement::one();
+    let d_1 = &one + &r_0.square2(); /* 2r^2 */
+
+    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
+
+    let d_sq = &d.square();
+    let au = &MONTGOMERY_A * &d;
+
+    let inner = &(d_sq + &au) + &one;
+    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
+
+    let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
+
+    let zero = FieldElement::zero();
+    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
+    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
+    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
+
+    MontgomeryPoint(u.to_bytes())
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -315,10 +352,24 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 
 #[cfg(test)]
 mod test {
-    use constants;
     use super::*;
+    use constants;
+    use core::convert::TryInto;
 
     use rand_core::OsRng;
+
+    #[test]
+    fn identity_in_different_coordinates() {
+        let id_projective = ProjectivePoint::identity();
+        let id_montgomery = id_projective.to_affine();
+
+        assert!(id_montgomery == MontgomeryPoint::identity());
+    }
+
+    #[test]
+    fn identity_in_different_models() {
+        assert!(EdwardsPoint::identity().to_montgomery() == MontgomeryPoint::identity());
+    }
 
     #[test]
     #[cfg(feature = "serde")]
@@ -396,8 +447,33 @@ mod test {
         let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = s * p_edwards;
-        let result   = s * p_montgomery;
+        let result = s * p_montgomery;
 
         assert_eq!(result, expected.to_montgomery())
+    }
+
+    const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
+        0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
+        0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
+        0xf4, 0x6e,
+    ];
+
+    #[test]
+    #[cfg(feature = "std")] // Vec
+    fn montgomery_elligator_correct() {
+        let bytes: std::vec::Vec<u8> = (0u8..32u8).collect();
+        let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
+
+        let fe = FieldElement::from_bytes(&bits_in);
+        let eg = elligator_encode(&fe);
+        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+    }
+
+    #[test]
+    fn montgomery_elligator_zero_zero() {
+        let zero = [0u8; 32];
+        let fe = FieldElement::from_bytes(&zero);
+        let eg = elligator_encode(&fe);
+        assert_eq!(eg.to_bytes(), zero);
     }
 }

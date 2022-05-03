@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! Pluggable implementations for different architectures.
@@ -36,11 +37,13 @@
 #[cfg(not(any(
     feature = "u32_backend",
     feature = "u64_backend",
+    feature = "fiat_u32_backend",
+    feature = "fiat_u64_backend",
     feature = "simd_backend",
 )))]
 compile_error!(
     "no curve25519-dalek backend cargo feature enabled! \
-     please enable one of: u32_backend, u64_backend, simd_backend"
+     please enable one of: u32_backend, u64_backend, fiat_u32_backend, fiat_u64_backend, simd_backend"
 );
 
 pub mod serial;

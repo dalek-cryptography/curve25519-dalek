@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 // We allow non snake_case names because coordinates in projective space are
@@ -176,6 +177,8 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
+
+use zeroize::Zeroize;
 
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
@@ -1075,6 +1078,22 @@ impl Debug for RistrettoPoint {
         let coset = self.coset4();
         write!(f, "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])
+    }
+}
+
+// ------------------------------------------------------------------------
+// Zeroize traits
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedRistretto {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+impl Zeroize for RistrettoPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

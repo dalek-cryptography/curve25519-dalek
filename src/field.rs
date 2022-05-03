@@ -1,7 +1,8 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis agora lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
@@ -31,6 +32,21 @@ use subtle::ConstantTimeEq;
 
 use constants;
 use backend;
+
+#[cfg(feature = "fiat_u32_backend")]
+pub use backend::serial::fiat_u32::field::*;
+#[cfg(feature = "fiat_u64_backend")]
+pub use backend::serial::fiat_u64::field::*;
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
+/// Using formally-verified field arithmetic from fiat-crypto
+#[cfg(feature = "fiat_u32_backend")]
+pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+#[cfg(feature = "fiat_u64_backend")]
+pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
 
 #[cfg(feature = "u64_backend")]
 pub use backend::serial::u64::field::*;

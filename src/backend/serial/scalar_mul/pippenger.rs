@@ -58,7 +58,7 @@ use prelude::*;
 /// However, if `w` is too big and `n` is not too big, then `(2^w/2)*A` could dominate.
 /// Therefore, the optimal choice of `w` grows slowly as `n` grows.
 ///
-/// This algorithm is adapted from section 4 of https://eprint.iacr.org/2012/549.pdf.
+/// This algorithm is adapted from section 4 of <https://eprint.iacr.org/2012/549.pdf>.
 pub struct Pippenger;
 
 #[cfg(any(feature = "alloc", feature = "std"))]

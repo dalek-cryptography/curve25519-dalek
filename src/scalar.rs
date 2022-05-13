@@ -1,7 +1,8 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // Portions Copyright 2017 Brian Smith
 // See LICENSE for licensing information.
 //
@@ -102,8 +103,8 @@
 //!
 //! // Streaming data into a hash object
 //! let mut hasher = Sha512::default();
-//! hasher.input(b"Abolish ");
-//! hasher.input(b"ICE");
+//! hasher.update(b"Abolish ");
+//! hasher.update(b"ICE");
 //! let a2 = Scalar::from_hash(hasher);
 //!
 //! assert_eq!(a, a2);
@@ -169,6 +170,15 @@ use constants;
 ///
 /// This is a type alias for one of the scalar types in the `backend`
 /// module.
+#[cfg(feature = "fiat_u32_backend")]
+type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
+#[cfg(feature = "fiat_u64_backend")]
+type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
+
+/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+///
+/// This is a type alias for one of the scalar types in the `backend`
+/// module.
 #[cfg(feature = "u64_backend")]
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
@@ -182,7 +192,7 @@ type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Hash)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -243,7 +253,7 @@ impl Scalar {
     /// This function is intended for applications like X25519 which
     /// require specific bit-patterns when performing scalar
     /// multiplication.
-    pub fn from_bits(bytes: [u8; 32]) -> Scalar {
+    pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar{bytes};
         // Ensure that s < 2^255 by masking the high bit
         s.bytes[31] &= 0b0111_1111;
@@ -416,10 +426,10 @@ impl<'de> Deserialize<'de> for Scalar {
                 let mut bytes = [0u8; 32];
                 for i in 0..32 {
                     bytes[i] = seq.next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Scalar::from_canonical_bytes(bytes)
-                    .ok_or(serde::de::Error::custom(
+                    .ok_or_else(|| serde::de::Error::custom(
                         &"scalar was not canonically encoded"
                     ))
             }
@@ -588,7 +598,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
-        hash.input(input);
+        hash.update(input);
         Scalar::from_hash(hash)
     }
 
@@ -630,7 +640,7 @@ impl Scalar {
         where D: Digest<OutputSize = U64>
     {
         let mut output = [0u8; 64];
-        output.copy_from_slice(hash.result().as_slice());
+        output.copy_from_slice(hash.finalize().as_slice());
         Scalar::from_bytes_mod_order_wide(&output)
     }
 
@@ -989,10 +999,12 @@ impl Scalar {
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
     pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-        debug_assert!(w >= 6);
+        debug_assert!(w >= 4);
         debug_assert!(w <= 8);
 
         let digits_count = match w {
+            4 => (256 + w - 1)/w as usize,
+            5 => (256 + w - 1)/w as usize,
             6 => (256 + w - 1)/w as usize,
             7 => (256 + w - 1)/w as usize,
             // See comment in to_radix_2w on handling the terminal carry.
@@ -1000,18 +1012,17 @@ impl Scalar {
             _ => panic!("invalid radix parameter"),
         };
 
-        debug_assert!(digits_count <= 43);
+        debug_assert!(digits_count <= 64);
         digits_count
     }
 
-    /// Creates a representation of a Scalar in radix 64, 128 or 256 for use with the Pippenger algorithm.
+    /// Creates a representation of a Scalar in radix 32, 64, 128 or 256 for use with the Pippenger algorithm.
     /// For lower radix, use `to_radix_16`, which is used by the Straus multi-scalar multiplication.
     /// Higher radixes are not supported to save cache space. Radix 256 is near-optimal even for very
     /// large inputs.
     ///
-    /// Radix below 64 or above 256 is prohibited.
+    /// Radix below 32 or above 256 is prohibited.
     /// This method returns digits in a fixed-sized array, excess digits are zeroes.
-    /// The second returned value is the number of digits.
     ///
     /// ## Scalar representation
     ///
@@ -1022,9 +1033,13 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 43] {
-        debug_assert!(w >= 6);
+    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 64] {
+        debug_assert!(w >= 4);
         debug_assert!(w <= 8);
+
+        if w == 4 {
+            return self.to_radix_16();
+        }
 
         use byteorder::{ByteOrder, LittleEndian};
 
@@ -1036,7 +1051,7 @@ impl Scalar {
         let window_mask: u64 = radix - 1;
 
         let mut carry = 0u64;
-        let mut digits = [0i8; 43];
+        let mut digits = [0i8; 64];
         let digits_count = (256 + w - 1)/w as usize;
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.

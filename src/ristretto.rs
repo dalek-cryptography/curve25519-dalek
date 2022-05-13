@@ -1,11 +1,12 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 // We allow non snake_case names because coordinates in projective space are
@@ -177,6 +178,8 @@ use subtle::ConditionallySelectable;
 use subtle::ConditionallyNegatable;
 use subtle::ConstantTimeEq;
 
+use zeroize::Zeroize;
+
 use edwards::EdwardsBasepointTable;
 use edwards::EdwardsPoint;
 
@@ -208,7 +211,7 @@ use backend::vector::scalar_mul;
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedRistretto {
@@ -377,11 +380,11 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 let mut bytes = [0u8; 32];
                 for i in 0..32 {
                     bytes[i] = seq.next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 CompressedRistretto(bytes)
                     .decompress()
-                    .ok_or(serde::de::Error::custom("decompression failed"))
+                    .ok_or_else(|| serde::de::Error::custom("decompression failed"))
             }
         }
 
@@ -409,7 +412,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 let mut bytes = [0u8; 32];
                 for i in 0..32 {
                     bytes[i] = seq.next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Ok(CompressedRistretto(bytes))
             }
@@ -689,7 +692,7 @@ impl RistrettoPoint {
         where D: Digest<OutputSize = U64> + Default
     {
         let mut hash = D::default();
-        hash.input(input);
+        hash.update(input);
         RistrettoPoint::from_hash(hash)
     }
 
@@ -702,7 +705,7 @@ impl RistrettoPoint {
         where D: Digest<OutputSize = U64> + Default
     {
         // dealing with generic arrays is clumsy, until const generics land
-        let output = hash.result();
+        let output = hash.finalize();
         let mut output_bytes = [0u8; 64];
         output_bytes.copy_from_slice(&output.as_slice());
 
@@ -1075,6 +1078,22 @@ impl Debug for RistrettoPoint {
         let coset = self.coset4();
         write!(f, "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
                coset[0], coset[1], coset[2], coset[3])
+    }
+}
+
+// ------------------------------------------------------------------------
+// Zeroize traits
+// ------------------------------------------------------------------------
+
+impl Zeroize for CompressedRistretto {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+impl Zeroize for RistrettoPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
     }
 }
 

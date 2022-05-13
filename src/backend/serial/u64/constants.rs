@@ -1,18 +1,19 @@
 // -*- mode: rust; -*-
 //
 // This file is part of curve25519-dalek.
-// Copyright (c) 2016-2019 Isis Lovecruft, Henry de Valence
+// Copyright (c) 2016-2021 isis lovecruft
+// Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
 //
 // Authors:
-// - Isis Agora Lovecruft <isis@patternsinthevoid.net>
+// - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
 use backend::serial::curve_models::AffineNielsPoint;
-use backend::serial::u64::field::FieldElement51;
-use backend::serial::u64::scalar::Scalar52;
+use super::field::FieldElement51;
+use super::scalar::Scalar52;
 use edwards::{EdwardsBasepointTable, EdwardsPoint};
 use window::{LookupTable, NafLookupTable8};
 
@@ -90,6 +91,21 @@ pub(crate) const SQRT_M1: FieldElement51 = FieldElement51([
 
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub(crate) const APLUS2_OVER_FOUR: FieldElement51 = FieldElement51([121666, 0, 0, 0, 0]);
+
+/// `MONTGOMERY_A` is equal to 486662, which is a constant of the curve equation
+/// for Curve25519 in its Montgomery form. (This is used internally within the
+/// Elligator map.)
+pub(crate) const MONTGOMERY_A: FieldElement51 = FieldElement51([486662, 0, 0, 0, 0]);
+
+/// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
+/// Elligator map.)
+pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51([
+    2251799813198567,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+    2251799813685247,
+]);
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52([

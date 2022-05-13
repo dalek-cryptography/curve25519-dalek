@@ -443,7 +443,6 @@ mod test {
     fn from_bytes_wide() {
         let bignum = [255u8; 64]; // 2^512 - 1
         let reduced = Scalar52::from_bytes_wide(&bignum);
-        println!("{:?}", reduced);
         for i in 0..5 {
             assert!(reduced[i] == C[i]);
         }

@@ -23,7 +23,7 @@ use ristretto::RistrettoPoint;
 
 
 impl RistrettoPoint {
-
+    /// Directly encode 253 bits as a RistrettoPoint, using Elligator
     pub fn from_uniform_bytes_single_elligator(bytes: &[u8; 32]) -> RistrettoPoint {
         RistrettoPoint::elligator_ristretto_flavor(&FieldElement::from_bytes(&bytes))
     }
@@ -72,6 +72,7 @@ impl RistrettoPoint {
         }
     }
 
+    /// Directly encode 253 bits as a RistrettoPoint, using Elligator
     pub fn encode_253_bits(data: &[u8; 32]) -> Option<RistrettoPoint>
     {
         if data.len() != 32 {
@@ -83,7 +84,7 @@ impl RistrettoPoint {
         Some(p)
     }
 
-
+    /// Directly decode a RistrettoPoint as 253 bits, using Elligator
     pub fn decode_253_bits(&self) -> (u8, [[u8; 32]; 8]) 
     {
         let mut ret = [ [0u8; 32]; 8];

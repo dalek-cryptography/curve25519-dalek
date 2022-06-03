@@ -72,3 +72,6 @@ simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # DEPRECATED: this is now an alias for `simd_backend` and may be removed
 # in some future release.
 avx2_backend = ["simd_backend"]
+
+# Expose unstable internals, may be required for FFI use
+yolo_crypto = []

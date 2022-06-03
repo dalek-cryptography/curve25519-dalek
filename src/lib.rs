@@ -303,12 +303,17 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+// Finite field arithmetic mod p = 2^255 - 19
+#[cfg(feature = "yolo_crypto")]
+pub mod field;
+
+#[cfg(not(feature = "yolo_crypto"))]
+mod field;
+
+
 //------------------------------------------------------------------------
 // curve25519-dalek internal modules
 //------------------------------------------------------------------------
-
-// Finite field arithmetic mod p = 2^255 - 19
-pub(crate) mod field;
 
 // Arithmetic backends (using u32, u64, etc) live here
 pub(crate) mod backend;

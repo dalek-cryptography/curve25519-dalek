@@ -44,9 +44,9 @@ pub use backend::serial::fiat_u64::field::*;
 /// implementations.
 /// Using formally-verified field arithmetic from fiat-crypto
 #[cfg(feature = "fiat_u32_backend")]
-pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+pub use backend::serial::fiat_u32::field::{FieldElement2625 as FieldElement};
 #[cfg(feature = "fiat_u64_backend")]
-pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+pub use backend::serial::fiat_u64::field::{FieldElement51 as FieldElement};
 
 #[cfg(feature = "u64_backend")]
 pub use backend::serial::u64::field::*;
@@ -56,7 +56,7 @@ pub use backend::serial::u64::field::*;
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u64_backend")]
-pub type FieldElement = backend::serial::u64::field::FieldElement51;
+pub use backend::serial::u64::field::{FieldElement51 as FieldElement};
 
 #[cfg(feature = "u32_backend")]
 pub use backend::serial::u32::field::*;
@@ -66,7 +66,7 @@ pub use backend::serial::u32::field::*;
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations.
 #[cfg(feature = "u32_backend")]
-pub type FieldElement = backend::serial::u32::field::FieldElement2625;
+pub use backend::serial::u32::field::{FieldElement2625 as FieldElement};
 
 impl Eq for FieldElement {}
 
@@ -82,6 +82,27 @@ impl ConstantTimeEq for FieldElement {
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> Choice {
         self.to_bytes().ct_eq(&other.to_bytes())
+    }
+}
+
+#[cfg(feature = "yolo_crypto")]
+impl FieldElement {
+    /// Create a FieldElement from a raw u32 limb.
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    #[cfg(feature = "u32_backend")]
+    pub const fn from_raw_u32(raw: [u32; 10]) -> Self {
+        Self(raw)
+    }
+
+    /// Create a FieldElement from a raw u32 limb
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    #[cfg(feature = "u32_backend")]
+    pub const fn to_raw_u32(&self) -> [u32; 10] {
+        self.0
     }
 }
 

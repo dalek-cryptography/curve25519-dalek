@@ -262,6 +262,30 @@ impl Scalar {
     }
 }
 
+#[cfg(feature="yolo_crypto")]
+impl Scalar {
+    /// Construct a `Scalar` from an unpacked [u32; 9] array, 
+    /// provided for FFI object compatibility
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    #[cfg(feature = "u32_backend")]
+    pub unsafe fn from_unpacked_u32(unpacked: [u32; 9]) -> Scalar {
+        use backend::serial::u32::scalar::Scalar29;
+        Scalar29(unpacked).pack()
+    }
+
+    /// Export unpacked [u32; 9] array from a `Scalar`, 
+    /// provided for FFI object compatibility
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    #[cfg(feature = "u32_backend")]
+    pub unsafe fn to_unpacked_u32(&self) -> [u32; 9] {
+        self.unpack().0
+    }
+}
+
 impl Debug for Scalar {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)

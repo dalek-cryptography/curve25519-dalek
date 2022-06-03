@@ -326,6 +326,41 @@ pub struct EdwardsPoint {
     pub(crate) T: FieldElement,
 }
 
+#[cfg(feature = "yolo_crypto")]
+impl EdwardsPoint {
+
+    #[cfg(feature = "u32_backend")]
+    /// Construct an [`EdwardsPoint`] from raw (X, Y, Z, T) [u32; 10] parts, 
+    /// provided for FFI object compatibility
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    pub unsafe fn try_from_raw_u32(x: [u32; 10], y: [u32; 10], z: [u32; 10], t: [u32; 10]) -> Result<Self, ()> {
+        let s = Self{
+            X: FieldElement{ 0: x },
+            Y: FieldElement{ 0: y },
+            Z: FieldElement{ 0: z },
+            T: FieldElement{ 0: t },
+        };
+        
+        // TODO(@isislovecruft): could we have useful safety checks here?
+        // TODO: also there's probably room to refactor the backends to be consty now?
+        let _ = &s;
+        
+        Ok(s)
+    }
+
+    #[cfg(feature = "u32_backend")]
+    /// Copy raw (X, Y, Z, T) [u32; 10] parts from edwards point, 
+    /// provided for FFI object compatibility
+    /// 
+    /// NOTE THAT BIT REPRESENTATIONS ARE NOT STABLE 
+    /// AND SHOULD NOT BE USED OUTSIDE THIS LIBRARY
+    pub unsafe fn to_raw_u32(&self) -> ([u32; 10], [u32; 10], [u32; 10], [u32; 10]) {
+        (self.X.0, self.Y.0, self.Z.0, self.T.0)
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------

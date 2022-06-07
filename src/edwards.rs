@@ -550,6 +550,21 @@ impl EdwardsPoint {
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
     }
+
+    /// Expose elligator encoding bytes to the group
+    pub fn bytes_to_curve(bytes: &[u8; 32]) -> EdwardsPoint
+    {
+        let sign_bit = (bytes[31] & 0x80) >> 7;
+
+        let fe = FieldElement::from_bytes(&bytes);
+
+        let M1 = crate::montgomery::elligator_encode(&fe);
+        let E1_opt = M1.to_edwards(sign_bit);
+
+        E1_opt
+            .expect("Montgomery conversion to Edwards point in Elligator failed")
+            .mul_by_cofactor()
+    }
 }
 
 // ------------------------------------------------------------------------

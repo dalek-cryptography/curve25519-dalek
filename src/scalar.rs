@@ -614,8 +614,9 @@ impl Scalar {
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// extern crate sha2;
+    /// extern crate digest;
     ///
-    /// use sha2::Digest;
+    /// use digest::{Digest, Update};
     /// use sha2::Sha512;
     ///
     /// # fn main() {

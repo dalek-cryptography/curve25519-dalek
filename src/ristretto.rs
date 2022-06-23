@@ -1329,8 +1329,9 @@ mod test {
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng;
 
-        let points: Vec<RistrettoPoint> =
+        let mut points: Vec<RistrettoPoint> =
             (0..1024).map(|_| RistrettoPoint::random(&mut rng)).collect();
+        points[500] = RistrettoPoint::identity();
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
 

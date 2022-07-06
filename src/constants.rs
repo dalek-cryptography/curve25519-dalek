@@ -90,6 +90,7 @@ pub const BASEPOINT_ORDER: Scalar = Scalar{
 
 use ristretto::RistrettoBasepointTable;
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
+#[cfg(feature="basepoint_tables")]
 pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable
     = RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
 

@@ -55,7 +55,7 @@ fiat-crypto = { version = "0.1.6", optional = true}
 
 [features]
 nightly = ["subtle/nightly"]
-default = ["std", "u64_backend"]
+default = ["std", "u64_backend", "basepoint_tables"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 
@@ -72,3 +72,5 @@ simd_backend = ["nightly", "u64_backend", "packed_simd"]
 # DEPRECATED: this is now an alias for `simd_backend` and may be removed
 # in some future release.
 avx2_backend = ["simd_backend"]
+# Enable use of basepoint tables for accelerated operations
+basepoint_tables = []

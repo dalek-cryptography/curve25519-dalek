@@ -55,7 +55,7 @@ fiat-crypto = { version = "0.1.6", optional = true}
 
 [features]
 nightly = ["subtle/nightly"]
-default = ["std", "u64_backend"]
+default = ["std", "u64_backend", "basepoint_tables"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
 
@@ -75,3 +75,5 @@ avx2_backend = ["simd_backend"]
 
 # Expose unstable internals, may be required for FFI use
 yolo_crypto = []
+
+basepoint_tables = []

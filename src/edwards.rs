@@ -175,6 +175,12 @@ impl Debug for CompressedEdwardsY {
     }
 }
 
+impl AsRef<[u8]> for CompressedEdwardsY {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub fn as_bytes(&self) -> &[u8; 32] {
@@ -551,12 +557,12 @@ impl EdwardsPoint {
             .mul_by_cofactor()
     }
 
-    /// Expose elligator encoding bytes to the group
+    /// Directly encode bytes to the curve. Same as [`hash_from_bytes`], without hashing.
     pub fn bytes_to_curve(bytes: &[u8; 32]) -> EdwardsPoint
     {
         let sign_bit = (bytes[31] & 0x80) >> 7;
 
-        let fe = FieldElement::from_bytes(&bytes);
+        let fe = FieldElement::from_bytes(bytes);
 
         let M1 = crate::montgomery::elligator_encode(&fe);
         let E1_opt = M1.to_edwards(sign_bit);

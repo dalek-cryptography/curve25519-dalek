@@ -1,13 +1,14 @@
 [package]
-name = "curve25519-dalek"
+name = "curve25519-entropic"
 # Before incrementing:
 # - update CHANGELOG
 # - update html_root_url
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "3.2.0"
+version = "3.2.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
-           "Henry de Valence <hdevalence@hdevalence.ca>"]
+           "Henry de Valence <hdevalence@hdevalence.ca>",
+           "Amit Prasad <mail@amitprasad.dev>"]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/curve25519-dalek"
@@ -27,8 +28,8 @@ exclude = [
 # rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
 features = ["nightly", "simd_backend"]
 
-[badges]
-travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
+# [badges]
+# travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
 sha2 = { version = "0.9", default-features = false }

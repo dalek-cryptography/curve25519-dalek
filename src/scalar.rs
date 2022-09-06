@@ -150,7 +150,7 @@ use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 use rand_core::{CryptoRng, RngCore};
 
@@ -163,8 +163,8 @@ use subtle::ConstantTimeEq;
 
 use zeroize::Zeroize;
 
-use backend;
-use constants;
+use crate::backend;
+use crate::constants;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
@@ -613,6 +613,7 @@ impl Scalar {
     /// ```
     /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
+    /// # use crate::curve25519_dalek::digest::Update;
     /// extern crate sha2;
     ///
     /// use sha2::Digest;

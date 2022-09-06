@@ -13,12 +13,12 @@
 
 use core::borrow::Borrow;
 
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::VartimeMultiscalarMul;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::VartimeMultiscalarMul;
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 /// Implements a version of Pippenger's algorithm.
 ///
@@ -71,7 +71,7 @@ impl VartimeMultiscalarMul for Pippenger {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use traits::Identity;
+        use crate::traits::Identity;
 
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
@@ -165,8 +165,7 @@ impl VartimeMultiscalarMul for Pippenger {
 #[cfg(test)]
 mod test {
     use super::*;
-    use constants;
-    use scalar::Scalar;
+    use crate::scalar::Scalar;
 
     #[test]
     fn test_vartime_pippenger() {
@@ -175,7 +174,7 @@ mod test {
         let x = Scalar::from(2128506u64).invert();
         let y = Scalar::from(4443282u64).invert();
         let points: Vec<_> = (0..n)
-            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
+            .map(|i| crate::constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
             .collect();
         let scalars: Vec<_> = (0..n)
             .map(|i| x + (Scalar::from(i as u64) * y)) // fast way to make ~random but deterministic scalars

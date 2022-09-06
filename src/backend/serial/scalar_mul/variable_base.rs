@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
-use traits::Identity;
-use scalar::Scalar;
-use edwards::EdwardsPoint;
-use backend::serial::curve_models::ProjectiveNielsPoint;
-use window::LookupTable;
+use crate::traits::Identity;
+use crate::scalar::Scalar;
+use crate::edwards::EdwardsPoint;
+use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
 pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {

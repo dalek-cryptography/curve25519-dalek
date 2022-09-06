@@ -30,8 +30,8 @@ use subtle::ConditionallyNegatable;
 use subtle::Choice;
 use subtle::ConstantTimeEq;
 
-use constants;
-use backend;
+use super::constants;
+use super::backend;
 
 #[cfg(feature = "fiat_u32_backend")]
 pub use backend::serial::fiat_u32::field::*;
@@ -293,7 +293,7 @@ impl FieldElement {
 
 #[cfg(test)]
 mod test {
-    use field::*;
+    use super::*;
     use subtle::ConditionallyNegatable;
 
     /// Random element a of GF(2^255-19), from Sage

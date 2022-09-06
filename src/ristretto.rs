@@ -170,8 +170,8 @@ use rand_core::{CryptoRng, RngCore};
 use digest::generic_array::typenum::U64;
 use digest::Digest;
 
-use constants;
-use field::FieldElement;
+use crate::constants;
+use crate::field::FieldElement;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -180,23 +180,23 @@ use subtle::ConstantTimeEq;
 
 use zeroize::Zeroize;
 
-use edwards::EdwardsBasepointTable;
-use edwards::EdwardsPoint;
+use crate::edwards::EdwardsBasepointTable;
+use crate::edwards::EdwardsPoint;
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
-use scalar::Scalar;
+use crate::scalar::Scalar;
 
-use traits::Identity;
+use crate::traits::Identity;
 #[cfg(any(feature = "alloc", feature = "std"))]
-use traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
-use backend::serial::scalar_mul;
+use crate::backend::serial::scalar_mul;
 #[cfg(all(
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
@@ -624,7 +624,7 @@ impl RistrettoPoint {
         let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
         let s_sq = s.square();
 
-        use backend::serial::curve_models::CompletedPoint;
+        use crate::backend::serial::curve_models::CompletedPoint;
 
         // The conversion from W_i is exactly the conversion from P1xP1.
         RistrettoPoint(CompletedPoint{
@@ -1105,10 +1105,10 @@ impl Zeroize for RistrettoPoint {
 mod test {
     use rand_core::OsRng;
 
-    use scalar::Scalar;
-    use constants;
-    use edwards::CompressedEdwardsY;
-    use traits::{Identity};
+    //use crate::scalar::Scalar;
+    //use constants;
+    use crate::edwards::CompressedEdwardsY;
+    //use cratetraits::{Identity};
     use super::*;
 
     #[test]
@@ -1343,7 +1343,7 @@ mod test {
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
-        let B = &::constants::RISTRETTO_BASEPOINT_TABLE;
+        let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1370,7 +1370,7 @@ mod test {
             &dynamic_points,
         );
 
-        use traits::VartimeMultiscalarMul;
+        use crate::traits::VartimeMultiscalarMul;
         let Q = RistrettoPoint::vartime_multiscalar_mul(
             static_scalars.iter().chain(dynamic_scalars.iter()),
             static_points.iter().chain(dynamic_points.iter()),

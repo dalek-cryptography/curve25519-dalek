@@ -149,6 +149,8 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
+use::num_traits::{Zero, One};
+
 #[allow(unused_imports)]
 use prelude::*;
 
@@ -287,6 +289,24 @@ impl Index<usize> for Scalar {
     /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
     fn index(&self, _index: usize) -> &u8 {
         &(self.bytes[_index])
+    }
+}
+
+impl Zero for Scalar {
+    fn zero() -> Self {
+	Scalar::zero()
+    }
+    fn is_zero(&self) -> bool {
+	self == &Scalar::zero()
+    }
+}
+
+impl One for Scalar {
+    fn one() -> Self {
+	Scalar::one()
+    }
+    fn is_one(&self) -> bool {
+	self == &Scalar::one()
     }
 }
 

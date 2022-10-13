@@ -138,7 +138,6 @@
 //!
 //! The resulting `Scalar` has exactly the specified bit pattern,
 //! **except for the highest bit, which will be set to 0**.
-
 use core::borrow::Borrow;
 use core::cmp::{Eq, PartialEq};
 use core::fmt::Debug;
@@ -151,6 +150,7 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Div, DivAssign};
 
 use::num_traits::{Zero, One};
+use bitvec::prelude::*;
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -311,10 +311,39 @@ impl One for Scalar {
     }
 }
 
+fn square_and_multiply(x: Scalar, n: Scalar) -> Scalar {
+    let mut ret = Scalar::zero();
+
+    let mut bitvec: Vec<bool> = Vec::new();
+    for byte in n.as_bytes() {
+        let bits = byte.view_bits::<Lsb0>();
+        for bit in bits {
+            bitvec.push(*bit);
+        }
+    }
+    //println!("{:?}", bitvec);
+    let mut square = x;
+    //for (i,bit) in bitvec.iter().enumerate() {
+    for bit in bitvec {
+        //println!("bit {} square is {:?}", i, square);                                                                  
+        if bit {
+            //println!("bit {} is {}", i, *bit);                                                                         
+            //let old = ret;
+            ret += square;
+            //println!("{:?} +\n{:?} =\n{:?}", old.as_bytes(), square.as_bytes(), ret.as_bytes());                       
+        }
+        square *= square;
+    }
+    //println!("{:?}", square);                                                                                          
+    ret
+}
+
 impl Div<Scalar> for Scalar {
     type Output = Scalar;
     fn div(self, q: Scalar) -> Self::Output {
-	Scalar::one()
+	let q1 = square_and_multiply(q, constants::BASEPOINT_ORDER - Scalar::from(2 as u8));
+	println!("inverse of {:?} is {:?}", q, q1);
+	self * q1
     }
 }
 

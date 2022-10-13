@@ -150,7 +150,6 @@ use core::ops::{Sub, SubAssign};
 use core::ops::{Div, DivAssign};
 
 use::num_traits::{Zero, One};
-//use bitvec::prelude::*;
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -315,7 +314,6 @@ impl Div<Scalar> for Scalar {
     type Output = Scalar;
     fn div(self, q: Scalar) -> Self::Output {
 	let q1 = q.invert();
-	println!("inverse of {:?} is {:?}", q, q1);
 	self * q1
     }
 }
@@ -323,7 +321,6 @@ impl Div<Scalar> for Scalar {
 impl DivAssign<Scalar> for Scalar {
     fn div_assign(&mut self, q: Scalar) {
 	let q1 = q.invert();
-	println!("inverse of {:?} is {:?}", q, q1);
 	*self = *self * q1;
     }
 }

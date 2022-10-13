@@ -53,7 +53,6 @@ packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_
 zeroize = { version = ">=1, <1.4", default-features = false }
 fiat-crypto = { version = "0.1.6", optional = true}
 num-traits = "0.2"
-bitvec = "1.0.1"
 
 [features]
 nightly = ["subtle/nightly"]

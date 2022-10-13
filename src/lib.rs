@@ -265,7 +265,6 @@ extern crate byteorder;
 pub extern crate digest;
 extern crate rand_core;
 extern crate num_traits;
-extern crate bitvec;
 extern crate zeroize;
 
 #[cfg(any(feature = "fiat_u64_backend", feature = "fiat_u32_backend"))]

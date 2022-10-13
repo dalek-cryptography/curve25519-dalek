@@ -311,9 +311,9 @@ impl One for Scalar {
     }
 }
 
-impl<'b> Div<&'b Scalar> for Scalar {
+impl Div<Scalar> for Scalar {
     type Output = Scalar;
-    fn div(self, q: &Scalar) -> Self::Output {
+    fn div(self, q: Scalar) -> Self::Output {
 	Scalar::one()
     }
 }

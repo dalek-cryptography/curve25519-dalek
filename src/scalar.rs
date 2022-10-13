@@ -148,6 +148,7 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use core::ops::{Div, DivAssign};
 
 use::num_traits::{Zero, One};
 
@@ -307,6 +308,13 @@ impl One for Scalar {
     }
     fn is_one(&self) -> bool {
 	self == &Scalar::one()
+    }
+}
+
+impl<'b> Div<&'b Scalar> for Scalar {
+    type Output = Scalar;
+    fn div(self, q: &Scalar) -> Self::Output {
+	Scalar::one()
     }
 }
 

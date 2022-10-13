@@ -263,6 +263,12 @@ impl Scalar {
 
         s
     }
+
+    /// Find the inverse module the group order of the passed scalar
+    pub fn inverse(&self) -> Self {
+	let exp = constants::BASEPOINT_ORDER - Scalar::from(2 as u8);
+	square_and_multiply(self, &exp)
+    }
 }
 
 impl Debug for Scalar {
@@ -311,7 +317,7 @@ impl One for Scalar {
     }
 }
 
-fn square_and_multiply(x: Scalar, n: Scalar) -> Scalar {
+fn square_and_multiply(x: &Scalar, n: &Scalar) -> Scalar {
     let mut ret = Scalar::zero();
 
     let mut bitvec: Vec<bool> = Vec::new();
@@ -322,7 +328,7 @@ fn square_and_multiply(x: Scalar, n: Scalar) -> Scalar {
         }
     }
     //println!("{:?}", bitvec);
-    let mut square = x;
+    let mut square = *x;
     //for (i,bit) in bitvec.iter().enumerate() {
     for bit in bitvec {
         //println!("bit {} square is {:?}", i, square);                                                                  
@@ -341,9 +347,17 @@ fn square_and_multiply(x: Scalar, n: Scalar) -> Scalar {
 impl Div<Scalar> for Scalar {
     type Output = Scalar;
     fn div(self, q: Scalar) -> Self::Output {
-	let q1 = square_and_multiply(q, constants::BASEPOINT_ORDER - Scalar::from(2 as u8));
+	let q1 = q.inverse();
 	println!("inverse of {:?} is {:?}", q, q1);
 	self * q1
+    }
+}
+
+impl DivAssign<Scalar> for Scalar {
+    fn div_assign(&mut self, q: Scalar) {
+	let q1 = q.inverse();
+	println!("inverse of {:?} is {:?}", q, q1);
+	*self = *self * q1;
     }
 }
 

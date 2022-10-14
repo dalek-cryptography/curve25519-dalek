@@ -159,7 +159,7 @@
 //! https://ristretto.group/
 
 use core::borrow::Borrow;
-use core::fmt::Debug;
+use core::fmt::{Debug, Display};
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
@@ -430,6 +430,14 @@ impl Zero for RistrettoPoint {
     }
     fn is_zero(&self) -> bool {
 	self == &RistrettoPoint::identity()
+    }
+}
+
+impl Display for RistrettoPoint {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+	let data = hex::encode(self.compress().as_bytes());
+	write!(f, "{}", data)?;
+	Ok(())
     }
 }
 

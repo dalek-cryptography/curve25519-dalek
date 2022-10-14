@@ -165,6 +165,8 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+use::num_traits::Zero;
+
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -419,6 +421,15 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
         }
 
         deserializer.deserialize_tuple(32, CompressedRistrettoVisitor)
+    }
+}
+
+impl Zero for RistrettoPoint {
+    fn zero() -> Self {
+	RistrettoPoint::identity()
+    }
+    fn is_zero(&self) -> bool {
+	self == &RistrettoPoint::identity()
     }
 }
 

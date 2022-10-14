@@ -272,9 +272,8 @@ impl Debug for Scalar {
 
 impl Display for Scalar {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-	for byte in self.as_bytes() {
-            write!(f, "{:#02x}", byte)?;
-	}
+	let data = hex::encode(self.bytes);
+        write!(f, "{}", data)?;
 	Ok(())
     }
 }

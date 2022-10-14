@@ -266,6 +266,7 @@ pub extern crate digest;
 extern crate rand_core;
 extern crate num_traits;
 extern crate zeroize;
+extern crate hex;
 
 #[cfg(any(feature = "fiat_u64_backend", feature = "fiat_u32_backend"))]
 extern crate fiat_crypto;
@@ -273,8 +274,7 @@ extern crate fiat_crypto;
 // Used for traits related to constant-time code.
 extern crate subtle;
 
-#[cfg(all(test, feature = "serde"))]
-extern crate bincode;
+#[cfg(all(test, feature = "serde"))]extern crate bincode;
 #[cfg(feature = "serde")]
 extern crate serde;
 

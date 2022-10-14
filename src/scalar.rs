@@ -139,8 +139,8 @@
 //! The resulting `Scalar` has exactly the specified bit pattern,
 //! **except for the highest bit, which will be set to 0**.
 use core::borrow::Borrow;
-use core::cmp::{Eq, PartialEq};
-use core::fmt::Debug;
+use core::cmp::{Eq, Ord, PartialEq};
+use core::fmt::{Debug, Display};
 use core::iter::{Product, Sum};
 use core::ops::Index;
 use core::ops::Neg;
@@ -194,7 +194,7 @@ type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Hash, Ord, PartialOrd)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -267,6 +267,15 @@ impl Scalar {
 impl Debug for Scalar {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
+    }
+}
+
+impl Display for Scalar {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+	for byte in self.as_bytes() {
+            write!(f, "{:#02x}", byte)?;
+	}
+	Ok(())
     }
 }
 

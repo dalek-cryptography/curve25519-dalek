@@ -16,7 +16,7 @@ use criterion::Criterion;
 
 mod ed25519_benches {
     use super::*;
-    use ed25519_dalek::ExpandedSecretKey;
+    use ed25519_dalek::verify_batch;
     use ed25519_dalek::Keypair;
     use ed25519_dalek::PublicKey;
     use ed25519_dalek::Signature;
@@ -30,20 +30,7 @@ mod ed25519_benches {
         let keypair: Keypair = Keypair::generate(&mut csprng);
         let msg: &[u8] = b"";
 
-        c.bench_function("Ed25519 signing", move |b| {
-                         b.iter(| | keypair.sign(msg))
-        });
-    }
-
-    fn sign_expanded_key(c: &mut Criterion) {
-        let mut csprng: ThreadRng = thread_rng();
-        let keypair: Keypair = Keypair::generate(&mut csprng);
-        let expanded: ExpandedSecretKey = (&keypair.secret).into();
-        let msg: &[u8] = b"";
-        
-        c.bench_function("Ed25519 signing with an expanded secret key", move |b| {
-                         b.iter(| | expanded.sign(msg, &keypair.public))
-        });
+        c.bench_function("Ed25519 signing", move |b| b.iter(|| keypair.sign(msg)));
     }
 
     fn verify(c: &mut Criterion) {
@@ -78,8 +65,10 @@ mod ed25519_benches {
                 let keypairs: Vec<Keypair> = (0..size).map(|_| Keypair::generate(&mut csprng)).collect();
                 let msg: &[u8] = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                 let messages: Vec<&[u8]> = (0..size).map(|_| msg).collect();
-                let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign(&msg)).collect();
-                let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+                let signatures: Vec<Signature> =
+                    keypairs.iter().map(|key| key.sign(&msg)).collect();
+                let public_keys: Vec<PublicKey> =
+                    keypairs.iter().map(|key| key.public_key()).collect();
 
                 b.iter(|| verify_batch(&messages[..], &signatures[..], &public_keys[..]));
             },
@@ -100,7 +89,6 @@ mod ed25519_benches {
         config = Criterion::default();
         targets =
             sign,
-            sign_expanded_key,
             verify,
             verify_strict,
             verify_batch_signatures,

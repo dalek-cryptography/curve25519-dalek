@@ -239,7 +239,7 @@ impl<'d> Deserialize<'d> for SecretKey {
 // same signature scheme, and which both fail in exactly the same way.  For a
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
-pub struct ExpandedSecretKey {
+pub(crate) struct ExpandedSecretKey {
     pub(crate) key: Scalar,
     pub(crate) nonce: [u8; 32],
 }
@@ -256,7 +256,7 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
@@ -302,7 +302,7 @@ impl ExpandedSecretKey {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
@@ -342,7 +342,7 @@ impl ExpandedSecretKey {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// # extern crate rand;
     /// # extern crate sha2;
     /// # extern crate ed25519_dalek;
@@ -375,12 +375,13 @@ impl ExpandedSecretKey {
     /// # fn main() { }
     /// ```
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
+    pub(crate) fn from_bytes(bytes: &[u8]) -> Result<ExpandedSecretKey, SignatureError> {
         if bytes.len() != EXPANDED_SECRET_KEY_LENGTH {
             return Err(InternalError::BytesLengthError {
                 name: "ExpandedSecretKey",
                 length: EXPANDED_SECRET_KEY_LENGTH,
-            }.into());
+            }
+            .into());
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -396,7 +397,7 @@ impl ExpandedSecretKey {
 
     /// Sign a message with this `ExpandedSecretKey`.
     #[allow(non_snake_case)]
-    pub fn sign(&self, message: &[u8], public_key: &PublicKey) -> ed25519::Signature {
+    pub(crate) fn sign(&self, message: &[u8], public_key: &PublicKey) -> ed25519::Signature {
         let mut h: Sha512 = Sha512::new();
         let R: CompressedEdwardsY;
         let r: Scalar;
@@ -441,7 +442,7 @@ impl ExpandedSecretKey {
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[allow(non_snake_case)]
-    pub fn sign_prehashed<'a, D>(
+    pub(crate) fn sign_prehashed<'a, D>(
         &self,
         prehashed_message: D,
         public_key: &PublicKey,
@@ -507,28 +508,6 @@ impl ExpandedSecretKey {
     }
 }
 
-#[cfg(feature = "serde")]
-impl Serialize for ExpandedSecretKey {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let bytes = &self.to_bytes()[..];
-        SerdeBytes::new(bytes).serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'d> Deserialize<'d> for ExpandedSecretKey {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'d>,
-    {
-        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
-        ExpandedSecretKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -546,5 +525,16 @@ mod test {
         let memory: &[u8] = unsafe { ::std::slice::from_raw_parts(secret_ptr, 32) };
 
         assert!(!memory.contains(&0x15));
+    }
+
+    #[test]
+    fn pubkey_from_secret_and_expanded_secret() {
+        let mut csprng = rand::rngs::OsRng {};
+        let secret: SecretKey = SecretKey::generate(&mut csprng);
+        let expanded_secret: ExpandedSecretKey = (&secret).into();
+        let public_from_secret: PublicKey = (&secret).into(); // XXX eww
+        let public_from_expanded_secret: PublicKey = (&expanded_secret).into(); // XXX eww
+
+        assert!(public_from_secret == public_from_expanded_secret);
     }
 }

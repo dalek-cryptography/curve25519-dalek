@@ -87,7 +87,7 @@
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
 //!
-//! let public_key: PublicKey = keypair.public;
+//! let public_key: PublicKey = keypair.public_key();
 //! assert!(public_key.verify(message, &signature).is_ok());
 //! # }
 //! ```
@@ -111,10 +111,9 @@
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
-//! # let public_key: PublicKey = keypair.public;
 //!
-//! let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = public_key.to_bytes();
-//! let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair.secret.to_bytes();
+//! let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = keypair.public_key().to_bytes();
+//! let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair.secret_key().to_bytes();
 //! let keypair_bytes:    [u8; KEYPAIR_LENGTH]    = keypair.to_bytes();
 //! let signature_bytes:  [u8; SIGNATURE_LENGTH]  = signature.to_bytes();
 //! # }
@@ -127,6 +126,7 @@
 //! # extern crate ed25519_dalek;
 //! # use std::convert::TryFrom;
 //! # use rand::rngs::OsRng;
+//! # use std::convert::TryInto;
 //! # use ed25519_dalek::{Keypair, Signature, Signer, PublicKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SecretKey, PublicKey, Keypair, Signature), SignatureError> {
@@ -134,8 +134,8 @@
 //! # let keypair_orig: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature_orig: Signature = keypair_orig.sign(message);
-//! # let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = keypair_orig.public.to_bytes();
-//! # let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair_orig.secret.to_bytes();
+//! # let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = keypair_orig.public_key().to_bytes();
+//! # let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = keypair_orig.secret_key().to_bytes();
 //! # let keypair_bytes:    [u8; KEYPAIR_LENGTH]    = keypair_orig.to_bytes();
 //! # let signature_bytes:  [u8; SIGNATURE_LENGTH]  = signature_orig.to_bytes();
 //! #
@@ -181,7 +181,7 @@
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
-//! # let public_key: PublicKey = keypair.public;
+//! # let public_key: PublicKey = keypair.public_key();
 //! # let verified: bool = public_key.verify(message, &signature).is_ok();
 //!
 //! let encoded_public_key: Vec<u8> = serialize(&public_key).unwrap();
@@ -213,7 +213,7 @@
 //! # let keypair: Keypair = Keypair::generate(&mut csprng);
 //! let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = keypair.sign(message);
-//! # let public_key: PublicKey = keypair.public;
+//! # let public_key: PublicKey = keypair.public_key();
 //! # let verified: bool = public_key.verify(message, &signature).is_ok();
 //! # let encoded_public_key: Vec<u8> = serialize(&public_key).unwrap();
 //! # let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
@@ -234,7 +234,6 @@
 #![no_std]
 #![warn(future_incompatible)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
-
 #![cfg_attr(not(test), forbid(unsafe_code))]
 
 #[cfg(any(feature = "std", test))]

@@ -29,7 +29,6 @@ use sha2::Sha512;
 #[cfg(test)]
 mod vectors {
     use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar};
-    use ed25519::signature::Signature as _;
     use sha2::{digest::Digest, Sha512};
     use std::convert::TryFrom;
 
@@ -69,8 +68,10 @@ mod vectors {
             let sig_bytes: Vec<u8> = FromHex::from_hex(&parts[3]).unwrap();
 
             let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
-            let public: PublicKey = PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
-            let keypair: Keypair  = Keypair{ secret: secret, public: public };
+            let expected_public: PublicKey =
+                PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+            let keypair: Keypair = Keypair::from(secret);
+            assert_eq!(expected_public, keypair.public_key());
 
 		    // The signatures in the test vectors also include the message
 		    // at the end, but we just want R and S.
@@ -97,8 +98,10 @@ mod vectors {
         let sig_bytes: Vec<u8> = FromHex::from_hex(signature).unwrap();
 
         let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
-        let public: PublicKey = PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
-        let keypair: Keypair  = Keypair{ secret: secret, public: public };
+        let expected_public: PublicKey =
+            PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+        let keypair: Keypair = Keypair::from(secret);
+        assert_eq!(expected_public, keypair.public_key());
         let sig1: Signature = Signature::from_bytes(&sig_bytes[..]).unwrap();
 
         let mut prehash_for_signing: Sha512 = Sha512::default();
@@ -280,17 +283,6 @@ mod integrations {
 
         assert!(result.is_ok());
     }
-
-    #[test]
-    fn pubkey_from_secret_and_expanded_secret() {
-        let mut csprng = OsRng{};
-        let secret: SecretKey = SecretKey::generate(&mut csprng);
-        let expanded_secret: ExpandedSecretKey = (&secret).into();
-        let public_from_secret: PublicKey = (&secret).into(); // XXX eww
-        let public_from_expanded_secret: PublicKey = (&expanded_secret).into(); // XXX eww
-
-        assert!(public_from_secret == public_from_expanded_secret);
-    }
 }
 
 #[serde(crate = "serde_crate")]
@@ -402,28 +394,6 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_deserialize_expanded_secret_key_bincode() {
-        let expanded_secret_key = ExpandedSecretKey::from(&SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap());
-        let encoded_expanded_secret_key: Vec<u8> = bincode::serialize(&expanded_secret_key).unwrap();
-        let decoded_expanded_secret_key: ExpandedSecretKey = bincode::deserialize(&encoded_expanded_secret_key).unwrap();
-
-        for i in 0..EXPANDED_SECRET_KEY_LENGTH {
-            assert_eq!(expanded_secret_key.to_bytes()[i], decoded_expanded_secret_key.to_bytes()[i]);
-        }
-    }
-
-    #[test]
-    fn serialize_deserialize_expanded_secret_key_json() {
-        let expanded_secret_key = ExpandedSecretKey::from(&SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap());
-        let encoded_expanded_secret_key = serde_json::to_string(&expanded_secret_key).unwrap();
-        let decoded_expanded_secret_key: ExpandedSecretKey = serde_json::from_str(&encoded_expanded_secret_key).unwrap();
-
-        for i in 0..EXPANDED_SECRET_KEY_LENGTH {
-            assert_eq!(expanded_secret_key.to_bytes()[i], decoded_expanded_secret_key.to_bytes()[i]);
-        }
-    }
-
-    #[test]
     fn serialize_deserialize_keypair_bincode() {
         let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
         let encoded_keypair: Vec<u8> = bincode::serialize(&keypair).unwrap();
@@ -471,13 +441,10 @@ mod serialisation {
     #[test]
     fn serialize_secret_key_size() {
         let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
-        assert_eq!(bincode::serialized_size(&secret_key).unwrap() as usize, BINCODE_INT_LENGTH + SECRET_KEY_LENGTH);
-    }
-
-    #[test]
-    fn serialize_expanded_secret_key_size() {
-        let expanded_secret_key = ExpandedSecretKey::from(&SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap());
-        assert_eq!(bincode::serialized_size(&expanded_secret_key).unwrap() as usize, BINCODE_INT_LENGTH + EXPANDED_SECRET_KEY_LENGTH);
+        assert_eq!(
+            bincode::serialized_size(&secret_key).unwrap() as usize,
+            BINCODE_INT_LENGTH + SECRET_KEY_LENGTH
+        );
     }
 
     #[test]

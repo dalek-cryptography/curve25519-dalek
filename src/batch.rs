@@ -209,7 +209,7 @@ fn zero_rng() -> ZeroRng {
 /// let msg: &[u8] = b"They're good dogs Brant";
 /// let messages: Vec<&[u8]> = (0..64).map(|_| msg).collect();
 /// let signatures:  Vec<Signature> = keypairs.iter().map(|key| key.sign(&msg)).collect();
-/// let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+/// let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public_key()).collect();
 ///
 /// let result = verify_batch(&messages[..], &signatures[..], &public_keys[..]);
 /// assert!(result.is_ok());

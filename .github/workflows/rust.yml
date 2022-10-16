@@ -101,14 +101,14 @@ jobs:
         args: --features "batch_deterministic"
 
   msrv:
-    name: Current MSRV is 1.41
+    name: Current MSRV is 1.56.1
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.41
+        toolchain: 1.56.1
         override: true
     - uses: actions-rs/cargo@v1
       with:
@@ -128,4 +128,4 @@ jobs:
       with:
         command: bench
         # This filter selects no benchmarks, so we don't run any, only build them.
-        args: --features "batch" "DONTRUNBENCHMARKS"
+        args: --features "batch" "nonexistentbenchmark"

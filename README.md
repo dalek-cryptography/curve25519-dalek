@@ -11,10 +11,15 @@ Documentation is available [here](https://docs.rs/ed25519-dalek).
 
 To install, add the following to your project's `Cargo.toml`:
 
-```toml
-[dependencies.ed25519-dalek]
-version = "1"
-```
+# Minimum Supported Rust Version
+
+This crate requires Rust 1.56.1 at a minimum. 1.x releases of this crate supported an MSRV of 1.41.
+
+In the future, MSRV changes will be accompanied by a minor version bump.
+
+# Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of this crate.
 
 # Benchmarks
 

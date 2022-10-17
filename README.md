@@ -119,7 +119,9 @@ If no backend is selected, compilation will fail.
 
 # Minimum Supported Rust Version
 
-This crate requires Rust 1.41 at a minimum. In the future, MSRV changes will be accompanied by a minor version bump.
+This crate requires Rust 1.56.1 at a minimum. 3.x releases of this crate supported an MSRV of 1.41.
+
+In the future, MSRV changes will be accompanied by a minor version bump.
 
 # Safety
 

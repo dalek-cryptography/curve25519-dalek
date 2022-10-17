@@ -10,11 +10,11 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 #![allow(non_snake_case)]
 
-use crate::constants;
-use crate::traits::Identity;
-use crate::scalar::Scalar;
-use crate::edwards::EdwardsPoint;
 use crate::backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
+use crate::constants;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
 use crate::window::NafLookupTable5;
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.

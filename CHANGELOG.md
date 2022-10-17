@@ -7,6 +7,7 @@ major series.
 
 * Update the `rand_core` dependency version and the `rand` dev-dependency
   version.
+* Relax the `zeroize` dependency to `^1`
 
 ## 3.x series
 

@@ -116,6 +116,11 @@ builds using `--no-default-features`.  Note that this requires explicitly
 selecting an arithmetic backend using one of the `_backend` features.
 If no backend is selected, compilation will fail.
 
+
+# Minimum Supported Rust Version
+
+This crate requires Rust 1.41 at a minimum. In the future, MSRV changes will be accompanied by a minor version bump.
+
 # Safety
 
 The `curve25519-dalek` types are designed to make illegal states

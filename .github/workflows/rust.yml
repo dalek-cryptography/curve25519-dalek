@@ -101,18 +101,26 @@ jobs:
         args: --features "nightly"
 
   msrv:
-    name: Current MSRV is 1.41
+    name: Current MSRV is 1.56.1
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    # First run `cargo +nightly -Z minimal-verisons check` in order to get a
+    # Cargo.lock with the oldest possible deps
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.41
+        toolchain: nightly
         override: true
-    - uses: actions-rs/cargo@v1
+    - run: cargo -Z minimal-versions check --no-default-features --features "fiat_u64_backend,serde"
+    # Now check that `cargo build` works with respect to the oldest possible
+    # deps and the stated MSRV
+    - uses: actions-rs/toolchain@v1
       with:
-        command: build
+        profile: minimal
+        toolchain: 1.56.1
+        override: true
+    - run: cargo build --no-default-features --features "fiat_u64_backend,serde"
 
   bench:
     name: Check that benchmarks compile
@@ -128,4 +136,4 @@ jobs:
       with:
         command: bench
         # This filter selects no benchmarks, so we don't run any, only build them.
-        args: "DONTRUNBENCHMARKS"
+        args: "nonexistentbenchmark"

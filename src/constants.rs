@@ -144,7 +144,7 @@ mod test {
     #[test]
     #[cfg(feature = "u32_backend")]
     fn test_d_vs_ratio() {
-        use backend::serial::u32::field::FieldElement2625;
+        use crate::backend::serial::u32::field::FieldElement2625;
         let a = -&FieldElement2625([121665, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         let b = FieldElement2625([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
         let d = &a * &b.invert();

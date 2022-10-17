@@ -105,6 +105,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    # First run `cargo +nightly -Z minimal-verisons check` in order to get a
+    # Cargo.lock with the oldest possible deps
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
@@ -114,6 +116,8 @@ jobs:
       with:
         command: check
         args: -Z minimal-versions
+    # Now check that `cargo build` works with respect to the oldest possible
+    # deps and the stated MSRV
     - uses: actions-rs/toolchain@v1
       with:
         profile: minimal
@@ -137,4 +141,4 @@ jobs:
       with:
         command: bench
         # This filter selects no benchmarks, so we don't run any, only build them.
-        args: "DONTRUNBENCHMARKS"
+        args: "nonexistentbenchmark"

@@ -150,7 +150,7 @@ use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 use rand_core::{CryptoRng, RngCore};
 
@@ -163,8 +163,8 @@ use subtle::ConstantTimeEq;
 
 use zeroize::Zeroize;
 
-use backend;
-use constants;
+use crate::backend;
+use crate::constants;
 
 /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
 ///
@@ -1204,7 +1204,7 @@ impl UnpackedScalar {
 #[cfg(test)]
 mod test {
     use super::*;
-    use constants;
+    use crate::constants;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     pub static X: Scalar = Scalar{

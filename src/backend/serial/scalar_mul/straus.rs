@@ -15,13 +15,13 @@
 
 use core::borrow::Borrow;
 
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::MultiscalarMul;
-use traits::VartimeMultiscalarMul;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::MultiscalarMul;
+use crate::traits::VartimeMultiscalarMul;
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 /// Perform multiscalar multiplication by the interleaved window
 /// method, also known as Straus' method (since it was apparently
@@ -109,9 +109,9 @@ impl MultiscalarMul for Straus {
     {
         use zeroize::Zeroizing;
 
-        use backend::serial::curve_models::ProjectiveNielsPoint;
-        use window::LookupTable;
-        use traits::Identity;
+        use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+        use crate::window::LookupTable;
+        use crate::traits::Identity;
 
         let lookup_tables: Vec<_> = points
             .into_iter()
@@ -161,9 +161,9 @@ impl VartimeMultiscalarMul for Straus {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use backend::serial::curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
-        use window::NafLookupTable5;
-        use traits::Identity;
+        use crate::backend::serial::curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
+        use crate::window::NafLookupTable5;
+        use crate::traits::Identity;
 
         let nafs: Vec<_> = scalars
             .into_iter()

@@ -10,12 +10,12 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 #![allow(non_snake_case)]
 
-use constants;
-use traits::Identity;
-use scalar::Scalar;
-use edwards::EdwardsPoint;
-use backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
-use window::NafLookupTable5;
+use crate::constants;
+use crate::traits::Identity;
+use crate::scalar::Scalar;
+use crate::edwards::EdwardsPoint;
+use crate::backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
+use crate::window::NafLookupTable5;
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {

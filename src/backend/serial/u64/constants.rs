@@ -11,11 +11,11 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
-use backend::serial::curve_models::AffineNielsPoint;
+use crate::backend::serial::curve_models::AffineNielsPoint;
 use super::field::FieldElement51;
 use super::scalar::Scalar52;
-use edwards::{EdwardsBasepointTable, EdwardsPoint};
-use window::{LookupTable, NafLookupTable8};
+use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
+use crate::window::{LookupTable, NafLookupTable8};
 
 /// The value of minus one, equal to `-&FieldElement::one()`
 pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51([

@@ -13,12 +13,12 @@
 
 use core::borrow::Borrow;
 
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::VartimeMultiscalarMul;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::VartimeMultiscalarMul;
 
 #[allow(unused_imports)]
-use prelude::*;
+use crate::prelude::*;
 
 /// Implements a version of Pippenger's algorithm.
 ///
@@ -71,7 +71,7 @@ impl VartimeMultiscalarMul for Pippenger {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use traits::Identity;
+        use crate::traits::Identity;
 
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
@@ -165,8 +165,8 @@ impl VartimeMultiscalarMul for Pippenger {
 #[cfg(test)]
 mod test {
     use super::*;
-    use constants;
-    use scalar::Scalar;
+    use crate::constants;
+    use crate::scalar::Scalar;
 
     #[test]
     fn test_vartime_pippenger() {

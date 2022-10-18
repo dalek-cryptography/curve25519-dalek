@@ -20,11 +20,11 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::Choice;
 
-use traits::Identity;
+use crate::traits::Identity;
 
-use edwards::EdwardsPoint;
-use backend::serial::curve_models::ProjectiveNielsPoint;
-use backend::serial::curve_models::AffineNielsPoint;
+use crate::edwards::EdwardsPoint;
+use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::backend::serial::curve_models::AffineNielsPoint;
 
 use zeroize::Zeroize;
 

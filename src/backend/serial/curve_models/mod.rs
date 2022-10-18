@@ -131,11 +131,11 @@ use subtle::ConditionallySelectable;
 
 use zeroize::Zeroize;
 
-use constants;
+use crate::constants;
 
-use edwards::EdwardsPoint;
-use field::FieldElement;
-use traits::ValidityCheck;
+use crate::edwards::EdwardsPoint;
+use crate::field::FieldElement;
+use crate::traits::ValidityCheck;
 
 // ------------------------------------------------------------------------
 // Internal point representations
@@ -219,7 +219,7 @@ impl Zeroize for ProjectiveNielsPoint {
 // Constructors
 // ------------------------------------------------------------------------
 
-use traits::Identity;
+use crate::traits::Identity;
 
 impl Identity for ProjectivePoint {
     fn identity() -> ProjectivePoint {

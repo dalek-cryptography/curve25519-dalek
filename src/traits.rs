@@ -17,7 +17,7 @@ use core::borrow::Borrow;
 
 use subtle;
 
-use scalar::Scalar;
+use crate::scalar::Scalar;
 
 // ------------------------------------------------------------------------
 // Public Traits

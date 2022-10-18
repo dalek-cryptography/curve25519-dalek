@@ -30,8 +30,8 @@ use subtle::ConditionallyNegatable;
 use subtle::Choice;
 use subtle::ConstantTimeEq;
 
-use constants;
-use backend;
+use crate::constants;
+use crate::backend;
 
 #[cfg(feature = "fiat_u32_backend")]
 pub use backend::serial::fiat_u32::field::*;
@@ -49,7 +49,7 @@ pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
 
 #[cfg(feature = "u64_backend")]
-pub use backend::serial::u64::field::*;
+pub use crate::backend::serial::u64::field::*;
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -293,7 +293,7 @@ impl FieldElement {
 
 #[cfg(test)]
 mod test {
-    use field::*;
+    use crate::field::*;
     use subtle::ConditionallyNegatable;
 
     /// Random element a of GF(2^255-19), from Sage

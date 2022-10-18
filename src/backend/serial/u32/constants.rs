@@ -13,15 +13,16 @@
 //! and useful field elements like `sqrt(-1)`), as well as
 //! lookup tables of pre-computed points.
 
-use backend::serial::curve_models::AffineNielsPoint;
 use super::field::FieldElement2625;
 use super::scalar::Scalar29;
-use edwards::{EdwardsBasepointTable, EdwardsPoint};
-use window::{LookupTable, NafLookupTable8};
+use crate::backend::serial::curve_models::AffineNielsPoint;
+use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
+use crate::window::{LookupTable, NafLookupTable8};
 
 /// The value of minus one, equal to `-&FieldElement::one()`
 pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625([
-    67108844, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431
+    67108844, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863,
+    33554431,
 ]);
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
@@ -35,13 +36,14 @@ pub(crate) const EDWARDS_D2: FieldElement2625 = FieldElement2625([
 ]);
 
 /// One minus edwards `d` value squared, equal to `(1 - (-121665/121666) mod p) pow 2`
-pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement2625 =  FieldElement2625([
-    6275446, 16937061, 44170319, 29780721, 11667076, 7397348, 39186143, 1766194, 42675006, 672202
+pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement2625 = FieldElement2625([
+    6275446, 16937061, 44170319, 29780721, 11667076, 7397348, 39186143, 1766194, 42675006, 672202,
 ]);
 
 /// Edwards `d` value minus one squared, equal to `(((-121665/121666) mod p) - 1) pow 2`
-pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement2625 =  FieldElement2625([
-    15551776, 22456977, 53683765, 23429360, 55212328, 10178283, 40474537, 4729243, 61826754, 23438029
+pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement2625 = FieldElement2625([
+    15551776, 22456977, 53683765, 23429360, 55212328, 10178283, 40474537, 4729243, 61826754,
+    23438029,
 ]);
 
 /// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.
@@ -73,7 +75,8 @@ pub(crate) const MONTGOMERY_A: FieldElement2625 =
 /// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
 /// Elligator map.)
 pub(crate) const MONTGOMERY_A_NEG: FieldElement2625 = FieldElement2625([
-    66622183, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431,
+    66622183, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863,
+    33554431,
 ]);
 
 /// `L` is the order of base point, i.e. 2^252 +

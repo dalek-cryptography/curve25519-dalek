@@ -9,6 +9,7 @@ major series.
   version.
 * Relax the `zeroize` dependency to `^1`
 * Update the MSRV from 1.41 to 1.56.1
+* Update the edition from 2015 to 2021
 
 ## 3.x series
 

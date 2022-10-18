@@ -354,7 +354,6 @@ impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
 mod test {
     use super::*;
     use crate::constants;
-    use core::convert::TryInto;
 
     use rand_core::OsRng;
 

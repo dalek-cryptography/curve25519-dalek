@@ -487,9 +487,7 @@ impl RistrettoPoint {
     /// in a batch.
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate rand_core;
     /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -676,9 +674,7 @@ impl RistrettoPoint {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// extern crate sha2;
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -1033,9 +1029,6 @@ impl ConditionallySelectable for RistrettoPoint {
     /// # Example
     ///
     /// ```
-    /// # extern crate subtle;
-    /// # extern crate curve25519_dalek;
-    /// #
     /// use subtle::ConditionallySelectable;
     /// use subtle::Choice;
     /// #

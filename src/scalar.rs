@@ -91,9 +91,6 @@
 //! which allows an IUF API.
 //!
 //! ```
-//! # extern crate curve25519_dalek;
-//! # extern crate sha2;
-//! #
 //! # fn main() {
 //! use sha2::{Digest, Sha512};
 //! use curve25519_dalek::scalar::Scalar;
@@ -554,9 +551,6 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// extern crate rand_core;
-    /// # extern crate curve25519_dalek;
-    /// #
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
@@ -581,10 +575,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// extern crate sha2;
-    ///
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -611,10 +602,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
-    /// extern crate sha2;
-    ///
     /// use curve25519_dalek::digest::Update;
     ///
     /// use sha2::Digest;
@@ -750,7 +738,6 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
     /// # use curve25519_dalek::scalar::Scalar;
     /// # fn main() {
     /// let mut scalars = [
@@ -1115,8 +1102,6 @@ impl Scalar {
     /// This is intended for uses like input validation, where variable-time code is acceptable.
     ///
     /// ```
-    /// # extern crate curve25519_dalek;
-    /// # extern crate subtle;
     /// # use curve25519_dalek::scalar::Scalar;
     /// # use subtle::ConditionallySelectable;
     /// # fn main() {

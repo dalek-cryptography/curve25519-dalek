@@ -1,18 +1,12 @@
 #![allow(non_snake_case)]
 
-extern crate rand;
 use rand::rngs::OsRng;
 use rand::thread_rng;
-
-#[macro_use]
-extern crate criterion;
 
 use criterion::measurement::Measurement;
 use criterion::BatchSize;
 use criterion::Criterion;
-use criterion::{BenchmarkGroup, BenchmarkId};
-
-extern crate curve25519_dalek;
+use criterion::{criterion_group, criterion_main, BenchmarkGroup, BenchmarkId};
 
 use curve25519_dalek::constants;
 use curve25519_dalek::scalar::Scalar;

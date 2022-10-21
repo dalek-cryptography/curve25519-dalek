@@ -138,6 +138,7 @@
 
 use core::borrow::Borrow;
 use core::cmp::{Eq, PartialEq};
+use core::convert::TryInto;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
 use core::ops::Index;
@@ -476,19 +477,19 @@ impl From<u8> for Scalar {
 
 impl From<u16> for Scalar {
     fn from(x: u16) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u16(&mut s_bytes, x);
-        Scalar{ bytes: s_bytes }
+        let x_bytes = x.to_le_bytes();
+        s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
+        Scalar { bytes: s_bytes }
     }
 }
 
 impl From<u32> for Scalar {
     fn from(x: u32) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u32(&mut s_bytes, x);
-        Scalar{ bytes: s_bytes }
+        let x_bytes = x.to_le_bytes();
+        s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
+        Scalar { bytes: s_bytes }
     }
 }
 
@@ -515,19 +516,19 @@ impl From<u64> for Scalar {
     /// assert!(fourtytwo == six * seven);
     /// ```
     fn from(x: u64) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u64(&mut s_bytes, x);
-        Scalar{ bytes: s_bytes }
+        let x_bytes = x.to_le_bytes();
+        s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
+        Scalar { bytes: s_bytes }
     }
 }
 
 impl From<u128> for Scalar {
     fn from(x: u128) -> Scalar {
-        use byteorder::{ByteOrder, LittleEndian};
         let mut s_bytes = [0u8; 32];
-        LittleEndian::write_u128(&mut s_bytes, x);
-        Scalar{ bytes: s_bytes }
+        let x_bytes = x.to_le_bytes();
+        s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
+        Scalar { bytes: s_bytes }
     }
 }
 
@@ -897,14 +898,12 @@ impl Scalar {
         // required by the NAF definition
         debug_assert!( w >= 2 );
         // required so that the NAF digits fit in i8
-        debug_assert!( w <= 8 );
-
-        use byteorder::{ByteOrder, LittleEndian};
+        debug_assert!(w <= 8);
 
         let mut naf = [0i8; 256];
 
         let mut x_u64 = [0u64; 5];
-        LittleEndian::read_u64_into(&self.bytes, &mut x_u64[0..4]);
+        read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
 
         let width = 1 << w;
         let window_mask = width - 1;
@@ -1030,11 +1029,9 @@ impl Scalar {
             return self.to_radix_16();
         }
 
-        use byteorder::{ByteOrder, LittleEndian};
-
         // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
         let mut scalar64x4 = [0u64; 4];
-        LittleEndian::read_u64_into(&self.bytes, &mut scalar64x4[0..4]);
+        read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
 
         let radix: u64 = 1 << w;
         let window_mask: u64 = radix - 1;
@@ -1183,6 +1180,26 @@ impl UnpackedScalar {
     /// Inverts an UnpackedScalar not in Montgomery form.
     pub fn invert(&self) -> UnpackedScalar {
         self.to_montgomery().montgomery_invert().from_montgomery()
+    }
+}
+
+/// Read one or more u64s stored as little endian bytes.
+///
+/// ## Panics
+/// Panics if `src.len() != 8 * dst.len()`.
+fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
+    assert!(
+        src.len() == 8 * dst.len(),
+        "src.len() = {}, dst.len() = {}",
+        src.len(),
+        dst.len()
+    );
+    for (bytes, val) in src.chunks(core::mem::size_of::<u64>()).zip(dst.iter_mut()) {
+        *val = u64::from_le_bytes(
+            bytes
+                .try_into()
+                .expect("Incorrect src length, should be 8 * dst.len()"),
+        );
     }
 }
 
@@ -1737,5 +1754,37 @@ mod test {
             test_pippenger_radix_iter(scalar, 7);
             test_pippenger_radix_iter(scalar, 8);
         }
+    }
+
+    #[test]
+    fn test_read_le_u64_into() {
+        let cases: &[(&[u8], &[u64])] = &[
+            (
+                &[0xFE, 0xEF, 0x10, 0x01, 0x1F, 0xF1, 0x0F, 0xF0],
+                &[0xF00F_F11F_0110_EFFE],
+            ),
+            (
+                &[
+                    0xFE, 0xEF, 0x10, 0x01, 0x1F, 0xF1, 0x0F, 0xF0, 0x12, 0x34, 0x56, 0x78, 0x9A,
+                    0xBC, 0xDE, 0xF0,
+                ],
+                &[0xF00F_F11F_0110_EFFE, 0xF0DE_BC9A_7856_3412],
+            ),
+        ];
+
+        for (src, expected) in cases {
+            let mut dst = vec![0; expected.len()];
+            read_le_u64_into(src, &mut dst);
+
+            assert_eq!(&dst, expected, "Expected {:x?} got {:x?}", expected, dst);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_read_le_u64_into_should_panic_on_bad_input() {
+        let mut dst = [0_u64; 1];
+        // One byte short
+        read_le_u64_into(&[0xFE, 0xEF, 0x10, 0x01, 0x1F, 0xF1, 0x0F], &mut dst);
     }
 }

@@ -44,7 +44,6 @@ harness = false
 
 [dependencies]
 rand_core = { version = "0.6", default-features = false }
-byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
 digest = { version = "0.10", default-features = false }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }

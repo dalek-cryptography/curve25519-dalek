@@ -9,15 +9,15 @@
 
 #![allow(non_snake_case)]
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use std::ops::{Add, Neg, Sub};
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use super::constants;
 use super::field::{F51x4Reduced, F51x4Unreduced, Lanes, Shuffle};
@@ -258,8 +258,8 @@ mod test {
 
     #[test]
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing id +- id");
         let P = edwards::EdwardsPoint::identity();
@@ -297,8 +297,8 @@ mod test {
 
     #[test]
     fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing [2]id");
         let P = edwards::EdwardsPoint::identity();

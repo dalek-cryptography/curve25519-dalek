@@ -11,7 +11,7 @@
 
 use packed_simd::u64x4;
 
-use window::NafLookupTable8;
+use crate::window::NafLookupTable8;
 
 use super::edwards::{CachedPoint, ExtendedPoint};
 use super::field::{F51x4Reduced, F51x4Unreduced};

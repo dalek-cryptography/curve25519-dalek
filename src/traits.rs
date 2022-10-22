@@ -263,15 +263,15 @@ pub trait VartimeMultiscalarMul {
 ///
 /// This trait has three methods for performing this computation:
 ///
-/// * [`vartime_multiscalar_mul`], which handles the special case
-/// where \\(n = 0\\) and there are no dynamic points;
+/// * [`Self::vartime_multiscalar_mul`], which handles the special case where
+///   \\(n = 0\\) and there are no dynamic points;
 ///
-/// * [`vartime_mixed_multiscalar_mul`], which takes the dynamic
-/// points as already-validated `Point`s and is infallible;
+/// * [`Self::vartime_mixed_multiscalar_mul`], which takes the dynamic points as
+///   already-validated `Point`s and is infallible;
 ///
-/// * [`optional_mixed_multiscalar_mul`], which takes the dynamic
-/// points as `Option<Point>`s and returns an `Option<Point>`,
-/// allowing decompression to be composed into the input iterators.
+/// * [`Self::optional_mixed_multiscalar_mul`], which takes the dynamic points
+///   as `Option<Point>`s and returns an `Option<Point>`, allowing decompression
+///   to be composed into the input iterators.
 ///
 /// All methods require that the lengths of the input iterators be
 /// known and matching, as if they were `ExactSizeIterator`s.  (It

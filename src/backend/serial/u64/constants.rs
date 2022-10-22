@@ -167,14 +167,14 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
     ]),
 };
 
-/// The 8-torsion subgroup \\(\mathcal E [8]\\).
+/// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
 /// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
-/// the array is \\([i]P\\), where \\(P\\) is a point of order \\(8\\)
-/// generating \\(\mathcal E[8]\\).
+/// the array is \\(\[i\]P\\), where \\(P\\) is a point of order \\(8\\)
+/// generating \\(\mathcal E\[8\]\\).
 ///
-/// Thus \\(\mathcal E[4]\\) is the points indexed by `0,2,4,6`, and
-/// \\(\mathcal E[2]\\) is the points indexed by `0,4`.
+/// Thus \\(\mathcal E\[4\]\\) is the points indexed by `0,2,4,6`, and
+/// \\(\mathcal E\[2\]\\) is the points indexed by `0,4`.
 pub const EIGHT_TORSION: [EdwardsPoint; 8] = EIGHT_TORSION_INNER_DOC_HIDDEN;
 
 /// Inner item used to hide limb constants from cargo doc output.

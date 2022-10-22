@@ -124,7 +124,7 @@
 //! ## Implementation
 //!
 //! The Decaf suggestion is to use a quotient group, such as \\(\mathcal
-//! E / \mathcal E[4]\\) or \\(2 \mathcal E / \mathcal E[2] \\), to
+//! E / \mathcal E\[4\]\\) or \\(2 \mathcal E / \mathcal E\[2\] \\), to
 //! implement a prime-order group using a non-prime-order curve.
 //!
 //! This requires only changing
@@ -498,7 +498,7 @@ impl RistrettoPoint {
     ///
     /// However, given input points \\( P\_1, \ldots, P\_n, \\)
     /// it is possible to compute the encodings of their doubles \\(
-    /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
+    /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
     /// ```
@@ -605,7 +605,7 @@ impl RistrettoPoint {
             .collect()
     }
 
-    /// Return the coset self + E[4], for debugging.
+    /// Return the coset self + E\[4\], for debugging.
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [
             self.0,

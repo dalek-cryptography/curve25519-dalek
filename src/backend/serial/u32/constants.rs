@@ -122,14 +122,14 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
     ]),
 };
 
-/// The 8-torsion subgroup \\(\mathcal E [8]\\).
+/// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
 /// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
 /// the array is \\([i]P\\), where \\(P\\) is a point of order \\(8\\)
-/// generating \\(\mathcal E[8]\\).
+/// generating \\(\mathcal E\[8\]\\).
 ///
-/// Thus \\(\mathcal E[4]\\) is the points indexed by `0,2,4,6`, and
-/// \\(\mathcal E[2]\\) is the points indexed by `0,4`.
+/// Thus \\(\mathcal E\[4\]\\) is the points indexed by `0,2,4,6`, and
+/// \\(\mathcal E\[2\]\\) is the points indexed by `0,4`.
 /// The Ed25519 basepoint has y = 4/5.  This is called `_POINT` to
 /// distinguish it from `_TABLE`, which should be used for scalar
 /// multiplication (it's much faster).

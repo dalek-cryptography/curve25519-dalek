@@ -253,7 +253,7 @@ impl ProjectivePoint {
 /// and the affine difference
 /// \\(      u\_{P-Q} = u(P-Q) \\), set
 /// $$
-///     (U\_P : W\_P) \gets u([2]P)
+///     (U\_P : W\_P) \gets u(\[2\]P)
 /// $$
 /// and
 /// $$
@@ -317,7 +317,7 @@ define_mul_variants!(
 impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
     type Output = MontgomeryPoint;
 
-    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0([n]P) \\).
+    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\).
     fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);

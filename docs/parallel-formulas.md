@@ -207,7 +207,7 @@ $$
 (S\_8 \cdot S\_9 &&,&& S\_5 \cdot S\_6 &&,&& S\_8 \cdot S\_6 &&,&& S\_5 \cdot S\_9)
 \end{aligned}
 $$
-to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = [2]P\_1 \\).
+to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = \[2\]P\_1 \\).
 
 The intermediate step between the squaring and multiplication requires
 a long chain of additions.  For the IFMA-based implementation, this is not a problem; for the AVX2-based implementation, it is, but with some care and finesse, it's possible to arrange the computation without requiring an intermediate reduction.

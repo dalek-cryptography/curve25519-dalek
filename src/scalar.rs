@@ -1194,7 +1194,7 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
         src.len(),
         dst.len()
     );
-    for (bytes, val) in src.chunks(core::mem::size_of::<u64>()).zip(dst.iter_mut()) {
+    for (bytes, val) in src.chunks(8).zip(dst.iter_mut()) {
         *val = u64::from_le_bytes(
             bytes
                 .try_into()
@@ -1778,6 +1778,35 @@ mod test {
 
             assert_eq!(&dst, expected, "Expected {:x?} got {:x?}", expected, dst);
         }
+    }
+
+    // Tests consistency of From<{integer}> impls for Scalar
+    #[test]
+    fn test_scalar_from_int() {
+        let s1 = Scalar::one();
+
+        // For `x` in `u8`, `u16`, `u32`, `u64`, and `u128`, check that
+        // `Scalar::from(x + 1) == Scalar::from(x) + Scalar::from(1)`
+
+        let x = 0x23u8;
+        let sx = Scalar::from(x);
+        assert_eq!(sx + s1, Scalar::from(x + 1));
+
+        let x = 0x2323u16;
+        let sx = Scalar::from(x);
+        assert_eq!(sx + s1, Scalar::from(x + 1));
+
+        let x = 0x2323_2323u32;
+        let sx = Scalar::from(x);
+        assert_eq!(sx + s1, Scalar::from(x + 1));
+
+        let x = 0x2323_2323_2323_2323u64;
+        let sx = Scalar::from(x);
+        assert_eq!(sx + s1, Scalar::from(x + 1));
+
+        let x = 0x2323_2323_2323_2323_2323_2323_2323_2323u128;
+        let sx = Scalar::from(x);
+        assert_eq!(sx + s1, Scalar::from(x + 1));
     }
 
     #[test]

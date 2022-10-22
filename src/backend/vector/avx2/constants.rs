@@ -13,9 +13,9 @@
 
 use packed_simd::u32x8;
 
-use backend::vector::avx2::edwards::{CachedPoint, ExtendedPoint};
-use backend::vector::avx2::field::FieldElement2625x4;
-use window::NafLookupTable8;
+use crate::backend::vector::avx2::edwards::{CachedPoint, ExtendedPoint};
+use crate::backend::vector::avx2::field::FieldElement2625x4;
+use crate::window::NafLookupTable8;
 
 /// The identity element as an `ExtendedPoint`.
 pub(crate) static EXTENDEDPOINT_IDENTITY: ExtendedPoint = ExtendedPoint(FieldElement2625x4([

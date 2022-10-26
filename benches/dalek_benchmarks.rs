@@ -92,10 +92,6 @@ mod multiscalar_benches {
             .collect()
     }
 
-    fn construct(n: usize) -> (Vec<Scalar>, Vec<EdwardsPoint>) {
-        (construct_scalars(n), construct_points(n))
-    }
-
     fn consttime_multiscalar_mul<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         for multiscalar_size in &MULTISCALAR_SIZES {
             c.bench_with_input(

@@ -1163,7 +1163,7 @@ mod test {
     #[test]
     fn decompression_sign_handling() {
         // Manually set the high bit of the last byte to flip the sign
-        let mut minus_basepoint_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes().clone();
+        let mut minus_basepoint_bytes = *constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
         minus_basepoint_bytes[31] |= 1 << 7;
         let minus_basepoint = CompressedEdwardsY(minus_basepoint_bytes)
                               .decompress().unwrap();
@@ -1373,7 +1373,7 @@ mod test {
         let s2 = Scalar::from(333u64);
         let P2 = BASE * s2;
 
-        let vec = vec![P1.clone(), P2.clone()];
+        let vec = vec![P1, P2];
         let sum: EdwardsPoint = vec.iter().sum();
 
         assert_eq!(sum, P1 + P2);

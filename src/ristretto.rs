@@ -1152,7 +1152,7 @@ mod test {
         let s2 = Scalar::from(333u64);
         let P2 = BASE * s2;
 
-        let vec = vec![P1.clone(), P2.clone()];
+        let vec = vec![P1, P2];
         let sum: RistrettoPoint = vec.iter().sum();
 
         assert_eq!(sum, P1 + P2);

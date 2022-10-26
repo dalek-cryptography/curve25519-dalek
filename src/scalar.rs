@@ -964,6 +964,7 @@ impl Scalar {
 
         // Step 1: change radix.
         // Convert from radix 256 (bytes) to radix 16 (nibbles)
+        #[allow(clippy::identity_op)]
         #[inline(always)]
         fn bot_half(x: u8) -> u8 { (x >> 0) & 15 }
         #[inline(always)]

@@ -123,6 +123,7 @@ impl Scalar29 {
     }
 
     /// Pack the limbs of this `Scalar29` into 32 bytes.
+    #[allow(clippy::identity_op)]
     pub fn as_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 

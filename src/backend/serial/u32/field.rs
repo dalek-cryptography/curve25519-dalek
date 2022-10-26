@@ -416,6 +416,7 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
+    #[allow(clippy::identity_op)]
     pub fn as_bytes(&self) -> [u8; 32] {
 
         let inp = &self.0;

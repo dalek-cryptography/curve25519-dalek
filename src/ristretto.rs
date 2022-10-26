@@ -587,9 +587,9 @@ impl RistrettoPoint {
     /// Return the coset self + E[4], for debugging.
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [  self.0
-        , &self.0 + &constants::EIGHT_TORSION[2]
-        , &self.0 + &constants::EIGHT_TORSION[4]
-        , &self.0 + &constants::EIGHT_TORSION[6]
+        , self.0 + constants::EIGHT_TORSION[2]
+        , self.0 + constants::EIGHT_TORSION[4]
+        , self.0 + constants::EIGHT_TORSION[6]
         ]
     }
 
@@ -733,7 +733,7 @@ impl RistrettoPoint {
 
         // Applying Elligator twice and adding the results ensures a
         // uniform distribution.
-        &R_1 + &R_2
+        R_1 + R_2
     }
 }
 
@@ -786,7 +786,7 @@ impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(&self.0 + &other.0)
+        RistrettoPoint(self.0 + other.0)
     }
 }
 
@@ -804,7 +804,7 @@ impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(&self.0 - &other.0)
+        RistrettoPoint(self.0 - other.0)
     }
 }
 
@@ -1134,8 +1134,8 @@ mod test {
         let P = constants::RISTRETTO_BASEPOINT_POINT;
         let s = Scalar::from(999u64);
 
-        let P1 = &P * &s;
-        let P2 = &s * &P;
+        let P1 = P * s;
+        let P2 = s * P;
 
         assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
@@ -1147,10 +1147,10 @@ mod test {
         let BASE = constants::RISTRETTO_BASEPOINT_POINT;
 
         let s1 = Scalar::from(999u64);
-        let P1 = &BASE * &s1;
+        let P1 = BASE * s1;
 
         let s2 = Scalar::from(333u64);
-        let P2 = &BASE * &s2;
+        let P2 = BASE * s2;
 
         let vec = vec![P1.clone(), P2.clone()];
         let sum: RistrettoPoint = vec.iter().sum();
@@ -1168,7 +1168,7 @@ mod test {
         let mapped = vec.iter().map(|x| x * s);
         let sum: RistrettoPoint = mapped.sum();
 
-        assert_eq!(sum, &P1 * &s + &P2 * &s);
+        assert_eq!(sum, P1 * s + P2 * s);
     }
 
     #[test]
@@ -1202,7 +1202,7 @@ mod test {
         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
-        let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - &bp_recaf;
+        let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
         let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
@@ -1232,7 +1232,7 @@ mod test {
         let mut bp = RistrettoPoint::identity();
         for point in compressed {
             assert_eq!(bp.compress(), point);
-            bp = &bp + &constants::RISTRETTO_BASEPOINT_POINT;
+            bp = bp + constants::RISTRETTO_BASEPOINT_POINT;
         }
     }
 

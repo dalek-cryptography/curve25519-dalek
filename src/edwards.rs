@@ -1195,7 +1195,7 @@ mod test {
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
-        let bp_added = &bp + &bp;
+        let bp_added = bp + bp;
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
@@ -1263,14 +1263,14 @@ mod test {
     #[test]
     fn test_precomputed_basepoint_mult() {
         let aB_1 = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
-        let aB_2 = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
+        let aB_2 = constants::ED25519_BASEPOINT_POINT * A_SCALAR;
         assert_eq!(aB_1.compress(), aB_2.compress());
     }
 
     /// Test scalar_mul versus a known scalar multiple from ed25519.py
     #[test]
     fn scalar_mul_vs_ed25519py() {
-        let aB = &constants::ED25519_BASEPOINT_POINT * &A_SCALAR;
+        let aB = constants::ED25519_BASEPOINT_POINT * A_SCALAR;
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
 
@@ -1368,10 +1368,10 @@ mod test {
         let BASE = constants::ED25519_BASEPOINT_POINT;
 
         let s1 = Scalar::from(999u64);
-        let P1 = &BASE * &s1;
+        let P1 = BASE * s1;
 
         let s2 = Scalar::from(333u64);
-        let P2 = &BASE * &s2;
+        let P2 = BASE * s2;
 
         let vec = vec![P1.clone(), P2.clone()];
         let sum: EdwardsPoint = vec.iter().sum();
@@ -1389,7 +1389,7 @@ mod test {
         let mapped = vec.iter().map(|x| x * s);
         let sum: EdwardsPoint = mapped.sum();
 
-        assert_eq!(sum, &P1 * &s + &P2 * &s);
+        assert_eq!(sum, P1 * s + P2 * s);
       }
 
 
@@ -1453,8 +1453,8 @@ mod test {
         let G: EdwardsPoint = constants::ED25519_BASEPOINT_POINT;
         let s: Scalar = A_SCALAR;
 
-        let P1 = &G * &s;
-        let P2 = &s * &G;
+        let P1 = G * s;
+        let P2 = s * G;
 
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
     }

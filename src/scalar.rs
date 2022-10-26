@@ -1331,8 +1331,8 @@ mod test {
         tmp[0..32].copy_from_slice(&b_bytes[..]);
         let also_b = Scalar::from_bytes_mod_order_wide(&tmp);
 
-        let expected_c = &a * &b;
-        let also_expected_c = &also_a * &also_b;
+        let expected_c = a * b;
+        let also_expected_c = also_a * also_b;
 
         assert_eq!(c, expected_c);
         assert_eq!(c, also_expected_c);
@@ -1391,7 +1391,7 @@ mod test {
 
     #[test]
     fn scalar_mul_by_one() {
-        let test_scalar = &X * &Scalar::one();
+        let test_scalar = X * Scalar::one();
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
@@ -1477,14 +1477,14 @@ mod test {
     fn impl_add() {
         let two = Scalar::from(2u64);
         let one = Scalar::one();
-        let should_be_two = &one + &one;
+        let should_be_two = one + one;
         assert_eq!(should_be_two, two);
     }
 
     #[allow(non_snake_case)]
     #[test]
     fn impl_mul() {
-        let should_be_X_times_Y = &X * &Y;
+        let should_be_X_times_Y = X * Y;
         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
     }
 
@@ -1552,7 +1552,7 @@ mod test {
 
     #[test]
     fn square() {
-        let expected = &X * &X;
+        let expected = X * X;
         let actual = X.unpack().square().pack();
         for i in 0..32 {
             assert!(expected[i] == actual[i]);
@@ -1594,7 +1594,7 @@ mod test {
     fn invert() {
         let inv_X = X.invert();
         assert_eq!(inv_X, XINV);
-        let should_be_one = &inv_X * &X;
+        let should_be_one = inv_X * X;
         assert_eq!(should_be_one, Scalar::one());
     }
 

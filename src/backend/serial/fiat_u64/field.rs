@@ -212,7 +212,7 @@ impl FieldElement51 {
     pub fn as_bytes(&self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         fiat_25519_to_bytes(&mut bytes, &self.0);
-        return bytes;
+        bytes
     }
 
     /// Given `k > 0`, return `self^(2^k)`.

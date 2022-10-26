@@ -1230,8 +1230,8 @@ mod test {
             CompressedRistretto([224, 196, 24, 247, 200, 217, 196, 205, 215, 57, 91, 147, 234, 18, 79, 58, 217, 144, 33, 187, 104, 29, 252, 51, 2, 169, 217, 154, 46, 83, 230, 78]),
         ];
         let mut bp = RistrettoPoint::identity();
-        for i in 0..16 {
-            assert_eq!(bp.compress(), compressed[i]);
+        for point in compressed {
+            assert_eq!(bp.compress(), point);
             bp = &bp + &constants::RISTRETTO_BASEPOINT_POINT;
         }
     }
@@ -1240,8 +1240,8 @@ mod test {
     fn four_torsion_basepoint() {
         let bp = constants::RISTRETTO_BASEPOINT_POINT;
         let bp_coset = bp.coset4();
-        for i in 0..4 {
-            assert_eq!(bp, RistrettoPoint(bp_coset[i]));
+        for point in bp_coset {
+            assert_eq!(bp, RistrettoPoint(point));
         }
     }
 
@@ -1251,8 +1251,8 @@ mod test {
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
-        for i in 0..4 {
-            assert_eq!(P, RistrettoPoint(P_coset[i]));
+        for point in P_coset {
+            assert_eq!(P, RistrettoPoint(point));
         }
     }
 

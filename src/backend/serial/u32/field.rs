@@ -570,8 +570,8 @@ impl FieldElement2625 {
     /// Compute `2*self^2`.
     pub fn square2(&self) -> FieldElement2625 {
         let mut coeffs = self.square_inner();
-        for i in 0..self.0.len() {
-            coeffs[i] += coeffs[i];
+        for coeff in &mut coeffs {
+            *coeff += *coeff;
         }
         FieldElement2625::reduce(coeffs)
     }

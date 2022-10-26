@@ -379,6 +379,7 @@ impl<'a> Neg for Scalar {
 impl ConditionallySelectable for Scalar {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let mut bytes = [0u8; 32];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
             bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
         }
@@ -815,6 +816,7 @@ impl Scalar {
     /// Get the bits of the scalar.
     pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
             // while the upper bits index the byte.
@@ -1040,6 +1042,7 @@ impl Scalar {
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
         let digits_count = (256 + w - 1)/w as usize;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
             let bit_offset = i*w;

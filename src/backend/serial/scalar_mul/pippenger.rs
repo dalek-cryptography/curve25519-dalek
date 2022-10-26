@@ -113,8 +113,8 @@ impl VartimeMultiscalarMul for Pippenger {
 
         let mut columns = (0..digits_count).rev().map(|digit_index| {
             // Clear the buckets when processing another digit.
-            for i in 0..buckets_count {
-                buckets[i] = EdwardsPoint::identity();
+            for bucket in &mut buckets {
+                *bucket = EdwardsPoint::identity();
             }
 
             // Iterate over pairs of (point, scalar)

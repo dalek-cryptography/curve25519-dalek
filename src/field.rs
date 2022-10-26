@@ -464,8 +464,8 @@ mod test {
         // .. then check that the encoding is correct
         let one_bytes = one.as_bytes();
         assert_eq!(one_bytes[0], 1);
-        for i in 1..32 {
-            assert_eq!(one_bytes[i], 0);
+        for byte in &one_bytes[1..] {
+            assert_eq!(*byte, 0);
         }
     }
 

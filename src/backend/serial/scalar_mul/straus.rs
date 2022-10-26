@@ -14,6 +14,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
@@ -181,10 +182,10 @@ impl VartimeMultiscalarMul for Straus {
             let mut t: CompletedPoint = r.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
-                if naf[i] > 0 {
-                    t = &t.as_extended() + &lookup_table.select(naf[i] as usize);
-                } else if naf[i] < 0 {
-                    t = &t.as_extended() - &lookup_table.select(-naf[i] as usize);
+                match naf[i].cmp(&0) {
+                    Ordering::Greater => t = &t.as_extended() + &lookup_table.select(naf[i] as usize),
+                    Ordering::Less => t = &t.as_extended() - &lookup_table.select(-naf[i] as usize),
+                    Ordering::Equal => {},
                 }
             }
 

@@ -198,7 +198,7 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
         // out[0] + carry * 19 < 2^51 + 19 * 2^59.33 < 2^63.58
         //
         // and there is no overflow.
-        out[0] = out[0] + carry * 19;
+        out[0] += carry * 19;
 
         // Now out[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
         out[1] += out[0] >> 51;
@@ -388,17 +388,17 @@ impl FieldElement51 {
 
         // Now carry the result to compute r + 19q ...
         let low_51_bit_mask = (1u64 << 51) - 1;
-        limbs[1] +=  limbs[0] >> 51;
-        limbs[0] = limbs[0] & low_51_bit_mask;
-        limbs[2] +=  limbs[1] >> 51;
-        limbs[1] = limbs[1] & low_51_bit_mask;
-        limbs[3] +=  limbs[2] >> 51;
-        limbs[2] = limbs[2] & low_51_bit_mask;
-        limbs[4] +=  limbs[3] >> 51;
-        limbs[3] = limbs[3] & low_51_bit_mask;
+        limbs[1] += limbs[0] >> 51;
+        limbs[0] &= low_51_bit_mask;
+        limbs[2] += limbs[1] >> 51;
+        limbs[1] &= low_51_bit_mask;
+        limbs[3] += limbs[2] >> 51;
+        limbs[2] &= low_51_bit_mask;
+        limbs[4] += limbs[3] >> 51;
+        limbs[3] &= low_51_bit_mask;
         // ... but instead of carrying (limbs[4] >> 51) = 2^255q
         // into another limb, discard it, subtracting the value
-        limbs[4] = limbs[4] & low_51_bit_mask;
+        limbs[4] &= low_51_bit_mask;
 
         // Now arrange the bits of the limbs.
         let mut s = [0u8;32];
@@ -530,7 +530,7 @@ impl FieldElement51 {
             // a[0] + carry * 19 < 2^51 + 19 * 2^59.33 < 2^63.58
             //
             // and there is no overflow.
-            a[0] = a[0] + carry * 19;
+            a[0] += carry * 19;
 
             // Now a[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
             a[1] += a[0] >> 51;
@@ -538,7 +538,7 @@ impl FieldElement51 {
 
             // Now all a[i] < 2^(51 + epsilon) and a = self^(2^k).
 
-            k = k - 1;
+            k -= 1;
             if k == 0 {
                 break;
             }

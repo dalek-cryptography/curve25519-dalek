@@ -457,29 +457,29 @@ impl FieldElement2625 {
 
         // Now carry the result to compute r + 19q...
         h[1] += h[0] >> 26;
-        h[0] = h[0] & LOW_26_BITS;
+        h[0] &= LOW_26_BITS;
         h[2] += h[1] >> 25;
-        h[1] = h[1] & LOW_25_BITS;
+        h[1] &= LOW_25_BITS;
         h[3] += h[2] >> 26;
-        h[2] = h[2] & LOW_26_BITS;
+        h[2] &= LOW_26_BITS;
         h[4] += h[3] >> 25;
-        h[3] = h[3] & LOW_25_BITS;
+        h[3] &= LOW_25_BITS;
         h[5] += h[4] >> 26;
-        h[4] = h[4] & LOW_26_BITS;
+        h[4] &= LOW_26_BITS;
         h[6] += h[5] >> 25;
-        h[5] = h[5] & LOW_25_BITS;
+        h[5] &= LOW_25_BITS;
         h[7] += h[6] >> 26;
-        h[6] = h[6] & LOW_26_BITS;
+        h[6] &= LOW_26_BITS;
         h[8] += h[7] >> 25;
-        h[7] = h[7] & LOW_25_BITS;
+        h[7] &= LOW_25_BITS;
         h[9] += h[8] >> 26;
-        h[8] = h[8] & LOW_26_BITS;
+        h[8] &= LOW_26_BITS;
 
         // ... but instead of carrying the value
         // (h[9] >> 25) = q*2^255 into another limb,
         // discard it, subtracting the value from h.
         debug_assert!( (h[9] >> 25) == 0 || (h[9] >> 25) == 1);
-        h[9] = h[9] & LOW_25_BITS;
+        h[9] &= LOW_25_BITS;
 
         let mut s = [0u8; 32];
         s[0] = (h[0] >> 0) as u8;

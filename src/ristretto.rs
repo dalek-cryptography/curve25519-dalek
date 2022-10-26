@@ -1232,7 +1232,7 @@ mod test {
         let mut bp = RistrettoPoint::identity();
         for point in compressed {
             assert_eq!(bp.compress(), point);
-            bp = bp + constants::RISTRETTO_BASEPOINT_POINT;
+            bp += constants::RISTRETTO_BASEPOINT_POINT;
         }
     }
 

@@ -1295,11 +1295,11 @@ mod test {
         let P = &constants::ED25519_BASEPOINT_POINT;
         let a = A_SCALAR;
 
-        let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
-        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
-        let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
-        let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
-        let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
+        let table_radix16 = EdwardsBasepointTableRadix16::create(P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(P);
+        let table_radix64 = EdwardsBasepointTableRadix64::create(P);
+        let table_radix128 = EdwardsBasepointTableRadix128::create(P);
+        let table_radix256 = EdwardsBasepointTableRadix256::create(P);
 
         let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
         let aP16 = (&table_radix16 * &a).compress();
@@ -1326,11 +1326,11 @@ mod test {
             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
         ]);
 
-        let table_radix16 = EdwardsBasepointTableRadix16::create(&P);
-        let table_radix32 = EdwardsBasepointTableRadix32::create(&P);
-        let table_radix64 = EdwardsBasepointTableRadix64::create(&P);
-        let table_radix128 = EdwardsBasepointTableRadix128::create(&P);
-        let table_radix256 = EdwardsBasepointTableRadix256::create(&P);
+        let table_radix16 = EdwardsBasepointTableRadix16::create(P);
+        let table_radix32 = EdwardsBasepointTableRadix32::create(P);
+        let table_radix64 = EdwardsBasepointTableRadix64::create(P);
+        let table_radix128 = EdwardsBasepointTableRadix128::create(P);
+        let table_radix256 = EdwardsBasepointTableRadix256::create(P);
 
         let aP = (&constants::ED25519_BASEPOINT_TABLE * &a).compress();
         let aP16 = (&table_radix16 * &a).compress();

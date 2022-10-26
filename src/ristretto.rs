@@ -550,8 +550,8 @@ impl RistrettoPoint {
         FieldElement::batch_invert(&mut invs[..]);
 
         states.iter().zip(invs.iter()).map(|(state, inv): (&BatchCompressState, &FieldElement)| {
-            let Zinv = &state.eg * &inv;
-            let Tinv = &state.fh * &inv;
+            let Zinv = &state.eg * inv;
+            let Tinv = &state.fh * inv;
 
             let mut magic = constants::INVSQRT_A_MINUS_D;
 
@@ -609,7 +609,7 @@ impl RistrettoPoint {
         let one = FieldElement::one();
 
         let r = i * &r_0.square();
-        let N_s = &(&r + &one) * &one_minus_d_sq;
+        let N_s = &(&r + &one) * one_minus_d_sq;
         let D = &(&c - &(d * &r)) * &(&r + d);
 
         let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
@@ -620,7 +620,7 @@ impl RistrettoPoint {
         s.conditional_assign(&s_prime, !Ns_D_is_sq);
         c.conditional_assign(&r, !Ns_D_is_sq);
 
-        let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
+        let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
         let s_sq = s.square();
 
         use crate::backend::serial::curve_models::CompletedPoint;
@@ -704,7 +704,7 @@ impl RistrettoPoint {
         // dealing with generic arrays is clumsy, until const generics land
         let output = hash.finalize();
         let mut output_bytes = [0u8; 64];
-        output_bytes.copy_from_slice(&output.as_slice());
+        output_bytes.copy_from_slice(output.as_slice());
 
         RistrettoPoint::from_uniform_bytes(&output_bytes)
     }

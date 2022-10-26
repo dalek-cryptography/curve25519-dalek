@@ -805,7 +805,7 @@ impl Scalar {
         // in place
         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
-            *input = UnpackedScalar::montgomery_mul(&acc, &scratch).pack();
+            *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
             acc = tmp;
         }
 
@@ -1126,7 +1126,7 @@ impl UnpackedScalar {
     pub fn montgomery_invert(&self) -> UnpackedScalar {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        let    _1 = self;
+        let    _1 = *self;
         let   _10 = _1.montgomery_square();
         let  _100 = _10.montgomery_square();
         let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);

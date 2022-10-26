@@ -143,7 +143,7 @@ mod multiscalar_benches {
             c.bench_with_input(
                 BenchmarkId::new(
                     "Variable-time fixed-base multiscalar multiplication",
-                    &multiscalar_size,
+                    multiscalar_size,
                 ),
                 &multiscalar_size,
                 move |b, &&total_size| {

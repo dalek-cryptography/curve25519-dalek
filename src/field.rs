@@ -191,6 +191,7 @@ impl FieldElement {
     /// x^(p-2)x = x^(p-1) = 1 (mod p).
     ///
     /// This function returns zero on input zero.
+    #[allow(clippy::let_and_return)]
     pub fn invert(&self) -> FieldElement {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
@@ -203,6 +204,7 @@ impl FieldElement {
     }
 
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
+    #[allow(clippy::let_and_return)]
     fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //

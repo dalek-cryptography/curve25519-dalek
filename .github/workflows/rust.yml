@@ -14,118 +14,62 @@ jobs:
     name: Test u32 backend
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --no-default-features --features "std u32_backend"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --no-default-features --features "std u32_backend"
 
   test-u64:
     name: Test u64 backend
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --no-default-features --features "std u64_backend"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --no-default-features --features "std u64_backend"
 
   test-simd:
     name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --no-default-features --features "std simd_backend"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo test --no-default-features --features "std simd_backend"
 
   test-defaults-serde:
     name: Test default feature selection and serde
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --features "serde"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --features "serde"
 
   test-alloc-u32:
     name: Test no_std+alloc with u32 backend
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --lib --no-default-features --features "alloc u32_backend"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo test --lib --no-default-features --features "alloc u32_backend"
 
   nightly:
     name: Test nightly compiler
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --features "nightly"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo test --features "nightly"
 
   msrv:
     name: Current MSRV is 1.41
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: 1.41
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: build
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.41
+    - run: cargo build
 
   bench:
     name: Check that benchmarks compile
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: bench
-        # This filter selects no benchmarks, so we don't run any, only build them.
-        args: "DONTRUNBENCHMARKS"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo bench "DONTRUNBENCHMARKS"

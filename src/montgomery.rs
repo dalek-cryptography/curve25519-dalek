@@ -104,7 +104,7 @@ impl Zeroize for MontgomeryPoint {
 
 impl MontgomeryPoint {
     /// View this `MontgomeryPoint` as an array of bytes.
-    pub fn as_bytes<'a>(&'a self) -> &'a [u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 

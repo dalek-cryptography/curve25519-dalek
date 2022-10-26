@@ -369,7 +369,7 @@ impl<'a> Neg for &'a Scalar {
     }
 }
 
-impl<'a> Neg for Scalar {
+impl Neg for Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
         -&self

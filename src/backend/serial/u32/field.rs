@@ -416,7 +416,7 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn as_bytes(&self) -> [u8; 32] {
 
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)

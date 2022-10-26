@@ -265,7 +265,7 @@ impl CompressedRistretto {
         // original input, since our encoding routine is canonical.
 
         let s = FieldElement::from_bytes(self.as_bytes());
-        let s_bytes_check = s.to_bytes();
+        let s_bytes_check = s.as_bytes();
         let s_encoding_is_canonical =
             &s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
@@ -475,7 +475,7 @@ impl RistrettoPoint {
         let s_is_negative = s.is_negative();
         s.conditional_negate(s_is_negative);
 
-        CompressedRistretto(s.to_bytes())
+        CompressedRistretto(s.as_bytes())
     }
 
     /// Double-and-compress a batch of points.  The Ristretto encoding
@@ -579,7 +579,7 @@ impl RistrettoPoint {
             let s_is_negative = s.is_negative();
             s.conditional_negate(s_is_negative);
 
-            CompressedRistretto(s.to_bytes())
+            CompressedRistretto(s.as_bytes())
         }).collect()
     }
 
@@ -631,7 +631,7 @@ impl RistrettoPoint {
             Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
             Y: &FieldElement::one() - &s_sq,
             T: &FieldElement::one() + &s_sq,
-        }.to_extended())
+        }.as_extended())
     }
 
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
@@ -1174,7 +1174,7 @@ mod test {
     #[test]
     fn decompress_negative_s_fails() {
         // constants::d is neg, so decompression should fail as |d| != d.
-        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.to_bytes());
+        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.as_bytes());
         assert!(bad_compressed.decompress().is_none());
     }
 

@@ -330,7 +330,7 @@ impl ProjectivePoint {
     /// \\( \mathbb P\^3 \\) model.
     ///
     /// This costs \\(3 \mathrm M + 1 \mathrm S\\).
-    pub fn to_extended(&self) -> EdwardsPoint {
+    pub fn as_extended(&self) -> EdwardsPoint {
         EdwardsPoint {
             X: &self.X * &self.Z,
             Y: &self.Y * &self.Z,
@@ -345,7 +345,7 @@ impl CompletedPoint {
     /// \\) model to the \\( \mathbb P\^2 \\) model.
     ///
     /// This costs \\(3 \mathrm M \\).
-    pub fn to_projective(&self) -> ProjectivePoint {
+    pub fn as_projective(&self) -> ProjectivePoint {
         ProjectivePoint {
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -357,7 +357,7 @@ impl CompletedPoint {
     /// \\) model to the \\( \mathbb P\^3 \\) model.
     ///
     /// This costs \\(4 \mathrm M \\).
-    pub fn to_extended(&self) -> EdwardsPoint {
+    pub fn as_extended(&self) -> EdwardsPoint {
         EdwardsPoint {
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,

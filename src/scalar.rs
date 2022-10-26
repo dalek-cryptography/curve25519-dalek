@@ -770,7 +770,7 @@ impl Scalar {
         use zeroize::Zeroizing;
 
         let n = inputs.len();
-        let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
+        let one: UnpackedScalar = Scalar::one().unpack().as_montgomery();
 
         // Place scratch storage in a Zeroizing wrapper to wipe it when
         // we pass out of scope.
@@ -778,7 +778,7 @@ impl Scalar {
         let mut scratch = Zeroizing::new(scratch_vec);
 
         // Keep an accumulator of all of the previous products
-        let mut acc = Scalar::one().unpack().to_montgomery();
+        let mut acc = Scalar::one().unpack().as_montgomery();
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
@@ -787,7 +787,7 @@ impl Scalar {
 
             // Avoid unnecessary Montgomery multiplication in second pass by
             // keeping inputs in Montgomery form
-            let tmp = input.unpack().to_montgomery();
+            let tmp = input.unpack().as_montgomery();
             *input = tmp.pack();
             acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
         }
@@ -956,7 +956,7 @@ impl Scalar {
     ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
     /// $$
     /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
-    pub(crate) fn to_radix_16(&self) -> [i8; 64] {
+    pub(crate) fn as_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 
@@ -1022,12 +1022,12 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 64] {
+    pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);
 
         if w == 4 {
-            return self.to_radix_16();
+            return self.as_radix_16();
         }
 
         // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
@@ -1119,7 +1119,7 @@ impl Scalar {
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
-        Scalar{ bytes: self.to_bytes() }
+        Scalar{ bytes: self.as_bytes() }
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
@@ -1180,7 +1180,7 @@ impl UnpackedScalar {
 
     /// Inverts an UnpackedScalar not in Montgomery form.
     pub fn invert(&self) -> UnpackedScalar {
-        self.to_montgomery().montgomery_invert().from_montgomery()
+        self.as_montgomery().montgomery_invert().from_montgomery()
     }
 }
 
@@ -1608,7 +1608,7 @@ mod test {
     #[test]
     fn to_bytes_from_bytes_roundtrips() {
         let unpacked = X.unpack();
-        let bytes = unpacked.to_bytes();
+        let bytes = unpacked.as_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
@@ -1719,7 +1719,7 @@ mod test {
 
     fn test_pippenger_radix_iter(scalar: Scalar, w: usize) {
         let digits_count = Scalar::to_radix_2w_size_hint(w);
-        let digits = scalar.to_radix_2w(w);
+        let digits = scalar.as_radix_2w(w);
 
         let radix = Scalar::from((1<<w) as u64);
         let mut term = Scalar::one();

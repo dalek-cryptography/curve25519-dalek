@@ -404,7 +404,7 @@ impl Zeroize for EdwardsPoint {
 
 impl ValidityCheck for EdwardsPoint {
     fn is_valid(&self) -> bool {
-        let point_on_curve = self.to_projective().is_valid();
+        let point_on_curve = self.as_projective().is_valid();
         let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
 
         point_on_curve && on_segre_image
@@ -457,7 +457,7 @@ impl Eq for EdwardsPoint {}
 
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
-    pub(crate) fn to_projective_niels(&self) -> ProjectiveNielsPoint {
+    pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
         ProjectiveNielsPoint{
             Y_plus_X:  &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -470,7 +470,7 @@ impl EdwardsPoint {
     /// coordinates to projective coordinates.
     ///
     /// Free.
-    pub(crate) fn to_projective(&self) -> ProjectivePoint {
+    pub(crate) fn as_projective(&self) -> ProjectivePoint {
         ProjectivePoint{
             X: self.X,
             Y: self.Y,
@@ -480,7 +480,7 @@ impl EdwardsPoint {
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub(crate) fn to_affine_niels(&self) -> AffineNielsPoint {
+    pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -510,7 +510,7 @@ impl EdwardsPoint {
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();
-        MontgomeryPoint(u.to_bytes())
+        MontgomeryPoint(u.as_bytes())
     }
 
     /// Compress this point to `CompressedEdwardsY` format.
@@ -520,7 +520,7 @@ impl EdwardsPoint {
         let y = &self.Y * &recip;
         let mut s: [u8; 32];
 
-        s = y.to_bytes();
+        s = y.as_bytes();
         s[31] ^= x.is_negative().unwrap_u8() << 7;
         CompressedEdwardsY(s)
     }
@@ -558,7 +558,7 @@ impl EdwardsPoint {
 impl EdwardsPoint {
     /// Add this point to itself.
     pub(crate) fn double(&self) -> EdwardsPoint {
-        self.to_projective().double().to_extended()
+        self.as_projective().double().as_extended()
     }
 }
 
@@ -569,7 +569,7 @@ impl EdwardsPoint {
 impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
     type Output = EdwardsPoint;
     fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
-        (self + &other.to_projective_niels()).to_extended()
+        (self + &other.as_projective_niels()).as_extended()
     }
 }
 
@@ -586,7 +586,7 @@ define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
     type Output = EdwardsPoint;
     fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
-        (self - &other.to_projective_niels()).to_extended()
+        (self - &other.as_projective_niels()).as_extended()
     }
 }
 
@@ -855,7 +855,7 @@ impl BasepointTable for $name {
     fn basepoint(&self) -> $point {
         // self.0[0].select(1) = 1*(16^2)^0*B
         // but as an `AffineNielsPoint`, so add identity to convert to extended.
-        (&<$point>::identity() + &self.0[0].select(1)).to_extended()
+        (&<$point>::identity() + &self.0[0].select(1)).as_extended()
     }
 
     /// The computation uses Pippeneger's algorithm, as described for the
@@ -897,19 +897,19 @@ impl BasepointTable for $name {
     ///
     /// The above algorithm is trivially generalised to other powers-of-2 radices.
     fn basepoint_mul(&self, scalar: &Scalar) -> $point {
-        let a = scalar.to_radix_2w($radix);
+        let a = scalar.as_radix_2w($radix);
 
         let tables = &self.0;
         let mut P = <$point>::identity();
 
         for i in (0..$adds).filter(|x| x % 2 == 1) {
-            P = (&P + &tables[i/2].select(a[i])).to_extended();
+            P = (&P + &tables[i/2].select(a[i])).as_extended();
         }
 
         P = P.mul_by_pow_2($radix);
 
         for i in (0..$adds).filter(|x| x % 2 == 0) {
-            P = (&P + &tables[i/2].select(a[i])).to_extended();
+            P = (&P + &tables[i/2].select(a[i])).as_extended();
         }
 
         P
@@ -1004,12 +1004,12 @@ impl EdwardsPoint {
     pub(crate) fn mul_by_pow_2(&self, k: u32) -> EdwardsPoint {
         debug_assert!( k > 0 );
         let mut r: CompletedPoint;
-        let mut s = self.to_projective();
+        let mut s = self.as_projective();
         for _ in 0..(k-1) {
-            r = s.double(); s = r.to_projective();
+            r = s.double(); s = r.as_projective();
         }
-        // Unroll last iteration so we can go directly to_extended()
-        s.double().to_extended()
+        // Unroll last iteration so we can go directly as_extended()
+        s.double().as_extended()
     }
 
     /// Determine if this point is of small order.
@@ -1204,7 +1204,7 @@ mod test {
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
-        let bp_added = (&bp + &bp.to_projective_niels()).to_extended();
+        let bp_added = (&bp + &bp.as_projective_niels()).as_extended();
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
@@ -1213,8 +1213,8 @@ mod test {
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
-        let bp_affine_niels = bp.to_affine_niels();
-        let bp_added = (&bp + &bp_affine_niels).to_extended();
+        let bp_affine_niels = bp.as_affine_niels();
+        let bp_added = (&bp + &bp_affine_niels).as_extended();
         assert_eq!(bp_added.compress(), BASE2_CMPRSSD);
     }
 
@@ -1238,8 +1238,8 @@ mod test {
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
         let aB = &constants::ED25519_BASEPOINT_TABLE * &A_SCALAR;
-        let aB_affine_niels = aB.to_affine_niels();
-        let also_aB = (&EdwardsPoint::identity() + &aB_affine_niels).to_extended();
+        let aB_affine_niels = aB.as_affine_niels();
+        let also_aB = (&EdwardsPoint::identity() + &aB_affine_niels).as_extended();
         assert_eq!(     aB.compress(),
                    also_aB.compress());
     }
@@ -1350,7 +1350,7 @@ mod test {
     #[test]
     fn basepoint_projective_extended_round_trip() {
         assert_eq!(constants::ED25519_BASEPOINT_POINT
-                       .to_projective().to_extended().compress(),
+                       .as_projective().as_extended().compress(),
                    constants::ED25519_BASEPOINT_COMPRESSED);
     }
 
@@ -1398,7 +1398,7 @@ mod test {
     fn conditional_assign_for_affine_niels_point() {
         let id     = AffineNielsPoint::identity();
         let mut p1 = AffineNielsPoint::identity();
-        let bp     = constants::ED25519_BASEPOINT_POINT.to_affine_niels();
+        let bp     = constants::ED25519_BASEPOINT_POINT.as_affine_niels();
 
         p1.conditional_assign(&bp, Choice::from(0));
         assert_eq!(p1, id);

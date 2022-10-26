@@ -123,7 +123,7 @@ impl MultiscalarMul for Straus {
         // Zeroizing wrapper.
         let scalar_digits_vec: Vec<_> = scalars
             .into_iter()
-            .map(|s| s.borrow().to_radix_16())
+            .map(|s| s.borrow().as_radix_16())
             .collect();
         let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
@@ -135,7 +135,7 @@ impl MultiscalarMul for Straus {
                 // R_i = s_{i,j} * P_i
                 let R_i = lookup_table_i.select(s_i[j]);
                 // Q = Q + R_i
-                Q = (&Q + &R_i).to_extended();
+                Q = (&Q + &R_i).as_extended();
             }
         }
 
@@ -182,15 +182,15 @@ impl VartimeMultiscalarMul for Straus {
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
                 if naf[i] > 0 {
-                    t = &t.to_extended() + &lookup_table.select(naf[i] as usize);
+                    t = &t.as_extended() + &lookup_table.select(naf[i] as usize);
                 } else if naf[i] < 0 {
-                    t = &t.to_extended() - &lookup_table.select(-naf[i] as usize);
+                    t = &t.as_extended() - &lookup_table.select(-naf[i] as usize);
                 }
             }
 
-            r = t.to_projective();
+            r = t.as_projective();
         }
 
-        Some(r.to_extended())
+        Some(r.as_extended())
     }
 }

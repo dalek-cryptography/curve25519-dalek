@@ -158,7 +158,7 @@ impl MontgomeryPoint {
 
         let y = &(&u - &one) * &(&u + &one).invert();
 
-        let mut y_bytes = y.to_bytes();
+        let mut y_bytes = y.as_bytes();
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
@@ -191,7 +191,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 
-    MontgomeryPoint(u.to_bytes())
+    MontgomeryPoint(u.as_bytes())
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -238,9 +238,9 @@ impl ProjectivePoint {
     ///
     /// * \\( u = U / W \\) if \\( W \neq 0 \\);
     /// * \\( 0 \\) if \\( W \eq 0 \\);
-    pub fn to_affine(&self) -> MontgomeryPoint {
+    pub fn as_affine(&self) -> MontgomeryPoint {
         let u = &self.U * &self.W.invert();
-        MontgomeryPoint(u.to_bytes())
+        MontgomeryPoint(u.as_bytes())
     }
 }
 
@@ -329,7 +329,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         }
         ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
 
-        x0.to_affine()
+        x0.as_affine()
     }
 }
 
@@ -361,7 +361,7 @@ mod test {
     #[test]
     fn identity_in_different_coordinates() {
         let id_projective = ProjectivePoint::identity();
-        let id_montgomery = id_projective.to_affine();
+        let id_montgomery = id_projective.as_affine();
 
         assert!(id_montgomery == MontgomeryPoint::identity());
     }
@@ -417,14 +417,14 @@ mod test {
         let one = FieldElement::one();
 
         // u = 2 corresponds to a point on the twist.
-        let two = MontgomeryPoint((&one+&one).to_bytes());
+        let two = MontgomeryPoint((&one+&one).as_bytes());
 
         assert!(two.to_edwards(0).is_none());
 
         // u = -1 corresponds to a point on the twist, but should be
         // checked explicitly because it's an exceptional point for the
         // birational map.  For instance, libsignal will accept it.
-        let minus_one = MontgomeryPoint((-&one).to_bytes());
+        let minus_one = MontgomeryPoint((-&one).as_bytes());
 
         assert!(minus_one.to_edwards(0).is_none());
     }

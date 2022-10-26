@@ -39,18 +39,18 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         let mut t = r.double();
 
         if a_naf[i] > 0 {
-            t = &t.to_extended() + &table_A.select(a_naf[i] as usize);
+            t = &t.as_extended() + &table_A.select(a_naf[i] as usize);
         } else if a_naf[i] < 0 {
-            t = &t.to_extended() - &table_A.select(-a_naf[i] as usize);
+            t = &t.as_extended() - &table_A.select(-a_naf[i] as usize);
         }
 
         if b_naf[i] > 0 {
-            t = &t.to_extended() + &table_B.select(b_naf[i] as usize);
+            t = &t.as_extended() + &table_B.select(b_naf[i] as usize);
         } else if b_naf[i] < 0 {
-            t = &t.to_extended() - &table_B.select(-b_naf[i] as usize);
+            t = &t.as_extended() - &table_B.select(-b_naf[i] as usize);
         }
 
-        r = t.to_projective();
+        r = t.as_projective();
 
         if i == 0 {
             break;
@@ -58,5 +58,5 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
         i -= 1;
     }
 
-    r.to_extended()
+    r.as_extended()
 }

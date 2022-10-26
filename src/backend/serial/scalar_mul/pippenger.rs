@@ -94,11 +94,11 @@ impl VartimeMultiscalarMul for Pippenger {
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
         let scalars = scalars
-            .map(|s| s.borrow().to_radix_2w(w));
+            .map(|s| s.borrow().as_radix_2w(w));
 
         let points = points
             .into_iter()
-            .map(|p| p.map(|P| P.to_projective_niels()));
+            .map(|p| p.map(|P| P.as_projective_niels()));
 
         let scalars_points = scalars
             .zip(points)
@@ -126,10 +126,10 @@ impl VartimeMultiscalarMul for Pippenger {
                 let digit = digits[digit_index] as i16;
                 if digit > 0 {
                     let b = (digit - 1) as usize;
-                    buckets[b] = (&buckets[b] + pt).to_extended();
+                    buckets[b] = (&buckets[b] + pt).as_extended();
                 } else if digit < 0 {
                     let b = (-digit - 1) as usize;
-                    buckets[b] = (&buckets[b] - pt).to_extended();
+                    buckets[b] = (&buckets[b] - pt).as_extended();
                 }
             }
 

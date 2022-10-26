@@ -94,9 +94,9 @@ impl<T: Debug> Debug for $name<T> {
 
 impl<'a> From<&'a EdwardsPoint> for $name<ProjectiveNielsPoint> {
     fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_projective_niels(); $size];
+        let mut points = [P.as_projective_niels(); $size];
         for j in $conv_range {
-            points[j + 1] = (P + &points[j]).to_extended().to_projective_niels();
+            points[j + 1] = (P + &points[j]).as_extended().as_projective_niels();
         }
         $name(points)
     }
@@ -104,10 +104,10 @@ impl<'a> From<&'a EdwardsPoint> for $name<ProjectiveNielsPoint> {
 
 impl<'a> From<&'a EdwardsPoint> for $name<AffineNielsPoint> {
     fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_affine_niels(); $size];
+        let mut points = [P.as_affine_niels(); $size];
         // XXX batch inversion would be good if perf mattered here
         for j in $conv_range {
-            points[j + 1] = (P + &points[j]).to_extended().to_affine_niels()
+            points[j + 1] = (P + &points[j]).as_extended().as_affine_niels()
         }
         $name(points)
     }
@@ -158,10 +158,10 @@ impl<T: Debug> Debug for NafLookupTable5<T> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_projective_niels(); 8];
+        let mut Ai = [A.as_projective_niels(); 8];
         let A2 = A.double();
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
         NafLookupTable5(Ai)
@@ -170,10 +170,10 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_affine_niels(); 8];
+        let mut Ai = [A.as_affine_niels(); 8];
         let A2 = A.double();
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_affine_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
         NafLookupTable5(Ai)
@@ -205,10 +205,10 @@ impl<T: Debug> Debug for NafLookupTable8<T> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_projective_niels(); 64];
+        let mut Ai = [A.as_projective_niels(); 64];
         let A2 = A.double();
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
         NafLookupTable8(Ai)
@@ -217,10 +217,10 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_affine_niels(); 64];
+        let mut Ai = [A.as_affine_niels(); 64];
         let A2 = A.double();
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_affine_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
         NafLookupTable8(Ai)

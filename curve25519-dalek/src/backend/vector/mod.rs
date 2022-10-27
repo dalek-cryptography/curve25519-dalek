@@ -19,4 +19,7 @@ pub mod avx2;
 #[cfg(nightly)]
 pub mod ifma;
 
+#[cfg(nightly)]
+pub mod neon;
+
 pub mod scalar_mul;

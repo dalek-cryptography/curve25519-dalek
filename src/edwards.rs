@@ -148,7 +148,7 @@ use crate::backend::serial::scalar_mul;
     feature = "simd_backend",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 ))]
-use backend::vector::scalar_mul;
+use crate::backend::vector::scalar_mul;
 
 // ------------------------------------------------------------------------
 // Compressed points

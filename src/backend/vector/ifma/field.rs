@@ -14,7 +14,7 @@
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{u64x4, IntoBits};
 
-use backend::serial::u64::field::FieldElement51;
+use crate::backend::serial::u64::field::FieldElement51;
 
 /// A wrapper around `vpmadd52luq` that works on `u64x4`.
 #[inline(always)]

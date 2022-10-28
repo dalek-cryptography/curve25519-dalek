@@ -401,6 +401,7 @@ impl FieldElement2625 {
     /// encoding of every field element should decode, re-encode to
     /// the canonical encoding, and check that the input was
     /// canonical.
+    #[rustfmt::skip] // keep alignment of h[*] values
     pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
         #[inline]
         fn load3(b: &[u8]) -> u64 {

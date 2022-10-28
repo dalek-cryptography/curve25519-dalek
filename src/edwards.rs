@@ -189,6 +189,7 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
+    #[rustfmt::skip] // keep alignment of explanatory comments
     pub fn decompress(&self) -> Option<EdwardsPoint> {
         let Y = FieldElement::from_bytes(self.as_bytes());
         let Z = FieldElement::one();

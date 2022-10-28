@@ -1122,6 +1122,7 @@ impl UnpackedScalar {
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
+    #[rustfmt::skip] // keep alignment of addition chain and squarings
     pub fn montgomery_invert(&self) -> UnpackedScalar {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion

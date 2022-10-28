@@ -302,6 +302,7 @@ impl Scalar29 {
 
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^261
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of part1() and part2() computations
     pub (crate) fn montgomery_reduce(limbs: &[u64; 17]) -> Scalar29 {
 
         #[inline(always)]

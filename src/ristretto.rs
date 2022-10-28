@@ -525,6 +525,7 @@ impl RistrettoPoint {
         }
 
         impl<'a> From<&'a RistrettoPoint> for BatchCompressState {
+            #[rustfmt::skip] // keep alignment of explanatory comments
             fn from(P: &'a RistrettoPoint) -> BatchCompressState {
                 let XX = P.0.X.square();
                 let YY = P.0.Y.square();

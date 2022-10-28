@@ -26,13 +26,19 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - run: cargo test --no-default-features --features "std u64_backend"
 
-  test-simd:
-    name: Test simd backend (nightly)
+  build-simd:
+    name: Build simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo test --no-default-features --features "std simd_backend"
+    # Build with AVX2 features, then with AVX512 features
+    - env:
+        RUSTFLAGS: "-C target_feature=+avx2"
+      run: cargo build --no-default-features --features "std simd_backend"
+    - env:
+        RUSTFLAGS: "-C target_feature=+avx512ifma"
+      run: cargo build --no-default-features --features "std simd_backend"
 
   test-defaults-serde:
     name: Test default feature selection and serde

@@ -72,15 +72,15 @@ impl Scalar29 {
         let top_mask = (1u32 << 24) - 1;
         let mut s = Scalar29::zero();
 
-        s[ 0] =   words[0]                            & mask;
-        s[ 1] = ((words[0] >> 29) | (words[1] <<  3)) & mask;
-        s[ 2] = ((words[1] >> 26) | (words[2] <<  6)) & mask;
-        s[ 3] = ((words[2] >> 23) | (words[3] <<  9)) & mask;
-        s[ 4] = ((words[3] >> 20) | (words[4] << 12)) & mask;
-        s[ 5] = ((words[4] >> 17) | (words[5] << 15)) & mask;
-        s[ 6] = ((words[5] >> 14) | (words[6] << 18)) & mask;
-        s[ 7] = ((words[6] >> 11) | (words[7] << 21)) & mask;
-        s[ 8] =  (words[7] >>  8)                     & top_mask;
+        s[0] =   words[0]                            & mask;
+        s[1] = ((words[0] >> 29) | (words[1] <<  3)) & mask;
+        s[2] = ((words[1] >> 26) | (words[2] <<  6)) & mask;
+        s[3] = ((words[2] >> 23) | (words[3] <<  9)) & mask;
+        s[4] = ((words[3] >> 20) | (words[4] << 12)) & mask;
+        s[5] = ((words[4] >> 17) | (words[5] << 15)) & mask;
+        s[6] = ((words[5] >> 14) | (words[6] << 18)) & mask;
+        s[7] = ((words[6] >> 11) | (words[7] << 21)) & mask;
+        s[8] =  (words[7] >>  8)                     & top_mask;
 
         s
     }
@@ -129,38 +129,38 @@ impl Scalar29 {
     pub fn to_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
-        s[0]  =  (self.0[ 0] >>  0)                      as u8;
-        s[1]  =  (self.0[ 0] >>  8)                      as u8;
-        s[2]  =  (self.0[ 0] >> 16)                      as u8;
-        s[3]  = ((self.0[ 0] >> 24) | (self.0[ 1] << 5)) as u8;
-        s[4]  =  (self.0[ 1] >>  3)                      as u8;
-        s[5]  =  (self.0[ 1] >> 11)                      as u8;
-        s[6]  =  (self.0[ 1] >> 19)                      as u8;
-        s[7]  = ((self.0[ 1] >> 27) | (self.0[ 2] << 2)) as u8;
-        s[8]  =  (self.0[ 2] >>  6)                      as u8;
-        s[9]  =  (self.0[ 2] >> 14)                      as u8;
-        s[10] = ((self.0[ 2] >> 22) | (self.0[ 3] << 7)) as u8;
-        s[11] =  (self.0[ 3] >>  1)                      as u8;
-        s[12] =  (self.0[ 3] >>  9)                      as u8;
-        s[13] =  (self.0[ 3] >> 17)                      as u8;
-        s[14] = ((self.0[ 3] >> 25) | (self.0[ 4] << 4)) as u8;
-        s[15] =  (self.0[ 4] >>  4)                      as u8;
-        s[16] =  (self.0[ 4] >> 12)                      as u8;
-        s[17] =  (self.0[ 4] >> 20)                      as u8;
-        s[18] = ((self.0[ 4] >> 28) | (self.0[ 5] << 1)) as u8;
-        s[19] =  (self.0[ 5] >>  7)                      as u8;
-        s[20] =  (self.0[ 5] >> 15)                      as u8;
-        s[21] = ((self.0[ 5] >> 23) | (self.0[ 6] << 6)) as u8;
-        s[22] =  (self.0[ 6] >>  2)                      as u8;
-        s[23] =  (self.0[ 6] >> 10)                      as u8;
-        s[24] =  (self.0[ 6] >> 18)                      as u8;
-        s[25] = ((self.0[ 6] >> 26) | (self.0[ 7] << 3)) as u8;
-        s[26] =  (self.0[ 7] >>  5)                      as u8;
-        s[27] =  (self.0[ 7] >> 13)                      as u8;
-        s[28] =  (self.0[ 7] >> 21)                      as u8;
-        s[29] =  (self.0[ 8] >>  0)                      as u8;
-        s[30] =  (self.0[ 8] >>  8)                      as u8;
-        s[31] =  (self.0[ 8] >> 16)                      as u8;
+        s[ 0] =  (self.0[0] >>  0)                      as u8;
+        s[ 1] =  (self.0[0] >>  8)                      as u8;
+        s[ 2] =  (self.0[0] >> 16)                      as u8;
+        s[ 3] = ((self.0[0] >> 24) | (self.0[1] << 5))  as u8;
+        s[ 4] =  (self.0[1] >>  3)                      as u8;
+        s[ 5] =  (self.0[1] >> 11)                      as u8;
+        s[ 6] =  (self.0[1] >> 19)                      as u8;
+        s[ 7] = ((self.0[1] >> 27) | (self.0[2] << 2))  as u8;
+        s[ 8] =  (self.0[2] >>  6)                      as u8;
+        s[ 9] =  (self.0[2] >> 14)                      as u8;
+        s[10] = ((self.0[2] >> 22) | (self.0[3] << 7))  as u8;
+        s[11] =  (self.0[3] >>  1)                      as u8;
+        s[12] =  (self.0[3] >>  9)                      as u8;
+        s[13] =  (self.0[3] >> 17)                      as u8;
+        s[14] = ((self.0[3] >> 25) | (self.0[4] << 4))  as u8;
+        s[15] =  (self.0[4] >>  4)                      as u8;
+        s[16] =  (self.0[4] >> 12)                      as u8;
+        s[17] =  (self.0[4] >> 20)                      as u8;
+        s[18] = ((self.0[4] >> 28) | (self.0[5] << 1))  as u8;
+        s[19] =  (self.0[5] >>  7)                      as u8;
+        s[20] =  (self.0[5] >> 15)                      as u8;
+        s[21] = ((self.0[5] >> 23) | (self.0[6] << 6))  as u8;
+        s[22] =  (self.0[6] >>  2)                      as u8;
+        s[23] =  (self.0[6] >> 10)                      as u8;
+        s[24] =  (self.0[6] >> 18)                      as u8;
+        s[25] = ((self.0[6] >> 26) | (self.0[7] << 3))  as u8;
+        s[26] =  (self.0[7] >>  5)                      as u8;
+        s[27] =  (self.0[7] >> 13)                      as u8;
+        s[28] =  (self.0[7] >> 21)                      as u8;
+        s[29] =  (self.0[8] >>  0)                      as u8;
+        s[30] =  (self.0[8] >>  8)                      as u8;
+        s[31] =  (self.0[8] >> 16)                      as u8;
 
         s
     }
@@ -212,23 +212,23 @@ impl Scalar29 {
     pub (crate) fn mul_internal(a: &Scalar29, b: &Scalar29) -> [u64; 17] {
         let mut z = [0u64; 17];
 
-        z[0] = m(a[0],b[0]);                                                             // c00
-        z[1] = m(a[0],b[1]) + m(a[1],b[0]);                                              // c01
-        z[2] = m(a[0],b[2]) + m(a[1],b[1]) + m(a[2],b[0]);                               // c02
-        z[3] = m(a[0],b[3]) + m(a[1],b[2]) + m(a[2],b[1]) + m(a[3],b[0]);                // c03
-        z[4] = m(a[0],b[4]) + m(a[1],b[3]) + m(a[2],b[2]) + m(a[3],b[1]) + m(a[4],b[0]); // c04
-        z[5] =                m(a[1],b[4]) + m(a[2],b[3]) + m(a[3],b[2]) + m(a[4],b[1]); // c05
-        z[6] =                               m(a[2],b[4]) + m(a[3],b[3]) + m(a[4],b[2]); // c06
-        z[7] =                                              m(a[3],b[4]) + m(a[4],b[3]); // c07
-        z[8] =                                                            (m(a[4],b[4])).wrapping_sub(z[3]); // c08 - c03
+        z[0] = m(a[0], b[0]);                                                                 // c00
+        z[1] = m(a[0], b[1]) + m(a[1], b[0]);                                                 // c01
+        z[2] = m(a[0], b[2]) + m(a[1], b[1]) + m(a[2], b[0]);                                 // c02
+        z[3] = m(a[0], b[3]) + m(a[1], b[2]) + m(a[2], b[1]) + m(a[3], b[0]);                 // c03
+        z[4] = m(a[0], b[4]) + m(a[1], b[3]) + m(a[2], b[2]) + m(a[3], b[1]) + m(a[4], b[0]); // c04
+        z[5] =                 m(a[1], b[4]) + m(a[2], b[3]) + m(a[3], b[2]) + m(a[4], b[1]); // c05
+        z[6] =                                 m(a[2], b[4]) + m(a[3], b[3]) + m(a[4], b[2]); // c06
+        z[7] =                                                 m(a[3], b[4]) + m(a[4], b[3]); // c07
+        z[8] =                                                                (m(a[4], b[4])).wrapping_sub(z[3]); // c08 - c03
 
-        z[10] = z[5].wrapping_sub(m(a[5],b[5]));                                             // c05mc10
-        z[11] = z[6].wrapping_sub(m(a[5],b[6]) + m(a[6],b[5]));                              // c06mc11
-        z[12] = z[7].wrapping_sub(m(a[5],b[7]) + m(a[6],b[6]) + m(a[7],b[5]));               // c07mc12
-        z[13] =                   m(a[5],b[8]) + m(a[6],b[7]) + m(a[7],b[6]) + m(a[8],b[5]); // c13
-        z[14] =                                  m(a[6],b[8]) + m(a[7],b[7]) + m(a[8],b[6]); // c14
-        z[15] =                                                 m(a[7],b[8]) + m(a[8],b[7]); // c15
-        z[16] =                                                                m(a[8],b[8]); // c16
+        z[10] = z[5].wrapping_sub(m(a[5], b[5]));                                                // c05mc10
+        z[11] = z[6].wrapping_sub(m(a[5], b[6]) + m(a[6], b[5]));                                // c06mc11
+        z[12] = z[7].wrapping_sub(m(a[5], b[7]) + m(a[6], b[6]) + m(a[7], b[5]));                // c07mc12
+        z[13] =                   m(a[5], b[8]) + m(a[6], b[7]) + m(a[7], b[6]) + m(a[8], b[5]); // c13
+        z[14] =                                   m(a[6], b[8]) + m(a[7], b[7]) + m(a[8], b[6]); // c14
+        z[15] =                                                   m(a[7], b[8]) + m(a[8], b[7]); // c15
+        z[16] =                                                                   m(a[8], b[8]); // c16
 
         z[ 5] = z[10].wrapping_sub(z[ 0]); // c05mc10 - c00
         z[ 6] = z[11].wrapping_sub(z[ 1]); // c06mc11 - c01
@@ -239,27 +239,27 @@ impl Scalar29 {
         z[11] = z[16].wrapping_add(z[11]); // c16 + c06mc11
 
         let aa = [
-            a[0]+a[5],
-            a[1]+a[6],
-            a[2]+a[7],
-            a[3]+a[8]
+            a[0] + a[5],
+            a[1] + a[6],
+            a[2] + a[7],
+            a[3] + a[8]
         ];
 
         let bb = [
-            b[0]+b[5],
-            b[1]+b[6],
-            b[2]+b[7],
-            b[3]+b[8]
+            b[0] + b[5],
+            b[1] + b[6],
+            b[2] + b[7],
+            b[3] + b[8]
         ];
 
-        z[ 5] = (m(aa[0],bb[0]))                                                                   .wrapping_add(z[ 5]); // c20 + c05mc10 - c00
-        z[ 6] = (m(aa[0],bb[1]) + m(aa[1],bb[0]))                                                  .wrapping_add(z[ 6]); // c21 + c06mc11 - c01
-        z[ 7] = (m(aa[0],bb[2]) + m(aa[1],bb[1]) + m(aa[2],bb[0]))                                 .wrapping_add(z[ 7]); // c22 + c07mc12 - c02
-        z[ 8] = (m(aa[0],bb[3]) + m(aa[1],bb[2]) + m(aa[2],bb[1]) + m(aa[3],bb[0]))                .wrapping_add(z[ 8]); // c23 + c08mc13 - c03
-        z[ 9] = (m(aa[0], b[4]) + m(aa[1],bb[3]) + m(aa[2],bb[2]) + m(aa[3],bb[1]) + m(a[4],bb[0])).wrapping_sub(z[ 9]); // c24 - c14 - c04
-        z[10] = (                 m(aa[1], b[4]) + m(aa[2],bb[3]) + m(aa[3],bb[2]) + m(a[4],bb[1])).wrapping_sub(z[10]); // c25 - c15 - c05mc10
-        z[11] = (                                  m(aa[2], b[4]) + m(aa[3],bb[3]) + m(a[4],bb[2])).wrapping_sub(z[11]); // c26 - c16 - c06mc11
-        z[12] = (                                                   m(aa[3], b[4]) + m(a[4],bb[3])).wrapping_sub(z[12]); // c27 - c07mc12
+        z[ 5] = (m(aa[0], bb[0]))                                                                       .wrapping_add(z[ 5]); // c20 + c05mc10 - c00
+        z[ 6] = (m(aa[0], bb[1]) + m(aa[1], bb[0]))                                                     .wrapping_add(z[ 6]); // c21 + c06mc11 - c01
+        z[ 7] = (m(aa[0], bb[2]) + m(aa[1], bb[1]) + m(aa[2], bb[0]))                                   .wrapping_add(z[ 7]); // c22 + c07mc12 - c02
+        z[ 8] = (m(aa[0], bb[3]) + m(aa[1], bb[2]) + m(aa[2], bb[1]) + m(aa[3], bb[0]))                 .wrapping_add(z[ 8]); // c23 + c08mc13 - c03
+        z[ 9] = (m(aa[0],  b[4]) + m(aa[1], bb[3]) + m(aa[2], bb[2]) + m(aa[3], bb[1]) + m(a[4], bb[0])).wrapping_sub(z[ 9]); // c24 - c14 - c04
+        z[10] = (                  m(aa[1],  b[4]) + m(aa[2], bb[3]) + m(aa[3], bb[2]) + m(a[4], bb[1])).wrapping_sub(z[10]); // c25 - c15 - c05mc10
+        z[11] = (                                    m(aa[2],  b[4]) + m(aa[3], bb[3]) + m(a[4], bb[2])).wrapping_sub(z[11]); // c26 - c16 - c06mc11
+        z[12] = (                                                      m(aa[3],  b[4]) + m(a[4], bb[3])).wrapping_sub(z[12]); // c27 - c07mc12
 
         z
     }
@@ -269,34 +269,34 @@ impl Scalar29 {
     #[rustfmt::skip] // keep alignment of calculations
     fn square_internal(a: &Scalar29) -> [u64; 17] {
         let aa = [
-            a[0]*2,
-            a[1]*2,
-            a[2]*2,
-            a[3]*2,
-            a[4]*2,
-            a[5]*2,
-            a[6]*2,
-            a[7]*2
+            a[0] * 2,
+            a[1] * 2,
+            a[2] * 2,
+            a[3] * 2,
+            a[4] * 2,
+            a[5] * 2,
+            a[6] * 2,
+            a[7] * 2
         ];
 
         [
-            m( a[0],a[0]),
-            m(aa[0],a[1]),
-            m(aa[0],a[2]) + m( a[1],a[1]),
-            m(aa[0],a[3]) + m(aa[1],a[2]),
-            m(aa[0],a[4]) + m(aa[1],a[3]) + m( a[2],a[2]),
-            m(aa[0],a[5]) + m(aa[1],a[4]) + m(aa[2],a[3]),
-            m(aa[0],a[6]) + m(aa[1],a[5]) + m(aa[2],a[4]) + m( a[3],a[3]),
-            m(aa[0],a[7]) + m(aa[1],a[6]) + m(aa[2],a[5]) + m(aa[3],a[4]),
-            m(aa[0],a[8]) + m(aa[1],a[7]) + m(aa[2],a[6]) + m(aa[3],a[5]) + m( a[4],a[4]),
-                            m(aa[1],a[8]) + m(aa[2],a[7]) + m(aa[3],a[6]) + m(aa[4],a[5]),
-                                            m(aa[2],a[8]) + m(aa[3],a[7]) + m(aa[4],a[6]) + m( a[5],a[5]),
-                                                            m(aa[3],a[8]) + m(aa[4],a[7]) + m(aa[5],a[6]),
-                                                                            m(aa[4],a[8]) + m(aa[5],a[7]) + m( a[6],a[6]),
-                                                                                            m(aa[5],a[8]) + m(aa[6],a[7]),
-                                                                                                            m(aa[6],a[8]) + m( a[7],a[7]),
-                                                                                                                            m(aa[7],a[8]),
-                                                                                                                                            m( a[8],a[8]),
+            m( a[0], a[0]),
+            m(aa[0], a[1]),
+            m(aa[0], a[2]) + m( a[1], a[1]),
+            m(aa[0], a[3]) + m(aa[1], a[2]),
+            m(aa[0], a[4]) + m(aa[1], a[3]) + m( a[2], a[2]),
+            m(aa[0], a[5]) + m(aa[1], a[4]) + m(aa[2], a[3]),
+            m(aa[0], a[6]) + m(aa[1], a[5]) + m(aa[2], a[4]) + m( a[3], a[3]),
+            m(aa[0], a[7]) + m(aa[1], a[6]) + m(aa[2], a[5]) + m(aa[3], a[4]),
+            m(aa[0], a[8]) + m(aa[1], a[7]) + m(aa[2], a[6]) + m(aa[3], a[5]) + m( a[4], a[4]),
+                             m(aa[1], a[8]) + m(aa[2], a[7]) + m(aa[3], a[6]) + m(aa[4], a[5]),
+                                              m(aa[2], a[8]) + m(aa[3], a[7]) + m(aa[4], a[6]) + m( a[5], a[5]),
+                                                               m(aa[3], a[8]) + m(aa[4], a[7]) + m(aa[5], a[6]),
+                                                                                m(aa[4], a[8]) + m(aa[5], a[7]) + m( a[6], a[6]),
+                                                                                                 m(aa[5], a[8]) + m(aa[6], a[7]),
+                                                                                                                  m(aa[6], a[8]) + m( a[7], a[7]),
+                                                                                                                                   m(aa[7], a[8]),
+                                                                                                                                                    m( a[8], a[8]),
         ]
     }
 

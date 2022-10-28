@@ -108,6 +108,8 @@ impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
 
 impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     type Output = FieldElement51;
+
+    #[rustfmt::skip] // keep alignment of c* calculations
     fn mul(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
@@ -328,6 +330,7 @@ impl FieldElement51 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     ///
+    #[rustfmt::skip] // keep alignment of bit shifts
     pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
         let load8 = |input: &[u8]| -> u64 {
                (input[0] as u64)
@@ -357,6 +360,7 @@ impl FieldElement51 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
+    #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn to_bytes(&self) -> [u8; 32] {
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
@@ -442,6 +446,7 @@ impl FieldElement51 {
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
+    #[rustfmt::skip] // keep alignment of c* calculations
     pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
 
         debug_assert!( k > 0 );

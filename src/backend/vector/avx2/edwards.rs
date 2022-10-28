@@ -329,6 +329,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
 mod test {
     use super::*;
 
+    #[rustfmt::skip] // keep alignment of some S* calculations
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         use crate::backend::serial::u64::field::FieldElement51;
 

@@ -257,6 +257,7 @@ impl ProjectivePoint {
 /// $$
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
+#[rustfmt::skip] // keep alignment of explanatory comments
 fn differential_add_and_double(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,

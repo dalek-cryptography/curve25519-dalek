@@ -112,6 +112,7 @@ impl FieldElement {
 
     /// Compute (self^(2^250-1), self^11), used as a helper function
     /// within invert() and pow22523().
+    #[rustfmt::skip] // keep alignment of explanatory comments
     fn pow22501(&self) -> (FieldElement, FieldElement) {
         // Instead of managing which temporary variables are used
         // for what, we define as many as we need and leave stack
@@ -170,7 +171,7 @@ impl FieldElement {
             acc = &acc * input;
         }
 
-	// acc is nonzero iff all inputs are nonzero
+        // acc is nonzero iff all inputs are nonzero
         assert_eq!(acc.is_zero().unwrap_u8(), 0);
 
         // Compute the inverse of all products
@@ -191,6 +192,7 @@ impl FieldElement {
     /// x^(p-2)x = x^(p-1) = 1 (mod p).
     ///
     /// This function returns zero on input zero.
+    #[rustfmt::skip] // keep alignment of explanatory comments
     pub fn invert(&self) -> FieldElement {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
@@ -203,6 +205,7 @@ impl FieldElement {
     }
 
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
+    #[rustfmt::skip] // keep alignment of explanatory comments
     fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //

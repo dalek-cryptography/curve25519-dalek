@@ -120,6 +120,8 @@ impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
 
 impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
+
+    #[rustfmt::skip] // keep alignment of z* calculations
     fn mul(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
         /// Helper function to multiply two 32-bit integers with 64 bits
         /// of output.
@@ -328,6 +330,7 @@ impl FieldElement2625 {
     ///
     /// In other words, each coefficient of the result is bounded by
     /// either `2^(25 + 0.007)` or `2^(26 + 0.007)`, as appropriate.
+    #[rustfmt::skip] // keep alignment of carry chain
     fn reduce(mut z: [u64; 10]) -> FieldElement2625 {
 
         const LOW_25_BITS: u64 = (1 << 25) - 1;
@@ -521,6 +524,7 @@ impl FieldElement2625 {
         s
     }
 
+    #[rustfmt::skip] // keep alignment of z* calculations
     fn square_inner(&self) -> [u64; 10] {
         // Optimized version of multiplication for the case of squaring.
         // Pre- and post- conditions identical to multiplication function.

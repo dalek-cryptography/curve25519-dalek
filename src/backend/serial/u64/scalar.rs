@@ -61,6 +61,7 @@ impl Scalar52 {
     }
 
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
+    #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn from_bytes(bytes: &[u8; 32]) -> Scalar52 {
         let mut words = [0u64; 4];
         for i in 0..4 {
@@ -83,6 +84,7 @@ impl Scalar52 {
     }
 
     /// Reduce a 64 byte / 512 bit scalar mod l
+    #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
         let mut words = [0u64; 8];
         for i in 0..8 {
@@ -113,6 +115,7 @@ impl Scalar52 {
     }
 
     /// Pack the limbs of this `Scalar52` into 32 bytes
+    #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn to_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
@@ -193,6 +196,7 @@ impl Scalar52 {
 
     /// Compute `a * b`
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of z[*] calculations
     pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
         let mut z = [0u128; 9];
 
@@ -211,6 +215,7 @@ impl Scalar52 {
 
     /// Compute `a^2`
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of return calculations
     fn square_internal(a: &Scalar52) -> [u128; 9] {
         let aa = [
             a[0]*2,
@@ -234,6 +239,7 @@ impl Scalar52 {
 
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar52 {
 
         #[inline(always)]

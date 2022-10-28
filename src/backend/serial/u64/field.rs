@@ -39,7 +39,7 @@ use zeroize::Zeroize;
 /// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement51(pub (crate) [u64; 5]);
+pub struct FieldElement51(pub(crate) [u64; 5]);
 
 impl Debug for FieldElement51 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -268,17 +268,23 @@ impl FieldElement51 {
 
     /// Construct zero.
     pub fn zero() -> FieldElement51 {
-        FieldElement51([ 0, 0, 0, 0, 0 ])
+        FieldElement51([0, 0, 0, 0, 0])
     }
 
     /// Construct one.
     pub fn one() -> FieldElement51 {
-        FieldElement51([ 1, 0, 0, 0, 0 ])
+        FieldElement51([1, 0, 0, 0, 0])
     }
 
     /// Construct -1.
     pub fn minus_one() -> FieldElement51 {
-        FieldElement51([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
+        FieldElement51([
+            2251799813685228,
+            2251799813685247,
+            2251799813685247,
+            2251799813685247,
+            2251799813685247,
+        ])
     }
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).

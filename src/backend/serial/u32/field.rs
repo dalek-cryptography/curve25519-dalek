@@ -50,7 +50,7 @@ use zeroize::Zeroize;
 /// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement2625(pub (crate) [u32; 10]);
+pub struct FieldElement2625(pub(crate) [u32; 10]);
 
 impl Debug for FieldElement2625 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -98,7 +98,8 @@ impl<'b> SubAssign<&'b FieldElement2625> for FieldElement2625 {
             ((self.0[7] + (0x1ffffff << 4)) - b[7]) as u64,
             ((self.0[8] + (0x3ffffff << 4)) - b[8]) as u64,
             ((self.0[9] + (0x1ffffff << 4)) - b[9]) as u64,
-        ]).0;
+        ])
+        .0;
     }
 }
 
@@ -301,25 +302,25 @@ impl FieldElement2625 {
 
     /// Construct zero.
     pub fn zero() -> FieldElement2625 {
-        FieldElement2625([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+        FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     /// Construct one.
     pub fn one() -> FieldElement2625 {
-        FieldElement2625([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+        FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     /// Construct -1.
     pub fn minus_one() -> FieldElement2625 {
         FieldElement2625([
-            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff,
-            0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+            0x3ffffff, 0x1ffffff,
         ])
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
     pub fn pow2k(&self, k: u32) -> FieldElement2625 {
-        debug_assert!( k > 0 );
+        debug_assert!(k > 0);
         let mut z = self.square();
         for _ in 1..k {
             z = z.square();
@@ -432,14 +433,22 @@ impl FieldElement2625 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
-
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([
             // XXX this cast is annoying
-            inp[0] as u64, inp[1] as u64, inp[2] as u64, inp[3] as u64, inp[4] as u64,
-            inp[5] as u64, inp[6] as u64, inp[7] as u64, inp[8] as u64, inp[9] as u64,
-        ]).0;
+            inp[0] as u64,
+            inp[1] as u64,
+            inp[2] as u64,
+            inp[3] as u64,
+            inp[4] as u64,
+            inp[5] as u64,
+            inp[6] as u64,
+            inp[7] as u64,
+            inp[8] as u64,
+            inp[9] as u64,
+        ])
+        .0;
 
         // Let h be the value to encode.
         //
@@ -468,7 +477,7 @@ impl FieldElement2625 {
         const LOW_25_BITS: u32 = (1 << 25) - 1;
         const LOW_26_BITS: u32 = (1 << 26) - 1;
 
-        h[0] += 19*q;
+        h[0] += 19 * q;
 
         // Now carry the result to compute r + 19q...
         h[1] += h[0] >> 26;

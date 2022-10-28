@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
-use crate::traits::Identity;
-use crate::scalar::Scalar;
-use crate::edwards::EdwardsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
 use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.

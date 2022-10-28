@@ -18,8 +18,8 @@ use zeroize::Zeroizing;
 use crate::backend::vector::{CachedPoint, ExtendedPoint};
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
-use crate::window::{LookupTable, NafLookupTable5};
 use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
+use crate::window::{LookupTable, NafLookupTable5};
 
 #[allow(unused_imports)]
 use crate::prelude::*;

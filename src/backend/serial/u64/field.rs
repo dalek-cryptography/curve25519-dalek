@@ -108,12 +108,15 @@ impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
 
 impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     type Output = FieldElement51;
+
     #[rustfmt::skip] // keep alignment of c* calculations
     fn mul(self, _rhs: &'b FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
         #[inline(always)]
-        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
+        fn m(x: u64, y: u64) -> u128 {
+            (x as u128) * (y as u128)
+        }
 
         // Alias self, _rhs for more readable formulas
         let a: &[u64; 5] = &self.0;
@@ -350,12 +353,12 @@ impl FieldElement51 {
 
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement51(
-            // load bits [  0, 64), no shift
+            // load bits [0, 64), no shift
             [
-                load8(&bytes[0..]) & low_51_bit_mask, // load bits [ 48,112), shift to [ 51,112)
-                (load8(&bytes[6..]) >> 3) & low_51_bit_mask, // load bits [ 96,160), shift to [102,160)
-                (load8(&bytes[12..]) >> 6) & low_51_bit_mask, // load bits [152,216), shift to [153,216)
-                (load8(&bytes[19..]) >> 1) & low_51_bit_mask, // load bits [192,256), shift to [204,112)
+                load8(&bytes[0..]) & low_51_bit_mask, // load bits [48,112], shift to [51,112]
+                (load8(&bytes[6..]) >> 3) & low_51_bit_mask, // load bits [96,160], shift to [102,160]
+                (load8(&bytes[12..]) >> 6) & low_51_bit_mask, // load bits [152,216], shift to [153,216]
+                (load8(&bytes[19..]) >> 1) & low_51_bit_mask, // load bits [192,256], shift to [204,112]
                 (load8(&bytes[24..]) >> 12) & low_51_bit_mask,
             ],
         )
@@ -391,17 +394,17 @@ impl FieldElement51 {
 
         // Now we can compute r as r = h - pq = r - (2^255-19)q = r + 19q - 2^255q
 
-        limbs[0] += 19*q;
+        limbs[0] += 19 * q;
 
         // Now carry the result to compute r + 19q ...
         let low_51_bit_mask = (1u64 << 51) - 1;
-        limbs[1] +=  limbs[0] >> 51;
+        limbs[1] += limbs[0] >> 51;
         limbs[0] = limbs[0] & low_51_bit_mask;
-        limbs[2] +=  limbs[1] >> 51;
+        limbs[2] += limbs[1] >> 51;
         limbs[1] = limbs[1] & low_51_bit_mask;
-        limbs[3] +=  limbs[2] >> 51;
+        limbs[3] += limbs[2] >> 51;
         limbs[2] = limbs[2] & low_51_bit_mask;
-        limbs[4] +=  limbs[3] >> 51;
+        limbs[4] += limbs[3] >> 51;
         limbs[3] = limbs[3] & low_51_bit_mask;
         // ... but instead of carrying (limbs[4] >> 51) = 2^255q
         // into another limb, discard it, subtracting the value
@@ -451,12 +454,13 @@ impl FieldElement51 {
     /// Given `k > 0`, return `self^(2^k)`.
     #[rustfmt::skip] // keep alignment of c* calculations
     pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
-
-        debug_assert!( k > 0 );
+        debug_assert!(k > 0);
 
         /// Multiply two 64-bit integers with 128 bits of output.
         #[inline(always)]
-        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
+        fn m(x: u64, y: u64) -> u128 {
+            (x as u128) * (y as u128)
+        }
 
         let mut a: [u64; 5] = self.0;
 

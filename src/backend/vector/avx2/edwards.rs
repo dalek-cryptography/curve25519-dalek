@@ -362,18 +362,18 @@ mod test {
         print_var!(S7);
         println!("");
 
-        let S8  =  &S4 *    &FieldElement51([  121666,0,0,0,0]);  // R5
-        let S9  =  &S5 *    &FieldElement51([  121666,0,0,0,0]);  // R6
-        let S10 =  &S6 *    &FieldElement51([2*121666,0,0,0,0]);  // R8
-        let S11 =  &S7 * &(-&FieldElement51([2*121665,0,0,0,0])); // R7
+        let S8 =  &S4 *    &FieldElement51([    121666, 0, 0, 0, 0]); // R5
+        let S9 =  &S5 *    &FieldElement51([    121666, 0, 0, 0, 0]); // R6
+        let S10 = &S6 *    &FieldElement51([2 * 121666, 0, 0, 0, 0]); // R8
+        let S11 = &S7 * &(-&FieldElement51([2 * 121665, 0, 0, 0, 0])); // R7
         print_var!(S8);
         print_var!(S9);
         print_var!(S10);
         print_var!(S11);
         println!("");
 
-        let S12 =  &S9 - &S8;  // R1
-        let S13 =  &S9 + &S8;  // R4
+        let S12 = &S9 - &S8; // R1
+        let S13 = &S9 + &S8; // R4
         let S14 = &S10 - &S11; // R2
         let S15 = &S10 + &S11; // R3
         print_var!(S12);

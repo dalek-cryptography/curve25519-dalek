@@ -74,11 +74,11 @@ impl Scalar52 {
         let top_mask = (1u64 << 48) - 1;
         let mut s = Scalar52::zero();
 
-        s[ 0] =   words[0]                            & mask;
-        s[ 1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
-        s[ 2] = ((words[1] >> 40) | (words[2] << 24)) & mask;
-        s[ 3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
-        s[ 4] =  (words[3] >> 16)                     & top_mask;
+        s[0] =   words[0]                            & mask;
+        s[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
+        s[2] = ((words[1] >> 40) | (words[2] << 24)) & mask;
+        s[3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
+        s[4] =  (words[3] >> 16)                     & top_mask;
 
         s
     }
@@ -108,7 +108,7 @@ impl Scalar52 {
         hi[3] = ((words[ 6] >> 32) | (words[ 7] << 32)) & mask;
         hi[4] =   words[ 7] >> 20                             ;
 
-        lo = Scalar52::montgomery_mul(&lo, &constants::R);  // (lo * R) / R = lo
+        lo = Scalar52::montgomery_mul(&lo, &constants::R); // (lo * R) / R = lo
         hi = Scalar52::montgomery_mul(&hi, &constants::RR); // (hi * R^2) / R = hi * R
 
         Scalar52::add(&hi, &lo)
@@ -119,16 +119,16 @@ impl Scalar52 {
     pub fn to_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
-        s[0]  =  (self.0[ 0] >>  0)                      as u8;
-        s[1]  =  (self.0[ 0] >>  8)                      as u8;
-        s[2]  =  (self.0[ 0] >> 16)                      as u8;
-        s[3]  =  (self.0[ 0] >> 24)                      as u8;
-        s[4]  =  (self.0[ 0] >> 32)                      as u8;
-        s[5]  =  (self.0[ 0] >> 40)                      as u8;
-        s[6]  = ((self.0[ 0] >> 48) | (self.0[ 1] << 4)) as u8;
-        s[7]  =  (self.0[ 1] >>  4)                      as u8;
-        s[8]  =  (self.0[ 1] >> 12)                      as u8;
-        s[9]  =  (self.0[ 1] >> 20)                      as u8;
+        s[ 0] =  (self.0[ 0] >>  0)                      as u8;
+        s[ 1] =  (self.0[ 0] >>  8)                      as u8;
+        s[ 2] =  (self.0[ 0] >> 16)                      as u8;
+        s[ 3] =  (self.0[ 0] >> 24)                      as u8;
+        s[ 4] =  (self.0[ 0] >> 32)                      as u8;
+        s[ 5] =  (self.0[ 0] >> 40)                      as u8;
+        s[ 6] = ((self.0[ 0] >> 48) | (self.0[ 1] << 4)) as u8;
+        s[ 7] =  (self.0[ 1] >>  4)                      as u8;
+        s[ 8] =  (self.0[ 1] >> 12)                      as u8;
+        s[ 9] =  (self.0[ 1] >> 20)                      as u8;
         s[10] =  (self.0[ 1] >> 28)                      as u8;
         s[11] =  (self.0[ 1] >> 36)                      as u8;
         s[12] =  (self.0[ 1] >> 44)                      as u8;
@@ -197,18 +197,18 @@ impl Scalar52 {
     /// Compute `a * b`
     #[rustfmt::skip] // keep alignment of z[*] calculations
     #[inline(always)]
-    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
+    pub(crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
         let mut z = [0u128; 9];
 
-        z[0] = m(a[0],b[0]);
-        z[1] = m(a[0],b[1]) + m(a[1],b[0]);
-        z[2] = m(a[0],b[2]) + m(a[1],b[1]) + m(a[2],b[0]);
-        z[3] = m(a[0],b[3]) + m(a[1],b[2]) + m(a[2],b[1]) + m(a[3],b[0]);
-        z[4] = m(a[0],b[4]) + m(a[1],b[3]) + m(a[2],b[2]) + m(a[3],b[1]) + m(a[4],b[0]);
-        z[5] =                m(a[1],b[4]) + m(a[2],b[3]) + m(a[3],b[2]) + m(a[4],b[1]);
-        z[6] =                               m(a[2],b[4]) + m(a[3],b[3]) + m(a[4],b[2]);
-        z[7] =                                              m(a[3],b[4]) + m(a[4],b[3]);
-        z[8] =                                                             m(a[4],b[4]);
+        z[0] = m(a[0], b[0]);
+        z[1] = m(a[0], b[1]) + m(a[1], b[0]);
+        z[2] = m(a[0], b[2]) + m(a[1], b[1]) + m(a[2], b[0]);
+        z[3] = m(a[0], b[3]) + m(a[1], b[2]) + m(a[2], b[1]) + m(a[3], b[0]);
+        z[4] = m(a[0], b[4]) + m(a[1], b[3]) + m(a[2], b[2]) + m(a[3], b[1]) + m(a[4], b[0]);
+        z[5] =                 m(a[1], b[4]) + m(a[2], b[3]) + m(a[3], b[2]) + m(a[4], b[1]);
+        z[6] =                                 m(a[2], b[4]) + m(a[3], b[3]) + m(a[4], b[2]);
+        z[7] =                                                 m(a[3], b[4]) + m(a[4], b[3]);
+        z[8] =                                                                 m(a[4], b[4]);
 
         z
     }
@@ -217,23 +217,18 @@ impl Scalar52 {
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of return calculations
     fn square_internal(a: &Scalar52) -> [u128; 9] {
-        let aa = [
-            a[0]*2,
-            a[1]*2,
-            a[2]*2,
-            a[3]*2,
-        ];
+        let aa = [a[0] * 2, a[1] * 2, a[2] * 2, a[3] * 2];
 
         [
-            m( a[0],a[0]),
-            m(aa[0],a[1]),
-            m(aa[0],a[2]) + m( a[1],a[1]),
-            m(aa[0],a[3]) + m(aa[1],a[2]),
-            m(aa[0],a[4]) + m(aa[1],a[3]) + m( a[2],a[2]),
-                            m(aa[1],a[4]) + m(aa[2],a[3]),
-                                            m(aa[2],a[4]) + m( a[3],a[3]),
-                                                            m(aa[3],a[4]),
-                                                                            m(a[4],a[4])
+            m( a[0], a[0]),
+            m(aa[0], a[1]),
+            m(aa[0], a[2]) + m( a[1], a[1]),
+            m(aa[0], a[3]) + m(aa[1], a[2]),
+            m(aa[0], a[4]) + m(aa[1], a[3]) + m( a[2], a[2]),
+                             m(aa[1], a[4]) + m(aa[2], a[3]),
+                                              m(aa[2], a[4]) + m( a[3], a[3]),
+                                                               m(aa[3], a[4]),
+                                                                               m(a[4], a[4])
         ]
     }
 
@@ -244,7 +239,7 @@ impl Scalar52 {
         #[inline(always)]
         fn part1(sum: u128) -> (u128, u64) {
             let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
-            ((sum + m(p,constants::L[0])) >> 52, p)
+            ((sum + m(p, constants::L[0])) >> 52, p)
         }
 
         #[inline(always)]
@@ -258,20 +253,20 @@ impl Scalar52 {
 
         // the first half computes the Montgomery adjustment factor n, and begins adding n*l to make limbs divisible by R
         let (carry, n0) = part1(        limbs[0]);
-        let (carry, n1) = part1(carry + limbs[1] + m(n0,l[1]));
-        let (carry, n2) = part1(carry + limbs[2] + m(n0,l[2]) + m(n1,l[1]));
-        let (carry, n3) = part1(carry + limbs[3]              + m(n1,l[2]) + m(n2,l[1]));
-        let (carry, n4) = part1(carry + limbs[4] + m(n0,l[4])              + m(n2,l[2]) + m(n3,l[1]));
+        let (carry, n1) = part1(carry + limbs[1] + m(n0, l[1]));
+        let (carry, n2) = part1(carry + limbs[2] + m(n0, l[2]) + m(n1, l[1]));
+        let (carry, n3) = part1(carry + limbs[3]               + m(n1, l[2]) + m(n2, l[1]));
+        let (carry, n4) = part1(carry + limbs[4] + m(n0, l[4])               + m(n2, l[2]) + m(n3, l[1]));
 
         // limbs is divisible by R now, so we can divide by R by simply storing the upper half as the result
-        let (carry, r0) = part2(carry + limbs[5]              + m(n1,l[4])              + m(n3,l[2]) + m(n4,l[1]));
-        let (carry, r1) = part2(carry + limbs[6]                           + m(n2,l[4])              + m(n4,l[2]));
-        let (carry, r2) = part2(carry + limbs[7]                                        + m(n3,l[4])             );
-        let (carry, r3) = part2(carry + limbs[8]                                                     + m(n4,l[4]));
+        let (carry, r0) = part2(carry + limbs[5]               + m(n1, l[4])               + m(n3, l[2]) + m(n4, l[1]));
+        let (carry, r1) = part2(carry + limbs[6]                             + m(n2, l[4])               + m(n4, l[2]));
+        let (carry, r2) = part2(carry + limbs[7]                                           + m(n3, l[4])              );
+        let (carry, r3) = part2(carry + limbs[8]                                                         + m(n4, l[4]));
         let         r4 = carry as u64;
 
         // result may be >= l, so attempt to subtract l
-        Scalar52::sub(&Scalar52([r0,r1,r2,r3,r4]), l)
+        Scalar52::sub(&Scalar52([r0, r1, r2, r3, r4]), l)
     }
 
     /// Compute `a * b` (mod l)

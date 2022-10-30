@@ -121,15 +121,19 @@ impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
 
 impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
+
     #[rustfmt::skip] // keep alignment of z* calculations
     fn mul(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
         /// Helper function to multiply two 32-bit integers with 64 bits
         /// of output.
         #[inline(always)]
-        fn m(x: u32, y: u32) -> u64 { (x as u64) * (y as u64) }
+        fn m(x: u32, y: u32) -> u64 {
+            (x as u64) * (y as u64)
+        }
 
         // Alias self, _rhs for more readable formulas
-        let x: &[u32;10] = &self.0; let y: &[u32;10] = &_rhs.0;
+        let x: &[u32; 10] = &self.0;
+        let y: &[u32; 10] = &_rhs.0;
 
         // We assume that the input limbs x[i], y[i] are bounded by:
         //
@@ -179,16 +183,16 @@ impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
         let x7_2 = 2 * x[7];
         let x9_2 = 2 * x[9];
 
-        let z0 = m(x[0],y[0]) + m(x1_2,y9_19) + m(x[2],y8_19) + m(x3_2,y7_19) + m(x[4],y6_19) + m(x5_2,y5_19) + m(x[6],y4_19) + m(x7_2,y3_19) + m(x[8],y2_19) + m(x9_2,y1_19);
-        let z1 = m(x[0],y[1]) + m(x[1],y[0])  + m(x[2],y9_19) + m(x[3],y8_19) + m(x[4],y7_19) + m(x[5],y6_19) + m(x[6],y5_19) + m(x[7],y4_19) + m(x[8],y3_19) + m(x[9],y2_19);
-        let z2 = m(x[0],y[2]) + m(x1_2,y[1])  + m(x[2],y[0])  + m(x3_2,y9_19) + m(x[4],y8_19) + m(x5_2,y7_19) + m(x[6],y6_19) + m(x7_2,y5_19) + m(x[8],y4_19) + m(x9_2,y3_19);
-        let z3 = m(x[0],y[3]) + m(x[1],y[2])  + m(x[2],y[1])  + m(x[3],y[0])  + m(x[4],y9_19) + m(x[5],y8_19) + m(x[6],y7_19) + m(x[7],y6_19) + m(x[8],y5_19) + m(x[9],y4_19);
-        let z4 = m(x[0],y[4]) + m(x1_2,y[3])  + m(x[2],y[2])  + m(x3_2,y[1])  + m(x[4],y[0])  + m(x5_2,y9_19) + m(x[6],y8_19) + m(x7_2,y7_19) + m(x[8],y6_19) + m(x9_2,y5_19);
-        let z5 = m(x[0],y[5]) + m(x[1],y[4])  + m(x[2],y[3])  + m(x[3],y[2])  + m(x[4],y[1])  + m(x[5],y[0])  + m(x[6],y9_19) + m(x[7],y8_19) + m(x[8],y7_19) + m(x[9],y6_19);
-        let z6 = m(x[0],y[6]) + m(x1_2,y[5])  + m(x[2],y[4])  + m(x3_2,y[3])  + m(x[4],y[2])  + m(x5_2,y[1])  + m(x[6],y[0])  + m(x7_2,y9_19) + m(x[8],y8_19) + m(x9_2,y7_19);
-        let z7 = m(x[0],y[7]) + m(x[1],y[6])  + m(x[2],y[5])  + m(x[3],y[4])  + m(x[4],y[3])  + m(x[5],y[2])  + m(x[6],y[1])  + m(x[7],y[0])  + m(x[8],y9_19) + m(x[9],y8_19);
-        let z8 = m(x[0],y[8]) + m(x1_2,y[7])  + m(x[2],y[6])  + m(x3_2,y[5])  + m(x[4],y[4])  + m(x5_2,y[3])  + m(x[6],y[2])  + m(x7_2,y[1])  + m(x[8],y[0])  + m(x9_2,y9_19);
-        let z9 = m(x[0],y[9]) + m(x[1],y[8])  + m(x[2],y[7])  + m(x[3],y[6])  + m(x[4],y[5])  + m(x[5],y[4])  + m(x[6],y[3])  + m(x[7],y[2])  + m(x[8],y[1])  + m(x[9],y[0]);
+        let z0 = m(x[0], y[0]) + m(x1_2, y9_19) + m(x[2], y8_19) + m(x3_2, y7_19) + m(x[4], y6_19) + m(x5_2, y5_19) + m(x[6], y4_19) + m(x7_2, y3_19) + m(x[8], y2_19) + m(x9_2, y1_19);
+        let z1 = m(x[0], y[1]) + m(x[1], y[0])  + m(x[2], y9_19) + m(x[3], y8_19) + m(x[4], y7_19) + m(x[5], y6_19) + m(x[6], y5_19) + m(x[7], y4_19) + m(x[8], y3_19) + m(x[9], y2_19);
+        let z2 = m(x[0], y[2]) + m(x1_2, y[1])  + m(x[2], y[0])  + m(x3_2, y9_19) + m(x[4], y8_19) + m(x5_2, y7_19) + m(x[6], y6_19) + m(x7_2, y5_19) + m(x[8], y4_19) + m(x9_2, y3_19);
+        let z3 = m(x[0], y[3]) + m(x[1], y[2])  + m(x[2], y[1])  + m(x[3], y[0])  + m(x[4], y9_19) + m(x[5], y8_19) + m(x[6], y7_19) + m(x[7], y6_19) + m(x[8], y5_19) + m(x[9], y4_19);
+        let z4 = m(x[0], y[4]) + m(x1_2, y[3])  + m(x[2], y[2])  + m(x3_2, y[1])  + m(x[4], y[0])  + m(x5_2, y9_19) + m(x[6], y8_19) + m(x7_2, y7_19) + m(x[8], y6_19) + m(x9_2, y5_19);
+        let z5 = m(x[0], y[5]) + m(x[1], y[4])  + m(x[2], y[3])  + m(x[3], y[2])  + m(x[4], y[1])  + m(x[5], y[0])  + m(x[6], y9_19) + m(x[7], y8_19) + m(x[8], y7_19) + m(x[9], y6_19);
+        let z6 = m(x[0], y[6]) + m(x1_2, y[5])  + m(x[2], y[4])  + m(x3_2, y[3])  + m(x[4], y[2])  + m(x5_2, y[1])  + m(x[6], y[0])  + m(x7_2, y9_19) + m(x[8], y8_19) + m(x9_2, y7_19);
+        let z7 = m(x[0], y[7]) + m(x[1], y[6])  + m(x[2], y[5])  + m(x[3], y[4])  + m(x[4], y[3])  + m(x[5], y[2])  + m(x[6], y[1])  + m(x[7], y[0])  + m(x[8], y9_19) + m(x[9], y8_19);
+        let z8 = m(x[0], y[8]) + m(x1_2, y[7])  + m(x[2], y[6])  + m(x3_2, y[5])  + m(x[4], y[4])  + m(x5_2, y[3])  + m(x[6], y[2])  + m(x7_2, y[1])  + m(x[8], y[0])  + m(x9_2, y9_19);
+        let z9 = m(x[0], y[9]) + m(x[1], y[8])  + m(x[2], y[7])  + m(x[3], y[6])  + m(x[4], y[5])  + m(x[5], y[4])  + m(x[6], y[3])  + m(x[7], y[2])  + m(x[8], y[1])  + m(x[9], y[0]);
 
         // How big is the contribution to z[i+j] from x[i], y[j]?
         //
@@ -332,7 +336,6 @@ impl FieldElement2625 {
     /// either `2^(25 + 0.007)` or `2^(26 + 0.007)`, as appropriate.
     #[rustfmt::skip] // keep alignment of carry chain
     fn reduce(mut z: [u64; 10]) -> FieldElement2625 {
-
         const LOW_25_BITS: u64 = (1 << 25) - 1;
         const LOW_26_BITS: u64 = (1 << 26) - 1;
 
@@ -342,11 +345,11 @@ impl FieldElement2625 {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
-                z[i+1] += z[i] >> 26;
+                z[i + 1] += z[i] >> 26;
                 z[i] &= LOW_26_BITS;
             } else {
                 // Odd limbs have 25 bits
-                z[i+1] += z[i] >> 25;
+                z[i + 1] += z[i] >> 25;
                 z[i] &= LOW_25_BITS;
             }
         }
@@ -363,7 +366,7 @@ impl FieldElement2625 {
         // and z[5] < 2^25 + 2^13.0002 < 2^25.0004 (good enough)
 
         // Last carry has a multiplication by 19:
-        z[0] += 19*(z[9] >> 25);
+        z[0] += 19 * (z[9] >> 25);
         z[9] &= LOW_25_BITS;
 
         // Since z[9] < 2^64, c < 2^(64-25) = 2^39,
@@ -374,8 +377,16 @@ impl FieldElement2625 {
         // and we're done.
 
         FieldElement2625([
-            z[0] as u32, z[1] as u32, z[2] as u32, z[3] as u32, z[4] as u32,
-            z[5] as u32, z[6] as u32, z[7] as u32, z[8] as u32, z[9] as u32,
+            z[0] as u32,
+            z[1] as u32,
+            z[2] as u32,
+            z[3] as u32,
+            z[4] as u32,
+            z[5] as u32,
+            z[6] as u32,
+            z[7] as u32,
+            z[8] as u32,
+            z[9] as u32,
         ])
     }
 
@@ -391,7 +402,8 @@ impl FieldElement2625 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
-        //FeFromBytes
+        // FeFromBytes
+
         #[inline]
         fn load3(b: &[u8]) -> u64 {
             (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16)
@@ -538,39 +550,41 @@ impl FieldElement2625 {
         // Optimized version of multiplication for the case of squaring.
         // Pre- and post- conditions identical to multiplication function.
         let x = &self.0;
-        let x0_2   =  2 * x[0];
-        let x1_2   =  2 * x[1];
-        let x2_2   =  2 * x[2];
-        let x3_2   =  2 * x[3];
-        let x4_2   =  2 * x[4];
-        let x5_2   =  2 * x[5];
-        let x6_2   =  2 * x[6];
-        let x7_2   =  2 * x[7];
-        let x5_19  = 19 * x[5];
-        let x6_19  = 19 * x[6];
-        let x7_19  = 19 * x[7];
-        let x8_19  = 19 * x[8];
-        let x9_19  = 19 * x[9];
+        let x0_2 = 2 * x[0];
+        let x1_2 = 2 * x[1];
+        let x2_2 = 2 * x[2];
+        let x3_2 = 2 * x[3];
+        let x4_2 = 2 * x[4];
+        let x5_2 = 2 * x[5];
+        let x6_2 = 2 * x[6];
+        let x7_2 = 2 * x[7];
+        let x5_19 = 19 * x[5];
+        let x6_19 = 19 * x[6];
+        let x7_19 = 19 * x[7];
+        let x8_19 = 19 * x[8];
+        let x9_19 = 19 * x[9];
 
         /// Helper function to multiply two 32-bit integers with 64 bits
         /// of output.
         #[inline(always)]
-        fn m(x: u32, y: u32) -> u64 { (x as u64) * (y as u64) }
+        fn m(x: u32, y: u32) -> u64 {
+            (x as u64) * (y as u64)
+        }
 
         // This block is rearranged so that instead of doing a 32-bit multiplication by 38, we do a
         // 64-bit multiplication by 2 on the results.  This is because lg(38) is too big: we would
         // have less than 1 bit of headroom left, which is too little.
-        let mut z = [0u64;10];
-        z[0] = m(x[0],x[0]) + m(x2_2,x8_19) + m(x4_2,x6_19) + (m(x1_2,x9_19) + m(x3_2,x7_19) + m(x[5],x5_19))*2;
-        z[1] = m(x0_2,x[1]) + m(x3_2,x8_19) + m(x5_2,x6_19) + (m(x[2],x9_19) + m(x[4],x7_19))*2;
-        z[2] = m(x0_2,x[2]) + m(x1_2,x[1]) + m(x4_2,x8_19) + m(x[6],x6_19) + (m(x3_2,x9_19) + m(x5_2,x7_19))*2;
-        z[3] = m(x0_2,x[3]) + m(x1_2,x[2]) + m(x5_2,x8_19) + (m(x[4],x9_19) + m(x[6],x7_19))*2;
-        z[4] = m(x0_2,x[4]) + m(x1_2,x3_2) + m(x[2],x[2]) + m(x6_2,x8_19) + (m(x5_2,x9_19) + m(x[7],x7_19))*2;
-        z[5] = m(x0_2,x[5]) + m(x1_2,x[4]) + m(x2_2,x[3]) + m(x7_2,x8_19) + m(x[6],x9_19)*2;
-        z[6] = m(x0_2,x[6]) + m(x1_2,x5_2) + m(x2_2,x[4]) + m(x3_2,x[3]) + m(x[8],x8_19) + m(x7_2,x9_19)*2;
-        z[7] = m(x0_2,x[7]) + m(x1_2,x[6]) + m(x2_2,x[5]) + m(x3_2,x[4]) + m(x[8],x9_19)*2;
-        z[8] = m(x0_2,x[8]) + m(x1_2,x7_2) + m(x2_2,x[6]) + m(x3_2,x5_2) + m(x[4],x[4]) + m(x[9],x9_19)*2;
-        z[9] = m(x0_2,x[9]) + m(x1_2,x[8]) + m(x2_2,x[7]) + m(x3_2,x[6]) + m(x4_2,x[5]) ;
+        let mut z = [0u64; 10];
+        z[0] = m(x[0], x[0]) + m(x2_2,x8_19) + m(x4_2, x6_19) + (m(x1_2, x9_19) +  m(x3_2, x7_19)  + m(x[5], x5_19)) * 2;
+        z[1] = m(x0_2, x[1]) + m(x3_2,x8_19) + m(x5_2, x6_19) + (m(x[2], x9_19) +  m(x[4], x7_19)) * 2;
+        z[2] = m(x0_2, x[2]) + m(x1_2, x[1]) + m(x4_2, x8_19) +  m(x[6], x6_19) + (m(x3_2, x9_19)  + m(x5_2, x7_19)) * 2;
+        z[3] = m(x0_2, x[3]) + m(x1_2, x[2]) + m(x5_2, x8_19) + (m(x[4], x9_19) +  m(x[6], x7_19)) * 2;
+        z[4] = m(x0_2, x[4]) + m(x1_2, x3_2) + m(x[2],  x[2]) +  m(x6_2, x8_19) + (m(x5_2, x9_19)  + m(x[7], x7_19)) * 2;
+        z[5] = m(x0_2, x[5]) + m(x1_2, x[4]) + m(x2_2,  x[3]) +  m(x7_2, x8_19) +  m(x[6], x9_19)  * 2;
+        z[6] = m(x0_2, x[6]) + m(x1_2, x5_2) + m(x2_2,  x[4]) +  m(x3_2,  x[3]) +  m(x[8], x8_19)  + m(x7_2, x9_19) * 2;
+        z[7] = m(x0_2, x[7]) + m(x1_2, x[6]) + m(x2_2,  x[5]) +  m(x3_2,  x[4]) +  m(x[8], x9_19)  * 2;
+        z[8] = m(x0_2, x[8]) + m(x1_2, x7_2) + m(x2_2,  x[6]) +  m(x3_2,  x5_2) +  m(x[4], x[4])   +  m(x[9], x9_19) * 2;
+        z[9] = m(x0_2, x[9]) + m(x1_2, x[8]) + m(x2_2,  x[7]) +  m(x3_2,  x[6]) +  m(x4_2, x[5]);
 
         z
     }

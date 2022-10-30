@@ -561,7 +561,7 @@ impl FieldElement2625x4 {
         let c = z[9] >> 25;
         z[9] = z[9] & LOW_25_BITS;
         let mut c0: u64x4 = c & LOW_26_BITS; // c0 < 2^26;
-        let mut c1: u64x4 = c >> 26;         // c1 < 2^(39-26) = 2^13;
+        let mut c1: u64x4 = c >> 26; // c1 < 2^(39-26) = 2^13;
 
         unsafe {
             use core::arch::x86_64::_mm256_mul_epu32;
@@ -621,20 +621,20 @@ impl FieldElement2625x4 {
         let (x6, x7) = unpack_pair(self.0[3]);
         let (x8, x9) = unpack_pair(self.0[4]);
 
-        let x0_2   = x0 << 1;
-        let x1_2   = x1 << 1;
-        let x2_2   = x2 << 1;
-        let x3_2   = x3 << 1;
-        let x4_2   = x4 << 1;
-        let x5_2   = x5 << 1;
-        let x6_2   = x6 << 1;
-        let x7_2   = x7 << 1;
+        let x0_2 = x0 << 1;
+        let x1_2 = x1 << 1;
+        let x2_2 = x2 << 1;
+        let x3_2 = x3 << 1;
+        let x4_2 = x4 << 1;
+        let x5_2 = x5 << 1;
+        let x6_2 = x6 << 1;
+        let x7_2 = x7 << 1;
 
-        let x5_19  = m_lo(v19, x5);
-        let x6_19  = m_lo(v19, x6);
-        let x7_19  = m_lo(v19, x7);
-        let x8_19  = m_lo(v19, x8);
-        let x9_19  = m_lo(v19, x9);
+        let x5_19 = m_lo(v19, x5);
+        let x6_19 = m_lo(v19, x6);
+        let x7_19 = m_lo(v19, x7);
+        let x8_19 = m_lo(v19, x8);
+        let x9_19 = m_lo(v19, x9);
 
         let mut z0 = m(x0,  x0) + m(x2_2,x8_19) + m(x4_2,x6_19) + ((m(x1_2,x9_19) +  m(x3_2,x7_19) +    m(x5,x5_19)) << 1);
         let mut z1 = m(x0_2,x1) + m(x3_2,x8_19) + m(x5_2,x6_19) +                  ((m(x2,x9_19)   +    m(x4,x7_19)) << 1);
@@ -825,16 +825,16 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         let x7_2 = x7 + x7;
         let x9_2 = x9 + x9;
 
-        let z0 = m(x0,y0) + m(x1_2,y9_19) + m(x2,y8_19) + m(x3_2,y7_19) + m(x4,y6_19) + m(x5_2,y5_19) + m(x6,y4_19) + m(x7_2,y3_19) + m(x8,y2_19) + m(x9_2,y1_19);
-        let z1 = m(x0,y1) +   m(x1,y0)    + m(x2,y9_19) +   m(x3,y8_19) + m(x4,y7_19) +   m(x5,y6_19) + m(x6,y5_19) +   m(x7,y4_19) + m(x8,y3_19) + m(x9,y2_19);
-        let z2 = m(x0,y2) + m(x1_2,y1)    + m(x2,y0)    + m(x3_2,y9_19) + m(x4,y8_19) + m(x5_2,y7_19) + m(x6,y6_19) + m(x7_2,y5_19) + m(x8,y4_19) + m(x9_2,y3_19);
-        let z3 = m(x0,y3) +   m(x1,y2)    + m(x2,y1)    +   m(x3,y0)    + m(x4,y9_19) +   m(x5,y8_19) + m(x6,y7_19) +   m(x7,y6_19) + m(x8,y5_19) + m(x9,y4_19);
-        let z4 = m(x0,y4) + m(x1_2,y3)    + m(x2,y2)    + m(x3_2,y1)    + m(x4,y0)    + m(x5_2,y9_19) + m(x6,y8_19) + m(x7_2,y7_19) + m(x8,y6_19) + m(x9_2,y5_19);
-        let z5 = m(x0,y5) +   m(x1,y4)    + m(x2,y3)    +   m(x3,y2)    + m(x4,y1)    +   m(x5,y0)    + m(x6,y9_19) +   m(x7,y8_19) + m(x8,y7_19) + m(x9,y6_19);
-        let z6 = m(x0,y6) + m(x1_2,y5)    + m(x2,y4)    + m(x3_2,y3)    + m(x4,y2)    + m(x5_2,y1)    + m(x6,y0)    + m(x7_2,y9_19) + m(x8,y8_19) + m(x9_2,y7_19);
-        let z7 = m(x0,y7) +   m(x1,y6)    + m(x2,y5)    +   m(x3,y4)    + m(x4,y3)    +   m(x5,y2)    + m(x6,y1)    +   m(x7,y0)    + m(x8,y9_19) + m(x9,y8_19);
-        let z8 = m(x0,y8) + m(x1_2,y7)    + m(x2,y6)    + m(x3_2,y5)    + m(x4,y4)    + m(x5_2,y3)    + m(x6,y2)    + m(x7_2,y1)    + m(x8,y0)    + m(x9_2,y9_19);
-        let z9 = m(x0,y9) +   m(x1,y8)    + m(x2,y7)    +   m(x3,y6)    + m(x4,y5)    +   m(x5,y4)    + m(x6,y3)    +   m(x7,y2)    + m(x8,y1)    + m(x9,y0);
+        let z0 = m(x0, y0) + m(x1_2, y9_19) + m(x2, y8_19) + m(x3_2, y7_19) + m(x4, y6_19) + m(x5_2, y5_19) + m(x6, y4_19) + m(x7_2, y3_19) + m(x8, y2_19) + m(x9_2, y1_19);
+        let z1 = m(x0, y1) + m(x1  , y0   ) + m(x2, y9_19) + m(x3  , y8_19) + m(x4, y7_19) + m(x5  , y6_19) + m(x6, y5_19) + m(x7  , y4_19) + m(x8, y3_19) + m(x9  , y2_19);
+        let z2 = m(x0, y2) + m(x1_2, y1   ) + m(x2, y0   ) + m(x3_2, y9_19) + m(x4, y8_19) + m(x5_2, y7_19) + m(x6, y6_19) + m(x7_2, y5_19) + m(x8, y4_19) + m(x9_2, y3_19);
+        let z3 = m(x0, y3) + m(x1  , y2   ) + m(x2, y1   ) + m(x3  , y0   ) + m(x4, y9_19) + m(x5  , y8_19) + m(x6, y7_19) + m(x7  , y6_19) + m(x8, y5_19) + m(x9  , y4_19);
+        let z4 = m(x0, y4) + m(x1_2, y3   ) + m(x2, y2   ) + m(x3_2, y1   ) + m(x4, y0)    + m(x5_2, y9_19) + m(x6, y8_19) + m(x7_2, y7_19) + m(x8, y6_19) + m(x9_2, y5_19);
+        let z5 = m(x0, y5) + m(x1  , y4   ) + m(x2, y3   ) + m(x3  , y2   ) + m(x4, y1)    + m(x5  , y0   ) + m(x6, y9_19) + m(x7  , y8_19) + m(x8, y7_19) + m(x9  , y6_19);
+        let z6 = m(x0, y6) + m(x1_2, y5   ) + m(x2, y4   ) + m(x3_2, y3   ) + m(x4, y2)    + m(x5_2, y1   ) + m(x6, y0   ) + m(x7_2, y9_19) + m(x8, y8_19) + m(x9_2, y7_19);
+        let z7 = m(x0, y7) + m(x1  , y6   ) + m(x2, y5   ) + m(x3  , y4   ) + m(x4, y3)    + m(x5  , y2   ) + m(x6, y1   ) + m(x7  , y0   ) + m(x8, y9_19) + m(x9  , y8_19);
+        let z8 = m(x0, y8) + m(x1_2, y7   ) + m(x2, y6   ) + m(x3_2, y5   ) + m(x4, y4)    + m(x5_2, y3   ) + m(x6, y2   ) + m(x7_2, y1   ) + m(x8, y0   ) + m(x9_2, y9_19);
+        let z9 = m(x0, y9) + m(x1  , y8   ) + m(x2, y7   ) + m(x3  , y6   ) + m(x4, y5)    + m(x5  , y4   ) + m(x6, y3   ) + m(x7  , y2   ) + m(x8, y1   ) + m(x9  , y0   );
 
         // The bounds on z[i] are the same as in the serial 32-bit code
         // and the comment below is copied from there:

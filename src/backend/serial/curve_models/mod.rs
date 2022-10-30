@@ -375,6 +375,7 @@ impl ProjectivePoint {
     /// Double this point: return self + self
     pub fn double(&self) -> CompletedPoint {
         // Double()
+
         let XX = self.X.square();
         let YY = self.Y.square();
         let ZZ2 = self.Z.square2();

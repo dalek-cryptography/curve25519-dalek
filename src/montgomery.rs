@@ -270,34 +270,34 @@ fn differential_add_and_double(
     let t2 = &Q.U + &Q.W;
     let t3 = &Q.U - &Q.W;
 
-    let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
-    let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+    let t4 = t0.square(); // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+    let t5 = t1.square(); // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
 
-    let t6 = &t4 - &t5;     // 4 U_P W_P
+    let t6 = &t4 - &t5; // 4 U_P W_P
 
-    let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
-    let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+    let t7 = &t0 * &t3; // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+    let t8 = &t1 * &t2; // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
 
-    let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
-    let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+    let t9  = &t7 + &t8; // 2 (U_P U_Q - W_P W_Q)
+    let t10 = &t7 - &t8; // 2 (W_P U_Q - U_P W_Q)
 
     let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
     let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
 
     let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
 
-    let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
-    let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+    let t14 = &t4 * &t5;  // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+    let t15 = &t13 + &t5; // (U_P - W_P)^2 + (A + 2) U_P W_P
 
-    let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+    let t16 = &t6 * &t15; // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
 
     let t17 = affine_PmQ * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
     let t18 = t11;               // W_D * 4 (U_P U_Q - W_P W_Q)^2
 
-    P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
-    P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
-    Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
-    Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+    P.U = t14; // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+    P.W = t16; // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+    Q.U = t18; // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
+    Q.W = t17; // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);

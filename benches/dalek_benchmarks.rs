@@ -176,41 +176,43 @@ mod multiscalar_benches {
         for multiscalar_size in &MULTISCALAR_SIZES {
             let bench_id = BenchmarkId::new(
                 "Variable-time mixed-base",
-                format!("(size: {:?}), ({:.0}pct dyn)", multiscalar_size, 100.0 * dynamic_fraction),
+                format!(
+                    "(size: {:?}), ({:.0}pct dyn)",
+                    multiscalar_size,
+                    100.0 * dynamic_fraction
+                ),
             );
 
-            c.bench_with_input(bench_id, &multiscalar_size,
-                move |b, &&total_size| {
-                    let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
-                    let static_size = total_size - dynamic_size;
+            c.bench_with_input(bench_id, &multiscalar_size, move |b, &&total_size| {
+                let dynamic_size = ((total_size as f64) * dynamic_fraction) as usize;
+                let static_size = total_size - dynamic_size;
 
-                    let static_points = construct_points(static_size);
-                    let dynamic_points = construct_points(dynamic_size);
-                    let precomp = VartimeEdwardsPrecomputation::new(&static_points);
-                    // Rerandomize the scalars for every call to prevent
-                    // false timings from better caching (e.g., the CPU
-                    // cache lifts exactly the right table entries for the
-                    // benchmark into the highest cache levels).  Timings
-                    // should be independent of points so we don't
-                    // randomize them.
-                    b.iter_batched(
-                        || {
-                            (
-                                construct_scalars(static_size),
-                                construct_scalars(dynamic_size),
-                            )
-                        },
-                        |(static_scalars, dynamic_scalars)| {
-                            precomp.vartime_mixed_multiscalar_mul(
-                                &static_scalars,
-                                &dynamic_scalars,
-                                &dynamic_points,
-                            )
-                        },
-                        BatchSize::SmallInput,
-                    );
-                },
-            );
+                let static_points = construct_points(static_size);
+                let dynamic_points = construct_points(dynamic_size);
+                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+                // Rerandomize the scalars for every call to prevent
+                // false timings from better caching (e.g., the CPU
+                // cache lifts exactly the right table entries for the
+                // benchmark into the highest cache levels).  Timings
+                // should be independent of points so we don't
+                // randomize them.
+                b.iter_batched(
+                    || {
+                        (
+                            construct_scalars(static_size),
+                            construct_scalars(dynamic_size),
+                        )
+                    },
+                    |(static_scalars, dynamic_scalars)| {
+                        precomp.vartime_mixed_multiscalar_mul(
+                            &static_scalars,
+                            &dynamic_scalars,
+                            &dynamic_points,
+                        )
+                    },
+                    BatchSize::SmallInput,
+                );
+            });
         }
     }
 

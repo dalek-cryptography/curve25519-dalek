@@ -110,8 +110,8 @@ impl MultiscalarMul for Straus {
         use zeroize::Zeroizing;
 
         use crate::backend::serial::curve_models::ProjectiveNielsPoint;
-        use crate::window::LookupTable;
         use crate::traits::Identity;
+        use crate::window::LookupTable;
 
         let lookup_tables: Vec<_> = points
             .into_iter()
@@ -161,9 +161,11 @@ impl VartimeMultiscalarMul for Straus {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use crate::backend::serial::curve_models::{CompletedPoint, ProjectiveNielsPoint, ProjectivePoint};
-        use crate::window::NafLookupTable5;
+        use crate::backend::serial::curve_models::{
+            CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
+        };
         use crate::traits::Identity;
+        use crate::window::NafLookupTable5;
 
         let nafs: Vec<_> = scalars
             .into_iter()

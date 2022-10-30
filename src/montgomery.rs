@@ -151,7 +151,9 @@ impl MontgomeryPoint {
 
         let u = FieldElement::from_bytes(&self.0);
 
-        if u == FieldElement::minus_one() { return None; }
+        if u == FieldElement::minus_one() {
+            return None;
+        }
 
         let one = FieldElement::one();
 
@@ -300,8 +302,16 @@ fn differential_add_and_double(
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);
 
-define_mul_variants!(LHS = MontgomeryPoint, RHS = Scalar, Output = MontgomeryPoint);
-define_mul_variants!(LHS = Scalar, RHS = MontgomeryPoint, Output = MontgomeryPoint);
+define_mul_variants!(
+    LHS = MontgomeryPoint,
+    RHS = Scalar,
+    Output = MontgomeryPoint
+);
+define_mul_variants!(
+    LHS = Scalar,
+    RHS = MontgomeryPoint,
+    Output = MontgomeryPoint
+);
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
 impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
@@ -397,7 +407,7 @@ mod test {
         );
         // sign bit = 1 => minus basepoint
         assert_eq!(
-            - constants::ED25519_BASEPOINT_POINT,
+            -constants::ED25519_BASEPOINT_POINT,
             constants::X25519_BASEPOINT.to_edwards(1).unwrap()
         );
     }
@@ -417,7 +427,7 @@ mod test {
         let one = FieldElement::one();
 
         // u = 2 corresponds to a point on the twist.
-        let two = MontgomeryPoint((&one+&one).to_bytes());
+        let two = MontgomeryPoint((&one + &one).to_bytes());
 
         assert!(two.to_edwards(0).is_none());
 
@@ -431,7 +441,8 @@ mod test {
 
     #[test]
     fn eq_defined_mod_p() {
-        let mut u18_bytes = [0u8; 32]; u18_bytes[0] = 18;
+        let mut u18_bytes = [0u8; 32];
+        u18_bytes[0] = 18;
         let u18 = MontgomeryPoint(u18_bytes);
         let u18_unred = MontgomeryPoint([255; 32]);
 

@@ -39,7 +39,7 @@ use zeroize::Zeroize;
 /// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement51(pub (crate) [u64; 5]);
+pub struct FieldElement51(pub(crate) [u64; 5]);
 
 impl Debug for FieldElement51 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -267,17 +267,23 @@ impl FieldElement51 {
 
     /// Construct zero.
     pub fn zero() -> FieldElement51 {
-        FieldElement51([ 0, 0, 0, 0, 0 ])
+        FieldElement51([0, 0, 0, 0, 0])
     }
 
     /// Construct one.
     pub fn one() -> FieldElement51 {
-        FieldElement51([ 1, 0, 0, 0, 0 ])
+        FieldElement51([1, 0, 0, 0, 0])
     }
 
     /// Construct -1.
     pub fn minus_one() -> FieldElement51 {
-        FieldElement51([2251799813685228, 2251799813685247, 2251799813685247, 2251799813685247, 2251799813685247])
+        FieldElement51([
+            2251799813685228,
+            2251799813685247,
+            2251799813685247,
+            2251799813685247,
+            2251799813685247,
+        ])
     }
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
@@ -344,17 +350,15 @@ impl FieldElement51 {
 
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement51(
-        // load bits [  0, 64), no shift
-        [  load8(&bytes[ 0..])        & low_51_bit_mask
-        // load bits [ 48,112), shift to [ 51,112)
-        , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
-        // load bits [ 96,160), shift to [102,160)
-        , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
-        // load bits [152,216), shift to [153,216)
-        , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
-        // load bits [192,256), shift to [204,112)
-        , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
-        ])
+            // load bits [  0, 64), no shift
+            [
+                load8(&bytes[0..]) & low_51_bit_mask, // load bits [ 48,112), shift to [ 51,112)
+                (load8(&bytes[6..]) >> 3) & low_51_bit_mask, // load bits [ 96,160), shift to [102,160)
+                (load8(&bytes[12..]) >> 6) & low_51_bit_mask, // load bits [152,216), shift to [153,216)
+                (load8(&bytes[19..]) >> 1) & low_51_bit_mask, // load bits [192,256), shift to [204,112)
+                (load8(&bytes[24..]) >> 12) & low_51_bit_mask,
+            ],
+        )
     }
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The

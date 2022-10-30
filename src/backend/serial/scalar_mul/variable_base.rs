@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
-use crate::traits::Identity;
-use crate::scalar::Scalar;
-use crate::edwards::EdwardsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
 use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
@@ -31,14 +31,14 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     // Now tmp1 = s_63*P in P1xP1 coords
     for i in (0..63).rev() {
         tmp2 = tmp1.to_projective(); // tmp2 =    (prev) in P2 coords
-        tmp1 = tmp2.double();        // tmp1 =  2*(prev) in P1xP1 coords
+        tmp1 = tmp2.double(); // tmp1 =  2*(prev) in P1xP1 coords
         tmp2 = tmp1.to_projective(); // tmp2 =  2*(prev) in P2 coords
-        tmp1 = tmp2.double();        // tmp1 =  4*(prev) in P1xP1 coords
+        tmp1 = tmp2.double(); // tmp1 =  4*(prev) in P1xP1 coords
         tmp2 = tmp1.to_projective(); // tmp2 =  4*(prev) in P2 coords
-        tmp1 = tmp2.double();        // tmp1 =  8*(prev) in P1xP1 coords
+        tmp1 = tmp2.double(); // tmp1 =  8*(prev) in P1xP1 coords
         tmp2 = tmp1.to_projective(); // tmp2 =  8*(prev) in P2 coords
-        tmp1 = tmp2.double();        // tmp1 = 16*(prev) in P1xP1 coords
-        tmp3 = tmp1.to_extended();   // tmp3 = 16*(prev) in P3 coords
+        tmp1 = tmp2.double(); // tmp1 = 16*(prev) in P1xP1 coords
+        tmp3 = tmp1.to_extended(); // tmp3 = 16*(prev) in P3 coords
         tmp1 = &tmp3 + &lookup_table.select(scalar_digits[i]);
         // Now tmp1 = s_i*P + 16*(prev) in P1xP1 coords
     }

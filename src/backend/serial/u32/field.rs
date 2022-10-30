@@ -50,7 +50,7 @@ use zeroize::Zeroize;
 /// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement2625(pub (crate) [u32; 10]);
+pub struct FieldElement2625(pub(crate) [u32; 10]);
 
 impl Debug for FieldElement2625 {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
@@ -98,7 +98,8 @@ impl<'b> SubAssign<&'b FieldElement2625> for FieldElement2625 {
             ((self.0[7] + (0x1ffffff << 4)) - b[7]) as u64,
             ((self.0[8] + (0x3ffffff << 4)) - b[8]) as u64,
             ((self.0[9] + (0x1ffffff << 4)) - b[9]) as u64,
-        ]).0;
+        ])
+        .0;
     }
 }
 
@@ -297,25 +298,25 @@ impl FieldElement2625 {
 
     /// Construct zero.
     pub fn zero() -> FieldElement2625 {
-        FieldElement2625([ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+        FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     /// Construct one.
     pub fn one() -> FieldElement2625 {
-        FieldElement2625([ 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 ])
+        FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     }
 
     /// Construct -1.
     pub fn minus_one() -> FieldElement2625 {
         FieldElement2625([
-            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff,
-            0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+            0x3ffffff, 0x1ffffff,
         ])
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
     pub fn pow2k(&self, k: u32) -> FieldElement2625 {
-        debug_assert!( k > 0 );
+        debug_assert!(k > 0);
         let mut z = self.square();
         for _ in 1..k {
             z = z.square();
@@ -389,28 +390,29 @@ impl FieldElement2625 {
     /// encoding of every field element should decode, re-encode to
     /// the canonical encoding, and check that the input was
     /// canonical.
-    pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 { //FeFromBytes
+    pub fn from_bytes(data: &[u8; 32]) -> FieldElement2625 {
+        //FeFromBytes
         #[inline]
         fn load3(b: &[u8]) -> u64 {
-           (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16)
+            (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16)
         }
 
         #[inline]
         fn load4(b: &[u8]) -> u64 {
-           (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16) | ((b[3] as u64) << 24)
+            (b[0] as u64) | ((b[1] as u64) << 8) | ((b[2] as u64) << 16) | ((b[3] as u64) << 24)
         }
 
-        let mut h = [0u64;10];
+        let mut h = [0u64; 10];
         const LOW_23_BITS: u64 = (1 << 23) - 1;
-        h[0] =  load4(&data[ 0..]);
-        h[1] =  load3(&data[ 4..]) << 6;
-        h[2] =  load3(&data[ 7..]) << 5;
-        h[3] =  load3(&data[10..]) << 3;
-        h[4] =  load3(&data[13..]) << 2;
-        h[5] =  load4(&data[16..]);
-        h[6] =  load3(&data[20..]) << 7;
-        h[7] =  load3(&data[23..]) << 5;
-        h[8] =  load3(&data[26..]) << 4;
+        h[0] = load4(&data[0..]);
+        h[1] = load3(&data[4..]) << 6;
+        h[2] = load3(&data[7..]) << 5;
+        h[3] = load3(&data[10..]) << 3;
+        h[4] = load3(&data[13..]) << 2;
+        h[5] = load4(&data[16..]);
+        h[6] = load3(&data[20..]) << 7;
+        h[7] = load3(&data[23..]) << 5;
+        h[8] = load3(&data[26..]) << 4;
         h[9] = (load3(&data[29..]) & LOW_23_BITS) << 2;
 
         FieldElement2625::reduce(h)
@@ -419,14 +421,22 @@ impl FieldElement2625 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(&self) -> [u8; 32] {
-
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([
             // XXX this cast is annoying
-            inp[0] as u64, inp[1] as u64, inp[2] as u64, inp[3] as u64, inp[4] as u64,
-            inp[5] as u64, inp[6] as u64, inp[7] as u64, inp[8] as u64, inp[9] as u64,
-        ]).0;
+            inp[0] as u64,
+            inp[1] as u64,
+            inp[2] as u64,
+            inp[3] as u64,
+            inp[4] as u64,
+            inp[5] as u64,
+            inp[6] as u64,
+            inp[7] as u64,
+            inp[8] as u64,
+            inp[9] as u64,
+        ])
+        .0;
 
         // Let h be the value to encode.
         //
@@ -448,14 +458,14 @@ impl FieldElement2625 {
         q = (h[8] + q) >> 26;
         q = (h[9] + q) >> 25;
 
-        debug_assert!( q == 0 || q == 1 );
+        debug_assert!(q == 0 || q == 1);
 
         // Now we can compute r as r = h - pq = r - (2^255-19)q = r + 19q - 2^255q
 
         const LOW_25_BITS: u32 = (1 << 25) - 1;
         const LOW_26_BITS: u32 = (1 << 26) - 1;
 
-        h[0] += 19*q;
+        h[0] += 19 * q;
 
         // Now carry the result to compute r + 19q...
         h[1] += h[0] >> 26;
@@ -480,7 +490,7 @@ impl FieldElement2625 {
         // ... but instead of carrying the value
         // (h[9] >> 25) = q*2^255 into another limb,
         // discard it, subtracting the value from h.
-        debug_assert!( (h[9] >> 25) == 0 || (h[9] >> 25) == 1);
+        debug_assert!((h[9] >> 25) == 0 || (h[9] >> 25) == 1);
         h[9] = h[9] & LOW_25_BITS;
 
         let mut s = [0u8; 32];

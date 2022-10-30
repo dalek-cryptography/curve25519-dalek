@@ -187,7 +187,6 @@ type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 #[cfg(feature = "u32_backend")]
 type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
-
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
 #[derive(Copy, Clone, Hash)]
@@ -212,7 +211,7 @@ impl Scalar {
     /// modulo the group order \\( \ell \\).
     pub fn from_bytes_mod_order(bytes: [u8; 32]) -> Scalar {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
-        let s_unreduced = Scalar{bytes};
+        let s_unreduced = Scalar { bytes };
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
@@ -236,7 +235,9 @@ impl Scalar {
     /// - `None` if `bytes` is not a canonical byte representation.
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> Option<Scalar> {
         // Check that the high bit is not set
-        if (bytes[31] >> 7) != 0u8 { return None; }
+        if (bytes[31] >> 7) != 0u8 {
+            return None;
+        }
         let candidate = Scalar::from_bits(bytes);
 
         if candidate.is_canonical() {
@@ -252,7 +253,7 @@ impl Scalar {
     /// require specific bit-patterns when performing scalar
     /// multiplication.
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
-        let mut s = Scalar{bytes};
+        let mut s = Scalar { bytes };
         // Ensure that s < 2^255 by masking the high bit
         s.bytes[31] &= 0b0111_1111;
 
@@ -386,14 +387,15 @@ impl ConditionallySelectable for Scalar {
 }
 
 #[cfg(feature = "serde")]
-use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
-#[cfg(feature = "serde")]
 use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl Serialize for Scalar {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         use serde::ser::SerializeTuple;
         let mut tup = serializer.serialize_tuple(32)?;
@@ -407,7 +409,8 @@ impl Serialize for Scalar {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Scalar {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         struct ScalarVisitor;
 
@@ -419,17 +422,18 @@ impl<'de> Deserialize<'de> for Scalar {
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
-                where A: serde::de::SeqAccess<'de>
+            where
+                A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
                 for i in 0..32 {
-                    bytes[i] = seq.next_element()?
+                    bytes[i] = seq
+                        .next_element()?
                         .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
-                Scalar::from_canonical_bytes(bytes)
-                    .ok_or(serde::de::Error::custom(
-                        &"scalar was not canonically encoded"
-                    ))
+                Scalar::from_canonical_bytes(bytes).ok_or(serde::de::Error::custom(
+                    &"scalar was not canonically encoded",
+                ))
             }
         }
 
@@ -439,11 +443,11 @@ impl<'de> Deserialize<'de> for Scalar {
 
 impl<T> Product<T> for Scalar
 where
-    T: Borrow<Scalar>
+    T: Borrow<Scalar>,
 {
     fn product<I>(iter: I) -> Self
     where
-        I: Iterator<Item = T>
+        I: Iterator<Item = T>,
     {
         iter.fold(Scalar::one(), |acc, item| acc * item.borrow())
     }
@@ -451,11 +455,11 @@ where
 
 impl<T> Sum<T> for Scalar
 where
-    T: Borrow<Scalar>
+    T: Borrow<Scalar>,
 {
     fn sum<I>(iter: I) -> Self
     where
-        I: Iterator<Item = T>
+        I: Iterator<Item = T>,
     {
         iter.fold(Scalar::zero(), |acc, item| acc + item.borrow())
     }
@@ -471,7 +475,7 @@ impl From<u8> for Scalar {
     fn from(x: u8) -> Scalar {
         let mut s_bytes = [0u8; 32];
         s_bytes[0] = x;
-        Scalar{ bytes: s_bytes }
+        Scalar { bytes: s_bytes }
     }
 }
 
@@ -587,7 +591,8 @@ impl Scalar {
     /// # }
     /// ```
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-        where D: Digest<OutputSize = U64> + Default
+    where
+        D: Digest<OutputSize = U64> + Default,
     {
         let mut hash = D::default();
         hash.update(input);
@@ -628,7 +633,8 @@ impl Scalar {
     /// # }
     /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
-        where D: Digest<OutputSize = U64>
+    where
+        D: Digest<OutputSize = U64>,
     {
         let mut output = [0u8; 64];
         output.copy_from_slice(hash.finalize().as_slice());
@@ -667,15 +673,15 @@ impl Scalar {
 
     /// Construct the scalar \\( 0 \\).
     pub fn zero() -> Self {
-        Scalar { bytes: [0u8; 32]}
+        Scalar { bytes: [0u8; 32] }
     }
 
     /// Construct the scalar \\( 1 \\).
     pub fn one() -> Self {
         Scalar {
             bytes: [
-                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
             ],
         }
     }
@@ -817,7 +823,7 @@ impl Scalar {
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
             // while the upper bits index the byte.
-            bits[i] = ((self.bytes[i>>3] >> (i&7)) & 1u8) as i8;
+            bits[i] = ((self.bytes[i >> 3] >> (i & 7)) & 1u8) as i8;
         }
         bits
     }
@@ -896,7 +902,7 @@ impl Scalar {
     /// initially, we don't need to emit anything.
     pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256] {
         // required by the NAF definition
-        debug_assert!( w >= 2 );
+        debug_assert!(w >= 2);
         // required so that the NAF digits fit in i8
         debug_assert!(w <= 8);
 
@@ -920,7 +926,7 @@ impl Scalar {
                 bit_buf = x_u64[u64_idx] >> bit_idx;
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx));
+                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx));
             }
 
             // Add the carry into the current window
@@ -935,7 +941,7 @@ impl Scalar {
                 continue;
             }
 
-            if window < width/2 {
+            if window < width / 2 {
                 carry = 0;
                 naf[pos] = window as i8;
             } else {
@@ -962,21 +968,25 @@ impl Scalar {
         // Step 1: change radix.
         // Convert from radix 256 (bytes) to radix 16 (nibbles)
         #[inline(always)]
-        fn bot_half(x: u8) -> u8 { (x >> 0) & 15 }
+        fn bot_half(x: u8) -> u8 {
+            (x >> 0) & 15
+        }
         #[inline(always)]
-        fn top_half(x: u8) -> u8 { (x >> 4) & 15 }
+        fn top_half(x: u8) -> u8 {
+            (x >> 4) & 15
+        }
 
         for i in 0..32 {
-            output[2*i  ] = bot_half(self[i]) as i8;
-            output[2*i+1] = top_half(self[i]) as i8;
+            output[2 * i] = bot_half(self[i]) as i8;
+            output[2 * i + 1] = top_half(self[i]) as i8;
         }
         // Precondition note: since self[31] <= 127, output[63] <= 7
 
         // Step 2: recenter coefficients from [0,16) to [-8,8)
         for i in 0..63 {
-            let carry    = (output[i] + 8) >> 4;
-            output[i  ] -= carry << 4;
-            output[i+1] += carry;
+            let carry = (output[i] + 8) >> 4;
+            output[i] -= carry << 4;
+            output[i + 1] += carry;
         }
         // Precondition note: output[63] is not recentered.  It
         // increases by carry <= 1.  Thus output[63] <= 8.
@@ -991,12 +1001,12 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4 => (256 + w - 1)/w as usize,
-            5 => (256 + w - 1)/w as usize,
-            6 => (256 + w - 1)/w as usize,
-            7 => (256 + w - 1)/w as usize,
+            4 => (256 + w - 1) / w as usize,
+            5 => (256 + w - 1) / w as usize,
+            6 => (256 + w - 1) / w as usize,
+            7 => (256 + w - 1) / w as usize,
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1)/w + 1 as usize,
+            8 => (256 + w - 1) / w + 1 as usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1038,29 +1048,30 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1)/w as usize;
+        let digits_count = (256 + w - 1) / w as usize;
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
-            let bit_offset = i*w;
+            let bit_offset = i * w;
             let u64_idx = bit_offset / 64;
             let bit_idx = bit_offset % 64;
 
             // Read the bits from the scalar
             let bit_buf: u64;
-            if bit_idx < 64 - w  || u64_idx == 3 {
+            if bit_idx < 64 - w || u64_idx == 3 {
                 // This window's bits are contained in a single u64,
                 // or it's the last u64 anyway.
                 bit_buf = scalar64x4[u64_idx] >> bit_idx;
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                bit_buf = (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1+u64_idx] << (64 - bit_idx));
+                bit_buf =
+                    (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx));
             }
 
             // Read the actual coefficient value from the window
             let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
 
-             // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
-            carry = (coef + (radix/2) as u64) >> w;
+            // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
+            carry = (coef + (radix / 2) as u64) >> w;
             digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
         }
 
@@ -1074,7 +1085,7 @@ impl Scalar {
         // and accumulate the final carry onto another digit.
         match w {
             8 => digits[digits_count] += carry as i8,
-            _ => digits[digits_count-1] += (carry << w) as i8,
+            _ => digits[digits_count - 1] += (carry << w) as i8,
         }
 
         digits
@@ -1118,7 +1129,9 @@ impl Scalar {
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
-        Scalar{ bytes: self.to_bytes() }
+        Scalar {
+            bytes: self.to_bytes(),
+        }
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
@@ -1210,109 +1223,110 @@ mod test {
     use crate::constants;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
-    pub static X: Scalar = Scalar{
+    pub static X: Scalar = Scalar {
         bytes: [
-            0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84,
-            0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2, 0x7d, 0x52,
-            0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44,
-            0xd4, 0x49, 0xf4, 0xa8, 0x79, 0xd9, 0xf2, 0x04,
+            0x4e, 0x5a, 0xb4, 0x34, 0x5d, 0x47, 0x08, 0x84, 0x59, 0x13, 0xb4, 0x64, 0x1b, 0xc2,
+            0x7d, 0x52, 0x52, 0xa5, 0x85, 0x10, 0x1b, 0xcc, 0x42, 0x44, 0xd4, 0x49, 0xf4, 0xa8,
+            0x79, 0xd9, 0xf2, 0x04,
         ],
     };
     /// 1/x = 6859937278830797291664592131120606308688036382723378951768035303146619657244
-    pub static XINV: Scalar = Scalar{
+    pub static XINV: Scalar = Scalar {
         bytes: [
-            0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb,
-            0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01, 0x63, 0x47,
-            0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96,
-            0xd5, 0x0b, 0xcd, 0x7a, 0x3f, 0x96, 0x2a, 0x0f,
+            0x1c, 0xdc, 0x17, 0xfc, 0xe0, 0xe9, 0xa5, 0xbb, 0xd9, 0x24, 0x7e, 0x56, 0xbb, 0x01,
+            0x63, 0x47, 0xbb, 0xba, 0x31, 0xed, 0xd5, 0xa9, 0xbb, 0x96, 0xd5, 0x0b, 0xcd, 0x7a,
+            0x3f, 0x96, 0x2a, 0x0f,
         ],
     };
     /// y = 2592331292931086675770238855846338635550719849568364935475441891787804997264
-    pub static Y: Scalar = Scalar{
+    pub static Y: Scalar = Scalar {
         bytes: [
-            0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4,
-            0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83, 0x86, 0xc3,
-            0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d,
-            0xe8, 0xef, 0x7a, 0xc3, 0x1f, 0x35, 0xbb, 0x05,
+            0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4, 0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83,
+            0x86, 0xc3, 0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d, 0xe8, 0xef, 0x7a, 0xc3,
+            0x1f, 0x35, 0xbb, 0x05,
         ],
     };
 
     /// x*y = 5690045403673944803228348699031245560686958845067437804563560795922180092780
-    static X_TIMES_Y: Scalar = Scalar{
+    static X_TIMES_Y: Scalar = Scalar {
         bytes: [
-            0x6c, 0x33, 0x74, 0xa1, 0x89, 0x4f, 0x62, 0x21,
-            0x0a, 0xaa, 0x2f, 0xe1, 0x86, 0xa6, 0xf9, 0x2c,
-            0xe0, 0xaa, 0x75, 0xc2, 0x77, 0x95, 0x81, 0xc2,
-            0x95, 0xfc, 0x08, 0x17, 0x9a, 0x73, 0x94, 0x0c,
+            0x6c, 0x33, 0x74, 0xa1, 0x89, 0x4f, 0x62, 0x21, 0x0a, 0xaa, 0x2f, 0xe1, 0x86, 0xa6,
+            0xf9, 0x2c, 0xe0, 0xaa, 0x75, 0xc2, 0x77, 0x95, 0x81, 0xc2, 0x95, 0xfc, 0x08, 0x17,
+            0x9a, 0x73, 0x94, 0x0c,
         ],
     };
 
     /// sage: l = 2^252 + 27742317777372353535851937790883648493
     /// sage: big = 2^256 - 1
     /// sage: repr((big % l).digits(256))
-    static CANONICAL_2_256_MINUS_1: Scalar = Scalar{
+    static CANONICAL_2_256_MINUS_1: Scalar = Scalar {
         bytes: [
-              28, 149, 152, 141, 116,  49, 236, 214,
-             112, 207, 125, 115, 244,  91, 239, 198,
-             254, 255, 255, 255, 255, 255, 255, 255,
-             255, 255, 255, 255, 255, 255, 255,  15,
+            28, 149, 152, 141, 116, 49, 236, 214, 112, 207, 125, 115, 244, 91, 239, 198, 254, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15,
         ],
     };
 
-    static A_SCALAR: Scalar = Scalar{
+    static A_SCALAR: Scalar = Scalar {
         bytes: [
-            0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d,
-            0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8, 0x26, 0x4d,
-            0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1,
-            0x58, 0x9e, 0x7b, 0x7f, 0x23, 0x76, 0xef, 0x09,
+            0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
+            0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
+            0x23, 0x76, 0xef, 0x09,
         ],
     };
 
-    static A_NAF: [i8; 256] =
-        [0,13,0,0,0,0,0,0,0,7,0,0,0,0,0,0,-9,0,0,0,0,-11,0,0,0,0,3,0,0,0,0,1,
-         0,0,0,0,9,0,0,0,0,-5,0,0,0,0,0,0,3,0,0,0,0,11,0,0,0,0,11,0,0,0,0,0,
-         -9,0,0,0,0,0,-3,0,0,0,0,9,0,0,0,0,0,1,0,0,0,0,0,0,-1,0,0,0,0,0,9,0,
-         0,0,0,-15,0,0,0,0,-7,0,0,0,0,-9,0,0,0,0,0,5,0,0,0,0,13,0,0,0,0,0,-3,0,
-         0,0,0,-11,0,0,0,0,-7,0,0,0,0,-13,0,0,0,0,11,0,0,0,0,-9,0,0,0,0,0,1,0,0,
-         0,0,0,-15,0,0,0,0,1,0,0,0,0,7,0,0,0,0,0,0,0,0,5,0,0,0,0,0,13,0,0,0,
-         0,0,0,11,0,0,0,0,0,15,0,0,0,0,0,-9,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,7,
-         0,0,0,0,0,-15,0,0,0,0,0,15,0,0,0,0,15,0,0,0,0,15,0,0,0,0,0,1,0,0,0,0];
+    static A_NAF: [i8; 256] = [
+        0, 13, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, -9, 0, 0, 0, 0, -11, 0, 0, 0, 0, 3, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 9, 0, 0, 0, 0, -5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 11, 0, 0, 0, 0,
+        11, 0, 0, 0, 0, 0, -9, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, -1, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, -15, 0, 0, 0, 0, -7, 0, 0, 0, 0, -9, 0, 0, 0, 0, 0, 5,
+        0, 0, 0, 0, 13, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, -11, 0, 0, 0, 0, -7, 0, 0, 0, 0, -13, 0, 0,
+        0, 0, 11, 0, 0, 0, 0, -9, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, -15, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+        7, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 13, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 15,
+        0, 0, 0, 0, 0, -9, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, -15, 0,
+        0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    ];
 
     static LARGEST_ED25519_S: Scalar = Scalar {
         bytes: [
-            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x7f,
         ],
     };
 
     static CANONICAL_LARGEST_ED25519_S_PLUS_ONE: Scalar = Scalar {
         bytes: [
-            0x7e, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
-            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+            0x7e, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97, 0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a,
+            0xe7, 0x6d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x0f,
         ],
     };
 
     static CANONICAL_LARGEST_ED25519_S_MINUS_ONE: Scalar = Scalar {
         bytes: [
-            0x7c, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97,
-            0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a, 0xe7, 0x6d,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0f,
+            0x7c, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97, 0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a,
+            0xe7, 0x6d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x0f,
         ],
     };
 
     #[test]
     fn fuzzer_testcase_reduction() {
         // LE bytes of 24519928653854221733733552434404946937899825954937634815
-        let a_bytes = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let a_bytes = [
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
         // LE bytes of 4975441334397345751130612518500927154628011511324180036903450236863266160640
-        let b_bytes = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 210, 210, 210, 255, 255, 255, 255, 10];
+        let b_bytes = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 210, 210,
+            210, 255, 255, 255, 255, 10,
+        ];
         // LE bytes of 6432735165214683820902750800207468552549813371247423777071615116673864412038
-        let c_bytes = [134, 171, 119, 216, 180, 128, 178, 62, 171, 132, 32, 62, 34, 119, 104, 193, 47, 215, 181, 250, 14, 207, 172, 93, 75, 207, 211, 103, 144, 204, 56, 14];
+        let c_bytes = [
+            134, 171, 119, 216, 180, 128, 178, 62, 171, 132, 32, 62, 34, 119, 104, 193, 47, 215,
+            181, 250, 14, 207, 172, 93, 75, 207, 211, 103, 144, 204, 56, 14,
+        ];
 
         let a = Scalar::from_bytes_mod_order(a_bytes);
         let b = Scalar::from_bytes_mod_order(b_bytes);
@@ -1441,10 +1455,9 @@ mod test {
         // This test is adapted from the one suggested by Quarkslab.
 
         let large_bytes = [
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x7f,
         ];
 
         let a = Scalar::from_bytes_mod_order(large_bytes);
@@ -1503,7 +1516,7 @@ mod test {
         let xs = [Scalar::from(2u64); 10];
         let ys = [Scalar::from(3u64); 10];
         // now zs is an iterator with Item = Scalar
-        let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x * y);
+        let zs = xs.iter().zip(ys.iter()).map(|(x, y)| x * y);
 
         let x_prod: Scalar = xs.iter().product();
         let y_prod: Scalar = ys.iter().product();
@@ -1513,12 +1526,10 @@ mod test {
         assert_eq!(y_prod, Scalar::from(59049u64));
         assert_eq!(z_prod, Scalar::from(60466176u64));
         assert_eq!(x_prod * y_prod, z_prod);
-
     }
 
     #[test]
     fn impl_sum() {
-
         // Test that sum works for non-empty iterators
         let two = Scalar::from(2u64);
         let one_vector = vec![Scalar::one(), Scalar::one()];
@@ -1535,7 +1546,7 @@ mod test {
         let xs = [Scalar::from(1u64); 10];
         let ys = [Scalar::from(2u64); 10];
         // now zs is an iterator with Item = Scalar
-        let zs = xs.iter().zip(ys.iter()).map(|(x,y)| x + y);
+        let zs = xs.iter().zip(ys.iter()).map(|(x, y)| x + y);
 
         let x_sum: Scalar = xs.iter().sum();
         let y_sum: Scalar = ys.iter().sum();
@@ -1567,17 +1578,15 @@ mod test {
         let mut bignum = [0u8; 64];
         // set bignum = x + 2^256x
         for i in 0..32 {
-            bignum[   i] = X[i];
-            bignum[32+i] = X[i];
+            bignum[i] = X[i];
+            bignum[32 + i] = X[i];
         }
         // 3958878930004874126169954872055634648693766179881526445624823978500314864344
         // = x + 2^256x (mod l)
-        let reduced = Scalar{
+        let reduced = Scalar {
             bytes: [
-                216, 154, 179, 139, 210, 121,   2,  71,
-                 69,  99, 158, 216,  23, 173,  63, 100,
-                204,   0,  91,  50, 219, 153,  57, 249,
-                 28,  82,  31, 197, 100, 165, 192,   8,
+                216, 154, 179, 139, 210, 121, 2, 71, 69, 99, 158, 216, 23, 173, 63, 100, 204, 0,
+                91, 50, 219, 153, 57, 249, 28, 82, 31, 197, 100, 165, 192, 8,
             ],
         };
         let test_red = Scalar::from_bytes_mod_order_wide(&bignum);
@@ -1620,17 +1629,15 @@ mod test {
 
         // set bignum = x + 2^256x
         for i in 0..32 {
-            bignum[   i] = X[i];
-            bignum[32+i] = X[i];
+            bignum[i] = X[i];
+            bignum[32 + i] = X[i];
         }
         // x + 2^256x (mod l)
         //         = 3958878930004874126169954872055634648693766179881526445624823978500314864344
-        let expected = Scalar{
+        let expected = Scalar {
             bytes: [
-                216, 154, 179, 139, 210, 121,   2,  71,
-                 69,  99, 158, 216,  23, 173,  63, 100,
-                204,   0,  91,  50, 219, 153,  57, 249,
-                 28,  82,  31, 197, 100, 165, 192,   8
+                216, 154, 179, 139, 210, 121, 2, 71, 69, 99, 158, 216, 23, 173, 63, 100, 204, 0,
+                91, 50, 219, 153, 57, 249, 28, 82, 31, 197, 100, 165, 192, 8,
             ],
         };
         let reduced = Scalar::from_bytes_mod_order_wide(&bignum);
@@ -1639,8 +1646,8 @@ mod test {
         assert_eq!(reduced.bytes, expected.bytes);
 
         //  (x + 2^256x) * R
-        let interim = UnpackedScalar::mul_internal(&UnpackedScalar::from_bytes_wide(&bignum),
-                                                   &constants::R);
+        let interim =
+            UnpackedScalar::mul_internal(&UnpackedScalar::from_bytes_wide(&bignum), &constants::R);
         // ((x + 2^256x) * R) / R  (mod l)
         let montgomery_reduced = UnpackedScalar::montgomery_reduce(&interim);
 
@@ -1652,7 +1659,10 @@ mod test {
     #[test]
     fn canonical_decoding() {
         // canonical encoding of 1667457891
-        let canonical_bytes = [99, 99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,];
+        let canonical_bytes = [
+            99, 99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0,
+        ];
 
         // encoding of
         //   7265385991361016183439748078976496179028704920197054998554201349516117938192
@@ -1661,11 +1671,14 @@ mod test {
         let non_canonical_bytes_because_unreduced = [16; 32];
 
         // encoding with high bit set, to check that the parser isn't pre-masking the high bit
-        let non_canonical_bytes_because_highbit = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128];
+        let non_canonical_bytes_because_highbit = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 128,
+        ];
 
-        assert!( Scalar::from_canonical_bytes(canonical_bytes).is_some() );
-        assert!( Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none() );
-        assert!( Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none() );
+        assert!(Scalar::from_canonical_bytes(canonical_bytes).is_some());
+        assert!(Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none());
+        assert!(Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none());
     }
 
     #[test]
@@ -1680,10 +1693,7 @@ mod test {
         assert_eq!(encoded.len(), 32);
 
         // Check that the encoding itself matches the usual one
-        assert_eq!(
-            X,
-            bincode::deserialize(X.as_bytes()).unwrap(),
-        );
+        assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
     }
 
     #[cfg(debug_assertions)]
@@ -1704,7 +1714,13 @@ mod test {
     #[test]
     fn batch_invert_consistency() {
         let mut x = Scalar::from(1u64);
-        let mut v1: Vec<_> = (0..16).map(|_| {let tmp = x; x = x + x; tmp}).collect();
+        let mut v1: Vec<_> = (0..16)
+            .map(|_| {
+                let tmp = x;
+                x = x + x;
+                tmp
+            })
+            .collect();
         let v2 = v1.clone();
 
         let expected: Scalar = v1.iter().product();
@@ -1721,7 +1737,7 @@ mod test {
         let digits_count = Scalar::to_radix_2w_size_hint(w);
         let digits = scalar.to_radix_2w(w);
 
-        let radix = Scalar::from((1<<w) as u64);
+        let radix = Scalar::from((1 << w) as u64);
         let mut term = Scalar::one();
         let mut recovered_scalar = Scalar::zero();
         for digit in &digits[0..digits_count] {

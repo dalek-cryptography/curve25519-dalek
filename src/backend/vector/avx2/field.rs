@@ -43,10 +43,10 @@ const D_LANES64: u8 = 0b11_00_00_00;
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 
+use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::avx2::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
-use crate::backend::serial::u64::field::FieldElement51;
 
 /// Unpack 32-bit lanes into 64-bit lanes:
 /// ```ascii,no_run
@@ -166,11 +166,7 @@ impl ConditionallySelectable for FieldElement2625x4 {
         ])
     }
 
-    fn conditional_assign(
-        &mut self,
-        other: &FieldElement2625x4,
-        choice: Choice,
-    ) {
+    fn conditional_assign(&mut self, other: &FieldElement2625x4, choice: Choice) {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
         let mask_vec = u32x8::splat(mask);
         self.0[0] ^= mask_vec & (self.0[0] ^ other.0[0]);
@@ -309,7 +305,8 @@ impl FieldElement2625x4 {
                         x.into_bits(),
                         y.into_bits(),
                         (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
-                    ).into_bits(),
+                    )
+                    .into_bits(),
                 }
             }
         }
@@ -436,8 +433,8 @@ impl FieldElement2625x4 {
         // The carryouts are bounded by 2^(32 - 25) = 2^7.
         let rotated_carryout = |v: u32x8| -> u32x8 {
             unsafe {
-                use core::arch::x86_64::_mm256_srlv_epi32;
                 use core::arch::x86_64::_mm256_shuffle_epi32;
+                use core::arch::x86_64::_mm256_srlv_epi32;
 
                 let c = _mm256_srlv_epi32(v.into_bits(), shifts.into_bits());
                 _mm256_shuffle_epi32(c, 0b01_00_11_10).into_bits()
@@ -715,7 +712,8 @@ impl Neg for FieldElement2625x4 {
             P_TIMES_16_HI - self.0[2],
             P_TIMES_16_HI - self.0[3],
             P_TIMES_16_HI - self.0[4],
-        ]).reduce()
+        ])
+        .reduce()
     }
 }
 
@@ -888,7 +886,7 @@ mod test {
     fn scale_by_curve_constants() {
         let mut x = FieldElement2625x4::splat(&FieldElement51::one());
 
-        x = x * (121666, 121666, 2*121666, 2*121665);
+        x = x * (121666, 121666, 2 * 121666, 2 * 121665);
 
         let xs = x.split();
         assert_eq!(xs[0], FieldElement51([121666, 0, 0, 0, 0]));

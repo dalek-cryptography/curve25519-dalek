@@ -184,6 +184,7 @@ impl ConditionallySelectable for FieldElement2625x4 {
 impl FieldElement2625x4 {
     /// Split this vector into an array of four (serial) field
     /// elements.
+    #[rustfmt::skip] // keep alignment of calculations
     pub fn split(&self) -> [FieldElement51; 4] {
         let mut out = [FieldElement51::zero(); 4];
         for i in 0..5 {
@@ -337,6 +338,7 @@ impl FieldElement2625x4 {
     /// # Postconditions
     ///
     /// The resulting `FieldElement2625x4` is bounded with \\( b < 0.0002 \\).
+    #[rustfmt::skip] // keep alignment of calculations
     pub fn new(
         x0: &FieldElement51,
         x1: &FieldElement51,
@@ -521,6 +523,7 @@ impl FieldElement2625x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[inline]
+    #[rustfmt::skip] // keep alignment of carry chain
     fn reduce64(mut z: [u64x4; 10]) -> FieldElement2625x4 {
         // These aren't const because splat isn't a const fn
         let LOW_25_BITS: u64x4 = u64x4::splat((1 << 25) - 1);
@@ -599,6 +602,7 @@ impl FieldElement2625x4 {
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
+    #[rustfmt::skip] // keep alignment of z* calculations
     pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
@@ -779,7 +783,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
-    ///
+    #[rustfmt::skip] // keep alignment of z* calculations
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {

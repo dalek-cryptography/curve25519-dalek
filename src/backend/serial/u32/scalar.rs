@@ -59,6 +59,7 @@ impl Scalar29 {
     }
 
     /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
+    #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn from_bytes(bytes: &[u8; 32]) -> Scalar29 {
         let mut words = [0u32; 8];
         for i in 0..8 {
@@ -85,6 +86,7 @@ impl Scalar29 {
     }
 
     /// Reduce a 64 byte / 512 bit scalar mod l.
+    #[rustfmt::skip] // keep alignment of lo[*] calculations
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar29 {
         let mut words = [0u32; 16];
         for i in 0..16 {
@@ -123,6 +125,7 @@ impl Scalar29 {
     }
 
     /// Pack the limbs of this `Scalar29` into 32 bytes.
+    #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn to_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
@@ -205,6 +208,7 @@ impl Scalar29 {
     ///
     /// This is implemented with a one-level refined Karatsuba decomposition
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of z[*] calculations
     pub(crate) fn mul_internal(a: &Scalar29, b: &Scalar29) -> [u64; 17] {
         let mut z = [0u64; 17];
 
@@ -256,6 +260,7 @@ impl Scalar29 {
 
     /// Compute `a^2`.
     #[inline(always)]
+    #[rustfmt::skip] // keep alignment of calculations
     fn square_internal(a: &Scalar29) -> [u64; 17] {
         let aa = [
             a[0] * 2,

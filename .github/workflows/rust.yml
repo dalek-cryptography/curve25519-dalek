@@ -86,3 +86,11 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     # This filter selects no benchmarks, so we don't run any, only build them.
     - run: cargo bench "nonexistentbenchmark"
+
+  fmt:
+    name: Check code style with Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo fmt --all -- --check

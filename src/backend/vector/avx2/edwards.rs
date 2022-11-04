@@ -329,6 +329,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
 mod test {
     use super::*;
 
+    #[rustfmt::skip] // keep alignment of some S* calculations
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
         use crate::backend::serial::u64::field::FieldElement51;
 
@@ -525,10 +526,11 @@ mod test {
 
     #[test]
     fn basepoint_odd_lookup_table_verify() {
+        use crate::backend::vector::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
         use crate::constants;
-        use crate::backend::vector::avx2::constants::{BASEPOINT_ODD_LOOKUP_TABLE};
 
-        let basepoint_odd_table = NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
+        let basepoint_odd_table =
+            NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
         println!("basepoint_odd_lookup_table = {:?}", basepoint_odd_table);
 
         let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;

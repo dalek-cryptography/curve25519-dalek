@@ -76,7 +76,7 @@ impl ExtendedPoint {
         // (Y1 X1 T1 Z1) -- uses vpshufd (1c latency @ 1/c)
         let mut tmp0 = self.0.shuffle(Shuffle::BADC);
 
-        // (X1+Y1 X1+Y1 X1+Y1 X1+Y1) -- can use vpinserti128 
+        // (X1+Y1 X1+Y1 X1+Y1 X1+Y1) -- can use vpinserti128
         let mut tmp1 = (self.0 + tmp0).shuffle(Shuffle::ABAB);
 
         // (X1 Y1 Z1 X1+Y1)

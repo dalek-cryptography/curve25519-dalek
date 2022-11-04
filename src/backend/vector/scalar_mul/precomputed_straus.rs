@@ -23,7 +23,6 @@ use crate::window::{NafLookupTable5, NafLookupTable8};
 #[allow(unused_imports)]
 use crate::prelude::*;
 
-
 pub struct VartimePrecomputedStraus {
     static_lookup_tables: Vec<NafLookupTable8<CachedPoint>>,
 }

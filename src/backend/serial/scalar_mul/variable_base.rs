@@ -1,12 +1,13 @@
 #![allow(non_snake_case)]
 
-use crate::traits::Identity;
-use crate::scalar::Scalar;
-use crate::edwards::EdwardsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
 use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
+#[rustfmt::skip] // keep alignment of explanatory comments
 pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
     let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(point);

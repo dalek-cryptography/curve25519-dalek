@@ -151,7 +151,7 @@ impl FieldElement {
 
     /// Given a slice of public `FieldElements`, replace each with its inverse.
     ///
-    /// All input `FieldElements` **MUST** be nonzero.
+    /// When an input `FieldElement` is zero, its value is unchanged.
     #[cfg(feature = "alloc")]
     pub fn batch_invert(inputs: &mut [FieldElement]) {
         // Montgomery’s Trick and Fast Implementation of Masked AES
@@ -168,10 +168,11 @@ impl FieldElement {
         // products in the scratch space
         for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
             *scratch = acc;
-            acc = &acc * input;
+            // acc <- acc * input, but skipping zeros (constant-time)
+            acc.conditional_assign(&(&acc * input), !input.is_zero());
         }
 
-        // acc is nonzero iff all inputs are nonzero
+        // acc is nonzero because we skipped zeros in inputs
         assert_eq!(acc.is_zero().unwrap_u8(), 0);
 
         // Compute the inverse of all products
@@ -181,8 +182,11 @@ impl FieldElement {
         // in place
         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
             let tmp = &acc * input;
-            *input = &acc * &scratch;
-            acc = tmp;
+            // input <- acc * scratch, then acc <- tmp
+            // Again, we skip zeros in a constant-time way
+            let nz = !input.is_zero();
+            input.conditional_assign(&(&acc * &scratch), nz);
+            acc.conditional_assign(&tmp, nz);
         }
     }
 
@@ -365,11 +369,12 @@ mod test {
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
         let asq = FieldElement::from_bytes(&ASQ_BYTES);
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
+        let a0 = &a - &a;
         let a2 = &a + &a;
-        let a_list = vec![a, ap58, asq, ainv, a2];
+        let a_list = vec![a, ap58, asq, ainv, a0, a2];
         let mut ainv_list = a_list.clone();
         FieldElement::batch_invert(&mut ainv_list[..]);
-        for i in 0..5 {
+        for i in 0..6 {
             assert_eq!(a_list[i].invert(), ainv_list[i]);
         }
     }

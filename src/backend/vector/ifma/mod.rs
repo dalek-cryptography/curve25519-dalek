@@ -7,10 +7,7 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![cfg_attr(
-    feature = "nightly",
-    doc(include = "../../../../docs/ifma-notes.md")
-)]
+#![cfg_attr(feature = "nightly", doc(include = "../../../../docs/ifma-notes.md"))]
 
 pub mod field;
 

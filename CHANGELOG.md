@@ -3,6 +3,14 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+## 4.x series
+
+* Update the `rand_core` dependency version and the `rand` dev-dependency
+  version.
+* Relax the `zeroize` dependency to `^1`
+* Update the MSRV from 1.41 to 1.56.1
+* Update the edition from 2015 to 2021
+
 ## 3.x series
 
 ### 3.2.0

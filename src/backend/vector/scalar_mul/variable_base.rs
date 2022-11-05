@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use window::LookupTable;
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
 pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {

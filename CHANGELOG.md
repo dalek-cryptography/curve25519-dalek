@@ -10,6 +10,7 @@ major series.
 * Relax the `zeroize` dependency to `^1`
 * Update the MSRV from 1.41 to 1.56.1
 * Update the edition from 2015 to 2021
+* Remove the deprecated `avx2_backend` feature.
 
 ## 3.x series
 

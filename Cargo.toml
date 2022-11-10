@@ -69,6 +69,3 @@ fiat_u64_backend = ["fiat-crypto"]
 fiat_u32_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
 simd_backend = ["nightly", "u64_backend", "packed_simd"]
-# DEPRECATED: this is now an alias for `simd_backend` and may be removed
-# in some future release.
-avx2_backend = ["simd_backend"]

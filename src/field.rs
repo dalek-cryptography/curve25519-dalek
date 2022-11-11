@@ -25,6 +25,8 @@
 
 use core::cmp::{Eq, PartialEq};
 
+use cfg_if::cfg_if;
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -33,40 +35,52 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
-#[cfg(feature = "fiat_u32_backend")]
-pub use backend::serial::fiat_u32::field::*;
-#[cfg(feature = "fiat_u64_backend")]
-pub use backend::serial::fiat_u64::field::*;
-/// A `FieldElement` represents an element of the field
-/// \\( \mathbb Z / (2\^{255} - 19)\\).
-///
-/// The `FieldElement` type is an alias for one of the platform-specific
-/// implementations.
-/// Using formally-verified field arithmetic from fiat-crypto
-#[cfg(feature = "fiat_u32_backend")]
-pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
-#[cfg(feature = "fiat_u64_backend")]
-pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+cfg_if! {
+    if #[cfg(feature = "fiat_backend")] {
+        #[cfg(not(target_pointer_width = "64"))]
+        pub use backend::serial::fiat_u32::field::*;
+        #[cfg(target_pointer_width = "64")]
+        pub use backend::serial::fiat_u64::field::*;
 
-#[cfg(feature = "u64_backend")]
-pub use crate::backend::serial::u64::field::*;
-/// A `FieldElement` represents an element of the field
-/// \\( \mathbb Z / (2\^{255} - 19)\\).
-///
-/// The `FieldElement` type is an alias for one of the platform-specific
-/// implementations.
-#[cfg(feature = "u64_backend")]
-pub type FieldElement = backend::serial::u64::field::FieldElement51;
+        /// A `FieldElement` represents an element of the field
+        /// \\( \mathbb Z / (2\^{255} - 19)\\).
+        ///
+        /// The `FieldElement` type is an alias for one of the platform-specific
+        /// implementations.
+        ///
+        /// Using formally-verified field arithmetic from fiat-crypto.
+        #[cfg(not(target_pointer_width = "64"))]
+        pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
-#[cfg(feature = "u32_backend")]
-pub use backend::serial::u32::field::*;
-/// A `FieldElement` represents an element of the field
-/// \\( \mathbb Z / (2\^{255} - 19)\\).
-///
-/// The `FieldElement` type is an alias for one of the platform-specific
-/// implementations.
-#[cfg(feature = "u32_backend")]
-pub type FieldElement = backend::serial::u32::field::FieldElement2625;
+        /// A `FieldElement` represents an element of the field
+        /// \\( \mathbb Z / (2\^{255} - 19)\\).
+        ///
+        /// The `FieldElement` type is an alias for one of the platform-specific
+        /// implementations.
+        ///
+        /// Using formally-verified field arithmetic from fiat-crypto.
+        #[cfg(target_pointer_width = "64")]
+        pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+    } else if #[cfg(target_pointer_width = "64")] {
+        pub use crate::backend::serial::u64::field::*;
+
+        /// A `FieldElement` represents an element of the field
+        /// \\( \mathbb Z / (2\^{255} - 19)\\).
+        ///
+        /// The `FieldElement` type is an alias for one of the platform-specific
+        /// implementations.
+        pub type FieldElement = backend::serial::u64::field::FieldElement51;
+    } else {
+        pub use backend::serial::u32::field::*;
+
+        /// A `FieldElement` represents an element of the field
+        /// \\( \mathbb Z / (2\^{255} - 19)\\).
+        ///
+        /// The `FieldElement` type is an alias for one of the platform-specific
+        /// implementations.
+        pub type FieldElement = backend::serial::u32::field::FieldElement2625;
+    }
+}
 
 impl Eq for FieldElement {}
 

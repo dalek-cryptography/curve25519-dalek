@@ -19,32 +19,24 @@
 //!
 //! When the vector backend is enabled, the field and scalar
 //! implementations are still used for non-vectorized operations.
-//!
-//! Note: at this time the `u32` and `u64` backends cannot be built
-//! together.
 
-#[cfg(not(any(
-    feature = "u32_backend",
-    feature = "u64_backend",
-    feature = "fiat_u32_backend",
-    feature = "fiat_u64_backend"
-)))]
-compile_error!(
-    "no curve25519-dalek backend cargo feature enabled! \
-     please enable one of: u32_backend, u64_backend, fiat_u32_backend, fiat_u64_backend"
-);
+use cfg_if::cfg_if;
 
-#[cfg(feature = "u32_backend")]
-pub mod u32;
+cfg_if! {
+    if #[cfg(feature = "fiat_backend")] {
+        #[cfg(not(target_pointer_width = "64"))]
+        pub mod fiat_u32;
 
-#[cfg(feature = "u64_backend")]
-pub mod u64;
+        #[cfg(target_pointer_width = "64")]
+        pub mod fiat_u64;
+    } else {
+        #[cfg(not(target_pointer_width = "64"))]
+        pub mod u32;
 
-#[cfg(feature = "fiat_u32_backend")]
-pub mod fiat_u32;
-
-#[cfg(feature = "fiat_u64_backend")]
-pub mod fiat_u64;
+        #[cfg(target_pointer_width = "64")]
+        pub mod u64;
+    }
+}
 
 pub mod curve_models;
 

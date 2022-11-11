@@ -10,21 +10,24 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test-u32:
-    name: Test u32 backend
+  test:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo test --no-default-features --features "std u32_backend"
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
 
-  test-u64:
-    name: Test u64 backend
-    runs-on: ubuntu-latest
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
     steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo test --no-default-features --features "std u64_backend"
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --features fiat_backend
 
   build-simd:
     name: Build simd backend (nightly)
@@ -54,7 +57,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-    - run: cargo test --lib --no-default-features --features "alloc u32_backend"
+    - run: rustup target add i686-unknown-linux-gnu
+    - run: sudo apt update && sudo apt install gcc-multilib
+    - run: cargo test --lib --no-default-features --features alloc --target i686-unknown-linux-gnu
 
   nightly:
     name: Test nightly compiler
@@ -72,11 +77,11 @@ jobs:
     # First run `cargo +nightly -Z minimal-verisons check` in order to get a
     # Cargo.lock with the oldest possible deps
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo -Z minimal-versions check --no-default-features --features "fiat_u64_backend serde"
+    - run: cargo -Z minimal-versions check --no-default-features --features fiat_backend,serde
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.56.1
-    - run: cargo build --no-default-features --features "fiat_u64_backend serde"
+    - run: cargo build --no-default-features --features fiat_backend,serde
 
   bench:
     name: Check that benchmarks compile

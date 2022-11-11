@@ -28,20 +28,27 @@
 
 #![allow(non_snake_case)]
 
+use cfg_if::cfg_if;
+
 use crate::edwards::CompressedEdwardsY;
 use crate::montgomery::MontgomeryPoint;
 use crate::ristretto::CompressedRistretto;
 use crate::ristretto::RistrettoPoint;
 use crate::scalar::Scalar;
 
-#[cfg(feature = "fiat_u32_backend")]
-pub use crate::backend::serial::fiat_u32::constants::*;
-#[cfg(feature = "fiat_u64_backend")]
-pub use crate::backend::serial::fiat_u64::constants::*;
-#[cfg(feature = "u32_backend")]
-pub use crate::backend::serial::u32::constants::*;
-#[cfg(feature = "u64_backend")]
-pub use crate::backend::serial::u64::constants::*;
+cfg_if! {
+    if #[cfg(feature = "fiat_backend")] {
+        #[cfg(not(target_pointer_width = "64"))]
+        pub use crate::backend::serial::fiat_u32::constants::*;
+        #[cfg(target_pointer_width = "64")]
+        pub use crate::backend::serial::fiat_u64::constants::*;
+    } else {
+        #[cfg(not(target_pointer_width = "64"))]
+        pub use crate::backend::serial::u32::constants::*;
+        #[cfg(target_pointer_width = "64")]
+        pub use crate::backend::serial::u64::constants::*;
+    }
+}
 
 /// The Ed25519 basepoint, in `CompressedEdwardsY` format.
 ///
@@ -142,7 +149,7 @@ mod test {
 
     /// Test that d = -121665/121666
     #[test]
-    #[cfg(feature = "u32_backend")]
+    #[cfg(all(not(target_pointer_width = "64"), not(feature = "fiat_backend")))]
     fn test_d_vs_ratio() {
         use crate::backend::serial::u32::field::FieldElement2625;
         let a = -&FieldElement2625([121665, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -155,7 +162,7 @@ mod test {
 
     /// Test that d = -121665/121666
     #[test]
-    #[cfg(feature = "u64_backend")]
+    #[cfg(all(target_pointer_width = "64", not(feature = "fiat_backend")))]
     fn test_d_vs_ratio() {
         use crate::backend::serial::u64::field::FieldElement51;
         let a = -&FieldElement51([121665, 0, 0, 0, 0]);

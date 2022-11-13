@@ -27,7 +27,8 @@
 // External dependencies:
 //------------------------------------------------------------------------
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[cfg(feature = "alloc")]
+#[allow(unused_imports)]
 #[macro_use]
 extern crate alloc;
 

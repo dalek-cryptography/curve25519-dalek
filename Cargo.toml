@@ -63,4 +63,4 @@ alloc = ["zeroize/alloc"]
 # fiat-crypto backend with formally-verified field arithmetic
 fiat_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
-simd_backend = ["nightly", "packed_simd"]
+simd_backend = ["alloc", "nightly", "packed_simd"]

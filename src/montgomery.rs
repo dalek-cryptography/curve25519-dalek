@@ -470,9 +470,9 @@ mod test {
     ];
 
     #[test]
-    #[cfg(feature = "std")] // Vec
+    #[cfg(feature = "alloc")] // Vec
     fn montgomery_elligator_correct() {
-        let bytes: std::vec::Vec<u8> = (0u8..32u8).collect();
+        let bytes: alloc::vec::Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);

@@ -82,9 +82,13 @@ version, and in terms of non-breaking changes it includes:
 ### 4.x (current alpha)
 
 The `4.x` series has an API largely unchanged from `3.x`, with a breaking change
-to update the `rand` dependency crates.  It also requires including a new trait,
-`use curve25519_dalek::traits::BasepointTable`, whenever using `EdwardsBasepointTable`
-or `RistrettoBasepointTable`.
+to update the `rand` dependency crates.
+
+It also requires including a new trait,
+`use curve25519_dalek::traits::BasepointTable`, whenever using
+`EdwardsBasepointTable` or `RistrettoBasepointTable`.
+
+Backend selection has also been updated to be more automatic. See below.
 
 # Backends and Features
 

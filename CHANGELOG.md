@@ -5,6 +5,7 @@ major series.
 
 ## 4.x series
 
+* Update the `criterion` dependency to 0.4.0
 * Include README.md into crate Documentation
 * Update the `rand_core` dependency version and the `rand` dev-dependency
   version.

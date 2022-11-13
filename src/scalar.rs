@@ -150,6 +150,8 @@ use core::ops::{Sub, SubAssign};
 #[allow(unused_imports)]
 use crate::prelude::*;
 
+use cfg_if::cfg_if;
+
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -164,28 +166,35 @@ use zeroize::Zeroize;
 use crate::backend;
 use crate::constants;
 
-/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-///
-/// This is a type alias for one of the scalar types in the `backend`
-/// module.
-#[cfg(feature = "fiat_u32_backend")]
-type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
-#[cfg(feature = "fiat_u64_backend")]
-type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
+cfg_if! {
+    if #[cfg(feature = "fiat_backend")] {
+        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+        ///
+        /// This is a type alias for one of the scalar types in the `backend`
+        /// module.
+        #[cfg(not(target_pointer_width = "64"))]
+        type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
-/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-///
-/// This is a type alias for one of the scalar types in the `backend`
-/// module.
-#[cfg(feature = "u64_backend")]
-type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
-
-/// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-///
-/// This is a type alias for one of the scalar types in the `backend`
-/// module.
-#[cfg(feature = "u32_backend")]
-type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+        ///
+        /// This is a type alias for one of the scalar types in the `backend`
+        /// module.
+        #[cfg(target_pointer_width = "64")]
+        type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
+    } else if #[cfg(target_pointer_width = "64")] {
+        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+        ///
+        /// This is a type alias for one of the scalar types in the `backend`
+        /// module.
+        type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
+    } else {
+        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
+        ///
+        /// This is a type alias for one of the scalar types in the `backend`
+        /// module.
+        type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+    }
+}
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).

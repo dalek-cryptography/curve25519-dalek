@@ -52,6 +52,8 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"], optional = true }
 zeroize = { version = "1", default-features = false }
 fiat-crypto = { version = "0.1.6", optional = true}
+num-traits = "0.2"
+hex = "0.4.3"
 
 [features]
 nightly = ["subtle/nightly"]

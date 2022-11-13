@@ -159,11 +159,13 @@
 //! https://ristretto.group/
 
 use core::borrow::Borrow;
-use core::fmt::Debug;
+use core::fmt::{Debug, Display};
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
+
+use::num_traits::Zero;
 
 use rand_core::{CryptoRng, RngCore};
 
@@ -419,6 +421,23 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
         }
 
         deserializer.deserialize_tuple(32, CompressedRistrettoVisitor)
+    }
+}
+
+impl Zero for RistrettoPoint {
+    fn zero() -> Self {
+	RistrettoPoint::identity()
+    }
+    fn is_zero(&self) -> bool {
+	self == &RistrettoPoint::identity()
+    }
+}
+
+impl Display for RistrettoPoint {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+	let data = hex::encode(self.compress().as_bytes());
+	write!(f, "{}", data)?;
+	Ok(())
     }
 }
 

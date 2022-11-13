@@ -138,16 +138,18 @@
 //!
 //! The resulting `Scalar` has exactly the specified bit pattern,
 //! **except for the highest bit, which will be set to 0**.
-
 use core::borrow::Borrow;
-use core::cmp::{Eq, PartialEq};
-use core::fmt::Debug;
+use core::cmp::{Eq, Ord, PartialEq};
+use core::fmt::{Debug, Display};
 use core::iter::{Product, Sum};
 use core::ops::Index;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use core::ops::{Div, DivAssign};
+
+use::num_traits::{Zero, One};
 
 #[allow(unused_imports)]
 use prelude::*;
@@ -192,7 +194,7 @@ type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Hash, Ord, PartialOrd)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -268,6 +270,14 @@ impl Debug for Scalar {
     }
 }
 
+impl Display for Scalar {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+	let data = hex::encode(self.bytes);
+        write!(f, "{}", data)?;
+	Ok(())
+    }
+}
+
 impl Eq for Scalar {}
 impl PartialEq for Scalar {
     fn eq(&self, other: &Self) -> bool {
@@ -287,6 +297,39 @@ impl Index<usize> for Scalar {
     /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
     fn index(&self, _index: usize) -> &u8 {
         &(self.bytes[_index])
+    }
+}
+
+impl Zero for Scalar {
+    fn zero() -> Self {
+	Scalar::zero()
+    }
+    fn is_zero(&self) -> bool {
+	self == &Scalar::zero()
+    }
+}
+
+impl One for Scalar {
+    fn one() -> Self {
+	Scalar::one()
+    }
+    fn is_one(&self) -> bool {
+	self == &Scalar::one()
+    }
+}
+
+impl Div<Scalar> for Scalar {
+    type Output = Scalar;
+    fn div(self, q: Scalar) -> Self::Output {
+	let q1 = q.invert();
+	self * q1
+    }
+}
+
+impl DivAssign<Scalar> for Scalar {
+    fn div_assign(&mut self, q: Scalar) {
+	let q1 = q.invert();
+	*self = *self * q1;
     }
 }
 

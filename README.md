@@ -98,12 +98,26 @@ Curve arithmetic is implemented using one of the following backends:
 * a `u64` backend using serial formulas and `u128` products;
 * an `avx2` backend using [parallel formulas][parallel_doc] and `avx2` instructions (sets speed records);
 * an `ifma` backend using [parallel formulas][parallel_doc] and `ifma` instructions (sets speed records);
+* a `fiat` backend using formally verified field arithmetic from [fiat-crypto];
 
 The `std` feature is enabled by default, but it can be disabled for no-`std`
 builds using `--no-default-features`.  Note that this requires explicitly
 selecting an arithmetic backend using one of the `_backend` features.
 If no backend is selected, compilation will fail.
 
+## Backend selection
+
+Backend selection is done automatically. E.g., if you're compiling on a
+64-bit machine, then the `u64` backend is automatically chosen. And
+if the `fiat_backend` feature is set, then the fiat `u64` backend is
+chosen.
+
+If you need a `u32` backend on a `u64` machine, then simple
+cross-compiling will work on an x86-64 Linux machine:
+
+* `sudo apt install gcc-multilib` (or whatever package manager you use)
+* `rustup target add i686-unknown-linux-gnu`
+* `cargo build --target i686-unknown-linux-gnu`
 
 # Minimum Supported Rust Version
 
@@ -154,10 +168,10 @@ compiled with appropriate `target_feature`s, so this cannot occur.
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --no-default-features --features std
+cargo bench --no-default-features
 # Uses avx2 or ifma only if compiled for an appropriate target.
 export RUSTFLAGS="-C target_cpu=native"
-cargo bench --no-default-features --features "std simd_backend"
+cargo +nightly bench --no-default-features --features simd_backend
 ```
 
 Performance is a secondary goal behind correctness, safety, and
@@ -230,3 +244,4 @@ contributions.
 [criterion]: https://github.com/japaric/criterion.rs
 [parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
 [subtle_doc]: https://doc.dalek.rs/subtle/
+[fiat-crypto]: https://github.com/mit-plv/fiat-crypto

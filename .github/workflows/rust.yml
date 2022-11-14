@@ -38,10 +38,10 @@ jobs:
     # Build with AVX2 features, then with AVX512 features
     - env:
         RUSTFLAGS: "-C target_feature=+avx2"
-      run: cargo build --no-default-features --features "std simd_backend"
+      run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
     - env:
         RUSTFLAGS: "-C target_feature=+avx512ifma"
-      run: cargo build --no-default-features --features "std simd_backend"
+      run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
 
   test-defaults-serde:
     name: Test default feature selection and serde

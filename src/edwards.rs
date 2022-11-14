@@ -1389,6 +1389,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn impl_sum() {
         // Test that sum works for non-empty iterators
         let BASE = constants::ED25519_BASEPOINT_POINT;
@@ -1487,6 +1488,7 @@ mod test {
     }
 
     // A single iteration of a consistency check for MSM.
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_iter(n: usize) {
         use core::iter;
         let mut rng = rand::thread_rng();
@@ -1521,6 +1523,7 @@ mod test {
     // parameters.
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_100() {
         let iters = 50;
         for _ in 0..iters {
@@ -1529,6 +1532,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_250() {
         let iters = 50;
         for _ in 0..iters {
@@ -1537,6 +1541,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_500() {
         let iters = 50;
         for _ in 0..iters {
@@ -1545,6 +1550,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_1000() {
         let iters = 50;
         for _ in 0..iters {
@@ -1553,6 +1559,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
@@ -1609,6 +1616,7 @@ mod test {
         }
 
         #[test]
+        #[cfg(feature = "alloc")]
         fn multiscalar_mul_vs_ed25519py() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result = EdwardsPoint::vartime_multiscalar_mul(
@@ -1619,6 +1627,7 @@ mod test {
         }
 
         #[test]
+        #[cfg(feature = "alloc")]
         fn multiscalar_mul_vartime_vs_consttime() {
             let A = A_TIMES_BASEPOINT.decompress().unwrap();
             let result_vartime = EdwardsPoint::vartime_multiscalar_mul(
@@ -1663,6 +1672,7 @@ mod test {
     //     https://github.com/signalapp/libsignal-protocol-c/ //
     ////////////////////////////////////////////////////////////
 
+    #[cfg(feature = "alloc")]
     fn test_vectors() -> Vec<Vec<&'static str>> {
         vec![
             vec![
@@ -1709,6 +1719,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn elligator_signal_test_vectors() {
         for vector in test_vectors().iter() {
             let input = hex::decode(vector[0]).unwrap();

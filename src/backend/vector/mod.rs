@@ -9,11 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-// Conditionally include the notes if we're on nightly (so we can include docs at all).
-#![cfg_attr(
-    feature = "nightly",
-    doc(include = "../../../docs/parallel-formulas.md")
-)]
+#![doc = include_str!("../../../docs/parallel-formulas.md")]
 
 #[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", rustdoc)))]
 compile_error!("simd_backend selected without target_feature=+avx2 or +avx512ifma");

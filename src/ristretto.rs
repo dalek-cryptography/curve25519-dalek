@@ -1178,6 +1178,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn impl_sum() {
         // Test that sum works for non-empty iterators
         let BASE = constants::RISTRETTO_BASEPOINT_POINT;
@@ -1500,6 +1501,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng;
 
@@ -1516,6 +1518,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 

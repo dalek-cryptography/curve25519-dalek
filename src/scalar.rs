@@ -1509,6 +1509,7 @@ mod test {
 
     #[allow(non_snake_case)]
     #[test]
+    #[cfg(feature = "alloc")]
     fn impl_product() {
         // Test that product works for non-empty iterators
         let X_Y_vector = vec![X, Y];
@@ -1538,6 +1539,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn impl_sum() {
         // Test that sum works for non-empty iterators
         let two = Scalar::from(2u64);
@@ -1705,7 +1707,7 @@ mod test {
         assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, feature = "alloc"))]
     #[test]
     #[should_panic]
     fn batch_invert_with_a_zero_input_panics() {
@@ -1716,11 +1718,13 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn batch_invert_empty() {
         assert_eq!(Scalar::one(), Scalar::batch_invert(&mut []));
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn batch_invert_consistency() {
         let mut x = Scalar::from(1u64);
         let mut v1: Vec<_> = (0..16)
@@ -1783,6 +1787,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn test_read_le_u64_into() {
         let cases: &[(&[u8], &[u64])] = &[
             (

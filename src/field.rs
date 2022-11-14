@@ -378,6 +378,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn batch_invert_a_matches_nonbatched() {
         let a = FieldElement::from_bytes(&A_BYTES);
         let ap58 = FieldElement::from_bytes(&AP58_BYTES);
@@ -495,6 +496,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "alloc")]
     fn batch_invert_empty() {
         FieldElement::batch_invert(&mut []);
     }

@@ -482,24 +482,24 @@ impl ExpandedSecretKey {
         // This is a really fucking stupid bandaid, and the damned scheme is
         // still bleeding from malleability, for fuck's sake.
         h = Sha512::new()
-            .chain(b"SigEd25519 no Ed25519 collisions")
-            .chain(&[1]) // Ed25519ph
-            .chain(&[ctx_len])
-            .chain(ctx)
-            .chain(&self.nonce)
-            .chain(&prehash[..]);
+            .chain_update(b"SigEd25519 no Ed25519 collisions")
+            .chain_update(&[1]) // Ed25519ph
+            .chain_update(&[ctx_len])
+            .chain_update(ctx)
+            .chain_update(&self.nonce)
+            .chain_update(&prehash[..]);
 
         r = Scalar::from_hash(h);
         R = (&r * &constants::ED25519_BASEPOINT_TABLE).compress();
 
         h = Sha512::new()
-            .chain(b"SigEd25519 no Ed25519 collisions")
-            .chain(&[1]) // Ed25519ph
-            .chain(&[ctx_len])
-            .chain(ctx)
-            .chain(R.as_bytes())
-            .chain(public_key.as_bytes())
-            .chain(&prehash[..]);
+            .chain_update(b"SigEd25519 no Ed25519 collisions")
+            .chain_update(&[1]) // Ed25519ph
+            .chain_update(&[ctx_len])
+            .chain_update(ctx)
+            .chain_update(R.as_bytes())
+            .chain_update(public_key.as_bytes())
+            .chain_update(&prehash[..]);
 
         k = Scalar::from_hash(h);
         s = &(&k * &self.key) + &r;

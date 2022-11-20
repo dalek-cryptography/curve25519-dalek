@@ -22,14 +22,14 @@ travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"
 features = ["nightly", "batch"]
 
 [dependencies]
-curve25519-dalek = { version = "3", default-features = false }
+curve25519-dalek = { version = "=4.0.0-pre.2", default-features = false }
 ed25519 = { version = "1", default-features = false }
-merlin = { version = "2", default-features = false, optional = true }
-rand = { version = "0.7", default-features = false, optional = true }
-rand_core = { version = "0.5", default-features = false, optional = true }
+merlin = { version = "3", default-features = false, optional = true }
+rand = { version = "0.8", default-features = false, optional = true }
+rand_core = { version = "0.6", default-features = false, optional = true }
 serde_crate = { package = "serde", version = "1.0", default-features = false, optional = true }
 serde_bytes = { version = "0.11", optional = true }
-sha2 = { version = "0.9", default-features = false }
+sha2 = { version = "0.10", default-features = false }
 zeroize = { version = "1", default-features = false }
 
 [dev-dependencies]
@@ -37,7 +37,7 @@ hex = "^0.4"
 bincode = "1.0"
 serde_json = "1.0"
 criterion = "0.3"
-rand = "0.7"
+rand = "0.8"
 serde_crate = { package = "serde", version = "1.0", features = ["derive"] }
 toml = { version = "0.5" }
 
@@ -49,7 +49,7 @@ harness = false
 # required-features = ["batch"]
 
 [features]
-default = ["std", "rand", "u64_backend"]
+default = ["std", "rand"]
 std = ["curve25519-dalek/std", "ed25519/std", "serde_crate/std", "sha2/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc", "rand/alloc", "zeroize/alloc"]
 nightly = ["curve25519-dalek/nightly"]
@@ -60,6 +60,7 @@ batch_deterministic = ["merlin", "rand", "rand_core"]
 asm = ["sha2/asm"]
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []
-u64_backend = ["curve25519-dalek/u64_backend"]
-u32_backend = ["curve25519-dalek/u32_backend"]
 simd_backend = ["curve25519-dalek/simd_backend"]
+
+[patch.crates-io]
+curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek.git", branch = "release/4.0" }

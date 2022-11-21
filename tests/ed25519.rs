@@ -277,7 +277,7 @@ mod integrations {
             signatures.push(keypair.sign(&messages[i]));
             keypairs.push(keypair);
         }
-        let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public).collect();
+        let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public_key()).collect();
 
         let result = verify_batch(&messages, &signatures[..], &public_keys[..]);
 
@@ -285,9 +285,9 @@ mod integrations {
     }
 }
 
-#[serde(crate = "serde_crate")]
 #[cfg(all(test, feature = "serde"))]
 #[derive(Debug, serde_crate::Serialize, serde_crate::Deserialize)]
+#[serde(crate = "serde_crate")]
 struct Demo {
     keypair: Keypair
 }
@@ -295,8 +295,6 @@ struct Demo {
 #[cfg(all(test, feature = "serde"))]
 mod serialisation {
     use super::*;
-
-    use ed25519::signature::Signature as _;
 
     // The size for bincode to serialize the length of a byte array.
     static BINCODE_INT_LENGTH: usize = 8;

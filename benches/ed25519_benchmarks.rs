@@ -57,6 +57,8 @@ mod ed25519_benches {
     fn verify_batch_signatures(c: &mut Criterion) {
         static BATCH_SIZES: [usize; 8] = [4, 8, 16, 32, 64, 96, 128, 256];
 
+        // TODO: use BenchmarkGroups instead.
+        #[allow(deprecated)]
         c.bench_function_over_inputs(
             "Ed25519 batch signature verification",
             |b, &&size| {

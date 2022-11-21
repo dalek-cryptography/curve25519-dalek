@@ -23,7 +23,7 @@ features = ["nightly", "batch"]
 
 [dependencies]
 curve25519-dalek = { version = "=4.0.0-pre.2", default-features = false }
-ed25519 = { version = "1", default-features = false }
+ed25519 = { version = "=2.0.0-pre.0", default-features = false }
 merlin = { version = "3", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
 rand_core = { version = "0.6", default-features = false, optional = true }

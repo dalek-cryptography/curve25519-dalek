@@ -14,7 +14,6 @@ use core::fmt::Debug;
 
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
-use ed25519::signature::Signature as _;
 
 use crate::constants::*;
 use crate::errors::*;
@@ -194,7 +193,7 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
     type Error = SignatureError;
 
     fn try_from(sig: &ed25519::Signature) -> Result<InternalSignature, SignatureError> {
-        InternalSignature::from_bytes(sig.as_bytes())
+        InternalSignature::from_bytes(sig.as_ref())
     }
 }
 

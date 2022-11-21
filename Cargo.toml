@@ -44,9 +44,7 @@ toml = { version = "0.5" }
 [[bench]]
 name = "ed25519_benchmarks"
 harness = false
-# This doesn't seem to work with criterion, cf. https://github.com/bheisler/criterion.rs/issues/344
-# For now, we have to bench by doing `cargo bench --features="batch"`.
-# required-features = ["batch"]
+required-features = ["batch"]
 
 [features]
 default = ["std", "rand"]

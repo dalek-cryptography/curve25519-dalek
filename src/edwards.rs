@@ -534,10 +534,14 @@ impl EdwardsPoint {
         CompressedEdwardsY(s)
     }
 
-    /// Perform hashing to the group using the Elligator2 map
-    ///
-    /// See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
-    pub fn hash_from_bytes<D>(bytes: &[u8]) -> EdwardsPoint
+    /// Hashes the input and maps the digest to the curve. This is NOT a hash-to-curve function, as
+    /// it produces points with a non-uniform distribution.
+    // See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1
+    #[deprecated(
+        since = "4.0.0",
+        note = "previously named `hash_from_bytes`, this is not a secure hash function"
+    )]
+    pub fn hash_and_encode<D>(bytes: &[u8]) -> EdwardsPoint
     where
         D: Digest<OutputSize = U64> + Default,
     {
@@ -1719,13 +1723,14 @@ mod test {
     }
 
     #[test]
+    #[allow(deprecated)]
     #[cfg(feature = "alloc")]
     fn elligator_signal_test_vectors() {
         for vector in test_vectors().iter() {
             let input = hex::decode(vector[0]).unwrap();
             let output = hex::decode(vector[1]).unwrap();
 
-            let point = EdwardsPoint::hash_from_bytes::<sha2::Sha512>(&input);
+            let point = EdwardsPoint::hash_and_encode::<sha2::Sha512>(&input);
             assert_eq!(point.compress().to_bytes(), output[..]);
         }
     }

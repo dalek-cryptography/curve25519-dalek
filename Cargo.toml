@@ -24,9 +24,8 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-# Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
-# rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
-features = ["nightly", "simd_backend"]
+rustdoc-args = ["--html-in-header", "docs/assets/rustdoc-include-katex-header.html", "--cfg", "docsrs"]
+features = ["nightly", "simd_backend", "packed_simd"]
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}

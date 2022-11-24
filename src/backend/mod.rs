@@ -36,18 +36,5 @@
 
 pub mod serial;
 
-#[cfg(any(
-    all(
-        feature = "simd_backend",
-        any(target_feature = "avx2", target_feature = "avx512ifma")
-    ),
-    all(feature = "nightly", rustdoc)
-))]
-#[cfg_attr(
-    feature = "nightly",
-    doc(cfg(any(all(
-        feature = "simd_backend",
-        any(target_feature = "avx2", target_feature = "avx512ifma")
-    ))))
-)]
+#[cfg(any(feature = "simd_backend", docsrs))]
 pub mod vector;

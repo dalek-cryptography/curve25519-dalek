@@ -148,6 +148,7 @@ use crate::traits::ValidityCheck;
 ///
 /// More details on the relationships between the different curve models
 /// can be found in the module-level documentation.
+#[allow(missing_docs)]
 #[derive(Copy, Clone)]
 pub struct ProjectivePoint {
     pub X: FieldElement,
@@ -199,6 +200,7 @@ impl Zeroize for AffineNielsPoint {
 /// More details on the relationships between the different curve models
 /// can be found in the module-level documentation.
 #[derive(Copy, Clone)]
+#[allow(missing_docs)]
 pub struct ProjectiveNielsPoint {
     pub Y_plus_X: FieldElement,
     pub Y_minus_X: FieldElement,

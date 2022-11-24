@@ -13,13 +13,13 @@
 #![cfg_attr(feature = "nightly", feature(test))]
 #![cfg_attr(feature = "nightly", feature(doc_cfg))]
 #![cfg_attr(feature = "simd_backend", feature(stdsimd))]
-
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------
-
 #![deny(missing_docs)]
-#![doc(html_logo_url = "https://doc.dalek.rs/assets/dalek-logo-clear.png")]
+#![doc(
+    html_logo_url = "https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"
+)]
 #![doc(html_root_url = "https://docs.rs/curve25519-dalek/4.0.0-pre.2")]
 #![doc = include_str!("../README.md")]
 
@@ -72,9 +72,13 @@ pub mod traits;
 pub(crate) mod field;
 
 // Arithmetic backends (using u32, u64, etc) live here
+#[cfg(docsrs)]
+pub mod backend;
+#[cfg(not(docsrs))]
 pub(crate) mod backend;
 
 // Crate-local prelude (for alloc-dependent features like `Vec`)
+
 pub(crate) mod prelude;
 
 // Generic code for window lookups

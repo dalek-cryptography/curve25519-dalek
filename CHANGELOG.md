@@ -5,6 +5,9 @@ major series.
 
 ## 4.x series
 
+* Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspect_map_to_curve`
+* Fix panic when `Ristretto::double_and_compress_batch` receives the identity point
+* Remove `byteorder` dependency
 * Update the `criterion` dependency to 0.4.0
 * Include README.md into crate Documentation
 * Update the `rand_core` dependency version and the `rand` dev-dependency

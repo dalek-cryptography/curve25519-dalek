@@ -9,7 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Pluggable implementations for different architectures.
+//! INTERNALS: Pluggable implementations for different architectures.
 //!
 //! The backend code is split into two parts: a serial backend,
 //! and a vector backend.

@@ -341,7 +341,6 @@ use serde::de::Visitor;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl Serialize for RistrettoPoint {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -357,7 +356,6 @@ impl Serialize for RistrettoPoint {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl Serialize for CompressedRistretto {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -373,7 +371,6 @@ impl Serialize for CompressedRistretto {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for RistrettoPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -409,7 +406,6 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
 }
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for CompressedRistretto {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

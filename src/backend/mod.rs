@@ -9,7 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! INTERNALS: Pluggable implementations for different architectures.
+//! **INTERNALS:** Pluggable implementations for different architectures.
 //!
 //! The backend code is split into two parts: a serial backend,
 //! and a vector backend.
@@ -37,5 +37,4 @@
 pub mod serial;
 
 #[cfg(any(feature = "simd_backend", docsrs))]
-#[cfg_attr(docsrs, doc(cfg(feature = "simd_backend")))]
 pub mod vector;

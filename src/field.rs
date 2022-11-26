@@ -38,16 +38,8 @@ use crate::constants;
 cfg_if! {
     if #[cfg(feature = "fiat_backend")] {
         #[cfg(not(target_pointer_width = "64"))]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", not(target_pointer_width = "64"))))
-        )]
         pub use backend::serial::fiat_u32::field::*;
         #[cfg(target_pointer_width = "64")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", target_pointer_width = "64")))
-        )]
         pub use backend::serial::fiat_u64::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -58,10 +50,6 @@ cfg_if! {
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(not(target_pointer_width = "64"))]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", not(target_pointer_width = "64"))))
-        )]
         pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
         /// A `FieldElement` represents an element of the field
@@ -72,13 +60,8 @@ cfg_if! {
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(target_pointer_width = "64")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", target_pointer_width = "64")))
-        )]
         pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
     } else if #[cfg(target_pointer_width = "64")] {
-        #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
         pub use crate::backend::serial::u64::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -86,10 +69,8 @@ cfg_if! {
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
         /// implementations.
-        #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
         pub type FieldElement = backend::serial::u64::field::FieldElement51;
     } else {
-        #[cfg_attr(docsrs, doc(cfg(not(target_pointer_width = "64"))))]
         pub use backend::serial::u32::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -97,7 +78,6 @@ cfg_if! {
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
         /// implementations.
-        #[cfg_attr(docsrs, doc(cfg(not(target_pointer_width = "64"))))]
         pub type FieldElement = backend::serial::u32::field::FieldElement2625;
     }
 }

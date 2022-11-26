@@ -10,9 +10,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-#![cfg_attr(feature = "nightly", feature(test))]
-#![cfg_attr(feature = "nightly", feature(doc_cfg))]
-#![cfg_attr(feature = "simd_backend", feature(stdsimd))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------

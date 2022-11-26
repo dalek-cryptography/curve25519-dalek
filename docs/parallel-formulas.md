@@ -145,16 +145,16 @@ This costs \\( 2\mathbf M + 1 \mathbf D\\).
 
 ## Readdition
 
-If the point \\( P_2 = (X\_2 : Y\_2 : Z\_2 : T\_2) \\) is fixed, we
+If the point \\( P\_2 = (X\_2 : Y\_2 : Z\_2 : T\_2) \\) is fixed, we
 can cache the multiplication of the curve constants by computing
 $$
 \begin{aligned}
-(S\_2' &&,&& S\_3' &&,&& Z\_2' &&,&& T\_2' )
+(S\_2\' &&,&& S\_3\' &&,&& Z\_2\' &&,&& T\_2\' )
 &\gets
 (d\_2 \cdot (Y\_2 - X\_2)&&,&& d\_2 \cdot (Y\_1 + X\_1)&&,&& 2d\_2 \cdot Z\_2 &&,&& 2d\_1 \cdot T\_2).
 \end{aligned}
 $$
-This costs \\( 1\mathbf D\\); with \\( (S\_2', S\_3', Z\_2', T\_2')\\)
+This costs \\( 1\mathbf D\\); with \\( (S\_2\', S\_3\', Z\_2\', T\_2\')\\)
 in hand, the addition formulas above become
 $$
 \begin{aligned}
@@ -164,7 +164,7 @@ $$
 \\\\
 (S\_8    &&,&& S\_9    &&,&& S\_{10} &&,&& S\_{11} )
 &\gets
-(S\_0 \cdot S\_2' &&,&& S\_1 \cdot S\_3'&&,&& Z\_1 \cdot Z\_2' &&,&& T\_1 \cdot T\_2')
+(S\_0 \cdot S\_2\' &&,&& S\_1 \cdot S\_3\'&&,&& Z\_1 \cdot Z\_2\' &&,&& T\_1 \cdot T\_2\')
 \\\\
 (S\_{12} &&,&& S\_{13} &&,&& S\_{14} &&,&& S\_{15})
 &\gets

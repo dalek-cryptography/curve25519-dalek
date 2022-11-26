@@ -1,4 +1,4 @@
-FEATURES := nightly simd_backend packed_simd
+FEATURES := simd_backend serde
 
 doc:
 	cargo +nightly rustdoc --features "$(FEATURES)" -- --html-in-header docs/assets/rustdoc-include-katex-header.html --cfg docsrs

@@ -37,4 +37,5 @@
 pub mod serial;
 
 #[cfg(any(feature = "simd_backend", docsrs))]
+#[cfg_attr(docsrs, doc(cfg(feature = "simd_backend")))]
 pub mod vector;

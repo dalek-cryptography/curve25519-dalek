@@ -18,22 +18,36 @@ compile_error!("simd_backend selected without target_feature=+avx2 or +avx512ifm
     all(target_feature = "avx2", not(target_feature = "avx512ifma")),
     docsrs
 ))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(target_feature = "avx2", not(target_feature = "avx512ifma")),))
+)]
 pub mod avx2;
 #[cfg(any(
     all(target_feature = "avx2", not(target_feature = "avx512ifma")),
     docsrs
 ))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(target_feature = "avx2", not(target_feature = "avx512ifma")),))
+)]
 pub(crate) use self::avx2::{
     constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
 };
 
 #[cfg(any(target_feature = "avx512ifma", docsrs))]
+#[cfg_attr(docsrs, doc(cfg(target_feature = "avx512ifma")))]
 pub mod ifma;
 #[cfg(target_feature = "avx512ifma")]
+#[cfg_attr(docsrs, doc(cfg(target_feature = "avx512ifma")))]
 pub(crate) use self::ifma::{
     constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
 };
 
 #[cfg(any(target_feature = "avx2", target_feature = "avx512ifma", docsrs))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(target_feature = "avx2", target_feature = "avx512ifma")))
+)]
 #[allow(missing_docs)]
 pub mod scalar_mul;

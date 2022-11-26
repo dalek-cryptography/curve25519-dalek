@@ -61,7 +61,8 @@ use crate::prelude::*;
 /// This algorithm is adapted from section 4 of <https://eprint.iacr.org/2012/549.pdf>.
 pub struct Pippenger;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 

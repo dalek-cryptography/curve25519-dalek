@@ -5,9 +5,11 @@ major series.
 
 ## 4.x series
 
+* Remove `nightly` feature flag
 * Migrate documentation to docs.rs hosted
+* Updates backend selection to be more automatic
 * Fix backend documentation generation
-* Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspect_map_to_curve`
+* Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`
 * Fix panic when `Ristretto::double_and_compress_batch` receives the identity point
 * Remove `byteorder` dependency
 * Update the `criterion` dependency to 0.4.0

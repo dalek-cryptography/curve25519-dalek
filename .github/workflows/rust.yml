@@ -69,6 +69,24 @@ jobs:
     - uses: dtolnay/rust-toolchain@nightly
     - run: cargo test --features "nightly"
 
+  clippy:
+    name: Check that clippy is happy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+      with: clippy
+    - run: cargo clippy --all-features -- -D warnings
+
+  rustfmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+      with: rustfmt
+    - run: cargo fmt --all -- --check
+
   msrv:
     name: Current MSRV is 1.56.1
     runs-on: ubuntu-latest

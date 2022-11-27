@@ -28,21 +28,6 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
-# Documentation
-
-The semver-stable, public-facing `curve25519-dalek` API is documented [here][docs].
-
-## Building the docs locally
-
-```sh
-make doc
-```
-for regular docs, and
-```sh
-make doc-internal
-```
-for docs that include private items.
-
 # Use
 
 To import `curve25519-dalek`, add the following to the dependencies section of
@@ -131,6 +116,24 @@ cross-compiling will work:
 * `sudo apt install gcc-multilib` (or whatever package manager you use)
 * `rustup target add i686-unknown-linux-gnu`
 * `cargo build --target i686-unknown-linux-gnu`
+
+# Documentation
+
+The semver-stable, public-facing `curve25519-dalek` API is documented [here][docs].
+
+## Building the docs locally
+
+The `curve25519-dalek` documentation requires a custom HTML header to include
+KaTeX for math support. Unfortunately `cargo doc` does not currently support
+this, but docs can be built using
+```sh
+make doc
+```
+for regular docs, and
+```sh
+make doc-internal
+```
+for docs that include private items.
 
 # Minimum Supported Rust Version
 

@@ -75,7 +75,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-      with: clippy
+      with:
+        components: clippy
     - run: cargo clippy --all-features -- -D warnings
 
   rustfmt:
@@ -84,7 +85,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-      with: rustfmt
+      with:
+        components: rustfmt
     - run: cargo fmt --all -- --check
 
   msrv:

@@ -12,6 +12,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
@@ -94,11 +95,11 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
-        let scalars = scalars.map(|s| s.borrow().to_radix_2w(w));
+        let scalars = scalars.map(|s| s.borrow().as_radix_2w(w));
 
         let points = points
             .into_iter()
-            .map(|p| p.map(|P| P.to_projective_niels()));
+            .map(|p| p.map(|P| P.as_projective_niels()));
 
         let scalars_points = scalars
             .zip(points)
@@ -113,8 +114,8 @@ impl VartimeMultiscalarMul for Pippenger {
 
         let mut columns = (0..digits_count).rev().map(|digit_index| {
             // Clear the buckets when processing another digit.
-            for i in 0..buckets_count {
-                buckets[i] = EdwardsPoint::identity();
+            for bucket in &mut buckets {
+                *bucket = EdwardsPoint::identity();
             }
 
             // Iterate over pairs of (point, scalar)
@@ -124,12 +125,16 @@ impl VartimeMultiscalarMul for Pippenger {
             for (digits, pt) in scalars_points.iter() {
                 // Widen digit so that we don't run into edge cases when w=8.
                 let digit = digits[digit_index] as i16;
-                if digit > 0 {
-                    let b = (digit - 1) as usize;
-                    buckets[b] = (&buckets[b] + pt).to_extended();
-                } else if digit < 0 {
-                    let b = (-digit - 1) as usize;
-                    buckets[b] = (&buckets[b] - pt).to_extended();
+                match digit.cmp(&0) {
+                    Ordering::Greater => {
+                        let b = (digit - 1) as usize;
+                        buckets[b] = (&buckets[b] + pt).as_extended();
+                    },
+                    Ordering::Less => {
+                        let b = (-digit - 1) as usize;
+                        buckets[b] = (&buckets[b] - pt).as_extended();
+                    },
+                    Ordering::Equal => {},
                 }
             }
 
@@ -193,7 +198,7 @@ mod test {
 
             assert_eq!(subject.compress(), control.compress());
 
-            n = n / 2;
+            n /= 2;
         }
     }
 }

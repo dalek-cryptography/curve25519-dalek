@@ -18,7 +18,7 @@
 //!
 //! ## Equality Testing
 //!
-//! The `EdwardsPoint` struct implements the `subtle::ConstantTimeEq`
+//! The `EdwardsPoint` struct implements the [`subtle::ConstantTimeEq`]
 //! trait for constant-time equality checking, and the Rust `Eq` trait
 //! for variable-time equality checking.
 //!
@@ -26,26 +26,26 @@
 //!
 //! The order of the group of points on the curve \\(\mathcal E\\)
 //! is \\(|\mathcal E| = 8\ell \\), so its structure is \\( \mathcal
-//! E = \mathcal E[8] \times \mathcal E[\ell]\\).  The torsion
-//! subgroup \\( \mathcal E[8] \\) consists of eight points of small
+//! E = \mathcal E\[8\] \times \mathcal E[\ell]\\).  The torsion
+//! subgroup \\( \mathcal E\[8\] \\) consists of eight points of small
 //! order.  Technically, all of \\(\mathcal E\\) is torsion, but we
-//! use the word only to refer to the small \\(\mathcal E[8]\\) part, not
+//! use the word only to refer to the small \\(\mathcal E\[8\]\\) part, not
 //! the large prime-order \\(\mathcal E[\ell]\\) part.
 //!
-//! To test if a point is in \\( \mathcal E[8] \\), use
-//! `EdwardsPoint::is_small_order()`.
+//! To test if a point is in \\( \mathcal E\[8\] \\), use
+//! [`EdwardsPoint::is_small_order`].
 //!
 //! To test if a point is in \\( \mathcal E[\ell] \\), use
-//! `EdwardsPoint::is_torsion_free()`.
+//! [`EdwardsPoint::is_torsion_free`].
 //!
-//! To multiply by the cofactor, use `EdwardsPoint::mul_by_cofactor()`.
+//! To multiply by the cofactor, use [`EdwardsPoint::mul_by_cofactor`].
 //!
 //! To avoid dealing with cofactors entirely, consider using Ristretto.
 //!
 //! ## Scalars
 //!
-//! Scalars are represented by the `Scalar` struct.  To construct a scalar with a specific bit
-//! pattern, see `Scalar::from_bits()`.
+//! Scalars are represented by the [`Scalar`] struct.  To construct a scalar with a specific bit
+//! pattern, see [`Scalar::from_bits`].
 //!
 //! ## Scalar Multiplication
 //!
@@ -85,7 +85,7 @@
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
 //!
-//! [curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/backend/serial/curve_models/index.html
+//! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -134,9 +134,9 @@ use crate::traits::BasepointTable;
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 use crate::traits::MultiscalarMul;
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
@@ -707,6 +707,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // forward to a specific backend implementation.
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -739,6 +740,7 @@ impl MultiscalarMul for EdwardsPoint {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -778,9 +780,11 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     type Point = EdwardsPoint;
 
@@ -825,7 +829,7 @@ macro_rules! impl_basepoint_table {
     (Name = $name:ident, LookupTable = $table:ident, Point = $point:ty, Radix = $radix:expr, Additions = $adds:expr) => {
         /// A precomputed table of multiples of a basepoint, for accelerating
         /// fixed-base scalar multiplication.  One table, for the Ed25519
-        /// basepoint, is provided in the `constants` module.
+        /// basepoint, is provided in the [`constants`] module.
         ///
         /// The basepoint tables are reasonably large, so they should probably be boxed.
         ///
@@ -833,7 +837,8 @@ macro_rules! impl_basepoint_table {
         /// multiplication are as follows:
         ///
         /// * [`EdwardsBasepointTableRadix16`]: 30KB, 64A
-        ///   (this is the default size, and is used for [`ED25519_BASEPOINT_TABLE`])
+        ///   (this is the default size, and is used for
+        ///   [`constants::ED25519_BASEPOINT_TABLE`])
         /// * [`EdwardsBasepointTableRadix64`]: 120KB, 43A
         /// * [`EdwardsBasepointTableRadix128`]: 240KB, 37A
         /// * [`EdwardsBasepointTableRadix256`]: 480KB, 33A
@@ -978,7 +983,7 @@ impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = Looku
 impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
 
 /// A type-alias for [`EdwardsBasepointTable`] because the latter is
-/// used as a constructor in the `constants` module.
+/// used as a constructor in the [`constants`] module.
 //
 // Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
 // first, because it's used as a constructor, and then provide a type alias for
@@ -1016,7 +1021,7 @@ impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = Edw
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
 
 impl EdwardsPoint {
-    /// Multiply by the cofactor: return \\([8]P\\).
+    /// Multiply by the cofactor: return \\(\[8\]P\\).
     pub fn mul_by_cofactor(&self) -> EdwardsPoint {
         self.mul_by_pow_2(3)
     }
@@ -1038,8 +1043,8 @@ impl EdwardsPoint {
     ///
     /// # Return
     ///
-    /// * `true` if `self` is in the torsion subgroup \\( \mathcal E[8] \\);
-    /// * `false` if `self` is not in the torsion subgroup \\( \mathcal E[8] \\).
+    /// * `true` if `self` is in the torsion subgroup \\( \mathcal E\[8\] \\);
+    /// * `false` if `self` is not in the torsion subgroup \\( \mathcal E\[8\] \\).
     ///
     /// # Example
     ///

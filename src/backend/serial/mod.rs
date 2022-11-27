@@ -11,11 +11,9 @@
 
 //! Serial implementations of field, scalar, point arithmetic.
 //!
-//! When the vector backend is disabled, the crate uses the
-//! mixed-model strategy for implementing point operations and scalar
-//! multiplication; see the [`curve_models`](self::curve_models) and
-//! [`scalar_mul`](self::scalar_mul) documentation for more
-//! information.
+//! When the vector backend is disabled, the crate uses the mixed-model strategy
+//! for implementing point operations and scalar multiplication; see the
+//! [`curve_models`] and [`scalar_mul`] documentation for more information.
 //!
 //! When the vector backend is enabled, the field and scalar
 //! implementations are still used for non-vectorized operations.

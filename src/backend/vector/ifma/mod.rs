@@ -9,8 +9,10 @@
 
 #![doc = include_str!("../../../../docs/ifma-notes.md")]
 
+#[allow(missing_docs)]
 pub mod field;
 
+#[allow(missing_docs)]
 pub mod edwards;
 
 pub mod constants;

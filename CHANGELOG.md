@@ -5,6 +5,8 @@ major series.
 
 ## 4.x series
 
+* Migrate documentation to docs.rs hosted
+* Fix backend documentation generation
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspect_map_to_curve`
 * Fix panic when `Ristretto::double_and_compress_batch` receives the identity point
 * Remove `byteorder` dependency

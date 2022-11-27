@@ -124,7 +124,7 @@
 //! ## Implementation
 //!
 //! The Decaf suggestion is to use a quotient group, such as \\(\mathcal
-//! E / \mathcal E[4]\\) or \\(2 \mathcal E / \mathcal E[2] \\), to
+//! E / \mathcal E\[4\]\\) or \\(2 \mathcal E / \mathcal E\[2\] \\), to
 //! implement a prime-order group using a non-prime-order curve.
 //!
 //! This requires only changing
@@ -190,7 +190,7 @@ use crate::scalar::Scalar;
 
 use crate::traits::BasepointTable;
 use crate::traits::Identity;
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
@@ -498,7 +498,7 @@ impl RistrettoPoint {
     ///
     /// However, given input points \\( P\_1, \ldots, P\_n, \\)
     /// it is possible to compute the encodings of their doubles \\(
-    /// \mathrm{enc}( [2]P\_1), \ldots, \mathrm{enc}( [2]P\_n ) \\)
+    /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
     /// ```
@@ -520,6 +520,7 @@ impl RistrettoPoint {
     /// # }
     /// ```
     #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
     where
         I: IntoIterator<Item = &'a RistrettoPoint>,
@@ -605,7 +606,7 @@ impl RistrettoPoint {
             .collect()
     }
 
-    /// Return the coset self + E[4], for debugging.
+    /// Return the coset self + E\[4\], for debugging.
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [
             self.0,
@@ -922,6 +923,7 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 // forward to the EdwardsPoint implementations.
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -938,6 +940,7 @@ impl MultiscalarMul for RistrettoPoint {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -958,9 +961,11 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
     type Point = RistrettoPoint;
 

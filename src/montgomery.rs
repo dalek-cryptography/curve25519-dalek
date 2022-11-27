@@ -49,7 +49,10 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-use core::ops::{Mul, MulAssign};
+use core::{
+    hash::{Hash, Hasher},
+    ops::{Mul, MulAssign},
+};
 
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
@@ -66,8 +69,7 @@ use zeroize::Zeroize;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
-#[allow(clippy::derive_hash_xor_eq)]
-#[derive(Copy, Clone, Debug, Default, Hash)]
+#[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
@@ -88,6 +90,17 @@ impl PartialEq for MontgomeryPoint {
 }
 
 impl Eq for MontgomeryPoint {}
+
+// Equal MontgomeryPoints must hash to the same value. So we have to get them into a canonical
+// encoding first
+impl Hash for MontgomeryPoint {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Do a round trip through a `FieldElement`. `as_bytes` is guaranteed to give a canonical
+        // 32-byte encoding
+        let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
+        canonical_bytes.hash(state);
+    }
+}
 
 impl Identity for MontgomeryPoint {
     /// Return the group identity element, which has order 4.

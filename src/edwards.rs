@@ -85,7 +85,7 @@
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
 //!
-//! [curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/backend/serial/curve_models/index.html
+//! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -134,9 +134,9 @@ use crate::traits::BasepointTable;
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 use crate::traits::MultiscalarMul;
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
@@ -707,6 +707,7 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // forward to a specific backend implementation.
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -739,6 +740,7 @@ impl MultiscalarMul for EdwardsPoint {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -778,9 +780,11 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     type Point = EdwardsPoint;
 

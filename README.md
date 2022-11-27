@@ -1,10 +1,12 @@
 
 # curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://doc.dalek.rs) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
 
+<p style="float: right">
 <img
- width="33%"
- align="right"
+ width="300px"
+ alt="dalek-cryptography logo: a dalek with edwards curves as sparkles coming out of its radar-schnozzley blaster thingies"
  src="https://doc.dalek.rs/assets/dalek-logo-clear.png"/>
+</p>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
 
@@ -246,6 +248,6 @@ contributions.
 [docs-external]: https://doc.dalek.rs/curve25519_dalek/
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
-[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
+[parallel_doc]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/vector/index.html
 [subtle_doc]: https://doc.dalek.rs/subtle/
 [fiat-crypto]: https://github.com/mit-plv/fiat-crypto

@@ -9,7 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-//! Pluggable implementations for different architectures.
+//! **INTERNALS:** Pluggable implementations for different architectures.
 //!
 //! The backend code is split into two parts: a serial backend,
 //! and a vector backend.
@@ -36,18 +36,5 @@
 
 pub mod serial;
 
-#[cfg(any(
-    all(
-        feature = "simd_backend",
-        any(target_feature = "avx2", target_feature = "avx512ifma")
-    ),
-    all(feature = "nightly", rustdoc)
-))]
-#[cfg_attr(
-    feature = "nightly",
-    doc(cfg(any(all(
-        feature = "simd_backend",
-        any(target_feature = "avx2", target_feature = "avx512ifma")
-    ))))
-)]
+#[cfg(any(feature = "simd_backend", docsrs))]
 pub mod vector;

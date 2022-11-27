@@ -24,7 +24,8 @@ use crate::prelude::*;
 /// See the documentation in the serial `scalar_mul::pippenger` module for details.
 pub struct Pippenger;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 

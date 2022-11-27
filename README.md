@@ -50,7 +50,7 @@ To disable the default features when using `curve25519-dalek` as a dependency, a
 
 ## Major Version API Changes
 
-See `CHANGELOG.md` for more details.
+See [`CHANGELOG.md`](CHANGELOG.md) for more details.
 
 ### 2.x
 

@@ -53,7 +53,7 @@ impl MultiscalarMul for Straus {
 
         let scalar_digits_vec: Vec<_> = scalars
             .into_iter()
-            .map(|s| s.borrow().to_radix_16())
+            .map(|s| s.borrow().as_radix_16())
             .collect();
         // Pass ownership to a `Zeroizing` wrapper
         let scalar_digits = Zeroizing::new(scalar_digits_vec);

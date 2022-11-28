@@ -346,6 +346,7 @@ impl FieldElement2625x4 {
     ) -> FieldElement2625x4 {
         let mut buf = [u32x8::splat(0); 5];
         let low_26_bits = (1 << 26) - 1;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..5 {
             let a_2i   = (x0.0[i] & low_26_bits) as u32;
             let a_2i_1 = (x0.0[i] >> 26) as u32;

@@ -505,7 +505,7 @@ impl FieldElement2625x4 {
         };
 
         // Add the final carryin.
-        v[0] = v[0] + c9_19;
+        v[0] += c9_19;
 
         // Each output coefficient has exactly one carryin, which is
         // bounded by 2^11.25, so they are bounded as
@@ -534,12 +534,12 @@ impl FieldElement2625x4 {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
-                z[i + 1] = z[i + 1] + (z[i] >> 26);
-                z[i] = z[i] & LOW_26_BITS;
+                z[i + 1] += (z[i] >> 26);
+                z[i] &= LOW_26_BITS;
             } else {
                 // Odd limbs have 25 bits
-                z[i + 1] = z[i + 1] + (z[i] >> 25);
-                z[i] = z[i] & LOW_25_BITS;
+                z[i + 1] += (z[i] >> 25);
+                z[i] &= LOW_25_BITS;
             }
         };
 
@@ -562,7 +562,7 @@ impl FieldElement2625x4 {
         // Instead, we split the carry in two, with c = c_0 + c_1*2^26.
 
         let c = z[9] >> 25;
-        z[9] = z[9] & LOW_25_BITS;
+        z[9] &= LOW_25_BITS;
         let mut c0: u64x4 = c & LOW_26_BITS; // c0 < 2^26;
         let mut c1: u64x4 = c >> 26;         // c1 < 2^(39-26) = 2^13;
 
@@ -573,8 +573,8 @@ impl FieldElement2625x4 {
             c1 = _mm256_mul_epu32(c1.into_bits(), x19.into_bits()).into_bits(); // c1 < 2^17.25
         }
 
-        z[0] = z[0] + c0; // z0 < 2^26 + 2^30.25 < 2^30.33
-        z[1] = z[1] + c1; // z1 < 2^25 + 2^17.25 < 2^25.0067
+        z[0] += c0; // z0 < 2^26 + 2^30.25 < 2^30.33
+        z[1] += c1; // z1 < 2^25 + 2^17.25 < 2^25.0067
         carry(&mut z, 0); // z0 < 2^26, z1 < 2^25.0067 + 2^4.33 = 2^25.007
 
         // The output coefficients are bounded with

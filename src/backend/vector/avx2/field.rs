@@ -105,6 +105,7 @@ fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
 /// It's used to specify blend operations without
 /// having to know details about the data layout of the
 /// `FieldElement2625x4`.
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug)]
 pub enum Lanes {
     C,
@@ -122,6 +123,7 @@ pub enum Lanes {
 /// The enum variants are named by what they do to a vector \\(
 /// (A,B,C,D) \\); for instance, `Shuffle::BADC` turns \\( (A, B, C,
 /// D) \\) into \\( (B, A, D, C) \\).
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug)]
 pub enum Shuffle {
     AAAA,

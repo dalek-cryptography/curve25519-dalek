@@ -89,9 +89,13 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
             for i in 0..dp {
                 let t_ij = dynamic_nafs[i][j];
                 match t_ij.cmp(&0) {
-                    Ordering::Greater => R = &R.as_extended() + &dynamic_lookup_tables[i].select(t_ij as usize),
-                    Ordering::Less => R = &R.as_extended() - &dynamic_lookup_tables[i].select(-t_ij as usize),
-                    Ordering::Equal => {},
+                    Ordering::Greater => {
+                        R = &R.as_extended() + &dynamic_lookup_tables[i].select(t_ij as usize)
+                    }
+                    Ordering::Less => {
+                        R = &R.as_extended() - &dynamic_lookup_tables[i].select(-t_ij as usize)
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
@@ -99,9 +103,13 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
             for i in 0..sp {
                 let t_ij = static_nafs[i][j];
                 match t_ij.cmp(&0) {
-                    Ordering::Greater => R = &R.as_extended() + &self.static_lookup_tables[i].select(t_ij as usize),
-                    Ordering::Less => R = &R.as_extended() - &self.static_lookup_tables[i].select(-t_ij as usize),
-                    Ordering::Equal => {},
+                    Ordering::Greater => {
+                        R = &R.as_extended() + &self.static_lookup_tables[i].select(t_ij as usize)
+                    }
+                    Ordering::Less => {
+                        R = &R.as_extended() - &self.static_lookup_tables[i].select(-t_ij as usize)
+                    }
+                    Ordering::Equal => {}
                 }
             }
 

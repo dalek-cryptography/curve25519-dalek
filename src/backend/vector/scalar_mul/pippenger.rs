@@ -87,12 +87,12 @@ impl VartimeMultiscalarMul for Pippenger {
                     Ordering::Greater => {
                         let b = (digit - 1) as usize;
                         buckets[b] = &buckets[b] + pt;
-                    },
+                    }
                     Ordering::Less => {
                         let b = (-digit - 1) as usize;
                         buckets[b] = &buckets[b] - pt;
-                    },
-                    Ordering::Equal => {},
+                    }
+                    Ordering::Equal => {}
                 }
             }
 

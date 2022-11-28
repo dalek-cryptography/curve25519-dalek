@@ -88,11 +88,11 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
                 match t_ij.cmp(&0) {
                     Ordering::Greater => {
                         R = &R + &dynamic_lookup_tables[i].select(t_ij as usize);
-                    },
+                    }
                     Ordering::Less => {
                         R = &R - &dynamic_lookup_tables[i].select(-t_ij as usize);
-                    },
-                    Ordering::Equal => {},
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
@@ -102,11 +102,11 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
                 match t_ij.cmp(&0) {
                     Ordering::Greater => {
                         R = &R + &self.static_lookup_tables[i].select(t_ij as usize);
-                    },
+                    }
                     Ordering::Less => {
                         R = &R - &self.static_lookup_tables[i].select(-t_ij as usize);
-                    },
-                    Ordering::Equal => {},
+                    }
+                    Ordering::Equal => {}
                 }
             }
         }

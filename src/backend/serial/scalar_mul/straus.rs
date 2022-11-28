@@ -185,9 +185,11 @@ impl VartimeMultiscalarMul for Straus {
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
                 match naf[i].cmp(&0) {
-                    Ordering::Greater => t = &t.as_extended() + &lookup_table.select(naf[i] as usize),
+                    Ordering::Greater => {
+                        t = &t.as_extended() + &lookup_table.select(naf[i] as usize)
+                    }
                     Ordering::Less => t = &t.as_extended() - &lookup_table.select(-naf[i] as usize),
-                    Ordering::Equal => {},
+                    Ordering::Equal => {}
                 }
             }
 

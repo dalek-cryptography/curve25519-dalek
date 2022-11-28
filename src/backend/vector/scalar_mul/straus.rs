@@ -99,11 +99,11 @@ impl VartimeMultiscalarMul for Straus {
                 match naf[i].cmp(&0) {
                     Ordering::Greater => {
                         Q = &Q + &lookup_table.select(naf[i] as usize);
-                    },
+                    }
                     Ordering::Less => {
                         Q = &Q - &lookup_table.select(-naf[i] as usize);
-                    },
-                    Ordering::Equal => {},
+                    }
+                    Ordering::Equal => {}
                 }
             }
         }

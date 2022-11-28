@@ -950,7 +950,7 @@ impl Scalar {
                 x_u64[u64_idx] >> bit_idx
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                (x_u64[u64_idx] >> bit_idx) | (x_u64[1+u64_idx] << (64 - bit_idx))
+                (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx))
             };
 
             // Add the carry into the current window
@@ -1082,13 +1082,13 @@ impl Scalar {
             let bit_idx = bit_offset % 64;
 
             // Read the bits from the scalar
-            let bit_buf: u64 = if bit_idx < 64 - w  || u64_idx == 3 {
+            let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
                 // This window's bits are contained in a single u64,
                 // or it's the last u64 anyway.
                 scalar64x4[u64_idx] >> bit_idx
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1+u64_idx] << (64 - bit_idx))
+                (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx))
             };
 
             // Read the actual coefficient value from the window

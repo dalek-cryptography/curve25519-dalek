@@ -12,6 +12,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use crate::backend::vector::{CachedPoint, ExtendedPoint};
 use crate::edwards::EdwardsPoint;
@@ -84,19 +85,27 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
 
             for i in 0..dp {
                 let t_ij = dynamic_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R + &dynamic_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R - &dynamic_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R + &dynamic_lookup_tables[i].select(t_ij as usize);
+                    },
+                    Ordering::Less => {
+                        R = &R - &dynamic_lookup_tables[i].select(-t_ij as usize);
+                    },
+                    Ordering::Equal => {},
                 }
             }
 
             for i in 0..sp {
                 let t_ij = static_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R + &self.static_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R - &self.static_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R + &self.static_lookup_tables[i].select(t_ij as usize);
+                    },
+                    Ordering::Less => {
+                        R = &R - &self.static_lookup_tables[i].select(-t_ij as usize);
+                    },
+                    Ordering::Equal => {},
                 }
             }
         }

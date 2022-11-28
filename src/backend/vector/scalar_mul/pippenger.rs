@@ -10,6 +10,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use crate::backend::vector::{CachedPoint, ExtendedPoint};
 use crate::edwards::EdwardsPoint;
@@ -81,12 +82,16 @@ impl VartimeMultiscalarMul for Pippenger {
             for (digits, pt) in scalars_points.iter() {
                 // Widen digit so that we don't run into edge cases when w=8.
                 let digit = digits[digit_index] as i16;
-                if digit > 0 {
-                    let b = (digit - 1) as usize;
-                    buckets[b] = &buckets[b] + pt;
-                } else if digit < 0 {
-                    let b = (-digit - 1) as usize;
-                    buckets[b] = &buckets[b] - pt;
+                match digit.cmp(&0) {
+                    Ordering::Greater => {
+                        let b = (digit - 1) as usize;
+                        buckets[b] = &buckets[b] + pt;
+                    },
+                    Ordering::Less => {
+                        let b = (-digit - 1) as usize;
+                        buckets[b] = &buckets[b] - pt;
+                    },
+                    Ordering::Equal => {},
                 }
             }
 

@@ -12,6 +12,7 @@
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use zeroize::Zeroizing;
 
@@ -95,10 +96,14 @@ impl VartimeMultiscalarMul for Straus {
             Q = Q.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
-                if naf[i] > 0 {
-                    Q = &Q + &lookup_table.select(naf[i] as usize);
-                } else if naf[i] < 0 {
-                    Q = &Q - &lookup_table.select(-naf[i] as usize);
+                match naf[i].cmp(&0) {
+                    Ordering::Greater => {
+                        Q = &Q + &lookup_table.select(naf[i] as usize);
+                    },
+                    Ordering::Less => {
+                        Q = &Q - &lookup_table.select(-naf[i] as usize);
+                    },
+                    Ordering::Equal => {},
                 }
             }
         }

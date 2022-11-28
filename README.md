@@ -125,11 +125,33 @@ cross-compiling will work on an x86-64 Linux machine:
 * `rustup target add i686-unknown-linux-gnu`
 * `cargo build --target i686-unknown-linux-gnu`
 
-# Minimum Supported Rust Version
+# Maintenance Policies
 
-This crate requires Rust 1.56.1 at a minimum. 3.x releases of this crate supported an MSRV of 1.41.
+## Minimum Supported Rust Version (MSRV)
 
-In the future, MSRV changes will be accompanied by a minor version bump.
+| Releases | MSRV   |
+| :---     | :---   |
+| 4.x      | 1.56.1 |
+| 3.x      | 1.41.0 |
+
+From 4.x MSRV changes will be accompanied by a minor version bump.
+
+## Public API SemVer Exemptions
+
+Breaking changes on SemVer exempted components affecting the Public API will also be accompanied by;
+
+| Releases | Public API Component(s)               | Policy              |
+| :---     | :---                                  | :---                |
+| 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
+
+* In the future exempted `digest` and `rand_core` may be changed to optional features.
+* Any changes to these exemptions will be accompanied by a major version bump.
+
+## SemVer
+
+* All on-by-default features of this library are covered by SemVer
+* MSRV is considered exempt from SemVer as noted
+* Breaking changes on dependencies exposed via Public API are also considered exempt as noted
 
 # Safety
 

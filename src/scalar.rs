@@ -1026,10 +1026,10 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4 => (256 + w - 1) / w as usize,
-            5 => (256 + w - 1) / w as usize,
-            6 => (256 + w - 1) / w as usize,
-            7 => (256 + w - 1) / w as usize,
+            4 => (256 + w - 1) / w,
+            5 => (256 + w - 1) / w,
+            6 => (256 + w - 1) / w,
+            7 => (256 + w - 1) / w,
             // See comment in to_radix_2w on handling the terminal carry.
             8 => (256 + w - 1) / w + 1_usize,
             _ => panic!("invalid radix parameter"),
@@ -1073,7 +1073,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1) / w as usize;
+        let digits_count = (256 + w - 1) / w;
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
@@ -1095,7 +1095,7 @@ impl Scalar {
             let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
 
             // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
-            carry = (coef + (radix / 2) as u64) >> w;
+            carry = (coef + (radix / 2)) >> w;
             digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
         }
 

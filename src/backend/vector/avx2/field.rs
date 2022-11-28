@@ -95,7 +95,7 @@ fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
         // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
         // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
 
-        return _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into_bits();
+        _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into_bits()
     }
 }
 

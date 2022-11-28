@@ -534,11 +534,11 @@ impl FieldElement2625x4 {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
-                z[i + 1] += (z[i] >> 26);
+                z[i + 1] += z[i] >> 26;
                 z[i] &= LOW_26_BITS;
             } else {
                 // Odd limbs have 25 bits
-                z[i + 1] += (z[i] >> 25);
+                z[i + 1] += z[i] >> 25;
                 z[i] &= LOW_25_BITS;
             }
         };

@@ -96,6 +96,7 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
                 }
             }
 
+            #[allow(clippy::needless_range_loop)]
             for i in 0..sp {
                 let t_ij = static_nafs[i][j];
                 match t_ij.cmp(&0) {

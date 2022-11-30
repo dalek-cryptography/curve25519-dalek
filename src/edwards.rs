@@ -1507,7 +1507,7 @@ mod test {
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
         let xs = (0..n)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             // The largest scalar allowed by the type system, 2^255-1
             .chain(iter::once(Scalar::from_bits([0xff; 32])))
             .collect::<Vec<_>>();
@@ -1577,11 +1577,11 @@ mod test {
         let B = &crate::constants::ED25519_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let check_scalar: Scalar = static_scalars

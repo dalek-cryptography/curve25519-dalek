@@ -44,7 +44,7 @@ harness = false
 [dependencies]
 cfg-if = "1"
 rand_core = { version = "0.6", default-features = false }
-digest = { version = "0.10", default-features = false }
+digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 # The original packed_simd package was orphaned, see
@@ -58,6 +58,7 @@ nightly = ["subtle/nightly"]
 default = ["std"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
+digest = ["dep:digest"]
 
 # fiat-crypto backend with formally-verified field arithmetic
 fiat_backend = ["fiat-crypto"]

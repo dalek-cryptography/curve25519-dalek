@@ -81,32 +81,9 @@
 //! assert!(a == two);
 //! ```
 //!
-//! There is also a constructor that reduces a \\(512\\)-bit integer,
-//! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
-//!
-//! To construct a `Scalar` as the hash of some input data, use
-//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes),
-//! which takes a buffer, or
-//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash),
-//! which allows an IUF API.
-//!
-//! ```
-//! # fn main() {
-//! use sha2::{Digest, Sha512};
-//! use curve25519_dalek::scalar::Scalar;
-//!
-//! // Hashing a single byte slice
-//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
-//!
-//! // Streaming data into a hash object
-//! let mut hasher = Sha512::default();
-//! hasher.update(b"Abolish ");
-//! hasher.update(b"ICE");
-//! let a2 = Scalar::from_hash(hasher);
-//!
-//! assert_eq!(a, a2);
-//! # }
-//! ```
+//! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
+//! reduces a \\(512\\)-bit integer, if the optional `digest` feature
+//! has been enabled.
 //!
 //! Finally, to create a `Scalar` with a specific bit-pattern
 //! (e.g., for compatibility with X/Ed25519
@@ -154,7 +131,9 @@ use cfg_if::cfg_if;
 
 use rand_core::{CryptoRng, RngCore};
 
+#[cfg(feature = "digest")]
 use digest::generic_array::typenum::U64;
+#[cfg(feature = "digest")]
 use digest::Digest;
 
 use subtle::Choice;
@@ -591,6 +570,7 @@ impl Scalar {
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 
+    #[cfg(feature = "digest")]
     /// Hash a slice of bytes into a scalar.
     ///
     /// Takes a type parameter `D`, which is any `Digest` producing 64
@@ -620,6 +600,7 @@ impl Scalar {
         Scalar::from_hash(hash)
     }
 
+    #[cfg(feature = "digest")]
     /// Construct a scalar from an existing `Digest` instance.
     ///
     /// Use this instead of `hash_from_bytes` if it is more convenient

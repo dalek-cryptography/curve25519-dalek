@@ -167,7 +167,9 @@ use core::ops::{Mul, MulAssign};
 
 use rand_core::{CryptoRng, RngCore};
 
+#[cfg(feature = "digest")]
 use digest::generic_array::typenum::U64;
+#[cfg(feature = "digest")]
 use digest::Digest;
 
 use crate::constants;
@@ -685,6 +687,7 @@ impl RistrettoPoint {
         RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
 
+    #[cfg(feature = "digest")]
     /// Hash a slice of bytes into a `RistrettoPoint`.
     ///
     /// Takes a type parameter `D`, which is any `Digest` producing 64
@@ -722,6 +725,7 @@ impl RistrettoPoint {
         RistrettoPoint::from_hash(hash)
     }
 
+    #[cfg(feature = "digest")]
     /// Construct a `RistrettoPoint` from an existing `Digest` instance.
     ///
     /// Use this instead of `hash_from_bytes` if it is more convenient

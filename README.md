@@ -127,6 +127,9 @@ cross-compiling will work on an x86-64 Linux machine:
 
 # Maintenance Policies
 
+* All on-by-default features of this library are covered by SemVer
+* SemVer exemptions are outlined below for MSRV and Public API
+
 ## Minimum Supported Rust Version (MSRV)
 
 | Releases | MSRV   |
@@ -144,14 +147,7 @@ Breaking changes on SemVer exempted components affecting the Public API will als
 | :---     | :---                                  | :---                |
 | 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
 
-* In the future exempted `digest` and `rand_core` may be changed to optional features.
-* Any changes to these exemptions will be accompanied by a major version bump.
-
-## SemVer
-
-* All on-by-default features of this library are covered by SemVer
-* MSRV is considered exempt from SemVer as noted
-* Breaking changes on dependencies exposed via Public API are also considered exempt as noted
+* In the future exempted `digest` and `rand_core` may be changed to optional features accompanied by a minor bump.
 
 # Safety
 

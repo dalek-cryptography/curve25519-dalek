@@ -14,6 +14,7 @@ use curve25519_dalek;
 use ed25519_dalek::*;
 
 use hex::FromHex;
+use hex_literal::hex;
 
 use sha2::Sha512;
 
@@ -61,9 +62,12 @@ mod vectors {
             let msg_bytes: Vec<u8> = FromHex::from_hex(&parts[2]).unwrap();
             let sig_bytes: Vec<u8> = FromHex::from_hex(&parts[3]).unwrap();
 
-            let signing_key = SigningKey::try_from(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+            let sec_bytes = &sec_bytes[..SECRET_KEY_LENGTH].try_into().unwrap();
+            let pub_bytes = &pub_bytes[..PUBLIC_KEY_LENGTH].try_into().unwrap();
+
+            let signing_key = SigningKey::from_bytes(sec_bytes);
             let expected_verifying_key =
-                VerifyingKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+                VerifyingKey::from_bytes(pub_bytes).unwrap();
             assert_eq!(expected_verifying_key, signing_key.verifying_key());
 
             // The signatures in the test vectors also include the message
@@ -83,26 +87,19 @@ mod vectors {
     // From https://tools.ietf.org/html/rfc8032#section-7.3
     #[test]
     fn ed25519ph_rf8032_test_vector() {
-        let secret_key: &[u8] = b"833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42";
-        let verifying_key: &[u8] =
-            b"ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf";
-        let message: &[u8] = b"616263";
-        let signature: &[u8] = b"98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406";
+        let sec_bytes = hex!("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42");
+        let pub_bytes = hex!("ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf");
+        let msg_bytes = hex!("616263");
+        let sig_bytes = hex!("98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406");
 
-        let sec_bytes: Vec<u8> = FromHex::from_hex(secret_key).unwrap();
-        let pub_bytes: Vec<u8> = FromHex::from_hex(verifying_key).unwrap();
-        let msg_bytes: Vec<u8> = FromHex::from_hex(message).unwrap();
-        let sig_bytes: Vec<u8> = FromHex::from_hex(signature).unwrap();
-
-        let signing_key: SigningKey =
-            SigningKey::try_from(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
-        let expected_verifying_key: VerifyingKey =
-            VerifyingKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+        let signing_key = SigningKey::from_bytes(&sec_bytes);
+        let expected_verifying_key =
+            VerifyingKey::from_bytes(&pub_bytes).unwrap();
         assert_eq!(expected_verifying_key, signing_key.verifying_key());
-        let sig1: Signature = Signature::try_from(&sig_bytes[..]).unwrap();
+        let sig1 = Signature::try_from(&sig_bytes[..]).unwrap();
 
-        let mut prehash_for_signing: Sha512 = Sha512::default();
-        let mut prehash_for_verifying: Sha512 = Sha512::default();
+        let mut prehash_for_signing = Sha512::default();
+        let mut prehash_for_verifying = Sha512::default();
 
         prehash_for_signing.update(&msg_bytes[..]);
         prehash_for_verifying.update(&msg_bytes[..]);
@@ -187,7 +184,7 @@ mod vectors {
         }
 
         let signature = serialize_signature(&r, &s);
-        let pk = VerifyingKey::from_bytes(&pub_key.compress().as_bytes()[..]).unwrap();
+        let pk = VerifyingKey::from_bytes(&pub_key.compress().as_bytes()).unwrap();
         let sig = Signature::try_from(&signature[..]).unwrap();
         // The same signature verifies for both messages
         assert!(pk.verify(message1, &sig).is_ok() && pk.verify(message2, &sig).is_ok());

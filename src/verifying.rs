@@ -129,18 +129,8 @@ impl VerifyingKey {
     /// A `Result` whose okay value is an EdDSA `VerifyingKey` or whose error value
     /// is an `SignatureError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<VerifyingKey, SignatureError> {
-        if bytes.len() != PUBLIC_KEY_LENGTH {
-            return Err(InternalError::BytesLengthError {
-                name: "VerifyingKey",
-                length: PUBLIC_KEY_LENGTH,
-            }
-            .into());
-        }
-        let mut bits: [u8; 32] = [0u8; 32];
-        bits.copy_from_slice(&bytes[..32]);
-
-        let compressed = CompressedEdwardsY(bits);
+    pub fn from_bytes(bytes: &[u8; PUBLIC_KEY_LENGTH]) -> Result<VerifyingKey, SignatureError> {
+        let compressed = CompressedEdwardsY(*bytes);
         let point = compressed
             .decompress()
             .ok_or(InternalError::PointDecompressionError)?;
@@ -358,10 +348,18 @@ impl Verifier<ed25519::Signature> for VerifyingKey {
 impl TryFrom<&[u8]> for VerifyingKey {
     type Error = SignatureError;
 
-    fn try_from(bytes: &[u8]) -> Result<VerifyingKey, SignatureError> {
-        VerifyingKey::from_bytes(bytes)
+    #[inline]
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let bytes = bytes.try_into().map_err(|_| {
+            InternalError::BytesLengthError {
+                name: "VerifyingKey",
+                length: PUBLIC_KEY_LENGTH,
+            }
+        })?;
+        Self::from_bytes(bytes)
     }
 }
+
 
 #[cfg(feature = "pkcs8")]
 impl DecodePublicKey for VerifyingKey {}
@@ -431,6 +429,6 @@ impl<'d> Deserialize<'d> for VerifyingKey {
         D: Deserializer<'d>,
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
-        VerifyingKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
+        VerifyingKey::try_from(bytes.as_ref()).map_err(SerdeError::custom)
     }
 }

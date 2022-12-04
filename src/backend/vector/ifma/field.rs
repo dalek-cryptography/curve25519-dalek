@@ -38,6 +38,7 @@ pub struct F51x4Unreduced(pub(crate) [u64x4; 5]);
 #[derive(Copy, Clone, Debug)]
 pub struct F51x4Reduced(pub(crate) [u64x4; 5]);
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone)]
 pub enum Shuffle {
     AAAA,
@@ -72,6 +73,7 @@ fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone)]
 pub enum Lanes {
     D,

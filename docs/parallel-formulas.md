@@ -145,16 +145,16 @@ This costs \\( 2\mathbf M + 1 \mathbf D\\).
 
 ## Readdition
 
-If the point \\( P_2 = (X\_2 : Y\_2 : Z\_2 : T\_2) \\) is fixed, we
+If the point \\( P\_2 = (X\_2 : Y\_2 : Z\_2 : T\_2) \\) is fixed, we
 can cache the multiplication of the curve constants by computing
 $$
 \begin{aligned}
-(S\_2' &&,&& S\_3' &&,&& Z\_2' &&,&& T\_2' )
+(S\_2\' &&,&& S\_3\' &&,&& Z\_2\' &&,&& T\_2\' )
 &\gets
 (d\_2 \cdot (Y\_2 - X\_2)&&,&& d\_2 \cdot (Y\_1 + X\_1)&&,&& 2d\_2 \cdot Z\_2 &&,&& 2d\_1 \cdot T\_2).
 \end{aligned}
 $$
-This costs \\( 1\mathbf D\\); with \\( (S\_2', S\_3', Z\_2', T\_2')\\)
+This costs \\( 1\mathbf D\\); with \\( (S\_2\', S\_3\', Z\_2\', T\_2\')\\)
 in hand, the addition formulas above become
 $$
 \begin{aligned}
@@ -164,7 +164,7 @@ $$
 \\\\
 (S\_8    &&,&& S\_9    &&,&& S\_{10} &&,&& S\_{11} )
 &\gets
-(S\_0 \cdot S\_2' &&,&& S\_1 \cdot S\_3'&&,&& Z\_1 \cdot Z\_2' &&,&& T\_1 \cdot T\_2')
+(S\_0 \cdot S\_2\' &&,&& S\_1 \cdot S\_3\'&&,&& Z\_1 \cdot Z\_2\' &&,&& T\_1 \cdot T\_2\')
 \\\\
 (S\_{12} &&,&& S\_{13} &&,&& S\_{14} &&,&& S\_{15})
 &\gets
@@ -207,7 +207,7 @@ $$
 (S\_8 \cdot S\_9 &&,&& S\_5 \cdot S\_6 &&,&& S\_8 \cdot S\_6 &&,&& S\_5 \cdot S\_9)
 \end{aligned}
 $$
-to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = [2]P\_1 \\).
+to obtain \\( P\_3 = (X\_3 : Y\_3 : Z\_3 : T\_3) = \[2\]P\_1 \\).
 
 The intermediate step between the squaring and multiplication requires
 a long chain of additions.  For the IFMA-based implementation, this is not a problem; for the AVX2-based implementation, it is, but with some care and finesse, it's possible to arrange the computation without requiring an intermediate reduction.
@@ -327,7 +327,7 @@ There are several directions for future improvement:
 [sandy2x]: https://eprint.iacr.org/2015/943.pdf
 [avx2trac]: https://trac.torproject.org/projects/tor/ticket/8897#comment:28
 [hwcd08]: https://www.iacr.org/archive/asiacrypt2008/53500329/53500329.pdf
-[curve_models]: https://doc-internal.dalek.rs/curve25519_dalek/backend/serial/curve_models/index.html
+[curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
 [bbjlp08]: https://eprint.iacr.org/2008/013
 [cmo98]: https://link.springer.com/content/pdf/10.1007%2F3-540-49649-1_6.pdf
 [intel]: https://software.intel.com/sites/default/files/managed/9e/bc/64-ia-32-architectures-optimization-manual.pdf

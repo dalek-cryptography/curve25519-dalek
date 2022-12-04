@@ -1,10 +1,12 @@
 
 # curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://doc.dalek.rs) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
 
+<p style="float: right">
 <img
- width="33%"
- align="right"
+ width="300px"
+ alt="dalek-cryptography logo: a dalek with edwards curves as sparkles coming out of its radar-schnozzley blaster thingies"
  src="https://doc.dalek.rs/assets/dalek-logo-clear.png"/>
+</p>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
 
@@ -45,8 +47,25 @@ make doc-internal
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "3"
+curve25519-dalek = "4.0.0-pre.2"
 ```
+
+## Major Version API Changes
+
+See `CHANGELOG.md` for more details.
+
+### 2.x
+
+The `2.x` series has API almost entirely unchanged from the `1.x` series,
+except that:
+
+* an error in the data modeling for the (optional) `serde` feature was
+  corrected, so that when the `2.x`-series `serde` implementation is used
+  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
+  formats;
+* the `rand` version was updated.
+
+### 3.x (current stable)
 
 The sole breaking change in the `3.x` series was an update to the `digest`
 version, and in terms of non-breaking changes it includes:
@@ -62,16 +81,16 @@ version, and in terms of non-breaking changes it includes:
   the Coq theorem proving system, and
 * support for explicitly calling the `zeroize` traits for all point types.
 
-The `2.x` series has API almost entirely unchanged from the `1.x` series,
-except that:
+### 4.x (current alpha)
 
-* an error in the data modeling for the (optional) `serde` feature was
-  corrected, so that when the `2.x`-series `serde` implementation is used
-  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
-  formats;
-* the `rand` version was updated.
+The `4.x` series has an API largely unchanged from `3.x`, with a breaking change
+to update the `rand` dependency crates.
 
-See `CHANGELOG.md` for more details.
+It also requires including a new trait,
+`use curve25519_dalek::traits::BasepointTable`, whenever using
+`EdwardsBasepointTable` or `RistrettoBasepointTable`.
+
+Backend selection has also been updated to be more automatic. See below.
 
 # Backends and Features
 
@@ -85,23 +104,32 @@ Curve arithmetic is implemented using one of the following backends:
 * a `u64` backend using serial formulas and `u128` products;
 * an `avx2` backend using [parallel formulas][parallel_doc] and `avx2` instructions (sets speed records);
 * an `ifma` backend using [parallel formulas][parallel_doc] and `ifma` instructions (sets speed records);
-
-By default the `u64` backend is selected.  To select a specific backend, use:
-```sh
-cargo build --no-default-features --features "std u32_backend"
-cargo build --no-default-features --features "std u64_backend"
-# Requires nightly, RUSTFLAGS="-C target_feature=+avx2" to use avx2
-cargo build --no-default-features --features "std simd_backend"
-# Requires nightly, RUSTFLAGS="-C target_feature=+avx512ifma" to use ifma
-cargo build --no-default-features --features "std simd_backend"
-```
-Crates using `curve25519-dalek` can either select a backend on behalf of their
-users, or expose feature flags that control the `curve25519-dalek` backend.
+* a `fiat` backend using formally verified field arithmetic from [fiat-crypto];
 
 The `std` feature is enabled by default, but it can be disabled for no-`std`
 builds using `--no-default-features`.  Note that this requires explicitly
 selecting an arithmetic backend using one of the `_backend` features.
 If no backend is selected, compilation will fail.
+
+## Backend selection
+
+Backend selection is done automatically. E.g., if you're compiling on a
+64-bit machine, then the `u64` backend is automatically chosen. And
+if the `fiat_backend` feature is set, then the fiat `u64` backend is
+chosen.
+
+If you need a `u32` backend on a `u64` machine, then simple
+cross-compiling will work on an x86-64 Linux machine:
+
+* `sudo apt install gcc-multilib` (or whatever package manager you use)
+* `rustup target add i686-unknown-linux-gnu`
+* `cargo build --target i686-unknown-linux-gnu`
+
+# Minimum Supported Rust Version
+
+This crate requires Rust 1.56.1 at a minimum. 3.x releases of this crate supported an MSRV of 1.41.
+
+In the future, MSRV changes will be accompanied by a minor version bump.
 
 # Safety
 
@@ -146,11 +174,10 @@ compiled with appropriate `target_feature`s, so this cannot occur.
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --no-default-features --features "std u32_backend"
-cargo bench --no-default-features --features "std u64_backend"
+cargo bench --no-default-features
 # Uses avx2 or ifma only if compiled for an appropriate target.
 export RUSTFLAGS="-C target_cpu=native"
-cargo bench --no-default-features --features "std simd_backend"
+cargo +nightly bench --no-default-features --features simd_backend
 ```
 
 Performance is a secondary goal behind correctness, safety, and
@@ -207,10 +234,9 @@ optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
 The `no_std` and `zeroize` support was contributed by Tony Arcieri.
 
-The formally verified backends, `fiat_u32_backend` and `fiat_u64_backend`, which
-integrate with the Rust generated by the
-[Fiat Crypto project](https://github.com/mit-plv/fiat-crypto) were contributed
-by François Garillot.
+The formally verified `fiat_backend` integrates Rust code generated by the
+[Fiat Crypto project](https://github.com/mit-plv/fiat-crypto) and was
+contributed by François Garillot.
 
 Thanks also to Ashley Hauck, Lucas Salibian, Manish Goregaokar, Jack Grigg,
 Pratyush Mishra, Michael Rosenberg, and countless others for their
@@ -222,5 +248,6 @@ contributions.
 [docs-external]: https://doc.dalek.rs/curve25519_dalek/
 [docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
-[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
+[parallel_doc]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/vector/index.html
 [subtle_doc]: https://doc.dalek.rs/subtle/
+[fiat-crypto]: https://github.com/mit-plv/fiat-crypto

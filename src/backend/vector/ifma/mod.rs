@@ -7,13 +7,12 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![cfg_attr(
-    feature = "nightly",
-    doc(include = "../../../../docs/ifma-notes.md")
-)]
+#![doc = include_str!("../../../../docs/ifma-notes.md")]
 
+#[allow(missing_docs)]
 pub mod field;
 
+#[allow(missing_docs)]
 pub mod edwards;
 
 pub mod constants;

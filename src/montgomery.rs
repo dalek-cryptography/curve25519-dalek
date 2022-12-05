@@ -335,17 +335,21 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             W: FieldElement::one(),
         };
 
-        let bits: [i8; 256] = scalar.bits();
-
-        for i in (0..255).rev() {
-            let choice: u8 = (bits[i + 1] ^ bits[i]) as u8;
+        // Go through the bits from most to least significant, using a sliding window of 2
+        let mut bits = scalar.bits_le().rev();
+        let mut prev_bit = bits.next().unwrap();
+        for cur_bit in bits {
+            let choice: u8 = (prev_bit ^ cur_bit) as u8;
 
             debug_assert!(choice == 0 || choice == 1);
 
             ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
             differential_add_and_double(&mut x0, &mut x1, &affine_u);
+
+            prev_bit = cur_bit;
         }
-        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(bits[0] as u8));
+        // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
+        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
 
         x0.as_affine()
     }

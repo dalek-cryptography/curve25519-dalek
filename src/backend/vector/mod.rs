@@ -12,7 +12,7 @@
 #![doc = include_str!("../../../docs/parallel-formulas.md")]
 
 #[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", docsrs)))]
-compile_error!("simd_backend selected without target_feature=+avx2 or +avx512ifma");
+compile_error!("'simd' backend selected without target_feature=+avx2 or +avx512ifma");
 
 #[cfg(any(
     all(target_feature = "avx2", not(target_feature = "avx512ifma")),

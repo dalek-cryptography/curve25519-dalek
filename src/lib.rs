@@ -10,7 +10,7 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
-#![cfg_attr(feature = "simd_backend", feature(stdsimd))]
+#![cfg_attr(curve25519_dalek_backend = "simd", feature(stdsimd))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 //------------------------------------------------------------------------

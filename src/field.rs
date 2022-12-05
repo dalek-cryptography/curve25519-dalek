@@ -36,7 +36,7 @@ use crate::backend;
 use crate::constants;
 
 cfg_if! {
-    if #[cfg(feature = "fiat_backend")] {
+    if #[cfg(curve25519_dalek_backend = "fiat")] {
         #[cfg(curve25519_dalek_bits = "32")]
         pub use backend::serial::fiat_u32::field::*;
         #[cfg(curve25519_dalek_bits = "64")]

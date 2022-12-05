@@ -139,12 +139,12 @@ use crate::traits::MultiscalarMul;
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[cfg(not(all(
-    feature = "simd_backend",
+    curve25519_dalek_backend = "simd",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
 use crate::backend::serial::scalar_mul;
 #[cfg(all(
-    feature = "simd_backend",
+    curve25519_dalek_backend = "simd",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 ))]
 use crate::backend::vector::scalar_mul;

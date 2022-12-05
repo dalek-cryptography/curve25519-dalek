@@ -21,8 +21,7 @@
 use cfg_if::cfg_if;
 
 cfg_if! {
-
-    if #[cfg(feature = "fiat_backend")] {
+    if #[cfg(curve25519_dalek_backend = "fiat")] {
 
         #[cfg(curve25519_dalek_bits = "32")]
         pub mod fiat_u32;
@@ -44,7 +43,7 @@ cfg_if! {
 pub mod curve_models;
 
 #[cfg(not(all(
-    feature = "simd_backend",
+    curve25519_dalek_backend = "simd",
     any(target_feature = "avx2", target_feature = "avx512ifma")
 )))]
 pub mod scalar_mul;

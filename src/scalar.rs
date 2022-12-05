@@ -170,7 +170,7 @@ use crate::backend;
 use crate::constants;
 
 cfg_if! {
-    if #[cfg(feature = "fiat_backend")] {
+    if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`

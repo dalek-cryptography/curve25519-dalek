@@ -350,6 +350,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         }
         // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
         ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
+        // Don't leave the bit in the stack
+        prev_bit.zeroize();
 
         x0.as_affine()
     }

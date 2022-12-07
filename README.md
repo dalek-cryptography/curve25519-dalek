@@ -67,7 +67,7 @@ except that:
   formats;
 * the `rand` version was updated.
 
-### 3.x (current stable)
+### 3.x
 
 The sole breaking change in the `3.x` series was an update to the `digest`
 version, and in terms of non-breaking changes it includes:
@@ -83,15 +83,15 @@ version, and in terms of non-breaking changes it includes:
   the Coq theorem proving system, and
 * support for explicitly calling the `zeroize` traits for all point types.
 
-### 4.x
+### 4.x (current stable)
 
 `4.x` has some small API changes:
 
-* Updates backend selection to be more automatic. See [backends](#backends)
+* Update backend selection to be more automatic. See [backends](#backends)
 * Remove `nightly` feature flag
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
-* Requires including a new trait, `use curve25519_dalek::traits::BasepointTable`
+* Require including a new trait, `use curve25519_dalek::traits::BasepointTable`
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
 * Update the MSRV from 1.41 to 1.56.1
 

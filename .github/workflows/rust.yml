@@ -32,13 +32,18 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --features batch_deterministic
       - run: cargo test --target ${{ matrix.target }} --features serde
 
-  test-simd:
+  build-simd:
     name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@nightly
-      - run: cargo test --features simd_backend
+      - env:
+          RUSTFLAGS: "-C target_feature=+avx2"
+        run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
+      - env:
+          RUSTFLAGS: "-C target_feature=+avx512ifma"
+        run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
 
   msrv:
     name: Current MSRV is 1.56.1

@@ -38,10 +38,13 @@ curve25519-dalek = "4"
 
 ## Feature Flags
 
-* `std` [default] - This feature flag enables `alloc` and `rand_core/std`, which
+* `std` [default] - Enables `alloc`
+and `rand_core/std`, which
 [slightly expands](https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features)
 the number of things that impl `RngCore`.
 * `alloc` [default] - Implied by `std`. This enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress.
+* `rand_core` - Enables the functions `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details.
+* `digest` - Enables the functions `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details.
 * `serde` - Enables `serde` serialization/deserialization for all the point and scalar types.
 * `simd_backend` - See [backends](#backends). Requires nightly.
 * `fiat_backend` - See [backends](#backends).
@@ -127,7 +130,7 @@ cross-compiling will work:
 
 The semver-stable, public-facing `curve25519-dalek` API is documented [here][docs].
 
-## Building the docs locally
+## Building Docs Locally
 
 The `curve25519-dalek` documentation requires a custom HTML header to include
 KaTeX for math support. Unfortunately `cargo doc` does not currently support
@@ -141,11 +144,29 @@ make doc-internal
 ```
 for docs that include private items.
 
-# Minimum Supported Rust Version
+# Maintenance Policies
 
-This crate requires Rust 1.56.1 at a minimum. 3.x releases of this crate supported an MSRV of 1.41.
+* All on-by-default features of this library are covered by [semantic versioning][semver] (SemVer).
+* SemVer exemptions are outlined below for MSRV and public API.
 
-In the future, MSRV changes will be accompanied by a minor version bump.
+## Minimum Supported Rust Version
+
+| Releases | MSRV   |
+| :---     | :---   |
+| 4.x      | 1.56.1 |
+| 3.x      | 1.41.0 |
+
+From 4.x and on, MSRV changes will be accompanied by a minor version bump.
+
+## Public API SemVer Exemptions
+
+Breaking changes on SemVer exempted components affecting the Public API will also be accompanied by;
+
+| Releases | Public API Component(s)               | Policy              |
+| :---     | :---                                  | :---                |
+| 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
+
+* In the future exempted `digest` and `rand_core` may be changed to optional features accompanied by a minor bump.
 
 # Safety
 
@@ -266,3 +287,4 @@ contributions.
 [parallel_doc]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/vector/index.html
 [subtle_doc]: https://docs.rs/subtle
 [fiat-crypto]: https://github.com/mit-plv/fiat-crypto
+[semver]: https://semver.org/spec/v2.0.0.html

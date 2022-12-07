@@ -38,15 +38,15 @@ curve25519-dalek = "4"
 
 ## Feature Flags
 
-| Feature            | Default | Implementation                                             |
-| :---               |  :---:  | :---                                                       |
-| `std`              |    ✓    | Enables `alloc` and `rand_core/std`, which [slightly expands][rngcorestd] the number of things that impl `RngCore`. |
-| `alloc`            |    ✓    | Implied by `std`. Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
-| `rand_core`        |         | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
-| `digest`           |         | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
-| `serde`            |         | Enables `serde` serialization/deserialization for all the point and scalar types. |
-| `simd_backend`     |         | See [backends](#backends). Requires nightly.      |
-| `fiat_backend`     |         | See [backends](#backends). |
+| Feature        | Default? | Description |
+| :---           |  :---:   | :---        |
+| `std`          |    ✓     | Enables `alloc` and `rand_core/std`, which [slightly expands][rngcorestd] the number of things that impl `RngCore`. |
+| `alloc`        |    ✓     | Implied by `std`. Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
+| `rand_core`    |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `digest`       |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `serde`        |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
+| `simd_backend` |          | See [backends](#backends). Requires nightly. |
+| `fiat_backend` |          | See [backends](#backends). |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To

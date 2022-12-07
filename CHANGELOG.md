@@ -5,6 +5,7 @@ major series.
 
 ## 4.x series
 
+* Update Maintenance Policies for SemVer
 * Remove `nightly` feature flag
 * Migrate documentation to docs.rs hosted
 * Updates backend selection to be more automatic

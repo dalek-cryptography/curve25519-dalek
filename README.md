@@ -38,18 +38,19 @@ curve25519-dalek = "4"
 
 ## Feature Flags
 
-* `std` [default] - Enables `alloc`
-and `rand_core/std`, which
-[slightly expands](https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features)
-the number of things that impl `RngCore`.
-* `alloc` [default] - Implied by `std`. This enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress.
-* `rand_core` - Enables the functions `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details.
-* `digest` - Enables the functions `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details.
-* `serde` - Enables `serde` serialization/deserialization for all the point and scalar types.
-* `simd_backend` - See [backends](#backends). Requires nightly.
-* `fiat_backend` - See [backends](#backends).
+| Feature            | Default | Implementation                                             |
+| :---               |  :---:  | :---                                                       |
+| `std`              |    ✓    | Enables `alloc` and `rand_core/std`, which [slightly expands][rngcorestd] the number of things that impl `RngCore`. |
+| `alloc`            |    ✓    | Implied by `std`. Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
+| `rand_core`        |         | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `digest`           |         | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `serde`            |         | Enables `serde` serialization/deserialization for all the point and scalar types. |
+| `simd_backend`     |         | See [backends](#backends). Requires nightly.      |
+| `fiat_backend`     |         | See [backends](#backends). |
 
-To disable the default features when using `curve25519-dalek` as a dependency, add `default-features = false` to the dependency in your `Cargo.toml`. To disable it when running `cargo`, add the `--no-default-features` CLI flag.
+To disable the default features when using `curve25519-dalek` as a dependency,
+add `default-features = false` to the dependency in your `Cargo.toml`. To
+disable it when running `cargo`, add the `--no-default-features` CLI flag.
 
 ## Major Version API Changes
 
@@ -88,8 +89,10 @@ version, and in terms of non-breaking changes it includes:
 
 * Updates backend selection to be more automatic. See [backends](#backends)
 * Remove `nightly` feature flag
-* Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`
-* Requires including a new trait, `use curve25519_dalek::traits::BasepointTable`, whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
+* Deprecate `EdwardsPoint::hash_from_bytes` and rename it
+  `EdwardsPoint::nonspec_map_to_curve`
+* Requires including a new trait, `use curve25519_dalek::traits::BasepointTable`
+  whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
 * Update the MSRV from 1.41 to 1.56.1
 
 It also does a lot of dependency updates and relaxations to unblock upstream build issues.
@@ -288,3 +291,4 @@ contributions.
 [subtle_doc]: https://docs.rs/subtle
 [fiat-crypto]: https://github.com/mit-plv/fiat-crypto
 [semver]: https://semver.org/spec/v2.0.0.html
+[rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features

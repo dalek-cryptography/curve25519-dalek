@@ -160,13 +160,12 @@ From 4.x and on, MSRV changes will be accompanied by a minor version bump.
 
 ## Public API SemVer Exemptions
 
-Breaking changes on SemVer exempted components affecting the Public API will also be accompanied by;
+Breaking changes to SemVer exempted components affecting the public API will be accompanied by
+_some_ version bump. Below are the specific policies:
 
 | Releases | Public API Component(s)               | Policy              |
 | :---     | :---                                  | :---                |
 | 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
-
-* In the future exempted `digest` and `rand_core` may be changed to optional features accompanied by a minor bump.
 
 # Safety
 

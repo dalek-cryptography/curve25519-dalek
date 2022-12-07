@@ -211,40 +211,33 @@ impl FieldElement2625x4 {
     pub fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
         #[inline(always)]
         fn blend_lanes(x: (u32x4, u32x4), y: (u32x4, u32x4), control: Lanes) -> (u32x4, u32x4) {
-            unsafe {
-                use core::arch::aarch64::vqtbx1q_u8;
-                match control {
-                    Lanes::C => {
-                        (x.0,
-                         vqtbx1q_u8(x.1.into_bits(), y.1.into_bits(), u8x16::new( 0,  1,  2,  3, 16, 16, 16, 16,  8,  9, 10, 11, 16, 16, 16, 16).into_bits()).into_bits())
-                    }
-                    Lanes::D => {
-                        (x.0,
-                         vqtbx1q_u8(x.1.into_bits(), y.1.into_bits(), u8x16::new(16, 16, 16, 16,  4,  5,  6,  7, 16, 16, 16, 16, 12, 13, 14, 15).into_bits()).into_bits())
-                    }
-                    Lanes::AD => {
-                        (vqtbx1q_u8(x.0.into_bits(), y.0.into_bits(), u8x16::new( 0,  1,  2,  3, 16, 16, 16, 16,  8,  9, 10, 11, 16, 16, 16, 16).into_bits() ).into_bits(),
-                         vqtbx1q_u8(x.1.into_bits(), y.1.into_bits(), u8x16::new(16, 16, 16, 16,  4,  5,  6,  7, 16, 16, 16, 16, 12, 13, 14, 15).into_bits() ).into_bits())
-                    }
-                    Lanes::AB => {
-                        (y.0, x.1)
-                    }
-                    Lanes::AC => {
-                        (vqtbx1q_u8(x.0.into_bits(), y.0.into_bits(), u8x16::new( 0,  1,  2,  3, 16, 16, 16, 16,  8,  9, 10, 11, 16, 16, 16, 16).into_bits()).into_bits(),
-                         vqtbx1q_u8(x.1.into_bits(), y.1.into_bits(), u8x16::new( 0,  1,  2,  3, 16, 16, 16, 16,  8,  9, 10, 11, 16, 16, 16, 16).into_bits()).into_bits())
-                    }
-                    Lanes::CD => {
-                        (x.0, y.1)
-                    }
-                    Lanes::BC => {
-                        (vqtbx1q_u8(x.0.into_bits(), y.0.into_bits(), u8x16::new(16, 16, 16, 16,  4,  5,  6,  7, 16, 16, 16, 16, 12, 13, 14, 15).into_bits() ).into_bits(),
-                         vqtbx1q_u8(x.1.into_bits(), y.1.into_bits(), u8x16::new( 0,  1,  2,  3, 16, 16, 16, 16,  8,  9, 10, 11, 16, 16, 16, 16).into_bits() ).into_bits())
-                    }
-                    Lanes::ABCD => {
-                        y
-                    }
-
+            use packed_simd::shuffle;
+            match control {
+                Lanes::C => {
+                    (x.0, shuffle!(y.1, x.1, [0, 5, 2, 7]))
                 }
+                Lanes::D => {
+                    (x.0, shuffle!(y.1, x.1, [4, 1, 6, 3]))
+                }
+                Lanes::AD => {
+                    (shuffle!(y.0, x.0, [0, 5, 2, 7]), shuffle!(y.1, x.1, [4, 1, 6, 3]))
+                }
+                Lanes::AB => {
+                    (y.0, x.1)
+                }
+                Lanes::AC => {
+                    (shuffle!(y.0, x.0, [0, 5, 2, 7]), shuffle!(y.1, x.1, [0, 5, 2, 7]))
+                }
+                Lanes::CD => {
+                    (x.0, y.1)
+                }
+                Lanes::BC => {
+                    (shuffle!(y.0, x.0, [4, 1, 6, 3]), shuffle!(y.1, x.1, [0, 5, 2, 7]))
+                }
+                Lanes::ABCD => {
+                    y
+                }
+
             }
         }
 

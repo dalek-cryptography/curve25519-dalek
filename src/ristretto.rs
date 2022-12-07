@@ -704,7 +704,8 @@ impl RistrettoPoint {
     ///
     /// # Example
     ///
-    /// ```
+    #[cfg_attr(feature = "digest", doc = "```")]
+    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// use sha2::Sha512;
     ///

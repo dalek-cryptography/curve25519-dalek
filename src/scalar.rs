@@ -81,6 +81,32 @@
 //! assert!(a == two);
 //! ```
 //!
+//! There is also a constructor that reduces a \\(512\\)-bit integer,
+//! [`Scalar::from_bytes_mod_order_wide`].
+//!
+//! To construct a `Scalar` as the hash of some input data, use
+//! [`Scalar::hash_from_bytes`], which takes a buffer, or
+//! [`Scalar::from_hash`], which allows an IUF API.
+//!
+#![cfg_attr(feature = "digest", doc = "```")]
+#![cfg_attr(not(feature = "digest"), doc = "```ignore")]
+//! # fn main() {
+//! use sha2::{Digest, Sha512};
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! // Hashing a single byte slice
+//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
+//!
+//! // Streaming data into a hash object
+//! let mut hasher = Sha512::default();
+//! hasher.update(b"Abolish ");
+//! hasher.update(b"ICE");
+//! let a2 = Scalar::from_hash(hasher);
+//!
+//! assert_eq!(a, a2);
+//! # }
+//! ```
+//!
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
@@ -88,9 +114,9 @@
 //! Finally, to create a `Scalar` with a specific bit-pattern
 //! (e.g., for compatibility with X/Ed25519
 //! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
-//! use [`Scalar::from_bits`](struct.Scalar.html#method.from_bits). This
-//! constructs a scalar with exactly the bit pattern given, without any
-//! assurances as to reduction modulo the group order:
+//! use [`Scalar::from_bits`]. This constructs a scalar with exactly
+//! the bit pattern given, without any assurances as to reduction
+//! modulo the group order:
 //!
 //! ```
 //! use curve25519_dalek::scalar::Scalar;
@@ -580,7 +606,8 @@ impl Scalar {
     ///
     /// # Example
     ///
-    /// ```
+    #[cfg_attr(feature = "digest", doc = "```")]
+    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
     /// # use curve25519_dalek::scalar::Scalar;
     /// use sha2::Sha512;
     ///

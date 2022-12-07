@@ -113,7 +113,7 @@
 //! used to implement
 //!
 //! * `RistrettoPoint::random()`, which generates random points from an
-//! RNG - enabled by rand_core feature;
+//! RNG - enabled by `rand_core` feature;
 //!
 //! * `RistrettoPoint::from_hash()` and
 //! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
@@ -502,7 +502,8 @@ impl RistrettoPoint {
     /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// use rand_core::OsRng;
     ///
@@ -511,12 +512,8 @@ impl RistrettoPoint {
     /// # fn main() {
     /// let mut rng = OsRng;
     ///
-    /// let mut uniform_bytes = [0u8; 64];
-    /// rng.fill_bytes(&mut uniform_bytes);
-    /// let random_rp = RistrettoPoint::from_uniform_bytes(&uniform_bytes)
-    ///
     /// let points: Vec<RistrettoPoint> =
-    ///     (0..32).map(|_| random_rp).collect();
+    ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
     /// let compressed = RistrettoPoint::double_and_compress_batch(&points);
     ///

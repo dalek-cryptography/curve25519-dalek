@@ -85,4 +85,4 @@ pub(crate) mod prelude;
 pub(crate) mod window;
 
 #[cfg(test)]
-pub mod mocks;
+pub(crate) mod mocks;

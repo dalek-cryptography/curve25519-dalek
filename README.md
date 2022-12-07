@@ -103,11 +103,11 @@ Curve arithmetic is implemented using one of the following backends:
     * A `u64` backend using serial formulas and `u128` products.
 * [Parallel][parallel_doc] - enabled with `simd_backend` feature. Requires nightly.
     * An `avx2` backend using `avx2` instructions (sets speed records). Requires the flag:
-    ```
+    ```sh
     RUSTFLAGS="-C target_feature=+avx2"
     ```
     * An `ifma` backend using `ifma` instructions (sets speed records). Requires the flag:
-    ```
+    ```sh
     RUSTFLAGS="-C target_feature=+avx512ifma"
     ```
 * Formally verified - enabled with `fiat_backend` feature.

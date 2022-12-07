@@ -58,7 +58,6 @@ nightly = ["subtle/nightly"]
 default = ["std"]
 std = ["alloc", "subtle/std", "rand_core/std"]
 alloc = ["zeroize/alloc"]
-digest = ["dep:digest"]
 
 # fiat-crypto backend with formally-verified field arithmetic
 fiat_backend = ["fiat-crypto"]

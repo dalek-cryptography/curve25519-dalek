@@ -96,35 +96,36 @@ It also does a lot of dependency updates and relaxations to unblock upstream bui
 
 # Backends
 
-Curve arithmetic is implemented using one of the following backends:
+Curve arithmetic is implemented and used by selecting one of the following backend features:
 
-* Serial - [default]
-    * A `u32` backend using serial formulas and `u64` products.
-    * A `u64` backend using serial formulas and `u128` products.
-* [Parallel][parallel_doc] - enabled with `simd_backend` feature. Requires nightly.
-    * An `avx2` backend using `avx2` instructions (sets speed records). Requires the flag:
-    ```sh
-    RUSTFLAGS="-C target_feature=+avx2"
-    ```
-    * An `ifma` backend using `ifma` instructions (sets speed records). Requires the flag:
-    ```sh
-    RUSTFLAGS="-C target_feature=+avx512ifma"
-    ```
-* Formally verified - enabled with `fiat_backend` feature.
-    * A `fiat_u32` backend using formally verified field arithmetic from [fiat-crypto].
-    * A `fiat_u64` backend using formally verified field arithmetic from [fiat-crypto].
+| Feature            | Implementation                                             | Target backends             |
+| :---               | :---                                                       | :---                        |
+| serial - [default] | Serial formulas                                            | `u32` <br/> `u64`           |
+| simd_backend       | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
+| fiat_backend       | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
 
-Architecture selection within serial and formally verified backends is
-automatic. E.g., if you're compiling with the serial backend on a 64-bit
-machine, then the `u64` backend is automatically chosen. And if the
-`fiat_backend` feature is set, then the `fiat_u64` backend is chosen.
+## Target backends
 
-If you need a 32-bit backend on an x86-64 Linux machine, then simple
-cross-compiling will work:
+Target backend selection via `serial` and `fiat_backend` features is automatic based on the build target.
+E.g., building with the serial backend on a 64-bit machine the `u64` backend is automatically chosen.
+And with the `fiat_backend` feature, the `fiat_u64` backend is automatically chosen.
+
+If a 32-bit backend is needed on an x86-64 Linux machine then cross-compiling will work:
 
 * `sudo apt install gcc-multilib` (or whatever package manager you use)
 * `rustup target add i686-unknown-linux-gnu`
 * `cargo build --target i686-unknown-linux-gnu`
+
+## Advanced Vector Extensions (AVX)
+
+Selection within `simd_backend` is manual by using `RUSTFLAGS` as below:
+
+| Target feature | `RUSTFLAGS`  Environment variable value |
+| :---           | :---                                    |
+| avx2           | `-C target_feature=+avx2`               |
+| avx512ifma     | `-C target_feature=+avx512ifma`         |
+
+This also requires using nightly e.g. by `cargo +nightly build` to build.
 
 # Documentation
 

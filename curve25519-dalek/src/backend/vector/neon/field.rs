@@ -95,24 +95,6 @@ pub enum Shuffle {
     ABDC,
 }
 
-macro_rules! lane_shuffle {
-    {$l0:expr, $l1:expr, $l2:expr, $l3:expr, $l4:expr, $l5:expr, $l6:expr, $l7:expr, $x:expr} => {
-        unsafe {
-            use core::arch::aarch64::vgetq_lane_u32;
-            const c: [i32; 8] = [$l0, $l1, $l2, $l3, $l4, $l5, $l6, $l7];
-            (u32x4::new(if c[0] < 4 { vgetq_lane_u32($x.0.into_bits(), c[0]) } else { vgetq_lane_u32($x.1.into_bits(), c[0] - 4) },
-                        if c[1] < 4 { vgetq_lane_u32($x.0.into_bits(), c[1]) } else { vgetq_lane_u32($x.1.into_bits(), c[1] - 4) },
-                        if c[2] < 4 { vgetq_lane_u32($x.0.into_bits(), c[2]) } else { vgetq_lane_u32($x.1.into_bits(), c[2] - 4) },
-                        if c[3] < 4 { vgetq_lane_u32($x.0.into_bits(), c[3]) } else { vgetq_lane_u32($x.1.into_bits(), c[3] - 4) }),
-             u32x4::new(if c[4] < 4 { vgetq_lane_u32($x.0.into_bits(), c[4]) } else { vgetq_lane_u32($x.1.into_bits(), c[4] - 4) },
-                        if c[5] < 4 { vgetq_lane_u32($x.0.into_bits(), c[5]) } else { vgetq_lane_u32($x.1.into_bits(), c[5] - 4) },
-                        if c[6] < 4 { vgetq_lane_u32($x.0.into_bits(), c[6]) } else { vgetq_lane_u32($x.1.into_bits(), c[6] - 4) },
-                        if c[7] < 4 { vgetq_lane_u32($x.0.into_bits(), c[7]) } else { vgetq_lane_u32($x.1.into_bits(), c[7] - 4) }))
-        }
-
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub struct FieldElement2625x4(pub(crate) [(u32x4, u32x4); 5]);
 
@@ -183,17 +165,18 @@ impl FieldElement2625x4 {
     pub fn shuffle(&self, control: Shuffle) -> FieldElement2625x4 {
         #[inline(always)]
         fn shuffle_lanes(x: (u32x4, u32x4), control: Shuffle) -> (u32x4, u32x4) {
+            use packed_simd::shuffle;
             match control {
-                Shuffle::AAAA => lane_shuffle!(0, 0, 2, 2, 0, 0, 2, 2, x),
-                Shuffle::BBBB => lane_shuffle!(1, 1, 3, 3, 1, 1, 3, 3, x),
-                Shuffle::CACA => lane_shuffle!(4, 0, 6, 2, 4, 0, 6, 2, x),
-                Shuffle::DBBD => lane_shuffle!(5, 1, 7, 3, 1, 5, 3, 7, x),
-                Shuffle::ADDA => lane_shuffle!(0, 5, 2, 7, 5, 0, 7, 2, x),
-                Shuffle::CBCB => lane_shuffle!(4, 1, 6, 3, 4, 1, 6, 3, x),
-                Shuffle::ABAB => lane_shuffle!(0, 1, 2, 3, 0, 1, 2, 3, x),
-                Shuffle::BADC => lane_shuffle!(1, 0, 3, 2, 5, 4, 7, 6, x),
-                Shuffle::BACD => lane_shuffle!(1, 0, 3, 2, 4, 5, 6, 7, x),
-                Shuffle::ABDC => lane_shuffle!(0, 1, 2, 3, 5, 4, 7, 6, x),
+                Shuffle::AAAA => (shuffle!(x.0, x.1, [0, 0, 2, 2]), shuffle!(x.0, x.1, [0, 0, 2, 2])),
+                Shuffle::BBBB => (shuffle!(x.0, x.1, [1, 1, 3, 3]), shuffle!(x.0, x.1, [1, 1, 3, 3])),
+                Shuffle::CACA => (shuffle!(x.0, x.1, [4, 0, 6, 2]), shuffle!(x.0, x.1, [4, 0, 6, 2])),
+                Shuffle::DBBD => (shuffle!(x.0, x.1, [5, 1, 7, 3]), shuffle!(x.0, x.1, [1, 5, 3, 7])),
+                Shuffle::ADDA => (shuffle!(x.0, x.1, [0, 5, 2, 7]), shuffle!(x.0, x.1, [5, 0, 7, 2])),
+                Shuffle::CBCB => (shuffle!(x.0, x.1, [4, 1, 6, 3]), shuffle!(x.0, x.1, [4, 1, 6, 3])),
+                Shuffle::ABAB => (shuffle!(x.0, x.1, [0, 1, 2, 3]), shuffle!(x.0, x.1, [0, 1, 2, 3])),
+                Shuffle::BADC => (shuffle!(x.0, x.1, [1, 0, 3, 2]), shuffle!(x.0, x.1, [5, 4, 7, 6])),
+                Shuffle::BACD => (shuffle!(x.0, x.1, [1, 0, 3, 2]), shuffle!(x.0, x.1, [4, 5, 6, 7])),
+                Shuffle::ABDC => (shuffle!(x.0, x.1, [0, 1, 2, 3]), shuffle!(x.0, x.1, [5, 4, 7, 6])),
             }
         }
 

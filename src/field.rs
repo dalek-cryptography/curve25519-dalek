@@ -37,9 +37,9 @@ use crate::constants;
 
 cfg_if! {
     if #[cfg(feature = "fiat_backend")] {
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub use backend::serial::fiat_u32::field::*;
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub use backend::serial::fiat_u64::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -49,7 +49,7 @@ cfg_if! {
         /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
         /// A `FieldElement` represents an element of the field
@@ -59,9 +59,9 @@ cfg_if! {
         /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
-    } else if #[cfg(target_pointer_width = "64")] {
+    } else if #[cfg(curve25519_dalek_bits = "64")] {
         pub use crate::backend::serial::u64::field::*;
 
         /// A `FieldElement` represents an element of the field

@@ -10,6 +10,9 @@ major series.
 #### Breaking changes
 
 * Update the MSRV from 1.41 to 1.56.1
+* Make `digest` an optional feature
+* Make `rand_core` an optional feature
+* Add target u32/u64 backend overrides
 * Update backend selection to be more automatic
 * Remove `nightly` feature flag
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`

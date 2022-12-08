@@ -101,7 +101,9 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+#[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -534,6 +536,7 @@ impl EdwardsPoint {
         CompressedEdwardsY(s)
     }
 
+    #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that
     /// resembles (but is not) half of the
@@ -1507,7 +1510,7 @@ mod test {
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
         let xs = (0..n)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             // The largest scalar allowed by the type system, 2^255-1
             .chain(iter::once(Scalar::from_bits([0xff; 32])))
             .collect::<Vec<_>>();
@@ -1577,11 +1580,11 @@ mod test {
         let B = &crate::constants::ED25519_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let check_scalar: Scalar = static_scalars
@@ -1683,7 +1686,7 @@ mod test {
     //     https://github.com/signalapp/libsignal-protocol-c/ //
     ////////////////////////////////////////////////////////////
 
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "digest"))]
     fn test_vectors() -> Vec<Vec<&'static str>> {
         vec![
             vec![
@@ -1731,7 +1734,7 @@ mod test {
 
     #[test]
     #[allow(deprecated)]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "digest"))]
     fn elligator_signal_test_vectors() {
         for vector in test_vectors().iter() {
             let input = hex::decode(vector[0]).unwrap();

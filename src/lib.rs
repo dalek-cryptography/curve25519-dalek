@@ -36,6 +36,7 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
+#[cfg(feature = "digest")]
 pub use digest;
 
 // Internal macros. Must come first!
@@ -83,3 +84,6 @@ pub(crate) mod prelude;
 
 // Generic code for window lookups
 pub(crate) mod window;
+
+#[cfg(test)]
+pub(crate) mod mocks;

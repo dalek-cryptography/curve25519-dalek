@@ -82,15 +82,14 @@
 //! ```
 //!
 //! There is also a constructor that reduces a \\(512\\)-bit integer,
-//! [`Scalar::from_bytes_mod_order_wide`](struct.Scalar.html#method.from_bytes_mod_order_wide).
+//! [`Scalar::from_bytes_mod_order_wide`].
 //!
 //! To construct a `Scalar` as the hash of some input data, use
-//! [`Scalar::hash_from_bytes`](struct.Scalar.html#method.hash_from_bytes),
-//! which takes a buffer, or
-//! [`Scalar::from_hash`](struct.Scalar.html#method.from_hash),
-//! which allows an IUF API.
+//! [`Scalar::hash_from_bytes`], which takes a buffer, or
+//! [`Scalar::from_hash`], which allows an IUF API.
 //!
-//! ```
+#![cfg_attr(feature = "digest", doc = "```")]
+#![cfg_attr(not(feature = "digest"), doc = "```ignore")]
 //! # fn main() {
 //! use sha2::{Digest, Sha512};
 //! use curve25519_dalek::scalar::Scalar;
@@ -108,12 +107,16 @@
 //! # }
 //! ```
 //!
+//! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
+//! reduces a \\(512\\)-bit integer, if the optional `digest` feature
+//! has been enabled.
+//!
 //! Finally, to create a `Scalar` with a specific bit-pattern
 //! (e.g., for compatibility with X/Ed25519
 //! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
-//! use [`Scalar::from_bits`](struct.Scalar.html#method.from_bits). This
-//! constructs a scalar with exactly the bit pattern given, without any
-//! assurances as to reduction modulo the group order:
+//! use [`Scalar::from_bits`]. This constructs a scalar with exactly
+//! the bit pattern given, without any assurances as to reduction
+//! modulo the group order:
 //!
 //! ```
 //! use curve25519_dalek::scalar::Scalar;
@@ -152,9 +155,12 @@ use crate::prelude::*;
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "rand_core")]
 use rand_core::{CryptoRng, RngCore};
 
+#[cfg(feature = "digest")]
 use digest::generic_array::typenum::U64;
+#[cfg(feature = "digest")]
 use digest::Digest;
 
 use subtle::Choice;
@@ -172,10 +178,10 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", not(target_pointer_width = "64"))))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
         )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
@@ -183,25 +189,25 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", target_pointer_width = "64")))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
-    } else if #[cfg(target_pointer_width = "64")] {
+    } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(not(target_pointer_width = "64"))))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
     }
 }
@@ -566,6 +572,7 @@ impl Zeroize for Scalar {
 }
 
 impl Scalar {
+    #[cfg(feature = "rand_core")]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -593,6 +600,7 @@ impl Scalar {
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 
+    #[cfg(feature = "digest")]
     /// Hash a slice of bytes into a scalar.
     ///
     /// Takes a type parameter `D`, which is any `Digest` producing 64
@@ -602,7 +610,8 @@ impl Scalar {
     ///
     /// # Example
     ///
-    /// ```
+    #[cfg_attr(feature = "digest", doc = "```")]
+    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
     /// # use curve25519_dalek::scalar::Scalar;
     /// use sha2::Sha512;
     ///
@@ -622,6 +631,7 @@ impl Scalar {
         Scalar::from_hash(hash)
     }
 
+    #[cfg(feature = "digest")]
     /// Construct a scalar from an existing `Digest` instance.
     ///
     /// Use this instead of `hash_from_bytes` if it is more convenient
@@ -1404,7 +1414,7 @@ mod test {
     fn non_adjacent_form_random() {
         let mut rng = rand::thread_rng();
         for _ in 0..1_000 {
-            let x = Scalar::random(&mut rng);
+            let x = crate::mocks::MockScalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {
                 non_adjacent_form_iter(*w, &x);
             }

@@ -38,14 +38,14 @@ use crate::scalar::Scalar;
 
 cfg_if! {
     if #[cfg(feature = "fiat_backend")] {
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub use crate::backend::serial::fiat_u32::constants::*;
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub use crate::backend::serial::fiat_u64::constants::*;
     } else {
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub use crate::backend::serial::u32::constants::*;
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub use crate::backend::serial::u64::constants::*;
     }
 }
@@ -149,7 +149,7 @@ mod test {
 
     /// Test that d = -121665/121666
     #[test]
-    #[cfg(all(not(target_pointer_width = "64"), not(feature = "fiat_backend")))]
+    #[cfg(all(curve25519_dalek_bits = "32", not(feature = "fiat_backend")))]
     fn test_d_vs_ratio() {
         use crate::backend::serial::u32::field::FieldElement2625;
         let a = -&FieldElement2625([121665, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -162,7 +162,7 @@ mod test {
 
     /// Test that d = -121665/121666
     #[test]
-    #[cfg(all(target_pointer_width = "64", not(feature = "fiat_backend")))]
+    #[cfg(all(curve25519_dalek_bits = "64", not(feature = "fiat_backend")))]
     fn test_d_vs_ratio() {
         use crate::backend::serial::u64::field::FieldElement51;
         let a = -&FieldElement51([121665, 0, 0, 0, 0]);

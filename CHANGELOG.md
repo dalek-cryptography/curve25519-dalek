@@ -6,6 +6,7 @@ major series.
 ## 4.x series
 
 * Make `rand_core` an optional feature
+* Add target u32/u64 backend overrides
 * Migrate documentation to docs.rs hosted
 * Fix backend documentation generation
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspect_map_to_curve`

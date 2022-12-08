@@ -21,18 +21,23 @@
 use cfg_if::cfg_if;
 
 cfg_if! {
+
     if #[cfg(feature = "fiat_backend")] {
-        #[cfg(not(target_pointer_width = "64"))]
+
+        #[cfg(curve25519_dalek_bits = "32")]
         pub mod fiat_u32;
 
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub mod fiat_u64;
+
     } else {
-        #[cfg(not(target_pointer_width = "64"))]
+
+        #[cfg(curve25519_dalek_bits = "32")]
         pub mod u32;
 
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub mod u64;
+
     }
 }
 

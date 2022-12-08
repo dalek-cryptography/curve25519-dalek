@@ -432,7 +432,8 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(&self) -> [u8; 32] {
+    #[allow(clippy::identity_op)]
+    pub fn as_bytes(&self) -> [u8; 32] {
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([
@@ -481,29 +482,29 @@ impl FieldElement2625 {
 
         // Now carry the result to compute r + 19q...
         h[1] += h[0] >> 26;
-        h[0] = h[0] & LOW_26_BITS;
+        h[0] &= LOW_26_BITS;
         h[2] += h[1] >> 25;
-        h[1] = h[1] & LOW_25_BITS;
+        h[1] &= LOW_25_BITS;
         h[3] += h[2] >> 26;
-        h[2] = h[2] & LOW_26_BITS;
+        h[2] &= LOW_26_BITS;
         h[4] += h[3] >> 25;
-        h[3] = h[3] & LOW_25_BITS;
+        h[3] &= LOW_25_BITS;
         h[5] += h[4] >> 26;
-        h[4] = h[4] & LOW_26_BITS;
+        h[4] &= LOW_26_BITS;
         h[6] += h[5] >> 25;
-        h[5] = h[5] & LOW_25_BITS;
+        h[5] &= LOW_25_BITS;
         h[7] += h[6] >> 26;
-        h[6] = h[6] & LOW_26_BITS;
+        h[6] &= LOW_26_BITS;
         h[8] += h[7] >> 25;
-        h[7] = h[7] & LOW_25_BITS;
+        h[7] &= LOW_25_BITS;
         h[9] += h[8] >> 26;
-        h[8] = h[8] & LOW_26_BITS;
+        h[8] &= LOW_26_BITS;
 
         // ... but instead of carrying the value
         // (h[9] >> 25) = q*2^255 into another limb,
         // discard it, subtracting the value from h.
         debug_assert!((h[9] >> 25) == 0 || (h[9] >> 25) == 1);
-        h[9] = h[9] & LOW_25_BITS;
+        h[9] &= LOW_25_BITS;
 
         let mut s = [0u8; 32];
         s[0] = (h[0] >> 0) as u8;
@@ -597,8 +598,8 @@ impl FieldElement2625 {
     /// Compute `2*self^2`.
     pub fn square2(&self) -> FieldElement2625 {
         let mut coeffs = self.square_inner();
-        for i in 0..self.0.len() {
-            coeffs[i] += coeffs[i];
+        for coeff in &mut coeffs {
+            *coeff += *coeff;
         }
         FieldElement2625::reduce(coeffs)
     }

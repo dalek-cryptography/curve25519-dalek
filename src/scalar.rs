@@ -173,10 +173,10 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", not(target_pointer_width = "64"))))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
         )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
@@ -184,31 +184,32 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", target_pointer_width = "64")))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
-    } else if #[cfg(target_pointer_width = "64")] {
+    } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(not(target_pointer_width = "64"))))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
     }
 }
 
 /// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
 /// represents an element of \\(\mathbb Z / \ell\\).
+#[allow(clippy::derive_hash_xor_eq)]
 #[derive(Copy, Clone, Hash)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
@@ -389,7 +390,7 @@ impl<'a> Neg for &'a Scalar {
     }
 }
 
-impl<'a> Neg for Scalar {
+impl Neg for Scalar {
     type Output = Scalar;
     fn neg(self) -> Scalar {
         -&self
@@ -399,6 +400,7 @@ impl<'a> Neg for Scalar {
 impl ConditionallySelectable for Scalar {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let mut bytes = [0u8; 32];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
             bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
         }
@@ -799,7 +801,7 @@ impl Scalar {
         use zeroize::Zeroizing;
 
         let n = inputs.len();
-        let one: UnpackedScalar = Scalar::one().unpack().to_montgomery();
+        let one: UnpackedScalar = Scalar::one().unpack().as_montgomery();
 
         // Place scratch storage in a Zeroizing wrapper to wipe it when
         // we pass out of scope.
@@ -807,7 +809,7 @@ impl Scalar {
         let mut scratch = Zeroizing::new(scratch_vec);
 
         // Keep an accumulator of all of the previous products
-        let mut acc = Scalar::one().unpack().to_montgomery();
+        let mut acc = Scalar::one().unpack().as_montgomery();
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
@@ -816,7 +818,7 @@ impl Scalar {
 
             // Avoid unnecessary Montgomery multiplication in second pass by
             // keeping inputs in Montgomery form
-            let tmp = input.unpack().to_montgomery();
+            let tmp = input.unpack().as_montgomery();
             *input = tmp.pack();
             acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
         }
@@ -834,7 +836,7 @@ impl Scalar {
         // in place
         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
-            *input = UnpackedScalar::montgomery_mul(&acc, &scratch).pack();
+            *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
             acc = tmp;
         }
 
@@ -844,6 +846,7 @@ impl Scalar {
     /// Get the bits of the scalar.
     pub(crate) fn bits(&self) -> [i8; 256] {
         let mut bits = [0i8; 256];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..256 {
             // As i runs from 0..256, the bottom 3 bits index the bit,
             // while the upper bits index the byte.
@@ -944,14 +947,13 @@ impl Scalar {
             // Construct a buffer of bits of the scalar, starting at bit `pos`
             let u64_idx = pos / 64;
             let bit_idx = pos % 64;
-            let bit_buf: u64;
-            if bit_idx < 64 - w {
+            let bit_buf: u64 = if bit_idx < 64 - w {
                 // This window's bits are contained in a single u64
-                bit_buf = x_u64[u64_idx] >> bit_idx;
+                x_u64[u64_idx] >> bit_idx
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                bit_buf = (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx));
-            }
+                (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx))
+            };
 
             // Add the carry into the current window
             let window = carry + (bit_buf & window_mask);
@@ -985,12 +987,13 @@ impl Scalar {
     ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
     /// $$
     /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
-    pub(crate) fn to_radix_16(&self) -> [i8; 64] {
+    pub(crate) fn as_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 
         // Step 1: change radix.
         // Convert from radix 256 (bytes) to radix 16 (nibbles)
+        #[allow(clippy::identity_op)]
         #[inline(always)]
         fn bot_half(x: u8) -> u8 {
             (x >> 0) & 15
@@ -1025,12 +1028,12 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4 => (256 + w - 1) / w as usize,
-            5 => (256 + w - 1) / w as usize,
-            6 => (256 + w - 1) / w as usize,
-            7 => (256 + w - 1) / w as usize,
+            4 => (256 + w - 1) / w,
+            5 => (256 + w - 1) / w,
+            6 => (256 + w - 1) / w,
+            7 => (256 + w - 1) / w,
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1) / w + 1 as usize,
+            8 => (256 + w - 1) / w + 1_usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1055,12 +1058,12 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    pub(crate) fn to_radix_2w(&self, w: usize) -> [i8; 64] {
+    pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);
 
         if w == 4 {
-            return self.to_radix_16();
+            return self.as_radix_16();
         }
 
         // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
@@ -1072,7 +1075,8 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1) / w as usize;
+        let digits_count = (256 + w - 1) / w;
+        #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
             let bit_offset = i * w;
@@ -1080,22 +1084,20 @@ impl Scalar {
             let bit_idx = bit_offset % 64;
 
             // Read the bits from the scalar
-            let bit_buf: u64;
-            if bit_idx < 64 - w || u64_idx == 3 {
+            let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
                 // This window's bits are contained in a single u64,
                 // or it's the last u64 anyway.
-                bit_buf = scalar64x4[u64_idx] >> bit_idx;
+                scalar64x4[u64_idx] >> bit_idx
             } else {
                 // Combine the current u64's bits with the bits from the next u64
-                bit_buf =
-                    (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx));
-            }
+                (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx))
+            };
 
             // Read the actual coefficient value from the window
             let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
 
             // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
-            carry = (coef + (radix / 2) as u64) >> w;
+            carry = (coef + (radix / 2)) >> w;
             digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
         }
 
@@ -1154,16 +1156,17 @@ impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
         Scalar {
-            bytes: self.to_bytes(),
+            bytes: self.as_bytes(),
         }
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
     #[rustfmt::skip] // keep alignment of addition chain and squarings
+    #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> UnpackedScalar {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        let    _1 = self;
+        let    _1 = *self;
         let   _10 = _1.montgomery_square();
         let  _100 = _10.montgomery_square();
         let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
@@ -1217,7 +1220,7 @@ impl UnpackedScalar {
 
     /// Inverts an UnpackedScalar not in Montgomery form.
     pub fn invert(&self) -> UnpackedScalar {
-        self.to_montgomery().montgomery_invert().from_montgomery()
+        self.as_montgomery().montgomery_invert().from_montgomery()
     }
 }
 
@@ -1366,8 +1369,8 @@ mod test {
         tmp[0..32].copy_from_slice(&b_bytes[..]);
         let also_b = Scalar::from_bytes_mod_order_wide(&tmp);
 
-        let expected_c = &a * &b;
-        let also_expected_c = &also_a * &also_b;
+        let expected_c = a * b;
+        let also_expected_c = also_a * also_b;
 
         assert_eq!(c, expected_c);
         assert_eq!(c, also_expected_c);
@@ -1426,7 +1429,7 @@ mod test {
 
     #[test]
     fn scalar_mul_by_one() {
-        let test_scalar = &X * &Scalar::one();
+        let test_scalar = X * Scalar::one();
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
@@ -1511,14 +1514,14 @@ mod test {
     fn impl_add() {
         let two = Scalar::from(2u64);
         let one = Scalar::one();
-        let should_be_two = &one + &one;
+        let should_be_two = one + one;
         assert_eq!(should_be_two, two);
     }
 
     #[allow(non_snake_case)]
     #[test]
     fn impl_mul() {
-        let should_be_X_times_Y = &X * &Y;
+        let should_be_X_times_Y = X * Y;
         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
     }
 
@@ -1586,7 +1589,7 @@ mod test {
 
     #[test]
     fn square() {
-        let expected = &X * &X;
+        let expected = X * X;
         let actual = X.unpack().square().pack();
         for i in 0..32 {
             assert!(expected[i] == actual[i]);
@@ -1626,7 +1629,7 @@ mod test {
     fn invert() {
         let inv_X = X.invert();
         assert_eq!(inv_X, XINV);
-        let should_be_one = &inv_X * &X;
+        let should_be_one = inv_X * X;
         assert_eq!(should_be_one, Scalar::one());
     }
 
@@ -1643,7 +1646,7 @@ mod test {
     #[test]
     fn to_bytes_from_bytes_roundtrips() {
         let unpacked = X.unpack();
-        let bytes = unpacked.to_bytes();
+        let bytes = unpacked.as_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
@@ -1763,7 +1766,7 @@ mod test {
 
     fn test_pippenger_radix_iter(scalar: Scalar, w: usize) {
         let digits_count = Scalar::to_radix_2w_size_hint(w);
-        let digits = scalar.to_radix_2w(w);
+        let digits = scalar.as_radix_2w(w);
 
         let radix = Scalar::from((1 << w) as u64);
         let mut term = Scalar::one();

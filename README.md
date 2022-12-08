@@ -188,10 +188,10 @@ compiled with appropriate `target_feature`s, so this cannot occur.
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench
+cargo bench --features "alloc"
 # Uses avx2 or ifma only if compiled for an appropriate target.
 export RUSTFLAGS="-C target_cpu=native"
-cargo +nightly bench --features simd_backend
+cargo +nightly bench --features "alloc simd_backend"
 ```
 
 Performance is a secondary goal behind correctness, safety, and

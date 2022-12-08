@@ -9,6 +9,8 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
@@ -17,16 +19,11 @@ use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::{Identity, VartimeMultiscalarMul};
 
-#[allow(unused_imports)]
-use crate::prelude::*;
-
 /// Implements a version of Pippenger's algorithm.
 ///
 /// See the documentation in the serial `scalar_mul::pippenger` module for details.
 pub struct Pippenger;
 
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 

@@ -150,9 +150,6 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
-#[allow(unused_imports)]
-use crate::prelude::*;
-
 use cfg_if::cfg_if;
 
 #[cfg(feature = "rand_core")]
@@ -797,7 +794,6 @@ impl Scalar {
     /// # }
     /// ```
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
     pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
@@ -1256,6 +1252,9 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
 mod test {
     use super::*;
     use crate::constants;
+
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     pub static X: Scalar = Scalar {

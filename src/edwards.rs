@@ -129,9 +129,6 @@ use crate::window::LookupTableRadix256;
 use crate::window::LookupTableRadix32;
 use crate::window::LookupTableRadix64;
 
-#[allow(unused_imports)]
-use crate::prelude::*;
-
 use crate::traits::BasepointTable;
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
@@ -710,7 +707,6 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 // forward to a specific backend implementation.
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -743,7 +739,6 @@ impl MultiscalarMul for EdwardsPoint {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
@@ -783,11 +778,9 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
     type Point = EdwardsPoint;
 
@@ -1125,6 +1118,9 @@ mod test {
     use crate::field::FieldElement;
     use crate::scalar::Scalar;
     use subtle::ConditionallySelectable;
+
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202

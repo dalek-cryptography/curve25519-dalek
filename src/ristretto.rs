@@ -168,7 +168,7 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(feature = "rand_core")]
+#[cfg(any(test, feature = "rand_core"))]
 use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "digest")]
@@ -666,7 +666,7 @@ impl RistrettoPoint {
         )
     }
 
-    #[cfg(feature = "rand_core")]
+    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -1347,7 +1347,7 @@ mod test {
     fn four_torsion_random() {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
-        let P = B * &crate::mocks::MockScalar::random(&mut rng);
+        let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
         for point in P_coset {
             assert_eq!(P, RistrettoPoint(point));
@@ -1674,7 +1674,7 @@ mod test {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
-            let P = B * &crate::mocks::MockScalar::random(&mut rng);
+            let P = B * &Scalar::random(&mut rng);
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
@@ -1687,7 +1687,7 @@ mod test {
         let mut rng = OsRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| crate::mocks::MockRistrettoPoint::random(&mut rng))
+            .map(|_| RistrettoPoint::random(&mut rng))
             .collect();
         points[500] = RistrettoPoint::identity();
 
@@ -1706,11 +1706,11 @@ mod test {
         let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
-            .map(|_| crate::mocks::MockScalar::random(&mut rng))
+            .map(|_| Scalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let dynamic_scalars = (0..128)
-            .map(|_| crate::mocks::MockScalar::random(&mut rng))
+            .map(|_| Scalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let check_scalar: Scalar = static_scalars

@@ -81,6 +81,3 @@ pub(crate) mod backend;
 
 // Generic code for window lookups
 pub(crate) mod window;
-
-#[cfg(test)]
-pub(crate) mod mocks;

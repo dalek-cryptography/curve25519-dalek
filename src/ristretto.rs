@@ -158,6 +158,9 @@
 //! [ristretto_main]:
 //! https://ristretto.group/
 
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::Sum;
@@ -185,9 +188,6 @@ use zeroize::Zeroize;
 
 use crate::edwards::EdwardsBasepointTable;
 use crate::edwards::EdwardsPoint;
-
-#[allow(unused_imports)]
-use crate::prelude::*;
 
 use crate::scalar::Scalar;
 
@@ -525,7 +525,6 @@ impl RistrettoPoint {
     /// # }
     /// ```
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
     pub fn double_and_compress_batch<'a, I>(points: I) -> Vec<CompressedRistretto>
     where
         I: IntoIterator<Item = &'a RistrettoPoint>,
@@ -932,7 +931,6 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 // forward to the EdwardsPoint implementations.
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -949,7 +947,6 @@ impl MultiscalarMul for RistrettoPoint {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimeMultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
@@ -970,11 +967,9 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
 impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
     type Point = RistrettoPoint;
 

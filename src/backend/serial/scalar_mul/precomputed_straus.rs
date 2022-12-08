@@ -11,6 +11,8 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
@@ -22,9 +24,6 @@ use crate::scalar::Scalar;
 use crate::traits::Identity;
 use crate::traits::VartimePrecomputedMultiscalarMul;
 use crate::window::{NafLookupTable5, NafLookupTable8};
-
-#[allow(unused_imports)]
-use crate::prelude::*;
 
 #[allow(missing_docs)]
 pub struct VartimePrecomputedStraus {

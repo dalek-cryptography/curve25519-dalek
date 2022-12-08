@@ -167,7 +167,6 @@ impl FieldElement {
     ///
     /// When an input `FieldElement` is zero, its value is unchanged.
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
     pub fn batch_invert(inputs: &mut [FieldElement]) {
         // Montgomery’s Trick and Fast Implementation of Masked AES
         // Genelle, Prouff and Quisquater

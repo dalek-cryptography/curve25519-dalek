@@ -32,7 +32,8 @@
 #[macro_use]
 extern crate alloc;
 
-#[cfg(feature = "std")]
+// TODO: move std-dependent tests to `tests/`
+#[cfg(test)]
 #[macro_use]
 extern crate std;
 
@@ -77,10 +78,6 @@ pub(crate) mod field;
 pub mod backend;
 #[cfg(not(docsrs))]
 pub(crate) mod backend;
-
-// Crate-local prelude (for alloc-dependent features like `Vec`)
-
-pub(crate) mod prelude;
 
 // Generic code for window lookups
 pub(crate) mod window;

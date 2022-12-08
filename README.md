@@ -180,7 +180,7 @@ functions in other crates.
 The implementation is memory-safe, and contains no significant
 `unsafe` code.  The SIMD backend uses `unsafe` internally to call SIMD
 intrinsics.  These are marked `unsafe` only because invoking them on an
-inappropriate CPU would cause `SIGKILL`, but the entire backend is only
+inappropriate CPU would cause `SIGILL`, but the entire backend is only
 compiled with appropriate `target_feature`s, so this cannot occur.
 
 # Performance

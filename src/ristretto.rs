@@ -504,7 +504,8 @@ impl RistrettoPoint {
     /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// use rand_core::OsRng;
     ///

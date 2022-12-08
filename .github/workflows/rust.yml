@@ -114,10 +114,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-    # This filter selects no benchmarks, so we don't run any, only build them.
     - name: Build u32 bench
-      run: env RUSTFLAGS="--cfg curve25519_dalek_bits=\"32\"" cargo bench "nonexistentbenchmark"
+      run: env RUSTFLAGS="--cfg curve25519_dalek_bits=\"32\"" cargo build --benches
     - name: Build u64 bench
-      run: env RUSTFLAGS="--cfg curve25519_dalek_bits=\"64\"" cargo bench "nonexistentbenchmark"
+      run: env RUSTFLAGS="--cfg curve25519_dalek_bits=\"64\"" cargo build --benches
     - name: Build default (host native) bench
-      run: cargo bench "nonexistentbenchmark"
+      run: cargo build --benches

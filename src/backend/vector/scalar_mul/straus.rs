@@ -11,6 +11,8 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
@@ -21,9 +23,6 @@ use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
 use crate::window::{LookupTable, NafLookupTable5};
-
-#[allow(unused_imports)]
-use crate::prelude::*;
 
 /// Multiscalar multiplication using interleaved window / Straus'
 /// method.  See the `Straus` struct in the serial backend for more

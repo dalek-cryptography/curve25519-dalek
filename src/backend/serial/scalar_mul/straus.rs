@@ -13,6 +13,8 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
@@ -20,9 +22,6 @@ use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::MultiscalarMul;
 use crate::traits::VartimeMultiscalarMul;
-
-#[allow(unused_imports)]
-use crate::prelude::*;
 
 /// Perform multiscalar multiplication by the interleaved window
 /// method, also known as Straus' method (since it was apparently

@@ -374,6 +374,9 @@ mod test {
     use super::*;
     use crate::constants;
 
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
+
     #[cfg(feature = "rand_core")]
     use rand_core::OsRng;
 
@@ -480,9 +483,9 @@ mod test {
     ];
 
     #[test]
-    #[cfg(feature = "alloc")] // Vec
+    #[cfg(feature = "alloc")]
     fn montgomery_elligator_correct() {
-        let bytes: alloc::vec::Vec<u8> = (0u8..32u8).collect();
+        let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);

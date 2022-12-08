@@ -5,6 +5,7 @@ major series.
 
 ## 4.x series
 
+* Make `digest` an optional feature
 * Make `rand_core` an optional feature
 * Add target u32/u64 backend overrides
 * Migrate documentation to docs.rs hosted

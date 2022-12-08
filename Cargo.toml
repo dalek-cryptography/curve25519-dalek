@@ -25,7 +25,7 @@ exclude = [
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "docs/assets/rustdoc-include-katex-header.html", "--cfg", "docsrs"]
-features = ["serde", "simd_backend", "rand_core"]
+features = ["serde", "simd_backend", "rand_core", "digest"]
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
@@ -45,7 +45,7 @@ harness = false
 [dependencies]
 cfg-if = "1"
 rand_core = { version = "0.6", default-features = false, optional = true }
-digest = { version = "0.10", default-features = false }
+digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 # The original packed_simd package was orphaned, see

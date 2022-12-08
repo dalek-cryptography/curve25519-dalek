@@ -172,10 +172,10 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", not(target_pointer_width = "64"))))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
         )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
@@ -183,25 +183,25 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         #[cfg_attr(
             docsrs,
-            doc(cfg(all(feature = "fiat_backend", target_pointer_width = "64")))
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
-    } else if #[cfg(target_pointer_width = "64")] {
+    } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(not(target_pointer_width = "64"))))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
     }
 }

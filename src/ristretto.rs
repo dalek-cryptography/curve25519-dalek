@@ -113,7 +113,7 @@
 //! used to implement
 //!
 //! * `RistrettoPoint::random()`, which generates random points from an
-//! RNG;
+//! RNG - enabled by `rand_core` feature;
 //!
 //! * `RistrettoPoint::from_hash()` and
 //! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
@@ -165,6 +165,7 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+#[cfg(feature = "rand_core")]
 use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "digest")]
@@ -267,7 +268,7 @@ impl CompressedRistretto {
         // original input, since our encoding routine is canonical.
 
         let s = FieldElement::from_bytes(self.as_bytes());
-        let s_bytes_check = s.to_bytes();
+        let s_bytes_check = s.as_bytes();
         let s_encoding_is_canonical = &s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
 
@@ -492,7 +493,7 @@ impl RistrettoPoint {
         let s_is_negative = s.is_negative();
         s.conditional_negate(s_is_negative);
 
-        CompressedRistretto(s.to_bytes())
+        CompressedRistretto(s.as_bytes())
     }
 
     /// Double-and-compress a batch of points.  The Ristretto encoding
@@ -503,7 +504,8 @@ impl RistrettoPoint {
     /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// use rand_core::OsRng;
     ///
@@ -511,6 +513,7 @@ impl RistrettoPoint {
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let mut rng = OsRng;
+    ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -574,8 +577,8 @@ impl RistrettoPoint {
             .iter()
             .zip(invs.iter())
             .map(|(state, inv): (&BatchCompressState, &FieldElement)| {
-                let Zinv = &state.eg * &inv;
-                let Tinv = &state.fh * &inv;
+                let Zinv = &state.eg * inv;
+                let Tinv = &state.fh * inv;
 
                 let mut magic = constants::INVSQRT_A_MINUS_D;
 
@@ -603,7 +606,7 @@ impl RistrettoPoint {
                 let s_is_negative = s.is_negative();
                 s.conditional_negate(s_is_negative);
 
-                CompressedRistretto(s.to_bytes())
+                CompressedRistretto(s.as_bytes())
             })
             .collect()
     }
@@ -612,9 +615,9 @@ impl RistrettoPoint {
     fn coset4(&self) -> [EdwardsPoint; 4] {
         [
             self.0,
-            &self.0 + &constants::EIGHT_TORSION[2],
-            &self.0 + &constants::EIGHT_TORSION[4],
-            &self.0 + &constants::EIGHT_TORSION[6],
+            self.0 + constants::EIGHT_TORSION[2],
+            self.0 + constants::EIGHT_TORSION[4],
+            self.0 + constants::EIGHT_TORSION[6],
         ]
     }
 
@@ -636,7 +639,7 @@ impl RistrettoPoint {
         let one = FieldElement::one();
 
         let r = i * &r_0.square();
-        let N_s = &(&r + &one) * &one_minus_d_sq;
+        let N_s = &(&r + &one) * one_minus_d_sq;
         let D = &(&c - &(d * &r)) * &(&r + d);
 
         let (Ns_D_is_sq, mut s) = FieldElement::sqrt_ratio_i(&N_s, &D);
@@ -647,7 +650,7 @@ impl RistrettoPoint {
         s.conditional_assign(&s_prime, !Ns_D_is_sq);
         c.conditional_assign(&r, !Ns_D_is_sq);
 
-        let N_t = &(&(&c * &(&r - &one)) * &d_minus_one_sq) - &D;
+        let N_t = &(&(&c * &(&r - &one)) * d_minus_one_sq) - &D;
         let s_sq = s.square();
 
         use crate::backend::serial::curve_models::CompletedPoint;
@@ -660,10 +663,11 @@ impl RistrettoPoint {
                 Y: &FieldElement::one() - &s_sq,
                 T: &FieldElement::one() + &s_sq,
             }
-            .to_extended(),
+            .as_extended(),
         )
     }
 
+    #[cfg(feature = "rand_core")]
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -739,7 +743,7 @@ impl RistrettoPoint {
         // dealing with generic arrays is clumsy, until const generics land
         let output = hash.finalize();
         let mut output_bytes = [0u8; 64];
-        output_bytes.copy_from_slice(&output.as_slice());
+        output_bytes.copy_from_slice(output.as_slice());
 
         RistrettoPoint::from_uniform_bytes(&output_bytes)
     }
@@ -770,7 +774,7 @@ impl RistrettoPoint {
 
         // Applying Elligator twice and adding the results ensures a
         // uniform distribution.
-        &R_1 + &R_2
+        R_1 + R_2
     }
 }
 
@@ -823,7 +827,7 @@ impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(&self.0 + &other.0)
+        RistrettoPoint(self.0 + other.0)
     }
 }
 
@@ -845,7 +849,7 @@ impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
-        RistrettoPoint(&self.0 - &other.0)
+        RistrettoPoint(self.0 - other.0)
     }
 }
 
@@ -1185,8 +1189,8 @@ mod test {
         let P = constants::RISTRETTO_BASEPOINT_POINT;
         let s = Scalar::from(999u64);
 
-        let P1 = &P * &s;
-        let P2 = &s * &P;
+        let P1 = P * s;
+        let P2 = s * P;
 
         assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
     }
@@ -1198,12 +1202,12 @@ mod test {
         let BASE = constants::RISTRETTO_BASEPOINT_POINT;
 
         let s1 = Scalar::from(999u64);
-        let P1 = &BASE * &s1;
+        let P1 = BASE * s1;
 
         let s2 = Scalar::from(333u64);
-        let P2 = &BASE * &s2;
+        let P2 = BASE * s2;
 
-        let vec = vec![P1.clone(), P2.clone()];
+        let vec = vec![P1, P2];
         let sum: RistrettoPoint = vec.iter().sum();
 
         assert_eq!(sum, P1 + P2);
@@ -1219,13 +1223,13 @@ mod test {
         let mapped = vec.iter().map(|x| x * s);
         let sum: RistrettoPoint = mapped.sum();
 
-        assert_eq!(sum, &P1 * &s + &P2 * &s);
+        assert_eq!(sum, P1 * s + P2 * s);
     }
 
     #[test]
     fn decompress_negative_s_fails() {
         // constants::d is neg, so decompression should fail as |d| != d.
-        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.to_bytes());
+        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.as_bytes());
         assert!(bad_compressed.decompress().is_none());
     }
 
@@ -1253,7 +1257,7 @@ mod test {
         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
-        let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - &bp_recaf;
+        let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
         let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
@@ -1329,9 +1333,9 @@ mod test {
             ]),
         ];
         let mut bp = RistrettoPoint::identity();
-        for i in 0..16 {
-            assert_eq!(bp.compress(), compressed[i]);
-            bp = &bp + &constants::RISTRETTO_BASEPOINT_POINT;
+        for point in compressed {
+            assert_eq!(bp.compress(), point);
+            bp += constants::RISTRETTO_BASEPOINT_POINT;
         }
     }
 
@@ -1339,8 +1343,8 @@ mod test {
     fn four_torsion_basepoint() {
         let bp = constants::RISTRETTO_BASEPOINT_POINT;
         let bp_coset = bp.coset4();
-        for i in 0..4 {
-            assert_eq!(bp, RistrettoPoint(bp_coset[i]));
+        for point in bp_coset {
+            assert_eq!(bp, RistrettoPoint(point));
         }
     }
 
@@ -1348,10 +1352,10 @@ mod test {
     fn four_torsion_random() {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
-        let P = B * &Scalar::random(&mut rng);
+        let P = B * &crate::mocks::MockScalar::random(&mut rng);
         let P_coset = P.coset4();
-        for i in 0..4 {
-            assert_eq!(P, RistrettoPoint(P_coset[i]));
+        for point in P_coset {
+            assert_eq!(P, RistrettoPoint(point));
         }
     }
 
@@ -1675,7 +1679,7 @@ mod test {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
-            let P = B * &Scalar::random(&mut rng);
+            let P = B * &crate::mocks::MockScalar::random(&mut rng);
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
@@ -1688,7 +1692,7 @@ mod test {
         let mut rng = OsRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::random(&mut rng))
+            .map(|_| crate::mocks::MockRistrettoPoint::random(&mut rng))
             .collect();
         points[500] = RistrettoPoint::identity();
 
@@ -1707,11 +1711,11 @@ mod test {
         let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let check_scalar: Scalar = static_scalars

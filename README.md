@@ -1,11 +1,11 @@
 
-# curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://doc.dalek.rs) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
+# curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://docs.rs/curve25519-dalek) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
 
 <p style="float: right">
 <img
  width="300px"
  alt="dalek-cryptography logo: a dalek with edwards curves as sparkles coming out of its radar-schnozzley blaster thingies"
- src="https://doc.dalek.rs/assets/dalek-logo-clear.png"/>
+ src="https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"/>
 </p>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
@@ -30,15 +30,11 @@ cofactor-related abstraction mismatches.
 
 # Documentation
 
-The semver-stable, public-facing `curve25519-dalek` API is documented
-[here][docs-external].  In addition, the unstable internal implementation
-details are documented [here][docs-internal].
+The `curve25519-dalek` public API and the backends are documented [here][docs-external].
 
-The `curve25519-dalek` documentation requires a custom HTML header to include
-KaTeX for math support. Unfortunately `cargo doc` does not currently support
-this, but docs can be built using
+In addition, the unstable internal implementation can be generated locally as below.
+
 ```sh
-make doc
 make doc-internal
 ```
 
@@ -245,9 +241,8 @@ contributions.
 [ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
 [x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
-[docs-external]: https://doc.dalek.rs/curve25519_dalek/
-[docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
+[docs-external]: https://docs.rs/curve25519-dalek
 [criterion]: https://github.com/japaric/criterion.rs
 [parallel_doc]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/vector/index.html
-[subtle_doc]: https://doc.dalek.rs/subtle/
+[subtle_doc]: https://docs.rs/subtle
 [fiat-crypto]: https://github.com/mit-plv/fiat-crypto

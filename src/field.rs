@@ -37,9 +37,9 @@ use crate::constants;
 
 cfg_if! {
     if #[cfg(feature = "fiat_backend")] {
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub use backend::serial::fiat_u32::field::*;
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub use backend::serial::fiat_u64::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -49,7 +49,7 @@ cfg_if! {
         /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(not(target_pointer_width = "64"))]
+        #[cfg(curve25519_dalek_bits = "32")]
         pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
         /// A `FieldElement` represents an element of the field
@@ -59,9 +59,9 @@ cfg_if! {
         /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(target_pointer_width = "64")]
+        #[cfg(curve25519_dalek_bits = "64")]
         pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
-    } else if #[cfg(target_pointer_width = "64")] {
+    } else if #[cfg(curve25519_dalek_bits = "64")] {
         pub use crate::backend::serial::u64::field::*;
 
         /// A `FieldElement` represents an element of the field
@@ -95,7 +95,7 @@ impl ConstantTimeEq for FieldElement {
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> Choice {
-        self.to_bytes().ct_eq(&other.to_bytes())
+        self.as_bytes().ct_eq(&other.as_bytes())
     }
 }
 
@@ -108,7 +108,7 @@ impl FieldElement {
     ///
     /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub fn is_negative(&self) -> Choice {
-        let bytes = self.to_bytes();
+        let bytes = self.as_bytes();
         (bytes[0] & 1).into()
     }
 
@@ -119,7 +119,7 @@ impl FieldElement {
     /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub fn is_zero(&self) -> Choice {
         let zero = [0u8; 32];
-        let bytes = self.to_bytes();
+        let bytes = self.as_bytes();
 
         bytes.ct_eq(&zero)
     }
@@ -212,6 +212,7 @@ impl FieldElement {
     ///
     /// This function returns zero on input zero.
     #[rustfmt::skip] // keep alignment of explanatory comments
+    #[allow(clippy::let_and_return)]
     pub fn invert(&self) -> FieldElement {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //
@@ -225,6 +226,7 @@ impl FieldElement {
 
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
     #[rustfmt::skip] // keep alignment of explanatory comments
+    #[allow(clippy::let_and_return)]
     fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //
@@ -489,10 +491,10 @@ mod test {
         // Decode to a field element
         let one = FieldElement::from_bytes(&one_encoded_wrongly_bytes);
         // .. then check that the encoding is correct
-        let one_bytes = one.to_bytes();
+        let one_bytes = one.as_bytes();
         assert_eq!(one_bytes[0], 1);
-        for i in 1..32 {
-            assert_eq!(one_bytes[i], 0);
+        for byte in &one_bytes[1..] {
+            assert_eq!(*byte, 0);
         }
     }
 

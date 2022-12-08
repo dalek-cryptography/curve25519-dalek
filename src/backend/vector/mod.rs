@@ -34,6 +34,10 @@ pub(crate) use self::ifma::{
     constants::BASEPOINT_ODD_LOOKUP_TABLE, edwards::CachedPoint, edwards::ExtendedPoint,
 };
 
-#[cfg(any(target_feature = "avx2", target_feature = "avx512ifma", all(docsrs, target_arch = "x86_64")))]
+#[cfg(any(
+    target_feature = "avx2",
+    target_feature = "avx512ifma",
+    all(docsrs, target_arch = "x86_64")
+))]
 #[allow(missing_docs)]
 pub mod scalar_mul;

@@ -116,7 +116,8 @@ impl Scalar52 {
 
     /// Pack the limbs of this `Scalar52` into 32 bytes
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn to_bytes(&self) -> [u8; 32] {
+    #[allow(clippy::identity_op)]
+    pub fn as_bytes(&self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
         s[ 0] =  (self.0[ 0] >>  0)                      as u8;
@@ -304,11 +305,12 @@ impl Scalar52 {
 
     /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod l)`
     #[inline(never)]
-    pub fn to_montgomery(&self) -> Scalar52 {
+    pub fn as_montgomery(&self) -> Scalar52 {
         Scalar52::montgomery_mul(self, &constants::RR)
     }
 
     /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod l)`
+    #[allow(clippy::wrong_self_convention)]
     #[inline(never)]
     pub fn from_montgomery(&self) -> Scalar52 {
         let mut limbs = [0u128; 9];

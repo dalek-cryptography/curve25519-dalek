@@ -7,12 +7,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-#[macro_use]
-extern crate criterion;
-extern crate ed25519_dalek;
-extern crate rand;
-
-use criterion::Criterion;
+use criterion::{criterion_group, criterion_main, Criterion};
 
 mod ed25519_benches {
     use super::*;

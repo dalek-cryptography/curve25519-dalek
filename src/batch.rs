@@ -9,12 +9,7 @@
 
 //! Batch signature verification.
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
-#[cfg(all(not(feature = "alloc"), feature = "std"))]
-use std::vec::Vec;
 
 use core::convert::TryFrom;
 use core::iter::once;
@@ -29,9 +24,9 @@ pub use curve25519_dalek::digest::Digest;
 
 use merlin::Transcript;
 
-use rand::Rng;
 #[cfg(all(feature = "batch", not(feature = "batch_deterministic")))]
 use rand::thread_rng;
+use rand::Rng;
 #[cfg(all(not(feature = "batch"), feature = "batch_deterministic"))]
 use rand_core;
 
@@ -101,7 +96,7 @@ impl rand_core::RngCore for ZeroRng {
     /// STROBE state based on external randomness, we're doing an
     /// `ENC_{state}(00000000000000000000000000000000)` operation, which is
     /// identical to the STROBE `MAC` operation.
-    fn fill_bytes(&mut self, _dest: &mut [u8]) { }
+    fn fill_bytes(&mut self, _dest: &mut [u8]) {}
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
         self.fill_bytes(dest);
@@ -193,9 +188,6 @@ fn zero_rng() -> ZeroRng {
 /// # Examples
 ///
 /// ```
-/// extern crate ed25519_dalek;
-/// extern crate rand;
-///
 /// use ed25519_dalek::verify_batch;
 /// use ed25519_dalek::Keypair;
 /// use ed25519_dalek::PublicKey;
@@ -215,24 +207,26 @@ fn zero_rng() -> ZeroRng {
 /// assert!(result.is_ok());
 /// # }
 /// ```
-#[cfg(all(any(feature = "batch", feature = "batch_deterministic"),
-          any(feature = "alloc", feature = "std")))]
 #[allow(non_snake_case)]
 pub fn verify_batch(
     messages: &[&[u8]],
     signatures: &[ed25519::Signature],
     public_keys: &[PublicKey],
-) -> Result<(), SignatureError>
-{
+) -> Result<(), SignatureError> {
     // Return an Error if any of the vectors were not the same size as the others.
-    if signatures.len() != messages.len() ||
-        signatures.len() != public_keys.len() ||
-        public_keys.len() != messages.len() {
-        return Err(InternalError::ArrayLengthError{
-            name_a: "signatures", length_a: signatures.len(),
-            name_b: "messages", length_b: messages.len(),
-            name_c: "public_keys", length_c: public_keys.len(),
-        }.into());
+    if signatures.len() != messages.len()
+        || signatures.len() != public_keys.len()
+        || public_keys.len() != messages.len()
+    {
+        return Err(InternalError::ArrayLengthError {
+            name_a: "signatures",
+            length_a: signatures.len(),
+            name_b: "messages",
+            length_b: messages.len(),
+            name_c: "public_keys",
+            length_c: public_keys.len(),
+        }
+        .into());
     }
 
     // Convert all signatures to `InternalSignature`
@@ -242,13 +236,15 @@ pub fn verify_batch(
         .collect::<Result<Vec<_>, _>>()?;
 
     // Compute H(R || A || M) for each (signature, public_key, message) triplet
-    let hrams: Vec<Scalar> = (0..signatures.len()).map(|i| {
-        let mut h: Sha512 = Sha512::default();
-        h.update(signatures[i].R.as_bytes());
-        h.update(public_keys[i].as_bytes());
-        h.update(&messages[i]);
-        Scalar::from_hash(h)
-    }).collect();
+    let hrams: Vec<Scalar> = (0..signatures.len())
+        .map(|i| {
+            let mut h: Sha512 = Sha512::default();
+            h.update(signatures[i].R.as_bytes());
+            h.update(public_keys[i].as_bytes());
+            h.update(&messages[i]);
+            Scalar::from_hash(h)
+        })
+        .collect();
 
     // Collect the message lengths and the scalar portions of the signatures,
     // and add them into the transcript.
@@ -295,7 +291,8 @@ pub fn verify_batch(
     let id = EdwardsPoint::optional_multiscalar_mul(
         once(-B_coefficient).chain(zs.iter().cloned()).chain(zhrams),
         B.chain(Rs).chain(As),
-    ).ok_or(InternalError::VerifyError)?;
+    )
+    .ok_or(InternalError::VerifyError)?;
 
     if id.is_identity() {
         Ok(())

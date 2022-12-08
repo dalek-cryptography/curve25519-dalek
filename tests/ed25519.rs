@@ -9,16 +9,7 @@
 
 //! Integration tests for ed25519-dalek.
 
-#[cfg(all(test, feature = "serde"))]
-extern crate bincode;
-extern crate ed25519_dalek;
-extern crate hex;
-extern crate sha2;
-extern crate rand;
-#[cfg(all(test, feature = "serde"))]
-extern crate serde_crate;
-#[cfg(all(test, feature = "serde"))]
-extern crate toml;
+use curve25519_dalek;
 
 use ed25519_dalek::*;
 
@@ -32,9 +23,9 @@ mod vectors {
     use sha2::{digest::Digest, Sha512};
     use std::convert::TryFrom;
 
-    use std::io::BufReader;
-    use std::io::BufRead;
     use std::fs::File;
+    use std::io::BufRead;
+    use std::io::BufReader;
 
     use super::*;
 
@@ -42,15 +33,18 @@ mod vectors {
     // package. It is a selection of test cases from
     // http://ed25519.cr.yp.to/python/sign.input
     #[test]
-    fn against_reference_implementation() { // TestGolden
+    fn against_reference_implementation() {
+        // TestGolden
         let mut line: String;
         let mut lineno: usize = 0;
 
         let f = File::open("TESTVECTORS");
         if f.is_err() {
-            println!("This test is only available when the code has been cloned \
-                      from the git repository, since the TESTVECTORS file is large \
-                      and is therefore not included within the distributed crate.");
+            println!(
+                "This test is only available when the code has been cloned \
+                 from the git repository, since the TESTVECTORS file is large \
+                 and is therefore not included within the distributed crate."
+            );
             panic!();
         }
         let file = BufReader::new(f.unwrap());
@@ -73,14 +67,17 @@ mod vectors {
             let keypair: Keypair = Keypair::from(secret);
             assert_eq!(expected_public, keypair.public_key());
 
-		    // The signatures in the test vectors also include the message
-		    // at the end, but we just want R and S.
+            // The signatures in the test vectors also include the message
+            // at the end, but we just want R and S.
             let sig1: Signature = Signature::from_bytes(&sig_bytes[..64]).unwrap();
             let sig2: Signature = keypair.sign(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
-            assert!(keypair.verify(&msg_bytes, &sig2).is_ok(),
-                    "Signature verification failed on line {}", lineno);
+            assert!(
+                keypair.verify(&msg_bytes, &sig2).is_ok(),
+                "Signature verification failed on line {}",
+                lineno
+            );
         }
     }
 
@@ -112,11 +109,19 @@ mod vectors {
 
         let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None).unwrap();
 
-        assert!(sig1 == sig2,
-                "Original signature from test vectors doesn't equal signature produced:\
-                \noriginal:\n{:?}\nproduced:\n{:?}", sig1, sig2);
-        assert!(keypair.verify_prehashed(prehash_for_verifying, None, &sig2).is_ok(),
-                "Could not verify ed25519ph signature!");
+        assert!(
+            sig1 == sig2,
+            "Original signature from test vectors doesn't equal signature produced:\
+             \noriginal:\n{:?}\nproduced:\n{:?}",
+            sig1,
+            sig2
+        );
+        assert!(
+            keypair
+                .verify_prehashed(prehash_for_verifying, None, &sig2)
+                .is_ok(),
+            "Could not verify ed25519ph signature!"
+        );
     }
 
     // Taken from curve25519_dalek::constants::EIGHT_TORSION[4]
@@ -197,38 +202,45 @@ mod integrations {
     use rand::rngs::OsRng;
 
     #[test]
-    fn sign_verify() {  // TestSignVerify
+    fn sign_verify() {
+        // TestSignVerify
         let keypair: Keypair;
         let good_sig: Signature;
-        let bad_sig:  Signature;
+        let bad_sig: Signature;
 
         let good: &[u8] = "test message".as_bytes();
-        let bad:  &[u8] = "wrong message".as_bytes();
+        let bad: &[u8] = "wrong message".as_bytes();
 
-        let mut csprng = OsRng{};
+        let mut csprng = OsRng {};
 
-        keypair  = Keypair::generate(&mut csprng);
+        keypair = Keypair::generate(&mut csprng);
         good_sig = keypair.sign(&good);
-        bad_sig  = keypair.sign(&bad);
+        bad_sig = keypair.sign(&bad);
 
-        assert!(keypair.verify(&good, &good_sig).is_ok(),
-                "Verification of a valid signature failed!");
-        assert!(keypair.verify(&good, &bad_sig).is_err(),
-                "Verification of a signature on a different message passed!");
-        assert!(keypair.verify(&bad,  &good_sig).is_err(),
-                "Verification of a signature on a different message passed!");
+        assert!(
+            keypair.verify(&good, &good_sig).is_ok(),
+            "Verification of a valid signature failed!"
+        );
+        assert!(
+            keypair.verify(&good, &bad_sig).is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+        assert!(
+            keypair.verify(&bad, &good_sig).is_err(),
+            "Verification of a signature on a different message passed!"
+        );
     }
 
     #[test]
     fn ed25519ph_sign_verify() {
         let keypair: Keypair;
         let good_sig: Signature;
-        let bad_sig:  Signature;
+        let bad_sig: Signature;
 
         let good: &[u8] = b"test message";
-        let bad:  &[u8] = b"wrong message";
+        let bad: &[u8] = b"wrong message";
 
-        let mut csprng = OsRng{};
+        let mut csprng = OsRng;
 
         // ugh… there's no `impl Copy for Sha512`… i hope we can all agree these are the same hashes
         let mut prehashed_good1: Sha512 = Sha512::default();
@@ -245,16 +257,32 @@ mod integrations {
 
         let context: &[u8] = b"testing testing 1 2 3";
 
-        keypair  = Keypair::generate(&mut csprng);
-        good_sig = keypair.sign_prehashed(prehashed_good1, Some(context)).unwrap();
-        bad_sig  = keypair.sign_prehashed(prehashed_bad1,  Some(context)).unwrap();
+        keypair = Keypair::generate(&mut csprng);
+        good_sig = keypair
+            .sign_prehashed(prehashed_good1, Some(context))
+            .unwrap();
+        bad_sig = keypair
+            .sign_prehashed(prehashed_bad1, Some(context))
+            .unwrap();
 
-        assert!(keypair.verify_prehashed(prehashed_good2, Some(context), &good_sig).is_ok(),
-                "Verification of a valid signature failed!");
-        assert!(keypair.verify_prehashed(prehashed_good3, Some(context), &bad_sig).is_err(),
-                "Verification of a signature on a different message passed!");
-        assert!(keypair.verify_prehashed(prehashed_bad2,  Some(context), &good_sig).is_err(),
-                "Verification of a signature on a different message passed!");
+        assert!(
+            keypair
+                .verify_prehashed(prehashed_good2, Some(context), &good_sig)
+                .is_ok(),
+            "Verification of a valid signature failed!"
+        );
+        assert!(
+            keypair
+                .verify_prehashed(prehashed_good3, Some(context), &bad_sig)
+                .is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+        assert!(
+            keypair
+                .verify_prehashed(prehashed_bad2, Some(context), &good_sig)
+                .is_err(),
+            "Verification of a signature on a different message passed!"
+        );
     }
 
     #[cfg(feature = "batch")]
@@ -268,7 +296,7 @@ mod integrations {
             b"Fuck dumbin' it down, spit ice, skip jewellery: Molotov cocktails on me like accessories.",
             b"Hey, I never cared about your bucks, so if I run up with a mask on, probably got a gas can too.",
             b"And I'm not here to fill 'er up. Nope, we came to riot, here to incite, we don't want any of your stuff.", ];
-        let mut csprng = OsRng{};
+        let mut csprng = OsRng;
         let mut keypairs: Vec<Keypair> = Vec::new();
         let mut signatures: Vec<Signature> = Vec::new();
 
@@ -289,7 +317,7 @@ mod integrations {
 #[derive(Debug, serde_crate::Serialize, serde_crate::Deserialize)]
 #[serde(crate = "serde_crate")]
 struct Demo {
-    keypair: Keypair
+    keypair: Keypair,
 }
 
 #[cfg(all(test, feature = "serde"))]
@@ -300,37 +328,29 @@ mod serialisation {
     static BINCODE_INT_LENGTH: usize = 8;
 
     static PUBLIC_KEY_BYTES: [u8; PUBLIC_KEY_LENGTH] = [
-        130, 039, 155, 015, 062, 076, 188, 063,
-        124, 122, 026, 251, 233, 253, 225, 220,
-        014, 041, 166, 120, 108, 035, 254, 077,
-        160, 083, 172, 058, 219, 042, 086, 120, ];
+        130, 039, 155, 015, 062, 076, 188, 063, 124, 122, 026, 251, 233, 253, 225, 220, 014, 041,
+        166, 120, 108, 035, 254, 077, 160, 083, 172, 058, 219, 042, 086, 120,
+    ];
 
     static SECRET_KEY_BYTES: [u8; SECRET_KEY_LENGTH] = [
-        062, 070, 027, 163, 092, 182, 011, 003,
-        077, 234, 098, 004, 011, 127, 079, 228,
-        243, 187, 150, 073, 201, 137, 076, 022,
-        085, 251, 152, 002, 241, 042, 072, 054, ];
+        062, 070, 027, 163, 092, 182, 011, 003, 077, 234, 098, 004, 011, 127, 079, 228, 243, 187,
+        150, 073, 201, 137, 076, 022, 085, 251, 152, 002, 241, 042, 072, 054,
+    ];
 
     /// Signature with the above keypair of a blank message.
     static SIGNATURE_BYTES: [u8; SIGNATURE_LENGTH] = [
-        010, 126, 151, 143, 157, 064, 047, 001,
-        196, 140, 179, 058, 226, 152, 018, 102,
-        160, 123, 080, 016, 210, 086, 196, 028,
-        053, 231, 012, 157, 169, 019, 158, 063,
-        045, 154, 238, 007, 053, 185, 227, 229,
-        079, 108, 213, 080, 124, 252, 084, 167,
-        216, 085, 134, 144, 129, 149, 041, 081,
-        063, 120, 126, 100, 092, 059, 050, 011, ];
+        010, 126, 151, 143, 157, 064, 047, 001, 196, 140, 179, 058, 226, 152, 018, 102, 160, 123,
+        080, 016, 210, 086, 196, 028, 053, 231, 012, 157, 169, 019, 158, 063, 045, 154, 238, 007,
+        053, 185, 227, 229, 079, 108, 213, 080, 124, 252, 084, 167, 216, 085, 134, 144, 129, 149,
+        041, 081, 063, 120, 126, 100, 092, 059, 050, 011,
+    ];
 
     static KEYPAIR_BYTES: [u8; KEYPAIR_LENGTH] = [
-        239, 085, 017, 235, 167, 103, 034, 062,
-        007, 010, 032, 146, 113, 039, 096, 174,
-        003, 219, 232, 166, 240, 121, 167, 013,
-        098, 238, 122, 116, 193, 114, 215, 213,
-        175, 181, 075, 166, 224, 164, 140, 146,
-        053, 120, 010, 037, 104, 094, 136, 225,
-        249, 102, 171, 160, 097, 132, 015, 071,
-        035, 056, 000, 074, 130, 168, 225, 071, ];
+        239, 085, 017, 235, 167, 103, 034, 062, 007, 010, 032, 146, 113, 039, 096, 174, 003, 219,
+        232, 166, 240, 121, 167, 013, 098, 238, 122, 116, 193, 114, 215, 213, 175, 181, 075, 166,
+        224, 164, 140, 146, 053, 120, 010, 037, 104, 094, 136, 225, 249, 102, 171, 160, 097, 132,
+        015, 071, 035, 056, 000, 074, 130, 168, 225, 071,
+    ];
 
     #[test]
     fn serialize_deserialize_signature_bincode() {
@@ -356,7 +376,10 @@ mod serialisation {
         let encoded_public_key: Vec<u8> = bincode::serialize(&public_key).unwrap();
         let decoded_public_key: PublicKey = bincode::deserialize(&encoded_public_key).unwrap();
 
-        assert_eq!(&PUBLIC_KEY_BYTES[..], &encoded_public_key[encoded_public_key.len() - PUBLIC_KEY_LENGTH..]);
+        assert_eq!(
+            &PUBLIC_KEY_BYTES[..],
+            &encoded_public_key[encoded_public_key.len() - PUBLIC_KEY_LENGTH..]
+        );
         assert_eq!(public_key, decoded_public_key);
     }
 
@@ -415,7 +438,9 @@ mod serialisation {
 
     #[test]
     fn serialize_deserialize_keypair_toml() {
-        let demo = Demo { keypair: Keypair::from_bytes(&KEYPAIR_BYTES).unwrap() };
+        let demo = Demo {
+            keypair: Keypair::from_bytes(&KEYPAIR_BYTES).unwrap(),
+        };
 
         println!("\n\nWrite to toml");
         let demo_toml = toml::to_string(&demo).unwrap();
@@ -427,13 +452,19 @@ mod serialisation {
     #[test]
     fn serialize_public_key_size() {
         let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
-        assert_eq!(bincode::serialized_size(&public_key).unwrap() as usize, BINCODE_INT_LENGTH + PUBLIC_KEY_LENGTH);
+        assert_eq!(
+            bincode::serialized_size(&public_key).unwrap() as usize,
+            BINCODE_INT_LENGTH + PUBLIC_KEY_LENGTH
+        );
     }
 
     #[test]
     fn serialize_signature_size() {
         let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
-        assert_eq!(bincode::serialized_size(&signature).unwrap() as usize, SIGNATURE_LENGTH);
+        assert_eq!(
+            bincode::serialized_size(&signature).unwrap() as usize,
+            SIGNATURE_LENGTH
+        );
     }
 
     #[test]
@@ -448,6 +479,9 @@ mod serialisation {
     #[test]
     fn serialize_keypair_size() {
         let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
-        assert_eq!(bincode::serialized_size(&keypair).unwrap() as usize, BINCODE_INT_LENGTH + KEYPAIR_LENGTH);
+        assert_eq!(
+            bincode::serialized_size(&keypair).unwrap() as usize,
+            BINCODE_INT_LENGTH + KEYPAIR_LENGTH
+        );
     }
 }

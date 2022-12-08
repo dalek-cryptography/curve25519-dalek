@@ -91,7 +91,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     //
     // This succeed-fast trick should succeed for roughly half of all scalars.
     if bytes[31] & 240 == 0 {
-        return Ok(Scalar::from_bits(bytes))
+        return Ok(Scalar::from_bits(bytes));
     }
 
     match Scalar::from_canonical_bytes(bytes) {
@@ -167,7 +167,8 @@ impl InternalSignature {
             return Err(InternalError::BytesLengthError {
                 name: "Signature",
                 length: SIGNATURE_LENGTH,
-            }.into());
+            }
+            .into());
         }
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
@@ -178,7 +179,7 @@ impl InternalSignature {
         let s: Scalar;
 
         match check_scalar(upper) {
-            Ok(x)  => s = x,
+            Ok(x) => s = x,
             Err(x) => return Err(x),
         }
 

@@ -19,9 +19,6 @@
 //! the operating system's builtin PRNG:
 //!
 //! ```
-//! extern crate rand;
-//! extern crate ed25519_dalek;
-//!
 //! # #[cfg(feature = "std")]
 //! # fn main() {
 //! use rand::rngs::OsRng;
@@ -39,8 +36,6 @@
 //! We can now use this `keypair` to sign a message:
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::Keypair;
@@ -56,8 +51,6 @@
 //! that `message`:
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, Signer};
@@ -74,8 +67,6 @@
 //! verify this signature:
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::Keypair;
@@ -101,8 +92,6 @@
 //! verify your signatures!)
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{Keypair, Signature, Signer, PublicKey};
@@ -122,8 +111,6 @@
 //! And similarly, decoded from bytes with `::from_bytes()`:
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
 //! # use std::convert::TryFrom;
 //! # use rand::rngs::OsRng;
 //! # use std::convert::TryInto;
@@ -165,13 +152,6 @@
 //! For example, using [bincode](https://github.com/TyOverby/bincode):
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
-//! # #[cfg(feature = "serde")]
-//! # extern crate serde_crate as serde;
-//! # #[cfg(feature = "serde")]
-//! # extern crate bincode;
-//!
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
@@ -195,13 +175,6 @@
 //! recipient may deserialise them and verify:
 //!
 //! ```
-//! # extern crate rand;
-//! # extern crate ed25519_dalek;
-//! # #[cfg(feature = "serde")]
-//! # extern crate serde_crate as serde;
-//! # #[cfg(feature = "serde")]
-//! # extern crate bincode;
-//! #
 //! # #[cfg(feature = "serde")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
@@ -232,40 +205,34 @@
 //! ```
 
 #![no_std]
-#![warn(future_incompatible)]
+#![warn(future_incompatible, rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 #![cfg_attr(not(test), forbid(unsafe_code))]
+
+#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+extern crate alloc;
 
 #[cfg(any(feature = "std", test))]
 #[macro_use]
 extern crate std;
 
-pub extern crate ed25519;
-
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-extern crate alloc;
-extern crate curve25519_dalek;
-#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
-extern crate merlin;
-#[cfg(any(feature = "batch", feature = "std", feature = "alloc", test))]
-extern crate rand;
 #[cfg(feature = "serde")]
 extern crate serde_crate as serde;
-extern crate sha2;
-extern crate zeroize;
 
-#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+pub use ed25519;
+
+#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
 mod batch;
 mod constants;
-mod keypair;
 mod errors;
+mod keypair;
 mod public;
 mod secret;
 mod signature;
 
 pub use curve25519_dalek::digest::Digest;
 
-#[cfg(all(any(feature = "batch", feature = "batch_deterministic"), any(feature = "std", feature = "alloc")))]
+#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
 pub use crate::batch::*;
 pub use crate::constants::*;
 pub use crate::errors::*;

@@ -39,9 +39,14 @@ pub(crate) enum InternalError {
     /// Two arrays did not match in size, making the called signature
     /// verification method impossible.
     #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
-    ArrayLengthError{ name_a: &'static str, length_a: usize,
-                      name_b: &'static str, length_b: usize,
-                      name_c: &'static str, length_c: usize, },
+    ArrayLengthError {
+        name_a: &'static str,
+        length_a: usize,
+        name_b: &'static str,
+        length_b: usize,
+        name_c: &'static str,
+        length_c: usize,
+    },
     /// An ed25519ph signature can only take up to 255 octets of context.
     PrehashedContextLengthError,
     /// A mismatched (public, secret) key pair.
@@ -51,29 +56,37 @@ pub(crate) enum InternalError {
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            InternalError::PointDecompressionError
-                => write!(f, "Cannot decompress Edwards point"),
-            InternalError::ScalarFormatError
-                => write!(f, "Cannot use scalar with high-bit set"),
-            InternalError::BytesLengthError{ name: n, length: l}
-                => write!(f, "{} must be {} bytes in length", n, l),
-            InternalError::VerifyError
-                => write!(f, "Verification equation was not satisfied"),
+            InternalError::PointDecompressionError => write!(f, "Cannot decompress Edwards point"),
+            InternalError::ScalarFormatError => write!(f, "Cannot use scalar with high-bit set"),
+            InternalError::BytesLengthError { name: n, length: l } => {
+                write!(f, "{} must be {} bytes in length", n, l)
+            }
+            InternalError::VerifyError => write!(f, "Verification equation was not satisfied"),
             #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
-            InternalError::ArrayLengthError{ name_a: na, length_a: la,
-                                             name_b: nb, length_b: lb,
-                                             name_c: nc, length_c: lc, }
-                => write!(f, "Arrays must be the same length: {} has length {},
-                              {} has length {}, {} has length {}.", na, la, nb, lb, nc, lc),
-            InternalError::PrehashedContextLengthError
-                => write!(f, "An ed25519ph signature can only take up to 255 octets of context"),
+            InternalError::ArrayLengthError {
+                name_a: na,
+                length_a: la,
+                name_b: nb,
+                length_b: lb,
+                name_c: nc,
+                length_c: lc,
+            } => write!(
+                f,
+                "Arrays must be the same length: {} has length {},
+                              {} has length {}, {} has length {}.",
+                na, la, nb, lb, nc, lc
+            ),
+            InternalError::PrehashedContextLengthError => write!(
+                f,
+                "An ed25519ph signature can only take up to 255 octets of context"
+            ),
             InternalError::MismatchedKeypairError => write!(f, "Mismatched Keypair detected"),
         }
     }
 }
 
 #[cfg(feature = "std")]
-impl Error for InternalError { }
+impl Error for InternalError {}
 
 /// Errors which may occur while processing signatures and keypairs.
 ///

@@ -27,7 +27,7 @@ use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
-use serde_bytes::{Bytes as SerdeBytes, ByteBuf as SerdeByteBuf};
+use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 use zeroize::Zeroize;
 
@@ -78,8 +78,6 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// # extern crate ed25519_dalek;
-    /// #
     /// use ed25519_dalek::SecretKey;
     /// use ed25519_dalek::SECRET_KEY_LENGTH;
     /// use ed25519_dalek::SignatureError;
@@ -112,7 +110,8 @@ impl SecretKey {
             return Err(InternalError::BytesLengthError {
                 name: "SecretKey",
                 length: SECRET_KEY_LENGTH,
-            }.into());
+            }
+            .into());
         }
         let mut bits: [u8; 32] = [0u8; 32];
         bits.copy_from_slice(&bytes[..32]);
@@ -125,9 +124,6 @@ impl SecretKey {
     /// # Example
     ///
     /// ```
-    /// extern crate rand;
-    /// extern crate ed25519_dalek;
-    ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #
@@ -147,9 +143,6 @@ impl SecretKey {
     /// Afterwards, you can generate the corresponding public:
     ///
     /// ```
-    /// # extern crate rand;
-    /// # extern crate ed25519_dalek;
-    /// #
     /// # fn main() {
     /// #
     /// # use rand::rngs::OsRng;
@@ -257,10 +250,6 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// # Examples
     ///
     /// ```ignore
-    /// # extern crate rand;
-    /// # extern crate sha2;
-    /// # extern crate ed25519_dalek;
-    /// #
     /// # fn main() {
     /// #
     /// use rand::rngs::OsRng;
@@ -273,7 +262,7 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
     /// ```
     fn from(secret_key: &'a SecretKey) -> ExpandedSecretKey {
         let mut h: Sha512 = Sha512::default();
-        let mut hash:  [u8; 64] = [0u8; 64];
+        let mut hash: [u8; 64] = [0u8; 64];
         let mut lower: [u8; 32] = [0u8; 32];
         let mut upper: [u8; 32] = [0u8; 32];
 
@@ -283,11 +272,14 @@ impl<'a> From<&'a SecretKey> for ExpandedSecretKey {
         lower.copy_from_slice(&hash[00..32]);
         upper.copy_from_slice(&hash[32..64]);
 
-        lower[0]  &= 248;
-        lower[31] &=  63;
-        lower[31] |=  64;
+        lower[0] &= 248;
+        lower[31] &= 63;
+        lower[31] |= 64;
 
-        ExpandedSecretKey{ key: Scalar::from_bits(lower), nonce: upper, }
+        ExpandedSecretKey {
+            key: Scalar::from_bits(lower),
+            nonce: upper,
+        }
     }
 }
 
@@ -358,7 +350,9 @@ impl ExpandedSecretKey {
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
 
         if ctx.len() > 255 {
-            return Err(SignatureError::from(InternalError::PrehashedContextLengthError));
+            return Err(SignatureError::from(
+                InternalError::PrehashedContextLengthError,
+            ));
         }
 
         let ctx_len: u8 = ctx.len() as u8;
@@ -413,7 +407,8 @@ mod test {
     fn secret_key_zeroize_on_drop() {
         let secret_ptr: *const u8;
 
-        { // scope for the secret to ensure it's been dropped
+        {
+            // scope for the secret to ensure it's been dropped
             let secret = SecretKey::from_bytes(&[0x15u8; 32][..]).unwrap();
 
             secret_ptr = secret.0.as_ptr();

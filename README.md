@@ -54,48 +54,21 @@ disable it when running `cargo`, add the `--no-default-features` CLI flag.
 
 ## Major Version API Changes
 
-See [`CHANGELOG.md`](CHANGELOG.md) for more details.
+Breaking changes for each major version release can be found in
+[`CHANGELOG.md`](CHANGELOG.md), under the "Breaking changes" subheader. The
+latest breaking changes are below:
 
-### 2.x
+### Breaking changes in 4.0.0
 
-The `2.x` series has API almost entirely unchanged from the `1.x` series,
-except that:
-
-* an error in the data modeling for the (optional) `serde` feature was
-  corrected, so that when the `2.x`-series `serde` implementation is used
-  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
-  formats;
-* the `rand` version was updated.
-
-### 3.x
-
-The sole breaking change in the `3.x` series was an update to the `digest`
-version, and in terms of non-breaking changes it includes:
-
-* support for using `alloc` instead of `std` on stable Rust,
-* the Elligator2 encoding for Edwards points,
-* a fix to use `packed_simd2`,
-* various documentation fixes and improvements,
-* support for configurably-sized, precomputed lookup tables for basepoint scalar
-  multiplication,
-* two new formally-verified field arithmetic backends which use the Fiat Crypto
-  Rust code, which is generated from proofs of functional correctness checked by
-  the Coq theorem proving system, and
-* support for explicitly calling the `zeroize` traits for all point types.
-
-### 4.x (current stable)
-
-`4.x` has some small API changes:
-
+* Update the MSRV from 1.41 to 1.56.1
 * Update backend selection to be more automatic. See [backends](#backends)
 * Remove `nightly` feature flag
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
-* Update the MSRV from 1.41 to 1.56.1
 
-It also does a lot of dependency updates and relaxations to unblock upstream build issues.
+This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
 
 # Backends
 
@@ -150,8 +123,9 @@ for docs that include private items.
 
 # Maintenance Policies
 
-* All on-by-default features of this library are covered by [semantic versioning][semver] (SemVer).
-* SemVer exemptions are outlined below for MSRV and public API.
+All on-by-default features of this library are covered by
+[semantic versioning][semver] (SemVer). SemVer exemptions are outlined below
+for MSRV and public API.
 
 ## Minimum Supported Rust Version
 

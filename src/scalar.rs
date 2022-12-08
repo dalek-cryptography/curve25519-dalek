@@ -152,6 +152,7 @@ use crate::prelude::*;
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "rand_core")]
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -566,6 +567,7 @@ impl Zeroize for Scalar {
 }
 
 impl Scalar {
+    #[cfg(feature = "rand_core")]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -1404,7 +1406,7 @@ mod test {
     fn non_adjacent_form_random() {
         let mut rng = rand::thread_rng();
         for _ in 0..1_000 {
-            let x = Scalar::random(&mut rng);
+            let x = crate::mocks::MockScalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {
                 non_adjacent_form_iter(*w, &x);
             }

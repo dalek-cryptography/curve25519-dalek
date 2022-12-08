@@ -374,6 +374,7 @@ mod test {
     use super::*;
     use crate::constants;
 
+    #[cfg(feature = "rand_core")]
     use rand_core::OsRng;
 
     #[test]
@@ -458,6 +459,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "rand_core")]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng: OsRng = OsRng;
 

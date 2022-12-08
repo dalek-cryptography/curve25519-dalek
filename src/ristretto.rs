@@ -113,7 +113,7 @@
 //! used to implement
 //!
 //! * `RistrettoPoint::random()`, which generates random points from an
-//! RNG;
+//! RNG - enabled by `rand_core` feature;
 //!
 //! * `RistrettoPoint::from_hash()` and
 //! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
@@ -165,6 +165,7 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+#[cfg(feature = "rand_core")]
 use rand_core::{CryptoRng, RngCore};
 
 use digest::generic_array::typenum::U64;
@@ -501,7 +502,8 @@ impl RistrettoPoint {
     /// \mathrm{enc}( \[2\]P\_1), \ldots, \mathrm{enc}( \[2\]P\_n ) \\)
     /// in a batch.
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
     /// use rand_core::OsRng;
     ///
@@ -509,6 +511,7 @@ impl RistrettoPoint {
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
     /// let mut rng = OsRng;
+    ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
     ///
@@ -662,6 +665,7 @@ impl RistrettoPoint {
         )
     }
 
+    #[cfg(feature = "rand_core")]
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -1343,7 +1347,7 @@ mod test {
     fn four_torsion_random() {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
-        let P = B * &Scalar::random(&mut rng);
+        let P = B * &crate::mocks::MockScalar::random(&mut rng);
         let P_coset = P.coset4();
         for point in P_coset {
             assert_eq!(P, RistrettoPoint(point));
@@ -1670,7 +1674,7 @@ mod test {
         let mut rng = OsRng;
         let B = &constants::RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
-            let P = B * &Scalar::random(&mut rng);
+            let P = B * &crate::mocks::MockScalar::random(&mut rng);
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
@@ -1683,7 +1687,7 @@ mod test {
         let mut rng = OsRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::random(&mut rng))
+            .map(|_| crate::mocks::MockRistrettoPoint::random(&mut rng))
             .collect();
         points[500] = RistrettoPoint::identity();
 
@@ -1702,11 +1706,11 @@ mod test {
         let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
+            .map(|_| crate::mocks::MockScalar::random(&mut rng))
             .collect::<Vec<_>>();
 
         let check_scalar: Scalar = static_scalars

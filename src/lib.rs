@@ -83,3 +83,6 @@ pub(crate) mod prelude;
 
 // Generic code for window lookups
 pub(crate) mod window;
+
+#[cfg(test)]
+pub(crate) mod mocks;

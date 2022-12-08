@@ -14,6 +14,7 @@ major series.
 * Make `rand_core` an optional feature
 * Add target u32/u64 backend overrides
 * Update backend selection to be more automatic
+* Remove `std` feature flag
 * Remove `nightly` feature flag
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

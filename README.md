@@ -40,8 +40,7 @@ curve25519-dalek = "4"
 
 | Feature        | Default? | Description |
 | :---           |  :---:   | :---        |
-| `std`          |    ✓     | Enables `alloc` and `rand_core/std`, which [slightly expands][rngcorestd] the number of things that impl `RngCore`. |
-| `alloc`        |    ✓     | Implied by `std`. Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
+| `alloc`        |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
 | `rand_core`    |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`       |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`        |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
@@ -62,6 +61,7 @@ latest breaking changes are below:
 
 * Update the MSRV from 1.41 to 1.56.1
 * Update backend selection to be more automatic. See [backends](#backends)
+* Remove `std` feature flag
 * Remove `nightly` feature flag
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`

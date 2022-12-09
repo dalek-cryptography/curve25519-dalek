@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
 
 jobs:
   test:
@@ -26,8 +27,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --no-default-features
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features fiat_backend
+      - run: cargo test --target ${{ matrix.target }} --features serde
 
   build-simd:
     name: Build simd backend (nightly)
@@ -42,24 +45,6 @@ jobs:
     - env:
         RUSTFLAGS: "-C target_feature=+avx512ifma"
       run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
-
-  test-defaults-serde:
-    name: Test default feature selection and serde
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo test --features "serde"
-
-  test-alloc-u32:
-    name: Test no_std+alloc with u32 backend
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - run: rustup target add i686-unknown-linux-gnu
-    - run: sudo apt update && sudo apt install gcc-multilib
-    - run: cargo test --lib --no-default-features --features alloc --target i686-unknown-linux-gnu
 
   nightly:
     name: Test nightly compiler

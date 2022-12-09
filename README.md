@@ -72,29 +72,49 @@ This release also does a lot of dependency updates and relaxations to unblock up
 
 # Backends
 
-Curve arithmetic is implemented and used by selecting one of the following backend features:
+Curve arithmetic is implemented and used by selecting one of the following backends:
 
-| Feature            | Implementation                                             | Target backends             |
+| Backend            | Implementation                                             | Target backends             |
 | :---               | :---                                                       | :---                        |
-| serial - [default] | Serial formulas                                            | `u32` <br/> `u64`           |
-| simd_backend       | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
-| fiat_backend       | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
+| `[default]`        | Serial formulas                                            | `u32` <br/> `u64`           |
+| `simd`             | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
+| `fiat`             | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
 
-## Target backends
+Backend selection over the `[default]` can be done via the `cfg(curve25519_dalek_backend)`.
 
-Target backend selection via `serial` and `fiat_backend` features is automatic based on the build target.
-E.g., building with the serial backend on a 64-bit machine the `u64` backend is automatically chosen.
-And with the `fiat_backend` feature, the `fiat_u64` backend is automatically chosen.
+To pick the `fiat` backend this configuration predicate can be passed via `RUSTFLAGS`:
 
-If a 32-bit backend is needed on an x86-64 Linux machine then cross-compiling will work:
+`env RUSTFLAGS='--cfg curve25519_dalek_backend="fiat" cargo build`
+
+The `simd` backend requires additional `target_features` -
+
+This is detailed under Advanced Vector Extensions (AVX) for either the `avx2` or `avx512ifma` target backends.
+
+## Target Backend
+
+Target backend selection via the `[default]` and `fiat` serial backends is automatic.
+
+This selection is automatic based on the build target:
+
+E.g., building the `[default]` serial backend on and for a 64-bit machine the `u64` backend is automatically chosen.
+
+And in turn with the `fiat` feature, the `fiat_u64` backend is automatically chosen for the 64 bit target.
+
+This can be overriden with `cfg(curve25519_dalek_bits)` e.g. to using 32 bit target backend:
+
+`env RUSTFLAGS='--cfg curve25519_dalek_bits="32"'`
+
+Also cross-compiling will work e.g. on a x86-64 Linux machine will select the 32 bit backend:
 
 * `sudo apt install gcc-multilib` (or whatever package manager you use)
 * `rustup target add i686-unknown-linux-gnu`
 * `cargo build --target i686-unknown-linux-gnu`
 
+This override and cross-compilation works the same way for the `fiat` as the `[default]` serial backends.
+
 ## Advanced Vector Extensions (AVX)
 
-Selection within `simd_backend` is manual by using `RUSTFLAGS` as below:
+Target backend Selection within `simd` is manual by using additional `RUSTFLAGS` as below:
 
 | Target feature | `RUSTFLAGS`  Environment variable value |
 | :---           | :---                                    |
@@ -102,6 +122,10 @@ Selection within `simd_backend` is manual by using `RUSTFLAGS` as below:
 | avx512ifma     | `-C target_feature=+avx512ifma`         |
 
 This also requires using nightly e.g. by `cargo +nightly build` to build.
+
+The `simd` backend in addition cross-uses the `[default]` target backend `u64`.
+
+The `fiat` target backend `fiat_u32` or `fiat_u64` cannot be used in combination with the `simd` backend.
 
 # Documentation
 

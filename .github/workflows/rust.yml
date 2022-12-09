@@ -31,7 +31,7 @@ jobs:
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features serde
       - env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat" -D warnings'
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
   build-simd:
@@ -42,10 +42,10 @@ jobs:
     - uses: dtolnay/rust-toolchain@nightly
     # Build with AVX2 features, then with AVX512 features
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2 -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
       run: cargo build --target x86_64-unknown-linux-gnu
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
       run: cargo build --target x86_64-unknown-linux-gnu
 
   nightly:
@@ -65,10 +65,10 @@ jobs:
       with:
         components: clippy
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2 -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
       run: cargo clippy --target x86_64-unknown-linux-gnu
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
       run: cargo clippy --target x86_64-unknown-linux-gnu
 
   rustfmt:
@@ -103,11 +103,11 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - name: Build u32 bench
       env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="32" -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
       run: cargo build --benches
     - name: Build u64 bench
       env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="64" -D warnings'
+        RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
       run: cargo build --benches
     - name: Build default (host native) bench
       run: cargo build --benches

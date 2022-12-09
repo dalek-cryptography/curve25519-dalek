@@ -179,6 +179,9 @@ use digest::Digest;
 use crate::constants;
 use crate::field::FieldElement;
 
+#[cfg(feature = "alloc")]
+use cfg_if::cfg_if;
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -196,16 +199,17 @@ use crate::traits::Identity;
 #[cfg(feature = "alloc")]
 use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
-#[cfg(not(all(
-    curve25519_dalek_backend = "simd",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
-)))]
-use crate::backend::serial::scalar_mul;
-#[cfg(all(
-    curve25519_dalek_backend = "simd",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
-))]
-use crate::backend::vector::scalar_mul;
+#[cfg(feature = "alloc")]
+cfg_if! {
+    if #[cfg(all(
+        curve25519_dalek_backend = "simd",
+        any(target_feature = "avx2", target_feature = "avx512ifma")
+    ))] {
+        use crate::backend::vector::scalar_mul;
+    } else {
+        use crate::backend::serial::scalar_mul;
+    }
+}
 
 // ------------------------------------------------------------------------
 // Compressed points

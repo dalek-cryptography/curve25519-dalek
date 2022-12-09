@@ -38,6 +38,9 @@ hex = "0.4.2"
 rand = "0.8"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
+[build-dependencies]
+platforms = "3.0.2"
+
 [[bench]]
 name = "dalek_benchmarks"
 harness = false

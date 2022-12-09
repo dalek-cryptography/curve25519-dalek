@@ -25,12 +25,12 @@ use x25519_dalek::EphemeralSecret;
 use x25519_dalek::PublicKey;
 
 fn bench_diffie_hellman(c: &mut Criterion) {
-    let bob_secret = EphemeralSecret::new(&mut OsRng);
+    let bob_secret = EphemeralSecret::new(OsRng);
     let bob_public = PublicKey::from(&bob_secret);
 
     c.bench_function("diffie_hellman", move |b| {
         b.iter_with_setup(
-            || EphemeralSecret::new(&mut OsRng),
+            || EphemeralSecret::new(OsRng),
             |alice_secret| alice_secret.diffie_hellman(&bob_public),
         )
     });

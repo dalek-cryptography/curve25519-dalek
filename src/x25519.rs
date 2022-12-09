@@ -120,7 +120,7 @@ impl ReusableSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(&self.0 * their_public.0)
+        SharedSecret(self.0 * their_public.0)
     }
 
     /// Generate a non-serializeable x25519 [`ReuseableSecret`] key.
@@ -166,7 +166,7 @@ impl StaticSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a `SharedSecret`.
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(&self.0 * their_public.0)
+        SharedSecret(self.0 * their_public.0)
     }
 
     /// Generate an x25519 key.

@@ -155,12 +155,6 @@
 //!
 //! [crypto_box]: https://github.com/RustCrypto/AEADs/tree/master/crypto_box
 
-extern crate curve25519_dalek;
-
-extern crate rand_core;
-
-extern crate zeroize;
-
 mod x25519;
 
 pub use crate::x25519::*;

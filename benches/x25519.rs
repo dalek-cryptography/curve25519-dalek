@@ -11,13 +11,7 @@
 
 //! Benchmark the Diffie-Hellman operation.
 
-#[macro_use]
-extern crate criterion;
-extern crate curve25519_dalek;
-extern crate rand_core;
-extern crate x25519_dalek;
-
-use criterion::Criterion;
+use criterion::{criterion_group, criterion_main, Criterion};
 
 use rand_core::OsRng;
 

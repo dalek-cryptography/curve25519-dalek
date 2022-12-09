@@ -281,8 +281,6 @@ fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
 ///
 /// # Example
 /// ```
-/// # extern crate rand_core;
-/// #
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
 ///

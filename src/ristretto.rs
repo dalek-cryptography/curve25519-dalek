@@ -202,7 +202,7 @@ use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMul
 #[cfg(feature = "alloc")]
 cfg_if! {
     if #[cfg(all(
-        feature = "simd_backend",
+        curve25519_dalek_backend = "simd",
         any(target_feature = "avx2", target_feature = "avx512ifma")
     ))] {
         use crate::backend::vector::scalar_mul;

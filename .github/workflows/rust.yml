@@ -52,7 +52,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo test --features "nightly"
+    - run: cargo test
 
   clippy:
     name: Check that clippy is happy

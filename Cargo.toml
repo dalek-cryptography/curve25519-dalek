@@ -56,11 +56,10 @@ zeroize = { version = "1", default-features = false }
 fiat-crypto = { version = "0.1.6", optional = true}
 
 [features]
-nightly = ["subtle/nightly"]
 default = ["alloc"]
 alloc = ["zeroize/alloc"]
 
 # fiat-crypto backend with formally-verified field arithmetic
 fiat_backend = ["fiat-crypto"]
 # The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
-simd_backend = ["nightly", "packed_simd"]
+simd_backend = ["packed_simd"]

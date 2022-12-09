@@ -331,6 +331,9 @@ mod test {
 
     #[rustfmt::skip] // keep alignment of some S* calculations
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
+        #[cfg(curve25519_dalek_serial = "fiat")]
+        use crate::backend::serial::fiat_u64::field::FieldElement51;
+        #[cfg(not(curve25519_dalek_serial = "fiat"))]
         use crate::backend::serial::u64::field::FieldElement51;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);

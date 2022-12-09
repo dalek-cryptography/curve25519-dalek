@@ -170,16 +170,12 @@ use crate::backend;
 use crate::constants;
 
 cfg_if! {
-    if #[cfg(curve25519_dalek_backend = "fiat")] {
+    if #[cfg(curve25519_dalek_serial = "fiat")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
         #[cfg(curve25519_dalek_bits = "32")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
-        )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
@@ -187,10 +183,6 @@ cfg_if! {
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
         #[cfg(curve25519_dalek_bits = "64")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
-        )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.

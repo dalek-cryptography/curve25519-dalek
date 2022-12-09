@@ -51,7 +51,8 @@ subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false }
 
-[target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
+# Cargo.toml comes before build.rs and we support selection on both _serial and _backend due ergonomics
+[target.'cfg(any(curve25519_dalek_backend = "fiat", curve25519_dalek_serial = "fiat"))'.dependencies]
 fiat-crypto = "0.1.6"
 
 # The original packed_simd package was orphaned, see

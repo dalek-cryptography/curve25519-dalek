@@ -22,6 +22,7 @@ major series.
 
 #### Other changes
 
+* Allow the fiat serial backend work with the simd backend
 * Update Maintenance Policies for SemVer
 * Migrate documentation to docs.rs hosted
 * Fix backend documentation generation

@@ -34,8 +34,8 @@ jobs:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
-  build-simd:
-    name: Build simd backend (nightly)
+  build-simd-default:
+    name: Build simd backend without fiat (nightly)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -46,6 +46,20 @@ jobs:
       run: cargo build --target x86_64-unknown-linux-gnu
     - env:
         RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
+      run: cargo build --target x86_64-unknown-linux-gnu
+
+  build-simd-fiat:
+    name: Build simd backend with fiat (nightly)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@nightly
+    # Build with AVX2 features, then with AVX512 features
+    - env:
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" --cfg curve25519_dalek_serial=\"fiat\" -C target_feature=+avx2'
+      run: cargo build --target x86_64-unknown-linux-gnu
+    - env:
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" --cfg curve25519_dalek_serial=\"fiat\" -C target_feature=+avx512ifma'
       run: cargo build --target x86_64-unknown-linux-gnu
 
   nightly:
@@ -82,7 +96,7 @@ jobs:
     - run: cargo fmt --all -- --check
 
   msrv:
-    name: Current MSRV is 1.56.1
+    name: Current non-Fiat MSRV is 1.56.1
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -95,19 +109,43 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.56.1
     - run: cargo build --no-default-features --features serde
 
+  msrv-fiat:
+    name: Current Fiat MSRV is 1.57
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    # First run `cargo +nightly -Z minimal-verisons check` in order to get a
+    # Cargo.lock with the oldest possible deps
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo -Z minimal-versions check --no-default-features --features serde
+    # Now check that `cargo build` works with respect to the oldest possible
+    # deps and the stated MSRV
+    - uses: dtolnay/rust-toolchain@1.57
+    - env:
+        RUSTFLAGS: '--cfg curve25519_dalek_serial="fiat"'
+      run: cargo build --no-default-features --features serde
+
   bench:
     name: Check that benchmarks compile
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-    - name: Build u32 bench
+    - name: Build non-Fiat u32 bench
       env:
         RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
       run: cargo build --benches
-    - name: Build u64 bench
+    - name: Build non-Fiat u64 bench
       env:
         RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
+      run: cargo build --benches
+    - name: Build Fiat u32 bench
+      env:
+        RUSTFLAGS: '--cfg curve25519_dalek_serial="fiat" --cfg curve25519_dalek_bits="64"'
+      run: cargo build --benches
+    - name: Build Fiat u64 bench
+      env:
+        RUSTFLAGS: '--cfg curve25519_dalek_serial="fiat" --cfg curve25519_dalek_bits="64"'
       run: cargo build --benches
     - name: Build default (host native) bench
       run: cargo build --benches

@@ -14,6 +14,9 @@
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{u64x4, IntoBits};
 
+#[cfg(curve25519_dalek_serial = "fiat")]
+use crate::backend::serial::fiat_u64::field::FieldElement51;
+#[cfg(not(curve25519_dalek_serial = "fiat"))]
 use crate::backend::serial::u64::field::FieldElement51;
 
 /// A wrapper around `vpmadd52luq` that works on `u64x4`.

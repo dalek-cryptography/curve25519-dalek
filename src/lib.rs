@@ -129,7 +129,7 @@
 //!
 //! # MSRV
 //!
-//! Current MSRV is 1.41 for production builds, and 1.48 for running tests.
+//! Current MSRV is 1.60.
 //!
 //! # Documentation
 //!

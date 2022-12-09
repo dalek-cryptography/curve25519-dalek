@@ -1,6 +1,6 @@
 [package]
 name = "x25519-dalek"
-edition = "2018"
+edition = "2021"
 # Before changing this:
 # - update version in README.md
 # - update html_root_url
@@ -25,6 +25,7 @@ exclude = [
     ".travis.yml",
     "CONTRIBUTING.md",
 ]
+rust-version = "1.60"
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
@@ -34,11 +35,9 @@ travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 features = ["nightly", "reusable_secrets", "serde"]
 
 [dependencies]
-curve25519-dalek = { version = "3", default-features = false }
-rand_core = { version = "0.6", default-features = false }
-# `serde` is renamed to `our_serde` in order to avoid a name collision between
-# importing the serde dependency and enabling the curve25519-dalek/serde feature
-our_serde = { package = "serde", version = "1", default-features = false, optional = true, features = ["derive"] }
+curve25519-dalek = { version = "4.0.0-pre.2", default-features = false }
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, features = ["zeroize_derive"] }
 
 [dev-dependencies]
@@ -50,12 +49,11 @@ name = "x25519"
 harness = false
 
 [features]
-default = ["std", "u64_backend"]
-serde = ["our_serde", "curve25519-dalek/serde"]
-std = ["curve25519-dalek/std"]
-nightly = ["curve25519-dalek/nightly"]
+default = ["alloc"]
+serde = ["dep:serde", "curve25519-dalek/serde"]
+alloc = ["curve25519-dalek/alloc", "serde?/alloc"]
 reusable_secrets = []
-u64_backend = ["curve25519-dalek/u64_backend"]
-u32_backend = ["curve25519-dalek/u32_backend"]
-fiat_u64_backend = ["curve25519-dalek/fiat_u64_backend"]
-fiat_u32_backend = ["curve25519-dalek/fiat_u32_backend"]
+
+
+[patch.crates-io]
+curve25519-dalek = { git = "https://github.com/dalek-cryptography/curve25519-dalek", branch = "release/4.0" }

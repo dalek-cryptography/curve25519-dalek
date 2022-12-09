@@ -60,6 +60,5 @@ fiat-crypto = "0.1.6"
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"] }
 
 [features]
-nightly = ["subtle/nightly"]
 default = ["alloc"]
 alloc = ["zeroize/alloc"]

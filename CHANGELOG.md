@@ -22,6 +22,7 @@ major series.
 
 #### Other changes
 
+* Set well known defaults for wasm and arm
 * Update Maintenance Policies for SemVer
 * Migrate documentation to docs.rs hosted
 * Fix backend documentation generation

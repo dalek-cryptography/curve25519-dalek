@@ -39,11 +39,11 @@ jobs:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@nightly
       - env:
-          RUSTFLAGS: "-C target_feature=+avx2"
-        run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
+        run: cargo build --target x86_64-unknown-linux-gnu
       - env:
-          RUSTFLAGS: "-C target_feature=+avx512ifma"
-        run: cargo build --target x86_64-unknown-linux-gnu --features simd_backend
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
+        run: cargo build --target x86_64-unknown-linux-gnu
 
   msrv:
     name: Current MSRV is 1.56.1

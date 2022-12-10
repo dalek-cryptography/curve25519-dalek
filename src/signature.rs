@@ -194,7 +194,7 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
     type Error = SignatureError;
 
     fn try_from(sig: &ed25519::Signature) -> Result<InternalSignature, SignatureError> {
-        InternalSignature::from_bytes(sig.as_ref())
+        InternalSignature::from_bytes(&sig.to_bytes())
     }
 }
 

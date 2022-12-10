@@ -69,7 +69,7 @@ mod vectors {
 
             // The signatures in the test vectors also include the message
             // at the end, but we just want R and S.
-            let sig1: Signature = Signature::from_bytes(&sig_bytes[..64]).unwrap();
+            let sig1: Signature = Signature::try_from(&sig_bytes[..64]).unwrap();
             let sig2: Signature = keypair.sign(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
@@ -99,7 +99,7 @@ mod vectors {
             PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
         let keypair: Keypair = Keypair::from(secret);
         assert_eq!(expected_public, keypair.public_key());
-        let sig1: Signature = Signature::from_bytes(&sig_bytes[..]).unwrap();
+        let sig1: Signature = Signature::try_from(&sig_bytes[..]).unwrap();
 
         let mut prehash_for_signing: Sha512 = Sha512::default();
         let mut prehash_for_verifying: Sha512 = Sha512::default();

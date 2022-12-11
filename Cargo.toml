@@ -48,7 +48,7 @@ required-features = ["rand_core"]
 
 [dependencies]
 cfg-if = "1"
-rand_core = { version = "0.6", default-features = false, optional = true }
+rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "^2.2.1", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }

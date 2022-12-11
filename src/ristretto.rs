@@ -169,7 +169,7 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::{CryptoRng, RngCore};
+use rand_core::CryptoRngCore;
 
 #[cfg(feature = "digest")]
 use digest::generic_array::typenum::U64;
@@ -675,7 +675,8 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
+    /// * `rng`: any RNG which implements `CryptoRngCore`
+    ///   (i.e. `CryptoRng` + `RngCore`) interface.
     ///
     /// # Returns
     ///
@@ -687,7 +688,7 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<R: RngCore + CryptoRng + ?Sized>(rng: &mut R) -> Self {
+    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
         let mut uniform_bytes = [0u8; 64];
         rng.fill_bytes(&mut uniform_bytes);
 

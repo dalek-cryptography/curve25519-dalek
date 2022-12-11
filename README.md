@@ -72,36 +72,77 @@ This release also does a lot of dependency updates and relaxations to unblock up
 
 # Backends
 
-Curve arithmetic is implemented and used by selecting one of the following backend features:
+Curve arithmetic is implemented and used by selecting one of the following backends:
 
-| Feature            | Implementation                                             | Target backends             |
+| Backend            | Implementation                                             | Target backends             |
 | :---               | :---                                                       | :---                        |
-| serial - [default] | Serial formulas                                            | `u32` <br/> `u64`           |
-| simd_backend       | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
-| fiat_backend       | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
+| `[default]`        | Serial formulas                                            | `u32` <br/> `u64`           |
+| `simd`             | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
+| `fiat`             | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
 
-## Target backends
+To choose a backend other than the `[default]` serial backend, set the
+environment variable:
+```sh
+RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
+```
+where `BACKEND` is `simd` or `fiat`. Equivalently, you can write to
+`~/.cargo/config`:
+```toml
+[build]
+rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
+```
+More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
-Target backend selection via `serial` and `fiat_backend` features is automatic based on the build target.
-E.g., building with the serial backend on a 64-bit machine the `u64` backend is automatically chosen.
-And with the `fiat_backend` feature, the `fiat_u64` backend is automatically chosen.
+The `simd` backend requires extra configuration. See [the SIMD
+section](#simd-target-backends).
 
-If a 32-bit backend is needed on an x86-64 Linux machine then cross-compiling will work:
+Note for contributors: The target backends are not entirely independent of each
+other. The `simd` backend directly depends on parts of the the `u64` backend to
+function.
 
-* `sudo apt install gcc-multilib` (or whatever package manager you use)
-* `rustup target add i686-unknown-linux-gnu`
-* `cargo build --target i686-unknown-linux-gnu`
+## Word size for serial backends
 
-## Advanced Vector Extensions (AVX)
+`curve25519-dalek` will automatically choose the word size for the `[default]`
+and `fiat` serial backends, based on the build target. For example, building
+for a 64-bit machine, the default `u64` target backend is automatically chosen
+when the `[default]` backend is selected, and `fiat_u64` is chosen when the
+`fiat backend is selected.
 
-Selection within `simd_backend` is manual by using `RUSTFLAGS` as below:
+Backend word size can be overridden for `[default]` and `fiat` by setting the
+environment variable:
+```sh
+RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
+```
+where `SIZE` is `32` or `64`. As in the above section, this can also be placed
+in `~/.cargo/config`.
 
-| Target feature | `RUSTFLAGS`  Environment variable value |
-| :---           | :---                                    |
-| avx2           | `-C target_feature=+avx2`               |
-| avx512ifma     | `-C target_feature=+avx512ifma`         |
+**NOTE:** The `simd` backend CANNOT be used with word size 32.
 
-This also requires using nightly e.g. by `cargo +nightly build` to build.
+### Cross-compilation
+
+Because backend selection is done by target, cross-compiling will select the
+correct word size automatically. For example, on an x86-64 Linux machine,
+`curve25519-dalek` will use the `u32` target backend if the following is run:
+```console
+$ sudo apt install gcc-multilib # (or whatever package manager you use)
+$ rustup target add i686-unknown-linux-gnu
+$ cargo build --target i686-unknown-linux-gnu
+```
+
+## SIMD target backends
+
+Target backend selection within `simd` must be done manually by setting the
+`RUSTFLAGS` environment variable to one of the below options:
+
+| CPU feature | `RUSTFLAGS`                     |
+| :---        | :---                            |
+| avx2        | `-C target_feature=+avx2`       |
+| avx512ifma  | `-C target_feature=+avx512ifma` |
+
+Or you can use `-C target_cpu=native` if you don't know what to set.
+
+The `simd` backend also requires using nightly, e.g. by running `cargo
++nightly build`, to build.
 
 # Documentation
 
@@ -188,10 +229,10 @@ compiled with appropriate `target_feature`s, so this cannot occur.
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --features "alloc"
+cargo bench --features "rand_core"
 # Uses avx2 or ifma only if compiled for an appropriate target.
-export RUSTFLAGS="-C target_cpu=native"
-cargo +nightly bench --features "alloc simd_backend"
+export RUSTFLAGS='--cfg curve25519_dalek_backend="simd" -C target_cpu=native'
+cargo +nightly bench --features "rand_core"
 ```
 
 Performance is a secondary goal behind correctness, safety, and

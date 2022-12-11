@@ -93,8 +93,12 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 ```
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
-**NOTE:** The `simd` backend requires extra configuration. See [the SIMD
+The `simd` backend requires extra configuration. See [the SIMD
 section](#simd-target-backends).
+
+Note for contributors: The target backends are not entirely independent of each
+other. The `simd` backend directly depends on parts of the the `u64` backend to
+function.
 
 ## Word size for serial backends
 
@@ -114,10 +118,11 @@ in `~/.cargo/config`.
 
 **NOTE:** The `simd` backend CANNOT be used with word size 32.
 
-Side note: Because backend selection is done by target, cross-compiling will do
-the right thing automatically. For example, on an x86-64 Linux machine,
-`curve25519-dalek` will correctly select the `u32` target backend if the
-following is run:
+### Cross-compilation
+
+Because backend selection is done by target, cross-compiling will select the
+correct word size automatically. For example, on an x86-64 Linux machine,
+`curve25519-dalek` will use the `u32` target backend if the following is run:
 ```console
 $ sudo apt install gcc-multilib # (or whatever package manager you use)
 $ rustup target add i686-unknown-linux-gnu
@@ -133,6 +138,8 @@ Target backend selection within `simd` must be done manually by setting the
 | :---        | :---                            |
 | avx2        | `-C target_feature=+avx2`       |
 | avx512ifma  | `-C target_feature=+avx512ifma` |
+
+Or you can use `-C target_cpu=native` if you don't know what to set.
 
 The `simd` backend also requires using nightly, e.g. by running `cargo
 +nightly build`, to build.

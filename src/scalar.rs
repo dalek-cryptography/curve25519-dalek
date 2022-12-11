@@ -152,6 +152,9 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(all(feature = "ff", feature = "rand_core"))]
+use {ff::Field, rand_core::RngCore, subtle::CtOption};
+
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
 
@@ -565,6 +568,36 @@ impl From<u128> for Scalar {
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
         self.bytes.zeroize();
+    }
+}
+
+#[cfg(all(feature = "ff", feature = "rand_core"))]
+impl Field for Scalar {
+    const ZERO: Self = Self::ZERO;
+    const ONE: Self = Self::ONE;
+
+    fn random(mut rng: impl RngCore) -> Self {
+        // NOTE: this is duplicated due to different `rng` bounds
+        let mut scalar_bytes = [0u8; 64];
+        rng.fill_bytes(&mut scalar_bytes);
+        Self::from_bytes_mod_order_wide(&scalar_bytes)
+    }
+
+    fn square(&self) -> Self {
+        self * self
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+
+    fn invert(&self) -> CtOption<Self> {
+        CtOption::new(self.invert(), Choice::from(1u8))
+    }
+
+    fn sqrt_ratio(_num: &Self, _div: &Self) -> (Choice, Self) {
+        // TODO: can't use `ff::helpers::sqrt_ratio_generic` because `Scalar` isn't a `PrimeField`
+        todo!()
     }
 }
 

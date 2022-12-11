@@ -134,7 +134,7 @@ impl ExtendedPoint {
         //    =======================
         //        S5   S6   S8   S9
 
-        let zero = FieldElement2625x4::zero();
+        let zero = FieldElement2625x4::ZERO;
         let S_1 = tmp1.shuffle(Shuffle::AAAA);
         let S_2 = tmp1.shuffle(Shuffle::BBBB);
 

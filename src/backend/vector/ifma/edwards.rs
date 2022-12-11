@@ -97,7 +97,7 @@ impl ExtendedPoint {
         //    =======================
         //        S5   S6   S8   S9
 
-        let zero = F51x4Unreduced::zero();
+        let zero = F51x4Unreduced::ZERO;
 
         let S1_S1_S1_S1 = tmp1.shuffle(Shuffle::AAAA);
         let S2_S2_S2_S2 = tmp1.shuffle(Shuffle::BBBB);

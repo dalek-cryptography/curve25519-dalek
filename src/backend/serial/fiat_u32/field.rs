@@ -177,28 +177,17 @@ impl ConditionallySelectable for FieldElement2625 {
 }
 
 impl FieldElement2625 {
+    pub const ZERO: FieldElement2625 = FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ONE: FieldElement2625 = FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const MINUS_ONE: FieldElement2625 = FieldElement2625([
+        0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+        0x3ffffff, 0x1ffffff,
+    ]);
+
     /// Invert the sign of this field element
     pub fn negate(&mut self) {
         let neg = self.neg();
         self.0 = neg.0;
-    }
-
-    /// Construct zero.
-    pub fn zero() -> FieldElement2625 {
-        FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    }
-
-    /// Construct one.
-    pub fn one() -> FieldElement2625 {
-        FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    }
-
-    /// Construct -1.
-    pub fn minus_one() -> FieldElement2625 {
-        FieldElement2625([
-            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
-            0x3ffffff, 0x1ffffff,
-        ])
     }
 
     /// Given `k > 0`, return `self^(2^k)`.

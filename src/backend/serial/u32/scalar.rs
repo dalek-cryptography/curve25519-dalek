@@ -53,10 +53,7 @@ fn m(x: u32, y: u32) -> u64 {
 }
 
 impl Scalar29 {
-    /// Return the zero scalar.
-    pub fn zero() -> Scalar29 {
-        Scalar29([0, 0, 0, 0, 0, 0, 0, 0, 0])
-    }
+    pub const ZERO: Scalar29 = Scalar29([0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
     /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
@@ -70,7 +67,7 @@ impl Scalar29 {
 
         let mask = (1u32 << 29) - 1;
         let top_mask = (1u32 << 24) - 1;
-        let mut s = Scalar29::zero();
+        let mut s = Scalar29::ZERO;
 
         s[0] =   words[0]                            & mask;
         s[1] = ((words[0] >> 29) | (words[1] <<  3)) & mask;
@@ -96,8 +93,8 @@ impl Scalar29 {
         }
 
         let mask = (1u32 << 29) - 1;
-        let mut lo = Scalar29::zero();
-        let mut hi = Scalar29::zero();
+        let mut lo = Scalar29::ZERO;
+        let mut hi = Scalar29::ZERO;
 
         lo[0] =   words[ 0]                             & mask;
         lo[1] = ((words[ 0] >> 29) | (words[ 1] <<  3)) & mask;
@@ -168,7 +165,7 @@ impl Scalar29 {
 
     /// Compute `a + b` (mod l).
     pub fn add(a: &Scalar29, b: &Scalar29) -> Scalar29 {
-        let mut sum = Scalar29::zero();
+        let mut sum = Scalar29::ZERO;
         let mask = (1u32 << 29) - 1;
 
         // a + b
@@ -184,7 +181,7 @@ impl Scalar29 {
 
     /// Compute `a - b` (mod l).
     pub fn sub(a: &Scalar29, b: &Scalar29) -> Scalar29 {
-        let mut difference = Scalar29::zero();
+        let mut difference = Scalar29::ZERO;
         let mask = (1u32 << 29) - 1;
 
         // a - b
@@ -512,7 +509,7 @@ mod test {
     #[test]
     fn add() {
         let res = Scalar29::add(&A, &B);
-        let zero = Scalar29::zero();
+        let zero = Scalar29::ZERO;
         for i in 0..9 {
             assert!(res[i] == zero[i]);
         }

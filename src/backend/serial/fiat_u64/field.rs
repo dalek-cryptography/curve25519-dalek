@@ -156,26 +156,15 @@ impl ConditionallySelectable for FieldElement51 {
 }
 
 impl FieldElement51 {
-    /// Construct zero.
-    pub fn zero() -> FieldElement51 {
-        FieldElement51([0, 0, 0, 0, 0])
-    }
-
-    /// Construct one.
-    pub fn one() -> FieldElement51 {
-        FieldElement51([1, 0, 0, 0, 0])
-    }
-
-    /// Construct -1.
-    pub fn minus_one() -> FieldElement51 {
-        FieldElement51([
-            2251799813685228,
-            2251799813685247,
-            2251799813685247,
-            2251799813685247,
-            2251799813685247,
-        ])
-    }
+    pub const ZERO: FieldElement51 = FieldElement51([0, 0, 0, 0, 0]);
+    pub const ONE: FieldElement51 = FieldElement51([1, 0, 0, 0, 0]);
+    pub const MINUS_ONE: FieldElement51 = FieldElement51([
+        2251799813685228,
+        2251799813685247,
+        2251799813685247,
+        2251799813685247,
+        2251799813685247,
+    ]);
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]

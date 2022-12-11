@@ -36,7 +36,7 @@
 //! ```
 //! use curve25519_dalek::scalar::Scalar;
 //!
-//! let one_as_bytes: [u8; 32] = Scalar::one().to_bytes();
+//! let one_as_bytes: [u8; 32] = Scalar::ONE.to_bytes();
 //! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes);
 //!
 //! assert!(a.is_some());
@@ -76,7 +76,7 @@
 //! ];
 //! let a: Scalar = Scalar::from_bytes_mod_order(l_plus_two_bytes);
 //!
-//! let two: Scalar = Scalar::one() + Scalar::one();
+//! let two: Scalar = Scalar::ONE + Scalar::ONE;
 //!
 //! assert!(a == two);
 //! ```
@@ -129,7 +129,7 @@
 //! ];
 //! let a: Scalar = Scalar::from_bits(l_plus_two_bytes);
 //!
-//! let two: Scalar = Scalar::one() + Scalar::one();
+//! let two: Scalar = Scalar::ONE + Scalar::ONE;
 //!
 //! assert!(a != two);              // the scalar is not reduced (mod l)…
 //! assert!(! a.is_canonical());    // …and therefore is not canonical.
@@ -388,7 +388,7 @@ impl<'a> Neg for &'a Scalar {
     fn neg(self) -> Scalar {
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        UnpackedScalar::sub(&UnpackedScalar::zero(), &self_mod_l).pack()
+        UnpackedScalar::sub(&UnpackedScalar::ZERO, &self_mod_l).pack()
     }
 }
 
@@ -475,7 +475,7 @@ where
     where
         I: Iterator<Item = T>,
     {
-        iter.fold(Scalar::one(), |acc, item| acc * item.borrow())
+        iter.fold(Scalar::ONE, |acc, item| acc * item.borrow())
     }
 }
 
@@ -487,13 +487,13 @@ where
     where
         I: Iterator<Item = T>,
     {
-        iter.fold(Scalar::zero(), |acc, item| acc + item.borrow())
+        iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
     }
 }
 
 impl Default for Scalar {
     fn default() -> Scalar {
-        Scalar::zero()
+        Scalar::ZERO
     }
 }
 
@@ -569,6 +569,17 @@ impl Zeroize for Scalar {
 }
 
 impl Scalar {
+    /// The scalar \\( 0 \\).
+    pub const ZERO: Self = Self { bytes: [0u8; 32] };
+
+    /// The scalar \\( 1 \\).
+    pub const ONE: Self = Self {
+        bytes: [
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    };
+
     #[cfg(any(test, feature = "rand_core"))]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
@@ -679,7 +690,7 @@ impl Scalar {
     /// ```
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// let s: Scalar = Scalar::zero();
+    /// let s: Scalar = Scalar::ZERO;
     ///
     /// assert!(s.to_bytes() == [0u8; 32]);
     /// ```
@@ -694,27 +705,12 @@ impl Scalar {
     /// ```
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// let s: Scalar = Scalar::zero();
+    /// let s: Scalar = Scalar::ZERO;
     ///
     /// assert!(s.as_bytes() == &[0u8; 32]);
     /// ```
     pub fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
-    }
-
-    /// Construct the scalar \\( 0 \\).
-    pub fn zero() -> Self {
-        Scalar { bytes: [0u8; 32] }
-    }
-
-    /// Construct the scalar \\( 1 \\).
-    pub fn one() -> Self {
-        Scalar {
-            bytes: [
-                1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-            ],
-        }
     }
 
     /// Given a nonzero `Scalar`, compute its multiplicative inverse.
@@ -752,7 +748,7 @@ impl Scalar {
     /// let inv_X: Scalar = X.invert();
     /// assert!(XINV == inv_X);
     /// let should_be_one: Scalar = &inv_X * &X;
-    /// assert!(should_be_one == Scalar::one());
+    /// assert!(should_be_one == Scalar::ONE);
     /// ```
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
@@ -806,7 +802,7 @@ impl Scalar {
         use zeroize::Zeroizing;
 
         let n = inputs.len();
-        let one: UnpackedScalar = Scalar::one().unpack().as_montgomery();
+        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
 
         // Place scratch storage in a Zeroizing wrapper to wipe it when
         // we pass out of scope.
@@ -814,7 +810,7 @@ impl Scalar {
         let mut scratch = Zeroizing::new(scratch_vec);
 
         // Keep an accumulator of all of the previous products
-        let mut acc = Scalar::one().unpack().as_montgomery();
+        let mut acc = Scalar::ONE.unpack().as_montgomery();
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
@@ -829,7 +825,7 @@ impl Scalar {
         }
 
         // acc is nonzero iff all inputs are nonzero
-        debug_assert!(acc.pack() != Scalar::zero());
+        debug_assert!(acc.pack() != Scalar::ZERO);
 
         // Compute the inverse of all products
         acc = acc.montgomery_invert().from_montgomery();
@@ -1395,7 +1391,7 @@ mod test {
         let naf = x.non_adjacent_form(w);
 
         // Reconstruct the scalar from the computed NAF
-        let mut y = Scalar::zero();
+        let mut y = Scalar::ZERO;
         for i in (0..256).rev() {
             y += y;
             let digit = if naf[i] < 0 {
@@ -1436,7 +1432,7 @@ mod test {
 
     #[test]
     fn scalar_mul_by_one() {
-        let test_scalar = X * Scalar::one();
+        let test_scalar = X * Scalar::ONE;
         for i in 0..32 {
             assert!(test_scalar[i] == X[i]);
         }
@@ -1446,12 +1442,12 @@ mod test {
     fn add_reduces() {
         // Check that the addition works
         assert_eq!(
-            (LARGEST_ED25519_S + Scalar::one()).reduce(),
+            (LARGEST_ED25519_S + Scalar::ONE).reduce(),
             CANONICAL_LARGEST_ED25519_S_PLUS_ONE
         );
         // Check that the addition reduces
         assert_eq!(
-            LARGEST_ED25519_S + Scalar::one(),
+            LARGEST_ED25519_S + Scalar::ONE,
             CANONICAL_LARGEST_ED25519_S_PLUS_ONE
         );
     }
@@ -1460,12 +1456,12 @@ mod test {
     fn sub_reduces() {
         // Check that the subtraction works
         assert_eq!(
-            (LARGEST_ED25519_S - Scalar::one()).reduce(),
+            (LARGEST_ED25519_S - Scalar::ONE).reduce(),
             CANONICAL_LARGEST_ED25519_S_MINUS_ONE
         );
         // Check that the subtraction reduces
         assert_eq!(
-            LARGEST_ED25519_S - Scalar::one(),
+            LARGEST_ED25519_S - Scalar::ONE,
             CANONICAL_LARGEST_ED25519_S_MINUS_ONE
         );
     }
@@ -1509,8 +1505,8 @@ mod test {
 
         assert_eq!(neg_a, neg_b);
 
-        let minus_a_3 = Scalar::zero() - a - a - a;
-        let minus_b_3 = Scalar::zero() - b - b - b;
+        let minus_a_3 = Scalar::ZERO - a - a - a;
+        let minus_b_3 = Scalar::ZERO - b - b - b;
 
         assert_eq!(minus_a_3, minus_b_3);
         assert_eq!(minus_a_3, -a_3);
@@ -1520,7 +1516,7 @@ mod test {
     #[test]
     fn impl_add() {
         let two = Scalar::from(2u64);
-        let one = Scalar::one();
+        let one = Scalar::ONE;
         let should_be_two = one + one;
         assert_eq!(should_be_two, two);
     }
@@ -1542,7 +1538,7 @@ mod test {
         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
 
         // Test that product works for the empty iterator
-        let one = Scalar::one();
+        let one = Scalar::ONE;
         let empty_vector = vec![];
         let should_be_one: Scalar = empty_vector.iter().product();
         assert_eq!(should_be_one, one);
@@ -1568,12 +1564,12 @@ mod test {
     fn impl_sum() {
         // Test that sum works for non-empty iterators
         let two = Scalar::from(2u64);
-        let one_vector = vec![Scalar::one(), Scalar::one()];
+        let one_vector = vec![Scalar::ONE, Scalar::ONE];
         let should_be_two: Scalar = one_vector.iter().sum();
         assert_eq!(should_be_two, two);
 
         // Test that sum works for the empty iterator
-        let zero = Scalar::zero();
+        let zero = Scalar::ZERO;
         let empty_vector = vec![];
         let should_be_zero: Scalar = empty_vector.iter().sum();
         assert_eq!(should_be_zero, zero);
@@ -1637,7 +1633,7 @@ mod test {
         let inv_X = X.invert();
         assert_eq!(inv_X, XINV);
         let should_be_one = inv_X * X;
-        assert_eq!(should_be_one, Scalar::one());
+        assert_eq!(should_be_one, Scalar::ONE);
     }
 
     // Negating a scalar twice should result in the original scalar.
@@ -1736,8 +1732,8 @@ mod test {
     #[test]
     #[should_panic]
     fn batch_invert_with_a_zero_input_panics() {
-        let mut xs = vec![Scalar::one(); 16];
-        xs[3] = Scalar::zero();
+        let mut xs = vec![Scalar::ONE; 16];
+        xs[3] = Scalar::ZERO;
         // This should panic in debug mode.
         Scalar::batch_invert(&mut xs);
     }
@@ -1745,7 +1741,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn batch_invert_empty() {
-        assert_eq!(Scalar::one(), Scalar::batch_invert(&mut []));
+        assert_eq!(Scalar::ONE, Scalar::batch_invert(&mut []));
     }
 
     #[test]
@@ -1767,7 +1763,7 @@ mod test {
         assert_eq!(ret, expected);
 
         for (a, b) in v1.iter().zip(v2.iter()) {
-            assert_eq!(a * b, Scalar::one());
+            assert_eq!(a * b, Scalar::ONE);
         }
     }
 
@@ -1776,8 +1772,8 @@ mod test {
         let digits = scalar.as_radix_2w(w);
 
         let radix = Scalar::from((1 << w) as u64);
-        let mut term = Scalar::one();
-        let mut recovered_scalar = Scalar::zero();
+        let mut term = Scalar::ONE;
+        let mut recovered_scalar = Scalar::ZERO;
         for digit in &digits[0..digits_count] {
             let digit = *digit;
             if digit != 0 {
@@ -1839,7 +1835,7 @@ mod test {
     // Tests consistency of From<{integer}> impls for Scalar
     #[test]
     fn test_scalar_from_int() {
-        let s1 = Scalar::one();
+        let s1 = Scalar::ONE;
 
         // For `x` in `u8`, `u16`, `u32`, `u64`, and `u128`, check that
         // `Scalar::from(x + 1) == Scalar::from(x) + Scalar::from(1)`

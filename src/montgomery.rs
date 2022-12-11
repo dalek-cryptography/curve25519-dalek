@@ -159,11 +159,11 @@ impl MontgomeryPoint {
 
         let u = FieldElement::from_bytes(&self.0);
 
-        if u == FieldElement::minus_one() {
+        if u == FieldElement::MINUS_ONE {
             return None;
         }
 
-        let one = FieldElement::one();
+        let one = FieldElement::ONE;
 
         let y = &(&u - &one) * &(&u + &one).invert();
 
@@ -182,7 +182,7 @@ impl MontgomeryPoint {
 //      draft gets into a more polished/accepted state.
 #[allow(unused)]
 pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
-    let one = FieldElement::one();
+    let one = FieldElement::ONE;
     let d_1 = &one + &r_0.square2(); /* 2r^2 */
 
     let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
@@ -195,7 +195,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
 
     let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
 
-    let zero = FieldElement::zero();
+    let zero = FieldElement::ZERO;
     let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
@@ -215,8 +215,8 @@ struct ProjectivePoint {
 impl Identity for ProjectivePoint {
     fn identity() -> ProjectivePoint {
         ProjectivePoint {
-            U: FieldElement::one(),
-            W: FieldElement::zero(),
+            U: FieldElement::ONE,
+            W: FieldElement::ZERO,
         }
     }
 }
@@ -332,7 +332,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         let mut x0 = ProjectivePoint::identity();
         let mut x1 = ProjectivePoint {
             U: affine_u,
-            W: FieldElement::one(),
+            W: FieldElement::ONE,
         };
 
         // Go through the bits from most to least significant, using a sliding window of 2
@@ -442,7 +442,7 @@ mod test {
     /// Check that Montgomery -> Edwards fails for points on the twist.
     #[test]
     fn montgomery_to_edwards_rejects_twist() {
-        let one = FieldElement::one();
+        let one = FieldElement::ONE;
 
         // u = 2 corresponds to a point on the twist.
         let two = MontgomeryPoint((&one + &one).as_bytes());

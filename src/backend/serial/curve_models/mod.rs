@@ -226,9 +226,9 @@ use crate::traits::Identity;
 impl Identity for ProjectivePoint {
     fn identity() -> ProjectivePoint {
         ProjectivePoint {
-            X: FieldElement::zero(),
-            Y: FieldElement::one(),
-            Z: FieldElement::one(),
+            X: FieldElement::ZERO,
+            Y: FieldElement::ONE,
+            Z: FieldElement::ONE,
         }
     }
 }
@@ -236,10 +236,10 @@ impl Identity for ProjectivePoint {
 impl Identity for ProjectiveNielsPoint {
     fn identity() -> ProjectiveNielsPoint {
         ProjectiveNielsPoint {
-            Y_plus_X: FieldElement::one(),
-            Y_minus_X: FieldElement::one(),
-            Z: FieldElement::one(),
-            T2d: FieldElement::zero(),
+            Y_plus_X: FieldElement::ONE,
+            Y_minus_X: FieldElement::ONE,
+            Z: FieldElement::ONE,
+            T2d: FieldElement::ZERO,
         }
     }
 }
@@ -253,9 +253,9 @@ impl Default for ProjectiveNielsPoint {
 impl Identity for AffineNielsPoint {
     fn identity() -> AffineNielsPoint {
         AffineNielsPoint {
-            y_plus_x: FieldElement::one(),
-            y_minus_x: FieldElement::one(),
-            xy2d: FieldElement::zero(),
+            y_plus_x: FieldElement::ONE,
+            y_minus_x: FieldElement::ONE,
+            xy2d: FieldElement::ZERO,
         }
     }
 }

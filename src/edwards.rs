@@ -191,7 +191,7 @@ impl CompressedEdwardsY {
     #[rustfmt::skip] // keep alignment of explanatory comments
     pub fn decompress(&self) -> Option<EdwardsPoint> {
         let Y = FieldElement::from_bytes(self.as_bytes());
-        let Z = FieldElement::one();
+        let Z = FieldElement::ONE;
         let YY = Y.square();
         let u = &YY - &Z;                            // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
@@ -370,10 +370,10 @@ impl CompressedEdwardsY {
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
         EdwardsPoint {
-            X: FieldElement::zero(),
-            Y: FieldElement::one(),
-            Z: FieldElement::one(),
-            T: FieldElement::zero(),
+            X: FieldElement::ZERO,
+            Y: FieldElement::ONE,
+            Z: FieldElement::ONE,
+            T: FieldElement::ZERO,
         }
     }
 }
@@ -400,8 +400,8 @@ impl Zeroize for EdwardsPoint {
     /// Reset this `CompressedEdwardsPoint` to the identity element.
     fn zeroize(&mut self) {
         self.X.zeroize();
-        self.Y = FieldElement::one();
-        self.Z = FieldElement::one();
+        self.Y = FieldElement::ONE;
+        self.Z = FieldElement::ONE;
         self.T.zeroize();
     }
 }
@@ -1210,7 +1210,7 @@ mod test {
     /// Test that computing 1*basepoint gives the correct basepoint.
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
-        let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::one();
+        let bp = &constants::ED25519_BASEPOINT_TABLE * &Scalar::ONE;
         let compressed = bp.compress();
         assert_eq!(compressed, constants::ED25519_BASEPOINT_COMPRESSED);
     }
@@ -1258,10 +1258,10 @@ mod test {
         two_bytes[0] = 2;
         let id1 = EdwardsPoint::identity();
         let id2 = EdwardsPoint {
-            X: FieldElement::zero(),
+            X: FieldElement::ZERO,
             Y: FieldElement::from_bytes(&two_bytes),
             Z: FieldElement::from_bytes(&two_bytes),
-            T: FieldElement::zero(),
+            T: FieldElement::ZERO,
         };
         assert_eq!(id1.ct_eq(&id2).unwrap_u8(), 1u8);
     }

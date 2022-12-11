@@ -132,7 +132,7 @@ mod test {
     /// Test that SQRT_M1 is the positive square root of -1
     #[test]
     fn test_sqrt_minus_one() {
-        let minus_one = FieldElement::minus_one();
+        let minus_one = FieldElement::MINUS_ONE;
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
         assert_eq!(minus_one, sqrt_m1_sq);
         assert_eq!(constants::SQRT_M1.is_negative().unwrap_u8(), 0);
@@ -140,7 +140,7 @@ mod test {
 
     #[test]
     fn test_sqrt_constants_sign() {
-        let minus_one = FieldElement::minus_one();
+        let minus_one = FieldElement::MINUS_ONE;
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
         assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
         let sign_test_sqrt = &invsqrt_m1 * &constants::SQRT_M1;
@@ -175,7 +175,7 @@ mod test {
 
     #[test]
     fn test_sqrt_ad_minus_one() {
-        let a = FieldElement::minus_one();
+        let a = FieldElement::MINUS_ONE;
         let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
         let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
         assert_eq!(should_be_ad_minus_one, ad_minus_one);

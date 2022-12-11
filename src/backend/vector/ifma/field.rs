@@ -101,9 +101,7 @@ fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
 }
 
 impl F51x4Unreduced {
-    pub fn zero() -> F51x4Unreduced {
-        F51x4Unreduced([u64x4::splat(0); 5])
-    }
+    pub const ZERO: F51x4Unreduced = F51x4Unreduced([u64x4::splat(0); 5]);
 
     pub fn new(
         x0: &FieldElement51,

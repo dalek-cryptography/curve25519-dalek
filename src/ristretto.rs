@@ -281,7 +281,7 @@ impl CompressedRistretto {
         }
 
         // Step 2.  Compute (X:Y:Z:T).
-        let one = FieldElement::one();
+        let one = FieldElement::ONE;
         let ss = s.square();
         let u1 = &one - &ss; //  1 + as²
         let u2 = &one + &ss; //  1 - as²    where a=-1
@@ -639,7 +639,7 @@ impl RistrettoPoint {
         let d_minus_one_sq = &constants::EDWARDS_D_MINUS_ONE_SQUARED;
         let mut c = constants::MINUS_ONE;
 
-        let one = FieldElement::one();
+        let one = FieldElement::ONE;
 
         let r = i * &r_0.square();
         let N_s = &(&r + &one) * one_minus_d_sq;
@@ -663,8 +663,8 @@ impl RistrettoPoint {
             CompletedPoint {
                 X: &(&s + &s) * &D,
                 Z: &N_t * &constants::SQRT_AD_MINUS_ONE,
-                Y: &FieldElement::one() - &s_sq,
-                T: &FieldElement::one() + &s_sq,
+                Y: &FieldElement::ONE - &s_sq,
+                T: &FieldElement::ONE + &s_sq,
             }
             .as_extended(),
         )

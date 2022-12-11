@@ -55,10 +55,7 @@ fn m(x: u64, y: u64) -> u128 {
 }
 
 impl Scalar52 {
-    /// Return the zero scalar
-    pub fn zero() -> Scalar52 {
-        Scalar52([0, 0, 0, 0, 0])
-    }
+    pub const ZERO: Scalar52 = Scalar52([0, 0, 0, 0, 0]);
 
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
@@ -72,7 +69,7 @@ impl Scalar52 {
 
         let mask = (1u64 << 52) - 1;
         let top_mask = (1u64 << 48) - 1;
-        let mut s = Scalar52::zero();
+        let mut s = Scalar52::ZERO;
 
         s[0] =   words[0]                            & mask;
         s[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
@@ -94,8 +91,8 @@ impl Scalar52 {
         }
 
         let mask = (1u64 << 52) - 1;
-        let mut lo = Scalar52::zero();
-        let mut hi = Scalar52::zero();
+        let mut lo = Scalar52::ZERO;
+        let mut hi = Scalar52::ZERO;
 
         lo[0] =   words[0]                             & mask;
         lo[1] = ((words[0] >> 52) | (words[ 1] << 12)) & mask;
@@ -158,7 +155,7 @@ impl Scalar52 {
 
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> Scalar52 {
-        let mut sum = Scalar52::zero();
+        let mut sum = Scalar52::ZERO;
         let mask = (1u64 << 52) - 1;
 
         // a + b
@@ -174,7 +171,7 @@ impl Scalar52 {
 
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> Scalar52 {
-        let mut difference = Scalar52::zero();
+        let mut difference = Scalar52::ZERO;
         let mask = (1u64 << 52) - 1;
 
         // a - b
@@ -472,7 +469,7 @@ mod test {
     #[test]
     fn add() {
         let res = Scalar52::add(&A, &B);
-        let zero = Scalar52::zero();
+        let zero = Scalar52::ZERO;
         for i in 0..5 {
             assert!(res[i] == zero[i]);
         }

@@ -153,7 +153,7 @@ use core::ops::{Sub, SubAssign};
 use cfg_if::cfg_if;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::{CryptoRng, RngCore};
+use rand_core::CryptoRngCore;
 
 #[cfg(feature = "digest")]
 use digest::generic_array::typenum::U64;
@@ -574,7 +574,8 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements the `RngCore + CryptoRng` interface.
+    /// * `rng`: any RNG which implements `CryptoRngCore`
+    ///   (i.e. `CryptoRng` + `RngCore`) interface.
     ///
     /// # Returns
     ///
@@ -591,7 +592,7 @@ impl Scalar {
     /// let mut csprng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<R: RngCore + CryptoRng + ?Sized>(rng: &mut R) -> Self {
+    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)

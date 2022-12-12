@@ -74,6 +74,8 @@ latest breaking changes are below:
 * Make `digest` an optional feature
 * Make `rand_core` an optional feature
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
+* `Scalar::from_canonical_bytes` now returns `CtOption`
+* `Scalar::is_canonical` now returns `Choice`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

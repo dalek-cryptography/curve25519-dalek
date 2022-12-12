@@ -54,8 +54,6 @@ curve25519-dalek = "4.0.0-pre.3"
 | `rand_core`    |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`       |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`        |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
-| `simd_backend` |          | See [backends](#backends). Requires nightly. |
-| `fiat_backend` |          | See [backends](#backends). |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To

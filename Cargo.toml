@@ -7,6 +7,7 @@ name = "curve25519-dalek"
 # - if README was updated, also update module documentation in src/lib.rs
 version = "4.0.0-pre.2"
 edition = "2021"
+rust-version = "1.56.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"

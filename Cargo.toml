@@ -48,6 +48,7 @@ required-features = ["rand_core"]
 
 [dependencies]
 cfg-if = "1"
+ff_crate = { version = "0.13", default-features = false, optional = true, package = "ff" }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.3.0", default-features = false }
@@ -65,6 +66,7 @@ packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_
 [features]
 default = ["alloc"]
 alloc = ["zeroize/alloc"]
+ff = ["ff_crate", "rand_core"]
 
 [profile.dev]
 opt-level = 2

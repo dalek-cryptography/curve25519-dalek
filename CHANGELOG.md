@@ -37,6 +37,7 @@ major series.
   version.
 * Relax the `zeroize` dependency to `^1`
 * Update the edition from 2015 to 2021
+* Add implementations of the `ff` traits, behind the `ff` feature flag.
 
 ## 3.x series
 

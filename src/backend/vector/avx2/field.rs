@@ -180,11 +180,13 @@ impl ConditionallySelectable for FieldElement2625x4 {
 }
 
 impl FieldElement2625x4 {
+    pub const ZERO: FieldElement2625x4 = FieldElement2625x4([u32x8::splat(0); 5]);
+
     /// Split this vector into an array of four (serial) field
     /// elements.
     #[rustfmt::skip] // keep alignment of extracted lanes
     pub fn split(&self) -> [FieldElement51; 4] {
-        let mut out = [FieldElement51::zero(); 4];
+        let mut out = [FieldElement51::ZERO; 4];
         for i in 0..5 {
             let a_2i   = self.0[i].extract(0) as u64; //
             let b_2i   = self.0[i].extract(1) as u64; //
@@ -320,11 +322,6 @@ impl FieldElement2625x4 {
             blend_lanes(self.0[3], other.0[3], control),
             blend_lanes(self.0[4], other.0[4], control),
         ])
-    }
-
-    /// Construct a vector of zeros.
-    pub fn zero() -> FieldElement2625x4 {
-        FieldElement2625x4([u32x8::splat(0); 5])
     }
 
     /// Convenience wrapper around `new(x,x,x,x)`.
@@ -888,7 +885,7 @@ mod test {
 
     #[test]
     fn scale_by_curve_constants() {
-        let mut x = FieldElement2625x4::splat(&FieldElement51::one());
+        let mut x = FieldElement2625x4::splat(&FieldElement51::ONE);
 
         x = x * (121666, 121666, 2 * 121666, 2 * 121665);
 

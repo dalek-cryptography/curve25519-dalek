@@ -173,10 +173,10 @@ impl FieldElement {
         // Section 3.2
 
         let n = inputs.len();
-        let mut scratch = vec![FieldElement::one(); n];
+        let mut scratch = vec![FieldElement::ONE; n];
 
         // Keep an accumulator of all of the previous products
-        let mut acc = FieldElement::one();
+        let mut acc = FieldElement::ONE;
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
@@ -310,7 +310,7 @@ impl FieldElement {
     /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
     ///
     pub fn invsqrt(&self) -> (Choice, FieldElement) {
-        FieldElement::sqrt_ratio_i(&FieldElement::one(), self)
+        FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
 }
 
@@ -376,7 +376,7 @@ mod test {
         let ainv = FieldElement::from_bytes(&AINV_BYTES);
         let should_be_inverse = a.invert();
         assert_eq!(ainv, should_be_inverse);
-        assert_eq!(FieldElement::one(), &a * &should_be_inverse);
+        assert_eq!(FieldElement::ONE, &a * &should_be_inverse);
     }
 
     #[test]
@@ -398,8 +398,8 @@ mod test {
 
     #[test]
     fn sqrt_ratio_behavior() {
-        let zero = FieldElement::zero();
-        let one = FieldElement::one();
+        let zero = FieldElement::ZERO;
+        let one = FieldElement::ONE;
         let i = constants::SQRT_M1;
         let two = &one + &one; // 2 is nonsquare mod p.
         let four = &two + &two; // 4 is square mod p.
@@ -468,8 +468,8 @@ mod test {
 
     #[test]
     fn conditional_negate() {
-        let one = FieldElement::one();
-        let minus_one = FieldElement::minus_one();
+        let one = FieldElement::ONE;
+        let minus_one = FieldElement::MINUS_ONE;
         let mut x = one;
         x.conditional_negate(Choice::from(1));
         assert_eq!(x, minus_one);

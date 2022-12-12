@@ -19,7 +19,7 @@ use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
 use crate::window::{LookupTable, NafLookupTable8};
 
-/// The value of minus one, equal to `-&FieldElement::one()`
+/// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625([
     67108844, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863, 33554431, 67108863,
     33554431,

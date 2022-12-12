@@ -55,6 +55,7 @@ fn m(x: u64, y: u64) -> u128 {
 }
 
 impl Scalar52 {
+    /// The scalar \\( 0 \\).
     pub const ZERO: Scalar52 = Scalar52([0, 0, 0, 0, 0]);
 
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.

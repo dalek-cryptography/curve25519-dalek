@@ -16,6 +16,7 @@ major series.
 * Update backend selection to be more automatic
 * Remove `std` feature flag
 * Remove `nightly` feature flag
+* Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`

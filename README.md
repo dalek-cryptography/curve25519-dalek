@@ -30,10 +30,20 @@ cofactor-related abstraction mismatches.
 
 # Use
 
+## Stable
+
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "4"
+curve25519-dalek = "3"
+```
+
+## Beta
+
+To use the latest prerelease (see changes [below](#breaking-changes-in-400)),
+use the following line in your project's `Cargo.toml`:
+```toml
+curve25519-dalek = "4.0.0-pre.3"
 ```
 
 ## Feature Flags
@@ -63,6 +73,9 @@ latest breaking changes are below:
 * Update backend selection to be more automatic. See [backends](#backends)
 * Remove `std` feature flag
 * Remove `nightly` feature flag
+* Make `digest` an optional feature
+* Make `rand_core` an optional feature
+* Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

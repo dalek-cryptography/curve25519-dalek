@@ -37,7 +37,7 @@
 //! use curve25519_dalek::scalar::Scalar;
 //!
 //! let one_as_bytes: [u8; 32] = Scalar::ONE.to_bytes();
-//! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes);
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes).into();
 //!
 //! assert!(a.is_some());
 //! ```
@@ -54,7 +54,7 @@
 //!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 //!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
 //! ];
-//! let a: Option<Scalar> = Scalar::from_canonical_bytes(l_plus_two_bytes);
+//! let a: Option<Scalar> = Scalar::from_canonical_bytes(l_plus_two_bytes).into();
 //!
 //! assert!(a.is_none());
 //! ```
@@ -132,7 +132,7 @@
 //! let two: Scalar = Scalar::ONE + Scalar::ONE;
 //!
 //! assert!(a != two);              // the scalar is not reduced (mod l)…
-//! assert!(! a.is_canonical());    // …and therefore is not canonical.
+//! assert!(! bool::from(a.is_canonical()));    // …and therefore is not canonical.
 //! assert!(a.reduce() == two);     // if we were to reduce it manually, it would be.
 //! ```
 //!
@@ -163,6 +163,7 @@ use digest::Digest;
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
+use subtle::CtOption;
 
 use zeroize::Zeroize;
 
@@ -256,18 +257,10 @@ impl Scalar {
     /// - `Some(s)`, where `s` is the `Scalar` corresponding to `bytes`,
     ///   if `bytes` is a canonical byte representation;
     /// - `None` if `bytes` is not a canonical byte representation.
-    pub fn from_canonical_bytes(bytes: [u8; 32]) -> Option<Scalar> {
-        // Check that the high bit is not set
-        if (bytes[31] >> 7) != 0u8 {
-            return None;
-        }
+    pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
+        let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
         let candidate = Scalar::from_bits(bytes);
-
-        if candidate.is_canonical() {
-            Some(candidate)
-        } else {
-            None
-        }
+        CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer.
@@ -457,9 +450,8 @@ impl<'de> Deserialize<'de> for Scalar {
                         .next_element()?
                         .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
-                Scalar::from_canonical_bytes(bytes).ok_or(serde::de::Error::custom(
-                    &"scalar was not canonically encoded",
-                ))
+                Option::from(Scalar::from_canonical_bytes(bytes))
+                    .ok_or_else(|| serde::de::Error::custom(&"scalar was not canonically encoded"))
             }
         }
 
@@ -1133,22 +1125,20 @@ impl Scalar {
 
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\).
     ///
-    /// This is intended for uses like input validation, where variable-time code is acceptable.
-    ///
     /// ```
     /// # use curve25519_dalek::scalar::Scalar;
     /// # use subtle::ConditionallySelectable;
     /// # fn main() {
     /// // 2^255 - 1, since `from_bits` clears the high bit
     /// let _2_255_minus_1 = Scalar::from_bits([0xff;32]);
-    /// assert!(!_2_255_minus_1.is_canonical());
+    /// assert!(! bool::from(_2_255_minus_1.is_canonical()));
     ///
     /// let reduced = _2_255_minus_1.reduce();
-    /// assert!(reduced.is_canonical());
+    /// assert!(bool::from(reduced.is_canonical()));
     /// # }
     /// ```
-    pub fn is_canonical(&self) -> bool {
-        *self == self.reduce()
+    pub fn is_canonical(&self) -> Choice {
+        self.ct_eq(&self.reduce())
     }
 }
 
@@ -1708,9 +1698,15 @@ mod test {
             0, 0, 128,
         ];
 
-        assert!(Scalar::from_canonical_bytes(canonical_bytes).is_some());
-        assert!(Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none());
-        assert!(Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none());
+        assert!(bool::from(
+            Scalar::from_canonical_bytes(canonical_bytes).is_some()
+        ));
+        assert!(bool::from(
+            Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none()
+        ));
+        assert!(bool::from(
+            Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none()
+        ));
     }
 
     #[test]

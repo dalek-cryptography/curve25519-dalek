@@ -50,7 +50,7 @@ required-features = ["rand_core"]
 cfg-if = "1"
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
-subtle = { version = "^2.2.1", default-features = false }
+subtle = { version = "2.3.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false }
 
@@ -65,3 +65,6 @@ packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_
 [features]
 default = ["alloc"]
 alloc = ["zeroize/alloc"]
+
+[profile.dev]
+opt-level = 2

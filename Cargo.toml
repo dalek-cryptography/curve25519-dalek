@@ -25,8 +25,12 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--html-in-header", "docs/assets/rustdoc-include-katex-header.html", "--cfg", "docsrs"]
-features = ["serde", "simd_backend", "rand_core", "digest"]
+rustdoc-args = [
+    "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
+    "--cfg", "docsrs",
+    '--cfg=curve25519_dalek_backend="simd"',
+]
+features = ["serde", "rand_core", "digest"]
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}

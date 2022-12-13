@@ -16,6 +16,7 @@ fn lotto_curve25519_dalek_bits() -> DalekBits {
     let target_triplet = std::env::var("TARGET").unwrap();
     let platform = platforms::Platform::find(&target_triplet).unwrap();
 
+    #[allow(clippy::match_single_binding)]
     match platform.target_arch {
         //Issues: 449 and 456
         //TODO(Arm): Needs tests + benchmarks to back this up

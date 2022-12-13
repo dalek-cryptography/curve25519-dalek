@@ -11,14 +11,14 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::VartimeMultiscalarMul;
-
-#[allow(unused_imports)]
-use prelude::*;
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::VartimeMultiscalarMul;
 
 /// Implements a version of Pippenger's algorithm.
 ///
@@ -61,7 +61,6 @@ use prelude::*;
 /// This algorithm is adapted from section 4 of <https://eprint.iacr.org/2012/549.pdf>.
 pub struct Pippenger;
 
-#[cfg(any(feature = "alloc", feature = "std"))]
 impl VartimeMultiscalarMul for Pippenger {
     type Point = EdwardsPoint;
 
@@ -71,7 +70,7 @@ impl VartimeMultiscalarMul for Pippenger {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<EdwardsPoint>>,
     {
-        use traits::Identity;
+        use crate::traits::Identity;
 
         let mut scalars = scalars.into_iter();
         let size = scalars.by_ref().size_hint().0;
@@ -93,12 +92,11 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Collect optimized scalars and points in buffers for repeated access
         // (scanning the whole set per digit position).
-        let scalars = scalars
-            .map(|s| s.borrow().to_radix_2w(w));
+        let scalars = scalars.map(|s| s.borrow().as_radix_2w(w));
 
         let points = points
             .into_iter()
-            .map(|p| p.map(|P| P.to_projective_niels()));
+            .map(|p| p.map(|P| P.as_projective_niels()));
 
         let scalars_points = scalars
             .zip(points)
@@ -113,8 +111,8 @@ impl VartimeMultiscalarMul for Pippenger {
 
         let mut columns = (0..digits_count).rev().map(|digit_index| {
             // Clear the buckets when processing another digit.
-            for i in 0..buckets_count {
-                buckets[i] = EdwardsPoint::identity();
+            for bucket in &mut buckets {
+                *bucket = EdwardsPoint::identity();
             }
 
             // Iterate over pairs of (point, scalar)
@@ -124,12 +122,16 @@ impl VartimeMultiscalarMul for Pippenger {
             for (digits, pt) in scalars_points.iter() {
                 // Widen digit so that we don't run into edge cases when w=8.
                 let digit = digits[digit_index] as i16;
-                if digit > 0 {
-                    let b = (digit - 1) as usize;
-                    buckets[b] = (&buckets[b] + pt).to_extended();
-                } else if digit < 0 {
-                    let b = (-digit - 1) as usize;
-                    buckets[b] = (&buckets[b] - pt).to_extended();
+                match digit.cmp(&0) {
+                    Ordering::Greater => {
+                        let b = (digit - 1) as usize;
+                        buckets[b] = (&buckets[b] + pt).as_extended();
+                    }
+                    Ordering::Less => {
+                        let b = (-digit - 1) as usize;
+                        buckets[b] = (&buckets[b] - pt).as_extended();
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
@@ -155,18 +157,15 @@ impl VartimeMultiscalarMul for Pippenger {
         // `unwrap()` always succeeds because we know we have more than zero digits.
         let hi_column = columns.next().unwrap();
 
-        Some(
-            columns
-                .fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p),
-        )
+        Some(columns.fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p))
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use constants;
-    use scalar::Scalar;
+    use crate::constants;
+    use crate::scalar::Scalar;
 
     #[test]
     fn test_vartime_pippenger() {
@@ -196,7 +195,7 @@ mod test {
 
             assert_eq!(subject.compress(), control.compress());
 
-            n = n / 2;
+            n /= 2;
         }
     }
 }

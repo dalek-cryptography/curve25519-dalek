@@ -17,7 +17,7 @@ use core::borrow::Borrow;
 
 use subtle;
 
-use scalar::Scalar;
+use crate::scalar::Scalar;
 
 // ------------------------------------------------------------------------
 // Public Traits
@@ -84,6 +84,8 @@ pub trait MultiscalarMul {
     /// iterators returning either `Scalar`s or `&Scalar`s.
     ///
     /// ```
+    /// # #[cfg(feature = "alloc")]
+    /// # {
     /// use curve25519_dalek::constants;
     /// use curve25519_dalek::traits::MultiscalarMul;
     /// use curve25519_dalek::ristretto::RistrettoPoint;
@@ -110,6 +112,7 @@ pub trait MultiscalarMul {
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
+    /// # }
     /// ```
     fn multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
     where
@@ -136,6 +139,8 @@ pub trait VartimeMultiscalarMul {
     /// inlining point decompression into the multiscalar call,
     /// avoiding the need for temporary buffers.
     /// ```
+    /// #[cfg(feature = "alloc")]
+    /// # {
     /// use curve25519_dalek::constants;
     /// use curve25519_dalek::traits::VartimeMultiscalarMul;
     /// use curve25519_dalek::ristretto::RistrettoPoint;
@@ -175,6 +180,7 @@ pub trait VartimeMultiscalarMul {
     /// );
     ///
     /// assert_eq!(A3, Some(A1+A1));
+    /// # }
     /// ```
     fn optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<Self::Point>
     where
@@ -199,6 +205,8 @@ pub trait VartimeMultiscalarMul {
     /// iterators returning either `Scalar`s or `&Scalar`s.
     ///
     /// ```
+    /// #[cfg(feature = "alloc")]
+    /// # {
     /// use curve25519_dalek::constants;
     /// use curve25519_dalek::traits::VartimeMultiscalarMul;
     /// use curve25519_dalek::ristretto::RistrettoPoint;
@@ -225,6 +233,7 @@ pub trait VartimeMultiscalarMul {
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
+    /// # }
     /// ```
     fn vartime_multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
     where
@@ -254,15 +263,15 @@ pub trait VartimeMultiscalarMul {
 ///
 /// This trait has three methods for performing this computation:
 ///
-/// * [`vartime_multiscalar_mul`], which handles the special case
-/// where \\(n = 0\\) and there are no dynamic points;
+/// * [`Self::vartime_multiscalar_mul`], which handles the special case where
+///   \\(n = 0\\) and there are no dynamic points;
 ///
-/// * [`vartime_mixed_multiscalar_mul`], which takes the dynamic
-/// points as already-validated `Point`s and is infallible;
+/// * [`Self::vartime_mixed_multiscalar_mul`], which takes the dynamic points as
+///   already-validated `Point`s and is infallible;
 ///
-/// * [`optional_mixed_multiscalar_mul`], which takes the dynamic
-/// points as `Option<Point>`s and returns an `Option<Point>`,
-/// allowing decompression to be composed into the input iterators.
+/// * [`Self::optional_mixed_multiscalar_mul`], which takes the dynamic points
+///   as `Option<Point>`s and returns an `Option<Point>`, allowing decompression
+///   to be composed into the input iterators.
 ///
 /// All methods require that the lengths of the input iterators be
 /// known and matching, as if they were `ExactSizeIterator`s.  (It

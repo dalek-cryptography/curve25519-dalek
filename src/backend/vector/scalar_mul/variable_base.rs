@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use window::LookupTable;
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::window::LookupTable;
 
 /// Perform constant-time, variable-base scalar multiplication.
 pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
@@ -15,7 +15,7 @@ pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     //    s = s_0 + s_1*16^1 + ... + s_63*16^63,
     //
     // with `-8 ≤ s_i < 8` for `0 ≤ i < 63` and `-8 ≤ s_63 ≤ 8`.
-    let scalar_digits = scalar.to_radix_16();
+    let scalar_digits = scalar.as_radix_16();
     // Compute s*P as
     //
     //    s*P = P*(s_0 +   s_1*16^1 +   s_2*16^2 + ... +   s_63*16^63)

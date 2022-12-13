@@ -1,10 +1,12 @@
 
-# curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/badge/dynamic/json.svg?label=docs&uri=https%3A%2F%2Fcrates.io%2Fapi%2Fv1%2Fcrates%2Fcurve25519-dalek%2Fversions&query=%24.versions%5B0%5D.num&colorB=4F74A6)](https://doc.dalek.rs) [![](https://travis-ci.org/dalek-cryptography/curve25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/curve25519-dalek)
+# curve25519-dalek [![](https://img.shields.io/crates/v/curve25519-dalek.svg)](https://crates.io/crates/curve25519-dalek) [![](https://img.shields.io/docsrs/curve25519-dalek)](https://docs.rs/curve25519-dalek) [![Rust](https://github.com/dalek-cryptography/curve25519-dalek/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/dalek-cryptography/curve25519-dalek/actions/workflows/rust.yml)
 
+<p align="center">
 <img
- width="33%"
- align="right"
- src="https://doc.dalek.rs/assets/dalek-logo-clear.png"/>
+ alt="dalek-cryptography logo: a dalek with edwards curves as sparkles coming out of its radar-schnozzley blaster thingies"
+ width="200px"
+ src="https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"/>
+</p>
 
 **A pure-Rust implementation of group operations on Ristretto and Curve25519.**
 
@@ -26,21 +28,9 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
-# Documentation
-
-The semver-stable, public-facing `curve25519-dalek` API is documented
-[here][docs-external].  In addition, the unstable internal implementation
-details are documented [here][docs-internal].
-
-The `curve25519-dalek` documentation requires a custom HTML header to include
-KaTeX for math support. Unfortunately `cargo doc` does not currently support
-this, but docs can be built using
-```sh
-make doc
-make doc-internal
-```
-
 # Use
+
+## Stable
 
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
@@ -48,60 +38,166 @@ your project's `Cargo.toml`:
 curve25519-dalek = "3"
 ```
 
-The sole breaking change in the `3.x` series was an update to the `digest`
-version, and in terms of non-breaking changes it includes:
+## Beta
 
-* support for using `alloc` instead of `std` on stable Rust,
-* the Elligator2 encoding for Edwards points,
-* a fix to use `packed_simd2`,
-* various documentation fixes and improvements,
-* support for configurably-sized, precomputed lookup tables for basepoint scalar
-  multiplication,
-* two new formally-verified field arithmetic backends which use the Fiat Crypto
-  Rust code, which is generated from proofs of functional correctness checked by
-  the Coq theorem proving system, and
-* support for explicitly calling the `zeroize` traits for all point types.
-
-The `2.x` series has API almost entirely unchanged from the `1.x` series,
-except that:
-
-* an error in the data modeling for the (optional) `serde` feature was
-  corrected, so that when the `2.x`-series `serde` implementation is used
-  with `serde-bincode`, the derived serialization matches the usual X/Ed25519
-  formats;
-* the `rand` version was updated.
-
-See `CHANGELOG.md` for more details.
-
-# Backends and Features
-
-The `nightly` feature enables features available only when using a Rust nightly
-compiler.  In particular, it is required for rendering documentation and for
-the SIMD backends.
-
-Curve arithmetic is implemented using one of the following backends:
-
-* a `u32` backend using serial formulas and `u64` products;
-* a `u64` backend using serial formulas and `u128` products;
-* an `avx2` backend using [parallel formulas][parallel_doc] and `avx2` instructions (sets speed records);
-* an `ifma` backend using [parallel formulas][parallel_doc] and `ifma` instructions (sets speed records);
-
-By default the `u64` backend is selected.  To select a specific backend, use:
-```sh
-cargo build --no-default-features --features "std u32_backend"
-cargo build --no-default-features --features "std u64_backend"
-# Requires nightly, RUSTFLAGS="-C target_feature=+avx2" to use avx2
-cargo build --no-default-features --features "std simd_backend"
-# Requires nightly, RUSTFLAGS="-C target_feature=+avx512ifma" to use ifma
-cargo build --no-default-features --features "std simd_backend"
+To use the latest prerelease (see changes [below](#breaking-changes-in-400)),
+use the following line in your project's `Cargo.toml`:
+```toml
+curve25519-dalek = "4.0.0-pre.3"
 ```
-Crates using `curve25519-dalek` can either select a backend on behalf of their
-users, or expose feature flags that control the `curve25519-dalek` backend.
 
-The `std` feature is enabled by default, but it can be disabled for no-`std`
-builds using `--no-default-features`.  Note that this requires explicitly
-selecting an arithmetic backend using one of the `_backend` features.
-If no backend is selected, compilation will fail.
+## Feature Flags
+
+| Feature        | Default? | Description |
+| :---           |  :---:   | :---        |
+| `alloc`        |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
+| `rand_core`    |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `digest`       |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
+| `serde`        |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
+
+To disable the default features when using `curve25519-dalek` as a dependency,
+add `default-features = false` to the dependency in your `Cargo.toml`. To
+disable it when running `cargo`, add the `--no-default-features` CLI flag.
+
+## Major Version API Changes
+
+Breaking changes for each major version release can be found in
+[`CHANGELOG.md`](CHANGELOG.md), under the "Breaking changes" subheader. The
+latest breaking changes are below:
+
+### Breaking changes in 4.0.0
+
+* Update the MSRV from 1.41 to 1.56.1
+* Update backend selection to be more automatic. See [backends](#backends)
+* Remove `std` feature flag
+* Remove `nightly` feature flag
+* Make `digest` an optional feature
+* Make `rand_core` an optional feature
+* Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
+* `Scalar::from_canonical_bytes` now returns `CtOption`
+* `Scalar::is_canonical` now returns `Choice`
+* Deprecate `EdwardsPoint::hash_from_bytes` and rename it
+  `EdwardsPoint::nonspec_map_to_curve`
+* Require including a new trait, `use curve25519_dalek::traits::BasepointTable`
+  whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
+
+This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
+
+# Backends
+
+Curve arithmetic is implemented and used by selecting one of the following backends:
+
+| Backend            | Implementation                                             | Target backends             |
+| :---               | :---                                                       | :---                        |
+| `[default]`        | Serial formulas                                            | `u32` <br/> `u64`           |
+| `simd`             | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
+| `fiat`             | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
+
+To choose a backend other than the `[default]` serial backend, set the
+environment variable:
+```sh
+RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
+```
+where `BACKEND` is `simd` or `fiat`. Equivalently, you can write to
+`~/.cargo/config`:
+```toml
+[build]
+rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
+```
+More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
+
+The `simd` backend requires extra configuration. See [the SIMD
+section](#simd-target-backends).
+
+Note for contributors: The target backends are not entirely independent of each
+other. The `simd` backend directly depends on parts of the the `u64` backend to
+function.
+
+## Word size for serial backends
+
+`curve25519-dalek` will automatically choose the word size for the `[default]`
+and `fiat` serial backends, based on the build target. For example, building
+for a 64-bit machine, the default `u64` target backend is automatically chosen
+when the `[default]` backend is selected, and `fiat_u64` is chosen when the
+`fiat backend is selected.
+
+Backend word size can be overridden for `[default]` and `fiat` by setting the
+environment variable:
+```sh
+RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
+```
+where `SIZE` is `32` or `64`. As in the above section, this can also be placed
+in `~/.cargo/config`.
+
+**NOTE:** The `simd` backend CANNOT be used with word size 32.
+
+### Cross-compilation
+
+Because backend selection is done by target, cross-compiling will select the
+correct word size automatically. For example, on an x86-64 Linux machine,
+`curve25519-dalek` will use the `u32` target backend if the following is run:
+```console
+$ sudo apt install gcc-multilib # (or whatever package manager you use)
+$ rustup target add i686-unknown-linux-gnu
+$ cargo build --target i686-unknown-linux-gnu
+```
+
+## SIMD target backends
+
+Target backend selection within `simd` must be done manually by setting the
+`RUSTFLAGS` environment variable to one of the below options:
+
+| CPU feature | `RUSTFLAGS`                     |
+| :---        | :---                            |
+| avx2        | `-C target_feature=+avx2`       |
+| avx512ifma  | `-C target_feature=+avx512ifma` |
+
+Or you can use `-C target_cpu=native` if you don't know what to set.
+
+The `simd` backend also requires using nightly, e.g. by running `cargo
++nightly build`, to build.
+
+# Documentation
+
+The semver-stable, public-facing `curve25519-dalek` API is documented [here][docs].
+
+## Building Docs Locally
+
+The `curve25519-dalek` documentation requires a custom HTML header to include
+KaTeX for math support. Unfortunately `cargo doc` does not currently support
+this, but docs can be built using
+```sh
+make doc
+```
+for regular docs, and
+```sh
+make doc-internal
+```
+for docs that include private items.
+
+# Maintenance Policies
+
+All on-by-default features of this library are covered by
+[semantic versioning][semver] (SemVer). SemVer exemptions are outlined below
+for MSRV and public API.
+
+## Minimum Supported Rust Version
+
+| Releases | MSRV   |
+| :---     | :---   |
+| 4.x      | 1.56.1 |
+| 3.x      | 1.41.0 |
+
+From 4.x and on, MSRV changes will be accompanied by a minor version bump.
+
+## Public API SemVer Exemptions
+
+Breaking changes to SemVer exempted components affecting the public API will be accompanied by
+_some_ version bump. Below are the specific policies:
+
+| Releases | Public API Component(s)               | Policy              |
+| :---     | :---                                  | :---                |
+| 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
 
 # Safety
 
@@ -146,11 +242,10 @@ compiled with appropriate `target_feature`s, so this cannot occur.
 Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
-cargo bench --no-default-features --features "std u32_backend"
-cargo bench --no-default-features --features "std u64_backend"
+cargo bench --features "rand_core"
 # Uses avx2 or ifma only if compiled for an appropriate target.
-export RUSTFLAGS="-C target_cpu=native"
-cargo bench --no-default-features --features "std simd_backend"
+export RUSTFLAGS='--cfg curve25519_dalek_backend="simd" -C target_cpu=native'
+cargo +nightly bench --features "rand_core"
 ```
 
 Performance is a secondary goal behind correctness, safety, and
@@ -207,20 +302,21 @@ optimised batch inversion was contributed by Sean Bowe and Daira Hopwood.
 
 The `no_std` and `zeroize` support was contributed by Tony Arcieri.
 
-The formally verified backends, `fiat_u32_backend` and `fiat_u64_backend`, which
-integrate with the Rust generated by the
-[Fiat Crypto project](https://github.com/mit-plv/fiat-crypto) were contributed
-by François Garillot.
+The formally verified `fiat_backend` integrates Rust code generated by the
+[Fiat Crypto project](https://github.com/mit-plv/fiat-crypto) and was
+contributed by François Garillot.
 
 Thanks also to Ashley Hauck, Lucas Salibian, Manish Goregaokar, Jack Grigg,
-Pratyush Mishra, Michael Rosenberg, and countless others for their
+Pratyush Mishra, Michael Rosenberg, @pinkforest, and countless others for their
 contributions.
 
 [ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
 [x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
+[docs]: https://docs.rs/curve25519-dalek/
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
-[docs-external]: https://doc.dalek.rs/curve25519_dalek/
-[docs-internal]: https://doc-internal.dalek.rs/curve25519_dalek/
 [criterion]: https://github.com/japaric/criterion.rs
-[parallel_doc]: https://doc-internal.dalek.rs/curve25519_dalek/backend/vector/avx2/index.html
-[subtle_doc]: https://doc.dalek.rs/subtle/
+[parallel_doc]: https://docs.rs/curve25519-dalek/latest/curve25519_dalek/backend/vector/index.html
+[subtle_doc]: https://docs.rs/subtle
+[fiat-crypto]: https://github.com/mit-plv/fiat-crypto
+[semver]: https://semver.org/spec/v2.0.0.html
+[rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features

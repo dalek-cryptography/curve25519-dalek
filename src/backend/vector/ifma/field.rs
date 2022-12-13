@@ -14,7 +14,7 @@
 use core::ops::{Add, Mul, Neg};
 use packed_simd::{u64x4, IntoBits};
 
-use backend::serial::u64::field::FieldElement51;
+use crate::backend::serial::u64::field::FieldElement51;
 
 /// A wrapper around `vpmadd52luq` that works on `u64x4`.
 #[inline(always)]
@@ -38,6 +38,7 @@ pub struct F51x4Unreduced(pub(crate) [u64x4; 5]);
 #[derive(Copy, Clone, Debug)]
 pub struct F51x4Reduced(pub(crate) [u64x4; 5]);
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone)]
 pub enum Shuffle {
     AAAA,
@@ -72,6 +73,7 @@ fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone)]
 pub enum Lanes {
     D,
@@ -99,9 +101,7 @@ fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
 }
 
 impl F51x4Unreduced {
-    pub fn zero() -> F51x4Unreduced {
-        F51x4Unreduced([u64x4::splat(0); 5])
-    }
+    pub const ZERO: F51x4Unreduced = F51x4Unreduced([u64x4::splat(0); 5]);
 
     pub fn new(
         x0: &FieldElement51,

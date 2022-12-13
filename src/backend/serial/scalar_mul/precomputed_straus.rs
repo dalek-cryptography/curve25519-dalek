@@ -11,20 +11,21 @@
 
 #![allow(non_snake_case)]
 
-use core::borrow::Borrow;
+use alloc::vec::Vec;
 
-use backend::serial::curve_models::{
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+
+use crate::backend::serial::curve_models::{
     AffineNielsPoint, CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
 };
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use traits::VartimePrecomputedMultiscalarMul;
-use window::{NafLookupTable5, NafLookupTable8};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::traits::VartimePrecomputedMultiscalarMul;
+use crate::window::{NafLookupTable5, NafLookupTable8};
 
-#[allow(unused_imports)]
-use prelude::*;
-
+#[allow(missing_docs)]
 pub struct VartimePrecomputedStraus {
     static_lookup_tables: Vec<NafLookupTable8<AffineNielsPoint>>,
 }
@@ -86,25 +87,34 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
 
             for i in 0..dp {
                 let t_ij = dynamic_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R.to_extended() + &dynamic_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R.to_extended() - &dynamic_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R.as_extended() + &dynamic_lookup_tables[i].select(t_ij as usize)
+                    }
+                    Ordering::Less => {
+                        R = &R.as_extended() - &dynamic_lookup_tables[i].select(-t_ij as usize)
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
+            #[allow(clippy::needless_range_loop)]
             for i in 0..sp {
                 let t_ij = static_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R.to_extended() + &self.static_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R.to_extended() - &self.static_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R.as_extended() + &self.static_lookup_tables[i].select(t_ij as usize)
+                    }
+                    Ordering::Less => {
+                        R = &R.as_extended() - &self.static_lookup_tables[i].select(-t_ij as usize)
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
-            S = R.to_projective();
+            S = R.as_projective();
         }
 
-        Some(S.to_extended())
+        Some(S.as_extended())
     }
 }

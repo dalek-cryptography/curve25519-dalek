@@ -9,15 +9,15 @@
 
 #![allow(non_snake_case)]
 
-use traits::Identity;
+use crate::traits::Identity;
 
-use std::ops::{Add, Neg, Sub};
+use core::ops::{Add, Neg, Sub};
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
 use super::constants;
 use super::field::{F51x4Reduced, F51x4Unreduced, Lanes, Shuffle};
@@ -76,7 +76,7 @@ impl ExtendedPoint {
         // (Y1 X1 T1 Z1) -- uses vpshufd (1c latency @ 1/c)
         let mut tmp0 = self.0.shuffle(Shuffle::BADC);
 
-        // (X1+Y1 X1+Y1 X1+Y1 X1+Y1) -- can use vpinserti128 
+        // (X1+Y1 X1+Y1 X1+Y1 X1+Y1) -- can use vpinserti128
         let mut tmp1 = (self.0 + tmp0).shuffle(Shuffle::ABAB);
 
         // (X1 Y1 Z1 X1+Y1)
@@ -97,7 +97,7 @@ impl ExtendedPoint {
         //    =======================
         //        S5   S6   S8   S9
 
-        let zero = F51x4Unreduced::zero();
+        let zero = F51x4Unreduced::ZERO;
 
         let S1_S1_S1_S1 = tmp1.shuffle(Shuffle::AAAA);
         let S2_S2_S2_S2 = tmp1.shuffle(Shuffle::BBBB);
@@ -258,8 +258,8 @@ mod test {
 
     #[test]
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing id +- id");
         let P = edwards::EdwardsPoint::identity();
@@ -297,8 +297,8 @@ mod test {
 
     #[test]
     fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing [2]id");
         let P = edwards::EdwardsPoint::identity();

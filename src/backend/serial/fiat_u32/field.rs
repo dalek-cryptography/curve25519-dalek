@@ -177,28 +177,20 @@ impl ConditionallySelectable for FieldElement2625 {
 }
 
 impl FieldElement2625 {
+    /// The scalar \\( 0 \\).
+    pub const ZERO: FieldElement2625 = FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    /// The scalar \\( 1 \\).
+    pub const ONE: FieldElement2625 = FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    /// The scalar \\( -1 \\).
+    pub const MINUS_ONE: FieldElement2625 = FieldElement2625([
+        0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
+        0x3ffffff, 0x1ffffff,
+    ]);
+
     /// Invert the sign of this field element
     pub fn negate(&mut self) {
         let neg = self.neg();
         self.0 = neg.0;
-    }
-
-    /// Construct zero.
-    pub fn zero() -> FieldElement2625 {
-        FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    }
-
-    /// Construct one.
-    pub fn one() -> FieldElement2625 {
-        FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    }
-
-    /// Construct -1.
-    pub fn minus_one() -> FieldElement2625 {
-        FieldElement2625([
-            0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
-            0x3ffffff, 0x1ffffff,
-        ])
     }
 
     /// Given `k > 0`, return `self^(2^k)`.
@@ -233,10 +225,10 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn as_bytes(&self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         fiat_25519_to_bytes(&mut bytes, &self.0);
-        return bytes;
+        bytes
     }
 
     /// Compute `self^2`.

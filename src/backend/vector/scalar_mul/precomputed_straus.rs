@@ -11,18 +11,17 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use traits::VartimePrecomputedMultiscalarMul;
-use window::{NafLookupTable5, NafLookupTable8};
-
-#[allow(unused_imports)]
-use prelude::*;
-
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::traits::VartimePrecomputedMultiscalarMul;
+use crate::window::{NafLookupTable5, NafLookupTable8};
 
 pub struct VartimePrecomputedStraus {
     static_lookup_tables: Vec<NafLookupTable8<CachedPoint>>,
@@ -85,19 +84,28 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
 
             for i in 0..dp {
                 let t_ij = dynamic_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R + &dynamic_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R - &dynamic_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R + &dynamic_lookup_tables[i].select(t_ij as usize);
+                    }
+                    Ordering::Less => {
+                        R = &R - &dynamic_lookup_tables[i].select(-t_ij as usize);
+                    }
+                    Ordering::Equal => {}
                 }
             }
 
+            #[allow(clippy::needless_range_loop)]
             for i in 0..sp {
                 let t_ij = static_nafs[i][j];
-                if t_ij > 0 {
-                    R = &R + &self.static_lookup_tables[i].select(t_ij as usize);
-                } else if t_ij < 0 {
-                    R = &R - &self.static_lookup_tables[i].select(-t_ij as usize);
+                match t_ij.cmp(&0) {
+                    Ordering::Greater => {
+                        R = &R + &self.static_lookup_tables[i].select(t_ij as usize);
+                    }
+                    Ordering::Less => {
+                        R = &R - &self.static_lookup_tables[i].select(-t_ij as usize);
+                    }
+                    Ordering::Equal => {}
                 }
             }
         }

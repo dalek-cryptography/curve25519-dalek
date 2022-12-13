@@ -5,13 +5,15 @@ name = "curve25519-dalek"
 # - update html_root_url
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "3.2.0"
+version = "4.0.0-pre.3"
+edition = "2021"
+rust-version = "1.56.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/curve25519-dalek"
-homepage = "https://dalek.rs/curve25519-dalek"
+homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
@@ -23,52 +25,47 @@ exclude = [
 ]
 
 [package.metadata.docs.rs]
-# Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
-# rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
-features = ["nightly", "simd_backend"]
+rustdoc-args = ["--html-in-header", "docs/assets/rustdoc-include-katex-header.html", "--cfg", "docsrs"]
+features = ["serde", "simd_backend", "rand_core", "digest"]
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/curve25519-dalek", branch = "master"}
 
 [dev-dependencies]
-sha2 = { version = "0.9", default-features = false }
+sha2 = { version = "0.10", default-features = false }
 bincode = "1"
-criterion = { version = "0.3.0", features = ["html_reports"] }
+criterion = { version = "0.4.0", features = ["html_reports"] }
 hex = "0.4.2"
-rand = "0.7"
+rand = "0.8"
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+
+[build-dependencies]
+platforms = "3.0.2"
 
 [[bench]]
 name = "dalek_benchmarks"
 harness = false
+required-features = ["rand_core"]
 
 [dependencies]
-rand_core = { version = "0.5", default-features = false }
-byteorder = { version = "^1.2.3", default-features = false, features = ["i128"] }
-digest = { version = "0.9", default-features = false }
-subtle = { version = "^2.2.1", default-features = false }
+cfg-if = "1"
+rand_core = { version = "0.6.4", default-features = false, optional = true }
+digest = { version = "0.10", default-features = false, optional = true }
+subtle = { version = "2.3.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
+zeroize = { version = "1", default-features = false }
+
+[target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
+fiat-crypto = "0.1.6"
+
 # The original packed_simd package was orphaned, see
 # https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161
-packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"], optional = true }
-zeroize = { version = "1", default-features = false }
-fiat-crypto = { version = "0.1.6", optional = true}
+[target.'cfg(curve25519_dalek_backend = "simd")'.dependencies]
+packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"] }
 
 [features]
-nightly = ["subtle/nightly"]
-default = ["std", "u64_backend"]
-std = ["alloc", "subtle/std", "rand_core/std"]
+default = ["alloc"]
 alloc = ["zeroize/alloc"]
 
-# The u32 backend uses u32s with u64 products.
-u32_backend = []
-# The u64 backend uses u64s with u128 products.
-u64_backend = []
-# fiat-u64 backend (with formally-verified field arith) uses u64s with u128 products.
-fiat_u64_backend = ["fiat-crypto"]
-# fiat-u32 backend (with formally-verified field arith) uses u32s with u64 products.
-fiat_u32_backend = ["fiat-crypto"]
-# The SIMD backend uses parallel formulas, using either AVX2 or AVX512-IFMA.
-simd_backend = ["nightly", "u64_backend", "packed_simd"]
-# DEPRECATED: this is now an alias for `simd_backend` and may be removed
-# in some future release.
-avx2_backend = ["simd_backend"]
+[profile.dev]
+opt-level = 2

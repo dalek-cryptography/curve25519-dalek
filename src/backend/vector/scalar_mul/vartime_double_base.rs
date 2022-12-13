@@ -11,12 +11,14 @@
 
 #![allow(non_snake_case)]
 
-use backend::vector::BASEPOINT_ODD_LOOKUP_TABLE;
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use traits::Identity;
-use window::NafLookupTable5;
+use core::cmp::Ordering;
+
+use crate::backend::vector::BASEPOINT_ODD_LOOKUP_TABLE;
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::Identity;
+use crate::window::NafLookupTable5;
 
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
@@ -40,16 +42,24 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     loop {
         Q = Q.double();
 
-        if a_naf[i] > 0 {
-            Q = &Q + &table_A.select(a_naf[i] as usize);
-        } else if a_naf[i] < 0 {
-            Q = &Q - &table_A.select(-a_naf[i] as usize);
+        match a_naf[i].cmp(&0) {
+            Ordering::Greater => {
+                Q = &Q + &table_A.select(a_naf[i] as usize);
+            }
+            Ordering::Less => {
+                Q = &Q - &table_A.select(-a_naf[i] as usize);
+            }
+            Ordering::Equal => {}
         }
 
-        if b_naf[i] > 0 {
-            Q = &Q + &table_B.select(b_naf[i] as usize);
-        } else if b_naf[i] < 0 {
-            Q = &Q - &table_B.select(-b_naf[i] as usize);
+        match b_naf[i].cmp(&0) {
+            Ordering::Greater => {
+                Q = &Q + &table_B.select(b_naf[i] as usize);
+            }
+            Ordering::Less => {
+                Q = &Q - &table_B.select(-b_naf[i] as usize);
+            }
+            Ordering::Equal => {}
         }
 
         if i == 0 {

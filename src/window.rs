@@ -15,116 +15,115 @@
 
 use core::fmt::Debug;
 
+use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::Choice;
 
-use traits::Identity;
+use crate::traits::Identity;
 
-use edwards::EdwardsPoint;
-use backend::serial::curve_models::ProjectiveNielsPoint;
-use backend::serial::curve_models::AffineNielsPoint;
+use crate::backend::serial::curve_models::AffineNielsPoint;
+use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use crate::edwards::EdwardsPoint;
 
 use zeroize::Zeroize;
 
 macro_rules! impl_lookup_table {
     (Name = $name:ident, Size = $size:expr, SizeNeg = $neg:expr, SizeRange = $range:expr, ConversionRange = $conv_range:expr) => {
+        /// A lookup table of precomputed multiples of a point \\(P\\), used to
+        /// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
+        ///
+        /// The computation of \\( xP \\) is done in constant time by the `select` function.
+        ///
+        /// Since `LookupTable` does not implement `Index`, it's more difficult
+        /// to accidentally use the table directly.  Unfortunately the table is
+        /// only `pub(crate)` so that we can write hardcoded constants, so it's
+        /// still technically possible.  It would be nice to prevent direct
+        /// access to the table.
+        #[derive(Copy, Clone)]
+        pub struct $name<T>(pub(crate) [T; $size]);
 
-/// A lookup table of precomputed multiples of a point \\(P\\), used to
-/// compute \\( xP \\) for \\( -8 \leq x \leq 8 \\).
-///
-/// The computation of \\( xP \\) is done in constant time by the `select` function.
-///
-/// Since `LookupTable` does not implement `Index`, it's more difficult
-/// to accidentally use the table directly.  Unfortunately the table is
-/// only `pub(crate)` so that we can write hardcoded constants, so it's
-/// still technically possible.  It would be nice to prevent direct
-/// access to the table.
-#[derive(Copy, Clone)]
-pub struct $name<T>(pub(crate) [T; $size]);
+        impl<T> $name<T>
+        where
+            T: Identity + ConditionallySelectable + ConditionallyNegatable,
+        {
+            /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
+            pub fn select(&self, x: i8) -> T {
+                debug_assert!(x >= $neg);
+                debug_assert!(x as i16 <= $size as i16); // XXX We have to convert to i16s here for the radix-256 case.. this is wrong.
 
-impl<T> $name<T>
-where
-    T: Identity + ConditionallySelectable + ConditionallyNegatable,
-{
-    /// Given \\(-8 \leq x \leq 8\\), return \\(xP\\) in constant time.
-    pub fn select(&self, x: i8) -> T {
-        debug_assert!(x >= $neg);
-        debug_assert!(x as i16 <= $size as i16); // XXX We have to convert to i16s here for the radix-256 case.. this is wrong.
+                // Compute xabs = |x|
+                let xmask = x as i16 >> 7;
+                let xabs = (x as i16 + xmask) ^ xmask;
 
-        // Compute xabs = |x|
-        let xmask = x  as i16 >> 7;
-        let xabs = (x as i16 + xmask) ^ xmask;
+                // Set t = 0 * P = identity
+                let mut t = T::identity();
+                for j in $range {
+                    // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
+                    let c = (xabs as u16).ct_eq(&(j as u16));
+                    t.conditional_assign(&self.0[j - 1], c);
+                }
+                // Now t == |x| * P.
 
-        // Set t = 0 * P = identity
-        let mut t = T::identity();
-        for j in $range {
-            // Copy `points[j-1] == j*P` onto `t` in constant time if `|x| == j`.
-            let c = (xabs as u16).ct_eq(&(j as u16));
-            t.conditional_assign(&self.0[j - 1], c);
-        }
-        // Now t == |x| * P.
+                let neg_mask = Choice::from((xmask & 1) as u8);
+                t.conditional_negate(neg_mask);
+                // Now t == x * P.
 
-        let neg_mask = Choice::from((xmask & 1) as u8);
-        t.conditional_negate(neg_mask);
-        // Now t == x * P.
-
-        t
-    }
-}
-
-impl<T: Copy + Default> Default for $name<T> {
-    fn default() -> $name<T> {
-        $name([T::default(); $size])
-    }
-}
-
-impl<T: Debug> Debug for $name<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "{:?}(", stringify!($name))?;
-
-        for x in self.0.iter() {
-            write!(f, "{:?}", x)?;
+                t
+            }
         }
 
-        write!(f, ")")
-    }
-}
-
-impl<'a> From<&'a EdwardsPoint> for $name<ProjectiveNielsPoint> {
-    fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_projective_niels(); $size];
-        for j in $conv_range {
-            points[j + 1] = (P + &points[j]).to_extended().to_projective_niels();
+        impl<T: Copy + Default> Default for $name<T> {
+            fn default() -> $name<T> {
+                $name([T::default(); $size])
+            }
         }
-        $name(points)
-    }
-}
 
-impl<'a> From<&'a EdwardsPoint> for $name<AffineNielsPoint> {
-    fn from(P: &'a EdwardsPoint) -> Self {
-        let mut points = [P.to_affine_niels(); $size];
-        // XXX batch inversion would be good if perf mattered here
-        for j in $conv_range {
-            points[j + 1] = (P + &points[j]).to_extended().to_affine_niels()
+        impl<T: Debug> Debug for $name<T> {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                write!(f, "{:?}(", stringify!($name))?;
+
+                for x in self.0.iter() {
+                    write!(f, "{:?}", x)?;
+                }
+
+                write!(f, ")")
+            }
         }
-        $name(points)
-    }
-}
 
-impl<T> Zeroize for $name<T>
-where
-    T: Copy + Default + Zeroize
-{
-    fn zeroize(&mut self) {
-        for x in self.0.iter_mut() {
-            x.zeroize();
+        impl<'a> From<&'a EdwardsPoint> for $name<ProjectiveNielsPoint> {
+            fn from(P: &'a EdwardsPoint) -> Self {
+                let mut points = [P.as_projective_niels(); $size];
+                for j in $conv_range {
+                    points[j + 1] = (P + &points[j]).as_extended().as_projective_niels();
+                }
+                $name(points)
+            }
         }
-    }
-}
 
-}}  // End macro_rules! impl_lookup_table
+        impl<'a> From<&'a EdwardsPoint> for $name<AffineNielsPoint> {
+            fn from(P: &'a EdwardsPoint) -> Self {
+                let mut points = [P.as_affine_niels(); $size];
+                // XXX batch inversion would be good if perf mattered here
+                for j in $conv_range {
+                    points[j + 1] = (P + &points[j]).as_extended().as_affine_niels()
+                }
+                $name(points)
+            }
+        }
+
+        impl<T> Zeroize for $name<T>
+        where
+            T: Copy + Default + Zeroize,
+        {
+            fn zeroize(&mut self) {
+                for x in self.0.iter_mut() {
+                    x.zeroize();
+                }
+            }
+        }
+    };
+} // End macro_rules! impl_lookup_table
 
 // The first one has to be named "LookupTable" because it's used as a constructor for consts.
 impl_lookup_table! {Name = LookupTable,         Size =   8, SizeNeg =   -8, SizeRange = 1 ..   9, ConversionRange = 0 ..   7} // radix-16
@@ -158,10 +157,10 @@ impl<T: Debug> Debug for NafLookupTable5<T> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_projective_niels(); 8];
+        let mut Ai = [A.as_projective_niels(); 8];
         let A2 = A.double();
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
         NafLookupTable5(Ai)
@@ -170,10 +169,10 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<ProjectiveNielsPoint> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_affine_niels(); 8];
+        let mut Ai = [A.as_affine_niels(); 8];
         let A2 = A.double();
         for i in 0..7 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_affine_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A]
         NafLookupTable5(Ai)
@@ -195,9 +194,9 @@ impl<T: Copy> NafLookupTable8<T> {
 
 impl<T: Debug> Debug for NafLookupTable8<T> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "NafLookupTable8([\n")?;
+        writeln!(f, "NafLookupTable8([")?;
         for i in 0..64 {
-            write!(f, "\t{:?},\n", &self.0[i])?;
+            writeln!(f, "\t{:?},", &self.0[i])?;
         }
         write!(f, "])")
     }
@@ -205,10 +204,10 @@ impl<T: Debug> Debug for NafLookupTable8<T> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_projective_niels(); 64];
+        let mut Ai = [A.as_projective_niels(); 64];
         let A2 = A.double();
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_projective_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_projective_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
         NafLookupTable8(Ai)
@@ -217,10 +216,10 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
 
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
-        let mut Ai = [A.to_affine_niels(); 64];
+        let mut Ai = [A.as_affine_niels(); 64];
         let A2 = A.double();
         for i in 0..63 {
-            Ai[i + 1] = (&A2 + &Ai[i]).to_extended().to_affine_niels();
+            Ai[i + 1] = (&A2 + &Ai[i]).as_extended().as_affine_niels();
         }
         // Now Ai = [A, 3A, 5A, 7A, 9A, 11A, 13A, 15A, ..., 127A]
         NafLookupTable8(Ai)

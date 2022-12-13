@@ -41,10 +41,10 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-use edwards;
-use window::{LookupTable, NafLookupTable5, NafLookupTable8};
+use crate::edwards;
+use crate::window::{LookupTable, NafLookupTable5, NafLookupTable8};
 
-use traits::Identity;
+use crate::traits::Identity;
 
 use super::constants;
 use super::field::{FieldElement2625x4, Lanes, Shuffle};
@@ -134,7 +134,7 @@ impl ExtendedPoint {
         //    =======================
         //        S5   S6   S8   S9
 
-        let zero = FieldElement2625x4::zero();
+        let zero = FieldElement2625x4::ZERO;
         let S_1 = tmp1.shuffle(Shuffle::AAAA);
         let S_2 = tmp1.shuffle(Shuffle::BBBB);
 
@@ -329,15 +329,16 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
 mod test {
     use super::*;
 
+    #[rustfmt::skip] // keep alignment of some S* calculations
     fn serial_add(P: edwards::EdwardsPoint, Q: edwards::EdwardsPoint) -> edwards::EdwardsPoint {
-        use backend::serial::u64::field::FieldElement51;
+        use crate::backend::serial::u64::field::FieldElement51;
 
         let (X1, Y1, Z1, T1) = (P.X, P.Y, P.Z, P.T);
         let (X2, Y2, Z2, T2) = (Q.X, Q.Y, Q.Z, Q.T);
 
         macro_rules! print_var {
             ($x:ident) => {
-                println!("{} = {:?}", stringify!($x), $x.to_bytes());
+                println!("{} = {:?}", stringify!($x), $x.as_bytes());
             };
         }
 
@@ -420,8 +421,8 @@ mod test {
 
     #[test]
     fn vector_addition_vs_serial_addition_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing id +- id");
         let P = edwards::EdwardsPoint::identity();
@@ -449,7 +450,7 @@ mod test {
 
         macro_rules! print_var {
             ($x:ident) => {
-                println!("{} = {:?}", stringify!($x), $x.to_bytes());
+                println!("{} = {:?}", stringify!($x), $x.as_bytes());
             };
         }
 
@@ -507,8 +508,8 @@ mod test {
 
     #[test]
     fn vector_doubling_vs_serial_doubling_vs_edwards_extendedpoint() {
-        use constants;
-        use scalar::Scalar;
+        use crate::constants;
+        use crate::scalar::Scalar;
 
         println!("Testing [2]id");
         let P = edwards::EdwardsPoint::identity();
@@ -525,10 +526,11 @@ mod test {
 
     #[test]
     fn basepoint_odd_lookup_table_verify() {
-        use constants;
-        use backend::vector::avx2::constants::{BASEPOINT_ODD_LOOKUP_TABLE};
+        use crate::backend::vector::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+        use crate::constants;
 
-        let basepoint_odd_table = NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
+        let basepoint_odd_table =
+            NafLookupTable8::<CachedPoint>::from(&constants::ED25519_BASEPOINT_POINT);
         println!("basepoint_odd_lookup_table = {:?}", basepoint_odd_table);
 
         let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;

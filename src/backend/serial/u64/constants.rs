@@ -11,19 +11,19 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
-use backend::serial::curve_models::AffineNielsPoint;
 use super::field::FieldElement51;
 use super::scalar::Scalar52;
-use edwards::{EdwardsBasepointTable, EdwardsPoint};
-use window::{LookupTable, NafLookupTable8};
+use crate::backend::serial::curve_models::AffineNielsPoint;
+use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
+use crate::window::{LookupTable, NafLookupTable8};
 
-/// The value of minus one, equal to `-&FieldElement::one()`
+/// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51([
     2251799813685228,
     2251799813685247,
     2251799813685247,
     2251799813685247,
-    2251799813685247
+    2251799813685247,
 ]);
 
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
@@ -50,7 +50,7 @@ pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement51 = FieldElement51([
     1998550399581263,
     496427632559748,
     118527312129759,
-    45110755273534
+    45110755273534,
 ]);
 
 /// Edwards `d` value minus one squared, equal to `(((-121665/121666) mod p) - 1) pow 2`
@@ -59,7 +59,7 @@ pub(crate) const EDWARDS_D_MINUS_ONE_SQUARED: FieldElement51 = FieldElement51([
     1572317787530805,
     683053064812840,
     317374165784489,
-    1572899562415810
+    1572899562415810,
 ]);
 
 /// `= sqrt(a*d - 1)`, where `a = -1 (mod p)`, `d` are the Edwards curve parameters.
@@ -167,14 +167,14 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
     ]),
 };
 
-/// The 8-torsion subgroup \\(\mathcal E [8]\\).
+/// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
 /// In the case of Curve25519, it is cyclic; the \\(i\\)-th element of
-/// the array is \\([i]P\\), where \\(P\\) is a point of order \\(8\\)
-/// generating \\(\mathcal E[8]\\).
+/// the array is \\(\[i\]P\\), where \\(P\\) is a point of order \\(8\\)
+/// generating \\(\mathcal E\[8\]\\).
 ///
-/// Thus \\(\mathcal E[4]\\) is the points indexed by `0,2,4,6`, and
-/// \\(\mathcal E[2]\\) is the points indexed by `0,4`.
+/// Thus \\(\mathcal E\[4\]\\) is the points indexed by `0,2,4,6`, and
+/// \\(\mathcal E\[2\]\\) is the points indexed by `0,4`.
 pub const EIGHT_TORSION: [EdwardsPoint; 8] = EIGHT_TORSION_INNER_DOC_HIDDEN;
 
 /// Inner item used to hide limb constants from cargo doc output.
@@ -6282,6 +6282,7 @@ pub const ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable =
     ]);
 
 /// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+#[allow(dead_code)]
 pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> =
     NafLookupTable8([
         AffineNielsPoint {

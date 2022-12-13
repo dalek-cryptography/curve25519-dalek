@@ -11,18 +11,18 @@
 
 #![allow(non_snake_case)]
 
+use alloc::vec::Vec;
+
 use core::borrow::Borrow;
+use core::cmp::Ordering;
 
 use zeroize::Zeroizing;
 
-use backend::vector::{CachedPoint, ExtendedPoint};
-use edwards::EdwardsPoint;
-use scalar::Scalar;
-use window::{LookupTable, NafLookupTable5};
-use traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
-
-#[allow(unused_imports)]
-use prelude::*;
+use crate::backend::vector::{CachedPoint, ExtendedPoint};
+use crate::edwards::EdwardsPoint;
+use crate::scalar::Scalar;
+use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
+use crate::window::{LookupTable, NafLookupTable5};
 
 /// Multiscalar multiplication using interleaved window / Straus'
 /// method.  See the `Straus` struct in the serial backend for more
@@ -53,7 +53,7 @@ impl MultiscalarMul for Straus {
 
         let scalar_digits_vec: Vec<_> = scalars
             .into_iter()
-            .map(|s| s.borrow().to_radix_16())
+            .map(|s| s.borrow().as_radix_16())
             .collect();
         // Pass ownership to a `Zeroizing` wrapper
         let scalar_digits = Zeroizing::new(scalar_digits_vec);
@@ -95,10 +95,14 @@ impl VartimeMultiscalarMul for Straus {
             Q = Q.double();
 
             for (naf, lookup_table) in nafs.iter().zip(lookup_tables.iter()) {
-                if naf[i] > 0 {
-                    Q = &Q + &lookup_table.select(naf[i] as usize);
-                } else if naf[i] < 0 {
-                    Q = &Q - &lookup_table.select(-naf[i] as usize);
+                match naf[i].cmp(&0) {
+                    Ordering::Greater => {
+                        Q = &Q + &lookup_table.select(naf[i] as usize);
+                    }
+                    Ordering::Less => {
+                        Q = &Q - &lookup_table.select(-naf[i] as usize);
+                    }
+                    Ordering::Equal => {}
                 }
             }
         }

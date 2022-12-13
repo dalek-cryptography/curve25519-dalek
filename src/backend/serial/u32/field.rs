@@ -282,8 +282,11 @@ impl ConditionallySelectable for FieldElement2625 {
 }
 
 impl FieldElement2625 {
+    /// The scalar \\( 0 \\).
     pub const ZERO: FieldElement2625 = FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    /// The scalar \\( 1 \\).
     pub const ONE: FieldElement2625 = FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    /// The scalar \\( -1 \\).
     pub const MINUS_ONE: FieldElement2625 = FieldElement2625([
         0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
         0x3ffffff, 0x1ffffff,

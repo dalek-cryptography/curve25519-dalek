@@ -9,6 +9,9 @@
 
 //! ed25519 keypairs.
 
+#[cfg(feature = "pkcs8")]
+use ed25519::pkcs8::{self, DecodePrivateKey};
+
 #[cfg(feature = "rand")]
 use rand::{CryptoRng, RngCore};
 
@@ -428,6 +431,83 @@ impl Verifier<ed25519::Signature> for Keypair {
     /// Verify a signature on a message with this keypair's public key.
     fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
         self.public.verify(message, signature)
+    }
+}
+
+impl TryFrom<&[u8]> for Keypair {
+    type Error = SignatureError;
+
+    fn try_from(bytes: &[u8]) -> Result<Keypair, SignatureError> {
+        Keypair::from_bytes(bytes)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl DecodePrivateKey for Keypair {}
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+impl pkcs8::EncodePrivateKey for Keypair {
+    fn to_pkcs8_der(&self) -> pkcs8::Result<pkcs8::SecretDocument> {
+        pkcs8::KeypairBytes::from(self).to_pkcs8_der()
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<pkcs8::KeypairBytes> for Keypair {
+    type Error = pkcs8::Error;
+
+    fn try_from(pkcs8_key: pkcs8::KeypairBytes) -> pkcs8::Result<Self> {
+        Keypair::try_from(&pkcs8_key)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<&pkcs8::KeypairBytes> for Keypair {
+    type Error = pkcs8::Error;
+
+    fn try_from(pkcs8_key: &pkcs8::KeypairBytes) -> pkcs8::Result<Self> {
+        let secret = SecretKey::from_bytes(&pkcs8_key.secret_key)
+            .map_err(|_| pkcs8::Error::KeyMalformed)?;
+
+        let public = PublicKey::from(&secret);
+
+        // Validate the public key in the PKCS#8 document if present
+        if let Some(public_bytes) = pkcs8_key.public_key {
+            let pk = PublicKey::from_bytes(public_bytes.as_ref())
+                .map_err(|_| pkcs8::Error::KeyMalformed)?;
+
+            if public != pk {
+                return Err(pkcs8::Error::KeyMalformed);
+            }
+        }
+
+        Ok(Keypair { secret, public })
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl From<Keypair> for pkcs8::KeypairBytes {
+    fn from(keypair: Keypair) -> pkcs8::KeypairBytes {
+        pkcs8::KeypairBytes::from(&keypair)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl From<&Keypair> for pkcs8::KeypairBytes {
+    fn from(keypair: &Keypair) -> pkcs8::KeypairBytes {
+        pkcs8::KeypairBytes {
+            secret_key: keypair.secret.to_bytes(),
+            public_key: Some(pkcs8::PublicKeyBytes(keypair.public.to_bytes())),
+        }
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<pkcs8::PrivateKeyInfo<'_>> for Keypair {
+    type Error = pkcs8::Error;
+
+    fn try_from(private_key: pkcs8::PrivateKeyInfo<'_>) -> pkcs8::Result<Self> {
+        pkcs8::KeypairBytes::try_from(private_key)?.try_into()
     }
 }
 

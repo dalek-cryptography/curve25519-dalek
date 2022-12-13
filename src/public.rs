@@ -23,6 +23,9 @@ use ed25519::signature::Verifier;
 
 pub use sha2::Sha512;
 
+#[cfg(feature = "pkcs8")]
+use ed25519::pkcs8::{self, DecodePublicKey};
+
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
 #[cfg(feature = "serde")]
@@ -347,6 +350,65 @@ impl Verifier<ed25519::Signature> for PublicKey {
         } else {
             Err(InternalError::VerifyError.into())
         }
+    }
+}
+
+impl TryFrom<&[u8]> for PublicKey {
+    type Error = SignatureError;
+
+    fn try_from(bytes: &[u8]) -> Result<PublicKey, SignatureError> {
+        PublicKey::from_bytes(bytes)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl DecodePublicKey for PublicKey {}
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+impl pkcs8::EncodePublicKey for PublicKey {
+    fn to_public_key_der(&self) -> pkcs8::spki::Result<pkcs8::Document> {
+        pkcs8::PublicKeyBytes::from(self).to_public_key_der()
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<pkcs8::PublicKeyBytes> for PublicKey {
+    type Error = pkcs8::spki::Error;
+
+    fn try_from(pkcs8_key: pkcs8::PublicKeyBytes) -> pkcs8::spki::Result<Self> {
+        PublicKey::try_from(&pkcs8_key)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<&pkcs8::PublicKeyBytes> for PublicKey {
+    type Error = pkcs8::spki::Error;
+
+    fn try_from(pkcs8_key: &pkcs8::PublicKeyBytes) -> pkcs8::spki::Result<Self> {
+        PublicKey::from_bytes(pkcs8_key.as_ref()).map_err(|_| pkcs8::spki::Error::KeyMalformed)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl From<PublicKey> for pkcs8::PublicKeyBytes {
+    fn from(public_key: PublicKey) -> pkcs8::PublicKeyBytes {
+        pkcs8::PublicKeyBytes::from(&public_key)
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl From<&PublicKey> for pkcs8::PublicKeyBytes {
+    fn from(public_key: &PublicKey) -> pkcs8::PublicKeyBytes {
+        pkcs8::PublicKeyBytes(public_key.to_bytes())
+    }
+}
+
+#[cfg(feature = "pkcs8")]
+impl TryFrom<pkcs8::spki::SubjectPublicKeyInfo<'_>> for PublicKey {
+    type Error = pkcs8::spki::Error;
+
+    fn try_from(public_key: pkcs8::spki::SubjectPublicKeyInfo<'_>) -> pkcs8::spki::Result<Self> {
+        pkcs8::PublicKeyBytes::try_from(public_key)?.try_into()
     }
 }
 

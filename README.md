@@ -18,7 +18,7 @@ version = "1"
 
 # Minimum Supported Rust Version
 
-This crate requires Rust 1.56.1 at a minimum. 1.x releases of this crate supported an MSRV of 1.41.
+This crate requires Rust 1.57.0 at a minimum. 1.x releases of this crate supported an MSRV of 1.41.
 
 In the future, MSRV changes will be accompanied by a minor version bump.
 

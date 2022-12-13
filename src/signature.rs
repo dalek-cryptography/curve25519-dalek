@@ -94,7 +94,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
         return Ok(Scalar::from_bits(bytes));
     }
 
-    match Scalar::from_canonical_bytes(bytes) {
+    match Scalar::from_canonical_bytes(bytes).into() {
         None => return Err(InternalError::ScalarFormatError.into()),
         Some(x) => return Ok(x),
     };

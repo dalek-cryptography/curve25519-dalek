@@ -138,6 +138,44 @@
 //! # }
 //! ```
 //!
+//! ### PKCS#8 Key Encoding
+//!
+//! PKCS#8 is a private key format with support for multiple algorithms.
+//! It can be encoded as binary (DER) or text (PEM).
+//!
+//! You can recognize PEM-encoded PKCS#8 keys by the following:
+//!
+//! ```text
+//! -----BEGIN PRIVATE KEY-----
+//! ```
+//!
+//! To use PKCS#8, you need to enable the `pkcs8` crate feature.
+//!
+//! The following traits can be used to decode/encode [`Keypair`] and
+//! [`PublicKey`] as PKCS#8. Note that [`pkcs8`] is re-exported from the
+//! toplevel of the crate:
+//!
+//! - [`pkcs8::DecodePrivateKey`]: decode private keys from PKCS#8
+//! - [`pkcs8::EncodePrivateKey`]: encode private keys to PKCS#8
+//! - [`pkcs8::DecodePublicKey`]: decode public keys from PKCS#8
+//! - [`pkcs8::EncodePublicKey`]: encode public keys to PKCS#8
+//!
+//! #### Example
+//!
+//! NOTE: this requires the `pem` crate feature.
+//!
+#![cfg_attr(feature = "pem", doc = "```")]
+#![cfg_attr(not(feature = "pem"), doc = "```ignore")]
+//! use ed25519_dalek::{PublicKey, pkcs8::DecodePublicKey};
+//!
+//! let pem = "-----BEGIN PUBLIC KEY-----
+//! MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
+//! -----END PUBLIC KEY-----";
+//!
+//! let public_key = PublicKey::from_public_key_pem(pem)
+//!     .expect("invalid public key PEM");
+//! ```
+//!
 //! ### Using Serde
 //!
 //! If you prefer the bytes to be wrapped in another serialisation format, all
@@ -208,6 +246,8 @@
 #![warn(future_incompatible, rust_2018_idioms)]
 #![deny(missing_docs)] // refuse to compile if documentation is missing
 #![cfg_attr(not(test), forbid(unsafe_code))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
+#![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 
 #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
 extern crate alloc;
@@ -243,3 +283,6 @@ pub use crate::secret::*;
 // Re-export the `Signer` and `Verifier` traits from the `signature` crate
 pub use ed25519::signature::{Signer, Verifier};
 pub use ed25519::Signature;
+
+#[cfg(feature = "pkcs8")]
+pub use ed25519::pkcs8;

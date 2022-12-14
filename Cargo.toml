@@ -5,7 +5,7 @@ name = "curve25519-dalek"
 # - update html_root_url
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.0.0-pre.4"
+version = "4.0.0-pre.5"
 edition = "2021"
 rust-version = "1.56.1"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
@@ -28,8 +28,8 @@ exclude = [
 rustdoc-args = [
     "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
     "--cfg", "docsrs",
-    '--cfg=curve25519_dalek_backend="simd"',
 ]
+rustc-args = ["--cfg", "curve25519_dalek_backend=\"simd\""]
 features = ["serde", "rand_core", "digest"]
 
 [badges]

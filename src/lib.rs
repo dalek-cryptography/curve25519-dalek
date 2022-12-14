@@ -20,7 +20,7 @@
 #![doc(
     html_logo_url = "https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"
 )]
-#![doc(html_root_url = "https://docs.rs/curve25519-dalek/4.0.0-pre.2")]
+#![doc(html_root_url = "https://docs.rs/curve25519-dalek/4.0.0-pre.5")]
 #![doc = include_str!("../README.md")]
 
 //------------------------------------------------------------------------

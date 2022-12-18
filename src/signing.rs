@@ -58,40 +58,36 @@ pub struct SigningKey {
     pub(crate) verifying_key: VerifyingKey,
 }
 
+/// # Example
+///
+/// ```
+/// # extern crate ed25519_dalek;
+/// #
+/// use ed25519_dalek::SigningKey;
+/// use ed25519_dalek::SECRET_KEY_LENGTH;
+/// use ed25519_dalek::SignatureError;
+///
+/// # fn doctest() -> Result<SigningKey, SignatureError> {
+/// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
+///    157, 097, 177, 157, 239, 253, 090, 096,
+///    186, 132, 074, 244, 146, 236, 044, 196,
+///    068, 073, 197, 105, 123, 050, 105, 025,
+///    112, 059, 172, 003, 028, 174, 127, 096, ];
+///
+/// let signing_key: SigningKey = SigningKey::from_bytes(&secret_key_bytes);
+/// assert_eq!(signing_key.to_bytes(), secret_key_bytes);
+///
+/// # Ok(signing_key)
+/// # }
+/// #
+/// # fn main() {
+/// #     let result = doctest();
+/// #     assert!(result.is_ok());
+/// # }
+/// ```
 impl SigningKey {
-    /// Construct a [`SigningKey`] from a slice of bytes.
+    /// Construct a [`SigningKey`] from a [`SecretKey`]
     ///
-    /// # Example
-    ///
-    /// ```
-    /// # extern crate ed25519_dalek;
-    /// #
-    /// use ed25519_dalek::SigningKey;
-    /// use ed25519_dalek::SECRET_KEY_LENGTH;
-    /// use ed25519_dalek::SignatureError;
-    ///
-    /// # fn doctest() -> Result<SigningKey, SignatureError> {
-    /// let secret_key_bytes: [u8; SECRET_KEY_LENGTH] = [
-    ///    157, 097, 177, 157, 239, 253, 090, 096,
-    ///    186, 132, 074, 244, 146, 236, 044, 196,
-    ///    068, 073, 197, 105, 123, 050, 105, 025,
-    ///    112, 059, 172, 003, 028, 174, 127, 096, ];
-    ///
-    /// let signing_key: SigningKey = SigningKey::from_bytes(&secret_key_bytes);
-    /// #
-    /// # Ok(signing_key)
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     let result = doctest();
-    /// #     assert!(result.is_ok());
-    /// # }
-    /// ```
-    ///
-    /// # Returns
-    ///
-    /// A `Result` whose okay value is an EdDSA `SecretKey` or whose error value
-    /// is an `SignatureError` wrapping the internal error that occurred.
     #[inline]
     pub fn from_bytes(secret_key: &SecretKey) -> Self {
         let verifying_key = VerifyingKey::from(&ExpandedSecretKey::from(secret_key));
@@ -101,7 +97,7 @@ impl SigningKey {
         }
     }
 
-    /// Convert this secret key to a byte array.
+    /// Convert this [`SigningKey`] into a [`SecretKey`]
     #[inline]
     pub fn to_bytes(&self) -> SecretKey {
         self.secret_key

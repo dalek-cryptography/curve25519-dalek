@@ -73,7 +73,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     // This is compatible with ed25519-donna and libsodium when
     // -DED25519_COMPAT is NOT specified.
     if bytes[31] & 224 != 0 {
-        return Err(InternalError::ScalarFormatError.into());
+        return Err(InternalError::ScalarFormat.into());
     }
 
     Ok(Scalar::from_bits(bytes))
@@ -95,15 +95,15 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     }
 
     match Scalar::from_canonical_bytes(bytes).into() {
-        None => return Err(InternalError::ScalarFormatError.into()),
-        Some(x) => return Ok(x),
-    };
+        None => Err(InternalError::ScalarFormat.into()),
+        Some(x) => Ok(x),
+    }
 }
 
 impl InternalSignature {
     /// Convert this `Signature` to a byte array.
     #[inline]
-    pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
+    pub fn as_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
         let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
 
         signature_bytes[..32].copy_from_slice(&self.R.as_bytes()[..]);
@@ -182,6 +182,6 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
 
 impl From<InternalSignature> for ed25519::Signature {
     fn from(sig: InternalSignature) -> ed25519::Signature {
-        ed25519::Signature::from_bytes(&sig.to_bytes()).unwrap()
+        ed25519::Signature::from_bytes(&sig.as_bytes()).unwrap()
     }
 }

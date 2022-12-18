@@ -124,7 +124,7 @@ impl SigningKey {
         let verifying_key = VerifyingKey::from_bytes(verifying_key.try_into().unwrap())?;
 
         if verifying_key != VerifyingKey::from(&secret_key) {
-            return Err(InternalError::MismatchedKeypairError.into());
+            return Err(InternalError::MismatchedKeypair.into());
         }
 
         Ok(SigningKey {
@@ -300,9 +300,7 @@ impl SigningKey {
     {
         let expanded: ExpandedSecretKey = (&self.secret_key).into(); // xxx thanks i hate this
 
-        expanded
-            .sign_prehashed(prehashed_message, &self.verifying_key, context)
-            .into()
+        expanded.sign_prehashed(prehashed_message, &self.verifying_key, context)
     }
 
     /// Verify a signature on a message with this signing key's public key.
@@ -473,7 +471,7 @@ impl Signer<ed25519::Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
     fn try_sign(&self, message: &[u8]) -> Result<ed25519::Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
-        Ok(expanded.sign(&message, &self.verifying_key).into())
+        Ok(expanded.sign(message, &self.verifying_key))
     }
 }
 
@@ -505,7 +503,7 @@ impl TryFrom<&[u8]> for SigningKey {
         SecretKey::try_from(bytes)
             .map(|bytes| Self::from_bytes(&bytes))
             .map_err(|_| {
-                InternalError::BytesLengthError {
+                InternalError::BytesLength {
                     name: "SecretKey",
                     length: SECRET_KEY_LENGTH,
                 }
@@ -695,24 +693,20 @@ impl ExpandedSecretKey {
     #[allow(non_snake_case)]
     pub(crate) fn sign(&self, message: &[u8], verifying_key: &VerifyingKey) -> ed25519::Signature {
         let mut h: Sha512 = Sha512::new();
-        let R: CompressedEdwardsY;
-        let r: Scalar;
-        let s: Scalar;
-        let k: Scalar;
 
-        h.update(&self.nonce);
-        h.update(&message);
+        h.update(self.nonce);
+        h.update(message);
 
-        r = Scalar::from_hash(h);
-        R = (&r * &ED25519_BASEPOINT_TABLE).compress();
+        let r = Scalar::from_hash(h);
+        let R: CompressedEdwardsY = (&r * &ED25519_BASEPOINT_TABLE).compress();
 
         h = Sha512::new();
         h.update(R.as_bytes());
         h.update(verifying_key.as_bytes());
-        h.update(&message);
+        h.update(message);
 
-        k = Scalar::from_hash(h);
-        s = &(&k * &self.key) + &r;
+        let k = Scalar::from_hash(h);
+        let s: Scalar = (k * self.key) + r;
 
         InternalSignature { R, s }.into()
     }
@@ -749,17 +743,11 @@ impl ExpandedSecretKey {
     {
         let mut h: Sha512;
         let mut prehash: [u8; 64] = [0u8; 64];
-        let R: CompressedEdwardsY;
-        let r: Scalar;
-        let s: Scalar;
-        let k: Scalar;
 
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
 
         if ctx.len() > 255 {
-            return Err(SignatureError::from(
-                InternalError::PrehashedContextLengthError,
-            ));
+            return Err(SignatureError::from(InternalError::PrehashedContextLength));
         }
 
         let ctx_len: u8 = ctx.len() as u8;
@@ -781,26 +769,26 @@ impl ExpandedSecretKey {
         // still bleeding from malleability, for fuck's sake.
         h = Sha512::new()
             .chain_update(b"SigEd25519 no Ed25519 collisions")
-            .chain_update(&[1]) // Ed25519ph
-            .chain_update(&[ctx_len])
+            .chain_update([1]) // Ed25519ph
+            .chain_update([ctx_len])
             .chain_update(ctx)
-            .chain_update(&self.nonce)
+            .chain_update(self.nonce)
             .chain_update(&prehash[..]);
 
-        r = Scalar::from_hash(h);
-        R = (&r * &ED25519_BASEPOINT_TABLE).compress();
+        let r = Scalar::from_hash(h);
+        let R: CompressedEdwardsY = (&r * &ED25519_BASEPOINT_TABLE).compress();
 
         h = Sha512::new()
             .chain_update(b"SigEd25519 no Ed25519 collisions")
-            .chain_update(&[1]) // Ed25519ph
-            .chain_update(&[ctx_len])
+            .chain_update([1]) // Ed25519ph
+            .chain_update([ctx_len])
             .chain_update(ctx)
             .chain_update(R.as_bytes())
             .chain_update(verifying_key.as_bytes())
             .chain_update(&prehash[..]);
 
-        k = Scalar::from_hash(h);
-        s = &(&k * &self.key) + &r;
+        let k = Scalar::from_hash(h);
+        let s: Scalar = (k * self.key) + r;
 
         Ok(InternalSignature { R, s }.into())
     }

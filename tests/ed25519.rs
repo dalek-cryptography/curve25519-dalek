@@ -66,8 +66,7 @@ mod vectors {
             let pub_bytes = &pub_bytes[..PUBLIC_KEY_LENGTH].try_into().unwrap();
 
             let signing_key = SigningKey::from_bytes(sec_bytes);
-            let expected_verifying_key =
-                VerifyingKey::from_bytes(pub_bytes).unwrap();
+            let expected_verifying_key = VerifyingKey::from_bytes(pub_bytes).unwrap();
             assert_eq!(expected_verifying_key, signing_key.verifying_key());
 
             // The signatures in the test vectors also include the message
@@ -93,8 +92,7 @@ mod vectors {
         let sig_bytes = hex!("98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406");
 
         let signing_key = SigningKey::from_bytes(&sec_bytes);
-        let expected_verifying_key =
-            VerifyingKey::from_bytes(&pub_bytes).unwrap();
+        let expected_verifying_key = VerifyingKey::from_bytes(&pub_bytes).unwrap();
         assert_eq!(expected_verifying_key, signing_key.verifying_key());
         let sig1 = Signature::try_from(&sig_bytes[..]).unwrap();
 

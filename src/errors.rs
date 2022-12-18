@@ -23,23 +23,23 @@ use std::error::Error;
 /// need to pay any attention to these.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub(crate) enum InternalError {
-    PointDecompressionError,
-    ScalarFormatError,
+    PointDecompression,
+    ScalarFormat,
     /// An error in the length of bytes handed to a constructor.
     ///
     /// To use this, pass a string specifying the `name` of the type which is
     /// returning the error, and the `length` in bytes which its constructor
     /// expects.
-    BytesLengthError {
+    BytesLength {
         name: &'static str,
         length: usize,
     },
     /// The verification equation wasn't satisfied
-    VerifyError,
+    Verify,
     /// Two arrays did not match in size, making the called signature
     /// verification method impossible.
     #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
-    ArrayLengthError {
+    ArrayLength {
         name_a: &'static str,
         length_a: usize,
         name_b: &'static str,
@@ -48,22 +48,22 @@ pub(crate) enum InternalError {
         length_c: usize,
     },
     /// An ed25519ph signature can only take up to 255 octets of context.
-    PrehashedContextLengthError,
+    PrehashedContextLength,
     /// A mismatched (public, secret) key pair.
-    MismatchedKeypairError,
+    MismatchedKeypair,
 }
 
 impl Display for InternalError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            InternalError::PointDecompressionError => write!(f, "Cannot decompress Edwards point"),
-            InternalError::ScalarFormatError => write!(f, "Cannot use scalar with high-bit set"),
-            InternalError::BytesLengthError { name: n, length: l } => {
+            InternalError::PointDecompression => write!(f, "Cannot decompress Edwards point"),
+            InternalError::ScalarFormat => write!(f, "Cannot use scalar with high-bit set"),
+            InternalError::BytesLength { name: n, length: l } => {
                 write!(f, "{} must be {} bytes in length", n, l)
             }
-            InternalError::VerifyError => write!(f, "Verification equation was not satisfied"),
+            InternalError::Verify => write!(f, "Verification equation was not satisfied"),
             #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
-            InternalError::ArrayLengthError {
+            InternalError::ArrayLength {
                 name_a: na,
                 length_a: la,
                 name_b: nb,
@@ -76,11 +76,11 @@ impl Display for InternalError {
                               {} has length {}, {} has length {}.",
                 na, la, nb, lb, nc, lc
             ),
-            InternalError::PrehashedContextLengthError => write!(
+            InternalError::PrehashedContextLength => write!(
                 f,
                 "An ed25519ph signature can only take up to 255 octets of context"
             ),
-            InternalError::MismatchedKeypairError => write!(f, "Mismatched Keypair detected"),
+            InternalError::MismatchedKeypair => write!(f, "Mismatched Keypair detected"),
         }
     }
 }

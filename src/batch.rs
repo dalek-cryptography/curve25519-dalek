@@ -218,7 +218,7 @@ pub fn verify_batch(
         || signatures.len() != verifying_keys.len()
         || verifying_keys.len() != messages.len()
     {
-        return Err(InternalError::ArrayLengthError {
+        return Err(InternalError::ArrayLength {
             name_a: "signatures",
             length_a: signatures.len(),
             name_b: "messages",
@@ -292,11 +292,11 @@ pub fn verify_batch(
         once(-B_coefficient).chain(zs.iter().cloned()).chain(zhrams),
         B.chain(Rs).chain(As),
     )
-    .ok_or(InternalError::VerifyError)?;
+    .ok_or(InternalError::Verify)?;
 
     if id.is_identity() {
         Ok(())
     } else {
-        Err(InternalError::VerifyError.into())
+        Err(InternalError::Verify.into())
     }
 }

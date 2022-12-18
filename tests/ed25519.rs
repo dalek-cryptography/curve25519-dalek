@@ -61,20 +61,19 @@ mod vectors {
             let msg_bytes: Vec<u8> = FromHex::from_hex(&parts[2]).unwrap();
             let sig_bytes: Vec<u8> = FromHex::from_hex(&parts[3]).unwrap();
 
-            let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
-            let expected_public: PublicKey =
-                PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
-            let keypair: Keypair = Keypair::from(secret);
-            assert_eq!(expected_public, keypair.public_key());
+            let signing_key = SigningKey::try_from(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+            let expected_verifying_key =
+                VerifyingKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+            assert_eq!(expected_verifying_key, signing_key.verifying_key());
 
             // The signatures in the test vectors also include the message
             // at the end, but we just want R and S.
             let sig1: Signature = Signature::try_from(&sig_bytes[..64]).unwrap();
-            let sig2: Signature = keypair.sign(&msg_bytes);
+            let sig2: Signature = signing_key.sign(&msg_bytes);
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
             assert!(
-                keypair.verify(&msg_bytes, &sig2).is_ok(),
+                signing_key.verify(&msg_bytes, &sig2).is_ok(),
                 "Signature verification failed on line {}",
                 lineno
             );
@@ -85,20 +84,21 @@ mod vectors {
     #[test]
     fn ed25519ph_rf8032_test_vector() {
         let secret_key: &[u8] = b"833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42";
-        let public_key: &[u8] = b"ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf";
+        let verifying_key: &[u8] =
+            b"ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf";
         let message: &[u8] = b"616263";
         let signature: &[u8] = b"98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406";
 
         let sec_bytes: Vec<u8> = FromHex::from_hex(secret_key).unwrap();
-        let pub_bytes: Vec<u8> = FromHex::from_hex(public_key).unwrap();
+        let pub_bytes: Vec<u8> = FromHex::from_hex(verifying_key).unwrap();
         let msg_bytes: Vec<u8> = FromHex::from_hex(message).unwrap();
         let sig_bytes: Vec<u8> = FromHex::from_hex(signature).unwrap();
 
-        let secret: SecretKey = SecretKey::from_bytes(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
-        let expected_public: PublicKey =
-            PublicKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
-        let keypair: Keypair = Keypair::from(secret);
-        assert_eq!(expected_public, keypair.public_key());
+        let signing_key: SigningKey =
+            SigningKey::try_from(&sec_bytes[..SECRET_KEY_LENGTH]).unwrap();
+        let expected_verifying_key: VerifyingKey =
+            VerifyingKey::from_bytes(&pub_bytes[..PUBLIC_KEY_LENGTH]).unwrap();
+        assert_eq!(expected_verifying_key, signing_key.verifying_key());
         let sig1: Signature = Signature::try_from(&sig_bytes[..]).unwrap();
 
         let mut prehash_for_signing: Sha512 = Sha512::default();
@@ -107,7 +107,9 @@ mod vectors {
         prehash_for_signing.update(&msg_bytes[..]);
         prehash_for_verifying.update(&msg_bytes[..]);
 
-        let sig2: Signature = keypair.sign_prehashed(prehash_for_signing, None).unwrap();
+        let sig2: Signature = signing_key
+            .sign_prehashed(prehash_for_signing, None)
+            .unwrap();
 
         assert!(
             sig1 == sig2,
@@ -117,7 +119,7 @@ mod vectors {
             sig2
         );
         assert!(
-            keypair
+            signing_key
                 .verify_prehashed(prehash_for_verifying, None, &sig2)
                 .is_ok(),
             "Could not verify ed25519ph signature!"
@@ -185,7 +187,7 @@ mod vectors {
         }
 
         let signature = serialize_signature(&r, &s);
-        let pk = PublicKey::from_bytes(&pub_key.compress().as_bytes()[..]).unwrap();
+        let pk = VerifyingKey::from_bytes(&pub_key.compress().as_bytes()[..]).unwrap();
         let sig = Signature::try_from(&signature[..]).unwrap();
         // The same signature verifies for both messages
         assert!(pk.verify(message1, &sig).is_ok() && pk.verify(message2, &sig).is_ok());
@@ -204,7 +206,7 @@ mod integrations {
     #[test]
     fn sign_verify() {
         // TestSignVerify
-        let keypair: Keypair;
+        let signing_key: SigningKey;
         let good_sig: Signature;
         let bad_sig: Signature;
 
@@ -213,27 +215,27 @@ mod integrations {
 
         let mut csprng = OsRng {};
 
-        keypair = Keypair::generate(&mut csprng);
-        good_sig = keypair.sign(&good);
-        bad_sig = keypair.sign(&bad);
+        signing_key = SigningKey::generate(&mut csprng);
+        good_sig = signing_key.sign(&good);
+        bad_sig = signing_key.sign(&bad);
 
         assert!(
-            keypair.verify(&good, &good_sig).is_ok(),
+            signing_key.verify(&good, &good_sig).is_ok(),
             "Verification of a valid signature failed!"
         );
         assert!(
-            keypair.verify(&good, &bad_sig).is_err(),
+            signing_key.verify(&good, &bad_sig).is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
-            keypair.verify(&bad, &good_sig).is_err(),
+            signing_key.verify(&bad, &good_sig).is_err(),
             "Verification of a signature on a different message passed!"
         );
     }
 
     #[test]
     fn ed25519ph_sign_verify() {
-        let keypair: Keypair;
+        let signing_key: SigningKey;
         let good_sig: Signature;
         let bad_sig: Signature;
 
@@ -257,28 +259,28 @@ mod integrations {
 
         let context: &[u8] = b"testing testing 1 2 3";
 
-        keypair = Keypair::generate(&mut csprng);
-        good_sig = keypair
+        signing_key = SigningKey::generate(&mut csprng);
+        good_sig = signing_key
             .sign_prehashed(prehashed_good1, Some(context))
             .unwrap();
-        bad_sig = keypair
+        bad_sig = signing_key
             .sign_prehashed(prehashed_bad1, Some(context))
             .unwrap();
 
         assert!(
-            keypair
+            signing_key
                 .verify_prehashed(prehashed_good2, Some(context), &good_sig)
                 .is_ok(),
             "Verification of a valid signature failed!"
         );
         assert!(
-            keypair
+            signing_key
                 .verify_prehashed(prehashed_good3, Some(context), &bad_sig)
                 .is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
-            keypair
+            signing_key
                 .verify_prehashed(prehashed_bad2, Some(context), &good_sig)
                 .is_err(),
             "Verification of a signature on a different message passed!"
@@ -297,17 +299,18 @@ mod integrations {
             b"Hey, I never cared about your bucks, so if I run up with a mask on, probably got a gas can too.",
             b"And I'm not here to fill 'er up. Nope, we came to riot, here to incite, we don't want any of your stuff.", ];
         let mut csprng = OsRng;
-        let mut keypairs: Vec<Keypair> = Vec::new();
+        let mut signing_keys: Vec<SigningKey> = Vec::new();
         let mut signatures: Vec<Signature> = Vec::new();
 
         for i in 0..messages.len() {
-            let keypair: Keypair = Keypair::generate(&mut csprng);
-            signatures.push(keypair.sign(&messages[i]));
-            keypairs.push(keypair);
+            let signing_key: SigningKey = SigningKey::generate(&mut csprng);
+            signatures.push(signing_key.sign(&messages[i]));
+            signing_keys.push(signing_key);
         }
-        let public_keys: Vec<PublicKey> = keypairs.iter().map(|key| key.public_key()).collect();
+        let verifying_keys: Vec<VerifyingKey> =
+            signing_keys.iter().map(|key| key.verifying_key()).collect();
 
-        let result = verify_batch(&messages, &signatures[..], &public_keys[..]);
+        let result = verify_batch(&messages, &signatures[..], &verifying_keys[..]);
 
         assert!(result.is_ok());
     }
@@ -317,7 +320,7 @@ mod integrations {
 #[derive(Debug, serde_crate::Serialize, serde_crate::Deserialize)]
 #[serde(crate = "serde_crate")]
 struct Demo {
-    keypair: Keypair,
+    signing_key: SigningKey,
 }
 
 #[cfg(all(test, feature = "serde"))]
@@ -337,19 +340,12 @@ mod serialisation {
         150, 073, 201, 137, 076, 022, 085, 251, 152, 002, 241, 042, 072, 054,
     ];
 
-    /// Signature with the above keypair of a blank message.
+    /// Signature with the above signing_key of a blank message.
     static SIGNATURE_BYTES: [u8; SIGNATURE_LENGTH] = [
         010, 126, 151, 143, 157, 064, 047, 001, 196, 140, 179, 058, 226, 152, 018, 102, 160, 123,
         080, 016, 210, 086, 196, 028, 053, 231, 012, 157, 169, 019, 158, 063, 045, 154, 238, 007,
         053, 185, 227, 229, 079, 108, 213, 080, 124, 252, 084, 167, 216, 085, 134, 144, 129, 149,
         041, 081, 063, 120, 126, 100, 092, 059, 050, 011,
-    ];
-
-    static KEYPAIR_BYTES: [u8; KEYPAIR_LENGTH] = [
-        239, 085, 017, 235, 167, 103, 034, 062, 007, 010, 032, 146, 113, 039, 096, 174, 003, 219,
-        232, 166, 240, 121, 167, 013, 098, 238, 122, 116, 193, 114, 215, 213, 175, 181, 075, 166,
-        224, 164, 140, 146, 053, 120, 010, 037, 104, 094, 136, 225, 249, 102, 171, 160, 097, 132,
-        015, 071, 035, 056, 000, 074, 130, 168, 225, 071,
     ];
 
     #[test]
@@ -371,75 +367,55 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_deserialize_public_key_bincode() {
-        let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
-        let encoded_public_key: Vec<u8> = bincode::serialize(&public_key).unwrap();
-        let decoded_public_key: PublicKey = bincode::deserialize(&encoded_public_key).unwrap();
+    fn serialize_deserialize_verifying_key_bincode() {
+        let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
+        let encoded_verifying_key: Vec<u8> = bincode::serialize(&verifying_key).unwrap();
+        let decoded_verifying_key: VerifyingKey =
+            bincode::deserialize(&encoded_verifying_key).unwrap();
 
         assert_eq!(
             &PUBLIC_KEY_BYTES[..],
-            &encoded_public_key[encoded_public_key.len() - PUBLIC_KEY_LENGTH..]
+            &encoded_verifying_key[encoded_verifying_key.len() - PUBLIC_KEY_LENGTH..]
         );
-        assert_eq!(public_key, decoded_public_key);
+        assert_eq!(verifying_key, decoded_verifying_key);
     }
 
     #[test]
-    fn serialize_deserialize_public_key_json() {
-        let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
-        let encoded_public_key = serde_json::to_string(&public_key).unwrap();
-        let decoded_public_key: PublicKey = serde_json::from_str(&encoded_public_key).unwrap();
+    fn serialize_deserialize_verifying_key_json() {
+        let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
+        let encoded_verifying_key = serde_json::to_string(&verifying_key).unwrap();
+        let decoded_verifying_key: VerifyingKey =
+            serde_json::from_str(&encoded_verifying_key).unwrap();
 
-        assert_eq!(public_key, decoded_public_key);
+        assert_eq!(verifying_key, decoded_verifying_key);
     }
 
     #[test]
-    fn serialize_deserialize_secret_key_bincode() {
-        let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
-        let encoded_secret_key: Vec<u8> = bincode::serialize(&secret_key).unwrap();
-        let decoded_secret_key: SecretKey = bincode::deserialize(&encoded_secret_key).unwrap();
+    fn serialize_deserialize_signing_key_bincode() {
+        let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
+        let encoded_signing_key: Vec<u8> = bincode::serialize(&signing_key).unwrap();
+        let decoded_signing_key: SigningKey = bincode::deserialize(&encoded_signing_key).unwrap();
 
         for i in 0..SECRET_KEY_LENGTH {
-            assert_eq!(SECRET_KEY_BYTES[i], decoded_secret_key.as_bytes()[i]);
+            assert_eq!(SECRET_KEY_BYTES[i], decoded_signing_key.to_bytes()[i]);
         }
     }
 
     #[test]
-    fn serialize_deserialize_secret_key_json() {
-        let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
-        let encoded_secret_key = serde_json::to_string(&secret_key).unwrap();
-        let decoded_secret_key: SecretKey = serde_json::from_str(&encoded_secret_key).unwrap();
+    fn serialize_deserialize_signing_key_json() {
+        let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
+        let encoded_signing_key = serde_json::to_string(&signing_key).unwrap();
+        let decoded_signing_key: SigningKey = serde_json::from_str(&encoded_signing_key).unwrap();
 
         for i in 0..SECRET_KEY_LENGTH {
-            assert_eq!(SECRET_KEY_BYTES[i], decoded_secret_key.as_bytes()[i]);
+            assert_eq!(SECRET_KEY_BYTES[i], decoded_signing_key.to_bytes()[i]);
         }
     }
 
     #[test]
-    fn serialize_deserialize_keypair_bincode() {
-        let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
-        let encoded_keypair: Vec<u8> = bincode::serialize(&keypair).unwrap();
-        let decoded_keypair: Keypair = bincode::deserialize(&encoded_keypair).unwrap();
-
-        for i in 0..KEYPAIR_LENGTH {
-            assert_eq!(KEYPAIR_BYTES[i], decoded_keypair.to_bytes()[i]);
-        }
-    }
-
-    #[test]
-    fn serialize_deserialize_keypair_json() {
-        let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
-        let encoded_keypair = serde_json::to_string(&keypair).unwrap();
-        let decoded_keypair: Keypair = serde_json::from_str(&encoded_keypair).unwrap();
-
-        for i in 0..KEYPAIR_LENGTH {
-            assert_eq!(KEYPAIR_BYTES[i], decoded_keypair.to_bytes()[i]);
-        }
-    }
-
-    #[test]
-    fn serialize_deserialize_keypair_toml() {
+    fn serialize_deserialize_signing_key_toml() {
         let demo = Demo {
-            keypair: Keypair::from_bytes(&KEYPAIR_BYTES).unwrap(),
+            signing_key: SigningKey::from_bytes(&SECRET_KEY_BYTES),
         };
 
         println!("\n\nWrite to toml");
@@ -450,10 +426,10 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_public_key_size() {
-        let public_key: PublicKey = PublicKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
+    fn serialize_verifying_key_size() {
+        let verifying_key: VerifyingKey = VerifyingKey::from_bytes(&PUBLIC_KEY_BYTES).unwrap();
         assert_eq!(
-            bincode::serialized_size(&public_key).unwrap() as usize,
+            bincode::serialized_size(&verifying_key).unwrap() as usize,
             BINCODE_INT_LENGTH + PUBLIC_KEY_LENGTH
         );
     }
@@ -468,20 +444,11 @@ mod serialisation {
     }
 
     #[test]
-    fn serialize_secret_key_size() {
-        let secret_key: SecretKey = SecretKey::from_bytes(&SECRET_KEY_BYTES).unwrap();
+    fn serialize_signing_key_size() {
+        let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
         assert_eq!(
-            bincode::serialized_size(&secret_key).unwrap() as usize,
+            bincode::serialized_size(&signing_key).unwrap() as usize,
             BINCODE_INT_LENGTH + SECRET_KEY_LENGTH
-        );
-    }
-
-    #[test]
-    fn serialize_keypair_size() {
-        let keypair = Keypair::from_bytes(&KEYPAIR_BYTES).unwrap();
-        assert_eq!(
-            bincode::serialized_size(&keypair).unwrap() as usize,
-            BINCODE_INT_LENGTH + KEYPAIR_LENGTH
         );
     }
 }

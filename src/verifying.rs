@@ -35,51 +35,53 @@ use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 use crate::constants::*;
 use crate::errors::*;
-use crate::secret::*;
 use crate::signature::*;
+use crate::signing::*;
 
 /// An ed25519 public key.
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
-pub struct PublicKey(pub(crate) CompressedEdwardsY, pub(crate) EdwardsPoint);
+pub struct VerifyingKey(pub(crate) CompressedEdwardsY, pub(crate) EdwardsPoint);
 
-impl Debug for PublicKey {
+impl Debug for VerifyingKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "PublicKey({:?}), {:?})", self.0, self.1)
+        write!(f, "VerifyingKey({:?}), {:?})", self.0, self.1)
     }
 }
 
-impl AsRef<[u8]> for PublicKey {
+impl AsRef<[u8]> for VerifyingKey {
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl<'a> From<&'a SecretKey> for PublicKey {
+impl From<&SecretKey> for VerifyingKey {
     /// Derive this public key from its corresponding `SecretKey`.
-    fn from(secret_key: &SecretKey) -> PublicKey {
+    fn from(secret_key: &SecretKey) -> VerifyingKey {
         let mut h: Sha512 = Sha512::new();
         let mut hash: [u8; 64] = [0u8; 64];
         let mut digest: [u8; 32] = [0u8; 32];
 
-        h.update(secret_key.as_bytes());
+        h.update(secret_key);
         hash.copy_from_slice(h.finalize().as_slice());
 
         digest.copy_from_slice(&hash[..32]);
 
-        PublicKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut digest)
+        VerifyingKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(
+            &mut digest,
+        )
     }
 }
 
-impl<'a> From<&'a ExpandedSecretKey> for PublicKey {
+impl From<&ExpandedSecretKey> for VerifyingKey {
     /// Derive this public key from its corresponding `ExpandedSecretKey`.
-    fn from(expanded_secret_key: &ExpandedSecretKey) -> PublicKey {
+    fn from(expanded_secret_key: &ExpandedSecretKey) -> VerifyingKey {
         let mut bits: [u8; 32] = expanded_secret_key.key.to_bytes();
 
-        PublicKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut bits)
+        VerifyingKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut bits)
     }
 }
 
-impl PublicKey {
+impl VerifyingKey {
     /// Convert this public key to a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_LENGTH] {
@@ -92,7 +94,7 @@ impl PublicKey {
         &(self.0).0
     }
 
-    /// Construct a `PublicKey` from a slice of bytes.
+    /// Construct a `VerifyingKey` from a slice of bytes.
     ///
     /// # Warning
     ///
@@ -103,16 +105,16 @@ impl PublicKey {
     /// # Example
     ///
     /// ```
-    /// use ed25519_dalek::PublicKey;
+    /// use ed25519_dalek::VerifyingKey;
     /// use ed25519_dalek::PUBLIC_KEY_LENGTH;
     /// use ed25519_dalek::SignatureError;
     ///
-    /// # fn doctest() -> Result<PublicKey, SignatureError> {
+    /// # fn doctest() -> Result<VerifyingKey, SignatureError> {
     /// let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = [
     ///    215,  90, 152,   1, 130, 177,  10, 183, 213,  75, 254, 211, 201, 100,   7,  58,
     ///     14, 225, 114, 243, 218, 166,  35,  37, 175,   2,  26, 104, 247,   7,   81, 26];
     ///
-    /// let public_key = PublicKey::from_bytes(&public_key_bytes)?;
+    /// let public_key = VerifyingKey::from_bytes(&public_key_bytes)?;
     /// #
     /// # Ok(public_key)
     /// # }
@@ -124,13 +126,13 @@ impl PublicKey {
     ///
     /// # Returns
     ///
-    /// A `Result` whose okay value is an EdDSA `PublicKey` or whose error value
+    /// A `Result` whose okay value is an EdDSA `VerifyingKey` or whose error value
     /// is an `SignatureError` describing the error that occurred.
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<PublicKey, SignatureError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<VerifyingKey, SignatureError> {
         if bytes.len() != PUBLIC_KEY_LENGTH {
             return Err(InternalError::BytesLengthError {
-                name: "PublicKey",
+                name: "VerifyingKey",
                 length: PUBLIC_KEY_LENGTH,
             }
             .into());
@@ -143,7 +145,7 @@ impl PublicKey {
             .decompress()
             .ok_or(InternalError::PointDecompressionError)?;
 
-        Ok(PublicKey(compressed, point))
+        Ok(VerifyingKey(compressed, point))
     }
 
     /// Internal utility function for mangling the bits of a (formerly
@@ -151,7 +153,7 @@ impl PublicKey {
     /// public key.
     fn mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(
         bits: &mut [u8; 32],
-    ) -> PublicKey {
+    ) -> VerifyingKey {
         bits[0] &= 248;
         bits[31] &= 127;
         bits[31] |= 64;
@@ -159,7 +161,7 @@ impl PublicKey {
         let point = &Scalar::from_bits(*bits) * &constants::ED25519_BASEPOINT_TABLE;
         let compressed = point.compress();
 
-        PublicKey(compressed, point)
+        VerifyingKey(compressed, point)
     }
 
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
@@ -323,7 +325,7 @@ impl PublicKey {
     }
 }
 
-impl Verifier<ed25519::Signature> for PublicKey {
+impl Verifier<ed25519::Signature> for VerifyingKey {
     /// Verify a signature on a message with this keypair's public key.
     ///
     /// # Return
@@ -353,58 +355,58 @@ impl Verifier<ed25519::Signature> for PublicKey {
     }
 }
 
-impl TryFrom<&[u8]> for PublicKey {
+impl TryFrom<&[u8]> for VerifyingKey {
     type Error = SignatureError;
 
-    fn try_from(bytes: &[u8]) -> Result<PublicKey, SignatureError> {
-        PublicKey::from_bytes(bytes)
+    fn try_from(bytes: &[u8]) -> Result<VerifyingKey, SignatureError> {
+        VerifyingKey::from_bytes(bytes)
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl DecodePublicKey for PublicKey {}
+impl DecodePublicKey for VerifyingKey {}
 
 #[cfg(all(feature = "alloc", feature = "pkcs8"))]
-impl pkcs8::EncodePublicKey for PublicKey {
+impl pkcs8::EncodePublicKey for VerifyingKey {
     fn to_public_key_der(&self) -> pkcs8::spki::Result<pkcs8::Document> {
         pkcs8::PublicKeyBytes::from(self).to_public_key_der()
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<pkcs8::PublicKeyBytes> for PublicKey {
+impl TryFrom<pkcs8::PublicKeyBytes> for VerifyingKey {
     type Error = pkcs8::spki::Error;
 
     fn try_from(pkcs8_key: pkcs8::PublicKeyBytes) -> pkcs8::spki::Result<Self> {
-        PublicKey::try_from(&pkcs8_key)
+        VerifyingKey::try_from(&pkcs8_key)
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<&pkcs8::PublicKeyBytes> for PublicKey {
+impl TryFrom<&pkcs8::PublicKeyBytes> for VerifyingKey {
     type Error = pkcs8::spki::Error;
 
     fn try_from(pkcs8_key: &pkcs8::PublicKeyBytes) -> pkcs8::spki::Result<Self> {
-        PublicKey::from_bytes(pkcs8_key.as_ref()).map_err(|_| pkcs8::spki::Error::KeyMalformed)
+        VerifyingKey::from_bytes(pkcs8_key.as_ref()).map_err(|_| pkcs8::spki::Error::KeyMalformed)
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl From<PublicKey> for pkcs8::PublicKeyBytes {
-    fn from(public_key: PublicKey) -> pkcs8::PublicKeyBytes {
-        pkcs8::PublicKeyBytes::from(&public_key)
+impl From<VerifyingKey> for pkcs8::PublicKeyBytes {
+    fn from(verifying_key: VerifyingKey) -> pkcs8::PublicKeyBytes {
+        pkcs8::PublicKeyBytes::from(&verifying_key)
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl From<&PublicKey> for pkcs8::PublicKeyBytes {
-    fn from(public_key: &PublicKey) -> pkcs8::PublicKeyBytes {
-        pkcs8::PublicKeyBytes(public_key.to_bytes())
+impl From<&VerifyingKey> for pkcs8::PublicKeyBytes {
+    fn from(verifying_key: &VerifyingKey) -> pkcs8::PublicKeyBytes {
+        pkcs8::PublicKeyBytes(verifying_key.to_bytes())
     }
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<pkcs8::spki::SubjectPublicKeyInfo<'_>> for PublicKey {
+impl TryFrom<pkcs8::spki::SubjectPublicKeyInfo<'_>> for VerifyingKey {
     type Error = pkcs8::spki::Error;
 
     fn try_from(public_key: pkcs8::spki::SubjectPublicKeyInfo<'_>) -> pkcs8::spki::Result<Self> {
@@ -413,7 +415,7 @@ impl TryFrom<pkcs8::spki::SubjectPublicKeyInfo<'_>> for PublicKey {
 }
 
 #[cfg(feature = "serde")]
-impl Serialize for PublicKey {
+impl Serialize for VerifyingKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -423,12 +425,12 @@ impl Serialize for PublicKey {
 }
 
 #[cfg(feature = "serde")]
-impl<'d> Deserialize<'d> for PublicKey {
+impl<'d> Deserialize<'d> for VerifyingKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'d>,
     {
         let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
-        PublicKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
+        VerifyingKey::from_bytes(bytes.as_ref()).map_err(SerdeError::custom)
     }
 }

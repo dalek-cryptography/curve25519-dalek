@@ -25,6 +25,7 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 /// A `FieldElement2625` represents an element of the field
@@ -58,6 +59,7 @@ impl Debug for FieldElement2625 {
     }
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for FieldElement2625 {
     fn zeroize(&mut self) {
         self.0.zeroize();

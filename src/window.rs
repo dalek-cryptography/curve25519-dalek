@@ -26,6 +26,7 @@ use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::edwards::EdwardsPoint;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 macro_rules! impl_lookup_table {
@@ -112,14 +113,13 @@ macro_rules! impl_lookup_table {
             }
         }
 
+        #[cfg(feature = "zeroize")]
         impl<T> Zeroize for $name<T>
         where
             T: Copy + Default + Zeroize,
         {
             fn zeroize(&mut self) {
-                for x in self.0.iter_mut() {
-                    x.zeroize();
-                }
+                self.0.iter_mut().zeroize();
             }
         }
     };

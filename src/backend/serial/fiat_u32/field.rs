@@ -27,6 +27,7 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 use fiat_crypto::curve25519_32::*;
@@ -62,6 +63,7 @@ impl Debug for FieldElement2625 {
     }
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for FieldElement2625 {
     fn zeroize(&mut self) {
         self.0.zeroize();

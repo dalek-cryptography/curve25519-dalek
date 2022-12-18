@@ -14,6 +14,7 @@
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 use crate::constants;
@@ -29,6 +30,7 @@ impl Debug for Scalar52 {
     }
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for Scalar52 {
     fn zeroize(&mut self) {
         self.0.zeroize();

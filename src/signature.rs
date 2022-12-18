@@ -162,30 +162,12 @@ impl InternalSignature {
     /// only checking the most significant three bits.  (See also the
     /// documentation for `PublicKey.verify_strict`.)
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<InternalSignature, SignatureError> {
-        if bytes.len() != SIGNATURE_LENGTH {
-            return Err(InternalError::BytesLengthError {
-                name: "Signature",
-                length: SIGNATURE_LENGTH,
-            }
-            .into());
-        }
-        let mut lower: [u8; 32] = [0u8; 32];
-        let mut upper: [u8; 32] = [0u8; 32];
-
-        lower.copy_from_slice(&bytes[..32]);
-        upper.copy_from_slice(&bytes[32..]);
-
-        let s: Scalar;
-
-        match check_scalar(upper) {
-            Ok(x) => s = x,
-            Err(x) => return Err(x),
-        }
-
+    pub fn from_bytes(bytes: &[u8; SIGNATURE_LENGTH]) -> Result<InternalSignature, SignatureError> {
+        // TODO: Use bytes.split_array_ref once it’s in MSRV.
+        let (lower, upper) = bytes.split_at(32);
         Ok(InternalSignature {
-            R: CompressedEdwardsY(lower),
-            s: s,
+            R: CompressedEdwardsY(lower.try_into().unwrap()),
+            s: check_scalar(upper.try_into().unwrap())?,
         })
     }
 }

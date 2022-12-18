@@ -122,17 +122,10 @@ impl SigningKey {
     /// is an `SignatureError` describing the error that occurred.
     #[inline]
     pub fn from_keypair_bytes(bytes: &[u8; 64]) -> Result<SigningKey, SignatureError> {
-        if bytes.len() != KEYPAIR_LENGTH {
-            return Err(InternalError::BytesLengthError {
-                name: "SigningKey",
-                length: KEYPAIR_LENGTH,
-            }
-            .into());
-        }
-
-        let secret_key =
-            SecretKey::try_from(&bytes[..SECRET_KEY_LENGTH]).map_err(|_| SignatureError::new())?;
-        let verifying_key = VerifyingKey::from_bytes(&bytes[SECRET_KEY_LENGTH..])?;
+        // TODO: Use bytes.split_array_ref once it’s in MSRV.
+        let (secret_key, verifying_key) = bytes.split_at(SECRET_KEY_LENGTH);
+        let secret_key = secret_key.try_into().unwrap();
+        let verifying_key = VerifyingKey::from_bytes(verifying_key.try_into().unwrap())?;
 
         if verifying_key != VerifyingKey::from(&secret_key) {
             return Err(InternalError::MismatchedKeypairError.into());

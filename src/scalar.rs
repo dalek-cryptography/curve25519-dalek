@@ -152,9 +152,9 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
-#[cfg(feature = "ff")]
+#[cfg(feature = "group")]
 use {
-    ff_crate::{Field, FromUniformBytes, PrimeField},
+    group::ff::{Field, FromUniformBytes, PrimeField},
     rand_core::RngCore,
 };
 
@@ -1220,7 +1220,7 @@ impl UnpackedScalar {
     }
 }
 
-#[cfg(feature = "ff")]
+#[cfg(feature = "group")]
 impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
     const ONE: Self = Self::ONE;
@@ -1245,11 +1245,11 @@ impl Field for Scalar {
     }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
-        ff_crate::helpers::sqrt_ratio_generic(num, div)
+        group::ff::helpers::sqrt_ratio_generic(num, div)
     }
 
     fn sqrt(&self) -> CtOption<Self> {
-        ff_crate::helpers::sqrt_tonelli_shanks(
+        group::ff::helpers::sqrt_tonelli_shanks(
             self,
             [
                 0xcb02_4c63_4b9e_ba7d,
@@ -1261,7 +1261,7 @@ impl Field for Scalar {
     }
 }
 
-#[cfg(feature = "ff")]
+#[cfg(feature = "group")]
 impl PrimeField for Scalar {
     type Repr = [u8; 32];
 
@@ -1333,7 +1333,7 @@ impl PrimeField for Scalar {
     };
 }
 
-#[cfg(feature = "ff")]
+#[cfg(feature = "group")]
 impl FromUniformBytes<64> for Scalar {
     fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
         Scalar::from_bytes_mod_order_wide(bytes)
@@ -1983,7 +1983,7 @@ mod test {
         assert_eq!(sx + s1, Scalar::from(x + 1));
     }
 
-    #[cfg(feature = "ff")]
+    #[cfg(feature = "group")]
     #[test]
     fn ff_constants() {
         assert_eq!(Scalar::from(2u64) * Scalar::TWO_INV, Scalar::ONE);
@@ -2011,7 +2011,7 @@ mod test {
         );
     }
 
-    #[cfg(feature = "ff")]
+    #[cfg(feature = "group")]
     #[test]
     fn ff_impls() {
         assert!(bool::from(Scalar::ZERO.is_even()));

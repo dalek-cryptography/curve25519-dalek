@@ -182,6 +182,13 @@ use crate::field::FieldElement;
 #[cfg(feature = "alloc")]
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
+use {
+    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    rand_core::RngCore,
+    subtle::CtOption,
+};
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -1126,6 +1133,133 @@ impl Debug for RistrettoPoint {
             "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
             coset[0], coset[1], coset[2], coset[3]
         )
+    }
+}
+
+// ------------------------------------------------------------------------
+// group traits
+// ------------------------------------------------------------------------
+
+// Use the full trait path to avoid Group::identity overlapping Identity::identity in the
+// rest of the module (e.g. tests).
+#[cfg(feature = "group")]
+impl group::Group for RistrettoPoint {
+    type Scalar = Scalar;
+
+    fn random(mut rng: impl RngCore) -> Self {
+        // NOTE: this is duplicated due to different `rng` bounds
+        let mut uniform_bytes = [0u8; 64];
+        rng.fill_bytes(&mut uniform_bytes);
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+    }
+
+    fn identity() -> Self {
+        Identity::identity()
+    }
+
+    fn generator() -> Self {
+        constants::RISTRETTO_BASEPOINT_POINT
+    }
+
+    fn is_identity(&self) -> Choice {
+        self.ct_eq(&Identity::identity())
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+}
+
+#[cfg(feature = "group")]
+impl GroupEncoding for RistrettoPoint {
+    type Repr = [u8; 32];
+
+    fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
+        // NOTE: this is duplicated from CompressedRistretto::decompress due to the
+        // constant time requirement.
+
+        // Step 1. Check s for validity:
+        // 1.a) s must be 32 bytes (we get this from the type system)
+        // 1.b) s < p
+        // 1.c) s is nonnegative
+        //
+        // Our decoding routine ignores the high bit, so the only
+        // possible failure for 1.b) is if someone encodes s in 0..18
+        // as s+p in 2^255-19..2^255-1.  We can check this by
+        // converting back to bytes, and checking that we get the
+        // original input, since our encoding routine is canonical.
+
+        let s = FieldElement::from_bytes(bytes);
+        let s_encoding_is_canonical = s.as_bytes().ct_eq(bytes);
+        let s_is_negative = s.is_negative();
+
+        let s_is_valid = s_encoding_is_canonical & !s_is_negative;
+
+        // Step 2.  Compute (X:Y:Z:T).
+        let one = FieldElement::ONE;
+        let ss = s.square();
+        let u1 = &one - &ss; //  1 + as²
+        let u2 = &one + &ss; //  1 - as²    where a=-1
+        let u2_sqr = u2.square(); // (1 - as²)²
+
+        // v == ad(1+as²)² - (1-as²)²            where d=-121665/121666
+        let v = &(&(-&constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
+
+        let (ok, I) = (&v * &u2_sqr).invsqrt(); // 1/sqrt(v*u_2²)
+
+        let Dx = &I * &u2; // 1/sqrt(v)
+        let Dy = &I * &(&Dx * &v); // 1/u2
+
+        // x == | 2s/sqrt(v) | == + sqrt(4s²/(ad(1+as²)² - (1-as²)²))
+        let mut x = &(&s + &s) * &Dx;
+        let x_neg = x.is_negative();
+        x.conditional_negate(x_neg);
+
+        // y == (1-as²)/(1+as²)
+        let y = &u1 * &Dy;
+
+        // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
+        let t = &x * &y;
+
+        CtOption::new(
+            RistrettoPoint(EdwardsPoint {
+                X: x,
+                Y: y,
+                Z: one,
+                T: t,
+            }),
+            s_is_valid & ok & !t.is_negative() & !y.is_zero(),
+        )
+    }
+
+    fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
+        // Just use the checked API; the checks we could skip aren't expensive.
+        Self::from_bytes(bytes)
+    }
+
+    fn to_bytes(&self) -> Self::Repr {
+        self.compress().to_bytes()
+    }
+}
+
+#[cfg(feature = "group")]
+impl PrimeGroup for RistrettoPoint {}
+
+/// Ristretto has a cofactor of 1.
+#[cfg(feature = "group")]
+impl CofactorGroup for RistrettoPoint {
+    type Subgroup = Self;
+
+    fn clear_cofactor(&self) -> Self::Subgroup {
+        *self
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(self, Choice::from(1))
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        Choice::from(1)
     }
 }
 

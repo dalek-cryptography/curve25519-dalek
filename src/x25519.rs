@@ -190,6 +190,11 @@ impl StaticSecret {
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
     }
+
+    /// View this key as a byte array.
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        self.0.as_bytes()
+    }
 }
 
 impl From<[u8; 32]> for StaticSecret {

@@ -254,9 +254,6 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
-#[cfg(feature = "serde")]
-extern crate serde_crate as serde;
-
 pub use ed25519;
 
 #[cfg(any(feature = "batch", feature = "batch_deterministic"))]

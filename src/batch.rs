@@ -9,6 +9,9 @@
 
 //! Batch signature verification.
 
+#[cfg(all(feature = "batch", feature = "batch_deterministic"))]
+compile_error!("`batch` and `batch_deterministic` features are mutually exclusive");
+
 use alloc::vec::Vec;
 
 use core::convert::TryFrom;

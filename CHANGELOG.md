@@ -7,5 +7,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Changes
-* Bumped MSRV from 1.41 to 1.56.1
+* Bumped MSRV from 1.41 to 1.60.0
 * Removed `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])

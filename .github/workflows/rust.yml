@@ -26,7 +26,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --lib
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc --lib
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features batch
       - run: cargo test --target ${{ matrix.target }} --features batch_deterministic
@@ -47,7 +48,7 @@ jobs:
         run: cargo build --target x86_64-unknown-linux-gnu
 
   msrv:
-    name: Current MSRV is 1.57.0
+    name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -57,7 +58,7 @@ jobs:
     - run: cargo -Z minimal-versions check --no-default-features --features serde
       # Now check that `cargo build` works with respect to the oldest possible
       # deps and the stated MSRV
-    - uses: dtolnay/rust-toolchain@1.57.0
+    - uses: dtolnay/rust-toolchain@1.60.0
     - run: cargo build
 
   bench:

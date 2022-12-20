@@ -68,6 +68,16 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - run: cargo build --benches --features batch
 
+  rustfmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
   clippy:
     name: Check that clippy is happy
     runs-on: ubuntu-latest

@@ -32,7 +32,7 @@ use curve25519_dalek::scalar::Scalar;
 
 use ed25519::signature::{KeypairRef, Signer, Verifier};
 
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::constants::*;
 use crate::errors::*;
@@ -511,6 +511,14 @@ impl TryFrom<&[u8]> for SigningKey {
             })
     }
 }
+
+impl Drop for SigningKey {
+    fn drop(&mut self) {
+        self.secret_key.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for SigningKey {}
 
 #[cfg(feature = "pkcs8")]
 impl DecodePrivateKey for SigningKey {}

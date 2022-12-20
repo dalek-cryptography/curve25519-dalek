@@ -267,6 +267,27 @@ impl CompressedRistretto {
     ///
     /// - `None` if `self` was not the canonical encoding of a point.
     pub fn decompress(&self) -> Option<RistrettoPoint> {
+        let (s_encoding_is_canonical, s_is_negative, s) = decompress::step_1(self);
+
+        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
+            return None;
+        }
+
+        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
+
+        if ok.unwrap_u8() == 0u8 || t_is_negative.unwrap_u8() == 1u8 || y_is_zero.unwrap_u8() == 1u8
+        {
+            None
+        } else {
+            Some(res)
+        }
+    }
+}
+
+mod decompress {
+    use super::*;
+
+    pub(super) fn step_1(repr: &CompressedRistretto) -> (Choice, Choice, FieldElement) {
         // Step 1. Check s for validity:
         // 1.a) s must be 32 bytes (we get this from the type system)
         // 1.b) s < p
@@ -278,15 +299,15 @@ impl CompressedRistretto {
         // converting back to bytes, and checking that we get the
         // original input, since our encoding routine is canonical.
 
-        let s = FieldElement::from_bytes(self.as_bytes());
+        let s = FieldElement::from_bytes(repr.as_bytes());
         let s_bytes_check = s.as_bytes();
-        let s_encoding_is_canonical = &s_bytes_check[..].ct_eq(self.as_bytes());
+        let s_encoding_is_canonical = s_bytes_check[..].ct_eq(repr.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
-            return None;
-        }
+        (s_encoding_is_canonical, s_is_negative, s)
+    }
 
+    pub(super) fn step_2(s: FieldElement) -> (Choice, Choice, Choice, RistrettoPoint) {
         // Step 2.  Compute (X:Y:Z:T).
         let one = FieldElement::ONE;
         let ss = s.square();
@@ -313,19 +334,17 @@ impl CompressedRistretto {
         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
-        if ok.unwrap_u8() == 0u8
-            || t.is_negative().unwrap_u8() == 1u8
-            || y.is_zero().unwrap_u8() == 1u8
-        {
-            None
-        } else {
-            Some(RistrettoPoint(EdwardsPoint {
+        (
+            ok,
+            t.is_negative(),
+            y.is_zero(),
+            RistrettoPoint(EdwardsPoint {
                 X: x,
                 Y: y,
                 Z: one,
                 T: t,
-            }))
-        }
+            }),
+        )
     }
 }
 
@@ -1175,61 +1194,14 @@ impl GroupEncoding for RistrettoPoint {
     type Repr = [u8; 32];
 
     fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
-        // NOTE: this is duplicated from CompressedRistretto::decompress due to the
-        // constant time requirement.
-
-        // Step 1. Check s for validity:
-        // 1.a) s must be 32 bytes (we get this from the type system)
-        // 1.b) s < p
-        // 1.c) s is nonnegative
-        //
-        // Our decoding routine ignores the high bit, so the only
-        // possible failure for 1.b) is if someone encodes s in 0..18
-        // as s+p in 2^255-19..2^255-1.  We can check this by
-        // converting back to bytes, and checking that we get the
-        // original input, since our encoding routine is canonical.
-
-        let s = FieldElement::from_bytes(bytes);
-        let s_encoding_is_canonical = s.as_bytes().ct_eq(bytes);
-        let s_is_negative = s.is_negative();
+        let (s_encoding_is_canonical, s_is_negative, s) =
+            decompress::step_1(&CompressedRistretto(*bytes));
 
         let s_is_valid = s_encoding_is_canonical & !s_is_negative;
 
-        // Step 2.  Compute (X:Y:Z:T).
-        let one = FieldElement::ONE;
-        let ss = s.square();
-        let u1 = &one - &ss; //  1 + as²
-        let u2 = &one + &ss; //  1 - as²    where a=-1
-        let u2_sqr = u2.square(); // (1 - as²)²
+        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
 
-        // v == ad(1+as²)² - (1-as²)²            where d=-121665/121666
-        let v = &(&(-&constants::EDWARDS_D) * &u1.square()) - &u2_sqr;
-
-        let (ok, I) = (&v * &u2_sqr).invsqrt(); // 1/sqrt(v*u_2²)
-
-        let Dx = &I * &u2; // 1/sqrt(v)
-        let Dy = &I * &(&Dx * &v); // 1/u2
-
-        // x == | 2s/sqrt(v) | == + sqrt(4s²/(ad(1+as²)² - (1-as²)²))
-        let mut x = &(&s + &s) * &Dx;
-        let x_neg = x.is_negative();
-        x.conditional_negate(x_neg);
-
-        // y == (1-as²)/(1+as²)
-        let y = &u1 * &Dy;
-
-        // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
-        let t = &x * &y;
-
-        CtOption::new(
-            RistrettoPoint(EdwardsPoint {
-                X: x,
-                Y: y,
-                Z: one,
-                T: t,
-            }),
-            s_is_valid & ok & !t.is_negative() & !y.is_zero(),
-        )
+        CtOption::new(res, s_is_valid & ok & !t_is_negative & !y_is_zero)
     }
 
     fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {

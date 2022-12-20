@@ -195,23 +195,50 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    #[rustfmt::skip] // keep alignment of explanatory comments
     pub fn decompress(&self) -> Option<EdwardsPoint> {
-        let Y = FieldElement::from_bytes(self.as_bytes());
+        let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
+        if is_valid_y_coord.unwrap_u8() != 1u8 {
+            return None;
+        }
+        Some(decompress::step_2(self, X, Y, Z))
+    }
+}
+
+mod decompress {
+    use super::*;
+
+    #[rustfmt::skip] // keep alignment of explanatory comments
+    pub(super) fn step_1(
+        repr: &CompressedEdwardsY,
+    ) -> (Choice, FieldElement, FieldElement, FieldElement) {
+        let Y = FieldElement::from_bytes(repr.as_bytes());
         let Z = FieldElement::ONE;
         let YY = Y.square();
         let u = &YY - &Z;                            // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
+        let (is_valid_y_coord, X) = FieldElement::sqrt_ratio_i(&u, &v);
 
-        if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
+        (is_valid_y_coord, X, Y, Z)
+    }
 
+    #[rustfmt::skip]
+    pub(super) fn step_2(
+        repr: &CompressedEdwardsY,
+        mut X: FieldElement,
+        Y: FieldElement,
+        Z: FieldElement,
+    ) -> EdwardsPoint {
          // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
          // so we negate according to the supplied sign bit.
-        let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
+        let compressed_sign_bit = Choice::from(repr.as_bytes()[31] >> 7);
         X.conditional_negate(compressed_sign_bit);
 
-        Some(EdwardsPoint{ X, Y, Z, T: &X * &Y })
+        EdwardsPoint {
+            X,
+            Y,
+            Z,
+            T: &X * &Y,
+        }
     }
 }
 
@@ -1158,30 +1185,9 @@ impl GroupEncoding for EdwardsPoint {
     type Repr = [u8; 32];
 
     fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
-        // NOTE: this is duplicated from CompressedEdwardsY::decompress due to the
-        // constant time requirement.
-
-        let Y = FieldElement::from_bytes(bytes);
-        let Z = FieldElement::ONE;
-        let YY = Y.square();
-        let u = &YY - &Z; // u =  y²-1
-        let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
-        let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
-
-        // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
-        // so we negate according to the supplied sign bit.
-        let compressed_sign_bit = Choice::from(bytes[31] >> 7);
-        X.conditional_negate(compressed_sign_bit);
-
-        CtOption::new(
-            EdwardsPoint {
-                X,
-                Y,
-                Z,
-                T: &X * &Y,
-            },
-            is_valid_y_coord,
-        )
+        let repr = CompressedEdwardsY(*bytes);
+        let (is_valid_y_coord, X, Y, Z) = decompress::step_1(&repr);
+        CtOption::new(decompress::step_2(&repr, X, Y, Z), is_valid_y_coord)
     }
 
     fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {

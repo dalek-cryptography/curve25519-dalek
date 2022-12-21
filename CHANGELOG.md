@@ -9,3 +9,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changes
 * Bumped MSRV from 1.41 to 1.60.0
 * Removed `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
+* Implemented `Clone` for `SigningKey`

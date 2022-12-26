@@ -165,6 +165,7 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 use crate::backend;
@@ -554,6 +555,7 @@ impl From<u128> for Scalar {
     }
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for Scalar {
     fn zeroize(&mut self) {
         self.bytes.zeroize();

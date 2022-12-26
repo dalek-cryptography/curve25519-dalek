@@ -129,6 +129,7 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 use crate::constants;
@@ -186,6 +187,7 @@ pub struct AffineNielsPoint {
     pub xy2d: FieldElement,
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for AffineNielsPoint {
     fn zeroize(&mut self) {
         self.y_plus_x.zeroize();
@@ -208,6 +210,7 @@ pub struct ProjectiveNielsPoint {
     pub T2d: FieldElement,
 }
 
+#[cfg(feature = "zeroize")]
 impl Zeroize for ProjectiveNielsPoint {
     fn zeroize(&mut self) {
         self.Y_plus_X.zeroize();

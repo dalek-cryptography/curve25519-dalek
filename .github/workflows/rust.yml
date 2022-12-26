@@ -28,6 +28,7 @@ jobs:
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }} --no-default-features
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features serde
       - env:

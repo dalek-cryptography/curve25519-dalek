@@ -57,7 +57,7 @@ rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.3.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
-zeroize = { version = "1", default-features = false }
+zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = "0.1.6"
@@ -68,8 +68,8 @@ fiat-crypto = "0.1.6"
 packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"] }
 
 [features]
-default = ["alloc"]
-alloc = ["zeroize/alloc"]
+default = ["alloc", "zeroize"]
+alloc = ["zeroize/alloc"] # TODO: use weak feature activation
 
 [profile.dev]
 opt-level = 2

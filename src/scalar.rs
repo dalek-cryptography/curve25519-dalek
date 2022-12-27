@@ -793,15 +793,10 @@ impl Scalar {
         // externally, but there's no corresponding distinction for
         // field elements.
 
-        use zeroize::Zeroizing;
-
         let n = inputs.len();
         let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
 
-        // Place scratch storage in a Zeroizing wrapper to wipe it when
-        // we pass out of scope.
-        let scratch_vec = vec![one; n];
-        let mut scratch = Zeroizing::new(scratch_vec);
+        let mut scratch = vec![one; n];
 
         // Keep an accumulator of all of the previous products
         let mut acc = Scalar::ONE.unpack().as_montgomery();
@@ -834,6 +829,9 @@ impl Scalar {
             *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
             acc = tmp;
         }
+
+        #[cfg(feature = "zeroize")]
+        zeroize::Zeroize::zeroize(&mut scratch);
 
         ret
     }

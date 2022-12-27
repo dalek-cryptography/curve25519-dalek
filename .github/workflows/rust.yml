@@ -28,6 +28,7 @@ jobs:
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }} --no-default-features
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features serde
@@ -110,7 +111,7 @@ jobs:
     - run: cargo fmt --all -- --check
 
   msrv:
-    name: Current MSRV is 1.56.1
+    name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -120,7 +121,7 @@ jobs:
     - run: cargo -Z minimal-versions check --no-default-features --features serde
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
-    - uses: dtolnay/rust-toolchain@1.56.1
+    - uses: dtolnay/rust-toolchain@1.60.0
     - run: cargo build --no-default-features --features serde
 
   bench:

@@ -107,8 +107,6 @@ impl MultiscalarMul for Straus {
         J: IntoIterator,
         J::Item: Borrow<EdwardsPoint>,
     {
-        use zeroize::Zeroizing;
-
         use crate::backend::serial::curve_models::ProjectiveNielsPoint;
         use crate::traits::Identity;
         use crate::window::LookupTable;
@@ -121,11 +119,11 @@ impl MultiscalarMul for Straus {
         // This puts the scalar digits into a heap-allocated Vec.
         // To ensure that these are erased, pass ownership of the Vec into a
         // Zeroizing wrapper.
-        let scalar_digits_vec: Vec<_> = scalars
+        #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+        let mut scalar_digits: Vec<_> = scalars
             .into_iter()
             .map(|s| s.borrow().as_radix_16())
             .collect();
-        let scalar_digits = Zeroizing::new(scalar_digits_vec);
 
         let mut Q = EdwardsPoint::identity();
         for j in (0..64).rev() {
@@ -138,6 +136,9 @@ impl MultiscalarMul for Straus {
                 Q = (&Q + &R_i).as_extended();
             }
         }
+
+        #[cfg(feature = "zeroize")]
+        zeroize::Zeroize::zeroize(&mut scalar_digits);
 
         Q
     }

@@ -68,7 +68,7 @@ latest breaking changes are below:
 
 ### Breaking changes in 4.0.0
 
-* Update the MSRV from 1.41 to 1.56.1
+* Update the MSRV from 1.41 to 1.60
 * Update backend selection to be more automatic. See [backends](#backends)
 * Remove `std` feature flag
 * Remove `nightly` feature flag
@@ -185,8 +185,8 @@ for MSRV and public API.
 ## Minimum Supported Rust Version
 
 | Releases | MSRV   |
-| :---     | :---   |
-| 4.x      | 1.56.1 |
+| :---     |:-------|
+| 4.x      | 1.60.0 |
 | 3.x      | 1.41.0 |
 
 From 4.x and on, MSRV changes will be accompanied by a minor version bump.

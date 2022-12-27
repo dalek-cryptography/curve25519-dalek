@@ -36,6 +36,19 @@ jobs:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
+  build-nostd:
+    name: Build on no_std target (thumbv7em-none-eabi)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabi
+      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
+      - run: cargo build --target thumbv7em-none-eabi --release
+      - run: cargo build --target thumbv7em-none-eabi --release --features serde
+
   build-simd:
     name: Build simd backend (nightly)
     runs-on: ubuntu-latest

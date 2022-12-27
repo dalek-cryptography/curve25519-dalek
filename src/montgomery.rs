@@ -476,7 +476,7 @@ mod test {
         let mut csprng: OsRng = OsRng;
 
         let s: Scalar = Scalar::random(&mut csprng);
-        let p_edwards: EdwardsPoint = &constants::ED25519_BASEPOINT_TABLE * &s;
+        let p_edwards: EdwardsPoint = constants::ED25519_BASEPOINT_TABLE * &s;
         let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = s * p_edwards;

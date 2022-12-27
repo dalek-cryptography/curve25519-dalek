@@ -19,7 +19,7 @@
 //! use curve25519_dalek::constants;
 //! use curve25519_dalek::traits::IsIdentity;
 //!
-//! let B = &constants::RISTRETTO_BASEPOINT_TABLE;
+//! let B = constants::RISTRETTO_BASEPOINT_TABLE;
 //! let l = &constants::BASEPOINT_ORDER;
 //!
 //! let A = l * B;
@@ -30,7 +30,7 @@
 
 use cfg_if::cfg_if;
 
-use crate::edwards::CompressedEdwardsY;
+use crate::edwards::{CompressedEdwardsY, EdwardsBasepointTable};
 use crate::montgomery::MontgomeryPoint;
 use crate::ristretto::CompressedRistretto;
 use crate::ristretto::RistrettoPoint;
@@ -93,8 +93,11 @@ pub const BASEPOINT_ORDER: Scalar = Scalar {
 
 use crate::ristretto::RistrettoBasepointTable;
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
-pub const RISTRETTO_BASEPOINT_TABLE: RistrettoBasepointTable =
-    RistrettoBasepointTable(ED25519_BASEPOINT_TABLE);
+pub static RISTRETTO_BASEPOINT_TABLE: &'static RistrettoBasepointTable = unsafe {
+    // SAFETY: `RistrettoBasepointTable` is a `#[repr(transparent)]` newtype of
+    // `EdwardsBasepointTable`
+    &*(ED25519_BASEPOINT_TABLE as *const EdwardsBasepointTable as *const RistrettoBasepointTable)
+};
 
 #[cfg(test)]
 mod test {

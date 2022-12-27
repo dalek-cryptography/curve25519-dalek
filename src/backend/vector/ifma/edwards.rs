@@ -278,7 +278,7 @@ mod test {
 
         println!("Testing B +- kB");
         let P = constants::ED25519_BASEPOINT_POINT;
-        let Q = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
+        let Q = constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
         addition_test_helper(P, Q);
     }
 
@@ -309,7 +309,7 @@ mod test {
         doubling_test_helper(P);
 
         println!("Testing [2]([k]B)");
-        let P = &constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
+        let P = constants::ED25519_BASEPOINT_TABLE * &Scalar::from(8475983829u64);
         doubling_test_helper(P);
     }
 }

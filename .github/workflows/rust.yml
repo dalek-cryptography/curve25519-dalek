@@ -87,7 +87,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      - run: cargo install cross
+      - uses: RustCrypto/actions/cross-install@master
       - run: cross test --release --target ${{ matrix.target }}
 
   nightly:

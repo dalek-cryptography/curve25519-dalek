@@ -30,11 +30,13 @@
 
 use cfg_if::cfg_if;
 
-use crate::edwards::{CompressedEdwardsY, EdwardsBasepointTable};
+use crate::edwards::CompressedEdwardsY;
 use crate::montgomery::MontgomeryPoint;
-use crate::ristretto::CompressedRistretto;
-use crate::ristretto::RistrettoPoint;
+use crate::ristretto::{CompressedRistretto, RistrettoPoint};
 use crate::scalar::Scalar;
+
+#[cfg(feature = "basepoint-tables")]
+use crate::edwards::EdwardsBasepointTable;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -91,8 +93,11 @@ pub const BASEPOINT_ORDER: Scalar = Scalar {
     ],
 };
 
+#[cfg(feature = "basepoint-tables")]
 use crate::ristretto::RistrettoBasepointTable;
+
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
+#[cfg(feature = "basepoint-tables")]
 pub static RISTRETTO_BASEPOINT_TABLE: &'static RistrettoBasepointTable = unsafe {
     // SAFETY: `RistrettoBasepointTable` is a `#[repr(transparent)]` newtype of
     // `EdwardsBasepointTable`

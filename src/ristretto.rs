@@ -1155,13 +1155,19 @@ impl Zeroize for RistrettoPoint {
 
 #[cfg(test)]
 mod test {
-    use rand_core::OsRng;
-
     use super::*;
-    use crate::constants::RISTRETTO_BASEPOINT_TABLE;
     use crate::edwards::CompressedEdwardsY;
     use crate::scalar::Scalar;
     use crate::traits::Identity;
+
+    #[cfg(feature = "basepoint-tables")]
+    use crate::constants::RISTRETTO_BASEPOINT_TABLE;
+
+    #[cfg(any(
+        feature = "basepoint-tables",
+        all(feature = "alloc", feature = "rand_core")
+    ))]
+    use rand_core::OsRng;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1352,6 +1358,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn four_torsion_random() {
         let mut rng = OsRng;
@@ -1678,6 +1685,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn random_roundtrip() {
         let mut rng = OsRng;
@@ -1691,7 +1699,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn double_and_compress_1024_random_points() {
         let mut rng = OsRng;
 
@@ -1708,7 +1716,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 

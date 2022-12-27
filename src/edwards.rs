@@ -1118,13 +1118,15 @@ impl Debug for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::constants::ED25519_BASEPOINT_TABLE;
     use crate::field::FieldElement;
     use crate::scalar::Scalar;
     use subtle::ConditionallySelectable;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
+
+    #[cfg(feature = "basepoint-tables")]
+    use crate::constants::ED25519_BASEPOINT_TABLE;
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -1212,6 +1214,7 @@ mod test {
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = ED25519_BASEPOINT_TABLE * &Scalar::ONE;
@@ -1220,6 +1223,7 @@ mod test {
     }
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_table_basepoint_function_correct() {
         let bp = ED25519_BASEPOINT_TABLE.basepoint();
@@ -1228,6 +1232,7 @@ mod test {
 
     /// Test `impl Add<EdwardsPoint> for EdwardsPoint`
     /// using basepoint + basepoint versus the 2*basepoint constant.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1237,6 +1242,7 @@ mod test {
 
     /// Test `impl Add<ProjectiveNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1246,6 +1252,7 @@ mod test {
 
     /// Test `impl Add<AffineNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1271,6 +1278,7 @@ mod test {
     }
 
     /// Sanity check for conversion to precomputed points
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
@@ -1281,6 +1289,7 @@ mod test {
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_vs_ed25519py() {
         let aB = ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1288,6 +1297,7 @@ mod test {
     }
 
     /// Test that multiplication by the basepoint order kills the basepoint
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_by_basepoint_order() {
         let B = ED25519_BASEPOINT_TABLE;
@@ -1296,6 +1306,7 @@ mod test {
     }
 
     /// Test precomputed basepoint mult
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn test_precomputed_basepoint_mult() {
         let aB_1 = ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1320,6 +1331,7 @@ mod test {
     }
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
         let two = Scalar::from(2u64);
@@ -1328,6 +1340,7 @@ mod test {
     }
 
     /// Test that all the basepoint table types compute the same results.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_tables() {
         let P = &constants::ED25519_BASEPOINT_POINT;
@@ -1353,7 +1366,8 @@ mod test {
         assert_eq!(aP128, aP256);
     }
 
-    // Check a unreduced scalar multiplication by the basepoint tables.
+    /// Check a unreduced scalar multiplication by the basepoint tables.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_tables_unreduced_scalar() {
         let P = &constants::ED25519_BASEPOINT_POINT;
@@ -1502,7 +1516,7 @@ mod test {
     }
 
     // A single iteration of a consistency check for MSM.
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn multiscalar_consistency_iter(n: usize) {
         use core::iter;
         let mut rng = rand::thread_rng();
@@ -1537,7 +1551,7 @@ mod test {
     // parameters.
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn multiscalar_consistency_n_100() {
         let iters = 50;
         for _ in 0..iters {
@@ -1546,7 +1560,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn multiscalar_consistency_n_250() {
         let iters = 50;
         for _ in 0..iters {
@@ -1555,7 +1569,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn multiscalar_consistency_n_500() {
         let iters = 50;
         for _ in 0..iters {
@@ -1564,7 +1578,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn multiscalar_consistency_n_1000() {
         let iters = 50;
         for _ in 0..iters {
@@ -1573,7 +1587,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 

@@ -1034,13 +1034,14 @@ impl RistrettoPoint {
 /// A precomputed table of multiples of the Ristretto basepoint is
 /// available in the `constants` module:
 /// ```
-/// use curve25519_dalek::constants;
+/// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 /// use curve25519_dalek::scalar::Scalar;
 ///
 /// let a = Scalar::from(87329482u64);
-/// let P = &a * &constants::RISTRETTO_BASEPOINT_TABLE;
+/// let P = &a * RISTRETTO_BASEPOINT_TABLE;
 /// ```
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
@@ -1157,7 +1158,7 @@ mod test {
     use rand_core::OsRng;
 
     use super::*;
-    use crate::constants;
+    use crate::constants::RISTRETTO_BASEPOINT_TABLE;
     use crate::edwards::CompressedEdwardsY;
     use crate::scalar::Scalar;
     use crate::traits::Identity;
@@ -1354,7 +1355,7 @@ mod test {
     #[test]
     fn four_torsion_random() {
         let mut rng = OsRng;
-        let B = &constants::RISTRETTO_BASEPOINT_TABLE;
+        let B = RISTRETTO_BASEPOINT_TABLE;
         let P = B * &Scalar::random(&mut rng);
         let P_coset = P.coset4();
         for point in P_coset {
@@ -1680,7 +1681,7 @@ mod test {
     #[test]
     fn random_roundtrip() {
         let mut rng = OsRng;
-        let B = &constants::RISTRETTO_BASEPOINT_TABLE;
+        let B = RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
             let P = B * &Scalar::random(&mut rng);
             let compressed_P = P.compress();
@@ -1711,7 +1712,7 @@ mod test {
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
-        let B = &crate::constants::RISTRETTO_BASEPOINT_TABLE;
+        let B = RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))

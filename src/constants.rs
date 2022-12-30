@@ -15,7 +15,8 @@
 //! `LONG_DESCRIPTIVE_UPPER_CASE_NAMES`, but they can be brought into
 //! scope using a `let` binding:
 //!
-//! ```
+#![cfg_attr(feature = "basepoint-tables", doc = "```")]
+#![cfg_attr(not(feature = "basepoint-tables"), doc = "```ignore")]
 //! use curve25519_dalek::constants;
 //! use curve25519_dalek::traits::IsIdentity;
 //!

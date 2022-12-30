@@ -702,6 +702,24 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
     }
 }
 
+impl EdwardsPoint {
+    /// Fixed-base scalar multiplication by the Ed25519 base point.
+    ///
+    /// Uses precomputed basepoint tables when the `basepoint-tables` feature
+    /// is enabled, trading off increased code size for ~4x better performance.
+    pub fn mul_base(scalar: &Scalar) -> Self {
+        #[cfg(not(feature = "basepoint-tables"))]
+        {
+            scalar * constants::ED25519_BASEPOINT_POINT
+        }
+
+        #[cfg(feature = "basepoint-tables")]
+        {
+            scalar * constants::ED25519_BASEPOINT_TABLE
+        }
+    }
+}
+
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
 // ------------------------------------------------------------------------

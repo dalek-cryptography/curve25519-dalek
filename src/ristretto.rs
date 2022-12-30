@@ -924,6 +924,24 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
     }
 }
 
+impl RistrettoPoint {
+    /// Fixed-base scalar multiplication by the Ristretto base point.
+    ///
+    /// Uses precomputed basepoint tables when the `basepoint-tables` feature
+    /// is enabled, trading off increased code size for ~4x better performance.
+    pub fn mul_base(scalar: &Scalar) -> Self {
+        #[cfg(not(feature = "basepoint-tables"))]
+        {
+            scalar * constants::RISTRETTO_BASEPOINT_POINT
+        }
+
+        #[cfg(feature = "basepoint-tables")]
+        {
+            scalar * constants::RISTRETTO_BASEPOINT_TABLE
+        }
+    }
+}
+
 define_mul_assign_variants!(LHS = RistrettoPoint, RHS = Scalar);
 
 define_mul_variants!(LHS = RistrettoPoint, RHS = Scalar, Output = RistrettoPoint);
@@ -1033,7 +1051,8 @@ impl RistrettoPoint {
 ///
 /// A precomputed table of multiples of the Ristretto basepoint is
 /// available in the `constants` module:
-/// ```
+#[cfg_attr(feature = "basepoint-tables", doc = "```")]
+#[cfg_attr(not(feature = "basepoint-tables"), doc = "```ignore")]
 /// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 /// use curve25519_dalek::scalar::Scalar;
 ///

@@ -1179,13 +1179,6 @@ mod test {
     use crate::scalar::Scalar;
     use crate::traits::Identity;
 
-    #[cfg(feature = "basepoint-tables")]
-    use crate::constants::RISTRETTO_BASEPOINT_TABLE;
-
-    #[cfg(any(
-        feature = "basepoint-tables",
-        all(feature = "alloc", feature = "rand_core")
-    ))]
     use rand_core::OsRng;
 
     #[test]
@@ -1377,12 +1370,10 @@ mod test {
         }
     }
 
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn four_torsion_random() {
         let mut rng = OsRng;
-        let B = RISTRETTO_BASEPOINT_TABLE;
-        let P = B * &Scalar::random(&mut rng);
+        let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
         let P_coset = P.coset4();
         for point in P_coset {
             assert_eq!(P, RistrettoPoint(point));
@@ -1704,13 +1695,11 @@ mod test {
         }
     }
 
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn random_roundtrip() {
         let mut rng = OsRng;
-        let B = RISTRETTO_BASEPOINT_TABLE;
         for _ in 0..100 {
-            let P = B * &Scalar::random(&mut rng);
+            let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
             let Q = compressed_P.decompress().unwrap();
             assert_eq!(P, Q);
@@ -1735,11 +1724,9 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
-
-        let B = RISTRETTO_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1755,8 +1742,14 @@ mod test {
             .map(|s| s * s)
             .sum();
 
-        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
-        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let static_points = static_scalars
+            .iter()
+            .map(RistrettoPoint::mul_base)
+            .collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars
+            .iter()
+            .map(RistrettoPoint::mul_base)
+            .collect::<Vec<_>>();
 
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
 
@@ -1772,7 +1765,7 @@ mod test {
             static_points.iter().chain(dynamic_points.iter()),
         );
 
-        let R = &check_scalar * B;
+        let R = RistrettoPoint::mul_base(&check_scalar);
 
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());

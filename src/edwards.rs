@@ -1250,7 +1250,6 @@ mod test {
 
     /// Test `impl Add<EdwardsPoint> for EdwardsPoint`
     /// using basepoint + basepoint versus the 2*basepoint constant.
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1260,7 +1259,6 @@ mod test {
 
     /// Test `impl Add<ProjectiveNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_projective_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1270,7 +1268,6 @@ mod test {
 
     /// Test `impl Add<AffineNielsPoint> for EdwardsPoint`
     /// using the basepoint, basepoint2 constants
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_plus_basepoint_affine_niels_vs_basepoint2() {
         let bp = constants::ED25519_BASEPOINT_POINT;
@@ -1307,19 +1304,16 @@ mod test {
     }
 
     /// Test basepoint_mult versus a known scalar multiple from ed25519.py
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_vs_ed25519py() {
-        let aB = ED25519_BASEPOINT_TABLE * &A_SCALAR;
+        let aB = EdwardsPoint::mul_base(&A_SCALAR);
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
 
     /// Test that multiplication by the basepoint order kills the basepoint
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let B = ED25519_BASEPOINT_TABLE;
-        let should_be_id = B * &constants::BASEPOINT_ORDER;
+        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER);
         assert!(should_be_id.is_identity());
     }
 
@@ -1349,11 +1343,10 @@ mod test {
     }
 
     /// Test that computing 2*basepoint is the same as basepoint.double()
-    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
         let two = Scalar::from(2u64);
-        let bp2 = ED25519_BASEPOINT_TABLE * &two;
+        let bp2 = EdwardsPoint::mul_base(&two);
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
 
@@ -1534,7 +1527,7 @@ mod test {
     }
 
     // A single iteration of a consistency check for MSM.
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_iter(n: usize) {
         use core::iter;
         let mut rng = rand::thread_rng();
@@ -1549,17 +1542,14 @@ mod test {
         let check = xs.iter().map(|xi| xi * xi).sum::<Scalar>();
 
         // Construct points G_i = x_i * B
-        let Gs = xs
-            .iter()
-            .map(|xi| xi * ED25519_BASEPOINT_TABLE)
-            .collect::<Vec<_>>();
+        let Gs = xs.iter().map(EdwardsPoint::mul_base).collect::<Vec<_>>();
 
         // Compute H1 = <xs, Gs> (consttime)
         let H1 = EdwardsPoint::multiscalar_mul(&xs, &Gs);
         // Compute H2 = <xs, Gs> (vartime)
         let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
-        let H3 = &check * ED25519_BASEPOINT_TABLE;
+        let H3 = EdwardsPoint::mul_base(&check);
 
         assert_eq!(H1, H3);
         assert_eq!(H2, H3);
@@ -1569,7 +1559,7 @@ mod test {
     // parameters.
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_100() {
         let iters = 50;
         for _ in 0..iters {
@@ -1578,7 +1568,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_250() {
         let iters = 50;
         for _ in 0..iters {
@@ -1587,7 +1577,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_500() {
         let iters = 50;
         for _ in 0..iters {
@@ -1596,7 +1586,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn multiscalar_consistency_n_1000() {
         let iters = 50;
         for _ in 0..iters {
@@ -1605,11 +1595,9 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "basepoint-tables"))]
+    #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
-
-        let B = ED25519_BASEPOINT_TABLE;
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1625,8 +1613,14 @@ mod test {
             .map(|s| s * s)
             .sum();
 
-        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
-        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let static_points = static_scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
 
         let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
 
@@ -1642,7 +1636,7 @@ mod test {
             static_points.iter().chain(dynamic_points.iter()),
         );
 
-        let R = &check_scalar * B;
+        let R = EdwardsPoint::mul_base(&check_scalar);
 
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());

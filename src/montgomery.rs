@@ -386,7 +386,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    #[cfg(all(feature = "basepoint-tables", feature = "rand_core"))]
+    #[cfg(feature = "rand_core")]
     use rand_core::OsRng;
 
     #[test]
@@ -471,12 +471,12 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "basepoint-tables", feature = "rand_core"))]
+    #[cfg(feature = "rand_core")]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng: OsRng = OsRng;
 
         let s: Scalar = Scalar::random(&mut csprng);
-        let p_edwards: EdwardsPoint = constants::ED25519_BASEPOINT_TABLE * &s;
+        let p_edwards = EdwardsPoint::base_mul(&s);
         let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
         let expected = s * p_edwards;

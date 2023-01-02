@@ -261,8 +261,12 @@ comprising either avx2 or avx512 backends.  To use them, compile with
 
 The standard variants of batch signature verification (i.e. many signatures made
 with potentially many different public keys over potentially many different
-message) is available via the `batch` feature.  It uses synthetic randomness, as
-noted above.
+messages) is available via the `batch` feature.  It uses synthetic randomness, as
+noted above. Batch verification requires allocation, so this won't function in
+heapless settings.
+
+Batch verification is slightly faster with the `std` feature enabled, since it
+permits us to use `rand::thread_rng`.
 
 ### Deterministic Batch Signature Verification
 

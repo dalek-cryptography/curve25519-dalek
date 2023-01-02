@@ -7,15 +7,13 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, Criterion};
 
 mod ed25519_benches {
     use super::*;
-    use ed25519_dalek::verify_batch;
     use ed25519_dalek::Signature;
     use ed25519_dalek::Signer;
     use ed25519_dalek::SigningKey;
-    use ed25519_dalek::VerifyingKey;
     use rand::prelude::ThreadRng;
     use rand::thread_rng;
 
@@ -49,14 +47,17 @@ mod ed25519_benches {
         });
     }
 
+    #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
     fn verify_batch_signatures(c: &mut Criterion) {
+        use ed25519_dalek::verify_batch;
+
         static BATCH_SIZES: [usize; 8] = [4, 8, 16, 32, 64, 96, 128, 256];
 
-        // TODO: use BenchmarkGroups instead.
-        #[allow(deprecated)]
-        c.bench_function_over_inputs(
-            "Ed25519 batch signature verification",
-            |b, &&size| {
+        // Benchmark batch verification for all the above batch sizes
+        let mut group = c.benchmark_group("Ed25519 batch signature verification");
+        for size in BATCH_SIZES {
+            let name = format!("size={size}");
+            group.bench_function(name, |b| {
                 let mut csprng: ThreadRng = thread_rng();
                 let keypairs: Vec<SigningKey> = (0..size)
                     .map(|_| SigningKey::generate(&mut csprng))
@@ -65,14 +66,17 @@ mod ed25519_benches {
                 let messages: Vec<&[u8]> = (0..size).map(|_| msg).collect();
                 let signatures: Vec<Signature> =
                     keypairs.iter().map(|key| key.sign(&msg)).collect();
-                let verifying_keys: Vec<VerifyingKey> =
+                let verifying_keys: Vec<_> =
                     keypairs.iter().map(|key| key.verifying_key()).collect();
 
                 b.iter(|| verify_batch(&messages[..], &signatures[..], &verifying_keys[..]));
-            },
-            &BATCH_SIZES,
-        );
+            });
+        }
     }
+
+    // If the above function isn't defined, make a placeholder function
+    #[cfg(not(any(feature = "batch", feature = "batch_deterministic")))]
+    fn verify_batch_signatures(_: &mut Criterion) {}
 
     fn key_generation(c: &mut Criterion) {
         let mut csprng: ThreadRng = thread_rng();
@@ -94,4 +98,4 @@ mod ed25519_benches {
     }
 }
 
-criterion_main!(ed25519_benches::ed25519_benches);
+criterion::criterion_main!(ed25519_benches::ed25519_benches);

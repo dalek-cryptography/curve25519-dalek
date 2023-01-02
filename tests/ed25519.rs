@@ -209,7 +209,7 @@ mod integrations {
         let good: &[u8] = "test message".as_bytes();
         let bad: &[u8] = "wrong message".as_bytes();
 
-        let mut csprng = OsRng {};
+        let mut csprng = OsRng;
 
         signing_key = SigningKey::generate(&mut csprng);
         good_sig = signing_key.sign(&good);

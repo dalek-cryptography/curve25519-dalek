@@ -18,28 +18,26 @@
 //! secure pseudorandom number generator (CSPRNG). For this example, we'll use
 //! the operating system's builtin PRNG:
 //!
-//! ```
-//! # #[cfg(feature = "std")]
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # fn main() {
 //! use rand::rngs::OsRng;
 //! use ed25519_dalek::SigningKey;
 //! use ed25519_dalek::Signature;
 //!
-//! let mut csprng = OsRng{};
+//! let mut csprng = OsRng;
 //! let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # }
-//! #
-//! # #[cfg(not(feature = "std"))]
-//! # fn main() { }
 //! ```
 //!
 //! We can now use this `signing_key` to sign a message:
 //!
-//! ```
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::SigningKey;
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! use ed25519_dalek::{Signature, Signer};
 //! let message: &[u8] = b"This is a test of the tsunami alert system.";
@@ -50,11 +48,12 @@
 //! As well as to verify that this is, indeed, a valid signature on
 //! that `message`:
 //!
-//! ```
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer};
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
@@ -66,7 +65,8 @@
 //! Anyone else, given the `public` half of the `signing_key` can also easily
 //! verify this signature:
 //!
-//! ```
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::SigningKey;
@@ -91,7 +91,8 @@
 //! secret key to anyone else, since they will only need the public key to
 //! verify your signatures!)
 //!
-//! ```
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, VerifyingKey};
@@ -110,14 +111,15 @@
 //!
 //! And similarly, decoded from bytes with `::from_bytes()`:
 //!
-//! ```
+#![cfg_attr(feature = "rand", doc = "```")]
+#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
 //! # use std::convert::TryFrom;
 //! # use rand::rngs::OsRng;
 //! # use std::convert::TryInto;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, VerifyingKey, SecretKey, SignatureError};
 //! # use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
 //! # fn do_test() -> Result<(SigningKey, VerifyingKey, Signature), SignatureError> {
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key_orig: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature_orig: Signature = signing_key_orig.sign(message);
@@ -164,13 +166,13 @@
 //!
 #![cfg_attr(feature = "pem", doc = "```")]
 #![cfg_attr(not(feature = "pem"), doc = "```ignore")]
-//! use ed25519_dalek::{VerifyingKey, pkcs8::DecodeVerifyingKey};
+//! use ed25519_dalek::{VerifyingKey, pkcs8::DecodePublicKey};
 //!
 //! let pem = "-----BEGIN PUBLIC KEY-----
 //! MCowBQYDK2VwAyEAGb9ECWmEzf6FQbrBZ9w7lshQhqowtrbLDFw4rXAxZuE=
 //! -----END PUBLIC KEY-----";
 //!
-//! let verifying_key = VerifyingKey::from_verifying_key_pem(pem)
+//! let verifying_key = VerifyingKey::from_public_key_pem(pem)
 //!     .expect("invalid public key PEM");
 //! ```
 //!
@@ -187,13 +189,13 @@
 //! They can be then serialised into any of the wire formats which serde supports.
 //! For example, using [bincode](https://github.com/TyOverby/bincode):
 //!
-//! ```
-//! # #[cfg(feature = "serde")]
+#![cfg_attr(all(feature = "rand", feature = "serde"), doc = "```")]
+#![cfg_attr(not(all(feature = "rand", feature = "serde")), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
 //! use bincode::serialize;
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
@@ -203,22 +205,20 @@
 //! let encoded_verifying_key: Vec<u8> = serialize(&verifying_key).unwrap();
 //! let encoded_signature: Vec<u8> = serialize(&signature).unwrap();
 //! # }
-//! # #[cfg(not(feature = "serde"))]
-//! # fn main() {}
 //! ```
 //!
 //! After sending the `encoded_verifying_key` and `encoded_signature`, the
 //! recipient may deserialise them and verify:
 //!
-//! ```
-//! # #[cfg(feature = "serde")]
+#![cfg_attr(all(feature = "rand", feature = "serde"), doc = "```")]
+#![cfg_attr(not(all(feature = "rand", feature = "serde")), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
 //! # use bincode::serialize;
 //! use bincode::deserialize;
 //!
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
@@ -236,8 +236,6 @@
 //!
 //! assert!(verified);
 //! # }
-//! # #[cfg(not(feature = "serde"))]
-//! # fn main() {}
 //! ```
 
 #![no_std]

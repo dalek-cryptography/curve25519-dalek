@@ -13,7 +13,7 @@
 use ed25519::pkcs8::{self, DecodePrivateKey};
 
 #[cfg(feature = "rand")]
-use rand::{CryptoRng, RngCore};
+use rand_core::CryptoRngCore;
 
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
@@ -168,7 +168,7 @@ impl SigningKey {
     /// use ed25519_dalek::SigningKey;
     /// use ed25519_dalek::Signature;
     ///
-    /// let mut csprng = OsRng{};
+    /// let mut csprng = OsRng;
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     ///
     /// # }
@@ -187,10 +187,7 @@ impl SigningKey {
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     #[cfg(feature = "rand")]
-    pub fn generate<R>(csprng: &mut R) -> SigningKey
-    where
-        R: CryptoRng + RngCore,
-    {
+    pub fn generate<R: CryptoRngCore + ?Sized>(csprng: &mut R) -> SigningKey {
         let mut secret = SecretKey::default();
         csprng.fill_bytes(&mut secret);
         Self::from_bytes(&secret)

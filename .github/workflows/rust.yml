@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ '*' ]
+    branches: [ '**' ]
   pull_request:
-    branches: [ 'main', 'develop', 'release/2.0' ]
+    branches: [ '**' ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -32,7 +32,7 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --features batch
       - run: cargo test --target ${{ matrix.target }} --features batch_deterministic
       - run: cargo test --target ${{ matrix.target }} --features serde
-      - run: cargo test --target ${{ matrix.target }} --features pkcs8
+      - run: cargo test --target ${{ matrix.target }} --features pem
 
   build-simd:
     name: Test simd backend (nightly)
@@ -68,6 +68,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
     - run: cargo build --benches --features batch
+    - run: cargo build --benches --features batch_deterministic
 
   rustfmt:
     name: Check formatting

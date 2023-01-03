@@ -101,6 +101,8 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+use cfg_if::cfg_if;
+
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
 
@@ -124,13 +126,15 @@ use crate::backend::serial::curve_models::CompletedPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::backend::serial::curve_models::ProjectivePoint;
 
-use crate::window::LookupTableRadix128;
-use crate::window::LookupTableRadix16;
-use crate::window::LookupTableRadix256;
-use crate::window::LookupTableRadix32;
-use crate::window::LookupTableRadix64;
+#[cfg(feature = "basepoint-tables")]
+use crate::window::{
+    LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
+    LookupTableRadix64,
+};
 
+#[cfg(feature = "basepoint-tables")]
 use crate::traits::BasepointTable;
+
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
 
@@ -842,6 +846,7 @@ impl EdwardsPoint {
     }
 }
 
+#[cfg(feature = "basepoint-tables")]
 macro_rules! impl_basepoint_table {
     (Name = $name:ident, LookupTable = $table:ident, Point = $point:ty, Radix = $radix:expr, Additions = $adds:expr) => {
         /// A precomputed table of multiples of a basepoint, for accelerating
@@ -994,20 +999,25 @@ macro_rules! impl_basepoint_table {
 } // End macro_rules! impl_basepoint_table
 
 // The number of additions required is ceil(256/w) where w is the radix representation.
-impl_basepoint_table! {Name = EdwardsBasepointTable, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
+cfg_if! {
+    if #[cfg(feature = "basepoint-tables")] {
+        impl_basepoint_table! {Name = EdwardsBasepointTable, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
+        impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
+        impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
+        impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
+        impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
 
-/// A type-alias for [`EdwardsBasepointTable`] because the latter is
-/// used as a constructor in the [`constants`] module.
-//
-// Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
-// first, because it's used as a constructor, and then provide a type alias for
-// it.
-pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
+    /// A type-alias for [`EdwardsBasepointTable`] because the latter is
+    /// used as a constructor in the [`constants`] module.
+    //
+    // Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
+    // first, because it's used as a constructor, and then provide a type alias for
+    // it.
+    pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
+    }
+}
 
+#[cfg(feature = "basepoint-tables")]
 macro_rules! impl_basepoint_table_conversions {
     (LHS = $lhs:ty, RHS = $rhs:ty) => {
         impl<'a> From<&'a $lhs> for $rhs {
@@ -1024,6 +1034,8 @@ macro_rules! impl_basepoint_table_conversions {
     };
 }
 
+cfg_if! {
+    if #[cfg(feature = "basepoint-tables")] {
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix32}
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
@@ -1037,6 +1049,8 @@ impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = Edw
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
 
 impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
+    }
+}
 
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\(\[8\]P\\).

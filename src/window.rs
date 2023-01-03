@@ -15,6 +15,8 @@
 
 use core::fmt::Debug;
 
+use cfg_if::cfg_if;
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -127,13 +129,19 @@ macro_rules! impl_lookup_table {
 
 // The first one has to be named "LookupTable" because it's used as a constructor for consts.
 impl_lookup_table! {Name = LookupTable,         Size =   8, SizeNeg =   -8, SizeRange = 1 ..   9, ConversionRange = 0 ..   7} // radix-16
+
+// The rest only get used to make basepoint tables
+cfg_if! {
+    if #[cfg(feature = "basepoint-tables")] {
 impl_lookup_table! {Name = LookupTableRadix32,  Size =  16, SizeNeg =  -16, SizeRange = 1 ..  17, ConversionRange = 0 ..  15} // radix-32
 impl_lookup_table! {Name = LookupTableRadix64,  Size =  32, SizeNeg =  -32, SizeRange = 1 ..  33, ConversionRange = 0 ..  31} // radix-64
 impl_lookup_table! {Name = LookupTableRadix128, Size =  64, SizeNeg =  -64, SizeRange = 1 ..  65, ConversionRange = 0 ..  63} // radix-128
 impl_lookup_table! {Name = LookupTableRadix256, Size = 128, SizeNeg = -128, SizeRange = 1 .. 129, ConversionRange = 0 .. 127} // radix-256
 
 // For homogeneity we then alias it to "LookupTableRadix16".
-pub type LookupTableRadix16<T> = LookupTable<T>;
+pub(crate) type LookupTableRadix16<T> = LookupTable<T>;
+    }
+}
 
 /// Holds odd multiples 1A, 3A, ..., 15A of a point A.
 #[derive(Copy, Clone)]

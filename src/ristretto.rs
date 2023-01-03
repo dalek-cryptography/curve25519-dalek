@@ -190,11 +190,13 @@ use subtle::ConstantTimeEq;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+#[cfg(feature = "basepoint-tables")]
 use crate::edwards::EdwardsBasepointTable;
 use crate::edwards::EdwardsPoint;
 
 use crate::scalar::Scalar;
 
+#[cfg(feature = "basepoint-tables")]
 use crate::traits::BasepointTable;
 use crate::traits::Identity;
 #[cfg(feature = "alloc")]
@@ -1051,18 +1053,19 @@ impl RistrettoPoint {
 ///
 /// A precomputed table of multiples of the Ristretto basepoint is
 /// available in the `constants` module:
-#[cfg_attr(feature = "basepoint-tables", doc = "```")]
-#[cfg_attr(not(feature = "basepoint-tables"), doc = "```ignore")]
+/// ```
 /// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 /// use curve25519_dalek::scalar::Scalar;
 ///
 /// let a = Scalar::from(87329482u64);
 /// let P = &a * RISTRETTO_BASEPOINT_TABLE;
 /// ```
+#[cfg(feature = "basepoint-tables")]
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
+#[cfg(feature = "basepoint-tables")]
 impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
@@ -1071,6 +1074,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     }
 }
 
+#[cfg(feature = "basepoint-tables")]
 impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
     type Output = RistrettoPoint;
 
@@ -1079,6 +1083,7 @@ impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
     }
 }
 
+#[cfg(feature = "basepoint-tables")]
 impl RistrettoBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
     pub fn create(basepoint: &RistrettoPoint) -> RistrettoBasepointTable {

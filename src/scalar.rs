@@ -1050,7 +1050,7 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(any(feature = "alloc", feature = "basepoint-tables"))]
     pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);

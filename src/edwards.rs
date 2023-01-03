@@ -860,7 +860,7 @@ macro_rules! impl_basepoint_table {
         ///
         /// * [`EdwardsBasepointTableRadix16`]: 30KB, 64A
         ///   (this is the default size, and is used for
-        ///   [`ED25519_BASEPOINT_TABLE`])
+        ///   [`constants::ED25519_BASEPOINT_TABLE`])
         /// * [`EdwardsBasepointTableRadix64`]: 120KB, 43A
         /// * [`EdwardsBasepointTableRadix128`]: 240KB, 37A
         /// * [`EdwardsBasepointTableRadix256`]: 480KB, 33A
@@ -919,10 +919,14 @@ macro_rules! impl_basepoint_table {
             /// $$
             /// with
             /// $$
-            ///     \frac{-w}{2} \leq a_i < \frac{w}{2}, \cdots, \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+            /// \begin{aligned}
+            ///     \frac{-w}{2} \leq a_i < \frac{w}{2}
+            ///     &&\cdots&&
+            ///     \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+            /// \end{aligned}
             /// $$
-            /// and the number of additions, \\(x\\), is given by \\(x = \lceil \frac{256}{w} \rceil\\).
-            /// Then
+            /// and the number of additions, \\(x\\), is given by
+            /// \\(x = \lceil \frac{256}{w} \rceil\\). Then
             /// $$
             ///     a B = a\_0 B + a\_1 w\^1 B + \cdots + a\_{x-1} w\^{x-1} B.
             /// $$
@@ -937,7 +941,7 @@ macro_rules! impl_basepoint_table {
             /// $$
             /// For each \\(i = 0 \ldots 31\\), we create a lookup table of
             /// $$
-            /// [w\^{2i} B, \ldots, \frac{w}{2}\cdotw\^{2i} B],
+            /// [w\^{2i} B, \ldots, \frac{w}{2}\cdot w\^{2i} B],
             /// $$
             /// and use it to select \\( y \cdot w\^{2i} \cdot B \\) in constant time.
             ///
@@ -1001,19 +1005,49 @@ macro_rules! impl_basepoint_table {
 // The number of additions required is ceil(256/w) where w is the radix representation.
 cfg_if! {
     if #[cfg(feature = "basepoint-tables")] {
-        impl_basepoint_table! {Name = EdwardsBasepointTable, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
-        impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
-        impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
-        impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
-        impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTable,
+            LookupTable = LookupTableRadix16,
+            Point = EdwardsPoint,
+            Radix = 4,
+            Additions = 64
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix32,
+            LookupTable = LookupTableRadix32,
+            Point = EdwardsPoint,
+            Radix = 5,
+            Additions = 52
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix64,
+            LookupTable = LookupTableRadix64,
+            Point = EdwardsPoint,
+            Radix = 6,
+            Additions = 43
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix128,
+            LookupTable = LookupTableRadix128,
+            Point = EdwardsPoint,
+            Radix = 7,
+            Additions = 37
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix256,
+            LookupTable = LookupTableRadix256,
+            Point = EdwardsPoint,
+            Radix = 8,
+            Additions = 33
+        }
 
-    /// A type-alias for [`EdwardsBasepointTable`] because the latter is
-    /// used as a constructor in the [`constants`] module.
-    //
-    // Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
-    // first, because it's used as a constructor, and then provide a type alias for
-    // it.
-    pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
+        /// A type-alias for [`EdwardsBasepointTable`] because the latter is
+        /// used as a constructor in the [`constants`] module.
+        //
+        // Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
+        // first, because it's used as a constructor, and then provide a type alias for
+        // it.
+        pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
     }
 }
 
@@ -1036,19 +1070,53 @@ macro_rules! impl_basepoint_table_conversions {
 
 cfg_if! {
     if #[cfg(feature = "basepoint-tables")] {
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix32}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 16
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix32
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix64
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix64}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 32
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix64
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 64
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix64,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix64,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 128
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix128,
+            RHS = EdwardsBasepointTableRadix256
+        }
     }
 }
 

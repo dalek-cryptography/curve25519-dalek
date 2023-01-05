@@ -226,8 +226,9 @@ pub struct Scalar {
     ///
     /// This ensures that there is room for a carry bit when computing a NAF representation.
     //
-    // XXX This is pub(crate) so we can write literal constants.  If const fns were stable, we could
-    //     make the Scalar constructors const fns and use those instead.
+    // XXX This is pub(crate) so we can write literal constants.
+    //     Alternatively we could make the Scalar constructors `const fn`s and use those instead.
+    //     See dalek-cryptography/curve25519-dalek#493
     pub(crate) bytes: [u8; 32],
 }
 
@@ -688,7 +689,7 @@ impl Scalar {
     ///
     /// assert!(s.to_bytes() == [0u8; 32]);
     /// ```
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub const fn to_bytes(&self) -> [u8; 32] {
         self.bytes
     }
 
@@ -703,7 +704,7 @@ impl Scalar {
     ///
     /// assert!(s.as_bytes() == &[0u8; 32]);
     /// ```
-    pub fn as_bytes(&self) -> &[u8; 32] {
+    pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }
 

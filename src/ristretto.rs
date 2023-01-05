@@ -231,12 +231,12 @@ impl ConstantTimeEq for CompressedRistretto {
 
 impl CompressedRistretto {
     /// Copy the bytes of this `CompressedRistretto`.
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub const fn to_bytes(&self) -> [u8; 32] {
         self.0
     }
 
     /// View this `CompressedRistretto` as an array of bytes.
-    pub fn as_bytes(&self) -> &[u8; 32] {
+    pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.0
     }
 

@@ -54,30 +54,17 @@ impl AsRef<[u8]> for VerifyingKey {
     }
 }
 
-impl From<&SecretKey> for VerifyingKey {
-    /// Derive this public key from its corresponding `SecretKey`.
-    fn from(secret_key: &SecretKey) -> VerifyingKey {
-        let mut h: Sha512 = Sha512::new();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut digest: [u8; 32] = [0u8; 32];
-
-        h.update(secret_key);
-        hash.copy_from_slice(h.finalize().as_slice());
-
-        digest.copy_from_slice(&hash[..32]);
-
-        VerifyingKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(
-            &mut digest,
-        )
-    }
-}
-
 impl From<&ExpandedSecretKey> for VerifyingKey {
     /// Derive this public key from its corresponding `ExpandedSecretKey`.
     fn from(expanded_secret_key: &ExpandedSecretKey) -> VerifyingKey {
         let mut bits: [u8; 32] = expanded_secret_key.key.to_bytes();
-
         VerifyingKey::mangle_scalar_bits_and_multiply_by_basepoint_to_produce_public_key(&mut bits)
+    }
+}
+
+impl From<&SigningKey> for VerifyingKey {
+    fn from(signing_key: &SigningKey) -> VerifyingKey {
+        signing_key.verifying_key()
     }
 }
 

@@ -118,22 +118,18 @@ impl SigningKey {
     /// is an `SignatureError` describing the error that occurred.
     #[inline]
     pub fn from_keypair_bytes(bytes: &[u8; 64]) -> Result<SigningKey, SignatureError> {
-        // TODO: Use bytes.split_array_ref once it’s in MSRV.
         let (secret_key, verifying_key) = bytes.split_at(SECRET_KEY_LENGTH);
-        let secret_key = secret_key.try_into().unwrap();
-        let verifying_key = VerifyingKey::from_bytes(verifying_key.try_into().unwrap())?;
+        let signing_key = SigningKey::try_from(secret_key)?;
+        let verifying_key = VerifyingKey::try_from(verifying_key)?;
 
-        if verifying_key != VerifyingKey::from(&secret_key) {
+        if signing_key.verifying_key() != verifying_key {
             return Err(InternalError::MismatchedKeypair.into());
         }
 
-        Ok(SigningKey {
-            secret_key,
-            verifying_key,
-        })
+        Ok(signing_key)
     }
 
-    /// Convert this signing key to bytes.
+    /// Convert this signing key to a 64-byte keypair.
     ///
     /// # Returns
     ///
@@ -541,19 +537,19 @@ impl TryFrom<&pkcs8::KeypairBytes> for SigningKey {
     type Error = pkcs8::Error;
 
     fn try_from(pkcs8_key: &pkcs8::KeypairBytes) -> pkcs8::Result<Self> {
-        // Validate the public key in the PKCS#8 document if present
-        if let Some(public_bytes) = pkcs8_key.public_key {
-            let expected_verifying_key = VerifyingKey::from(&pkcs8_key.secret_key);
+        let signing_key = SigningKey::from_bytes(&pkcs8_key.secret_key);
 
-            let pkcs8_verifying_key = VerifyingKey::from_bytes(public_bytes.as_ref())
+        // Validate the public key in the PKCS#8 document if present
+        if let Some(public_bytes) = &pkcs8_key.public_key {
+            let expected_verifying_key = VerifyingKey::from_bytes(public_bytes.as_ref())
                 .map_err(|_| pkcs8::Error::KeyMalformed)?;
 
-            if expected_verifying_key != pkcs8_verifying_key {
+            if signing_key.verifying_key() != expected_verifying_key {
                 return Err(pkcs8::Error::KeyMalformed);
             }
         }
 
-        Ok(SigningKey::from_bytes(&pkcs8_key.secret_key))
+        Ok(signing_key)
     }
 }
 

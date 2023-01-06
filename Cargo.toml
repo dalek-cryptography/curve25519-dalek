@@ -11,7 +11,7 @@ documentation = "https://docs.rs/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
 categories = ["cryptography", "no-std"]
 description = "Fast and efficient ed25519 EdDSA key generations, signing, and verification in pure Rust."
-exclude = [ ".gitignore", "TESTVECTORS", "res/*" ]
+exclude = [ ".gitignore", "TESTVECTORS", "VALIDATIONVECTORS", "res/*" ]
 rust-version = "1.60"
 
 [badges]

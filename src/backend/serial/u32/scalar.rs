@@ -48,7 +48,7 @@ impl IndexMut<usize> for Scalar29 {
 
 /// u32 * u32 = u64 multiply helper
 #[inline(always)]
-fn m(x: u32, y: u32) -> u64 {
+const fn m(x: u32, y: u32) -> u64 {
     (x as u64) * (y as u64)
 }
 
@@ -58,29 +58,64 @@ impl Scalar29 {
 
     /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn from_bytes(bytes: &[u8; 32]) -> Scalar29 {
-        let mut words = [0u32; 8];
-        for i in 0..8 {
-            for j in 0..4 {
-                words[i] |= (bytes[(i * 4) + j] as u32) << (j * 8);
-            }
-        }
+    pub const fn from_bytes(bytes: &[u8; 32]) -> Scalar29 {
+        let words : [u32; 8] = [
+            (bytes[(0 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(0 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(0 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(0 * 4) + 3] as u32) << (3 * 8),
 
+            (bytes[(1 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(1 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(1 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(1 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(2 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(2 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(2 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(2 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(3 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(3 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(3 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(3 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(4 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(4 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(4 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(4 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(5 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(5 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(5 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(5 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(6 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(6 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(6 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(6 * 4) + 3] as u32) << (3 * 8),
+
+            (bytes[(7 * 4) + 0] as u32) << (0 * 8)
+            | (bytes[(7 * 4) + 1] as u32) << (1 * 8)
+            | (bytes[(7 * 4) + 2] as u32) << (2 * 8)
+            | (bytes[(7 * 4) + 3] as u32) << (3 * 8),
+
+        ];
         let mask = (1u32 << 29) - 1;
         let top_mask = (1u32 << 24) - 1;
-        let mut s = Scalar29::ZERO;
 
-        s[0] =   words[0]                            & mask;
-        s[1] = ((words[0] >> 29) | (words[1] <<  3)) & mask;
-        s[2] = ((words[1] >> 26) | (words[2] <<  6)) & mask;
-        s[3] = ((words[2] >> 23) | (words[3] <<  9)) & mask;
-        s[4] = ((words[3] >> 20) | (words[4] << 12)) & mask;
-        s[5] = ((words[4] >> 17) | (words[5] << 15)) & mask;
-        s[6] = ((words[5] >> 14) | (words[6] << 18)) & mask;
-        s[7] = ((words[6] >> 11) | (words[7] << 21)) & mask;
-        s[8] =  (words[7] >>  8)                     & top_mask;
-
-        s
+        let s :[u32; 9] = [
+              words[0]                            & mask,
+            ((words[0] >> 29) | (words[1] <<  3)) & mask,
+            ((words[1] >> 26) | (words[2] <<  6)) & mask,
+            ((words[2] >> 23) | (words[3] <<  9)) & mask,
+            ((words[3] >> 20) | (words[4] << 12)) & mask,
+            ((words[4] >> 17) | (words[5] << 15)) & mask,
+            ((words[5] >> 14) | (words[6] << 18)) & mask,
+            ((words[6] >> 11) | (words[7] << 21)) & mask,
+             (words[7] >>  8)                     & top_mask,
+        ];
+        Scalar29(s)
     }
 
     /// Reduce a 64 byte / 512 bit scalar mod l.

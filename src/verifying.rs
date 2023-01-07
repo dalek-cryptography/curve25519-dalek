@@ -141,6 +141,28 @@ impl VerifyingKey {
         VerifyingKey(compressed, point)
     }
 
+    // A helper function that computes H(R || A || M) as well as its prehashed version
+    #[allow(non_snake_case)]
+    fn compute_challenge(
+        context: Option<&[u8]>,
+        R: &CompressedEdwardsY,
+        A: &CompressedEdwardsY,
+        M: &[u8],
+    ) -> Scalar {
+        let mut h = Sha512::new();
+        if let Some(c) = context {
+            h.update(b"SigEd25519 no Ed25519 collisions");
+            h.update([1]); // Ed25519ph
+            h.update([c.len() as u8]);
+            h.update(c);
+        }
+        h.update(R.as_bytes());
+        h.update(A.as_bytes());
+        h.update(M);
+
+        Scalar::from_hash(h)
+    }
+
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
     ///
     /// # Inputs
@@ -171,8 +193,6 @@ impl VerifyingKey {
     {
         let signature = InternalSignature::try_from(signature)?;
 
-        let mut h: Sha512 = Sha512::default();
-
         let ctx: &[u8] = context.unwrap_or(b"");
         debug_assert!(
             ctx.len() <= 255,
@@ -180,16 +200,12 @@ impl VerifyingKey {
         );
 
         let minus_A: EdwardsPoint = -self.1;
-
-        h.update(b"SigEd25519 no Ed25519 collisions");
-        h.update([1]); // Ed25519ph
-        h.update([ctx.len() as u8]);
-        h.update(ctx);
-        h.update(signature.R.as_bytes());
-        h.update(self.as_bytes());
-        h.update(prehashed_message.finalize().as_slice());
-
-        let k = Scalar::from_hash(h);
+        let k = Self::compute_challenge(
+            Some(ctx),
+            &signature.R,
+            &self.0,
+            prehashed_message.finalize().as_slice(),
+        );
         let R: EdwardsPoint =
             EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
 
@@ -270,26 +286,81 @@ impl VerifyingKey {
     ) -> Result<(), SignatureError> {
         let signature = InternalSignature::try_from(signature)?;
 
-        let mut h: Sha512 = Sha512::new();
-        let minus_A: EdwardsPoint = -self.1;
-
-        let signature_R: EdwardsPoint = match signature.R.decompress() {
-            None => return Err(InternalError::Verify.into()),
-            Some(x) => x,
-        };
+        let signature_R = signature
+            .R
+            .decompress()
+            .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
 
         // Logical OR is fine here as we're not trying to be constant time.
         if signature_R.is_small_order() || self.1.is_small_order() {
             return Err(InternalError::Verify.into());
         }
 
-        h.update(signature.R.as_bytes());
-        h.update(self.as_bytes());
-        h.update(message);
-
-        let k = Scalar::from_hash(h);
+        let minus_A: EdwardsPoint = -self.1;
+        let k = Self::compute_challenge(None, &signature.R, &self.0, message);
         let R: EdwardsPoint =
             EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
+
+        if R == signature_R {
+            Ok(())
+        } else {
+            Err(InternalError::Verify.into())
+        }
+    }
+
+    /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm,
+    /// using strict signture checking as defined by [`Self::verify_strict`].
+    ///
+    /// # Inputs
+    ///
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
+    /// * `context` is an optional context string, up to 255 bytes inclusive,
+    ///   which may be used to provide additional domain separation.  If not
+    ///   set, this will default to an empty string.
+    /// * `signature` is a purported Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the `signature` was a valid signature created by this
+    /// `Keypair` on the `prehashed_message`.
+    #[allow(non_snake_case)]
+    pub fn verify_prehashed_strict<D>(
+        &self,
+        prehashed_message: D,
+        context: Option<&[u8]>,
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError>
+    where
+        D: Digest<OutputSize = U64>,
+    {
+        let signature = InternalSignature::try_from(signature)?;
+
+        let ctx: &[u8] = context.unwrap_or(b"");
+        debug_assert!(
+            ctx.len() <= 255,
+            "The context must not be longer than 255 octets."
+        );
+
+        let signature_R = signature
+            .R
+            .decompress()
+            .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
+
+        // Logical OR is fine here as we're not trying to be constant time.
+        if signature_R.is_small_order() || self.1.is_small_order() {
+            return Err(InternalError::Verify.into());
+        }
+
+        let minus_A: EdwardsPoint = -self.1;
+        let k = Self::compute_challenge(
+            Some(ctx),
+            &signature.R,
+            &self.0,
+            prehashed_message.finalize().as_slice(),
+        );
+        let R = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
 
         if R == signature_R {
             Ok(())
@@ -309,14 +380,8 @@ impl Verifier<ed25519::Signature> for VerifyingKey {
     fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
         let signature = InternalSignature::try_from(signature)?;
 
-        let mut h: Sha512 = Sha512::new();
         let minus_A: EdwardsPoint = -self.1;
-
-        h.update(signature.R.as_bytes());
-        h.update(self.as_bytes());
-        h.update(message);
-
-        let k = Scalar::from_hash(h);
+        let k = Self::compute_challenge(None, &signature.R, &self.0, message);
         let R: EdwardsPoint =
             EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s);
 

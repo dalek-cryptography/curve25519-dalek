@@ -21,15 +21,22 @@ use sha2::Sha512;
 
 #[cfg(test)]
 mod vectors {
-    use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar};
-    use sha2::{digest::Digest, Sha512};
-    use std::convert::TryFrom;
-
-    use std::fs::File;
-    use std::io::BufRead;
-    use std::io::BufReader;
-
     use super::*;
+
+    use curve25519_dalek::{
+        constants::ED25519_BASEPOINT_POINT,
+        edwards::{CompressedEdwardsY, EdwardsPoint},
+        scalar::Scalar,
+        traits::IsIdentity,
+    };
+    use sha2::{digest::Digest, Sha512};
+
+    use std::{
+        convert::TryFrom,
+        fs::File,
+        io::{BufRead, BufReader},
+        ops::Neg,
+    };
 
     // TESTVECTORS is taken from sign.input.gz in agl's ed25519 Golang
     // package. It is a selection of test cases from
@@ -81,6 +88,13 @@ mod vectors {
                 "Signature verification failed on line {}",
                 lineno
             );
+            assert!(
+                expected_verifying_key
+                    .verify_strict(&msg_bytes, &sig2)
+                    .is_ok(),
+                "Signature strict verification failed on line {}",
+                lineno
+            );
         }
     }
 
@@ -116,11 +130,21 @@ mod vectors {
         );
         assert!(
             signing_key
-                .verify_prehashed(prehash_for_verifying, None, &sig2)
+                .verify_prehashed(prehash_for_verifying.clone(), None, &sig2)
                 .is_ok(),
             "Could not verify ed25519ph signature!"
         );
+        assert!(
+            expected_verifying_key
+                .verify_prehashed_strict(prehash_for_verifying, None, &sig2)
+                .is_ok(),
+            "Could not strict-verify ed25519ph signature!"
+        );
     }
+
+    //
+    // The remaining items in this mod are for the repudiation tests
+    //
 
     // Taken from curve25519_dalek::constants::EIGHT_TORSION[4]
     const EIGHT_TORSION_4: [u8; 32] = [
@@ -128,69 +152,132 @@ mod vectors {
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127,
     ];
 
-    fn compute_hram(message: &[u8], pub_key: &EdwardsPoint, signature_r: &EdwardsPoint) -> Scalar {
-        let k_bytes = Sha512::default()
-            .chain_update(&signature_r.compress().as_bytes())
-            .chain_update(&pub_key.compress().as_bytes()[..])
-            .chain_update(&message);
-        let mut k_output = [0u8; 64];
-        k_output.copy_from_slice(k_bytes.finalize().as_slice());
-        Scalar::from_bytes_mod_order_wide(&k_output)
+    // Computes the prehashed or non-prehashed challenge, depending on whether context is given
+    fn compute_challenge(
+        message: &[u8],
+        pub_key: &EdwardsPoint,
+        signature_r: &EdwardsPoint,
+        context: Option<&[u8]>,
+    ) -> Scalar {
+        let mut h = Sha512::default();
+        if let Some(c) = context {
+            h.update(b"SigEd25519 no Ed25519 collisions");
+            h.update(&[1]);
+            h.update(&[c.len() as u8]);
+            h.update(c);
+        }
+        h.update(&signature_r.compress().as_bytes());
+        h.update(&pub_key.compress().as_bytes()[..]);
+        h.update(&message);
+        Scalar::from_hash(h)
     }
 
     fn serialize_signature(r: &EdwardsPoint, s: &Scalar) -> Vec<u8> {
         [&r.compress().as_bytes()[..], &s.as_bytes()[..]].concat()
     }
 
+    const WEAK_PUBKEY: CompressedEdwardsY = CompressedEdwardsY(EIGHT_TORSION_4);
+
+    // Pick a random Scalar
+    fn non_null_scalar() -> Scalar {
+        let mut rng = rand::rngs::OsRng;
+        let mut s_candidate = Scalar::random(&mut rng);
+        while s_candidate == Scalar::ZERO {
+            s_candidate = Scalar::random(&mut rng);
+        }
+        s_candidate
+    }
+
+    fn pick_r(s: Scalar) -> EdwardsPoint {
+        let r0 = s * ED25519_BASEPOINT_POINT;
+        // Pick a torsion point of order 2
+        r0 + WEAK_PUBKEY.decompress().unwrap().neg()
+    }
+
+    // Tests that verify_strict() rejects small-order pubkeys. We test this by explicitly
+    // constructing a pubkey-signature pair that verifies with respect to two distinct messages.
+    // This should be accepted by verify(), but rejected by verify_strict().
     #[test]
     fn repudiation() {
-        use curve25519_dalek::traits::IsIdentity;
-        use std::ops::Neg;
-
         let message1 = b"Send 100 USD to Alice";
         let message2 = b"Send 100000 USD to Alice";
 
-        // Pick a random Scalar
-        fn non_null_scalar() -> Scalar {
-            let mut rng = rand::rngs::OsRng;
-            let mut s_candidate = Scalar::random(&mut rng);
-            while s_candidate == Scalar::ZERO {
-                s_candidate = Scalar::random(&mut rng);
-            }
-            s_candidate
-        }
         let mut s: Scalar = non_null_scalar();
+        let pubkey = WEAK_PUBKEY.decompress().unwrap();
+        let mut r = pick_r(s);
 
-        fn pick_r_and_pubkey(s: Scalar) -> (EdwardsPoint, EdwardsPoint) {
-            let r0 = s * curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
-            // Pick a torsion point of order 2
-            let pub_key = curve25519_dalek::edwards::CompressedEdwardsY(EIGHT_TORSION_4)
-                .decompress()
-                .unwrap();
-            let r = r0 + pub_key.neg();
-            (r, pub_key)
+        // Find an R such that
+        //     H(R || A || M₁) · A == A == H(R || A || M₂) · A
+        // This happens with high probability when A is low order.
+        while !(pubkey.neg() + compute_challenge(message1, &pubkey, &r, None) * pubkey)
+            .is_identity()
+            || !(pubkey.neg() + compute_challenge(message2, &pubkey, &r, None) * pubkey)
+                .is_identity()
+        {
+            // We pick an s and let R = sB - A where B is the basepoint
+            s = non_null_scalar();
+            r = pick_r(s);
         }
 
-        let (mut r, mut pub_key) = pick_r_and_pubkey(s);
+        // At this point, both verification equations hold:
+        //     sB = R + H(R || A || M₁) · A
+        //        = R + H(R || A || M₂) · A
+        // Check that this is true
+        let signature = serialize_signature(&r, &s);
+        let vk = VerifyingKey::from_bytes(&pubkey.compress().as_bytes()).unwrap();
+        let sig = Signature::try_from(&signature[..]).unwrap();
+        assert!(vk.verify(message1, &sig).is_ok());
+        assert!(vk.verify(message2, &sig).is_ok());
 
-        while !(pub_key.neg() + compute_hram(message1, &pub_key, &r) * pub_key).is_identity()
-            || !(pub_key.neg() + compute_hram(message2, &pub_key, &r) * pub_key).is_identity()
+        // Now check that the sigs fail under verify_strict. This is because verify_strict rejects
+        // small order pubkeys.
+        assert!(vk.verify_strict(message1, &sig).is_err());
+        assert!(vk.verify_strict(message2, &sig).is_err());
+    }
+
+    // Identical to repudiation() above, but testing verify_prehashed against
+    // verify_prehashed_strict. See comments above for a description of what's happening.
+    #[test]
+    fn repudiation_prehash() {
+        let message1 = Sha512::new().chain_update(b"Send 100 USD to Alice");
+        let message2 = Sha512::new().chain_update(b"Send 100000 USD to Alice");
+        let message1_bytes = message1.clone().finalize();
+        let message2_bytes = message2.clone().finalize();
+
+        let mut s: Scalar = non_null_scalar();
+        let pubkey = WEAK_PUBKEY.decompress().unwrap();
+        let mut r = pick_r(s);
+        let context_str = Some(&b"edtest"[..]);
+
+        while !(pubkey.neg()
+            + compute_challenge(&message1_bytes, &pubkey, &r, context_str) * pubkey)
+            .is_identity()
+            || !(pubkey.neg()
+                + compute_challenge(&message2_bytes, &pubkey, &r, context_str) * pubkey)
+                .is_identity()
         {
             s = non_null_scalar();
-            let key = pick_r_and_pubkey(s);
-            r = key.0;
-            pub_key = key.1;
+            r = pick_r(s);
         }
 
+        // Check that verify_prehashed succeeds on both sigs
         let signature = serialize_signature(&r, &s);
-        let pk = VerifyingKey::from_bytes(&pub_key.compress().as_bytes()).unwrap();
+        let vk = VerifyingKey::from_bytes(&pubkey.compress().as_bytes()).unwrap();
         let sig = Signature::try_from(&signature[..]).unwrap();
-        // The same signature verifies for both messages
-        assert!(pk.verify(message1, &sig).is_ok() && pk.verify(message2, &sig).is_ok());
-        // But not with a strict signature: verify_strict refuses small order keys
-        assert!(
-            pk.verify_strict(message1, &sig).is_err() || pk.verify_strict(message2, &sig).is_err()
-        );
+        assert!(vk
+            .verify_prehashed(message1.clone(), context_str, &sig)
+            .is_ok());
+        assert!(vk
+            .verify_prehashed(message2.clone(), context_str, &sig)
+            .is_ok());
+
+        // Check that verify_prehashed_strict fails on both sigs
+        assert!(vk
+            .verify_prehashed_strict(message1.clone(), context_str, &sig)
+            .is_err());
+        assert!(vk
+            .verify_prehashed_strict(message2.clone(), context_str, &sig)
+            .is_err());
     }
 }
 
@@ -212,6 +299,7 @@ mod integrations {
         let mut csprng = OsRng;
 
         signing_key = SigningKey::generate(&mut csprng);
+        let verifying_key = signing_key.verifying_key();
         good_sig = signing_key.sign(&good);
         bad_sig = signing_key.sign(&bad);
 
@@ -220,12 +308,24 @@ mod integrations {
             "Verification of a valid signature failed!"
         );
         assert!(
+            verifying_key.verify_strict(&good, &good_sig).is_ok(),
+            "Strict verification of a valid signature failed!"
+        );
+        assert!(
             signing_key.verify(&good, &bad_sig).is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
+            verifying_key.verify_strict(&good, &bad_sig).is_err(),
+            "Strict verification of a signature on a different message passed!"
+        );
+        assert!(
             signing_key.verify(&bad, &good_sig).is_err(),
             "Verification of a signature on a different message passed!"
+        );
+        assert!(
+            verifying_key.verify_strict(&bad, &good_sig).is_err(),
+            "Strict verification of a signature on a different message passed!"
         );
     }
 
@@ -256,6 +356,7 @@ mod integrations {
         let context: &[u8] = b"testing testing 1 2 3";
 
         signing_key = SigningKey::generate(&mut csprng);
+        let verifying_key = signing_key.verifying_key();
         good_sig = signing_key
             .sign_prehashed(prehashed_good1, Some(context))
             .unwrap();
@@ -265,21 +366,39 @@ mod integrations {
 
         assert!(
             signing_key
-                .verify_prehashed(prehashed_good2, Some(context), &good_sig)
+                .verify_prehashed(prehashed_good2.clone(), Some(context), &good_sig)
                 .is_ok(),
             "Verification of a valid signature failed!"
         );
         assert!(
+            verifying_key
+                .verify_prehashed_strict(prehashed_good2, Some(context), &good_sig)
+                .is_ok(),
+            "Strict verification of a valid signature failed!"
+        );
+        assert!(
             signing_key
-                .verify_prehashed(prehashed_good3, Some(context), &bad_sig)
+                .verify_prehashed(prehashed_good3.clone(), Some(context), &bad_sig)
                 .is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
+            verifying_key
+                .verify_prehashed_strict(prehashed_good3, Some(context), &bad_sig)
+                .is_err(),
+            "Strict verification of a signature on a different message passed!"
+        );
+        assert!(
             signing_key
-                .verify_prehashed(prehashed_bad2, Some(context), &good_sig)
+                .verify_prehashed(prehashed_bad2.clone(), Some(context), &good_sig)
                 .is_err(),
             "Verification of a signature on a different message passed!"
+        );
+        assert!(
+            verifying_key
+                .verify_prehashed_strict(prehashed_bad2, Some(context), &good_sig)
+                .is_err(),
+            "Strict verification of a signature on a different message passed!"
         );
     }
 

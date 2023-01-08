@@ -949,7 +949,7 @@ macro_rules! impl_basepoint_table {
             /// by \\(2\^{255}\\), which is always the case.
             ///
             /// The above algorithm is trivially generalised to other powers-of-2 radices.
-            fn basepoint_mul(&self, scalar: &Scalar) -> $point {
+            fn mul_base(&self, scalar: &Scalar) -> $point {
                 let a = scalar.as_radix_2w($radix);
 
                 let tables = &self.0;
@@ -976,7 +976,7 @@ macro_rules! impl_basepoint_table {
             /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
             fn mul(self, scalar: &'b Scalar) -> $point {
                 // delegate to a private function so that its documentation appears in internal docs
-                self.basepoint_mul(scalar)
+                self.mul_base(scalar)
             }
         }
 
@@ -1385,7 +1385,7 @@ mod test {
         assert_eq!(aB.compress(), also_aB.compress());
     }
 
-    /// Test basepoint_mult versus a known scalar multiple from ed25519.py
+    /// Test mul_base versus a known scalar multiple from ed25519.py
     #[test]
     fn basepoint_mult_vs_ed25519py() {
         let aB = EdwardsPoint::mul_base(&A_SCALAR);

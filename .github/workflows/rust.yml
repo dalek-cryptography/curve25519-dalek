@@ -29,8 +29,14 @@ jobs:
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }} --no-default-features
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features digest
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features basepoint-tables
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features rand_core
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features serde
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize
       - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --features digest
+      - run: cargo test --target ${{ matrix.target }} --features rand_core
       - run: cargo test --target ${{ matrix.target }} --features serde
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'

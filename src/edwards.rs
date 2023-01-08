@@ -101,6 +101,8 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+use cfg_if::cfg_if;
+
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
 
@@ -124,13 +126,15 @@ use crate::backend::serial::curve_models::CompletedPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::backend::serial::curve_models::ProjectivePoint;
 
-use crate::window::LookupTableRadix128;
-use crate::window::LookupTableRadix16;
-use crate::window::LookupTableRadix256;
-use crate::window::LookupTableRadix32;
-use crate::window::LookupTableRadix64;
+#[cfg(feature = "basepoint-tables")]
+use crate::window::{
+    LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
+    LookupTableRadix64,
+};
 
+#[cfg(feature = "basepoint-tables")]
 use crate::traits::BasepointTable;
+
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
 
@@ -702,6 +706,24 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
     }
 }
 
+impl EdwardsPoint {
+    /// Fixed-base scalar multiplication by the Ed25519 base point.
+    ///
+    /// Uses precomputed basepoint tables when the `basepoint-tables` feature
+    /// is enabled, trading off increased code size for ~4x better performance.
+    pub fn mul_base(scalar: &Scalar) -> Self {
+        #[cfg(not(feature = "basepoint-tables"))]
+        {
+            scalar * constants::ED25519_BASEPOINT_POINT
+        }
+
+        #[cfg(feature = "basepoint-tables")]
+        {
+            scalar * constants::ED25519_BASEPOINT_TABLE
+        }
+    }
+}
+
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
 // ------------------------------------------------------------------------
@@ -824,6 +846,7 @@ impl EdwardsPoint {
     }
 }
 
+#[cfg(feature = "basepoint-tables")]
 macro_rules! impl_basepoint_table {
     (Name = $name:ident, LookupTable = $table:ident, Point = $point:ty, Radix = $radix:expr, Additions = $adds:expr) => {
         /// A precomputed table of multiples of a basepoint, for accelerating
@@ -837,7 +860,7 @@ macro_rules! impl_basepoint_table {
         ///
         /// * [`EdwardsBasepointTableRadix16`]: 30KB, 64A
         ///   (this is the default size, and is used for
-        ///   [`ED25519_BASEPOINT_TABLE`])
+        ///   [`constants::ED25519_BASEPOINT_TABLE`])
         /// * [`EdwardsBasepointTableRadix64`]: 120KB, 43A
         /// * [`EdwardsBasepointTableRadix128`]: 240KB, 37A
         /// * [`EdwardsBasepointTableRadix256`]: 480KB, 33A
@@ -896,10 +919,14 @@ macro_rules! impl_basepoint_table {
             /// $$
             /// with
             /// $$
-            ///     \frac{-w}{2} \leq a_i < \frac{w}{2}, \cdots, \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+            /// \begin{aligned}
+            ///     \frac{-w}{2} \leq a_i < \frac{w}{2}
+            ///     &&\cdots&&
+            ///     \frac{-w}{2} \leq a\_{x} \leq \frac{w}{2}
+            /// \end{aligned}
             /// $$
-            /// and the number of additions, \\(x\\), is given by \\(x = \lceil \frac{256}{w} \rceil\\).
-            /// Then
+            /// and the number of additions, \\(x\\), is given by
+            /// \\(x = \lceil \frac{256}{w} \rceil\\). Then
             /// $$
             ///     a B = a\_0 B + a\_1 w\^1 B + \cdots + a\_{x-1} w\^{x-1} B.
             /// $$
@@ -914,7 +941,7 @@ macro_rules! impl_basepoint_table {
             /// $$
             /// For each \\(i = 0 \ldots 31\\), we create a lookup table of
             /// $$
-            /// [w\^{2i} B, \ldots, \frac{w}{2}\cdotw\^{2i} B],
+            /// [w\^{2i} B, \ldots, \frac{w}{2}\cdot w\^{2i} B],
             /// $$
             /// and use it to select \\( y \cdot w\^{2i} \cdot B \\) in constant time.
             ///
@@ -922,7 +949,7 @@ macro_rules! impl_basepoint_table {
             /// by \\(2\^{255}\\), which is always the case.
             ///
             /// The above algorithm is trivially generalised to other powers-of-2 radices.
-            fn basepoint_mul(&self, scalar: &Scalar) -> $point {
+            fn mul_base(&self, scalar: &Scalar) -> $point {
                 let a = scalar.as_radix_2w($radix);
 
                 let tables = &self.0;
@@ -949,7 +976,7 @@ macro_rules! impl_basepoint_table {
             /// computing the multiple \\(aB\\) of this basepoint \\(B\\).
             fn mul(self, scalar: &'b Scalar) -> $point {
                 // delegate to a private function so that its documentation appears in internal docs
-                self.basepoint_mul(scalar)
+                self.mul_base(scalar)
             }
         }
 
@@ -976,20 +1003,55 @@ macro_rules! impl_basepoint_table {
 } // End macro_rules! impl_basepoint_table
 
 // The number of additions required is ceil(256/w) where w is the radix representation.
-impl_basepoint_table! {Name = EdwardsBasepointTable, LookupTable = LookupTableRadix16, Point = EdwardsPoint, Radix = 4, Additions = 64}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix32, LookupTable = LookupTableRadix32, Point = EdwardsPoint, Radix = 5, Additions = 52}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix64, LookupTable = LookupTableRadix64, Point = EdwardsPoint, Radix = 6, Additions = 43}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix128, LookupTable = LookupTableRadix128, Point = EdwardsPoint, Radix = 7, Additions = 37}
-impl_basepoint_table! {Name = EdwardsBasepointTableRadix256, LookupTable = LookupTableRadix256, Point = EdwardsPoint, Radix = 8, Additions = 33}
+cfg_if! {
+    if #[cfg(feature = "basepoint-tables")] {
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTable,
+            LookupTable = LookupTableRadix16,
+            Point = EdwardsPoint,
+            Radix = 4,
+            Additions = 64
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix32,
+            LookupTable = LookupTableRadix32,
+            Point = EdwardsPoint,
+            Radix = 5,
+            Additions = 52
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix64,
+            LookupTable = LookupTableRadix64,
+            Point = EdwardsPoint,
+            Radix = 6,
+            Additions = 43
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix128,
+            LookupTable = LookupTableRadix128,
+            Point = EdwardsPoint,
+            Radix = 7,
+            Additions = 37
+        }
+        impl_basepoint_table! {
+            Name = EdwardsBasepointTableRadix256,
+            LookupTable = LookupTableRadix256,
+            Point = EdwardsPoint,
+            Radix = 8,
+            Additions = 33
+        }
 
-/// A type-alias for [`EdwardsBasepointTable`] because the latter is
-/// used as a constructor in the [`constants`] module.
-//
-// Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
-// first, because it's used as a constructor, and then provide a type alias for
-// it.
-pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
+        /// A type-alias for [`EdwardsBasepointTable`] because the latter is
+        /// used as a constructor in the [`constants`] module.
+        //
+        // Same as for `LookupTableRadix16`, we have to define `EdwardsBasepointTable`
+        // first, because it's used as a constructor, and then provide a type alias for
+        // it.
+        pub type EdwardsBasepointTableRadix16 = EdwardsBasepointTable;
+    }
+}
 
+#[cfg(feature = "basepoint-tables")]
 macro_rules! impl_basepoint_table_conversions {
     (LHS = $lhs:ty, RHS = $rhs:ty) => {
         impl<'a> From<&'a $lhs> for $rhs {
@@ -1006,19 +1068,57 @@ macro_rules! impl_basepoint_table_conversions {
     };
 }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix32}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix64}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix16, RHS = EdwardsBasepointTableRadix256}
+cfg_if! {
+    if #[cfg(feature = "basepoint-tables")] {
+        // Conversions from radix 16
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix32
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix64
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix16,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix64}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix32, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 32
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix64
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix32,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix128}
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix64, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 64
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix64,
+            RHS = EdwardsBasepointTableRadix128
+        }
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix64,
+            RHS = EdwardsBasepointTableRadix256
+        }
 
-impl_basepoint_table_conversions! {LHS = EdwardsBasepointTableRadix128, RHS = EdwardsBasepointTableRadix256}
+        // Conversions from radix 128
+        impl_basepoint_table_conversions! {
+            LHS = EdwardsBasepointTableRadix128,
+            RHS = EdwardsBasepointTableRadix256
+        }
+    }
+}
 
 impl EdwardsPoint {
     /// Multiply by the cofactor: return \\(\[8\]P\\).
@@ -1118,13 +1218,15 @@ impl Debug for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::constants::ED25519_BASEPOINT_TABLE;
     use crate::field::FieldElement;
     use crate::scalar::Scalar;
     use subtle::ConditionallySelectable;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
+
+    #[cfg(feature = "basepoint-tables")]
+    use crate::constants::ED25519_BASEPOINT_TABLE;
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
@@ -1212,6 +1314,7 @@ mod test {
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = ED25519_BASEPOINT_TABLE * &Scalar::ONE;
@@ -1220,6 +1323,7 @@ mod test {
     }
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_table_basepoint_function_correct() {
         let bp = ED25519_BASEPOINT_TABLE.basepoint();
@@ -1271,6 +1375,7 @@ mod test {
     }
 
     /// Sanity check for conversion to precomputed points
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
@@ -1280,22 +1385,22 @@ mod test {
         assert_eq!(aB.compress(), also_aB.compress());
     }
 
-    /// Test basepoint_mult versus a known scalar multiple from ed25519.py
+    /// Test mul_base versus a known scalar multiple from ed25519.py
     #[test]
     fn basepoint_mult_vs_ed25519py() {
-        let aB = ED25519_BASEPOINT_TABLE * &A_SCALAR;
+        let aB = EdwardsPoint::mul_base(&A_SCALAR);
         assert_eq!(aB.compress(), A_TIMES_BASEPOINT);
     }
 
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let B = ED25519_BASEPOINT_TABLE;
-        let should_be_id = B * &constants::BASEPOINT_ORDER;
+        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER);
         assert!(should_be_id.is_identity());
     }
 
     /// Test precomputed basepoint mult
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn test_precomputed_basepoint_mult() {
         let aB_1 = ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1323,11 +1428,12 @@ mod test {
     #[test]
     fn basepoint_mult_two_vs_basepoint2() {
         let two = Scalar::from(2u64);
-        let bp2 = ED25519_BASEPOINT_TABLE * &two;
+        let bp2 = EdwardsPoint::mul_base(&two);
         assert_eq!(bp2.compress(), BASE2_CMPRSSD);
     }
 
     /// Test that all the basepoint table types compute the same results.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_tables() {
         let P = &constants::ED25519_BASEPOINT_POINT;
@@ -1353,7 +1459,8 @@ mod test {
         assert_eq!(aP128, aP256);
     }
 
-    // Check a unreduced scalar multiplication by the basepoint tables.
+    /// Check a unreduced scalar multiplication by the basepoint tables.
+    #[cfg(feature = "basepoint-tables")]
     #[test]
     fn basepoint_tables_unreduced_scalar() {
         let P = &constants::ED25519_BASEPOINT_POINT;
@@ -1517,17 +1624,14 @@ mod test {
         let check = xs.iter().map(|xi| xi * xi).sum::<Scalar>();
 
         // Construct points G_i = x_i * B
-        let Gs = xs
-            .iter()
-            .map(|xi| xi * ED25519_BASEPOINT_TABLE)
-            .collect::<Vec<_>>();
+        let Gs = xs.iter().map(EdwardsPoint::mul_base).collect::<Vec<_>>();
 
         // Compute H1 = <xs, Gs> (consttime)
         let H1 = EdwardsPoint::multiscalar_mul(&xs, &Gs);
         // Compute H2 = <xs, Gs> (vartime)
         let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
-        let H3 = &check * ED25519_BASEPOINT_TABLE;
+        let H3 = EdwardsPoint::mul_base(&check);
 
         assert_eq!(H1, H3);
         assert_eq!(H2, H3);
@@ -1577,8 +1681,6 @@ mod test {
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::thread_rng();
 
-        let B = ED25519_BASEPOINT_TABLE;
-
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
             .collect::<Vec<_>>();
@@ -1593,8 +1695,14 @@ mod test {
             .map(|s| s * s)
             .sum();
 
-        let static_points = static_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
-        let dynamic_points = dynamic_scalars.iter().map(|s| s * B).collect::<Vec<_>>();
+        let static_points = static_scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
 
         let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
 
@@ -1610,7 +1718,7 @@ mod test {
             static_points.iter().chain(dynamic_points.iter()),
         );
 
-        let R = &check_scalar * B;
+        let R = EdwardsPoint::mul_base(&check_scalar);
 
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());

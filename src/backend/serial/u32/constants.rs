@@ -16,8 +16,11 @@
 use super::field::FieldElement2625;
 use super::scalar::Scalar29;
 use crate::backend::serial::curve_models::AffineNielsPoint;
-use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
-use crate::window::{LookupTable, NafLookupTable8};
+use crate::edwards::EdwardsPoint;
+use crate::window::NafLookupTable8;
+
+#[cfg(feature = "basepoint-tables")]
+use crate::{edwards::EdwardsBasepointTable, window::LookupTable};
 
 /// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625([
@@ -234,11 +237,13 @@ pub const EIGHT_TORSION_INNER_DOC_HIDDEN: [EdwardsPoint; 8] = [
 ];
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\(B = (x, 4/5)\\).
+#[cfg(feature = "basepoint-tables")]
 pub static ED25519_BASEPOINT_TABLE: &'static EdwardsBasepointTable =
     &ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
 
 /// Inner constant, used to avoid filling the docs with precomputed points.
 #[doc(hidden)]
+#[cfg(feature = "basepoint-tables")]
 static ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable = EdwardsBasepointTable([
     LookupTable([
         AffineNielsPoint {

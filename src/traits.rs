@@ -60,7 +60,7 @@ pub trait BasepointTable {
     fn basepoint(&self) -> Self::Point;
 
     /// Multiply a `scalar` by this precomputed basepoint table, in constant time.
-    fn basepoint_mul(&self, scalar: &Scalar) -> Self::Point;
+    fn mul_base(&self, scalar: &Scalar) -> Self::Point;
 }
 
 /// A trait for constant-time multiscalar multiplication without precomputation.

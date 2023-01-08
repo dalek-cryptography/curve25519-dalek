@@ -1015,7 +1015,7 @@ impl Scalar {
 
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
-    #[cfg(any(feature = "alloc", test))]
+    #[cfg(any(feature = "alloc", all(test, feature = "basepoint-tables")))]
     pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);
@@ -1051,6 +1051,7 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
+    #[cfg(any(feature = "alloc", feature = "basepoint-tables"))]
     pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
         debug_assert!(w >= 4);
         debug_assert!(w <= 8);
@@ -1764,6 +1765,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "basepoint-tables")]
     fn test_pippenger_radix_iter(scalar: Scalar, w: usize) {
         let digits_count = Scalar::to_radix_2w_size_hint(w);
         let digits = scalar.as_radix_2w(w);
@@ -1788,6 +1790,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "basepoint-tables")]
     fn test_pippenger_radix() {
         use core::iter;
         // For each valid radix it tests that 1000 random-ish scalars can be restored

@@ -270,33 +270,26 @@ impl Scalar {
     /// require specific bit-patterns when performing scalar
     /// multiplication.
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
-        let mut bytes:[u8; 32] = bytes;
-        bytes[31] &= 0b0111_1111;
-        Scalar { bytes }
+        let mut s = Scalar { bytes };
+        // Ensure that s < 2^255 by masking the high bit
+        s.bytes[31] &= 0b0111_1111;
+
+        s
     }
 
     /// Construct a `Scalar` from the low 255 bits of a little-endian 256-bit integer
     /// `clamping` it's value to be in range
     ///
     /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
-    pub const fn from_bits_clamped(bytes: [u8; 32]) -> Scalar {
-        Scalar{ bytes : Scalar::clamp(bytes) }
+    pub const fn clamp(bytes: [u8; 32]) -> Scalar {
+        let mut s = Scalar { bytes };
+
+        s.bytes[0] &= 0b1111_1000;
+        s.bytes[31] &= 0b0111_1111;
+        s.bytes[31] |= 0b0100_0000;
+
+        s
     }
-
-    /// Constructs `[u8; 32]` bytes representing 255 bit little-endinan integer in range
-    ///
-    /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
-    ///
-    /// input value `bytes` is treated as little-endian 256-bit integer
-    pub const fn clamp(bytes: [u8; 32]) -> [u8; 32] {
-        let mut bytes : [u8; 32] = bytes;
-        bytes[0]  &= 0b1111_1000;
-        bytes[31] &= 0b0111_1111;
-        bytes[31] |= 0b0100_0000;
-
-        bytes
-    }
-
 }
 
 impl Debug for Scalar {
@@ -1889,35 +1882,37 @@ mod test {
     #[test]
     fn test_scalar_clamp() {
         let input = A_SCALAR.bytes;
-        let expected: [u8; 32] = [
-            0x18, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
-            0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
-            0x23, 0x76, 0xef, 0x49,
-        ];
+        let expected = Scalar {
+            bytes: [
+                0x18, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
+                0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
+                0x23, 0x76, 0xef, 0x49,
+            ],
+        };
         let actual = Scalar::clamp(input);
         assert_eq!(actual, expected);
-        assert_eq!(expected, Scalar::clamp(expected));
 
-        let expected :[u8;32] =[
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0x40,
-        ];
+        let expected = Scalar {
+            bytes: [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0x40,
+            ],
+        };
         let actual = Scalar::clamp([0; 32]);
         assert_eq!(expected, actual);
-        assert_eq!(expected, Scalar::clamp(expected));
-        let expected :[u8;32] =[
-            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
-        ];
+        let expected = Scalar {
+            bytes: [
+                0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0x7f,
+            ],
+        };
         let actual = Scalar::clamp([0xff; 32]);
         assert_eq!(actual, expected);
-        assert_eq!(expected, Scalar::clamp(expected));
 
-        assert_eq!(LARGEST_ED25519_S.bytes, Scalar::clamp(LARGEST_ED25519_S.bytes))
+        assert_eq!(
+            LARGEST_ED25519_S.bytes,
+            Scalar::clamp(LARGEST_ED25519_S.bytes).bytes
+        )
     }
-
 }

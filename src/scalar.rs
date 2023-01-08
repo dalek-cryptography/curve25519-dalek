@@ -281,7 +281,7 @@ impl Scalar {
     /// `clamping` it's value to be in range
     ///
     /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
-    pub const fn clamp(bytes: [u8; 32]) -> Scalar {
+    pub const fn from_bits_clamped(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
 
         s.bytes[0] &= 0b1111_1000;
@@ -1889,7 +1889,7 @@ mod test {
                 0x23, 0x76, 0xef, 0x49,
             ],
         };
-        let actual = Scalar::clamp(input);
+        let actual = Scalar::from_bits_clamped(input);
         assert_eq!(actual, expected);
 
         let expected = Scalar {
@@ -1898,7 +1898,7 @@ mod test {
                 0, 0, 0, 0x40,
             ],
         };
-        let actual = Scalar::clamp([0; 32]);
+        let actual = Scalar::from_bits_clamped([0; 32]);
         assert_eq!(expected, actual);
         let expected = Scalar {
             bytes: [
@@ -1907,12 +1907,12 @@ mod test {
                 0xff, 0xff, 0xff, 0x7f,
             ],
         };
-        let actual = Scalar::clamp([0xff; 32]);
+        let actual = Scalar::from_bits_clamped([0xff; 32]);
         assert_eq!(actual, expected);
 
         assert_eq!(
             LARGEST_ED25519_S.bytes,
-            Scalar::clamp(LARGEST_ED25519_S.bytes).bytes
+            Scalar::from_bits_clamped(LARGEST_ED25519_S.bytes).bytes
         )
     }
 }

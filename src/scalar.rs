@@ -144,7 +144,7 @@ use core::cmp::{Eq, PartialEq};
 use core::convert::TryInto;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
-use core::ops::{Index};
+use core::ops::Index;
 use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};

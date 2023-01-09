@@ -281,6 +281,20 @@ impl Scalar {
     /// `clamping` it's value to be in range
     ///
     /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
+    ///
+    /// # Explanation of `clamping`
+    ///
+    /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
+    /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
+    /// then you end up with a 255-bit number with the most significant bit set to 1 and
+    /// the least-significant three bits set to 0.
+    /// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
+    /// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
+    /// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
+    /// in the right form and pre-multiplied by the cofactor.
+    ///
+    /// refer <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
+    ///
     pub const fn from_bits_clamped(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
 

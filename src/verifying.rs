@@ -12,7 +12,6 @@
 use core::convert::TryFrom;
 use core::fmt::Debug;
 
-use curve25519_dalek::constants;
 use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
@@ -135,7 +134,8 @@ impl VerifyingKey {
         bits[31] &= 127;
         bits[31] |= 64;
 
-        let point = &Scalar::from_bits(*bits) * &constants::ED25519_BASEPOINT_TABLE;
+        let scalar = Scalar::from_bits(*bits);
+        let point = EdwardsPoint::mul_base(&scalar);
         let compressed = point.compress();
 
         VerifyingKey(compressed, point)

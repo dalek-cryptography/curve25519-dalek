@@ -24,10 +24,10 @@ use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 use sha2::Sha512;
 
-use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
 use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
+use curve25519_dalek::edwards::EdwardsPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use ed25519::signature::{KeypairRef, Signer, Verifier};
@@ -699,7 +699,7 @@ impl ExpandedSecretKey {
         h.update(message);
 
         let r = Scalar::from_hash(h);
-        let R: CompressedEdwardsY = (&r * &ED25519_BASEPOINT_TABLE).compress();
+        let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
 
         h = Sha512::new();
         h.update(R.as_bytes());
@@ -777,7 +777,7 @@ impl ExpandedSecretKey {
             .chain_update(&prehash[..]);
 
         let r = Scalar::from_hash(h);
-        let R: CompressedEdwardsY = (&r * &ED25519_BASEPOINT_TABLE).compress();
+        let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
 
         h = Sha512::new()
             .chain_update(b"SigEd25519 no Ed25519 collisions")

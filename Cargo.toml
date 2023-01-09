@@ -24,7 +24,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 features = ["nightly", "batch", "pkcs8"]
 
 [dependencies]
-curve25519-dalek = { version = "=4.0.0-pre.3", default-features = false, features = ["digest", "rand_core"] }
+curve25519-dalek = { version = "=4.0.0-pre.5", default-features = false, features = ["digest", "rand_core", "zeroize"] }
 ed25519 = { version = "=2.0.0-rc.0", default-features = false }
 merlin = { version = "3", default-features = false, optional = true }
 rand = { version = "0.8", default-features = false, optional = true }
@@ -64,3 +64,6 @@ pkcs8 = ["ed25519/pkcs8"]
 pem = ["alloc", "ed25519/pem", "pkcs8"]
 rand = ["dep:rand", "dep:rand_core"]
 serde = ["dep:serde", "serde_bytes", "ed25519/serde"]
+
+[patch.crates-io.curve25519-dalek]
+git = "https://github.com/dalek-cryptography/curve25519-dalek.git"

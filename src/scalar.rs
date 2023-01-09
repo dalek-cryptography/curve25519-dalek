@@ -277,6 +277,34 @@ impl Scalar {
 
         s
     }
+
+    /// Construct a `Scalar` from the low 255 bits of a little-endian 256-bit integer
+    /// `clamping` it's value to be in range
+    ///
+    /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
+    ///
+    /// # Explanation of `clamping`
+    ///
+    /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
+    /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
+    /// then you end up with a 255-bit number with the most significant bit set to 1 and
+    /// the least-significant three bits set to 0.
+    ///
+    /// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
+    /// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
+    /// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
+    /// in the right form and pre-multiplied by the cofactor.
+    ///
+    /// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
+    pub const fn from_bits_clamped(bytes: [u8; 32]) -> Scalar {
+        let mut s = Scalar { bytes };
+
+        s.bytes[0] &= 0b1111_1000;
+        s.bytes[31] &= 0b0111_1111;
+        s.bytes[31] |= 0b0100_0000;
+
+        s
+    }
 }
 
 impl Debug for Scalar {
@@ -1867,5 +1895,42 @@ mod test {
         let mut dst = [0_u64; 1];
         // One byte short
         read_le_u64_into(&[0xFE, 0xEF, 0x10, 0x01, 0x1F, 0xF1, 0x0F], &mut dst);
+    }
+
+    #[test]
+    fn test_scalar_clamp() {
+        let input = A_SCALAR.bytes;
+        let expected = Scalar {
+            bytes: [
+                0x18, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
+                0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
+                0x23, 0x76, 0xef, 0x49,
+            ],
+        };
+        let actual = Scalar::from_bits_clamped(input);
+        assert_eq!(actual, expected);
+
+        let expected = Scalar {
+            bytes: [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0x40,
+            ],
+        };
+        let actual = Scalar::from_bits_clamped([0; 32]);
+        assert_eq!(expected, actual);
+        let expected = Scalar {
+            bytes: [
+                0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0x7f,
+            ],
+        };
+        let actual = Scalar::from_bits_clamped([0xff; 32]);
+        assert_eq!(actual, expected);
+
+        assert_eq!(
+            LARGEST_ED25519_S.bytes,
+            Scalar::from_bits_clamped(LARGEST_ED25519_S.bytes).bytes
+        )
     }
 }

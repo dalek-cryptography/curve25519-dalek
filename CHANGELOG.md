@@ -25,7 +25,7 @@ major series.
 
 #### Other changes
 
-* Add `basepoint-tables` feature
+* Add `precomputed-tables` feature
 * Update Maintenance Policies for SemVer
 * Migrate documentation to docs.rs hosted
 * Fix backend documentation generation

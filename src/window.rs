@@ -139,7 +139,7 @@ impl_lookup_table! {
 
 // The rest only get used to make basepoint tables
 cfg_if! {
-    if #[cfg(feature = "basepoint-tables")] {
+    if #[cfg(feature = "precomputed-tables")] {
         // radix-32
         impl_lookup_table! {
             Name = LookupTableRadix32,

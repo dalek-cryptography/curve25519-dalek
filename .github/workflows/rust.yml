@@ -30,7 +30,7 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --no-default-features
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features digest
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features basepoint-tables
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features precomputed-tables
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features rand_core
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features serde
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize

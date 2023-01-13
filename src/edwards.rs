@@ -126,13 +126,13 @@ use crate::backend::serial::curve_models::CompletedPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::backend::serial::curve_models::ProjectivePoint;
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 use crate::window::{
     LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
     LookupTableRadix64,
 };
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 use crate::traits::BasepointTable;
 
 use crate::traits::ValidityCheck;
@@ -709,15 +709,15 @@ impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
 impl EdwardsPoint {
     /// Fixed-base scalar multiplication by the Ed25519 base point.
     ///
-    /// Uses precomputed basepoint tables when the `basepoint-tables` feature
+    /// Uses precomputed basepoint tables when the `precomputed-tables` feature
     /// is enabled, trading off increased code size for ~4x better performance.
     pub fn mul_base(scalar: &Scalar) -> Self {
-        #[cfg(not(feature = "basepoint-tables"))]
+        #[cfg(not(feature = "precomputed-tables"))]
         {
             scalar * constants::ED25519_BASEPOINT_POINT
         }
 
-        #[cfg(feature = "basepoint-tables")]
+        #[cfg(feature = "precomputed-tables")]
         {
             scalar * constants::ED25519_BASEPOINT_TABLE
         }
@@ -846,7 +846,7 @@ impl EdwardsPoint {
     }
 }
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 macro_rules! impl_basepoint_table {
     (Name = $name:ident, LookupTable = $table:ident, Point = $point:ty, Radix = $radix:expr, Additions = $adds:expr) => {
         /// A precomputed table of multiples of a basepoint, for accelerating
@@ -1004,7 +1004,7 @@ macro_rules! impl_basepoint_table {
 
 // The number of additions required is ceil(256/w) where w is the radix representation.
 cfg_if! {
-    if #[cfg(feature = "basepoint-tables")] {
+    if #[cfg(feature = "precomputed-tables")] {
         impl_basepoint_table! {
             Name = EdwardsBasepointTable,
             LookupTable = LookupTableRadix16,
@@ -1051,7 +1051,7 @@ cfg_if! {
     }
 }
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 macro_rules! impl_basepoint_table_conversions {
     (LHS = $lhs:ty, RHS = $rhs:ty) => {
         impl<'a> From<&'a $lhs> for $rhs {
@@ -1069,7 +1069,7 @@ macro_rules! impl_basepoint_table_conversions {
 }
 
 cfg_if! {
-    if #[cfg(feature = "basepoint-tables")] {
+    if #[cfg(feature = "precomputed-tables")] {
         // Conversions from radix 16
         impl_basepoint_table_conversions! {
             LHS = EdwardsBasepointTableRadix16,
@@ -1225,7 +1225,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     use crate::constants::ED25519_BASEPOINT_TABLE;
 
     /// X coordinate of the basepoint.
@@ -1314,7 +1314,7 @@ mod test {
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn basepoint_mult_one_vs_basepoint() {
         let bp = ED25519_BASEPOINT_TABLE * &Scalar::ONE;
@@ -1323,7 +1323,7 @@ mod test {
     }
 
     /// Test that `EdwardsBasepointTable::basepoint()` gives the correct basepoint.
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn basepoint_table_basepoint_function_correct() {
         let bp = ED25519_BASEPOINT_TABLE.basepoint();
@@ -1375,7 +1375,7 @@ mod test {
     }
 
     /// Sanity check for conversion to precomputed points
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn to_affine_niels_clears_denominators() {
         // construct a point as aB so it has denominators (ie. Z != 1)
@@ -1400,7 +1400,7 @@ mod test {
     }
 
     /// Test precomputed basepoint mult
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn test_precomputed_basepoint_mult() {
         let aB_1 = ED25519_BASEPOINT_TABLE * &A_SCALAR;
@@ -1433,7 +1433,7 @@ mod test {
     }
 
     /// Test that all the basepoint table types compute the same results.
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn basepoint_tables() {
         let P = &constants::ED25519_BASEPOINT_POINT;
@@ -1460,7 +1460,7 @@ mod test {
     }
 
     /// Check a unreduced scalar multiplication by the basepoint tables.
-    #[cfg(feature = "basepoint-tables")]
+    #[cfg(feature = "precomputed-tables")]
     #[test]
     fn basepoint_tables_unreduced_scalar() {
         let P = &constants::ED25519_BASEPOINT_POINT;

@@ -12,7 +12,7 @@
 #[cfg(feature = "pkcs8")]
 use ed25519::pkcs8::{self, DecodePrivateKey};
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_core")]
 use rand_core::CryptoRngCore;
 
 #[cfg(feature = "serde")]
@@ -183,7 +183,7 @@ impl SigningKey {
     /// The standard hash function used for most ed25519 libraries is SHA-512,
     /// which is available with `use sha2::Sha512` as in the example above.
     /// Other suitable hash functions include Keccak-512 and Blake2b-512.
-    #[cfg(feature = "rand")]
+    #[cfg(feature = "rand_core")]
     pub fn generate<R: CryptoRngCore + ?Sized>(csprng: &mut R) -> SigningKey {
         let mut secret = SecretKey::default();
         csprng.fill_bytes(&mut secret);
@@ -252,7 +252,8 @@ impl SigningKey {
     /// Let's add a context for good measure (remember, you'll want to choose
     /// your own!):
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use ed25519_dalek::Digest;
     /// # use ed25519_dalek::SigningKey;
     /// # use ed25519_dalek::Signature;
@@ -325,7 +326,8 @@ impl SigningKey {
     ///
     /// # Examples
     ///
-    /// ```
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::SigningKey;
     /// use ed25519_dalek::Signature;
@@ -655,21 +657,6 @@ impl Drop for ExpandedSecretKey {
 }
 
 impl From<&SecretKey> for ExpandedSecretKey {
-    /// Construct an `ExpandedSecretKey` from a `SecretKey`.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// # fn main() {
-    /// #
-    /// use rand::rngs::OsRng;
-    /// use ed25519_dalek::{SecretKey, ExpandedSecretKey};
-    ///
-    /// let mut csprng = OsRng{};
-    /// let secret_key: SecretKey = SecretKey::generate(&mut csprng);
-    /// let expanded_secret_key: ExpandedSecretKey = ExpandedSecretKey::from(&secret_key);
-    /// # }
-    /// ```
     fn from(secret_key: &SecretKey) -> ExpandedSecretKey {
         let mut h: Sha512 = Sha512::default();
         let mut hash: [u8; 64] = [0u8; 64];

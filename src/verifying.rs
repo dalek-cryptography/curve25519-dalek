@@ -38,6 +38,7 @@ use crate::signature::*;
 use crate::signing::*;
 
 /// An ed25519 public key.
+// Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct VerifyingKey(pub(crate) CompressedEdwardsY, pub(crate) EdwardsPoint);
 
@@ -121,6 +122,7 @@ impl VerifyingKey {
             .decompress()
             .ok_or(InternalError::PointDecompression)?;
 
+        // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
         Ok(VerifyingKey(compressed, point))
     }
 
@@ -138,6 +140,7 @@ impl VerifyingKey {
         let point = EdwardsPoint::mul_base(&scalar);
         let compressed = point.compress();
 
+        // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
         VerifyingKey(compressed, point)
     }
 

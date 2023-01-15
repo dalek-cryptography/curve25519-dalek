@@ -9,9 +9,6 @@
 
 //! Batch signature verification.
 
-#[cfg(all(feature = "batch", feature = "batch_deterministic"))]
-compile_error!("`batch` and `batch_deterministic` features are mutually exclusive");
-
 use alloc::vec::Vec;
 
 use core::convert::TryFrom;
@@ -27,7 +24,7 @@ pub use curve25519_dalek::digest::Digest;
 
 use merlin::Transcript;
 
-use rand::Rng;
+use rand_core::RngCore;
 
 use sha2::Sha512;
 
@@ -36,59 +33,11 @@ use crate::errors::SignatureError;
 use crate::signature::InternalSignature;
 use crate::VerifyingKey;
 
-/// Gets an RNG from the system, or the zero RNG if we're in deterministic mode. If available, we
-/// prefer `thread_rng`, since it's faster than `OsRng`.
-fn get_rng() -> impl rand_core::CryptoRngCore {
-    #[cfg(all(feature = "batch_deterministic", not(feature = "batch")))]
-    return ZeroRng;
-
-    #[cfg(all(feature = "batch", feature = "std"))]
-    return rand::thread_rng();
-
-    #[cfg(all(feature = "batch", not(feature = "std")))]
-    return rand::rngs::OsRng;
-}
-
-trait BatchTranscript {
-    fn append_scalars(&mut self, scalars: &Vec<Scalar>);
-    fn append_message_lengths(&mut self, message_lengths: &Vec<usize>);
-}
-
-impl BatchTranscript for Transcript {
-    /// Append some `scalars` to this batch verification sigma protocol transcript.
-    ///
-    /// For ed25519 batch verification, we include the following as scalars:
-    ///
-    /// * All of the computed `H(R||A||M)`s to the protocol transcript, and
-    /// * All of the `s` components of each signature.
-    ///
-    /// Each is also prefixed with their index in the vector.
-    fn append_scalars(&mut self, scalars: &Vec<Scalar>) {
-        for (i, scalar) in scalars.iter().enumerate() {
-            self.append_u64(b"", i as u64);
-            self.append_message(b"hram", scalar.as_bytes());
-        }
-    }
-
-    /// Append the lengths of the messages into the transcript.
-    ///
-    /// This is done out of an (potential over-)abundance of caution, to guard against the unlikely
-    /// event of collisions.  However, a nicer way to do this would be to append the message length
-    /// before the message, but this is messy w.r.t. the calculations of the `H(R||A||M)`s above.
-    fn append_message_lengths(&mut self, message_lengths: &Vec<usize>) {
-        for (i, len) in message_lengths.iter().enumerate() {
-            self.append_u64(b"", i as u64);
-            self.append_u64(b"mlen", *len as u64);
-        }
-    }
-}
-
-/// An implementation of `rand_core::RngCore` which does nothing, to provide purely deterministic
-/// transcript-based nonces, rather than synthetically random nonces.
-#[cfg(feature = "batch_deterministic")]
+/// An implementation of `rand_core::RngCore` which does nothing. This is necessary because merlin
+/// demands an `Rng` as input to `TranscriptRngBuilder::finalize()`. Using this with `finalize()`
+/// yields a PRG whose input is the hashed transcript.
 struct ZeroRng;
 
-#[cfg(feature = "batch_deterministic")]
 impl rand_core::RngCore for ZeroRng {
     fn next_u32(&mut self) -> u32 {
         rand_core::impls::next_u32_via_fill(self)
@@ -114,8 +63,15 @@ impl rand_core::RngCore for ZeroRng {
     }
 }
 
-#[cfg(feature = "batch_deterministic")]
+// `TranscriptRngBuilder::finalize()` requires a `CryptoRng`
 impl rand_core::CryptoRng for ZeroRng {}
+
+// We write our own gen() function so we don't need to pull in the rand crate
+fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {
+    let mut buf = [0u8; 16];
+    rng.fill_bytes(&mut buf);
+    u128::from_le_bytes(buf)
+}
 
 /// Verify a batch of `signatures` on `messages` with their respective `verifying_keys`.
 ///
@@ -131,84 +87,49 @@ impl rand_core::CryptoRng for ZeroRng {}
 ///   `SignatureError` containing a description of the internal error which
 ///   occured.
 ///
-/// # Notes on Nonce Generation & Malleability
-///
-/// ## On Synthetic Nonces
-///
-/// This library defaults to using what is called "synthetic" nonces, which
-/// means that a mixture of deterministic (per any unique set of inputs to this
-/// function) data and system randomness is used to seed the CSPRNG for nonce
-/// generation.  For more of the background theory on why many cryptographers
-/// currently believe this to be superior to either purely deterministic
-/// generation or purely relying on the system's randomness, see [this section
-/// of the Merlin design](https://merlin.cool/transcript/rng.html) by Henry de
-/// Valence, isis lovecruft, and Oleg Andreev, as well as Trevor Perrin's
-/// [designs for generalised
-/// EdDSA](https://moderncrypto.org/mail-archive/curves/2017/000925.html).
-///
 /// ## On Deterministic Nonces
 ///
-/// In order to be ammenable to protocols which require stricter third-party
-/// auditability trails, such as in some financial cryptographic settings, this
-/// library also supports a `--features=batch_deterministic` setting, where the
-/// nonces for batch signature verification are derived purely from the inputs
-/// to this function themselves.
-///
-/// **This is not recommended for use unless you have several cryptographers on
-///   staff who can advise you in its usage and all the horrible, terrible,
-///   awful ways it can go horribly, terribly, awfully wrong.**
+/// The nonces for batch signature verification are derived purely from the inputs to this function
+/// themselves.
 ///
 /// In any sigma protocol it is wise to include as much context pertaining
 /// to the public state in the protocol as possible, to avoid malleability
 /// attacks where an adversary alters publics in an algebraic manner that
 /// manages to satisfy the equations for the protocol in question.
 ///
-/// For ed25519 batch verification (both with synthetic and deterministic nonce
-/// generation), we include the following as scalars in the protocol transcript:
+/// For ed25519 batch verification we include the following as scalars in the protocol transcript:
 ///
 /// * All of the computed `H(R||A||M)`s to the protocol transcript, and
 /// * All of the `s` components of each signature.
-///
-/// Each is also prefixed with their index in the vector.
 ///
 /// The former, while not quite as elegant as adding the `R`s, `A`s, and
 /// `M`s separately, saves us a bit of context hashing since the
 /// `H(R||A||M)`s need to be computed for the verification equation anyway.
 ///
-/// The latter prevents a malleability attack only found in deterministic batch
-/// signature verification (i.e. only when compiling `ed25519-dalek` with
-/// `--features batch_deterministic`) wherein an adversary, without access
+/// The latter prevents a malleability attack wherein an adversary, without access
 /// to the signing key(s), can take any valid signature, `(s,R)`, and swap
-/// `s` with `s' = -z1`.  This doesn't contitute a signature forgery, merely
+/// `s` with `s' = -z1`.  This doesn't constitute a signature forgery, merely
 /// a vulnerability, as the resulting signature will not pass single
 /// signature verification.  (Thanks to Github users @real_or_random and
 /// @jonasnick for pointing out this malleability issue.)
 ///
-/// For an additional way in which signatures can be made to probablistically
-/// falsely "pass" the synthethic batch verification equation *for the same
-/// inputs*, but *only some crafted inputs* will pass the deterministic batch
-/// single, and neither of these will ever pass single signature verification,
-/// see the documentation for [`VerifyingKey.validate()`].
-///
 /// # Examples
 ///
 /// ```
-/// use ed25519_dalek::verify_batch;
-/// use ed25519_dalek::SigningKey;
-/// use ed25519_dalek::VerifyingKey;
-/// use ed25519_dalek::Signer;
-/// use ed25519_dalek::Signature;
+/// use ed25519_dalek::{
+///     verify_batch, SigningKey, VerifyingKey, Signer, Signature,
+/// };
 /// use rand::rngs::OsRng;
 ///
 /// # fn main() {
 /// let mut csprng = OsRng;
 /// let signing_keys: Vec<_> = (0..64).map(|_| SigningKey::generate(&mut csprng)).collect();
 /// let msg: &[u8] = b"They're good dogs Brant";
-/// let messages: Vec<&[u8]> = (0..64).map(|_| msg).collect();
-/// let signatures:  Vec<Signature> = signing_keys.iter().map(|key| key.sign(&msg)).collect();
-/// let verifying_keys: Vec<VerifyingKey> = signing_keys.iter().map(|key| key.verifying_key()).collect();
+/// let messages: Vec<_> = (0..64).map(|_| msg).collect();
+/// let signatures:  Vec<_> = signing_keys.iter().map(|key| key.sign(&msg)).collect();
+/// let verifying_keys: Vec<_> = signing_keys.iter().map(|key| key.verifying_key()).collect();
 ///
-/// let result = verify_batch(&messages[..], &signatures[..], &verifying_keys[..]);
+/// let result = verify_batch(&messages, &signatures, &verifying_keys);
 /// assert!(result.is_ok());
 /// # }
 /// ```
@@ -234,43 +155,61 @@ pub fn verify_batch(
         .into());
     }
 
+    // Make a transcript which logs all inputs to this function
+    let mut transcript: Transcript = Transcript::new(b"ed25519 batch verification");
+
+    // We make one optimization in the transcript: since we will end up computing H(R || A || M)
+    // for each (R, A, M) triplet, we will feed _that_ into our transcript rather than each R, A, M
+    // individually. Since R and A are fixed-length, this modification is secure so long as SHA-512
+    // is collision-resistant.
+    // It suffices to take `verifying_keys[i].as_bytes()` even though a `VerifyingKey` has two
+    // fields, and `as_bytes()` only returns the bytes of the first. This is because of an
+    // invariant guaranteed by `VerifyingKey`: the second field is always the (unique)
+    // decompression of the first. Thus, the serialized first field is a unique representation of
+    // the entire `VerifyingKey`.
+    let hrams: Vec<[u8; 64]> = (0..signatures.len())
+        .map(|i| {
+            // Compute H(R || A || M), where
+            // R = sig.R
+            // A = verifying key
+            // M = msg
+            let mut h: Sha512 = Sha512::default();
+            h.update(signatures[i].r_bytes());
+            h.update(verifying_keys[i].as_bytes());
+            h.update(&messages[i]);
+            h.finalize().try_into().unwrap()
+        })
+        .collect();
+
+    // Update transcript with the hashes above. This covers verifying_keys, messages, and the R
+    // half of signatures
+    for hram in hrams.iter() {
+        transcript.append_message(b"hram", hram);
+    }
+    // Update transcript with the rest of the data. This covers the s half of the signatures
+    for sig in signatures {
+        transcript.append_message(b"sig.s", sig.s_bytes());
+    }
+
+    // All function inputs have now been hashed into the transcript. Finalize it and use it as
+    // randomness for the batch verification.
+    let mut rng = transcript.build_rng().finalize(&mut ZeroRng);
+
     // Convert all signatures to `InternalSignature`
     let signatures = signatures
         .iter()
         .map(InternalSignature::try_from)
         .collect::<Result<Vec<_>, _>>()?;
-
-    // Compute H(R || A || M) for each (signature, public_key, message) triplet
-    let hrams: Vec<Scalar> = (0..signatures.len())
-        .map(|i| {
-            let mut h: Sha512 = Sha512::default();
-            h.update(signatures[i].R.as_bytes());
-            h.update(verifying_keys[i].as_bytes());
-            h.update(&messages[i]);
-            Scalar::from_hash(h)
-        })
+    // Convert the H(R || A || M) values into scalars
+    let hrams: Vec<Scalar> = hrams
+        .iter()
+        .map(Scalar::from_bytes_mod_order_wide)
         .collect();
-
-    // Collect the message lengths and the scalar portions of the signatures, and add them into the
-    // transcript.
-    let message_lengths: Vec<usize> = messages.iter().map(|i| i.len()).collect();
-    let scalars: Vec<Scalar> = signatures.iter().map(|i| i.s).collect();
-
-    // Build a PRNG based on a transcript of the H(R || A || M)s seen thus far. This provides
-    // synthethic randomness in the default configuration, and purely deterministic in the case of
-    // compiling with the "batch_deterministic" feature.
-    let mut transcript: Transcript = Transcript::new(b"ed25519 batch verification");
-
-    transcript.append_scalars(&hrams);
-    transcript.append_message_lengths(&message_lengths);
-    transcript.append_scalars(&scalars);
-
-    let mut prng = transcript.build_rng().finalize(&mut get_rng());
 
     // Select a random 128-bit scalar for each signature.
     let zs: Vec<Scalar> = signatures
         .iter()
-        .map(|_| Scalar::from(prng.gen::<u128>()))
+        .map(|_| Scalar::from(gen_u128(&mut rng)))
         .collect();
 
     // Compute the basepoint coefficient, ∑ s[i]z[i] (mod l)

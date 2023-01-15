@@ -24,10 +24,9 @@ rustdoc-args = ["--cfg", "docsrs"]
 features = ["nightly", "batch", "pkcs8"]
 
 [dependencies]
-curve25519-dalek = { version = "=4.0.0-pre.5", default-features = false, features = ["digest", "rand_core"] }
+curve25519-dalek = { version = "=4.0.0-pre.5", default-features = false, features = ["digest"] }
 ed25519 = { version = "=2.0.0-rc.0", default-features = false }
 merlin = { version = "3", default-features = false, optional = true }
-rand = { version = "0.8", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 serde_bytes = { version = "0.11", optional = true }
@@ -44,25 +43,23 @@ rand = "0.8"
 rand_core = { version = "0.6.4", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 toml = { version = "0.5" }
+curve25519-dalek = { version = "=4.0.0-pre.5", default-features = false, features = ["digest", "rand_core"] }
 
 [[bench]]
 name = "ed25519_benchmarks"
 harness = false
 
 [features]
-default = ["std", "rand", "zeroize"]
-alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "rand?/alloc", "serde?/alloc", "zeroize?/alloc"]
-std = ["alloc", "ed25519/std", "rand?/std", "serde?/std", "sha2/std"]
+default = ["std", "rand_core", "zeroize"]
+alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "serde?/alloc", "zeroize/alloc"]
+std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
 
 asm = ["sha2/asm"]
-batch = ["alloc", "merlin", "rand"]
-# This feature enables deterministic batch verification.
-batch_deterministic = ["alloc", "merlin", "rand"]
+batch = ["alloc", "merlin", "rand_core"]
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []
 pkcs8 = ["ed25519/pkcs8"]
 pem = ["alloc", "ed25519/pem", "pkcs8"]
-rand = ["dep:rand", "dep:rand_core"]
 serde = ["dep:serde", "serde_bytes", "ed25519/serde"]
 zeroize = ["dep:zeroize", "curve25519-dalek/zeroize"]
 

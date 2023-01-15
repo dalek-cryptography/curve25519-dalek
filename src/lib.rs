@@ -18,8 +18,8 @@
 //! secure pseudorandom number generator (CSPRNG). For this example, we'll use
 //! the operating system's builtin PRNG:
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
 //! use rand::rngs::OsRng;
 //! use ed25519_dalek::SigningKey;
@@ -32,8 +32,8 @@
 //!
 //! We can now use this `signing_key` to sign a message:
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::SigningKey;
@@ -48,8 +48,8 @@
 //! As well as to verify that this is, indeed, a valid signature on
 //! that `message`:
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer};
@@ -65,8 +65,8 @@
 //! Anyone else, given the `public` half of the `signing_key` can also easily
 //! verify this signature:
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::SigningKey;
@@ -91,8 +91,8 @@
 //! secret key to anyone else, since they will only need the public key to
 //! verify your signatures!)
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, VerifyingKey};
@@ -111,8 +111,8 @@
 //!
 //! And similarly, decoded from bytes with `::from_bytes()`:
 //!
-#![cfg_attr(feature = "rand", doc = "```")]
-#![cfg_attr(not(feature = "rand"), doc = "```ignore")]
+#![cfg_attr(feature = "rand_core", doc = "```")]
+#![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # use std::convert::TryFrom;
 //! # use rand::rngs::OsRng;
 //! # use std::convert::TryInto;
@@ -189,8 +189,8 @@
 //! They can be then serialised into any of the wire formats which serde supports.
 //! For example, using [bincode](https://github.com/TyOverby/bincode):
 //!
-#![cfg_attr(all(feature = "rand", feature = "serde"), doc = "```")]
-#![cfg_attr(not(all(feature = "rand", feature = "serde")), doc = "```ignore")]
+#![cfg_attr(all(feature = "rand_core", feature = "serde"), doc = "```")]
+#![cfg_attr(not(all(feature = "rand_core", feature = "serde")), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
@@ -210,8 +210,8 @@
 //! After sending the `encoded_verifying_key` and `encoded_signature`, the
 //! recipient may deserialise them and verify:
 //!
-#![cfg_attr(all(feature = "rand", feature = "serde"), doc = "```")]
-#![cfg_attr(not(all(feature = "rand", feature = "serde")), doc = "```ignore")]
+#![cfg_attr(all(feature = "rand_core", feature = "serde"), doc = "```")]
+#![cfg_attr(not(all(feature = "rand_core", feature = "serde")), doc = "```ignore")]
 //! # fn main() {
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, Verifier, VerifyingKey};
@@ -245,7 +245,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 
-#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+#[cfg(feature = "batch")]
 extern crate alloc;
 
 #[cfg(any(feature = "std", test))]
@@ -254,7 +254,7 @@ extern crate std;
 
 pub use ed25519;
 
-#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+#[cfg(feature = "batch")]
 mod batch;
 mod constants;
 mod errors;
@@ -264,7 +264,7 @@ mod verifying;
 
 pub use curve25519_dalek::digest::Digest;
 
-#[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+#[cfg(feature = "batch")]
 pub use crate::batch::*;
 pub use crate::constants::*;
 pub use crate::errors::*;

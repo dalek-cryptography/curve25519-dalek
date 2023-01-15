@@ -47,7 +47,7 @@ mod ed25519_benches {
         });
     }
 
-    #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+    #[cfg(feature = "batch")]
     fn verify_batch_signatures(c: &mut Criterion) {
         use ed25519_dalek::verify_batch;
 
@@ -75,7 +75,7 @@ mod ed25519_benches {
     }
 
     // If the above function isn't defined, make a placeholder function
-    #[cfg(not(any(feature = "batch", feature = "batch_deterministic")))]
+    #[cfg(not(feature = "batch"))]
     fn verify_batch_signatures(_: &mut Criterion) {}
 
     fn key_generation(c: &mut Criterion) {

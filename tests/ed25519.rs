@@ -16,7 +16,7 @@ use ed25519_dalek::*;
 use hex::FromHex;
 use hex_literal::hex;
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_core")]
 use sha2::Sha512;
 
 #[cfg(test)]
@@ -281,7 +281,7 @@ mod vectors {
     }
 }
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_core")]
 mod integrations {
     use super::*;
     use rand::rngs::OsRng;
@@ -425,7 +425,7 @@ mod integrations {
         let verifying_keys: Vec<VerifyingKey> =
             signing_keys.iter().map(|key| key.verifying_key()).collect();
 
-        let result = verify_batch(&messages, &signatures[..], &verifying_keys[..]);
+        let result = verify_batch(&messages, &signatures, &verifying_keys);
 
         assert!(result.is_ok());
     }

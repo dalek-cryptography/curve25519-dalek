@@ -160,7 +160,7 @@ impl InternalSignature {
     ///
     /// However, by the time this was standardised, most libraries in use were
     /// only checking the most significant three bits.  (See also the
-    /// documentation for `PublicKey.verify_strict`.)
+    /// documentation for [`crate::VerifyingKey::verify_strict`].)
     #[inline]
     pub fn from_bytes(bytes: &[u8; SIGNATURE_LENGTH]) -> Result<InternalSignature, SignatureError> {
         // TODO: Use bytes.split_array_ref once it’s in MSRV.

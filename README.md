@@ -170,55 +170,19 @@ transactions.
 The scalar component of a signature is not the only source of signature
 malleability, however.  Both the public key used for signature verification and
 the group element component of the signature are malleable, as they may contain
-a small torsion component as a consquence of the curve25519 group not being of
+a small torsion component as a consequence of the curve25519 group not being of
 prime order, but having a small cofactor of 8.
 
 If you wish to also eliminate this source of signature malleability, please
 review the
 [documentation for the `verify_strict()` function](https://doc.dalek.rs/ed25519_dalek/struct.PublicKey.html#method.verify_strict).
 
-# A Note on Randomness Generation
-
-The original paper's specification and the standarisation of RFC8032 do not
-specify precisely how randomness is to be generated, other than using a CSPRNG
-(Cryptographically Secure Random Number Generator).  Particularly in the case of
-signature verification, where the security proof _relies_ on the uniqueness of
-the blinding factors/nonces, it is paramount that these samples of randomness be
-unguessable to an adversary.  Because of this, a current growing belief among
-cryptographers is that it is safer to prefer _synthetic randomness_.
-
-To explain synthetic randomness, we should first explain how `ed25519-dalek`
-handles generation of _deterministic randomness_.  This mode is disabled by
-default due to a tiny-but-not-nonexistent chance that this mode will open users
-up to fault attacks, wherein an adversary who controls all of the inputs to
-batch verification (i.e. the public keys, signatures, and messages) can craft
-them in a specialised manner such as to induce a fault (e.g. causing a
-mistakenly flipped bit in RAM, overheating a processor, etc.).  In the
-deterministic mode, we seed the PRNG which generates our blinding factors/nonces
-by creating
-[a PRNG based on the Fiat-Shamir transform of the public inputs](https://merlin.cool/transcript/rng.html).
-This mode is potentially useful to protocols which require strong auditability
-guarantees, as well as those which do not have access to secure system-/chip-
-provided randomness.  This feature can be enabled via
-`--features='batch_deterministic'`.  Note that we _do not_ support deterministic
-signing, due to the numerous pitfalls therein, including a re-used nonce
-accidentally revealing the secret key.
-
-In the default mode, we do as above in the fully deterministic mode, but we
-ratchet the underlying keccak-f1600 function (used for the provided
-transcript-based PRNG) forward additionally based on some system-/chip- provided
-randomness.  This provides _synthetic randomness_, that is, randomness based on
-both deterministic and undeterinistic data.  The reason for doing this is to
-prevent badly seeded system RNGs from ruining the security of the signature
-verification scheme.
-
 # Features
 
 ## #![no_std]
 
-This library aims to be `#![no_std]` compliant.  If batch verification is
-required (`--features='batch'`), please enable either of the `std` or `alloc`
-features.
+This library aims is fully `#![no_std]` compliant. No features need to be
+enabled or disabled to suppose no-std.
 
 ## Nightly Compilers
 
@@ -264,11 +228,3 @@ with potentially many different public keys over potentially many different
 messages) is available via the `batch` feature.  It uses synthetic randomness, as
 noted above. Batch verification requires allocation, so this won't function in
 heapless settings.
-
-Batch verification is slightly faster with the `std` feature enabled, since it
-permits us to use `rand::thread_rng`.
-
-### Deterministic Batch Signature Verification
-
-The same notion of batch signature verification as above, but with purely
-deterministic randomness can be enabled via the `batch_deterministic` feature.

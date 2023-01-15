@@ -38,7 +38,7 @@ pub(crate) enum InternalError {
     Verify,
     /// Two arrays did not match in size, making the called signature
     /// verification method impossible.
-    #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+    #[cfg(feature = "batch")]
     ArrayLength {
         name_a: &'static str,
         length_a: usize,
@@ -62,7 +62,7 @@ impl Display for InternalError {
                 write!(f, "{} must be {} bytes in length", n, l)
             }
             InternalError::Verify => write!(f, "Verification equation was not satisfied"),
-            #[cfg(any(feature = "batch", feature = "batch_deterministic"))]
+            #[cfg(feature = "batch")]
             InternalError::ArrayLength {
                 name_a: na,
                 length_a: la,

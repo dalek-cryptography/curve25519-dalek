@@ -16,9 +16,6 @@ use ed25519_dalek::*;
 use hex::FromHex;
 use hex_literal::hex;
 
-#[cfg(feature = "rand_core")]
-use sha2::Sha512;
-
 #[cfg(test)]
 mod vectors {
     use super::*;
@@ -285,6 +282,7 @@ mod vectors {
 mod integrations {
     use super::*;
     use rand::rngs::OsRng;
+    use sha2::Sha512;
 
     #[test]
     fn sign_verify() {

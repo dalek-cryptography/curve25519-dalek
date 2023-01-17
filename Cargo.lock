@@ -275,9 +275,9 @@ dependencies = [
 
 [[package]]
 name = "ed25519"
-version = "2.0.0-rc.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24a753d68e68a75b72508fa3d37255ae8a6f7492715e61f3a14f3769859b2fb3"
+checksum = "a3af5919f6d605315213c36abdd435562224665993b274912dee0d9a0e2fed8a"
 dependencies = [
  "pkcs8",
  "serde",
@@ -746,9 +746,9 @@ dependencies = [
 
 [[package]]
 name = "signature"
-version = "2.0.0-rc.0"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51659052c3c82a3cb69d911c1c1d8cb5d383012b7ec537918d5ecc5f42870d2d"
+checksum = "8fe458c98333f9c8152221191a77e2a44e8325d0193484af2e9421a53019e57d"
 
 [[package]]
 name = "spki"

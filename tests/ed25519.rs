@@ -283,6 +283,7 @@ mod integrations {
     use super::*;
     use rand::rngs::OsRng;
     use sha2::Sha512;
+    use std::collections::HashMap;
 
     #[test]
     fn sign_verify() {
@@ -426,6 +427,33 @@ mod integrations {
         let result = verify_batch(&messages, &signatures, &verifying_keys);
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn public_key_hash_trait_check() {
+        let mut csprng = OsRng {};
+        let secret: SigningKey = SigningKey::generate(&mut csprng);
+        let public_from_secret: VerifyingKey = (&secret).into();
+
+        let mut m = HashMap::new();
+        m.insert(public_from_secret, "Example_Public_Key");
+
+        m.insert(public_from_secret, "Updated Value");
+
+        let (k, v) = m.get_key_value(&public_from_secret).unwrap();
+        assert_eq!(k, &public_from_secret);
+        assert_eq!(v.clone(), "Updated Value");
+        assert_eq!(m.len(), 1usize);
+
+        let second_secret: SigningKey = SigningKey::generate(&mut csprng);
+        let public_from_second_secret: VerifyingKey = (&second_secret).into();
+        assert_ne!(public_from_secret, public_from_second_secret);
+        m.insert(public_from_second_secret, "Second public key");
+
+        let (k, v) = m.get_key_value(&public_from_second_secret).unwrap();
+        assert_eq!(k, &public_from_second_secret);
+        assert_eq!(v.clone(), "Second public key");
+        assert_eq!(m.len(), 2usize);
     }
 }
 

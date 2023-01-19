@@ -93,6 +93,7 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::Iterator;
@@ -210,6 +211,14 @@ impl CompressedEdwardsY {
         X.conditional_negate(compressed_sign_bit);
 
         Some(EdwardsPoint{ X, Y, Z, T: &X * &Y })
+    }
+}
+
+impl TryFrom<&[u8]> for CompressedEdwardsY {
+    type Error = TryFromSliceError;
+
+    fn try_from(slice: &[u8]) -> Result<CompressedEdwardsY, TryFromSliceError> {
+        Self::from_slice(slice)
     }
 }
 
@@ -360,15 +369,12 @@ impl Default for CompressedEdwardsY {
 impl CompressedEdwardsY {
     /// Construct a `CompressedEdwardsY` from a slice of bytes.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If the input `bytes` slice does not have a length of 32.
-    pub fn from_slice(bytes: &[u8]) -> CompressedEdwardsY {
-        let mut tmp = [0u8; 32];
-
-        tmp.copy_from_slice(bytes);
-
-        CompressedEdwardsY(tmp)
+    /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
+    /// a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> Result<CompressedEdwardsY, TryFromSliceError> {
+        bytes.try_into().map(CompressedEdwardsY)
     }
 }
 

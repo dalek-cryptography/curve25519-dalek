@@ -161,6 +161,7 @@
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
+use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::Sum;
@@ -244,15 +245,12 @@ impl CompressedRistretto {
 
     /// Construct a `CompressedRistretto` from a slice of bytes.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If the input `bytes` slice does not have a length of 32.
-    pub fn from_slice(bytes: &[u8]) -> CompressedRistretto {
-        let mut tmp = [0u8; 32];
-
-        tmp.copy_from_slice(bytes);
-
-        CompressedRistretto(tmp)
+    /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
+    /// a length of 32.
+    pub fn from_slice(bytes: &[u8]) -> Result<CompressedRistretto, TryFromSliceError> {
+        bytes.try_into().map(CompressedRistretto)
     }
 
     /// Attempt to decompress to an `RistrettoPoint`.
@@ -334,6 +332,14 @@ impl Identity for CompressedRistretto {
 impl Default for CompressedRistretto {
     fn default() -> CompressedRistretto {
         CompressedRistretto::identity()
+    }
+}
+
+impl TryFrom<&[u8]> for CompressedRistretto {
+    type Error = TryFromSliceError;
+
+    fn try_from(slice: &[u8]) -> Result<CompressedRistretto, TryFromSliceError> {
+        Self::from_slice(slice)
     }
 }
 

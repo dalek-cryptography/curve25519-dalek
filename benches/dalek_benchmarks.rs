@@ -32,10 +32,9 @@ mod edwards_benches {
     }
 
     fn consttime_fixed_base_scalar_mul(c: &mut Criterion) {
-        let B = constants::ED25519_BASEPOINT_TABLE;
         let s = Scalar::from(897987897u64).invert();
         c.bench_function("Constant-time fixed-base scalar mul", move |b| {
-            b.iter(|| B * &s)
+            b.iter(|| EdwardsPoint::mul_base(&s))
         });
     }
 
@@ -50,7 +49,7 @@ mod edwards_benches {
     fn vartime_double_base_scalar_mul(c: &mut Criterion) {
         c.bench_function("Variable-time aA+bB, A variable, B fixed", |bench| {
             let mut rng = thread_rng();
-            let A = &Scalar::random(&mut rng) * constants::ED25519_BASEPOINT_TABLE;
+            let A = EdwardsPoint::mul_base(&Scalar::random(&mut rng));
             bench.iter_batched(
                 || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
                 |(a, b)| EdwardsPoint::vartime_double_scalar_mul_basepoint(&a, &A, &b),
@@ -88,7 +87,7 @@ mod multiscalar_benches {
     fn construct_points(n: usize) -> Vec<EdwardsPoint> {
         let mut rng = thread_rng();
         (0..n)
-            .map(|_| &Scalar::random(&mut rng) * constants::ED25519_BASEPOINT_TABLE)
+            .map(|_| EdwardsPoint::mul_base(&Scalar::random(&mut rng)))
             .collect()
     }
 

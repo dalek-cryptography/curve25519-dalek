@@ -22,7 +22,11 @@ use crate::window::NafLookupTable5;
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     let a_naf = a.non_adjacent_form(5);
+
+    #[cfg(feature = "precomputed-tables")]
     let b_naf = b.non_adjacent_form(8);
+    #[cfg(not(feature = "precomputed-tables"))]
+    let b_naf = b.non_adjacent_form(5);
 
     // Find starting index
     let mut i: usize = 255;
@@ -34,7 +38,11 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     }
 
     let table_A = NafLookupTable5::<ProjectiveNielsPoint>::from(A);
+    #[cfg(feature = "precomputed-tables")]
     let table_B = &constants::AFFINE_ODD_MULTIPLES_OF_BASEPOINT;
+    #[cfg(not(feature = "precomputed-tables"))]
+    let table_B =
+        &NafLookupTable5::<ProjectiveNielsPoint>::from(&constants::ED25519_BASEPOINT_POINT);
 
     let mut r = ProjectivePoint::identity();
     loop {

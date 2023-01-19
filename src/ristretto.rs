@@ -190,13 +190,13 @@ use subtle::ConstantTimeEq;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 use crate::edwards::EdwardsBasepointTable;
 use crate::edwards::EdwardsPoint;
 
 use crate::scalar::Scalar;
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 use crate::traits::BasepointTable;
 use crate::traits::Identity;
 #[cfg(feature = "alloc")]
@@ -929,15 +929,15 @@ impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
 impl RistrettoPoint {
     /// Fixed-base scalar multiplication by the Ristretto base point.
     ///
-    /// Uses precomputed basepoint tables when the `basepoint-tables` feature
+    /// Uses precomputed basepoint tables when the `precomputed-tables` feature
     /// is enabled, trading off increased code size for ~4x better performance.
     pub fn mul_base(scalar: &Scalar) -> Self {
-        #[cfg(not(feature = "basepoint-tables"))]
+        #[cfg(not(feature = "precomputed-tables"))]
         {
             scalar * constants::RISTRETTO_BASEPOINT_POINT
         }
 
-        #[cfg(feature = "basepoint-tables")]
+        #[cfg(feature = "precomputed-tables")]
         {
             scalar * constants::RISTRETTO_BASEPOINT_TABLE
         }
@@ -1060,12 +1060,12 @@ impl RistrettoPoint {
 /// let a = Scalar::from(87329482u64);
 /// let P = &a * RISTRETTO_BASEPOINT_TABLE;
 /// ```
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
@@ -1074,7 +1074,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     }
 }
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
     type Output = RistrettoPoint;
 
@@ -1083,7 +1083,7 @@ impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
     }
 }
 
-#[cfg(feature = "basepoint-tables")]
+#[cfg(feature = "precomputed-tables")]
 impl RistrettoBasepointTable {
     /// Create a precomputed table of multiples of the given `basepoint`.
     pub fn create(basepoint: &RistrettoPoint) -> RistrettoBasepointTable {

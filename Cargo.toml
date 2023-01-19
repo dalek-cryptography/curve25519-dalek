@@ -57,6 +57,7 @@ std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
 
 asm = ["sha2/asm"]
 batch = ["alloc", "merlin", "rand_core"]
+digest = []
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []
 pkcs8 = ["ed25519/pkcs8"]

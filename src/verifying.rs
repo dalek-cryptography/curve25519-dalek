@@ -13,6 +13,7 @@ use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
+#[cfg(feature = "digest")]
 use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
@@ -21,7 +22,7 @@ use curve25519_dalek::scalar::Scalar;
 
 use ed25519::signature::Verifier;
 
-pub use sha2::Sha512;
+use sha2::Sha512;
 
 #[cfg(feature = "pkcs8")]
 use ed25519::pkcs8::{self, DecodePublicKey};
@@ -206,6 +207,7 @@ impl VerifyingKey {
     ///
     /// Returns `true` if the `signature` was a valid signature created by this
     /// `Keypair` on the `prehashed_message`.
+    #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
     pub fn verify_prehashed<D>(
         &self,
@@ -350,6 +352,7 @@ impl VerifyingKey {
     ///
     /// Returns `true` if the `signature` was a valid signature created by this
     /// `Keypair` on the `prehashed_message`.
+    #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
     pub fn verify_prehashed_strict<D>(
         &self,

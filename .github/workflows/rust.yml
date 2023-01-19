@@ -30,7 +30,7 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc --lib
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --features batch
-      - run: cargo test --target ${{ matrix.target }} --features rand_core
+      - run: cargo test --target ${{ matrix.target }} --features "digest rand_core"
       - run: cargo test --target ${{ matrix.target }} --features serde
       - run: cargo test --target ${{ matrix.target }} --features pem
 

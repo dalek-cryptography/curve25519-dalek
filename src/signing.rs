@@ -24,6 +24,7 @@ use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 use sha2::Sha512;
 
+#[cfg(feature = "digest")]
 use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
@@ -208,12 +209,15 @@ impl SigningKey {
     ///
     /// # Examples
     ///
-    #[cfg_attr(feature = "rand_core", doc = "```")]
-    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
+    #[cfg_attr(all(feature = "rand_core", feature = "digest"), doc = "```")]
+    #[cfg_attr(
+        any(not(feature = "rand_core"), not(feature = "digest")),
+        doc = "```ignore"
+    )]
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::SigningKey;
-    /// use ed25519_dalek::Sha512;
     /// use ed25519_dalek::Signature;
+    /// use sha2::Sha512;
     /// use rand::rngs::OsRng;
     ///
     /// # #[cfg(feature = "std")]
@@ -253,13 +257,16 @@ impl SigningKey {
     /// Let's add a context for good measure (remember, you'll want to choose
     /// your own!):
     ///
-    #[cfg_attr(feature = "rand_core", doc = "```")]
-    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
+    #[cfg_attr(all(feature = "rand_core", feature = "digest"), doc = "```")]
+    #[cfg_attr(
+        any(not(feature = "rand_core"), not(feature = "digest")),
+        doc = "```ignore"
+    )]
     /// # use ed25519_dalek::Digest;
     /// # use ed25519_dalek::SigningKey;
     /// # use ed25519_dalek::Signature;
     /// # use ed25519_dalek::SignatureError;
-    /// # use ed25519_dalek::Sha512;
+    /// # use sha2::Sha512;
     /// # use rand::rngs::OsRng;
     /// #
     /// # fn do_test() -> Result<Signature, SignatureError> {
@@ -286,6 +293,7 @@ impl SigningKey {
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     /// [terrible_idea]: https://github.com/isislovecruft/scripts/blob/master/gpgkey2bc.py
+    #[cfg(feature = "digest")]
     pub fn sign_prehashed<D>(
         &self,
         prehashed_message: D,
@@ -327,13 +335,16 @@ impl SigningKey {
     ///
     /// # Examples
     ///
-    #[cfg_attr(feature = "rand_core", doc = "```")]
-    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
+    #[cfg_attr(all(feature = "rand_core", feature = "digest"), doc = "```")]
+    #[cfg_attr(
+        any(not(feature = "rand_core"), not(feature = "digest")),
+        doc = "```ignore"
+    )]
     /// use ed25519_dalek::Digest;
     /// use ed25519_dalek::SigningKey;
     /// use ed25519_dalek::Signature;
     /// use ed25519_dalek::SignatureError;
-    /// use ed25519_dalek::Sha512;
+    /// use sha2::Sha512;
     /// use rand::rngs::OsRng;
     ///
     /// # fn do_test() -> Result<(), SignatureError> {
@@ -369,6 +380,7 @@ impl SigningKey {
     /// ```
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[cfg(feature = "digest")]
     pub fn verify_prehashed<D>(
         &self,
         prehashed_message: D,
@@ -724,6 +736,7 @@ impl ExpandedSecretKey {
     /// a `SignatureError`.
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
     pub(crate) fn sign_prehashed<'a, D>(
         &self,

@@ -14,6 +14,7 @@ use curve25519_dalek;
 use ed25519_dalek::*;
 
 use hex::FromHex;
+#[cfg(feature = "digest")]
 use hex_literal::hex;
 
 #[cfg(test)]
@@ -96,8 +97,9 @@ mod vectors {
     }
 
     // From https://tools.ietf.org/html/rfc8032#section-7.3
+    #[cfg(feature = "digest")]
     #[test]
-    fn ed25519ph_rf8032_test_vector() {
+    fn ed25519ph_rf8032_test_vector_prehash() {
         let sec_bytes = hex!("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42");
         let pub_bytes = hex!("ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf");
         let msg_bytes = hex!("616263");
@@ -234,6 +236,7 @@ mod vectors {
 
     // Identical to repudiation() above, but testing verify_prehashed against
     // verify_prehashed_strict. See comments above for a description of what's happening.
+    #[cfg(feature = "digest")]
     #[test]
     fn repudiation_prehash() {
         let message1 = Sha512::new().chain_update(b"Send 100 USD to Alice");
@@ -282,6 +285,7 @@ mod vectors {
 mod integrations {
     use super::*;
     use rand::rngs::OsRng;
+    #[cfg(feature = "digest")]
     use sha2::Sha512;
     use std::collections::HashMap;
 
@@ -328,6 +332,7 @@ mod integrations {
         );
     }
 
+    #[cfg(feature = "digest")]
     #[test]
     fn ed25519ph_sign_verify() {
         let signing_key: SigningKey;

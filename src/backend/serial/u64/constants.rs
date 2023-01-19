@@ -13,12 +13,14 @@
 
 use super::field::FieldElement51;
 use super::scalar::Scalar52;
-use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::edwards::EdwardsPoint;
-use crate::window::NafLookupTable8;
 
 #[cfg(feature = "precomputed-tables")]
-use crate::{edwards::EdwardsBasepointTable, window::LookupTable};
+use crate::{
+    backend::serial::curve_models::AffineNielsPoint,
+    edwards::EdwardsBasepointTable,
+    window::{LookupTable, NafLookupTable8},
+};
 
 /// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51([
@@ -6287,6 +6289,7 @@ static ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable = Edwards
 ]);
 
 /// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+#[cfg(feature = "precomputed-tables")]
 #[allow(dead_code)]
 pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> =
     NafLookupTable8([

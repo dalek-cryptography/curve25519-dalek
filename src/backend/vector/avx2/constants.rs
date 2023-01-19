@@ -15,6 +15,8 @@ use packed_simd::u32x8;
 
 use crate::backend::vector::avx2::edwards::{CachedPoint, ExtendedPoint};
 use crate::backend::vector::avx2::field::FieldElement2625x4;
+
+#[cfg(feature = "precomputed-tables")]
 use crate::window::NafLookupTable8;
 
 /// The identity element as an `ExtendedPoint`.
@@ -96,6 +98,7 @@ pub(crate) static P_TIMES_16_HI: u32x8 = u32x8::new(
 );
 
 /// Odd multiples of the Ed25519 basepoint:
+#[cfg(feature = "precomputed-tables")]
 pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
     CachedPoint(FieldElement2625x4([
         u32x8::new(

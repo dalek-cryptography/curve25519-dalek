@@ -11,6 +11,7 @@
 
 use packed_simd::u64x4;
 
+#[cfg(feature = "precomputed-tables")]
 use crate::window::NafLookupTable8;
 
 use super::edwards::{CachedPoint, ExtendedPoint};
@@ -35,6 +36,7 @@ pub(crate) static CACHEDPOINT_IDENTITY: CachedPoint = CachedPoint(F51x4Reduced([
 ]));
 
 /// Odd multiples of the Ed25519 basepoint:
+#[cfg(feature = "precomputed-tables")]
 pub(crate) static BASEPOINT_ODD_LOOKUP_TABLE: NafLookupTable8<CachedPoint> = NafLookupTable8([
     CachedPoint(F51x4Reduced([
         u64x4::new(1277522120965857, 73557767439946, 243332, 1943719795065404),

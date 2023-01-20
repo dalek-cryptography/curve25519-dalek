@@ -240,7 +240,7 @@ dependencies = [
 [[package]]
 name = "curve25519-dalek"
 version = "4.0.0-pre.5"
-source = "git+https://github.com/dalek-cryptography/curve25519-dalek.git#83f6b149d33c37b8997316cb7a87d8d247b75c3e"
+source = "git+https://github.com/dalek-cryptography/curve25519-dalek.git#3effd73307a606e44469a425974f0b7b0eb85899"
 dependencies = [
  "cfg-if",
  "digest",

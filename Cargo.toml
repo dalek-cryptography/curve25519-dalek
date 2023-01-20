@@ -51,12 +51,13 @@ harness = false
 required-features = ["rand_core"]
 
 [features]
-default = ["std", "zeroize"]
+default = ["fast", "std", "zeroize"]
 alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "serde?/alloc", "zeroize/alloc"]
 std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
 
 asm = ["sha2/asm"]
 batch = ["alloc", "merlin", "rand_core"]
+fast = ["curve25519-dalek/precomputed-tables"]
 digest = []
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []

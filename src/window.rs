@@ -222,10 +222,13 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable5<AffineNielsPoint> {
     }
 }
 
-/// Holds stuff up to 8.
+/// Holds stuff up to 8. The only time we use tables this big is for precomputed basepoint tables
+/// and multiscalar multiplication (which requires alloc).
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 #[derive(Copy, Clone)]
 pub(crate) struct NafLookupTable8<T>(pub(crate) [T; 64]);
 
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<T: Copy> NafLookupTable8<T> {
     pub fn select(&self, x: usize) -> T {
         debug_assert_eq!(x & 1, 1);
@@ -235,6 +238,7 @@ impl<T: Copy> NafLookupTable8<T> {
     }
 }
 
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<T: Debug> Debug for NafLookupTable8<T> {
     fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
         writeln!(f, "NafLookupTable8([")?;
@@ -245,6 +249,7 @@ impl<T: Debug> Debug for NafLookupTable8<T> {
     }
 }
 
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
         let mut Ai = [A.as_projective_niels(); 64];
@@ -257,6 +262,7 @@ impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<ProjectiveNielsPoint> {
     }
 }
 
+#[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<'a> From<&'a EdwardsPoint> for NafLookupTable8<AffineNielsPoint> {
     fn from(A: &'a EdwardsPoint) -> Self {
         let mut Ai = [A.as_affine_niels(); 64];

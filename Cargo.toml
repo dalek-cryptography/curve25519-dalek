@@ -44,7 +44,7 @@ platforms = "3.0.2"
 [[bench]]
 name = "dalek_benchmarks"
 harness = false
-required-features = ["rand_core"]
+required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"

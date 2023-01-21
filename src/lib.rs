@@ -157,8 +157,8 @@
 //!
 //! - [`pkcs8::DecodePrivateKey`]: decode private keys from PKCS#8
 //! - [`pkcs8::EncodePrivateKey`]: encode private keys to PKCS#8
-//! - [`pkcs8::DecodeVerifyingKey`]: decode public keys from PKCS#8
-//! - [`pkcs8::EncodeVerifyingKey`]: encode public keys to PKCS#8
+//! - [`pkcs8::DecodePublicKey`]: decode public keys from PKCS#8
+//! - [`pkcs8::EncodePublicKey`]: encode public keys to PKCS#8
 //!
 //! #### Example
 //!

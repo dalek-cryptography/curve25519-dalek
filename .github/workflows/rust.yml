@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: '-D warnings'
+  RUSTDOCFLAGS: '-D warnings'
 
 jobs:
   test:
@@ -94,3 +95,14 @@ jobs:
         with:
           components: clippy
       - run: cargo clippy
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+      - run: cargo doc --all-features

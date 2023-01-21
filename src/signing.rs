@@ -43,6 +43,7 @@ use crate::constants::*;
 use crate::errors::*;
 use crate::signature::*;
 use crate::verifying::*;
+use crate::Signature;
 
 /// ed25519 secret key as defined in [RFC8032 § 5.1.5]:
 ///
@@ -301,7 +302,7 @@ impl SigningKey {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-    ) -> Result<ed25519::Signature, SignatureError>
+    ) -> Result<Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {
@@ -311,11 +312,7 @@ impl SigningKey {
     }
 
     /// Verify a signature on a message with this signing key's public key.
-    pub fn verify(
-        &self,
-        message: &[u8],
-        signature: &ed25519::Signature,
-    ) -> Result<(), SignatureError> {
+    pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
         self.verifying_key.verify(message, signature)
     }
 
@@ -388,7 +385,7 @@ impl SigningKey {
         &self,
         prehashed_message: D,
         context: Option<&[u8]>,
-        signature: &ed25519::Signature,
+        signature: &Signature,
     ) -> Result<(), SignatureError>
     where
         D: Digest<OutputSize = U64>,
@@ -463,7 +460,7 @@ impl SigningKey {
     pub fn verify_strict(
         &self,
         message: &[u8],
-        signature: &ed25519::Signature,
+        signature: &Signature,
     ) -> Result<(), SignatureError> {
         self.verifying_key.verify_strict(message, signature)
     }
@@ -479,9 +476,9 @@ impl KeypairRef for SigningKey {
     type VerifyingKey = VerifyingKey;
 }
 
-impl Signer<ed25519::Signature> for SigningKey {
+impl Signer<Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
-    fn try_sign(&self, message: &[u8]) -> Result<ed25519::Signature, SignatureError> {
+    fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
         Ok(expanded.sign(message, &self.verifying_key))
     }
@@ -489,18 +486,18 @@ impl Signer<ed25519::Signature> for SigningKey {
 
 /// Equivalent to [`SigningKey::sign_prehashed`] with `context` set to [`None`].
 #[cfg(feature = "digest")]
-impl<D> DigestSigner<D, ed25519::Signature> for SigningKey
+impl<D> DigestSigner<D, Signature> for SigningKey
 where
     D: Digest<OutputSize = U64>,
 {
-    fn try_sign_digest(&self, msg_digest: D) -> Result<ed25519::Signature, SignatureError> {
+    fn try_sign_digest(&self, msg_digest: D) -> Result<Signature, SignatureError> {
         self.sign_prehashed(msg_digest, None)
     }
 }
 
-impl Verifier<ed25519::Signature> for SigningKey {
+impl Verifier<Signature> for SigningKey {
     /// Verify a signature on a message with this signing key's public key.
-    fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
+    fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
         self.verifying_key.verify(message, signature)
     }
 }
@@ -710,7 +707,7 @@ impl From<&SecretKey> for ExpandedSecretKey {
 impl ExpandedSecretKey {
     /// Sign a message with this `ExpandedSecretKey`.
     #[allow(non_snake_case)]
-    pub(crate) fn sign(&self, message: &[u8], verifying_key: &VerifyingKey) -> ed25519::Signature {
+    pub(crate) fn sign(&self, message: &[u8], verifying_key: &VerifyingKey) -> Signature {
         let mut h: Sha512 = Sha512::new();
 
         h.update(self.nonce);
@@ -757,7 +754,7 @@ impl ExpandedSecretKey {
         prehashed_message: D,
         verifying_key: &VerifyingKey,
         context: Option<&'a [u8]>,
-    ) -> Result<ed25519::Signature, SignatureError>
+    ) -> Result<Signature, SignatureError>
     where
         D: Digest<OutputSize = U64>,
     {

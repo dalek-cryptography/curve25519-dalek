@@ -496,7 +496,7 @@ mod serialisation {
 
     #[test]
     fn serialize_deserialize_signature_bincode() {
-        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
+        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES);
         let encoded_signature: Vec<u8> = bincode::serialize(&signature).unwrap();
         let decoded_signature: Signature = bincode::deserialize(&encoded_signature).unwrap();
 
@@ -505,7 +505,7 @@ mod serialisation {
 
     #[test]
     fn serialize_deserialize_signature_json() {
-        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
+        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES);
         let encoded_signature = serde_json::to_string(&signature).unwrap();
         let decoded_signature: Signature = serde_json::from_str(&encoded_signature).unwrap();
 
@@ -582,7 +582,7 @@ mod serialisation {
 
     #[test]
     fn serialize_signature_size() {
-        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES).unwrap();
+        let signature: Signature = Signature::from_bytes(&SIGNATURE_BYTES);
         assert_eq!(
             bincode::serialized_size(&signature).unwrap() as usize,
             SIGNATURE_LENGTH

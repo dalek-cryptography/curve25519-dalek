@@ -84,7 +84,7 @@ impl From<IntermediateTestVector> for TestVector {
         let sig = {
             let mut buf = [0u8; 64];
             buf.copy_from_slice(&tv.sig);
-            Signature::from_bytes(&buf).unwrap()
+            Signature::from_bytes(&buf)
         };
         let msg = tv.msg.as_bytes().to_vec();
 

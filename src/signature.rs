@@ -101,16 +101,6 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
 }
 
 impl InternalSignature {
-    /// Convert this `Signature` to a byte array.
-    #[inline]
-    pub fn as_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
-        let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
-
-        signature_bytes[..32].copy_from_slice(&self.R.as_bytes()[..]);
-        signature_bytes[32..].copy_from_slice(&self.s.as_bytes()[..]);
-        signature_bytes
-    }
-
     /// Construct a `Signature` from a slice of bytes.
     ///
     /// # Scalar Malleability Checking
@@ -182,10 +172,7 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
 }
 
 impl From<InternalSignature> for ed25519::Signature {
-    #[allow(clippy::unwrap_used)]
     fn from(sig: InternalSignature) -> ed25519::Signature {
-        // This function only fails if the s half of the parsed input exceeds the scalar modulus.
-        // Since the bytes are coming straight from a Scalar, this is impossible.
-        ed25519::Signature::from_bytes(&sig.as_bytes()).unwrap()
+        ed25519::Signature::from_components(*sig.R.as_bytes(), *sig.s.as_bytes())
     }
 }

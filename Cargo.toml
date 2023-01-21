@@ -26,11 +26,14 @@ features = ["nightly", "batch", "pkcs8"]
 [dependencies]
 curve25519-dalek = { version = "=4.0.0-pre.5", default-features = false, features = ["digest"] }
 ed25519 = { version = "2", default-features = false }
+signature = { version = ">=2.0, <2.1", optional = true, default-features = false }
+sha2 = { version = "0.10", default-features = false }
+
+# optional features
 merlin = { version = "3", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 serde_bytes = { version = "0.11", optional = true }
-sha2 = { version = "0.10", default-features = false }
 zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
@@ -58,7 +61,7 @@ std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
 asm = ["sha2/asm"]
 batch = ["alloc", "merlin", "rand_core"]
 fast = ["curve25519-dalek/precomputed-tables"]
-digest = []
+digest = ["signature/digest"]
 # This features turns off stricter checking for scalar malleability in signatures
 legacy_compatibility = []
 pkcs8 = ["ed25519/pkcs8"]

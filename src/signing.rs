@@ -33,6 +33,9 @@ use curve25519_dalek::scalar::Scalar;
 
 use ed25519::signature::{KeypairRef, Signer, Verifier};
 
+#[cfg(feature = "digest")]
+use signature::DigestSigner;
+
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -481,6 +484,17 @@ impl Signer<ed25519::Signature> for SigningKey {
     fn try_sign(&self, message: &[u8]) -> Result<ed25519::Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
         Ok(expanded.sign(message, &self.verifying_key))
+    }
+}
+
+/// Equivalent to [`SigningKey::sign_prehashed`] with `context` set to [`None`].
+#[cfg(feature = "digest")]
+impl<D> DigestSigner<D, ed25519::Signature> for SigningKey
+where
+    D: Digest<OutputSize = U64>,
+{
+    fn try_sign_digest(&self, msg_digest: D) -> Result<ed25519::Signature, SignatureError> {
+        self.sign_prehashed(msg_digest, None)
     }
 }
 

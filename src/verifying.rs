@@ -34,6 +34,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
 use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
+#[cfg(feature = "digest")]
+use signature::DigestVerifier;
+
 use crate::constants::*;
 use crate::errors::*;
 use crate::signature::*;
@@ -414,6 +417,21 @@ impl Verifier<ed25519::Signature> for VerifyingKey {
         } else {
             Err(InternalError::Verify.into())
         }
+    }
+}
+
+/// Equivalent to [`VerifyingKey::verify_prehashed`] with `context` set to [`None`].
+#[cfg(feature = "digest")]
+impl<D> DigestVerifier<D, ed25519::Signature> for VerifyingKey
+where
+    D: Digest<OutputSize = U64>,
+{
+    fn verify_digest(
+        &self,
+        msg_digest: D,
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
+        self.verify_prehashed(msg_digest, None, signature)
     }
 }
 

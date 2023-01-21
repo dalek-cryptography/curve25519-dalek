@@ -681,25 +681,16 @@ impl Drop for ExpandedSecretKey {
 }
 
 impl From<&SecretKey> for ExpandedSecretKey {
+    #[allow(clippy::unwrap_used)]
     fn from(secret_key: &SecretKey) -> ExpandedSecretKey {
-        let mut h: Sha512 = Sha512::default();
-        let mut hash: [u8; 64] = [0u8; 64];
-        let mut lower: [u8; 32] = [0u8; 32];
-        let mut upper: [u8; 32] = [0u8; 32];
+        let hash = Sha512::default().chain_update(secret_key).finalize();
+        // TODO: Use bytes.split_array_ref once it’s in MSRV.
+        let (lower, upper) = hash.split_at(32);
 
-        h.update(secret_key);
-        hash.copy_from_slice(h.finalize().as_slice());
-
-        lower.copy_from_slice(&hash[00..32]);
-        upper.copy_from_slice(&hash[32..64]);
-
-        lower[0] &= 248;
-        lower[31] &= 63;
-        lower[31] |= 64;
-
+        // The try_into here converts to fixed-size array
         ExpandedSecretKey {
-            key: Scalar::from_bits(lower),
-            nonce: upper,
+            key: Scalar::from_bits_clamped(lower.try_into().unwrap()),
+            nonce: upper.try_into().unwrap(),
         }
     }
 }

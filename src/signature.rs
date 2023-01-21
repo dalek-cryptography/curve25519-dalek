@@ -162,6 +162,7 @@ impl InternalSignature {
     /// only checking the most significant three bits.  (See also the
     /// documentation for [`crate::VerifyingKey::verify_strict`].)
     #[inline]
+    #[allow(clippy::unwrap_used)]
     pub fn from_bytes(bytes: &[u8; SIGNATURE_LENGTH]) -> Result<InternalSignature, SignatureError> {
         // TODO: Use bytes.split_array_ref once it’s in MSRV.
         let (lower, upper) = bytes.split_at(32);
@@ -181,7 +182,10 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
 }
 
 impl From<InternalSignature> for ed25519::Signature {
+    #[allow(clippy::unwrap_used)]
     fn from(sig: InternalSignature) -> ed25519::Signature {
+        // This function only fails if the s half of the parsed input exceeds the scalar modulus.
+        // Since the bytes are coming straight from a Scalar, this is impossible.
         ed25519::Signature::from_bytes(&sig.as_bytes()).unwrap()
     }
 }

@@ -38,6 +38,7 @@ use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 use signature::DigestVerifier;
 
 use crate::constants::*;
+use crate::context::Context;
 use crate::errors::*;
 use crate::signature::*;
 use crate::signing::*;
@@ -151,6 +152,15 @@ impl VerifyingKey {
 
         // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
         Ok(VerifyingKey(compressed, point))
+    }
+
+    /// Create a verifying context that can be used for Ed25519ph with
+    /// [`DigestVerifier`].
+    pub fn with_context<'k, 'v>(
+        &'k self,
+        context_value: &'v [u8],
+    ) -> Result<Context<'k, 'v, Self>, SignatureError> {
+        Context::new(self, context_value)
     }
 
     /// Internal utility function for clamping a scalar representation and multiplying by the
@@ -428,6 +438,23 @@ where
         signature: &ed25519::Signature,
     ) -> Result<(), SignatureError> {
         self.verify_prehashed(msg_digest, None, signature)
+    }
+}
+
+/// Equivalent to [`VerifyingKey::verify_prehashed`] with `context` set to [`Some`]
+/// containing `self.value()`.
+#[cfg(feature = "digest")]
+impl<D> DigestVerifier<D, ed25519::Signature> for Context<'_, '_, VerifyingKey>
+where
+    D: Digest<OutputSize = U64>,
+{
+    fn verify_digest(
+        &self,
+        msg_digest: D,
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
+        self.key()
+            .verify_prehashed(msg_digest, Some(self.value()), signature)
     }
 }
 

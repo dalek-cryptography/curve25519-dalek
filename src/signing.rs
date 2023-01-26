@@ -40,6 +40,7 @@ use signature::DigestSigner;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::constants::*;
+use crate::context::Context;
 use crate::errors::*;
 use crate::signature::*;
 use crate::verifying::*;
@@ -158,6 +159,15 @@ impl SigningKey {
         self.verifying_key
     }
 
+    /// Create a signing context that can be used for Ed25519ph with
+    /// [`DigestSigner`].
+    pub fn with_context<'k, 'v>(
+        &'k self,
+        context_value: &'v [u8],
+    ) -> Result<Context<'k, 'v, Self>, SignatureError> {
+        Context::new(self, context_value)
+    }
+
     /// Generate an ed25519 signing key.
     ///
     /// # Example
@@ -200,9 +210,7 @@ impl SigningKey {
     ///
     /// # Inputs
     ///
-    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
-    ///   output which has had the message to be signed previously fed into its
-    ///   state.
+    /// * `prehashed_message` is an instantiated SHA-512 digest of the message
     /// * `context` is an optional context string, up to 255 bytes inclusive,
     ///   which may be used to provide additional domain separation.  If not
     ///   set, this will default to an empty string.
@@ -210,6 +218,13 @@ impl SigningKey {
     /// # Returns
     ///
     /// An Ed25519ph [`Signature`] on the `prehashed_message`.
+    ///
+    /// # Note
+    ///
+    /// The RFC only permits SHA-512 to be used for prehashing. This function technically works,
+    /// and is probably safe to use, with any secure hash function with 512-bit digests, but
+    /// anything outside of SHA-512 is NOT specification-compliant. We expose [`crate::Sha512`] for
+    /// user convenience.
     ///
     /// # Examples
     ///
@@ -226,7 +241,7 @@ impl SigningKey {
     ///
     /// # #[cfg(feature = "std")]
     /// # fn main() {
-    /// let mut csprng = OsRng{};
+    /// let mut csprng = OsRng;
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -274,7 +289,7 @@ impl SigningKey {
     /// # use rand::rngs::OsRng;
     /// #
     /// # fn do_test() -> Result<Signature, SignatureError> {
-    /// # let mut csprng = OsRng{};
+    /// # let mut csprng = OsRng;
     /// # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
     /// # let mut prehashed: Sha512 = Sha512::new();
@@ -348,7 +363,7 @@ impl SigningKey {
     /// use rand::rngs::OsRng;
     ///
     /// # fn do_test() -> Result<(), SignatureError> {
-    /// let mut csprng = OsRng{};
+    /// let mut csprng = OsRng;
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -485,6 +500,12 @@ impl Signer<Signature> for SigningKey {
 }
 
 /// Equivalent to [`SigningKey::sign_prehashed`] with `context` set to [`None`].
+///
+/// # Note
+///
+/// The RFC only permits SHA-512 to be used for prehashing. This function technically works, and is
+/// probably safe to use, with any secure hash function with 512-bit digests, but anything outside
+/// of SHA-512 is NOT specification-compliant. We expose [`crate::Sha512`] for user convenience.
 #[cfg(feature = "digest")]
 impl<D> DigestSigner<D, Signature> for SigningKey
 where
@@ -492,6 +513,24 @@ where
 {
     fn try_sign_digest(&self, msg_digest: D) -> Result<Signature, SignatureError> {
         self.sign_prehashed(msg_digest, None)
+    }
+}
+
+/// Equivalent to [`SigningKey::sign_prehashed`] with `context` set to [`Some`]
+/// containing `self.value()`.
+///
+/// # Note
+///
+/// The RFC only permits SHA-512 to be used for prehashing. This function technically works, and is
+/// probably safe to use, with any secure hash function with 512-bit digests, but anything outside
+/// of SHA-512 is NOT specification-compliant. We expose [`crate::Sha512`] for user convenience.
+#[cfg(feature = "digest")]
+impl<D> DigestSigner<D, Signature> for Context<'_, '_, SigningKey>
+where
+    D: Digest<OutputSize = U64>,
+{
+    fn try_sign_digest(&self, msg_digest: D) -> Result<Signature, SignatureError> {
+        self.key().sign_prehashed(msg_digest, Some(self.value()))
     }
 }
 

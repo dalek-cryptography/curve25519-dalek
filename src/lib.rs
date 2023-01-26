@@ -73,7 +73,7 @@
 //! # use ed25519_dalek::Signature;
 //! # use ed25519_dalek::Signer;
 //! use ed25519_dalek::{VerifyingKey, Verifier};
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
@@ -97,7 +97,7 @@
 //! # use rand::rngs::OsRng;
 //! # use ed25519_dalek::{SigningKey, Signature, Signer, VerifyingKey};
 //! use ed25519_dalek::{PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH, KEYPAIR_LENGTH, SIGNATURE_LENGTH};
-//! # let mut csprng = OsRng{};
+//! # let mut csprng = OsRng;
 //! # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
@@ -258,6 +258,7 @@ pub use ed25519;
 #[cfg(feature = "batch")]
 mod batch;
 mod constants;
+mod context;
 mod errors;
 mod signature;
 mod signing;
@@ -265,15 +266,20 @@ mod verifying;
 
 #[cfg(feature = "digest")]
 pub use curve25519_dalek::digest::Digest;
+#[cfg(feature = "digest")]
+pub use sha2::Sha512;
 
 #[cfg(feature = "batch")]
 pub use crate::batch::*;
 pub use crate::constants::*;
+pub use crate::context::Context;
 pub use crate::errors::*;
 pub use crate::signing::*;
 pub use crate::verifying::*;
 
 // Re-export the `Signer` and `Verifier` traits from the `signature` crate
+#[cfg(feature = "digest")]
+pub use ed25519::signature::{DigestSigner, DigestVerifier};
 pub use ed25519::signature::{Signer, Verifier};
 pub use ed25519::Signature;
 

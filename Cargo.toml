@@ -14,13 +14,11 @@ description = "Fast and efficient ed25519 EdDSA key generations, signing, and ve
 exclude = [ ".gitignore", "TESTVECTORS", "VALIDATIONVECTORS", "res/*" ]
 rust-version = "1.60"
 
-[badges]
-travis-ci = { repository = "dalek-cryptography/ed25519-dalek", branch = "master"}
-
 [package.metadata.docs.rs]
-# Disabled for now since this is borked; tracking https://github.com/rust-lang/docs.rs/issues/302
-# rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-0.13.2/rustdoc-include-katex-header.html"]
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = [
+    "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
+    "--cfg", "docsrs",
+]
 features = ["nightly", "batch", "pkcs8"]
 
 [dependencies]

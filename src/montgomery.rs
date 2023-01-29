@@ -54,7 +54,7 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG, X25519_BASEPOINT};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::Scalar;
@@ -118,6 +118,11 @@ impl Zeroize for MontgomeryPoint {
 }
 
 impl MontgomeryPoint {
+    /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
+    pub fn mul_base(scalar: &Scalar) -> Self {
+        scalar * X25519_BASEPOINT
+    }
+
     /// View this `MontgomeryPoint` as an array of bytes.
     pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.0

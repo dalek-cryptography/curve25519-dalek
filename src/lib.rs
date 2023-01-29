@@ -129,7 +129,7 @@
 //!
 //! # MSRV
 //!
-//! Current MSRV is 1.41 for production builds, and 1.48 for running tests.
+//! Current MSRV is 1.60.
 //!
 //! # Documentation
 //!
@@ -154,12 +154,6 @@
 //!   `x25519-dalek` for key agreement
 //!
 //! [crypto_box]: https://github.com/RustCrypto/AEADs/tree/master/crypto_box
-
-extern crate curve25519_dalek;
-
-extern crate rand_core;
-
-extern crate zeroize;
 
 mod x25519;
 

@@ -107,7 +107,7 @@ x25519-dalek = "2.0.0-pre.0"
 
 # MSRV
 
-Current MSRV is 1.51.
+Current MSRV is 1.60.
 
 # Documentation
 

@@ -80,3 +80,7 @@ pub(crate) mod backend;
 
 // Generic code for window lookups
 pub(crate) mod window;
+
+pub use crate::{
+    edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
+};

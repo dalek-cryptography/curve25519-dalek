@@ -50,8 +50,5 @@ pub mod scalar_mul;
 ))]
 pub(crate) use self::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
-#[cfg(any(
-    all(target_feature = "avx512ifma", feature = "precomputed-tables"),
-    all(docsrs, target_arch = "x86_64")
-))]
+#[cfg(all(target_feature = "avx512ifma", feature = "precomputed-tables"))]
 pub(crate) use self::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;

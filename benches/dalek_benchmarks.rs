@@ -288,6 +288,7 @@ mod ristretto_benches {
 
 mod montgomery_benches {
     use super::*;
+    use curve25519_dalek::montgomery::MontgomeryPoint;
 
     fn montgomery_ladder(c: &mut Criterion) {
         c.bench_function("Montgomery pseudomultiplication", |b| {
@@ -297,10 +298,17 @@ mod montgomery_benches {
         });
     }
 
+    fn consttime_fixed_base_scalar_mul(c: &mut Criterion) {
+        let s = Scalar::from(897987897u64).invert();
+        c.bench_function("Constant-time fixed-base scalar mul", move |b| {
+            b.iter(|| MontgomeryPoint::mul_base(&s))
+        });
+    }
+
     criterion_group! {
         name = montgomery_benches;
         config = Criterion::default();
-        targets = montgomery_ladder,
+        targets = montgomery_ladder, consttime_fixed_base_scalar_mul
     }
 }
 

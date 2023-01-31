@@ -228,6 +228,9 @@ mod vectors {
         assert!(vk.verify(message1, &sig).is_ok());
         assert!(vk.verify(message2, &sig).is_ok());
 
+        // Check that this public key appears as weak
+        assert!(vk.is_weak());
+
         // Now check that the sigs fail under verify_strict. This is because verify_strict rejects
         // small order pubkeys.
         assert!(vk.verify_strict(message1, &sig).is_err());
@@ -305,6 +308,9 @@ mod integrations {
         let verifying_key = signing_key.verifying_key();
         good_sig = signing_key.sign(&good);
         bad_sig = signing_key.sign(&bad);
+
+        // Check that an honestly generated public key is not weak
+        assert!(!verifying_key.is_weak());
 
         assert!(
             signing_key.verify(&good, &good_sig).is_ok(),

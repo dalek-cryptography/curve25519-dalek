@@ -163,6 +163,15 @@ impl VerifyingKey {
         Context::new(self, context_value)
     }
 
+    /// Returns whether this is a _weak_ public key, i.e., if this public key has low order.
+    ///
+    /// A weak public key can be used to generate a siganture that's valid for almost every
+    /// message. [`Self::verify_strict`] denies weak keys, but if you want to check for this
+    /// property before verification, then use this method.
+    pub fn is_weak(&self) -> bool {
+        self.1.is_small_order()
+    }
+
     /// Internal utility function for clamping a scalar representation and multiplying by the
     /// basepont to produce a public key.
     fn clamp_and_mul_base(bits: [u8; 32]) -> VerifyingKey {

@@ -118,6 +118,11 @@ impl Zeroize for MontgomeryPoint {
 }
 
 impl MontgomeryPoint {
+    /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
+    pub fn mul_base(scalar: &Scalar) -> Self {
+        EdwardsPoint::mul_base(scalar).to_montgomery()
+    }
+
     /// View this `MontgomeryPoint` as an array of bytes.
     pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.0

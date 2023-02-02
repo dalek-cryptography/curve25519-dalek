@@ -15,8 +15,11 @@ use crate::{InternalError, SignatureError};
 ///
 /// # Example
 ///
-#[cfg_attr(feature = "digest", doc = "```")]
-#[cfg_attr(not(feature = "digest"), doc = "```ignore")]
+#[cfg_attr(all(feature = "digest", feature = "rand_core"), doc = "```")]
+#[cfg_attr(
+    any(not(feature = "digest"), not(feature = "rand_core")),
+    doc = "```ignore"
+)]
 /// # fn main() {
 /// use ed25519_dalek::{Signature, SigningKey, VerifyingKey, Sha512};
 /// # use curve25519_dalek::digest::Digest;

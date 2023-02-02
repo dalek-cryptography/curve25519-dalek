@@ -34,13 +34,14 @@ use curve25519_dalek::scalar::Scalar;
 use ed25519::signature::{KeypairRef, Signer, Verifier};
 
 #[cfg(feature = "digest")]
+use crate::context::Context;
+#[cfg(feature = "digest")]
 use signature::DigestSigner;
 
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::constants::*;
-use crate::context::Context;
 use crate::errors::*;
 use crate::signature::*;
 use crate::verifying::*;
@@ -161,6 +162,7 @@ impl SigningKey {
 
     /// Create a signing context that can be used for Ed25519ph with
     /// [`DigestSigner`].
+    #[cfg(feature = "digest")]
     pub fn with_context<'k, 'v>(
         &'k self,
         context_value: &'v [u8],
@@ -172,21 +174,15 @@ impl SigningKey {
     ///
     /// # Example
     ///
-    /// ```
-    /// # #[cfg(feature = "std")]
+    #[cfg_attr(feature = "rand_core", doc = "```")]
+    #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # fn main() {
-    ///
     /// use rand::rngs::OsRng;
-    /// use ed25519_dalek::SigningKey;
-    /// use ed25519_dalek::Signature;
+    /// use ed25519_dalek::{Signature, SigningKey};
     ///
     /// let mut csprng = OsRng;
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
-    ///
     /// # }
-    /// #
-    /// # #[cfg(not(feature = "std"))]
-    /// # fn main() { }
     /// ```
     ///
     /// # Input
@@ -239,7 +235,6 @@ impl SigningKey {
     /// use sha2::Sha512;
     /// use rand::rngs::OsRng;
     ///
-    /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// let mut csprng = OsRng;
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
@@ -250,9 +245,6 @@ impl SigningKey {
     ///
     /// prehashed.update(message);
     /// # }
-    /// #
-    /// # #[cfg(not(feature = "std"))]
-    /// # fn main() { }
     /// ```
     ///
     /// If you want, you can optionally pass a "context".  It is generally a
@@ -301,13 +293,9 @@ impl SigningKey {
     /// #
     /// # Ok(sig)
     /// # }
-    /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #     do_test();
     /// # }
-    /// #
-    /// # #[cfg(not(feature = "std"))]
-    /// # fn main() { }
     /// ```
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
@@ -385,13 +373,9 @@ impl SigningKey {
     /// # verified
     /// # }
     /// #
-    /// # #[cfg(feature = "std")]
     /// # fn main() {
     /// #     do_test();
     /// # }
-    /// #
-    /// # #[cfg(not(feature = "std"))]
-    /// # fn main() { }
     /// ```
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1

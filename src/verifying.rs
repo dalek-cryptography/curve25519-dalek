@@ -35,10 +35,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 #[cfg(feature = "digest")]
+use crate::context::Context;
+#[cfg(feature = "digest")]
 use signature::DigestVerifier;
 
 use crate::constants::*;
-use crate::context::Context;
 use crate::errors::*;
 use crate::signature::*;
 use crate::signing::*;
@@ -156,6 +157,7 @@ impl VerifyingKey {
 
     /// Create a verifying context that can be used for Ed25519ph with
     /// [`DigestVerifier`].
+    #[cfg(feature = "digest")]
     pub fn with_context<'k, 'v>(
         &'k self,
         context_value: &'v [u8],

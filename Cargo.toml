@@ -1,12 +1,15 @@
 [package]
 name = "ed25519-dalek"
-version = "1.0.1"
+version = "2.0.0-pre.0"
 edition = "2021"
-authors = ["isis lovecruft <isis@patternsinthevoid.net>"]
+authors = [
+    "isis lovecruft <isis@patternsinthevoid.net>",
+    "Tony Arcieri <bascule@gmail.com>",
+    "Michael Rosenberg <michael@mrosenberg.pub>"
+]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/ed25519-dalek"
-homepage = "https://dalek.rs"
 documentation = "https://docs.rs/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
 categories = ["cryptography", "no-std"]

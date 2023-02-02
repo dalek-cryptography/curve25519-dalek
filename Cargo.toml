@@ -22,7 +22,7 @@ rustdoc-args = [
     "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
     "--cfg", "docsrs",
 ]
-features = ["nightly", "batch", "pkcs8"]
+features = ["batch", "pkcs8"]
 
 [dependencies]
 curve25519-dalek = { version = "=4.0.0-rc.0", default-features = false, features = ["digest"] }

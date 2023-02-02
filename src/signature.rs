@@ -14,7 +14,6 @@ use core::fmt::Debug;
 
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::scalar::Scalar;
-use ed25519::signature::Signature as _;
 
 use crate::constants::*;
 use crate::errors::*;
@@ -74,7 +73,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     // This is compatible with ed25519-donna and libsodium when
     // -DED25519_COMPAT is NOT specified.
     if bytes[31] & 224 != 0 {
-        return Err(InternalError::ScalarFormatError.into());
+        return Err(InternalError::ScalarFormat.into());
     }
 
     Ok(Scalar::from_bits(bytes))
@@ -92,26 +91,16 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     //
     // This succeed-fast trick should succeed for roughly half of all scalars.
     if bytes[31] & 240 == 0 {
-        return Ok(Scalar::from_bits(bytes))
+        return Ok(Scalar::from_bits(bytes));
     }
 
-    match Scalar::from_canonical_bytes(bytes) {
-        None => return Err(InternalError::ScalarFormatError.into()),
-        Some(x) => return Ok(x),
-    };
+    match Scalar::from_canonical_bytes(bytes).into() {
+        None => Err(InternalError::ScalarFormat.into()),
+        Some(x) => Ok(x),
+    }
 }
 
 impl InternalSignature {
-    /// Convert this `Signature` to a byte array.
-    #[inline]
-    pub fn to_bytes(&self) -> [u8; SIGNATURE_LENGTH] {
-        let mut signature_bytes: [u8; SIGNATURE_LENGTH] = [0u8; SIGNATURE_LENGTH];
-
-        signature_bytes[..32].copy_from_slice(&self.R.as_bytes()[..]);
-        signature_bytes[32..].copy_from_slice(&self.s.as_bytes()[..]);
-        signature_bytes
-    }
-
     /// Construct a `Signature` from a slice of bytes.
     ///
     /// # Scalar Malleability Checking
@@ -161,31 +150,15 @@ impl InternalSignature {
     ///
     /// However, by the time this was standardised, most libraries in use were
     /// only checking the most significant three bits.  (See also the
-    /// documentation for `PublicKey.verify_strict`.)
+    /// documentation for [`crate::VerifyingKey::verify_strict`].)
     #[inline]
-    pub fn from_bytes(bytes: &[u8]) -> Result<InternalSignature, SignatureError> {
-        if bytes.len() != SIGNATURE_LENGTH {
-            return Err(InternalError::BytesLengthError {
-                name: "Signature",
-                length: SIGNATURE_LENGTH,
-            }.into());
-        }
-        let mut lower: [u8; 32] = [0u8; 32];
-        let mut upper: [u8; 32] = [0u8; 32];
-
-        lower.copy_from_slice(&bytes[..32]);
-        upper.copy_from_slice(&bytes[32..]);
-
-        let s: Scalar;
-
-        match check_scalar(upper) {
-            Ok(x)  => s = x,
-            Err(x) => return Err(x),
-        }
-
+    #[allow(clippy::unwrap_used)]
+    pub fn from_bytes(bytes: &[u8; SIGNATURE_LENGTH]) -> Result<InternalSignature, SignatureError> {
+        // TODO: Use bytes.split_array_ref once it’s in MSRV.
+        let (lower, upper) = bytes.split_at(32);
         Ok(InternalSignature {
-            R: CompressedEdwardsY(lower),
-            s: s,
+            R: CompressedEdwardsY(lower.try_into().unwrap()),
+            s: check_scalar(upper.try_into().unwrap())?,
         })
     }
 }
@@ -194,12 +167,12 @@ impl TryFrom<&ed25519::Signature> for InternalSignature {
     type Error = SignatureError;
 
     fn try_from(sig: &ed25519::Signature) -> Result<InternalSignature, SignatureError> {
-        InternalSignature::from_bytes(sig.as_bytes())
+        InternalSignature::from_bytes(&sig.to_bytes())
     }
 }
 
 impl From<InternalSignature> for ed25519::Signature {
     fn from(sig: InternalSignature) -> ed25519::Signature {
-        ed25519::Signature::from_bytes(&sig.to_bytes()).unwrap()
+        ed25519::Signature::from_components(*sig.R.as_bytes(), *sig.s.as_bytes())
     }
 }

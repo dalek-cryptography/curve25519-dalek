@@ -1,270 +1,186 @@
-# ed25519-dalek [![](https://img.shields.io/crates/v/ed25519-dalek.svg)](https://crates.io/crates/ed25519-dalek) [![](https://docs.rs/ed25519-dalek/badge.svg)](https://docs.rs/ed25519-dalek) [![](https://travis-ci.org/dalek-cryptography/ed25519-dalek.svg?branch=master)](https://travis-ci.org/dalek-cryptography/ed25519-dalek?branch=master)
+# ed25519-dalek [![](https://img.shields.io/crates/v/ed25519-dalek.svg)](https://crates.io/crates/ed25519-dalek) [![](https://docs.rs/ed25519-dalek/badge.svg)](https://docs.rs/ed25519-dalek) [![Rust](https://github.com/dalek-cryptography/ed25519-dalek/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/dalek-cryptography/ed25519-dalek/actions/workflows/rust.yml)
 
 Fast and efficient Rust implementation of ed25519 key generation, signing, and
-verification in Rust.
+verification.
+
+# Use
+
+## Stable
+
+To import `ed25519-dalek`, add the following to the dependencies section of
+your project's `Cargo.toml`:
+```toml
+ed25519-dalek = "1"
+```
+
+## Beta
+
+To use the latest prerelease (see changes [below](#breaking-changes-in-200)),
+use the following line in your project's `Cargo.toml`:
+```toml
+ed25519-dalek = "2.0.0-pre.0"
+```
+
+# Feature Flags
+
+This crate is `#[no_std]` compatible with `default-features = false`.
+
+| Feature                | Default? | Description |
+| :---                   | :---     | :---        |
+| `alloc`                | ✓        | When `pkcs8` is enabled, implements `EncodePrivateKey`/`EncodePublicKey` for `SigningKey`/`VerifyingKey`, respectively. |
+| `std`                  | ✓        | Implements `std::error::Error` for `SignatureError`. Also enables `alloc`. |
+| `zeroize`              | ✓        | Implements `Zeroize` and `ZeroizeOnDrop` for `SigningKey` |
+| `rand_core`            |          | Enables `SigningKey::generate` |
+| `batch`                |          | Enables `verify_batch` for verifying many signatures quickly. Also enables `rand_core`. |
+| `digest`               |          | Enables `Context`, `SigningKey::{with_context, sign_prehashed}` and `VerifyingKey::{with_context, verify_prehashed, verify_prehashed_strict}` for Ed25519ph prehashed signatures |
+| `asm`                  |          | Enables assembly optimizations in the SHA-512 compression functions |
+| `pkcs8`                |          | Enables [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) serialization/deserialization for `SigningKey` and `VerifyingKey` |
+| `pem`                  |          | Enables PEM serialization support for PKCS#8 private keys and SPKI public keys. Also enables `alloc`. |
+| `legacy_compatibility` |          | **Unsafe:** Disables certain signature checks. See [below](#malleability-and-the-legacy_compatibility-feature) |
+
+# Major Changes
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of this crate.
+
+## Breaking Changes in 2.0.0
+
+* Bump MSRV from 1.41 to 1.60.0
+* Bump Rust edition
+* Bump `signature` dependency to 2.0
+* Make [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) more automatic
+* Make `digest` an optional dependency
+* Make `zeroize` an optional dependency
+* Make `rand_core` an optional dependency
+* Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
+* Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
+* Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`
 
 # Documentation
 
 Documentation is available [here](https://docs.rs/ed25519-dalek).
 
-# Installation
+# Compatibility Policies
 
-To install, add the following to your project's `Cargo.toml`:
+All on-by-default features of this library are covered by [semantic versioning](https://semver.org/spec/v2.0.0.html) (SemVer).
+SemVer exemptions are outlined below for MSRV and public API.
 
-```toml
-[dependencies.ed25519-dalek]
-version = "1"
+## Minimum Supported Rust Version
+
+| Releases | MSRV   |
+| :---     | :---   |
+| 2.x      | 1.60   |
+| 1.x      | 1.41   |
+
+From 2.x and on, MSRV changes will be accompanied by a minor version bump.
+
+## Public API SemVer Exemptions
+
+Breaking changes to SemVer-exempted components affecting the public API will be accompanied by some version bump.
+
+Below are the specific policies:
+
+| Releases | Public API Component(s) | Policy |
+| :---     | :---                    | :---   |
+| 2.x      | Dependencies `digest`, `pkcs8` and `rand_core` | Minor SemVer bump |
+
+# Safety
+
+`ed25519-dalek` is designed to prevent misuse. Signing is constant-time, all signing keys are zeroed when they go out of scope (unless `zeroize` is disabled), detached public keys [cannot](https://github.com/MystenLabs/ed25519-unsafe-libs/blob/main/README.md) be used for signing, and extra functions like [`VerifyingKey::verify_strict`](#weak-key-forgery-and-verify_strict) are made available to avoid known gotchas.
+
+Further, this crate has no—and in fact forbids—unsafe code. You can opt in to using some highly optimized unsafe code that resides in `curve25519-dalek`, though. See [below](#microarchitecture-specific-backends) for more information on backend selection.
+
+# Performance
+
+Performance is a secondary goal behind correctness, safety, and clarity, but we
+aim to be competitive with other implementations.
+
+## Benchmarks
+
+Benchmarks are run using [criterion.rs](https://github.com/japaric/criterion.rs):
+
+```sh
+cargo bench --features "batch"
+# Uses avx2 or ifma only if compiled for an appropriate target.
+export RUSTFLAGS='--cfg curve25519_dalek_backend="simd" -C target_cpu=native'
+cargo +nightly bench --features "batch"
 ```
 
-# Minimum Supported Rust Version
+On an Intel 10700K running at stock comparing between the `curve25519-dalek` backends.
 
-This crate requires Rust 1.56.1 at a minimum. 1.x releases of this crate supported an MSRV of 1.41.
+| Benchmark                       | u64       | simd +avx2         | fiat               |
+| :---                            | :----     | :---               | :---               |
+| signing                         | 15.017 µs | 13.906 µs -7.3967% | 15.877 µs +14.188% |
+| signature verification          | 40.144 µs | 25.963 µs -35.603% | 42.118 µs +62.758% |
+| strict signature verification   | 41.334 µs | 27.874 µs -32.660% | 43.985 µs +57.763% |
+| batch signature verification/4  | 109.44 µs | 81.778 µs -25.079% | 117.80 µs +43.629% |
+| batch signature verification/8  | 182.75 µs | 138.40 µs -23.871% | 195.86 µs +40.665% |
+| batch signature verification/16 | 328.67 µs | 251.39 µs -23.744% | 351.55 µs +39.901% |
+| batch signature verification/32 | 619.49 µs | 477.36 µs -23.053% | 669.41 µs +39.966% |
+| batch signature verification/64 | 1.2136 ms | 936.85 µs -22.543% | 1.3028 ms +38.808% |
+| batch signature verification/96 | 1.8677 ms | 1.2357 ms -33.936% | 2.0552 ms +66.439% |
+| batch signature verification/128| 2.3281 ms | 1.5795 ms -31.996% | 2.5596 ms +61.678% |
+| batch signature verification/256| 4.1868 ms | 2.8864 ms -31.061% | 4.6494 ms +61.081% |
+| keypair generation              | 13.973 µs | 13.108 µs -6.5062% | 15.099 µs +15.407% |
 
-In the future, MSRV changes will be accompanied by a minor version bump.
-
-# Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of this crate.
-
-# Benchmarks
-
-On an Intel Skylake i9-7900X running at 3.30 GHz, without TurboBoost, this code achieves
-the following performance benchmarks:
-
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench
-       Compiling ed25519-dalek v0.7.0 (file:///home/isis/code/rust/ed25519-dalek)
-        Finished release [optimized] target(s) in 3.11s
-          Running target/release/deps/ed25519_benchmarks-721332beed423bce
-
-    Ed25519 signing                     time:   [15.617 us 15.630 us 15.647 us]
-    Ed25519 signature verification      time:   [45.930 us 45.968 us 46.011 us]
-    Ed25519 keypair generation          time:   [15.440 us 15.465 us 15.492 us]
-
-By enabling the avx2 backend (on machines with compatible microarchitectures),
-the performance for signature verification is greatly improved:
-
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS=-Ctarget_cpu=native
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --features=avx2_backend
-       Compiling ed25519-dalek v0.7.0 (file:///home/isis/code/rust/ed25519-dalek)
-        Finished release [optimized] target(s) in 4.28s
-          Running target/release/deps/ed25519_benchmarks-e4866664de39c84d
-    Ed25519 signing                     time:   [15.923 us 15.945 us 15.967 us]
-    Ed25519 signature verification      time:   [33.382 us 33.411 us 33.445 us]
-    Ed25519 keypair generation          time:   [15.246 us 15.260 us 15.275 us]
-
-In comparison, the equivalent package in Golang performs as follows:
-
-    ∃!isisⒶmistakenot:(master *=)~/code/go/src/github.com/agl/ed25519 ∴ go test -bench .
-    BenchmarkKeyGeneration     30000             47007 ns/op
-    BenchmarkSigning           30000             48820 ns/op
-    BenchmarkVerification      10000            119701 ns/op
-    ok      github.com/agl/ed25519  5.775s
-
-Making key generation and signing a rough average of 2x faster, and
-verification 2.5-3x faster depending on the availability of avx2.  Of course, this
-is just my machine, and these results—nowhere near rigorous—should be taken
-with a handful of salt.
-
-Translating to a rough cycle count: we multiply by a factor of 3.3 to convert
-nanoseconds to cycles per second on a 3300 Mhz CPU, that's 110256 cycles for
-verification and 52618 for signing, which is competitive with hand-optimised
-assembly implementations.
-
-Additionally, if you're using a CSPRNG from the `rand` crate, the `nightly`
-feature will enable `u128`/`i128` features there, resulting in potentially
-faster performance.
+## Batch Performance
 
 If your protocol or application is able to batch signatures for verification,
-the `verify_batch()` function has greatly improved performance.  On the
-aforementioned Intel Skylake i9-7900X, verifying a batch of 96 signatures takes
-1.7673ms.  That's 18.4094us, or roughly 60750 cycles, per signature verification,
-more than double the speed of batch verification given in the original paper
-(this is likely not a fair comparison as that was a Nehalem machine).
-The numbers after the `/` in the test name refer to the size of the batch:
-
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ export RUSTFLAGS=-Ctarget_cpu=native
-    ∃!isisⒶmistakenot:(master *=)~/code/rust/ed25519-dalek ∴ cargo bench --features=avx2_backend batch
-       Compiling ed25519-dalek v0.8.0 (file:///home/isis/code/rust/ed25519-dalek)
-        Finished release [optimized] target(s) in 34.16s
-          Running target/release/deps/ed25519_benchmarks-cf0daf7d68fc71b6
-    Ed25519 batch signature verification/4   time:   [105.20 us 106.04 us 106.99 us]
-    Ed25519 batch signature verification/8   time:   [178.66 us 179.01 us 179.39 us]
-    Ed25519 batch signature verification/16  time:   [325.65 us 326.67 us 327.90 us]
-    Ed25519 batch signature verification/32  time:   [617.96 us 620.74 us 624.12 us]
-    Ed25519 batch signature verification/64  time:   [1.1862 ms 1.1900 ms 1.1943 ms]
-    Ed25519 batch signature verification/96  time:   [1.7611 ms 1.7673 ms 1.7742 ms]
-    Ed25519 batch signature verification/128 time:   [2.3320 ms 2.3376 ms 2.3446 ms]
-    Ed25519 batch signature verification/256 time:   [5.0124 ms 5.0290 ms 5.0491 ms]
+the [`verify_batch`][func_verify_batch] function has greatly improved performance.
 
 As you can see, there's an optimal batch size for each machine, so you'll likely
-want to test the benchmarks on your target CPU to discover the best size.  For
-this machine, around 100 signatures per batch is the optimum:
-
-![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/batch-violin-benchmark.svg)
-
-Additionally, thanks to Rust, this implementation has both type and memory
-safety.  It's also easily readable by a much larger set of people than those who
-can read qhasm, making it more readily and more easily auditable.  We're of
-the opinion that, ultimately, these features—combined with speed—are more
-valuable than simply cycle counts alone.
-
-# A Note on Signature Malleability
-
-The signatures produced by this library are malleable, as discussed in
-[the original paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf):
-
-![](https://github.com/dalek-cryptography/ed25519-dalek/blob/master/res/ed25519-malleability.png)
-
-While the scalar component of our `Signature` struct is strictly *not*
-malleable, because reduction checks are put in place upon `Signature`
-deserialisation from bytes, for all types of signatures in this crate,
-there is still the question of potential malleability due to the group
-element components.
-
-We could eliminate the latter malleability property by multiplying by the curve
-cofactor, however, this would cause our implementation to *not* match the
-behaviour of every other implementation in existence.  As of this writing,
-[RFC 8032](https://tools.ietf.org/html/rfc8032), "Edwards-Curve Digital
-Signature Algorithm (EdDSA)," advises that the stronger check should be done.
-While we agree that the stronger check should be done, it is our opinion that
-one shouldn't get to change the definition of "ed25519 verification" a decade
-after the fact, breaking compatibility with every other implementation.
-
-However, if you require this, please see the documentation for the
-`verify_strict()` function, which does the full checks for the group elements.
-This functionality is available by default.
-
-If for some reason—although we strongly advise you not to—you need to conform
-to the original specification of ed25519 signatures as in the excerpt from the
-paper above, you can disable scalar malleability checking via
-`--features='legacy_compatibility'`.  **WE STRONGLY ADVISE AGAINST THIS.**
-
-## The `legacy_compatibility` Feature
-
-By default, this library performs a stricter check for malleability in the
-scalar component of a signature, upon signature deserialisation.  This stricter
-check, that `s < \ell` where `\ell` is the order of the basepoint, is
-[mandated by RFC8032](https://tools.ietf.org/html/rfc8032#section-5.1.7).
-However, that RFC was standardised a decade after the original paper, which, as
-described above, (usually, falsely) stated that malleability was inconsequential.
-
-Because of this, most ed25519 implementations only perform a limited, hackier
-check that the most significant three bits of the scalar are unset.  If you need
-compatibility with legacy implementations, including:
-
-* ed25519-donna
-* Golang's /x/crypto ed25519
-* libsodium (only when built with `-DED25519_COMPAT`)
-* NaCl's "ref" implementation
-* probably a bunch of others
-
-then enable `ed25519-dalek`'s `legacy_compatibility` feature.  Please note and
-be forewarned that doing so allows for signature malleability, meaning that
-there may be two different and "valid" signatures with the same key for the same
-message, which is obviously incredibly dangerous in a number of contexts,
-including—but not limited to—identification protocols and cryptocurrency
-transactions.
-
-## The `verify_strict()` Function
-
-The scalar component of a signature is not the only source of signature
-malleability, however.  Both the public key used for signature verification and
-the group element component of the signature are malleable, as they may contain
-a small torsion component as a consquence of the curve25519 group not being of
-prime order, but having a small cofactor of 8.
-
-If you wish to also eliminate this source of signature malleability, please
-review the
-[documentation for the `verify_strict()` function](https://doc.dalek.rs/ed25519_dalek/struct.PublicKey.html#method.verify_strict).
-
-# A Note on Randomness Generation
-
-The original paper's specification and the standarisation of RFC8032 do not
-specify precisely how randomness is to be generated, other than using a CSPRNG
-(Cryptographically Secure Random Number Generator).  Particularly in the case of
-signature verification, where the security proof _relies_ on the uniqueness of
-the blinding factors/nonces, it is paramount that these samples of randomness be
-unguessable to an adversary.  Because of this, a current growing belief among
-cryptographers is that it is safer to prefer _synthetic randomness_.
-
-To explain synthetic randomness, we should first explain how `ed25519-dalek`
-handles generation of _deterministic randomness_.  This mode is disabled by
-default due to a tiny-but-not-nonexistent chance that this mode will open users
-up to fault attacks, wherein an adversary who controls all of the inputs to
-batch verification (i.e. the public keys, signatures, and messages) can craft
-them in a specialised manner such as to induce a fault (e.g. causing a
-mistakenly flipped bit in RAM, overheating a processor, etc.).  In the
-deterministic mode, we seed the PRNG which generates our blinding factors/nonces
-by creating
-[a PRNG based on the Fiat-Shamir transform of the public inputs](https://merlin.cool/transcript/rng.html).
-This mode is potentially useful to protocols which require strong auditability
-guarantees, as well as those which do not have access to secure system-/chip-
-provided randomness.  This feature can be enabled via
-`--features='batch_deterministic'`.  Note that we _do not_ support deterministic
-signing, due to the numerous pitfalls therein, including a re-used nonce
-accidentally revealing the secret key.
-
-In the default mode, we do as above in the fully deterministic mode, but we
-ratchet the underlying keccak-f1600 function (used for the provided
-transcript-based PRNG) forward additionally based on some system-/chip- provided
-randomness.  This provides _synthetic randomness_, that is, randomness based on
-both deterministic and undeterinistic data.  The reason for doing this is to
-prevent badly seeded system RNGs from ruining the security of the signature
-verification scheme.
-
-# Features
-
-## #![no_std]
-
-This library aims to be `#![no_std]` compliant.  If batch verification is
-required (`--features='batch'`), please enable either of the `std` or `alloc`
-features.
-
-## Nightly Compilers
-
-To cause your application to build `ed25519-dalek` with the nightly feature
-enabled by default, instead do:
-
-```toml
-[dependencies.ed25519-dalek]
-version = "1"
-features = ["nightly"]
-```
-
-To cause your application to instead build with the nightly feature enabled
-when someone builds with `cargo build --features="nightly"` add the following
-to the `Cargo.toml`:
-
-```toml
-[features]
-nightly = ["ed25519-dalek/nightly"]
-```
-
-## Serde
-
-To enable [serde](https://serde.rs) support, build `ed25519-dalek` with the
-`serde` feature.
+want to test the benchmarks on your target CPU to discover the best size.
 
 ## (Micro)Architecture Specific Backends
 
-By default, `ed25519-dalek` builds against `curve25519-dalek`'s `u64_backend`
-feature, which uses Rust's `i128` feature to achieve roughly double the speed as
-the `u32_backend` feature.  When targetting 32-bit systems, however, you'll
-likely want to compile with `cargo build --no-default-features
---features="u32_backend"`.  If you're building for a machine with avx2
-instructions, there's also the experimental `simd_backend`s, currently
-comprising either avx2 or avx512 backends.  To use them, compile with
-`RUSTFLAGS="-C target_cpu=native" cargo build --no-default-features
---features="simd_backend"`
+A _backend_ refers to an implementation of elliptic curve and scalar arithmetic. Different backends have different use cases. For example, if you demand formally verified code, you want to use the `fiat` backend (as it was generated from [Fiat Crypto][fiat]). If you want the highest performance possible, you probably want the `simd` backend.
 
-## Batch Signature Verification
+Backend selection details and instructions can be found in the [curve25519-dalek docs](https://github.com/dalek-cryptography/curve25519-dalek#backends).
 
-The standard variants of batch signature verification (i.e. many signatures made
-with potentially many different public keys over potentially many different
-message) is available via the `batch` feature.  It uses synthetic randomness, as
-noted above.
+# Contributing
 
-### Deterministic Batch Signature Verification
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-The same notion of batch signature verification as above, but with purely
-deterministic randomness can be enabled via the `batch_deterministic` feature.
+# Batch Signature Verification
+
+The standard variants of batch signature verification (i.e. many signatures made with potentially many different public keys over potentially many different messages) is available via the `batch` feature. It uses deterministic randomness, i.e., it hashes the inputs (using [`merlin`](https://merlin.cool/), which handles transcript item separation) and uses the result to generate random coefficients. Batch verification requires allocation, so this won't function in heapless settings.
+
+# Validation Criteria
+
+The _validation criteria_ of a signature scheme are the criteria that signatures and public keys must satisfy in order to be accepted. Unfortunately, Ed25519 has some underspecified parts, leading to different validation criteria across implementations. For a very good overview of this, see [Henry's post][validation].
+
+In this section, we mention some specific details about our validation criteria, and how to navigate them.
+
+## Malleability and the `legacy_compatibility` Feature
+
+A signature scheme is considered to produce _malleable signatures_ if a passive attacker with knowledge of a public key _A_, message _m_, and valid signature _σ'_ can produce a distinct _σ'_ such that _σ'_ is a valid signature of _m_ with respect to _A_. A scheme is only malleable if the attacker can do this _without_ knowledge of the private key corresponding to _A_.
+
+`ed25519-dalek` is not a malleable signature scheme.
+
+Some other Ed25519 implementations are malleable, though, such as [libsodium with `ED25519_COMPAT` enabled](https://github.com/jedisct1/libsodium/blob/24211d370a9335373f0715664271dfe203c7c2cd/src/libsodium/crypto_sign/ed25519/ref10/open.c#L30), [ed25519-donna](https://github.com/floodyberry/ed25519-donna/blob/8757bd4cd209cb032853ece0ce413f122eef212c/ed25519.c#L100), [NaCl's ref10 impl](https://github.com/floodyberry/ed25519-donna/blob/8757bd4cd209cb032853ece0ce413f122eef212c/fuzz/ed25519-ref10.c#L4627), and probably a lot more.
+If you need to interoperate with such implementations and accept otherwise invalid signatures, you can enable the `legacy_compatibility` flag. **Do not enable `legacy_compatibility`** if you don't have to, because it will make your signatures malleable.
+
+Note: [CIRCL](https://github.com/cloudflare/circl/blob/fa6e0cca79a443d7be18ed241e779adf9ed2a301/sign/ed25519/ed25519.go#L358) has no scalar range check at all. We do not have a feature flag for interoperating with the larger set of RFC-disallowed signatures that CIRCL accepts.
+
+## Weak key Forgery and `verify_strict()`
+
+A _signature forgery_ is what it sounds like: it's when an attacker, given a public key _A_, creates a signature _σ_ and message _m_ such that _σ_ is a valid signature of _m_ with respect to _A_. Since this is the core security definition of any signature scheme, Ed25519 signatures cannot be forged.
+
+However, there's a much looser kind of forgery that Ed25519 permits, which we call _weak key forgery_. An attacker can produce a special public key _A_ (which we call a _weak_ public key) and a signature _σ_ such that _σ_ is a valid signature of _any_ message _m_, with respect to _A_, with high probability. This attack is acknowledged in the [Ed25519 paper](https://ed25519.cr.yp.to/ed25519-20110926.pdf), and caused an exploitable bug in the Scuttlebutt protocol ([paper](https://eprint.iacr.org/2019/526.pdf), section 7.1). The [`VerifyingKey::verify()`][method_verify] function permits weak keys.
+
+We provide [`VerifyingKey::verify_strict`][method_verify_strict] (and [`verify_strict_prehashed`][method_verify_strict_ph]) to help users avoid these scenarios. These functions perform an extra check on _A_, ensuring it's not a weak public key. In addition, we provide the [`VerifyingKey::is_weak`][method_is_weak] to allow users to perform this check before attempting signature verification.
+
+## Batch verification
+
+As mentioned above, weak public keys can be used to produce signatures for unknown messages with high probability. This means that sometimes a weak forgery attempt will fail. In fact, it can fail up to 7/8 of the time. If you call `verify()` twice on the same failed forgery, it will return an error both times, as expected. However, if you call `verify_batch()` twice on two distinct otherwise-valid batches, both of which contain the failed forgery, there's a 21% chance that one fails and the other succeeds.
+
+Why is this? It's because `verify_batch()` does not do the weak key testing of `verify_strict()`, and it multiplies each verification equation by some random coefficient. If the failed forgery gets multiplied by 8, then the weak key (which is a low-order point) becomes 0, and the verification equation on the attempted forgery will succeed.
+
+Since `verify_batch()` is intended to be high-throughput, we think it's best not to put weak key checks in it. If you want to prevent weird behavior due to weak public keys in your batches, you should call [`VerifyingKey::is_weak`][method_is_weak] on the inputs in advance.
+
+[fiat]: https://github.com/mit-plv/fiat-crypto
+[validation]: https://hdevalence.ca/blog/2020-10-04-its-25519am
+[func_verify_batch]: https://docs.rs/ed25519-dalek/latest/ed25519_dalek/fn.verify_batch.html
+[method_verify]: https://docs.rs/ed25519-dalek/latest/ed25519_dalek/struct.VerifyingKey.html#method.verify
+[method_verify_strict]: https://docs.rs/ed25519-dalek/latest/ed25519_dalek/struct.VerifyingKey.html#method.verify_strict
+[method_verify_strict_ph]: https://docs.rs/ed25519-dalek/latest/ed25519_dalek/struct.VerifyingKey.html#method.verify_strict_prehashed
+[method_is_weak]: https://docs.rs/ed25519-dalek/latest/ed25519_dalek/struct.VerifyingKey.html#method.is_weak

@@ -69,6 +69,15 @@ jobs:
         RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
       run: cargo build --target x86_64-unknown-linux-gnu
 
+  build-docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: make doc
+    - run: make doc-internal
+
   cross:
     strategy:
       matrix:

@@ -254,9 +254,9 @@ impl SharedSecret {
     /// key exchange with non-contributory behaviour.
     ///
     /// In some more exotic protocols which need to guarantee "contributory"
-    /// behaviour for both parties, that is, that each party contibuted a public
+    /// behaviour for both parties, that is, that each party contributed a public
     /// value which increased the security of the resulting shared secret.
-    /// To take an example protocol attack where this could lead to undesireable
+    /// To take an example protocol attack where this could lead to undesirable
     /// results [from Thái "thaidn" Dương](https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html):
     ///
     /// > If Mallory replaces Alice's and Bob's public keys with zero, which is

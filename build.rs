@@ -14,7 +14,10 @@ fn lotto_curve25519_dalek_bits() -> DalekBits {
     use platforms::target::PointerWidth;
 
     let target_triplet = std::env::var("TARGET").unwrap();
-    let platform = platforms::Platform::find(&target_triplet).unwrap();
+    let platform = match platforms::Platform::find(&target_triplet){
+        Some(platform) => platform,
+        _ => return DalekBits::Dalek32,
+    };
 
     #[allow(clippy::match_single_binding)]
     match platform.target_arch {

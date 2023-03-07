@@ -45,7 +45,7 @@ jobs:
     name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'

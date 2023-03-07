@@ -86,7 +86,7 @@
 //! ## Serialisation
 //!
 //! `VerifyingKey`s, `SecretKey`s, `SigningKey`s, and `Signature`s can be serialised
-//! into byte-arrays by calling `.to_bytes()`.  It's perfectly acceptible and
+//! into byte-arrays by calling `.to_bytes()`.  It's perfectly acceptable and
 //! safe to transfer and/or store those bytes.  (Of course, never transfer your
 //! secret key to anyone else, since they will only need the public key to
 //! verify your signatures!)

@@ -10,7 +10,7 @@
 //! ed25519 signing keys.
 
 #[cfg(feature = "pkcs8")]
-use ed25519::pkcs8::{self, DecodePrivateKey};
+use ed25519::pkcs8;
 
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
@@ -564,9 +564,6 @@ impl Drop for SigningKey {
 
 #[cfg(feature = "zeroize")]
 impl ZeroizeOnDrop for SigningKey {}
-
-#[cfg(feature = "pkcs8")]
-impl DecodePrivateKey for SigningKey {}
 
 #[cfg(all(feature = "alloc", feature = "pkcs8"))]
 impl pkcs8::EncodePrivateKey for SigningKey {

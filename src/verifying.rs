@@ -25,7 +25,7 @@ use ed25519::signature::Verifier;
 use sha2::Sha512;
 
 #[cfg(feature = "pkcs8")]
-use ed25519::pkcs8::{self, DecodePublicKey};
+use ed25519::pkcs8;
 
 #[cfg(feature = "serde")]
 use serde::de::Error as SerdeError;
@@ -488,9 +488,6 @@ impl TryFrom<&[u8]> for VerifyingKey {
     }
 }
 
-#[cfg(feature = "pkcs8")]
-impl DecodePublicKey for VerifyingKey {}
-
 #[cfg(all(feature = "alloc", feature = "pkcs8"))]
 impl pkcs8::EncodePublicKey for VerifyingKey {
     fn to_public_key_der(&self) -> pkcs8::spki::Result<pkcs8::Document> {
@@ -531,10 +528,10 @@ impl From<&VerifyingKey> for pkcs8::PublicKeyBytes {
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<pkcs8::spki::SubjectPublicKeyInfo<'_>> for VerifyingKey {
+impl TryFrom<pkcs8::spki::SubjectPublicKeyInfoRef<'_>> for VerifyingKey {
     type Error = pkcs8::spki::Error;
 
-    fn try_from(public_key: pkcs8::spki::SubjectPublicKeyInfo<'_>) -> pkcs8::spki::Result<Self> {
+    fn try_from(public_key: pkcs8::spki::SubjectPublicKeyInfoRef<'_>) -> pkcs8::spki::Result<Self> {
         pkcs8::PublicKeyBytes::try_from(public_key)?.try_into()
     }
 }

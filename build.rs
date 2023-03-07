@@ -14,20 +14,23 @@ fn lotto_curve25519_dalek_bits() -> DalekBits {
     use platforms::target::PointerWidth;
 
     let target_triplet = std::env::var("TARGET").unwrap();
-    let platform = platforms::Platform::find(&target_triplet).unwrap();
+    if let Some(platform) = platforms::Platform::find(&target_triplet) {
 
-    #[allow(clippy::match_single_binding)]
-    match platform.target_arch {
-        //Issues: 449 and 456
-        //TODO(Arm): Needs tests + benchmarks to back this up
-        //platforms::target::Arch::Arm => DalekBits::Dalek64,
-        //TODO(Wasm32): Needs tests + benchmarks to back this up
-        //platforms::target::Arch::Wasm32 => DalekBits::Dalek64,
-        _ => match platform.target_pointer_width {
-            PointerWidth::U64 => DalekBits::Dalek64,
-            PointerWidth::U32 => DalekBits::Dalek32,
-            _ => DalekBits::Dalek32,
-        },
+        #[allow(clippy::match_single_binding)]
+        match platform.target_arch {
+            //Issues: 449 and 456
+            //TODO(Arm): Needs tests + benchmarks to back this up
+            //platforms::target::Arch::Arm => DalekBits::Dalek64,
+            //TODO(Wasm32): Needs tests + benchmarks to back this up
+            //platforms::target::Arch::Wasm32 => DalekBits::Dalek64,
+            _ => match platform.target_pointer_width {
+                PointerWidth::U64 => DalekBits::Dalek64,
+                PointerWidth::U32 => DalekBits::Dalek32,
+                _ => DalekBits::Dalek32,
+            },
+        }
+    } else {
+        DalekBits::Dalek32
     }
 }
 

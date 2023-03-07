@@ -224,7 +224,7 @@ pub fn verify_batch(
     let zhrams = hrams.iter().zip(zs.iter()).map(|(hram, z)| hram * z);
 
     let Rs = signatures.iter().map(|sig| sig.R.decompress());
-    let As = verifying_keys.iter().map(|pk| Some(pk.1));
+    let As = verifying_keys.iter().map(|pk| Some(pk.point));
     let B = once(Some(constants::ED25519_BASEPOINT_POINT));
 
     // Compute (-∑ z[i]s[i] (mod l)) B + ∑ z[i]R[i] + ∑ (z[i]H(R||A||M)[i] (mod l)) A[i] = 0

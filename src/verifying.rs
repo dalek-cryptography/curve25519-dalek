@@ -57,11 +57,17 @@ use crate::signing::*;
 /// are rejected, use [`VerifyingKey::verify_strict`].
 // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
 #[derive(Copy, Clone, Default, Eq)]
-pub struct VerifyingKey(pub(crate) CompressedEdwardsY, pub(crate) EdwardsPoint);
+pub struct VerifyingKey {
+    /// Serialized compressed Edwards-y point.
+    pub(crate) compressed: CompressedEdwardsY,
+
+    /// Decompressed Edwards point used for curve arithmetic operations.
+    pub(crate) point: EdwardsPoint,
+}
 
 impl Debug for VerifyingKey {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-        write!(f, "VerifyingKey({:?}), {:?})", self.0, self.1)
+        write!(f, "VerifyingKey({:?}), {:?})", self.compressed, self.point)
     }
 }
 
@@ -101,13 +107,13 @@ impl VerifyingKey {
     /// Convert this public key to a byte array.
     #[inline]
     pub fn to_bytes(&self) -> [u8; PUBLIC_KEY_LENGTH] {
-        self.0.to_bytes()
+        self.compressed.to_bytes()
     }
 
     /// View this public key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; PUBLIC_KEY_LENGTH] {
-        &(self.0).0
+        &(self.compressed).0
     }
 
     /// Construct a `VerifyingKey` from a slice of bytes.
@@ -152,7 +158,7 @@ impl VerifyingKey {
             .ok_or(InternalError::PointDecompression)?;
 
         // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
-        Ok(VerifyingKey(compressed, point))
+        Ok(VerifyingKey { compressed, point })
     }
 
     /// Create a verifying context that can be used for Ed25519ph with
@@ -171,7 +177,7 @@ impl VerifyingKey {
     /// message. [`Self::verify_strict`] denies weak keys, but if you want to check for this
     /// property before verification, then use this method.
     pub fn is_weak(&self) -> bool {
-        self.1.is_small_order()
+        self.point.is_small_order()
     }
 
     /// Internal utility function for clamping a scalar representation and multiplying by the
@@ -182,7 +188,7 @@ impl VerifyingKey {
         let compressed = point.compress();
 
         // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
-        VerifyingKey(compressed, point)
+        VerifyingKey { compressed, point }
     }
 
     // A helper function that computes H(R || A || M). If `context.is_some()`, this does the
@@ -222,8 +228,8 @@ impl VerifyingKey {
         signature: &InternalSignature,
         M: &[u8],
     ) -> CompressedEdwardsY {
-        let k = Self::compute_challenge(context, &signature.R, &self.0, M);
-        let minus_A: EdwardsPoint = -self.1;
+        let k = Self::compute_challenge(context, &signature.R, &self.compressed, M);
+        let minus_A: EdwardsPoint = -self.point;
         // Recall the (non-batched) verification equation: -[k]A + [s]B = R
         EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s).compress()
     }
@@ -349,7 +355,7 @@ impl VerifyingKey {
             .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
 
         // Logical OR is fine here as we're not trying to be constant time.
-        if signature_R.is_small_order() || self.1.is_small_order() {
+        if signature_R.is_small_order() || self.point.is_small_order() {
             return Err(InternalError::Verify.into());
         }
 
@@ -403,7 +409,7 @@ impl VerifyingKey {
             .ok_or_else(|| SignatureError::from(InternalError::Verify))?;
 
         // Logical OR is fine here as we're not trying to be constant time.
-        if signature_R.is_small_order() || self.1.is_small_order() {
+        if signature_R.is_small_order() || self.point.is_small_order() {
             return Err(InternalError::Verify.into());
         }
 

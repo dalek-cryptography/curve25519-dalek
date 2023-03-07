@@ -105,6 +105,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
-          profile: minimal
       - run: cargo doc --all-features

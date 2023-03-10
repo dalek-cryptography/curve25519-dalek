@@ -37,7 +37,7 @@ mod deterministic {
         "Standard Cargo TARGET environment variable is not set.";
 
     // Custom Non-Rust standard target platforms require explicit settings.
-    static ERR_MSG_NO_PLATFORM: &'static str = "Unrecognised Rust target platform.";
+    static ERR_MSG_NO_PLATFORM: &'static str = "Unknown Rust target platform.";
 
     // Error handling when the bits setting cannot be determined
     fn determine_curve25519_dalek_bits_error(cause: &str) -> ! {

@@ -47,7 +47,7 @@ mod deterministic {
     }
 
     // Determine the curve25519_dalek_bits based on Rust standard TARGET triplet
-    pub(crate) fn determine_curve25519_dalek_bits() -> DalekBits {
+    pub(super) fn determine_curve25519_dalek_bits() -> DalekBits {
         use platforms::target::PointerWidth;
 
         // TARGET environment is supplied by Cargo

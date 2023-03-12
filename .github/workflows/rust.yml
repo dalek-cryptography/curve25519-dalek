@@ -95,7 +95,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
-    - run: cargo build --benches --features batch
+    - run: cargo build --benches
 
   rustfmt:
     name: Check formatting

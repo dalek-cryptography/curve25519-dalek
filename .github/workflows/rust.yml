@@ -8,94 +8,121 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+  RUSTDOCFLAGS: '-D warnings'
 
 jobs:
-  test-u32:
-    name: Test u32 backend
+  test:
+    name: Test all features
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --no-default-features --features "std u32_backend"
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --all-features
 
-  test-u64:
-    name: Test u64 backend
+  build-simd:
+    name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --no-default-features --features "std u64_backend"
-
-  nightly:
-    name: Test nightly compiler
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --features "nightly"
-
-  test-defaults-serde:
-    name: Test default feature selection and serde
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --features "serde"
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
+        run: cargo build --target x86_64-unknown-linux-gnu
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
+        run: cargo build --target x86_64-unknown-linux-gnu
 
   msrv:
-    name: Current MSRV is 1.51
+    name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: 1.51
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: build
+    - uses: actions/checkout@v3
+      # First delete the checked-in `Cargo.lock`. We're going to regenerate it
+    - run: rm Cargo.lock
+      # Now run `cargo +nightly -Z minimal-verisons check` in order to get a
+      # Cargo.lock with the oldest possible deps
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo -Z minimal-versions check --no-default-features --features serde
+      # Now check that `cargo build` works with respect to the oldest possible
+      # deps and the stated MSRV
+    - uses: dtolnay/rust-toolchain@1.60.0
+    - run: cargo build
+
+# no_std support is pending feature, tracking:
+# https://github.com/dalek-cryptography/x25519-dalek/issues/111
+#  # Test no_std integration with no features
+#  build-nostd-base:
+#    name: Build on no_std target (thumbv7em-none-eabi)
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: dtolnay/rust-toolchain@master
+#        with:
+#          toolchain: stable
+#          targets: thumbv7em-none-eabi
+#      - uses: taiki-e/install-action@cargo-hack
+#      # No default features build
+#      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
+#
+#  # Test no_std integration with all no_std features
+#  build-nostd-features:
+#    name: Build on no_std target (thumbv7em-none-eabi)
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: dtolnay/rust-toolchain@master
+#        with:
+#          toolchain: stable
+#          targets: thumbv7em-none-eabi
+#      - uses: taiki-e/install-action@cargo-hack
+#      # No default features build
+#      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
 
   bench:
     name: Check that benchmarks compile
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
-    - uses: actions-rs/cargo@v1
-      with:
-        command: bench
-        # This filter selects no benchmarks, so we don't run any, only build them.
-        args: "DONTRUNBENCHMARKS"
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo build --benches
+
+  rustfmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Check that clippy is happy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.65
+        with:
+          components: clippy
+      - run: cargo clippy
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - run: cargo doc --all-features

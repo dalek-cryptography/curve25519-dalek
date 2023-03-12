@@ -12,6 +12,7 @@ env:
 
 jobs:
   test:
+    name: Test All features
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -27,22 +28,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features digest
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features precomputed-tables
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features rand_core
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features serde
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize
-      - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --features digest
-      - run: cargo test --target ${{ matrix.target }} --features rand_core
-      - run: cargo test --target ${{ matrix.target }} --features serde
+      - run: cargo test --target ${{ matrix.target }} --all-features
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
-  build-nostd:
+  # Test no_std with no features
+  build-nostd-base:
     name: Build on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
     steps:
@@ -51,9 +43,22 @@ jobs:
         with:
           toolchain: stable
           targets: thumbv7em-none-eabi
+      - uses: taiki-e/install-action@cargo-hack
+      # No default features build
       - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
-      - run: cargo build --target thumbv7em-none-eabi --release
-      - run: cargo build --target thumbv7em-none-eabi --release --features serde
+
+  # Test no_std integration with all no_std features
+  build-nostd-features:
+    name: Build on no_std target (thumbv7em-none-eabi)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabi
+      - uses: taiki-e/install-action@cargo-hack
+      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
 
   build-simd:
     name: Build simd backend (nightly)

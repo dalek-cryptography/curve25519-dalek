@@ -59,33 +59,35 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.60.0
     - run: cargo build
 
-  # Test no_std integration with no features
-  build-nostd-base:
-    name: Build on no_std target (thumbv7em-none-eabi)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: thumbv7em-none-eabi
-      - uses: taiki-e/install-action@cargo-hack
-      # No default features build
-      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
-
-  # Test no_std integration with all no_std features
-  build-nostd-features:
-    name: Build on no_std target (thumbv7em-none-eabi)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: thumbv7em-none-eabi
-      - uses: taiki-e/install-action@cargo-hack
-      # No default features build
-      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
+# no_std support is pending feature, tracking:
+# https://github.com/dalek-cryptography/x25519-dalek/issues/111
+#  # Test no_std integration with no features
+#  build-nostd-base:
+#    name: Build on no_std target (thumbv7em-none-eabi)
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: dtolnay/rust-toolchain@master
+#        with:
+#          toolchain: stable
+#          targets: thumbv7em-none-eabi
+#      - uses: taiki-e/install-action@cargo-hack
+#      # No default features build
+#      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
+#
+#  # Test no_std integration with all no_std features
+#  build-nostd-features:
+#    name: Build on no_std target (thumbv7em-none-eabi)
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#      - uses: dtolnay/rust-toolchain@master
+#        with:
+#          toolchain: stable
+#          targets: thumbv7em-none-eabi
+#      - uses: taiki-e/install-action@cargo-hack
+#      # No default features build
+#      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
 
   bench:
     name: Check that benchmarks compile

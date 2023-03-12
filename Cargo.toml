@@ -31,8 +31,11 @@ rust-version = "1.60"
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
 
 [package.metadata.docs.rs]
-#rustdoc-args = ["--html-in-header", ".cargo/registry/src/github.com-1ecc6299db9ec823/curve25519-dalek-1.0.1/docs/assets/rustdoc-include-katex-header.html"]
-features = ["nightly", "reusable_secrets", "serde"]
+rustdoc-args = [
+    "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
+    "--cfg", "docsrs",
+]
+features = ["reusable_secrets", "serde"]
 
 [dependencies]
 curve25519-dalek = { version = "4.0.0-rc.0", default-features = false }

@@ -125,7 +125,7 @@ impl ReusableSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate a non-serializeable x25519 [`ReuseableSecret`] key.
+    /// Generate a non-serializeable x25519 [`ReusableSecret`] key.
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 

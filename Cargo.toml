@@ -1,5 +1,5 @@
 [package]
-name = "test-x25519-dalek"
+name = "x25519-dalek"
 edition = "2021"
 # Before changing this:
 # - update version in README.md

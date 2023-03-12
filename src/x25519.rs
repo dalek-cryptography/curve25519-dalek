@@ -267,7 +267,8 @@ impl SharedSecret {
 /// cannot use the better, safer, and faster ephemeral DH API.
 ///
 /// # Example
-/// ```
+#[cfg_attr(feature = "docsrs", doc = "```")]
+#[cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
 ///

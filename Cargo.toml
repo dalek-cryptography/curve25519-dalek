@@ -36,7 +36,7 @@ features = ["nightly", "reusable_secrets", "serde"]
 
 [dependencies]
 curve25519-dalek = { version = "4.0.0-rc.0", default-features = false }
-rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+rand_core = { version = "0.6", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
 
@@ -55,3 +55,5 @@ serde = ["dep:serde", "curve25519-dalek/serde"]
 alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]
 precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
+# docs: docsrs and doctest features
+docsrs = ["rand_core/getrandom"]

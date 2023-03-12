@@ -53,7 +53,8 @@
 //! First, Alice uses `EphemeralSecret::new()` and then
 //! `PublicKey::from()` to produce her secret and public keys:
 //!
-//! ```rust
+#![cfg_attr(feature = "docsrs", doc = "```")]
+#![cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 //! use rand_core::OsRng;
 //! use x25519_dalek::{EphemeralSecret, PublicKey};
 //!
@@ -63,7 +64,8 @@
 //!
 //! Bob does the same:
 //!
-//! ```rust
+#![cfg_attr(feature = "docsrs", doc = "```")]
+#![cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
 //! let bob_secret = EphemeralSecret::new(OsRng);
@@ -74,7 +76,8 @@
 //! loudly meows `bob_public` back to Alice.  Alice now computes her
 //! shared secret with Bob by doing:
 //!
-//! ```rust
+#![cfg_attr(feature = "docsrs", doc = "```")]
+#![cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
 //! # let alice_secret = EphemeralSecret::new(OsRng);
@@ -86,7 +89,8 @@
 //!
 //! Similarly, Bob computes a shared secret by doing:
 //!
-//! ```rust
+#![cfg_attr(feature = "docsrs", doc = "```")]
+#![cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
 //! # let alice_secret = EphemeralSecret::new(OsRng);
@@ -98,7 +102,8 @@
 //!
 //! These secrets are the same:
 //!
-//! ```rust
+#![cfg_attr(feature = "docsrs", doc = "```")]
+#![cfg_attr(not(feature = "docsrs"), doc = "```ignore")]
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
 //! # let alice_secret = EphemeralSecret::new(OsRng);

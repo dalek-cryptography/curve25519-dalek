@@ -478,7 +478,7 @@ impl<'de> Deserialize<'de> for Scalar {
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
-                        .ok_or(serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Option::from(Scalar::from_canonical_bytes(bytes))
                     .ok_or_else(|| serde::de::Error::custom(&"scalar was not canonically encoded"))

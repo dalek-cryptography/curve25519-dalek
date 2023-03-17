@@ -2,8 +2,7 @@
 
 #![deny(clippy::unwrap_used, dead_code)]
 
-#[allow(non_camel_case_types, dead_code)]
-#[derive(Debug)]
+#[allow(non_camel_case_types)]
 enum DalekBits {
     Dalek32,
     Dalek64,

@@ -4,21 +4,16 @@
 
 #[allow(non_camel_case_types)]
 enum DalekBits {
-    #[cfg_attr(curve25519_dalek_bits = "64", allow(dead_code))]
     Dalek32,
-    #[cfg_attr(curve25519_dalek_bits = "32", allow(dead_code))]
     Dalek64,
 }
 
 fn main() {
-    #[cfg(curve25519_dalek_bits = "32")]
-    let curve25519_dalek_bits = DalekBits::Dalek32;
-
-    #[cfg(curve25519_dalek_bits = "64")]
-    let curve25519_dalek_bits = DalekBits::Dalek64;
-
-    #[cfg(all(not(curve25519_dalek_bits = "64"), not(curve25519_dalek_bits = "32")))]
-    let curve25519_dalek_bits = deterministic::determine_curve25519_dalek_bits();
+    let curve25519_dalek_bits = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref() {
+        Ok("32") => DalekBits::Dalek32,
+        Ok("64") => DalekBits::Dalek64,
+        _ => deterministic::determine_curve25519_dalek_bits(),
+    };
 
     match curve25519_dalek_bits {
         DalekBits::Dalek64 => println!("cargo:rustc-cfg=curve25519_dalek_bits=\"64\""),
@@ -27,22 +22,19 @@ fn main() {
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.
-#[cfg(all(not(curve25519_dalek_bits = "64"), not(curve25519_dalek_bits = "32")))]
 mod deterministic {
 
     use super::*;
 
     // Standard Cargo TARGET environment variable of triplet is required
-    static ERR_MSG_NO_TARGET: &str = "Standard Cargo TARGET environment variable is not set.";
+    static ERR_MSG_NO_TARGET: &str = "Standard Cargo TARGET environment variable is not set";
 
     // Custom Non-Rust standard target platforms require explicit settings.
     static ERR_MSG_NO_PLATFORM: &str = "Unknown Rust target platform.";
 
-    // Error handling when the bits setting cannot be determined
-    fn determine_curve25519_dalek_bits_error(cause: &str) -> ! {
-        eprintln!("Error: {cause}");
-        eprintln!("Please set cfg(curve25519_dalek_bits) explicitly either as 32 or 64.");
-        std::process::exit(1)
+    // Warning when the curve25519_dalek_bits cannot be determined
+    fn determine_curve25519_dalek_bits_warning(cause: &str) {
+        println!("cargo:warning=\"Defaulting to curve25519_dalek_bits=32: {cause}\"");
     }
 
     // Determine the curve25519_dalek_bits based on Rust standard TARGET triplet
@@ -53,13 +45,19 @@ mod deterministic {
         // https://doc.rust-lang.org/cargo/reference/environment-variables.html
         let target_triplet = match std::env::var("TARGET") {
             Ok(t) => t,
-            Err(_) => determine_curve25519_dalek_bits_error(ERR_MSG_NO_TARGET),
+            Err(_) => {
+                determine_curve25519_dalek_bits_warning(ERR_MSG_NO_TARGET);
+                return DalekBits::Dalek32;
+            }
         };
 
         // platforms crate is the source of truth used to determine the platform
         let platform = match platforms::Platform::find(&target_triplet) {
             Some(p) => p,
-            None => determine_curve25519_dalek_bits_error(ERR_MSG_NO_PLATFORM),
+            None => {
+                determine_curve25519_dalek_bits_warning(ERR_MSG_NO_PLATFORM);
+                return DalekBits::Dalek32;
+            }
         };
 
         #[allow(clippy::match_single_binding)]

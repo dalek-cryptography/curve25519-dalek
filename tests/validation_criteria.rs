@@ -132,9 +132,8 @@ fn get_test_vectors() -> impl Iterator<Item = TestVector> {
 /// VERIFY_STRICT_ALLOWED_EDGECASES, respectively
 #[test]
 fn check_validation_criteria() {
-    let verify_allowed_edgecases = Set::from_iter(VERIFY_ALLOWED_EDGECASES.to_vec().into_iter());
-    let verify_strict_allowed_edgecases =
-        Set::from_iter(VERIFY_STRICT_ALLOWED_EDGECASES.to_vec().into_iter());
+    let verify_allowed_edgecases = Set::from_iter(VERIFY_ALLOWED_EDGECASES.to_vec());
+    let verify_strict_allowed_edgecases = Set::from_iter(VERIFY_STRICT_ALLOWED_EDGECASES.to_vec());
 
     for TestVector {
         number,

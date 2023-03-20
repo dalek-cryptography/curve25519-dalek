@@ -1075,7 +1075,7 @@ impl Scalar {
 
     /// Reduce this `Scalar` modulo \\(\ell\\).
     #[allow(non_snake_case)]
-    pub fn reduce(&self) -> Scalar {
+    fn reduce(&self) -> Scalar {
         let x = self.unpack();
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
         let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
@@ -1240,10 +1240,11 @@ mod test {
     };
 
     /// The largest valid scalar (not mod l). Remember for NAF computations, the top bit has to be
-    // 0. So the largest integer a scalar can hold is 2^255 - 1. You cannot do addition or
-    // subtraction with this Scalar, since those require inputs to be reduced. You can do
-    // multiplication though. This property is not relevant for our API, but it is relevant for the
-    // tests below.
+    // 0. So the largest integer a scalar can hold is 2^255 - 1. Addition and subtraction are
+    // broken on unreduced scalars. The only thing you can do with this is multiplying with a curve
+    // point (and actually also scalar-scalar multiplication, but that's just a quirk of our
+    // implementation).
+    #[cfg(feature = "precomputed-tables")]
     static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
         bytes: [
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

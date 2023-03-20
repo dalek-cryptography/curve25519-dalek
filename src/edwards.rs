@@ -1324,6 +1324,7 @@ mod test {
     // broken on unreduced scalars. The only thing you can do with this is multiplying with a curve
     // point (and actually also scalar-scalar multiplication, but that's just a quirk of our
     // implementation).
+    #[cfg(feature = "precomputed-tables")]
     static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
         bytes: [
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

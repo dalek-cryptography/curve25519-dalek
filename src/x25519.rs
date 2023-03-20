@@ -57,6 +57,14 @@ impl PublicKey {
     }
 }
 
+impl AsRef<[u8]> for PublicKey {
+    /// View this public key as a byte array.
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
 /// A short-lived Diffie-Hellman secret key that can only be used to compute a single
 /// [`SharedSecret`].
 ///
@@ -182,8 +190,15 @@ impl StaticSecret {
     }
 
     /// Extract this key's bytes for serialization.
+    #[inline]
     pub fn to_bytes(&self) -> [u8; 32] {
         self.0.to_bytes()
+    }
+
+    /// View this key as a byte array.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        self.0.as_bytes()
     }
 }
 
@@ -198,6 +213,14 @@ impl<'a> From<&'a StaticSecret> for PublicKey {
     /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
         PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
+    }
+}
+
+impl AsRef<[u8]> for StaticSecret {
+    /// View this key as a byte array.
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
 
@@ -226,9 +249,9 @@ impl SharedSecret {
     /// key exchange with non-contributory behaviour.
     ///
     /// In some more exotic protocols which need to guarantee "contributory"
-    /// behaviour for both parties, that is, that each party contibuted a public
+    /// behaviour for both parties, that is, that each party contributed a public
     /// value which increased the security of the resulting shared secret.
-    /// To take an example protocol attack where this could lead to undesireable
+    /// To take an example protocol attack where this could lead to undesirable
     /// results [from Thái "thaidn" Dương](https://vnhacker.blogspot.com/2015/09/why-not-validating-curve25519-public.html):
     ///
     /// > If Mallory replaces Alice's and Bob's public keys with zero, which is
@@ -258,6 +281,14 @@ impl SharedSecret {
     #[must_use]
     pub fn was_contributory(&self) -> bool {
         !self.0.is_identity()
+    }
+}
+
+impl AsRef<[u8]> for SharedSecret {
+    /// View this shared secret key as a byte array.
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
     }
 }
 

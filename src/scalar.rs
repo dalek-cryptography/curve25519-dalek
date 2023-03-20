@@ -244,6 +244,19 @@ impl Scalar {
         let candidate = Scalar { bytes };
         CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
     }
+
+    /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
+    /// that scalars are always reduced. **Scalar arithmetic does not work** on scalars produced
+    /// from this function. You may only use the output of this for `EdwardsPoint::mul` and
+    /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`
+    #[cfg(feature = "legacy_compatibility")]
+    pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
+        let mut s = Scalar { bytes };
+        // Ensure that s < 2^255 by masking the high bit
+        s.bytes[31] &= 0b0111_1111;
+
+        s
+    }
 }
 
 impl Debug for Scalar {
@@ -1199,7 +1212,7 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
 /// in the right form and pre-multiplied by the cofactor.
 ///
 /// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
-pub fn clamp(mut bytes: [u8; 32]) -> [u8; 32] {
+pub fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
     bytes[0] &= 0b1111_1000;
     bytes[31] &= 0b0111_1111;
     bytes[31] |= 0b0100_0000;
@@ -1831,24 +1844,27 @@ mod test {
             0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
             0x23, 0x76, 0xef, 0x49,
         ];
-        let actual = clamp(input);
+        let actual = clamp_integer(input);
         assert_eq!(actual, expected);
 
         let expected = [
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0x40,
         ];
-        let actual = clamp([0; 32]);
+        let actual = clamp_integer([0; 32]);
         assert_eq!(expected, actual);
         let expected = [
             0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0x7f,
         ];
-        let actual = clamp([0xff; 32]);
+        let actual = clamp_integer([0xff; 32]);
         assert_eq!(actual, expected);
 
-        assert_eq!(LARGEST_ED25519_S.bytes, clamp(LARGEST_ED25519_S.bytes));
+        assert_eq!(
+            LARGEST_ED25519_S.bytes,
+            clamp_integer(LARGEST_ED25519_S.bytes)
+        );
     }
 
     /*

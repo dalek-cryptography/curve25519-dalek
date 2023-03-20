@@ -57,7 +57,7 @@ use core::{
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
-use crate::scalar::Scalar;
+use crate::scalar::{clamp_integer, Scalar};
 
 use crate::traits::Identity;
 
@@ -148,7 +148,7 @@ impl MontgomeryPoint {
         // arithmetic with this clamped value, so there's no issues arising from the fact that the
         // curve point is not necessarily in the prime-order subgroup.
         let s = Scalar {
-            bytes: crate::scalar::clamp(bytes),
+            bytes: clamp_integer(bytes),
         };
         s * self
     }

@@ -66,6 +66,7 @@ packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_
 default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
+legacy_compatibility = []
 
 [profile.dev]
 opt-level = 2

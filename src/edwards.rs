@@ -118,7 +118,7 @@ use zeroize::Zeroize;
 use crate::constants;
 
 use crate::field::FieldElement;
-use crate::scalar::Scalar;
+use crate::scalar::{clamp_integer, Scalar};
 
 use crate::montgomery::MontgomeryPoint;
 
@@ -754,9 +754,17 @@ impl EdwardsPoint {
         // arithmetic with this clamped value, so there's no issues arising from the fact that the
         // curve point is not necessarily in the prime-order subgroup.
         let s = Scalar {
-            bytes: crate::scalar::clamp(bytes),
+            bytes: clamp_integer(bytes),
         };
         s * self
+    }
+
+    /// A fixed-base version of [`Self::mul_clamped`].
+    pub fn mul_base_clamped(bytes: [u8; 32]) -> Self {
+        let s = Scalar {
+            bytes: clamp_integer(bytes),
+        };
+        Self::mul_base(&s)
     }
 }
 

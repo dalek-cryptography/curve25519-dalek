@@ -728,6 +728,36 @@ impl EdwardsPoint {
             scalar * constants::ED25519_BASEPOINT_TABLE
         }
     }
+
+    /// Scalar multiplication using the low 255 bits of a little-endian 256-bit integer, `clamping`
+    /// it's value to be in range
+    ///
+    /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
+    ///
+    /// # Explanation of `clamping`
+    ///
+    /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
+    /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
+    /// then you end up with a 255-bit number with the most significant bit set to 1 and
+    /// the least-significant three bits set to 0.
+    ///
+    /// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
+    /// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
+    /// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
+    /// in the right form and pre-multiplied by the cofactor.
+    ///
+    /// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
+    pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
+        // This is the only place we construct a Scalar that is not reduced mod l. All our
+        // multiplication routines are defined up to and including 2^255 - 1, and clamping is
+        // guaranteed to return something within this range. Further, we don't do any reduction or
+        // arithmetic with this clamped value, so there's no issues arising from the fact that the
+        // curve point is not necessarily in the prime-order subgroup.
+        let s = Scalar {
+            bytes: crate::scalar::clamp(bytes),
+        };
+        s * self
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1289,6 +1319,19 @@ mod test {
         0x2b, 0x42,
     ]);
 
+    /// The largest valid scalar (not mod l). Remember for NAF computations, the top bit has to be
+    // 0. So the largest integer a scalar can hold is 2^255 - 1. Addition and subtraction are
+    // broken on unreduced scalars. The only thing you can do with this is multiplying with a curve
+    // point (and actually also scalar-scalar multiplication, but that's just a quirk of our
+    // implementation).
+    static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
+        bytes: [
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x7f,
+        ],
+    };
+
     /// Test round-trip decompression for the basepoint.
     #[test]
     fn basepoint_decompression_compression() {
@@ -1470,11 +1513,7 @@ mod test {
     #[test]
     fn basepoint_tables_unreduced_scalar() {
         let P = &constants::ED25519_BASEPOINT_POINT;
-        let a = Scalar::from_bits([
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF,
-        ]);
+        let a = LARGEST_UNREDUCED_SCALAR;
 
         let table_radix16 = EdwardsBasepointTableRadix16::create(P);
         let table_radix32 = EdwardsBasepointTableRadix32::create(P);
@@ -1617,16 +1656,11 @@ mod test {
     // A single iteration of a consistency check for MSM.
     #[cfg(feature = "alloc")]
     fn multiscalar_consistency_iter(n: usize) {
-        use core::iter;
         let mut rng = rand::thread_rng();
 
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
-        let xs = (0..n)
-            .map(|_| Scalar::random(&mut rng))
-            // The largest scalar allowed by the type system, 2^255-1
-            .chain(iter::once(Scalar::from_bits([0xff; 32])))
-            .collect::<Vec<_>>();
+        let xs = (0..n).map(|_| Scalar::random(&mut rng)).collect::<Vec<_>>();
         let check = xs.iter().map(|xi| xi * xi).sum::<Scalar>();
 
         // Construct points G_i = x_i * B

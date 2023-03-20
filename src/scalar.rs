@@ -110,34 +110,6 @@
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
-//!
-//! Finally, to create a `Scalar` with a specific bit-pattern
-//! (e.g., for compatibility with X/Ed25519
-//! ["clamping"](https://github.com/isislovecruft/ed25519-dalek/blob/f790bd2ce/src/ed25519.rs#L349)),
-//! use [`Scalar::from_bits`]. This constructs a scalar with exactly
-//! the bit pattern given, without any assurances as to reduction
-//! modulo the group order:
-//!
-//! ```
-//! use curve25519_dalek::scalar::Scalar;
-//!
-//! let l_plus_two_bytes: [u8; 32] = [
-//!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
-//!    0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14,
-//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//!    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
-//! ];
-//! let a: Scalar = Scalar::from_bits(l_plus_two_bytes);
-//!
-//! let two: Scalar = Scalar::ONE + Scalar::ONE;
-//!
-//! assert!(a != two);              // the scalar is not reduced (mod l)…
-//! assert!(! bool::from(a.is_canonical()));    // …and therefore is not canonical.
-//! assert!(a.reduce() == two);     // if we were to reduce it manually, it would be.
-//! ```
-//!
-//! The resulting `Scalar` has exactly the specified bit pattern,
-//! **except for the highest bit, which will be set to 0**.
 
 use core::borrow::Borrow;
 use core::cmp::{Eq, PartialEq};
@@ -211,8 +183,7 @@ cfg_if! {
     }
 }
 
-/// The `Scalar` struct holds an integer \\(s < 2\^{255} \\) which
-/// represents an element of \\(\mathbb Z / \ell\\).
+/// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derive_hash_xor_eq)]
 #[derive(Copy, Clone, Hash)]
 pub struct Scalar {
@@ -221,14 +192,23 @@ pub struct Scalar {
     ///
     /// # Invariant
     ///
-    /// The integer representing this scalar must be bounded above by \\(2\^{255}\\), or
-    /// equivalently the high bit of `bytes[31]` must be zero.
+    /// The integer representing this scalar is less than \\(2\^{255} - 19 \\), i.e., it represents
+    /// a canonical representative of an element of \\( \mathbb Z / \ell\mathbb Z \\).
     ///
-    /// This ensures that there is room for a carry bit when computing a NAF representation.
-    //
-    // XXX This is pub(crate) so we can write literal constants.
-    //     Alternatively we could make the Scalar constructors `const fn`s and use those instead.
-    //     See dalek-cryptography/curve25519-dalek#493
+    /// Note that this implies the high bit of `bytes[31]` is zero, which ensures that there is
+    /// room for a carry bit when computing a NAF representation.
+    ///
+    /// # Note
+    ///
+    /// In some unit tests, and one specific use case of the `mul_clamped` for `EdwardsPoint` and
+    /// `MontgomeryPoint`, this will not be reduced mod l. This is not an issue. We implement curve
+    /// point scalar multiplication for any choice of `bytes`, so long as the top bit is 0.
+    ///
+    /// This is the only thing you can do safely with an unreduced scalar. Addition and subtraction
+    /// are NOT correct when using unreduced scalars. Multiplication is correct, but this is only
+    /// due to a quirk of our implementation, and not guaranteed to hold in general.
+    ///
+    /// It is not possible to construct an unreduced `Scalar` from the publicly-facing API.
     pub(crate) bytes: [u8; 32],
 }
 
@@ -257,53 +237,12 @@ impl Scalar {
     /// # Return
     ///
     /// - `Some(s)`, where `s` is the `Scalar` corresponding to `bytes`,
-    ///   if `bytes` is a canonical byte representation;
+    ///   if `bytes` is a canonical byte representation modulo the group order \\( \ell \\);
     /// - `None` if `bytes` is not a canonical byte representation.
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
         let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
-        let candidate = Scalar::from_bits(bytes);
+        let candidate = Scalar { bytes };
         CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
-    }
-
-    /// Construct a `Scalar` from the low 255 bits of a 256-bit integer.
-    ///
-    /// This function is intended for applications like X25519 which
-    /// require specific bit-patterns when performing scalar
-    /// multiplication.
-    pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
-        let mut s = Scalar { bytes };
-        // Ensure that s < 2^255 by masking the high bit
-        s.bytes[31] &= 0b0111_1111;
-
-        s
-    }
-
-    /// Construct a `Scalar` from the low 255 bits of a little-endian 256-bit integer
-    /// `clamping` it's value to be in range
-    ///
-    /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
-    ///
-    /// # Explanation of `clamping`
-    ///
-    /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
-    /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
-    /// then you end up with a 255-bit number with the most significant bit set to 1 and
-    /// the least-significant three bits set to 0.
-    ///
-    /// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
-    /// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
-    /// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
-    /// in the right form and pre-multiplied by the cofactor.
-    ///
-    /// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
-    pub const fn from_bits_clamped(bytes: [u8; 32]) -> Scalar {
-        let mut s = Scalar { bytes };
-
-        s.bytes[0] &= 0b1111_1000;
-        s.bytes[31] &= 0b0111_1111;
-        s.bytes[31] |= 0b0100_0000;
-
-        s
     }
 }
 
@@ -364,15 +303,9 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
-        // The UnpackedScalar::add function produces reduced outputs
-        // if the inputs are reduced.  However, these inputs may not
-        // be reduced -- they might come from Scalar::from_bits.  So
-        // after computing the sum, we explicitly reduce it mod l
-        // before repacking.
-        let sum = UnpackedScalar::add(&self.unpack(), &_rhs.unpack());
-        let sum_R = UnpackedScalar::mul_internal(&sum, &constants::R);
-        let sum_mod_l = UnpackedScalar::montgomery_reduce(&sum_R);
-        sum_mod_l.pack()
+        // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
+        // the Scalar invariant property, this is always the case.
+        UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
@@ -390,16 +323,9 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn sub(self, rhs: &'b Scalar) -> Scalar {
-        // The UnpackedScalar::sub function requires reduced inputs
-        // and produces reduced output. However, these inputs may not
-        // be reduced -- they might come from Scalar::from_bits.  So
-        // we explicitly reduce the inputs.
-        let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
-        let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        let rhs_R = UnpackedScalar::mul_internal(&rhs.unpack(), &constants::R);
-        let rhs_mod_l = UnpackedScalar::montgomery_reduce(&rhs_R);
-
-        UnpackedScalar::sub(&self_mod_l, &rhs_mod_l).pack()
+        // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
+        // the Scalar invariant property, this is always the case.
+        UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
     }
 }
 
@@ -691,10 +617,13 @@ impl Scalar {
     /// let s = Scalar::from_hash(h);
     ///
     /// println!("{:?}", s.to_bytes());
-    /// assert!(s == Scalar::from_bits([ 21,  88, 208, 252,  63, 122, 210, 152,
-    ///                                 154,  38,  15,  23,  16, 167,  80, 150,
-    ///                                 192, 221,  77, 226,  62,  25, 224, 148,
-    ///                                 239,  48, 176,  10, 185,  69, 168,  11, ]));
+    /// assert!(
+    ///     s.to_bytes(),
+    ///     [  21,  88, 208, 252,  63, 122, 210, 152,
+    ///       154,  38,  15,  23,  16, 167,  80, 150,
+    ///       192, 221,  77, 226,  62,  25, 224, 148,
+    ///       239,  48, 176,  10, 185,  69, 168,  11, ],
+    /// ));
     /// # }
     /// ```
     pub fn from_hash<D>(hash: D) -> Scalar
@@ -1153,21 +1082,9 @@ impl Scalar {
         x_mod_l.pack()
     }
 
-    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\).
-    ///
-    /// ```
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// # use subtle::ConditionallySelectable;
-    /// # fn main() {
-    /// // 2^255 - 1, since `from_bits` clears the high bit
-    /// let _2_255_minus_1 = Scalar::from_bits([0xff;32]);
-    /// assert!(! bool::from(_2_255_minus_1.is_canonical()));
-    ///
-    /// let reduced = _2_255_minus_1.reduce();
-    /// assert!(bool::from(reduced.is_canonical()));
-    /// # }
-    /// ```
-    pub fn is_canonical(&self) -> Choice {
+    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
+    /// public because any `Scalar` that is publicly observed is reduced, by the invariant.
+    fn is_canonical(&self) -> Choice {
         self.ct_eq(&self.reduce())
     }
 }
@@ -1264,6 +1181,31 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
     }
 }
 
+/// Fixed-base scalar multiplication using the low 255 bits of a little-endian 256-bit integer,
+/// `clamping` it's value to be in range
+///
+/// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
+///
+/// # Explanation of `clamping`
+///
+/// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
+/// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
+/// then you end up with a 255-bit number with the most significant bit set to 1 and
+/// the least-significant three bits set to 0.
+///
+/// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
+/// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
+/// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
+/// in the right form and pre-multiplied by the cofactor.
+///
+/// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
+pub fn clamp(mut bytes: [u8; 32]) -> [u8; 32] {
+    bytes[0] &= 0b1111_1000;
+    bytes[31] &= 0b0111_1111;
+    bytes[31] |= 0b0100_0000;
+    bytes
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -1294,6 +1236,19 @@ mod test {
             0x90, 0x76, 0x33, 0xfe, 0x1c, 0x4b, 0x66, 0xa4, 0xa2, 0x8d, 0x2d, 0xd7, 0x67, 0x83,
             0x86, 0xc3, 0x53, 0xd0, 0xde, 0x54, 0x55, 0xd4, 0xfc, 0x9d, 0xe8, 0xef, 0x7a, 0xc3,
             0x1f, 0x35, 0xbb, 0x05,
+        ],
+    };
+
+    /// The largest valid scalar (not mod l). Remember for NAF computations, the top bit has to be
+    // 0. So the largest integer a scalar can hold is 2^255 - 1. You cannot do addition or
+    // subtraction with this Scalar, since those require inputs to be reduced. You can do
+    // multiplication though. This property is not relevant for our API, but it is relevant for the
+    // tests below.
+    static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
+        bytes: [
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x7f,
         ],
     };
 
@@ -1336,27 +1291,19 @@ mod test {
         0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
     ];
 
+    const BASEPOINT_ORDER_MINUS_ONE: Scalar = Scalar {
+        bytes: [
+            0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9,
+            0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x10,
+        ],
+    };
+
     static LARGEST_ED25519_S: Scalar = Scalar {
         bytes: [
             0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0x7f,
-        ],
-    };
-
-    static CANONICAL_LARGEST_ED25519_S_PLUS_ONE: Scalar = Scalar {
-        bytes: [
-            0x7e, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97, 0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a,
-            0xe7, 0x6d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0x0f,
-        ],
-    };
-
-    static CANONICAL_LARGEST_ED25519_S_MINUS_ONE: Scalar = Scalar {
-        bytes: [
-            0x7c, 0x34, 0x47, 0x75, 0x47, 0x4a, 0x7f, 0x97, 0x23, 0xb6, 0x3a, 0x8b, 0xe9, 0x2a,
-            0xe7, 0x6d, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0x0f,
         ],
     };
 
@@ -1460,58 +1407,34 @@ mod test {
 
     #[test]
     fn add_reduces() {
-        // Check that the addition works
-        assert_eq!(
-            (LARGEST_ED25519_S + Scalar::ONE).reduce(),
-            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
-        );
-        // Check that the addition reduces
-        assert_eq!(
-            LARGEST_ED25519_S + Scalar::ONE,
-            CANONICAL_LARGEST_ED25519_S_PLUS_ONE
-        );
+        // Check that addition wraps around the modulus
+        assert_eq!(BASEPOINT_ORDER_MINUS_ONE + Scalar::ONE, Scalar::ZERO);
     }
 
     #[test]
     fn sub_reduces() {
-        // Check that the subtraction works
-        assert_eq!(
-            (LARGEST_ED25519_S - Scalar::ONE).reduce(),
-            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
-        );
-        // Check that the subtraction reduces
-        assert_eq!(
-            LARGEST_ED25519_S - Scalar::ONE,
-            CANONICAL_LARGEST_ED25519_S_MINUS_ONE
-        );
+        // Check that subtraction wraps around the modulus
+        assert_eq!(Scalar::ZERO - Scalar::ONE, BASEPOINT_ORDER_MINUS_ONE);
     }
 
+    /*
     #[test]
     fn quarkslab_scalar_overflow_does_not_occur() {
-        // Check that manually-constructing large Scalars with
-        // from_bits cannot produce incorrect results.
+        // Check that manually-constructing large Scalars cannot produce incorrect results.
         //
-        // The from_bits function is required to implement X/Ed25519,
-        // while all other methods of constructing a Scalar produce
-        // reduced Scalars.  However, this "invariant loophole" allows
-        // constructing large scalars which are not reduced mod l.
+        // The EdwardsPoint::mul_clamped function is required to implement X/Ed25519, while all
+        // other methods of constructing a Scalar produce reduced Scalars. However, this "invariant
+        // loophole" allows constructing large scalars which are not reduced mod l.
         //
-        // This issue was discovered independently by both Jack
-        // "str4d" Grigg (issue #238), who noted that reduction was
-        // not performed on addition, and Laurent Grémy & Nicolas
-        // Surbayrole of Quarkslab, who noted that it was possible to
-        // cause an overflow and compute incorrect results.
+        // This issue was discovered independently by both Jack "str4d" Grigg (issue #238), who
+        // noted that reduction was not performed on addition, and Laurent Grémy & Nicolas
+        // Surbayrole of Quarkslab, who noted that it was possible to cause an overflow and compute
+        // incorrect results.
         //
         // This test is adapted from the one suggested by Quarkslab.
 
-        let large_bytes = [
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0x7f,
-        ];
-
-        let a = Scalar::from_bytes_mod_order(large_bytes);
-        let b = Scalar::from_bits(large_bytes);
+        let a = Scalar::from_bytes_mod_order(LARGEST_VALID_SCALAR.bytes);
+        let b = LARGEST_VALID_SCALAR;
 
         assert_eq!(a, b.reduce());
 
@@ -1532,6 +1455,7 @@ mod test {
         assert_eq!(minus_a_3, -a_3);
         assert_eq!(minus_b_3, -b_3);
     }
+    */
 
     #[test]
     fn impl_add() {
@@ -1825,8 +1749,9 @@ mod test {
         // from the produced representation precisely.
         let cases = (2..100)
             .map(|s| Scalar::from(s as u64).invert())
-            // The largest unreduced scalar, s = 2^255-1
-            .chain(iter::once(Scalar::from_bits([0xff; 32])));
+            // The largest unreduced scalar, s = 2^255-1. This is not reduced mod l. Scalar mult
+            // still works though.
+            .chain(iter::once(LARGEST_UNREDUCED_SCALAR));
 
         for scalar in cases {
             test_pippenger_radix_iter(scalar, 6);
@@ -1900,37 +1825,87 @@ mod test {
     #[test]
     fn test_scalar_clamp() {
         let input = A_SCALAR.bytes;
-        let expected = Scalar {
-            bytes: [
-                0x18, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
-                0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
-                0x23, 0x76, 0xef, 0x49,
-            ],
-        };
-        let actual = Scalar::from_bits_clamped(input);
+        let expected = [
+            0x18, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
+            0x26, 0x4d, 0xa7, 0x58, 0xaa, 0x1b, 0x88, 0xe0, 0x40, 0xd1, 0x58, 0x9e, 0x7b, 0x7f,
+            0x23, 0x76, 0xef, 0x49,
+        ];
+        let actual = clamp(input);
         assert_eq!(actual, expected);
 
-        let expected = Scalar {
-            bytes: [
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0x40,
-            ],
-        };
-        let actual = Scalar::from_bits_clamped([0; 32]);
+        let expected = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0x40,
+        ];
+        let actual = clamp([0; 32]);
         assert_eq!(expected, actual);
-        let expected = Scalar {
-            bytes: [
-                0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                0xff, 0xff, 0xff, 0x7f,
-            ],
-        };
-        let actual = Scalar::from_bits_clamped([0xff; 32]);
+        let expected = [
+            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x7f,
+        ];
+        let actual = clamp([0xff; 32]);
         assert_eq!(actual, expected);
 
-        assert_eq!(
-            LARGEST_ED25519_S.bytes,
-            Scalar::from_bits_clamped(LARGEST_ED25519_S.bytes).bytes
-        )
+        assert_eq!(LARGEST_ED25519_S.bytes, clamp(LARGEST_ED25519_S.bytes));
     }
+
+    /*
+    #[test]
+    fn test_bad_arithmetic1() {
+        use rand::{RngCore, SeedableRng};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(2u64);
+
+        // Make a random clamped scalar
+        let s = {
+            let mut bytes = [0u8; 32];
+            rng.fill_bytes(&mut bytes);
+            Scalar::from_bits_clamped(bytes)
+        };
+
+        // Make a random point
+        let point = {
+            let mut bytes = [0u8; 32];
+            rng.fill_bytes(&mut bytes);
+            crate::edwards::CompressedEdwardsY::from_slice(&bytes)
+                .unwrap()
+                .decompress()
+                .unwrap()
+        };
+
+        assert_eq!(s * point, s.reduce() * point);
+
+        //assert_eq!(max_scalar.bytes, reduced.bytes);
+    }
+
+    #[test]
+    fn test_bad_arithmetic2() {
+        use rand::{RngCore, SeedableRng};
+        let mut rng = rand::rngs::StdRng::seed_from_u64(2u64);
+
+        // Make two random scalars that are reduced mod l
+        let (s1, s2) = {
+            let mut bytes1 = [0u8; 32];
+            let mut bytes2 = [0u8; 32];
+            rng.fill_bytes(&mut bytes1);
+            rng.fill_bytes(&mut bytes2);
+            (
+                Scalar::from_bytes_mod_order(bytes1),
+                Scalar::from_bytes_mod_order(bytes2),
+            )
+        };
+
+        // Make a random point
+        let point = {
+            let mut bytes = [0u8; 32];
+            rng.fill_bytes(&mut bytes);
+            crate::edwards::CompressedEdwardsY::from_slice(&bytes)
+                .unwrap()
+                .decompress()
+                .unwrap()
+        };
+
+        assert_eq!((s1 + s2) * point, s1 * point + s2 * point);
+    }
+    */
 }

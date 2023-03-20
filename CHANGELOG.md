@@ -2,6 +2,19 @@
 
 Entries are listed in reverse chronological order.
 
+# 2.x Series
+
+* Update MSRV to 1.60.
+
+## 2.0.0-pre.1
+
+* Loosen restriction on zeroize dependency version from =1.3 to 1.
+* Update MSRV to 1.51.
+
+## 2.0.0-pre.0
+
+* Update `rand_core` dependency to `0.6`.
+
 # 1.x Series
 
 ## 1.2

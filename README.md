@@ -102,12 +102,12 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "1"
+x25519-dalek = "2.0.0-pre.0"
 ```
 
 # MSRV
 
-Current MSRV is 1.41 for production builds, and 1.48 for running tests.
+Current MSRV is 1.60.
 
 # Documentation
 

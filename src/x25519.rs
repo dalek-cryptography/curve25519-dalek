@@ -14,14 +14,14 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
-use curve25519_dalek::montgomery::MontgomeryPoint;
-use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::traits::IsIdentity;
+use curve25519_dalek::{
+    edwards::EdwardsPoint, montgomery::MontgomeryPoint, scalar::Scalar, traits::IsIdentity,
+};
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
 
+#[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 /// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or
@@ -31,12 +31,9 @@ use zeroize::Zeroize;
 /// should they wish to erase public keys from memory.  Note that this erasure
 /// (in this crate) does *not* automatically happen, but either must be derived
 /// for Drop or explicitly called.
-#[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
-#[cfg_attr(
-    feature = "serde",
-    derive(our_serde::Serialize, our_serde::Deserialize)
-)]
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug, Zeroize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct PublicKey(pub(crate) MontgomeryPoint);
 
 impl From<[u8; 32]> for PublicKey {
@@ -76,8 +73,8 @@ impl AsRef<[u8]> for PublicKey {
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
 /// generated from fresh randomness by [`EphemeralSecret::new`] and the compiler statically checks
 /// that the resulting secret is used at most once.
-#[derive(Zeroize)]
-#[zeroize(drop)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
+#[cfg_attr(feature = "zeroize", zeroize(drop))]
 pub struct EphemeralSecret(pub(crate) Scalar);
 
 impl EphemeralSecret {
@@ -93,14 +90,14 @@ impl EphemeralSecret {
 
         csprng.fill_bytes(&mut bytes);
 
-        EphemeralSecret(clamp_scalar(bytes))
+        EphemeralSecret(Scalar::from_bits_clamped(bytes))
     }
 }
 
 impl<'a> From<&'a EphemeralSecret> for PublicKey {
     /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a EphemeralSecret) -> PublicKey {
-        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
     }
 }
 
@@ -123,8 +120,9 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
 #[cfg(feature = "reusable_secrets")]
-#[derive(Clone, Zeroize)]
-#[zeroize(drop)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
+#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[derive(Clone)]
 pub struct ReusableSecret(pub(crate) Scalar);
 
 #[cfg(feature = "reusable_secrets")]
@@ -132,16 +130,16 @@ impl ReusableSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(&self.0 * their_public.0)
+        SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate a non-serializeable x25519 [`ReuseableSecret`] key.
+    /// Generate a non-serializeable x25519 [`ReusableSecret`] key.
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
 
-        ReusableSecret(clamp_scalar(bytes))
+        ReusableSecret(Scalar::from_bits_clamped(bytes))
     }
 }
 
@@ -149,7 +147,7 @@ impl ReusableSecret {
 impl<'a> From<&'a ReusableSecret> for PublicKey {
     /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a ReusableSecret) -> PublicKey {
-        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
     }
 }
 
@@ -167,13 +165,10 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
-#[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
-#[cfg_attr(
-    feature = "serde",
-    derive(our_serde::Serialize, our_serde::Deserialize)
-)]
-#[derive(Clone, Zeroize)]
-#[zeroize(drop)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
+#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[derive(Clone)]
 pub struct StaticSecret(
     #[cfg_attr(feature = "serde", serde(with = "AllowUnreducedScalarBytes"))] pub(crate) Scalar,
 );
@@ -191,7 +186,7 @@ impl StaticSecret {
 
         csprng.fill_bytes(&mut bytes);
 
-        StaticSecret(clamp_scalar(bytes))
+        StaticSecret(Scalar::from_bits_clamped(bytes))
     }
 
     /// Extract this key's bytes for serialization.
@@ -210,14 +205,14 @@ impl StaticSecret {
 impl From<[u8; 32]> for StaticSecret {
     /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
-        StaticSecret(clamp_scalar(bytes))
+        StaticSecret(Scalar::from_bits_clamped(bytes))
     }
 }
 
 impl<'a> From<&'a StaticSecret> for PublicKey {
     /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
-        PublicKey((&ED25519_BASEPOINT_TABLE * &secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
     }
 }
 
@@ -233,8 +228,8 @@ impl AsRef<[u8]> for StaticSecret {
 ///
 /// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
 /// counterparty's [`PublicKey`].
-#[derive(Zeroize)]
-#[zeroize(drop)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
+#[cfg_attr(feature = "zeroize", zeroize(drop))]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
 
 impl SharedSecret {
@@ -297,22 +292,6 @@ impl AsRef<[u8]> for SharedSecret {
     }
 }
 
-/// "Decode" a scalar from a 32-byte array.
-///
-/// By "decode" here, what is really meant is applying key clamping by twiddling
-/// some bits.
-///
-/// # Returns
-///
-/// A `Scalar`.
-fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
-    scalar[0] &= 248;
-    scalar[31] &= 127;
-    scalar[31] |= 64;
-
-    Scalar::from_bits(scalar)
-}
-
 /// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.
 ///
 /// This can be used with [`X25519_BASEPOINT_BYTES`] for people who
@@ -320,8 +299,6 @@ fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
 ///
 /// # Example
 /// ```
-/// # extern crate rand_core;
-/// #
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
 ///
@@ -346,7 +323,7 @@ fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
 /// assert_eq!(alice_shared, bob_shared);
 /// ```
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
-    (clamp_scalar(k) * MontgomeryPoint(u)).to_bytes()
+    (Scalar::from_bits_clamped(k) * MontgomeryPoint(u)).to_bytes()
 }
 
 /// The X25519 basepoint, for use with the bare, byte-oriented x25519
@@ -359,17 +336,13 @@ pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
 /// Derived serialization methods will not work on a StaticSecret because x25519 requires
 /// non-canonical scalars which are rejected by curve25519-dalek. Thus we provide a way to convert
 /// the bytes directly to a scalar using Serde's remote derive functionality.
-#[cfg_attr(feature = "serde", serde(crate = "our_serde"))]
-#[cfg_attr(
-    feature = "serde",
-    derive(our_serde::Serialize, our_serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(remote = "Scalar"))]
 struct AllowUnreducedScalarBytes(
     #[cfg_attr(feature = "serde", serde(getter = "Scalar::to_bytes"))] [u8; 32],
 );
 impl From<AllowUnreducedScalarBytes> for Scalar {
     fn from(bytes: AllowUnreducedScalarBytes) -> Scalar {
-        clamp_scalar(bytes.0)
+        Scalar::from_bits_clamped(bytes.0)
     }
 }

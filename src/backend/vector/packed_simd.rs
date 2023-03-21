@@ -170,6 +170,7 @@ impl_shared!(
 
 impl_conv!(u64x4 => u32x8, i32x8);
 
+#[allow(dead_code)]
 impl u64x4 {
     #[inline]
     pub const fn new_const(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
@@ -196,6 +197,7 @@ impl u64x4 {
     }
 }
 
+#[allow(dead_code)]
 impl u32x8 {
     #[inline]
     pub const fn new_const(
@@ -232,6 +234,7 @@ impl u32x8 {
     }
 }
 
+#[allow(dead_code)]
 impl i32x8 {
     #[inline]
     pub fn new(x0: i32, x1: i32, x2: i32, x3: i32, x4: i32, x5: i32, x6: i32, x7: i32) -> Self {

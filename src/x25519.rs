@@ -298,7 +298,7 @@ impl AsRef<[u8]> for SharedSecret {
 /// cannot use the better, safer, and faster ephemeral DH API.
 ///
 /// # Example
-/// ```
+/// ```rust
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
 ///

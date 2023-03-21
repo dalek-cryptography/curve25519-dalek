@@ -180,3 +180,53 @@ fn rfc7748_ladder_test2() {
         ]
     );
 }
+
+mod rand_core {
+
+    use super::*;
+    use ::rand_core::OsRng;
+
+    #[test]
+    fn ephemeral_from_rng() {
+        #[allow(deprecated)]
+        EphemeralSecret::new(OsRng);
+        EphemeralSecret::random_from_rng(OsRng);
+    }
+
+    #[test]
+    #[cfg(feature = "reusable_secrets")]
+    fn reusable_from_rng() {
+        #[allow(deprecated)]
+        ReusableSecret::new(OsRng);
+        ReusableSecret::random_from_rng(OsRng);
+    }
+
+    #[test]
+    fn static_from_rng() {
+        #[allow(deprecated)]
+        StaticSecret::new(OsRng);
+        StaticSecret::random_from_rng(OsRng);
+    }
+}
+
+#[cfg(feature = "getrandom")]
+mod getrandom {
+
+    use super::*;
+
+    #[test]
+    fn ephemeral_random() {
+        EphemeralSecret::random();
+    }
+
+    #[test]
+    #[cfg(feature = "reusable_secrets")]
+    fn reusable_random() {
+        ReusableSecret::random();
+    }
+
+    #[test]
+    fn static_random() {
+        StaticSecret::random();
+    }
+}

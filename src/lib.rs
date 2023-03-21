@@ -50,14 +50,14 @@
 //! kittens will be able to secretly organise to find their mittens, and then spend
 //! the rest of the afternoon nomming some yummy pie!
 //!
-//! First, Alice uses `EphemeralSecret::new()` and then
+//! First, Alice uses `EphemeralSecret::random_from_rng` and then
 //! `PublicKey::from()` to produce her secret and public keys:
 //!
 //! ```rust
 //! use rand_core::OsRng;
 //! use x25519_dalek::{EphemeralSecret, PublicKey};
 //!
-//! let alice_secret = EphemeralSecret::new(OsRng);
+//! let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 //! let alice_public = PublicKey::from(&alice_secret);
 //! ```
 //!
@@ -66,7 +66,7 @@
 //! ```rust
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
-//! let bob_secret = EphemeralSecret::new(OsRng);
+//! let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 //! let bob_public = PublicKey::from(&bob_secret);
 //! ```
 //!
@@ -77,9 +77,9 @@
 //! ```rust
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
-//! # let alice_secret = EphemeralSecret::new(OsRng);
+//! # let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let alice_public = PublicKey::from(&alice_secret);
-//! # let bob_secret = EphemeralSecret::new(OsRng);
+//! # let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let bob_public = PublicKey::from(&bob_secret);
 //! let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 //! ```
@@ -89,9 +89,9 @@
 //! ```rust
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
-//! # let alice_secret = EphemeralSecret::new(OsRng);
+//! # let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let alice_public = PublicKey::from(&alice_secret);
-//! # let bob_secret = EphemeralSecret::new(OsRng);
+//! # let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let bob_public = PublicKey::from(&bob_secret);
 //! let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 //! ```
@@ -101,9 +101,9 @@
 //! ```rust
 //! # use rand_core::OsRng;
 //! # use x25519_dalek::{EphemeralSecret, PublicKey};
-//! # let alice_secret = EphemeralSecret::new(OsRng);
+//! # let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let alice_public = PublicKey::from(&alice_secret);
-//! # let bob_secret = EphemeralSecret::new(OsRng);
+//! # let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 //! # let bob_public = PublicKey::from(&bob_secret);
 //! # let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 //! # let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);

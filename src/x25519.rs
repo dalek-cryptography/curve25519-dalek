@@ -71,8 +71,8 @@ impl AsRef<[u8]> for PublicKey {
 /// This type is identical to the [`StaticSecret`] type, except that the
 /// [`EphemeralSecret::diffie_hellman`] method consumes and then wipes the secret key, and there
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
-/// generated from fresh randomness by [`EphemeralSecret::new`] and the compiler statically checks
-/// that the resulting secret is used at most once.
+/// generated from fresh randomness where the compiler statically checks that the resulting
+/// secret is used at most once.
 #[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[cfg_attr(feature = "zeroize", zeroize(drop))]
 pub struct EphemeralSecret(pub(crate) Scalar);
@@ -84,13 +84,28 @@ impl EphemeralSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate an x25519 [`EphemeralSecret`] key.
+    /// Generate a new [`EphemeralSecret`] with the supplied RNG.
+    #[deprecated(
+        since = "2.0.0",
+        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
+    )]
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        Self::random_from_rng(&mut csprng)
+    }
+
+    /// Generate a new [`EphemeralSecret`] with the supplied RNG.
+    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
 
         EphemeralSecret(Scalar::from_bits_clamped(bytes))
+    }
+
+    /// Generate a new [`EphemeralSecret`].
+    #[cfg(feature = "getrandom")]
+    pub fn random() -> Self {
+        Self::random_from_rng(&mut rand_core::OsRng)
     }
 }
 
@@ -133,13 +148,28 @@ impl ReusableSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate a non-serializeable x25519 [`ReusableSecret`] key.
+    /// Generate a new [`ReusableSecret`] with the supplied RNG.
+    #[deprecated(
+        since = "2.0.0",
+        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0."
+    )]
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        Self::random_from_rng(&mut csprng)
+    }
+
+    /// Generate a new [`ReusableSecret`] with the supplied RNG.
+    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
 
         ReusableSecret(Scalar::from_bits_clamped(bytes))
+    }
+
+    /// Generate a new [`ReusableSecret`].
+    #[cfg(feature = "getrandom")]
+    pub fn random() -> Self {
+        Self::random_from_rng(&mut rand_core::OsRng)
     }
 }
 
@@ -180,13 +210,28 @@ impl StaticSecret {
         SharedSecret(self.0 * their_public.0)
     }
 
-    /// Generate an x25519 key.
+    /// Generate a new [`StaticSecret`] with the supplied RNG.
+    #[deprecated(
+        since = "2.0.0",
+        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
+    )]
     pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        Self::random_from_rng(&mut csprng)
+    }
+
+    /// Generate a new [`StaticSecret`] with the supplied RNG.
+    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         let mut bytes = [0u8; 32];
 
         csprng.fill_bytes(&mut bytes);
 
         StaticSecret(Scalar::from_bits_clamped(bytes))
+    }
+
+    /// Generate a new [`StaticSecret`].
+    #[cfg(feature = "getrandom")]
+    pub fn random() -> Self {
+        Self::random_from_rng(&mut rand_core::OsRng)
     }
 
     /// Extract this key's bytes for serialization.
@@ -307,11 +352,11 @@ impl AsRef<[u8]> for SharedSecret {
 /// use x25519_dalek::PublicKey;
 ///
 /// // Generate Alice's key pair.
-/// let alice_secret = StaticSecret::new(&mut OsRng);
+/// let alice_secret = StaticSecret::random_from_rng(&mut OsRng);
 /// let alice_public = PublicKey::from(&alice_secret);
 ///
 /// // Generate Bob's key pair.
-/// let bob_secret = StaticSecret::new(&mut OsRng);
+/// let bob_secret = StaticSecret::random_from_rng(&mut OsRng);
 /// let bob_public = PublicKey::from(&bob_secret);
 ///
 /// // Alice and Bob should now exchange their public keys.

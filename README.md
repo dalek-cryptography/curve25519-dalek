@@ -28,23 +28,21 @@ up on modern public key cryptography and have learned a nifty trick called
 kittens will be able to secretly organise to find their mittens, and then spend
 the rest of the afternoon nomming some yummy pie!
 
-First, Alice uses `EphemeralSecret::new()` and then
+First, Alice uses `EphemeralSecret::random()` and then
 `PublicKey::from()` to produce her secret and public keys:
 
 ```rust
-use rand_core::OsRng;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-let alice_secret = EphemeralSecret::new(OsRng);
+let alice_secret = EphemeralSecret::random();
 let alice_public = PublicKey::from(&alice_secret);
 ```
 
 Bob does the same:
 
 ```rust
-# use rand_core::OsRng;
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-let bob_secret = EphemeralSecret::new(OsRng);
+let bob_secret = EphemeralSecret::random();
 let bob_public = PublicKey::from(&bob_secret);
 ```
 

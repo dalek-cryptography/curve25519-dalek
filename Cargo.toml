@@ -54,6 +54,7 @@ harness = false
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
+getrandom = ["rand_core/getrandom"]
 zeroize = ["dep:zeroize", "curve25519-dalek/zeroize"]
 serde = ["dep:serde", "curve25519-dalek/serde"]
 alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]

@@ -406,7 +406,10 @@ impl<'de> Deserialize<'de> for Scalar {
             type Value = Scalar;
 
             fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                formatter.write_str("a valid point in Edwards y + sign format")
+                formatter.write_str(
+                    "a sequence of 32 bytes whose little-endian interpretation is less than the \
+                    basepoint order ℓ",
+                )
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
@@ -1865,6 +1868,45 @@ mod test {
             LARGEST_ED25519_S.bytes,
             clamp_integer(LARGEST_ED25519_S.bytes)
         );
+    }
+
+    // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones out of range and
+    // with the high bit set. In old versions of ed25519-dalek, it used to be the case that a was
+    // reduced and b was clamped an unreduced. This should not affect computation.
+    #[test]
+    fn test_mul_reduction_invariance() {
+        use rand::RngCore;
+        let mut rng = rand::thread_rng();
+
+        for _ in 0..10 {
+            // Also define c that's clamped. We'll make sure that clamping doesn't affect
+            // computation
+            let (a, b, c) = {
+                let mut a_bytes = [0u8; 32];
+                let mut b_bytes = [0u8; 32];
+                let mut c_bytes = [0u8; 32];
+                rng.fill_bytes(&mut a_bytes);
+                rng.fill_bytes(&mut b_bytes);
+                rng.fill_bytes(&mut c_bytes);
+                (
+                    Scalar { bytes: a_bytes },
+                    Scalar { bytes: b_bytes },
+                    Scalar {
+                        bytes: clamp_integer(c_bytes),
+                    },
+                )
+            };
+
+            // Make sure this is the same product no matter how you cut it
+            let reduced_mul_ab = a.reduce() * b.reduce();
+            let reduced_mul_ac = a.reduce() * c.reduce();
+            assert_eq!(a * b, reduced_mul_ab);
+            assert_eq!(a.reduce() * b, reduced_mul_ab);
+            assert_eq!(a * b.reduce(), reduced_mul_ab);
+            assert_eq!(a * c, reduced_mul_ac);
+            assert_eq!(a.reduce() * c, reduced_mul_ac);
+            assert_eq!(a * c.reduce(), reduced_mul_ac);
+        }
     }
 
     /*

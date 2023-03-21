@@ -18,6 +18,7 @@
 )))]
 compile_error!("'simd' backend selected without target_feature=+avx2 or +avx512ifma");
 
+#[allow(missing_docs)]
 pub mod packed_simd;
 
 #[cfg(any(

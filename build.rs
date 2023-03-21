@@ -19,6 +19,10 @@ fn main() {
         DalekBits::Dalek64 => println!("cargo:rustc-cfg=curve25519_dalek_bits=\"64\""),
         DalekBits::Dalek32 => println!("cargo:rustc-cfg=curve25519_dalek_bits=\"32\""),
     }
+
+    if rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly {
+        println!("cargo:rustc-cfg=nightly");
+    }
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

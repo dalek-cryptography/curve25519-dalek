@@ -11,28 +11,41 @@
 
 #![doc = include_str!("../../../docs/parallel-formulas.md")]
 
-#[cfg(not(any(target_feature = "avx2", target_feature = "avx512ifma", docsrs)))]
+#[cfg(not(any(
+    target_feature = "avx2",
+    all(target_feature = "avx512ifma", nightly),
+    docsrs
+)))]
 compile_error!("'simd' backend selected without target_feature=+avx2 or +avx512ifma");
 
 #[cfg(any(
-    all(target_feature = "avx2", not(target_feature = "avx512ifma")),
+    all(
+        target_feature = "avx2",
+        not(all(target_feature = "avx512ifma", nightly))
+    ),
     all(docsrs, target_arch = "x86_64")
 ))]
 pub mod avx2;
 #[cfg(any(
-    all(target_feature = "avx2", not(target_feature = "avx512ifma")),
+    all(
+        target_feature = "avx2",
+        not(all(target_feature = "avx512ifma", nightly))
+    ),
     all(docsrs, target_arch = "x86_64")
 ))]
 pub(crate) use self::avx2::{edwards::CachedPoint, edwards::ExtendedPoint};
 
-#[cfg(any(target_feature = "avx512ifma", all(docsrs, target_arch = "x86_64")))]
+#[cfg(any(
+    all(target_feature = "avx512ifma", nightly),
+    all(docsrs, target_arch = "x86_64")
+))]
 pub mod ifma;
-#[cfg(target_feature = "avx512ifma")]
+#[cfg(all(target_feature = "avx512ifma", nightly))]
 pub(crate) use self::ifma::{edwards::CachedPoint, edwards::ExtendedPoint};
 
 #[cfg(any(
     target_feature = "avx2",
-    target_feature = "avx512ifma",
+    all(target_feature = "avx512ifma", nightly),
     all(docsrs, target_arch = "x86_64")
 ))]
 #[allow(missing_docs)]
@@ -43,12 +56,12 @@ pub mod scalar_mul;
 #[cfg(any(
     all(
         target_feature = "avx2",
-        not(target_feature = "avx512ifma"),
+        not(all(target_feature = "avx512ifma", nightly)),
         feature = "precomputed-tables"
     ),
     all(docsrs, target_arch = "x86_64")
 ))]
 pub(crate) use self::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
-#[cfg(all(target_feature = "avx512ifma", feature = "precomputed-tables"))]
+#[cfg(all(target_feature = "avx512ifma", nightly, feature = "precomputed-tables"))]
 pub(crate) use self::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;

@@ -20,7 +20,11 @@ fn main() {
         DalekBits::Dalek32 => println!("cargo:rustc-cfg=curve25519_dalek_bits=\"32\""),
     }
 
-    if rustc_version::version_meta().unwrap().channel == rustc_version::Channel::Nightly {
+    if rustc_version::version_meta()
+        .expect("failed to detect rustc version")
+        .channel
+        == rustc_version::Channel::Nightly
+    {
         println!("cargo:rustc-cfg=nightly");
     }
 }

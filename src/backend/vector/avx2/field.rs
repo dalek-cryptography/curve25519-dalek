@@ -40,8 +40,8 @@ const C_LANES64: u8 = 0b00_11_00_00;
 #[allow(unused)]
 const D_LANES64: u8 = 0b11_00_00_00;
 
+use crate::backend::packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 use core::ops::{Add, Mul, Neg};
-use packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::avx2::constants::{
@@ -188,14 +188,14 @@ impl FieldElement2625x4 {
     pub fn split(&self) -> [FieldElement51; 4] {
         let mut out = [FieldElement51::ZERO; 4];
         for i in 0..5 {
-            let a_2i   = self.0[i].extract(0) as u64; //
-            let b_2i   = self.0[i].extract(1) as u64; //
-            let a_2i_1 = self.0[i].extract(2) as u64; // `.
-            let b_2i_1 = self.0[i].extract(3) as u64; //  | pre-swapped to avoid
-            let c_2i   = self.0[i].extract(4) as u64; //  | a cross lane shuffle
-            let d_2i   = self.0[i].extract(5) as u64; // .'
-            let c_2i_1 = self.0[i].extract(6) as u64; //
-            let d_2i_1 = self.0[i].extract(7) as u64; //
+            let a_2i   = self.0[i].extract::<0>() as u64; //
+            let b_2i   = self.0[i].extract::<1>() as u64; //
+            let a_2i_1 = self.0[i].extract::<2>() as u64; // `.
+            let b_2i_1 = self.0[i].extract::<3>() as u64; //  | pre-swapped to avoid
+            let c_2i   = self.0[i].extract::<4>() as u64; //  | a cross lane shuffle
+            let d_2i   = self.0[i].extract::<5>() as u64; // .'
+            let c_2i_1 = self.0[i].extract::<6>() as u64; //
+            let d_2i_1 = self.0[i].extract::<7>() as u64; //
 
             out[0].0[i] = a_2i + (a_2i_1 << 26);
             out[1].0[i] = b_2i + (b_2i_1 << 26);
@@ -531,11 +531,11 @@ impl FieldElement2625x4 {
             debug_assert!(i < 9);
             if i % 2 == 0 {
                 // Even limbs have 26 bits
-                z[i + 1] += z[i] >> 26;
+                z[i + 1] += z[i].shr::<26>();
                 z[i] &= LOW_26_BITS;
             } else {
                 // Odd limbs have 25 bits
-                z[i + 1] += z[i] >> 25;
+                z[i + 1] += z[i].shr::<25>();
                 z[i] &= LOW_25_BITS;
             }
         };
@@ -558,10 +558,10 @@ impl FieldElement2625x4 {
         // big.  To ensure c < 2^32, we would need z[9] < 2^57.
         // Instead, we split the carry in two, with c = c_0 + c_1*2^26.
 
-        let c = z[9] >> 25;
+        let c = z[9].shr::<25>();
         z[9] &= LOW_25_BITS;
         let mut c0: u64x4 = c & LOW_26_BITS; // c0 < 2^26;
-        let mut c1: u64x4 = c >> 26;         // c1 < 2^(39-26) = 2^13;
+        let mut c1: u64x4 = c.shr::<26>();         // c1 < 2^(39-26) = 2^13;
 
         unsafe {
             use core::arch::x86_64::_mm256_mul_epu32;
@@ -621,14 +621,14 @@ impl FieldElement2625x4 {
         let (x6, x7) = unpack_pair(self.0[3]);
         let (x8, x9) = unpack_pair(self.0[4]);
 
-        let x0_2 = x0 << 1;
-        let x1_2 = x1 << 1;
-        let x2_2 = x2 << 1;
-        let x3_2 = x3 << 1;
-        let x4_2 = x4 << 1;
-        let x5_2 = x5 << 1;
-        let x6_2 = x6 << 1;
-        let x7_2 = x7 << 1;
+        let x0_2 = x0.shl::<1>();
+        let x1_2 = x1.shl::<1>();
+        let x2_2 = x2.shl::<1>();
+        let x3_2 = x3.shl::<1>();
+        let x4_2 = x4.shl::<1>();
+        let x5_2 = x5.shl::<1>();
+        let x6_2 = x6.shl::<1>();
+        let x7_2 = x7.shl::<1>();
 
         let x5_19 = m_lo(v19, x5);
         let x6_19 = m_lo(v19, x6);
@@ -636,16 +636,16 @@ impl FieldElement2625x4 {
         let x8_19 = m_lo(v19, x8);
         let x9_19 = m_lo(v19, x9);
 
-        let mut z0 = m(x0,   x0) + m(x2_2, x8_19) + m(x4_2, x6_19) + ((m(x1_2, x9_19) +   m(x3_2, x7_19) +    m(x5,   x5_19)) << 1);
-        let mut z1 = m(x0_2, x1) + m(x3_2, x8_19) + m(x5_2, x6_19) +                    ((m(x2,   x9_19) +    m(x4,   x7_19)) << 1);
-        let mut z2 = m(x0_2, x2) + m(x1_2,    x1) + m(x4_2, x8_19) +   m(x6,   x6_19) + ((m(x3_2, x9_19) +    m(x5_2, x7_19)) << 1);
-        let mut z3 = m(x0_2, x3) + m(x1_2,    x2) + m(x5_2, x8_19) +                    ((m(x4,   x9_19) +    m(x6,   x7_19)) << 1);
-        let mut z4 = m(x0_2, x4) + m(x1_2,  x3_2) + m(x2,      x2) +   m(x6_2, x8_19) + ((m(x5_2, x9_19) +    m(x7,   x7_19)) << 1);
-        let mut z5 = m(x0_2, x5) + m(x1_2,    x4) + m(x2_2,    x3) +   m(x7_2, x8_19)                    +  ((m(x6,   x9_19)) << 1);
-        let mut z6 = m(x0_2, x6) + m(x1_2,  x5_2) + m(x2_2,    x4) +   m(x3_2,    x3) +   m(x8,   x8_19) +  ((m(x7_2, x9_19)) << 1);
-        let mut z7 = m(x0_2, x7) + m(x1_2,    x6) + m(x2_2,    x5) +   m(x3_2,    x4)                    +  ((m(x8,   x9_19)) << 1);
-        let mut z8 = m(x0_2, x8) + m(x1_2,  x7_2) + m(x2_2,    x6) +   m(x3_2,  x5_2) +   m(x4,      x4) +  ((m(x9,   x9_19)) << 1);
-        let mut z9 = m(x0_2, x9) + m(x1_2,    x8) + m(x2_2,    x7) +   m(x3_2,    x6) +   m(x4_2,    x5)                           ;
+        let mut z0 = m(x0,   x0) + m(x2_2, x8_19) + m(x4_2, x6_19) + ((m(x1_2, x9_19) +   m(x3_2, x7_19) +    m(x5,   x5_19)).shl::<1>());
+        let mut z1 = m(x0_2, x1) + m(x3_2, x8_19) + m(x5_2, x6_19) +                    ((m(x2,   x9_19) +    m(x4,   x7_19)).shl::<1>());
+        let mut z2 = m(x0_2, x2) + m(x1_2,    x1) + m(x4_2, x8_19) +   m(x6,   x6_19) + ((m(x3_2, x9_19) +    m(x5_2, x7_19)).shl::<1>());
+        let mut z3 = m(x0_2, x3) + m(x1_2,    x2) + m(x5_2, x8_19) +                    ((m(x4,   x9_19) +    m(x6,   x7_19)).shl::<1>());
+        let mut z4 = m(x0_2, x4) + m(x1_2,  x3_2) + m(x2,      x2) +   m(x6_2, x8_19) + ((m(x5_2, x9_19) +    m(x7,   x7_19)).shl::<1>());
+        let mut z5 = m(x0_2, x5) + m(x1_2,    x4) + m(x2_2,    x3) +   m(x7_2, x8_19)                    +  ((m(x6,   x9_19)).shl::<1>());
+        let mut z6 = m(x0_2, x6) + m(x1_2,  x5_2) + m(x2_2,    x4) +   m(x3_2,    x3) +   m(x8,   x8_19) +  ((m(x7_2, x9_19)).shl::<1>());
+        let mut z7 = m(x0_2, x7) + m(x1_2,    x6) + m(x2_2,    x5) +   m(x3_2,    x4)                    +  ((m(x8,   x9_19)).shl::<1>());
+        let mut z8 = m(x0_2, x8) + m(x1_2,  x7_2) + m(x2_2,    x6) +   m(x3_2,  x5_2) +   m(x4,      x4) +  ((m(x9,   x9_19)).shl::<1>());
+        let mut z9 = m(x0_2, x9) + m(x1_2,    x8) + m(x2_2,    x7) +   m(x3_2,    x6) +   m(x4_2,    x5)                                 ;
 
         // The biggest z_i is bounded as z_i < 249*2^(51 + 2*b);
         // if b < 1.5 we get z_i < 4485585228861014016.

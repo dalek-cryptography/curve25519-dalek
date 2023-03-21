@@ -9,7 +9,7 @@
 
 //! This module contains constants used by the IFMA backend.
 
-use packed_simd::u64x4;
+use crate::backend::packed_simd::u64x4;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::window::NafLookupTable8;

@@ -11,7 +11,7 @@
 
 //! This module contains constants used by the AVX2 backend.
 
-use packed_simd::u32x8;
+use crate::backend::packed_simd::u32x8;
 
 use crate::backend::vector::avx2::edwards::{CachedPoint, ExtendedPoint};
 use crate::backend::vector::avx2::field::FieldElement2625x4;

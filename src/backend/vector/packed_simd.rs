@@ -172,19 +172,33 @@ impl_conv!(u64x4 => u32x8, i32x8);
 
 impl u64x4 {
     #[inline]
-    pub const fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
+    pub const fn new_const(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
         unsafe { Self(core::mem::transmute([x0, x1, x2, x3])) }
     }
 
     #[inline]
-    pub const fn splat(x: u64) -> Self {
-        Self::new(x, x, x, x)
+    pub const fn splat_const<const N: u64>() -> Self {
+        Self::new_const(N, N, N, N)
+    }
+
+    #[inline]
+    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
+        unsafe {
+            Self(core::arch::x86_64::_mm256_set_epi64x(
+                x3 as i64, x2 as i64, x1 as i64, x0 as i64,
+            ))
+        }
+    }
+
+    #[inline]
+    pub fn splat(x: u64) -> Self {
+        unsafe { Self(core::arch::x86_64::_mm256_set1_epi64x(x as i64)) }
     }
 }
 
 impl u32x8 {
     #[inline]
-    pub const fn new(
+    pub const fn new_const(
         x0: u32,
         x1: u32,
         x2: u32,
@@ -198,23 +212,33 @@ impl u32x8 {
     }
 
     #[inline]
-    pub const fn splat(x: u32) -> Self {
-        Self::new(x, x, x, x, x, x, x, x)
+    pub const fn splat_const<const N: u32>() -> Self {
+        Self::new_const(N, N, N, N, N, N, N, N)
+    }
+
+    #[inline]
+    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> Self {
+        unsafe {
+            Self(core::arch::x86_64::_mm256_set_epi32(
+                x7 as i32, x6 as i32, x5 as i32, x4 as i32, x3 as i32, x2 as i32, x1 as i32,
+                x0 as i32,
+            ))
+        }
+    }
+
+    #[inline]
+    pub fn splat(x: u32) -> Self {
+        unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
     }
 }
 
 impl i32x8 {
     #[inline]
-    pub const fn new(
-        x0: i32,
-        x1: i32,
-        x2: i32,
-        x3: i32,
-        x4: i32,
-        x5: i32,
-        x6: i32,
-        x7: i32,
-    ) -> Self {
-        unsafe { Self(core::mem::transmute([x0, x1, x2, x3, x4, x5, x6, x7])) }
+    pub fn new(x0: i32, x1: i32, x2: i32, x3: i32, x4: i32, x5: i32, x6: i32, x7: i32) -> Self {
+        unsafe {
+            Self(core::arch::x86_64::_mm256_set_epi32(
+                x7, x6, x5, x4, x3, x2, x1, x0,
+            ))
+        }
     }
 }

@@ -180,7 +180,7 @@ impl ConditionallySelectable for FieldElement2625x4 {
 }
 
 impl FieldElement2625x4 {
-    pub const ZERO: FieldElement2625x4 = FieldElement2625x4([u32x8::splat(0); 5]);
+    pub const ZERO: FieldElement2625x4 = FieldElement2625x4([u32x8::splat_const::<0>(); 5]);
 
     /// Split this vector into an array of four (serial) field
     /// elements.

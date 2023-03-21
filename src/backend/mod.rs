@@ -38,6 +38,3 @@ pub mod serial;
 
 #[cfg(any(curve25519_dalek_backend = "simd", docsrs))]
 pub mod vector;
-
-#[cfg(any(curve25519_dalek_backend = "simd", docsrs))]
-pub mod packed_simd;

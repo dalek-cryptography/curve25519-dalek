@@ -11,7 +11,7 @@
 
 #![allow(non_snake_case)]
 
-use crate::backend::packed_simd::{u64x4, IntoBits};
+use crate::backend::vector::packed_simd::{u64x4, IntoBits};
 use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;

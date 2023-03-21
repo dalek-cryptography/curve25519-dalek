@@ -40,7 +40,7 @@ const C_LANES64: u8 = 0b00_11_00_00;
 #[allow(unused)]
 const D_LANES64: u8 = 0b11_00_00_00;
 
-use crate::backend::packed_simd::{i32x8, u32x8, u64x4, IntoBits};
+use crate::backend::vector::packed_simd::{i32x8, u32x8, u64x4, IntoBits};
 use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;

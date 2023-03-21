@@ -16,11 +16,7 @@ use ed25519::pkcs8;
 use rand_core::CryptoRngCore;
 
 #[cfg(feature = "serde")]
-use serde::de::Error as SerdeError;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "serde")]
-use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 use sha2::Sha512;
 
@@ -634,7 +630,7 @@ impl Serialize for SigningKey {
     where
         S: Serializer,
     {
-        SerdeBytes::new(&self.secret_key).serialize(serializer)
+        serializer.serialize_bytes(&self.secret_key)
     }
 }
 
@@ -644,8 +640,37 @@ impl<'d> Deserialize<'d> for SigningKey {
     where
         D: Deserializer<'d>,
     {
-        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
-        Self::try_from(bytes.as_ref()).map_err(SerdeError::custom)
+        struct SigningKeyVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for SigningKeyVisitor {
+            type Value = SigningKey;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                write!(formatter, concat!("An ed25519 signing (private) key"))
+            }
+
+            fn visit_borrowed_bytes<E: serde::de::Error>(
+                self,
+                bytes: &'de [u8],
+            ) -> Result<Self::Value, E> {
+                SigningKey::try_from(bytes.as_ref()).map_err(E::custom)
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq
+                        .next_element()?
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                }
+                SigningKey::try_from(bytes).map_err(serde::de::Error::custom)
+            }
+        }
+
+        deserializer.deserialize_bytes(SigningKeyVisitor)
     }
 }
 

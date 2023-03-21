@@ -28,11 +28,7 @@ use sha2::Sha512;
 use ed25519::pkcs8;
 
 #[cfg(feature = "serde")]
-use serde::de::Error as SerdeError;
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "serde")]
-use serde_bytes::{ByteBuf as SerdeByteBuf, Bytes as SerdeBytes};
 
 #[cfg(feature = "digest")]
 use crate::context::Context;
@@ -542,7 +538,7 @@ impl Serialize for VerifyingKey {
     where
         S: Serializer,
     {
-        SerdeBytes::new(self.as_bytes()).serialize(serializer)
+        serializer.serialize_bytes(&self.as_bytes()[..])
     }
 }
 
@@ -552,7 +548,36 @@ impl<'d> Deserialize<'d> for VerifyingKey {
     where
         D: Deserializer<'d>,
     {
-        let bytes = <SerdeByteBuf>::deserialize(deserializer)?;
-        VerifyingKey::try_from(bytes.as_ref()).map_err(SerdeError::custom)
+        struct VerifyingKeyVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for VerifyingKeyVisitor {
+            type Value = VerifyingKey;
+
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                write!(formatter, concat!("An ed25519 verifying (public) key"))
+            }
+
+            fn visit_borrowed_bytes<E: serde::de::Error>(
+                self,
+                bytes: &'de [u8],
+            ) -> Result<Self::Value, E> {
+                VerifyingKey::try_from(bytes.as_ref()).map_err(E::custom)
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let mut bytes = [0u8; 32];
+                for i in 0..32 {
+                    bytes[i] = seq
+                        .next_element()?
+                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                }
+                VerifyingKey::try_from(&bytes[..]).map_err(serde::de::Error::custom)
+            }
+        }
+
+        deserializer.deserialize_bytes(VerifyingKeyVisitor)
     }
 }

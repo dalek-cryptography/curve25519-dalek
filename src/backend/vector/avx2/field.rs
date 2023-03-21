@@ -61,7 +61,7 @@ use crate::backend::vector::avx2::constants::{
 fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
     let b: u32x8;
-    let zero = i32x8::new(0, 0, 0, 0, 0, 0, 0, 0);
+    let zero = i32x8::splat(0);
     unsafe {
         use core::arch::x86_64::_mm256_unpackhi_epi32;
         use core::arch::x86_64::_mm256_unpacklo_epi32;

@@ -241,4 +241,9 @@ impl i32x8 {
             ))
         }
     }
+
+    #[inline]
+    pub fn splat(x: i32) -> Self {
+        unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x)) }
+    }
 }

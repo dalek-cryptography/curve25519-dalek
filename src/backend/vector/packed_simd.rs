@@ -1,3 +1,8 @@
+// -*- mode: rust; -*-
+//
+// This file is part of curve25519-dalek.
+// See LICENSE for licensing information.
+
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
 
 pub trait IntoBits<T> {

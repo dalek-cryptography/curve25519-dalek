@@ -18,7 +18,7 @@ ed25519-dalek = "1"
 To use the latest prerelease (see changes [below](#breaking-changes-in-200)),
 use the following line in your project's `Cargo.toml`:
 ```toml
-ed25519-dalek = "2.0.0-pre.0"
+ed25519-dalek = "2.0.0-rc.2"
 ```
 
 # Feature Flags
@@ -47,10 +47,10 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of t
 * Bump MSRV from 1.41 to 1.60.0
 * Bump Rust edition
 * Bump `signature` dependency to 2.0
-* Make [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) more automatic
 * Make `digest` an optional dependency
 * Make `zeroize` an optional dependency
 * Make `rand_core` an optional dependency
+* Adopt [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) over features
 * Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
 * Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
 * Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`

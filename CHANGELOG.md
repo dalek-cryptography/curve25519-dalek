@@ -15,10 +15,10 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Bump MSRV from 1.41 to 1.60.0
 * Bump Rust edition
 * Bump `signature` dependency to 2.0
-* Make [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) more automatic
 * Make `digest` an optional dependency
 * Make `zeroize` an optional dependency
 * Make `rand_core` an optional dependency
+* Adopt [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) over features
 * Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
 * Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
 * Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`
@@ -34,3 +34,4 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Impl `Hash` for `VerifyingKey`
 * Impl `Clone`, `Drop`, and `ZeroizeOnDrop` for `SigningKey`
 * Remove `rand` dependency
+* Improve key deserialization diagnostics

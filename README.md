@@ -43,7 +43,7 @@ curve25519-dalek = "3"
 To use the latest prerelease (see changes [below](#breaking-changes-in-400)),
 use the following line in your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "4.0.0-rc.1"
+curve25519-dalek = "4.0.0-rc.2"
 ```
 
 ## Feature Flags
@@ -65,16 +65,15 @@ disable it when running `cargo`, add the `--no-default-features` CLI flag.
 
 Breaking changes for each major version release can be found in
 [`CHANGELOG.md`](CHANGELOG.md), under the "Breaking changes" subheader. The
-latest breaking changes are below:
+latest breaking changes in high level are below:
 
 ### Breaking changes in 4.0.0
 
 * Update the MSRV from 1.41 to 1.60
-* Update backend selection to be more automatic. See [backends](#backends)
-* Remove `std` feature flag
-* Remove `nightly` feature flag
-* Make `digest` an optional feature
-* Make `rand_core` an optional feature
+* Provide SemVer policy
+* Make `digest` and `rand_core` optional features
+* Remove `std` and `nightly` features
+* Replace backend selection - See [CHANGELOG.md](CHANGELOG.md) and [backends](#backends)
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
@@ -84,6 +83,10 @@ latest breaking changes are below:
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
 
 This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
+
+### 4.0.0 - Open Breaking Changes
+
+See tracking issue: [curve25519-dalek/issues/521](https://github.com/dalek-cryptography/curve25519-dalek/issues/521)
 
 # Backends
 
@@ -272,9 +275,6 @@ that primitive.
 # Contributing
 
 Please see [CONTRIBUTING.md][contributing].
-
-Patches and pull requests should be make against the `develop`
-branch, **not** `main`.
 
 # About
 

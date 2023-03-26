@@ -10,12 +10,14 @@ major series.
 #### Breaking changes
 
 * Update the MSRV from 1.41 to 1.60
+* Provide SemVer policy
 * Make `digest` an optional feature
 * Make `rand_core` an optional feature
-* Add target u32/u64 backend overrides
-* Update backend selection to be more automatic
 * Remove `std` feature flag
 * Remove `nightly` feature flag
+* Automatic serial backend selection between `u32` and `u64` over the default `u32`
+* Backend selection is now via cfg(curve25519_dalek_backend) over additive features.
+* Provide override to select `u32` or `u64` backend via cfg(curve25519_dalek_bits)
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

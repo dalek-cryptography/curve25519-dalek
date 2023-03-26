@@ -4,7 +4,7 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.0.0-rc.1"
+version = "4.0.0-rc.2"
 edition = "2021"
 rust-version = "1.60.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
@@ -55,12 +55,12 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
-fiat-crypto = "0.1.6"
+fiat-crypto = "0.1.19"
 
 # The original packed_simd package was orphaned, see
 # https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161
 [target.'cfg(curve25519_dalek_backend = "simd")'.dependencies]
-packed_simd = { version = "0.3.4", package = "packed_simd_2", features = ["into_bits"] }
+packed_simd = { version = "0.3.8", package = "packed_simd_2", features = ["into_bits"] }
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]

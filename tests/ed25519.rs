@@ -543,6 +543,33 @@ mod serialisation {
     }
 
     #[test]
+    fn serialize_deserialize_verifying_key_json_too_long() {
+        // derived from `serialize_deserialize_verifying_key_json` test
+        // trailing zero elements makes key too long (34 bytes)
+        let encoded_verifying_key_too_long = "[130,39,155,15,62,76,188,63,124,122,26,251,233,253,225,220,14,41,166,120,108,35,254,77,160,83,172,58,219,42,86,120,0,0]";
+        let de_err = serde_json::from_str::<VerifyingKey>(&encoded_verifying_key_too_long)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            de_err.contains("invalid length 34"),
+            "expected invalid length error, got: {de_err}",
+        );
+    }
+
+    #[test]
+    fn serialize_deserialize_verifying_key_json_too_short() {
+        // derived from `serialize_deserialize_verifying_key_json` test
+        let encoded_verifying_key_too_long = "[130,39,155,15]";
+        let de_err = serde_json::from_str::<VerifyingKey>(&encoded_verifying_key_too_long)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            de_err.contains("invalid length 4"),
+            "expected invalid length error, got: {de_err}"
+        );
+    }
+
+    #[test]
     fn serialize_deserialize_signing_key_bincode() {
         let signing_key = SigningKey::from_bytes(&SECRET_KEY_BYTES);
         let encoded_signing_key: Vec<u8> = bincode::serialize(&signing_key).unwrap();
@@ -562,6 +589,33 @@ mod serialisation {
         for i in 0..SECRET_KEY_LENGTH {
             assert_eq!(SECRET_KEY_BYTES[i], decoded_signing_key.to_bytes()[i]);
         }
+    }
+
+    #[test]
+    fn serialize_deserialize_signing_key_json_too_long() {
+        // derived from `serialize_deserialize_signing_key_json` test
+        // trailing zero elements makes key too long (34 bytes)
+        let encoded_signing_key_too_long = "[62,70,27,163,92,182,11,3,77,234,98,4,11,127,79,228,243,187,150,73,201,137,76,22,85,251,152,2,241,42,72,54,0,0]";
+        let de_err = serde_json::from_str::<SigningKey>(&encoded_signing_key_too_long)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            de_err.contains("invalid length 34"),
+            "expected invalid length error, got: {de_err}",
+        );
+    }
+
+    #[test]
+    fn serialize_deserialize_signing_key_json_too_short() {
+        // derived from `serialize_deserialize_signing_key_json` test
+        let encoded_signing_key_too_long = "[62,70,27,163]";
+        let de_err = serde_json::from_str::<SigningKey>(&encoded_signing_key_too_long)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            de_err.contains("invalid length 4"),
+            "expected invalid length error, got: {de_err}"
+        );
     }
 
     #[test]

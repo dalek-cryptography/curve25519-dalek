@@ -666,6 +666,19 @@ impl<'d> Deserialize<'d> for SigningKey {
                         .next_element()?
                         .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
+
+                let remaining = (0..)
+                    .map(|_| seq.next_element::<u8>())
+                    .take_while(|el| matches!(el, Ok(Some(_))))
+                    .count();
+
+                if remaining > 0 {
+                    return Err(serde::de::Error::invalid_length(
+                        32 + remaining,
+                        &"expected 32 bytes",
+                    ));
+                }
+
                 SigningKey::try_from(bytes).map_err(serde::de::Error::custom)
             }
         }

@@ -1216,12 +1216,12 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
     }
 }
 
-/// Clamps the given little-endian representation of a 32-byte integer. Clamping the value puts it
-/// in the range:
+/// _Clamps_ the given little-endian representation of a 32-byte integer. Clamping the value puts
+/// it in the range:
 ///
 /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
 ///
-/// # Explanation of _clamping_
+/// # Explanation of clamping
 ///
 /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
 /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits

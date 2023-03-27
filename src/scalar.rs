@@ -1235,7 +1235,7 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
 ///
 /// See [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/) for
 /// more details.
-pub fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
+pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
     bytes[0] &= 0b1111_1000;
     bytes[31] &= 0b0111_1111;
     bytes[31] |= 0b0100_0000;
@@ -1336,13 +1336,8 @@ pub(crate) mod test {
         ],
     };
 
-    static LARGEST_ED25519_S: Scalar = Scalar {
-        bytes: [
-            0xf8, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0x7f,
-        ],
-    };
+    /// The largest clamped integer
+    static LARGEST_CLAMPED_INTEGER: [u8; 32] = clamp_integer(LARGEST_UNREDUCED_SCALAR.bytes);
 
     #[test]
     fn fuzzer_testcase_reduction() {
@@ -1845,8 +1840,8 @@ pub(crate) mod test {
         assert_eq!(actual, expected);
 
         assert_eq!(
-            LARGEST_ED25519_S.bytes,
-            clamp_integer(LARGEST_ED25519_S.bytes)
+            LARGEST_CLAMPED_INTEGER,
+            clamp_integer(LARGEST_CLAMPED_INTEGER)
         );
     }
 

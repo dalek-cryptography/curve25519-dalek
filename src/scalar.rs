@@ -1454,46 +1454,6 @@ pub(crate) mod test {
         assert_eq!(Scalar::ZERO - Scalar::ONE, BASEPOINT_ORDER_MINUS_ONE);
     }
 
-    /*
-    #[test]
-    fn quarkslab_scalar_overflow_does_not_occur() {
-        // Check that manually-constructing large Scalars cannot produce incorrect results.
-        //
-        // The EdwardsPoint::mul_clamped function is required to implement X/Ed25519, while all
-        // other methods of constructing a Scalar produce reduced Scalars. However, this "invariant
-        // loophole" allows constructing large scalars which are not reduced mod l.
-        //
-        // This issue was discovered independently by both Jack "str4d" Grigg (issue #238), who
-        // noted that reduction was not performed on addition, and Laurent Grémy & Nicolas
-        // Surbayrole of Quarkslab, who noted that it was possible to cause an overflow and compute
-        // incorrect results.
-        //
-        // This test is adapted from the one suggested by Quarkslab.
-
-        let a = Scalar::from_bytes_mod_order(LARGEST_VALID_SCALAR.bytes);
-        let b = LARGEST_VALID_SCALAR;
-
-        assert_eq!(a, b.reduce());
-
-        let a_3 = a + a + a;
-        let b_3 = b + b + b;
-
-        assert_eq!(a_3, b_3);
-
-        let neg_a = -a;
-        let neg_b = -b;
-
-        assert_eq!(neg_a, neg_b);
-
-        let minus_a_3 = Scalar::ZERO - a - a - a;
-        let minus_b_3 = Scalar::ZERO - b - b - b;
-
-        assert_eq!(minus_a_3, minus_b_3);
-        assert_eq!(minus_a_3, -a_3);
-        assert_eq!(minus_b_3, -b_3);
-    }
-    */
-
     #[test]
     fn impl_add() {
         let two = Scalar::from(2u64);
@@ -1928,63 +1888,4 @@ pub(crate) mod test {
             assert_eq!(a * c.reduce(), reduced_mul_ac);
         }
     }
-
-    /*
-    #[test]
-    fn test_bad_arithmetic1() {
-        use rand::{RngCore, SeedableRng};
-        let mut rng = rand::rngs::StdRng::seed_from_u64(2u64);
-
-        // Make a random clamped scalar
-        let s = {
-            let mut bytes = [0u8; 32];
-            rng.fill_bytes(&mut bytes);
-            Scalar::from_bits_clamped(bytes)
-        };
-
-        // Make a random point
-        let point = {
-            let mut bytes = [0u8; 32];
-            rng.fill_bytes(&mut bytes);
-            crate::edwards::CompressedEdwardsY::from_slice(&bytes)
-                .unwrap()
-                .decompress()
-                .unwrap()
-        };
-
-        assert_eq!(s * point, s.reduce() * point);
-
-        //assert_eq!(max_scalar.bytes, reduced.bytes);
-    }
-
-    #[test]
-    fn test_bad_arithmetic2() {
-        use rand::{RngCore, SeedableRng};
-        let mut rng = rand::rngs::StdRng::seed_from_u64(2u64);
-
-        // Make two random scalars that are reduced mod l
-        let (s1, s2) = {
-            let mut bytes1 = [0u8; 32];
-            let mut bytes2 = [0u8; 32];
-            rng.fill_bytes(&mut bytes1);
-            rng.fill_bytes(&mut bytes2);
-            (
-                Scalar::from_bytes_mod_order(bytes1),
-                Scalar::from_bytes_mod_order(bytes2),
-            )
-        };
-
-        // Make a random point
-        let point = {
-            let mut bytes = [0u8; 32];
-            rng.fill_bytes(&mut bytes);
-            crate::edwards::CompressedEdwardsY::from_slice(&bytes)
-                .unwrap()
-                .decompress()
-                .unwrap()
-        };
-
-        assert_eq!((s1 + s2) * point, s1 * point + s2 * point);
-    }
-    */
 }

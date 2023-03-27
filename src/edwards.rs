@@ -729,38 +729,27 @@ impl EdwardsPoint {
         }
     }
 
-    /// Scalar multiplication using the low 255 bits of a little-endian 256-bit integer, `clamping`
-    /// its value to be in range
-    ///
-    /// **n ∈ 2^254 + 8\*{0, 1, 2, 3, . . ., 2^251 − 1}**
-    ///
-    /// # Explanation of _clamping_
-    ///
-    /// For Curve25519, h = 8, and multiplying by 8 is the same as a binary left-shift by 3 bits.
-    /// If you take a secret scalar value between 2^251 and 2^252 – 1 and left-shift by 3 bits
-    /// then you end up with a 255-bit number with the most significant bit set to 1 and
-    /// the least-significant three bits set to 0.
-    ///
-    /// The Curve25519 clamping operation takes **an arbitrary 256-bit random value** and
-    /// clears the most-significant bit (making it a 255-bit number), sets the next bit, and then
-    /// clears the 3 least-significant bits. In other words, it directly creates a scalar value that is
-    /// in the right form and pre-multiplied by the cofactor.
-    ///
-    /// See <https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/> for details
+    /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
+    /// [`clamp_integer`].
     pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
-        // This is the only place we construct a Scalar that is not reduced mod l. All our
-        // multiplication routines are defined up to and including 2^255 - 1, and clamping is
-        // guaranteed to return something within this range. Further, we don't do any reduction or
-        // arithmetic with this clamped value, so there's no issues arising from the fact that the
-        // curve point is not necessarily in the prime-order subgroup.
+        // We have to construct a Scalar that is not reduced mod l, which breaks its invariant.
+        // However, all our scalar-point multiplication routines are defined for all values of
+        // `bytes` up to and including 2^255 - 1, and clamping is guaranteed to return something
+        // within this range. Further, we don't do any reduction or arithmetic with this clamped
+        // value, so there's no issues arising from the fact that the curve point is not
+        // necessarily in the prime-order subgroup.
         let s = Scalar {
             bytes: clamp_integer(bytes),
         };
         s * self
     }
 
-    /// A fixed-base version of [`Self::mul_clamped`].
+    /// Multiply the basepoint by `clamp_integer(bytes)`. For a description of clamping, see
+    /// [`clamp_integer`].
     pub fn mul_base_clamped(bytes: [u8; 32]) -> Self {
+        // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
+        // note that basepoint multiplication is also defined for all values of `bytes` up to and
+        // including 2^255 - 1.
         let s = Scalar {
             bytes: clamp_integer(bytes),
         };

@@ -190,25 +190,38 @@ pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
     ///
-    /// # Invariant
+    /// # Invariant #1
+    ///
+    /// The integer representing this scalar is less than \\(2\^{255}\\). That is, the most
+    /// significant bit of `bytes[31]` is 0.
+    ///
+    /// This is required for `EdwardsPoint` variable- and fixed-base multiplication, because most
+    /// integers above 2^255 are unrepresentable in our radix-16 NAF (see [`Self::as_radix_16`]).
+    /// The invariant is also required because our `MontgomeryPoint` multiplication assumes the MSB
+    /// is 0 (see `MontgomeryPoint::mul`).
+    ///
+    /// # Invariant #2 (weak)
     ///
     /// The integer representing this scalar is less than \\(2\^{255} - 19 \\), i.e., it represents
-    /// a canonical representative of an element of \\( \mathbb Z / \ell\mathbb Z \\).
+    /// a canonical representative of an element of \\( \mathbb Z / \ell\mathbb Z \\). This is
+    /// stronger than invariant #1. It also sometimes has to be broken.
     ///
-    /// Note that this implies the high bit of `bytes[31]` is zero, which ensures that there is
-    /// room for a carry bit when computing a NAF representation.
+    /// This invariant is deliberately broken in the implementation of `EdwardsPoint::{mul_clamped,
+    /// mul_base_clamped}`, `MontgomeryPoint::{mul_clamped, mul_base_clamped}`, and
+    /// `BasepointTable::mul_base_clamped`. This is not an issue though. As mentioned above,
+    /// scalar-point multiplication is defined for any choice of `bytes` that satisfies invariant
+    /// #1. Since clamping guarantees invariant #1 is satisfied, these operations are well defined.
     ///
-    /// # Note
+    /// Note: Scalar-point mult is the _only_ thing you can do safely with an unreduced scalar.
+    /// Scalar-scalar addition and subtraction are NOT correct when using unreduced scalars.
+    /// Multiplication is correct, but this is only due to a quirk of our implementation, and not
+    /// guaranteed to hold in general in the future.
     ///
-    /// In some unit tests, and one specific use case of the `mul_clamped` for `EdwardsPoint` and
-    /// `MontgomeryPoint`, this will not be reduced mod l. This is not an issue. We implement curve
-    /// point scalar multiplication for any choice of `bytes`, so long as the top bit is 0.
+    /// Note: It is not possible to construct an unreduced `Scalar` from the public API unless the
+    /// `legacy_compatibility` is enabled (thus making `Scalar::from_bits` public). Thus, for all
+    /// public non-legacy uses, invariant #2
+    /// always holds.
     ///
-    /// This is the only thing you can do safely with an unreduced scalar. Addition and subtraction
-    /// are NOT correct when using unreduced scalars. Multiplication is correct, but this is only
-    /// due to a quirk of our implementation, and not guaranteed to hold in general.
-    ///
-    /// It is not possible to construct an unreduced `Scalar` from the publicly-facing API.
     pub(crate) bytes: [u8; 32],
 }
 
@@ -248,11 +261,12 @@ impl Scalar {
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
     /// that scalars are always reduced. **Scalar arithmetic does not work** on scalars produced
     /// from this function. You may only use the output of this for `EdwardsPoint::mul` and
-    /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`
+    /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
+    /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
-        // Ensure that s < 2^255 by masking the high bit
+        // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.
         s.bytes[31] &= 0b0111_1111;
 
         s
@@ -317,7 +331,7 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
-        // the Scalar invariant property, this is always the case.
+        // Scalar invariant #1, this is always the case.
         UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
@@ -337,7 +351,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     #[allow(non_snake_case)]
     fn sub(self, rhs: &'b Scalar) -> Scalar {
         // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
-        // the Scalar invariant property, this is always the case.
+        // Scalar invariant #1, this is always the case.
         UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
     }
 }
@@ -833,7 +847,7 @@ impl Scalar {
     ///
     /// The length of the NAF is at most one more than the length of
     /// the binary representation of \\(k\\).  This is why the
-    /// `Scalar` type maintains an invariant that the top bit is
+    /// `Scalar` type maintains an invariant (invariant #1) that the top bit is
     /// \\(0\\), so that the NAF of a scalar has at most 256 digits.
     ///
     /// Intuitively, this is like a binary expansion, except that we
@@ -952,6 +966,10 @@ impl Scalar {
     ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
     /// $$
     /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
+    ///
+    /// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
+    /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
+    /// \\(2^{255}\\).
     pub(crate) fn as_radix_16(&self) -> [i8; 64] {
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
@@ -994,10 +1012,7 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4 => (256 + w - 1) / w,
-            5 => (256 + w - 1) / w,
-            6 => (256 + w - 1) / w,
-            7 => (256 + w - 1) / w,
+            4..=7 => (256 + w - 1) / w,
             // See comment in to_radix_2w on handling the terminal carry.
             8 => (256 + w - 1) / w + 1_usize,
             _ => panic!("invalid radix parameter"),
@@ -1007,13 +1022,17 @@ impl Scalar {
         digits_count
     }
 
-    /// Creates a representation of a Scalar in radix 32, 64, 128 or 256 for use with the Pippenger algorithm.
-    /// For lower radix, use `to_radix_16`, which is used by the Straus multi-scalar multiplication.
-    /// Higher radixes are not supported to save cache space. Radix 256 is near-optimal even for very
-    /// large inputs.
+    /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
+    /// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.
+    /// Radix 256 is near-optimal even for very large inputs.
     ///
-    /// Radix below 32 or above 256 is prohibited.
+    /// Radix below 16 or above 256 is prohibited.
     /// This method returns digits in a fixed-sized array, excess digits are zeroes.
+    ///
+    /// For radix 16, `Self` must be less than \\(2^{255}\\). This is because most integers larger
+    /// than \\(2^{255}\\) are unrepresentable in the form described below for \\(w = 4\\). This
+    /// would be true for \\(w = 8\\) as well, but it is compensated for by increasing the size
+    /// hint by 1.
     ///
     /// ## Scalar representation
     ///
@@ -1068,12 +1087,12 @@ impl Scalar {
             digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
         }
 
-        // When w < 8, we can fold the final carry onto the last digit d,
+        // When 4 < w < 8, we can fold the final carry onto the last digit d,
         // because d < 2^w/2 so d + carry*2^w = d + 1*2^w < 2^(w+1) < 2^8.
         //
         // When w = 8, we can't fit carry*2^w into an i8.  This should
         // not happen anyways, because the final carry will be 0 for
-        // reduced scalars, but the Scalar invariant allows 255-bit scalars.
+        // reduced scalars, but Scalar invariant #1 allows 255-bit scalars.
         // To handle this, we expand the size_hint by 1 when w=8,
         // and accumulate the final carry onto another digit.
         match w {
@@ -1099,7 +1118,7 @@ impl Scalar {
     }
 
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
-    /// public because any `Scalar` that is publicly observed is reduced, by the invariant.
+    /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {
         self.ct_eq(&self.reduce())
     }
@@ -1224,7 +1243,7 @@ pub fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 }
 
 #[cfg(test)]
-mod test {
+pub(crate) mod test {
     use super::*;
     use crate::constants;
 
@@ -1256,13 +1275,13 @@ mod test {
         ],
     };
 
-    /// The largest valid scalar (not mod l). Remember for NAF computations, the top bit has to be
-    // 0. So the largest integer a scalar can hold is 2^255 - 1. Addition and subtraction are
-    // broken on unreduced scalars. The only thing you can do with this is multiplying with a curve
-    // point (and actually also scalar-scalar multiplication, but that's just a quirk of our
-    // implementation).
+    /// The largest scalar that satisfies invariant #1, i.e., the largest scalar with the top bit
+    /// set to 0. Since this scalar violates invariant #2, i.e., it's greater than the modulus `l`,
+    /// addition and subtraction are broken. The only thing you can do with this is scalar-point
+    /// multiplication (and actually also scalar-scalar multiplication, but that's just a quirk of
+    /// our implementation).
     #[cfg(feature = "precomputed-tables")]
-    static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
+    pub(crate) static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
         bytes: [
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

@@ -44,8 +44,8 @@
 //!
 //! ## Scalars
 //!
-//! Scalars are represented by the [`Scalar`] struct.  To construct a scalar with a specific bit
-//! pattern, see [`Scalar::from_bits`].
+//! Scalars are represented by the [`Scalar`] struct. To construct a scalar, see
+//! [`Scalar::from_canonical_bytes`] or [`Scalar::from_bytes_mod_order_wide`].
 //!
 //! ## Scalar Multiplication
 //!
@@ -732,12 +732,13 @@ impl EdwardsPoint {
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
     /// [`clamp_integer`].
     pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
-        // We have to construct a Scalar that is not reduced mod l, which breaks its invariant.
-        // However, all our scalar-point multiplication routines are defined for all values of
-        // `bytes` up to and including 2^255 - 1, and clamping is guaranteed to return something
-        // within this range. Further, we don't do any reduction or arithmetic with this clamped
-        // value, so there's no issues arising from the fact that the curve point is not
-        // necessarily in the prime-order subgroup.
+        // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
+        // #2. But #2 is not necessary for correctness of variable-base multiplication. All that
+        // needs to hold is invariant #1, i.e., the scalar is less than 2^255. This is guaranteed
+        // by clamping.
+        // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
+        // issues arising from the fact that the curve point is not necessarily in the prime-order
+        // subgroup.
         let s = Scalar {
             bytes: clamp_integer(bytes),
         };
@@ -748,8 +749,8 @@ impl EdwardsPoint {
     /// [`clamp_integer`].
     pub fn mul_base_clamped(bytes: [u8; 32]) -> Self {
         // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
-        // note that basepoint multiplication is also defined for all values of `bytes` up to and
-        // including 2^255 - 1.
+        // note that fixed-base multiplication is also defined for all values of `bytes` less than
+        // 2^255.
         let s = Scalar {
             bytes: clamp_integer(bytes),
         };
@@ -902,7 +903,7 @@ macro_rules! impl_basepoint_table {
         ///
         /// Normally, the radix-256 tables would allow for only 32 additions per scalar
         /// multiplication.  However, due to the fact that standardised definitions of
-        /// legacy protocols—such as x25519—require allowing unreduced 255-bit scalar
+        /// legacy protocols—such as x25519—require allowing unreduced 255-bit scalars
         /// invariants, when converting such an unreduced scalar's representation to
         /// radix-\\(2^{8}\\), we cannot guarantee the carry bit will fit in the last
         /// coefficient (the coefficients are `i8`s).  When, \\(w\\), the power-of-2 of
@@ -1251,8 +1252,7 @@ impl Debug for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::field::FieldElement;
-    use crate::scalar::Scalar;
+    use crate::{field::FieldElement, scalar::Scalar};
     use subtle::ConditionallySelectable;
 
     #[cfg(feature = "alloc")]
@@ -1315,20 +1315,6 @@ mod test {
         0xc4, 0xc0, 0x46, 0x83, 0x43, 0xde, 0x70, 0x4b, 0x85, 0x09, 0x6f, 0xfe, 0x35, 0x4f, 0x13,
         0x2b, 0x42,
     ]);
-
-    /// The largest valid scalar (not mod l). Remember for NAF computations, the top bit has to be
-    // 0. So the largest integer a scalar can hold is 2^255 - 1. Addition and subtraction are
-    // broken on unreduced scalars. The only thing you can do with this is multiplying with a curve
-    // point (and actually also scalar-scalar multiplication, but that's just a quirk of our
-    // implementation).
-    #[cfg(feature = "precomputed-tables")]
-    static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
-        bytes: [
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-            0xff, 0xff, 0xff, 0x7f,
-        ],
-    };
 
     /// Test round-trip decompression for the basepoint.
     #[test]
@@ -1506,12 +1492,13 @@ mod test {
         assert_eq!(aP128, aP256);
     }
 
-    /// Check a unreduced scalar multiplication by the basepoint tables.
+    /// Check unreduced scalar multiplication by the basepoint tables is the same no matter what
+    /// radix the table is.
     #[cfg(feature = "precomputed-tables")]
     #[test]
     fn basepoint_tables_unreduced_scalar() {
         let P = &constants::ED25519_BASEPOINT_POINT;
-        let a = LARGEST_UNREDUCED_SCALAR;
+        let a = crate::scalar::test::LARGEST_UNREDUCED_SCALAR;
 
         let table_radix16 = EdwardsBasepointTableRadix16::create(P);
         let table_radix32 = EdwardsBasepointTableRadix32::create(P);
@@ -1550,6 +1537,33 @@ mod test {
     fn basepoint16_vs_mul_by_pow_2_4() {
         let bp16 = constants::ED25519_BASEPOINT_POINT.mul_by_pow_2(4);
         assert_eq!(bp16.compress(), BASE16_CMPRSSD);
+    }
+
+    /// Check that mul_base_clamped and mul_clamped agree
+    #[test]
+    fn mul_base_clamped() {
+        let mut csprng = rand_core::OsRng;
+
+        // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
+        let a_bytes = [0xff; 32];
+        assert_eq!(
+            EdwardsPoint::mul_base_clamped(a_bytes),
+            constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
+        );
+
+        // Test agreement on random integers
+        for _ in 0..100 {
+            use rand_core::RngCore;
+
+            // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
+            let mut a_bytes = [0u8; 32];
+            csprng.fill_bytes(&mut a_bytes);
+
+            assert_eq!(
+                EdwardsPoint::mul_base_clamped(a_bytes),
+                constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
+            );
+        }
     }
 
     #[test]

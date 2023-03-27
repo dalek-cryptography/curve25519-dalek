@@ -56,6 +56,7 @@ curve25519-dalek = "4.0.0-rc.1"
 | `rand_core`        |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
+| `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To
@@ -78,6 +79,7 @@ latest breaking changes are below:
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
+* Remove `Scalar::from_bits` and `Scalar::from_bits_clamped`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

@@ -1280,7 +1280,6 @@ pub(crate) mod test {
     /// addition and subtraction are broken. The only thing you can do with this is scalar-point
     /// multiplication (and actually also scalar-scalar multiplication, but that's just a quirk of
     /// our implementation).
-    #[cfg(feature = "precomputed-tables")]
     pub(crate) static LARGEST_UNREDUCED_SCALAR: Scalar = Scalar {
         bytes: [
             0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

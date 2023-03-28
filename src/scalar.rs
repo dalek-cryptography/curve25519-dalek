@@ -264,6 +264,7 @@ impl Scalar {
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
+    #[deprecated(since = "4.0.0", note = "blah")]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.
@@ -1250,6 +1251,8 @@ pub(crate) mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
+    use rand::RngCore;
+
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     pub static X: Scalar = Scalar {
         bytes: [
@@ -1844,12 +1847,11 @@ pub(crate) mod test {
         );
     }
 
-    // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones out of range and
-    // with the high bit set. In old versions of ed25519-dalek, it used to be the case that a was
-    // reduced and b was clamped an unreduced. This should not affect computation.
+    // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
+    // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
+    // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
-        use rand::RngCore;
         let mut rng = rand::thread_rng();
 
         for _ in 0..10 {

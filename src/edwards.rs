@@ -1261,6 +1261,8 @@ mod test {
     #[cfg(feature = "precomputed-tables")]
     use crate::constants::ED25519_BASEPOINT_TABLE;
 
+    use rand_core::RngCore;
+
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202
     static BASE_X_COORD_BYTES: [u8; 32] = [
@@ -1544,17 +1546,31 @@ mod test {
     fn mul_base_clamped() {
         let mut csprng = rand_core::OsRng;
 
-        // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
+        // Make a random curve point in the curve. Give it torsion to make things interesting.
+        let random_point = {
+            let mut b = [0u8; 32];
+            csprng.fill_bytes(&mut b);
+            EdwardsPoint::mul_base_clamped(b) + constants::EIGHT_TORSION[1]
+        };
+        // Make a basepoint table from the random point. We'll use this with mul_base_clamped
+        let random_table = EdwardsBasepointTableRadix256::create(&random_point);
+
+        // Now test scalar mult. agreement on the default basepoint as well as random_point
+
+        // Test that mul_base_clamped and mul_clamped agree on a large integer. Even after
+        // clamping, this integer is not reduced mod l.
         let a_bytes = [0xff; 32];
         assert_eq!(
             EdwardsPoint::mul_base_clamped(a_bytes),
             constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
         );
+        assert_eq!(
+            random_table.mul_base_clamped(a_bytes),
+            random_point.mul_clamped(a_bytes)
+        );
 
         // Test agreement on random integers
         for _ in 0..100 {
-            use rand_core::RngCore;
-
             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
             let mut a_bytes = [0u8; 32];
             csprng.fill_bytes(&mut a_bytes);
@@ -1562,6 +1578,10 @@ mod test {
             assert_eq!(
                 EdwardsPoint::mul_base_clamped(a_bytes),
                 constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
+            );
+            assert_eq!(
+                random_table.mul_base_clamped(a_bytes),
+                random_point.mul_clamped(a_bytes)
             );
         }
     }

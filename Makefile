@@ -1,4 +1,4 @@
-FEATURES := serde rand_core digest
+FEATURES := serde rand_core digest legacy_compatibility
 
 export RUSTFLAGS := --cfg=curve25519_dalek_backend="simd"
 export RUSTDOCFLAGS := \

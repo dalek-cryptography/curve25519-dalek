@@ -259,12 +259,16 @@ impl Scalar {
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
-    /// that scalars are always reduced. **Scalar arithmetic does not work** on scalars produced
-    /// from this function. You may only use the output of this for `EdwardsPoint::mul` and
+    /// that scalars are always reduced. Scalar-scalar arithmetic, i.e., addition, subtraction,
+    /// multiplication, **does not work** on scalars produced from this function. You may only use
+    /// the output of this function for `EdwardsPoint::mul`, `MontgomeryPoint::mul`, and
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
-    #[deprecated(since = "4.0.0", note = "blah")]
+    #[deprecated(
+        since = "4.0.0",
+        note = "This constructor outputs scalars with undefined scalar-scalar arithmetic. See docs."
+    )]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.

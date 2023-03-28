@@ -79,8 +79,8 @@ latest breaking changes are below:
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
-* Gate `Scalar::from_bits` behind the `legacy_compatibility` feature
-* Remove `Scalar::from_bits_clamped` and `Scalar::reduce`
+* Remove `Scalar::from_bytes_clamped` and `Scalar::reduce`
+* Deprecate and feature-gate `Scalar::from_bits` behind `legacy_compatibility`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it
   `EdwardsPoint::nonspec_map_to_curve`
 * Require including a new trait, `use curve25519_dalek::traits::BasepointTable`

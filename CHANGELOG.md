@@ -22,8 +22,8 @@ major series.
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
-* Gate `Scalar::from_bits` behind the `legacy_compatibility` feature
-* Remove `Scalar::from_bits_clamped` and `Scalar::reduce`
+* Remove `Scalar::from_bytes_clamped` and `Scalar::reduce`
+* Deprecate and feature-gate `Scalar::from_bits` behind `legacy_compatibility`
 
 #### Other changes
 

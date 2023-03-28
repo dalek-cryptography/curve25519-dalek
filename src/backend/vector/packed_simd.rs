@@ -5,10 +5,6 @@
 
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
 
-pub trait IntoBits<T> {
-    fn into_bits(self) -> T;
-}
-
 macro_rules! impl_shared {
     (
         $ty:ident,
@@ -24,17 +20,17 @@ macro_rules! impl_shared {
         #[repr(transparent)]
         pub struct $ty(core::arch::x86_64::__m256i);
 
-        impl IntoBits<core::arch::x86_64::__m256i> for $ty {
+        impl From<$ty> for core::arch::x86_64::__m256i {
             #[inline]
-            fn into_bits(self) -> core::arch::x86_64::__m256i {
-                self.0
+            fn from(value: $ty) -> core::arch::x86_64::__m256i {
+                value.0
             }
         }
 
-        impl IntoBits<$ty> for core::arch::x86_64::__m256i {
+        impl From<core::arch::x86_64::__m256i> for $ty {
             #[inline]
-            fn into_bits(self) -> $ty {
-                $ty(self)
+            fn from(value: core::arch::x86_64::__m256i) -> $ty {
+                $ty(value)
             }
         }
 
@@ -69,7 +65,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn add(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::$add_intrinsic(self.0, rhs.0).into_bits() }
+                unsafe { core::arch::x86_64::$add_intrinsic(self.0, rhs.0).into() }
             }
         }
 
@@ -85,7 +81,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn sub(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::$sub_intrinsic(self.0, rhs.0).into_bits() }
+                unsafe { core::arch::x86_64::$sub_intrinsic(self.0, rhs.0).into() }
             }
         }
 
@@ -94,7 +90,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn bitand(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::_mm256_and_si256(self.0, rhs.0).into_bits() }
+                unsafe { core::arch::x86_64::_mm256_and_si256(self.0, rhs.0).into() }
             }
         }
 
@@ -103,7 +99,7 @@ macro_rules! impl_shared {
 
             #[inline]
             fn bitxor(self, rhs: $ty) -> Self {
-                unsafe { core::arch::x86_64::_mm256_xor_si256(self.0, rhs.0).into_bits() }
+                unsafe { core::arch::x86_64::_mm256_xor_si256(self.0, rhs.0).into() }
             }
         }
 
@@ -125,12 +121,12 @@ macro_rules! impl_shared {
         impl $ty {
             #[inline]
             pub fn shl<const N: i32>(self) -> Self {
-                unsafe { core::arch::x86_64::$shl_intrinsic(self.0, N).into_bits() }
+                unsafe { core::arch::x86_64::$shl_intrinsic(self.0, N).into() }
             }
 
             #[inline]
             pub fn shr<const N: i32>(self) -> Self {
-                unsafe { core::arch::x86_64::$shr_intrinsic(self.0, N).into_bits() }
+                unsafe { core::arch::x86_64::$shr_intrinsic(self.0, N).into() }
             }
 
             #[inline]
@@ -144,10 +140,10 @@ macro_rules! impl_shared {
 macro_rules! impl_conv {
     ($src:ident => $($dst:ident),+) => {
         $(
-            impl IntoBits<$dst> for $src {
+            impl From<$src> for $dst {
                 #[inline]
-                fn into_bits(self) -> $dst {
-                    $dst(self.0)
+                fn from(value: $src) -> $dst {
+                    $dst(value.0)
                 }
             }
         )+

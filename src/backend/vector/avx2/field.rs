@@ -40,7 +40,7 @@ const C_LANES64: u8 = 0b00_11_00_00;
 #[allow(unused)]
 const D_LANES64: u8 = 0b11_00_00_00;
 
-use crate::backend::vector::packed_simd::{i32x8, u32x8, u64x4, IntoBits};
+use crate::backend::vector::packed_simd::{i32x8, u32x8, u64x4};
 use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
@@ -65,8 +65,8 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     unsafe {
         use core::arch::x86_64::_mm256_unpackhi_epi32;
         use core::arch::x86_64::_mm256_unpacklo_epi32;
-        a = _mm256_unpacklo_epi32(src.into_bits(), zero.into_bits()).into_bits();
-        b = _mm256_unpackhi_epi32(src.into_bits(), zero.into_bits()).into_bits();
+        a = _mm256_unpacklo_epi32(src.into(), zero.into()).into();
+        b = _mm256_unpackhi_epi32(src.into(), zero.into()).into();
     }
     (a, b)
 }
@@ -89,13 +89,13 @@ fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
         // Input: x = (a0, 0, b0, 0, c0, 0, d0, 0)
         // Input: y = (a1, 0, b1, 0, c1, 0, d1, 0)
 
-        let x_shuffled = _mm256_shuffle_epi32(x.into_bits(), 0b11_01_10_00);
-        let y_shuffled = _mm256_shuffle_epi32(y.into_bits(), 0b10_00_11_01);
+        let x_shuffled = _mm256_shuffle_epi32(x.into(), 0b11_01_10_00);
+        let y_shuffled = _mm256_shuffle_epi32(y.into(), 0b10_00_11_01);
 
         // x' = (a0, b0,  0,  0, c0, d0,  0,  0)
         // y' = ( 0,  0, a1, b1,  0,  0, c1, d1)
 
-        _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into_bits()
+        _mm256_blend_epi32(x_shuffled, y_shuffled, 0b11001100).into()
     }
 }
 
@@ -233,7 +233,7 @@ impl FieldElement2625x4 {
                 // Note that this gets turned into a generic LLVM
                 // shuffle-by-constants, which can be lowered to a simpler
                 // instruction than a generic permute.
-                _mm256_permutevar8x32_epi32(x.into_bits(), c.into_bits()).into_bits()
+                _mm256_permutevar8x32_epi32(x.into(), c.into()).into()
             }
         }
 
@@ -279,38 +279,29 @@ impl FieldElement2625x4 {
                 // which does not require a shuffle immediate but *is* lowered
                 // to immediate shuffles anyways).
                 match control {
-                    Lanes::C => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), C_LANES as i32).into_bits()
-                    }
-                    Lanes::D => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), D_LANES as i32).into_bits()
-                    }
+                    Lanes::C => _mm256_blend_epi32(x.into(), y.into(), C_LANES as i32).into(),
+                    Lanes::D => _mm256_blend_epi32(x.into(), y.into(), D_LANES as i32).into(),
                     Lanes::AD => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | D_LANES) as i32)
-                            .into_bits()
+                        _mm256_blend_epi32(x.into(), y.into(), (A_LANES | D_LANES) as i32).into()
                     }
                     Lanes::AB => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | B_LANES) as i32)
-                            .into_bits()
+                        _mm256_blend_epi32(x.into(), y.into(), (A_LANES | B_LANES) as i32).into()
                     }
                     Lanes::AC => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (A_LANES | C_LANES) as i32)
-                            .into_bits()
+                        _mm256_blend_epi32(x.into(), y.into(), (A_LANES | C_LANES) as i32).into()
                     }
                     Lanes::CD => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (C_LANES | D_LANES) as i32)
-                            .into_bits()
+                        _mm256_blend_epi32(x.into(), y.into(), (C_LANES | D_LANES) as i32).into()
                     }
                     Lanes::BC => {
-                        _mm256_blend_epi32(x.into_bits(), y.into_bits(), (B_LANES | C_LANES) as i32)
-                            .into_bits()
+                        _mm256_blend_epi32(x.into(), y.into(), (B_LANES | C_LANES) as i32).into()
                     }
                     Lanes::ABCD => _mm256_blend_epi32(
-                        x.into_bits(),
-                        y.into_bits(),
+                        x.into(),
+                        y.into(),
                         (A_LANES | B_LANES | C_LANES | D_LANES) as i32,
                     )
-                    .into_bits(),
+                    .into(),
                 }
             }
         }
@@ -436,8 +427,8 @@ impl FieldElement2625x4 {
                 use core::arch::x86_64::_mm256_shuffle_epi32;
                 use core::arch::x86_64::_mm256_srlv_epi32;
 
-                let c = _mm256_srlv_epi32(v.into_bits(), shifts.into_bits());
-                _mm256_shuffle_epi32(c, 0b01_00_11_10).into_bits()
+                let c = _mm256_srlv_epi32(v.into(), shifts.into());
+                _mm256_shuffle_epi32(c, 0b01_00_11_10).into()
             }
         };
 
@@ -458,7 +449,7 @@ impl FieldElement2625x4 {
         let combine = |v_lo: u32x8, v_hi: u32x8| -> u32x8 {
             unsafe {
                 use core::arch::x86_64::_mm256_blend_epi32;
-                _mm256_blend_epi32(v_lo.into_bits(), v_hi.into_bits(), 0b11_00_11_00).into_bits()
+                _mm256_blend_epi32(v_lo.into(), v_hi.into(), 0b11_00_11_00).into()
             }
         };
 
@@ -488,17 +479,17 @@ impl FieldElement2625x4 {
             //
             // c98       = (c(x9), c(y9), c(x8), c(y8), c(z9), c(w9), c(z8), c(w8));
             // c9_spread = (c(x9), c(x8), c(y9), c(y8), c(z9), c(z8), c(w9), c(w8)).
-            let c9_spread = _mm256_shuffle_epi32(c98.into_bits(), 0b11_01_10_00);
+            let c9_spread = _mm256_shuffle_epi32(c98.into(), 0b11_01_10_00);
 
             // Since the carryouts are bounded by 2^7, their products with 19
             // are bounded by 2^11.25.  This means that
             //
             // c9_19_spread = (19*c(x9), 0, 19*c(y9), 0, 19*c(z9), 0, 19*c(w9), 0).
-            let c9_19_spread = _mm256_mul_epu32(c9_spread, u64x4::splat(19).into_bits());
+            let c9_19_spread = _mm256_mul_epu32(c9_spread, u64x4::splat(19).into());
 
             // Unshuffle:
             // c9_19 = (19*c(x9), 19*c(y9), 0, 0, 19*c(z9), 19*c(w9), 0, 0).
-            _mm256_shuffle_epi32(c9_19_spread, 0b11_01_10_00).into_bits()
+            _mm256_shuffle_epi32(c9_19_spread, 0b11_01_10_00).into()
         };
 
         // Add the final carryin.
@@ -566,8 +557,8 @@ impl FieldElement2625x4 {
         unsafe {
             use core::arch::x86_64::_mm256_mul_epu32;
             let x19 = u64x4::splat(19);
-            c0 = _mm256_mul_epu32(c0.into_bits(), x19.into_bits()).into_bits(); // c0 < 2^30.25
-            c1 = _mm256_mul_epu32(c1.into_bits(), x19.into_bits()).into_bits(); // c1 < 2^17.25
+            c0 = _mm256_mul_epu32(c0.into(), x19.into()).into(); // c0 < 2^30.25
+            c1 = _mm256_mul_epu32(c1.into(), x19.into()).into(); // c1 < 2^17.25
         }
 
         z[0] += c0; // z0 < 2^26 + 2^30.25 < 2^30.33
@@ -582,11 +573,11 @@ impl FieldElement2625x4 {
         //
         // So the packed result is bounded with b = 0.007.
         FieldElement2625x4([
-            repack_pair(z[0].into_bits(), z[1].into_bits()),
-            repack_pair(z[2].into_bits(), z[3].into_bits()),
-            repack_pair(z[4].into_bits(), z[5].into_bits()),
-            repack_pair(z[6].into_bits(), z[7].into_bits()),
-            repack_pair(z[8].into_bits(), z[9].into_bits()),
+            repack_pair(z[0].into(), z[1].into()),
+            repack_pair(z[2].into(), z[3].into()),
+            repack_pair(z[4].into(), z[5].into()),
+            repack_pair(z[6].into(), z[7].into()),
+            repack_pair(z[8].into(), z[9].into()),
         ])
     }
 
@@ -604,13 +595,13 @@ impl FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into_bits(), y.into_bits()).into_bits() }
+            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
         }
 
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
             use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into_bits(), y.into_bits()).into_bits() }
+            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
         }
 
         let v19 = u32x8::new(19, 0, 19, 0, 19, 0, 19, 0);
@@ -670,7 +661,7 @@ impl FieldElement2625x4 {
         let negate_D = |x: u64x4, p: u64x4| -> u64x4 {
             unsafe {
                 use core::arch::x86_64::_mm256_blend_epi32;
-                _mm256_blend_epi32(x.into_bits(), (p - x).into_bits(), D_LANES64 as i32).into_bits()
+                _mm256_blend_epi32(x.into(), (p - x).into(), D_LANES64 as i32).into()
             }
         };
 
@@ -753,16 +744,16 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
             let (b8, b9) = unpack_pair(self.0[4]);
 
             FieldElement2625x4::reduce64([
-                _mm256_mul_epu32(b0.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b1.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b2.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b3.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b4.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b5.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b6.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b7.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b8.into_bits(), consts.into_bits()).into_bits(),
-                _mm256_mul_epu32(b9.into_bits(), consts.into_bits()).into_bits(),
+                _mm256_mul_epu32(b0.into(), consts.into()).into(),
+                _mm256_mul_epu32(b1.into(), consts.into()).into(),
+                _mm256_mul_epu32(b2.into(), consts.into()).into(),
+                _mm256_mul_epu32(b3.into(), consts.into()).into(),
+                _mm256_mul_epu32(b4.into(), consts.into()).into(),
+                _mm256_mul_epu32(b5.into(), consts.into()).into(),
+                _mm256_mul_epu32(b6.into(), consts.into()).into(),
+                _mm256_mul_epu32(b7.into(), consts.into()).into(),
+                _mm256_mul_epu32(b8.into(), consts.into()).into(),
+                _mm256_mul_epu32(b9.into(), consts.into()).into(),
             ])
         }
     }
@@ -787,13 +778,13 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into_bits(), y.into_bits()).into_bits() }
+            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
         }
 
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
             use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into_bits(), y.into_bits()).into_bits() }
+            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
         }
 
         let (x0, x1) = unpack_pair(self.0[0]);

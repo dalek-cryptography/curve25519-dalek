@@ -42,7 +42,21 @@ macro_rules! impl_shared {
             #[inline]
             fn eq(&self, rhs: &$ty) -> bool {
                 unsafe {
+                    // This compares each pair of 8-bit packed integers and returns either 0xFF or 0x00
+                    // depending on whether they're equal.
+                    //
+                    // So the values are equal if (and only if) this returns a value that's filled with only 0xFF.
+                    //
+                    // Pseudocode of what this does:
+                    //   self.0.bytes().zip(rhs.0.bytes()).map(|a, b| if a == b { 0xFF } else { 0x00 }).join();
                     let m = core::arch::x86_64::_mm256_cmpeq_epi8(self.0, rhs.0);
+
+                    // Now we need to reduce the 256-bit value to something on which we can branch.
+                    //
+                    // This will just take the most significant bit of every 8-bit packed integer
+                    // and build an `i32` out of it. If the values we previously compared were equal
+                    // then all off the most significant bits will be equal to 1, which means that
+                    // this will return 0xFFFFFFFF, which is equal to -1 when represented as an `i32`.
                     core::arch::x86_64::_mm256_movemask_epi8(m) == -1
                 }
             }

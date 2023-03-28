@@ -18,7 +18,8 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
-/// The `Scalar29` struct represents an element in ℤ/lℤ as 9 29-bit limbs
+/// The `Scalar29` struct represents an element in \\(\mathbb{Z} / \ell\mathbb{Z}\\) as 9 29-bit
+/// limbs
 #[derive(Copy, Clone)]
 pub struct Scalar29(pub [u32; 9]);
 

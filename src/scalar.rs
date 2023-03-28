@@ -574,7 +574,7 @@ impl Scalar {
     ///
     /// # Returns
     ///
-    /// A random scalar within ℤ/lℤ.
+    /// A random scalar within \\(\mathbb{Z} / \ell\mathbb{Z}\\).
     ///
     /// # Example
     ///

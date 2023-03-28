@@ -17,7 +17,7 @@ use core::borrow::Borrow;
 
 use subtle;
 
-use crate::scalar::Scalar;
+use crate::scalar::{clamp_integer, Scalar};
 
 // ------------------------------------------------------------------------
 // Public Traits
@@ -61,6 +61,18 @@ pub trait BasepointTable {
 
     /// Multiply a `scalar` by this precomputed basepoint table, in constant time.
     fn mul_base(&self, scalar: &Scalar) -> Self::Point;
+
+    /// Multiply `clamp_integer(bytes)` by this precomputed basepoint table, in constant time. For
+    /// a description of clamping, see [`clamp_integer`].
+    fn mul_base_clamped(&self, bytes: [u8; 32]) -> Self::Point {
+        // Basepoint multiplication is defined for all values of `bytes` up to and including
+        // 2^255 - 1. The limit comes from the fact that scalar.as_radix_16() doesn't work for
+        // most scalars larger than 2^255.
+        let s = Scalar {
+            bytes: clamp_integer(bytes),
+        };
+        self.mul_base(&s)
+    }
 }
 
 /// A trait for constant-time multiscalar multiplication without precomputation.

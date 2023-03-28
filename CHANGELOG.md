@@ -24,9 +24,12 @@ major series.
   whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
+* Remove `Scalar::from_bytes_clamped` and `Scalar::reduce`
+* Deprecate and feature-gate `Scalar::from_bits` behind `legacy_compatibility`
 
 #### Other changes
 
+* Add `EdwardsPoint::{mul_base, mul_base_clamped}`, `MontgomeryPoint::{mul_base, mul_base_clamped}`, and `BasepointTable::mul_base_clamped`
 * Add `precomputed-tables` feature
 * Update Maintenance Policies for SemVer
 * Migrate documentation to docs.rs hosted

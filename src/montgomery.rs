@@ -57,7 +57,7 @@ use core::{
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
-use crate::scalar::Scalar;
+use crate::scalar::{clamp_integer, Scalar};
 
 use crate::traits::Identity;
 
@@ -121,6 +121,34 @@ impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
     pub fn mul_base(scalar: &Scalar) -> Self {
         EdwardsPoint::mul_base(scalar).to_montgomery()
+    }
+
+    /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
+    /// [`clamp_integer`].
+    pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
+        // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
+        // #2. But #2 is not necessary for correctness of variable-base multiplication. All that
+        // needs to hold is invariant #1, i.e., the scalar is less than 2^255. This is guaranteed
+        // by clamping.
+        // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
+        // issues arising from the fact that the curve point is not necessarily in the prime-order
+        // subgroup.
+        let s = Scalar {
+            bytes: clamp_integer(bytes),
+        };
+        s * self
+    }
+
+    /// Multiply the basepoint by `clamp_integer(bytes)`. For a description of clamping, see
+    /// [`clamp_integer`].
+    pub fn mul_base_clamped(bytes: [u8; 32]) -> Self {
+        // See reasoning in Self::mul_clamped why it is OK to make an unreduced Scalar here. We
+        // note that fixed-base multiplication is also defined for all values of `bytes` less than
+        // 2^255.
+        let s = Scalar {
+            bytes: clamp_integer(bytes),
+        };
+        Self::mul_base(&s)
     }
 
     /// View this `MontgomeryPoint` as an array of bytes.
@@ -342,6 +370,9 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             W: FieldElement::ONE,
         };
 
+        // NOTE: The below swap-double-add routine skips the first iteration, i.e., it assumes the
+        // MSB of `scalar` is 0. This is allowed, since it follows from Scalar invariant #1.
+
         // Go through the bits from most to least significant, using a sliding window of 2
         let mut bits = scalar.bits_le().rev();
         let mut prev_bit = bits.next().unwrap();
@@ -391,8 +422,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    #[cfg(feature = "rand_core")]
-    use rand_core::OsRng;
+    use rand_core::RngCore;
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -476,18 +506,44 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "rand_core")]
     fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng: OsRng = OsRng;
+        let mut csprng = rand_core::OsRng;
 
-        let s: Scalar = Scalar::random(&mut csprng);
-        let p_edwards = EdwardsPoint::mul_base(&s);
-        let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+        for _ in 0..100 {
+            let s: Scalar = Scalar::random(&mut csprng);
+            let p_edwards = EdwardsPoint::mul_base(&s);
+            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
-        let expected = s * p_edwards;
-        let result = s * p_montgomery;
+            let expected = s * p_edwards;
+            let result = s * p_montgomery;
 
-        assert_eq!(result, expected.to_montgomery())
+            assert_eq!(result, expected.to_montgomery())
+        }
+    }
+
+    /// Check that mul_base_clamped and mul_clamped agree
+    #[test]
+    fn mul_base_clamped() {
+        let mut csprng = rand_core::OsRng;
+
+        // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
+        let a_bytes = [0xff; 32];
+        assert_eq!(
+            MontgomeryPoint::mul_base_clamped(a_bytes),
+            constants::X25519_BASEPOINT.mul_clamped(a_bytes)
+        );
+
+        // Test agreement on random integers
+        for _ in 0..100 {
+            // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
+            let mut a_bytes = [0u8; 32];
+            csprng.fill_bytes(&mut a_bytes);
+
+            assert_eq!(
+                MontgomeryPoint::mul_base_clamped(a_bytes),
+                constants::X25519_BASEPOINT.mul_clamped(a_bytes)
+            );
+        }
     }
 
     #[cfg(feature = "alloc")]

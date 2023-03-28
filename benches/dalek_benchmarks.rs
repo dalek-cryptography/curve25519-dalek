@@ -300,10 +300,33 @@ mod montgomery_benches {
 mod scalar_benches {
     use super::*;
 
-    fn scalar_inversion<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+    fn scalar_arith<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let mut rng = thread_rng();
+
         c.bench_function("Scalar inversion", |b| {
             let s = Scalar::from(897987897u64).invert();
             b.iter(|| s.invert());
+        });
+        c.bench_function("Scalar addition", |b| {
+            b.iter_batched(
+                || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
+                |(a, b)| a + b,
+                BatchSize::SmallInput,
+            );
+        });
+        c.bench_function("Scalar subtraction", |b| {
+            b.iter_batched(
+                || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
+                |(a, b)| a - b,
+                BatchSize::SmallInput,
+            );
+        });
+        c.bench_function("Scalar multiplication", |b| {
+            b.iter_batched(
+                || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
+                |(a, b)| a * b,
+                BatchSize::SmallInput,
+            );
         });
     }
 
@@ -329,7 +352,7 @@ mod scalar_benches {
         let mut c = Criterion::default();
         let mut g = c.benchmark_group("scalar benches");
 
-        scalar_inversion(&mut g);
+        scalar_arith(&mut g);
         batch_scalar_inversion(&mut g);
     }
 }

@@ -168,17 +168,8 @@ impl_shared!(
     _mm256_srli_epi32,
     _mm256_extract_epi32
 );
-impl_shared!(
-    i32x8,
-    i32,
-    _mm256_add_epi32,
-    _mm256_sub_epi32,
-    _mm256_slli_epi32,
-    _mm256_srli_epi32,
-    _mm256_extract_epi32
-);
 
-impl_conv!(u64x4 => u32x8, i32x8);
+impl_conv!(u64x4 => u32x8);
 
 #[allow(dead_code)]
 impl u64x4 {
@@ -241,22 +232,5 @@ impl u32x8 {
     #[inline]
     pub fn splat(x: u32) -> Self {
         unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
-    }
-}
-
-#[allow(dead_code)]
-impl i32x8 {
-    #[inline]
-    pub fn new(x0: i32, x1: i32, x2: i32, x3: i32, x4: i32, x5: i32, x6: i32, x7: i32) -> Self {
-        unsafe {
-            Self(core::arch::x86_64::_mm256_set_epi32(
-                x7, x6, x5, x4, x3, x2, x1, x0,
-            ))
-        }
-    }
-
-    #[inline]
-    pub fn splat(x: i32) -> Self {
-        unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x)) }
     }
 }

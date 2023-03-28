@@ -40,7 +40,7 @@ const C_LANES64: u8 = 0b00_11_00_00;
 #[allow(unused)]
 const D_LANES64: u8 = 0b11_00_00_00;
 
-use crate::backend::vector::packed_simd::{i32x8, u32x8, u64x4};
+use crate::backend::vector::packed_simd::{u32x8, u64x4};
 use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
@@ -61,7 +61,7 @@ use crate::backend::vector::avx2::constants::{
 fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
     let b: u32x8;
-    let zero = i32x8::splat(0);
+    let zero = u32x8::splat(0);
     unsafe {
         use core::arch::x86_64::_mm256_unpackhi_epi32;
         use core::arch::x86_64::_mm256_unpacklo_epi32;
@@ -404,7 +404,7 @@ impl FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.0002 \\).
     #[inline]
     pub fn reduce(&self) -> FieldElement2625x4 {
-        let shifts = i32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
+        let shifts = u32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
         let masks = u32x8::new(
             (1 << 26) - 1,
             (1 << 26) - 1,

@@ -233,4 +233,14 @@ impl u32x8 {
     pub fn splat(x: u32) -> Self {
         unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
     }
+
+    /// Multiplies the low unsigned 32-bits from each packed 64-bit element
+    /// and returns the unsigned 64-bit results.
+    ///
+    /// (This ignores the upper 32-bits from each packed 64-bits!)
+    #[inline]
+    pub fn mul32(self, rhs: u32x8) -> u64x4 {
+        // NOTE: This ignores the upper 32-bits from each packed 64-bits.
+        unsafe { core::arch::x86_64::_mm256_mul_epu32(self.0, rhs.0).into() }
+    }
 }

@@ -554,12 +554,9 @@ impl FieldElement2625x4 {
         let mut c0: u64x4 = c & LOW_26_BITS; // c0 < 2^26;
         let mut c1: u64x4 = c.shr::<26>();         // c1 < 2^(39-26) = 2^13;
 
-        unsafe {
-            use core::arch::x86_64::_mm256_mul_epu32;
-            let x19 = u64x4::splat(19);
-            c0 = _mm256_mul_epu32(c0.into(), x19.into()).into(); // c0 < 2^30.25
-            c1 = _mm256_mul_epu32(c1.into(), x19.into()).into(); // c1 < 2^17.25
-        }
+        let x19 = u64x4::splat(19);
+        c0 = u32x8::from(c0).mul32(u32x8::from(x19));
+        c1 = u32x8::from(c1).mul32(u32x8::from(x19));
 
         z[0] += c0; // z0 < 2^26 + 2^30.25 < 2^30.33
         z[1] += c1; // z1 < 2^25 + 2^17.25 < 2^25.0067
@@ -594,14 +591,12 @@ impl FieldElement2625x4 {
     pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
-            use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
+            x.mul32(y)
         }
 
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
-            use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
+            x.mul32(y).into()
         }
 
         let v19 = u32x8::new(19, 0, 19, 0, 19, 0, 19, 0);
@@ -732,30 +727,26 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[inline]
     fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement2625x4 {
-        unsafe {
-            use core::arch::x86_64::_mm256_mul_epu32;
+        let consts = u32x8::new(scalars.0, 0, scalars.1, 0, scalars.2, 0, scalars.3, 0);
 
-            let consts = u32x8::new(scalars.0, 0, scalars.1, 0, scalars.2, 0, scalars.3, 0);
+        let (b0, b1) = unpack_pair(self.0[0]);
+        let (b2, b3) = unpack_pair(self.0[1]);
+        let (b4, b5) = unpack_pair(self.0[2]);
+        let (b6, b7) = unpack_pair(self.0[3]);
+        let (b8, b9) = unpack_pair(self.0[4]);
 
-            let (b0, b1) = unpack_pair(self.0[0]);
-            let (b2, b3) = unpack_pair(self.0[1]);
-            let (b4, b5) = unpack_pair(self.0[2]);
-            let (b6, b7) = unpack_pair(self.0[3]);
-            let (b8, b9) = unpack_pair(self.0[4]);
-
-            FieldElement2625x4::reduce64([
-                _mm256_mul_epu32(b0.into(), consts.into()).into(),
-                _mm256_mul_epu32(b1.into(), consts.into()).into(),
-                _mm256_mul_epu32(b2.into(), consts.into()).into(),
-                _mm256_mul_epu32(b3.into(), consts.into()).into(),
-                _mm256_mul_epu32(b4.into(), consts.into()).into(),
-                _mm256_mul_epu32(b5.into(), consts.into()).into(),
-                _mm256_mul_epu32(b6.into(), consts.into()).into(),
-                _mm256_mul_epu32(b7.into(), consts.into()).into(),
-                _mm256_mul_epu32(b8.into(), consts.into()).into(),
-                _mm256_mul_epu32(b9.into(), consts.into()).into(),
-            ])
-        }
+        FieldElement2625x4::reduce64([
+            b0.mul32(consts),
+            b1.mul32(consts),
+            b2.mul32(consts),
+            b3.mul32(consts),
+            b4.mul32(consts),
+            b5.mul32(consts),
+            b6.mul32(consts),
+            b7.mul32(consts),
+            b8.mul32(consts),
+            b9.mul32(consts),
+        ])
     }
 }
 
@@ -777,14 +768,12 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
-            use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
+            x.mul32(y)
         }
 
         #[inline(always)]
         fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
-            use core::arch::x86_64::_mm256_mul_epu32;
-            unsafe { _mm256_mul_epu32(x.into(), y.into()).into() }
+            x.mul32(y).into()
         }
 
         let (x0, x1) = unpack_pair(self.0[0]);

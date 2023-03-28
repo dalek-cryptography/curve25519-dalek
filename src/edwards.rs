@@ -1547,12 +1547,14 @@ mod test {
         let mut csprng = rand_core::OsRng;
 
         // Make a random curve point in the curve. Give it torsion to make things interesting.
+        #[cfg(feature = "precomputed-tables")]
         let random_point = {
             let mut b = [0u8; 32];
             csprng.fill_bytes(&mut b);
             EdwardsPoint::mul_base_clamped(b) + constants::EIGHT_TORSION[1]
         };
         // Make a basepoint table from the random point. We'll use this with mul_base_clamped
+        #[cfg(feature = "precomputed-tables")]
         let random_table = EdwardsBasepointTableRadix256::create(&random_point);
 
         // Now test scalar mult. agreement on the default basepoint as well as random_point
@@ -1564,6 +1566,7 @@ mod test {
             EdwardsPoint::mul_base_clamped(a_bytes),
             constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
         );
+        #[cfg(feature = "precomputed-tables")]
         assert_eq!(
             random_table.mul_base_clamped(a_bytes),
             random_point.mul_clamped(a_bytes)
@@ -1579,6 +1582,7 @@ mod test {
                 EdwardsPoint::mul_base_clamped(a_bytes),
                 constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
             );
+            #[cfg(feature = "precomputed-tables")]
             assert_eq!(
                 random_table.mul_base_clamped(a_bytes),
                 random_point.mul_clamped(a_bytes)

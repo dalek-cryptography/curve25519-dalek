@@ -23,7 +23,7 @@ major series.
 * `Scalar::from_canonical_bytes` now returns `CtOption`
 * `Scalar::is_canonical` now returns `Choice`
 * Gate `Scalar::from_bits` behind the `legacy_compatibility` feature
-* Remove `Scalar::from_bits_clamped`
+* Remove `Scalar::from_bits_clamped` and `Scalar::reduce`
 
 #### Other changes
 

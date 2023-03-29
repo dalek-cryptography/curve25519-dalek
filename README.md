@@ -152,15 +152,15 @@ $ cargo build --target i686-unknown-linux-gnu
 Target backend selection within `simd` must be done manually by setting the
 `RUSTFLAGS` environment variable to one of the below options:
 
-| CPU feature | `RUSTFLAGS`                     |
-| :---        | :---                            |
-| avx2        | `-C target_feature=+avx2`       |
-| avx512ifma  | `-C target_feature=+avx512ifma` |
+| CPU feature | `RUSTFLAGS`                     | Requires nightly? |
+| :---        | :---                            | :---              |
+| avx2        | `-C target_feature=+avx2`       | no                |
+| avx512ifma  | `-C target_feature=+avx512ifma` | yes               |
 
 Or you can use `-C target_cpu=native` if you don't know what to set.
 
-The `simd` backend also requires using nightly, e.g. by running `cargo
-+nightly build`, to build.
+The AVX512 backend requires Rust nightly. If enabled and when compiled on a non-nightly
+compiler it will fall back to using the AVX2 backend.
 
 # Documentation
 

@@ -44,21 +44,27 @@ macro_rules! impl_shared {
             #[inline]
             fn eq(&self, rhs: &$ty) -> bool {
                 unsafe {
-                    // This compares each pair of 8-bit packed integers and returns either 0xFF or 0x00
-                    // depending on whether they're equal.
+                    // This compares each pair of 8-bit packed integers and returns either 0xFF or
+                    // 0x00 depending on whether they're equal.
                     //
-                    // So the values are equal if (and only if) this returns a value that's filled with only 0xFF.
+                    // So the values are equal if (and only if) this returns a value that's filled
+                    // with only 0xFF.
                     //
                     // Pseudocode of what this does:
-                    //   self.0.bytes().zip(rhs.0.bytes()).map(|a, b| if a == b { 0xFF } else { 0x00 }).join();
+                    //     self.0
+                    //         .bytes()
+                    //         .zip(rhs.0.bytes())
+                    //         .map(|a, b| if a == b { 0xFF } else { 0x00 })
+                    //         .join();
                     let m = core::arch::x86_64::_mm256_cmpeq_epi8(self.0, rhs.0);
 
                     // Now we need to reduce the 256-bit value to something on which we can branch.
                     //
                     // This will just take the most significant bit of every 8-bit packed integer
-                    // and build an `i32` out of it. If the values we previously compared were equal
-                    // then all off the most significant bits will be equal to 1, which means that
-                    // this will return 0xFFFFFFFF, which is equal to -1 when represented as an `i32`.
+                    // and build an `i32` out of it. If the values we previously compared were
+                    // equal then all off the most significant bits will be equal to 1, which means
+                    // that this will return 0xFFFFFFFF, which is equal to -1 when represented as
+                    // an `i32`.
                     core::arch::x86_64::_mm256_movemask_epi8(m) == -1
                 }
             }
@@ -156,6 +162,37 @@ macro_rules! impl_conv {
     }
 }
 
+// We define SIMD functionality over packed unsigned integer types. However, all the integer
+// intrinsics deal with signed integers. So we cast unsigned to signed, pack it into SIMD, do
+// add/sub/shl/shr arithmetic, and finally cast back to unsigned at the end. Why is this equivalent
+// to doing the same thing on unsigned integers? Shl/shr is clear, because casting does not change
+// the bits of the integer. But what about add/sub? This is due to the following:
+//
+//     1) Rust uses two's complement to represent signed integers. So we're assured that the values
+//        we cast into SIMD and extract out at the end are two's complement.
+//
+//        https://doc.rust-lang.org/reference/types/numeric.html
+//
+//     2) Wrapping add/sub is compatible between two's complement signed and unsigned integers.
+//        That is, for all x,y: u64 (or any unsigned integer type),
+//
+//            x.wrapping_add(y) == (x as i64).wrapping_add(y as i64) as u64, and
+//            x.wrapping_sub(y) == (x as i64).wrapping_sub(y as i64) as u64
+//
+//        https://julesjacobs.com/2019/03/20/why-twos-complement-works.html
+//
+//     3) The add/sub functions we use for SIMD are indeed wrapping. The docs indicate that
+//        __mm256_add/sub compile to vpaddX/vpsubX instructions where X = w, d, or q depending on
+//        the bitwidth. From x86 docs:
+//
+//            When an individual result is too large to be represented in X bits (overflow), the
+//            result is wrapped around and the low X bits are written to the destination operand
+//            (that is, the carry is ignored).
+//
+//        https://www.felixcloutier.com/x86/paddb:paddw:paddd:paddq
+//        https://www.felixcloutier.com/x86/psubb:psubw:psubd
+//        https://www.felixcloutier.com/x86/psubq
+
 impl_shared!(
     u64x4,
     u64,
@@ -184,7 +221,8 @@ impl u64x4 {
     /// Should only be called from `const` contexts. At runtime `new` is going to be faster.
     #[inline]
     pub const fn new_const(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
-        // SAFETY: Transmuting between an array and a SIMD type is safe: https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { Self(core::mem::transmute([x0, x1, x2, x3])) }
     }
 
@@ -229,7 +267,8 @@ impl u32x8 {
         x6: u32,
         x7: u32,
     ) -> Self {
-        // SAFETY: Transmuting between an array and a SIMD type is safe: https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { Self(core::mem::transmute([x0, x1, x2, x3, x4, x5, x6, x7])) }
     }
 

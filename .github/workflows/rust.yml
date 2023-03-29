@@ -55,7 +55,7 @@ jobs:
       - run: cargo build --target thumbv7em-none-eabi --release
       - run: cargo build --target thumbv7em-none-eabi --release --features serde
 
-  build-simd:
+  build-simd-nightly:
     name: Build simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
@@ -67,6 +67,17 @@ jobs:
       run: cargo build --target x86_64-unknown-linux-gnu
     - env:
         RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
+      run: cargo build --target x86_64-unknown-linux-gnu
+
+  build-simd-stable:
+    name: Build simd backend (stable)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    # Currently only the AVX2 backend works on stable
+    - env:
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
       run: cargo build --target x86_64-unknown-linux-gnu
 
   build-docs:

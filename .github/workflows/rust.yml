@@ -79,6 +79,23 @@ jobs:
         RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
       run: cargo test --target x86_64-unknown-linux-gnu
 
+  build-simd-msrv:
+    name: Build stable simd backend with MSRV
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    # Build with AVX2 feature
+    - env:
+        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
+    # First run `cargo +nightly -Z minimal-verisons check` in order to get a
+    # Cargo.lock with the oldest possible deps
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo -Z minimal-versions check --no-default-features --features serde
+    # Now check that `cargo build` works with respect to the oldest possible
+    # deps and the stated MSRV
+    - uses: dtolnay/rust-toolchain@1.60.0
+      run: cargo build --target x86_64-unknown-linux-gnu
+
   build-docs:
     name: Build docs
     runs-on: ubuntu-latest

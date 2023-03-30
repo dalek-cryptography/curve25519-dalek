@@ -238,6 +238,7 @@ impl u64x4 {
     #[inline]
     pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
         unsafe {
+            // _mm256_set_epi64 sets the underlying vector in reverse order of the args
             Self(core::arch::x86_64::_mm256_set_epi64x(
                 x3 as i64, x2 as i64, x1 as i64, x0 as i64,
             ))
@@ -284,6 +285,7 @@ impl u32x8 {
     #[inline]
     pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> Self {
         unsafe {
+            // _mm256_set_epi32 sets the underlying vector in reverse order of the args
             Self(core::arch::x86_64::_mm256_set_epi32(
                 x7 as i32, x6 as i32, x5 as i32, x4 as i32, x3 as i32, x2 as i32, x1 as i32,
                 x0 as i32,

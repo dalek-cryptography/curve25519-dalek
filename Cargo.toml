@@ -40,6 +40,7 @@ rand_core = { version = "0.6", default-features = false, features = ["getrandom"
 
 [build-dependencies]
 platforms = "3.0.2"
+rustc_version = "0.4.0"
 
 [[bench]]
 name = "dalek_benchmarks"
@@ -56,11 +57,6 @@ zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = "0.1.19"
-
-# The original packed_simd package was orphaned, see
-# https://github.com/rust-lang/packed_simd/issues/303#issuecomment-701361161
-[target.'cfg(curve25519_dalek_backend = "simd")'.dependencies]
-packed_simd = { version = "0.3.8", package = "packed_simd_2", features = ["into_bits"] }
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]

@@ -94,7 +94,7 @@ jobs:
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0
-      run: cargo build --target x86_64-unknown-linux-gnu
+    - run: cargo build --target x86_64-unknown-linux-gnu
 
   build-docs:
     name: Build docs

@@ -109,18 +109,18 @@ On an Intel 10700K running at stock comparing between the `curve25519-dalek` bac
 
 | Benchmark                       | u64       | simd +avx2         | fiat               |
 | :---                            | :----     | :---               | :---               |
-| signing                         | 15.017 µs | 13.906 µs -7.3967% | 15.877 µs +14.188% |
-| signature verification          | 40.144 µs | 25.963 µs -35.603% | 42.118 µs +62.758% |
-| strict signature verification   | 41.334 µs | 27.874 µs -32.660% | 43.985 µs +57.763% |
-| batch signature verification/4  | 109.44 µs | 81.778 µs -25.079% | 117.80 µs +43.629% |
-| batch signature verification/8  | 182.75 µs | 138.40 µs -23.871% | 195.86 µs +40.665% |
-| batch signature verification/16 | 328.67 µs | 251.39 µs -23.744% | 351.55 µs +39.901% |
-| batch signature verification/32 | 619.49 µs | 477.36 µs -23.053% | 669.41 µs +39.966% |
-| batch signature verification/64 | 1.2136 ms | 936.85 µs -22.543% | 1.3028 ms +38.808% |
-| batch signature verification/96 | 1.8677 ms | 1.2357 ms -33.936% | 2.0552 ms +66.439% |
-| batch signature verification/128| 2.3281 ms | 1.5795 ms -31.996% | 2.5596 ms +61.678% |
-| batch signature verification/256| 4.1868 ms | 2.8864 ms -31.061% | 4.6494 ms +61.081% |
-| keypair generation              | 13.973 µs | 13.108 µs -6.5062% | 15.099 µs +15.407% |
+| signing                         | 15.017 µs | 13.906 µs -7.3967% | 15.877 μs +5.7268% |
+| signature verification          | 40.144 µs | 25.963 µs -35.603% | 42.118 μs +4.9173% |
+| strict signature verification   | 41.334 µs | 27.874 µs -32.660% | 43.985 μs +6.4136% |
+| batch signature verification/4  | 109.44 µs | 81.778 µs -25.079% | 117.80 μs +7.6389% |
+| batch signature verification/8  | 182.75 µs | 138.40 µs -23.871% | 195.86 μs +7.1737% |
+| batch signature verification/16 | 328.67 µs | 251.39 µs -23.744% | 351.55 μs +6.9614% |
+| batch signature verification/32 | 619.49 µs | 477.36 µs -23.053% | 669.41 μs +8.0582% |
+| batch signature verification/64 | 1.2136 ms | 936.85 µs -22.543% | 1.3028 ms +7.3500% |
+| batch signature verification/96 | 1.8677 ms | 1.2357 ms -33.936% | 2.0552 ms +10.039% |
+| batch signature verification/128| 2.3281 ms | 1.5795 ms -31.996% | 2.5596 ms +9.9437% |
+| batch signature verification/256| 4.1868 ms | 2.8864 ms -31.061% | 4.6494 μs +11.049% |
+| keypair generation              | 13.973 µs | 13.108 µs -6.5062% | 15.099 μs +8.0584% |
 
 ## Batch Performance
 

@@ -305,9 +305,11 @@ impl SigningKey {
     where
         D: Digest<OutputSize = U64>,
     {
-        let expanded: ExpandedSecretKey = (&self.secret_key).into(); // xxx thanks i hate this
-
-        expanded.sign_prehashed(prehashed_message, &self.verifying_key, context)
+        ExpandedSecretKey::from(&self.secret_key).sign_prehashed(
+            prehashed_message,
+            &self.verifying_key,
+            context,
+        )
     }
 
     /// Verify a signature on a message with this signing key's public key.
@@ -458,6 +460,14 @@ impl SigningKey {
         signature: &Signature,
     ) -> Result<(), SignatureError> {
         self.verifying_key.verify_strict(message, signature)
+    }
+
+    /// Convert this signing key into a Curve25519 scalar.
+    ///
+    /// This is useful for e.g. performing X25519 Diffie-Hellman using
+    /// Ed25519 keys.
+    pub fn to_scalar(&self) -> Scalar {
+        ExpandedSecretKey::from(&self.secret_key).scalar
     }
 }
 
@@ -726,14 +736,14 @@ impl<'d> Deserialize<'d> for SigningKey {
 // better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
 // "generalised EdDSA" and "VXEdDSA".
 pub(crate) struct ExpandedSecretKey {
-    pub(crate) key: Scalar,
+    pub(crate) scalar: Scalar,
     pub(crate) nonce: [u8; 32],
 }
 
 #[cfg(feature = "zeroize")]
 impl Drop for ExpandedSecretKey {
     fn drop(&mut self) {
-        self.key.zeroize();
+        self.scalar.zeroize();
         self.nonce.zeroize()
     }
 }
@@ -747,7 +757,7 @@ impl From<&SecretKey> for ExpandedSecretKey {
 
         // The try_into here converts to fixed-size array
         ExpandedSecretKey {
-            key: Scalar::from_bits_clamped(lower.try_into().unwrap()),
+            scalar: Scalar::from_bits_clamped(lower.try_into().unwrap()),
             nonce: upper.try_into().unwrap(),
         }
     }
@@ -771,7 +781,7 @@ impl ExpandedSecretKey {
         h.update(message);
 
         let k = Scalar::from_hash(h);
-        let s: Scalar = (k * self.key) + r;
+        let s: Scalar = (k * self.scalar) + r;
 
         InternalSignature { R, s }.into()
     }
@@ -854,7 +864,7 @@ impl ExpandedSecretKey {
             .chain_update(&prehash[..]);
 
         let k = Scalar::from_hash(h);
-        let s: Scalar = (k * self.key) + r;
+        let s: Scalar = (k * self.scalar) + r;
 
         Ok(InternalSignature { R, s }.into())
     }

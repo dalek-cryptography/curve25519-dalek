@@ -18,6 +18,7 @@ use curve25519_dalek::digest::generic_array::typenum::U64;
 use curve25519_dalek::digest::Digest;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use curve25519_dalek::edwards::EdwardsPoint;
+use curve25519_dalek::montgomery::MontgomeryPoint;
 use curve25519_dalek::scalar::Scalar;
 
 use ed25519::signature::Verifier;
@@ -88,7 +89,7 @@ impl PartialEq<VerifyingKey> for VerifyingKey {
 impl From<&ExpandedSecretKey> for VerifyingKey {
     /// Derive this public key from its corresponding `ExpandedSecretKey`.
     fn from(expanded_secret_key: &ExpandedSecretKey) -> VerifyingKey {
-        let bits: [u8; 32] = expanded_secret_key.key.to_bytes();
+        let bits: [u8; 32] = expanded_secret_key.scalar.to_bytes();
         VerifyingKey::clamp_and_mul_base(bits)
     }
 }
@@ -417,6 +418,21 @@ impl VerifyingKey {
         } else {
             Err(InternalError::Verify.into())
         }
+    }
+
+    /// Convert this verifying key into Montgomery form.
+    ///
+    /// This is useful for systems which perform X25519 Diffie-Hellman using
+    /// Ed25519 keys.
+    ///
+    /// When possible, it's recommended to use separate keys for signing and
+    /// Diffie-Hellman.
+    ///
+    /// For more information on the security of systems which use the same keys
+    /// for both signing and Diffie-Hellman, see the paper
+    /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509.pdf).
+    pub fn to_montgomery(&self) -> MontgomeryPoint {
+        self.point.to_montgomery()
     }
 }
 

@@ -4,7 +4,14 @@ Entries are listed in reverse chronological order.
 
 # 2.x Series
 
+## 2.0.0-rc.2
+
 * Update MSRV to 1.60.
+* Update edition to 2021
+* Add `.as_bytes()` and `AsRef<[u8]>` for `Shared/StaticSecret`
+* Add `getrandom` feature to provide `random_from_rng` constructors
+* Make `StaticSecrets` optional via feature `static_secrets`
+* Update underlying `curve25519_dalek` library to `4.0.0-rc.2`
 
 ## 2.0.0-pre.1
 

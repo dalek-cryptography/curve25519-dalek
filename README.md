@@ -31,7 +31,7 @@ the rest of the afternoon nomming some yummy pie!
 First, Alice uses `EphemeralSecret::random()` and then
 `PublicKey::from()` to produce her secret and public keys:
 
-```rust
+```ignore
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
 let alice_secret = EphemeralSecret::random();
@@ -40,7 +40,7 @@ let alice_public = PublicKey::from(&alice_secret);
 
 Bob does the same:
 
-```rust
+```ignore
 # use x25519_dalek::{EphemeralSecret, PublicKey};
 let bob_secret = EphemeralSecret::random();
 let bob_public = PublicKey::from(&bob_secret);
@@ -100,7 +100,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "2.0.0-pre.0"
+x25519-dalek = "2.0.0-rc.2"
 ```
 
 # MSRV

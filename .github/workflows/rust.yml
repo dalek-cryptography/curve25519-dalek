@@ -13,7 +13,7 @@ env:
 
 jobs:
   test:
-    name: Test all features
+    name: Test with multiple feature combinations
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -29,6 +29,10 @@ jobs:
         with:
           target: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --no-default-features
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features reusable_secrets
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features static_secrets
+      - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --all-features
 
   build-simd:

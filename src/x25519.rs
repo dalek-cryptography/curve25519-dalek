@@ -24,8 +24,7 @@ use rand_core::RngCore;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-/// A Diffie-Hellman public key, corresponding to an [`EphemeralSecret`] or
-/// [`StaticSecret`] key.
+/// A Diffie-Hellman public key
 ///
 /// We implement `Zeroize` so that downstream consumers may derive it for `Drop`
 /// should they wish to erase public keys from memory.  Note that this erasure
@@ -68,7 +67,7 @@ impl AsRef<[u8]> for PublicKey {
 /// A short-lived Diffie-Hellman secret key that can only be used to compute a single
 /// [`SharedSecret`].
 ///
-/// This type is identical to the [`StaticSecret`] type, except that the
+/// This type is identical to the `StaticSecret` type, except that the
 /// [`EphemeralSecret::diffie_hellman`] method consumes and then wipes the secret key, and there
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
 /// generated from fresh randomness where the compiler statically checks that the resulting
@@ -125,7 +124,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 ///
 /// Similarly to [`EphemeralSecret`], this type does _not_ have serialisation
 /// methods, in order to discourage long-term usage of secret key material. (For
-/// long-term secret keys, see [`StaticSecret`].)
+/// long-term secret keys, see `StaticSecret`.)
 ///
 /// # Warning
 ///
@@ -195,6 +194,7 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// [`EphemeralSecret`] at all times, as that type enforces at compile-time that
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
+#[cfg(feature = "static_secrets")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[cfg_attr(feature = "zeroize", zeroize(drop))]
@@ -203,6 +203,7 @@ pub struct StaticSecret(
     #[cfg_attr(feature = "serde", serde(with = "AllowUnreducedScalarBytes"))] pub(crate) Scalar,
 );
 
+#[cfg(feature = "static_secrets")]
 impl StaticSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a `SharedSecret`.
@@ -247,6 +248,7 @@ impl StaticSecret {
     }
 }
 
+#[cfg(feature = "static_secrets")]
 impl From<[u8; 32]> for StaticSecret {
     /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
@@ -254,6 +256,7 @@ impl From<[u8; 32]> for StaticSecret {
     }
 }
 
+#[cfg(feature = "static_secrets")]
 impl<'a> From<&'a StaticSecret> for PublicKey {
     /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
@@ -261,6 +264,7 @@ impl<'a> From<&'a StaticSecret> for PublicKey {
     }
 }
 
+#[cfg(feature = "static_secrets")]
 impl AsRef<[u8]> for StaticSecret {
     /// View this key as a byte array.
     #[inline]
@@ -343,7 +347,8 @@ impl AsRef<[u8]> for SharedSecret {
 /// cannot use the better, safer, and faster ephemeral DH API.
 ///
 /// # Example
-/// ```rust
+#[cfg_attr(feature = "static_secrets", doc = "```")]
+#[cfg_attr(not(feature = "static_secrets"), doc = "```ignore")]
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
 ///

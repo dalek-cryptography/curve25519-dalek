@@ -61,3 +61,7 @@ alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]
 precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
 static_secrets = []
+
+[patch.crates-io.curve25519-dalek]
+git = "https://github.com/dalek-cryptography/curve25519-dalek.git"
+rev = "f460ae149b0000695205cc78f560d74a2d3918eb"

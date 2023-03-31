@@ -1,4 +1,4 @@
-use curve25519_dalek::{edwards::EdwardsPoint, scalar::Scalar};
+use curve25519_dalek::edwards::EdwardsPoint;
 
 use x25519_dalek::*;
 
@@ -10,11 +10,9 @@ fn byte_basepoint_matches_edwards_scalar_mul() {
         scalar_bytes[i] += 2;
 
         let result = x25519(scalar_bytes, X25519_BASEPOINT_BYTES);
-
-        let expected = {
-            let scalar = Scalar::from_bits_clamped(scalar_bytes);
-            EdwardsPoint::mul_base(&scalar).to_montgomery().to_bytes()
-        };
+        let expected = EdwardsPoint::mul_base_clamped(scalar_bytes)
+            .to_montgomery()
+            .to_bytes();
 
         assert_eq!(result, expected);
     }
@@ -64,8 +62,7 @@ fn serde_bincode_static_secret_matches_from_bytes() {
     use bincode;
 
     let expected = StaticSecret::from([0x24; 32]);
-    let clamped_bytes = Scalar::from_bits_clamped([0x24; 32]).to_bytes();
-    let decoded: StaticSecret = bincode::deserialize(&clamped_bytes).unwrap();
+    let decoded: StaticSecret = bincode::deserialize(&[0x24; 32]).unwrap();
 
     assert_eq!(decoded.to_bytes(), expected.to_bytes());
 }

@@ -4,6 +4,11 @@ Entries are listed in reverse chronological order.
 
 # 2.x Series
 
+
+## 2.0.0-rc.3
+
+* Change: `StaticSecret` serialization and `to_bytes()` no longer returns clamped integers. Clamping is still always done during scalar-point multiplication.
+
 ## 2.0.0-rc.2
 
 * Update MSRV to 1.60.

@@ -14,9 +14,7 @@
 //! This implements x25519 key exchange as specified by Mike Hamburg
 //! and Adam Langley in [RFC7748](https://tools.ietf.org/html/rfc7748).
 
-use curve25519_dalek::{
-    edwards::EdwardsPoint, montgomery::MontgomeryPoint, scalar::Scalar, traits::IsIdentity,
-};
+use curve25519_dalek::{edwards::EdwardsPoint, montgomery::MontgomeryPoint, traits::IsIdentity};
 
 use rand_core::CryptoRng;
 use rand_core::RngCore;
@@ -74,13 +72,13 @@ impl AsRef<[u8]> for PublicKey {
 /// secret is used at most once.
 #[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[cfg_attr(feature = "zeroize", zeroize(drop))]
-pub struct EphemeralSecret(pub(crate) Scalar);
+pub struct EphemeralSecret(pub(crate) [u8; 32]);
 
 impl EphemeralSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(self.0 * their_public.0)
+        SharedSecret(their_public.0.mul_clamped(self.0))
     }
 
     /// Generate a new [`EphemeralSecret`] with the supplied RNG.
@@ -94,11 +92,10 @@ impl EphemeralSecret {
 
     /// Generate a new [`EphemeralSecret`] with the supplied RNG.
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-
         csprng.fill_bytes(&mut bytes);
-
-        EphemeralSecret(Scalar::from_bits_clamped(bytes))
+        EphemeralSecret(bytes)
     }
 
     /// Generate a new [`EphemeralSecret`].
@@ -111,7 +108,7 @@ impl EphemeralSecret {
 impl<'a> From<&'a EphemeralSecret> for PublicKey {
     /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a EphemeralSecret) -> PublicKey {
-        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base_clamped(secret.0).to_montgomery())
     }
 }
 
@@ -137,14 +134,14 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 #[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[cfg_attr(feature = "zeroize", zeroize(drop))]
 #[derive(Clone)]
-pub struct ReusableSecret(pub(crate) Scalar);
+pub struct ReusableSecret(pub(crate) [u8; 32]);
 
 #[cfg(feature = "reusable_secrets")]
 impl ReusableSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a [`SharedSecret`].
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(self.0 * their_public.0)
+        SharedSecret(their_public.0.mul_clamped(self.0))
     }
 
     /// Generate a new [`ReusableSecret`] with the supplied RNG.
@@ -158,11 +155,10 @@ impl ReusableSecret {
 
     /// Generate a new [`ReusableSecret`] with the supplied RNG.
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-
         csprng.fill_bytes(&mut bytes);
-
-        ReusableSecret(Scalar::from_bits_clamped(bytes))
+        ReusableSecret(bytes)
     }
 
     /// Generate a new [`ReusableSecret`].
@@ -176,7 +172,7 @@ impl ReusableSecret {
 impl<'a> From<&'a ReusableSecret> for PublicKey {
     /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a ReusableSecret) -> PublicKey {
-        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base_clamped(secret.0).to_montgomery())
     }
 }
 
@@ -199,16 +195,14 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 #[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[cfg_attr(feature = "zeroize", zeroize(drop))]
 #[derive(Clone)]
-pub struct StaticSecret(
-    #[cfg_attr(feature = "serde", serde(with = "AllowUnreducedScalarBytes"))] pub(crate) Scalar,
-);
+pub struct StaticSecret([u8; 32]);
 
 #[cfg(feature = "static_secrets")]
 impl StaticSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
     /// `their_public` key to produce a `SharedSecret`.
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
-        SharedSecret(self.0 * their_public.0)
+        SharedSecret(their_public.0.mul_clamped(self.0))
     }
 
     /// Generate a new [`StaticSecret`] with the supplied RNG.
@@ -222,11 +216,10 @@ impl StaticSecret {
 
     /// Generate a new [`StaticSecret`] with the supplied RNG.
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+        // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-
         csprng.fill_bytes(&mut bytes);
-
-        StaticSecret(Scalar::from_bits_clamped(bytes))
+        StaticSecret(bytes)
     }
 
     /// Generate a new [`StaticSecret`].
@@ -238,13 +231,13 @@ impl StaticSecret {
     /// Extract this key's bytes for serialization.
     #[inline]
     pub fn to_bytes(&self) -> [u8; 32] {
-        self.0.to_bytes()
+        self.0
     }
 
     /// View this key as a byte array.
     #[inline]
     pub fn as_bytes(&self) -> &[u8; 32] {
-        self.0.as_bytes()
+        &self.0
     }
 }
 
@@ -252,7 +245,7 @@ impl StaticSecret {
 impl From<[u8; 32]> for StaticSecret {
     /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
-        StaticSecret(Scalar::from_bits_clamped(bytes))
+        StaticSecret(bytes)
     }
 }
 
@@ -260,7 +253,7 @@ impl From<[u8; 32]> for StaticSecret {
 impl<'a> From<&'a StaticSecret> for PublicKey {
     /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicKey`].
     fn from(secret: &'a StaticSecret) -> PublicKey {
-        PublicKey(EdwardsPoint::mul_base(&secret.0).to_montgomery())
+        PublicKey(EdwardsPoint::mul_base_clamped(secret.0).to_montgomery())
     }
 }
 
@@ -373,7 +366,7 @@ impl AsRef<[u8]> for SharedSecret {
 /// assert_eq!(alice_shared, bob_shared);
 /// ```
 pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
-    (Scalar::from_bits_clamped(k) * MontgomeryPoint(u)).to_bytes()
+    MontgomeryPoint(u).mul_clamped(k).to_bytes()
 }
 
 /// The X25519 basepoint, for use with the bare, byte-oriented x25519
@@ -382,17 +375,3 @@ pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
-
-/// Derived serialization methods will not work on a StaticSecret because x25519 requires
-/// non-canonical scalars which are rejected by curve25519-dalek. Thus we provide a way to convert
-/// the bytes directly to a scalar using Serde's remote derive functionality.
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(remote = "Scalar"))]
-struct AllowUnreducedScalarBytes(
-    #[cfg_attr(feature = "serde", serde(getter = "Scalar::to_bytes"))] [u8; 32],
-);
-impl From<AllowUnreducedScalarBytes> for Scalar {
-    fn from(bytes: AllowUnreducedScalarBytes) -> Scalar {
-        Scalar::from_bits_clamped(bytes.0)
-    }
-}

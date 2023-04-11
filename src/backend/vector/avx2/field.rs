@@ -765,6 +765,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     ///
     #[rustfmt::skip] // keep alignment of z* calculations
+    #[inline]
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {

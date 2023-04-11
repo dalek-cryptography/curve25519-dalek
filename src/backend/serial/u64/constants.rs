@@ -327,7 +327,7 @@ pub const EIGHT_TORSION_INNER_DOC_HIDDEN: [EdwardsPoint; 8] = [
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\(B = (x, 4/5)\\).
 #[cfg(feature = "precomputed-tables")]
-pub static ED25519_BASEPOINT_TABLE: &'static EdwardsBasepointTable =
+pub static ED25519_BASEPOINT_TABLE: &EdwardsBasepointTable =
     &ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
 
 /// Inner constant, used to avoid filling the docs with precomputed points.

@@ -99,7 +99,7 @@ use crate::ristretto::RistrettoBasepointTable;
 
 /// The Ristretto basepoint, as a `RistrettoBasepointTable` for scalar multiplication.
 #[cfg(feature = "precomputed-tables")]
-pub static RISTRETTO_BASEPOINT_TABLE: &'static RistrettoBasepointTable = unsafe {
+pub static RISTRETTO_BASEPOINT_TABLE: &RistrettoBasepointTable = unsafe {
     // SAFETY: `RistrettoBasepointTable` is a `#[repr(transparent)]` newtype of
     // `EdwardsBasepointTable`
     &*(ED25519_BASEPOINT_TABLE as *const EdwardsBasepointTable as *const RistrettoBasepointTable)

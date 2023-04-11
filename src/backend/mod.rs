@@ -99,6 +99,7 @@ fn get_selected_backend() -> BackendKind {
     BackendKind::Serial
 }
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub fn pippenger_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
 where
@@ -209,6 +210,7 @@ impl VartimePrecomputedStraus {
     }
 }
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub fn straus_multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
 where
@@ -249,6 +251,7 @@ where
     }
 }
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub fn straus_optional_multiscalar_mul<I, J>(scalars: I, points: J) -> Option<EdwardsPoint>
 where

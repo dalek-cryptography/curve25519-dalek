@@ -55,19 +55,19 @@ jobs:
       - run: cargo build --target thumbv7em-none-eabi --release
       - run: cargo build --target thumbv7em-none-eabi --release --features serde
 
-  build-simd-nightly:
-    name: Build simd backend (nightly)
+  test-simd-native:
+    name: Test simd backend (native)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@nightly
-    # Build with AVX2 features, then with AVX512 features
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
-      run: cargo build --target x86_64-unknown-linux-gnu
-    - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
-      run: cargo build --target x86_64-unknown-linux-gnu
+        # This will:
+        #   1) build all of the x86_64 SIMD code,
+        #   2) run all of the SIMD-specific tests that the test runner supports,
+        #   3) run all of the normal tests using the best available SIMD backend.
+        RUSTFLAGS: '-C target_cpu=native'
+      run: cargo test --features simd --target x86_64-unknown-linux-gnu
 
   test-simd-avx2:
     name: Test simd backend (avx2)
@@ -76,8 +76,10 @@ jobs:
     - uses: actions/checkout@v3
     - uses: dtolnay/rust-toolchain@stable
     - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
-      run: cargo test --target x86_64-unknown-linux-gnu
+        # This will run AVX2-specific tests and run all of the normal tests
+        # with the AVX2 backend, even if the runner supports AVX512.
+        RUSTFLAGS: '-C target_feature=+avx2'
+      run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize,simd_avx2 --target x86_64-unknown-linux-gnu
 
   build-docs:
     name: Build docs
@@ -131,12 +133,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@nightly
       with:
         components: clippy
-    - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
-      run: cargo clippy --target x86_64-unknown-linux-gnu
-    - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
-      run: cargo clippy --target x86_64-unknown-linux-gnu
+    - run: cargo clippy --target x86_64-unknown-linux-gnu
 
   rustfmt:
     name: Check formatting
@@ -162,9 +159,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.60.0
     - run: cargo build --no-default-features --features serde
     # Also make sure the AVX2 build works
-    - env:
-        RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
-      run: cargo build --target x86_64-unknown-linux-gnu
+    - run: cargo build --target x86_64-unknown-linux-gnu
 
   bench:
     name: Check that benchmarks compile

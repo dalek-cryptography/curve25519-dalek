@@ -11,60 +11,13 @@
 
 #![doc = include_str!("../../../docs/parallel-formulas.md")]
 
-#[cfg(not(any(
-    target_feature = "avx2",
-    all(target_feature = "avx512ifma", nightly),
-    docsrs
-)))]
-compile_error!("'simd' backend selected without target_feature=+avx2 or +avx512ifma");
-
 #[allow(missing_docs)]
 pub mod packed_simd;
 
-#[cfg(any(
-    all(
-        target_feature = "avx2",
-        not(all(target_feature = "avx512ifma", nightly))
-    ),
-    all(docsrs, target_arch = "x86_64")
-))]
+#[cfg(feature = "simd_avx2")]
 pub mod avx2;
-#[cfg(any(
-    all(
-        target_feature = "avx2",
-        not(all(target_feature = "avx512ifma", nightly))
-    ),
-    all(docsrs, target_arch = "x86_64")
-))]
-pub(crate) use self::avx2::{edwards::CachedPoint, edwards::ExtendedPoint};
 
-#[cfg(any(
-    all(target_feature = "avx512ifma", nightly),
-    all(docsrs, target_arch = "x86_64")
-))]
+#[cfg(all(feature = "simd_avx512", nightly))]
 pub mod ifma;
-#[cfg(all(target_feature = "avx512ifma", nightly))]
-pub(crate) use self::ifma::{edwards::CachedPoint, edwards::ExtendedPoint};
 
-#[cfg(any(
-    target_feature = "avx2",
-    all(target_feature = "avx512ifma", nightly),
-    all(docsrs, target_arch = "x86_64")
-))]
-#[allow(missing_docs)]
 pub mod scalar_mul;
-
-// Precomputed table re-exports
-
-#[cfg(any(
-    all(
-        target_feature = "avx2",
-        not(all(target_feature = "avx512ifma", nightly)),
-        feature = "precomputed-tables"
-    ),
-    all(docsrs, target_arch = "x86_64")
-))]
-pub(crate) use self::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
-
-#[cfg(all(target_feature = "avx512ifma", nightly, feature = "precomputed-tables"))]
-pub(crate) use self::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;

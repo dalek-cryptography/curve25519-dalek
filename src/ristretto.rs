@@ -180,9 +180,6 @@ use digest::Digest;
 use crate::constants;
 use crate::field::FieldElement;
 
-#[cfg(feature = "alloc")]
-use cfg_if::cfg_if;
-
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -202,18 +199,6 @@ use crate::traits::BasepointTable;
 use crate::traits::Identity;
 #[cfg(feature = "alloc")]
 use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
-
-#[cfg(feature = "alloc")]
-cfg_if! {
-    if #[cfg(all(
-        curve25519_dalek_backend = "simd",
-        any(target_feature = "avx2", target_feature = "avx512ifma")
-    ))] {
-        use crate::backend::vector::scalar_mul;
-    } else {
-        use crate::backend::serial::scalar_mul;
-    }
-}
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -999,7 +984,7 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
-pub struct VartimeRistrettoPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
+pub struct VartimeRistrettoPrecomputation(crate::backend::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
 impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
@@ -1010,11 +995,9 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
         I: IntoIterator,
         I::Item: Borrow<Self::Point>,
     {
-        Self(
-            scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(
-                static_points.into_iter().map(|P| P.borrow().0),
-            ),
-        )
+        Self(crate::backend::VartimePrecomputedStraus::new(
+            static_points.into_iter().map(|P| P.borrow().0),
+        ))
     }
 
     fn optional_mixed_multiscalar_mul<I, J, K>(

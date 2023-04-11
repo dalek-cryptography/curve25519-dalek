@@ -11,12 +11,23 @@
 
 #![allow(non_snake_case)]
 
+#[unsafe_target_feature::unsafe_target_feature_specialize(
+    conditional("avx2", feature = "simd_avx2"),
+    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+)]
+pub mod spec {
+
 use alloc::vec::Vec;
 
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
-use crate::backend::vector::{CachedPoint, ExtendedPoint};
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
+
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::Identity;
@@ -33,7 +44,7 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
     fn new<I>(static_points: I) -> Self
     where
         I: IntoIterator,
-        I::Item: Borrow<Self::Point>,
+        I::Item: Borrow<EdwardsPoint>,
     {
         Self {
             static_lookup_tables: static_points
@@ -48,13 +59,13 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
         static_scalars: I,
         dynamic_scalars: J,
         dynamic_points: K,
-    ) -> Option<Self::Point>
+    ) -> Option<EdwardsPoint>
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
         J: IntoIterator,
         J::Item: Borrow<Scalar>,
-        K: IntoIterator<Item = Option<Self::Point>>,
+        K: IntoIterator<Item = Option<EdwardsPoint>>,
     {
         let static_nafs = static_scalars
             .into_iter()
@@ -112,4 +123,6 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
 
         Some(R.into())
     }
+}
+
 }

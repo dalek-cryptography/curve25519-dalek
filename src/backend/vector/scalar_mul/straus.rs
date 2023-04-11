@@ -11,6 +11,12 @@
 
 #![allow(non_snake_case)]
 
+#[unsafe_target_feature::unsafe_target_feature_specialize(
+    conditional("avx2", feature = "simd_avx2"),
+    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+)]
+pub mod spec {
+
 use alloc::vec::Vec;
 
 use core::borrow::Borrow;
@@ -18,7 +24,12 @@ use core::cmp::Ordering;
 
 use zeroize::Zeroizing;
 
-use crate::backend::vector::{CachedPoint, ExtendedPoint};
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
+
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
@@ -109,4 +120,6 @@ impl VartimeMultiscalarMul for Straus {
 
         Some(Q.into())
     }
+}
+
 }

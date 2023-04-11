@@ -1,6 +1,17 @@
 #![allow(non_snake_case)]
 
-use crate::backend::vector::{CachedPoint, ExtendedPoint};
+#[unsafe_target_feature::unsafe_target_feature_specialize(
+    conditional("avx2", feature = "simd_avx2"),
+    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+)]
+pub mod spec {
+
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
+
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::Identity;
@@ -29,4 +40,6 @@ pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
         Q = &Q + &lookup_table.select(scalar_digits[i]);
     }
     Q.into()
+}
+
 }

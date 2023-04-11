@@ -11,9 +11,28 @@
 
 #![allow(non_snake_case)]
 
+#[unsafe_target_feature::unsafe_target_feature_specialize(
+    conditional("avx2", feature = "simd_avx2"),
+    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+)]
+pub mod spec {
+
 use core::cmp::Ordering;
 
-use crate::backend::vector::{CachedPoint, ExtendedPoint};
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
+
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
+#[cfg(feature = "precomputed-tables")]
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+
+#[cfg(feature = "precomputed-tables")]
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::Identity;
@@ -40,7 +59,8 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     let table_A = NafLookupTable5::<CachedPoint>::from(A);
 
     #[cfg(feature = "precomputed-tables")]
-    let table_B = &crate::backend::vector::BASEPOINT_ODD_LOOKUP_TABLE;
+    let table_B = &BASEPOINT_ODD_LOOKUP_TABLE;
+
     #[cfg(not(feature = "precomputed-tables"))]
     let table_B = &NafLookupTable5::<CachedPoint>::from(&crate::constants::ED25519_BASEPOINT_POINT);
 
@@ -76,4 +96,6 @@ pub fn mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     }
 
     Q.into()
+}
+
 }

@@ -11,12 +11,12 @@
 
 #![no_std]
 #![cfg_attr(
-    all(
-        curve25519_dalek_backend = "simd",
-        target_feature = "avx512ifma",
-        nightly
-    ),
+    all(target_arch = "x86_64", feature = "simd_avx512", nightly),
     feature(stdsimd)
+)]
+#![cfg_attr(
+    all(target_arch = "x86_64", feature = "simd_avx512", nightly),
+    feature(avx512_target_feature)
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]

@@ -9,12 +9,23 @@
 
 #![allow(non_snake_case)]
 
+#[unsafe_target_feature::unsafe_target_feature_specialize(
+    conditional("avx2", feature = "simd_avx2"),
+    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+)]
+pub mod spec {
+
 use alloc::vec::Vec;
 
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 
-use crate::backend::vector::{CachedPoint, ExtendedPoint};
+#[for_target_feature("avx2")]
+use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
+
+#[for_target_feature("avx512ifma")]
+use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::{Identity, VartimeMultiscalarMul};
@@ -49,7 +60,7 @@ impl VartimeMultiscalarMul for Pippenger {
 
         // Collect optimized scalars and points in a buffer for repeated access
         // (scanning the whole collection per each digit position).
-        let scalars = scalars.into_iter().map(|s| s.borrow().as_radix_2w(w));
+        let scalars = scalars.map(|s| s.borrow().as_radix_2w(w));
 
         let points = points
             .into_iter()
@@ -127,12 +138,12 @@ impl VartimeMultiscalarMul for Pippenger {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::constants;
-    use crate::scalar::Scalar;
-
     #[test]
     fn test_vartime_pippenger() {
+        use super::*;
+        use crate::constants;
+        use crate::scalar::Scalar;
+
         // Reuse points across different tests
         let mut n = 512;
         let x = Scalar::from(2128506u64).invert();
@@ -162,4 +173,6 @@ mod test {
             n = n / 2;
         }
     }
+}
+
 }

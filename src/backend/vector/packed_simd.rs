@@ -11,6 +11,8 @@
 ///!           by the callers of this code.
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
 
+use unsafe_target_feature::unsafe_target_feature;
+
 macro_rules! impl_shared {
     (
         $ty:ident,
@@ -26,6 +28,7 @@ macro_rules! impl_shared {
         #[repr(transparent)]
         pub struct $ty(core::arch::x86_64::__m256i);
 
+        #[unsafe_target_feature("avx2")]
         impl From<$ty> for core::arch::x86_64::__m256i {
             #[inline]
             fn from(value: $ty) -> core::arch::x86_64::__m256i {
@@ -33,6 +36,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         impl From<core::arch::x86_64::__m256i> for $ty {
             #[inline]
             fn from(value: core::arch::x86_64::__m256i) -> $ty {
@@ -40,6 +44,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         impl PartialEq for $ty {
             #[inline]
             fn eq(&self, rhs: &$ty) -> bool {
@@ -72,6 +77,7 @@ macro_rules! impl_shared {
 
         impl Eq for $ty {}
 
+        #[unsafe_target_feature("avx2")]
         impl Add for $ty {
             type Output = Self;
 
@@ -81,6 +87,8 @@ macro_rules! impl_shared {
             }
         }
 
+        #[allow(clippy::assign_op_pattern)]
+        #[unsafe_target_feature("avx2")]
         impl AddAssign for $ty {
             #[inline]
             fn add_assign(&mut self, rhs: $ty) {
@@ -88,6 +96,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         impl Sub for $ty {
             type Output = Self;
 
@@ -97,6 +106,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         impl BitAnd for $ty {
             type Output = Self;
 
@@ -106,6 +116,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         impl BitXor for $ty {
             type Output = Self;
 
@@ -115,6 +126,8 @@ macro_rules! impl_shared {
             }
         }
 
+        #[allow(clippy::assign_op_pattern)]
+        #[unsafe_target_feature("avx2")]
         impl BitAndAssign for $ty {
             #[inline]
             fn bitand_assign(&mut self, rhs: $ty) {
@@ -122,6 +135,8 @@ macro_rules! impl_shared {
             }
         }
 
+        #[allow(clippy::assign_op_pattern)]
+        #[unsafe_target_feature("avx2")]
         impl BitXorAssign for $ty {
             #[inline]
             fn bitxor_assign(&mut self, rhs: $ty) {
@@ -129,6 +144,7 @@ macro_rules! impl_shared {
             }
         }
 
+        #[unsafe_target_feature("avx2")]
         #[allow(dead_code)]
         impl $ty {
             #[inline]
@@ -152,6 +168,7 @@ macro_rules! impl_shared {
 macro_rules! impl_conv {
     ($src:ident => $($dst:ident),+) => {
         $(
+            #[unsafe_target_feature("avx2")]
             impl From<$src> for $dst {
                 #[inline]
                 fn from(value: $src) -> $dst {
@@ -235,8 +252,9 @@ impl u64x4 {
     }
 
     /// Constructs a new instance.
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
+    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> u64x4 {
         unsafe {
             // _mm256_set_epi64 sets the underlying vector in reverse order of the args
             Self(core::arch::x86_64::_mm256_set_epi64x(
@@ -246,8 +264,9 @@ impl u64x4 {
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub fn splat(x: u64) -> Self {
+    pub fn splat(x: u64) -> u64x4 {
         unsafe { Self(core::arch::x86_64::_mm256_set1_epi64x(x as i64)) }
     }
 }
@@ -257,6 +276,7 @@ impl u32x8 {
     /// A constified variant of `new`.
     ///
     /// Should only be called from `const` contexts. At runtime `new` is going to be faster.
+    #[allow(clippy::too_many_arguments)]
     #[inline]
     pub const fn new_const(
         x0: u32,
@@ -282,8 +302,10 @@ impl u32x8 {
     }
 
     /// Constructs a new instance.
+    #[allow(clippy::too_many_arguments)]
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> Self {
+    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> u32x8 {
         unsafe {
             // _mm256_set_epi32 sets the underlying vector in reverse order of the args
             Self(core::arch::x86_64::_mm256_set_epi32(
@@ -294,11 +316,15 @@ impl u32x8 {
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub fn splat(x: u32) -> Self {
+    pub fn splat(x: u32) -> u32x8 {
         unsafe { Self(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
     }
+}
 
+#[unsafe_target_feature("avx2")]
+impl u32x8 {
     /// Multiplies the low unsigned 32-bits from each packed 64-bit element
     /// and returns the unsigned 64-bit results.
     ///

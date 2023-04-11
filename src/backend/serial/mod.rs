@@ -42,8 +42,4 @@ cfg_if! {
 
 pub mod curve_models;
 
-#[cfg(not(all(
-    curve25519_dalek_backend = "simd",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
-)))]
 pub mod scalar_mul;

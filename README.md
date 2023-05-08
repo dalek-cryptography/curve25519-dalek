@@ -129,4 +129,4 @@ copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
   the NaCl family of encryption libraries (libsodium, TweetNaCl) which uses
   `x25519-dalek` for key agreement
 
-[crypto_box]: https://github.com/RustCrypto/AEADs/tree/master/crypto_box
+[crypto_box]: https://github.com/RustCrypto/nacl-compat/tree/master/crypto_box

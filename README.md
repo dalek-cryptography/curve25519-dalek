@@ -37,6 +37,7 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 | `pkcs8`                |          | Enables [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8) serialization/deserialization for `SigningKey` and `VerifyingKey` |
 | `pem`                  |          | Enables PEM serialization support for PKCS#8 private keys and SPKI public keys. Also enables `alloc`. |
 | `legacy_compatibility` |          | **Unsafe:** Disables certain signature checks. See [below](#malleability-and-the-legacy_compatibility-feature) |
+| `hazmat` |          | **Unsafe:** Exposes the `hazmat` module for raw signing/verifying. Misuse of these functions will expose the private key, as in the [signing oracle attack](https://github.com/MystenLabs/ed25519-unsafe-libs). |
 
 # Major Changes
 
@@ -54,6 +55,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of t
 * Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
 * Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
 * Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`
+* Make `hazmat` feature to expose, `ExpandedSecretKey`, `raw_sign()`, `raw_sign_prehashed()`, `raw_verify()`, and `raw_verify_prehashed()`
 
 # Documentation
 

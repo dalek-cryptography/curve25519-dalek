@@ -20,12 +20,11 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use sha2::Sha512;
 
-#[cfg(feature = "digest")]
-use curve25519_dalek::digest::generic_array::typenum::U64;
-use curve25519_dalek::digest::Digest;
-use curve25519_dalek::edwards::CompressedEdwardsY;
-use curve25519_dalek::edwards::EdwardsPoint;
-use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::{
+    digest::{generic_array::typenum::U64, Digest},
+    edwards::{CompressedEdwardsY, EdwardsPoint},
+    scalar::Scalar,
+};
 
 use ed25519::signature::{KeypairRef, Signer, Verifier};
 
@@ -37,11 +36,14 @@ use signature::DigestSigner;
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use crate::constants::*;
-use crate::errors::*;
-use crate::signature::*;
-use crate::verifying::*;
-use crate::Signature;
+use crate::{
+    constants::{KEYPAIR_LENGTH, SECRET_KEY_LENGTH},
+    errors::{InternalError, SignatureError},
+    hazmat::ExpandedSecretKey,
+    signature::InternalSignature,
+    verifying::VerifyingKey,
+    Signature,
+};
 
 /// ed25519 secret key as defined in [RFC8032 § 5.1.5]:
 ///
@@ -202,7 +204,9 @@ impl SigningKey {
     ///
     /// # Inputs
     ///
-    /// * `prehashed_message` is an instantiated SHA-512 digest of the message
+    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
+    ///   output which has had the message to be signed previously fed into its
+    ///   state.
     /// * `context` is an optional context string, up to 255 bytes inclusive,
     ///   which may be used to provide additional domain separation.  If not
     ///   set, this will default to an empty string.
@@ -213,10 +217,10 @@ impl SigningKey {
     ///
     /// # Note
     ///
-    /// The RFC only permits SHA-512 to be used for prehashing. This function technically works,
-    /// and is probably safe to use, with any secure hash function with 512-bit digests, but
-    /// anything outside of SHA-512 is NOT specification-compliant. We expose [`crate::Sha512`] for
-    /// user convenience.
+    /// The RFC only permits SHA-512 to be used for prehashing, i.e., `MsgDigest = Sha512`. This
+    /// function technically works, and is probably safe to use, with any secure hash function with
+    /// 512-bit digests, but anything outside of SHA-512 is NOT specification-compliant. We expose
+    /// [`crate::Sha512`] for user convenience.
     ///
     /// # Examples
     ///
@@ -297,15 +301,15 @@ impl SigningKey {
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     /// [terrible_idea]: https://github.com/isislovecruft/scripts/blob/master/gpgkey2bc.py
     #[cfg(feature = "digest")]
-    pub fn sign_prehashed<D>(
+    pub fn sign_prehashed<MsgDigest>(
         &self,
-        prehashed_message: D,
+        prehashed_message: MsgDigest,
         context: Option<&[u8]>,
     ) -> Result<Signature, SignatureError>
     where
-        D: Digest<OutputSize = U64>,
+        MsgDigest: Digest<OutputSize = U64>,
     {
-        ExpandedSecretKey::from(&self.secret_key).sign_prehashed(
+        ExpandedSecretKey::from(&self.secret_key).raw_sign_prehashed::<Sha512, MsgDigest>(
             prehashed_message,
             &self.verifying_key,
             context,
@@ -333,6 +337,13 @@ impl SigningKey {
     ///
     /// Returns `true` if the `signature` was a valid signature created by this
     /// [`SigningKey`] on the `prehashed_message`.
+    ///
+    /// # Note
+    ///
+    /// The RFC only permits SHA-512 to be used for prehashing, i.e., `MsgDigest = Sha512`. This
+    /// function technically works, and is probably safe to use, with any secure hash function with
+    /// 512-bit digests, but anything outside of SHA-512 is NOT specification-compliant. We expose
+    /// [`crate::Sha512`] for user convenience.
     ///
     /// # Examples
     ///
@@ -378,14 +389,14 @@ impl SigningKey {
     ///
     /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
     #[cfg(feature = "digest")]
-    pub fn verify_prehashed<D>(
+    pub fn verify_prehashed<MsgDigest>(
         &self,
-        prehashed_message: D,
+        prehashed_message: MsgDigest,
         context: Option<&[u8]>,
         signature: &Signature,
     ) -> Result<(), SignatureError>
     where
-        D: Digest<OutputSize = U64>,
+        MsgDigest: Digest<OutputSize = U64>,
     {
         self.verifying_key
             .verify_prehashed(prehashed_message, context, signature)
@@ -485,7 +496,7 @@ impl Signer<Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
     fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
-        Ok(expanded.sign(message, &self.verifying_key))
+        Ok(expanded.raw_sign::<Sha512>(message, &self.verifying_key))
     }
 }
 
@@ -697,57 +708,9 @@ impl<'d> Deserialize<'d> for SigningKey {
     }
 }
 
-/// An "expanded" secret key.
-///
-/// This is produced by using an hash function with 512-bits output to digest a
-/// `SecretKey`.  The output digest is then split in half, the lower half being
-/// the actual `key` used to sign messages, after twiddling with some bits.¹ The
-/// upper half is used a sort of half-baked, ill-designed² pseudo-domain-separation
-/// "nonce"-like thing, which is used during signature production by
-/// concatenating it with the message to be signed before the message is hashed.
-///
-/// Instances of this secret are automatically overwritten with zeroes when they
-/// fall out of scope.
-//
-// ¹ This results in a slight bias towards non-uniformity at one spectrum of
-// the range of valid keys.  Oh well: not my idea; not my problem.
-//
-// ² It is the author's view (specifically, isis agora lovecruft, in the event
-// you'd like to complain about me, again) that this is "ill-designed" because
-// this doesn't actually provide true hash domain separation, in that in many
-// real-world applications a user wishes to have one key which is used in
-// several contexts (such as within tor, which does domain separation
-// manually by pre-concatenating static strings to messages to achieve more
-// robust domain separation).  In other real-world applications, such as
-// bitcoind, a user might wish to have one master keypair from which others are
-// derived (à la BIP32) and different domain separators between keys derived at
-// different levels (and similarly for tree-based key derivation constructions,
-// such as hash-based signatures).  Leaving the domain separation to
-// application designers, who thus far have produced incompatible,
-// slightly-differing, ad hoc domain separation (at least those application
-// designers who knew enough cryptographic theory to do so!), is therefore a
-// bad design choice on the part of the cryptographer designing primitives
-// which should be simple and as foolproof as possible to use for
-// non-cryptographers.  Further, later in the ed25519 signature scheme, as
-// specified in RFC8032, the public key is added into *another* hash digest
-// (along with the message, again); it is unclear to this author why there's
-// not only one but two poorly-thought-out attempts at domain separation in the
-// same signature scheme, and which both fail in exactly the same way.  For a
-// better-designed, Schnorr-based signature scheme, see Trevor Perrin's work on
-// "generalised EdDSA" and "VXEdDSA".
-pub(crate) struct ExpandedSecretKey {
-    pub(crate) scalar: Scalar,
-    pub(crate) nonce: [u8; 32],
-}
-
-#[cfg(feature = "zeroize")]
-impl Drop for ExpandedSecretKey {
-    fn drop(&mut self) {
-        self.scalar.zeroize();
-        self.nonce.zeroize()
-    }
-}
-
+/// The spec-compliant way to define an expanded secret key. This computes `SHA512(sk)`, clamps the
+/// first 32 bytes and uses it as a scalar, and uses the second 32 bytes as a domain separator for
+/// hashing.
 impl From<&SecretKey> for ExpandedSecretKey {
     #[allow(clippy::unwrap_used)]
     fn from(secret_key: &SecretKey) -> ExpandedSecretKey {
@@ -758,24 +721,42 @@ impl From<&SecretKey> for ExpandedSecretKey {
         // The try_into here converts to fixed-size array
         ExpandedSecretKey {
             scalar: Scalar::from_bits_clamped(lower.try_into().unwrap()),
-            nonce: upper.try_into().unwrap(),
+            hash_prefix: upper.try_into().unwrap(),
         }
     }
 }
 
-impl ExpandedSecretKey {
-    /// Sign a message with this `ExpandedSecretKey`.
-    #[allow(non_snake_case)]
-    pub(crate) fn sign(&self, message: &[u8], verifying_key: &VerifyingKey) -> Signature {
-        let mut h: Sha512 = Sha512::new();
+//
+// Signing functions. These are pub(crate) so that the `hazmat` module can use them
+//
 
-        h.update(self.nonce);
+impl ExpandedSecretKey {
+    /// The plain, non-prehashed, signing function for Ed25519. `CtxDigest` is the digest used to
+    /// calculate the pseudorandomness needed for signing. According to the spec, `CtxDigest =
+    /// Sha512`, and `self` is derived via the method defined in `impl From<&SigningKey> for
+    /// ExpandedSecretKey`.
+    ///
+    /// This definition is loose in its parameters so that end-users of the `hazmat` module can
+    /// change how the `ExpandedSecretKey` is calculated and which hash function to use.
+    #[allow(non_snake_case)]
+    #[inline(always)]
+    pub(crate) fn raw_sign<CtxDigest>(
+        &self,
+        message: &[u8],
+        verifying_key: &VerifyingKey,
+    ) -> Signature
+    where
+        CtxDigest: Digest<OutputSize = U64>,
+    {
+        let mut h = CtxDigest::new();
+
+        h.update(self.hash_prefix);
         h.update(message);
 
         let r = Scalar::from_hash(h);
         let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
 
-        h = Sha512::new();
+        h = CtxDigest::new();
         h.update(R.as_bytes());
         h.update(verifying_key.as_bytes());
         h.update(message);
@@ -786,38 +767,27 @@ impl ExpandedSecretKey {
         InternalSignature { R, s }.into()
     }
 
-    /// Sign a `prehashed_message` with this `ExpandedSecretKey` using the
-    /// Ed25519ph algorithm defined in [RFC8032 §5.1][rfc8032].
+    /// The prehashed signing function for Ed25519 (i.e., Ed25519ph). `CtxDigest` is the digest
+    /// function used to calculate the pseudorandomness needed for signing. `MsgDigest` is the
+    /// digest function used to hash the signed message. According to the spec, `MsgDigest =
+    /// CtxDigest = Sha512`, and `self` is derived via the method defined in `impl
+    /// From<&SigningKey> for ExpandedSecretKey`.
     ///
-    /// # Inputs
-    ///
-    /// * `prehashed_message` is an instantiated hash digest with 512-bits of
-    ///   output which has had the message to be signed previously fed into its
-    ///   state.
-    /// * `verifying_key` is a [`VerifyingKey`] which corresponds to this secret key.
-    /// * `context` is an optional context string, up to 255 bytes inclusive,
-    ///   which may be used to provide additional domain separation.  If not
-    ///   set, this will default to an empty string.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` whose `Ok` value is an Ed25519ph [`Signature`] on the
-    /// `prehashed_message` if the context was 255 bytes or less, otherwise
-    /// a `SignatureError`.
-    ///
-    /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
+    /// This definition is loose in its parameters so that end-users of the `hazmat` module can
+    /// change how the `ExpandedSecretKey` is calculated and which `CtxDigest` function to use.
     #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
-    pub(crate) fn sign_prehashed<'a, D>(
+    #[inline(always)]
+    pub(crate) fn raw_sign_prehashed<'a, CtxDigest, MsgDigest>(
         &self,
-        prehashed_message: D,
+        prehashed_message: MsgDigest,
         verifying_key: &VerifyingKey,
         context: Option<&'a [u8]>,
     ) -> Result<Signature, SignatureError>
     where
-        D: Digest<OutputSize = U64>,
+        CtxDigest: Digest<OutputSize = U64>,
+        MsgDigest: Digest<OutputSize = U64>,
     {
-        let mut h: Sha512;
         let mut prehash: [u8; 64] = [0u8; 64];
 
         let ctx: &[u8] = context.unwrap_or(b""); // By default, the context is an empty string.
@@ -843,18 +813,18 @@ impl ExpandedSecretKey {
         //
         // This is a really fucking stupid bandaid, and the damned scheme is
         // still bleeding from malleability, for fuck's sake.
-        h = Sha512::new()
+        let mut h = CtxDigest::new()
             .chain_update(b"SigEd25519 no Ed25519 collisions")
             .chain_update([1]) // Ed25519ph
             .chain_update([ctx_len])
             .chain_update(ctx)
-            .chain_update(self.nonce)
+            .chain_update(self.hash_prefix)
             .chain_update(&prehash[..]);
 
         let r = Scalar::from_hash(h);
         let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
 
-        h = Sha512::new()
+        h = CtxDigest::new()
             .chain_update(b"SigEd25519 no Ed25519 collisions")
             .chain_update([1]) // Ed25519ph
             .chain_update([ctx_len])

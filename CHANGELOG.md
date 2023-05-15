@@ -22,6 +22,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
 * Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
 * Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`
+* Make `hazmat` feature to expose, `ExpandedSecretKey`, `raw_sign()`, `raw_sign_prehashed()`, `raw_verify()`, and `raw_verify_prehashed()`
 
 ### Other changes
 

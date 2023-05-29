@@ -287,7 +287,7 @@ impl Debug for Scalar {
 impl Eq for Scalar {}
 impl PartialEq for Scalar {
     fn eq(&self, other: &Self) -> bool {
-        self.ct_eq(other).unwrap_u8() == 1u8
+        self.ct_eq(other).into()
     }
 }
 

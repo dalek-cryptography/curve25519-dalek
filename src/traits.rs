@@ -44,7 +44,7 @@ where
     T: subtle::ConstantTimeEq + Identity,
 {
     fn is_identity(&self) -> bool {
-        self.ct_eq(&T::identity()).unwrap_u8() == 1u8
+        self.ct_eq(&T::identity()).into()
     }
 }
 

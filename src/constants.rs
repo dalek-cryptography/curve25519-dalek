@@ -144,14 +144,14 @@ mod test {
         let minus_one = FieldElement::MINUS_ONE;
         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
         assert_eq!(minus_one, sqrt_m1_sq);
-        assert_eq!(constants::SQRT_M1.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!constants::SQRT_M1.is_negative()));
     }
 
     #[test]
     fn test_sqrt_constants_sign() {
         let minus_one = FieldElement::MINUS_ONE;
         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
-        assert_eq!(was_nonzero_square.unwrap_u8(), 1u8);
+        assert!(bool::from(was_nonzero_square));
         let sign_test_sqrt = &invsqrt_m1 * &constants::SQRT_M1;
         assert_eq!(sign_test_sqrt, minus_one);
     }

@@ -274,10 +274,10 @@ impl CompressedRistretto {
 
         let s = FieldElement::from_bytes(self.as_bytes());
         let s_bytes_check = s.as_bytes();
-        let s_encoding_is_canonical = &s_bytes_check[..].ct_eq(self.as_bytes());
+        let s_encoding_is_canonical = s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
+        if (!s_encoding_is_canonical).into() || s_is_negative.into() {
             return None;
         }
 
@@ -307,10 +307,7 @@ impl CompressedRistretto {
         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
-        if ok.unwrap_u8() == 0u8
-            || t.is_negative().unwrap_u8() == 1u8
-            || y.is_zero().unwrap_u8() == 1u8
-        {
+        if (!ok).into() || t.is_negative().into() || y.is_zero().into() {
             None
         } else {
             Some(RistrettoPoint(EdwardsPoint {
@@ -809,7 +806,7 @@ impl Default for RistrettoPoint {
 
 impl PartialEq for RistrettoPoint {
     fn eq(&self, other: &RistrettoPoint) -> bool {
-        self.ct_eq(other).unwrap_u8() == 1u8
+        self.ct_eq(other).into()
     }
 }
 

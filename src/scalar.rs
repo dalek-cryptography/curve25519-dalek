@@ -877,7 +877,7 @@ impl Scalar {
     ///
     /// Here \\( \bar x = x \operatorname{mods} 2^w \\) means the
     /// \\( \bar x \\) with \\( \bar x \equiv x \pmod{2^w} \\) and
-    /// \\( -2^{w-1} \leq \bar x < 2^w \\).
+    /// \\( -2^{w-1} \leq \bar x < 2^{w-1} \\).
     ///
     /// We implement this by scanning across the bits of \\(k\\) from
     /// least-significant bit to most-significant-bit.

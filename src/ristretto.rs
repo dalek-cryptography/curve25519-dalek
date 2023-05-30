@@ -277,7 +277,7 @@ impl CompressedRistretto {
         let s_encoding_is_canonical = s_bytes_check[..].ct_eq(self.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if (!s_encoding_is_canonical).into() || s_is_negative.into() {
+        if (!s_encoding_is_canonical | s_is_negative).into() {
             return None;
         }
 

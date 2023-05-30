@@ -307,7 +307,7 @@ impl CompressedRistretto {
         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
-        if (!ok).into() || t.is_negative().into() || y.is_zero().into() {
+        if (!ok | t.is_negative() | y.is_zero()).into() {
             None
         } else {
             Some(RistrettoPoint(EdwardsPoint {

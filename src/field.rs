@@ -86,7 +86,7 @@ impl Eq for FieldElement {}
 
 impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> bool {
-        self.ct_eq(other).unwrap_u8() == 1u8
+        self.ct_eq(other).into()
     }
 }
 
@@ -187,7 +187,7 @@ impl FieldElement {
         }
 
         // acc is nonzero because we skipped zeros in inputs
-        assert_eq!(acc.is_zero().unwrap_u8(), 0);
+        assert!(bool::from(!acc.is_zero()));
 
         // Compute the inverse of all products
         acc = acc.invert();
@@ -406,33 +406,33 @@ mod test {
 
         // 0/0 should return (1, 0) since u is 0
         let (choice, sqrt) = FieldElement::sqrt_ratio_i(&zero, &zero);
-        assert_eq!(choice.unwrap_u8(), 1);
+        assert!(bool::from(choice));
         assert_eq!(sqrt, zero);
-        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!sqrt.is_negative()));
 
         // 1/0 should return (0, 0) since v is 0, u is nonzero
         let (choice, sqrt) = FieldElement::sqrt_ratio_i(&one, &zero);
-        assert_eq!(choice.unwrap_u8(), 0);
+        assert!(bool::from(!choice));
         assert_eq!(sqrt, zero);
-        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!sqrt.is_negative()));
 
         // 2/1 is nonsquare, so we expect (0, sqrt(i*2))
         let (choice, sqrt) = FieldElement::sqrt_ratio_i(&two, &one);
-        assert_eq!(choice.unwrap_u8(), 0);
+        assert!(bool::from(!choice));
         assert_eq!(sqrt.square(), &two * &i);
-        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!sqrt.is_negative()));
 
         // 4/1 is square, so we expect (1, sqrt(4))
         let (choice, sqrt) = FieldElement::sqrt_ratio_i(&four, &one);
-        assert_eq!(choice.unwrap_u8(), 1);
+        assert!(bool::from(choice));
         assert_eq!(sqrt.square(), four);
-        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!sqrt.is_negative()));
 
         // 1/4 is square, so we expect (1, 1/sqrt(4))
         let (choice, sqrt) = FieldElement::sqrt_ratio_i(&one, &four);
-        assert_eq!(choice.unwrap_u8(), 1);
+        assert!(bool::from(choice));
         assert_eq!(&sqrt.square() * &four, one);
-        assert_eq!(sqrt.is_negative().unwrap_u8(), 0);
+        assert!(bool::from(!sqrt.is_negative()));
     }
 
     #[test]

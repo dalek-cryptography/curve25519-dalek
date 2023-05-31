@@ -203,7 +203,9 @@ impl CompressedEdwardsY {
         let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
         let (is_valid_y_coord, mut X) = FieldElement::sqrt_ratio_i(&u, &v);
 
-        if is_valid_y_coord.unwrap_u8() != 1u8 { return None; }
+        if (!is_valid_y_coord).into() {
+            return None;
+        }
 
          // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
          // so we negate according to the supplied sign bit.
@@ -466,7 +468,7 @@ impl ConstantTimeEq for EdwardsPoint {
 
 impl PartialEq for EdwardsPoint {
     fn eq(&self, other: &EdwardsPoint) -> bool {
-        self.ct_eq(other).unwrap_u8() == 1u8
+        self.ct_eq(other).into()
     }
 }
 
@@ -1406,7 +1408,7 @@ mod test {
             Z: FieldElement::from_bytes(&two_bytes),
             T: FieldElement::ZERO,
         };
-        assert_eq!(id1.ct_eq(&id2).unwrap_u8(), 1u8);
+        assert!(bool::from(id1.ct_eq(&id2)));
     }
 
     /// Sanity check for conversion to precomputed points

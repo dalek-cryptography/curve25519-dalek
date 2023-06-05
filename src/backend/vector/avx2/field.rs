@@ -48,6 +48,8 @@ use crate::backend::vector::avx2::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
 
+use unsafe_target_feature::unsafe_target_feature;
+
 /// Unpack 32-bit lanes into 64-bit lanes:
 /// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
@@ -57,9 +59,9 @@ use crate::backend::vector::avx2::constants::{
 /// (a0, 0, b0, 0, c0, 0, d0, 0)
 /// (a1, 0, b1, 0, c1, 0, d1, 0)
 /// ```
-#[target_feature(enable = "avx2")]
-#[inline]
-unsafe fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
+#[unsafe_target_feature("avx2")]
+#[inline(always)]
+fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
     let b: u32x8;
     let zero = u32x8::splat(0);
@@ -81,9 +83,9 @@ unsafe fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
 /// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
 /// ```
-#[target_feature(enable = "avx2")]
-#[inline]
-unsafe fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
+#[unsafe_target_feature("avx2")]
+#[inline(always)]
+fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
     unsafe {
         use core::arch::x86_64::_mm256_blend_epi32;
         use core::arch::x86_64::_mm256_shuffle_epi32;
@@ -153,62 +155,43 @@ pub struct FieldElement2625x4(pub(crate) [u32x8; 5]);
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[unsafe_target_feature("avx2")]
 impl ConditionallySelectable for FieldElement2625x4 {
-    #[inline(always)]
     fn conditional_select(
         a: &FieldElement2625x4,
         b: &FieldElement2625x4,
         choice: Choice,
     ) -> FieldElement2625x4 {
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner(
-            a: &FieldElement2625x4,
-            b: &FieldElement2625x4,
-            choice: Choice,
-        ) -> FieldElement2625x4 {
-            let mask = (-(choice.unwrap_u8() as i32)) as u32;
-            let mask_vec = u32x8::splat(mask);
-            FieldElement2625x4([
-                a.0[0] ^ (mask_vec & (a.0[0] ^ b.0[0])),
-                a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
-                a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
-                a.0[3] ^ (mask_vec & (a.0[3] ^ b.0[3])),
-                a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4])),
-            ])
-        }
-
-        unsafe { inner(a, b, choice) }
+        let mask = (-(choice.unwrap_u8() as i32)) as u32;
+        let mask_vec = u32x8::splat(mask);
+        FieldElement2625x4([
+            a.0[0] ^ (mask_vec & (a.0[0] ^ b.0[0])),
+            a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
+            a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
+            a.0[3] ^ (mask_vec & (a.0[3] ^ b.0[3])),
+            a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4])),
+        ])
     }
 
-    #[inline(always)]
     fn conditional_assign(&mut self, other: &FieldElement2625x4, choice: Choice) {
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner(
-            itself: &mut FieldElement2625x4,
-            other: &FieldElement2625x4,
-            choice: Choice,
-        ) {
-            let mask = (-(choice.unwrap_u8() as i32)) as u32;
-            let mask_vec = u32x8::splat(mask);
-            itself.0[0] ^= mask_vec & (itself.0[0] ^ other.0[0]);
-            itself.0[1] ^= mask_vec & (itself.0[1] ^ other.0[1]);
-            itself.0[2] ^= mask_vec & (itself.0[2] ^ other.0[2]);
-            itself.0[3] ^= mask_vec & (itself.0[3] ^ other.0[3]);
-            itself.0[4] ^= mask_vec & (itself.0[4] ^ other.0[4]);
-        }
-
-        unsafe { inner(self, other, choice) }
+        let mask = (-(choice.unwrap_u8() as i32)) as u32;
+        let mask_vec = u32x8::splat(mask);
+        self.0[0] ^= mask_vec & (self.0[0] ^ other.0[0]);
+        self.0[1] ^= mask_vec & (self.0[1] ^ other.0[1]);
+        self.0[2] ^= mask_vec & (self.0[2] ^ other.0[2]);
+        self.0[3] ^= mask_vec & (self.0[3] ^ other.0[3]);
+        self.0[4] ^= mask_vec & (self.0[4] ^ other.0[4]);
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl FieldElement2625x4 {
     pub const ZERO: FieldElement2625x4 = FieldElement2625x4([u32x8::splat_const::<0>(); 5]);
 
     /// Split this vector into an array of four (serial) field
     /// elements.
     #[rustfmt::skip] // keep alignment of extracted lanes
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn split(&self) -> [FieldElement51; 4] {
+    pub fn split(&self) -> [FieldElement51; 4] {
         let mut out = [FieldElement51::ZERO; 4];
         for i in 0..5 {
             let a_2i   = self.0[i].extract::<0>() as u64; //
@@ -235,8 +218,7 @@ impl FieldElement2625x4 {
     /// that when this function is inlined, LLVM is able to lower the
     /// shuffle using an immediate.
     #[inline]
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn shuffle(&self, control: Shuffle) -> FieldElement2625x4 {
+    pub fn shuffle(&self, control: Shuffle) -> FieldElement2625x4 {
         #[inline(always)]
         fn shuffle_lanes(x: u32x8, control: Shuffle) -> u32x8 {
             unsafe {
@@ -276,8 +258,7 @@ impl FieldElement2625x4 {
     /// that this function can be inlined and LLVM can lower it to a
     /// blend instruction using an immediate.
     #[inline]
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
+    pub fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
         #[inline(always)]
         fn blend_lanes(x: u32x8, y: u32x8, control: Lanes) -> u32x8 {
             unsafe {
@@ -341,8 +322,7 @@ impl FieldElement2625x4 {
     }
 
     /// Convenience wrapper around `new(x,x,x,x)`.
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn splat(x: &FieldElement51) -> FieldElement2625x4 {
+    pub fn splat(x: &FieldElement51) -> FieldElement2625x4 {
         FieldElement2625x4::new(x, x, x, x)
     }
 
@@ -352,8 +332,7 @@ impl FieldElement2625x4 {
     ///
     /// The resulting `FieldElement2625x4` is bounded with \\( b < 0.0002 \\).
     #[rustfmt::skip] // keep alignment of computed lanes
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn new(
+    pub fn new(
         x0: &FieldElement51,
         x1: &FieldElement51,
         x2: &FieldElement51,
@@ -392,8 +371,7 @@ impl FieldElement2625x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 1 \\).
     #[inline]
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn negate_lazy(&self) -> FieldElement2625x4 {
+    pub fn negate_lazy(&self) -> FieldElement2625x4 {
         // The limbs of self are bounded with b < 0.999, while the
         // smallest limb of 2*p is 67108845 > 2^{26+0.9999}, so
         // underflows are not possible.
@@ -416,8 +394,7 @@ impl FieldElement2625x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 1.6 \\).
     #[inline]
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn diff_sum(&self) -> FieldElement2625x4 {
+    pub fn diff_sum(&self) -> FieldElement2625x4 {
         // tmp1 = (B, A, D, C)
         let tmp1 = self.shuffle(Shuffle::BADC);
         // tmp2 = (-A, B, -C, D)
@@ -432,8 +409,7 @@ impl FieldElement2625x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.0002 \\).
     #[inline]
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn reduce(&self) -> FieldElement2625x4 {
+    pub fn reduce(&self) -> FieldElement2625x4 {
         let shifts = u32x8::new(26, 26, 25, 25, 26, 26, 25, 25);
         let masks = u32x8::new(
             (1 << 26) - 1,
@@ -542,8 +518,7 @@ impl FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[inline]
     #[rustfmt::skip] // keep alignment of carry chain
-    #[target_feature(enable = "avx2")]
-    unsafe fn reduce64(mut z: [u64x4; 10]) -> FieldElement2625x4 {
+    fn reduce64(mut z: [u64x4; 10]) -> FieldElement2625x4 {
         // These aren't const because splat isn't a const fn
         let LOW_25_BITS: u64x4 = u64x4::splat((1 << 25) - 1);
         let LOW_26_BITS: u64x4 = u64x4::splat((1 << 26) - 1);
@@ -619,8 +594,7 @@ impl FieldElement2625x4 {
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     #[rustfmt::skip] // keep alignment of z* calculations
-    #[target_feature(enable = "avx2")]
-    pub unsafe fn square_and_negate_D(&self) -> FieldElement2625x4 {
+    pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             x.mul32(y)
@@ -707,6 +681,7 @@ impl FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Neg for FieldElement2625x4 {
     type Output = FieldElement2625x4;
 
@@ -722,46 +697,36 @@ impl Neg for FieldElement2625x4 {
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.0002 \\).
-    #[inline(always)]
+    #[inline]
     fn neg(self) -> FieldElement2625x4 {
-        #[inline]
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner(itself: FieldElement2625x4) -> FieldElement2625x4 {
-            FieldElement2625x4([
-                P_TIMES_16_LO - itself.0[0],
-                P_TIMES_16_HI - itself.0[1],
-                P_TIMES_16_HI - itself.0[2],
-                P_TIMES_16_HI - itself.0[3],
-                P_TIMES_16_HI - itself.0[4],
-            ])
-            .reduce()
-        }
-
-        unsafe { inner(self) }
+        FieldElement2625x4([
+            P_TIMES_16_LO - self.0[0],
+            P_TIMES_16_HI - self.0[1],
+            P_TIMES_16_HI - self.0[2],
+            P_TIMES_16_HI - self.0[3],
+            P_TIMES_16_HI - self.0[4],
+        ])
+        .reduce()
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Add<FieldElement2625x4> for FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Add two `FieldElement2625x4`s, without performing a reduction.
-    #[inline(always)]
+    #[inline]
     fn add(self, rhs: FieldElement2625x4) -> FieldElement2625x4 {
-        #[inline]
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner(itself: FieldElement2625x4, rhs: FieldElement2625x4) -> FieldElement2625x4 {
-            FieldElement2625x4([
-                itself.0[0] + rhs.0[0],
-                itself.0[1] + rhs.0[1],
-                itself.0[2] + rhs.0[2],
-                itself.0[3] + rhs.0[3],
-                itself.0[4] + rhs.0[4],
-            ])
-        }
-
-        unsafe { inner(self, rhs) }
+        FieldElement2625x4([
+            self.0[0] + rhs.0[0],
+            self.0[1] + rhs.0[1],
+            self.0[2] + rhs.0[2],
+            self.0[3] + rhs.0[3],
+            self.0[4] + rhs.0[4],
+        ])
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Perform a multiplication by a vector of small constants.
@@ -769,40 +734,32 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     /// # Postconditions
     ///
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
-    #[inline(always)]
+    #[inline]
     fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement2625x4 {
-        #[inline]
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner(
-            itself: FieldElement2625x4,
-            scalars: (u32, u32, u32, u32),
-        ) -> FieldElement2625x4 {
-            let consts = u32x8::new(scalars.0, 0, scalars.1, 0, scalars.2, 0, scalars.3, 0);
+        let consts = u32x8::new(scalars.0, 0, scalars.1, 0, scalars.2, 0, scalars.3, 0);
 
-            let (b0, b1) = unpack_pair(itself.0[0]);
-            let (b2, b3) = unpack_pair(itself.0[1]);
-            let (b4, b5) = unpack_pair(itself.0[2]);
-            let (b6, b7) = unpack_pair(itself.0[3]);
-            let (b8, b9) = unpack_pair(itself.0[4]);
+        let (b0, b1) = unpack_pair(self.0[0]);
+        let (b2, b3) = unpack_pair(self.0[1]);
+        let (b4, b5) = unpack_pair(self.0[2]);
+        let (b6, b7) = unpack_pair(self.0[3]);
+        let (b8, b9) = unpack_pair(self.0[4]);
 
-            FieldElement2625x4::reduce64([
-                b0.mul32(consts),
-                b1.mul32(consts),
-                b2.mul32(consts),
-                b3.mul32(consts),
-                b4.mul32(consts),
-                b5.mul32(consts),
-                b6.mul32(consts),
-                b7.mul32(consts),
-                b8.mul32(consts),
-                b9.mul32(consts),
-            ])
-        }
-
-        unsafe { inner(self, scalars) }
+        FieldElement2625x4::reduce64([
+            b0.mul32(consts),
+            b1.mul32(consts),
+            b2.mul32(consts),
+            b3.mul32(consts),
+            b4.mul32(consts),
+            b5.mul32(consts),
+            b6.mul32(consts),
+            b7.mul32(consts),
+            b8.mul32(consts),
+            b9.mul32(consts),
+        ])
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Multiply `self` by `rhs`.
@@ -818,106 +775,98 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     ///
     #[rustfmt::skip] // keep alignment of z* calculations
-    #[inline(always)]
+    #[inline]
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
-        #[inline]
-        #[target_feature(enable = "avx2")]
-        unsafe fn inner<'a, 'b>(itself: &'a FieldElement2625x4, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
-            #[inline(always)]
-            fn m(x: u32x8, y: u32x8) -> u64x4 {
-                x.mul32(y)
-            }
-
-            #[inline(always)]
-            fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
-                x.mul32(y).into()
-            }
-
-            let (x0, x1) = unpack_pair(itself.0[0]);
-            let (x2, x3) = unpack_pair(itself.0[1]);
-            let (x4, x5) = unpack_pair(itself.0[2]);
-            let (x6, x7) = unpack_pair(itself.0[3]);
-            let (x8, x9) = unpack_pair(itself.0[4]);
-
-            let (y0, y1) = unpack_pair(rhs.0[0]);
-            let (y2, y3) = unpack_pair(rhs.0[1]);
-            let (y4, y5) = unpack_pair(rhs.0[2]);
-            let (y6, y7) = unpack_pair(rhs.0[3]);
-            let (y8, y9) = unpack_pair(rhs.0[4]);
-
-            let v19 = u32x8::new(19, 0, 19, 0, 19, 0, 19, 0);
-
-            let y1_19 = m_lo(v19, y1); // This fits in a u32
-            let y2_19 = m_lo(v19, y2); // iff 26 + b + lg(19) < 32
-            let y3_19 = m_lo(v19, y3); // if  b < 32 - 26 - 4.248 = 1.752
-            let y4_19 = m_lo(v19, y4);
-            let y5_19 = m_lo(v19, y5);
-            let y6_19 = m_lo(v19, y6);
-            let y7_19 = m_lo(v19, y7);
-            let y8_19 = m_lo(v19, y8);
-            let y9_19 = m_lo(v19, y9);
-
-            let x1_2 = x1 + x1; // This fits in a u32 iff 25 + b + 1 < 32
-            let x3_2 = x3 + x3; //                    iff b < 6
-            let x5_2 = x5 + x5;
-            let x7_2 = x7 + x7;
-            let x9_2 = x9 + x9;
-
-            let z0 = m(x0, y0) + m(x1_2, y9_19) + m(x2, y8_19) + m(x3_2, y7_19) + m(x4, y6_19) + m(x5_2, y5_19) + m(x6, y4_19) + m(x7_2, y3_19) + m(x8, y2_19) + m(x9_2, y1_19);
-            let z1 = m(x0, y1) + m(x1,      y0) + m(x2, y9_19) + m(x3,   y8_19) + m(x4, y7_19) + m(x5,   y6_19) + m(x6, y5_19) + m(x7,   y4_19) + m(x8, y3_19) + m(x9,   y2_19);
-            let z2 = m(x0, y2) + m(x1_2,    y1) + m(x2,    y0) + m(x3_2, y9_19) + m(x4, y8_19) + m(x5_2, y7_19) + m(x6, y6_19) + m(x7_2, y5_19) + m(x8, y4_19) + m(x9_2, y3_19);
-            let z3 = m(x0, y3) + m(x1,      y2) + m(x2,    y1) + m(x3,      y0) + m(x4, y9_19) + m(x5,   y8_19) + m(x6, y7_19) + m(x7,   y6_19) + m(x8, y5_19) + m(x9,   y4_19);
-            let z4 = m(x0, y4) + m(x1_2,    y3) + m(x2,    y2) + m(x3_2,    y1) + m(x4,    y0) + m(x5_2, y9_19) + m(x6, y8_19) + m(x7_2, y7_19) + m(x8, y6_19) + m(x9_2, y5_19);
-            let z5 = m(x0, y5) + m(x1,      y4) + m(x2,    y3) + m(x3,      y2) + m(x4,    y1) + m(x5,      y0) + m(x6, y9_19) + m(x7,   y8_19) + m(x8, y7_19) + m(x9,   y6_19);
-            let z6 = m(x0, y6) + m(x1_2,    y5) + m(x2,    y4) + m(x3_2,    y3) + m(x4,    y2) + m(x5_2,    y1) + m(x6,    y0) + m(x7_2, y9_19) + m(x8, y8_19) + m(x9_2, y7_19);
-            let z7 = m(x0, y7) + m(x1,      y6) + m(x2,    y5) + m(x3,      y4) + m(x4,    y3) + m(x5,      y2) + m(x6,    y1) + m(x7,      y0) + m(x8, y9_19) + m(x9,   y8_19);
-            let z8 = m(x0, y8) + m(x1_2,    y7) + m(x2,    y6) + m(x3_2,    y5) + m(x4,    y4) + m(x5_2,    y3) + m(x6,    y2) + m(x7_2,    y1) + m(x8,    y0) + m(x9_2, y9_19);
-            let z9 = m(x0, y9) + m(x1,      y8) + m(x2,    y7) + m(x3,      y6) + m(x4,    y5) + m(x5,      y4) + m(x6,    y3) + m(x7,      y2) + m(x8,    y1) + m(x9,      y0);
-
-            // The bounds on z[i] are the same as in the serial 32-bit code
-            // and the comment below is copied from there:
-
-            // How big is the contribution to z[i+j] from x[i], y[j]?
-            //
-            // Using the bounds above, we get:
-            //
-            // i even, j even:   x[i]*y[j] <   2^(26+b)*2^(26+b) = 2*2^(51+2*b)
-            // i  odd, j even:   x[i]*y[j] <   2^(25+b)*2^(26+b) = 1*2^(51+2*b)
-            // i even, j  odd:   x[i]*y[j] <   2^(26+b)*2^(25+b) = 1*2^(51+2*b)
-            // i  odd, j  odd: 2*x[i]*y[j] < 2*2^(25+b)*2^(25+b) = 1*2^(51+2*b)
-            //
-            // We perform inline reduction mod p by replacing 2^255 by 19
-            // (since 2^255 - 19 = 0 mod p).  This adds a factor of 19, so
-            // we get the bounds (z0 is the biggest one, but calculated for
-            // posterity here in case finer estimation is needed later):
-            //
-            //  z0 < ( 2 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 249*2^(51 + 2*b)
-            //  z1 < ( 1 +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 154*2^(51 + 2*b)
-            //  z2 < ( 2 +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 195*2^(51 + 2*b)
-            //  z3 < ( 1 +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 118*2^(51 + 2*b)
-            //  z4 < ( 2 +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 141*2^(51 + 2*b)
-            //  z5 < ( 1 +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) =  82*2^(51 + 2*b)
-            //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) =  87*2^(51 + 2*b)
-            //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 )*2^(51 + 2b) =  46*2^(51 + 2*b)
-            //  z8 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 )*2^(51 + 2b) =  33*2^(51 + 2*b)
-            //  z9 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   )*2^(51 + 2b) =  10*2^(51 + 2*b)
-            //
-            // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
-            //                         if b < 2.5.
-
-            // In fact this bound is slightly sloppy, since it treats both
-            // inputs x and y as being bounded by the same parameter b,
-            // while they are in fact bounded by b_x and b_y, and we
-            // already require that b_y < 1.75 in order to fit the
-            // multiplications by 19 into a u32.  The tighter bound on b_y
-            // means we could get a tighter bound on the outputs, or a
-            // looser bound on b_x.
-            FieldElement2625x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+        #[inline(always)]
+        fn m(x: u32x8, y: u32x8) -> u64x4 {
+            x.mul32(y)
         }
 
-        unsafe {
-            inner(self, rhs)
+        #[inline(always)]
+        fn m_lo(x: u32x8, y: u32x8) -> u32x8 {
+            x.mul32(y).into()
         }
+
+        let (x0, x1) = unpack_pair(self.0[0]);
+        let (x2, x3) = unpack_pair(self.0[1]);
+        let (x4, x5) = unpack_pair(self.0[2]);
+        let (x6, x7) = unpack_pair(self.0[3]);
+        let (x8, x9) = unpack_pair(self.0[4]);
+
+        let (y0, y1) = unpack_pair(rhs.0[0]);
+        let (y2, y3) = unpack_pair(rhs.0[1]);
+        let (y4, y5) = unpack_pair(rhs.0[2]);
+        let (y6, y7) = unpack_pair(rhs.0[3]);
+        let (y8, y9) = unpack_pair(rhs.0[4]);
+
+        let v19 = u32x8::new(19, 0, 19, 0, 19, 0, 19, 0);
+
+        let y1_19 = m_lo(v19, y1); // This fits in a u32
+        let y2_19 = m_lo(v19, y2); // iff 26 + b + lg(19) < 32
+        let y3_19 = m_lo(v19, y3); // if  b < 32 - 26 - 4.248 = 1.752
+        let y4_19 = m_lo(v19, y4);
+        let y5_19 = m_lo(v19, y5);
+        let y6_19 = m_lo(v19, y6);
+        let y7_19 = m_lo(v19, y7);
+        let y8_19 = m_lo(v19, y8);
+        let y9_19 = m_lo(v19, y9);
+
+        let x1_2 = x1 + x1; // This fits in a u32 iff 25 + b + 1 < 32
+        let x3_2 = x3 + x3; //                    iff b < 6
+        let x5_2 = x5 + x5;
+        let x7_2 = x7 + x7;
+        let x9_2 = x9 + x9;
+
+        let z0 = m(x0, y0) + m(x1_2, y9_19) + m(x2, y8_19) + m(x3_2, y7_19) + m(x4, y6_19) + m(x5_2, y5_19) + m(x6, y4_19) + m(x7_2, y3_19) + m(x8, y2_19) + m(x9_2, y1_19);
+        let z1 = m(x0, y1) + m(x1,      y0) + m(x2, y9_19) + m(x3,   y8_19) + m(x4, y7_19) + m(x5,   y6_19) + m(x6, y5_19) + m(x7,   y4_19) + m(x8, y3_19) + m(x9,   y2_19);
+        let z2 = m(x0, y2) + m(x1_2,    y1) + m(x2,    y0) + m(x3_2, y9_19) + m(x4, y8_19) + m(x5_2, y7_19) + m(x6, y6_19) + m(x7_2, y5_19) + m(x8, y4_19) + m(x9_2, y3_19);
+        let z3 = m(x0, y3) + m(x1,      y2) + m(x2,    y1) + m(x3,      y0) + m(x4, y9_19) + m(x5,   y8_19) + m(x6, y7_19) + m(x7,   y6_19) + m(x8, y5_19) + m(x9,   y4_19);
+        let z4 = m(x0, y4) + m(x1_2,    y3) + m(x2,    y2) + m(x3_2,    y1) + m(x4,    y0) + m(x5_2, y9_19) + m(x6, y8_19) + m(x7_2, y7_19) + m(x8, y6_19) + m(x9_2, y5_19);
+        let z5 = m(x0, y5) + m(x1,      y4) + m(x2,    y3) + m(x3,      y2) + m(x4,    y1) + m(x5,      y0) + m(x6, y9_19) + m(x7,   y8_19) + m(x8, y7_19) + m(x9,   y6_19);
+        let z6 = m(x0, y6) + m(x1_2,    y5) + m(x2,    y4) + m(x3_2,    y3) + m(x4,    y2) + m(x5_2,    y1) + m(x6,    y0) + m(x7_2, y9_19) + m(x8, y8_19) + m(x9_2, y7_19);
+        let z7 = m(x0, y7) + m(x1,      y6) + m(x2,    y5) + m(x3,      y4) + m(x4,    y3) + m(x5,      y2) + m(x6,    y1) + m(x7,      y0) + m(x8, y9_19) + m(x9,   y8_19);
+        let z8 = m(x0, y8) + m(x1_2,    y7) + m(x2,    y6) + m(x3_2,    y5) + m(x4,    y4) + m(x5_2,    y3) + m(x6,    y2) + m(x7_2,    y1) + m(x8,    y0) + m(x9_2, y9_19);
+        let z9 = m(x0, y9) + m(x1,      y8) + m(x2,    y7) + m(x3,      y6) + m(x4,    y5) + m(x5,      y4) + m(x6,    y3) + m(x7,      y2) + m(x8,    y1) + m(x9,      y0);
+
+        // The bounds on z[i] are the same as in the serial 32-bit code
+        // and the comment below is copied from there:
+
+        // How big is the contribution to z[i+j] from x[i], y[j]?
+        //
+        // Using the bounds above, we get:
+        //
+        // i even, j even:   x[i]*y[j] <   2^(26+b)*2^(26+b) = 2*2^(51+2*b)
+        // i  odd, j even:   x[i]*y[j] <   2^(25+b)*2^(26+b) = 1*2^(51+2*b)
+        // i even, j  odd:   x[i]*y[j] <   2^(26+b)*2^(25+b) = 1*2^(51+2*b)
+        // i  odd, j  odd: 2*x[i]*y[j] < 2*2^(25+b)*2^(25+b) = 1*2^(51+2*b)
+        //
+        // We perform inline reduction mod p by replacing 2^255 by 19
+        // (since 2^255 - 19 = 0 mod p).  This adds a factor of 19, so
+        // we get the bounds (z0 is the biggest one, but calculated for
+        // posterity here in case finer estimation is needed later):
+        //
+        //  z0 < ( 2 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 249*2^(51 + 2*b)
+        //  z1 < ( 1 +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 154*2^(51 + 2*b)
+        //  z2 < ( 2 +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 195*2^(51 + 2*b)
+        //  z3 < ( 1 +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 118*2^(51 + 2*b)
+        //  z4 < ( 2 +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 141*2^(51 + 2*b)
+        //  z5 < ( 1 +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) =  82*2^(51 + 2*b)
+        //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) =  87*2^(51 + 2*b)
+        //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 )*2^(51 + 2b) =  46*2^(51 + 2*b)
+        //  z8 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 )*2^(51 + 2b) =  33*2^(51 + 2*b)
+        //  z9 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   )*2^(51 + 2b) =  10*2^(51 + 2*b)
+        //
+        // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
+        //                         if b < 2.5.
+
+        // In fact this bound is slightly sloppy, since it treats both
+        // inputs x and y as being bounded by the same parameter b,
+        // while they are in fact bounded by b_x and b_y, and we
+        // already require that b_y < 1.75 in order to fit the
+        // multiplications by 19 into a u32.  The tighter bound on b_y
+        // means we could get a tighter bound on the outputs, or a
+        // looser bound on b_x.
+        FieldElement2625x4::reduce64([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
     }
 }
 

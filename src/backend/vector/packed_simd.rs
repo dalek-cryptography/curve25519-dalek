@@ -252,9 +252,9 @@ impl u64x4 {
     }
 
     /// Constructs a new instance.
-    #[target_feature(enable = "avx2")]
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub unsafe fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> u64x4 {
+    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> u64x4 {
         unsafe {
             // _mm256_set_epi64 sets the underlying vector in reverse order of the args
             u64x4(core::arch::x86_64::_mm256_set_epi64x(
@@ -264,9 +264,9 @@ impl u64x4 {
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
-    #[target_feature(enable = "avx2")]
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub unsafe fn splat(x: u64) -> u64x4 {
+    pub fn splat(x: u64) -> u64x4 {
         unsafe { u64x4(core::arch::x86_64::_mm256_set1_epi64x(x as i64)) }
     }
 }
@@ -303,18 +303,9 @@ impl u32x8 {
 
     /// Constructs a new instance.
     #[allow(clippy::too_many_arguments)]
-    #[target_feature(enable = "avx2")]
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub unsafe fn new(
-        x0: u32,
-        x1: u32,
-        x2: u32,
-        x3: u32,
-        x4: u32,
-        x5: u32,
-        x6: u32,
-        x7: u32,
-    ) -> u32x8 {
+    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32, x4: u32, x5: u32, x6: u32, x7: u32) -> u32x8 {
         unsafe {
             // _mm256_set_epi32 sets the underlying vector in reverse order of the args
             u32x8(core::arch::x86_64::_mm256_set_epi32(
@@ -325,9 +316,9 @@ impl u32x8 {
     }
 
     /// Constructs a new instance with all of the elements initialized to the given value.
-    #[target_feature(enable = "avx2")]
+    #[unsafe_target_feature("avx2")]
     #[inline]
-    pub unsafe fn splat(x: u32) -> u32x8 {
+    pub fn splat(x: u32) -> u32x8 {
         unsafe { u32x8(core::arch::x86_64::_mm256_set1_epi32(x as i32)) }
     }
 }

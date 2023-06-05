@@ -3,12 +3,12 @@
 // This file is part of curve25519-dalek.
 // See LICENSE for licensing information.
 
-///! This module defines wrappers over platform-specific SIMD types to make them
-///! more convenient to use.
-///!
-///! UNSAFETY: Everything in this module assumes that we're running on hardware
-///!           which supports at least AVX2. This invariant *must* be enforced
-///!           by the callers of this code.
+//! This module defines wrappers over platform-specific SIMD types to make them
+//! more convenient to use.
+//!
+//! UNSAFETY: Everything in this module assumes that we're running on hardware
+//!           which supports at least AVX2. This invariant *must* be enforced
+//!           by the callers of this code.
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
 
 use unsafe_target_feature::unsafe_target_feature;

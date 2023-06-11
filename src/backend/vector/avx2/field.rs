@@ -48,6 +48,8 @@ use crate::backend::vector::avx2::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
 
+use unsafe_target_feature::unsafe_target_feature;
+
 /// Unpack 32-bit lanes into 64-bit lanes:
 /// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
@@ -57,6 +59,7 @@ use crate::backend::vector::avx2::constants::{
 /// (a0, 0, b0, 0, c0, 0, d0, 0)
 /// (a1, 0, b1, 0, c1, 0, d1, 0)
 /// ```
+#[unsafe_target_feature("avx2")]
 #[inline(always)]
 fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
     let a: u32x8;
@@ -80,6 +83,7 @@ fn unpack_pair(src: u32x8) -> (u32x8, u32x8) {
 /// ```ascii,no_run
 /// (a0, b0, a1, b1, c0, d0, c1, d1)
 /// ```
+#[unsafe_target_feature("avx2")]
 #[inline(always)]
 fn repack_pair(x: u32x8, y: u32x8) -> u32x8 {
     unsafe {
@@ -151,6 +155,7 @@ pub struct FieldElement2625x4(pub(crate) [u32x8; 5]);
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[unsafe_target_feature("avx2")]
 impl ConditionallySelectable for FieldElement2625x4 {
     fn conditional_select(
         a: &FieldElement2625x4,
@@ -179,6 +184,7 @@ impl ConditionallySelectable for FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl FieldElement2625x4 {
     pub const ZERO: FieldElement2625x4 = FieldElement2625x4([u32x8::splat_const::<0>(); 5]);
 
@@ -675,6 +681,7 @@ impl FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Neg for FieldElement2625x4 {
     type Output = FieldElement2625x4;
 
@@ -703,6 +710,7 @@ impl Neg for FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Add<FieldElement2625x4> for FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Add two `FieldElement2625x4`s, without performing a reduction.
@@ -718,6 +726,7 @@ impl Add<FieldElement2625x4> for FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Perform a multiplication by a vector of small constants.
@@ -750,6 +759,7 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     }
 }
 
+#[unsafe_target_feature("avx2")]
 impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Multiply `self` by `rhs`.
@@ -765,6 +775,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     /// The coefficients of the result are bounded with \\( b < 0.007 \\).
     ///
     #[rustfmt::skip] // keep alignment of z* calculations
+    #[inline]
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
@@ -859,6 +870,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     }
 }
 
+#[cfg(target_feature = "avx2")]
 #[cfg(test)]
 mod test {
     use super::*;

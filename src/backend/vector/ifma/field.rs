@@ -16,15 +16,19 @@ use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
 
+use unsafe_target_feature::unsafe_target_feature;
+
 /// A wrapper around `vpmadd52luq` that works on `u64x4`.
-#[inline(always)]
+#[unsafe_target_feature("avx512ifma,avx512vl")]
+#[inline]
 unsafe fn madd52lo(z: u64x4, x: u64x4, y: u64x4) -> u64x4 {
     use core::arch::x86_64::_mm256_madd52lo_epu64;
     _mm256_madd52lo_epu64(z.into(), x.into(), y.into()).into()
 }
 
 /// A wrapper around `vpmadd52huq` that works on `u64x4`.
-#[inline(always)]
+#[unsafe_target_feature("avx512ifma,avx512vl")]
+#[inline]
 unsafe fn madd52hi(z: u64x4, x: u64x4, y: u64x4) -> u64x4 {
     use core::arch::x86_64::_mm256_madd52hi_epu64;
     _mm256_madd52hi_epu64(z.into(), x.into(), y.into()).into()
@@ -53,6 +57,7 @@ pub enum Shuffle {
     CACA,
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 #[inline(always)]
 fn shuffle_lanes(x: u64x4, control: Shuffle) -> u64x4 {
     unsafe {
@@ -84,6 +89,7 @@ pub enum Lanes {
     BCD,
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 #[inline]
 fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
     unsafe {
@@ -100,6 +106,7 @@ fn blend_lanes(x: u64x4, y: u64x4, control: Lanes) -> u64x4 {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl F51x4Unreduced {
     pub const ZERO: F51x4Unreduced = F51x4Unreduced([u64x4::splat_const::<0>(); 5]);
 
@@ -198,6 +205,7 @@ impl F51x4Unreduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl Neg for F51x4Reduced {
     type Output = F51x4Reduced;
 
@@ -209,6 +217,7 @@ impl Neg for F51x4Reduced {
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl ConditionallySelectable for F51x4Reduced {
     #[inline]
     fn conditional_select(a: &F51x4Reduced, b: &F51x4Reduced, choice: Choice) -> F51x4Reduced {
@@ -235,6 +244,7 @@ impl ConditionallySelectable for F51x4Reduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl F51x4Reduced {
     #[inline]
     pub fn shuffle(&self, control: Shuffle) -> F51x4Reduced {
@@ -373,6 +383,7 @@ impl F51x4Reduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl From<F51x4Reduced> for F51x4Unreduced {
     #[inline]
     fn from(x: F51x4Reduced) -> F51x4Unreduced {
@@ -380,6 +391,7 @@ impl From<F51x4Reduced> for F51x4Unreduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl From<F51x4Unreduced> for F51x4Reduced {
     #[inline]
     fn from(x: F51x4Unreduced) -> F51x4Reduced {
@@ -405,6 +417,7 @@ impl From<F51x4Unreduced> for F51x4Reduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl Add<F51x4Unreduced> for F51x4Unreduced {
     type Output = F51x4Unreduced;
     #[inline]
@@ -419,6 +432,7 @@ impl Add<F51x4Unreduced> for F51x4Unreduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl<'a> Mul<(u32, u32, u32, u32)> for &'a F51x4Reduced {
     type Output = F51x4Unreduced;
     #[inline]
@@ -470,6 +484,7 @@ impl<'a> Mul<(u32, u32, u32, u32)> for &'a F51x4Reduced {
     }
 }
 
+#[unsafe_target_feature("avx512ifma,avx512vl")]
 impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
     type Output = F51x4Unreduced;
     #[inline]
@@ -614,6 +629,7 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
     }
 }
 
+#[cfg(target_feature = "avx512ifma,avx512vl")]
 #[cfg(test)]
 mod test {
     use super::*;

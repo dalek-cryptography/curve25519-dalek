@@ -16,3 +16,5 @@ pub(crate) mod field;
 pub(crate) mod edwards;
 
 pub(crate) mod constants;
+
+pub(crate) use self::edwards::{CachedPoint, ExtendedPoint};

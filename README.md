@@ -53,6 +53,9 @@ curve25519-dalek = "4.0.0-rc.2"
 | `alloc`            |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. Also enables `zeroize`. |
 | `zeroize`          |    ✓     | Enables [`Zeroize`][zeroize-trait] for all scalar and curve point types. |
 | `precomputed-tables` |    ✓     | Includes precomputed basepoint multiplication tables. This speeds up `EdwardsPoint::mul_base` and `RistrettoPoint::mul_base` by ~4x, at the cost of ~30KB added to the code size. |
+| `simd_avx2`        |    ✓     | Allows the AVX2 SIMD backend to be used, if available. |
+| `simd_avx512`      |    ✓     | Allows the AVX512 SIMD backend to be used, if available. |
+| `simd`             |    ✓     | Allows every SIMD backend to be used, if available. |
 | `rand_core`        |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
@@ -95,18 +98,17 @@ See tracking issue: [curve25519-dalek/issues/521](https://github.com/dalek-crypt
 
 Curve arithmetic is implemented and used by selecting one of the following backends:
 
-| Backend            | Implementation                                             | Target backends             |
-| :---               | :---                                                       | :---                        |
-| `[default]`        | Serial formulas                                            | `u32` <br/> `u64`           |
-| `simd`             | [Parallel][parallel_doc], using Advanced Vector Extensions | `avx2` <br/> `avx512ifma`   |
-| `fiat`             | Formally verified field arithmetic from [fiat-crypto]      | `fiat_u32` <br/> `fiat_u64` |
+| Backend            | Implementation                                                | Target backends             |
+| :---               | :---                                                          | :---                        |
+| `[default]`        | Automatic runtime backend selection (either serial or SIMD)   | `u32` <br/> `u64` <br/> `avx2` <br/> `avx512` |
+| `fiat`             | Formally verified field arithmetic from [fiat-crypto]         | `fiat_u32` <br/> `fiat_u64` |
 
-To choose a backend other than the `[default]` serial backend, set the
+To choose a backend other than the `[default]` backend, set the
 environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
 ```
-where `BACKEND` is `simd` or `fiat`. Equivalently, you can write to
+where `BACKEND` is `fiat`. Equivalently, you can write to
 `~/.cargo/config`:
 ```toml
 [build]
@@ -114,11 +116,8 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 ```
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
-The `simd` backend requires extra configuration. See [the SIMD
-section](#simd-target-backends).
-
 Note for contributors: The target backends are not entirely independent of each
-other. The `simd` backend directly depends on parts of the the `u64` backend to
+other. The SIMD backend directly depends on parts of the the `u64` backend to
 function.
 
 ## Word size for serial backends
@@ -137,7 +136,7 @@ RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
 where `SIZE` is `32` or `64`. As in the above section, this can also be placed
 in `~/.cargo/config`.
 
-**NOTE:** The `simd` backend CANNOT be used with word size 32.
+**NOTE:** Using a word size of 32 will automatically disable SIMD support.
 
 ### Cross-compilation
 
@@ -152,18 +151,19 @@ $ cargo build --target i686-unknown-linux-gnu
 
 ## SIMD target backends
 
-Target backend selection within `simd` must be done manually by setting the
-`RUSTFLAGS` environment variable to one of the below options:
+The SIMD target backend selection is done automatically at runtime depending
+on the available CPU features, provided the appropriate feature flag is enabled.
 
-| CPU feature | `RUSTFLAGS`                     | Requires nightly? |
-| :---        | :---                            | :---              |
-| avx2        | `-C target_feature=+avx2`       | no                |
-| avx512ifma  | `-C target_feature=+avx512ifma` | yes               |
+You can also specify an appropriate `-C target_feature` to build a binary
+which assumes the required SIMD instructions are always available.
 
-Or you can use `-C target_cpu=native` if you don't know what to set.
+| Backend | Feature flag  | `RUSTFLAGS`                               | Requires nightly? |
+| :---    | :---          | :---                                      | :---              |
+| avx2    | `simd_avx2`   | `-C target_feature=+avx2`                 | no                |
+| avx512  | `simd_avx512` | `-C target_feature=+avx512ifma,+avx512vl` | yes               |
 
-The AVX512 backend requires Rust nightly. If enabled and when compiled on a non-nightly
-compiler it will fall back to using the AVX2 backend.
+The AVX512 backend requires Rust nightly. When compiled on a non-nightly
+compiler it will always be disabled.
 
 # Documentation
 
@@ -243,7 +243,8 @@ The implementation is memory-safe, and contains no significant
 `unsafe` code.  The SIMD backend uses `unsafe` internally to call SIMD
 intrinsics.  These are marked `unsafe` only because invoking them on an
 inappropriate CPU would cause `SIGILL`, but the entire backend is only
-compiled with appropriate `target_feature`s, so this cannot occur.
+invoked when the appropriate CPU features are detected at runtime, or
+when the whole program is compiled with the appropriate `target_feature`s.
 
 # Performance
 
@@ -251,8 +252,7 @@ Benchmarks are run using [`criterion.rs`][criterion]:
 
 ```sh
 cargo bench --features "rand_core"
-# Uses avx2 or ifma only if compiled for an appropriate target.
-export RUSTFLAGS='--cfg curve25519_dalek_backend="simd" -C target_cpu=native'
+export RUSTFLAGS='-C target_cpu=native'
 cargo +nightly bench --features "rand_core"
 ```
 
@@ -294,7 +294,7 @@ universe's beauty, but also his deep hatred of the Daleks. Rusty destroys the
 other Daleks and departs the ship, determined to track down and bring an end
 to the Dalek race.*
 
-`curve25519-dalek` is authored by Isis Agora Lovecruft and Henry de Valence. 
+`curve25519-dalek` is authored by Isis Agora Lovecruft and Henry de Valence.
 
 Portions of this library were originally a port of [Adam Langley's
 Golang ed25519 library](https://github.com/agl/ed25519), which was in

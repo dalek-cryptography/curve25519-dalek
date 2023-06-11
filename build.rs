@@ -27,6 +27,13 @@ fn main() {
     {
         println!("cargo:rustc-cfg=nightly");
     }
+
+    let rustc_version = rustc_version::version().expect("failed to detect rustc version");
+    if rustc_version.major == 1 && rustc_version.minor <= 64 {
+        // Old versions of Rust complain when you have an `unsafe fn` and you use `unsafe {}` inside,
+        // so for those we want to apply the `#[allow(unused_unsafe)]` attribute to get rid of that warning.
+        println!("cargo:rustc-cfg=allow_unused_unsafe");
+    }
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

@@ -9,15 +9,22 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+//! Implementations of various multiplication algorithms for the SIMD backends.
+
+#[allow(missing_docs)]
 pub mod variable_base;
 
+#[allow(missing_docs)]
 pub mod vartime_double_base;
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub mod straus;
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub mod precomputed_straus;
 
+#[allow(missing_docs)]
 #[cfg(feature = "alloc")]
 pub mod pippenger;

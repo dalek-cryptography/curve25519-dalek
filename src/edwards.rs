@@ -144,17 +144,6 @@ use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
-#[cfg(not(all(
-    curve25519_dalek_backend = "simd",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
-)))]
-use crate::backend::serial::scalar_mul;
-#[cfg(all(
-    curve25519_dalek_backend = "simd",
-    any(target_feature = "avx2", target_feature = "avx512ifma")
-))]
-use crate::backend::vector::scalar_mul;
-
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
@@ -698,7 +687,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
     fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
-        scalar_mul::variable_base::mul(self, scalar)
+        crate::backend::variable_base_mul(self, scalar)
     }
 }
 
@@ -795,7 +784,7 @@ impl MultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        scalar_mul::straus::Straus::multiscalar_mul(scalars, points)
+        crate::backend::straus_multiscalar_mul(scalars, points)
     }
 }
 
@@ -827,9 +816,9 @@ impl VartimeMultiscalarMul for EdwardsPoint {
         let size = s_lo;
 
         if size < 190 {
-            scalar_mul::straus::Straus::optional_multiscalar_mul(scalars, points)
+            crate::backend::straus_optional_multiscalar_mul(scalars, points)
         } else {
-            scalar_mul::pippenger::Pippenger::optional_multiscalar_mul(scalars, points)
+            crate::backend::pippenger_optional_multiscalar_mul(scalars, points)
         }
     }
 }
@@ -839,7 +828,7 @@ impl VartimeMultiscalarMul for EdwardsPoint {
 // decouple stability of the inner type from the stability of the
 // outer type.
 #[cfg(feature = "alloc")]
-pub struct VartimeEdwardsPrecomputation(scalar_mul::precomputed_straus::VartimePrecomputedStraus);
+pub struct VartimeEdwardsPrecomputation(crate::backend::VartimePrecomputedStraus);
 
 #[cfg(feature = "alloc")]
 impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
@@ -850,7 +839,7 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
         I: IntoIterator,
         I::Item: Borrow<Self::Point>,
     {
-        Self(scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
+        Self(crate::backend::VartimePrecomputedStraus::new(static_points))
     }
 
     fn optional_mixed_multiscalar_mul<I, J, K>(
@@ -878,7 +867,7 @@ impl EdwardsPoint {
         A: &EdwardsPoint,
         b: &Scalar,
     ) -> EdwardsPoint {
-        scalar_mul::vartime_double_base::mul(a, A, b)
+        crate::backend::vartime_double_base_mul(a, A, b)
     }
 }
 

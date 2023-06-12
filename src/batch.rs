@@ -177,7 +177,7 @@ pub fn verify_batch(
             h.update(signatures[i].r_bytes());
             h.update(verifying_keys[i].as_bytes());
             h.update(&messages[i]);
-            h.finalize().try_into().unwrap()
+            *h.finalize().as_ref()
         })
         .collect();
 

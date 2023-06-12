@@ -63,6 +63,9 @@ impl Debug for InternalSignature {
     }
 }
 
+/// Ensures that the scalar `s` of a signature is within the bounds [0, 2^253).
+///
+/// **Unsafe**: This version of `check_scalar` permits signature malleability. See README.
 #[cfg(feature = "legacy_compatibility")]
 #[inline(always)]
 fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
@@ -76,24 +79,17 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
         return Err(InternalError::ScalarFormat.into());
     }
 
+    // You cannot do arithmetic with scalars construct with Scalar::from_bits. We only use this
+    // scalar for EdwardsPoint::vartime_double_scalar_mul_basepoint, which is an accepted usecase.
+    // The `from_bits` method is deprecated because it's unsafe. We know this.
+    #[allow(deprecated)]
     Ok(Scalar::from_bits(bytes))
 }
 
+/// Ensures that the scalar `s` of a signature is within the bounds [0, ℓ)
 #[cfg(not(feature = "legacy_compatibility"))]
 #[inline(always)]
 fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
-    // Since this is only used in signature deserialisation (i.e. upon
-    // verification), we can do a "succeed fast" trick by checking that the most
-    // significant 4 bits are unset.  If they are unset, we can succeed fast
-    // because we are guaranteed that the scalar is fully reduced.  However, if
-    // the 4th most significant bit is set, we must do the full reduction check,
-    // as the order of the basepoint is roughly a 2^(252.5) bit number.
-    //
-    // This succeed-fast trick should succeed for roughly half of all scalars.
-    if bytes[31] & 240 == 0 {
-        return Ok(Scalar::from_bits(bytes));
-    }
-
     match Scalar::from_canonical_bytes(bytes).into() {
         None => Err(InternalError::ScalarFormat.into()),
         Some(x) => Ok(x),
@@ -152,13 +148,17 @@ impl InternalSignature {
     /// only checking the most significant three bits.  (See also the
     /// documentation for [`crate::VerifyingKey::verify_strict`].)
     #[inline]
-    #[allow(clippy::unwrap_used)]
+    #[allow(non_snake_case)]
     pub fn from_bytes(bytes: &[u8; SIGNATURE_LENGTH]) -> Result<InternalSignature, SignatureError> {
         // TODO: Use bytes.split_array_ref once it’s in MSRV.
-        let (lower, upper) = bytes.split_at(32);
+        let mut R_bytes: [u8; 32] = [0u8; 32];
+        let mut s_bytes: [u8; 32] = [0u8; 32];
+        R_bytes.copy_from_slice(&bytes[00..32]);
+        s_bytes.copy_from_slice(&bytes[32..64]);
+
         Ok(InternalSignature {
-            R: CompressedEdwardsY(lower.try_into().unwrap()),
-            s: check_scalar(upper.try_into().unwrap())?,
+            R: CompressedEdwardsY(R_bytes),
+            s: check_scalar(s_bytes)?,
         })
     }
 }

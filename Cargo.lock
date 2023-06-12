@@ -249,8 +249,7 @@ dependencies = [
 [[package]]
 name = "curve25519-dalek"
 version = "4.0.0-rc.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03d928d978dbec61a1167414f5ec534f24bea0d7a0d24dd9b6233d3d8223e585"
+source = "git+https://github.com/dalek-cryptography/curve25519-dalek.git?rev=f460ae149b0000695205cc78f560d74a2d3918eb#f460ae149b0000695205cc78f560d74a2d3918eb"
 dependencies = [
  "cfg-if",
  "digest",

@@ -15,7 +15,7 @@
 
 use crate::{InternalError, SignatureError};
 
-use curve25519_dalek::Scalar;
+use curve25519_dalek::scalar::{clamp_integer, Scalar};
 
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -35,6 +35,10 @@ use curve25519_dalek::digest::{generic_array::typenum::U64, Digest};
 ///
 /// Instances of this secret are automatically overwritten with zeroes when they fall out of scope.
 pub struct ExpandedSecretKey {
+    // `scalar_bytes` and `scalar` are separate, because the public key is computed as an unreduced
+    // scalar multiplication (ie `mul_base_clamped`), whereas the signing operations are done
+    // modulo l.
+    pub(crate) scalar_bytes: [u8; 32],
     /// The secret scalar used for signing
     pub scalar: Scalar,
     /// The domain separator used when hashing the message to generate the pseudorandom `r` value
@@ -64,18 +68,24 @@ impl ExpandedSecretKey {
         bytes
     }
 
-    /// Construct an `ExpandedSecretKey` from an array of 64 bytes.
+    /// Construct an `ExpandedSecretKey` from an array of 64 bytes. In the spec, the bytes are the
+    /// output of a SHA-512 hash. This clamps the first 32 bytes and uses it as a scalar, and uses
+    /// the second 32 bytes as a domain separator for hashing.
     pub fn from_bytes(bytes: &[u8; 64]) -> Self {
         // TODO: Use bytes.split_array_ref once it’s in MSRV.
-        let mut lower: [u8; 32] = [0u8; 32];
-        let mut upper: [u8; 32] = [0u8; 32];
+        let mut scalar_bytes: [u8; 32] = [0u8; 32];
+        let mut hash_prefix: [u8; 32] = [0u8; 32];
+        scalar_bytes.copy_from_slice(&bytes[00..32]);
+        hash_prefix.copy_from_slice(&bytes[32..64]);
 
-        lower.copy_from_slice(&bytes[00..32]);
-        upper.copy_from_slice(&bytes[32..64]);
+        // For signing, we'll need the integer, clamped, and converted to a Scalar. See
+        // PureEdDSA.keygen in RFC 8032 Appendix A.
+        let scalar = Scalar::from_bytes_mod_order(clamp_integer(scalar_bytes));
 
         ExpandedSecretKey {
-            scalar: Scalar::from_bytes_mod_order(lower),
-            hash_prefix: upper,
+            scalar_bytes,
+            scalar,
+            hash_prefix,
         }
     }
 
@@ -86,18 +96,15 @@ impl ExpandedSecretKey {
     /// A `Result` whose okay value is an EdDSA `ExpandedSecretKey` or whose error value is an
     /// `SignatureError` describing the error that occurred, namely that the given slice's length
     /// is not 64.
-    #[allow(clippy::unwrap_used)]
     pub fn from_slice(bytes: &[u8]) -> Result<Self, SignatureError> {
-        if bytes.len() != 64 {
-            Err(InternalError::BytesLength {
+        // Try to coerce bytes to a [u8; 64]
+        bytes.try_into().map(Self::from_bytes).map_err(|_| {
+            InternalError::BytesLength {
                 name: "ExpandedSecretKey",
                 length: 64,
             }
-            .into())
-        } else {
-            // If the input is 64 bytes long, coerce it to a 64-byte array
-            Ok(Self::from_bytes(bytes.try_into().unwrap()))
-        }
+            .into()
+        })
     }
 }
 
@@ -213,7 +220,6 @@ where
 mod test {
     use super::*;
 
-    use curve25519_dalek::Scalar;
     use rand::{rngs::OsRng, CryptoRng, RngCore};
 
     // Pick distinct, non-spec 512-bit hash functions for message and sig-context hashing
@@ -224,17 +230,9 @@ mod test {
         // Make a random expanded secret key for testing purposes. This is NOT how you generate
         // expanded secret keys IRL. They're the hash of a seed.
         fn random<R: RngCore + CryptoRng>(mut rng: R) -> Self {
-            // The usual signing algorithm clamps its scalars
-            let scalar_bytes = [0u8; 32];
-            let scalar = Scalar::from_bits_clamped(scalar_bytes);
-
-            let mut hash_prefix = [0u8; 32];
-            rng.fill_bytes(&mut hash_prefix);
-
-            ExpandedSecretKey {
-                scalar,
-                hash_prefix,
-            }
+            let mut bytes = [0u8; 64];
+            rng.fill_bytes(&mut bytes);
+            ExpandedSecretKey::from_bytes(&bytes)
         }
     }
 

@@ -16,16 +16,16 @@ fn ed25519_to_x25519_dh() {
     let ed25519_signing_key_a = SigningKey::from_bytes(&ed25519_secret_key_a);
     let ed25519_signing_key_b = SigningKey::from_bytes(&ed25519_secret_key_b);
 
-    let scalar_a = ed25519_signing_key_a.to_scalar();
-    let scalar_b = ed25519_signing_key_b.to_scalar();
+    let scalar_a_bytes = ed25519_signing_key_a.to_scalar_bytes();
+    let scalar_b_bytes = ed25519_signing_key_b.to_scalar_bytes();
 
     assert_eq!(
-        scalar_a.to_bytes(),
-        hex!("307c83864f2833cb427a2ef1c00a013cfdff2768d980c0a3a520f006904de94f")
+        scalar_a_bytes,
+        hex!("357c83864f2833cb427a2ef1c00a013cfdff2768d980c0a3a520f006904de90f")
     );
     assert_eq!(
-        scalar_b.to_bytes(),
-        hex!("68bd9ed75882d52815a97585caf4790a7f6c6b3b7f821c5e259a24b02e502e51")
+        scalar_b_bytes,
+        hex!("6ebd9ed75882d52815a97585caf4790a7f6c6b3b7f821c5e259a24b02e502e11")
     );
 
     let x25519_public_key_a = ed25519_signing_key_a.verifying_key().to_montgomery();
@@ -44,11 +44,11 @@ fn ed25519_to_x25519_dh() {
         hex!("5166f24a6918368e2af831a4affadd97af0ac326bdf143596c045967cc00230e");
 
     assert_eq!(
-        (x25519_public_key_a * scalar_b).to_bytes(),
+        x25519_public_key_a.mul_clamped(scalar_b_bytes).to_bytes(),
         expected_shared_secret
     );
     assert_eq!(
-        (x25519_public_key_b * scalar_a).to_bytes(),
+        x25519_public_key_b.mul_clamped(scalar_a_bytes).to_bytes(),
         expected_shared_secret
     );
 }

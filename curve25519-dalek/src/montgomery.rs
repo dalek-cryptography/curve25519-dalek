@@ -375,7 +375,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
 
         // Go through the bits from most to least significant, using a sliding window of 2
         let mut bits = scalar.bits_le().rev();
-        let mut prev_bit = bits.next().unwrap();
+        let mut prev_bit = bits.next().expect("scalar should be at least 1-bit");
         for cur_bit in bits {
             let choice: u8 = (prev_bit ^ cur_bit) as u8;
 

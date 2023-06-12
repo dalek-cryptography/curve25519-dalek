@@ -23,6 +23,8 @@
 //! Field operations defined in terms of other field operations, such as
 //! field inversion or square roots, are defined here.
 
+#![allow(unused_qualifications)]
+
 use core::cmp::{Eq, PartialEq};
 
 use cfg_if::cfg_if;

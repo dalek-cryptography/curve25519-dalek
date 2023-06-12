@@ -279,7 +279,7 @@ impl Scalar {
 }
 
 impl Debug for Scalar {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
@@ -424,7 +424,7 @@ impl<'de> Deserialize<'de> for Scalar {
         impl<'de> Visitor<'de> for ScalarVisitor {
             type Value = Scalar;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str(
                     "a sequence of 32 bytes whose little-endian interpretation is less than the \
                     basepoint order ℓ",

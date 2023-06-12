@@ -17,15 +17,24 @@
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
-#![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
 //------------------------------------------------------------------------
 // Documentation:
 //------------------------------------------------------------------------
-#![deny(missing_docs)]
 #![doc(
     html_logo_url = "https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png"
 )]
 #![doc = include_str!("../README.md")]
+//------------------------------------------------------------------------
+// Linting:
+//------------------------------------------------------------------------
+#![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
+#![warn(
+    clippy::unwrap_used,
+    missing_docs,
+    rust_2018_idioms,
+    unused_lifetimes,
+    unused_qualifications
+)]
 
 //------------------------------------------------------------------------
 // External dependencies:

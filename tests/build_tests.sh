@@ -34,7 +34,7 @@ match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
 match_and_report "curve25519_dalek_bits is '64'" "$OUT"
 
 # 32 bit target default
-OUT=build_default_32.txt
+OUT=build_default_32_on_32.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build --target i686-unknown-linux-gnu > "$OUT" 2>&1
 match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
 match_and_report "curve25519_dalek_bits is '32'" "$OUT"

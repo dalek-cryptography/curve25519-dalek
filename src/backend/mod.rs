@@ -41,9 +41,10 @@ pub mod serial;
 
 #[cfg(all(
     target_arch = "x86_64",
-    any(feature = "simd_avx2", all(feature = "simd_avx512", nightly)),
+    nightly,
     curve25519_dalek_bits = "64",
-    not(curve25519_dalek_backend = "fiat")
+    not(curve25519_dalek_backend = "fiat"),
+    not(curve25519_dalek_backend = "serial")
 ))]
 pub mod vector;
 
@@ -51,16 +52,17 @@ pub mod vector;
 enum BackendKind {
     #[cfg(all(
         target_arch = "x86_64",
-        feature = "simd_avx2",
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     Avx2,
     #[cfg(all(
         target_arch = "x86_64",
-        all(feature = "simd_avx512", nightly),
+        nightly,
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     Avx512,
     Serial,
@@ -70,9 +72,10 @@ enum BackendKind {
 fn get_selected_backend() -> BackendKind {
     #[cfg(all(
         target_arch = "x86_64",
-        all(feature = "simd_avx512", nightly),
+        nightly,
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     {
         cpufeatures::new!(cpuid_avx512, "avx512ifma", "avx512vl");
@@ -84,9 +87,9 @@ fn get_selected_backend() -> BackendKind {
 
     #[cfg(all(
         target_arch = "x86_64",
-        feature = "simd_avx2",
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     {
         cpufeatures::new!(cpuid_avx2, "avx2");
@@ -110,10 +113,10 @@ where
     use crate::traits::VartimeMultiscalarMul;
 
     match get_selected_backend() {
-        #[cfg(all(target_arch = "x86_64", feature = "simd_avx2", curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
+        #[cfg(all(target_arch = "x86_64", curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial")))]
         BackendKind::Avx2 =>
             self::vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
-        #[cfg(all(target_arch = "x86_64", all(feature = "simd_avx512", nightly), curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
+        #[cfg(all(target_arch = "x86_64", nightly, curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial")))]
         BackendKind::Avx512 =>
             self::vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
         BackendKind::Serial =>
@@ -125,16 +128,17 @@ where
 pub(crate) enum VartimePrecomputedStraus {
     #[cfg(all(
         target_arch = "x86_64",
-        feature = "simd_avx2",
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     Avx2(self::vector::scalar_mul::precomputed_straus::spec_avx2::VartimePrecomputedStraus),
     #[cfg(all(
         target_arch = "x86_64",
-        all(feature = "simd_avx512", nightly),
+        nightly,
         curve25519_dalek_bits = "64",
-        not(curve25519_dalek_backend = "fiat")
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
     ))]
     Avx512ifma(
         self::vector::scalar_mul::precomputed_straus::spec_avx512ifma_avx512vl::VartimePrecomputedStraus,
@@ -152,10 +156,10 @@ impl VartimePrecomputedStraus {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
         match get_selected_backend() {
-            #[cfg(all(target_arch = "x86_64", feature = "simd_avx2", curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
+            #[cfg(all(target_arch = "x86_64", curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial")))]
             BackendKind::Avx2 =>
                 VartimePrecomputedStraus::Avx2(self::vector::scalar_mul::precomputed_straus::spec_avx2::VartimePrecomputedStraus::new(static_points)),
-            #[cfg(all(target_arch = "x86_64", all(feature = "simd_avx512", nightly), curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
+            #[cfg(all(target_arch = "x86_64", nightly, curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial")))]
             BackendKind::Avx512 =>
                 VartimePrecomputedStraus::Avx512ifma(self::vector::scalar_mul::precomputed_straus::spec_avx512ifma_avx512vl::VartimePrecomputedStraus::new(static_points)),
             BackendKind::Serial =>
@@ -181,9 +185,9 @@ impl VartimePrecomputedStraus {
         match self {
             #[cfg(all(
                 target_arch = "x86_64",
-                feature = "simd_avx2",
                 curve25519_dalek_bits = "64",
-                not(curve25519_dalek_backend = "fiat")
+                not(curve25519_dalek_backend = "fiat"),
+                not(curve25519_dalek_backend = "serial"),
             ))]
             VartimePrecomputedStraus::Avx2(inner) => inner.optional_mixed_multiscalar_mul(
                 static_scalars,
@@ -192,9 +196,10 @@ impl VartimePrecomputedStraus {
             ),
             #[cfg(all(
                 target_arch = "x86_64",
-                all(feature = "simd_avx512", nightly),
+                nightly,
                 curve25519_dalek_bits = "64",
-                not(curve25519_dalek_backend = "fiat")
+                not(curve25519_dalek_backend = "fiat"),
+                not(curve25519_dalek_backend = "serial"),
             ))]
             VartimePrecomputedStraus::Avx512ifma(inner) => inner.optional_mixed_multiscalar_mul(
                 static_scalars,
@@ -224,9 +229,9 @@ where
     match get_selected_backend() {
         #[cfg(all(
             target_arch = "x86_64",
-            feature = "simd_avx2",
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial"),
         ))]
         BackendKind::Avx2 => {
             self::vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul::<I, J>(
@@ -235,9 +240,10 @@ where
         }
         #[cfg(all(
             target_arch = "x86_64",
-            all(feature = "simd_avx512", nightly),
+            nightly,
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial"),
         ))]
         BackendKind::Avx512 => {
             self::vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul::<
@@ -264,9 +270,9 @@ where
     match get_selected_backend() {
         #[cfg(all(
             target_arch = "x86_64",
-            feature = "simd_avx2",
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial"),
         ))]
         BackendKind::Avx2 => {
             self::vector::scalar_mul::straus::spec_avx2::Straus::optional_multiscalar_mul::<I, J>(
@@ -275,9 +281,10 @@ where
         }
         #[cfg(all(
             target_arch = "x86_64",
-            all(feature = "simd_avx512", nightly),
+            nightly,
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial")
         ))]
         BackendKind::Avx512 => {
             self::vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::optional_multiscalar_mul::<
@@ -298,16 +305,17 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint 
     match get_selected_backend() {
         #[cfg(all(
             target_arch = "x86_64",
-            feature = "simd_avx2",
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial")
         ))]
         BackendKind::Avx2 => self::vector::scalar_mul::variable_base::spec_avx2::mul(point, scalar),
         #[cfg(all(
             target_arch = "x86_64",
-            all(feature = "simd_avx512", nightly),
+            nightly,
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial")
         ))]
         BackendKind::Avx512 => {
             self::vector::scalar_mul::variable_base::spec_avx512ifma_avx512vl::mul(point, scalar)
@@ -322,16 +330,17 @@ pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> Edwa
     match get_selected_backend() {
         #[cfg(all(
             target_arch = "x86_64",
-            feature = "simd_avx2",
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial")
         ))]
         BackendKind::Avx2 => self::vector::scalar_mul::vartime_double_base::spec_avx2::mul(a, A, b),
         #[cfg(all(
             target_arch = "x86_64",
-            all(feature = "simd_avx512", nightly),
+            nightly,
             curve25519_dalek_bits = "64",
-            not(curve25519_dalek_backend = "fiat")
+            not(curve25519_dalek_backend = "fiat"),
+            not(curve25519_dalek_backend = "serial")
         ))]
         BackendKind::Avx512 => {
             self::vector::scalar_mul::vartime_double_base::spec_avx512ifma_avx512vl::mul(a, A, b)

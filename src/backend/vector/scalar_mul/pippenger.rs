@@ -9,9 +9,9 @@
 
 #![allow(non_snake_case)]
 
-#[unsafe_target_feature::unsafe_target_feature_specialize(
-    conditional("avx2", feature = "simd_avx2"),
-    conditional("avx512ifma,avx512vl", all(feature = "simd_avx512", nightly))
+#[curve25519_dalek_derive::unsafe_target_feature_specialize(
+    "avx2",
+    conditional("avx512ifma,avx512vl", nightly)
 )]
 pub mod spec {
 

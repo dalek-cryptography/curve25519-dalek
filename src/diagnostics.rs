@@ -14,7 +14,7 @@ compile_error!("curve25519_dalek_backend is 'serial'");
 
 // simd was assumed over overriden
 #[cfg(curve25519_dalek_backend = "simd")]
-compile_error!("curve25519_dalek_backed is 'simd'");
+compile_error!("curve25519_dalek_backend is 'simd'");
 
 // 32 bits target_pointer_width was assumed or overriden
 #[cfg(curve25519_dalek_bits = "32")]

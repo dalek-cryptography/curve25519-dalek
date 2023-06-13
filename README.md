@@ -53,9 +53,6 @@ curve25519-dalek = "4.0.0-rc.2"
 | `alloc`            |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. Also enables `zeroize`. |
 | `zeroize`          |    ✓     | Enables [`Zeroize`][zeroize-trait] for all scalar and curve point types. |
 | `precomputed-tables` |    ✓     | Includes precomputed basepoint multiplication tables. This speeds up `EdwardsPoint::mul_base` and `RistrettoPoint::mul_base` by ~4x, at the cost of ~30KB added to the code size. |
-| `simd_avx2`        |    ✓     | Allows the AVX2 SIMD backend to be used, if available. |
-| `simd_avx512`      |    ✓     | Allows the AVX512 SIMD backend to be used, if available. |
-| `simd`             |    ✓     | Allows every SIMD backend to be used, if available. |
 | `rand_core`        |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
@@ -98,17 +95,18 @@ See tracking issue: [curve25519-dalek/issues/521](https://github.com/dalek-crypt
 
 Curve arithmetic is implemented and used by selecting one of the following backends:
 
-| Backend            | Implementation                                                | Target backends             |
-| :---               | :---                                                          | :---                        |
-| `[default]`        | Automatic runtime backend selection (either serial or SIMD)   | `u32` <br/> `u64` <br/> `avx2` <br/> `avx512` |
-| `fiat`             | Formally verified field arithmetic from [fiat-crypto]         | `fiat_u32` <br/> `fiat_u64` |
+| Backend            | Selection | Implementation                                                | Target backends             |
+| :---               | :---      | :---                                                          | :---                        |
+| `serial`           | Automatic | serial software                                               | `u32` <br/> `u64`           |
+| `fiat`             | Manual    | Formally verified field arithmetic from [fiat-crypto]         | `fiat_u32` <br/> `fiat_u64` |
+| `simd`             | Automatic | Intel AVX2 / AVX512 IFMA accelerated backend                  | `avx2` <br/> `avx512`       |
 
-To choose a backend other than the `[default]` backend, set the
+To override a backend other than the automaticlaly selected backend, set the
 environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
 ```
-where `BACKEND` is `fiat`. Equivalently, you can write to
+Equivalently, you can write to
 `~/.cargo/config`:
 ```toml
 [build]

@@ -3,6 +3,7 @@
 #![deny(clippy::unwrap_used, dead_code)]
 
 #[allow(non_camel_case_types)]
+#[derive(PartialEq, Debug)]
 enum DalekBits {
     Dalek32,
     Dalek64,
@@ -34,6 +35,31 @@ fn main() {
         // so for those we want to apply the `#[allow(unused_unsafe)]` attribute to get rid of that warning.
         println!("cargo:rustc-cfg=allow_unused_unsafe");
     }
+
+    let target_arch = match std::env::var("CARGO_CFG_TARGET_ARCH") {
+        Ok(arch) => arch,
+        _ => "".to_string(),
+    };
+
+    // Backend override
+    let curve25519_dalek_backend =
+        match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
+            Ok("fiat") => "fiat",
+            Ok("serial") => "serial",
+            Ok("simd") => {
+                // simd override is not guaranteed as:
+                // simd can only be enabled on x86_64 & 64bit target_pointer_width
+                if target_arch == "x84_64" && curve25519_dalek_bits == DalekBits::Dalek64 {
+                    "simd"
+                // fallback to auto
+                } else {
+                    "auto"
+                }
+            }
+            // default auto
+            _ => "auto",
+        };
+    println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

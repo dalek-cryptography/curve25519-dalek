@@ -43,7 +43,7 @@ pub mod serial;
     target_arch = "x86_64",
     curve25519_dalek_bits = "64",
     not(curve25519_dalek_backend = "fiat"),
-    not(curve25519_dalek_backend = "serial")
+    not(curve25519_dalek_backend = "serial"),
 ))]
 pub mod vector;
 

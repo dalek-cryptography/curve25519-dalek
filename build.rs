@@ -42,24 +42,25 @@ fn main() {
     };
 
     // Backend override
-    let curve25519_dalek_backend =
-        match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
-            Ok("fiat") => "fiat",
-            Ok("serial") => "serial",
-            Ok("simd") => {
-                // simd override is not guaranteed as:
-                // simd can only be enabled on x86_64 & 64bit target_pointer_width
-                if target_arch == "x86_64" && curve25519_dalek_bits == DalekBits::Dalek64 {
-                    "simd"
-                // fallback to auto with a warning
-                } else {
-                    println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to auto");
-                    "auto"
-                }
+    let curve25519_dalek_backend = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND")
+        .as_deref()
+    {
+        Ok("fiat") => "fiat",
+        Ok("serial") => "serial",
+        Ok("simd") => {
+            // simd override is not guaranteed as:
+            // simd can only be enabled on x86_64 & 64bit target_pointer_width
+            if target_arch == "x86_64" && curve25519_dalek_bits == DalekBits::Dalek64 {
+                "simd"
+            // fallback to auto with a warning
+            } else {
+                println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to auto");
+                "auto"
             }
-            // default auto
-            _ => "auto",
-        };
+        }
+        // default auto
+        _ => "auto",
+    };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 

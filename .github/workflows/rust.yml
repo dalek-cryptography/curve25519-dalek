@@ -11,7 +11,7 @@ env:
   RUSTFLAGS: '-D warnings'
 
 jobs:
-  test:
+  test-auto:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,8 +38,45 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --features digest
       - run: cargo test --target ${{ matrix.target }} --features rand_core
       - run: cargo test --target ${{ matrix.target }} --features serde
+
+  test-fiat:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
+        run: cargo test --target ${{ matrix.target }}
+
+  test-serial:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="serial"'
         run: cargo test --target ${{ matrix.target }}
 
   build-nostd:

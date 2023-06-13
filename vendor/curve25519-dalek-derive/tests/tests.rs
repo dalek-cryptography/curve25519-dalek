@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-use unsafe_target_feature::{unsafe_target_feature, unsafe_target_feature_specialize};
+use curve25519_dalek_derive::{unsafe_target_feature, unsafe_target_feature_specialize};
 
 #[unsafe_target_feature("sse2")]
 /// A doc comment.

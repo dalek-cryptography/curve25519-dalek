@@ -92,7 +92,7 @@ unsafe fn func() {}
 ```
 
 ```rust
-use unsafe_target_feature::unsafe_target_feature;
+use curve25519_dalek_derive::unsafe_target_feature;
 
 // No `unsafe` on the function itself!
 #[unsafe_target_feature("avx2")]
@@ -115,7 +115,7 @@ impl core::ops::Add for S {
 ```
 
 ```rust
-use unsafe_target_feature::unsafe_target_feature;
+use curve25519_dalek_derive::unsafe_target_feature;
 
 struct S;
 
@@ -133,7 +133,7 @@ impl core::ops::Add for S {
 ### You can generate specialized copies of a module for each target feature
 
 ```rust
-use unsafe_target_feature::unsafe_target_feature_specialize;
+use curve25519_dalek_derive::unsafe_target_feature_specialize;
 
 #[unsafe_target_feature_specialize("sse2", "avx2", conditional("avx512ifma", nightly))]
 mod simd {

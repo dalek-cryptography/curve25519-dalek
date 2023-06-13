@@ -22,6 +22,7 @@ pub mod spec {
     use core::borrow::Borrow;
     use core::cmp::Ordering;
 
+    #[cfg(feature = "zeroize")]
     use zeroize::Zeroizing;
 
     #[for_target_feature("avx2")]
@@ -67,12 +68,13 @@ pub mod spec {
                 .map(|s| s.borrow().as_radix_16())
                 .collect();
             // Pass ownership to a `Zeroizing` wrapper
-            let scalar_digits = Zeroizing::new(scalar_digits_vec);
+            #[cfg(feature = "zeroize")]
+            let scalar_digits_vec = Zeroizing::new(scalar_digits_vec);
 
             let mut Q = ExtendedPoint::identity();
             for j in (0..64).rev() {
                 Q = Q.mul_by_pow_2(4);
-                let it = scalar_digits.iter().zip(lookup_tables.iter());
+                let it = scalar_digits_vec.iter().zip(lookup_tables.iter());
                 for (s_i, lookup_table_i) in it {
                     // Q = Q + s_{i,j} * P_i
                     Q = &Q + &lookup_table_i.select(s_i[j]);

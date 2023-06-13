@@ -55,8 +55,8 @@ jobs:
       - run: cargo build --target thumbv7em-none-eabi --release
       - run: cargo build --target thumbv7em-none-eabi --release --features serde
 
-  test-simd-native:
-    name: Test simd backend (native)
+  test-simd-nightly:
+    name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -70,8 +70,8 @@ jobs:
         RUSTFLAGS: '-C target_cpu=native'
       run: cargo test --target x86_64-unknown-linux-gnu
 
-  test-simd-avx2:
-    name: Test simd backend
+  test-simd-stable:
+    name: Test simd backend (stable)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

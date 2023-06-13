@@ -14,10 +14,9 @@
 #[allow(missing_docs)]
 pub mod packed_simd;
 
-#[cfg(feature = "simd_avx2")]
 pub mod avx2;
 
-#[cfg(all(feature = "simd_avx512", nightly))]
+#[cfg(nightly)]
 pub mod ifma;
 
 pub mod scalar_mul;

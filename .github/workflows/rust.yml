@@ -79,6 +79,17 @@ jobs:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="serial"'
         run: cargo test --target ${{ matrix.target }}
 
+  build-script:
+    name: Test Build Script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
+      - run: bash tests/build_tests.sh
+
   build-nostd:
     name: Build on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest

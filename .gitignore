@@ -2,7 +2,7 @@
 target
 Cargo.lock
 */Cargo.lock
-
+build*.txt
 *~
 \#*
 .\#*

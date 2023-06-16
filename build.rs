@@ -54,12 +54,12 @@ fn main() {
                 "simd"
             // fallback to auto with a warning
             } else {
-                println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to auto");
-                "auto"
+                println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to serial");
+                "serial"
             }
         }
-        // default auto
-        _ => "auto",
+        // default serial
+        _ => "serial",
     };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }

@@ -52,7 +52,7 @@ fn main() {
             // simd can only be enabled on x86_64 & 64bit target_pointer_width
             if target_arch == "x86_64" && curve25519_dalek_bits == DalekBits::Dalek64 {
                 "simd"
-            // fallback to auto with a warning
+            // fallback to serial with a warning
             } else {
                 println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to serial");
                 "serial"

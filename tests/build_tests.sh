@@ -19,35 +19,35 @@ function match_and_report() {
 cargo clean
 OUT=build_1.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '64'" "$OUT"
 
 # Override to 32 bits assuming naively 64 bit build host
 cargo clean
 OUT=build_2.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\" --cfg curve25519_dalek_bits=\"32\"" cargo build > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '32'" "$OUT"
 
 # Override to 64 bits on 32 bit target
 cargo clean
 OUT=build_3.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\" --cfg curve25519_dalek_bits=\"64\"" cargo build --target i686-unknown-linux-gnu > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '64'" "$OUT"
 
 # 32 bit target default
 cargo clean
 OUT=build_4.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build --target i686-unknown-linux-gnu > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '32'" "$OUT"
 
 # wasm 32 bit target default
 cargo clean
 OUT=build_5.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build --target wasm32-unknown-unknown > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'auto'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '32'" "$OUT"
 
 # fiat override with default 64 bit naive host assumption

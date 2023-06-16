@@ -128,7 +128,7 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
 Note for contributors: The target backends are not entirely independent of each
-other. The [SIMD backend] directly depends on parts of the the `u64` backend to
+other. The [SIMD backend] directly depends on parts of the serial backend to
 function.
 
 ## Bits / Word size
@@ -136,9 +136,8 @@ function.
 `curve25519-dalek` will automatically choose the word size for the `fiat` and
 `serial` backends, based on the build target.
 
-For example, building for a 64-bit machine, the default `u64` target backend is
-automatically chosen when the `serial` backend is selected, and `fiat_u64` is
-chosen when the `fiat backend is selected.
+For example, building for a 64-bit machine, the default 64 bit word size is
+automatically chosen when either the `serial` or `fiat` backend is selected.
 
 In some targets it might be required to override the word size for better
 performance.

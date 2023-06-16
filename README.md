@@ -100,13 +100,15 @@ Curve arithmetic is implemented and used by one of the following backends:
 ## Automatic Backend Selection
 
 Currently on the intel `x86_64` platforms with `64` bit word size, the backend
-selection is automatic between the `simd` and `serial` backends where `simd` is
-selected if the AVX instruction set is detected available on the target CPU.
+selection is automatic between the `simd` and `serial` backends.
 
-The `simd` may also require nightly compiler for AVX512 - see [SIMD backend](#SIMD backend).
+The `simd` backend may be automatically selected if the AVX instruction set is
+detected available on the target CPU.
+
+The `simd` may also require nightly compiler for AVX512 - see [SIMD backend].
 
 In the future `simd` backend may be extended to cover more instruction sets and
-this change will be non-breaking since this is considered implementation detail.
+this change will be non-breaking as this is considered as implementation detail.
 
 ## Manual Backend Override
 
@@ -123,7 +125,7 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
 Note for contributors: The target backends are not entirely independent of each
-other. The [SIMD backend](#SIMD backend) directly depends on parts of the the `u64` backend to
+other. The [SIMD backend] directly depends on parts of the the `u64` backend to
 function.
 
 ## Bits / Word size
@@ -337,3 +339,4 @@ contributions.
 [semver]: https://semver.org/spec/v2.0.0.html
 [rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features
 [zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
+[SIMD backend]: #SIMD backend

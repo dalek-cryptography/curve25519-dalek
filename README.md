@@ -105,6 +105,9 @@ selection is automatic between the `simd` and `serial` backends.
 The `simd` backend may be automatically selected if the AVX instruction set is
 detected available on the target CPU.
 
+The automatic selection between `serial` and `simd` does not happen on any other
+platform currently and will default to `serial` software implementation.
+
 The `simd` may also require nightly compiler for AVX512 - see [SIMD backend].
 
 In the future `simd` backend may be extended to cover more instruction sets and
@@ -339,4 +342,4 @@ contributions.
 [semver]: https://semver.org/spec/v2.0.0.html
 [rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features
 [zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
-[SIMD backend]: #SIMD backend
+[SIMD backend]: README.md#SIMD backend

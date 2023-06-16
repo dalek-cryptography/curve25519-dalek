@@ -342,4 +342,4 @@ contributions.
 [semver]: https://semver.org/spec/v2.0.0.html
 [rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features
 [zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
-[SIMD backend]: README.md#SIMD backend
+[SIMD backend]: #-simd-backend

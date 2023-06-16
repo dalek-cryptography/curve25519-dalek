@@ -39,11 +39,14 @@ use crate::Scalar;
 
 pub mod serial;
 
-#[cfg(all(
-    target_arch = "x86_64",
-    curve25519_dalek_bits = "64",
-    not(curve25519_dalek_backend = "fiat"),
-    not(curve25519_dalek_backend = "serial"),
+#[cfg(any(
+    docsrs,
+    all(
+        target_arch = "x86_64",
+        curve25519_dalek_bits = "64",
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial"),
+    )
 ))]
 pub mod vector;
 

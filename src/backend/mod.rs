@@ -49,9 +49,20 @@ pub mod vector;
 
 #[derive(Copy, Clone)]
 enum BackendKind {
-    #[allow(dead_code)]
+    #[cfg(all(
+        target_arch = "x86_64",
+        curve25519_dalek_bits = "64",
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
+    ))]
     Avx2,
-    #[allow(dead_code)]
+    #[cfg(all(
+        target_arch = "x86_64",
+        nightly,
+        curve25519_dalek_bits = "64",
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial")
+    ))]
     Avx512,
     Serial,
 }

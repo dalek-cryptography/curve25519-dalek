@@ -99,7 +99,7 @@ Curve arithmetic is implemented and used by one of the following backends:
 
 ## Automatic Backend Selection
 
-Currently on the intel `x86_64` platforms with `64` bit word size, the backend
+Currently on the intel `x86_64` targets with `64` bit word size, the backend
 selection is automatic between the `simd` and `serial` backends.
 
 The `simd` backend may be automatically selected if the AVX instruction set is

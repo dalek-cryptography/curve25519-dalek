@@ -87,22 +87,30 @@ latest breaking changes in high level are below:
 
 This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
 
-### 4.0.0 - Open Breaking Changes
-
-See tracking issue: [curve25519-dalek/issues/521](https://github.com/dalek-cryptography/curve25519-dalek/issues/521)
-
 # Backends
 
-Curve arithmetic is implemented and used by selecting one of the following backends:
+Curve arithmetic is implemented and used by one of the following backends:
 
-| Backend            | Selection | Implementation                                                | Target backends             |
-| :---               | :---      | :---                                                          | :---                        |
-| `serial`           | Automatic | serial software                                               | `u32` <br/> `u64`           |
-| `fiat`             | Manual    | Formally verified field arithmetic from [fiat-crypto]         | `fiat_u32` <br/> `fiat_u64` |
-| `simd`             | Automatic | Intel AVX2 / AVX512 IFMA accelerated backend                  | `avx2` <br/> `avx512`       |
+| Backend            | Selection | Implementation                                                | Bits / Word sizes |
+| :---               | :---      | :---                                                          | :---              |
+| `serial`           | Automatic | serial software                                               | `32` <br/> `64`   |
+| `fiat`             | Manual    | Formally verified field arithmetic from [fiat-crypto]         | `32` <br/> `64`   |
+| `simd`             | Automatic | Intel AVX2 / AVX512 IFMA accelerated backend                  | `64` only         |
 
-To override a backend other than the automaticlaly selected backend, set the
-environment variable:
+## Automatic Backend Selection
+
+Currently on the intel `x86_64` platforms with `64` bit word size, the backend
+selection is automatic between the `simd` and `serial` backends where `simd` is
+selected if the AVX instruction set is detected available on the target CPU.
+
+The `simd` may also require nightly compiler for AVX512 - see [SIMD backend](#SIMD backend).
+
+In the future `simd` backend may be extended to cover more instruction sets and
+this change will be non-breaking since this is considered implementation detail.
+
+## Manual Backend Override
+
+The backend can be potentially overriden by setting an environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
 ```
@@ -115,26 +123,31 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
 Note for contributors: The target backends are not entirely independent of each
-other. The SIMD backend directly depends on parts of the the `u64` backend to
+other. The [SIMD backend](#SIMD backend) directly depends on parts of the the `u64` backend to
 function.
 
-## Word size for serial backends
+## Bits / Word size
 
-`curve25519-dalek` will automatically choose the word size for the `[default]`
-and `fiat` serial backends, based on the build target. For example, building
-for a 64-bit machine, the default `u64` target backend is automatically chosen
-when the `[default]` backend is selected, and `fiat_u64` is chosen when the
-`fiat backend is selected.
+`curve25519-dalek` will automatically choose the word size for the `fiat` and
+`serial` backends, based on the build target.
 
-Backend word size can be overridden for `[default]` and `fiat` by setting the
+For example, building for a 64-bit machine, the default `u64` target backend is
+automatically chosen when the `serial` backend is selected, and `fiat_u64` is
+chosen when the `fiat backend is selected.
+
+In some targets it might be required to override the word size for better
+performance.
+
+Backend word size can be overridden for `serial` and `fiat` by setting the
 environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
 ```
-where `SIZE` is `32` or `64`. As in the above section, this can also be placed
+`SIZE` is `32` or `64`. As in the above section, this can also be placed
 in `~/.cargo/config`.
 
-**NOTE:** Using a word size of 32 will automatically disable SIMD support.
+**NOTE:** Using a word size of 32 will automatically prevent SIMD auto-detection
+and support as this backend requires the 64 bit word size.
 
 ### Cross-compilation
 
@@ -147,7 +160,7 @@ $ rustup target add i686-unknown-linux-gnu
 $ cargo build --target i686-unknown-linux-gnu
 ```
 
-## SIMD target backends
+## SIMD backend
 
 The SIMD target backend selection is done automatically at runtime depending
 on the available CPU features, provided the appropriate feature flag is enabled.

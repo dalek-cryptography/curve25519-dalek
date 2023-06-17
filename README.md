@@ -102,13 +102,11 @@ Curve arithmetic is implemented and used by one of the following backends:
 Currently on the intel `x86_64` targets with `64` bit word size, the backend
 selection is automatic between the `simd` and `serial` backends.
 
-The `simd` backend may be automatically selected if the AVX instruction set is
-detected available on the target CPU.
+The `simd` backend is automatically selected if the needed instruction set is
+detected available on the target CPU - see more from [SIMD backend].
 
 The automatic selection between `serial` and `simd` does not happen on any other
 platform currently and will default to `serial` software implementation.
-
-The `simd` may also require nightly compiler for AVX512 - see [SIMD backend].
 
 In the future `simd` backend may be extended to cover more instruction sets and
 this change will be non-breaking as this is considered as implementation detail.

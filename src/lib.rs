@@ -11,11 +11,21 @@
 
 #![no_std]
 #![cfg_attr(
-    all(curve25519_dalek_backend = "simd", target_arch = "x86_64", nightly),
+    all(
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial"),
+        target_arch = "x86_64",
+        nightly
+    ),
     feature(stdsimd)
 )]
 #![cfg_attr(
-    all(curve25519_dalek_backend = "simd", target_arch = "x86_64", nightly),
+    all(
+        not(curve25519_dalek_backend = "fiat"),
+        not(curve25519_dalek_backend = "serial"),
+        target_arch = "x86_64",
+        nightly
+    ),
     feature(avx512_target_feature)
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]

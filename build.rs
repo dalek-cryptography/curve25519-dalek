@@ -50,7 +50,7 @@ fn main() {
         Ok("simd") => {
             // simd override is not guaranteed as:
             // simd can only be enabled on x86_64 & 64bit target_pointer_width
-            if target_arch == "x86_64" && curve25519_dalek_bits == DalekBits::Dalek64 {
+            if is_capable_simd(&target_arch, curve25519_dalek_bits) {
                 "simd"
             // fallback to serial with a warning
             } else {
@@ -58,10 +58,18 @@ fn main() {
                 "serial"
             }
         }
-        // default serial
-        _ => "serial",
+        // default between serial / simd (if potentially capable)
+        _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+            true => "simd",
+            false => "serial",
+        },
     };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
+}
+
+// Is the target arch & curve25519_dalek_bits potentially simd capable ?
+fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
+    arch == "x86_64" && bits == DalekBits::Dalek64
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

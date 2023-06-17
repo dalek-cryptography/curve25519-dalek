@@ -19,7 +19,7 @@ function match_and_report() {
 cargo clean
 OUT=build_1.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build > "$OUT" 2>&1
-match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'simd'" "$OUT"
 match_and_report "curve25519_dalek_bits is '64'" "$OUT"
 
 # Override to 32 bits assuming naively 64 bit build host

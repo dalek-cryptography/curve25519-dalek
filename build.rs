@@ -50,8 +50,8 @@ fn main() {
                 // simd can only be enabled on x86_64 & 64bit target_pointer_width
                 match is_capable_simd(&target_arch, curve25519_dalek_bits) {
                     true => "simd",
-                    // If override is not possible this should result to compile error
-                    // mere fallback with a warning would require all(not()) gating
+                    // If override is not possible this must result to compile error
+                    // See: issues/532
                     false => panic!("Could not override curve25519_dalek_backend to simd"),
                 }
             }

@@ -149,8 +149,8 @@ RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
 in `~/.cargo/config`.
 
 **NOTE:** Using a word size of 32 will automatically prevent [SIMD backend]
-selection as it requires the 64 bit word size and will result a compile error
-if simd is attempted as a a manual backend override in this case.
+selection as this requires the 64 bit word size and will result a compile error
+if simd is attempted as a manual backend override.
 
 ### Cross-compilation
 

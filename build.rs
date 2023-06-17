@@ -41,26 +41,19 @@ fn main() {
         _ => "".to_string(),
     };
 
-    // Backend overrides
-    // NOTE: If someone provides cfg(curve25519_dalek_backend) this may end up
-    // as an additional entry where the gating has to be done via negative not()
-    // e.g. on wasm32 target may be both "serial" and "simd" if tries override w/
-    // "simd" since the logic here adds "serial" due to target not being "simd"
-    // capable - correct way to gate it so gate via all(not(other1), not(other2)
+    // Backend overrides / defaults
     let curve25519_dalek_backend = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND")
         .as_deref()
     {
         Ok("fiat") => "fiat",
         Ok("serial") => "serial",
         Ok("simd") => {
-            // simd override is not guaranteed as:
             // simd can only be enabled on x86_64 & 64bit target_pointer_width
-            if is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                "simd"
-            // fallback to serial with a warning
-            } else {
-                println!("cargo:warning=Could not override curve25519_dalek_backend to simd - defaulting to serial");
-                "serial"
+            match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                true => "simd",
+                // If override is not possible this should result to compile error
+                // mere fallback with a warning would require all(not()) gating
+                false => panic!("cargo:error=Could not override curve25519_dalek_backend to simd"),
             }
         }
         // default between serial / simd (if potentially capable)

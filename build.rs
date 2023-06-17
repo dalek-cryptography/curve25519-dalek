@@ -53,7 +53,7 @@ fn main() {
                 true => "simd",
                 // If override is not possible this should result to compile error
                 // mere fallback with a warning would require all(not()) gating
-                false => panic!("cargo:error=Could not override curve25519_dalek_backend to simd"),
+                false => panic!("Could not override curve25519_dalek_backend to simd"),
             }
         }
         // default between serial / simd (if potentially capable)

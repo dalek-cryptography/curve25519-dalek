@@ -50,6 +50,19 @@ env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\"" cargo build --targe
 match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
 match_and_report "curve25519_dalek_bits is '32'" "$OUT"
 
+# wasm 32 bit target default
+# Attempted override w/ "simd" should result "serial" addition
+cargo clean
+OUT=build_5_1.txt
+env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\" --cfg curve25519_dalek_backend=\"simd\"" cargo build --target wasm32-unknown-unknown > "$OUT" 2>&1
+# this is the cargo behaviour - it adds two entries so gating is via all(not())
+# e.g. simd must be gated via all(not(curve25519_dalek_backend = "serial") +fiat
+# TODO: maybe this could be a compile error instead ?
+match_and_report "warning: Could not override curve25519_dalek_backend to simd - defaulting to serial" "$OUT"
+match_and_report "curve25519_dalek_backend is 'serial'" "$OUT"
+match_and_report "curve25519_dalek_backend is 'simd'" "$OUT"
+match_and_report "curve25519_dalek_bits is '32'" "$OUT"
+
 # fiat override with default 64 bit naive host assumption
 cargo clean
 OUT=build_6.txt

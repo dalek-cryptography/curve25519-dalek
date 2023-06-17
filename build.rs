@@ -41,7 +41,12 @@ fn main() {
         _ => "".to_string(),
     };
 
-    // Backend override
+    // Backend overrides
+    // NOTE: If someone provides cfg(curve25519_dalek_backend) this may end up
+    // as an additional entry where the gating has to be done via negative not()
+    // e.g. on wasm32 target may be both "serial" and "simd" if tries override w/
+    // "simd" since the logic here adds "serial" due to target not being "simd"
+    // capable - correct way to gate it so gate via all(not(other1), not(other2)
     let curve25519_dalek_backend = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND")
         .as_deref()
     {

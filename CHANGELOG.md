@@ -16,7 +16,8 @@ major series.
 * Remove `std` feature flag
 * Remove `nightly` feature flag
 * Automatic serial backend selection between `u32` and `u64` over the default `u32`
-* Backend selection is now via cfg(curve25519_dalek_backend) over additive features.
+* Backend `simd` is now automatically selected over `serial` when a supported CPU is detected
+* Backend override is now via cfg(curve25519_dalek_backend) over additive features
 * Provide override to select `u32` or `u64` backend via cfg(curve25519_dalek_bits)
 * Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
 * Deprecate `EdwardsPoint::hash_from_bytes` and rename it `EdwardsPoint::nonspec_map_to_curve`

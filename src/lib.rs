@@ -10,12 +10,9 @@
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
 #![no_std]
+#![cfg_attr(all(curve25519_dalek_backend = "simd", nightly), feature(stdsimd))]
 #![cfg_attr(
-    all(target_arch = "x86_64", feature = "simd_avx512", nightly),
-    feature(stdsimd)
-)]
-#![cfg_attr(
-    all(target_arch = "x86_64", feature = "simd_avx512", nightly),
+    all(curve25519_dalek_backend = "simd", nightly),
     feature(avx512_target_feature)
 )]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
@@ -92,3 +89,7 @@ pub(crate) mod window;
 pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
 };
+
+// Build time diagnostics for validation
+#[cfg(curve25519_dalek_diagnostics = "build")]
+mod diagnostics;

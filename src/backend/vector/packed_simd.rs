@@ -11,7 +11,7 @@
 //!           by the callers of this code.
 use core::ops::{Add, AddAssign, BitAnd, BitAndAssign, BitXor, BitXorAssign, Sub};
 
-use unsafe_target_feature::unsafe_target_feature;
+use curve25519_dalek_derive::unsafe_target_feature;
 
 macro_rules! impl_shared {
     (

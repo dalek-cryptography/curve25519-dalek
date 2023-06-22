@@ -53,9 +53,6 @@ curve25519-dalek = "4.0.0-rc.2"
 | `alloc`            |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. Also enables `zeroize`. |
 | `zeroize`          |    ✓     | Enables [`Zeroize`][zeroize-trait] for all scalar and curve point types. |
 | `precomputed-tables` |    ✓     | Includes precomputed basepoint multiplication tables. This speeds up `EdwardsPoint::mul_base` and `RistrettoPoint::mul_base` by ~4x, at the cost of ~30KB added to the code size. |
-| `simd_avx2`        |    ✓     | Allows the AVX2 SIMD backend to be used, if available. |
-| `simd_avx512`      |    ✓     | Allows the AVX512 SIMD backend to be used, if available. |
-| `simd`             |    ✓     | Allows every SIMD backend to be used, if available. |
 | `rand_core`        |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
@@ -90,25 +87,27 @@ latest breaking changes in high level are below:
 
 This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
 
-### 4.0.0 - Open Breaking Changes
-
-See tracking issue: [curve25519-dalek/issues/521](https://github.com/dalek-cryptography/curve25519-dalek/issues/521)
-
 # Backends
 
-Curve arithmetic is implemented and used by selecting one of the following backends:
+Curve arithmetic is implemented and used by one of the following backends:
 
-| Backend            | Implementation                                                | Target backends             |
-| :---               | :---                                                          | :---                        |
-| `[default]`        | Automatic runtime backend selection (either serial or SIMD)   | `u32` <br/> `u64` <br/> `avx2` <br/> `avx512` |
-| `fiat`             | Formally verified field arithmetic from [fiat-crypto]         | `fiat_u32` <br/> `fiat_u64` |
+| Backend  | Selection | Implementation                                                | Bits / Word sizes |
+| :---     | :---      | :---                                                          | :---              |
+| `serial` | Automatic | An optimized, non-parllel implementation                      | `32` and `64`     |
+| `fiat`   | Manual    | Formally verified field arithmetic from [fiat-crypto]         | `32` and `64`     |
+| `simd`   | Automatic | Intel AVX2 / AVX512 IFMA accelerated backend                  | `64` only         |
 
-To choose a backend other than the `[default]` backend, set the
-environment variable:
+At runtime, `curve25519-dalek` selects an arithmetic backend from the set of backends it was compiled to support. For Intel x86-64 targets, unless otherwise specified, it will build itself with `simd` support, and default to `serial` at runtime if the appropriate CPU features aren't detected. See [SIMD backend] for more details.
+
+In the future, `simd` backend may be extended to cover more instruction sets. This change will be non-breaking as this is considered as implementation detail.
+
+## Manual Backend Override
+
+You can force the crate to compile with specific backend support, e.g., `serial` for x86-64 targets to save code size, or `fiat` to force the runtime to use verified code. To do this, set the environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_backend="BACKEND"'
 ```
-where `BACKEND` is `fiat`. Equivalently, you can write to
+Equivalently, you can write to
 `~/.cargo/config`:
 ```toml
 [build]
@@ -117,53 +116,49 @@ rustflags = ['--cfg=curve25519_dalek_backend="BACKEND"']
 More info [here](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags).
 
 Note for contributors: The target backends are not entirely independent of each
-other. The SIMD backend directly depends on parts of the the `u64` backend to
+other. The [SIMD backend] directly depends on parts of the serial backend to
 function.
 
-## Word size for serial backends
+## Bits / Word size
 
-`curve25519-dalek` will automatically choose the word size for the `[default]`
-and `fiat` serial backends, based on the build target. For example, building
-for a 64-bit machine, the default `u64` target backend is automatically chosen
-when the `[default]` backend is selected, and `fiat_u64` is chosen when the
-`fiat backend is selected.
+`curve25519-dalek` will automatically choose the word size for the `fiat` and
+`serial` backends, based on the build target.
+For example, building for a 64-bit machine, the default 64 bit word size is
+automatically chosen when either the `serial` or `fiat` backend is selected.
 
-Backend word size can be overridden for `[default]` and `fiat` by setting the
+In some targets it might be required to override the word size for better
+performance.
+Backend word size can be overridden for `serial` and `fiat` by setting the
 environment variable:
 ```sh
 RUSTFLAGS='--cfg curve25519_dalek_bits="SIZE"'
 ```
-where `SIZE` is `32` or `64`. As in the above section, this can also be placed
+`SIZE` is `32` or `64`. As in the above section, this can also be placed
 in `~/.cargo/config`.
 
-**NOTE:** Using a word size of 32 will automatically disable SIMD support.
+Note: The [SIMD backend] requires a word size of 64 bits. Attempting to set bits=32 and backend=`simd` will yield a compile error.
 
 ### Cross-compilation
 
-Because backend selection is done by target, cross-compiling will select the
-correct word size automatically. For example, on an x86-64 Linux machine,
-`curve25519-dalek` will use the `u32` target backend if the following is run:
+Because backend selection is done by target, cross-compiling will select the correct word size automatically. For example, if a x86-64 Linux machine runs the following commands, `curve25519-dalek` will be compiled with the 32-bit `serial` backend.
 ```console
 $ sudo apt install gcc-multilib # (or whatever package manager you use)
 $ rustup target add i686-unknown-linux-gnu
 $ cargo build --target i686-unknown-linux-gnu
 ```
 
-## SIMD target backends
+## SIMD backend
 
-The SIMD target backend selection is done automatically at runtime depending
-on the available CPU features, provided the appropriate feature flag is enabled.
+The specific SIMD backend (AVX512 / AVX2 / `serial` default) is selected automatically at runtime, depending on the currently available CPU features, and whether Rust nightly is being used for compilation. The precise conditions are specified below.
 
-You can also specify an appropriate `-C target_feature` to build a binary
-which assumes the required SIMD instructions are always available.
+For a given CPU feature, you can also specify an appropriate `-C target_feature` to build a binary which assumes the required SIMD instructions are always available. Don't do this if you don't have a good reason.
 
-| Backend | Feature flag  | `RUSTFLAGS`                               | Requires nightly? |
-| :---    | :---          | :---                                      | :---              |
-| avx2    | `simd_avx2`   | `-C target_feature=+avx2`                 | no                |
-| avx512  | `simd_avx512` | `-C target_feature=+avx512ifma,+avx512vl` | yes               |
+| Backend | `RUSTFLAGS`                               | Requires nightly? |
+| :---    | :---                                      | :---              |
+| avx2    | `-C target_feature=+avx2`                 | no                |
+| avx512  | `-C target_feature=+avx512ifma,+avx512vl` | yes               |
 
-The AVX512 backend requires Rust nightly. When compiled on a non-nightly
-compiler it will always be disabled.
+If compiled on a non-nightly compiler, `curve25519-dalek` will not include AVX512 code, and therefore will never select it at runtime.
 
 # Documentation
 
@@ -326,3 +321,4 @@ contributions.
 [semver]: https://semver.org/spec/v2.0.0.html
 [rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features
 [zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
+[SIMD backend]: #simd-backend

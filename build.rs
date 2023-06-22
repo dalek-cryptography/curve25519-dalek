@@ -3,6 +3,7 @@
 #![deny(clippy::unwrap_used, dead_code)]
 
 #[allow(non_camel_case_types)]
+#[derive(PartialEq, Debug)]
 enum DalekBits {
     Dalek32,
     Dalek64,
@@ -34,6 +35,38 @@ fn main() {
         // so for those we want to apply the `#[allow(unused_unsafe)]` attribute to get rid of that warning.
         println!("cargo:rustc-cfg=allow_unused_unsafe");
     }
+
+    let target_arch = match std::env::var("CARGO_CFG_TARGET_ARCH") {
+        Ok(arch) => arch,
+        _ => "".to_string(),
+    };
+
+    // Backend overrides / defaults
+    let curve25519_dalek_backend =
+        match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
+            Ok("fiat") => "fiat",
+            Ok("serial") => "serial",
+            Ok("simd") => {
+                // simd can only be enabled on x86_64 & 64bit target_pointer_width
+                match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                    true => "simd",
+                    // If override is not possible this must result to compile error
+                    // See: issues/532
+                    false => panic!("Could not override curve25519_dalek_backend to simd"),
+                }
+            }
+            // default between serial / simd (if potentially capable)
+            _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                true => "simd",
+                false => "serial",
+            },
+        };
+    println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
+}
+
+// Is the target arch & curve25519_dalek_bits potentially simd capable ?
+fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
+    arch == "x86_64" && bits == DalekBits::Dalek64
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

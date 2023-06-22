@@ -16,7 +16,7 @@ use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
 
-use unsafe_target_feature::unsafe_target_feature;
+use curve25519_dalek_derive::unsafe_target_feature;
 
 /// A wrapper around `vpmadd52luq` that works on `u64x4`.
 #[unsafe_target_feature("avx512ifma,avx512vl")]

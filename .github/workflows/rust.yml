@@ -11,7 +11,7 @@ env:
   RUSTFLAGS: '-D warnings'
 
 jobs:
-  test:
+  test-auto:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -38,9 +38,57 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --features digest
       - run: cargo test --target ${{ matrix.target }} --features rand_core
       - run: cargo test --target ${{ matrix.target }} --features serde
+
+  test-fiat:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
+
+  test-serial:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="serial"'
+        run: cargo test --target ${{ matrix.target }}
+
+  build-script:
+    name: Test Build Script
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
+      - run: bash tests/build_tests.sh
 
   build-nostd:
     name: Build on no_std target (thumbv7em-none-eabi)
@@ -55,8 +103,8 @@ jobs:
       - run: cargo build --target thumbv7em-none-eabi --release
       - run: cargo build --target thumbv7em-none-eabi --release --features serde
 
-  test-simd-native:
-    name: Test simd backend (native)
+  test-simd-nightly:
+    name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -66,11 +114,12 @@ jobs:
         #   1) build all of the x86_64 SIMD code,
         #   2) run all of the SIMD-specific tests that the test runner supports,
         #   3) run all of the normal tests using the best available SIMD backend.
+        # This should automatically pick up the simd backend in a x84_64 runner
         RUSTFLAGS: '-C target_cpu=native'
-      run: cargo test --features simd --target x86_64-unknown-linux-gnu
+      run: cargo test --target x86_64-unknown-linux-gnu
 
-  test-simd-avx2:
-    name: Test simd backend (avx2)
+  test-simd-stable:
+    name: Test simd backend (stable)
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -78,8 +127,10 @@ jobs:
     - env:
         # This will run AVX2-specific tests and run all of the normal tests
         # with the AVX2 backend, even if the runner supports AVX512.
+        # This should automatically pick up the simd backend in a x86_64 runner
+        # It should pick AVX2 due to stable toolchain used since AVX512 requires nigthly
         RUSTFLAGS: '-C target_feature=+avx2'
-      run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize,simd_avx2 --target x86_64-unknown-linux-gnu
+      run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize --target x86_64-unknown-linux-gnu
 
   build-docs:
     name: Build docs

@@ -43,7 +43,7 @@ curve25519-dalek = "3"
 To use the latest prerelease (see changes [below](#breaking-changes-in-400)),
 use the following line in your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "4.0.0-rc.2"
+curve25519-dalek = "4.0.0-rc.3"
 ```
 
 ## Feature Flags

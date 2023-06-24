@@ -18,7 +18,7 @@ ed25519-dalek = "1"
 To use the latest prerelease (see changes [below](#breaking-changes-in-200)),
 use the following line in your project's `Cargo.toml`:
 ```toml
-ed25519-dalek = "2.0.0-rc.2"
+ed25519-dalek = "2.0.0-rc.3"
 ```
 
 # Feature Flags
@@ -103,7 +103,7 @@ Benchmarks are run using [criterion.rs](https://github.com/japaric/criterion.rs)
 ```sh
 cargo bench --features "batch"
 # Uses avx2 or ifma only if compiled for an appropriate target.
-export RUSTFLAGS='--cfg curve25519_dalek_backend="simd" -C target_cpu=native'
+export RUSTFLAGS='-C target_cpu=native'
 cargo +nightly bench --features "batch"
 ```
 
@@ -134,7 +134,7 @@ want to test the benchmarks on your target CPU to discover the best size.
 
 ## (Micro)Architecture Specific Backends
 
-A _backend_ refers to an implementation of elliptic curve and scalar arithmetic. Different backends have different use cases. For example, if you demand formally verified code, you want to use the `fiat` backend (as it was generated from [Fiat Crypto][fiat]). If you want the highest performance possible, you probably want the `simd` backend.
+A _backend_ refers to an implementation of elliptic curve and scalar arithmetic. Different backends have different use cases. For example, if you demand formally verified code, you want to use the `fiat` backend (as it was generated from [Fiat Crypto][fiat]).
 
 Backend selection details and instructions can be found in the [curve25519-dalek docs](https://github.com/dalek-cryptography/curve25519-dalek#backends).
 

@@ -4,10 +4,14 @@ Entries are listed in reverse chronological order.
 
 # 2.x Series
 
+* Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases. 
 
 ## 2.0.0-rc.3
 
-* Change: `StaticSecret` serialization and `to_bytes()` no longer returns clamped integers. Clamping is still always done during scalar-point multiplication.
+* `StaticSecret` serialization and `to_bytes()` no longer returns clamped integers. Clamping is still always done during scalar-point multiplication.
+* Update underlying `curve25519_dalek` library to `4.0.0-rc.3`. Notable changes:
+    * [curve25519-dalek backend] now by default auto selects `simd` backend over `serial` where supported.
+
 
 ## 2.0.0-rc.2
 
@@ -16,7 +20,9 @@ Entries are listed in reverse chronological order.
 * Add `.as_bytes()` and `AsRef<[u8]>` for `Shared/StaticSecret`
 * Add `getrandom` feature to provide `random_from_rng` constructors
 * Make `StaticSecrets` optional via feature `static_secrets`
-* Update underlying `curve25519_dalek` library to `4.0.0-rc.2`
+* Update underlying `curve25519_dalek` library to `4.0.0-rc.2`. Notable changes:
+    * [curve25519-dalek backend] additive features have been removed in favor of cfg based selection.
+    * [curve25519-dalek backend] now by default auto selects the appropriate word size over the previous default `32`.
 
 ## 2.0.0-pre.1
 
@@ -87,4 +93,6 @@ Entries are listed in reverse chronological order.
 ## 0.5.0
 
 * Adds support for static and ephemeral keys.
+
+[curve25519-dalek backend]: https://github.com/dalek-cryptography/curve25519-dalek/#backends 
 

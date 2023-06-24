@@ -100,7 +100,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "2.0.0-rc.2"
+x25519-dalek = "2.0.0-rc.3"
 ```
 
 # MSRV
@@ -110,6 +110,12 @@ Current MSRV is 1.60.
 # Documentation
 
 Documentation is available [here](https://docs.rs/x25519-dalek).
+
+# Performance and backend selection
+
+Performance is a secondary goal behind correctness, safety, and clarity, but we aim to be competitive with other implementations. To this end, we allow users to choose their _backend_, i.e., the underlying implementation of elliptic curve and scalar arithmetic. Different backends have different use cases. For example, if you demand formally verified code, you want to use the `fiat` backend (as it was generated from [Fiat Crypto][fiat]).
+
+Further instructions and details regarding backends can be found in the [curve25519-dalek docs](https://github.com/dalek-cryptography/curve25519-dalek#backends).
 
 # Note
 
@@ -129,4 +135,5 @@ copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
   the NaCl family of encryption libraries (libsodium, TweetNaCl) which uses
   `x25519-dalek` for key agreement
 
+[fiat]: https://github.com/mit-plv/fiat-crypto
 [crypto_box]: https://github.com/RustCrypto/nacl-compat/tree/master/crypto_box

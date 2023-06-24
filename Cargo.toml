@@ -6,7 +6,7 @@ edition = "2021"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "2.0.0-rc.2"
+version = "2.0.0-rc.3"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",
@@ -38,7 +38,7 @@ rustdoc-args = [
 features = ["getrandom", "reusable_secrets", "serde", "static_secrets"]
 
 [dependencies]
-curve25519-dalek = { version = "4.0.0-rc.2", default-features = false }
+curve25519-dalek = { version = "=4.0.0-rc.3", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
@@ -61,7 +61,3 @@ alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]
 precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
 static_secrets = []
-
-[patch.crates-io.curve25519-dalek]
-git = "https://github.com/dalek-cryptography/curve25519-dalek.git"
-rev = "f460ae149b0000695205cc78f560d74a2d3918eb"

@@ -63,7 +63,7 @@ impl ExpandedSecretKey {
     pub fn to_bytes(&self) -> [u8; 64] {
         let mut bytes: [u8; 64] = [0u8; 64];
 
-        bytes[..32].copy_from_slice(self.scalar.as_bytes());
+        bytes[..32].copy_from_slice(&self.scalar_bytes);
         bytes[32..].copy_from_slice(&self.hash_prefix[..]);
         bytes
     }
@@ -221,6 +221,7 @@ mod test {
     use super::*;
 
     use rand::{rngs::OsRng, CryptoRng, RngCore};
+    use sha2::Sha512;
 
     // Pick distinct, non-spec 512-bit hash functions for message and sig-context hashing
     type CtxDigest = blake2::Blake2b512;
@@ -249,6 +250,48 @@ mod test {
         // Sign and verify
         let sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
         raw_verify::<CtxDigest>(&vk, msg, &sig).unwrap();
+    }
+
+    #[test]
+    fn sign_verify_to_bytes_roundtrip() {
+        let mut rng = OsRng;
+        let key = ExpandedSecretKey::random(&mut rng);
+        let verifying_key = VerifyingKey::from(&key);
+
+        let message = b"It's a secret to everybody";
+
+        let cloned_key = ExpandedSecretKey::from_bytes(&key.to_bytes());
+
+        let signature = raw_sign::<Sha512>(&key, message, &verifying_key);
+        verifying_key
+            .verify_strict(message, &signature)
+            .expect("We should be able to verify a signature");
+
+        let another_signature = raw_sign::<Sha512>(&cloned_key, message, &verifying_key);
+
+        verifying_key
+            .verify_strict(message, &another_signature)
+            .expect("We should be able to verify a signature if we cloned the expanded secret key");
+    }
+
+    #[test]
+    fn expanded_secret_key_roundtrip() {
+        let mut rng = OsRng;
+        let key = ExpandedSecretKey::random(&mut rng);
+        let cloned_key = ExpandedSecretKey::from_bytes(&key.to_bytes());
+
+        assert_eq!(
+            key.scalar_bytes, cloned_key.scalar_bytes,
+            "The scalar bytes should be the same after a to_bytes/from_bytes roundtrip"
+        );
+        assert_eq!(
+            key.scalar, cloned_key.scalar,
+            "The scalar should be the same after a to_bytes/from_bytes roundtrip"
+        );
+        assert_eq!(
+            key.hash_prefix, cloned_key.hash_prefix,
+            "The hash prefix should be the same after a to_bytes/from_bytes roundtrip"
+        );
     }
 
     // Check that raw_sign_prehashed and raw_verify_prehashed work when distinct, non-spec

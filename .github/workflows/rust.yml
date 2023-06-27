@@ -1,0 +1,122 @@
+name: Rust
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+  RUSTDOCFLAGS: '-D warnings'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --lib --tests
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc --lib
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features fast --lib
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features rand_core --lib --tests
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc,rand_core --lib --tests
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features fast,rand_core --lib --tests
+      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc,fast,rand_core --lib --tests
+      - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --features batch
+      - run: cargo test --target ${{ matrix.target }} --features digest,rand_core
+      - run: cargo test --target ${{ matrix.target }} --features serde
+      - run: cargo test --target ${{ matrix.target }} --features pem
+      - run: cargo test --target ${{ matrix.target }} --all-features
+
+  build-simd:
+    name: Test simd backend (nightly)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
+        run: cargo build --target x86_64-unknown-linux-gnu
+      - env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
+        run: cargo build --target x86_64-unknown-linux-gnu
+
+  msrv:
+    name: Current MSRV is 1.60.0
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      # First delete the checked-in `Cargo.lock`. We're going to regenerate it
+    - run: rm Cargo.lock
+      # Now run `cargo +nightly -Z minimal-verisons check` in order to get a
+      # Cargo.lock with the oldest possible deps
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo -Z minimal-versions check --no-default-features --features serde
+      # Now check that `cargo build` works with respect to the oldest possible
+      # deps and the stated MSRV
+    - uses: dtolnay/rust-toolchain@1.60.0
+    - run: cargo build
+
+  build-nostd:
+    name: Build on no_std target (thumbv7em-none-eabi)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabi
+      - uses: taiki-e/install-action@cargo-hack
+      # No default features build
+      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
+      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
+
+  bench:
+    name: Check that benchmarks compile
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - run: cargo build --benches --features batch
+
+  rustfmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Check that clippy is happy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.65
+        with:
+          components: clippy
+      - run: cargo clippy
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - run: cargo doc --all-features

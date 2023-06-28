@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "curve25519-dalek",
+    "curve25519-dalek-derive",
+    "ed25519-dalek",
+    "x25519-dalek"
+]
+resolver = "2"
+
+[profile.dev]
+opt-level = 2
+

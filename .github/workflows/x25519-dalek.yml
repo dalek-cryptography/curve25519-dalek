@@ -1,10 +1,16 @@
-name: Rust
+name: x25519 Rust
 
 on:
   push:
     branches: [ '**' ]
+    paths: 'x25519-dalek/**'
   pull_request:
     branches: [ '**' ]
+    paths: 'x25519-dalek/**'
+
+defaults:
+  run:
+    working-directory: x25519-dalek
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,41 +18,6 @@ env:
   RUSTDOCFLAGS: '-D warnings'
 
 jobs:
-  test:
-    name: Test with multiple feature combinations
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          # 32-bit target
-          - target: i686-unknown-linux-gnu
-            deps: sudo apt update && sudo apt install gcc-multilib
-          # 64-bit target
-          - target: x86_64-unknown-linux-gnu
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          target: ${{ matrix.target }}
-      - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features reusable_secrets
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features static_secrets
-      - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --all-features
-
-  build-simd:
-    name: Test simd backend (nightly)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@nightly
-      - env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx2'
-        run: cargo build --target x86_64-unknown-linux-gnu
-      - env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="simd" -C target_feature=+avx512ifma'
-        run: cargo build --target x86_64-unknown-linux-gnu
 
   msrv:
     name: Current MSRV is 1.60.0
@@ -63,70 +34,3 @@ jobs:
       # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0
     - run: cargo build
-
-# no_std support is pending feature, tracking:
-# https://github.com/dalek-cryptography/x25519-dalek/issues/111
-#  # Test no_std integration with no features
-#  build-nostd-base:
-#    name: Build on no_std target (thumbv7em-none-eabi)
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: dtolnay/rust-toolchain@master
-#        with:
-#          toolchain: stable
-#          targets: thumbv7em-none-eabi
-#      - uses: taiki-e/install-action@cargo-hack
-#      # No default features build
-#      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
-#
-#  # Test no_std integration with all no_std features
-#  build-nostd-features:
-#    name: Build on no_std target (thumbv7em-none-eabi)
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: dtolnay/rust-toolchain@master
-#        with:
-#          toolchain: stable
-#          targets: thumbv7em-none-eabi
-#      - uses: taiki-e/install-action@cargo-hack
-#      # No default features build
-#      - run: cargo hack build --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std
-
-  bench:
-    name: Check that benchmarks compile
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - run: cargo build --benches
-
-  rustfmt:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
-
-  clippy:
-    name: Check that clippy is happy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.65
-        with:
-          components: clippy
-      - run: cargo clippy
-
-  doc:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-      - run: cargo doc --all-features

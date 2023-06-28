@@ -1,45 +1,25 @@
-name: Rust
+name: curve25519 Rust
 
 on:
   push:
     branches: [ '**' ]
+    paths: 'curve25519-dalek/**'
   pull_request:
     branches: [ '**' ]
+    paths: 'curve25519-dalek/**'
+
+defaults:
+  run:
+    working-directory: curve25519-dalek
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: '-D warnings'
 
 jobs:
-  test-auto:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          # 32-bit target
-          - target: i686-unknown-linux-gnu
-            deps: sudo apt update && sudo apt install gcc-multilib
-
-          # 64-bit target
-          - target: x86_64-unknown-linux-gnu
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-      - run: rustup target add ${{ matrix.target }}
-      - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features alloc
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features digest
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features precomputed-tables
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features rand_core
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features serde
-      - run: cargo test --target ${{ matrix.target }} --no-default-features --features zeroize
-      - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --features digest
-      - run: cargo test --target ${{ matrix.target }} --features rand_core
-      - run: cargo test --target ${{ matrix.target }} --features serde
 
   test-fiat:
+    name: Test fiat backend
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -60,6 +40,7 @@ jobs:
         run: cargo test --target ${{ matrix.target }}
 
   test-serial:
+    name: Test serial backend
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -90,19 +71,6 @@ jobs:
           targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
       - run: bash tests/build_tests.sh
 
-  build-nostd:
-    name: Build on no_std target (thumbv7em-none-eabi)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: thumbv7em-none-eabi
-      - run: cargo build --target thumbv7em-none-eabi --release --no-default-features
-      - run: cargo build --target thumbv7em-none-eabi --release
-      - run: cargo build --target thumbv7em-none-eabi --release --features serde
-
   test-simd-nightly:
     name: Test simd backend (nightly)
     runs-on: ubuntu-latest
@@ -132,70 +100,6 @@ jobs:
         RUSTFLAGS: '-C target_feature=+avx2'
       run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize --target x86_64-unknown-linux-gnu
 
-  build-docs:
-    name: Build docs
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@nightly
-    - run: make doc
-    - run: make doc-internal
-
-  cross:
-    strategy:
-      matrix:
-        include:
-          # ARM32
-          - target: armv7-unknown-linux-gnueabihf
-            rust: stable
-
-          # ARM64
-          - target: aarch64-unknown-linux-gnu
-            rust: stable
-
-          # PPC32
-          - target: powerpc-unknown-linux-gnu
-            rust: stable
-
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: ${{ matrix.deps }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          targets: ${{ matrix.target }}
-      - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --release --target ${{ matrix.target }}
-
-  nightly:
-    name: Test nightly compiler
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo test
-
-  clippy:
-    name: Check that clippy is happy
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@nightly
-      with:
-        components: clippy
-    - run: cargo clippy --target x86_64-unknown-linux-gnu
-
-  rustfmt:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt
-    - run: cargo fmt --all -- --check
-
   msrv:
     name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
@@ -211,20 +115,3 @@ jobs:
     - run: cargo build --no-default-features --features serde
     # Also make sure the AVX2 build works
     - run: cargo build --target x86_64-unknown-linux-gnu
-
-  bench:
-    name: Check that benchmarks compile
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - name: Build u32 bench
-      env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
-      run: cargo build --benches
-    - name: Build u64 bench
-      env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
-      run: cargo build --benches
-    - name: Build default (host native) bench
-      run: cargo build --benches

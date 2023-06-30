@@ -12,7 +12,7 @@ Patches are welcomed as pull requests on
 email (preferably sent to all of the authors listed in `Cargo.toml`).
 
 All issues on curve25519-dalek are mentored, if you want help with a bug just
-ask @isislovecruft or @hdevalence.
+ask @rozbb or @tarcieri.
 
 Some issues are easier than others. The `easy` label can be used to find the
 easy issues. If you want to work on an issue, please leave a comment so that we

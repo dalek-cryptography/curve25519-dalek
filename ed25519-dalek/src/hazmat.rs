@@ -35,10 +35,6 @@ use curve25519_dalek::digest::{generic_array::typenum::U64, Digest};
 ///
 /// Instances of this secret are automatically overwritten with zeroes when they fall out of scope.
 pub struct ExpandedSecretKey {
-    // `scalar_bytes` and `scalar` are separate, because the public key is computed as an unreduced
-    // scalar multiplication (ie `mul_base_clamped`), whereas the signing operations are done
-    // modulo l.
-    pub(crate) scalar_bytes: [u8; 32],
     /// The secret scalar used for signing
     pub scalar: Scalar,
     /// The domain separator used when hashing the message to generate the pseudorandom `r` value
@@ -59,15 +55,6 @@ impl ZeroizeOnDrop for ExpandedSecretKey {}
 // Some conversion methods for `ExpandedSecretKey`. The signing methods are defined in
 // `signing.rs`, since we need them even when `not(feature = "hazmat")`
 impl ExpandedSecretKey {
-    /// Convert this `ExpandedSecretKey` into an array of 64 bytes.
-    pub fn to_bytes(&self) -> [u8; 64] {
-        let mut bytes: [u8; 64] = [0u8; 64];
-
-        bytes[..32].copy_from_slice(self.scalar.as_bytes());
-        bytes[32..].copy_from_slice(&self.hash_prefix[..]);
-        bytes
-    }
-
     /// Construct an `ExpandedSecretKey` from an array of 64 bytes. In the spec, the bytes are the
     /// output of a SHA-512 hash. This clamps the first 32 bytes and uses it as a scalar, and uses
     /// the second 32 bytes as a domain separator for hashing.
@@ -83,7 +70,6 @@ impl ExpandedSecretKey {
         let scalar = Scalar::from_bytes_mod_order(clamp_integer(scalar_bytes));
 
         ExpandedSecretKey {
-            scalar_bytes,
             scalar,
             hash_prefix,
         }

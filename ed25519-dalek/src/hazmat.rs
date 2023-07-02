@@ -24,6 +24,9 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 use crate::{Signature, VerifyingKey};
 use curve25519_dalek::digest::{generic_array::typenum::U64, Digest};
 
+/// Domain separator used when hashing the message to generate the pseudorandom `r` value.
+pub type HashPrefix = [u8; 32];
+
 /// Contains the secret scalar and domain separator used for generating signatures.
 ///
 /// This is used internally for signing.
@@ -40,14 +43,15 @@ pub struct ExpandedSecretKey {
     // modulo l.
     pub(crate) scalar_bytes: [u8; 32],
     /// The secret scalar used for signing
-    pub scalar: Scalar,
+    pub(crate) scalar: Scalar,
     /// The domain separator used when hashing the message to generate the pseudorandom `r` value
-    pub hash_prefix: [u8; 32],
+    pub(crate) hash_prefix: HashPrefix,
 }
 
 #[cfg(feature = "zeroize")]
 impl Drop for ExpandedSecretKey {
     fn drop(&mut self) {
+        self.scalar_bytes.zeroize();
         self.scalar.zeroize();
         self.hash_prefix.zeroize()
     }
@@ -59,6 +63,16 @@ impl ZeroizeOnDrop for ExpandedSecretKey {}
 // Some conversion methods for `ExpandedSecretKey`. The signing methods are defined in
 // `signing.rs`, since we need them even when `not(feature = "hazmat")`
 impl ExpandedSecretKey {
+    /// Secret scalar used for signing.
+    pub fn scalar(&self) -> &Scalar {
+        &self.scalar
+    }
+
+    /// Domain separator used when hashing the message to generate the pseudorandom `r` value.
+    pub fn hash_prefix(&self) -> &HashPrefix {
+        &self.hash_prefix
+    }
+
     /// Convert this `ExpandedSecretKey` into an array of 64 bytes.
     pub fn to_bytes(&self) -> [u8; 64] {
         let mut bytes: [u8; 64] = [0u8; 64];
@@ -105,6 +119,22 @@ impl ExpandedSecretKey {
             }
             .into()
         })
+    }
+
+    /// Construct an `ExpandedSecretKey` from a scalar and hash prefix.
+    pub fn from_scalar_and_prefix(scalar: Scalar, hash_prefix: HashPrefix) -> Self {
+        let scalar_bytes = scalar.to_bytes();
+        Self {
+            scalar_bytes,
+            scalar,
+            hash_prefix,
+        }
+    }
+}
+
+impl From<(Scalar, HashPrefix)> for ExpandedSecretKey {
+    fn from(parts: (Scalar, HashPrefix)) -> ExpandedSecretKey {
+        ExpandedSecretKey::from_scalar_and_prefix(parts.0, parts.1)
     }
 }
 

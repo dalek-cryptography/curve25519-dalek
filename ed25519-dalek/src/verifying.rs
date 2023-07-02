@@ -43,6 +43,9 @@ use crate::{
     signing::SigningKey,
 };
 
+mod stream;
+pub use self::stream::StreamVerifier;
+
 /// An ed25519 public key.
 ///
 /// # Note
@@ -398,8 +401,21 @@ impl VerifyingKey {
         }
     }
 
+    /// Constructs stream verifier with candidate `signature`.
+    ///
+    /// Useful for cases where the whole message is not available all at once, allowing the
+    /// internal signature state to be updated incrementally and verified at the end. In some cases,
+    /// this will reduce the need for additional allocations.
+    pub fn verify_stream(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        let signature = InternalSignature::try_from(signature)?;
+        Ok(StreamVerifier::new(*self, signature))
+    }
+
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm,
-    /// using strict signture checking as defined by [`Self::verify_strict`].
+    /// using strict signature checking as defined by [`Self::verify_strict`].
     ///
     /// # Inputs
     ///

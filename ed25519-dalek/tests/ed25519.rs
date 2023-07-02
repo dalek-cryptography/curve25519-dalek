@@ -340,6 +340,45 @@ mod integrations {
 
     #[cfg(feature = "digest")]
     #[test]
+    fn sign_verify_digest_equivalence() {
+        // TestSignVerify
+        let keypair: SigningKey;
+        let good_sig: Signature;
+        let bad_sig: Signature;
+
+        let good: &[u8] = "test message".as_bytes();
+        let bad: &[u8] = "wrong message".as_bytes();
+
+        let mut csprng = OsRng {};
+
+        keypair = SigningKey::generate(&mut csprng);
+        good_sig = keypair.sign(&good);
+        bad_sig = keypair.sign(&bad);
+
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
+        verifier.update(&good);
+        assert!(
+            verifier.finalize_and_verify().is_ok(),
+            "Verification of a valid signature failed!"
+        );
+
+        let mut verifier = keypair.verify_stream(&bad_sig).unwrap();
+        verifier.update(&good);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
+        verifier.update(&bad);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+    }
+
+    #[cfg(feature = "digest")]
+    #[test]
     fn ed25519ph_sign_verify() {
         let signing_key: SigningKey;
         let good_sig: Signature;

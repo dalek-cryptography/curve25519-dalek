@@ -41,7 +41,7 @@ use crate::{
     errors::{InternalError, SignatureError},
     hazmat::ExpandedSecretKey,
     signature::InternalSignature,
-    verifying::VerifyingKey,
+    verifying::{StreamVerifier, VerifyingKey},
     Signature,
 };
 
@@ -471,6 +471,16 @@ impl SigningKey {
         signature: &Signature,
     ) -> Result<(), SignatureError> {
         self.verifying_key.verify_strict(message, signature)
+    }
+
+    /// Constructs stream verifier with candidate `signature`.
+    ///
+    /// See [`VerifyingKey::verify_stream()`] for more details.
+    pub fn verify_stream(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        self.verifying_key.verify_stream(signature)
     }
 
     /// Convert this signing key into a byte representation of a(n) (unreduced) Curve25519 scalar.

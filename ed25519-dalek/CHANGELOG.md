@@ -8,6 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # Unreleased
 
+* Add `SigningKey::verify_stream()`, and `VerifyingKey::verify_stream()`
 * Add `hazmat` `raw_sign_byupdate()` and `raw_verify_byupdate()` to allow
   passing a message incrementally.
   

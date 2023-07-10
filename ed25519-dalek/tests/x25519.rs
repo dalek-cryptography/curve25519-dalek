@@ -1,7 +1,16 @@
 //! Tests for converting Ed25519 keys into X25519 (Montgomery form) keys.
 
+use curve25519_dalek::scalar::{clamp_integer, Scalar};
 use ed25519_dalek::SigningKey;
 use hex_literal::hex;
+use sha2::{Digest, Sha512};
+
+/// Helper function to return the bytes corresponding to the input bytes after being clamped and
+/// reduced mod 2^255 - 19
+fn clamp_and_reduce(bytes: &[u8]) -> [u8; 32] {
+    assert_eq!(bytes.len(), 32);
+    Scalar::from_bytes_mod_order(clamp_integer(bytes.try_into().unwrap())).to_bytes()
+}
 
 /// Tests that X25519 Diffie-Hellman works when using keys converted from Ed25519.
 // TODO: generate test vectors using another implementation of Ed25519->X25519
@@ -18,6 +27,18 @@ fn ed25519_to_x25519_dh() {
 
     let scalar_a = ed25519_signing_key_a.to_scalar();
     let scalar_b = ed25519_signing_key_b.to_scalar();
+
+    // Compare the scalar bytes to the first 32 bytes of SHA-512(secret_key). We have to clamp and
+    // reduce the SHA-512 output because that's what the spec does before using the scalars for
+    // anything.
+    assert_eq!(
+        scalar_a.to_bytes(),
+        clamp_and_reduce(&Sha512::digest(ed25519_secret_key_a)[..32]),
+    );
+    assert_eq!(
+        scalar_b.to_bytes(),
+        clamp_and_reduce(&Sha512::digest(ed25519_secret_key_b)[..32]),
+    );
 
     let x25519_public_key_a = ed25519_signing_key_a.verifying_key().to_montgomery();
     let x25519_public_key_b = ed25519_signing_key_b.verifying_key().to_montgomery();

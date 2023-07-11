@@ -91,7 +91,7 @@ impl PartialEq<VerifyingKey> for VerifyingKey {
 impl From<&ExpandedSecretKey> for VerifyingKey {
     /// Derive this public key from its corresponding `ExpandedSecretKey`.
     fn from(expanded_secret_key: &ExpandedSecretKey) -> VerifyingKey {
-        VerifyingKey::clamp_and_mul_base(expanded_secret_key.scalar_bytes)
+        VerifyingKey::from(EdwardsPoint::mul_base(&expanded_secret_key.scalar))
     }
 }
 
@@ -185,16 +185,6 @@ impl VerifyingKey {
     /// property before verification, then use this method.
     pub fn is_weak(&self) -> bool {
         self.point.is_small_order()
-    }
-
-    /// Internal utility function for clamping a scalar representation and multiplying by the
-    /// basepont to produce a public key.
-    fn clamp_and_mul_base(bits: [u8; 32]) -> VerifyingKey {
-        let point = EdwardsPoint::mul_base_clamped(bits);
-        let compressed = point.compress();
-
-        // Invariant: VerifyingKey.1 is always the decompression of VerifyingKey.0
-        VerifyingKey { compressed, point }
     }
 
     // A helper function that computes `H(R || A || M)` where `H` is the 512-bit hash function

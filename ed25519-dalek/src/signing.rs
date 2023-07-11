@@ -488,8 +488,8 @@ impl SigningKey {
     /// For more information on the security of systems which use the same keys for both signing
     /// and Diffie-Hellman, see the paper
     /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509).
-    pub fn to_scalar_bytes(&self) -> [u8; 32] {
-        ExpandedSecretKey::from(&self.secret_key).scalar_bytes
+    pub fn to_scalar(&self) -> Scalar {
+        ExpandedSecretKey::from(&self.secret_key).scalar
     }
 }
 

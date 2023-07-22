@@ -451,9 +451,9 @@ mod integrations {
 
         m.insert(public_from_secret, "Updated Value");
 
-        let (k, v) = m.get_key_value(&public_from_secret).unwrap();
+        let (k, &v) = m.get_key_value(&public_from_secret).unwrap();
         assert_eq!(k, &public_from_secret);
-        assert_eq!(v.clone(), "Updated Value");
+        assert_eq!(v, "Updated Value");
         assert_eq!(m.len(), 1usize);
 
         let second_secret: SigningKey = SigningKey::generate(&mut csprng);
@@ -461,9 +461,9 @@ mod integrations {
         assert_ne!(public_from_secret, public_from_second_secret);
         m.insert(public_from_second_secret, "Second public key");
 
-        let (k, v) = m.get_key_value(&public_from_second_secret).unwrap();
+        let (k, &v) = m.get_key_value(&public_from_second_secret).unwrap();
         assert_eq!(k, &public_from_second_secret);
-        assert_eq!(v.clone(), "Second public key");
+        assert_eq!(v, "Second public key");
         assert_eq!(m.len(), 2usize);
     }
 }

@@ -35,15 +35,7 @@ cofactor-related abstraction mismatches.
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "3"
-```
-
-## Beta
-
-To use the latest prerelease (see changes [below](#breaking-changes-in-400)),
-use the following line in your project's `Cargo.toml`:
-```toml
-curve25519-dalek = "4.0.0-rc.3"
+curve25519-dalek = "4"
 ```
 
 ## Feature Flags

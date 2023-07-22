@@ -25,7 +25,7 @@ rustdoc-args = [
 features = ["batch", "digest", "hazmat", "pem", "serde"]
 
 [dependencies]
-curve25519-dalek = { version = "=4.0.0-rc.3", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
+curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
 ed25519 = { version = ">=2.2, <2.3", default-features = false }
 signature = { version = ">=2.0, <2.1", optional = true, default-features = false }
 sha2 = { version = "0.10", default-features = false }
@@ -37,7 +37,7 @@ serde = { version = "1.0", default-features = false, optional = true }
 zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
-curve25519-dalek = { version = "=4.0.0-rc.3", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
+curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
 blake2 = "0.10"
 sha3 = "0.10"
 hex = "0.4"

@@ -1,0 +1,34 @@
+name: x25519 Rust
+
+on:
+  push:
+    branches: [ '**' ]
+    paths: 'x25519-dalek/**'
+  pull_request:
+    branches: [ '**' ]
+    paths: 'x25519-dalek/**'
+
+defaults:
+  run:
+    working-directory: x25519-dalek
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+  RUSTDOCFLAGS: '-D warnings'
+
+jobs:
+
+  msrv:
+    name: Current MSRV is 1.60.0
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      # Now run `cargo +nightly -Z minimal-verisons check` in order to get a
+      # Cargo.lock with the oldest possible deps
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo -Z minimal-versions check --no-default-features --features serde
+      # Now check that `cargo build` works with respect to the oldest possible
+      # deps and the stated MSRV
+    - uses: dtolnay/rust-toolchain@1.60.0
+    - run: cargo build

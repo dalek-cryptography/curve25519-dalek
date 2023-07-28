@@ -2,35 +2,34 @@
 //!
 //! Could be moved into backend/serial/u??/constants.rs
 
-#[cfg(feature = "u64_backend")]
-pub(crate) use lizard::u64_constants::*;
+#[cfg(curve25519_dalek_bits = "64")]
+pub(crate) use super::u64_constants::*;
 
-#[cfg(feature = "u32_backend")]
-pub(crate) use lizard::u32_constants::*;
-
+#[cfg(curve25519_dalek_bits = "32")]
+pub(crate) use super::u32_constants::*;
 
 // ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
 
-#[cfg(all(test, feature = "stage2_build"))]
+#[cfg(test)]
 mod test {
 
     use super::*;
-    use constants;
-    use field::FieldElement;
+    use crate::constants;
+    use crate::field::FieldElement;
 
     #[test]
     fn test_lizard_constants() {
-        let (_, sqrt_id) =  FieldElement::sqrt_ratio_i(
+        let (_, sqrt_id) = FieldElement::sqrt_ratio_i(
             &(&constants::SQRT_M1 * &constants::EDWARDS_D),
-            &FieldElement::one()
+            &FieldElement::ONE,
         );
         assert_eq!(sqrt_id, SQRT_ID);
 
         assert_eq!(
-            &(&constants::EDWARDS_D + &FieldElement::one())
-            * &(&constants::EDWARDS_D - &FieldElement::one()).invert(),
+            &(&constants::EDWARDS_D + &FieldElement::ONE)
+                * &(&constants::EDWARDS_D - &FieldElement::ONE).invert(),
             DP1_OVER_DM1
         );
 
@@ -44,11 +43,7 @@ mod test {
             &MDOUBLE_INVSQRT_A_MINUS_D * &constants::SQRT_M1
         );
 
-        let (_, invsqrt_one_plus_d) = (
-            &constants::EDWARDS_D + &FieldElement::one()).invsqrt();
-        assert_eq!(
-            -&invsqrt_one_plus_d,
-            MINVSQRT_ONE_PLUS_D
-        );
+        let (_, invsqrt_one_plus_d) = (&constants::EDWARDS_D + &FieldElement::ONE).invsqrt();
+        assert_eq!(-&invsqrt_one_plus_d, MINVSQRT_ONE_PLUS_D);
     }
 }

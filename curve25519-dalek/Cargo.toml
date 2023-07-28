@@ -61,10 +61,11 @@ cpufeatures = "0.2.6"
 fiat-crypto = "0.1.19"
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = ["alloc", "precomputed-tables", "zeroize", "lizard"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
+lizard = ["digest"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

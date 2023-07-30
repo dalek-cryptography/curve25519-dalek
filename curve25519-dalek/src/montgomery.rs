@@ -117,18 +117,6 @@ impl Zeroize for MontgomeryPoint {
     }
 }
 
-/// Given a bytestring that's little-endian at the byte level, return an iterator over all the
-/// bits, in little-endian order.
-pub(crate) fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + '_ {
-    let bitlen = x.len() * 8;
-    (0..bitlen).map(|i| {
-        // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-        // the byte. Since self.bytes is little-endian at the byte level, this iterator is
-        // little-endian on the bit level
-        ((x[i >> 3] >> (i & 7)) & 1u8) == 1
-    })
-}
-
 impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
     pub fn mul_base(scalar: &Scalar) -> Self {
@@ -138,12 +126,17 @@ impl MontgomeryPoint {
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
     /// [`clamp_integer`].
     pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
-        // Clamp the integer, convert to bits, and multiply
-        let clamped = clamp_integer(bytes);
-        // Clamping sets the the MSB 0, so we skip it
-        let le_bits = bytestring_bits_le(&clamped).rev().skip(1);
-
-        self._mul_bits_be(le_bits)
+        // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
+        // #2. But #2 is not necessary for correctness of variable-base multiplication. All that
+        // needs to hold is invariant #1, i.e., the scalar is less than 2^255. This is guaranteed
+        // by clamping.
+        // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
+        // issues arising from the fact that the curve point is not necessarily in the prime-order
+        // subgroup.
+        let s = Scalar {
+            bytes: clamp_integer(bytes),
+        };
+        s * self
     }
 
     /// Multiply the basepoint by `clamp_integer(bytes)`. For a description of clamping, see
@@ -531,6 +524,18 @@ mod test {
     fn rand_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
         let s: Scalar = Scalar::random(&mut rng);
         EdwardsPoint::mul_base(&s)
+    }
+
+    /// Given a bytestring that's little-endian at the byte level, return an iterator over all the
+    /// bits, in little-endian order.
+    fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + '_ {
+        let bitlen = x.len() * 8;
+        (0..bitlen).map(|i| {
+            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+            // the byte. Since self.bytes is little-endian at the byte level, this iterator is
+            // little-endian on the bit level
+            ((x[i >> 3] >> (i & 7)) & 1u8) == 1
+        })
     }
 
     #[test]

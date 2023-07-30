@@ -117,6 +117,18 @@ impl Zeroize for MontgomeryPoint {
     }
 }
 
+/// Given a bytestring that's little-endian at the byte level, return an iterator over all the
+/// bits, in little-endian order.
+pub(crate) fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + '_ {
+    let bitlen = x.len() * 8;
+    (0..bitlen).map(|i| {
+        // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+        // the byte. Since self.bytes is little-endian at the byte level, this iterator is
+        // little-endian on the bit level
+        ((x[i >> 3] >> (i & 7)) & 1u8) == 1
+    })
+}
+
 impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
     pub fn mul_base(scalar: &Scalar) -> Self {
@@ -126,17 +138,12 @@ impl MontgomeryPoint {
     /// Multiply this point by `clamp_integer(bytes)`. For a description of clamping, see
     /// [`clamp_integer`].
     pub fn mul_clamped(self, bytes: [u8; 32]) -> Self {
-        // We have to construct a Scalar that is not reduced mod l, which breaks scalar invariant
-        // #2. But #2 is not necessary for correctness of variable-base multiplication. All that
-        // needs to hold is invariant #1, i.e., the scalar is less than 2^255. This is guaranteed
-        // by clamping.
-        // Further, we don't do any reduction or arithmetic with this clamped value, so there's no
-        // issues arising from the fact that the curve point is not necessarily in the prime-order
-        // subgroup.
-        let s = Scalar {
-            bytes: clamp_integer(bytes),
-        };
-        s * self
+        // Clamp the integer, convert to bits, and multiply
+        let clamped = clamp_integer(bytes);
+        // Clamping sets the the MSB 0, so we skip it
+        let le_bits = bytestring_bits_le(&clamped).rev().skip(1);
+
+        self._mul_bits_be(le_bits)
     }
 
     /// Multiply the basepoint by `clamp_integer(bytes)`. For a description of clamping, see
@@ -356,12 +363,13 @@ define_mul_variants!(
     Output = MontgomeryPoint
 );
 
-/// Multiply this `MontgomeryPoint` by a `Scalar`.
-impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
-    type Output = MontgomeryPoint;
-
-    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\).
-    fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
+impl MontgomeryPoint {
+    /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
+    /// \\(n\\), return \\( u\_0(\[n\]P) \\).
+    ///
+    /// This is a helper function that's hidden by default. Below is a wrapper that's made public
+    /// when the `hazmat` feature is set.
+    fn _mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
@@ -370,12 +378,8 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
             W: FieldElement::ONE,
         };
 
-        // NOTE: The below swap-double-add routine skips the first iteration, i.e., it assumes the
-        // MSB of `scalar` is 0. This is allowed, since it follows from Scalar invariant #1.
-
         // Go through the bits from most to least significant, using a sliding window of 2
-        let mut bits = scalar.bits_le().rev();
-        let mut prev_bit = bits.next().unwrap();
+        let mut prev_bit = false;
         for cur_bit in bits {
             let choice: u8 = (prev_bit ^ cur_bit) as u8;
 
@@ -393,6 +397,25 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
         prev_bit.zeroize();
 
         x0.as_affine()
+    }
+
+    /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
+    /// \\(n\\), return \\( u\_0(\[n\]P) \\).
+    #[cfg(feature = "hazmat")]
+    fn mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
+        self.mul_bits_be(bits)
+    }
+}
+
+/// Multiply this `MontgomeryPoint` by a `Scalar`.
+impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
+    type Output = MontgomeryPoint;
+
+    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\).
+    fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
+        // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
+        // the MSB is 0, so we can skip it.
+        self._mul_bits_be(scalar.bits_le().rev().skip(1))
     }
 }
 
@@ -422,7 +445,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    use rand_core::RngCore;
+    use rand_core::{CryptoRng, RngCore};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -505,17 +528,43 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
+    fn rand_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
+        let s: Scalar = Scalar::random(&mut rng);
+        EdwardsPoint::mul_base(&s)
+    }
+
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
         let mut csprng = rand_core::OsRng;
 
         for _ in 0..100 {
-            let s: Scalar = Scalar::random(&mut csprng);
-            let p_edwards = EdwardsPoint::mul_base(&s);
+            let p_edwards = rand_point(&mut csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
+            let s: Scalar = Scalar::random(&mut csprng);
             let expected = s * p_edwards;
             let result = s * p_montgomery;
+
+            assert_eq!(result, expected.to_montgomery())
+        }
+    }
+
+    // Tests that point._mul_bits_be(bits) is the same as multiplying by the Scalar representation
+    // of the bits.
+    #[test]
+    fn montgomery_mul_bits_be() {
+        let mut csprng = rand_core::OsRng;
+
+        for _ in 0..100 {
+            let p_edwards = rand_point(&mut csprng);
+            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+
+            let mut bigint = [0u8; 64];
+            csprng.fill_bytes(&mut bigint[..]);
+            let bigint_bits_be = bytestring_bits_le(&bigint).rev();
+
+            let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
+            let result = p_montgomery._mul_bits_be(bigint_bits_be);
 
             assert_eq!(result, expected.to_montgomery())
         }

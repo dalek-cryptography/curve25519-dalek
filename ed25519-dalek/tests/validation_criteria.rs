@@ -89,7 +89,7 @@ impl From<IntermediateTestVector> for TestVector {
         let msg = tv.msg.as_bytes().to_vec();
 
         // Unwrap the Option<Set<Flag>>
-        let flags = tv.flags.unwrap_or_else(Default::default);
+        let flags = tv.flags.unwrap_or_default();
 
         Self {
             number,

@@ -700,7 +700,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                 self,
                 bytes: &'de [u8],
             ) -> Result<Self::Value, E> {
-                SigningKey::try_from(bytes.as_ref()).map_err(E::custom)
+                SigningKey::try_from(bytes).map_err(E::custom)
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -708,6 +708,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                 A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
@@ -797,11 +798,11 @@ impl ExpandedSecretKey {
     #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
     #[inline(always)]
-    pub(crate) fn raw_sign_prehashed<'a, CtxDigest, MsgDigest>(
+    pub(crate) fn raw_sign_prehashed<CtxDigest, MsgDigest>(
         &self,
         prehashed_message: MsgDigest,
         verifying_key: &VerifyingKey,
-        context: Option<&'a [u8]>,
+        context: Option<&[u8]>,
     ) -> Result<Signature, SignatureError>
     where
         CtxDigest: Digest<OutputSize = U64>,

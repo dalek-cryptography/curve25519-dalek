@@ -147,14 +147,14 @@ mod multiscalar_benches {
                     let static_size = total_size;
 
                     let static_points = construct_points(static_size);
-                    let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+                    let precomp = VartimeEdwardsPrecomputation::new(static_points);
                     // Rerandomize the scalars for every call to prevent
                     // false timings from better caching (e.g., the CPU
                     // cache lifts exactly the right table entries for the
                     // benchmark into the highest cache levels).
                     b.iter_batched(
                         || construct_scalars(static_size),
-                        |scalars| precomp.vartime_multiscalar_mul(&scalars),
+                        |scalars| precomp.vartime_multiscalar_mul(scalars),
                         BatchSize::SmallInput,
                     );
                 },
@@ -182,7 +182,7 @@ mod multiscalar_benches {
 
                 let static_points = construct_points(static_size);
                 let dynamic_points = construct_points(dynamic_size);
-                let precomp = VartimeEdwardsPrecomputation::new(&static_points);
+                let precomp = VartimeEdwardsPrecomputation::new(static_points);
                 // Rerandomize the scalars for every call to prevent
                 // false timings from better caching (e.g., the CPU
                 // cache lifts exactly the right table entries for the

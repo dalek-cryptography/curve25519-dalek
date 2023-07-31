@@ -212,6 +212,29 @@ impl VerifyingKey {
         }
     }
 
+    #[allow(non_snake_case)]
+    pub(crate) fn raw_verify_byupdate<CtxDigest, F>(
+        &self,
+        msg_update: F,
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError>
+    where
+        CtxDigest: Digest<OutputSize = U64>,
+        F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+    {
+        let signature = InternalSignature::try_from(signature)?;
+
+        let mut c = RCompute::<CtxDigest>::new(self, signature, None);
+        msg_update(&mut c.h)?;
+        let expected_R = c.finish();
+
+        if expected_R == signature.R {
+            Ok(())
+        } else {
+            Err(InternalError::Verify.into())
+        }
+    }
+
     /// The prehashed non-batched Ed25519 verification check, rejecting non-canonical R values.
     /// (see [`Self::recompute_R`]). `CtxDigest` is the digest used to calculate the
     /// pseudorandomness needed for signing. `MsgDigest` is the digest used to hash the signed

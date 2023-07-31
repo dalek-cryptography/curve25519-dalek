@@ -169,6 +169,30 @@ where
     esk.raw_sign_prehashed::<CtxDigest, MsgDigest>(prehashed_message, verifying_key, context)
 }
 
+/// Compute an ordinary Ed25519 signature over the given message. `CtxDigest` is the digest used to
+/// calculate the pseudorandomness needed for signing. According to the Ed25519 spec, `CtxDigest =
+/// Sha512`.
+///
+/// The `msg_update` closure provides the message content, updating a hash argument.
+/// It will be called twice.
+///
+/// # ⚠️  Unsafe
+///
+/// Do NOT use this function unless you absolutely must. Using the wrong values in
+/// `ExpandedSecretKey` can leak your signing key. See
+/// [here](https://github.com/MystenLabs/ed25519-unsafe-libs) for more details on this attack.
+pub fn raw_sign_byupdate<CtxDigest, F>(
+    esk: &ExpandedSecretKey,
+    msg_update: F,
+    verifying_key: &VerifyingKey,
+) -> Result<Signature, SignatureError>
+where
+    CtxDigest: Digest<OutputSize = U64>,
+    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+{
+    esk.raw_sign_byupdate::<CtxDigest, F>(msg_update, verifying_key)
+}
+
 /// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R
 /// values.`CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `CtxDigest = Sha512`.
@@ -200,6 +224,25 @@ where
     CtxDigest: Digest<OutputSize = U64>,
 {
     vk.raw_verify_prehashed::<CtxDigest, MsgDigest>(prehashed_message, context, signature)
+}
+
+/// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R
+/// values.`CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
+/// According to the Ed25519 spec, `CtxDigest = Sha512`.
+/// Instead of passing the message directly (`sign()`), the caller
+/// provides a `msg_update` closure that will be called to feed the
+/// hash of the message being signed.
+
+pub fn raw_verify_byupdate<CtxDigest, F>(
+    vk: &VerifyingKey,
+    msg_update: F,
+    signature: &ed25519::Signature,
+) -> Result<(), SignatureError>
+where
+    CtxDigest: Digest<OutputSize = U64>,
+    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+{
+    vk.raw_verify_byupdate::<CtxDigest, F>(msg_update, signature)
 }
 
 #[cfg(test)]

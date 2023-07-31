@@ -304,4 +304,111 @@ mod test {
             .unwrap();
         raw_verify_prehashed::<CtxDigest, MsgDigest>(&vk, h, Some(ctx_str), &sig).unwrap();
     }
+
+    #[test]
+    fn sign_byupdate() {
+        // Generate the keypair
+        let mut rng = OsRng;
+        let esk = ExpandedSecretKey::random(&mut rng);
+        let vk = VerifyingKey::from(&esk);
+
+        let msg = b"realistic";
+        // signatures are deterministic so we can compare with a good one
+        let good_sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate matches");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Err(SignatureError::new())
+            },
+            &vk,
+        );
+        assert!(sig.is_err(), "sign byupdate failure propagates");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(&msg[..1]);
+                h.update(&msg[1..]);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate two part");
+    }
+
+    #[test]
+    fn verify_byupdate() {
+        // Generate the keypair
+        let mut rng = OsRng;
+        let esk = ExpandedSecretKey::random(&mut rng);
+        let vk = VerifyingKey::from(&esk);
+
+        let msg = b"Torrens title";
+        let sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
+        let wrong_sig = raw_sign::<CtxDigest>(&esk, b"nope", &vk);
+
+        let r = raw_verify_byupdate::<CtxDigest, _>(
+            &vk,
+            |h| {
+                h.update(msg);
+                Ok(())
+            },
+            &sig,
+        );
+        assert!(r.is_ok(), "verify byupdate success");
+
+        let r = raw_verify_byupdate::<CtxDigest, _>(
+            &vk,
+            |h| {
+                h.update(msg);
+                Ok(())
+            },
+            &wrong_sig,
+        );
+        assert!(r.is_err(), "verify byupdate wrong fails");
+
+        let r = raw_verify_byupdate::<CtxDigest, _>(
+            &vk,
+            |h| {
+                h.update(&msg[..5]);
+                h.update(&msg[5..]);
+                Ok(())
+            },
+            &sig,
+        );
+        assert!(r.is_ok(), "verify byupdate two-part");
+
+        let r = raw_verify_byupdate::<CtxDigest, _>(
+            &vk,
+            |h| {
+                h.update(msg);
+                h.update(b"X");
+                Ok(())
+            },
+            &sig,
+        );
+        assert!(r.is_err(), "verify byupdate extra fails");
+
+        let r = raw_verify_byupdate::<CtxDigest, _>(
+            &vk,
+            |h| {
+                h.update(msg);
+                Err(SignatureError::new())
+            },
+            &sig,
+        );
+        assert!(r.is_err(), "verify byupdate error propagates");
+    }
 }

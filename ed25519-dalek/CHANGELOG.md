@@ -8,6 +8,9 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # Unreleased
 
+* Add `hazmat` `raw_sign_byupdate()` and `raw_verify_byupdate()` to allow
+  passing a message incrementally.
+  
 # 2.x series
 
 ## 2.1.1

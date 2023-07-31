@@ -970,7 +970,7 @@ impl VartimeMultiscalarMul for RistrettoPoint {
         I::Item: Borrow<Scalar>,
         J: IntoIterator<Item = Option<RistrettoPoint>>,
     {
-        let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.borrow().0));
+        let extended_points = points.into_iter().map(|opt_P| opt_P.map(|P| P.0));
 
         EdwardsPoint::optional_multiscalar_mul(scalars, extended_points).map(RistrettoPoint)
     }

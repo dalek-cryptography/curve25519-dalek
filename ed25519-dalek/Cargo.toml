@@ -29,6 +29,7 @@ curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-featur
 ed25519 = { version = ">=2.2, <2.3", default-features = false }
 signature = { version = ">=2.0, <2.1", optional = true, default-features = false }
 sha2 = { version = "0.10", default-features = false }
+subtle = { version = "2.3.0", default-features = false }
 
 # optional features
 merlin = { version = "3", default-features = false, optional = true }

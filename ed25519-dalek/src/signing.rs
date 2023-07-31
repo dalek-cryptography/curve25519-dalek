@@ -19,6 +19,7 @@ use rand_core::CryptoRngCore;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use sha2::Sha512;
+use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
     digest::{generic_array::typenum::U64, Digest},
@@ -582,6 +583,20 @@ impl TryFrom<&[u8]> for SigningKey {
             })
     }
 }
+
+impl ConstantTimeEq for SigningKey {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.secret_key.ct_eq(&other.secret_key)
+    }
+}
+
+impl PartialEq for SigningKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl Eq for SigningKey {}
 
 #[cfg(feature = "zeroize")]
 impl Drop for SigningKey {

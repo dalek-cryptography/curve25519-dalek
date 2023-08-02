@@ -521,7 +521,8 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
-    fn rand_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
+    /// Returns a random point on the prime-order subgroup
+    fn rand_prime_order_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
         let s: Scalar = Scalar::random(&mut rng);
         EdwardsPoint::mul_base(&s)
     }
@@ -543,7 +544,7 @@ mod test {
         let mut csprng = rand_core::OsRng;
 
         for _ in 0..100 {
-            let p_edwards = rand_point(&mut csprng);
+            let p_edwards = rand_prime_order_point(&mut csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             let s: Scalar = Scalar::random(&mut csprng);
@@ -554,24 +555,60 @@ mod test {
         }
     }
 
-    // Tests that point._mul_bits_be(bits) is the same as multiplying by the Scalar representation
-    // of the bits.
+    // Tests that, on the prime-order subgroup, MontgomeryPoint::_mul_bits_be is the same as
+    // multiplying by the Scalar representation of the same bits
     #[test]
     fn montgomery_mul_bits_be() {
         let mut csprng = rand_core::OsRng;
 
         for _ in 0..100 {
-            let p_edwards = rand_point(&mut csprng);
+            // Make a random prime-order point P
+            let p_edwards = rand_prime_order_point(&mut csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
+            // Make a random integer b
             let mut bigint = [0u8; 64];
             csprng.fill_bytes(&mut bigint[..]);
             let bigint_bits_be = bytestring_bits_le(&bigint).rev();
 
+            // Check that bP is the same whether calculated as scalar-times-edwards or
+            // integer-times-montgomery.
             let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
             let result = p_montgomery._mul_bits_be(bigint_bits_be);
-
             assert_eq!(result, expected.to_montgomery())
+        }
+    }
+
+    // Tests that MontgomeryPoint::_mul_bits_be is consistent on any point, even ones that might be
+    // on the curve's twist. Specifically, this tests that b₁(b₂P) == b₂(b₁P) for random
+    // integers b₁, b₂ and random (curve or twist) point P.
+    #[test]
+    fn montgomery_mul_bits_be_twist() {
+        let mut csprng = rand_core::OsRng;
+
+        for _ in 0..100 {
+            // Make a random point P on the curve or its twist
+            let p_montgomery = {
+                let mut buf = [0u8; 32];
+                csprng.fill_bytes(&mut buf);
+                MontgomeryPoint(buf)
+            };
+
+            // Compute two big integers b₁ and b₂
+            let mut bigint1 = [0u8; 64];
+            let mut bigint2 = [0u8; 64];
+            csprng.fill_bytes(&mut bigint1[..]);
+            csprng.fill_bytes(&mut bigint2[..]);
+
+            // Compute b₁P and b₂P
+            let prod1 = p_montgomery._mul_bits_be(bytestring_bits_le(&bigint1).rev());
+            let prod2 = p_montgomery._mul_bits_be(bytestring_bits_le(&bigint2).rev());
+
+            // Check that b₁(b₂P) == b₂(b₁P)
+            assert_eq!(
+                prod1._mul_bits_be(bytestring_bits_le(&bigint2).rev()),
+                prod2._mul_bits_be(bytestring_bits_le(&bigint1).rev())
+            );
         }
     }
 

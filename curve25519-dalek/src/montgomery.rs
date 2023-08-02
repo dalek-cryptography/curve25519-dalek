@@ -529,7 +529,7 @@ mod test {
 
     /// Given a bytestring that's little-endian at the byte level, return an iterator over all the
     /// bits, in little-endian order.
-    fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + '_ {
+    fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + Clone + '_ {
         let bitlen = x.len() * 8;
         (0..bitlen).map(|i| {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
@@ -601,13 +601,15 @@ mod test {
             csprng.fill_bytes(&mut bigint2[..]);
 
             // Compute b₁P and b₂P
-            let prod1 = p_montgomery._mul_bits_be(bytestring_bits_le(&bigint1).rev());
-            let prod2 = p_montgomery._mul_bits_be(bytestring_bits_le(&bigint2).rev());
+            let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
+            let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
+            let prod1 = p_montgomery._mul_bits_be(bigint1_bits_be.clone());
+            let prod2 = p_montgomery._mul_bits_be(bigint2_bits_be.clone());
 
             // Check that b₁(b₂P) == b₂(b₁P)
             assert_eq!(
-                prod1._mul_bits_be(bytestring_bits_le(&bigint2).rev()),
-                prod2._mul_bits_be(bytestring_bits_le(&bigint1).rev())
+                prod1._mul_bits_be(bigint2_bits_be),
+                prod2._mul_bits_be(bigint1_bits_be)
             );
         }
     }

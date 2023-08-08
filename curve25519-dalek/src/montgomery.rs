@@ -358,11 +358,13 @@ define_mul_variants!(
 
 impl MontgomeryPoint {
     /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
-    /// \\(n\\), return \\( u\_0(\[n\]P) \\).
+    /// \\(n\\), return \\( u\_0(\[n\]P) \\). This is constant time in the length of `bits`.
     ///
-    /// This is a helper function that's hidden by default. Below is a wrapper that's made public
-    /// when the `hazmat` feature is set.
-    fn _mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
+    /// **NOTE:** You probably do not want to use this function. Almost every protocol built on
+    /// Curve25519 uses _clamped multiplication_, explained
+    /// [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/).
+    /// When in doubt, use [`Self::mul_clamped`].
+    pub fn mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
         // Algorithm 8 of Costello-Smith 2017
         let affine_u = FieldElement::from_bytes(&self.0);
         let mut x0 = ProjectivePoint::identity();
@@ -391,24 +393,17 @@ impl MontgomeryPoint {
 
         x0.as_affine()
     }
-
-    /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
-    /// \\(n\\), return \\( u\_0(\[n\]P) \\).
-    #[cfg(feature = "hazmat")]
-    fn mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
-        self.mul_bits_be(bits)
-    }
 }
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
 impl Mul<&Scalar> for &MontgomeryPoint {
     type Output = MontgomeryPoint;
 
-    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\).
+    /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\)
     fn mul(self, scalar: &Scalar) -> MontgomeryPoint {
         // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
         // the MSB is 0, so we can skip it.
-        self._mul_bits_be(scalar.bits_le().rev().skip(1))
+        self.mul_bits_be(scalar.bits_le().rev().skip(1))
     }
 }
 

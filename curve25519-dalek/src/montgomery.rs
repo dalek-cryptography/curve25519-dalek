@@ -151,6 +151,43 @@ impl MontgomeryPoint {
         Self::mul_base(&s)
     }
 
+    /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
+    /// \\(n\\), return \\( u\_0(\[n\]P) \\). This is constant time in the length of `bits`.
+    ///
+    /// **NOTE:** You probably do not want to use this function. Almost every protocol built on
+    /// Curve25519 uses _clamped multiplication_, explained
+    /// [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/).
+    /// When in doubt, use [`Self::mul_clamped`].
+    pub fn mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
+        // Algorithm 8 of Costello-Smith 2017
+        let affine_u = FieldElement::from_bytes(&self.0);
+        let mut x0 = ProjectivePoint::identity();
+        let mut x1 = ProjectivePoint {
+            U: affine_u,
+            W: FieldElement::ONE,
+        };
+
+        // Go through the bits from most to least significant, using a sliding window of 2
+        let mut prev_bit = false;
+        for cur_bit in bits {
+            let choice: u8 = (prev_bit ^ cur_bit) as u8;
+
+            debug_assert!(choice == 0 || choice == 1);
+
+            ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
+            differential_add_and_double(&mut x0, &mut x1, &affine_u);
+
+            prev_bit = cur_bit;
+        }
+        // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
+        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
+        // Don't leave the bit in the stack
+        #[cfg(feature = "zeroize")]
+        prev_bit.zeroize();
+
+        x0.as_affine()
+    }
+
     /// View this `MontgomeryPoint` as an array of bytes.
     pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.0
@@ -356,45 +393,6 @@ define_mul_variants!(
     Output = MontgomeryPoint
 );
 
-impl MontgomeryPoint {
-    /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
-    /// \\(n\\), return \\( u\_0(\[n\]P) \\). This is constant time in the length of `bits`.
-    ///
-    /// **NOTE:** You probably do not want to use this function. Almost every protocol built on
-    /// Curve25519 uses _clamped multiplication_, explained
-    /// [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/).
-    /// When in doubt, use [`Self::mul_clamped`].
-    pub fn mul_bits_be(self, bits: impl Iterator<Item = bool>) -> MontgomeryPoint {
-        // Algorithm 8 of Costello-Smith 2017
-        let affine_u = FieldElement::from_bytes(&self.0);
-        let mut x0 = ProjectivePoint::identity();
-        let mut x1 = ProjectivePoint {
-            U: affine_u,
-            W: FieldElement::ONE,
-        };
-
-        // Go through the bits from most to least significant, using a sliding window of 2
-        let mut prev_bit = false;
-        for cur_bit in bits {
-            let choice: u8 = (prev_bit ^ cur_bit) as u8;
-
-            debug_assert!(choice == 0 || choice == 1);
-
-            ProjectivePoint::conditional_swap(&mut x0, &mut x1, choice.into());
-            differential_add_and_double(&mut x0, &mut x1, &affine_u);
-
-            prev_bit = cur_bit;
-        }
-        // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
-        ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
-        // Don't leave the bit in the stack
-        #[cfg(feature = "zeroize")]
-        prev_bit.zeroize();
-
-        x0.as_affine()
-    }
-}
-
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
 impl Mul<&Scalar> for &MontgomeryPoint {
     type Output = MontgomeryPoint;
@@ -550,7 +548,7 @@ mod test {
         }
     }
 
-    // Tests that, on the prime-order subgroup, MontgomeryPoint::_mul_bits_be is the same as
+    // Tests that, on the prime-order subgroup, MontgomeryPoint::mul_bits_be is the same as
     // multiplying by the Scalar representation of the same bits
     #[test]
     fn montgomery_mul_bits_be() {
@@ -569,12 +567,12 @@ mod test {
             // Check that bP is the same whether calculated as scalar-times-edwards or
             // integer-times-montgomery.
             let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
-            let result = p_montgomery._mul_bits_be(bigint_bits_be);
+            let result = p_montgomery.mul_bits_be(bigint_bits_be);
             assert_eq!(result, expected.to_montgomery())
         }
     }
 
-    // Tests that MontgomeryPoint::_mul_bits_be is consistent on any point, even ones that might be
+    // Tests that MontgomeryPoint::mul_bits_be is consistent on any point, even ones that might be
     // on the curve's twist. Specifically, this tests that b₁(b₂P) == b₂(b₁P) for random
     // integers b₁, b₂ and random (curve or twist) point P.
     #[test]
@@ -598,13 +596,13 @@ mod test {
             // Compute b₁P and b₂P
             let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
             let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
-            let prod1 = p_montgomery._mul_bits_be(bigint1_bits_be.clone());
-            let prod2 = p_montgomery._mul_bits_be(bigint2_bits_be.clone());
+            let prod1 = p_montgomery.mul_bits_be(bigint1_bits_be.clone());
+            let prod2 = p_montgomery.mul_bits_be(bigint2_bits_be.clone());
 
             // Check that b₁(b₂P) == b₂(b₁P)
             assert_eq!(
-                prod1._mul_bits_be(bigint2_bits_be),
-                prod2._mul_bits_be(bigint1_bits_be)
+                prod1.mul_bits_be(bigint2_bits_be),
+                prod2.mul_bits_be(bigint1_bits_be)
             );
         }
     }

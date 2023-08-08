@@ -401,27 +401,27 @@ impl MontgomeryPoint {
 }
 
 /// Multiply this `MontgomeryPoint` by a `Scalar`.
-impl<'a, 'b> Mul<&'b Scalar> for &'a MontgomeryPoint {
+impl Mul<&Scalar> for &MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\).
-    fn mul(self, scalar: &'b Scalar) -> MontgomeryPoint {
+    fn mul(self, scalar: &Scalar) -> MontgomeryPoint {
         // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
         // the MSB is 0, so we can skip it.
         self._mul_bits_be(scalar.bits_le().rev().skip(1))
     }
 }
 
-impl<'b> MulAssign<&'b Scalar> for MontgomeryPoint {
-    fn mul_assign(&mut self, scalar: &'b Scalar) {
+impl MulAssign<&Scalar> for MontgomeryPoint {
+    fn mul_assign(&mut self, scalar: &Scalar) {
         *self = (self as &MontgomeryPoint) * scalar;
     }
 }
 
-impl<'a, 'b> Mul<&'b MontgomeryPoint> for &'a Scalar {
+impl Mul<&MontgomeryPoint> for &Scalar {
     type Output = MontgomeryPoint;
 
-    fn mul(self, point: &'b MontgomeryPoint) -> MontgomeryPoint {
+    fn mul(self, point: &MontgomeryPoint) -> MontgomeryPoint {
         point * self
     }
 }

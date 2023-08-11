@@ -100,7 +100,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "2.0.0-rc.3"
+x25519-dalek = "2"
 ```
 
 # MSRV

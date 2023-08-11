@@ -101,7 +101,7 @@ impl EphemeralSecret {
     /// Generate a new [`EphemeralSecret`].
     #[cfg(feature = "getrandom")]
     pub fn random() -> Self {
-        Self::random_from_rng(&mut rand_core::OsRng)
+        Self::random_from_rng(rand_core::OsRng)
     }
 }
 

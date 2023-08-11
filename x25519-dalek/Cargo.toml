@@ -6,7 +6,7 @@ edition = "2021"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "2.0.0-rc.3"
+version = "2.0.0"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",
@@ -45,7 +45,7 @@ zeroize = { version = "1", default-features = false, optional = true, features =
 
 [dev-dependencies]
 bincode = "1"
-criterion = "0.4.0"
+criterion = "0.5"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
 [[bench]]

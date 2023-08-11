@@ -110,8 +110,8 @@ pub fn unsafe_target_feature_specialize(
         let features: Vec<_> = attributes
             .lit()
             .value()
-            .split(",")
-            .map(|feature| feature.replace(" ", ""))
+            .split(',')
+            .map(|feature| feature.replace(' ', ""))
             .collect();
         let name = format!("{}_{}", item_mod.ident, features.join("_"));
         let ident = syn::Ident::new(&name, item_mod.ident.span());

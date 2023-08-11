@@ -5,20 +5,10 @@ verification.
 
 # Use
 
-## Stable
-
 To import `ed25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-ed25519-dalek = "1"
-```
-
-## Beta
-
-To use the latest prerelease (see changes [below](#breaking-changes-in-200)),
-use the following line in your project's `Cargo.toml`:
-```toml
-ed25519-dalek = "2.0.0-rc.3"
+ed25519-dalek = "2"
 ```
 
 # Feature Flags

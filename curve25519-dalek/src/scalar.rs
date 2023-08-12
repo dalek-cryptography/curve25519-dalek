@@ -1240,6 +1240,7 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
 ///
 /// See [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/) for
 /// more details.
+#[must_use]
 pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
     bytes[0] &= 0b1111_1000;
     bytes[31] &= 0b0111_1111;

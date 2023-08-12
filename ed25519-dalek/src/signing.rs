@@ -110,6 +110,12 @@ impl SigningKey {
         self.secret_key
     }
 
+    /// Convert this [`SigningKey`] into a [`SecretKey`] reference
+    #[inline]
+    pub fn as_bytes(&self) -> &SecretKey {
+        &self.secret_key
+    }
+
     /// Construct a [`SigningKey`] from the bytes of a `VerifyingKey` and `SecretKey`.
     ///
     /// # Inputs

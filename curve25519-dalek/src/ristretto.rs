@@ -180,9 +180,6 @@ use digest::Digest;
 use crate::constants;
 use crate::field::FieldElement;
 
-#[cfg(feature = "alloc")]
-use cfg_if::cfg_if;
-
 #[cfg(feature = "group")]
 use {
     group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},

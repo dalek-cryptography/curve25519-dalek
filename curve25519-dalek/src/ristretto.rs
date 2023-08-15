@@ -255,14 +255,13 @@ impl CompressedRistretto {
     pub fn decompress(&self) -> Option<RistrettoPoint> {
         let (s_encoding_is_canonical, s_is_negative, s) = decompress::step_1(self);
 
-        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
+        if (!s_encoding_is_canonical | s_is_negative).into() {
             return None;
         }
 
         let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
 
-        if ok.unwrap_u8() == 0u8 || t_is_negative.unwrap_u8() == 1u8 || y_is_zero.unwrap_u8() == 1u8
-        {
+        if (!ok | t_is_negative | y_is_zero).into() {
             None
         } else {
             Some(res)

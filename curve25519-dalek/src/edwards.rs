@@ -192,10 +192,12 @@ impl CompressedEdwardsY {
     /// curve point.
     pub fn decompress(&self) -> Option<EdwardsPoint> {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
-        if (!is_valid_y_coord).into() {
-            return None;
+
+        if is_valid_y_coord.into() {
+            Some(decompress::step_2(self, X, Y, Z))
+        } else {
+            None
         }
-        Some(decompress::step_2(self, X, Y, Z))
     }
 }
 

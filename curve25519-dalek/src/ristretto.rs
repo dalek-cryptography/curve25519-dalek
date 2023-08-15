@@ -180,6 +180,16 @@ use digest::Digest;
 use crate::constants;
 use crate::field::FieldElement;
 
+#[cfg(feature = "alloc")]
+use cfg_if::cfg_if;
+
+#[cfg(feature = "group")]
+use {
+    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    rand_core::RngCore,
+    subtle::CtOption,
+};
+
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
@@ -246,6 +256,27 @@ impl CompressedRistretto {
     ///
     /// - `None` if `self` was not the canonical encoding of a point.
     pub fn decompress(&self) -> Option<RistrettoPoint> {
+        let (s_encoding_is_canonical, s_is_negative, s) = decompress::step_1(self);
+
+        if s_encoding_is_canonical.unwrap_u8() == 0u8 || s_is_negative.unwrap_u8() == 1u8 {
+            return None;
+        }
+
+        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
+
+        if ok.unwrap_u8() == 0u8 || t_is_negative.unwrap_u8() == 1u8 || y_is_zero.unwrap_u8() == 1u8
+        {
+            None
+        } else {
+            Some(res)
+        }
+    }
+}
+
+mod decompress {
+    use super::*;
+
+    pub(super) fn step_1(repr: &CompressedRistretto) -> (Choice, Choice, FieldElement) {
         // Step 1. Check s for validity:
         // 1.a) s must be 32 bytes (we get this from the type system)
         // 1.b) s < p
@@ -257,15 +288,15 @@ impl CompressedRistretto {
         // converting back to bytes, and checking that we get the
         // original input, since our encoding routine is canonical.
 
-        let s = FieldElement::from_bytes(self.as_bytes());
+        let s = FieldElement::from_bytes(repr.as_bytes());
         let s_bytes_check = s.as_bytes();
-        let s_encoding_is_canonical = s_bytes_check[..].ct_eq(self.as_bytes());
+        let s_encoding_is_canonical = s_bytes_check[..].ct_eq(repr.as_bytes());
         let s_is_negative = s.is_negative();
 
-        if (!s_encoding_is_canonical | s_is_negative).into() {
-            return None;
-        }
+        (s_encoding_is_canonical, s_is_negative, s)
+    }
 
+    pub(super) fn step_2(s: FieldElement) -> (Choice, Choice, Choice, RistrettoPoint) {
         // Step 2.  Compute (X:Y:Z:T).
         let one = FieldElement::ONE;
         let ss = s.square();
@@ -292,16 +323,17 @@ impl CompressedRistretto {
         // t == ((1+as²) sqrt(4s²/(ad(1+as²)² - (1-as²)²)))/(1-as²)
         let t = &x * &y;
 
-        if (!ok | t.is_negative() | y.is_zero()).into() {
-            None
-        } else {
-            Some(RistrettoPoint(EdwardsPoint {
+        (
+            ok,
+            t.is_negative(),
+            y.is_zero(),
+            RistrettoPoint(EdwardsPoint {
                 X: x,
                 Y: y,
                 Z: one,
                 T: t,
-            }))
-        }
+            }),
+        )
     }
 }
 
@@ -1138,6 +1170,86 @@ impl Debug for RistrettoPoint {
             "RistrettoPoint: coset \n{:?}\n{:?}\n{:?}\n{:?}",
             coset[0], coset[1], coset[2], coset[3]
         )
+    }
+}
+
+// ------------------------------------------------------------------------
+// group traits
+// ------------------------------------------------------------------------
+
+// Use the full trait path to avoid Group::identity overlapping Identity::identity in the
+// rest of the module (e.g. tests).
+#[cfg(feature = "group")]
+impl group::Group for RistrettoPoint {
+    type Scalar = Scalar;
+
+    fn random(mut rng: impl RngCore) -> Self {
+        // NOTE: this is duplicated due to different `rng` bounds
+        let mut uniform_bytes = [0u8; 64];
+        rng.fill_bytes(&mut uniform_bytes);
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+    }
+
+    fn identity() -> Self {
+        Identity::identity()
+    }
+
+    fn generator() -> Self {
+        constants::RISTRETTO_BASEPOINT_POINT
+    }
+
+    fn is_identity(&self) -> Choice {
+        self.ct_eq(&Identity::identity())
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+}
+
+#[cfg(feature = "group")]
+impl GroupEncoding for RistrettoPoint {
+    type Repr = [u8; 32];
+
+    fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
+        let (s_encoding_is_canonical, s_is_negative, s) =
+            decompress::step_1(&CompressedRistretto(*bytes));
+
+        let s_is_valid = s_encoding_is_canonical & !s_is_negative;
+
+        let (ok, t_is_negative, y_is_zero, res) = decompress::step_2(s);
+
+        CtOption::new(res, s_is_valid & ok & !t_is_negative & !y_is_zero)
+    }
+
+    fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
+        // Just use the checked API; the checks we could skip aren't expensive.
+        Self::from_bytes(bytes)
+    }
+
+    fn to_bytes(&self) -> Self::Repr {
+        self.compress().to_bytes()
+    }
+}
+
+#[cfg(feature = "group")]
+impl PrimeGroup for RistrettoPoint {}
+
+/// Ristretto has a cofactor of 1.
+#[cfg(feature = "group")]
+impl CofactorGroup for RistrettoPoint {
+    type Subgroup = Self;
+
+    fn clear_cofactor(&self) -> Self::Subgroup {
+        *self
+    }
+
+    fn into_subgroup(self) -> CtOption<Self::Subgroup> {
+        CtOption::new(self, Choice::from(1))
+    }
+
+    fn is_torsion_free(&self) -> Choice {
+        Choice::from(1)
     }
 }
 

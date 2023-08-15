@@ -44,6 +44,10 @@ extern crate std;
 #[cfg(feature = "digest")]
 pub use digest;
 
+// TODO: Remove once our MSRV supports namespaced features.
+#[cfg(feature = "group")]
+extern crate group_crate as group;
+
 // Internal macros. Must come first!
 #[macro_use]
 pub(crate) mod macros;

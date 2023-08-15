@@ -124,6 +124,12 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
+use {
+    group::ff::{Field, FromUniformBytes, PrimeField},
+    rand_core::RngCore,
+};
+
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
 
@@ -1201,6 +1207,126 @@ impl UnpackedScalar {
     }
 }
 
+#[cfg(feature = "group")]
+impl Field for Scalar {
+    const ZERO: Self = Self::ZERO;
+    const ONE: Self = Self::ONE;
+
+    fn random(mut rng: impl RngCore) -> Self {
+        // NOTE: this is duplicated due to different `rng` bounds
+        let mut scalar_bytes = [0u8; 64];
+        rng.fill_bytes(&mut scalar_bytes);
+        Self::from_bytes_mod_order_wide(&scalar_bytes)
+    }
+
+    fn square(&self) -> Self {
+        self * self
+    }
+
+    fn double(&self) -> Self {
+        self + self
+    }
+
+    fn invert(&self) -> CtOption<Self> {
+        CtOption::new(self.invert(), !self.is_zero())
+    }
+
+    fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
+        group::ff::helpers::sqrt_ratio_generic(num, div)
+    }
+
+    fn sqrt(&self) -> CtOption<Self> {
+        group::ff::helpers::sqrt_tonelli_shanks(
+            self,
+            [
+                0xcb02_4c63_4b9e_ba7d,
+                0x029b_df3b_d45e_f39a,
+                0x0000_0000_0000_0000,
+                0x0200_0000_0000_0000,
+            ],
+        )
+    }
+}
+
+#[cfg(feature = "group")]
+impl PrimeField for Scalar {
+    type Repr = [u8; 32];
+
+    fn from_repr(repr: Self::Repr) -> CtOption<Self> {
+        Self::from_canonical_bytes(repr)
+    }
+
+    fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
+        // Check that the high bit is not set
+        if (repr[31] >> 7) != 0u8 {
+            return None;
+        }
+
+        let candidate = Scalar::from_bits(repr);
+
+        if candidate == candidate.reduce() {
+            Some(candidate)
+        } else {
+            None
+        }
+    }
+
+    fn to_repr(&self) -> Self::Repr {
+        self.to_bytes()
+    }
+
+    fn is_odd(&self) -> Choice {
+        Choice::from(self.as_bytes()[0] & 1)
+    }
+
+    const MODULUS: &'static str =
+        "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed";
+    const NUM_BITS: u32 = 253;
+    const CAPACITY: u32 = 252;
+
+    const TWO_INV: Self = Self {
+        bytes: [
+            0xf7, 0xe9, 0x7a, 0x2e, 0x8d, 0x31, 0x09, 0x2c, 0x6b, 0xce, 0x7b, 0x51, 0xef, 0x7c,
+            0x6f, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x08,
+        ],
+    };
+    const MULTIPLICATIVE_GENERATOR: Self = Self {
+        bytes: [
+            2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    };
+    const S: u32 = 2;
+    const ROOT_OF_UNITY: Self = Self {
+        bytes: [
+            0xd4, 0x07, 0xbe, 0xeb, 0xdf, 0x75, 0x87, 0xbe, 0xfe, 0x83, 0xce, 0x42, 0x53, 0x56,
+            0xf0, 0x0e, 0x7a, 0xc2, 0xc1, 0xab, 0x60, 0x6d, 0x3d, 0x7d, 0xe7, 0x81, 0x79, 0xe0,
+            0x10, 0x73, 0x4a, 0x09,
+        ],
+    };
+    const ROOT_OF_UNITY_INV: Self = Self {
+        bytes: [
+            0x19, 0xcc, 0x37, 0x71, 0x3a, 0xed, 0x8a, 0x99, 0xd7, 0x18, 0x29, 0x60, 0x8b, 0xa3,
+            0xee, 0x05, 0x86, 0x3d, 0x3e, 0x54, 0x9f, 0x92, 0xc2, 0x82, 0x18, 0x7e, 0x86, 0x1f,
+            0xef, 0x8c, 0xb5, 0x06,
+        ],
+    };
+    const DELTA: Self = Self {
+        bytes: [
+            16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    };
+}
+
+#[cfg(feature = "group")]
+impl FromUniformBytes<64> for Scalar {
+    fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
+        Scalar::from_bytes_mod_order_wide(bytes)
+    }
+}
+
 /// Read one or more u64s stored as little endian bytes.
 ///
 /// ## Panics
@@ -1811,6 +1937,56 @@ pub(crate) mod test {
         let x = 0x2323_2323_2323_2323_2323_2323_2323_2323u128;
         let sx = Scalar::from(x);
         assert_eq!(sx + s1, Scalar::from(x + 1));
+    }
+
+    #[cfg(feature = "group")]
+    #[test]
+    fn ff_constants() {
+        assert_eq!(Scalar::from(2u64) * Scalar::TWO_INV, Scalar::ONE);
+
+        assert_eq!(
+            Scalar::ROOT_OF_UNITY * Scalar::ROOT_OF_UNITY_INV,
+            Scalar::ONE,
+        );
+
+        // ROOT_OF_UNITY^{2^s} mod m == 1
+        assert_eq!(
+            Scalar::ROOT_OF_UNITY.pow(&[1u64 << Scalar::S, 0, 0, 0]),
+            Scalar::ONE,
+        );
+
+        // DELTA^{t} mod m == 1
+        assert_eq!(
+            Scalar::DELTA.pow(&[
+                0x9604_98c6_973d_74fb,
+                0x0537_be77_a8bd_e735,
+                0x0000_0000_0000_0000,
+                0x0400_0000_0000_0000,
+            ]),
+            Scalar::ONE,
+        );
+    }
+
+    #[cfg(feature = "group")]
+    #[test]
+    fn ff_impls() {
+        assert!(bool::from(Scalar::ZERO.is_even()));
+        assert!(bool::from(Scalar::ONE.is_odd()));
+        assert!(bool::from(Scalar::from(2u64).is_even()));
+        assert!(bool::from(Scalar::DELTA.is_even()));
+
+        assert!(bool::from(Field::invert(&Scalar::ZERO).is_none()));
+        assert_eq!(Field::invert(&X).unwrap(), XINV);
+
+        let x_sq = X.square();
+        // We should get back either the positive or negative root.
+        assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
+
+        assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
+        assert_eq!(Scalar::from_repr_vartime([0xff; 32]), None);
+
+        assert_eq!(Scalar::from_repr(X.to_repr()).unwrap(), X);
+        assert!(bool::from(Scalar::from_repr([0xff; 32]).is_none()));
     }
 
     #[test]

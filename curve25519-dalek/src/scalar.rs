@@ -1256,12 +1256,14 @@ impl PrimeField for Scalar {
         Self::from_canonical_bytes(repr)
     }
 
+    #[cfg(feature = "legacy_compatibility")]
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
         // Check that the high bit is not set
         if (repr[31] >> 7) != 0u8 {
             return None;
         }
 
+        #[allow(deprecated)]
         let candidate = Scalar::from_bits(repr);
 
         if candidate == candidate.reduce() {

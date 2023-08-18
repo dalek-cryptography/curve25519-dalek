@@ -1352,9 +1352,9 @@ impl Neg for SubgroupPoint {
 }
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Add<&'b SubgroupPoint> for &'a SubgroupPoint {
+impl Add<&SubgroupPoint> for &SubgroupPoint {
     type Output = SubgroupPoint;
-    fn add(self, other: &'b SubgroupPoint) -> SubgroupPoint {
+    fn add(self, other: &SubgroupPoint) -> SubgroupPoint {
         SubgroupPoint(self.0 + other.0)
     }
 }
@@ -1367,9 +1367,9 @@ define_add_variants!(
 );
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Add<&'b SubgroupPoint> for &'a EdwardsPoint {
+impl Add<&SubgroupPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
-    fn add(self, other: &'b SubgroupPoint) -> EdwardsPoint {
+    fn add(self, other: &SubgroupPoint) -> EdwardsPoint {
         self + other.0
     }
 }
@@ -1402,9 +1402,9 @@ impl AddAssign<&SubgroupPoint> for EdwardsPoint {
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = SubgroupPoint);
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Sub<&'b SubgroupPoint> for &'a SubgroupPoint {
+impl Sub<&SubgroupPoint> for &SubgroupPoint {
     type Output = SubgroupPoint;
-    fn sub(self, other: &'b SubgroupPoint) -> SubgroupPoint {
+    fn sub(self, other: &SubgroupPoint) -> SubgroupPoint {
         SubgroupPoint(self.0 - other.0)
     }
 }
@@ -1417,9 +1417,9 @@ define_sub_variants!(
 );
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Sub<&'b SubgroupPoint> for &'a EdwardsPoint {
+impl Sub<&SubgroupPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
-    fn sub(self, other: &'b SubgroupPoint) -> EdwardsPoint {
+    fn sub(self, other: &SubgroupPoint) -> EdwardsPoint {
         self - other.0
     }
 }
@@ -1466,14 +1466,14 @@ where
 }
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Mul<&'b Scalar> for &'a SubgroupPoint {
+impl Mul<&Scalar> for &SubgroupPoint {
     type Output = SubgroupPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, scalar: &'b Scalar) -> SubgroupPoint {
+    fn mul(self, scalar: &Scalar) -> SubgroupPoint {
         SubgroupPoint(self.0 * scalar)
     }
 }
@@ -1482,14 +1482,14 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a SubgroupPoint {
 define_mul_variants!(LHS = Scalar, RHS = SubgroupPoint, Output = SubgroupPoint);
 
 #[cfg(feature = "group")]
-impl<'a, 'b> Mul<&'b SubgroupPoint> for &'a Scalar {
+impl Mul<&SubgroupPoint> for &Scalar {
     type Output = SubgroupPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, point: &'b SubgroupPoint) -> SubgroupPoint {
+    fn mul(self, point: &SubgroupPoint) -> SubgroupPoint {
         point * self
     }
 }

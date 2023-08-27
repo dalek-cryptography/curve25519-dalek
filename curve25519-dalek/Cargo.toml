@@ -48,6 +48,7 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
+group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.3.0", default-features = false }
@@ -65,6 +66,7 @@ default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
+group = ["dep:group", "rand_core"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

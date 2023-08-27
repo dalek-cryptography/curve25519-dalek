@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### Unreleased
+
+* Add implementations of the `ff` and `group` traits, behind the `group` feature flag.
+
 ### 4.0.0
 
 #### Breaking changes

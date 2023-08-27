@@ -436,13 +436,14 @@ impl<'de> Deserialize<'de> for Scalar {
                 A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
                         .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
                 }
                 Option::from(Scalar::from_canonical_bytes(bytes))
-                    .ok_or_else(|| serde::de::Error::custom(&"scalar was not canonically encoded"))
+                    .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
             }
         }
 
@@ -1476,13 +1477,13 @@ pub(crate) mod test {
     #[cfg(feature = "alloc")]
     fn impl_product() {
         // Test that product works for non-empty iterators
-        let X_Y_vector = vec![X, Y];
+        let X_Y_vector = [X, Y];
         let should_be_X_times_Y: Scalar = X_Y_vector.iter().product();
         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
 
         // Test that product works for the empty iterator
         let one = Scalar::ONE;
-        let empty_vector = vec![];
+        let empty_vector = [];
         let should_be_one: Scalar = empty_vector.iter().product();
         assert_eq!(should_be_one, one);
 
@@ -1507,13 +1508,13 @@ pub(crate) mod test {
     fn impl_sum() {
         // Test that sum works for non-empty iterators
         let two = Scalar::from(2u64);
-        let one_vector = vec![Scalar::ONE, Scalar::ONE];
+        let one_vector = [Scalar::ONE, Scalar::ONE];
         let should_be_two: Scalar = one_vector.iter().sum();
         assert_eq!(should_be_two, two);
 
         // Test that sum works for the empty iterator
         let zero = Scalar::ZERO;
-        let empty_vector = vec![];
+        let empty_vector = [];
         let should_be_zero: Scalar = empty_vector.iter().sum();
         assert_eq!(should_be_zero, zero);
 

@@ -388,6 +388,7 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
                 A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
@@ -423,6 +424,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
                 A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
@@ -1270,7 +1272,7 @@ mod test {
         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
         // Check that bp_recaf differs from bp by a point of order 4
-        let diff = &constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
+        let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
         let diff4 = diff.mul_by_pow_2(2);
         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
     }
@@ -1681,7 +1683,7 @@ mod test {
         ];
         // Check that onewaymap(input) == output for all the above vectors
         for (input, output) in test_vectors {
-            let Q = RistrettoPoint::from_uniform_bytes(&input);
+            let Q = RistrettoPoint::from_uniform_bytes(input);
             assert_eq!(&Q.compress(), output);
         }
     }

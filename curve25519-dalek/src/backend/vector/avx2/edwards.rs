@@ -240,7 +240,7 @@ impl ConditionallySelectable for CachedPoint {
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a> Neg for &'a CachedPoint {
+impl Neg for &CachedPoint {
     type Output = CachedPoint;
     /// Lazily negate the point.
     ///
@@ -255,11 +255,11 @@ impl<'a> Neg for &'a CachedPoint {
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
+impl Add<&CachedPoint> for &ExtendedPoint {
     type Output = ExtendedPoint;
 
     /// Add an `ExtendedPoint` and a `CachedPoint`.
-    fn add(self, other: &'b CachedPoint) -> ExtendedPoint {
+    fn add(self, other: &CachedPoint) -> ExtendedPoint {
         // The coefficients of an `ExtendedPoint` are reduced after
         // every operation.  If the `CachedPoint` was negated, its
         // coefficients grow by one bit.  So on input, `self` is
@@ -293,7 +293,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
+impl Sub<&CachedPoint> for &ExtendedPoint {
     type Output = ExtendedPoint;
 
     /// Implement subtraction by negating the point and adding.
@@ -301,14 +301,14 @@ impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     /// Empirically, this seems about the same cost as a custom
     /// subtraction impl (maybe because the benefit is cancelled by
     /// increased code size?)
-    fn sub(self, other: &'b CachedPoint) -> ExtendedPoint {
+    fn sub(self, other: &CachedPoint) -> ExtendedPoint {
         self + &(-other)
     }
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
-    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+impl From<&edwards::EdwardsPoint> for LookupTable<CachedPoint> {
+    fn from(point: &edwards::EdwardsPoint) -> Self {
         let P = ExtendedPoint::from(*point);
         let mut points = [CachedPoint::from(P); 8];
         for i in 0..7 {
@@ -319,8 +319,8 @@ impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
-    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+impl From<&edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
+    fn from(point: &edwards::EdwardsPoint) -> Self {
         let A = ExtendedPoint::from(*point);
         let mut Ai = [CachedPoint::from(A); 8];
         let A2 = A.double();
@@ -334,8 +334,8 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
 
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 #[unsafe_target_feature("avx2")]
-impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
-    fn from(point: &'a edwards::EdwardsPoint) -> Self {
+impl From<&edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
+    fn from(point: &edwards::EdwardsPoint) -> Self {
         let A = ExtendedPoint::from(*point);
         let mut Ai = [CachedPoint::from(A); 64];
         let A2 = A.double();

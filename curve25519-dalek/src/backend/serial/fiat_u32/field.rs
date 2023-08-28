@@ -58,7 +58,7 @@ use fiat_crypto::curve25519_32::*;
 pub struct FieldElement2625(pub(crate) [u32; 10]);
 
 impl Debug for FieldElement2625 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "FieldElement2625({:?})", &self.0[..])
     }
 }

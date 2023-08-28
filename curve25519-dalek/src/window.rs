@@ -83,7 +83,7 @@ macro_rules! impl_lookup_table {
         }
 
         impl<T: Debug> Debug for $name<T> {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 write!(f, "{:?}(", stringify!($name))?;
 
                 for x in self.0.iter() {
@@ -193,7 +193,7 @@ impl<T: Copy> NafLookupTable5<T> {
 }
 
 impl<T: Debug> Debug for NafLookupTable5<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "NafLookupTable5({:?})", self.0)
     }
 }
@@ -240,7 +240,7 @@ impl<T: Copy> NafLookupTable8<T> {
 
 #[cfg(any(feature = "precomputed-tables", feature = "alloc"))]
 impl<T: Debug> Debug for NafLookupTable8<T> {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         writeln!(f, "NafLookupTable8([")?;
         for i in 0..64 {
             writeln!(f, "\t{:?},", &self.0[i])?;

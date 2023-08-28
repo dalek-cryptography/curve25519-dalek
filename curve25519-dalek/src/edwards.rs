@@ -170,7 +170,7 @@ impl ConstantTimeEq for CompressedEdwardsY {
 }
 
 impl Debug for CompressedEdwardsY {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
     }
 }
@@ -301,7 +301,7 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
         impl<'de> Visitor<'de> for EdwardsPointVisitor {
             type Value = EdwardsPoint;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
@@ -337,7 +337,7 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
         impl<'de> Visitor<'de> for CompressedEdwardsYVisitor {
             type Value = CompressedEdwardsY;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 formatter.write_str("32 bytes of data")
             }
 
@@ -1052,7 +1052,7 @@ macro_rules! impl_basepoint_table {
         }
 
         impl Debug for $name {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 write!(f, "{:?}([\n", stringify!($name))?;
                 for i in 0..32 {
                     write!(f, "\t{:?},\n", &self.0[i])?;
@@ -1263,7 +1263,7 @@ impl EdwardsPoint {
 // ------------------------------------------------------------------------
 
 impl Debug for EdwardsPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(
             f,
             "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",

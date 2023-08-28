@@ -49,6 +49,7 @@ curve25519-dalek = "4"
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
+| `group`            |          | Enables external `group` and `ff` crate traits |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To
@@ -190,9 +191,9 @@ From 4.x and on, MSRV changes will be accompanied by a minor version bump.
 Breaking changes to SemVer exempted components affecting the public API will be accompanied by
 _some_ version bump. Below are the specific policies:
 
-| Releases | Public API Component(s)               | Policy              |
-| :---     | :---                                  | :---                |
-| 4.x      | Dependencies `digest` and `rand_core` | Minor SemVer bump   |
+| Releases | Public API Component(s)                         | Policy              |
+| :---     | :---                                            | :---                |
+| 4.x      | Dependencies `group`, `digest` and `rand_core`  | Minor SemVer bump   |
 
 # Safety
 

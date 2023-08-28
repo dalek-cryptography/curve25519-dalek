@@ -111,6 +111,7 @@ mod inner_spec {
     #[for_target_feature("avx2")]
     const IS_AVX2: bool = true;
 
+    #[allow(clippy::assertions_on_constants)]
     #[test]
     fn test_specialized() {
         assert!(!IS_AVX2);
@@ -118,6 +119,7 @@ mod inner_spec {
 
     #[cfg(test)]
     mod tests {
+        #[allow(clippy::assertions_on_constants)]
         #[test]
         fn test_specialized_inner() {
             assert!(!super::IS_AVX2);

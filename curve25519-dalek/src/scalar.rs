@@ -1952,13 +1952,13 @@ pub(crate) mod test {
 
         // ROOT_OF_UNITY^{2^s} mod m == 1
         assert_eq!(
-            Scalar::ROOT_OF_UNITY.pow(&[1u64 << Scalar::S, 0, 0, 0]),
+            Scalar::ROOT_OF_UNITY.pow([1u64 << Scalar::S, 0, 0, 0]),
             Scalar::ONE,
         );
 
         // DELTA^{t} mod m == 1
         assert_eq!(
-            Scalar::DELTA.pow(&[
+            Scalar::DELTA.pow([
                 0x9604_98c6_973d_74fb,
                 0x0537_be77_a8bd_e735,
                 0x0000_0000_0000_0000,

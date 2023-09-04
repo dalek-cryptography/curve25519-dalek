@@ -3,10 +3,14 @@ name: curve25519 Rust
 on:
   push:
     branches: [ '**' ]
-    paths: 'curve25519-dalek/**'
+    paths:
+      - 'curve25519-dalek/**'
+      - '.github/workflows/curve25519-dalek.yml'
   pull_request:
     branches: [ '**' ]
-    paths: 'curve25519-dalek/**'
+    paths:
+      - 'curve25519-dalek/**'
+      - '.github/workflows/curve25519-dalek.yml'
 
 defaults:
   run:
@@ -38,6 +42,31 @@ jobs:
       - env:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
+
+  # Default no_std test only tests using serial across all crates
+  build-nostd-fiat:
+    name: Build fiat on no_std target (thumbv7em-none-eabi)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - crate: curve25519-dalek
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabi
+      - uses: taiki-e/install-action@cargo-hack
+      # No default features build
+      - name: no_std fiat / no feat ${{ matrix.crate }}
+        env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
+        run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
+      - name: no_std fiat / cargo hack ${{ matrix.crate }}
+        env:
+          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'      
+        run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
 
   test-serial:
     name: Test serial backend

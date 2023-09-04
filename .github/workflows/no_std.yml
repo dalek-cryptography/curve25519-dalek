@@ -12,8 +12,8 @@ env:
 
 jobs:
 
-  build-nostd:
-    name: Build on no_std target (thumbv7em-none-eabi)
+  build-nostd-serial:
+    name: Build serial on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -55,8 +55,9 @@ use crate::{
 pub type SecretKey = [u8; SECRET_KEY_LENGTH];
 
 /// ed25519 signing key which can be used to produce signatures.
-// Invariant: `public` is always the public key of `secret`. This prevents the signing function
-// oracle attack described in https://github.com/MystenLabs/ed25519-unsafe-libs
+// Invariant: `verifying_key` is always the public key of
+// `secret_key`. This prevents the signing function oracle attack
+// described in https://github.com/MystenLabs/ed25519-unsafe-libs
 #[derive(Clone, Debug)]
 pub struct SigningKey {
     /// The secret half of this signing key.

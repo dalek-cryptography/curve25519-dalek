@@ -33,12 +33,13 @@ cofactor-related abstraction mismatches.
 ## Stable
 
 To import `curve25519-dalek`, add the following to the dependencies section of
-your project's `Cargo.toml`
+your project's `Cargo.toml`:
 ```toml
 curve25519-dalek = "4"
 ```
 
-Optionally if opting into SemVer [exempted features](#public-api-semver-exemptions), you may use:
+Optionally if opting into SemVer [exempted features](#public-api-semver-exemptions)
+a range can be used to define the tested compatible version range e.g. 4.0 - 4.1:
 ```toml
 curve25519-dalek = ">= 4.0, < 4.2"
 ```

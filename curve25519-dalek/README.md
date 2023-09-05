@@ -33,9 +33,14 @@ cofactor-related abstraction mismatches.
 ## Stable
 
 To import `curve25519-dalek`, add the following to the dependencies section of
-your project's `Cargo.toml`:
+your project's `Cargo.toml`
 ```toml
 curve25519-dalek = "4"
+```
+
+Optionally if opting into SemVer [exempted features](#public-api-semver-exemptions), you may use:
+```toml
+curve25519-dalek = ">= 4.0, < 4.2"
 ```
 
 ## Feature Flags
@@ -303,8 +308,8 @@ Thanks also to Ashley Hauck, Lucas Salibian, Manish Goregaokar, Jack Grigg,
 Pratyush Mishra, Michael Rosenberg, @pinkforest, and countless others for their
 contributions.
 
-[ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
-[x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
+[ed25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/ed25519-dalek
+[x25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/x25519-dalek
 [docs]: https://docs.rs/curve25519-dalek/
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
 [criterion]: https://github.com/japaric/criterion.rs

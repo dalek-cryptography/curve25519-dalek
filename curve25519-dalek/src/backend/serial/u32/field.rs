@@ -284,12 +284,16 @@ impl ConditionallySelectable for FieldElement2625 {
 }
 
 impl FieldElement2625 {
+    pub(crate) const fn from_limbs(limbs: [u32; 10]) -> FieldElement2625 {
+        FieldElement2625(limbs)
+    }
+
     /// The scalar \\( 0 \\).
-    pub const ZERO: FieldElement2625 = FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ZERO: FieldElement2625 = FieldElement2625::from_limbs([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     /// The scalar \\( 1 \\).
-    pub const ONE: FieldElement2625 = FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ONE: FieldElement2625 = FieldElement2625::from_limbs([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     /// The scalar \\( -1 \\).
-    pub const MINUS_ONE: FieldElement2625 = FieldElement2625([
+    pub const MINUS_ONE: FieldElement2625 = FieldElement2625::from_limbs([
         0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
         0x3ffffff, 0x1ffffff,
     ]);

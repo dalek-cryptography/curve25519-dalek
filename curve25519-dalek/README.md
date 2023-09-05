@@ -309,8 +309,8 @@ Thanks also to Ashley Hauck, Lucas Salibian, Manish Goregaokar, Jack Grigg,
 Pratyush Mishra, Michael Rosenberg, @pinkforest, and countless others for their
 contributions.
 
-[ed25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/ed25519-dalek
-[x25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/x25519-dalek
+[ed25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/tree/main/ed25519-dalek
+[x25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek
 [docs]: https://docs.rs/curve25519-dalek/
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
 [criterion]: https://github.com/japaric/criterion.rs

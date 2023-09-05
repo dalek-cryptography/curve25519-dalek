@@ -38,8 +38,8 @@ your project's `Cargo.toml`:
 curve25519-dalek = "4"
 ```
 
-Optionally if opting into SemVer [exempted features](#public-api-semver-exemptions)
-a range can be used to define the tested compatible version range e.g. 4.0 - 4.1:
+If opting into SemVer [exempted features](#public-api-semver-exemptions) a range
+can be used to scope the tested compatible version range e.g.:
 ```toml
 curve25519-dalek = ">= 4.0, < 4.2"
 ```

@@ -5,9 +5,14 @@ major series.
 
 ## 4.x series
 
-### Unreleased
+### 4.1.0
 
-* Add implementations of the `ff` and `group` traits, behind the `group` feature flag.
+* Add arbitrary integer multiplication with `MontgomeryPoint::mul_bits_be`
+* Add implementations of the `ff` and `group` traits, behind the `group` feature flag
+* Adapt to new types introduced in `fiat-crypto` 0.2 in `fiat` backend
+* Fix `no_std` for `fiat` backend
+* Mark `Scalar::clamp_integer` as `#[must_use]`
+* Various documentation fixes
 
 ### 4.0.0
 

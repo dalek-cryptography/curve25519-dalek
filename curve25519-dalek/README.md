@@ -38,6 +38,12 @@ your project's `Cargo.toml`:
 curve25519-dalek = "4"
 ```
 
+If opting into SemVer [exempted features](#public-api-semver-exemptions) a range
+can be used to scope the tested compatible version range e.g.:
+```toml
+curve25519-dalek = ">= 4.0, < 4.2"
+```
+
 ## Feature Flags
 
 | Feature            | Default? | Description |
@@ -303,8 +309,8 @@ Thanks also to Ashley Hauck, Lucas Salibian, Manish Goregaokar, Jack Grigg,
 Pratyush Mishra, Michael Rosenberg, @pinkforest, and countless others for their
 contributions.
 
-[ed25519-dalek]: https://github.com/dalek-cryptography/ed25519-dalek
-[x25519-dalek]: https://github.com/dalek-cryptography/x25519-dalek
+[ed25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/tree/main/ed25519-dalek
+[x25519-dalek]: https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek
 [docs]: https://docs.rs/curve25519-dalek/
 [contributing]: https://github.com/dalek-cryptography/curve25519-dalek/blob/master/CONTRIBUTING.md
 [criterion]: https://github.com/japaric/criterion.rs

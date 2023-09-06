@@ -14,7 +14,7 @@ authors = [
 ]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/curve25519-dalek"
+repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek"
 homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/x25519-dalek"
 categories = ["cryptography", "no-std"]

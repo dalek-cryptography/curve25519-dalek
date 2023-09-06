@@ -9,7 +9,7 @@ authors = [
 ]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/curve25519-dalek"
+repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/ed25519-dalek"
 homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/ed25519-dalek"
 keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]

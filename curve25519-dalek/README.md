@@ -38,7 +38,7 @@ your project's `Cargo.toml`:
 curve25519-dalek = "4"
 ```
 
-If opting into SemVer [exempted features](#public-api-semver-exemptions) a range
+If opting into [SemVer-exempted features](#public-api-semver-exemptions) a range
 can be used to scope the tested compatible version range e.g.:
 ```toml
 curve25519-dalek = ">= 4.0, < 4.2"
@@ -194,7 +194,7 @@ From 4.x and on, MSRV changes will be accompanied by a minor version bump.
 
 ## Public API SemVer Exemptions
 
-Breaking changes to SemVer exempted components affecting the public API will be accompanied by
+Breaking changes to SemVer-exempted components affecting the public API will be accompanied by
 _some_ version bump. Below are the specific policies:
 
 | Releases | Public API Component(s)                         | Policy              |

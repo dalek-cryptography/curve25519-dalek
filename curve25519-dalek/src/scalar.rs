@@ -1330,10 +1330,7 @@ impl PrimeFieldBits for Scalar {
   }
 
   fn char_le_bits() -> FieldBits<Self::ReprBits> {
-    let mut bytes = (Scalar::ZERO - Scalar::ONE).to_repr();
-    bytes[0] += 1;
-    debug_assert_eq!(DScalar::from_bytes_mod_order(bytes), DScalar::ZERO);
-    bytes.into()
+    constants::BASEPOINT_ORDER.to_bytes().into()
   }
 }
 

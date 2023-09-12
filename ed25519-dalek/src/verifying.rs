@@ -43,6 +43,9 @@ use crate::{
     signing::SigningKey,
 };
 
+mod stream;
+pub use self::stream::StreamVerifier;
+
 /// An ed25519 public key.
 ///
 /// # Note
@@ -187,58 +190,8 @@ impl VerifyingKey {
         self.point.is_small_order()
     }
 
-    // A helper function that computes `H(R || A || M)` where `H` is the 512-bit hash function
-    // given by `CtxDigest` (this is SHA-512 in spec-compliant Ed25519). If `context.is_some()`,
-    // this does the prehashed variant of the computation using its contents.
-    #[allow(non_snake_case)]
-    fn compute_challenge<CtxDigest>(
-        context: Option<&[u8]>,
-        R: &CompressedEdwardsY,
-        A: &CompressedEdwardsY,
-        M: &[u8],
-    ) -> Scalar
-    where
-        CtxDigest: Digest<OutputSize = U64>,
-    {
-        let mut h = CtxDigest::new();
-        if let Some(c) = context {
-            h.update(b"SigEd25519 no Ed25519 collisions");
-            h.update([1]); // Ed25519ph
-            h.update([c.len() as u8]);
-            h.update(c);
-        }
-        h.update(R.as_bytes());
-        h.update(A.as_bytes());
-        h.update(M);
-
-        Scalar::from_hash(h)
-    }
-
-    // Helper function for verification. Computes the _expected_ R component of the signature. The
-    // caller compares this to the real R component.  If `context.is_some()`, this does the
-    // prehashed variant of the computation using its contents.
-    // Note that this returns the compressed form of R and the caller does a byte comparison. This
-    // means that all our verification functions do not accept non-canonically encoded R values.
-    // See the validation criteria blog post for more details:
-    //     https://hdevalence.ca/blog/2020-10-04-its-25519am
-    #[allow(non_snake_case)]
-    fn recompute_R<CtxDigest>(
-        &self,
-        context: Option<&[u8]>,
-        signature: &InternalSignature,
-        M: &[u8],
-    ) -> CompressedEdwardsY
-    where
-        CtxDigest: Digest<OutputSize = U64>,
-    {
-        let k = Self::compute_challenge::<CtxDigest>(context, &signature.R, &self.compressed, M);
-        let minus_A: EdwardsPoint = -self.point;
-        // Recall the (non-batched) verification equation: -[k]A + [s]B = R
-        EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &signature.s).compress()
-    }
-
     /// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R values. (see
-    /// [`Self::recompute_R`]). `CtxDigest` is the digest used to calculate the pseudorandomness
+    /// [`Self::RCompute`]). `CtxDigest` is the digest used to calculate the pseudorandomness
     /// needed for signing. According to the spec, `CtxDigest = Sha512`.
     ///
     /// This definition is loose in its parameters so that end-users of the `hazmat` module can
@@ -254,7 +207,30 @@ impl VerifyingKey {
     {
         let signature = InternalSignature::try_from(signature)?;
 
-        let expected_R = self.recompute_R::<CtxDigest>(None, &signature, message);
+        let expected_R = RCompute::<CtxDigest>::compute(self, signature, None, message);
+        if expected_R == signature.R {
+            Ok(())
+        } else {
+            Err(InternalError::Verify.into())
+        }
+    }
+
+    #[allow(non_snake_case)]
+    pub(crate) fn raw_verify_byupdate<CtxDigest, F>(
+        &self,
+        msg_update: F,
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError>
+    where
+        CtxDigest: Digest<OutputSize = U64>,
+        F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+    {
+        let signature = InternalSignature::try_from(signature)?;
+
+        let mut c = RCompute::<CtxDigest>::new(self, signature, None);
+        msg_update(&mut c.h)?;
+        let expected_R = c.finish();
+
         if expected_R == signature.R {
             Ok(())
         } else {
@@ -290,7 +266,8 @@ impl VerifyingKey {
         );
 
         let message = prehashed_message.finalize();
-        let expected_R = self.recompute_R::<CtxDigest>(Some(ctx), &signature, &message);
+
+        let expected_R = RCompute::<CtxDigest>::compute(self, signature, Some(ctx), &message);
 
         if expected_R == signature.R {
             Ok(())
@@ -416,7 +393,7 @@ impl VerifyingKey {
             return Err(InternalError::Verify.into());
         }
 
-        let expected_R = self.recompute_R::<Sha512>(None, &signature, message);
+        let expected_R = RCompute::<Sha512>::compute(self, signature, None, message);
         if expected_R == signature.R {
             Ok(())
         } else {
@@ -424,8 +401,21 @@ impl VerifyingKey {
         }
     }
 
+    /// Constructs stream verifier with candidate `signature`.
+    ///
+    /// Useful for cases where the whole message is not available all at once, allowing the
+    /// internal signature state to be updated incrementally and verified at the end. In some cases,
+    /// this will reduce the need for additional allocations.
+    pub fn verify_stream(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        let signature = InternalSignature::try_from(signature)?;
+        Ok(StreamVerifier::new(*self, signature))
+    }
+
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm,
-    /// using strict signture checking as defined by [`Self::verify_strict`].
+    /// using strict signature checking as defined by [`Self::verify_strict`].
     ///
     /// # Inputs
     ///
@@ -478,7 +468,7 @@ impl VerifyingKey {
         }
 
         let message = prehashed_message.finalize();
-        let expected_R = self.recompute_R::<Sha512>(Some(ctx), &signature, &message);
+        let expected_R = RCompute::<Sha512>::compute(self, signature, Some(ctx), &message);
 
         if expected_R == signature.R {
             Ok(())
@@ -504,6 +494,74 @@ impl VerifyingKey {
     /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509).
     pub fn to_montgomery(&self) -> MontgomeryPoint {
         self.point.to_montgomery()
+    }
+}
+
+// Helper for verification. Computes the _expected_ R component of the signature. The
+// caller compares this to the real R component.
+// For prehashed variants a `h` with the context already included can be provided.
+// Note that this returns the compressed form of R and the caller does a byte comparison. This
+// means that all our verification functions do not accept non-canonically encoded R values.
+// See the validation criteria blog post for more details:
+//     https://hdevalence.ca/blog/2020-10-04-its-25519am
+pub(crate) struct RCompute<CtxDigest> {
+    key: VerifyingKey,
+    signature: InternalSignature,
+    h: CtxDigest,
+}
+
+#[allow(non_snake_case)]
+impl<CtxDigest> RCompute<CtxDigest>
+where
+    CtxDigest: Digest<OutputSize = U64>,
+{
+    pub fn compute(
+        key: &VerifyingKey,
+        signature: InternalSignature,
+        prehash_ctx: Option<&[u8]>,
+        message: &[u8],
+    ) -> CompressedEdwardsY {
+        let mut c = Self::new(key, signature, prehash_ctx);
+        c.update(message);
+        c.finish()
+    }
+
+    pub fn new(
+        key: &VerifyingKey,
+        signature: InternalSignature,
+        prehash_ctx: Option<&[u8]>,
+    ) -> Self {
+        let R = &signature.R;
+        let A = &key.compressed;
+
+        let mut h = CtxDigest::new();
+        if let Some(c) = prehash_ctx {
+            h.update(b"SigEd25519 no Ed25519 collisions");
+            h.update([1]); // Ed25519ph
+            h.update([c.len() as u8]);
+            h.update(c);
+        }
+
+        h.update(R.as_bytes());
+        h.update(A.as_bytes());
+        Self {
+            key: *key,
+            signature,
+            h,
+        }
+    }
+
+    pub fn update(&mut self, m: &[u8]) {
+        self.h.update(m)
+    }
+
+    pub fn finish(self) -> CompressedEdwardsY {
+        let k = Scalar::from_hash(self.h);
+
+        let minus_A: EdwardsPoint = -self.key.point;
+        // Recall the (non-batched) verification equation: -[k]A + [s]B = R
+        EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(minus_A), &self.signature.s)
+            .compress()
     }
 }
 

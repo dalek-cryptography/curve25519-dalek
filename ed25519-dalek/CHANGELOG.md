@@ -34,6 +34,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Add `pkcs` feature to support PKCS #8 (de)serialization of `SigningKey` and `VerifyingKey`
 * Add `fast` feature to include basepoint tables
 * Add tests for validation criteria
+* Add `SigningKey::verify_stream()`, and `VerifyingKey::verify_stream()`
 * Impl `DigestSigner`/`DigestVerifier` for `SigningKey`/`VerifyingKey`, respectively
 * Impl `Hash` for `VerifyingKey`
 * Impl `Clone`, `Drop`, and `ZeroizeOnDrop` for `SigningKey`

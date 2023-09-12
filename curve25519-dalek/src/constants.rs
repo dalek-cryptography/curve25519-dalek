@@ -69,7 +69,7 @@ pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BAS
 /// $$
 /// \ell = 2^\{252\} + 27742317777372353535851937790883648493.
 /// $$
-#[deprecated(since = "5.0.0", note = "Should not have been in public API")]
+#[deprecated(since = "4.1.1", note = "Should not have been in public API")]
 pub const BASEPOINT_ORDER: Scalar = BASEPOINT_ORDER_PRIVATE;
 
 pub(crate) const BASEPOINT_ORDER_PRIVATE: Scalar = Scalar {

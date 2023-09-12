@@ -5,9 +5,9 @@ major series.
 
 ## 4.x series
 
-### Unreleased
+### 4.1.1
 
-* Mark `constants::BASEPOINT_ORDER` deprecated from pub API from 5.0.0
+* Mark `constants::BASEPOINT_ORDER` deprecated from pub API
 
 ### 4.1.0
 

@@ -126,7 +126,7 @@ use cfg_if::cfg_if;
 
 #[cfg(feature = "group")]
 use {
-    group::ff::{Field, FromUniformBytes, PrimeField},
+    group::ff::{Field, FromUniformBytes, PrimeField, PrimeFieldBits},
     rand_core::RngCore,
 };
 
@@ -1319,6 +1319,22 @@ impl PrimeField for Scalar {
             0, 0, 0,
         ],
     };
+}
+
+#[cfg(feature = "group")]
+impl PrimeFieldBits for Scalar {
+  type ReprBits = [u8; 32];
+
+  fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
+    self.to_repr().into()
+  }
+
+  fn char_le_bits() -> FieldBits<Self::ReprBits> {
+    let mut bytes = (Scalar::ZERO - Scalar::ONE).to_repr();
+    bytes[0] += 1;
+    debug_assert_eq!(DScalar::from_bytes_mod_order(bytes), DScalar::ZERO);
+    bytes.into()
+  }
 }
 
 #[cfg(feature = "group")]

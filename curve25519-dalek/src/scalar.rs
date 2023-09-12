@@ -124,9 +124,11 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group-bits")]
+use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
 use {
-    group::ff::{Field, FieldBits, FromUniformBytes, PrimeField, PrimeFieldBits},
+    group::ff::{Field, FromUniformBytes, PrimeField},
     rand_core::RngCore,
 };
 
@@ -1321,7 +1323,7 @@ impl PrimeField for Scalar {
     };
 }
 
-#[cfg(feature = "group")]
+#[cfg(feature = "group-bits")]
 impl PrimeFieldBits for Scalar {
     type ReprBits = [u8; 32];
 

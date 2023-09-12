@@ -126,7 +126,7 @@ use cfg_if::cfg_if;
 
 #[cfg(feature = "group")]
 use {
-    group::ff::{Field, FromUniformBytes, PrimeField, FieldBits, PrimeFieldBits},
+    group::ff::{Field, FieldBits, FromUniformBytes, PrimeField, PrimeFieldBits},
     rand_core::RngCore,
 };
 

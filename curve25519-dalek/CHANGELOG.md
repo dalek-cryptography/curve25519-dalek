@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### Unreleased
+
+* Mark `constants::BASEPOINT_ORDER` deprecated from pub API from 5.0.0
+
 ### 4.1.0
 
 * Add arbitrary integer multiplication with `MontgomeryPoint::mul_bits_be`

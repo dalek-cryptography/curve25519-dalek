@@ -8,24 +8,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! Various constants, such as the Ristretto and Ed25519 basepoints.
-//!
-//! Most of the constants are given with
-//! `LONG_DESCRIPTIVE_UPPER_CASE_NAMES`, but they can be brought into
-//! scope using a `let` binding:
-//!
-#![cfg_attr(feature = "precomputed-tables", doc = "```")]
-#![cfg_attr(not(feature = "precomputed-tables"), doc = "```ignore")]
-//! use curve25519_dalek::constants;
-//! use curve25519_dalek::traits::IsIdentity;
-//!
-//! let B = constants::RISTRETTO_BASEPOINT_TABLE;
-//! let l = &constants::BASEPOINT_ORDER;
-//!
-//! let A = l * B;
-//! assert!(A.is_identity());
-//! ```
 
 #![allow(non_snake_case)]
 
@@ -86,7 +69,10 @@ pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BAS
 /// $$
 /// \ell = 2^\{252\} + 27742317777372353535851937790883648493.
 /// $$
-pub const BASEPOINT_ORDER: Scalar = Scalar {
+#[deprecated(since = "4.1.1", note = "Should not have been in public API")]
+pub const BASEPOINT_ORDER: Scalar = BASEPOINT_ORDER_PRIVATE;
+
+pub(crate) const BASEPOINT_ORDER_PRIVATE: Scalar = Scalar {
     bytes: [
         0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde,
         0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

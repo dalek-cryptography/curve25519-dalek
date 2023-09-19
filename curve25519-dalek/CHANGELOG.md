@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### Unreleased
+
+* Add implementation for `PrimeFieldBits`, behind the `group-bits` feature flag.
+
 ### 4.1.0
 
 * Add arbitrary integer multiplication with `MontgomeryPoint::mul_bits_be`

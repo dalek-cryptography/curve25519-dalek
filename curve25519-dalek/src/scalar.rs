@@ -1332,7 +1332,7 @@ impl PrimeFieldBits for Scalar {
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
-        constants::BASEPOINT_ORDER.to_bytes().into()
+        constants::BASEPOINT_ORDER_PRIVATE.to_bytes().into()
     }
 }
 

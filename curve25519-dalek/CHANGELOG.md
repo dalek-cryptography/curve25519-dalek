@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### Unreleased
+
+* Add implementation for `PrimeFieldBits`, behind the `group-bits` feature flag.
+
 ### 4.1.1
 
 * Mark `constants::BASEPOINT_ORDER` deprecated from pub API

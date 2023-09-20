@@ -124,6 +124,8 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group-bits")]
+use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
 use {
     group::ff::{Field, FromUniformBytes, PrimeField},
@@ -1319,6 +1321,19 @@ impl PrimeField for Scalar {
             0, 0, 0,
         ],
     };
+}
+
+#[cfg(feature = "group-bits")]
+impl PrimeFieldBits for Scalar {
+    type ReprBits = [u8; 32];
+
+    fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
+        self.to_repr().into()
+    }
+
+    fn char_le_bits() -> FieldBits<Self::ReprBits> {
+        constants::BASEPOINT_ORDER_PRIVATE.to_bytes().into()
+    }
 }
 
 #[cfg(feature = "group")]

@@ -1254,7 +1254,7 @@ impl EdwardsPoint {
     /// assert_eq!((P+Q).is_torsion_free(), false);
     /// ```
     pub fn is_torsion_free(&self) -> bool {
-        (self * constants::BASEPOINT_ORDER).is_identity()
+        (self * constants::BASEPOINT_ORDER_PRIVATE).is_identity()
     }
 }
 
@@ -1580,7 +1580,7 @@ impl CofactorGroup for EdwardsPoint {
     }
 
     fn is_torsion_free(&self) -> Choice {
-        (self * constants::BASEPOINT_ORDER).ct_eq(&Self::identity())
+        (self * constants::BASEPOINT_ORDER_PRIVATE).ct_eq(&Self::identity())
     }
 }
 
@@ -1769,7 +1769,7 @@ mod test {
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER);
+        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER_PRIVATE);
         assert!(should_be_id.is_identity());
     }
 

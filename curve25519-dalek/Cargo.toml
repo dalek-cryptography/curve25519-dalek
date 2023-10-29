@@ -46,6 +46,11 @@ name = "dalek_benchmarks"
 harness = false
 required-features = ["alloc", "rand_core"]
 
+[[bench]]
+name = "ecdlp"
+harness = false
+required-features = ["alloc", "rand_core"]
+
 [dependencies]
 cfg-if = "1"
 ff = { version = "0.13", default-features = false, optional = true }
@@ -55,6 +60,7 @@ digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.3.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
+itertools = "0.11.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
@@ -65,6 +71,7 @@ fiat-crypto = { version = "0.2.1", default-features = false }
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
+precompute_table_gen = []
 precomputed-tables = []
 legacy_compatibility = []
 group = ["dep:group", "rand_core"]

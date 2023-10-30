@@ -39,11 +39,6 @@ use crate::constants;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
-        #[cfg(curve25519_dalek_bits = "32")]
-        pub use backend::serial::fiat_u32::field::*;
-        #[cfg(curve25519_dalek_bits = "64")]
-        pub use backend::serial::fiat_u64::field::*;
-
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
@@ -64,8 +59,6 @@ cfg_if! {
         #[cfg(curve25519_dalek_bits = "64")]
         pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
-        pub use crate::backend::serial::u64::field::*;
-
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
@@ -73,14 +66,12 @@ cfg_if! {
         /// implementations.
         pub type FieldElement = backend::serial::u64::field::FieldElement51;
     } else {
-        pub use backend::serial::u32::field::*;
-
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
         /// implementations.
-        pub type FieldElement = backend::serial::u32::field::FieldElement2625;
+        type FieldElement = backend::serial::u32::field::FieldElement2625;
     }
 }
 

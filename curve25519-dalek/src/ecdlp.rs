@@ -3,6 +3,7 @@ use crate::{
     field::FieldElement,
     EdwardsPoint, RistrettoPoint, Scalar,
 };
+use bytemuck::{Pod, Zeroable};
 use itertools::Itertools;
 
 pub trait PrecomputedECDLPTables {
@@ -43,7 +44,7 @@ macro_rules! embed_t1_in_binary {
         #[repr(C, align(64))]
         struct IncludeBytesAlignHack<Bytes: ?Sized>(Bytes);
 
-        #[repr(C, align(64))] // repr(C): layout must be stable across compilations.
+        #[repr(C)] // repr(C): layout must be stable across compilations.
         struct CuckooT1HashMap {
             keys: [u32; CUCKOO_LEN],
             values: [u32; CUCKOO_LEN],
@@ -66,7 +67,7 @@ macro_rules! embed_t1_in_binary {
     }}
 }
 macro_rules! embed_t2_in_binary {
-    (L = $L:expr, L1 = $L1:expr, PATH = $T1_PATH:expr) => {{
+    (L = $L:expr, L1 = $L1:expr, PATH = $T2_PATH:expr) => {{
         const L2: usize = $L - $L1;
         const I_BITS: usize = L2 - 1;
         const I_MAX: usize = (1 << I_BITS) + 1;
@@ -82,7 +83,7 @@ macro_rules! embed_t2_in_binary {
         const T2: &T2LinearTable = {
             const T2_BYTE_LEN: usize = core::mem::size_of::<T2LinearTable>();
             const ALIGNED: &IncludeBytesAlignHack<[u8; T2_BYTE_LEN]> =
-                &IncludeBytesAlignHack(*include_bytes!("t2.bin"));
+                &IncludeBytesAlignHack(*include_bytes!($T2_PATH));
 
             // Safety: same safety argument as T1.
             unsafe { core::mem::transmute(ALIGNED) }
@@ -123,7 +124,7 @@ impl From<&'_ EdwardsPoint> for AffineMontgomeryPoint {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, bytemuck::NoUninit)]
+#[derive(Clone, Copy, Default, Pod, Zeroable)]
 pub struct T2MontgomeryCoordinates {
     pub u: CompressedFieldElement,
     pub v: CompressedFieldElement,
@@ -163,7 +164,7 @@ impl CuckooT1HashMapView<'_> {
 }
 
 pub fn decode<TS: PrecomputedECDLPTables>(
-    precomputed_tables: TS,
+    precomputed_tables: &TS,
     point: RistrettoPoint,
     range_start: i64,
     range_end: i64,
@@ -196,7 +197,7 @@ pub fn decode<TS: PrecomputedECDLPTables>(
 }
 
 fn fast_ecdlp<TS: PrecomputedECDLPTables>(
-    precomputed_tables: TS,
+    precomputed_tables: &TS,
     target_point: RistrettoPoint,
     j_start: u64,
     j_end: u64,
@@ -322,7 +323,7 @@ mod table_generation {
             let mut v = i as _;
             let mut old_hash_id = 1u8;
 
-            if i % 4096 == 0 {
+            if i % (j_max / 1000 + 1) == 0 {
                 println!("[{}/{}]", i, j_max);
             }
 
@@ -374,7 +375,7 @@ mod table_generation {
         for i in 1..=j_max {
             let point = acc; // i * G
 
-            if i % 4096 == 0 {
+            if i % (j_max / 1000 + 1) == 0 {
                 println!("[{}/{}]", i, j_max);
             }
 
@@ -393,12 +394,16 @@ mod table_generation {
             cuckoo_len,
             j_max,
             &all_entries,
-            &mut t1_keys,
             &mut t1_values,
+            &mut t1_keys,
         );
+
+        println!("Writing to file...");
 
         file.write_all(bytemuck::cast_slice(&t1_keys)).unwrap();
         file.write_all(bytemuck::cast_slice(&t1_values)).unwrap();
+
+        println!("Done :)")
     }
 
     pub fn create_t2_table(l1: usize, l2: usize, file: &mut File) {
@@ -438,32 +443,61 @@ fn i64_to_scalar(n: i64) -> Scalar {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::File;
     use super::*;
     use crate::constants::MONTGOMERY_A;
 
     #[test]
     #[cfg(feature = "precompute_table_gen")]
     fn gen_t1_t2() {
+        use std::fs::File;
         let l1 = 26;
         let l2 = 48 - l1;
+
+        // let l1 = 8;
+        // let l2 = 16 - l1;
         table_generation::create_t1_table(l1, &mut File::create(format!("t1_{l1}.bin")).unwrap());
-        table_generation::create_t2_table(l1, l2, &mut File::create(format!("t2_{l1}_{l2}.bin")).unwrap())
+        table_generation::create_t2_table(
+            l1,
+            l2,
+            &mut File::create(format!("t2_{l1}_{l2}.bin")).unwrap(),
+        )
     }
 
-    // #[test]
-    // #[cfg(not(feature = "precompute_table_gen"))]
-    // fn test_fast_ecdlp() {
-    //     fn decode_(num: u64) -> Option<i64> {
-    //         decode(Scalar::from(num) * G, 0, 1 << L, true)
-    //         // fast_ecdlp(Scalar::from(num) * G, 0, J_MAX, chunk_step)
-    //     }
+    #[test]
+    #[cfg(not(feature = "precompute_table_gen"))]
+    fn test_fast_ecdlp() {
+        const T1: CuckooT1HashMapView<'static> =
+            embed_t1_in_binary! { L = 16, L1 = 8, PATH = "../t1_8.bin" };
+        const T2: T2LinearTableView<'static> =
+            embed_t2_in_binary! { L = 16, L1 = 8, PATH = "../t2_8_8.bin" };
 
-    //     for i in 0..(1 << L) {
-    //         // println!("Running {i:?}");
-    //         assert_eq!(Some(i as i64), decode_(i));
-    //     }
-    // }
+        struct ECDLPTables16L8;
+        impl PrecomputedECDLPTables for ECDLPTables16L8 {
+            const L: usize = 16;
+            const L1: usize = 8;
+
+            fn get_t1(&self) -> CuckooT1HashMapView<'_> {
+                T1
+            }
+            fn get_t2(&self) -> T2LinearTableView<'_> {
+                T2
+            }
+        }
+
+        fn decode_(num: u64) -> Option<i64> {
+            decode(
+                &ECDLPTables16L8,
+                Scalar::from(num) * G,
+                0,
+                1 << ECDLPTables16L8::L,
+                true,
+            )
+        }
+
+        for i in 0..(1 << ECDLPTables16L8::L) {
+            assert_eq!(Some(i as i64), decode_(i));
+        }
+    }
 
     #[test]
     fn test_const_alpha() {

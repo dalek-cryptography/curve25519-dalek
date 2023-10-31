@@ -9,6 +9,8 @@
 
 //! ed25519 signing keys.
 
+use core::fmt::Debug;
+
 #[cfg(feature = "pkcs8")]
 use ed25519::pkcs8;
 
@@ -58,7 +60,7 @@ pub type SecretKey = [u8; SECRET_KEY_LENGTH];
 // Invariant: `verifying_key` is always the public key of
 // `secret_key`. This prevents the signing function oracle attack
 // described in https://github.com/MystenLabs/ed25519-unsafe-libs
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SigningKey {
     /// The secret half of this signing key.
     pub(crate) secret_key: SecretKey,
@@ -504,6 +506,14 @@ impl SigningKey {
 impl AsRef<VerifyingKey> for SigningKey {
     fn as_ref(&self) -> &VerifyingKey {
         &self.verifying_key
+    }
+}
+
+impl Debug for SigningKey {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        f.debug_struct("SigningKey")
+            .field("verifying_key", &self.verifying_key)
+            .finish_non_exhaustive() // avoids printing `secret_key`
     }
 }
 

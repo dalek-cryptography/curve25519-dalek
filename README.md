@@ -8,7 +8,6 @@
 # Dalek elliptic curve cryptography
 
 This repo contains pure-Rust crates for elliptic curve cryptography:
-[![curve25519 Rust]()](https://github.com/dalek-cryptography/curve25519-dalek/actions/workflows/curve25519-dalek.yml)
 
 |                 Crate                    |   Description  | Crates.io | Docs | CI                                                                                                                                                                                                                          |
 -------------------------------------------|----------------|-----------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

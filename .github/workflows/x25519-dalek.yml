@@ -24,10 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-      # Now run `cargo +nightly -Z minimal-verisons check` in order to get a
-      # Cargo.lock with the oldest possible deps
+      # Re-resolve Cargo.lock with minimal versions
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo -Z minimal-versions check --no-default-features --features serde
+    - run: cargo update -Z minimal-versions
       # Now check that `cargo build` works with respect to the oldest possible
       # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0

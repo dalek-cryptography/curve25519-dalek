@@ -193,6 +193,14 @@ impl FieldElement2625 {
         FieldElement2625(fiat_25519_tight_field_element(limbs))
     }
 
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_ELL_A: FieldElement2625 =
+        FieldElement2625::from_limbs([486662, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_MINUS_ELL_A: FieldElement2625 = FieldElement2625::from_limbs([
+        0xfff892e7, 0x7ffff, 0xffffffff, 0x7ffff, 0xffffffff, 0x7ffff, 0xffffffff, 0x7ffff,
+        0xffffffff, 0x7ffff,
+    ]);
     /// The scalar \\( 0 \\).
     pub const ZERO: FieldElement2625 = FieldElement2625::from_limbs([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     /// The scalar \\( 1 \\).

@@ -259,6 +259,16 @@ impl FieldElement51 {
         FieldElement51(limbs)
     }
 
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_ELL_A: FieldElement51 = FieldElement51::from_limbs([486662, 0, 0, 0, 0]);
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_MINUS_ELL_A: FieldElement51 = FieldElement51::from_limbs([
+        0x7fffffff892e7,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+    ]);
     /// The scalar \\( 0 \\).
     pub const ZERO: FieldElement51 = FieldElement51::from_limbs([0, 0, 0, 0, 0]);
     /// The scalar \\( 1 \\).

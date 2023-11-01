@@ -605,6 +605,92 @@ impl EdwardsPoint {
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
     }
+
+    #[cfg(feature = "group")]
+    /// Maps the input bytes to the curve. This implements the spec for
+    /// [`hash_to_curve`](https://datatracker.ietf.org/doc/rfc9380/) according to sections
+    /// 8.5 and J.5
+    pub fn hash_to_curve<X>(msg: &[u8], dst: &[u8]) -> Self
+    where
+        X: for<'a> elliptic_curve::hash2curve::ExpandMsg<'a>,
+    {
+        use elliptic_curve::{
+            bigint::{ArrayEncoding, Encoding, NonZero, U384},
+            hash2curve::Expander,
+        };
+
+        let dst = [dst];
+        let mut random_bytes = [0u8; 96];
+        let mut expander =
+            X::expand_message(&[msg], &dst, random_bytes.len()).expect("expand_message failed");
+        expander.fill_bytes(&mut random_bytes);
+
+        let p = NonZero::new(U384::from_be_hex("000000000000000000000000000000007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed")).expect("NonZero::new failed");
+        let u0 = U384::from_be_bytes(
+            <[u8; 48]>::try_from(&random_bytes[..48]).expect("try_from failed"),
+        ) % p;
+        let u1 = U384::from_be_bytes(
+            <[u8; 48]>::try_from(&random_bytes[48..]).expect("try_from failed"),
+        ) % p;
+
+        let mut arr = [0u8; 32];
+        arr.copy_from_slice(&u0.to_le_byte_array()[..32]);
+        let u0 = FieldElement::from_bytes(&arr);
+        arr.copy_from_slice(&u1.to_le_byte_array()[..32]);
+        let u1 = FieldElement::from_bytes(&arr);
+
+        let q0 = map_to_edwards(u0);
+        let q1 = map_to_edwards(u1);
+        let p = q0 + q1;
+        p.mul_by_cofactor()
+    }
+}
+
+fn map_to_edwards(e: FieldElement) -> EdwardsPoint {
+    let (u, v) = elligator_encode(e);
+    let (x, y) = montgomery_to_edwards(u, v);
+    affine_to_edwards(x, y)
+}
+
+fn elligator_encode(e: FieldElement) -> (FieldElement, FieldElement) {
+    let mut t1 = &(&FieldElement::ONE + &FieldElement::ONE) * &e.square(); // 2u^2
+    let e1 = t1.ct_eq(&FieldElement::MINUS_ONE);
+    t1.conditional_assign(&FieldElement::ZERO, e1); // if 2u^2 == -1, t1 = 0
+    let x1 = &(&t1 + &FieldElement::ONE).invert() * &FieldElement::EDWARDS_MINUS_ELL_A; // -A / t1 + 1
+    let min_x1 = -(&x1);
+
+    let gx1 = &(&(&(&x1 + &FieldElement::EDWARDS_ELL_A) * &x1) + &FieldElement::ONE) * &x1; // x1 * (x1 * (x1 + A) + 1)
+    let x2 = &min_x1 - &FieldElement::EDWARDS_ELL_A; // -x1 - A
+    let gx2 = &t1 * &gx1;
+    let (is_square, root1) = FieldElement::sqrt_ratio_i(&gx1, &FieldElement::ONE);
+    let neg_root1 = -(&root1);
+    let (_, root2) = FieldElement::sqrt_ratio_i(&gx2, &FieldElement::ONE);
+
+    let x = FieldElement::conditional_select(&x2, &x1, is_square);
+    let y = FieldElement::conditional_select(&root2, &neg_root1, is_square);
+    (x, y)
+}
+
+fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, FieldElement) {
+    let inv_sqr_d = FieldElement::from_bytes(&[
+        6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197, 126, 79, 252, 3,
+        220, 8, 123, 210, 187, 6, 160, 96, 244, 237, 38, 15,
+    ]);
+    let x = &(&v.invert() * &u) * &inv_sqr_d;
+    let u1 = &u - &FieldElement::ONE;
+    let u2 = &u + &FieldElement::ONE;
+    let y = &u1 * &u2.invert();
+    (x, y)
+}
+
+fn affine_to_edwards(x: FieldElement, y: FieldElement) -> EdwardsPoint {
+    let t = &x * &y;
+    EdwardsPoint {
+        X: x,
+        Y: y,
+        Z: FieldElement::ONE,
+        T: t,
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -2298,6 +2384,27 @@ mod test {
 
             let point = EdwardsPoint::nonspec_map_to_curve::<sha2::Sha512>(&input);
             assert_eq!(point.compress().to_bytes(), output[..]);
+        }
+    }
+
+    #[cfg(feature = "group")]
+    #[test]
+    fn hash_to_curve() {
+        const DST: &[u8] = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
+        let msgs: [(&[u8], &str); 5] = [
+            (b"", "09a6c8561a0b22bef63124c588ce4c62ea83a3c899763af26d795302e115dc21"),
+            (b"abc", "9a8395b88338f22e435bbd301183e7f20a5f9de643f11882fb237f88268a5531"),
+            (b"abcdef0123456789", "53060a3d140e7fbcda641ed3cf42c88a75411e648a1add71217f70ea8ec561a6"),
+            (b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", "2eca15e355fcfa39d2982f67ddb0eea138e2994f5956ed37b7f72eea5e89d2f7"),
+            (b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "6dc2fc04f266c5c27f236a80b14f92ccd051ef1ff027f26a07f8c0f327d8f995"),
+        ];
+        for (input, expected_hex) in msgs {
+            let pt = EdwardsPoint::hash_to_curve::<
+                elliptic_curve::hash2curve::ExpandMsgXmd<sha2::Sha512>,
+            >(input, DST);
+            let mut expected_bytes = hex::decode(expected_hex).unwrap();
+            expected_bytes.reverse();
+            assert_eq!(expected_bytes, pt.to_bytes());
         }
     }
 }

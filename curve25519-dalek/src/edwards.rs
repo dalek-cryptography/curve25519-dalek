@@ -614,10 +614,7 @@ impl EdwardsPoint {
     where
         X: for<'a> elliptic_curve::hash2curve::ExpandMsg<'a>,
     {
-        use elliptic_curve::{
-            bigint::{ArrayEncoding, Encoding, NonZero, U384},
-            hash2curve::Expander,
-        };
+        use elliptic_curve::hash2curve::Expander;
 
         let dst = [dst];
         let mut random_bytes = [0u8; 96];
@@ -625,19 +622,8 @@ impl EdwardsPoint {
             X::expand_message(&[msg], &dst, random_bytes.len()).expect("expand_message failed");
         expander.fill_bytes(&mut random_bytes);
 
-        let p = NonZero::new(U384::from_be_hex("000000000000000000000000000000007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed")).expect("NonZero::new failed");
-        let u0 = U384::from_be_bytes(
-            <[u8; 48]>::try_from(&random_bytes[..48]).expect("try_from failed"),
-        ) % p;
-        let u1 = U384::from_be_bytes(
-            <[u8; 48]>::try_from(&random_bytes[48..]).expect("try_from failed"),
-        ) % p;
-
-        let mut arr = [0u8; 32];
-        arr.copy_from_slice(&u0.to_le_byte_array()[..32]);
-        let u0 = FieldElement::from_bytes(&arr);
-        arr.copy_from_slice(&u1.to_le_byte_array()[..32]);
-        let u1 = FieldElement::from_bytes(&arr);
+        let u0 = FieldElement::from_xmd_bytes_mod_order(&random_bytes[..48]);
+        let u1 = FieldElement::from_xmd_bytes_mod_order(&random_bytes[48..]);
 
         let q0 = map_to_edwards(u0);
         let q1 = map_to_edwards(u1);
@@ -675,11 +661,7 @@ fn elligator_encode(e: FieldElement) -> (FieldElement, FieldElement) {
 
 #[cfg(feature = "group")]
 fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, FieldElement) {
-    let inv_sqr_d = FieldElement::from_bytes(&[
-        6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197, 126, 79, 252, 3,
-        220, 8, 123, 210, 187, 6, 160, 96, 244, 237, 38, 15,
-    ]);
-    let x = &(&v.invert() * &u) * &inv_sqr_d;
+    let x = &(&v.invert() * &u) * &FieldElement::MONTGOMERY_TO_EDWARDS_INV_SQRT_D;
     let u1 = &u - &FieldElement::ONE;
     let u2 = &u + &FieldElement::ONE;
     let y = &u1 * &u2.invert();
@@ -688,12 +670,11 @@ fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, Fie
 
 #[cfg(feature = "group")]
 fn affine_to_edwards(x: FieldElement, y: FieldElement) -> EdwardsPoint {
-    let t = &x * &y;
     EdwardsPoint {
         X: x,
         Y: y,
         Z: FieldElement::ONE,
-        T: t,
+        T: &x * &y,
     }
 }
 

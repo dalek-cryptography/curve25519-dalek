@@ -47,6 +47,7 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
+elliptic-curve = { version = "0.13.5", features = ["hash2curve"], optional = true }
 ff = { version = "0.13", default-features = false, optional = true }
 group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
@@ -62,11 +63,11 @@ cpufeatures = "0.2.6"
 fiat-crypto = { version = "0.2.1", default-features = false }
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = ["alloc", "group", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
-group = ["dep:group", "rand_core"]
+group = ["dep:group", "dep:elliptic-curve", "rand_core"]
 group-bits = ["group", "ff/bits"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]

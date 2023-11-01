@@ -28,6 +28,9 @@ prime-order group from a non-prime-order Edwards curve.  This provides the
 speed and safety benefits of Edwards curve arithmetic, without the pitfalls of
 cofactor-related abstraction mismatches.
 
+**NOTE** The main difference with this crate and [curve25519-dalek](https://docs.rs/curve25519-dalek) is this adds
+hash_to_curve for Edwards curves.
+
 # Use
 
 ## Stable

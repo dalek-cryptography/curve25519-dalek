@@ -49,7 +49,7 @@ required-features = ["alloc", "rand_core"]
 [[bench]]
 name = "ecdlp"
 harness = false
-required-features = ["alloc", "rand_core"]
+required-features = ["alloc", "rand_core", "std"]
 
 [dependencies]
 cfg-if = "1"
@@ -62,6 +62,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 zeroize = { version = "1", default-features = false, optional = true }
 itertools = "0.11.0"
 bytemuck = { version = "1.14.0", features = ["derive"] }
+memmap = "0.7.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
@@ -72,6 +73,7 @@ fiat-crypto = { version = "0.2.1", default-features = false }
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
+std = []
 precompute_table_gen = ["alloc"]
 precomputed-tables = []
 legacy_compatibility = []

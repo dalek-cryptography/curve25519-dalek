@@ -1,3 +1,8 @@
+use core::{
+    ops::ControlFlow,
+    sync::atomic::{AtomicBool, Ordering},
+};
+
 use crate::{
     constants::{MONTGOMERY_A_NEG, RISTRETTO_BASEPOINT_POINT as G},
     field::FieldElement,
@@ -163,14 +168,86 @@ impl CuckooT1HashMapView<'_> {
     }
 }
 
-pub fn decode<TS: PrecomputedECDLPTables>(
+pub trait ProgressReportFunction {
+    fn report(&self, progress: f64) -> ControlFlow<()>;
+}
+pub struct NoopReportFn;
+impl ProgressReportFunction for NoopReportFn {
+    #[inline(always)]
+    fn report(&self, _progress: f64) -> ControlFlow<()> {
+        ControlFlow::Continue(())
+    }
+}
+impl<F: Fn(f64) -> ControlFlow<()> + Send> ProgressReportFunction for F {
+    #[inline(always)]
+    fn report(&self, progress: f64) -> ControlFlow<()> {
+        self(progress)
+    }
+}
+
+pub struct ECDLPArguments<R: ProgressReportFunction = NoopReportFn> {
+    range_start: i64,
+    range_end: Option<i64>,
+    pseudo_constant_time: bool,
+    n_threads: usize,
+    progress_report_function: R,
+}
+
+impl Default for ECDLPArguments<NoopReportFn> {
+    fn default() -> Self {
+        Self {
+            range_start: 0,
+            range_end: None,
+            pseudo_constant_time: false,
+            progress_report_function: NoopReportFn,
+            n_threads: 1,
+        }
+    }
+}
+
+impl<F: ProgressReportFunction> ECDLPArguments<F> {
+    pub fn decode_range(self, range_start: i64, range_end: i64) -> Self {
+        Self {
+            range_start,
+            range_end: Some(range_end),
+            ..self
+        }
+    }
+
+    pub fn best_effort_constant_time(self, pseudo_constant_time: bool) -> Self {
+        Self {
+            pseudo_constant_time,
+            ..self
+        }
+    }
+
+    pub fn progress_report_function<R: ProgressReportFunction>(
+        self,
+        progress_report_function: R,
+    ) -> ECDLPArguments<R> {
+        ECDLPArguments {
+            progress_report_function,
+            range_start: self.range_start,
+            range_end: self.range_end,
+            pseudo_constant_time: self.pseudo_constant_time,
+            n_threads: self.n_threads,
+        }
+    }
+
+    pub fn n_threads(self, n_threads: usize) -> Self {
+        Self { n_threads, ..self }
+    }
+}
+
+#[cfg(feature = "std")]
+pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
     precomputed_tables: &TS,
     point: RistrettoPoint,
-    range_start: i64,
-    range_end: i64,
-    pseudo_constant_time: bool,
+    args: ECDLPArguments<R>,
 ) -> Option<i64> {
-    let amplitude = (range_end - range_start).max(0);
+    use alloc::vec::Vec;
+
+    let amplitude = (args.range_end.unwrap_or(1 << TS::L) - args.range_start).max(0);
     if amplitude > (1 << TS::L) {
         panic!(
             "Precomputed table does not cover range of amplitude: {} (max: {})",
@@ -180,18 +257,122 @@ pub fn decode<TS: PrecomputedECDLPTables>(
     }
 
     // Normalize the range into [-2^(L-1), 2^(L-1)[.
-    let offset = range_start + (amplitude / 2);
+    let offset = args.range_start + (amplitude / 2);
     let normalized = &point - &i64_to_scalar(offset) * G;
 
-    let j_end = (amplitude >> (TS::L1 + 1)) + 1; // amplitude / 2^(L1 + 1) + 1
+    let j_end = ((amplitude >> (TS::L1 + 1)) + 1) as usize; // amplitude / 2^(L1 + 1) + 1
+
+    // This will dispatch the j values evenly accross threads, in a batched way, so that
+    // if, for example we have n_threads=3, j_end=194 and BATCH_SIZE=64,
+    // we get: thread #0 gets batch_1 = 0..64 and batch_2 = 192..193,
+    // thread #1 batch_1 = 64..128
+    // thread #2 batch_1 = 128..192
+    // This allows small unknown numbers to get decoded faster when pseudo_constant_time is off.
+    // 
+    // On top of that, we are counting from the end (.rev()) because since our range is normalized to the negatives,
+    // the true 0 will correspond the last J.
+    let batch_iterator = (0..j_end).step_by(BATCH_SIZE).enumerate().map(|(i, j)| {
+        let batch = (j..(j + BATCH_SIZE)).take(if j_end / BATCH_SIZE == i {
+            j_end % BATCH_SIZE // last chunk
+        } else {
+            BATCH_SIZE
+        });
+        let progress = i as f64 / (j_end as f64 / BATCH_SIZE as f64);
+
+        (batch, progress)
+    }).rev();
+
+    let end_flag = AtomicBool::new(false);
+
+    let res = std::thread::scope(|s| {
+        let handles = (0..args.n_threads)
+            .map(|thread_i| {
+                let thread_batch_iterator = batch_iterator
+                    .clone()
+                    .skip(thread_i)
+                    .step_by(args.n_threads);
+
+                let end_flag = &end_flag;
+
+                let progress_report = &args.progress_report_function;
+
+                let progress_report = |progress| {
+                    if !args.pseudo_constant_time && end_flag.load(Ordering::SeqCst) {
+                        ControlFlow::Break(())
+                    } else {
+                        progress_report.report(progress)
+                    }
+                };
+
+                let handle = s.spawn(move || {
+                    let res = fast_ecdlp(
+                        precomputed_tables,
+                        normalized,
+                        thread_batch_iterator,
+                        args.pseudo_constant_time,
+                        &progress_report,
+                    );
+
+                    if !args.pseudo_constant_time && res.is_some() {
+                        end_flag.store(true, Ordering::SeqCst);
+                    }
+
+                    res
+                });
+
+                handle
+            })
+            .collect::<Vec<_>>();
+
+        let mut res = None;
+        for el in handles {
+            res = res.or(el.join().expect("child thread panicked"));
+        }
+
+        res
+    });
+
+    res.map(|v| v as i64 + offset)
+}
+
+pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
+    precomputed_tables: &TS,
+    point: RistrettoPoint,
+    args: ECDLPArguments<R>,
+) -> Option<i64> {
+    let amplitude = (args.range_end.unwrap_or(1 << TS::L) - args.range_start).max(0);
+    if amplitude > (1 << TS::L) {
+        panic!(
+            "Precomputed table does not cover range of amplitude: {} (max: {})",
+            amplitude,
+            1 << TS::L
+        );
+    }
+
+    // Normalize the range into [-2^(L-1), 2^(L-1)[.
+    let offset = args.range_start + (amplitude / 2);
+    let normalized = &point - &i64_to_scalar(offset) * G;
+
+    let j_end = ((amplitude >> (TS::L1 + 1)) + 1) as usize; // amplitude / 2^(L1 + 1) + 1
+
+    let batch_iterator = (0..j_end).step_by(BATCH_SIZE).enumerate().map(|(i, j)| {
+        let count = if j_end / BATCH_SIZE == i {
+            j_end % BATCH_SIZE // last chunk
+        } else {
+            BATCH_SIZE
+        };
+        let batch = j..(j + count);
+        let progress = i as f64 / (j_end as f64 / BATCH_SIZE as f64);
+
+        (batch, progress)
+    }).rev();
 
     fast_ecdlp(
         precomputed_tables,
         normalized,
-        0,
-        j_end as _,
-        1,
-        pseudo_constant_time,
+        batch_iterator,
+        args.pseudo_constant_time,
+        args.progress_report_function,
     )
     .map(|v| v as i64 + offset)
 }
@@ -199,10 +380,9 @@ pub fn decode<TS: PrecomputedECDLPTables>(
 fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     precomputed_tables: &TS,
     target_point: RistrettoPoint,
-    j_start: u64,
-    j_end: u64,
-    chunk_step: usize,
+    j_batch_iterator: impl Iterator<Item = (impl Iterator<Item = usize>, f64)>,
     pseudo_constant_time: bool,
+    progress_report: impl ProgressReportFunction,
 ) -> Option<u64> {
     // convert to montgomery (u, v) affine coordinates
     let target_montgomery = AffineMontgomeryPoint::from(&target_point.0);
@@ -218,12 +398,13 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
         found.is_some()
     };
 
-    let into_chunks = (j_start..j_end).chunks(BATCH_SIZE);
-    let chunks = into_chunks.into_iter();
-
     let mut batch = [FieldElement::ONE; BATCH_SIZE];
-    let mut batch_j = [0u64; BATCH_SIZE];
-    'outer: for chunk in chunks.step_by(chunk_step) {
+    let mut batch_j = [0usize; BATCH_SIZE];
+    'outer: for (chunk, progress) in j_batch_iterator {
+        if let ControlFlow::Break(_) = progress_report.report(progress) {
+            break 'outer;
+        }
+
         // Z = T2[j]_x - Pm_x
         let mut b_item_count = 0;
         for (batch_index, j) in chunk.enumerate() {
@@ -450,7 +631,7 @@ mod tests {
     #[cfg(feature = "precompute_table_gen")]
     fn gen_t1_t2() {
         use std::fs::File;
-        let l1 = 26;
+        let l1 = 25;
         let l2 = 48 - l1;
 
         // let l1 = 8;
@@ -463,39 +644,54 @@ mod tests {
         )
     }
 
+    const T1: CuckooT1HashMapView<'static> =
+        embed_t1_in_binary! { L = 16, L1 = 8, PATH = "../t1_8.bin" };
+    const T2: T2LinearTableView<'static> =
+        embed_t2_in_binary! { L = 16, L1 = 8, PATH = "../t2_8_8.bin" };
+    struct ECDLPTables16L8;
+    impl PrecomputedECDLPTables for ECDLPTables16L8 {
+        const L: usize = 16;
+        const L1: usize = 8;
+
+        fn get_t1(&self) -> CuckooT1HashMapView<'_> {
+            T1
+        }
+        fn get_t2(&self) -> T2LinearTableView<'_> {
+            T2
+        }
+    }
+
     #[test]
     #[cfg(not(feature = "precompute_table_gen"))]
     fn test_fast_ecdlp() {
-        const T1: CuckooT1HashMapView<'static> =
-            embed_t1_in_binary! { L = 16, L1 = 8, PATH = "../t1_8.bin" };
-        const T2: T2LinearTableView<'static> =
-            embed_t2_in_binary! { L = 16, L1 = 8, PATH = "../t2_8_8.bin" };
-
-        struct ECDLPTables16L8;
-        impl PrecomputedECDLPTables for ECDLPTables16L8 {
-            const L: usize = 16;
-            const L1: usize = 8;
-
-            fn get_t1(&self) -> CuckooT1HashMapView<'_> {
-                T1
-            }
-            fn get_t2(&self) -> T2LinearTableView<'_> {
-                T2
-            }
-        }
-
         fn decode_(num: u64) -> Option<i64> {
             decode(
                 &ECDLPTables16L8,
                 Scalar::from(num) * G,
-                0,
-                1 << ECDLPTables16L8::L,
-                true,
+                ECDLPArguments::default()
+                    .best_effort_constant_time(true)
             )
         }
 
         for i in 0..(1 << ECDLPTables16L8::L) {
             assert_eq!(Some(i as i64), decode_(i));
+        }
+    }
+
+    #[test]
+    #[cfg(not(feature = "precompute_table_gen"))]
+    fn test_par_decode() {
+        for i in 0..(1u64 << ECDLPTables16L8::L) {
+            assert_eq!(
+                Some(i as i64),
+                par_decode(
+                    &ECDLPTables16L8,
+                    Scalar::from(i) * G,
+                    ECDLPArguments::default()
+                        .best_effort_constant_time(true)
+                        .n_threads(4)
+                )
+            );
         }
     }
 

@@ -304,6 +304,7 @@ impl FieldElement {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
 
+    #[cfg(feature = "group")]
     /// Handle 48 bytes like a big integer and reduce mod order
     /// i.e. big_int(48 bytes) % p
     /// but without using any reduce methods
@@ -315,17 +316,16 @@ impl FieldElement {
         // and the 2nd half as the lo value
         let mut arr = [0u8; 32];
         for i in 0..24 {
-            arr[i] = bytes[23-i];
+            arr[i] = bytes[23 - i];
         }
         let mut hi = FieldElement::from_bytes(&arr);
         for i in 0..24 {
-            arr[i] = bytes[47-i];
+            arr[i] = bytes[47 - i];
         }
         let lo = FieldElement::from_bytes(&arr);
         hi *= &FieldElement::F_2_192;
         &hi + &lo
     }
-
 }
 
 #[cfg(test)]

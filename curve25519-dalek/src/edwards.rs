@@ -646,12 +646,14 @@ impl EdwardsPoint {
     }
 }
 
+#[cfg(feature = "group")]
 fn map_to_edwards(e: FieldElement) -> EdwardsPoint {
     let (u, v) = elligator_encode(e);
     let (x, y) = montgomery_to_edwards(u, v);
     affine_to_edwards(x, y)
 }
 
+#[cfg(feature = "group")]
 fn elligator_encode(e: FieldElement) -> (FieldElement, FieldElement) {
     let mut t1 = &(&FieldElement::ONE + &FieldElement::ONE) * &e.square(); // 2u^2
     let e1 = t1.ct_eq(&FieldElement::MINUS_ONE);
@@ -671,6 +673,7 @@ fn elligator_encode(e: FieldElement) -> (FieldElement, FieldElement) {
     (x, y)
 }
 
+#[cfg(feature = "group")]
 fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, FieldElement) {
     let inv_sqr_d = FieldElement::from_bytes(&[
         6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197, 126, 79, 252, 3,
@@ -683,6 +686,7 @@ fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, Fie
     (x, y)
 }
 
+#[cfg(feature = "group")]
 fn affine_to_edwards(x: FieldElement, y: FieldElement) -> EdwardsPoint {
     let t = &x * &y;
     EdwardsPoint {

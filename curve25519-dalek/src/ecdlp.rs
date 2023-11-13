@@ -4,8 +4,10 @@ use core::{
 };
 
 use crate::{
+    backend::serial::u64::constants::MONTGOMERY_A,
     constants::{MONTGOMERY_A_NEG, RISTRETTO_BASEPOINT_POINT as G},
     field::FieldElement,
+    traits::Identity,
     EdwardsPoint, RistrettoPoint, Scalar,
 };
 use bytemuck::{Pod, Zeroable};
@@ -98,7 +100,9 @@ macro_rules! embed_t2_in_binary {
     }};
 }
 
-const BATCH_SIZE: usize = 256;
+const NEW_L2: usize = 9;
+const BATCH_SIZE: usize = 1 << (NEW_L2 - 1);
+// T2 has the size of BATCH_SIZE
 
 /// Canonical FieldElement type.
 type CompressedFieldElement = [u8; 32];
@@ -129,7 +133,7 @@ impl From<&'_ EdwardsPoint> for AffineMontgomeryPoint {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Default, Pod, Zeroable)]
+#[derive(Clone, Copy, Default, Pod, Zeroable, Debug)]
 pub struct T2MontgomeryCoordinates {
     pub u: CompressedFieldElement,
     pub v: CompressedFieldElement,
@@ -154,14 +158,25 @@ pub struct CuckooT1HashMapView<'a> {
 }
 
 impl CuckooT1HashMapView<'_> {
-    fn lookup<TS: PrecomputedECDLPTables>(&self, x: &[u8]) -> Option<u64> {
+    fn lookup<TS: PrecomputedECDLPTables>(
+        &self,
+        x: &[u8],
+        mut is_problem_answer: impl FnMut(u64) -> bool,
+    ) -> Option<u64> {
+        // println!("- begin for {x:?}");
         for i in 0..TS::CUCKOO_K {
             let start = i * 8;
             let end = start + 4;
             let key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
-            let h = u32::from_be_bytes(x[start..end].try_into().unwrap()) as usize % TS::CUCKOO_LEN;
+            let h = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize
+                % TS::CUCKOO_LEN;
+            // println!("i={i}; start={start} end={end} key={key} h={h}");
             if self.keys[h as usize] == key {
-                return Some(self.values[h as usize] as u64);
+                println!("YES");
+                let value = self.values[h as usize] as u64;
+                if is_problem_answer(value) {
+                    return Some(value);
+                }
             }
         }
         None
@@ -239,101 +254,107 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
     }
 }
 
-#[cfg(feature = "std")]
-pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
-    precomputed_tables: &TS,
-    point: RistrettoPoint,
-    args: ECDLPArguments<R>,
-) -> Option<i64> {
-    use alloc::vec::Vec;
+// #[cfg(feature = "std")]
+// pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
+//     precomputed_tables: &TS,
+//     point: RistrettoPoint,
+//     args: ECDLPArguments<R>,
+// ) -> Option<i64> {
+//     use alloc::vec::Vec;
 
-    let amplitude = (args.range_end.unwrap_or(1 << TS::L) - args.range_start).max(0);
-    if amplitude > (1 << TS::L) {
-        panic!(
-            "Precomputed table does not cover range of amplitude: {} (max: {})",
-            amplitude,
-            1 << TS::L
-        );
-    }
+//     let amplitude = (args.range_end.unwrap_or(1 << TS::L) - args.range_start).max(0);
+//     if amplitude > (1 << TS::L) {
+//         panic!(
+//             "Precomputed table does not cover range of amplitude: {} (max: {})",
+//             amplitude,
+//             1 << TS::L
+//         );
+//     }
 
-    // Normalize the range into [-2^(L-1), 2^(L-1)[.
-    let offset = args.range_start + (amplitude / 2);
-    let normalized = &point - &i64_to_scalar(offset) * G;
+//     // Normalize the range into [-2^(L-1), 2^(L-1)[.
+//     let offset = args.range_start + (amplitude / 2);
+//     let normalized = &point - &i64_to_scalar(offset) * G;
 
-    let j_end = ((amplitude >> (TS::L1 + 1)) + 1) as usize; // amplitude / 2^(L1 + 1) + 1
+//     let j_end = ((amplitude >> (TS::L1 + 1)) + 1) as usize; // amplitude / 2^(L1 + 1) + 1
 
-    // This will dispatch the j values evenly accross threads, in a batched way, so that
-    // if, for example we have n_threads=3, j_end=194 and BATCH_SIZE=64,
-    // we get: thread #0 gets batch_1 = 0..64 and batch_2 = 192..193,
-    // thread #1 batch_1 = 64..128
-    // thread #2 batch_1 = 128..192
-    // This allows small unknown numbers to get decoded faster when pseudo_constant_time is off.
-    // 
-    // On top of that, we are counting from the end (.rev()) because since our range is normalized to the negatives,
-    // the true 0 will correspond the last J.
-    let batch_iterator = (0..j_end).step_by(BATCH_SIZE).enumerate().map(|(i, j)| {
-        let batch = (j..(j + BATCH_SIZE)).take(if j_end / BATCH_SIZE == i {
-            j_end % BATCH_SIZE // last chunk
-        } else {
-            BATCH_SIZE
-        });
-        let progress = i as f64 / (j_end as f64 / BATCH_SIZE as f64);
+//     // This will dispatch the j values evenly accross threads, in a batched way, so that
+//     // if, for example we have n_threads=3, j_end=194 and BATCH_SIZE=64,
+//     // we get: thread #0 gets batch_1 = 0..64 and batch_2 = 192..193,
+//     // thread #1 batch_1 = 64..128
+//     // thread #2 batch_1 = 128..192
+//     // This allows small unknown numbers to get decoded faster when pseudo_constant_time is off.
+//     //
+//     // On top of that, we are counting from the end (.rev()) because since our range is normalized to the negatives,
+//     // the true 0 will correspond the last J.
+//     let batch_iterator = (0..j_end)
+//         .step_by(BATCH_SIZE)
+//         .enumerate()
+//         .map(|(i, j)| {
+//             let count = if j_end / BATCH_SIZE == i {
+//                 j_end % BATCH_SIZE // last chunk
+//             } else {
+//                 BATCH_SIZE
+//             };
+//             // let batch = j..(j + count);
+//             let progress = i as f64 / (j_end as f64 / BATCH_SIZE as f64);
 
-        (batch, progress)
-    }).rev();
+//             (j, count, progress)
+//         })
+//         .rev();
 
-    let end_flag = AtomicBool::new(false);
+//     let end_flag = AtomicBool::new(false);
 
-    let res = std::thread::scope(|s| {
-        let handles = (0..args.n_threads)
-            .map(|thread_i| {
-                let thread_batch_iterator = batch_iterator
-                    .clone()
-                    .skip(thread_i)
-                    .step_by(args.n_threads);
+//     let res = std::thread::scope(|s| {
+//         let handles = (0..args.n_threads)
+//             .map(|thread_i| {
+//                 let thread_batch_iterator = batch_iterator
+//                     .clone()
+//                     .skip(thread_i)
+//                     .step_by(args.n_threads);
 
-                let end_flag = &end_flag;
+//                 let end_flag = &end_flag;
 
-                let progress_report = &args.progress_report_function;
+//                 let progress_report = &args.progress_report_function;
 
-                let progress_report = |progress| {
-                    if !args.pseudo_constant_time && end_flag.load(Ordering::SeqCst) {
-                        ControlFlow::Break(())
-                    } else {
-                        progress_report.report(progress)
-                    }
-                };
+//                 let progress_report = |progress| {
+//                     if !args.pseudo_constant_time && end_flag.load(Ordering::SeqCst) {
+//                         ControlFlow::Break(())
+//                     } else {
+//                         progress_report.report(progress)
+//                     }
+//                 };
 
-                let handle = s.spawn(move || {
-                    let res = fast_ecdlp(
-                        precomputed_tables,
-                        normalized,
-                        thread_batch_iterator,
-                        args.pseudo_constant_time,
-                        &progress_report,
-                    );
+//                 let handle = s.spawn(move || {
+//                     let res = fast_ecdlp(
+//                         precomputed_tables,
+//                         normalized,
+//                         thread_batch_iterator,
+//                         -(args.n_threads as i64),
+//                         args.pseudo_constant_time,
+//                         &progress_report,
+//                     );
 
-                    if !args.pseudo_constant_time && res.is_some() {
-                        end_flag.store(true, Ordering::SeqCst);
-                    }
+//                     if !args.pseudo_constant_time && res.is_some() {
+//                         end_flag.store(true, Ordering::SeqCst);
+//                     }
 
-                    res
-                });
+//                     res
+//                 });
 
-                handle
-            })
-            .collect::<Vec<_>>();
+//                 handle
+//             })
+//             .collect::<Vec<_>>();
 
-        let mut res = None;
-        for el in handles {
-            res = res.or(el.join().expect("child thread panicked"));
-        }
+//         let mut res = None;
+//         for el in handles {
+//             res = res.or(el.join().expect("child thread panicked"));
+//         }
 
-        res
-    });
+//         res
+//     });
 
-    res.map(|v| v as i64 + offset)
-}
+//     res.map(|v| v as i64 + offset)
+// }
 
 pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
     precomputed_tables: &TS,
@@ -341,36 +362,33 @@ pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
     args: ECDLPArguments<R>,
 ) -> Option<i64> {
     let amplitude = (args.range_end.unwrap_or(1 << TS::L) - args.range_start).max(0);
-    if amplitude > (1 << TS::L) {
-        panic!(
-            "Precomputed table does not cover range of amplitude: {} (max: {})",
-            amplitude,
-            1 << TS::L
-        );
-    }
+    // if amplitude > (1 << TS::L) {
+    //     panic!(
+    //         "Precomputed table does not cover range of amplitude: {} (max: {})",
+    //         amplitude,
+    //         1 << TS::L
+    //     );
+    // }
 
-    // Normalize the range into [-2^(L-1), 2^(L-1)[.
-    let offset = args.range_start + (amplitude / 2);
+    let offset = args.range_start + ((1 << (NEW_L2 - 1)) << TS::L1) + (1 << (TS::L1 - 1));
     let normalized = &point - &i64_to_scalar(offset) * G;
 
-    let j_end = ((amplitude >> (TS::L1 + 1)) + 1) as usize; // amplitude / 2^(L1 + 1) + 1
+    let j_end = (amplitude >> TS::L1) as usize; // amplitude / 2^(L1 + 1)
 
-    let batch_iterator = (0..j_end).step_by(BATCH_SIZE).enumerate().map(|(i, j)| {
-        let count = if j_end / BATCH_SIZE == i {
-            j_end % BATCH_SIZE // last chunk
-        } else {
-            BATCH_SIZE
-        };
-        let batch = j..(j + count);
-        let progress = i as f64 / (j_end as f64 / BATCH_SIZE as f64);
+    println!("j_end is {j_end}, {offset}");
 
-        (batch, progress)
-    }).rev();
+    let batch_n = (j_end + (1 << NEW_L2) - 1) / (1 << NEW_L2); // divceil(j_end, 2^NEW_L2)
+
+    let batch_iterator = (0..batch_n).enumerate().map(|(i, j)| {
+        let progress = i as f64 / batch_n as f64;
+        (j * (1 << NEW_L2), progress)
+    });
 
     fast_ecdlp(
         precomputed_tables,
         normalized,
         batch_iterator,
+        -1,
         args.pseudo_constant_time,
         args.progress_report_function,
     )
@@ -380,101 +398,199 @@ pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
 fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     precomputed_tables: &TS,
     target_point: RistrettoPoint,
-    j_batch_iterator: impl Iterator<Item = (impl Iterator<Item = usize>, f64)>,
+    j_batch_iterator: impl Iterator<Item = (usize, f64)>,
+    j_batch_step: i64,
     pseudo_constant_time: bool,
     progress_report: impl ProgressReportFunction,
 ) -> Option<u64> {
     // convert to montgomery (u, v) affine coordinates
-    let target_montgomery = AffineMontgomeryPoint::from(&target_point.0);
+    let mut target_montgomery = AffineMontgomeryPoint::from(&target_point.0);
+    let j_batch_step = j_batch_step * (1 << TS::L1) * 2 * BATCH_SIZE as i64;
+    let j_batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(j_batch_step) * G).0); // 2^L1 * j_batch_step
+
+    println!("j_batch_step {}", j_batch_step);
 
     let t1_table = precomputed_tables.get_t1();
     let t2_table = precomputed_tables.get_t2();
 
     let mut found = None;
     let mut consider_candidate = |m| {
+        println!("Consider {m}");
         if i64_to_scalar(m) * G == target_point {
             found = found.or(Some(m as u64));
+            true
+        } else {
+            false
         }
-        found.is_some()
     };
 
-    let mut batch = [FieldElement::ONE; BATCH_SIZE];
-    let mut batch_j = [0usize; BATCH_SIZE];
-    'outer: for (chunk, progress) in j_batch_iterator {
+    let mut batch = [FieldElement::ZERO; BATCH_SIZE];
+    'outer: for (j_start, progress) in j_batch_iterator {
+        println!("j_start={j_start}, progress={progress}");
         if let ControlFlow::Break(_) = progress_report.report(progress) {
             break 'outer;
         }
 
+        // Case where target is 0. Has to be handled separately.
+        if target_montgomery.u == FieldElement::ZERO {
+            println!("Case 0 j_start={j_start} j=0 i=0");
+            consider_candidate((j_start as i64) << TS::L1);
+            if !pseudo_constant_time {
+                break 'outer;
+            }
+        }
+
+        // Case where j=0. Has to be handled separately.
+        if t1_table
+            .lookup::<TS>(&target_montgomery.u.as_bytes(), |i| {
+                println!("Case 2 j_start={j_start} j=0 i={i}");
+                consider_candidate(((j_start as i64) << TS::L1) + i as i64)
+                    || consider_candidate(((j_start as i64) << TS::L1) - i as i64)
+            })
+            .is_some()
+        {
+            if !pseudo_constant_time {
+                break 'outer;
+            }
+        }
+
         // Z = T2[j]_x - Pm_x
-        let mut b_item_count = 0;
-        for (batch_index, j) in chunk.enumerate() {
+        for batch_i in 0..BATCH_SIZE {
+            let j = batch_i + 1;
             let t2_point = t2_table.index(j as _);
             let diff = &t2_point.u - &target_montgomery.u;
+
             if diff == FieldElement::ZERO {
-                // Montgomery substraction: exceptional case when T2[j] = Pm.
-                // Also catches the exceptional case when Pm is the identity.
+                println!("Case 1 j_start={j_start} j={j} i=/");
+                // Montgomery addition: exceptional case when T2[j] = Pm.
                 // m1 = j * 2^L1, m2 = -j * 2^L1
-                let found = consider_candidate((j as i64) << TS::L1)
-                    || consider_candidate(-(j as i64) << TS::L1);
+                let found = consider_candidate((j_start as i64 + j as i64) << TS::L1)
+                    || consider_candidate((j_start as i64 - j as i64) << TS::L1);
                 if !pseudo_constant_time && found {
                     break 'outer;
                 }
             }
-            batch[batch_index] = diff;
-            batch_j[batch_index] = j;
-            b_item_count += 1usize;
+            batch[batch_i] = diff;
         }
 
         // nu = Z^-1
         FieldElement::batch_invert(&mut batch);
 
-        for (&j, nu) in batch_j.iter().zip(batch.iter()).take(b_item_count) {
-            if j == 0 {
-                // Montgomery substraction: exceptional case when t2_point is the identity
+        for (batch_i, nu) in batch.iter().enumerate() {
+            let j = batch_i + 1;
+            // Montgomery addition: general case
 
-                if let Some(i) = t1_table.lookup::<TS>(&target_montgomery.u.as_bytes()) {
-                    let found = consider_candidate((-(j as i64) << TS::L1) + i as i64)
-                        || consider_candidate((-(j as i64) << TS::L1) - i as i64);
-                    if !pseudo_constant_time && found {
-                        break 'outer;
-                    }
+            let t2_point = t2_table.index(j as _);
+
+            let alpha = &(&MONTGOMERY_A_NEG - &t2_point.u) - &target_montgomery.u;
+
+            // lambda = (T2[j]_y - Pm_y) * nu
+            // Q_x = lambda^2 - A - T2[j]_x - Pm_x
+            let lambda = &(&t2_point.v - &target_montgomery.v) * &nu;
+            let qx = &lambda.square() + &alpha;
+
+            if t1_table
+                .lookup::<TS>(&qx.as_bytes(), |i| {
+                    println!("Case 3 j_start={j_start} j={j} i={i}");
+                    consider_candidate(((j_start as i64 - j as i64) << TS::L1) + i as i64)
+                        || consider_candidate(((j_start as i64 - j as i64) << TS::L1) - i as i64)
+                })
+                .is_some()
+            {
+                println!(
+                    "{:?} {:?} {:?}",
+                    qx.as_bytes(),
+                    t2_point.u.as_bytes(),
+                    target_montgomery.u.as_bytes()
+                );
+                // m1 = -j * 2^L1 + i, m2 = -j * 2^L1 - i
+                if !pseudo_constant_time {
+                    break 'outer;
                 }
-            } else {
-                // Montgomery substraction: general case
+            }
 
-                let t2_point = t2_table.index(j as _);
+            // lambda = (p - T2[j]_y - Pm_y) * nu
+            // Q_x = lambda^2 - A - T2[j]_x - Pm_x
+            let lambda = &(&-&t2_point.v - &target_montgomery.v) * &nu;
+            let qx = &lambda.square() + &alpha;
 
-                let alpha = &(&MONTGOMERY_A_NEG - &t2_point.u) - &target_montgomery.u;
-
-                // lambda = (T2[j]_y - Pm_y) * nu
-                // Q_x = lambda^2 - A - T2[j]_x - Pm_x
-                let lambda = &(&t2_point.v - &target_montgomery.v) * &nu;
-                let qx = &lambda.square() + &alpha;
-
-                if let Some(i) = t1_table.lookup::<TS>(&qx.as_bytes()) {
-                    // m1 = -j * 2^L1 + i, m2 = -j * 2^L1 - i
-                    let found = consider_candidate((-(j as i64) << TS::L1) + i as i64)
-                        || consider_candidate((-(j as i64) << TS::L1) - i as i64);
-                    if !pseudo_constant_time && found {
-                        break 'outer;
-                    }
-                }
-
-                // lambda = (p - T2[j]_y - Pm_y) * nu
-                // Q_x = lambda^2 - A - T2[j]_x - Pm_x
-                let lambda = &(&-&t2_point.v - &target_montgomery.v) * &nu;
-                let qx = &lambda.square() + &alpha;
-
-                if let Some(i) = t1_table.lookup::<TS>(&qx.as_bytes()) {
-                    // m1 = j * 2^L1 + i, m2 = j * 2^L1 - i
-                    let found = consider_candidate(((j as i64) << TS::L1) + i as i64)
-                        || consider_candidate(((j as i64) << TS::L1) - i as i64);
-                    if !pseudo_constant_time && found {
-                        break 'outer;
-                    }
+            if t1_table
+                .lookup::<TS>(&qx.as_bytes(), |i| {
+                    println!("Case 4 j_start={j_start} j={j} i={i}");
+                    consider_candidate(((j_start as i64 + j as i64) << TS::L1) + i as i64)
+                        || consider_candidate(((j_start as i64 + j as i64) << TS::L1) - i as i64)
+                })
+                .is_some()
+            {
+                // m1 = j * 2^L1 + i, m2 = j * 2^L1 - i
+                if !pseudo_constant_time {
+                    break 'outer;
                 }
             }
         }
+
+        // Move target point by the batch step * 2^L1
+
+        // println!(
+        //     "[1] u={:?} v={:?}",
+        //     target_montgomery.u.as_bytes(),
+        //     target_montgomery.v.as_bytes(),
+        // );
+        // println!(
+        //     "[2] u={:?} v={:?}",
+        //     j_batch_step_montgomery.u.as_bytes(),
+        //     j_batch_step_montgomery.v.as_bytes(),
+        // );
+
+        let p1 = target_montgomery;
+        let p2 = j_batch_step_montgomery;
+
+        let p3 = {
+            if p1.u == FieldElement::ZERO && p1.v == FieldElement::ZERO {
+                println!("p2 + P_inf = p2");
+                // p2 + P_inf = p2
+                p2
+            } else if p2.u == FieldElement::ZERO && p2.v == FieldElement::ZERO {
+                println!("p1 + P_inf = p1");
+                // p1 + P_inf = p1
+                p1
+            } else if p1.u == p2.u && p1.v == -&p2.v {
+                println!("p1 + p2 = P_inf");
+                // p1 = -p2 = (u1, -v1), meaning p1 + p2 = P_inf
+                AffineMontgomeryPoint {
+                    u: FieldElement::ZERO,
+                    v: FieldElement::ZERO,
+                }
+            } else {
+                let lambda = if p1.u == p2.u {
+                    // doubling case
+                    println!("doubling case");
+
+                    // (3*u1^2 + 2*A*u1 + 1) / (2*v1)
+                    // todo this is ugly
+                    let u1_sq = p1.u.square();
+                    let u1_sq_3 = &(&u1_sq + &u1_sq) + &u1_sq;
+                    let u1_ta = &MONTGOMERY_A * &p1.u;
+                    let u1_ta_2 = &u1_ta + &u1_ta;
+                    let den = &p1.v + &p1.v;
+                    let num = &(&u1_sq_3 + &u1_ta_2) + &FieldElement::ONE;
+
+                    &num * &den.invert()
+                } else {
+                    // println!("regular case");
+                    // (v1 - v2) / (u1 - u2)
+                    &(&p1.v - &p2.v) * &(&p1.u - &p2.u).invert()
+                };
+
+                // u3 = lambda^2 - A - u1 - u2
+                // v3 = lambda * (u1 - u3) - v1
+                let new_u = &(&lambda.square() - &MONTGOMERY_A) - &(&p1.u + &p2.u);
+                let new_v = &(&lambda * &(&p1.u - &new_u)) - &p1.v;
+
+                AffineMontgomeryPoint { u: new_u, v: new_v }
+            }
+        };
+        target_montgomery = p3;
     }
 
     found
@@ -500,7 +616,7 @@ mod table_generation {
 
         let mut hash_index = vec![0u8; cuckoo_len];
 
-        for i in 1..=j_max {
+        for i in 0..j_max {
             let mut v = i as _;
             let mut old_hash_id = 1u8;
 
@@ -509,12 +625,13 @@ mod table_generation {
             }
 
             for j in 0..CUCKOO_MAX_INSERT_SWAPS {
-                let x = all_entries[v as usize - 1].as_ref();
+                let x = all_entries[v as usize].as_ref();
                 let start = (old_hash_id as usize - 1) * 8;
                 let end = start as usize + 4;
                 let mut key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
-                let h1 = u32::from_be_bytes(x[start..end].try_into().unwrap()) as usize;
-                let h = u32::from_be_bytes(x[start..end].try_into().unwrap()) as usize % cuckoo_len;
+                let h1 = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize;
+                let h = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize
+                    % cuckoo_len;
 
                 if hash_index[h] == 0 {
                     // println!("Putting {:?} [{} - {h1}] => {}", x, h, v);
@@ -552,8 +669,8 @@ mod table_generation {
         let mut all_entries = vec![Default::default(); j_max];
 
         println!("Computing all the points...");
-        let mut acc = G;
-        for i in 1..=j_max {
+        let mut acc = RistrettoPoint::identity();
+        for i in 0..j_max {
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
@@ -563,7 +680,7 @@ mod table_generation {
             let u = point.0.to_montgomery();
             let bytes = u.to_bytes();
 
-            all_entries[i - 1] = bytes;
+            all_entries[i] = bytes;
             acc += G;
         }
 
@@ -631,11 +748,11 @@ mod tests {
     #[cfg(feature = "precompute_table_gen")]
     fn gen_t1_t2() {
         use std::fs::File;
-        let l1 = 25;
-        let l2 = 48 - l1;
+        // let l1 = 25;
+        // let l2 = 48 - l1;
 
-        // let l1 = 8;
-        // let l2 = 16 - l1;
+        let l1 = 22;
+        let l2 = 32 - l1;
         table_generation::create_t1_table(l1, &mut File::create(format!("t1_{l1}.bin")).unwrap());
         table_generation::create_t2_table(
             l1,
@@ -661,39 +778,136 @@ mod tests {
         }
     }
 
-    #[test]
-    #[cfg(not(feature = "precompute_table_gen"))]
-    fn test_fast_ecdlp() {
-        fn decode_(num: u64) -> Option<i64> {
-            decode(
-                &ECDLPTables16L8,
-                Scalar::from(num) * G,
-                ECDLPArguments::default()
-                    .best_effort_constant_time(true)
-            )
-        }
+    const T1_3: CuckooT1HashMapView<'static> =
+        embed_t1_in_binary! { L = 16, L1 = 3, PATH = "../t1_3.bin" };
+    const T2_3_13: T2LinearTableView<'static> =
+        embed_t2_in_binary! { L = 16, L1 = 3, PATH = "../t2_3_13.bin" };
+    struct ECDLPTables16L3;
+    impl PrecomputedECDLPTables for ECDLPTables16L3 {
+        const L: usize = 16;
+        const L1: usize = 3;
 
-        for i in 0..(1 << ECDLPTables16L8::L) {
-            assert_eq!(Some(i as i64), decode_(i));
+        fn get_t1(&self) -> CuckooT1HashMapView<'_> {
+            T1_3
+        }
+        fn get_t2(&self) -> T2LinearTableView<'_> {
+            T2_3_13
+        }
+    }
+
+    #[cfg(not(feature = "precompute_table_gen"))]
+    const T1_22: CuckooT1HashMapView<'static> =
+        embed_t1_in_binary! { L = 32, L1 = 22, PATH = "../t1_22.bin" };
+    #[cfg(not(feature = "precompute_table_gen"))]
+    const T2_22_10: T2LinearTableView<'static> =
+        embed_t2_in_binary! { L = 32, L1 = 22, PATH = "../t2_22_10.bin" };
+    #[cfg(not(feature = "precompute_table_gen"))]
+    struct ECDLPTables22L10;
+    #[cfg(not(feature = "precompute_table_gen"))]
+    impl PrecomputedECDLPTables for ECDLPTables22L10 {
+        const L: usize = 32;
+        const L1: usize = 22;
+
+        fn get_t1(&self) -> CuckooT1HashMapView<'_> {
+            T1_22
+        }
+        fn get_t2(&self) -> T2LinearTableView<'_> {
+            T2_22_10
         }
     }
 
     #[test]
     #[cfg(not(feature = "precompute_table_gen"))]
-    fn test_par_decode() {
-        for i in 0..(1u64 << ECDLPTables16L8::L) {
+    fn test_fast_ecdlp() {
+        for i in 0..(1 << ECDLPTables16L8::L) {
             assert_eq!(
                 Some(i as i64),
-                par_decode(
+                decode(
                     &ECDLPTables16L8,
-                    Scalar::from(i) * G,
-                    ECDLPArguments::default()
-                        .best_effort_constant_time(true)
-                        .n_threads(4)
+                    Scalar::from(i as u64) * G,
+                    ECDLPArguments::default().best_effort_constant_time(true),
                 )
             );
         }
     }
+
+    #[test]
+    #[cfg(not(feature = "precompute_table_gen"))]
+    fn test_fast_ecdlp_16l3() {
+        // for i in [31411, 33459] {
+        for i in 0..(1 << ECDLPTables16L8::L) {
+            println!(
+                "{:?} {:?}",
+                // assert_eq!(
+                Some(i as i64),
+                decode(
+                    &ECDLPTables16L3,
+                    Scalar::from(i as u64) * G,
+                    ECDLPArguments::default().best_effort_constant_time(true),
+                )
+            );
+        }
+    }
+
+    #[test]
+    #[cfg(not(feature = "precompute_table_gen"))]
+    fn test_fast_ecdlp_22l10() {
+        println!("hi");
+        // let a = (1i64 << 31) - (1 << 30) - (1 << 21);
+        // for i in (a-5..(1 << 32)).step_by(1) {
+        for i in (2149580800i64 - 5..(1 << 32)).step_by(1) {
+            // for i in [30720] {
+            // for i in (0i64..=3223322624+5).rev().step_by(1) {
+            //     println!("{i}");
+            // }
+            // let i = rand::thread_rng().gen_range(0u64..(1 << ECDLPTables22L10::L - 1)) + (1 << ECDLPTables22L10::L - 1);
+            // let i = [3189370311u64, 3049128194u64, 3524051702u64, 3582638009u64][i as usize];
+            println!("Testdding {i}");
+            println!(
+                "{:?}, {:?}",
+                Some(i as i64),
+                decode(
+                    &ECDLPTables22L10,
+                    Scalar::from(i as u64) * G,
+                    ECDLPArguments::default().best_effort_constant_time(true),
+                )
+            );
+        }
+    }
+
+    use proptest::prelude::*;
+    #[cfg(not(feature = "precompute_table_gen"))]
+    proptest! {
+        #[test]
+        fn test_pt_fast_ecdlp_22l10(i in 0i64..4294967296i64) {
+            println!("Testing {}", i);
+            assert_eq!(
+                Some(i),
+                decode(
+                    &ECDLPTables22L10,
+                    Scalar::from(i as u64) * G,
+                    ECDLPArguments::default(),
+                )
+            );
+        }
+    }
+
+    // #[test]
+    // #[cfg(not(feature = "precompute_table_gen"))]
+    // fn test_par_decode() {
+    //     for i in 0..(1u64 << ECDLPTables16L8::L) {
+    //         assert_eq!(
+    //             Some(i as i64),
+    //             par_decode(
+    //                 &ECDLPTables16L8,
+    //                 Scalar::from(i) * G,
+    //                 ECDLPArguments::default()
+    //                     .best_effort_constant_time(true)
+    //                     .n_threads(4)
+    //             )
+    //         );
+    //     }
+    // }
 
     #[test]
     fn test_const_alpha() {

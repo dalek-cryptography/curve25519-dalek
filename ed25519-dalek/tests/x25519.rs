@@ -1,5 +1,6 @@
 //! Tests for converting Ed25519 keys into X25519 (Montgomery form) keys.
 
+use curve25519_dalek::scalar::{clamp_integer, Scalar};
 use ed25519_dalek::SigningKey;
 use hex_literal::hex;
 use sha2::{Digest, Sha512};
@@ -22,11 +23,25 @@ fn ed25519_to_x25519_dh() {
     let x_static_secret_a = XStaticSecret::from(scalar_bytes_a);
     let x_static_secret_b = XStaticSecret::from(scalar_bytes_b);
 
+    // Compute the secret scalars too
+    let scalar_a = ed_signing_key_a.to_scalar();
+    let scalar_b = ed_signing_key_b.to_scalar();
+
     // Compare the scalar bytes to the first 32 bytes of SHA-512(secret_key). We have to clamp and
     // reduce the SHA-512 output because that's what the spec does before using the scalars for
     // anything.
-    assert_eq!(scalar_bytes_a, &Sha512::digest(ed_secret_key_a)[..32],);
-    assert_eq!(scalar_bytes_b, &Sha512::digest(ed_secret_key_b)[..32],);
+    assert_eq!(scalar_bytes_a, &Sha512::digest(ed_secret_key_a)[..32]);
+    assert_eq!(scalar_bytes_b, &Sha512::digest(ed_secret_key_b)[..32]);
+
+    // Compare the scalar with the clamped and reduced scalar bytes
+    assert_eq!(
+        scalar_a,
+        Scalar::from_bytes_mod_order(clamp_integer(scalar_bytes_a))
+    );
+    assert_eq!(
+        scalar_b,
+        Scalar::from_bytes_mod_order(clamp_integer(scalar_bytes_b))
+    );
 
     let x_public_key_a = XPublicKey::from(&x_static_secret_a);
     let x_public_key_b = XPublicKey::from(&x_static_secret_b);

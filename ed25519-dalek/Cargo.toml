@@ -40,6 +40,7 @@ zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
+x25519-dalek = { version = "2", path = "../x25519-dalek", default-features = false, features = ["static_secrets"] }
 blake2 = "0.10"
 sha3 = "0.10"
 hex = "0.4"

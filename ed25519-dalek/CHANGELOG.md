@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are listed in reverse chronological order per undeprecated major series.
 
+# Unreleased
+
+* Add `SigningKey::to_scalar_bytes` for getting the unclamped scalar from signing key
+
 # 2.x series
 
 ##  2.0.0

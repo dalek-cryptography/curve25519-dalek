@@ -876,3 +876,17 @@ impl ExpandedSecretKey {
         Ok(InternalSignature { R, s }.into())
     }
 }
+
+/// Tests the claim made in the comments of SigningKey::to_scalar, i.e., that the resulting scalar
+/// is a valid private key for the x25519 pubkey represented by `verifying_key().to_montgomery()`
+#[test]
+fn privkey_scalar_yields_x25519_pubkey() {
+    let signing_privkey = SigningKey::generate(&mut rand::thread_rng());
+    let signing_pubkey = signing_privkey.verifying_key().to_montgomery();
+    let signing_scalar = signing_privkey.to_scalar();
+
+    let x_privkey = x25519_dalek::StaticSecret::from(signing_scalar.to_bytes());
+    let x_pubkey = x25519_dalek::PublicKey::from(&x_privkey);
+
+    assert_eq!(signing_pubkey.to_bytes(), x_pubkey.to_bytes());
+}

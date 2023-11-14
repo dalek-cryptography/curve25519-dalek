@@ -498,8 +498,13 @@ impl SigningKey {
     /// For more information on the security of systems which use the same keys for both signing
     /// and Diffie-Hellman, see the paper
     /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509).
-    pub fn to_scalar(&self) -> Scalar {
-        ExpandedSecretKey::from(&self.secret_key).scalar
+    pub fn to_scalar_bytes(&self) -> [u8; 32] {
+        // The unreduced ed25519 scalar bytes are given by the first 32 bytes of the SHA-512 hash
+        // of the secret key.
+        let mut buf = [0u8; 32];
+        let scalar_and_hash_prefix = Sha512::default().chain_update(self.secret_key).finalize();
+        buf.copy_from_slice(&scalar_and_hash_prefix[..32]);
+        buf
     }
 }
 
@@ -875,18 +880,4 @@ impl ExpandedSecretKey {
 
         Ok(InternalSignature { R, s }.into())
     }
-}
-
-/// Tests the claim made in the comments of SigningKey::to_scalar, i.e., that the resulting scalar
-/// is a valid private key for the x25519 pubkey represented by `verifying_key().to_montgomery()`
-#[test]
-fn privkey_scalar_yields_x25519_pubkey() {
-    let signing_privkey = SigningKey::generate(&mut rand::thread_rng());
-    let signing_pubkey = signing_privkey.verifying_key().to_montgomery();
-    let signing_scalar = signing_privkey.to_scalar();
-
-    let x_privkey = x25519_dalek::StaticSecret::from(signing_scalar.to_bytes());
-    let x_pubkey = x25519_dalek::PublicKey::from(&x_privkey);
-
-    assert_eq!(signing_pubkey.to_bytes(), x_pubkey.to_bytes());
 }

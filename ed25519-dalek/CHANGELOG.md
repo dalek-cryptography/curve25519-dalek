@@ -8,9 +8,12 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # Unreleased
 
-* Add `SigningKey::to_scalar_bytes` for getting the unclamped scalar from signing key
-
 # 2.x series
+
+## 2.1.0
+
+* Add `SigningKey::to_scalar_bytes` for getting the unclamped scalar from a signing key
+* Loosened `signature` dependency to allow version 2.2
 
 ##  2.0.0
 

@@ -483,7 +483,9 @@ impl SigningKey {
         self.verifying_key.verify_strict(message, signature)
     }
 
-    /// Convert this signing key into a byte representation of a(n) (unreduced) Curve25519 scalar.
+    /// Convert this signing key into a byte representation of an unreduced, unclamped Curve25519
+    /// scalar. This is NOT the same thing as `self.to_scalar().to_bytes()`, since `to_scalar()`
+    /// performs a clamping step, which changes the value of the resulting scalar.
     ///
     /// This can be used for performing X25519 Diffie-Hellman using Ed25519 keys. The bytes output
     /// by this function are a valid corresponding [`StaticSecret`](https://docs.rs/x25519-dalek/2.0.0/x25519_dalek/struct.StaticSecret.html#impl-From%3C%5Bu8;+32%5D%3E-for-StaticSecret)

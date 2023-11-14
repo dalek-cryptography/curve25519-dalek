@@ -530,8 +530,7 @@ impl SigningKey {
         // where the two outputs are both 32 bytes. To use for signing, scalar_bytes must be
         // clamped and reduced (see ExpandedSecretKey::from_bytes). We return the clamped and
         // reduced form.
-        let hash = Sha512::default().chain_update(self.secret_key).finalize();
-        ExpandedSecretKey::from_bytes(hash.as_ref()).scalar
+        ExpandedSecretKey::from(&self.secret_key).scalar
     }
 }
 

@@ -23,7 +23,6 @@ pub fn ecdlp_bench(c: &mut Criterion) {
                 black_box(point),
                 ECDLPArguments::new_with_range(0, 1 << 48).best_effort_constant_time(true),
             );
-            println!("{:?}, {:?}", res, Some(num as i64));
             assert_eq!(res, Some(num as i64));
         });
     });

@@ -8,7 +8,6 @@ use crate::{
     backend::serial::u64::constants::MONTGOMERY_A,
     constants::{MONTGOMERY_A_NEG, RISTRETTO_BASEPOINT_POINT as G},
     field::FieldElement,
-    traits::Identity,
     EdwardsPoint, RistrettoPoint, Scalar,
 };
 use bytemuck::{Pod, Zeroable};
@@ -218,7 +217,7 @@ impl ProgressReportFunction for NoopReportFn {
         ControlFlow::Continue(())
     }
 }
-impl<F: Fn(f64) -> ControlFlow<()> + Send> ProgressReportFunction for F {
+impl<F: Fn(f64) -> ControlFlow<()>> ProgressReportFunction for F {
     #[inline(always)]
     fn report(&self, progress: f64) -> ControlFlow<()> {
         self(progress)
@@ -338,10 +337,10 @@ pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction +
 }
 
 fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
-    precomputed_tables: &TS,
+    _precomputed_tables: &TS,
     point: RistrettoPoint,
     args: &ECDLPArguments<R>,
-    n_threads: usize,
+    _n_threads: usize,
 ) -> (i64, RistrettoPoint, usize) {
     let amplitude = (args.range_end - args.range_start).max(0);
 
@@ -364,10 +363,10 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
     num_batches: usize,
     n_threads: usize,
     thread_i: usize,
-) -> impl Iterator<Item = (usize, AffineMontgomeryPoint, f64)> {
-    let batch_iterator = (0..num_batches).enumerate().map(move |(i, j)| {
-        let progress = i as f64 / num_batches as f64;
-        (j * (1 << L2), progress)
+) -> impl Iterator<Item = (usize, usize, AffineMontgomeryPoint, f64)> {
+    let batch_iterator = (0..num_batches).map(move |j| {
+        let progress = j as f64 / num_batches as f64;
+        (j, j * (1 << L2), progress)
     });
 
     let thread_iter = batch_iterator.skip(thread_i).step_by(n_threads);
@@ -381,7 +380,7 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
     let batch_step = -(n_threads as i64) * els_per_batch as i64;
     let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0);
 
-    thread_iter.map(move |(j_start, progress)| {
+    thread_iter.map(move |(j, j_start, progress)| {
         let current = target_montgomery;
 
         target_montgomery = AffineMontgomeryPoint::addition_not_constant_time(
@@ -389,7 +388,7 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
             &batch_step_montgomery,
         );
 
-        (j_start, current, progress)
+        (j, j_start, current, progress)
     })
 }
 
@@ -413,7 +412,7 @@ pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
 fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     precomputed_tables: &TS,
     target_point: RistrettoPoint,
-    point_iterator: impl Iterator<Item = (usize, AffineMontgomeryPoint, f64)>,
+    point_iterator: impl Iterator<Item = (usize, usize, AffineMontgomeryPoint, f64)>,
     pseudo_constant_time: bool,
     progress_report: impl ProgressReportFunction,
 ) -> Option<u64> {
@@ -431,9 +430,12 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     };
 
     let mut batch = [FieldElement::ZERO; BATCH_SIZE];
-    'outer: for (j_start, target_montgomery, progress) in point_iterator {
-        if let ControlFlow::Break(_) = progress_report.report(progress) {
-            break 'outer;
+    'outer: for (index, j_start, target_montgomery, progress) in point_iterator {
+        // amortize the potential cost of the report function
+        if index % 256 == 0 {
+            if let ControlFlow::Break(_) = progress_report.report(progress) {
+                break 'outer;
+            }
         }
 
         // Case 0: target is 0. Has to be handled separately.
@@ -548,7 +550,7 @@ pub mod table_generation {
 
         let mut hash_index = vec![0u8; cuckoo_len];
 
-        for i in 0..=j_max {
+        for i in 0..j_max {
             let mut v = i as _;
             let mut old_hash_id = 1u8;
 
@@ -572,13 +574,6 @@ pub mod table_generation {
                     t1_keys[h] = key;
                     break;
                 } else {
-                    // println!(
-                    //     "Swapping {:?} [{} - {h1}] for {} (swap #{}) -- {cuckoo_len}",
-                    //     x,
-                    //     h,
-                    //     v,
-                    //     j + 1
-                    // );
                     swap(&mut old_hash_id, &mut hash_index[h]);
                     swap(&mut v, &mut t1_values[h]);
                     swap(&mut key, &mut t1_keys[h]);
@@ -587,22 +582,26 @@ pub mod table_generation {
                     if j == CUCKOO_MAX_INSERT_SWAPS - 1 {
                         // We actually don't have to implement the case where we need to rehash the
                         // whole map.
-                        panic!("Cuckoo hashmap insert needs rehashing.")
+                        panic!(
+                            "Cuckoo hashmap insert needs rehashing: Swapping {x:?} [{h} - {h1}] for {v} (swap #{}) -- {cuckoo_len}",
+                            j + 1
+                        );
                     }
                 }
             }
         }
     }
 
-    fn create_t1_table(l1: usize, file: &mut File) -> std::io::Result<()> {
-        let j_max = 1 << (l1 - 1);
-        let cuckoo_len = (j_max as f64 * 1.3) as usize;
+    fn t1_table_gen_points(
+        j_max: usize,
+        to_skip: usize,
+        limit: usize,
+        slice: &mut [[u8; 32]],
+    ) -> std::io::Result<()> {
+        let thread_iter = (0..j_max).skip(to_skip).take(limit);
+        let mut acc = G * Scalar::from(to_skip as u64);
 
-        let mut all_entries = vec![Default::default(); j_max + 1];
-
-        println!("Computing all the points...");
-        let mut acc = RistrettoPoint::identity();
-        for i in 0..=j_max {
+        for (i_local, i) in thread_iter.enumerate() {
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
@@ -612,14 +611,45 @@ pub mod table_generation {
             let u = point.0.to_montgomery();
             let bytes = u.to_bytes();
 
-            all_entries[i] = bytes;
+            slice[i_local] = bytes;
             acc += G;
         }
+
+        Ok(())
+    }
+
+    fn create_t1_table(l1: usize, file: &mut File, n_threads: usize) -> std::io::Result<()> {
+        let j_max = (1 << (l1 - 1)) + 1;
+        let cuckoo_len = ((j_max-1) as f64 * 1.3) as usize;
+
+        println!("Computing all the points...");
+        let mut all_entries = vec![Default::default(); j_max];
+
+        std::thread::scope(|s| {
+            let chunk_size = j_max / n_threads + 1;
+
+            let handles = all_entries
+                .chunks_mut(chunk_size)
+                .enumerate()
+                .map(|(thread_i, slice)| {
+                    let to_skip = chunk_size * thread_i;
+                    s.spawn(move || t1_table_gen_points(j_max, to_skip, chunk_size, slice))
+                })
+                .collect::<Vec<_>>();
+
+            for el in handles {
+                el.join().expect("child thread panicked")?;
+            }
+
+            std::io::Result::Ok(())
+        })?;
 
         let mut t1_keys = vec![0u32; cuckoo_len];
         let mut t1_values = vec![0u32; cuckoo_len];
 
         println!("Setting up the cuckoo hashmap...");
+        // no attempt is made to multithread this step
+        // i'd love to do it, it *could* be done but it's kinda tedious
         t1_cuckoo_setup(
             cuckoo_len,
             j_max,
@@ -662,9 +692,13 @@ pub mod table_generation {
         Ok(())
     }
 
-    pub fn create_combined_table(l1: usize, file: &mut File) -> std::io::Result<()> {
+    pub fn create_combined_table(
+        l1: usize,
+        file: &mut File,
+        n_threads: usize,
+    ) -> std::io::Result<()> {
         create_t2_table(l1, file)?;
-        create_t1_table(l1, file)
+        create_t1_table(l1, file, n_threads)
     }
 }
 
@@ -685,9 +719,11 @@ mod tests {
     #[test]
     fn gen_t1_t2() {
         let l1 = 26;
+        let n_threads = 4;
         table_generation::create_combined_table(
             l1,
-            &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
+            &mut File::create(format!("ecdlp_table_{l1}_2.bin")).unwrap(),
+            n_threads,
         )
         .unwrap();
     }

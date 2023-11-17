@@ -746,10 +746,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                 write!(formatter, concat!("An ed25519 signing (private) key"))
             }
 
-            fn visit_borrowed_bytes<E: serde::de::Error>(
-                self,
-                bytes: &'de [u8],
-            ) -> Result<Self::Value, E> {
+            fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {
                 SigningKey::try_from(bytes).map_err(E::custom)
             }
 

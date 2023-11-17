@@ -636,10 +636,7 @@ impl<'d> Deserialize<'d> for VerifyingKey {
                 write!(formatter, concat!("An ed25519 verifying (public) key"))
             }
 
-            fn visit_borrowed_bytes<E: serde::de::Error>(
-                self,
-                bytes: &'de [u8],
-            ) -> Result<Self::Value, E> {
+            fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {
                 VerifyingKey::try_from(bytes).map_err(E::custom)
             }
 

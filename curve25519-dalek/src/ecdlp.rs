@@ -1,3 +1,46 @@
+//! # Elliptic Curve Discrete Logarithm Problem (ECDLP)
+//! This file enables the decoding of numbers from RistrettoPoints. As this requires
+//! a bruteforce operation, this can take quite a long time for large input spaces.
+//! The algorithm implemented here is BSGS (Baby Step Giant Step), and the implementation
+//! details are based on https://eprint.iacr.org/2022/1573. The gist of BSGS goes
+//! as follows:
+//! - Our target point, which we want to decode, represents an integer in the range [0, 2^(L1 + L2)].
+//! - We have a T1 hash table, where the key is the curve point and value is the decoded
+//!   point. T1 = <i * G => i | i in [1, 2^l1]>
+//! - We have a T2 linear table (an array), where T2 = [j * 2^l1 * G | j in [1, 2^l2]]
+//! - For each j in 0..2^l2
+//!     Compute the difference between T2[j] and the target point
+//!     if let Some(i) = T1.get(the difference) => the decoded integer is j * 2^L1 + i.
+//! On top of this regular BSGS algorithm, we add the following optimizations:
+//! - Batching. The paper uses a tree-based Montgomery trick - instead, we use the batched
+//!   inversion which is implemented in FieldElement.
+//! - T1 only contains the truncated x coordinates. The table uses Cuckoo hashing, and 
+//!   the hash of a point is directly just a subset of the bytes of the point.
+//! - We need a canonical encoding of a point before any hashmap lookup: this means that
+//!   we must work with affine coordinates. Addition of affine Montgomery points requires
+//!   less inversions than Edwards points, so we use that instead.  
+//! - Using the fact -(x, y) = (x, -y) on the Montgomery curve, we can shift the inputs so
+//!   that we only need half of T1 and T2 for the same number of modular inversions.
+//! - The L2 constant has been fixed here, because we can just shift the input after every
+//!   batch. This means that L2 has a constant size of about 16Ko, which is preferable
+//!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
+//!   however it seems this has no visible impact on performance. Shifting the inputs like this
+//!   also means that we support arbitrary decoding ranges for a given constant tables file.
+//! - This algorithm cannot be constant time because of hashtable lookups. However a "pseudo"
+//!   constant time mode is implemented which will let the algorithm continue to run even when it
+//!   find the answer. When this mode is disabled, the implementation has been tuned so that numbers
+//!   which are closer to the start of the range will get found exponentially earlier - with numbers
+//!   close to 0 found almost imediately.
+//! 
+//! # Benchmarks
+//! 
+//! To see benchmark performance, see [here](ecdlp_perf.md).
+//! 
+//! # Table generation
+//! 
+//! For now, table generation can be done using the`gen_t1_t2` test.
+//! FIXME(table_generation): have a tiny cli/tool?
+
 use core::{
     ops::ControlFlow,
     sync::atomic::{AtomicBool, Ordering},
@@ -8,6 +51,7 @@ use crate::{
     backend::serial::u64::constants::MONTGOMERY_A,
     constants::{MONTGOMERY_A_NEG, RISTRETTO_BASEPOINT_POINT as G},
     field::FieldElement,
+    traits::Identity,
     EdwardsPoint, RistrettoPoint, Scalar,
 };
 use bytemuck::{Pod, Zeroable};
@@ -550,7 +594,7 @@ pub mod table_generation {
 
         let mut hash_index = vec![0u8; cuckoo_len];
 
-        for i in 0..j_max {
+        for i in 0..=j_max {
             let mut v = i as _;
             let mut old_hash_id = 1u8;
 
@@ -574,6 +618,13 @@ pub mod table_generation {
                     t1_keys[h] = key;
                     break;
                 } else {
+                    // println!(
+                    //     "Swapping {:?} [{} - {h1}] for {} (swap #{}) -- {cuckoo_len}",
+                    //     x,
+                    //     h,
+                    //     v,
+                    //     j + 1
+                    // );
                     swap(&mut old_hash_id, &mut hash_index[h]);
                     swap(&mut v, &mut t1_values[h]);
                     swap(&mut key, &mut t1_keys[h]);
@@ -582,26 +633,22 @@ pub mod table_generation {
                     if j == CUCKOO_MAX_INSERT_SWAPS - 1 {
                         // We actually don't have to implement the case where we need to rehash the
                         // whole map.
-                        panic!(
-                            "Cuckoo hashmap insert needs rehashing: Swapping {x:?} [{h} - {h1}] for {v} (swap #{}) -- {cuckoo_len}",
-                            j + 1
-                        );
+                        panic!("Cuckoo hashmap insert needs rehashing.")
                     }
                 }
             }
         }
     }
 
-    fn t1_table_gen_points(
-        j_max: usize,
-        to_skip: usize,
-        limit: usize,
-        slice: &mut [[u8; 32]],
-    ) -> std::io::Result<()> {
-        let thread_iter = (0..j_max).skip(to_skip).take(limit);
-        let mut acc = G * Scalar::from(to_skip as u64);
+    fn create_t1_table(l1: usize, file: &mut File) -> std::io::Result<()> {
+        let j_max = 1 << (l1 - 1);
+        let cuckoo_len = (j_max as f64 * 1.3) as usize;
 
-        for (i_local, i) in thread_iter.enumerate() {
+        let mut all_entries = vec![Default::default(); j_max + 1];
+
+        println!("Computing all the points...");
+        let mut acc = RistrettoPoint::identity();
+        for i in 0..=j_max {
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
@@ -611,45 +658,14 @@ pub mod table_generation {
             let u = point.0.to_montgomery();
             let bytes = u.to_bytes();
 
-            slice[i_local] = bytes;
+            all_entries[i] = bytes;
             acc += G;
         }
-
-        Ok(())
-    }
-
-    fn create_t1_table(l1: usize, file: &mut File, n_threads: usize) -> std::io::Result<()> {
-        let j_max = (1 << (l1 - 1)) + 1;
-        let cuckoo_len = ((j_max-1) as f64 * 1.3) as usize;
-
-        println!("Computing all the points...");
-        let mut all_entries = vec![Default::default(); j_max];
-
-        std::thread::scope(|s| {
-            let chunk_size = j_max / n_threads + 1;
-
-            let handles = all_entries
-                .chunks_mut(chunk_size)
-                .enumerate()
-                .map(|(thread_i, slice)| {
-                    let to_skip = chunk_size * thread_i;
-                    s.spawn(move || t1_table_gen_points(j_max, to_skip, chunk_size, slice))
-                })
-                .collect::<Vec<_>>();
-
-            for el in handles {
-                el.join().expect("child thread panicked")?;
-            }
-
-            std::io::Result::Ok(())
-        })?;
 
         let mut t1_keys = vec![0u32; cuckoo_len];
         let mut t1_values = vec![0u32; cuckoo_len];
 
         println!("Setting up the cuckoo hashmap...");
-        // no attempt is made to multithread this step
-        // i'd love to do it, it *could* be done but it's kinda tedious
         t1_cuckoo_setup(
             cuckoo_len,
             j_max,
@@ -692,13 +708,9 @@ pub mod table_generation {
         Ok(())
     }
 
-    pub fn create_combined_table(
-        l1: usize,
-        file: &mut File,
-        n_threads: usize,
-    ) -> std::io::Result<()> {
+    pub fn create_combined_table(l1: usize, file: &mut File) -> std::io::Result<()> {
         create_t2_table(l1, file)?;
-        create_t1_table(l1, file, n_threads)
+        create_t1_table(l1, file)
     }
 }
 
@@ -718,14 +730,13 @@ mod tests {
 
     #[test]
     fn gen_t1_t2() {
-        let l1 = 26;
-        let n_threads = 4;
-        table_generation::create_combined_table(
-            l1,
-            &mut File::create(format!("ecdlp_table_{l1}_2.bin")).unwrap(),
-            n_threads,
-        )
-        .unwrap();
+        for l1 in 10..=28 {
+            table_generation::create_combined_table(
+                l1,
+                &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
+            )
+            .unwrap();
+        }
     }
 
     #[test]

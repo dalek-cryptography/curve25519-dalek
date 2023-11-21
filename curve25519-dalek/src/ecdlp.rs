@@ -1,9 +1,11 @@
 //! # Elliptic Curve Discrete Logarithm Problem (ECDLP)
+//! 
 //! This file enables the decoding of numbers from RistrettoPoints. As this requires
 //! a bruteforce operation, this can take quite a long time for large input spaces.
 //! The algorithm implemented here is BSGS (Baby Step Giant Step), and the implementation
-//! details are based on https://eprint.iacr.org/2022/1573. The gist of BSGS goes
-//! as follows:
+//! details are based on [Solving Small Exponential ECDLP in EC-based Additively Homomorphic Encryption and Applications][fast-ecdlp-paper]
+//! 
+//! The gist of BSGS goes as follows:
 //! - Our target point, which we want to decode, represents an integer in the range [0, 2^(L1 + L2)].
 //! - We have a T1 hash table, where the key is the curve point and value is the decoded
 //!   point. T1 = <i * G => i | i in [1, 2^l1]>
@@ -11,6 +13,7 @@
 //! - For each j in 0..2^l2
 //!     Compute the difference between T2[j] and the target point
 //!     if let Some(i) = T1.get(the difference) => the decoded integer is j * 2^L1 + i.
+//! 
 //! On top of this regular BSGS algorithm, we add the following optimizations:
 //! - Batching. The paper uses a tree-based Montgomery trick - instead, we use the batched
 //!   inversion which is implemented in FieldElement.
@@ -20,17 +23,17 @@
 //!   we must work with affine coordinates. Addition of affine Montgomery points requires
 //!   less inversions than Edwards points, so we use that instead.  
 //! - Using the fact -(x, y) = (x, -y) on the Montgomery curve, we can shift the inputs so
-//!   that we only need half of T1 and T2 for the same number of modular inversions.
+//!   that we only need half of T1 and T2 and half of the modular inversions.
 //! - The L2 constant has been fixed here, because we can just shift the input after every
 //!   batch. This means that L2 has a constant size of about 16Ko, which is preferable
 //!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
-//!   however it seems this has no visible impact on performance. Shifting the inputs like this
+//!   however this has no visible impact on performance. Shifting the inputs like this
 //!   also means that we support arbitrary decoding ranges for a given constant tables file.
-//! - This algorithm cannot be constant time because of hashtable lookups. However a "pseudo"
+//! - This algorithm cannot be constant-time because of hashmap lookups. However a "pseudo"
 //!   constant time mode is implemented which will let the algorithm continue to run even when it
 //!   find the answer. When this mode is disabled, the implementation has been tuned so that numbers
 //!   which are closer to the start of the range will get found exponentially earlier - with numbers
-//!   close to 0 found almost imediately.
+//!   close to 0 found almost immediately.
 //! 
 //! # Benchmarks
 //! 
@@ -40,6 +43,8 @@
 //! 
 //! For now, table generation can be done using the`gen_t1_t2` test.
 //! FIXME(table_generation): have a tiny cli/tool?
+//! 
+//! [fast-ecdlp-paper]: https://eprint.iacr.org/2022/1573
 
 use core::{
     ops::ControlFlow,
@@ -289,7 +294,12 @@ impl ECDLPArguments<NoopReportFn> {
 }
 
 impl<F: ProgressReportFunction> ECDLPArguments<F> {
-    pub fn best_effort_constant_time(self, pseudo_constant_time: bool) -> Self {
+    /// Enable the "pseudo constant-time" mode. This means that the algorithm will not stop
+    /// once it has found the answer. Keep in mind that **this is not actually constant-time**,
+    /// in fact, the algorithm cannot be constant-time because it relies on hashmap lookups.
+    /// This setting is also useful for benchmarking, as any input will result in roughly the same
+    /// execution time.
+    pub fn pseudo_constant_time(self, pseudo_constant_time: bool) -> Self {
         Self {
             pseudo_constant_time,
             ..self
@@ -309,11 +319,15 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
         }
     }
 
+    /// Configures the number of threads used.
+    /// This only affects the execution of the [`par_decode`] function.
     pub fn n_threads(self, n_threads: usize) -> Self {
         Self { n_threads, ..self }
     }
 }
 
+/// Decode a [`RistrettoPoint`] to the represented integer, in parallel.
+/// This uses [`std::thread`] as a threading primitive, and as such, it is only available when the `std` feature is enabled.
 pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
     precomputed_tables: &TS,
     point: RistrettoPoint,

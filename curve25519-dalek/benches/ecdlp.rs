@@ -21,7 +21,7 @@ pub fn ecdlp_bench(c: &mut Criterion) {
             let res = ecdlp::decode(
                 &tables,
                 black_box(point),
-                ECDLPArguments::new_with_range(0, 1 << 48).best_effort_constant_time(true),
+                ECDLPArguments::new_with_range(0, 1 << 48).pseudo_constant_time(true),
             );
             assert_eq!(res, Some(num as i64));
         });
@@ -35,7 +35,7 @@ pub fn ecdlp_bench(c: &mut Criterion) {
                 &tables,
                 black_box(point),
                 ECDLPArguments::new_with_range(0, 1 << 48)
-                    .best_effort_constant_time(true)
+                    .pseudo_constant_time(true)
                     .n_threads(1),
             );
             assert_eq!(res, Some(num as i64));
@@ -50,7 +50,7 @@ pub fn ecdlp_bench(c: &mut Criterion) {
                 &tables,
                 black_box(point),
                 ECDLPArguments::new_with_range(0, 1 << 48)
-                    .best_effort_constant_time(true)
+                    .pseudo_constant_time(true)
                     .n_threads(2),
             );
             assert_eq!(res, Some(num as i64));
@@ -65,7 +65,7 @@ pub fn ecdlp_bench(c: &mut Criterion) {
                 &tables,
                 black_box(point),
                 ECDLPArguments::new_with_range(0, 1 << 48)
-                    .best_effort_constant_time(true)
+                    .pseudo_constant_time(true)
                     .n_threads(4),
             );
             assert_eq!(res, Some(num as i64));
@@ -80,7 +80,7 @@ pub fn ecdlp_bench(c: &mut Criterion) {
                 &tables,
                 black_box(point),
                 ECDLPArguments::new_with_range(0, 1 << 48)
-                    .best_effort_constant_time(true)
+                    .pseudo_constant_time(true)
                     .n_threads(4),
             );
             assert_eq!(res, Some(num as i64));

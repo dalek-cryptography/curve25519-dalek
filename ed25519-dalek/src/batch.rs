@@ -176,7 +176,7 @@ pub fn verify_batch(
             let mut h: Sha512 = Sha512::default();
             h.update(signatures[i].r_bytes());
             h.update(verifying_keys[i].as_bytes());
-            h.update(&messages[i]);
+            h.update(messages[i]);
             *h.finalize().as_ref()
         })
         .collect();

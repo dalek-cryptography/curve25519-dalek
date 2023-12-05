@@ -259,7 +259,7 @@ pub trait VartimeMultiscalarMul {
             scalars,
             points.into_iter().map(|P| Some(P.borrow().clone())),
         )
-        .unwrap()
+        .expect("should return some point")
     }
 }
 
@@ -365,7 +365,7 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
             dynamic_scalars,
             dynamic_points.into_iter().map(|P| Some(P.borrow().clone())),
         )
-        .unwrap()
+        .expect("should return some point")
     }
 
     /// Given `static_scalars`, an iterator of public scalars

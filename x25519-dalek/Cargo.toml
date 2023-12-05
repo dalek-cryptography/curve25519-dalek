@@ -6,7 +6,7 @@ edition = "2021"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "2.0.0-rc.3"
+version = "2.0.0"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",
@@ -14,8 +14,8 @@ authors = [
 ]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/x25519-dalek"
-homepage = "https://dalek.rs/"
+repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek"
+homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/x25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "curve25519", "key-exchange", "x25519", "diffie-hellman"]
@@ -45,7 +45,7 @@ zeroize = { version = "1", default-features = false, optional = true, features =
 
 [dev-dependencies]
 bincode = "1"
-criterion = "0.4.0"
+criterion = "0.5"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
 [[bench]]

@@ -154,8 +154,7 @@ impl VartimeMultiscalarMul for Pippenger {
         });
 
         // Take the high column as an initial value to avoid wasting time doubling the identity element in `fold()`.
-        // `unwrap()` always succeeds because we know we have more than zero digits.
-        let hi_column = columns.next().unwrap();
+        let hi_column = columns.next().expect("should have more than zero digits");
 
         Some(columns.fold(hi_column, |total, p| total.mul_by_pow_2(w as u32) + p))
     }

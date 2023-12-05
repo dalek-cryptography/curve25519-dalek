@@ -53,9 +53,9 @@ shared secret with Bob by doing:
 ```rust
 # use rand_core::OsRng;
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 # let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 # let bob_public = PublicKey::from(&bob_secret);
 let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 ```
@@ -65,9 +65,9 @@ Similarly, Bob computes a shared secret by doing:
 ```rust
 # use rand_core::OsRng;
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 # let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 # let bob_public = PublicKey::from(&bob_secret);
 let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
 ```
@@ -77,9 +77,9 @@ These secrets are the same:
 ```rust
 # use rand_core::OsRng;
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-# let alice_secret = EphemeralSecret::new(OsRng);
+# let alice_secret = EphemeralSecret::random_from_rng(OsRng);
 # let alice_public = PublicKey::from(&alice_secret);
-# let bob_secret = EphemeralSecret::new(OsRng);
+# let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 # let bob_public = PublicKey::from(&bob_secret);
 # let alice_shared_secret = alice_secret.diffie_hellman(&bob_public);
 # let bob_shared_secret = bob_secret.diffie_hellman(&alice_public);
@@ -100,7 +100,7 @@ To install, add the following to your project's `Cargo.toml`:
 
 ```toml
 [dependencies]
-x25519-dalek = "2.0.0-rc.3"
+x25519-dalek = "2"
 ```
 
 # MSRV

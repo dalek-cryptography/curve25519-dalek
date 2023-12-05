@@ -760,7 +760,7 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
 }
 
 #[unsafe_target_feature("avx2")]
-impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
+impl Mul<&FieldElement2625x4> for &FieldElement2625x4 {
     type Output = FieldElement2625x4;
     /// Multiply `self` by `rhs`.
     ///
@@ -776,7 +776,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     ///
     #[rustfmt::skip] // keep alignment of z* calculations
     #[inline]
-    fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
+    fn mul(self, rhs: &FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x8, y: u32x8) -> u64x4 {
             x.mul32(y)

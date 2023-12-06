@@ -83,9 +83,7 @@ impl<T: Copy + core::ops::Sub> StructWithGenericsNoWhere<T> {
 #[unsafe_target_feature("sse2")]
 #[allow(dead_code)]
 impl<'a> From<&'a Struct> for () {
-    fn from(_: &'a Struct) -> Self {
-        ()
-    }
+    fn from(_: &'a Struct) -> Self {}
 }
 
 #[unsafe_target_feature("sse2")]
@@ -97,8 +95,6 @@ mod inner {
 
 #[unsafe_target_feature_specialize("sse2", "avx2", conditional("avx512ifma", disabled))]
 mod inner_spec {
-    use std;
-
     #[for_target_feature("sse2")]
     const CONST: u32 = 1;
 

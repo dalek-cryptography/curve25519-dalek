@@ -55,73 +55,78 @@ use fiat_crypto::curve25519_32::*;
 /// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement2625(pub(crate) [u32; 10]);
+pub struct FieldElement2625(pub(crate) fiat_25519_tight_field_element);
 
 impl Debug for FieldElement2625 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-        write!(f, "FieldElement2625({:?})", &self.0[..])
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        write!(f, "FieldElement2625({:?})", &(self.0).0[..])
     }
 }
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for FieldElement2625 {
     fn zeroize(&mut self) {
-        self.0.zeroize();
+        (self.0).0.zeroize();
     }
 }
 
 impl<'b> AddAssign<&'b FieldElement2625> for FieldElement2625 {
-    fn add_assign(&mut self, _rhs: &'b FieldElement2625) {
-        let input = self.0;
-        fiat_25519_add(&mut self.0, &input, &_rhs.0);
-        let input = self.0;
-        fiat_25519_carry(&mut self.0, &input);
+    fn add_assign(&mut self, rhs: &'b FieldElement2625) {
+        let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_add(&mut result_loose, &self.0, &rhs.0);
+        fiat_25519_carry(&mut self.0, &result_loose);
     }
 }
 
 impl<'a, 'b> Add<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
-    fn add(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
-        let mut output = *self;
-        fiat_25519_add(&mut output.0, &self.0, &_rhs.0);
-        let input = output.0;
-        fiat_25519_carry(&mut output.0, &input);
+    fn add(self, rhs: &'b FieldElement2625) -> FieldElement2625 {
+        let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_add(&mut result_loose, &self.0, &rhs.0);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry(&mut output.0, &result_loose);
         output
     }
 }
 
 impl<'b> SubAssign<&'b FieldElement2625> for FieldElement2625 {
-    fn sub_assign(&mut self, _rhs: &'b FieldElement2625) {
-        let input = self.0;
-        fiat_25519_sub(&mut self.0, &input, &_rhs.0);
-        let input = self.0;
-        fiat_25519_carry(&mut self.0, &input);
+    fn sub_assign(&mut self, rhs: &'b FieldElement2625) {
+        let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_sub(&mut result_loose, &self.0, &rhs.0);
+        fiat_25519_carry(&mut self.0, &result_loose);
     }
 }
 
 impl<'a, 'b> Sub<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
-    fn sub(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
-        let mut output = *self;
-        fiat_25519_sub(&mut output.0, &self.0, &_rhs.0);
-        let input = output.0;
-        fiat_25519_carry(&mut output.0, &input);
+    fn sub(self, rhs: &'b FieldElement2625) -> FieldElement2625 {
+        let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_sub(&mut result_loose, &self.0, &rhs.0);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry(&mut output.0, &result_loose);
         output
     }
 }
 
 impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
-    fn mul_assign(&mut self, _rhs: &'b FieldElement2625) {
-        let input = self.0;
-        fiat_25519_carry_mul(&mut self.0, &input, &_rhs.0);
+    fn mul_assign(&mut self, rhs: &'b FieldElement2625) {
+        let mut self_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut self_loose, &self.0);
+        let mut rhs_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut rhs_loose, &rhs.0);
+        fiat_25519_carry_mul(&mut self.0, &self_loose, &rhs_loose);
     }
 }
 
 impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
-    fn mul(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
-        let mut output = *self;
-        fiat_25519_carry_mul(&mut output.0, &self.0, &_rhs.0);
+    fn mul(self, rhs: &'b FieldElement2625) -> FieldElement2625 {
+        let mut self_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut self_loose, &self.0);
+        let mut rhs_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut rhs_loose, &rhs.0);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry_mul(&mut output.0, &self_loose, &rhs_loose);
         output
     }
 }
@@ -129,10 +134,10 @@ impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
 impl<'a> Neg for &'a FieldElement2625 {
     type Output = FieldElement2625;
     fn neg(self) -> FieldElement2625 {
-        let mut output = *self;
-        fiat_25519_opp(&mut output.0, &self.0);
-        let input = output.0;
-        fiat_25519_carry(&mut output.0, &input);
+        let mut output_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_opp(&mut output_loose, &self.0);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry(&mut output.0, &output_loose);
         output
     }
 }
@@ -143,8 +148,13 @@ impl ConditionallySelectable for FieldElement2625 {
         b: &FieldElement2625,
         choice: Choice,
     ) -> FieldElement2625 {
-        let mut output = [0u32; 10];
-        fiat_25519_selectznz(&mut output, choice.unwrap_u8() as fiat_25519_u1, &a.0, &b.0);
+        let mut output = fiat_25519_tight_field_element([0u32; 10]);
+        fiat_25519_selectznz(
+            &mut output.0,
+            choice.unwrap_u8() as fiat_25519_u1,
+            &(a.0).0,
+            &(b.0).0,
+        );
         FieldElement2625(output)
     }
 
@@ -161,7 +171,7 @@ impl ConditionallySelectable for FieldElement2625 {
         fiat_25519_cmovznz_u32(&mut output[7], choicebit, self.0[7], other.0[7]);
         fiat_25519_cmovznz_u32(&mut output[8], choicebit, self.0[8], other.0[8]);
         fiat_25519_cmovznz_u32(&mut output[9], choicebit, self.0[9], other.0[9]);
-        *self = FieldElement2625(output);
+        *self = FieldElement2625::from_limbs(output);
     }
 
     fn conditional_swap(a: &mut FieldElement2625, b: &mut FieldElement2625, choice: Choice) {
@@ -179,12 +189,16 @@ impl ConditionallySelectable for FieldElement2625 {
 }
 
 impl FieldElement2625 {
+    pub(crate) const fn from_limbs(limbs: [u32; 10]) -> FieldElement2625 {
+        FieldElement2625(fiat_25519_tight_field_element(limbs))
+    }
+
     /// The scalar \\( 0 \\).
-    pub const ZERO: FieldElement2625 = FieldElement2625([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ZERO: FieldElement2625 = FieldElement2625::from_limbs([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     /// The scalar \\( 1 \\).
-    pub const ONE: FieldElement2625 = FieldElement2625([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ONE: FieldElement2625 = FieldElement2625::from_limbs([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     /// The scalar \\( -1 \\).
-    pub const MINUS_ONE: FieldElement2625 = FieldElement2625([
+    pub const MINUS_ONE: FieldElement2625 = FieldElement2625::from_limbs([
         0x3ffffec, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff, 0x3ffffff, 0x1ffffff,
         0x3ffffff, 0x1ffffff,
     ]);
@@ -220,7 +234,7 @@ impl FieldElement2625 {
         let mut temp = [0u8; 32];
         temp.copy_from_slice(data);
         temp[31] &= 127u8;
-        let mut output = [0u32; 10];
+        let mut output = fiat_25519_tight_field_element([0u32; 10]);
         fiat_25519_from_bytes(&mut output, &temp);
         FieldElement2625(output)
     }
@@ -235,20 +249,23 @@ impl FieldElement2625 {
 
     /// Compute `self^2`.
     pub fn square(&self) -> FieldElement2625 {
-        let mut output = *self;
-        fiat_25519_carry_square(&mut output.0, &self.0);
+        let mut self_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut self_loose, &self.0);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry_square(&mut output.0, &self_loose);
         output
     }
 
     /// Compute `2*self^2`.
     pub fn square2(&self) -> FieldElement2625 {
-        let mut output = *self;
-        let mut temp = *self;
-        // Void vs return type, measure cost of copying self
-        fiat_25519_carry_square(&mut temp.0, &self.0);
-        fiat_25519_add(&mut output.0, &temp.0, &temp.0);
-        let input = output.0;
-        fiat_25519_carry(&mut output.0, &input);
+        let mut self_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_relax(&mut self_loose, &self.0);
+        let mut square = fiat_25519_tight_field_element([0; 10]);
+        fiat_25519_carry_square(&mut square, &self_loose);
+        let mut output_loose = fiat_25519_loose_field_element([0; 10]);
+        fiat_25519_add(&mut output_loose, &square, &square);
+        let mut output = FieldElement2625::ZERO;
+        fiat_25519_carry(&mut output.0, &output_loose);
         output
     }
 }

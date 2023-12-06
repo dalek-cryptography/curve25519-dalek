@@ -237,7 +237,7 @@ impl RistrettoPoint {
 #[cfg(test)]
 mod test {
 
-    extern crate sha2;
+    use sha2;
 
     use self::sha2::Sha256;
     use super::*;

@@ -64,8 +64,7 @@ mod ed25519_benches {
                     .collect();
                 let msg: &[u8] = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                 let messages: Vec<&[u8]> = (0..size).map(|_| msg).collect();
-                let signatures: Vec<Signature> =
-                    keypairs.iter().map(|key| key.sign(&msg)).collect();
+                let signatures: Vec<Signature> = keypairs.iter().map(|key| key.sign(msg)).collect();
                 let verifying_keys: Vec<_> =
                     keypairs.iter().map(|key| key.verifying_key()).collect();
 

@@ -640,7 +640,7 @@ impl<'d> Deserialize<'d> for VerifyingKey {
                 self,
                 bytes: &'de [u8],
             ) -> Result<Self::Value, E> {
-                VerifyingKey::try_from(bytes.as_ref()).map_err(E::custom)
+                VerifyingKey::try_from(bytes).map_err(E::custom)
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -649,6 +649,7 @@ impl<'d> Deserialize<'d> for VerifyingKey {
             {
                 let mut bytes = [0u8; 32];
 
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?

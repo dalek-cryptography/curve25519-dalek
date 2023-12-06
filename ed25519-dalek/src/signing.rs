@@ -19,6 +19,7 @@ use rand_core::CryptoRngCore;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use sha2::Sha512;
+use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
     digest::{generic_array::typenum::U64, Digest},
@@ -54,8 +55,9 @@ use crate::{
 pub type SecretKey = [u8; SECRET_KEY_LENGTH];
 
 /// ed25519 signing key which can be used to produce signatures.
-// Invariant: `public` is always the public key of `secret`. This prevents the signing function
-// oracle attack described in https://github.com/MystenLabs/ed25519-unsafe-libs
+// Invariant: `verifying_key` is always the public key of
+// `secret_key`. This prevents the signing function oracle attack
+// described in https://github.com/MystenLabs/ed25519-unsafe-libs
 #[derive(Clone, Debug)]
 pub struct SigningKey {
     /// The secret half of this signing key.
@@ -107,6 +109,12 @@ impl SigningKey {
     #[inline]
     pub fn to_bytes(&self) -> SecretKey {
         self.secret_key
+    }
+
+    /// Convert this [`SigningKey`] into a [`SecretKey`] reference
+    #[inline]
+    pub fn as_bytes(&self) -> &SecretKey {
+        &self.secret_key
     }
 
     /// Construct a [`SigningKey`] from the bytes of a `VerifyingKey` and `SecretKey`.
@@ -583,6 +591,20 @@ impl TryFrom<&[u8]> for SigningKey {
     }
 }
 
+impl ConstantTimeEq for SigningKey {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.secret_key.ct_eq(&other.secret_key)
+    }
+}
+
+impl PartialEq for SigningKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl Eq for SigningKey {}
+
 #[cfg(feature = "zeroize")]
 impl Drop for SigningKey {
     fn drop(&mut self) {
@@ -685,7 +707,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                 self,
                 bytes: &'de [u8],
             ) -> Result<Self::Value, E> {
-                SigningKey::try_from(bytes.as_ref()).map_err(E::custom)
+                SigningKey::try_from(bytes).map_err(E::custom)
             }
 
             fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
@@ -693,6 +715,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                 A: serde::de::SeqAccess<'de>,
             {
                 let mut bytes = [0u8; 32];
+                #[allow(clippy::needless_range_loop)]
                 for i in 0..32 {
                     bytes[i] = seq
                         .next_element()?
@@ -782,11 +805,11 @@ impl ExpandedSecretKey {
     #[cfg(feature = "digest")]
     #[allow(non_snake_case)]
     #[inline(always)]
-    pub(crate) fn raw_sign_prehashed<'a, CtxDigest, MsgDigest>(
+    pub(crate) fn raw_sign_prehashed<CtxDigest, MsgDigest>(
         &self,
         prehashed_message: MsgDigest,
         verifying_key: &VerifyingKey,
-        context: Option<&'a [u8]>,
+        context: Option<&[u8]>,
     ) -> Result<Signature, SignatureError>
     where
         CtxDigest: Digest<OutputSize = U64>,

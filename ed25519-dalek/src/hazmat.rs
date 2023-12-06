@@ -156,11 +156,11 @@ where
 /// [rfc8032]: https://tools.ietf.org/html/rfc8032#section-5.1
 #[cfg(feature = "digest")]
 #[allow(non_snake_case)]
-pub fn raw_sign_prehashed<'a, CtxDigest, MsgDigest>(
+pub fn raw_sign_prehashed<CtxDigest, MsgDigest>(
     esk: &ExpandedSecretKey,
     prehashed_message: MsgDigest,
     verifying_key: &VerifyingKey,
-    context: Option<&'a [u8]>,
+    context: Option<&[u8]>,
 ) -> Result<Signature, SignatureError>
 where
     MsgDigest: Digest<OutputSize = U64>,
@@ -204,6 +204,8 @@ where
 
 #[cfg(test)]
 mod test {
+    #![allow(clippy::unwrap_used)]
+
     use super::*;
 
     use rand::{rngs::OsRng, CryptoRng, RngCore};
@@ -226,8 +228,8 @@ mod test {
     #[test]
     fn sign_verify_nonspec() {
         // Generate the keypair
-        let mut rng = OsRng;
-        let esk = ExpandedSecretKey::random(&mut rng);
+        let rng = OsRng;
+        let esk = ExpandedSecretKey::random(rng);
         let vk = VerifyingKey::from(&esk);
 
         let msg = b"Then one day, a piano fell on my head";
@@ -245,8 +247,8 @@ mod test {
         use curve25519_dalek::digest::Digest;
 
         // Generate the keypair
-        let mut rng = OsRng;
-        let esk = ExpandedSecretKey::random(&mut rng);
+        let rng = OsRng;
+        let esk = ExpandedSecretKey::random(rng);
         let vk = VerifyingKey::from(&esk);
 
         // Hash the message

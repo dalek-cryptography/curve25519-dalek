@@ -1,50 +1,82 @@
 //! # Elliptic Curve Discrete Logarithm Problem (ECDLP)
+//!
+//! This file enables the decoding of integers from [`RistrettoPoint`]s. As this requires
+//! a bruteforce operation, this can take quite a long time (multiple seconds) for large input spaces.
 //! 
-//! This file enables the decoding of numbers from RistrettoPoints. As this requires
-//! a bruteforce operation, this can take quite a long time for large input spaces.
-//! The algorithm implemented here is BSGS (Baby Step Giant Step), and the implementation
-//! details are based on [Solving Small Exponential ECDLP in EC-based Additively Homomorphic Encryption and Applications][fast-ecdlp-paper]
+//! The algorithm depends on a constant `L1` parameter, which enables changing the space/time tradeoff.
+//! To use a given `L1` constant, you need to generate a precomputed tables file, or download a pre-generated one.
+//! The resulting file may be quite big, which is why it is recommanded to load it at runtime using [`ecdlp::ECDLPTablesFile`].
 //! 
-//! The gist of BSGS goes as follows:
-//! - Our target point, which we want to decode, represents an integer in the range [0, 2^(L1 + L2)].
-//! - We have a T1 hash table, where the key is the curve point and value is the decoded
-//!   point. T1 = <i * G => i | i in [1, 2^l1]>
-//! - We have a T2 linear table (an array), where T2 = [j * 2^l1 * G | j in [1, 2^l2]]
-//! - For each j in 0..2^l2
-//!     Compute the difference between T2[j] and the target point
-//!     if let Some(i) = T1.get(the difference) => the decoded integer is j * 2^L1 + i.
-//! 
-//! On top of this regular BSGS algorithm, we add the following optimizations:
-//! - Batching. The paper uses a tree-based Montgomery trick - instead, we use the batched
-//!   inversion which is implemented in FieldElement.
-//! - T1 only contains the truncated x coordinates. The table uses Cuckoo hashing, and 
-//!   the hash of a point is directly just a subset of the bytes of the point.
-//! - We need a canonical encoding of a point before any hashmap lookup: this means that
-//!   we must work with affine coordinates. Addition of affine Montgomery points requires
-//!   less inversions than Edwards points, so we use that instead.  
-//! - Using the fact -(x, y) = (x, -y) on the Montgomery curve, we can shift the inputs so
-//!   that we only need half of T1 and T2 and half of the modular inversions.
-//! - The L2 constant has been fixed here, because we can just shift the input after every
-//!   batch. This means that L2 has a constant size of about 16Ko, which is preferable
-//!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
-//!   however this has no visible impact on performance. Shifting the inputs like this
-//!   also means that we support arbitrary decoding ranges for a given constant tables file.
-//! - This algorithm cannot be constant-time because of hashmap lookups. However a "pseudo"
-//!   constant time mode is implemented which will let the algorithm continue to run even when it
-//!   find the answer. When this mode is disabled, the implementation has been tuned so that numbers
-//!   which are closer to the start of the range will get found exponentially earlier - with numbers
-//!   close to 0 found almost immediately.
-//! 
-//! # Benchmarks
-//! 
-//! To see benchmark performance, see [here](ecdlp_perf.md).
-//! 
+//! The algorithm works for any range, but keep in mind that the time the algorithm takes grows exponentially: with the same
+//! precomputed tables, decoding an `n+1`-bit integer will take 2x as long as an `n`-bit integer. By default, unless the "pseudo"
+//! constant time mode is enabled, integers which are closer to the start of the range will be found exponentially faster: for 
+//! example, integers in the `n-1`-bit first half of the `n`-bit decoding range will take 1/2 of the time compared to the second half,
+//! and numbers near the very beginning will be found almost immediately.
+//!
+//! # Space / Time tradeoff and benchmarks
+//!
+//! To choose an `L1` constant, you may to see benchmark performance and tables size [here](ecdlp_perf.md).
+//!
 //! # Table generation
-//! 
-//! For now, table generation can be done using the`gen_t1_t2` test.
-//! FIXME(table_generation): have a tiny cli/tool?
-//! 
-//! [fast-ecdlp-paper]: https://eprint.iacr.org/2022/1573
+//!
+//! For now, table generation can be done using the `gen_t1_t2` test, or using the unstable [`ecdlp::table_generation`] module.
+//!
+//! # Constant time
+//!
+//! This algorithm cannot be constant-time because of hashmap lookups. However a "pseudo"
+//! constant time mode is implemented which lets the algorithm continue to run even when it
+//! has found the answer.
+//!
+//! # Example
+//!
+//! Decoding a 48bit number using a L1=26 precomputed tables file.
+//! ```
+//! use curve25519_dalek::constants::{RISTRETTO_BASEPOINT_POINT as G};
+//!
+//! let precomputed_tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin")
+//!     .unwrap();
+//!
+//! let num = 258383831730230u64;
+//! let to_decode = Scalar::from(num) * G;
+//!
+//! assert_eq!(
+//!     decode(precomputed_tables, to_decode, ECDLPArguments::new_with_range(0, 1 << 48)),
+//!     Some(num)
+//! );
+//! ```
+
+// Notes of the ECDLP implementation.
+mod ecdlp_notes {
+    //! The algorithm implemented here is BSGS (Baby Step Giant Step), and the implementation
+    //! details are based on [Solving Small Exponential ECDLP in EC-based Additively Homomorphic Encryption and Applications][fast-ecdlp-paper].
+    //!
+    //! The gist of BSGS goes as follows:
+    //! - Our target point, which we want to decode, represents an integer in the range \[0, 2^(L1 + L2)\].
+    //! - We have a T1 hash table, where the key is the curve point and value is the decoded
+    //!   point. T1 = <i * G => i | i in \[1, 2^l1\]>
+    //! - We have a T2 linear table (an array), where T2 = \[j * 2^l1 * G | j in \[1, 2^l2\]\]
+    //! - For each j in 0..2^l2
+    //!     Compute the difference between T2\[j\] and the target point
+    //!     if let Some(i) = T1.get(the difference) => the decoded integer is j * 2^L1 + i.
+    //!
+    //! On top of this regular BSGS algorithm, we add the following optimizations:
+    //! - Batching. The paper uses a tree-based Montgomery trick - instead, we use the batched
+    //!   inversion which is implemented in FieldElement.
+    //! - T1 only contains the truncated x coordinates. The table uses Cuckoo hashing, and
+    //!   the hash of a point is directly just a subset of the bytes of the point.
+    //! - We need a canonical encoding of a point before any hashmap lookup: this means that
+    //!   we must work with affine coordinates. Addition of affine Montgomery points requires
+    //!   less inversions than Edwards points, so we use that instead.  
+    //! - Using the fact -(x, y) = (x, -y) on the Montgomery curve, we can shift the inputs so
+    //!   that we only need half of T1 and T2 and half of the modular inversions.
+    //! - The L2 constant has been fixed here, because we can just shift the input after every
+    //!   batch. This means that L2 has a constant size of about 16Ko, which is preferable
+    //!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
+    //!   however this has no visible impact on performance. Shifting the inputs like this
+    //!   also means that we support arbitrary decoding ranges for a given constant tables file.
+    //!
+    //! [fast-ecdlp-paper]: https://eprint.iacr.org/2022/1573
+}
 
 use core::{
     ops::ControlFlow,
@@ -66,13 +98,19 @@ const BATCH_SIZE: usize = 1 << (L2 - 1);
 
 const I_BITS: usize = L2 - 1;
 const I_MAX: usize = (1 << I_BITS) + 1; // there needs to be one more element in T2
+const CUCKOO_K: usize = 3; // number of cuckoo lookups before giving up
 
-// Note: file layout is just T2 followed by T1 keys and then T2 values.
-// We just do casts using bytemuck since everything are PODs.
+// Note: file layout is just T2 followed by T1 keys and then T1 values.
+// We just do casts using `bytemuck` since everything are PODs.
+
+/// ECDLP tables loaded from a file. The `L1` const-generic needs to match the one
+/// used during table generation.
 pub struct ECDLPTablesFile<const L1: usize> {
     content: memmap::Mmap,
 }
 impl<const L1: usize> ECDLPTablesFile<L1> {
+    /// Load the ECDLP tables from a file.
+    /// As of now, the file layout is unstable and may change.
     pub fn load_from_file(filename: impl AsRef<Path>) -> std::io::Result<Self> {
         let f = File::open(filename)?;
 
@@ -109,23 +147,34 @@ impl<const L1: usize> PrecomputedECDLPTables for ECDLPTablesFile<L1> {
     }
 }
 
+/// Trait to expose access to the ECDLP precomputed tables to the algorithm.
+/// You should probably use [`ECDLPTablesFile`], which implements this trait -
+/// this trait only exists as a way to implement your own way of storing the tables,
+/// in case you are running on `no_std` or don't have access to `mmap`.
 pub trait PrecomputedECDLPTables {
+    /// The `L1` constant used to generate the table.
     const L1: usize;
 
-    const J_BITS: usize = Self::L1 - 1;
-    const J_MAX: usize = 1 << Self::J_BITS;
-
-    const CUCKOO_LEN: usize = (Self::J_MAX as f64 * 1.3) as _;
-    const CUCKOO_K: usize = 3;
-
-    /// Hashmap <i * G => i | i in [1, 2^(l1-1)]>.
+    /// Hashmap <i * G => i | i in \[1, 2^(l1-1)\]>.
     /// Cuckoo hash table, each entry is 8 bytes long - but there are 1.3 times the needed slots.
     /// Total map size is then 1.3*8*2^(l1-1) bytes.
     /// The hashing function is just indexing the bytes of the point for efficiency.
     fn get_t1(&self) -> CuckooT1HashMapView<'_>;
 
-    /// Linear map [j * 2^l1 * G] | j in [1, 2^(l2-1)].
+    /// Linear map \[j * 2^l1 * G | j in \[1, 2^(l2-1)\]\].
     fn get_t2(&self) -> T2LinearTableView<'_>;
+}
+
+// Hoist these constants to a private trait to make them non-overrideable.
+trait ECDLPTablesConstants {
+    const J_BITS: usize;
+    const J_MAX: usize;
+    const CUCKOO_LEN: usize;
+}
+impl<T: PrecomputedECDLPTables> ECDLPTablesConstants for T {
+    const J_BITS: usize = Self::L1 - 1;
+    const J_MAX: usize = 1 << Self::J_BITS;
+    const CUCKOO_LEN: usize = (Self::J_MAX as f64 * 1.3) as _;
 }
 
 /// Canonical FieldElement type.
@@ -137,6 +186,7 @@ struct AffineMontgomeryPoint {
 }
 
 impl AffineMontgomeryPoint {
+    /// Add two `AffineMontgomeryPoint` together.
     fn addition_not_constant_time(&self, p2: &Self) -> AffineMontgomeryPoint {
         let p1 = self;
         if p1.u == FieldElement::ZERO && p1.v == FieldElement::ZERO {
@@ -210,12 +260,15 @@ impl From<&'_ EdwardsPoint> for AffineMontgomeryPoint {
 
 #[repr(C)]
 #[derive(Clone, Copy, Default, Pod, Zeroable, Debug)]
+/// An entry in the T2 table. Represents a (u,v) coordinate on the Montgomery curve.
 pub struct T2MontgomeryCoordinates {
+    /// The `u` coordinate.
     pub u: CompressedFieldElement,
+    /// The `v` coordinate.
     pub v: CompressedFieldElement,
 }
 
-/// (u, v) Montgomery pairs.
+/// A view into the T2 table.
 pub struct T2LinearTableView<'a>(pub &'a [T2MontgomeryCoordinates]);
 
 impl T2LinearTableView<'_> {
@@ -228,8 +281,11 @@ impl T2LinearTableView<'_> {
     }
 }
 
+/// A view into the T1 table.
 pub struct CuckooT1HashMapView<'a> {
+    /// Cuckoo keys
     pub keys: &'a [u32],
+    /// Cuckoo values
     pub values: &'a [u32],
 }
 
@@ -239,7 +295,7 @@ impl CuckooT1HashMapView<'_> {
         x: &[u8],
         mut is_problem_answer: impl FnMut(u64) -> bool,
     ) -> Option<u64> {
-        for i in 0..TS::CUCKOO_K {
+        for i in 0..CUCKOO_K {
             let start = i * 8;
             let end = start + 4;
             let key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
@@ -256,15 +312,11 @@ impl CuckooT1HashMapView<'_> {
     }
 }
 
+/// A trait to represent progress report functions.
+/// It is auto-implemented on any `F: Fn(f64) -> ConstrolFlow<()>`.
 pub trait ProgressReportFunction {
+    /// Run the progress report function.
     fn report(&self, progress: f64) -> ControlFlow<()>;
-}
-pub struct NoopReportFn;
-impl ProgressReportFunction for NoopReportFn {
-    #[inline(always)]
-    fn report(&self, _progress: f64) -> ControlFlow<()> {
-        ControlFlow::Continue(())
-    }
 }
 impl<F: Fn(f64) -> ControlFlow<()>> ProgressReportFunction for F {
     #[inline(always)]
@@ -272,7 +324,16 @@ impl<F: Fn(f64) -> ControlFlow<()>> ProgressReportFunction for F {
         self(progress)
     }
 }
+/// The Noop (no operation) report function. It does nothing and will never break.
+pub struct NoopReportFn;
+impl ProgressReportFunction for NoopReportFn {
+    #[inline(always)]
+    fn report(&self, _progress: f64) -> ControlFlow<()> {
+        ControlFlow::Continue(())
+    }
+}
 
+/// Builder for the ECDLP algorithm parameters.
 pub struct ECDLPArguments<R: ProgressReportFunction = NoopReportFn> {
     range_start: i64,
     range_end: i64,
@@ -282,6 +343,7 @@ pub struct ECDLPArguments<R: ProgressReportFunction = NoopReportFn> {
 }
 
 impl ECDLPArguments<NoopReportFn> {
+    /// Creates a new `ECDLPArguments` with default arguments, to run on a specific range.
     pub fn new_with_range(range_start: i64, range_end: i64) -> Self {
         Self {
             range_start,
@@ -306,6 +368,24 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
         }
     }
 
+    /// Sets the progress report function.
+    ///
+    /// This function will be periodically called when the algorithm is running.
+    /// The `progress` argument represents the current progress, from `0.0` to `1.0`.
+    /// Returning `ControlFlow::Break(())` will stop the algorithm.
+    ///
+    /// Please keep in mind that this report function should not take too long or nuke
+    /// the cache, as it would impact the performance of the algorithm.
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// let ecdlp_args = ECDLPArguments::new_with_range(0, 1 << 48)
+    ///     .progress_report_function(|_progress| {
+    ///         // do something with `progress`
+    ///         ControlFlow::Continue(())
+    ///     });
+    /// ```
     pub fn progress_report_function<R: ProgressReportFunction>(
         self,
         progress_report_function: R,
@@ -321,13 +401,104 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
 
     /// Configures the number of threads used.
     /// This only affects the execution of the [`par_decode`] function.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let n_threads = std::thread::available_parallelism()
+    ///     .expect("cannot get available parallelism")
+    ///     .get();
+    /// let ecdlp_args = ECDLPArguments::new_with_range(0, 1 << 48)
+    ///     .n_threads(n_threads);
+    /// ```
     pub fn n_threads(self, n_threads: usize) -> Self {
         Self { n_threads, ..self }
     }
 }
 
+/// Offset calculations common to [`par_decode`] and [`decode`].
+fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
+    _precomputed_tables: &TS,
+    point: RistrettoPoint,
+    args: &ECDLPArguments<R>,
+    _n_threads: usize,
+) -> (i64, RistrettoPoint, usize) {
+    let amplitude = (args.range_end - args.range_start).max(0);
+
+    let offset = args.range_start + ((1 << (L2 - 1)) << TS::L1) + (1 << (TS::L1 - 1));
+    let normalized = &point - &i64_to_scalar(offset) * G;
+
+    let j_end = (amplitude >> TS::L1) as usize; // amplitude / 2^(L1 + 1)
+
+    // FIXME: is there a better way to divceil other than pulling the `num` crate?
+    let divceil = |a, b| (a + b - 1) / b;
+
+    let num_batches = divceil(j_end, 1 << L2); // divceil(j_end, 2^NEW_L2)
+
+    (offset, normalized, num_batches)
+}
+
+/// Returns an iterator of batches for a given thread. Common to [`par_decode`] and [`decode`].
+/// Iterator item is (index, j_start, target_montgomery, progress).
+fn make_point_iterator<TS: PrecomputedECDLPTables>(
+    _precomputed_tables: &TS,
+    normalized: RistrettoPoint,
+    num_batches: usize,
+    n_threads: usize,
+    thread_i: usize,
+) -> impl Iterator<Item = (usize, usize, AffineMontgomeryPoint, f64)> {
+    let batch_iterator = (0..num_batches).map(move |j| {
+        let progress = j as f64 / num_batches as f64;
+        (j, j * (1 << L2), progress)
+    });
+
+    let thread_iter = batch_iterator.skip(thread_i).step_by(n_threads);
+
+    let els_per_batch = 1 << (L2 + TS::L1);
+
+    // starting point for this thread
+    let t_normalized = &normalized - &i64_to_scalar((thread_i * els_per_batch) as i64) * G;
+
+    let mut target_montgomery = AffineMontgomeryPoint::from(&t_normalized.0);
+    let batch_step = -(n_threads as i64) * els_per_batch as i64;
+    let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0);
+
+    thread_iter.map(move |(j, j_start, progress)| {
+        let current = target_montgomery;
+
+        target_montgomery = AffineMontgomeryPoint::addition_not_constant_time(
+            &target_montgomery,
+            &batch_step_montgomery,
+        );
+
+        (j, j_start, current, progress)
+    })
+}
+
+/// Decode a [`RistrettoPoint`] to the represented integer.
+/// This may take a long time, so if you are running on an event-loop such as `tokio`, you
+/// should wrap this in a `tokio::block_on` task.
+pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
+    precomputed_tables: &TS,
+    point: RistrettoPoint,
+    args: ECDLPArguments<R>,
+) -> Option<i64> {
+    let (offset, normalized, num_batches) = decode_prep(precomputed_tables, point, &args, 1);
+    let point_iter = make_point_iterator(precomputed_tables, normalized, num_batches, 1, 0);
+    fast_ecdlp(
+        precomputed_tables,
+        normalized,
+        point_iter,
+        args.pseudo_constant_time,
+        args.progress_report_function,
+    )
+    .map(|v| v as i64 + offset)
+}
+
 /// Decode a [`RistrettoPoint`] to the represented integer, in parallel.
 /// This uses [`std::thread`] as a threading primitive, and as such, it is only available when the `std` feature is enabled.
+/// This may take a long time, so if you are running on an event-loop such as `tokio`, you
+/// should wrap this in a `tokio::block_on` task.
 pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
     precomputed_tables: &TS,
     point: RistrettoPoint,
@@ -392,79 +563,6 @@ pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction +
     });
 
     res.map(|v| v as i64 + offset)
-}
-
-fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
-    _precomputed_tables: &TS,
-    point: RistrettoPoint,
-    args: &ECDLPArguments<R>,
-    _n_threads: usize,
-) -> (i64, RistrettoPoint, usize) {
-    let amplitude = (args.range_end - args.range_start).max(0);
-
-    let offset = args.range_start + ((1 << (L2 - 1)) << TS::L1) + (1 << (TS::L1 - 1));
-    let normalized = &point - &i64_to_scalar(offset) * G;
-
-    let j_end = (amplitude >> TS::L1) as usize; // amplitude / 2^(L1 + 1)
-
-    // FIXME: is there a better way to divceil other than pulling the `num` crate?
-    let divceil = |a, b| (a + b - 1) / b;
-
-    let num_batches = divceil(j_end, 1 << L2); // divceil(j_end, 2^NEW_L2)
-
-    (offset, normalized, num_batches)
-}
-
-fn make_point_iterator<TS: PrecomputedECDLPTables>(
-    _precomputed_tables: &TS,
-    normalized: RistrettoPoint,
-    num_batches: usize,
-    n_threads: usize,
-    thread_i: usize,
-) -> impl Iterator<Item = (usize, usize, AffineMontgomeryPoint, f64)> {
-    let batch_iterator = (0..num_batches).map(move |j| {
-        let progress = j as f64 / num_batches as f64;
-        (j, j * (1 << L2), progress)
-    });
-
-    let thread_iter = batch_iterator.skip(thread_i).step_by(n_threads);
-
-    let els_per_batch = 1 << (L2 + TS::L1);
-
-    // starting point for this thread
-    let t_normalized = &normalized - &i64_to_scalar((thread_i * els_per_batch) as i64) * G;
-
-    let mut target_montgomery = AffineMontgomeryPoint::from(&t_normalized.0);
-    let batch_step = -(n_threads as i64) * els_per_batch as i64;
-    let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0);
-
-    thread_iter.map(move |(j, j_start, progress)| {
-        let current = target_montgomery;
-
-        target_montgomery = AffineMontgomeryPoint::addition_not_constant_time(
-            &target_montgomery,
-            &batch_step_montgomery,
-        );
-
-        (j, j_start, current, progress)
-    })
-}
-
-pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
-    precomputed_tables: &TS,
-    point: RistrettoPoint,
-    args: ECDLPArguments<R>,
-) -> Option<i64> {
-    let (offset, normalized, num_batches) = decode_prep(precomputed_tables, point, &args, 1);
-    let point_iter = make_point_iterator(precomputed_tables, normalized, num_batches, 1, 0);
-    fast_ecdlp(
-        precomputed_tables,
-        normalized,
-        point_iter,
-        args.pseudo_constant_time,
-        args.progress_report_function,
-    )
-    .map(|v| v as i64 + offset)
 }
 
 fn fast_ecdlp<TS: PrecomputedECDLPTables>(
@@ -589,6 +687,8 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     found
 }
 
+/// Table generation module. This module is public but should be treated as
+/// unstable. The API may change without notice.
 pub mod table_generation {
     use std::{fs::File, io::Write};
 
@@ -622,8 +722,7 @@ pub mod table_generation {
                 let end = start as usize + 4;
                 let mut key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
                 let h1 = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize;
-                let h = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize
-                    % cuckoo_len;
+                let h = h1 % cuckoo_len;
 
                 if hash_index[h] == 0 {
                     // println!("Putting {:?} [{} - {h1}] => {}", x, h, v);
@@ -722,6 +821,7 @@ pub mod table_generation {
         Ok(())
     }
 
+    /// Generate the ECDLP precomputed tables file.
     pub fn create_combined_table(l1: usize, file: &mut File) -> std::io::Result<()> {
         create_t2_table(l1, file)?;
         create_t1_table(l1, file)

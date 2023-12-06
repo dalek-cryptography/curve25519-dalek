@@ -79,6 +79,7 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+/// Decoding ristretto points to integers.
 pub mod ecdlp;
 
 //------------------------------------------------------------------------

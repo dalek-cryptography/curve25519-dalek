@@ -123,7 +123,7 @@ major series.
 
 ### 2.1.2
 
-* Multiple documenation typo fixes.
+* Multiple documentation typo fixes.
 * Fix `alloc` feature working with stable rust.
 
 ### 2.1.1

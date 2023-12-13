@@ -1,0 +1,111 @@
+name: All
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: '-D warnings'
+
+jobs:
+  test-stable:
+    name: Test 32/64 bit stable
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # 32-bit target
+          - target: i686-unknown-linux-gnu
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit target
+          - target: x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup target add ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --no-default-features
+      - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --all-features
+
+  test-nightly:
+    name: Test Nightly
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@nightly
+    - run: cargo test
+
+  bench:
+    name: Check that benchmarks compile
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Build u32 bench
+      env:
+        RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
+      run: cargo build --benches
+    - name: Build u64 bench
+      env:
+        RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
+      run: cargo build --benches
+    - name: Build default (host native) bench
+      run: cargo build --benches
+
+  # Test no_std with serial (default)
+  build-nostd-serial:
+    name: Build serial on no_std target (thumbv7em-none-eabi)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - crate: curve25519-dalek
+          - crate: ed25519-dalek
+          - crate: x25519-dalek
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: thumbv7em-none-eabi
+      - uses: taiki-e/install-action@cargo-hack
+      # No default features build
+      - name: no_std / no feat ${{ matrix.crate }}
+        run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
+      - name: no_std / cargo hack ${{ matrix.crate }}
+        run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
+
+  clippy:
+    name: Check that clippy is happy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.73.0
+      with:
+        components: clippy
+    - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features
+
+  rustfmt:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - run: cargo fmt --all -- --check
+
+  doc:
+    name: Check docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - run: cargo doc --all-features

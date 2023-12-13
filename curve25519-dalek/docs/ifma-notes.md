@@ -351,7 +351,7 @@ This computation requires 25 `vpmadd52luq` and 25 `vpmadd52huq`
 operations.  For 256-bit vectors, IFMA operations execute on an
 i3-8121U with latency 4 cycles, throughput 0.5 cycles, so executing 50
 instructions requires 25 cycles' worth of throughput.  Accumulating
-terms with coefficient \\(1\\) and \\(2\\) seperately means that the
+terms with coefficient \\(1\\) and \\(2\\) separately means that the
 longest dependency chain has length 5, so the critical path has length
 20 cycles and the bottleneck is throughput.
 

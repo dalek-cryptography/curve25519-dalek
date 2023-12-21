@@ -35,7 +35,7 @@ rustdoc-args = [
     "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
     "--cfg", "docsrs",
 ]
-features = ["getrandom", "reusable_secrets", "serde", "static_secrets"]
+features = ["getrandom", "reusable_secrets", "serde", "static_secrets", "elligator2"]
 
 [dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false }
@@ -61,3 +61,4 @@ alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]
 precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
 static_secrets = []
+elligator2 = ["curve25519-dalek/elligator2"]

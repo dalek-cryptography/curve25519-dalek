@@ -54,14 +54,13 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-#[cfg(not(feature = "betrusted"))]
-use constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
-#[cfg(feature = "betrusted")]
-use constants::{MONTGOMERY_A, MONTGOMERY_A_NEG}; // eliminate constants absorbed into the microcode engine
+#[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
+use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
+use crate::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG}; // eliminate constants absorbed into the microcode engine
 
-use edwards::{CompressedEdwardsY, EdwardsPoint};
-use field::FieldElement;
-use scalar::Scalar;
+use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
+use crate::field::FieldElement;
 use crate::scalar::{clamp_integer, Scalar};
 
 use crate::traits::Identity;
@@ -156,6 +155,8 @@ impl MontgomeryPoint {
         Self::mul_base(&s)
     }
 
+    //TODO: understand _clamped multiplication_ and ensure we are doing it correctly and
+    //compatibily as this has changed since our fork.
     /// Given `self` \\( = u\_0(P) \\), and a big-endian bit representation of an integer
     /// \\(n\\), return \\( u\_0(\[n\]P) \\). This is constant time in the length of `bits`.
     ///
@@ -324,15 +325,17 @@ impl ProjectivePoint {
     ///
     /// * \\( u = U / W \\) if \\( W \neq 0 \\);
     /// * \\( 0 \\) if \\( W \eq 0 \\);
-    #[cfg(not(feature = "betrusted"))]
+    #[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
     pub fn as_affine(&self) -> MontgomeryPoint {
-        #[cfg(all(not(test),feature="betrusted"))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
+        //TODO: consider making this a seperate feature. Something like "panic_on_sw_eval" which would
+        //be ameniable to upstreaming
+        #[cfg(all(not(test),curve25519_dalek_backend = "u32e_backend"))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
         log::warn!("sw as_affine being used - check for build config errors!");
         let u = &self.U * &self.W.invert();
         MontgomeryPoint(u.as_bytes())
     }
     #[allow(dead_code)]
-    #[cfg(feature = "betrusted")]
+    #[cfg(curve25519_dalek_backend = "u32e_backend")]
     pub fn as_affine(&self) -> MontgomeryPoint {
         let mcode = assemble_engine25519!(
             start:
@@ -496,7 +499,7 @@ impl ProjectivePoint {
 /// $$
 ///     (U\_Q : W\_Q) \gets u(P + Q).
 /// $$
-#[cfg(not(feature = "betrusted"))]
+#[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
 #[rustfmt::skip] // keep alignment of explanatory comments
 pub(crate) fn differential_add_and_double(
     P: &mut ProjectivePoint,
@@ -538,7 +541,7 @@ pub(crate) fn differential_add_and_double(
     Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
 }
 
-#[cfg(feature = "betrusted")]
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; engine_25519::RF_SIZE_IN_U32]) {
     use core::convert::TryInto;
     for (byte, rf_dst) in bytes.chunks_exact(4).zip(rf[register * 8..(register+1)*8].iter_mut()) {
@@ -546,7 +549,7 @@ fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32; engine_25519::RF_
     }
 }
 
-#[cfg(feature = "betrusted")]
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u8; 32] {
     let mut ret: [u8; 32] = [0; 32];
 
@@ -560,7 +563,7 @@ fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u
 }
 
 #[allow(dead_code)] // absorbed into mul, but might be useful later on as a subroutine for something else
-#[cfg(feature = "betrusted")]
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 pub(crate) fn differential_add_and_double_hw(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
@@ -700,7 +703,7 @@ impl Mul<&Scalar> for &MontgomeryPoint {
     type Output = MontgomeryPoint;
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0([n]P) \\).
-    #[cfg(feature = "betrusted")]
+    #[cfg(curve25519_dalek_backend = "u32e_backend")]
     fn mul(self, scalar: &Scalar) -> MontgomeryPoint {
         log::debug!("hw mont");
         // Algorithm 8 of Costello-Smith 2017
@@ -1014,6 +1017,10 @@ impl Mul<&Scalar> for &MontgomeryPoint {
             if false { // unmerged affine path
                 x0.U = FieldElement::from_bytes(&copy_from_rf(25, &result_rf));
                 x0.W = FieldElement::from_bytes(&copy_from_rf(26, &result_rf));
+                
+                //Note: is seems this TODO has been handled as ProjectivePoint's as_affine already
+                //has an accelerated version. Should this be removed or is there further
+                //optimization work to be done. If so, what is that work?
 
                 // TODO: optimize this relatively innocuous looking call.
                 // this consumes about 100ms runtime -- need to implement this using
@@ -1038,9 +1045,10 @@ impl Mul<&Scalar> for &MontgomeryPoint {
     }
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\)
-    #[cfg(not(feature = "betrusted"))]
+    #[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
     fn mul(self, scalar: &Scalar) -> MontgomeryPoint {
-        #[cfg(all(not(test),feature="betrusted"))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
+        // TODO: consider feature "panic_on_sw_eval"
+        #[cfg(all(not(test),curve25519_dalek_backend = "u32e_backend"))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
         log::warn!("sw montgomery multiply being used - check for build config errors!");
         // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
         // the MSB is 0, so we can skip it.

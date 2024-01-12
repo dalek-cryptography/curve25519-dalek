@@ -157,6 +157,8 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
+        //TODO: this should be the same as the u32 backend such that we don't even need to have
+        //backend/serial/scalar.rs defined. Double check that to simplify the code. 
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
     }
     else if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -846,7 +848,7 @@ impl Scalar {
     }
 
     /// Get the bits of the scalar, in little-endian order
-    #[cfg(not(feature = "betrusted"))]
+    #[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
         (0..256).map(|i| {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index

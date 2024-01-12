@@ -68,7 +68,8 @@ pub(crate) const SQRT_M1: FieldElement2625 = FieldElement2625::from_limbs([
 ]);
 
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
-#[cfg(not(feature = "betrusted"))]
+/// The u32e backend uses hardware acceleration for this.
+#[cfg(curve_dalek_backend != "u32e_backend")]
 pub(crate) const APLUS2_OVER_FOUR: FieldElement2625 =
     FieldElement2625::from_limbs([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 

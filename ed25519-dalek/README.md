@@ -130,7 +130,7 @@ Backend selection details and instructions can be found in the [curve25519-dalek
 
 # Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 # Batch Signature Verification
 

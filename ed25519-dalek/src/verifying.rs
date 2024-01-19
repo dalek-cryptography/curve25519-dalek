@@ -425,7 +425,7 @@ impl VerifyingKey {
     }
 
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm,
-    /// using strict signture checking as defined by [`Self::verify_strict`].
+    /// using strict signature checking as defined by [`Self::verify_strict`].
     ///
     /// # Inputs
     ///

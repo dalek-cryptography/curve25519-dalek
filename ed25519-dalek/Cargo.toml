@@ -29,7 +29,7 @@ features = ["batch", "digest", "hazmat", "pem", "serde"]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
 ed25519 = { version = ">=2.2, <2.3", default-features = false }
 signature = { version = ">=2.0, <2.3", optional = true, default-features = false }
-sha2 = { version = "0.10", default-features = false }
+sha2 = { version = "=0.11.0-pre.3", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
 # optional features
@@ -63,7 +63,6 @@ default = ["fast", "std", "zeroize"]
 alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "serde?/alloc", "zeroize/alloc"]
 std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
 
-asm = ["sha2/asm"]
 batch = ["alloc", "merlin", "rand_core"]
 fast = ["curve25519-dalek/precomputed-tables"]
 digest = ["signature/digest"]

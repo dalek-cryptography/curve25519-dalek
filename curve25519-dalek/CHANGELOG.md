@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### 4.1.2
+
+* Fix nightly SIMD build
+
 ### 4.1.1
 
 * Mark `constants::BASEPOINT_ORDER` deprecated from pub API

@@ -10,6 +10,10 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 2.x series
 
+## 2.1.1
+
+* Fix nightly SIMD build
+
 ## 2.1.0
 
 * Add `SigningKey::to_scalar_bytes` for getting the unclamped scalar from a signing key

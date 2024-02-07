@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "2.1.0"
+version = "2.1.1"
 edition = "2021"
 authors = [
     "isis lovecruft <isis@patternsinthevoid.net>",

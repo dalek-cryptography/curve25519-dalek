@@ -1406,7 +1406,7 @@ impl GroupEncoding for EdwardsPoint {
 /// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
 /// guaranteed to be in the prime-order subgroup.
 #[cfg(feature = "group")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct SubgroupPoint(EdwardsPoint);
 
 #[cfg(feature = "group")]

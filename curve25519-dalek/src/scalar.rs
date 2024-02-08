@@ -159,7 +159,7 @@ cfg_if! {
         /// module.
         //TODO: this should be the same as the u32 backend such that we don't even need to have
         //backend/serial/scalar.rs defined. Double check that to simplify the code. 
-        type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+        type UnpackedScalar = backend::serial::u32e::scalar::Scalar29;
     }
     else if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.

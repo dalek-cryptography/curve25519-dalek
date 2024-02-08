@@ -2,6 +2,9 @@
 
 #![deny(clippy::unwrap_used, dead_code)]
 
+use platforms::Platform;
+use platforms::target;
+
 #[allow(non_camel_case_types)]
 #[derive(PartialEq, Debug)]
 enum DalekBits {
@@ -10,6 +13,9 @@ enum DalekBits {
 }
 
 fn main() {
+    let target_triplet = std::env::var("TARGET").unwrap();
+    let platform = platforms::Platform::find(&target_triplet).unwrap();
+    //Xous running on 
     let curve25519_dalek_bits = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref() {
         Ok("32") => DalekBits::Dalek32,
         Ok("64") => DalekBits::Dalek64,
@@ -54,12 +60,22 @@ fn main() {
                     // See: issues/532
                     false => panic!("Could not override curve25519_dalek_backend to simd"),
                 }
-            }
-            // default between serial / simd (if potentially capable)
-            _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                true => "simd",
-                false => "serial",
             },
+            //coprocessor for Precursor
+            Ok("u32e_backend") => {
+                if curve25519_dalek_bits != DalekBits::Dalek64{
+                    panic!("u32e_backend only supports 32 bit bits");
+                }
+                "u32e_backend"
+            },
+            // default between serial / simd (if potentially capable)
+            _ => match is_precursor(platform) {
+                true => "u32e_backend",
+                false => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                    true => "simd",
+                    false => "serial",
+                },
+            }
         };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
@@ -67,6 +83,10 @@ fn main() {
 // Is the target arch & curve25519_dalek_bits potentially simd capable ?
 fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
     arch == "x86_64" && bits == DalekBits::Dalek64
+}
+// Is the target the Precursor?
+fn is_precursor(platform: &Platform) -> bool {
+    platform.target_os == target::OS::Xous && platform.target_arch == target::Arch::Riscv32
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

@@ -505,6 +505,11 @@ impl VerifyingKey {
     pub fn to_montgomery(&self) -> MontgomeryPoint {
         self.point.to_montgomery()
     }
+
+    /// Return this verifying key in Edwards form.
+    pub fn to_edwards(&self) -> EdwardsPoint {
+        self.point
+    }
 }
 
 impl Verifier<ed25519::Signature> for VerifyingKey {
@@ -560,6 +565,12 @@ impl TryFrom<&[u8]> for VerifyingKey {
             length: PUBLIC_KEY_LENGTH,
         })?;
         Self::from_bytes(bytes)
+    }
+}
+
+impl From<VerifyingKey> for EdwardsPoint {
+    fn from(vk: VerifyingKey) -> EdwardsPoint {
+        vk.point
     }
 }
 

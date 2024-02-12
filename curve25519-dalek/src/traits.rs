@@ -409,6 +409,7 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
 /// This trait is only for debugging/testing, since it should be
 /// impossible for a `curve25519-dalek` user to construct an invalid
 /// point.
+#[allow(dead_code)]
 pub(crate) trait ValidityCheck {
     /// Checks whether the point is on the curve. Not CT.
     fn is_valid(&self) -> bool;

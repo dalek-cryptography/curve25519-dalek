@@ -31,7 +31,7 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 
 # Major Changes
 
-See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of this crate.
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past versions of this crate.
 
 ## Breaking Changes in 2.0.0
 
@@ -63,7 +63,7 @@ SemVer exemptions are outlined below for MSRV and public API.
 | 2.x      | 1.60   |
 | 1.x      | 1.41   |
 
-From 2.x and on, MSRV changes will be accompanied by a minor version bump.
+From 2.x onwards, MSRV changes will be accompanied by a minor version bump.
 
 ## Public API SemVer Exemptions
 

@@ -56,8 +56,7 @@ subtle = { version = "2.3.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
 
-# Betrusted/Precursor dependency set
-[target.'cfg(curve25519_dalek_backend = "u32e_backend")'.dependencies]
+# Betrusted/Precursor dependency set, enabled by backend_u32e feature
 engine25519-as = {git = "https://github.com/betrusted-io/engine25519-as.git", rev = "d249c967556b02ab5439eacb5078fa00c60b93d6", default-features = false, features = [], optional = true}
 engine-25519 = { git = "https://github.com/betrusted-io/xous-engine-25519.git", rev = "63d3d1f30736022e791deaacf4dd62c00b42fe2e", optional = true}
 utralib = {version = "0.1.0", optional = true} # this is bogus -- must be patched in the invoking build environment TODO: if this builds, it seems a crate has been released as version 0.1.23 that could replace this
@@ -65,16 +64,18 @@ utralib = {version = "0.1.0", optional = true} # this is bogus -- must be patche
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
 
-[target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
-fiat-crypto = { version = "0.2.1", default-features = false }
+fiat-crypto = { version = "0.2.1", default-features = false , optional = true}
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
+backend_fiat = ["dep:fiat-crypto"]
+backend_u32e = ["dep:engine25519-as","dep:engine-25519","dep:utralib"]
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 
+# TODO: clean this up as you can't select deps like this
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

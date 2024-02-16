@@ -9,12 +9,20 @@ enum DalekBits {
     Dalek64,
 }
 
+macro_rules! build_debug {
+    ($($tokens: tt)*) => {
+        println!("cargo:warning={}", format!($($tokens)*))
+    }
+}
+
 fn main() {
     let curve25519_dalek_bits = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref() {
         Ok("32") => DalekBits::Dalek32,
         Ok("64") => DalekBits::Dalek64,
         _ => deterministic::determine_curve25519_dalek_bits(),
     };
+    build_debug!("CARGO_CFG_CURVE25519_DALEK_BITS: {:?}", std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref());
+    build_debug!("curve25519_dalek_bits {:?}", curve25519_dalek_bits);
 
     match curve25519_dalek_bits {
         DalekBits::Dalek64 => println!("cargo:rustc-cfg=curve25519_dalek_bits=\"64\""),
@@ -61,6 +69,7 @@ fn main() {
                 false => "serial",
             },
         };
+    build_debug!("curve25519_dalek_backend {:?}", curve25519_dalek_backend);
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 

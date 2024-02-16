@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of curve25519-dalek.
+// This file is part of curve25519-dalek_ml.
 // Copyright (c) 2016-2021 isis lovecruft
 // Copyright (c) 2016-2019 Henry de Valence
 // Portions Copyright 2017 Brian Smith
@@ -34,7 +34,7 @@
 //! `Some(Scalar)` in return:
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_ml::scalar::Scalar;
 //!
 //! let one_as_bytes: [u8; 32] = Scalar::ONE.to_bytes();
 //! let a: Option<Scalar> = Scalar::from_canonical_bytes(one_as_bytes).into();
@@ -46,7 +46,7 @@
 //! (in this case, \\( \ell + 2 \\)), we'll get `None` back:
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_ml::scalar::Scalar;
 //!
 //! let l_plus_two_bytes: [u8; 32] = [
 //!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -66,7 +66,7 @@
 //! resultant scalar \\( \mod \ell \\), producing \\( 2 \\):
 //!
 //! ```
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_ml::scalar::Scalar;
 //!
 //! let l_plus_two_bytes: [u8; 32] = [
 //!    0xef, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58,
@@ -92,7 +92,7 @@
 #![cfg_attr(not(feature = "digest"), doc = "```ignore")]
 //! # fn main() {
 //! use sha2::{Digest, Sha512};
-//! use curve25519_dalek::scalar::Scalar;
+//! use curve25519_dalek_ml::scalar::Scalar;
 //!
 //! // Hashing a single byte slice
 //! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
@@ -527,7 +527,7 @@ impl From<u64> for Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// let fourtytwo = Scalar::from(42u64);
     /// let six = Scalar::from(6u64);
@@ -587,7 +587,7 @@ impl Scalar {
     ///
     /// ```
     /// # fn main() {
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// use rand_core::OsRng;
     ///
@@ -612,7 +612,7 @@ impl Scalar {
     ///
     #[cfg_attr(feature = "digest", doc = "```")]
     #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # use curve25519_dalek_ml::scalar::Scalar;
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -641,8 +641,8 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// use curve25519_dalek::digest::Update;
+    /// use curve25519_dalek_ml::scalar::Scalar;
+    /// use curve25519_dalek_ml::digest::Update;
     ///
     /// use sha2::Digest;
     /// use sha2::Sha512;
@@ -682,7 +682,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// let s: Scalar = Scalar::ZERO;
     ///
@@ -697,7 +697,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// let s: Scalar = Scalar::ZERO;
     ///
@@ -722,7 +722,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// // x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     /// let X: Scalar = Scalar::from_bytes_mod_order([
@@ -766,7 +766,7 @@ impl Scalar {
     /// # Example
     ///
     /// ```
-    /// # use curve25519_dalek::scalar::Scalar;
+    /// # use curve25519_dalek_ml::scalar::Scalar;
     /// # fn main() {
     /// let mut scalars = [
     ///     Scalar::from(3u64),

@@ -4,9 +4,8 @@ name = "curve25519-dalek-ml"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.1.3"
+version = "4.2.0"
 edition = "2021"
-rust-version = "1.60.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>",
            "Michael Lodder <redmike7@gmail.com>"]
@@ -48,7 +47,7 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
-elliptic-curve = { version = "0.13.5", features = ["hash2curve"], optional = true }
+elliptic-curve = { version = "0.13", features = ["hash2curve"], optional = true }
 ff = { version = "0.13", default-features = false, optional = true }
 group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }

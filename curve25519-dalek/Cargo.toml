@@ -4,7 +4,7 @@ name = "curve25519-dalek-ml"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.2.0"
+version = "4.2.1"
 edition = "2021"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
            "Henry de Valence <hdevalence@hdevalence.ca>",

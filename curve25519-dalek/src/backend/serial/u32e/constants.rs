@@ -11,11 +11,15 @@
 
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
 
-use crate::backend::serial::curve_models::AffineNielsPoint;
 use super::field::Engine25519;
 use super::scalar::Scalar29;
-use crate::edwards::{EdwardsBasepointTable, EdwardsPoint};
-use crate::window::{LookupTable, NafLookupTable8};
+use crate::edwards::EdwardsPoint;
+#[cfg(feature = "precomputed-tables")]
+use crate::{
+    backend::serial::curve_models::AffineNielsPoint,
+    edwards::EdwardsBasepointTable,
+    window::{LookupTable, NafLookupTable8},
+};
 
 /// The value of minus one, equal to `-&FieldElement::one()`
 pub(crate) const MINUS_ONE: Engine25519 = Engine25519([
@@ -198,11 +202,13 @@ pub const EIGHT_TORSION_INNER_DOC_HIDDEN: [EdwardsPoint; 8] = [
 ];
 
 /// Table containing precomputed multiples of the Ed25519 basepoint \\(B = (x, 4/5)\\).
-pub const ED25519_BASEPOINT_TABLE: EdwardsBasepointTable = ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
+#[cfg(feature = "precomputed-tables")]
+pub static ED25519_BASEPOINT_TABLE: &'static EdwardsBasepointTable = &ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN;
 
 /// Inner constant, used to avoid filling the docs with precomputed points.
 #[doc(hidden)]
-pub const ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable =
+#[cfg(feature = "precomputed-tables")]
+static ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable =
     EdwardsBasepointTable([
         LookupTable([
             AffineNielsPoint {
@@ -2319,6 +2325,8 @@ pub const ED25519_BASEPOINT_TABLE_INNER_DOC_HIDDEN: EdwardsBasepointTable =
     ]);
 
 /// Odd multiples of the basepoint `[B, 3B, 5B, 7B, 9B, 11B, 13B, 15B, ..., 127B]`.
+#[cfg(feature = "precomputed-tables")]
+#[allow(dead_code)]
 pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsPoint> =
     NafLookupTable8([
         AffineNielsPoint {

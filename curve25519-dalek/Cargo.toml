@@ -73,7 +73,7 @@ alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
 fiat_backend = ["dep:fiat-crypto"]
-u32e_backend = ["dep:engine25519-as","dep:engine-25519","dep:utralib","log","group","zeroize","precomputed-tables"]
+u32e_backend = ["dep:engine25519-as","dep:engine-25519","dep:utralib","log","zeroize"]
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 

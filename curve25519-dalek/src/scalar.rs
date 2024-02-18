@@ -157,8 +157,6 @@ cfg_if! {
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        //TODO: this should be the same as the u32 backend such that we don't even need to have
-        //backend/serial/scalar.rs defined. Double check that to simplify the code. 
         type UnpackedScalar = backend::serial::u32e::scalar::Scalar29;
     }
     else if #[cfg(curve25519_dalek_backend = "fiat")] {

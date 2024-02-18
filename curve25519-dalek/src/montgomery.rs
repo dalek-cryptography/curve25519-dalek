@@ -475,8 +475,8 @@ impl ProjectivePoint {
         for (&src, dst) in mcode.iter().zip(job.ucode.iter_mut()) {
             *dst = src as u32;
         }
-        copy_to_rf(self.U.to_bytes(), 29, &mut job.rf);
-        copy_to_rf(self.W.to_bytes(), 30, &mut job.rf);
+        copy_to_rf(self.U.as_bytes(), 29, &mut job.rf);
+        copy_to_rf(self.W.as_bytes(), 30, &mut job.rf);
 
         // start the run
         let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
@@ -564,7 +564,7 @@ fn copy_from_rf(register: usize, rf: &[u32; engine_25519::RF_SIZE_IN_U32]) -> [u
 
 #[allow(dead_code)] // absorbed into mul, but might be useful later on as a subroutine for something else
 #[cfg(curve25519_dalek_backend = "u32e_backend")]
-pub(crate) fn differential_add_and_double_hw(
+pub(crate) fn differential_add_and_double(
     P: &mut ProjectivePoint,
     Q: &mut ProjectivePoint,
     affine_PmQ: &FieldElement,
@@ -670,11 +670,11 @@ pub(crate) fn differential_add_and_double_hw(
     // Q.U in %22
     // Q.W in %23
     // affine_PmQ in %24
-    copy_to_rf(P.U.to_bytes(), 20, &mut job.rf);
-    copy_to_rf(P.W.to_bytes(), 21, &mut job.rf);
-    copy_to_rf(Q.U.to_bytes(), 22, &mut job.rf);
-    copy_to_rf(Q.W.to_bytes(), 23, &mut job.rf);
-    copy_to_rf(affine_PmQ.to_bytes(), 24, &mut job.rf);
+    copy_to_rf(P.U.as_bytes(), 20, &mut job.rf);
+    copy_to_rf(P.W.as_bytes(), 21, &mut job.rf);
+    copy_to_rf(Q.U.as_bytes(), 22, &mut job.rf);
+    copy_to_rf(Q.W.as_bytes(), 23, &mut job.rf);
+    copy_to_rf(affine_PmQ.as_bytes(), 24, &mut job.rf);
 
     // start the run
     let result_rf = engine.spawn_job(job).expect("couldn't run engine job");
@@ -711,7 +711,7 @@ impl Mul<&Scalar> for &MontgomeryPoint {
         let mut x0 = ProjectivePoint::identity();
         let x1 = ProjectivePoint {
             U: affine_u,
-            W: FieldElement::one(),
+            W: FieldElement::ONE,
         };
 
         // for now, prefer to use the fully-accelerated version where this code is local to the server
@@ -997,11 +997,11 @@ impl Mul<&Scalar> for &MontgomeryPoint {
                 *dst = src as u32;
             }
 
-            copy_to_rf(x0.U.to_bytes(), 25, &mut job.rf);
-            copy_to_rf(x0.W.to_bytes(), 26, &mut job.rf);
-            copy_to_rf(x1.U.to_bytes(), 27, &mut job.rf);
-            copy_to_rf(x1.W.to_bytes(), 28, &mut job.rf);
-            copy_to_rf(affine_u.to_bytes(), 24, &mut job.rf);
+            copy_to_rf(x0.U.as_bytes(), 25, &mut job.rf);
+            copy_to_rf(x0.W.as_bytes(), 26, &mut job.rf);
+            copy_to_rf(x1.U.as_bytes(), 27, &mut job.rf);
+            copy_to_rf(x1.W.as_bytes(), 28, &mut job.rf);
+            copy_to_rf(affine_u.as_bytes(), 24, &mut job.rf);
             copy_to_rf(scalar.bytes, 31, &mut job.rf);
             // load the number 254 into the loop index register
             copy_to_rf([
@@ -1032,11 +1032,11 @@ impl Mul<&Scalar> for &MontgomeryPoint {
         } else {
             let mut engine = engine_25519::Engine25519::new();
             let job = engine_25519::MontgomeryJob {
-                x0_u: x0.U.to_bytes(),
-                x0_w: x0.W.to_bytes(),
-                x1_u: x1.U.to_bytes(),
-                x1_w: x1.W.to_bytes(),
-                affine_u: affine_u.to_bytes(),
+                x0_u: x0.U.as_bytes(),
+                x0_w: x0.W.as_bytes(),
+                x1_u: x1.U.as_bytes(),
+                x1_w: x1.W.as_bytes(),
+                affine_u: affine_u.as_bytes(),
                 scalar: scalar.bytes,
             };
 

@@ -322,23 +322,18 @@ impl Engine25519 {
     }
 
     /// Construct zero.
-    pub fn zero() -> Engine25519 {
-        Engine25519([ 0 ; 32 ])
-    }
+    pub const ZERO: Engine25519 = Engine25519([ 0 ; 32 ]);
 
     /// Construct one.
-    pub fn one() -> Engine25519 {
-        Engine25519([   1, 0, 0, 0, 0, 0, 0, 0,
+    pub const ONE: Engine25519 = Engine25519([   1, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0,
                         0, 0, 0, 0, 0, 0, 0, 0,
-            ])
-    }
+            ]);
 
     /// Construct -1.
-    pub fn minus_one() -> Engine25519 {
-        Engine25519([236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127])
-    }
+    pub const MINUS_ONE: Engine25519 =
+        Engine25519([236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127]);
 
     /// Given `k > 0`, return `self^(2^k)`.
     pub fn pow2k(&self, k: u32) -> Engine25519 {
@@ -371,7 +366,7 @@ impl Engine25519 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn as_bytes(&self) -> [u8; 32] {
         self.0
     }
 

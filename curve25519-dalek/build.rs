@@ -21,7 +21,6 @@ macro_rules! build_debug {
 fn main() {
     let target_triplet = std::env::var("TARGET").unwrap();
     let platform = platforms::Platform::find(&target_triplet).unwrap();
-    //Xous running on 
     let curve25519_dalek_bits = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref() {
         Ok("32") => DalekBits::Dalek32,
         Ok("64") => DalekBits::Dalek64,
@@ -54,6 +53,7 @@ fn main() {
         Ok(arch) => arch,
         _ => "".to_string(),
     };
+    build_debug!("target_arch {}",target_arch);
 
     // Backend overrides / defaults
     let curve25519_dalek_backend =

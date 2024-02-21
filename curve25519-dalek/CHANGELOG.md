@@ -3,6 +3,14 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+# Unreleased
+
+### 4.2.0-pre
+
+* Update the MSRV from 1.60 to 1.71
+* Update `digest` dependency to `0.11`.
+* Update `sha2` dependency to `0.11`.
+
 ## 4.x series
 
 ### 4.1.2

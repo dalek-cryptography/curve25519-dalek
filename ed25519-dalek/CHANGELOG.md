@@ -8,6 +8,14 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # Unreleased
 
+## 2.2.0-pre
+
+* Update the MSRV from 1.60 to 1.72
+* Update `sha2` dependency to `0.11`.
+* Update `signature` dependency to `2.3.0-pre.3`.
+* Update underlying `curve25519_dalek` to `4.2.0-pre`
+* Update underlying `ed25519` to `2.3.0-pre`
+
 # 2.x series
 
 ## 2.1.1

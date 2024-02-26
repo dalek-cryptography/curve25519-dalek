@@ -122,8 +122,6 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
-use crate::constants;
-
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
@@ -149,6 +147,7 @@ use subtle::CtOption;
 use zeroize::Zeroize;
 
 use crate::backend;
+use crate::constants;
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {

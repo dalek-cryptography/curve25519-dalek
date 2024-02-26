@@ -109,9 +109,11 @@ use digest::{generic_array::typenum::U64, Digest};
 #[cfg(feature = "group")]
 use {
     group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
-    rand_core::RngCore,
     subtle::CtOption,
 };
+
+#[cfg(any(test, feature = "group"))]
+use rand_core::RngCore;
 
 use subtle::Choice;
 use subtle::ConditionallyNegatable;

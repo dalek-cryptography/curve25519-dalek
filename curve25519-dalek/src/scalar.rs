@@ -122,13 +122,13 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
+use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
-#[cfg(feature = "group")]
-use {
-    group::ff::{Field, FromUniformBytes, PrimeField},
-    rand_core::RngCore,
-};
+
+#[cfg(any(test, feature = "group"))]
+use rand_core::RngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;

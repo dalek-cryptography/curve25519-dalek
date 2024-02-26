@@ -28,6 +28,9 @@ mod vectors {
         traits::IsIdentity,
     };
 
+    #[cfg(not(feature = "digest"))]
+    use sha2::{digest::Digest, Sha512};
+
     use std::{
         fs::File,
         io::{BufRead, BufReader},

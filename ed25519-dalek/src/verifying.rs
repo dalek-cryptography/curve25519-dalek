@@ -9,7 +9,6 @@
 
 //! ed25519 public keys.
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 

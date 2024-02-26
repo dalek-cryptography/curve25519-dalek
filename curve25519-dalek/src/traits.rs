@@ -15,9 +15,8 @@
 
 use core::borrow::Borrow;
 
-use subtle;
-
 use crate::scalar::{clamp_integer, Scalar};
+use subtle::ConstantTimeEq;
 
 // ------------------------------------------------------------------------
 // Public Traits
@@ -41,7 +40,7 @@ pub trait IsIdentity {
 /// constructor.
 impl<T> IsIdentity for T
 where
-    T: subtle::ConstantTimeEq + Identity,
+    T: ConstantTimeEq + Identity,
 {
     fn is_identity(&self) -> bool {
         self.ct_eq(&T::identity()).into()

@@ -12,6 +12,7 @@ enum DalekBits {
     Dalek64,
 }
 
+//TODO: remove debugging before merging
 macro_rules! build_debug {
     ($($tokens: tt)*) => {
         println!("cargo:warning={}", format!($($tokens)*))
@@ -71,7 +72,7 @@ fn main() {
             },
             //coprocessor for Precursor
             Ok("u32e_backend") => {
-                if curve25519_dalek_bits != DalekBits::Dalek64{
+                if curve25519_dalek_bits != DalekBits::Dalek32{
                     panic!("u32e_backend only supports 32 bit bits");
                 }
                 "u32e_backend"
@@ -85,6 +86,7 @@ fn main() {
                 },
             }
         };
+    build_debug!("CARGO_CFG_CURVE25519_DALEK_BACKEND: {:?}", std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref());
     build_debug!("curve25519_dalek_backend {:?}", curve25519_dalek_backend);
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }

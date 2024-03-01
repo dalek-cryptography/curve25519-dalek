@@ -509,6 +509,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(curve25519_dalek_backend = "u32e_backend")]
     fn make_vectors() {
         // reminder to self: to create just this vector, run
         // cargo test field::test::make_vectors

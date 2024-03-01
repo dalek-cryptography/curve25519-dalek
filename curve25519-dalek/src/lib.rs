@@ -62,21 +62,12 @@ pub(crate) mod macros;
 
 //To consider upstreaming, we likely can't do this. Consider the "panic_on_sw_eval" feature
 #[allow(unused_imports)]
-#[cfg(any(test, curve25519_dalek_backend = "u32e_backend"))]
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 #[macro_use]
 extern crate engine25519_as;
-#[cfg(curve25519_dalek_backend = "u32e_backend")] //this is the binding for betrusted, so it should be gated 
-                                                  //with a "betrusted" flag, but we gate it with the backend 
-                                                  //flag for now. We'd need to refactor this to be
-                                                  //make it easier to support other platforms,
-                                                  //though there are no other platforms. For
-                                                  //upstreaming this might be diserable, but for
-                                                  //now, we'll leave it as a TODO.
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 extern crate engine_25519;
-
-#[cfg(curve25519_dalek_backend = "u32e_backend")] //while this is specific to betrusted, any other
-                                                  //use of this hardware would likely also need
-                                                  //utralib, at least that would be easiest.
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
 extern crate utralib;
 
 //------------------------------------------------------------------------

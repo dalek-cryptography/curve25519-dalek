@@ -112,8 +112,6 @@
 //! has been enabled.
 
 use core::borrow::Borrow;
-use core::cmp::{Eq, PartialEq};
-use core::convert::TryInto;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
 use core::ops::Index;
@@ -124,13 +122,13 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
+use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
-#[cfg(feature = "group")]
-use {
-    group::ff::{Field, FromUniformBytes, PrimeField},
-    rand_core::RngCore,
-};
+
+#[cfg(any(test, feature = "group"))]
+use rand_core::RngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
@@ -402,7 +400,7 @@ impl ConditionallySelectable for Scalar {
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -1393,12 +1391,9 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use crate::constants;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
-
-    use rand::RngCore;
 
     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
     pub static X: Scalar = Scalar {

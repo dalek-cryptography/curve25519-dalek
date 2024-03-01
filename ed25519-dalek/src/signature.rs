@@ -9,7 +9,6 @@
 
 //! An ed25519 signature.
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 
 use curve25519_dalek::edwards::CompressedEdwardsY;

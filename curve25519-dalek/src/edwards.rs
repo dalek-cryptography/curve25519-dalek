@@ -96,7 +96,6 @@
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
-use core::iter::Iterator;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
@@ -110,9 +109,11 @@ use digest::{generic_array::typenum::U64, Digest};
 #[cfg(feature = "group")]
 use {
     group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
-    rand_core::RngCore,
     subtle::CtOption,
 };
+
+#[cfg(feature = "group")]
+use rand_core::RngCore;
 
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
@@ -258,7 +259,7 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl Serialize for EdwardsPoint {
@@ -1591,16 +1592,16 @@ impl CofactorGroup for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{field::FieldElement, scalar::Scalar};
-    use subtle::ConditionallySelectable;
+
+    // If `group` is set, then this is already imported in super
+    #[cfg(not(feature = "group"))]
+    use rand_core::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
     #[cfg(feature = "precomputed-tables")]
     use crate::constants::ED25519_BASEPOINT_TABLE;
-
-    use rand_core::RngCore;
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202

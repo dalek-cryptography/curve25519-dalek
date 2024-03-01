@@ -364,7 +364,7 @@ impl TryFrom<&[u8]> for CompressedRistretto {
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl Serialize for RistrettoPoint {
@@ -1277,8 +1277,6 @@ impl Zeroize for RistrettoPoint {
 mod test {
     use super::*;
     use crate::edwards::CompressedEdwardsY;
-    use crate::scalar::Scalar;
-    use crate::traits::Identity;
 
     use rand_core::OsRng;
 

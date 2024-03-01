@@ -112,7 +112,7 @@ use {
     subtle::CtOption,
 };
 
-#[cfg(any(test, feature = "group"))]
+#[cfg(feature = "group")]
 use rand_core::RngCore;
 
 use subtle::Choice;
@@ -1592,6 +1592,10 @@ impl CofactorGroup for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    // If `group` is set, then this is already imported in super
+    #[cfg(not(feature = "group"))]
+    use rand_core::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;

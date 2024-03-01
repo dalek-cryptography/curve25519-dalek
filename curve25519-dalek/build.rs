@@ -66,7 +66,7 @@ fn main() {
 
 // Is the target arch & curve25519_dalek_bits potentially simd capable ?
 fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
-    arch == "x86_64" && bits == DalekBits::Dalek64
+    (arch == "x86_64" || arch == "aarch64") && bits == DalekBits::Dalek64
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

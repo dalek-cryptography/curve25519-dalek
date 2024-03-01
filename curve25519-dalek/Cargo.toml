@@ -72,3 +72,6 @@ group-bits = ["group", "ff/bits"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
+
+[target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "aarch64"))'.dependencies]
+curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

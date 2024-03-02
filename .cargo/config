@@ -1,0 +1,2 @@
+[target.riscv32imac-unknown-xous-elf]
+rustflags = ["--cfg",'curve25519_dalek_backend="u32e_backend"']

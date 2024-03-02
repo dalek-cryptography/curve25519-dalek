@@ -60,9 +60,10 @@ zeroize = { version = "1", default-features = false, optional = true }
 [target.'cfg(curve25519_dalek_backend = "u32e_backend")'.dependencies]
 log = { version = "0.4"}
 engine25519-as = {git = "https://github.com/betrusted-io/engine25519-as.git", rev = "d249c967556b02ab5439eacb5078fa00c60b93d6", default-features = false, features = []}
-engine-25519 = { git = "https://github.com/betrusted-io/xous-engine-25519.git", rev = "63d3d1f30736022e791deaacf4dd62c00b42fe2e"}
+# TODO: is there a better way to select this dep?
+#engine-25519 = { git = "https://github.com/betrusted-io/xous-engine-25519.git", rev = "63d3d1f30736022e791deaacf4dd62c00b42fe2e"}
+engine-25519 = {path = "../../xous-core/services/engine-25519"}
 utralib = {version = "0.1.24", default-features = false}
-
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
@@ -77,6 +78,5 @@ legacy_compatibility = []
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 
-# TODO: clean this up as you can't select deps like this
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

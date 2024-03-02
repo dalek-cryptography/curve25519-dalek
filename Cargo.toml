@@ -10,3 +10,12 @@ resolver = "2"
 [profile.dev]
 
 opt-level = 2
+
+[patch.crates-io.getrandom]
+path = "../xous-core/imports/getrandom"
+
+# Until they release 0.5.2, we need to use master due to is-terminal
+[patch.crates-io.criterion]
+git = "https://github.com/bheisler/criterion.rs"
+rev = "b913e232edd98780961ecfbae836ec77ede49259"
+features = ["html_reports"]

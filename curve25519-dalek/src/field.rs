@@ -23,7 +23,7 @@
 //! Field operations defined in terms of other field operations, such as
 //! field inversion or square roots, are defined here.
 
-#![allow(unused_qualifications)]
+#[allow(unused_qualifications)]
 
 use core::cmp::{Eq, PartialEq};
 
@@ -520,7 +520,7 @@ mod test {
         use self::rand::Rng;
 
         fn write_helper(file: &mut File, elem: FieldElement) {
-            let elem_bytes = elem.to_bytes();
+            let elem_bytes = elem.as_bytes();
             let _ = file.write(&elem_bytes);
             /*
             for i in 0..elem_bytes.len()/4 {
@@ -597,8 +597,8 @@ mod test {
 
             // test vectors
             // 1 plus -1 = 0 -> this works overflow path
-            let a = FieldElement::one();
-            let b = FieldElement::minus_one();
+            let a = FieldElement::ONE;
+            let b = FieldElement::MINUS_ONE;
             let q = &a + &b;
 
             write_helper(&mut file, a);
@@ -617,11 +617,11 @@ mod test {
         }
 
         fn ref_fact(n: usize) -> FieldElement {
-            let mut a = FieldElement::one();
-            let mut result = FieldElement::one();
+            let mut a = FieldElement::ONE;
+            let mut result = FieldElement::ONE;
             for _ in 0..n {
                 result = &result * &a;
-                a = &a + &FieldElement::one();
+                a = &a + &FieldElement::ONE;
             }
             result
         }
@@ -655,10 +655,10 @@ mod test {
             write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
 
             // test vectors
-            let mut n = FieldElement::one();
+            let mut n = FieldElement::ONE;
             for i in 1..6 {
                 write_helper(&mut file, n);
-                n = &n + &FieldElement::one(); // mirror i's progression
+                n = &n + &FieldElement::ONE; // mirror i's progression
                 let q = ref_fact(i);
                 write_helper(&mut file, q);
             }
@@ -690,10 +690,10 @@ mod test {
                 let swap: FieldElement;
                 let q: FieldElement;
                 if i % 2 == 0 {
-                    swap = FieldElement::zero();
+                    swap = FieldElement::ZERO;
                     q = a;
                 } else {
-                    swap = FieldElement::one();
+                    swap = FieldElement::ONE;
                     q = b;
                 }
                 write_helper(&mut file, a);
@@ -720,16 +720,16 @@ mod test {
             write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
 
             // 1: 1*1 - simple case
-            let a = FieldElement::one();
-            let b = FieldElement::one();
+            let a = FieldElement::ONE;
+            let b = FieldElement::ONE;
             let q = &a * &b;
             write_helper(&mut file, a);
             write_helper(&mut file, b);
             write_helper(&mut file, q);
 
             // 2: 1*-1 - simple case
-            let a = FieldElement::one();
-            let b = FieldElement::minus_one();
+            let a = FieldElement::ONE;
+            let b = FieldElement::MINUS_ONE;
             let q = &a * &b;
             write_helper(&mut file, a);
             write_helper(&mut file, b);
@@ -741,7 +741,7 @@ mod test {
                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
                 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7f,]);
-            let b = FieldElement::one();
+            let b = FieldElement::ONE;
             let q = &a * &b;
             write_helper(&mut file, a);
             write_helper(&mut file, b);
@@ -965,7 +965,7 @@ mod test {
 
 
         fn test_diff_add_and_double(mut file: &mut File) {
-            use montgomery::ProjectivePoint;
+            use crate::montgomery::ProjectivePoint;
 
             // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
             let num_src_regs = 5;
@@ -1074,7 +1074,7 @@ mod test {
                     fin  // finish execution
             );            write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
 
-            use montgomery::differential_add_and_double;
+            use crate::montgomery::differential_add_and_double;
 
             // test vectors
             for _ in 0..8 {
@@ -1098,7 +1098,7 @@ mod test {
         }
 
         fn test_scalar_mul(mut file: &mut File) {
-            use montgomery::ProjectivePoint;
+            use crate::montgomery::ProjectivePoint;
 
             // test cswap. three input registers: (r0, r1) to swap, (r2) to control swap, one output register (r31).
             let num_src_regs = 7;
@@ -1261,9 +1261,9 @@ mod test {
 
             write_test_header(&mut file, loading_address, &mcode, num_src_regs, reg_window, num_tests);
 
-            use scalar::Scalar;
-            use montgomery::MontgomeryPoint;
-            use montgomery::differential_add_and_double;
+            use crate::scalar::Scalar;
+            use crate::montgomery::MontgomeryPoint;
+            use crate::montgomery::differential_add_and_double;
 
             fn clamp_scalar(mut scalar: [u8; 32]) -> Scalar {
                 scalar[0] &= 248;
@@ -1278,12 +1278,12 @@ mod test {
             // Algorithm 8 of Costello-Smith 2017
             let affine_u = FieldElement::from_bytes(&mp.0);
             let mut x0 = ProjectivePoint {
-                U: FieldElement::one(),
-                W: FieldElement::zero(),
+                U: FieldElement::ONE,
+                W: FieldElement::ZERO,
             };
             let mut x1 = ProjectivePoint {
                 U: affine_u,
-                W: FieldElement::one(),
+                W: FieldElement::ONE,
             };
 
             // test vectors input to test routine

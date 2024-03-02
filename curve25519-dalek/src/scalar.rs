@@ -1026,11 +1026,11 @@ impl Scalar {
         output
     }
 
-    /// Returns a size hint indicating how many entries of the return
-    /// value of `to_radix_2w` are nonzero.
     cfg_if::cfg_if!{
         if #[cfg(curve25519_dalek_backend = "u32e_backend")]{}
         else if #[cfg(any(feature = "alloc", all(test, feature = "precomputed-tables")))] {
+            /// Returns a size hint indicating how many entries of the return
+            /// value of `to_radix_2w` are nonzero.
             pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
                 debug_assert!(w >= 4);
                 debug_assert!(w <= 8);

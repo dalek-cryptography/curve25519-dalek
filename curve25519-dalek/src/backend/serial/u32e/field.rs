@@ -59,6 +59,7 @@ pub(crate) enum EngineOp {
     Sub,
 }
 
+#[allow(unused_qualifications)]
 pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
     use utralib::generated::*;
     let mut engine = utralib::CSR::new(utra::engine::HW_ENGINE_BASE as *mut u32);

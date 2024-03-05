@@ -74,7 +74,7 @@ mod ecdlp_notes {
     //!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
     //!   however this has no visible impact on performance. Shifting the inputs like this
     //!   also means that we support arbitrary decoding ranges for a given constant tables file.
-    //! 
+    //!
     //! Note: We are dealing with a curve which has cofactors; as such, we need to multiply
     //! by the cofactor before running ECDLP to clear it and guarantee a canonical encoding of our points.
     //! The tables also need to be based on `num * cofactor` to match.
@@ -82,239 +82,25 @@ mod ecdlp_notes {
     //! [fast-ecdlp-paper]: https://eprint.iacr.org/2022/1573
 }
 
+mod affine_montgomery;
+mod table;
+
+use crate::{
+    backend::serial::u64::constants::MONTGOMERY_A_NEG, constants::RISTRETTO_BASEPOINT_POINT as G,
+    field::FieldElement, RistrettoPoint, Scalar,
+};
+use affine_montgomery::AffineMontgomeryPoint;
 use core::{
     ops::ControlFlow,
     sync::atomic::{AtomicBool, Ordering},
 };
-use std::{fs::File, mem::size_of, path::Path};
 
-use crate::{
-    backend::serial::u64::constants::MONTGOMERY_A,
-    constants::{MONTGOMERY_A_NEG, RISTRETTO_BASEPOINT_POINT as G},
-    field::FieldElement,
-    traits::Identity,
-    EdwardsPoint, RistrettoPoint, Scalar,
+pub use table::{
+    table_generation, CuckooT1HashMapView, ECDLPTablesFile, PrecomputedECDLPTables,
+    T2LinearTableView, T2MontgomeryCoordinates,
 };
-use bytemuck::{Pod, Zeroable};
 
-const L2: usize = 9; // corresponds to a batch size of 256 and a T2 table of a few Ko.
-const BATCH_SIZE: usize = 1 << (L2 - 1);
-
-const I_BITS: usize = L2 - 1;
-const I_MAX: usize = (1 << I_BITS) + 1; // there needs to be one more element in T2
-const CUCKOO_K: usize = 3; // number of cuckoo lookups before giving up
-
-// Note: file layout is just T2 followed by T1 keys and then T1 values.
-// We just do casts using `bytemuck` since everything are PODs.
-
-/// ECDLP tables loaded from a file. The `L1` const-generic needs to match the one
-/// used during table generation.
-pub struct ECDLPTablesFile<const L1: usize> {
-    content: memmap::Mmap,
-}
-impl<const L1: usize> ECDLPTablesFile<L1> {
-    /// Load the ECDLP tables from a file.
-    /// As of now, the file layout is unstable and may change.
-    pub fn load_from_file(filename: impl AsRef<Path>) -> std::io::Result<Self> {
-        let f = File::open(filename)?;
-
-        // Safety: mmap does not have any safety comment, but see
-        // https://github.com/danburkert/memmap-rs/issues/99
-        let content = unsafe { memmap::MmapOptions::new().map(&f)? };
-
-        assert_eq!(
-            content.len(),
-            size_of::<T2MontgomeryCoordinates>() * I_MAX + size_of::<u32>() * Self::CUCKOO_LEN * 2
-        );
-
-        Ok(Self { content })
-    }
-}
-
-impl<const L1: usize> PrecomputedECDLPTables for ECDLPTablesFile<L1> {
-    const L1: usize = L1;
-
-    fn get_t1(&self) -> CuckooT1HashMapView<'_> {
-        let t1_keys_values: &[u32] =
-            bytemuck::cast_slice(&self.content[(size_of::<T2MontgomeryCoordinates>() * I_MAX)..]);
-
-        CuckooT1HashMapView {
-            keys: &t1_keys_values[0..Self::CUCKOO_LEN],
-            values: &t1_keys_values[Self::CUCKOO_LEN..],
-        }
-    }
-
-    fn get_t2(&self) -> T2LinearTableView<'_> {
-        let t2: &[T2MontgomeryCoordinates] =
-            bytemuck::cast_slice(&self.content[0..(size_of::<T2MontgomeryCoordinates>() * I_MAX)]);
-        T2LinearTableView(t2)
-    }
-}
-
-/// Trait to expose access to the ECDLP precomputed tables to the algorithm.
-/// You should probably use [`ECDLPTablesFile`], which implements this trait -
-/// this trait only exists as a way to implement your own way of storing the tables,
-/// in case you are running on `no_std` or don't have access to `mmap`.
-pub trait PrecomputedECDLPTables {
-    /// The `L1` constant used to generate the table.
-    const L1: usize;
-
-    /// Hashmap <i * G => i | i in \[1, 2^(l1-1)\]>.
-    /// Cuckoo hash table, each entry is 8 bytes long - but there are 1.3 times the needed slots.
-    /// Total map size is then 1.3*8*2^(l1-1) bytes.
-    /// The hashing function is just indexing the bytes of the point for efficiency.
-    fn get_t1(&self) -> CuckooT1HashMapView<'_>;
-
-    /// Linear map \[j * 2^l1 * G | j in \[1, 2^(l2-1)\]\].
-    fn get_t2(&self) -> T2LinearTableView<'_>;
-}
-
-// Hoist these constants to a private trait to make them non-overrideable.
-trait ECDLPTablesConstants {
-    const J_BITS: usize;
-    const J_MAX: usize;
-    const CUCKOO_LEN: usize;
-}
-impl<T: PrecomputedECDLPTables> ECDLPTablesConstants for T {
-    const J_BITS: usize = Self::L1 - 1;
-    const J_MAX: usize = 1 << Self::J_BITS;
-    const CUCKOO_LEN: usize = (Self::J_MAX as f64 * 1.3) as _;
-}
-
-/// Canonical FieldElement type.
-type CompressedFieldElement = [u8; 32];
-#[derive(Clone, Copy, Debug)]
-struct AffineMontgomeryPoint {
-    u: FieldElement,
-    v: FieldElement,
-}
-
-impl AffineMontgomeryPoint {
-    /// Add two `AffineMontgomeryPoint` together.
-    fn addition_not_constant_time(&self, p2: &Self) -> AffineMontgomeryPoint {
-        let p1 = self;
-        if p1.u == FieldElement::ZERO && p1.v == FieldElement::ZERO {
-            // p2 + P_inf = p2
-            *p2
-        } else if p2.u == FieldElement::ZERO && p2.v == FieldElement::ZERO {
-            // p1 + P_inf = p1
-            *p1
-        } else if p1.u == p2.u && p1.v == -&p2.v {
-            // p1 = -p2 = (u1, -v1), meaning p1 + p2 = P_inf
-            AffineMontgomeryPoint {
-                u: FieldElement::ZERO,
-                v: FieldElement::ZERO,
-            }
-        } else {
-            let lambda = if p1.u == p2.u {
-                // doubling case
-
-                // (3*u1^2 + 2*A*u1 + 1) / (2*v1)
-                // todo this is ugly
-                let u1_sq = p1.u.square();
-                let u1_sq_3 = &(&u1_sq + &u1_sq) + &u1_sq;
-                let u1_ta = &MONTGOMERY_A * &p1.u;
-                let u1_ta_2 = &u1_ta + &u1_ta;
-                let den = &p1.v + &p1.v;
-                let num = &(&u1_sq_3 + &u1_ta_2) + &FieldElement::ONE;
-
-                &num * &den.invert()
-            } else {
-                // (v1 - v2) / (u1 - u2)
-                &(&p1.v - &p2.v) * &(&p1.u - &p2.u).invert()
-            };
-
-            // u3 = lambda^2 - A - u1 - u2
-            // v3 = lambda * (u1 - u3) - v1
-            let new_u = &(&lambda.square() - &MONTGOMERY_A) - &(&p1.u + &p2.u);
-            let new_v = &(&lambda * &(&p1.u - &new_u)) - &p1.v;
-
-            AffineMontgomeryPoint { u: new_u, v: new_v }
-        }
-    }
-}
-
-// FIXME(upstream): FieldElement::from_bytes should probably be const
-// see test for correctness of this const
-fn edwards_to_montgomery_alpha() -> FieldElement {
-    // Constant comes from https://ristretto.group/details/isogenies.html (birational mapping from E2 = E_(a2,d2) to M_(B,A))
-    // alpha = sqrt((A + 2) / (B * a_2)) with B = 1 and a_2 = -1.
-    FieldElement::from_bytes(&[
-        6, 126, 69, 255, 170, 4, 110, 204, 130, 26, 125, 75, 209, 211, 161, 197, 126, 79, 252, 3,
-        220, 8, 123, 210, 187, 6, 160, 96, 244, 237, 38, 15,
-    ])
-}
-
-impl From<&'_ EdwardsPoint> for AffineMontgomeryPoint {
-    #[allow(non_snake_case)]
-    fn from(eddy: &EdwardsPoint) -> Self {
-        let ALPHA = edwards_to_montgomery_alpha();
-
-        // u = (1+y)/(1-y) = (Z+Y)/(Z-Y),
-        // v = (1+y)/(x(1-y)) * alpha = (Z+Y)/(X-T) * alpha.
-        let Z_plus_Y = &eddy.Z + &eddy.Y;
-        let Z_minus_Y = &eddy.Z - &eddy.Y;
-        let X_minus_T = &eddy.X - &eddy.T;
-        AffineMontgomeryPoint {
-            u: &Z_plus_Y * &Z_minus_Y.invert(),
-            v: &(&Z_plus_Y * &X_minus_T.invert()) * &ALPHA,
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Default, Pod, Zeroable, Debug)]
-/// An entry in the T2 table. Represents a (u,v) coordinate on the Montgomery curve.
-pub struct T2MontgomeryCoordinates {
-    /// The `u` coordinate.
-    pub u: CompressedFieldElement,
-    /// The `v` coordinate.
-    pub v: CompressedFieldElement,
-}
-
-/// A view into the T2 table.
-pub struct T2LinearTableView<'a>(pub &'a [T2MontgomeryCoordinates]);
-
-impl T2LinearTableView<'_> {
-    fn index(&self, index: usize) -> AffineMontgomeryPoint {
-        let T2MontgomeryCoordinates { u, v } = self.0[index - 1];
-        AffineMontgomeryPoint {
-            u: FieldElement::from_bytes(&u),
-            v: FieldElement::from_bytes(&v),
-        }
-    }
-}
-
-/// A view into the T1 table.
-pub struct CuckooT1HashMapView<'a> {
-    /// Cuckoo keys
-    pub keys: &'a [u32],
-    /// Cuckoo values
-    pub values: &'a [u32],
-}
-
-impl CuckooT1HashMapView<'_> {
-    fn lookup<TS: PrecomputedECDLPTables>(
-        &self,
-        x: &[u8],
-        mut is_problem_answer: impl FnMut(u64) -> bool,
-    ) -> Option<u64> {
-        for i in 0..CUCKOO_K {
-            let start = i * 8;
-            let end = start + 4;
-            let key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
-            let h = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize
-                % TS::CUCKOO_LEN;
-            if self.keys[h as usize] == key {
-                let value = self.values[h as usize] as u64;
-                if is_problem_answer(value) {
-                    return Some(value);
-                }
-            }
-        }
-        None
-    }
-}
+use table::{BATCH_SIZE, L2};
 
 /// A trait to represent progress report functions.
 /// It is auto-implemented on any `F: Fn(f64) -> ConstrolFlow<()>`.
@@ -430,7 +216,7 @@ fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
     let amplitude = (args.range_end - args.range_start).max(0);
 
     let offset = args.range_start + ((1 << (L2 - 1)) << TS::L1) + (1 << (TS::L1 - 1));
-    let normalized = &point - &i64_to_scalar(offset) * G;
+    let normalized = &point - RistrettoPoint::mul_base(&i64_to_scalar(offset));
 
     let j_end = (amplitude >> TS::L1) as usize; // amplitude / 2^(L1 + 1)
 
@@ -468,15 +254,14 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
 
     let mut target_montgomery = AffineMontgomeryPoint::from(&t_normalized.0);
     let batch_step = -(n_threads as i64) * els_per_batch as i64;
-    let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0.mul_by_cofactor());
+    let batch_step_montgomery =
+        AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0.mul_by_cofactor());
 
     thread_iter.map(move |(j, j_start, progress)| {
         let current = target_montgomery;
 
-        target_montgomery = AffineMontgomeryPoint::addition_not_constant_time(
-            &target_montgomery,
-            &batch_step_montgomery,
-        );
+        target_montgomery =
+            AffineMontgomeryPoint::addition_not_ct(&target_montgomery, &batch_step_montgomery);
 
         (j, j_start, current, progress)
     })
@@ -602,7 +387,7 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
         }
 
         // Case 0: target is 0. Has to be handled separately.
-        if target_montgomery.u == FieldElement::ZERO {
+        if target_montgomery.is_identity_not_ct() {
             consider_candidate((j_start as i64) << TS::L1);
             if !pseudo_constant_time {
                 break 'outer;
@@ -694,148 +479,6 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
     found
 }
 
-/// Table generation module. This module is public but should be treated as
-/// unstable. The API may change without notice.
-pub mod table_generation {
-    use std::{fs::File, io::Write};
-
-    use super::*;
-
-    fn t1_cuckoo_setup(
-        cuckoo_len: usize,
-        j_max: usize,
-        all_entries: &[impl AsRef<[u8]>],
-        t1_values: &mut [u32],
-        t1_keys: &mut [u32],
-    ) {
-        use core::mem::swap;
-
-        /// Dumb cuckoo rehashing threshold.
-        const CUCKOO_MAX_INSERT_SWAPS: usize = 500;
-
-        let mut hash_index = vec![0u8; cuckoo_len];
-
-        for i in 0..=j_max {
-            let mut v = i as _;
-            let mut old_hash_id = 1u8;
-
-            if i % (j_max / 1000 + 1) == 0 {
-                println!("[{}/{}]", i, j_max);
-            }
-
-            for j in 0..CUCKOO_MAX_INSERT_SWAPS {
-                let x = all_entries[v as usize].as_ref();
-                let start = (old_hash_id as usize - 1) * 8;
-                let end = start as usize + 4;
-                let mut key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
-                let h1 = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize;
-                let h = h1 % cuckoo_len;
-
-                if hash_index[h] == 0 {
-                    // println!("Putting {:?} [{} - {h1}] => {}", x, h, v);
-                    hash_index[h] = old_hash_id;
-                    t1_values[h] = v;
-                    t1_keys[h] = key;
-                    break;
-                } else {
-                    // println!(
-                    //     "Swapping {:?} [{} - {h1}] for {} (swap #{}) -- {cuckoo_len}",
-                    //     x,
-                    //     h,
-                    //     v,
-                    //     j + 1
-                    // );
-                    swap(&mut old_hash_id, &mut hash_index[h]);
-                    swap(&mut v, &mut t1_values[h]);
-                    swap(&mut key, &mut t1_keys[h]);
-                    old_hash_id = old_hash_id % 3 + 1;
-
-                    if j == CUCKOO_MAX_INSERT_SWAPS - 1 {
-                        // We actually don't have to implement the case where we need to rehash the
-                        // whole map.
-                        panic!("Cuckoo hashmap insert needs rehashing.")
-                    }
-                }
-            }
-        }
-    }
-
-    fn create_t1_table(l1: usize, file: &mut File) -> std::io::Result<()> {
-        let j_max = 1 << (l1 - 1);
-        let cuckoo_len = (j_max as f64 * 1.3) as usize;
-
-        let mut all_entries = vec![Default::default(); j_max + 1];
-
-        println!("Computing all the points...");
-        let mut acc = RistrettoPoint::identity().0;
-        let step = G.0.mul_by_cofactor(); // table is based on number*cofactor
-        for i in 0..=j_max {
-            let point = acc; // i * G
-
-            if i % (j_max / 1000 + 1) == 0 {
-                println!("[{}/{}]", i, j_max);
-            }
-
-            let u = point.to_montgomery();
-            let bytes = u.to_bytes();
-
-            all_entries[i] = bytes;
-            acc += step;
-        }
-
-        let mut t1_keys = vec![0u32; cuckoo_len];
-        let mut t1_values = vec![0u32; cuckoo_len];
-
-        println!("Setting up the cuckoo hashmap...");
-        t1_cuckoo_setup(
-            cuckoo_len,
-            j_max,
-            &all_entries,
-            &mut t1_values,
-            &mut t1_keys,
-        );
-
-        println!("Writing to file...");
-
-        file.write_all(bytemuck::cast_slice(&t1_keys))?;
-        file.write_all(bytemuck::cast_slice(&t1_values))?;
-
-        println!("Done :)");
-        Ok(())
-    }
-
-    fn create_t2_table(l1: usize, file: &mut File) -> std::io::Result<()> {
-        let i_max = (1 << (L2 - 1)) + 1;
-        let two_to_l1 = EdwardsPoint::mul_base(&Scalar::from(1u32 << l1)); // 2^l1
-        let two_to_l1 = two_to_l1.mul_by_cofactor(); // clear cofactor
-
-        let mut arr = vec![
-            T2MontgomeryCoordinates {
-                u: Default::default(),
-                v: Default::default()
-            };
-            i_max
-        ];
-
-        let mut acc = two_to_l1;
-        for j in 1..i_max {
-            let p = AffineMontgomeryPoint::from(&acc);
-            let (u, v) = (p.u.as_bytes(), p.v.as_bytes());
-            arr[j - 1] = T2MontgomeryCoordinates { u, v };
-            acc += two_to_l1;
-        }
-
-        file.write_all(bytemuck::cast_slice(&arr)).unwrap();
-        Ok(())
-    }
-
-    /// Generate the ECDLP precomputed tables file.
-    pub fn create_combined_table(l1: usize, file: &mut File) -> std::io::Result<()> {
-        create_t2_table(l1, file)?;
-        create_t1_table(l1, file)
-    }
-}
-
 // FIXME(upstrean): should be an impl From<i64> for Scalar
 fn i64_to_scalar(n: i64) -> Scalar {
     if n >= 0 {
@@ -847,35 +490,26 @@ fn i64_to_scalar(n: i64) -> Scalar {
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+
+    use rand::Rng;
+
     use super::*;
-    use crate::constants::MONTGOMERY_A;
 
     #[test]
     fn gen_t1_t2() {
         // for l1 in 10..=28 {
-            let l1 = 26;
-            table_generation::create_combined_table(
-                l1,
-                &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
-            )
-            .unwrap();
+        let l1 = 26;
+        table_generation::create_combined_table(
+            l1,
+            &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
+        )
+        .unwrap();
         // }
     }
 
     #[test]
-    fn test_const_alpha() {
-        // Constant comes from https://ristretto.group/details/isogenies.html (birational mapping from E2 = E_(a2,d2) to M_(B,A))
-        // alpha = sqrt((A + 2) / (B * a_2)) with B = 1 and a_2 = -1.
-        let two = &FieldElement::ONE + &FieldElement::ONE;
-        let (is_sq, v) =
-            FieldElement::sqrt_ratio_i(&(&MONTGOMERY_A + &two), &FieldElement::MINUS_ONE);
-        assert!(bool::from(is_sq));
-
-        assert_eq!(edwards_to_montgomery_alpha().as_bytes(), v.as_bytes());
-    }
-
-    #[test]
-    #[cfg(ecdlp_test_needs_table_generated)]
+    // #[cfg(ecdlp_test_needs_table_generated)]
     fn test_ecdlp_26_cofactors() {
         let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
 
@@ -890,7 +524,11 @@ mod tests {
             let point = point.coset4()[coset_i];
             // let point = point.compress().decompress().unwrap();
 
-            let res = decode(&tables, RistrettoPoint(point), ECDLPArguments::new_with_range(0, 1 << 48));
+            let res = decode(
+                &tables,
+                RistrettoPoint(point),
+                ECDLPArguments::new_with_range(0, 1 << 48),
+            );
             assert_eq!(res, Some(num as i64));
 
             println!("tested {num} (coset4[{coset_i}])");
@@ -898,7 +536,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(ecdlp_test_needs_table_generated)]
+    // #[cfg(ecdlp_test_needs_table_generated)]
     fn test_ecdlp_26() {
         let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
 

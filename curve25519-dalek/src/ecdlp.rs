@@ -2,14 +2,14 @@
 //!
 //! This file enables the decoding of integers from [`RistrettoPoint`]s. As this requires
 //! a bruteforce operation, this can take quite a long time (multiple seconds) for large input spaces.
-//! 
+//!
 //! The algorithm depends on a constant `L1` parameter, which enables changing the space/time tradeoff.
 //! To use a given `L1` constant, you need to generate a precomputed tables file, or download a pre-generated one.
 //! The resulting file may be quite big, which is why it is recommanded to load it at runtime using [`ecdlp::ECDLPTablesFile`].
-//! 
+//!
 //! The algorithm works for any range, but keep in mind that the time the algorithm takes grows exponentially: with the same
 //! precomputed tables, decoding an `n+1`-bit integer will take 2x as long as an `n`-bit integer. By default, unless the "pseudo"
-//! constant time mode is enabled, integers which are closer to the start of the range will be found exponentially faster: for 
+//! constant time mode is enabled, integers which are closer to the start of the range will be found exponentially faster: for
 //! example, integers in the `n-1`-bit first half of the `n`-bit decoding range will take 1/2 of the time compared to the second half,
 //! and numbers near the very beginning will be found almost immediately.
 //!
@@ -74,6 +74,10 @@ mod ecdlp_notes {
     //!   to >100Mo when L2 = 22, for example. This results in slightly more modular inversions,
     //!   however this has no visible impact on performance. Shifting the inputs like this
     //!   also means that we support arbitrary decoding ranges for a given constant tables file.
+    //! 
+    //! Note: We are dealing with a curve which has cofactors; as such, we need to multiply
+    //! by the cofactor before running ECDLP to clear it and guarantee a canonical encoding of our points.
+    //! The tables also need to be based on `num * cofactor` to match.
     //!
     //! [fast-ecdlp-paper]: https://eprint.iacr.org/2022/1573
 }
@@ -179,7 +183,7 @@ impl<T: PrecomputedECDLPTables> ECDLPTablesConstants for T {
 
 /// Canonical FieldElement type.
 type CompressedFieldElement = [u8; 32];
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 struct AffineMontgomeryPoint {
     u: FieldElement,
     v: FieldElement,
@@ -376,9 +380,9 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
     ///
     /// Please keep in mind that this report function should not take too long or nuke
     /// the cache, as it would impact the performance of the algorithm.
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```
     /// let ecdlp_args = ECDLPArguments::new_with_range(0, 1 << 48)
     ///     .progress_report_function(|_progress| {
@@ -452,6 +456,9 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
         (j, j * (1 << L2), progress)
     });
 
+    // clear the cofactor, we want the repr to be canonical
+    let normalized = RistrettoPoint(normalized.0.mul_by_cofactor());
+
     let thread_iter = batch_iterator.skip(thread_i).step_by(n_threads);
 
     let els_per_batch = 1 << (L2 + TS::L1);
@@ -461,7 +468,7 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
 
     let mut target_montgomery = AffineMontgomeryPoint::from(&t_normalized.0);
     let batch_step = -(n_threads as i64) * els_per_batch as i64;
-    let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0);
+    let batch_step_montgomery = AffineMontgomeryPoint::from(&(i64_to_scalar(batch_step) * G).0.mul_by_cofactor());
 
     thread_iter.map(move |(j, j_start, progress)| {
         let current = target_montgomery;
@@ -760,7 +767,8 @@ pub mod table_generation {
         let mut all_entries = vec![Default::default(); j_max + 1];
 
         println!("Computing all the points...");
-        let mut acc = RistrettoPoint::identity();
+        let mut acc = RistrettoPoint::identity().0;
+        let step = G.0.mul_by_cofactor(); // table is based on number*cofactor
         for i in 0..=j_max {
             let point = acc; // i * G
 
@@ -768,11 +776,11 @@ pub mod table_generation {
                 println!("[{}/{}]", i, j_max);
             }
 
-            let u = point.0.to_montgomery();
+            let u = point.to_montgomery();
             let bytes = u.to_bytes();
 
             all_entries[i] = bytes;
-            acc += G;
+            acc += step;
         }
 
         let mut t1_keys = vec![0u32; cuckoo_len];
@@ -799,6 +807,7 @@ pub mod table_generation {
     fn create_t2_table(l1: usize, file: &mut File) -> std::io::Result<()> {
         let i_max = (1 << (L2 - 1)) + 1;
         let two_to_l1 = EdwardsPoint::mul_base(&Scalar::from(1u32 << l1)); // 2^l1
+        let two_to_l1 = two_to_l1.mul_by_cofactor(); // clear cofactor
 
         let mut arr = vec![
             T2MontgomeryCoordinates {
@@ -812,7 +821,6 @@ pub mod table_generation {
         for j in 1..i_max {
             let p = AffineMontgomeryPoint::from(&acc);
             let (u, v) = (p.u.as_bytes(), p.v.as_bytes());
-            // println!("{j} * 2^l1 * G = {u:?} {v:?}");
             arr[j - 1] = T2MontgomeryCoordinates { u, v };
             acc += two_to_l1;
         }
@@ -844,13 +852,14 @@ mod tests {
 
     #[test]
     fn gen_t1_t2() {
-        for l1 in 10..=28 {
+        // for l1 in 10..=28 {
+            let l1 = 26;
             table_generation::create_combined_table(
                 l1,
                 &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
             )
             .unwrap();
-        }
+        // }
     }
 
     #[test]
@@ -863,5 +872,50 @@ mod tests {
         assert!(bool::from(is_sq));
 
         assert_eq!(edwards_to_montgomery_alpha().as_bytes(), v.as_bytes());
+    }
+
+    #[test]
+    #[cfg(ecdlp_test_needs_table_generated)]
+    fn test_ecdlp_26_cofactors() {
+        let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
+
+        for i in (0..(1u64 << 48)).step_by(1 << 26).take(1 << 14) {
+            let delta = rand::thread_rng().gen_range(0..(1 << 26));
+
+            let num = i as u64 + delta;
+            let point = RistrettoPoint::mul_base(&Scalar::from(num));
+
+            // take a random point from the coset4
+            let coset_i = rand::thread_rng().gen_range(0..4);
+            let point = point.coset4()[coset_i];
+            // let point = point.compress().decompress().unwrap();
+
+            let res = decode(&tables, RistrettoPoint(point), ECDLPArguments::new_with_range(0, 1 << 48));
+            assert_eq!(res, Some(num as i64));
+
+            println!("tested {num} (coset4[{coset_i}])");
+        }
+    }
+
+    #[test]
+    #[cfg(ecdlp_test_needs_table_generated)]
+    fn test_ecdlp_26() {
+        let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
+
+        for i in (0..(1u64 << 48)).step_by(1 << 26) {
+            let num = i as u64; // rand::thread_rng().gen_range(0u64..(1 << 48));
+            let mut point = RistrettoPoint::mul_base(&Scalar::from(num));
+
+            if rand::thread_rng().gen() {
+                // do a round of compression/decompression to mess up the Z and Ts
+                // & ecdlp will need to clear the cofactor
+                point = point.compress().decompress().unwrap();
+            }
+
+            let res = decode(&tables, point, ECDLPArguments::new_with_range(0, 1 << 48));
+            assert_eq!(res, Some(num as i64));
+
+            println!("tested {num}");
+        }
     }
 }

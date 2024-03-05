@@ -212,7 +212,7 @@ pub mod table_generation {
         }
     }
 
-    fn create_t1_table(l1: usize, file: &mut File) -> std::io::Result<()> {
+    fn create_t1_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
         let j_max = 1 << (l1 - 1);
         let cuckoo_len = (j_max as f64 * 1.3) as usize;
 
@@ -256,7 +256,7 @@ pub mod table_generation {
         Ok(())
     }
 
-    fn create_t2_table(l1: usize, file: &mut File) -> std::io::Result<()> {
+    fn create_t2_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
         let i_max = (1 << (L2 - 1)) + 1;
         let two_to_l1 = EdwardsPoint::mul_base(&Scalar::from(1u32 << l1)); // 2^l1
         let two_to_l1 = two_to_l1.mul_by_cofactor(); // clear cofactor
@@ -282,7 +282,7 @@ pub mod table_generation {
     }
 
     /// Generate the ECDLP precomputed tables file.
-    pub fn create_combined_table(l1: usize, file: &mut File) -> std::io::Result<()> {
+    pub fn create_combined_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
         create_t2_table(l1, file)?;
         create_t1_table(l1, file)
     }

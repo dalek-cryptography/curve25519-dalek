@@ -172,7 +172,7 @@ pub mod table_generation {
             let mut old_hash_id = 1u8;
 
             if i % (j_max / 1000 + 1) == 0 {
-                println!("[{}/{}]", i, j_max);
+                log::info!("[{}/{}]", i, j_max);
             }
 
             for j in 0..CUCKOO_MAX_INSERT_SWAPS {
@@ -184,19 +184,11 @@ pub mod table_generation {
                 let h = h1 % cuckoo_len;
 
                 if hash_index[h] == 0 {
-                    // println!("Putting {:?} [{} - {h1}] => {}", x, h, v);
                     hash_index[h] = old_hash_id;
                     t1_values[h] = v;
                     t1_keys[h] = key;
                     break;
                 } else {
-                    // println!(
-                    //     "Swapping {:?} [{} - {h1}] for {} (swap #{}) -- {cuckoo_len}",
-                    //     x,
-                    //     h,
-                    //     v,
-                    //     j + 1
-                    // );
                     swap(&mut old_hash_id, &mut hash_index[h]);
                     swap(&mut v, &mut t1_values[h]);
                     swap(&mut key, &mut t1_keys[h]);
@@ -218,14 +210,14 @@ pub mod table_generation {
 
         let mut all_entries = vec![Default::default(); j_max + 1];
 
-        println!("Computing all the points...");
+        log::info!("Computing all the points...");
         let mut acc = RistrettoPoint::identity().0;
         let step = RISTRETTO_BASEPOINT_POINT.0.mul_by_cofactor(); // table is based on number*cofactor
         for i in 0..=j_max {
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
-                println!("[{}/{}]", i, j_max);
+                log::info!("[{}/{}]", i, j_max);
             }
 
             let u = point.to_montgomery();
@@ -238,7 +230,7 @@ pub mod table_generation {
         let mut t1_keys = vec![0u32; cuckoo_len];
         let mut t1_values = vec![0u32; cuckoo_len];
 
-        println!("Setting up the cuckoo hashmap...");
+        log::info!("Setting up the cuckoo hashmap...");
         t1_cuckoo_setup(
             cuckoo_len,
             j_max,
@@ -247,12 +239,12 @@ pub mod table_generation {
             &mut t1_keys,
         );
 
-        println!("Writing to file...");
+        log::info!("Writing to file...");
 
         file.write_all(bytemuck::cast_slice(&t1_keys))?;
         file.write_all(bytemuck::cast_slice(&t1_values))?;
 
-        println!("Done :)");
+        log::info!("Done :)");
         Ok(())
     }
 

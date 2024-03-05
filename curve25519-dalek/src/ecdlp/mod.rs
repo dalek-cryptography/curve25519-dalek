@@ -490,14 +490,20 @@ fn i64_to_scalar(n: i64) -> Scalar {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use rand::Rng;
     use std::fs::File;
 
-    use rand::Rng;
-
-    use super::*;
+    fn init() {
+        let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+            .is_test(true)
+            .try_init();
+    }
 
     #[test]
     fn gen_t1_t2() {
+        init();
+
         // for l1 in 10..=28 {
         let l1 = 26;
         table_generation::create_combined_table(
@@ -511,6 +517,8 @@ mod tests {
     #[test]
     // #[cfg(ecdlp_test_needs_table_generated)]
     fn test_ecdlp_26_cofactors() {
+        init();
+
         let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
 
         for i in (0..(1u64 << 48)).step_by(1 << 26).take(1 << 14) {
@@ -538,6 +546,8 @@ mod tests {
     #[test]
     // #[cfg(ecdlp_test_needs_table_generated)]
     fn test_ecdlp_26() {
+        init();
+
         let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
 
         for i in (0..(1u64 << 48)).step_by(1 << 26) {

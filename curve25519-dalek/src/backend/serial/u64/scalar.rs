@@ -25,7 +25,7 @@ use crate::constants;
 pub struct Scalar52(pub [u64; 5]);
 
 impl Debug for Scalar52 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
     }
 }

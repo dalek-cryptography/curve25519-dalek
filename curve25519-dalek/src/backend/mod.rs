@@ -179,16 +179,13 @@ where
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => {
-            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul::<I, J>(
-                scalars, points,
-            )
+            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul::<I, J>(scalars, points)
         }
         #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
         BackendKind::Avx512 => {
-            vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul::<
-                I,
-                J,
-            >(scalars, points)
+            vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul::<I, J>(
+                scalars, points,
+            )
         }
         BackendKind::Serial => {
             serial::scalar_mul::straus::Straus::multiscalar_mul::<I, J>(scalars, points)
@@ -221,9 +218,7 @@ where
             >(scalars, points)
         }
         BackendKind::Serial => {
-            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(
-                scalars, points,
-            )
+            serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(scalars, points)
         }
     }
 }

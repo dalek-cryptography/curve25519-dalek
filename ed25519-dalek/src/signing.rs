@@ -543,7 +543,7 @@ impl AsRef<VerifyingKey> for SigningKey {
 }
 
 impl Debug for SigningKey {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("SigningKey")
             .field("verifying_key", &self.verifying_key)
             .finish_non_exhaustive() // avoids printing `secret_key`
@@ -742,7 +742,7 @@ impl<'d> Deserialize<'d> for SigningKey {
         impl<'de> serde::de::Visitor<'de> for SigningKeyVisitor {
             type Value = SigningKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(formatter, concat!("An ed25519 signing (private) key"))
             }
 

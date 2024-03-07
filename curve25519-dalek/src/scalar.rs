@@ -1233,11 +1233,11 @@ impl Field for Scalar {
     }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
-        ff::helpers::sqrt_ratio_generic(num, div)
+        group::ff::helpers::sqrt_ratio_generic(num, div)
     }
 
     fn sqrt(&self) -> CtOption<Self> {
-        ff::helpers::sqrt_tonelli_shanks(
+        group::ff::helpers::sqrt_tonelli_shanks(
             self,
             [
                 0xcb02_4c63_4b9e_ba7d,

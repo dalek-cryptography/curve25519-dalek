@@ -285,7 +285,7 @@ impl Scalar {
 }
 
 impl Debug for Scalar {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
@@ -430,7 +430,7 @@ impl<'de> Deserialize<'de> for Scalar {
         impl<'de> Visitor<'de> for ScalarVisitor {
             type Value = Scalar;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str(
                     "a sequence of 32 bytes whose little-endian interpretation is less than the \
                     basepoint order ℓ",
@@ -831,7 +831,7 @@ impl Scalar {
         }
 
         #[cfg(feature = "zeroize")]
-        zeroize::Zeroize::zeroize(&mut scratch);
+        Zeroize::zeroize(&mut scratch);
 
         ret
     }
@@ -1233,11 +1233,11 @@ impl Field for Scalar {
     }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
-        group::ff::helpers::sqrt_ratio_generic(num, div)
+        ff::helpers::sqrt_ratio_generic(num, div)
     }
 
     fn sqrt(&self) -> CtOption<Self> {
-        group::ff::helpers::sqrt_tonelli_shanks(
+        ff::helpers::sqrt_tonelli_shanks(
             self,
             [
                 0xcb02_4c63_4b9e_ba7d,

@@ -1,0 +1,10 @@
+[package]
+name = "generate-wycheproofs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+codegen = "0.2.0"
+hex = "0.4.3"
+itertools = "0.12.1"
+wycheproof = "0.5.1"

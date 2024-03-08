@@ -2,8 +2,7 @@
 //! unstable. The API may change without notice.
 
 use bytemuck::{Pod, Zeroable};
-use std::{fs::File, io::Write};
-use std::{mem::size_of, path::Path};
+use std::mem::size_of;
 
 use crate::constants::RISTRETTO_BASEPOINT_POINT;
 use crate::traits::Identity;
@@ -21,36 +20,25 @@ pub(crate) const CUCKOO_K: usize = 3; // number of cuckoo lookups before giving 
 // Note: file layout is just T2 followed by T1 keys and then T1 values.
 // We just do casts using `bytemuck` since everything are PODs.
 
-/// ECDLP tables loaded from a file. The `L1` const-generic needs to match the one
-/// used during table generation.
-pub struct ECDLPTablesFile<const L1: usize> {
-    content: memmap::Mmap,
+/// A view into an ECDLP precomputed table. This is a wrapper around a read-only byte array, which you could back by an mmaped file, for example.
+pub struct ECDLPTablesFileView<'a, const L1: usize> {
+    bytes: &'a [u8],
 }
-impl<const L1: usize> ECDLPTablesFile<L1> {
-    /// Load the ECDLP tables from a file.
-    /// As of now, the file layout is unstable and may change.
-    pub fn load_from_file(filename: impl AsRef<Path>) -> std::io::Result<Self> {
-        let f = File::open(filename)?;
 
-        // Safety: mmap does not have any safety comment, but see
-        // https://github.com/danburkert/memmap-rs/issues/99
-        let content = unsafe { memmap::MmapOptions::new().map(&f)? };
+impl<'a, const L1: usize> ECDLPTablesFileView<'a, L1> {
+    const J_BITS: usize = L1 - 1;
+    const J_MAX: usize = 1 << Self::J_BITS;
+    const CUCKOO_LEN: usize = (Self::J_MAX as f64 * 1.3) as _;
 
-        assert_eq!(
-            content.len(),
-            size_of::<T2MontgomeryCoordinates>() * I_MAX + size_of::<u32>() * Self::CUCKOO_LEN * 2
-        );
-
-        Ok(Self { content })
+    /// ECDLP algorithm may panic if the alignment or size of `bytes` is wrong.
+    pub fn from_bytes(bytes: &'a [u8]) -> Self {
+        // TODO(merge): check align/size of `bytes` here
+        Self { bytes }
     }
-}
 
-impl<const L1: usize> PrecomputedECDLPTables for ECDLPTablesFile<L1> {
-    const L1: usize = L1;
-
-    fn get_t1(&self) -> CuckooT1HashMapView<'_> {
+    pub(crate) fn get_t1(&self) -> CuckooT1HashMapView<'_, L1> {
         let t1_keys_values: &[u32] =
-            bytemuck::cast_slice(&self.content[(size_of::<T2MontgomeryCoordinates>() * I_MAX)..]);
+            bytemuck::cast_slice(&self.bytes[(size_of::<T2MontgomeryCoordinates>() * I_MAX)..]);
 
         CuckooT1HashMapView {
             keys: &t1_keys_values[0..Self::CUCKOO_LEN],
@@ -58,50 +46,20 @@ impl<const L1: usize> PrecomputedECDLPTables for ECDLPTablesFile<L1> {
         }
     }
 
-    fn get_t2(&self) -> T2LinearTableView<'_> {
+    pub(crate) fn get_t2(&self) -> T2LinearTableView<'_> {
         let t2: &[T2MontgomeryCoordinates] =
-            bytemuck::cast_slice(&self.content[0..(size_of::<T2MontgomeryCoordinates>() * I_MAX)]);
+            bytemuck::cast_slice(&self.bytes[0..(size_of::<T2MontgomeryCoordinates>() * I_MAX)]);
         T2LinearTableView(t2)
     }
-}
-
-/// Trait to expose access to the ECDLP precomputed tables to the algorithm.
-/// You should probably use [`ECDLPTablesFile`], which implements this trait -
-/// this trait only exists as a way to implement your own way of storing the tables,
-/// in case you are running on `no_std` or don't have access to `mmap`.
-pub trait PrecomputedECDLPTables {
-    /// The `L1` constant used to generate the table.
-    const L1: usize;
-
-    /// Hashmap <i * G => i | i in \[1, 2^(l1-1)\]>.
-    /// Cuckoo hash table, each entry is 8 bytes long - but there are 1.3 times the needed slots.
-    /// Total map size is then 1.3*8*2^(l1-1) bytes.
-    /// The hashing function is just indexing the bytes of the point for efficiency.
-    fn get_t1(&self) -> CuckooT1HashMapView<'_>;
-
-    /// Linear map \[j * 2^l1 * G | j in \[1, 2^(l2-1)\]\].
-    fn get_t2(&self) -> T2LinearTableView<'_>;
-}
-
-// Hoist these constants to a private trait to make them non-overrideable.
-pub(crate) trait ECDLPTablesConstants {
-    const J_BITS: usize;
-    const J_MAX: usize;
-    const CUCKOO_LEN: usize;
-}
-impl<T: PrecomputedECDLPTables> ECDLPTablesConstants for T {
-    const J_BITS: usize = Self::L1 - 1;
-    const J_MAX: usize = 1 << Self::J_BITS;
-    const CUCKOO_LEN: usize = (Self::J_MAX as f64 * 1.3) as _;
 }
 
 /// Canonical FieldElement type.
 type CompressedFieldElement = [u8; 32];
 
-#[repr(C)]
+#[repr(C, align(32))]
 #[derive(Clone, Copy, Default, Pod, Zeroable, Debug)]
 /// An entry in the T2 table. Represents a (u,v) coordinate on the Montgomery curve.
-pub struct T2MontgomeryCoordinates {
+pub(crate) struct T2MontgomeryCoordinates {
     /// The `u` coordinate.
     pub u: CompressedFieldElement,
     /// The `v` coordinate.
@@ -109,25 +67,25 @@ pub struct T2MontgomeryCoordinates {
 }
 
 /// A view into the T2 table.
-pub struct T2LinearTableView<'a>(pub &'a [T2MontgomeryCoordinates]);
+pub(crate) struct T2LinearTableView<'a>(pub &'a [T2MontgomeryCoordinates]);
 
 impl T2LinearTableView<'_> {
-    pub(crate) fn index(&self, index: usize) -> AffineMontgomeryPoint {
+    pub fn index(&self, index: usize) -> AffineMontgomeryPoint {
         let T2MontgomeryCoordinates { u, v } = self.0[index - 1];
         AffineMontgomeryPoint::from_bytes(&u, &v)
     }
 }
 
 /// A view into the T1 table.
-pub struct CuckooT1HashMapView<'a> {
+pub(crate) struct CuckooT1HashMapView<'a, const L1: usize> {
     /// Cuckoo keys
     pub keys: &'a [u32],
     /// Cuckoo values
     pub values: &'a [u32],
 }
 
-impl CuckooT1HashMapView<'_> {
-    pub(crate) fn lookup<TS: PrecomputedECDLPTables>(
+impl<'a, const L1: usize> CuckooT1HashMapView<'a, L1> {
+    pub(crate) fn lookup(
         &self,
         x: &[u8],
         mut is_problem_answer: impl FnMut(u64) -> bool,
@@ -137,7 +95,7 @@ impl CuckooT1HashMapView<'_> {
             let end = start + 4;
             let key = u32::from_be_bytes(x[end..end + 4].try_into().unwrap());
             let h = u32::from_be_bytes(x[start..start + 4].try_into().unwrap()) as usize
-                % TS::CUCKOO_LEN;
+                % ECDLPTablesFileView::<L1>::CUCKOO_LEN;
             if self.keys[h as usize] == key {
                 let value = self.values[h as usize] as u64;
                 if is_problem_answer(value) {
@@ -172,7 +130,7 @@ pub mod table_generation {
             let mut old_hash_id = 1u8;
 
             if i % (j_max / 1000 + 1) == 0 {
-                log::info!("[{}/{}]", i, j_max);
+                log::info!("T1 hashmap generation [{}/{}]", i, j_max);
             }
 
             for j in 0..CUCKOO_MAX_INSERT_SWAPS {
@@ -204,7 +162,7 @@ pub mod table_generation {
         }
     }
 
-    fn create_t1_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
+    fn create_t1_table(l1: usize, dest: &mut [u8]) -> std::io::Result<()> {
         let j_max = 1 << (l1 - 1);
         let cuckoo_len = (j_max as f64 * 1.3) as usize;
 
@@ -217,7 +175,7 @@ pub mod table_generation {
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
-                log::info!("[{}/{}]", i, j_max);
+                log::info!("T1 point computation [{}/{}]", i, j_max);
             }
 
             let u = point.to_montgomery();
@@ -227,6 +185,7 @@ pub mod table_generation {
             acc += step;
         }
 
+        // We don't directly write to `dest` as our writes will be very random-access-y and `dest` is probably an mmaped file.
         let mut t1_keys = vec![0u32; cuckoo_len];
         let mut t1_values = vec![0u32; cuckoo_len];
 
@@ -239,43 +198,48 @@ pub mod table_generation {
             &mut t1_keys,
         );
 
-        log::info!("Writing to file...");
+        let (t1_keys_dest, t1_values_dest) = dest.split_at_mut(cuckoo_len * size_of::<u32>());
+        let t1_keys_dest: &mut [u32] = bytemuck::cast_slice_mut(t1_keys_dest);
+        let t1_values_dest: &mut [u32] = bytemuck::cast_slice_mut(t1_values_dest);
 
-        file.write_all(bytemuck::cast_slice(&t1_keys))?;
-        file.write_all(bytemuck::cast_slice(&t1_values))?;
+        t1_keys_dest.copy_from_slice(&t1_keys);
+        t1_values_dest.copy_from_slice(&t1_values);
 
         log::info!("Done :)");
         Ok(())
     }
 
-    fn create_t2_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
-        let i_max = (1 << (L2 - 1)) + 1;
+    fn create_t2_table(l1: usize, dest: &mut [u8]) -> std::io::Result<()> {
         let two_to_l1 = EdwardsPoint::mul_base(&Scalar::from(1u32 << l1)); // 2^l1
         let two_to_l1 = two_to_l1.mul_by_cofactor(); // clear cofactor
 
-        let mut arr = vec![
-            T2MontgomeryCoordinates {
-                u: Default::default(),
-                v: Default::default()
-            };
-            i_max
-        ];
+        let arr: &mut [T2MontgomeryCoordinates] = bytemuck::cast_slice_mut(dest);
 
         let mut acc = two_to_l1;
-        for j in 1..i_max {
+        for j in 1..I_MAX {
             let p = AffineMontgomeryPoint::from(&acc);
             let (u, v) = (p.u.as_bytes(), p.v.as_bytes());
             arr[j - 1] = T2MontgomeryCoordinates { u, v };
             acc += two_to_l1;
         }
 
-        file.write_all(bytemuck::cast_slice(&arr)).unwrap();
         Ok(())
     }
 
+    /// Length of the
+    pub fn table_file_len(l1: usize) -> usize {
+        let j_max = 1 << (l1 - 1);
+        let cuckoo_len = (j_max as f64 * 1.3) as usize;
+
+        I_MAX * size_of::<T2MontgomeryCoordinates>() + (cuckoo_len * 2) * size_of::<u32>()
+    }
+
     /// Generate the ECDLP precomputed tables file.
-    pub fn create_combined_table(l1: usize, file: &mut impl Write) -> std::io::Result<()> {
-        create_t2_table(l1, file)?;
-        create_t1_table(l1, file)
+    /// To prepare `dest`, you should use an mmaped file or a 32-byte aligned byte array.
+    /// The byte array length should be the return value of [`table_file_len`].
+    pub fn create_table_file(l1: usize, dest: &mut [u8]) -> std::io::Result<()> {
+        let (t2_bytes, t1_bytes) = dest.split_at_mut(I_MAX * size_of::<T2MontgomeryCoordinates>());
+        create_t2_table(l1, t2_bytes)?;
+        create_t1_table(l1, t1_bytes)
     }
 }

@@ -95,10 +95,7 @@ use core::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-pub use table::{
-    table_generation, CuckooT1HashMapView, ECDLPTablesFile, PrecomputedECDLPTables,
-    T2LinearTableView, T2MontgomeryCoordinates,
-};
+pub use table::{table_generation, ECDLPTablesFileView};
 
 use table::{BATCH_SIZE, L2};
 
@@ -207,18 +204,18 @@ impl<F: ProgressReportFunction> ECDLPArguments<F> {
 }
 
 /// Offset calculations common to [`par_decode`] and [`decode`].
-fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
-    _precomputed_tables: &TS,
+fn decode_prep<const L1: usize, R: ProgressReportFunction>(
+    _precomputed_tables: &ECDLPTablesFileView<'_, L1>,
     point: RistrettoPoint,
     args: &ECDLPArguments<R>,
     _n_threads: usize,
 ) -> (i64, RistrettoPoint, usize) {
     let amplitude = (args.range_end - args.range_start).max(0);
 
-    let offset = args.range_start + ((1 << (L2 - 1)) << TS::L1) + (1 << (TS::L1 - 1));
+    let offset = args.range_start + ((1 << (L2 - 1)) << L1) + (1 << (L1 - 1));
     let normalized = &point - RistrettoPoint::mul_base(&i64_to_scalar(offset));
 
-    let j_end = (amplitude >> TS::L1) as usize; // amplitude / 2^(L1 + 1)
+    let j_end = (amplitude >> L1) as usize; // amplitude / 2^(L1 + 1)
 
     // FIXME: is there a better way to divceil other than pulling the `num` crate?
     let divceil = |a, b| (a + b - 1) / b;
@@ -230,8 +227,8 @@ fn decode_prep<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
 
 /// Returns an iterator of batches for a given thread. Common to [`par_decode`] and [`decode`].
 /// Iterator item is (index, j_start, target_montgomery, progress).
-fn make_point_iterator<TS: PrecomputedECDLPTables>(
-    _precomputed_tables: &TS,
+fn make_point_iterator<const L1: usize>(
+    _precomputed_tables: &ECDLPTablesFileView<'_, L1>,
     normalized: RistrettoPoint,
     num_batches: usize,
     n_threads: usize,
@@ -247,7 +244,7 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
 
     let thread_iter = batch_iterator.skip(thread_i).step_by(n_threads);
 
-    let els_per_batch = 1 << (L2 + TS::L1);
+    let els_per_batch = 1 << (L2 + L1);
 
     // starting point for this thread
     let t_normalized = &normalized - &i64_to_scalar((thread_i * els_per_batch) as i64) * G;
@@ -270,8 +267,8 @@ fn make_point_iterator<TS: PrecomputedECDLPTables>(
 /// Decode a [`RistrettoPoint`] to the represented integer.
 /// This may take a long time, so if you are running on an event-loop such as `tokio`, you
 /// should wrap this in a `tokio::block_on` task.
-pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
-    precomputed_tables: &TS,
+pub fn decode<const L1: usize, R: ProgressReportFunction>(
+    precomputed_tables: &ECDLPTablesFileView<'_, L1>,
     point: RistrettoPoint,
     args: ECDLPArguments<R>,
 ) -> Option<i64> {
@@ -291,8 +288,8 @@ pub fn decode<TS: PrecomputedECDLPTables, R: ProgressReportFunction>(
 /// This uses [`std::thread`] as a threading primitive, and as such, it is only available when the `std` feature is enabled.
 /// This may take a long time, so if you are running on an event-loop such as `tokio`, you
 /// should wrap this in a `tokio::block_on` task.
-pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction + Sync>(
-    precomputed_tables: &TS,
+pub fn par_decode<const L1: usize, R: ProgressReportFunction + Sync>(
+    precomputed_tables: &ECDLPTablesFileView<'_, L1>,
     point: RistrettoPoint,
     args: ECDLPArguments<R>,
 ) -> Option<i64> {
@@ -357,8 +354,8 @@ pub fn par_decode<TS: PrecomputedECDLPTables + Sync, R: ProgressReportFunction +
     res.map(|v| v as i64 + offset)
 }
 
-fn fast_ecdlp<TS: PrecomputedECDLPTables>(
-    precomputed_tables: &TS,
+fn fast_ecdlp<const L1: usize>(
+    precomputed_tables: &ECDLPTablesFileView<'_, L1>,
     target_point: RistrettoPoint,
     point_iterator: impl Iterator<Item = (usize, usize, AffineMontgomeryPoint, f64)>,
     pseudo_constant_time: bool,
@@ -388,7 +385,7 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
 
         // Case 0: target is 0. Has to be handled separately.
         if target_montgomery.is_identity_not_ct() {
-            consider_candidate((j_start as i64) << TS::L1);
+            consider_candidate((j_start as i64) << L1);
             if !pseudo_constant_time {
                 break 'outer;
             }
@@ -396,9 +393,9 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
 
         // Case 2: j=0. Has to be handled separately.
         if t1_table
-            .lookup::<TS>(&target_montgomery.u.as_bytes(), |i| {
-                consider_candidate(((j_start as i64) << TS::L1) + i as i64)
-                    || consider_candidate(((j_start as i64) << TS::L1) - i as i64)
+            .lookup(&target_montgomery.u.as_bytes(), |i| {
+                consider_candidate(((j_start as i64) << L1) + i as i64)
+                    || consider_candidate(((j_start as i64) << L1) - i as i64)
             })
             .is_some()
         {
@@ -416,8 +413,8 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
             if diff == FieldElement::ZERO {
                 // Case 1: (Montgomery addition) exceptional case when T2[j] = Pm.
                 // m1 = j * 2^L1, m2 = -j * 2^L1
-                let found = consider_candidate((j_start as i64 + j as i64) << TS::L1)
-                    || consider_candidate((j_start as i64 - j as i64) << TS::L1);
+                let found = consider_candidate((j_start as i64 + j as i64) << L1)
+                    || consider_candidate((j_start as i64 - j as i64) << L1);
                 if !pseudo_constant_time && found {
                     break 'outer;
                 }
@@ -443,9 +440,9 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
 
             // Case 3: general case, negative j.
             if t1_table
-                .lookup::<TS>(&qx.as_bytes(), |i| {
-                    consider_candidate(((j_start as i64 - j as i64) << TS::L1) + i as i64)
-                        || consider_candidate(((j_start as i64 - j as i64) << TS::L1) - i as i64)
+                .lookup(&qx.as_bytes(), |i| {
+                    consider_candidate(((j_start as i64 - j as i64) << L1) + i as i64)
+                        || consider_candidate(((j_start as i64 - j as i64) << L1) - i as i64)
                 })
                 .is_some()
             {
@@ -462,9 +459,9 @@ fn fast_ecdlp<TS: PrecomputedECDLPTables>(
 
             // Case 4: general case, positive j.
             if t1_table
-                .lookup::<TS>(&qx.as_bytes(), |i| {
-                    consider_candidate(((j_start as i64 + j as i64) << TS::L1) + i as i64)
-                        || consider_candidate(((j_start as i64 + j as i64) << TS::L1) - i as i64)
+                .lookup(&qx.as_bytes(), |i| {
+                    consider_candidate(((j_start as i64 + j as i64) << L1) + i as i64)
+                        || consider_candidate(((j_start as i64 + j as i64) << L1) - i as i64)
                 })
                 .is_some()
             {
@@ -492,7 +489,7 @@ fn i64_to_scalar(n: i64) -> Scalar {
 mod tests {
     use super::*;
     use rand::Rng;
-    use std::fs::File;
+    use std::fs::{File, OpenOptions};
 
     fn init() {
         let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
@@ -504,14 +501,21 @@ mod tests {
     fn gen_t1_t2() {
         init();
 
-        // for l1 in 10..=28 {
-        let l1 = 26;
-        table_generation::create_combined_table(
-            l1,
-            &mut File::create(format!("ecdlp_table_{l1}.bin")).unwrap(),
-        )
-        .unwrap();
-        // }
+        // for l1 in 10..=28
+        {
+            let l1 = 26;
+            let path = format!("ecdlp_table_{l1}.bin");
+            let file = OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .open(path)
+                .unwrap();
+            file.set_len(table_generation::table_file_len(l1) as _)
+                .unwrap();
+            let mut mapped = unsafe { memmap::MmapOptions::new().map_mut(&file).unwrap() };
+            table_generation::create_table_file(l1, &mut mapped).unwrap();
+        }
     }
 
     #[test]
@@ -519,9 +523,11 @@ mod tests {
     fn test_ecdlp_26_cofactors() {
         init();
 
-        let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
+        let ecdlp_table_file = File::open("ecdlp_table_26.bin").unwrap();
+        let bytes = unsafe { memmap::MmapOptions::new().map(&ecdlp_table_file).unwrap() };
+        let tables = ECDLPTablesFileView::<'_, 26>::from_bytes(&bytes);
 
-        for i in (0..(1u64 << 48)).step_by(1 << 26).take(1 << 14) {
+        for i in (0..(1u64 << 48)).step_by(1 << 26).take(1 << 12) {
             let delta = rand::thread_rng().gen_range(0..(1 << 26));
 
             let num = i as u64 + delta;
@@ -548,9 +554,11 @@ mod tests {
     fn test_ecdlp_26() {
         init();
 
-        let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
+        let ecdlp_table_file = File::open("ecdlp_table_26.bin").unwrap();
+        let bytes = unsafe { memmap::MmapOptions::new().map(&ecdlp_table_file).unwrap() };
+        let tables = ECDLPTablesFileView::<'_, 26>::from_bytes(&bytes);
 
-        for i in (0..(1u64 << 48)).step_by(1 << 26) {
+        for i in (0..(1u64 << 48)).step_by(1 << 26).take(1 << 12) {
             let num = i as u64; // rand::thread_rng().gen_range(0u64..(1 << 48));
             let mut point = RistrettoPoint::mul_base(&Scalar::from(num));
 

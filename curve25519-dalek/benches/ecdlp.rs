@@ -12,7 +12,9 @@ use rand::Rng;
 use std::{fs::File, io::Read};
 
 pub fn ecdlp_bench(c: &mut Criterion) {
-    let tables = ECDLPTablesFile::<26>::load_from_file("ecdlp_table_26.bin").unwrap();
+    let ecdlp_table_file = File::open("ecdlp_table_26.bin").unwrap();
+    let bytes = unsafe { memmap::MmapOptions::new().map(&ecdlp_table_file).unwrap() };
+    let tables = ECDLPTablesFileView::<'_, 26>::from_bytes(&bytes);
 
     c.bench_function("fast ecdlp", |b| {
         let num = rand::thread_rng().gen_range(0u64..(1 << 48));

@@ -1,52 +1,52 @@
-/// wycheproofs TC[1] 
+/// wycheproofs TC[1]
 #[test]
 fn wycheproof_tc_1() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "d4fbdb52bfa726b44d1786a8c0d171c3e62ca83c9e5bbe63de0bb2483f8fd6cc1429ab72cafc41ab56af02ff8fcc43b99bfe4c7ae940f60f38ebaa9d311c4007", "")
 }
 
-/// wycheproofs TC[2] 
+/// wycheproofs TC[2]
 #[test]
 fn wycheproof_tc_2() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "d80737358ede548acb173ef7e0399f83392fe8125b2ce877de7975d8b726ef5b1e76632280ee38afad12125ea44b961bf92f1178c9fa819d020869975bcbe109", "78")
 }
 
-/// wycheproofs TC[3] 
+/// wycheproofs TC[3]
 #[test]
 fn wycheproof_tc_3() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab07a9155711ecfaf7f99f277bad0c6ae7e39d4eef676573336a5c51eb6f946b30d", "54657374")
 }
 
-/// wycheproofs TC[4] 
+/// wycheproofs TC[4]
 #[test]
 fn wycheproof_tc_4() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "1c1ad976cbaae3b31dee07971cf92c928ce2091a85f5899f5e11ecec90fc9f8e93df18c5037ec9b29c07195ad284e63d548cd0a6fe358cc775bd6c1608d2c905", "48656c6c6f")
 }
 
-/// wycheproofs TC[5] 
+/// wycheproofs TC[5]
 #[test]
 fn wycheproof_tc_5() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "657c1492402ab5ce03e2c3a7f0384d051b9cf3570f1207fc78c1bcc98c281c2bf0cf5b3a289976458a1be6277a5055545253b45b07dcc1abd96c8b989c00f301", "313233343030")
 }
 
-/// wycheproofs TC[6] 
+/// wycheproofs TC[6]
 #[test]
 fn wycheproof_tc_6() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "d46543bfb892f84ec124dcdfc847034c19363bf3fc2fa89b1267833a14856e52e60736918783f950b6f1dd8d40dc343247cd43ce054c2d68ef974f7ed0f3c60f", "000000000000000000000000")
 }
 
-/// wycheproofs TC[7] 
+/// wycheproofs TC[7]
 #[test]
 fn wycheproof_tc_7() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "879350045543bc14ed2c08939b68c30d22251d83e018cacbaf0c9d7a48db577e80bdf76ce99e5926762bc13b7b3483260a5ef63d07e34b58eb9c14621ac92f00", "6161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161")
 }
 
-/// wycheproofs TC[8] 
+/// wycheproofs TC[8]
 #[test]
 fn wycheproof_tc_8() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7bdc3f9919a05f1d5db4a3ada896094f6871c1f37afc75db82ec3147d84d6f237b7e5ecc26b59cfea0c7eaf1052dc427b0f724615be9c3d3e01356c65b9b5109", "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60")
 }
 
-/// wycheproofs TC[9] 
+/// wycheproofs TC[9]
 #[test]
 fn wycheproof_tc_9() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "5dbd7360e55aa38e855d6ad48c34bd35b7871628508906861a7c4776765ed7d1e13d910faabd689ec8618b78295c8ab8f0e19c8b4b43eb8685778499e943ae04", "ffffffffffffffffffffffffffffffff")
@@ -196,14 +196,22 @@ fn wycheproof_tc_29() {
 #[test]
 #[should_panic]
 fn wycheproof_tc_30() {
-    super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "", "54657374")
+    super::ed25519_dalek_wycheproof(
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa",
+        "",
+        "54657374",
+    )
 }
 
 /// wycheproofs TC[31] s missing
 #[test]
 #[should_panic]
 fn wycheproof_tc_31() {
-    super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab0", "54657374")
+    super::ed25519_dalek_wycheproof(
+        "7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa",
+        "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab0",
+        "54657374",
+    )
 }
 
 /// wycheproofs TC[32] signature too short
@@ -423,111 +431,111 @@ fn wycheproof_tc_62() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "9a83eb6dbfd54a31fc1d3c580fc7b2fae4630ca8f0edf803873e433673d7e3d40e94254586cb6188c5386c3febed477cb9a6cb29e3979adc4cb27cf5278fb70a", "313233343030")
 }
 
-/// wycheproofs TC[63] checking malleability 
+/// wycheproofs TC[63] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_63() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab067654bce3832c2d76f8f6f5dafc08d9339d4eef676573336a5c51eb6f946b31d", "54657374")
 }
 
-/// wycheproofs TC[64] checking malleability 
+/// wycheproofs TC[64] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_64() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab05439412b5395d42f462c67008eba6ca839d4eef676573336a5c51eb6f946b32d", "54657374")
 }
 
-/// wycheproofs TC[65] checking malleability 
+/// wycheproofs TC[65] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_65() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab02ee12ce5875bf9dff26556464bae2ad239d4eef676573336a5c51eb6f946b34d", "54657374")
 }
 
-/// wycheproofs TC[66] checking malleability 
+/// wycheproofs TC[66] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_66() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab0e2300459f1e742404cd934d2c595a6253ad4eef676573336a5c51eb6f946b38d", "54657374")
 }
 
-/// wycheproofs TC[67] checking malleability 
+/// wycheproofs TC[67] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_67() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab07a9155711ecfaf7f99f277bad0c6ae7e39d4eef676573336a5c51eb6f946b32d", "54657374")
 }
 
-/// wycheproofs TC[68] checking malleability 
+/// wycheproofs TC[68] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_68() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab07a9155711ecfaf7f99f277bad0c6ae7e39d4eef676573336a5c51eb6f946b34d", "54657374")
 }
 
-/// wycheproofs TC[69] checking malleability 
+/// wycheproofs TC[69] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_69() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab07a9155711ecfaf7f99f277bad0c6ae7e39d4eef676573336a5c51eb6f946b38d", "54657374")
 }
 
-/// wycheproofs TC[70] checking malleability 
+/// wycheproofs TC[70] checking malleability
 #[test]
 #[should_panic]
 fn wycheproof_tc_70() {
     super::ed25519_dalek_wycheproof("7d4d0e7f6153a69b6242b522abbee685fda4420f8834b108c3bdae369ef549fa", "7c38e026f29e14aabd059a0f2db8b0cd783040609a8be684db12f82a27774ab0679155711ecfaf7f99f277bad0c6ae7e39d4eef676573336a5c51eb6f946b38d", "54657374")
 }
 
-/// wycheproofs TC[71] 
+/// wycheproofs TC[71]
 #[test]
 fn wycheproof_tc_71() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "5056325d2ab440bf30bbf0f7173199aa8b4e6fbc091cf3eb6bc6cf87cd73d992ffc216c85e4ab5b8a0bbc7e9a6e9f8d33b7f6e5ac0ffdc22d9fcaf784af84302", "")
 }
 
-/// wycheproofs TC[72] 
+/// wycheproofs TC[72]
 #[test]
 fn wycheproof_tc_72() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "481fafbf4364d7b682475282f517a3ac0538c9a6b6a562e99a3d8e5afb4f90a559b056b9f07af023905753b02d95eb329a35c77f154b79abbcd291615ce42f02", "78")
 }
 
-/// wycheproofs TC[73] 
+/// wycheproofs TC[73]
 #[test]
 fn wycheproof_tc_73() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "8a9bb4c465a3863abc9fd0dd35d80bb28f7d33d37d74679802d63f82b20da114b8d765a1206b3e9ad7cf2b2d8d778bb8651f1fa992db293c0039eacb6161480f", "54657374")
 }
 
-/// wycheproofs TC[74] 
+/// wycheproofs TC[74]
 #[test]
 fn wycheproof_tc_74() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "d839c20abfda1fd429531831c64f813f84b913e9928540310cf060b44c3dbf9457d44a7721fdc0d67724ff81cb450dd39b10cfb65db15dda4b8bf09d26bd3801", "48656c6c6f")
 }
 
-/// wycheproofs TC[75] 
+/// wycheproofs TC[75]
 #[test]
 fn wycheproof_tc_75() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "9bbb1052dcfa8ad2715c2eb716ae4f1902dea353d42ee09fd4c0b4fcb8b52b5219e2200016e1199d0061891c263e31b0bc3b55673c19610c4e0fa5408004160b", "313233343030")
 }
 
-/// wycheproofs TC[76] 
+/// wycheproofs TC[76]
 #[test]
 fn wycheproof_tc_76() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "f63b5c0667c7897fc283296416f7f60e84bbde9cbd832e56be463ed9f568069702b17a2f7c341ebf590706a6388ac76ac613c1675ec0f2c7118f2573422a500b", "000000000000000000000000")
 }
 
-/// wycheproofs TC[77] 
+/// wycheproofs TC[77]
 #[test]
 fn wycheproof_tc_77() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "1bc44d7001e6b5b9090fef34b2ca480f9786bbefa7d279353e5881e8dfb91b803ccd46500e270ef0109bfd741037558832120bc2a4f20fbe7b5fb3c3aaf23e08", "6161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161")
 }
 
-/// wycheproofs TC[78] 
+/// wycheproofs TC[78]
 #[test]
 fn wycheproof_tc_78() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "ea8e22143b02372e76e99aece3ed36aec529768a27e2bb49bdc135d44378061e1f62d1ac518f33ebf37b2ee8cc6dde68a4bd7d4a2f4d6cb77f015f71ca9fc30d", "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60")
 }
 
-/// wycheproofs TC[79] 
+/// wycheproofs TC[79]
 #[test]
 fn wycheproof_tc_79() {
     super::ed25519_dalek_wycheproof("a12c2beb77265f2aac953b5009349d94155a03ada416aad451319480e983ca4c", "8acd679e1a914fc45d5fa83d3021f0509c805c8d271df54e52f43cfbd00cb6222bf81d58fe1de2de378df67ee9f453786626961fe50a9b05f12b6f0899ebdd0a", "ffffffffffffffffffffffffffffffff")

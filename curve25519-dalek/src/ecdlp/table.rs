@@ -5,6 +5,7 @@ use bytemuck::{Pod, Zeroable};
 use std::mem::size_of;
 
 use crate::constants::RISTRETTO_BASEPOINT_POINT;
+use crate::field::FieldElement;
 use crate::traits::Identity;
 use crate::{EdwardsPoint, RistrettoPoint, Scalar};
 
@@ -66,6 +67,24 @@ pub(crate) struct T2MontgomeryCoordinates {
     pub v: CompressedFieldElement,
 }
 
+impl From<T2MontgomeryCoordinates> for AffineMontgomeryPoint {
+    fn from(e: T2MontgomeryCoordinates) -> Self {
+        Self {
+            u: FieldElement::from_bytes(&e.u),
+            v: FieldElement::from_bytes(&e.v),
+        }
+    }
+}
+
+impl From<AffineMontgomeryPoint> for T2MontgomeryCoordinates {
+    fn from(e: AffineMontgomeryPoint) -> Self {
+        Self {
+            u: e.u.as_bytes(),
+            v: e.v.as_bytes(),
+        }
+    }
+}
+
 /// A view into the T2 table.
 pub(crate) struct T2LinearTableView<'a>(pub &'a [T2MontgomeryCoordinates]);
 
@@ -114,7 +133,7 @@ pub mod table_generation {
     fn t1_cuckoo_setup(
         cuckoo_len: usize,
         j_max: usize,
-        all_entries: &[impl AsRef<[u8]>],
+        all_entries: &[CompressedFieldElement],
         t1_values: &mut [u32],
         t1_keys: &mut [u32],
     ) {
@@ -169,20 +188,21 @@ pub mod table_generation {
         let mut all_entries = vec![Default::default(); j_max + 1];
 
         log::info!("Computing all the points...");
-        let mut acc = RistrettoPoint::identity().0;
+        let acc = RistrettoPoint::identity().0;
         let step = RISTRETTO_BASEPOINT_POINT.0.mul_by_cofactor(); // table is based on number*cofactor
+        
+        let mut acc = AffineMontgomeryPoint::from(&acc);
+        let step = AffineMontgomeryPoint::from(&step);
         for i in 0..=j_max {
+            // acc is i * G
             let point = acc; // i * G
 
             if i % (j_max / 1000 + 1) == 0 {
                 log::info!("T1 point computation [{}/{}]", i, j_max);
             }
 
-            let u = point.to_montgomery();
-            let bytes = u.to_bytes();
-
-            all_entries[i] = bytes;
-            acc += step;
+            all_entries[i] = point.u.as_bytes();
+            acc = acc.addition_not_ct(&step);
         }
 
         // We don't directly write to `dest` as our writes will be very random-access-y and `dest` is probably an mmaped file.
@@ -215,18 +235,17 @@ pub mod table_generation {
 
         let arr: &mut [T2MontgomeryCoordinates] = bytemuck::cast_slice_mut(dest);
 
+        let two_to_l1 = AffineMontgomeryPoint::from(&two_to_l1);
         let mut acc = two_to_l1;
         for j in 1..I_MAX {
-            let p = AffineMontgomeryPoint::from(&acc);
-            let (u, v) = (p.u.as_bytes(), p.v.as_bytes());
-            arr[j - 1] = T2MontgomeryCoordinates { u, v };
-            acc += two_to_l1;
+            arr[j - 1] = acc.into();
+            acc = acc.addition_not_ct(&two_to_l1);
         }
 
         Ok(())
     }
 
-    /// Length of the
+    /// Length of the table file for a given `l1` const.
     pub fn table_file_len(l1: usize) -> usize {
         let j_max = 1 << (l1 - 1);
         let cuckoo_len = (j_max as f64 * 1.3) as usize;

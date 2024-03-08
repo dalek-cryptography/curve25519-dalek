@@ -6,13 +6,11 @@ on:
     paths:
       - 'curve25519-dalek/**'
       - '.github/workflows/curve25519-dalek.yml'
-      - 'wycheproofs/**'
   pull_request:
     branches: [ '**' ]
     paths:
       - 'curve25519-dalek/**'
       - '.github/workflows/curve25519-dalek.yml'
-      - 'wycheproofs/**'
 
 defaults:
   run:

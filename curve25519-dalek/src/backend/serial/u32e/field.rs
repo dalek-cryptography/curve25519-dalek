@@ -62,15 +62,22 @@ pub(crate) enum EngineOp {
 #[allow(unused_qualifications)]
 pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
     use utralib::generated::*;
-    let mut engine = utralib::CSR::new(utra::engine::HW_ENGINE_BASE as *mut u32);
-    let mcode: &'static mut [u32] = unsafe{ core::slice::from_raw_parts_mut(utralib::HW_ENGINE_MEM as *mut u32, 1024) };
-    // allocate the first three registers
-    let rf: [&'static mut [u32]; 3] =
-    unsafe { [
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 0 * 32) as *mut u32, 8),
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 1 * 32) as *mut u32, 8),
-        core::slice::from_raw_parts_mut((utralib::HW_ENGINE_MEM + 0x1_0000 + 2 * 32) as *mut u32, 8),
-    ] };
+    use crate::backend::serial::u32e::*;
+
+    crate::backend::serial::u32e::ensure_engine();
+    let mut engine = utralib::CSR::new(unsafe{ENGINE_BASE.unwrap()}.as_mut_ptr() as *mut u32);
+    let mcode: &'static mut [u32] = unsafe{
+        core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
+    };
+    let rf: [&'static mut [u32]; 3] = [
+        unsafe{core::slice::from_raw_parts_mut(
+            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 0 * 32) as *mut u32, 8)},
+        unsafe{core::slice::from_raw_parts_mut(
+            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 1 * 32) as *mut u32, 8)},
+        unsafe{core::slice::from_raw_parts_mut(
+            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 2 * 32) as *mut u32, 8)},
+    ];
+
     match op {
         EngineOp::Mul => {
             let prog = assemble_engine25519!(

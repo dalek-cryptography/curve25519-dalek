@@ -38,6 +38,8 @@ pub(crate) const RF_U32_BASE: usize = 0x1_0000 / 4;
 pub fn free_engine() {
     log::debug!("free engine");
     if let Some(base) = unsafe { ENGINE_BASE.take() } {
+        let mut engine = utralib::CSR::new(base.as_mut_ptr() as *mut u32);
+        engine.rmwf(utra::engine::POWER_ON, 1);
         xous::unmap_memory(base).unwrap();
     }
     if let Some(mem) = unsafe { ENGINE_MEM.take() } {
@@ -70,6 +72,8 @@ pub fn ensure_engine() {
         log::debug!("claiming engine mem {:x?}", mem.as_ptr());
         unsafe { ENGINE_MEM = Some(mem) };
     }
+    let mut engine = utralib::CSR::new(unsafe { ENGINE_BASE.unwrap() }.as_mut_ptr() as *mut u32);
+    engine.rmwf(utra::engine::POWER_ON, 1);
 }
 
 /// Safety: must be called after ensure_engine()

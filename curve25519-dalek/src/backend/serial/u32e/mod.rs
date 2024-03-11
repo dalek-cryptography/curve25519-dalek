@@ -72,7 +72,19 @@ pub fn ensure_engine() {
     }
 }
 
-pub(crate) fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32], window: usize) {
+/// Safety: must be called after ensure_engine()
+pub unsafe fn get_ucode() -> &'static mut [u32] {
+    core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
+}
+/// Safety: must be called after ensure_engine()
+pub unsafe fn get_rf() -> &'static mut [u32] {
+    core::slice::from_raw_parts_mut(
+        (ENGINE_MEM.unwrap().as_mut_ptr() as usize + RF_U8_BASE) as *mut u32,
+        TOTAL_RF_SIZE_IN_U32,
+    )
+}
+
+pub fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32], window: usize) {
     use core::convert::TryInto;
     for (byte, rf_dst) in bytes.chunks_exact(4).zip(
         rf[window * RF_SIZE_IN_U32 + register * 8..window * RF_SIZE_IN_U32 + (register + 1) * 8]
@@ -82,7 +94,7 @@ pub(crate) fn copy_to_rf(bytes: [u8; 32], register: usize, rf: &mut [u32], windo
     }
 }
 
-pub(crate) fn copy_from_rf(register: usize, rf: &[u32], window: usize) -> [u8; 32] {
+pub fn copy_from_rf(register: usize, rf: &[u32], window: usize) -> [u8; 32] {
     let mut ret: [u8; 32] = [0; 32];
 
     for (src, dst) in rf
@@ -98,7 +110,7 @@ pub(crate) fn copy_from_rf(register: usize, rf: &[u32], window: usize) -> [u8; 3
     ret
 }
 
-pub(crate) fn get_single_result(rf_hw: &[u32], window: usize, r: usize) -> [u8; 32] {
+pub fn get_single_result(rf_hw: &[u32], window: usize, r: usize) -> [u8; 32] {
     // TODO: put handlers for illegal opcodes, suspend/resume catch
 
     let mut ret_r: [u8; 32] = [0; 32];
@@ -115,7 +127,7 @@ pub(crate) fn get_single_result(rf_hw: &[u32], window: usize, r: usize) -> [u8; 
 
 /// This assumes that arguments have been loaded in appropriate locations for the microcode
 /// and that the result is always in r31.
-pub(crate) fn run_job(
+pub fn run_job(
     ucode_hw: &mut [u32],
     rf_hw: &[u32],
     mcode: &[i32],

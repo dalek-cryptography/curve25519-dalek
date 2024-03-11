@@ -466,15 +466,9 @@ impl ProjectivePoint {
 
         use crate::backend::serial::u32e::*;
         ensure_engine();
-        let mut ucode_hw: &'static mut [u32] = unsafe {
-            core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
-        };
-        let rf_hw: &mut [u32] = unsafe {
-            core::slice::from_raw_parts_mut(
-                (ENGINE_MEM.unwrap().as_mut_ptr() as usize + RF_U8_BASE) as *mut u32,
-                TOTAL_RF_SIZE_IN_U32,
-            )
-        };
+        // safety: these were called after ensure_engine()
+        let mut ucode_hw = unsafe { get_ucode() };
+        let rf_hw = unsafe { get_rf() };
 
         copy_to_rf(self.U.as_bytes(), 29, rf_hw, 0);
         copy_to_rf(self.W.as_bytes(), 30, rf_hw, 0);
@@ -629,15 +623,9 @@ pub(crate) fn differential_add_and_double(
     );
     use crate::backend::serial::u32e::*;
     ensure_engine();
-    let mut ucode_hw: &'static mut [u32] = unsafe {
-        core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
-    };
-    let rf_hw: &mut [u32] = unsafe {
-        core::slice::from_raw_parts_mut(
-            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + RF_U8_BASE) as *mut u32,
-            TOTAL_RF_SIZE_IN_U32,
-        )
-    };
+    // safety: these were called after ensure_engine()
+    let mut ucode_hw = unsafe { get_ucode() };
+    let rf_hw = unsafe { get_rf() };
 
     // P.U in %20
     // P.W in %21
@@ -958,15 +946,9 @@ impl Mul<&Scalar> for &MontgomeryPoint {
 
         let window = 0;
         ensure_engine();
-        let mut ucode_hw: &'static mut [u32] = unsafe {
-            core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
-        };
-        let mut rf_hw: &mut [u32] = unsafe {
-            core::slice::from_raw_parts_mut(
-                (ENGINE_MEM.unwrap().as_mut_ptr() as usize + RF_U8_BASE) as *mut u32,
-                TOTAL_RF_SIZE_IN_U32,
-            )
-        };
+        // safety: these were called after ensure_engine()
+        let mut ucode_hw = unsafe { get_ucode() };
+        let mut rf_hw = unsafe { get_rf() };
 
         copy_to_rf(x0.U.as_bytes(), 25, &mut rf_hw, window);
         copy_to_rf(x0.W.as_bytes(), 26, &mut rf_hw, window);

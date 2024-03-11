@@ -35,9 +35,8 @@
     unused_lifetimes,
     unused_qualifications
 )]
-
 // needed for engine25519-as.
-#![recursion_limit="512"]
+#![recursion_limit = "512"]
 
 //------------------------------------------------------------------------
 // External dependencies:
@@ -65,10 +64,6 @@ pub(crate) mod macros;
 #[cfg(curve25519_dalek_backend = "u32e_backend")]
 #[macro_use]
 extern crate engine25519_as;
-#[cfg(curve25519_dalek_backend = "u32e_backend")]
-extern crate engine_25519;
-#[cfg(curve25519_dalek_backend = "u32e_backend")]
-extern crate utralib;
 
 //------------------------------------------------------------------------
 // curve25519-dalek public modules
@@ -102,8 +97,10 @@ pub(crate) mod field;
 // Arithmetic backends (using u32, u64, etc) live here
 #[cfg(docsrs)]
 pub mod backend;
-#[cfg(not(docsrs))]
+#[cfg(all(not(docsrs), not(curve25519_dalek_backend = "u32e_backend")))]
 pub(crate) mod backend;
+#[cfg(curve25519_dalek_backend = "u32e_backend")]
+pub mod backend;
 
 // Generic code for window lookups
 pub(crate) mod window;

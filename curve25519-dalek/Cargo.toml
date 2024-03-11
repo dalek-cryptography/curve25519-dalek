@@ -60,10 +60,9 @@ zeroize = { version = "1", default-features = false, optional = true }
 [target.'cfg(curve25519_dalek_backend = "u32e_backend")'.dependencies]
 log = { version = "0.4"}
 engine25519-as = {git = "https://github.com/betrusted-io/engine25519-as.git", rev = "d249c967556b02ab5439eacb5078fa00c60b93d6", default-features = false, features = []}
-# TODO: is there a better way to select this dep?
-#engine-25519 = { git = "https://github.com/betrusted-io/xous-engine-25519.git", rev = "63d3d1f30736022e791deaacf4dd62c00b42fe2e"}
-engine-25519 = {path = "../../xous-core/services/engine-25519"}
 utralib = {version = "0.1.24", default-features = false}
+zeroize = { version = "1", default-features = false }
+xous = "0.9.58"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"

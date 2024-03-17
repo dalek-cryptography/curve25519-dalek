@@ -24,7 +24,7 @@ use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
-    digest::{generic_array::typenum::U64, Digest},
+    digest::{typenum::U64, Digest},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     scalar::Scalar,
 };

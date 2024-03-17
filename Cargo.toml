@@ -10,3 +10,6 @@ resolver = "2"
 [profile.dev]
 opt-level = 2
 
+[patch.crates-io]
+# https://github.com/RustCrypto/signatures/pull/807/files
+ed25519 = { git = "https://github.com/baloo/signatures.git", branch = "baloo/pkcs8-0.11.0-pre.0" }

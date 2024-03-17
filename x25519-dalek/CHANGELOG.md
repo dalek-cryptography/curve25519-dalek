@@ -2,6 +2,13 @@
 
 Entries are listed in reverse chronological order.
 
+# Unreleased
+
+## 2.1.0-pre
+
+* Update the MSRV from 1.60 to 1.71
+* Update underlying `curve25519_dalek` to `4.2.0-pre`
+
 # 2.x Series
 
 * Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases. 

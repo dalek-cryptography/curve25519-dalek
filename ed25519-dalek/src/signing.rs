@@ -44,7 +44,7 @@ use crate::{
     errors::{InternalError, SignatureError},
     hazmat::ExpandedSecretKey,
     signature::InternalSignature,
-    verifying::VerifyingKey,
+    verifying::{StreamVerifier, VerifyingKey},
     Signature,
 };
 
@@ -483,6 +483,16 @@ impl SigningKey {
         self.verifying_key.verify_strict(message, signature)
     }
 
+    /// Constructs stream verifier with candidate `signature`.
+    ///
+    /// See [`VerifyingKey::verify_stream()`] for more details.
+    pub fn verify_stream(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        self.verifying_key.verify_stream(signature)
+    }
+
     /// Convert this signing key into a byte representation of an unreduced, unclamped Curve25519
     /// scalar. This is NOT the same thing as `self.to_scalar().to_bytes()`, since `to_scalar()`
     /// performs a clamping step, which changes the value of the resulting scalar.
@@ -806,6 +816,7 @@ impl ExpandedSecretKey {
     /// This definition is loose in its parameters so that end-users of the `hazmat` module can
     /// change how the `ExpandedSecretKey` is calculated and which hash function to use.
     #[allow(non_snake_case)]
+    #[allow(clippy::unwrap_used)]
     #[inline(always)]
     pub(crate) fn raw_sign<CtxDigest>(
         &self,
@@ -815,10 +826,34 @@ impl ExpandedSecretKey {
     where
         CtxDigest: Digest<OutputSize = U64>,
     {
+        // OK unwrap, update can't fail.
+        self.raw_sign_byupdate(
+            |h: &mut CtxDigest| {
+                h.update(message);
+                Ok(())
+            },
+            verifying_key,
+        )
+        .unwrap()
+    }
+
+    /// Sign a message provided in parts. The `msg_update` closure
+    /// will be called twice to hash the message parts.
+    #[allow(non_snake_case)]
+    #[inline(always)]
+    pub(crate) fn raw_sign_byupdate<CtxDigest, F>(
+        &self,
+        msg_update: F,
+        verifying_key: &VerifyingKey,
+    ) -> Result<Signature, SignatureError>
+    where
+        CtxDigest: Digest<OutputSize = U64>,
+        F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+    {
         let mut h = CtxDigest::new();
 
         h.update(self.hash_prefix);
-        h.update(message);
+        msg_update(&mut h)?;
 
         let r = Scalar::from_hash(h);
         let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
@@ -826,12 +861,12 @@ impl ExpandedSecretKey {
         h = CtxDigest::new();
         h.update(R.as_bytes());
         h.update(verifying_key.as_bytes());
-        h.update(message);
+        msg_update(&mut h)?;
 
         let k = Scalar::from_hash(h);
         let s: Scalar = (k * self.scalar) + r;
 
-        InternalSignature { R, s }.into()
+        Ok(InternalSignature { R, s }.into())
     }
 
     /// The prehashed signing function for Ed25519 (i.e., Ed25519ph). `CtxDigest` is the digest

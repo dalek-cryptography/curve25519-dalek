@@ -1026,27 +1026,23 @@ impl Scalar {
         output
     }
 
-    cfg_if::cfg_if!{
-        if #[cfg(curve25519_dalek_backend = "u32e_backend")]{}
-        else if #[cfg(any(feature = "alloc", all(test, feature = "precomputed-tables")))] {
-            /// Returns a size hint indicating how many entries of the return
-            /// value of `to_radix_2w` are nonzero.
-            pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-                debug_assert!(w >= 4);
-                debug_assert!(w <= 8);
+        #[cfg(any(feature = "alloc", all(test, feature = "precomputed-tables")))]
+        /// Returns a size hint indicating how many entries of the return
+        /// value of `to_radix_2w` are nonzero.
+        pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
+            debug_assert!(w >= 4);
+            debug_assert!(w <= 8);
 
-                let digits_count = match w {
-                    4..=7 => (256 + w - 1) / w,
-                    // See comment in to_radix_2w on handling the terminal carry.
-                    8 => (256 + w - 1) / w + 1_usize,
-                    _ => panic!("invalid radix parameter"),
-                };
+            let digits_count = match w {
+                4..=7 => (256 + w - 1) / w,
+                // See comment in to_radix_2w on handling the terminal carry.
+                8 => (256 + w - 1) / w + 1_usize,
+                _ => panic!("invalid radix parameter"),
+            };
 
-                debug_assert!(digits_count <= 64);
-                digits_count
-            }
+            debug_assert!(digits_count <= 64);
+            digits_count
         }
-    }
 
     /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
     /// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.

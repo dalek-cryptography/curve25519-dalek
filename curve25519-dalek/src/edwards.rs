@@ -605,6 +605,23 @@ impl EdwardsPoint {
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
     }
+
+    /// Get X
+    pub fn get_x(&self) -> FieldElement {
+        self.X
+    }
+    /// Get Y
+    pub fn get_y(&self) -> FieldElement {
+        self.Y
+    }
+    /// Get Z
+    pub fn get_z(&self) -> FieldElement {
+        self.Z
+    }
+    /// Get T
+    pub fn get_t(&self) -> FieldElement {
+        self.T
+    }
 }
 
 // ------------------------------------------------------------------------

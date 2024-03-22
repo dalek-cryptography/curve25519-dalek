@@ -21,26 +21,22 @@
 //! arm instructions.
 
 use core::ops::{Add, Mul, Neg};
-use super::packed_simd::{u32x2, u32x4, i32x4, u64x2, u64x4};
 
+use super::packed_simd::{u32x2, u32x4, i32x4, u64x2, u64x4};
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::neon::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
 
-fn shuffle_u32x4<const IDX: [u32; 4]>(x: u32x4, y: u32x4) -> u32x4 {
-    unsafe { 
-        core::mem::transmute::<[u32; 4], u32x4>(
-            *core::intrinsics::simd::simd_shuffle::<core::simd::Simd<u32, 4>, [u32; 4], core::simd::Simd<u32, 4>>(
-                core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>(x)), 
-                core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>(y)), 
-                IDX).as_array()) 
-    }
-}
-
 macro_rules! shuffle {
-    ($vec0:expr, $vec1:expr, [$l0:expr, $l1:expr, $l2:expr, $l3:expr]) => {
-        shuffle_u32x4::<{[$l0, $l1, $l2, $l3]}>($vec0, $vec1)
+    ($vec0:expr, $vec1:expr, $index:expr) => {
+        unsafe {
+            core::mem::transmute::<[u32; 4], u32x4>(
+                *core::simd::simd_swizzle!(
+                    core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>($vec0)), 
+                    core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>($vec1)), 
+                    $index).as_array())
+        }
     };
 }
 
@@ -483,14 +479,14 @@ impl FieldElement2625x4 {
         let (x6, x7) = unpack_pair(self.0[3]);
         let (x8, x9) = unpack_pair(self.0[4]);
 
-        let x0_2   = (x0.0.shr::<1>(), x0.1.shr::<1>());
-        let x1_2   = (x1.0.shr::<1>(), x1.1.shr::<1>());
-        let x2_2   = (x2.0.shr::<1>(), x2.1.shr::<1>());
-        let x3_2   = (x3.0.shr::<1>(), x3.1.shr::<1>());
-        let x4_2   = (x4.0.shr::<1>(), x4.1.shr::<1>());
-        let x5_2   = (x5.0.shr::<1>(), x5.1.shr::<1>());
-        let x6_2   = (x6.0.shr::<1>(), x6.1.shr::<1>());
-        let x7_2   = (x7.0.shr::<1>(), x7.1.shr::<1>());
+        let x0_2   = (x0.0.shl::<1>(), x0.1.shl::<1>());
+        let x1_2   = (x1.0.shl::<1>(), x1.1.shl::<1>());
+        let x2_2   = (x2.0.shl::<1>(), x2.1.shl::<1>());
+        let x3_2   = (x3.0.shl::<1>(), x3.1.shl::<1>());
+        let x4_2   = (x4.0.shl::<1>(), x4.1.shl::<1>());
+        let x5_2   = (x5.0.shl::<1>(), x5.1.shl::<1>());
+        let x6_2   = (x6.0.shl::<1>(), x6.1.shl::<1>());
+        let x7_2   = (x7.0.shl::<1>(), x7.1.shl::<1>());
 
         let x5_19  = m_lo(v19, x5);
         let x6_19  = m_lo(v19, x6);

@@ -1,0 +1,13 @@
+target/
+**/*.rs.bk
+
+.cargo
+
+*~
+\#*
+.\#*
+*.swp
+*.orig
+*.bak
+
+*.s

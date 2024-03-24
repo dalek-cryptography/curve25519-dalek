@@ -6,7 +6,7 @@ edition = "2021"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "2.0.0"
+version = "2.0.1"
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",

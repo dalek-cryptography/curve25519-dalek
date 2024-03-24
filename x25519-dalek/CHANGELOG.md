@@ -6,6 +6,10 @@ Entries are listed in reverse chronological order.
 
 * Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases. 
 
+## 2.0.1
+
+* Fix nightly SIMD build
+
 ## 2.0.0-rc.3
 
 * `StaticSecret` serialization and `to_bytes()` no longer returns clamped integers. Clamping is still always done during scalar-point multiplication.

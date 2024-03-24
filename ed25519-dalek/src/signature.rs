@@ -9,7 +9,6 @@
 
 //! An ed25519 signature.
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 
 use curve25519_dalek::edwards::CompressedEdwardsY;
@@ -58,7 +57,7 @@ impl Clone for InternalSignature {
 }
 
 impl Debug for InternalSignature {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Signature( R: {:?}, s: {:?} )", &self.R, &self.s)
     }
 }

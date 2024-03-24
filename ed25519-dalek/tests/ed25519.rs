@@ -27,10 +27,11 @@ mod vectors {
         scalar::Scalar,
         traits::IsIdentity,
     };
+
+    #[cfg(not(feature = "digest"))]
     use sha2::{digest::Digest, Sha512};
 
     use std::{
-        convert::TryFrom,
         fs::File,
         io::{BufRead, BufReader},
         ops::Neg,
@@ -288,8 +289,6 @@ mod vectors {
 mod integrations {
     use super::*;
     use rand::rngs::OsRng;
-    #[cfg(feature = "digest")]
-    use sha2::Sha512;
     use std::collections::HashMap;
 
     #[test]
@@ -458,6 +457,29 @@ mod integrations {
         assert_eq!(k, &public_from_second_secret);
         assert_eq!(v, "Second public key");
         assert_eq!(m.len(), 2usize);
+    }
+
+    #[test]
+    fn montgomery_and_edwards_conversion() {
+        let mut rng = rand::rngs::OsRng;
+        let signing_key = SigningKey::generate(&mut rng);
+        let verifying_key = signing_key.verifying_key();
+
+        let ed = verifying_key.to_edwards();
+
+        // Check that to_edwards and From return same result:
+        assert_eq!(ed, curve25519_dalek::EdwardsPoint::from(verifying_key));
+
+        // The verifying key serialization is simply the compressed Edwards point
+        assert_eq!(verifying_key.to_bytes(), ed.compress().0);
+
+        // Check that modulo sign, to_montgomery().to_edwards() returns the original point
+        let monty = verifying_key.to_montgomery();
+        let via_monty0 = monty.to_edwards(0).unwrap();
+        let via_monty1 = monty.to_edwards(1).unwrap();
+
+        assert!(via_monty0 != via_monty1);
+        assert!(ed == via_monty0 || ed == via_monty1);
     }
 }
 

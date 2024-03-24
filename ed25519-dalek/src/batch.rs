@@ -11,7 +11,6 @@
 
 use alloc::vec::Vec;
 
-use core::convert::TryFrom;
 use core::iter::once;
 
 use curve25519_dalek::constants;

@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### 4.1.2
+
+* Fix nightly SIMD build
+
 ### 4.1.1
 
 * Mark `constants::BASEPOINT_ORDER` deprecated from pub API
@@ -123,7 +127,7 @@ major series.
 
 ### 2.1.2
 
-* Multiple documenation typo fixes.
+* Multiple documentation typo fixes.
 * Fix `alloc` feature working with stable rust.
 
 ### 2.1.1

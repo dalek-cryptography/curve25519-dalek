@@ -21,6 +21,7 @@
 #![cfg_attr(feature = "rand_core", doc = "```")]
 #![cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
 //! # fn main() {
+//! // $ cargo add ed25519_dalek --features rand_core
 //! use rand::rngs::OsRng;
 //! use ed25519_dalek::SigningKey;
 //! use ed25519_dalek::Signature;

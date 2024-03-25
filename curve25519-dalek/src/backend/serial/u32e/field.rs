@@ -24,7 +24,33 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
+use core::fmt::Debug;
+use fiat_crypto::curve25519_32::*;
 use zeroize::Zeroize;
+
+#[derive(Copy, Clone)]
+pub struct FieldElement2625(pub(crate) fiat_25519_tight_field_element);
+
+impl Debug for FieldElement2625 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "FieldElement2625({:?})", &(self.0).0[..])
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for FieldElement2625 {
+    fn zeroize(&mut self) {
+        (self.0).0.zeroize();
+    }
+}
+
+impl FieldElement2625 {
+    pub(crate) const fn from_limbs(limbs: [u32; 10]) -> FieldElement2625 {
+        FieldElement2625(fiat_25519_tight_field_element(limbs))
+    }
+
+    pub const ZERO: FieldElement2625 = FieldElement2625::from_limbs([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+}
 
 /// A `Engine25519` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -50,102 +76,169 @@ use zeroize::Zeroize;
 /// outside of the `curve25519_dalek::field` module.
 
 #[derive(Copy, Clone, Debug)]
-pub struct Engine25519(
-    pub (crate) [u8; 32]
-);
+pub struct Engine25519(pub(crate) [u8; 32]);
 pub(crate) enum EngineOp {
     Mul,
     Add,
     Sub,
 }
 
+pub fn bytes_to_fiat(data: &[u8; 32]) -> FieldElement2625 {
+    let mut temp = [0u8; 32];
+    temp.copy_from_slice(data);
+    temp[31] &= 127u8;
+    let mut output = fiat_25519_tight_field_element([0u32; 10]);
+    fiat_25519_from_bytes(&mut output, &temp);
+    FieldElement2625(output)
+}
+
+pub fn fiat_to_bytes(fiat_rep: &fiat_25519_tight_field_element) -> [u8; 32] {
+    let mut bytes = [0u8; 32];
+    fiat_25519_to_bytes(&mut bytes, fiat_rep);
+    bytes
+}
+
 #[allow(unused_qualifications)]
 pub(crate) fn engine(a: &[u8; 32], b: &[u8; 32], op: EngineOp) -> Engine25519 {
-    use utralib::generated::*;
     use crate::backend::serial::u32e::*;
 
-    crate::backend::serial::u32e::ensure_engine();
-    let mut engine = utralib::CSR::new(unsafe{ENGINE_BASE.unwrap()}.as_mut_ptr() as *mut u32);
-    let mcode: &'static mut [u32] = unsafe{
-        core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
-    };
-    let rf: [&'static mut [u32]; 3] = [
-        unsafe{core::slice::from_raw_parts_mut(
-            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 0 * 32) as *mut u32, 8)},
-        unsafe{core::slice::from_raw_parts_mut(
-            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 1 * 32) as *mut u32, 8)},
-        unsafe{core::slice::from_raw_parts_mut(
-            (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 2 * 32) as *mut u32, 8)},
-    ];
+    match crate::backend::serial::u32e::ensure_engine() {
+        Ok(_) => {
+            let mut engine =
+                utralib::CSR::new(unsafe { ENGINE_BASE.unwrap() }.as_mut_ptr() as *mut u32);
+            let mcode: &'static mut [u32] = unsafe {
+                core::slice::from_raw_parts_mut(ENGINE_MEM.unwrap().as_mut_ptr() as *mut u32, 1024)
+            };
+            let rf: [&'static mut [u32]; 3] = [
+                unsafe {
+                    core::slice::from_raw_parts_mut(
+                        (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 0 * 32) as *mut u32,
+                        8,
+                    )
+                },
+                unsafe {
+                    core::slice::from_raw_parts_mut(
+                        (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 1 * 32) as *mut u32,
+                        8,
+                    )
+                },
+                unsafe {
+                    core::slice::from_raw_parts_mut(
+                        (ENGINE_MEM.unwrap().as_mut_ptr() as usize + 0x1_0000 + 2 * 32) as *mut u32,
+                        8,
+                    )
+                },
+            ];
 
-    match op {
-        EngineOp::Mul => {
-            let prog = assemble_engine25519!(
-                start:
-                    mul %2, %0, %1
-                    fin
-            );
-            for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
-                *dest = src;
+            match op {
+                EngineOp::Mul => {
+                    let prog = assemble_engine25519!(
+                        start:
+                            mul %2, %0, %1
+                            fin
+                    );
+                    for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
+                        *dest = src;
+                    }
+                    engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
+                }
+                EngineOp::Add => {
+                    let prog = assemble_engine25519!(
+                    start:
+                        add %2, %0, %1
+                        trd %30, %2
+                        sub %2, %2, %30
+                        fin
+                    );
+                    for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
+                        *dest = src;
+                    }
+                    engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
+                }
+                EngineOp::Sub => {
+                    let prog = assemble_engine25519!(
+                    start:
+                        sub %1, #3, %1
+                        add %2, %0, %1
+                        trd %30, %2
+                        sub %2, %2, %30
+                        fin
+                    );
+                    for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
+                        *dest = src;
+                    }
+                    engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
+                }
             }
-            engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
-        },
-        EngineOp::Add => {
-            let prog = assemble_engine25519!(
-            start:
-                add %2, %0, %1
-                trd %30, %2
-                sub %2, %2, %30
-                fin
-            );
-            for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
-                *dest = src;
+            // copy a arg
+            for (src, dst) in a.chunks_exact(4).zip(rf[0].iter_mut()) {
+                let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
+                unsafe {
+                    (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));
+                }
+                /* this is a bad idea: src[0..4].try_into().unwrap()
+                   because "unwrap()" adds in a whole bunch of string formatting stuff, adds +16k or so to the binary size
+                */
             }
-            engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
-        },
-        EngineOp::Sub => {
-            let prog = assemble_engine25519!(
-            start:
-                sub %1, #3, %1
-                add %2, %0, %1
-                trd %30, %2
-                sub %2, %2, %30
-                fin
-            );
-            for (&src, dest) in prog.iter().zip(mcode.iter_mut()) {
-                *dest = src;
+
+            // copy b arg
+            for (src, dst) in b.chunks_exact(4).zip(rf[1].iter_mut()) {
+                let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
+                unsafe {
+                    (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));
+                }
             }
-            engine.wfo(utra::engine::MPLEN_MPLEN, prog.len() as u32);
-        },
-    }
-    // copy a arg
-    for (src, dst) in a.chunks_exact(4).zip(rf[0].iter_mut()) {
-        let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
-        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));}
-        /* this is a bad idea: src[0..4].try_into().unwrap()
-           because "unwrap()" adds in a whole bunch of string formatting stuff, adds +16k or so to the binary size
-        */
-    }
 
-    // copy b arg
-    for (src, dst) in b.chunks_exact(4).zip(rf[1].iter_mut()) {
-        let bytes: [u8; 4] = [src[0], src[1], src[2], src[3]];
-        unsafe{ (dst as *mut u32).write_volatile(u32::from_le_bytes(bytes));}
-    }
+            engine.wfo(utra::engine::CONTROL_GO, 1);
+            while engine.rf(utra::engine::STATUS_RUNNING) != 0 {}
 
-    engine.wfo(utra::engine::CONTROL_GO, 1);
-    while engine.rf(utra::engine::STATUS_RUNNING) != 0 {}
+            // return result, always in reg 2
+            let mut result: [u8; 32] = [0; 32];
+            for (&src, dst) in rf[2].iter().zip(result.chunks_exact_mut(4)) {
+                for (&sb, db) in src.to_le_bytes().iter().zip(dst.iter_mut()) {
+                    *db = sb;
+                }
+            }
 
-    // return result, always in reg 2
-    let mut result: [u8; 32] = [0; 32];
-    for (&src, dst) in rf[2].iter().zip(result.chunks_exact_mut(4)) {
-        for (&sb, db) in src.to_le_bytes().iter().zip(dst.iter_mut()) {
-            *db = sb;
+            Engine25519 { 0: result }
         }
-    }
-
-    Engine25519 {
-        0: result
+        _ => {
+            // fallback to fiat crypto field arithmetic...
+            log::warn!("Hardware acceleration unavailable, falling back to software");
+            let fiat_a = bytes_to_fiat(a);
+            let fiat_b = bytes_to_fiat(b);
+            match op {
+                EngineOp::Mul => {
+                    let mut self_loose = fiat_25519_loose_field_element([0; 10]);
+                    fiat_25519_relax(&mut self_loose, &fiat_a.0);
+                    let mut rhs_loose = fiat_25519_loose_field_element([0; 10]);
+                    fiat_25519_relax(&mut rhs_loose, &fiat_b.0);
+                    let mut output = FieldElement2625::ZERO;
+                    fiat_25519_carry_mul(&mut output.0, &self_loose, &rhs_loose);
+                    Engine25519 {
+                        0: fiat_to_bytes(&output.0),
+                    }
+                }
+                EngineOp::Add => {
+                    let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+                    fiat_25519_add(&mut result_loose, &fiat_a.0, &fiat_b.0);
+                    let mut output = FieldElement2625::ZERO;
+                    fiat_25519_carry(&mut output.0, &result_loose);
+                    Engine25519 {
+                        0: fiat_to_bytes(&output.0),
+                    }
+                }
+                EngineOp::Sub => {
+                    let mut result_loose = fiat_25519_loose_field_element([0; 10]);
+                    fiat_25519_sub(&mut result_loose, &fiat_a.0, &fiat_b.0);
+                    let mut output = FieldElement2625::ZERO;
+                    fiat_25519_carry(&mut output.0, &result_loose);
+                    Engine25519 {
+                        0: fiat_to_bytes(&output.0),
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -210,11 +303,7 @@ impl<'a> Neg for &'a Engine25519 {
 }
 
 impl ConditionallySelectable for Engine25519 {
-    fn conditional_select(
-        a: &Engine25519,
-        b: &Engine25519,
-        choice: Choice,
-    ) -> Engine25519 {
+    fn conditional_select(a: &Engine25519, b: &Engine25519, choice: Choice) -> Engine25519 {
         Engine25519([
             u8::conditional_select(&a.0[0], &b.0[0], choice),
             u8::conditional_select(&a.0[1], &b.0[1], choice),
@@ -330,22 +419,23 @@ impl Engine25519 {
     }
 
     /// Construct zero.
-    pub const ZERO: Engine25519 = Engine25519([ 0 ; 32 ]);
+    pub const ZERO: Engine25519 = Engine25519([0; 32]);
 
     /// Construct one.
-    pub const ONE: Engine25519 = Engine25519([   1, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0,
-                        0, 0, 0, 0, 0, 0, 0, 0,
-            ]);
+    pub const ONE: Engine25519 = Engine25519([
+        1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0,
+    ]);
 
     /// Construct -1.
-    pub const MINUS_ONE: Engine25519 =
-        Engine25519([236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127]);
+    pub const MINUS_ONE: Engine25519 = Engine25519([
+        236, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+        255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127,
+    ]);
 
     /// Given `k > 0`, return `self^(2^k)`.
     pub fn pow2k(&self, k: u32) -> Engine25519 {
-        debug_assert!( k > 0 );
+        debug_assert!(k > 0);
         let mut z = self.square();
         for _ in 1..k {
             z = z.square();
@@ -364,12 +454,11 @@ impl Engine25519 {
     /// encoding of every field element should decode, re-encode to
     /// the canonical encoding, and check that the input was
     /// canonical.
-    pub fn from_bytes(data: &[u8; 32]) -> Engine25519 { //FeFromBytes
+    pub fn from_bytes(data: &[u8; 32]) -> Engine25519 {
+        //FeFromBytes
         let mut mask_data = data.clone();
         mask_data[31] &= 0x7F; // mask off the high bit per comment above
-        Engine25519 {
-            0: mask_data,
-        }
+        Engine25519 { 0: mask_data }
     }
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The

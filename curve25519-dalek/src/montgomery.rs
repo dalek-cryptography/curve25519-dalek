@@ -54,10 +54,7 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-#[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
-#[cfg(curve25519_dalek_backend = "u32e_backend")]
-use crate::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG}; // eliminate constants absorbed into the microcode engine
 
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
@@ -465,15 +462,23 @@ impl ProjectivePoint {
         );
 
         use crate::backend::serial::u32e::*;
-        ensure_engine();
-        // safety: these were called after ensure_engine()
-        let mut ucode_hw = unsafe { get_ucode() };
-        let rf_hw = unsafe { get_rf() };
+        match ensure_engine() {
+            Ok(_) => {
+                // safety: these were called after ensure_engine()
+                let mut ucode_hw = unsafe { get_ucode() };
+                let rf_hw = unsafe { get_rf() };
 
-        copy_to_rf(self.U.as_bytes(), 29, rf_hw, 0);
-        copy_to_rf(self.W.as_bytes(), 30, rf_hw, 0);
+                copy_to_rf(self.U.as_bytes(), 29, rf_hw, 0);
+                copy_to_rf(self.W.as_bytes(), 30, rf_hw, 0);
 
-        MontgomeryPoint(run_job(&mut ucode_hw, &rf_hw, &mcode, 0))
+                MontgomeryPoint(run_job(&mut ucode_hw, &rf_hw, &mcode, 0))
+            }
+            _ => {
+                log::warn!("Hardware acceleration unavailable, falling back to software");
+                let u = &self.U * &self.W.invert();
+                MontgomeryPoint(u.as_bytes())
+            }
+        }
     }
 }
 
@@ -622,29 +627,68 @@ pub(crate) fn differential_add_and_double(
             fin  // finish execution
     );
     use crate::backend::serial::u32e::*;
-    ensure_engine();
-    // safety: these were called after ensure_engine()
-    let mut ucode_hw = unsafe { get_ucode() };
-    let rf_hw = unsafe { get_rf() };
+    match ensure_engine() {
+        Ok(_) => {
+            // safety: these were called after ensure_engine()
+            let mut ucode_hw = unsafe { get_ucode() };
+            let rf_hw = unsafe { get_rf() };
 
-    // P.U in %20
-    // P.W in %21
-    // Q.U in %22
-    // Q.W in %23
-    // affine_PmQ in %24
-    copy_to_rf(P.U.as_bytes(), 20, rf_hw, 0);
-    copy_to_rf(P.W.as_bytes(), 21, rf_hw, 0);
-    copy_to_rf(Q.U.as_bytes(), 22, rf_hw, 0);
-    copy_to_rf(Q.W.as_bytes(), 23, rf_hw, 0);
-    copy_to_rf(affine_PmQ.as_bytes(), 24, rf_hw, 0);
+            // P.U in %20
+            // P.W in %21
+            // Q.U in %22
+            // Q.W in %23
+            // affine_PmQ in %24
+            copy_to_rf(P.U.as_bytes(), 20, rf_hw, 0);
+            copy_to_rf(P.W.as_bytes(), 21, rf_hw, 0);
+            copy_to_rf(Q.U.as_bytes(), 22, rf_hw, 0);
+            copy_to_rf(Q.W.as_bytes(), 23, rf_hw, 0);
+            copy_to_rf(affine_PmQ.as_bytes(), 24, rf_hw, 0);
 
-    // start the run
-    run_job(&mut ucode_hw, &rf_hw, &mcode, 0);
+            // start the run
+            run_job(&mut ucode_hw, &rf_hw, &mcode, 0);
 
-    P.U = FieldElement::from_bytes(&copy_from_rf(20, &rf_hw, 0));
-    P.W = FieldElement::from_bytes(&copy_from_rf(21, &rf_hw, 0));
-    Q.U = FieldElement::from_bytes(&copy_from_rf(22, &rf_hw, 0));
-    Q.W = FieldElement::from_bytes(&copy_from_rf(23, &rf_hw, 0));
+            P.U = FieldElement::from_bytes(&copy_from_rf(20, &rf_hw, 0));
+            P.W = FieldElement::from_bytes(&copy_from_rf(21, &rf_hw, 0));
+            Q.U = FieldElement::from_bytes(&copy_from_rf(22, &rf_hw, 0));
+            Q.W = FieldElement::from_bytes(&copy_from_rf(23, &rf_hw, 0));
+        }
+        _ => {
+            log::warn!("Hardware acceleration unavailable, falling back to software");
+            let t0 = &P.U + &P.W;
+            let t1 = &P.U - &P.W;
+            let t2 = &Q.U + &Q.W;
+            let t3 = &Q.U - &Q.W;
+
+            let t4 = t0.square();   // (U_P + W_P)^2 = U_P^2 + 2 U_P W_P + W_P^2
+            let t5 = t1.square();   // (U_P - W_P)^2 = U_P^2 - 2 U_P W_P + W_P^2
+
+            let t6 = &t4 - &t5;     // 4 U_P W_P
+
+            let t7 = &t0 * &t3;     // (U_P + W_P) (U_Q - W_Q) = U_P U_Q + W_P U_Q - U_P W_Q - W_P W_Q
+            let t8 = &t1 * &t2;     // (U_P - W_P) (U_Q + W_Q) = U_P U_Q - W_P U_Q + U_P W_Q - W_P W_Q
+
+            let t9  = &t7 + &t8;    // 2 (U_P U_Q - W_P W_Q)
+            let t10 = &t7 - &t8;    // 2 (W_P U_Q - U_P W_Q)
+
+            let t11 =  t9.square(); // 4 (U_P U_Q - W_P W_Q)^2
+            let t12 = t10.square(); // 4 (W_P U_Q - U_P W_Q)^2
+
+            let t13 = &APLUS2_OVER_FOUR * &t6; // (A + 2) U_P U_Q
+
+            let t14 = &t4 * &t5;    // ((U_P + W_P)(U_P - W_P))^2 = (U_P^2 - W_P^2)^2
+            let t15 = &t13 + &t5;   // (U_P - W_P)^2 + (A + 2) U_P W_P
+
+            let t16 = &t6 * &t15;   // 4 (U_P W_P) ((U_P - W_P)^2 + (A + 2) U_P W_P)
+
+            let t17 = affine_PmQ * &t12; // U_D * 4 (W_P U_Q - U_P W_Q)^2
+            let t18 = t11;               // W_D * 4 (U_P U_Q - W_P W_Q)^2
+
+            P.U = t14;  // U_{P'} = (U_P + W_P)^2 (U_P - W_P)^2
+            P.W = t16;  // W_{P'} = (4 U_P W_P) ((U_P - W_P)^2 + ((A + 2)/4) 4 U_P W_P)
+            Q.U = t18;  // U_{Q'} = W_D * 4 (U_P U_Q - W_P W_Q)^2
+            Q.W = t17;  // W_{Q'} = U_D * 4 (W_P U_Q - U_P W_Q)^2
+        }
+    }
 }
 
 define_mul_assign_variants!(LHS = MontgomeryPoint, RHS = Scalar);
@@ -945,35 +989,43 @@ impl Mul<&Scalar> for &MontgomeryPoint {
         );
 
         let window = 0;
-        ensure_engine();
-        // safety: these were called after ensure_engine()
-        let mut ucode_hw = unsafe { get_ucode() };
-        let mut rf_hw = unsafe { get_rf() };
+        match ensure_engine() {
+            Ok(_) => {
+                // safety: these were called after ensure_engine()
+                let mut ucode_hw = unsafe { get_ucode() };
+                let mut rf_hw = unsafe { get_rf() };
 
-        copy_to_rf(x0.U.as_bytes(), 25, &mut rf_hw, window);
-        copy_to_rf(x0.W.as_bytes(), 26, &mut rf_hw, window);
-        copy_to_rf(x1.U.as_bytes(), 27, &mut rf_hw, window);
-        copy_to_rf(x1.W.as_bytes(), 28, &mut rf_hw, window);
-        copy_to_rf(affine_u.as_bytes(), 24, &mut rf_hw, window);
-        copy_to_rf(scalar.bytes, 31, &mut rf_hw, window);
-        copy_to_rf(
-            [
-                254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00,
-            ],
-            19,
-            &mut rf_hw,
-            window,
-        ); // 254 as loop counter
+                copy_to_rf(x0.U.as_bytes(), 25, &mut rf_hw, window);
+                copy_to_rf(x0.W.as_bytes(), 26, &mut rf_hw, window);
+                copy_to_rf(x1.U.as_bytes(), 27, &mut rf_hw, window);
+                copy_to_rf(x1.W.as_bytes(), 28, &mut rf_hw, window);
+                copy_to_rf(affine_u.as_bytes(), 24, &mut rf_hw, window);
+                copy_to_rf(scalar.bytes, 31, &mut rf_hw, window);
+                copy_to_rf(
+                    [
+                        254, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0x00, 0x00, 0x00, 0x00,
+                    ],
+                    19,
+                    &mut rf_hw,
+                    window,
+                ); // 254 as loop counter
 
-        MontgomeryPoint(run_job(&mut ucode_hw, &rf_hw, &mcode, window))
+                MontgomeryPoint(run_job(&mut ucode_hw, &rf_hw, &mcode, window))
+            }
+            _ => {
+                log::warn!("Hardware acceleration unavailable, falling back to software");
+                // We multiply by the integer representation of the given Scalar. By scalar invariant #1,
+                // the MSB is 0, so we can skip it.
+                self.mul_bits_be(scalar.bits_le().rev().skip(1))
+            }
+        }
     }
 
     /// Given `self` \\( = u\_0(P) \\), and a `Scalar` \\(n\\), return \\( u\_0(\[n\]P) \\)
     #[cfg(not(curve25519_dalek_backend = "u32e_backend"))]
     fn mul(self, scalar: &Scalar) -> MontgomeryPoint {
-        // TODO: consider feature "panic_on_sw_eval"
         #[cfg(all(not(test), curve25519_dalek_backend = "u32e_backend"))] // due to issue https://github.com/rust-lang/rust/issues/59168, you will have to manually comment this out when running a test on the full system and not just this crate.
         log::warn!("sw montgomery multiply being used - check for build config errors!");
         // We multiply by the integer representation of the given Scalar. By scalar invariant #1,

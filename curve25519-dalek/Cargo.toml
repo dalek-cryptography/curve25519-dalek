@@ -58,7 +58,7 @@ zeroize = { version = "1", default-features = false, optional = true }
 # Betrusted/Precursor dependency set, enabled by backend_u32e feature
 [target.'cfg(curve25519_dalek_backend = "u32e_backend")'.dependencies]
 log = { version = "0.4"}
-engine25519-as = {git = "https://github.com/betrusted-io/engine25519-as.git", rev = "d249c967556b02ab5439eacb5078fa00c60b93d6", default-features = false, features = []}
+engine25519-as = {git = "https://github.com/betrusted-io/engine25519-as.git", rev = "775e8406eb4aad08f05ae10619fcb4ca891ba0a6", default-features = false, features = []}
 utralib = {version = "0.1.24", default-features = false}
 zeroize = { version = "1", default-features = false }
 xous = "0.9.58"

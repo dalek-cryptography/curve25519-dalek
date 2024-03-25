@@ -2,9 +2,6 @@
 
 #![deny(clippy::unwrap_used, dead_code)]
 
-use platforms::Platform;
-use platforms::target;
-
 #[allow(non_camel_case_types)]
 #[derive(PartialEq, Debug)]
 enum DalekBits {
@@ -12,23 +9,29 @@ enum DalekBits {
     Dalek64,
 }
 
-//TODO: remove debugging before merging
-macro_rules! build_debug {
-    ($($tokens: tt)*) => {
-        println!("cargo:warning={}", format!($($tokens)*))
+use std::fmt::Formatter;
+
+impl std::fmt::Display for DalekBits {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        let w_bits = match self {
+            DalekBits::Dalek32 => "32",
+            DalekBits::Dalek64 => "64",
+        };
+        write!(f, "{}", w_bits)
     }
 }
 
 fn main() {
-    let target_triplet = std::env::var("TARGET").unwrap();
-    let platform = platforms::Platform::find(&target_triplet).unwrap();
+    let target_arch = match std::env::var("CARGO_CFG_TARGET_ARCH") {
+        Ok(arch) => arch,
+        _ => "".to_string(),
+    };
+
     let curve25519_dalek_bits = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref() {
         Ok("32") => DalekBits::Dalek32,
         Ok("64") => DalekBits::Dalek64,
         _ => deterministic::determine_curve25519_dalek_bits(&target_arch),
     };
-    build_debug!("CARGO_CFG_CURVE25519_DALEK_BITS: {:?}", std::env::var("CARGO_CFG_CURVE25519_DALEK_BITS").as_deref());
-    build_debug!("curve25519_dalek_bits {:?}", curve25519_dalek_bits);
 
     println!("cargo:rustc-cfg=curve25519_dalek_bits=\"{curve25519_dalek_bits}\"");
 
@@ -47,12 +50,6 @@ fn main() {
         println!("cargo:rustc-cfg=allow_unused_unsafe");
     }
 
-    let target_arch = match std::env::var("CARGO_CFG_TARGET_ARCH") {
-        Ok(arch) => arch,
-        _ => "".to_string(),
-    };
-    build_debug!("target_arch {}",target_arch);
-
     // Backend overrides / defaults
     let curve25519_dalek_backend =
         match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
@@ -66,35 +63,19 @@ fn main() {
                     // See: issues/532
                     false => panic!("Could not override curve25519_dalek_backend to simd"),
                 }
-            },
-            //coprocessor for Precursor
-            Ok("u32e_backend") => {
-                if curve25519_dalek_bits != DalekBits::Dalek32{
-                    panic!("u32e_backend only supports 32 bit bits");
-                }
-                "u32e_backend"
-            },
-            // default between serial / simd (if potentially capable)
-            _ => match is_precursor(platform) {
-                true => "u32e_backend",
-                false => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                    true => "simd",
-                    false => "serial",
-                },
             }
+            // default between serial / simd (if potentially capable)
+            _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                true => "simd",
+                false => "serial",
+            },
         };
-    build_debug!("CARGO_CFG_CURVE25519_DALEK_BACKEND: {:?}", std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref());
-    build_debug!("curve25519_dalek_backend {:?}", curve25519_dalek_backend);
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 
 // Is the target arch & curve25519_dalek_bits potentially simd capable ?
 fn is_capable_simd(arch: &str, bits: DalekBits) -> bool {
     arch == "x86_64" && bits == DalekBits::Dalek64
-}
-// Is the target the Precursor?
-fn is_precursor(platform: &Platform) -> bool {
-    platform.target_os == target::OS::Xous && platform.target_arch == target::Arch::Riscv32
 }
 
 // Deterministic cfg(curve25519_dalek_bits) when this is not explicitly set.

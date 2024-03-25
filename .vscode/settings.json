@@ -1,5 +1,7 @@
 {
+  "rust-analyzer.cargo.target": "riscv32imac-unknown-xous-elf",
     "rust-analyzer.diagnostics.disabled": [
     "macro-error"
   ]
 }
+

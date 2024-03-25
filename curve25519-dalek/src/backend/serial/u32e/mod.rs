@@ -34,6 +34,7 @@ pub(crate) const RF_U8_BASE: usize = 0x1_0000;
 #[allow(dead_code)]
 pub(crate) const RF_U32_BASE: usize = 0x1_0000 / 4;
 
+/// It is safe to call this multiple times.
 pub fn free_engine() {
     log::debug!("free engine");
     if let Some(base) = unsafe { ENGINE_BASE.take() } {
@@ -46,15 +47,15 @@ pub fn free_engine() {
     }
 }
 
-pub fn ensure_engine() {
+/// It is safe to call this multiple times.
+pub fn ensure_engine() -> Result<(), xous::Error> {
     if unsafe { ENGINE_BASE.is_none() } {
         let base = xous::syscall::map_memory(
             xous::MemoryAddress::new(utra::engine::HW_ENGINE_BASE),
             None,
             4096,
             xous::MemoryFlags::R | xous::MemoryFlags::W,
-        )
-        .expect("couldn't map engine CSR range");
+        )?;
         log::debug!("claiming engine csr {:x?}", base.as_ptr());
         unsafe {
             ENGINE_BASE = Some(base);
@@ -66,13 +67,13 @@ pub fn ensure_engine() {
             None,
             HW_ENGINE_MEM_LEN,
             xous::MemoryFlags::R | xous::MemoryFlags::W,
-        )
-        .expect("couldn't map engine memory window range");
+        )?;
         log::debug!("claiming engine mem {:x?}", mem.as_ptr());
         unsafe { ENGINE_MEM = Some(mem) };
     }
     let mut engine = utralib::CSR::new(unsafe { ENGINE_BASE.unwrap() }.as_mut_ptr() as *mut u32);
     engine.rmwf(utra::engine::POWER_ON, 1);
+    Ok(())
 }
 
 /// Safety: must be called after ensure_engine()

@@ -54,16 +54,18 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::constants::APLUS2_OVER_FOUR;
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{clamp_integer, Scalar};
-
 use crate::traits::Identity;
 
+#[cfg(feature = "elligator2")]
+use crate::elligator2;
+
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -244,35 +246,12 @@ impl MontgomeryPoint {
 
         CompressedEdwardsY(y_bytes).decompress()
     }
-}
 
-/// Perform the Elligator2 mapping to a Montgomery point.
-///
-/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
-//
-// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
-//      draft gets into a more polished/accepted state.
-#[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
-    let one = FieldElement::ONE;
-    let d_1 = &one + &r_0.square2(); /* 2r^2 */
-
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
-
-    let d_sq = &d.square();
-    let au = &MONTGOMERY_A * &d;
-
-    let inner = &(d_sq + &au) + &one;
-    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
-
-    let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
-
-    let zero = FieldElement::ZERO;
-    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
-    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
-    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
-
-    MontgomeryPoint(u.as_bytes())
+    #[cfg(feature = "elligator2")]
+    /// This decodes an elligator2 hidden point to a curve point on Curve25519.
+    pub fn from_representative(&self) -> MontgomeryPoint {
+        elligator2::map_to_point(&self.0)
+    }
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -641,20 +620,20 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "elligator2")]
     fn montgomery_elligator_correct() {
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
-        let fe = FieldElement::from_bytes(&bits_in);
-        let eg = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+        let eg = elligator2::map_to_point(&bits_in);
+        assert_eq!(eg.0, ELLIGATOR_CORRECT_OUTPUT);
     }
 
     #[test]
+    #[cfg(feature = "elligator2")]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
-        let fe = FieldElement::from_bytes(&zero);
-        let eg = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), zero);
+        let eg = elligator2::map_to_point(&zero);
+        assert_eq!(eg.0, zero);
     }
 }

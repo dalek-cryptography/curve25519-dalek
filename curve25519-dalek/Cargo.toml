@@ -27,13 +27,14 @@ rustdoc-args = [
     "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
     "--cfg", "docsrs",
 ]
-features = ["serde", "rand_core", "digest", "legacy_compatibility", "group-bits"]
+features = ["serde", "rand_core", "elligator2", "digest", "legacy_compatibility", "group-bits"]
 
 [dev-dependencies]
 sha2 = { version = "0.10", default-features = false }
 bincode = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4.2"
+json = "0.12.4"
 rand = "0.8"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
@@ -68,6 +69,8 @@ precomputed-tables = []
 legacy_compatibility = []
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
+elligator2 = []
+digest = ["dep:digest", "elligator2"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

@@ -104,6 +104,8 @@ use core::ops::{Mul, MulAssign};
 use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
+use crate::elligator2::map_to_point;
+#[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
 
 #[cfg(feature = "group")]
@@ -596,14 +598,66 @@ impl EdwardsPoint {
 
         let sign_bit = (res[31] & 0x80) >> 7;
 
-        let fe = FieldElement::from_bytes(&res);
-
-        let M1 = crate::montgomery::elligator_encode(&fe);
-        let E1_opt = M1.to_edwards(sign_bit);
+        let fe1 = map_to_point(&res);
+        let E1_opt = fe1.to_edwards(sign_bit);
 
         E1_opt
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
+    }
+
+    #[cfg(elligator2)]
+    /// Build an [`EdwardsPoint`] using the birational mapping from (the
+    /// extended `(u, v)` form of) a montgomery point.
+    pub fn from_uv(u: &[u8; 32], v: &[u8; 32]) -> EdwardsPoint {
+        let u_fe = FieldElement::from_bytes(u);
+        let v_fe = FieldElement::from_bytes(v);
+        let (x, y) = Self::new_edwards_point(&u_fe, &v_fe);
+        Self::from_xy(x, y)
+    }
+
+    #[cfg(elligator2)]
+    fn new_edwards_point(u: &FieldElement, v: &FieldElement) -> (FieldElement, FieldElement) {
+        // Per RFC 7748: (x, y) = (sqrt(-486664)*u/v, (u-1)/(u+1))
+
+        let two = &FieldElement::ONE + &FieldElement::ONE;
+        let (_, sqrt_neg_a_plus_two) =
+            FieldElement::sqrt_ratio_i(&(&MONTGOMERY_A_NEG + &two), &FieldElement::ONE);
+
+        let mut x = &(u * &v.invert()) * &sqrt_neg_a_plus_two;
+
+        let u_plus_one = u + &FieldElement::ONE;
+        let u_minus_one = u - &FieldElement::ONE;
+
+        let mut y = &u_minus_one * &u_plus_one.invert();
+
+        // This mapping is undefined when t == 0 or s == -1, i.e., when the
+        // denominator of either of the above rational functions is zero.
+        // Implementations MUST detect exceptional cases and return the value
+        // (v, w) = (0, 1), which is the identity point on all twisted Edwards
+        // curves.
+        let result_undefined = v.is_zero() | u_plus_one.is_zero();
+        x.conditional_assign(&FieldElement::ZERO, result_undefined);
+        y.conditional_assign(&FieldElement::ONE, result_undefined);
+
+        // Convert from Edwards (x, y) to extended (x, y, z, t) coordinates.
+        // new_edwards_from_xy(x, y)
+
+        (x, y)
+    }
+
+    #[cfg(elligator2)]
+    fn from_xy(x: &FieldElement, y: &FieldElement) -> EdwardsPoint {
+        // Yeah yeah yeah, no where better to put this. :(
+        let z = FieldElement::ONE;
+        let t = x * y;
+
+        EdwardsPoint {
+            X: *x,
+            Y: *y,
+            Z: z,
+            T: t,
+        }
     }
 }
 

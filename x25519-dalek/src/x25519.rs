@@ -375,3 +375,137 @@ pub fn x25519(k: [u8; 32], u: [u8; 32]) -> [u8; 32] {
 pub const X25519_BASEPOINT_BYTES: [u8; 32] = [
     9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 ];
+
+/// [`PublicKey`] transformation to a format indistinguishable from uniform
+/// random. Requires feature `elligator2`.
+///
+/// This allows public keys to be sent over an insecure channel without
+/// revealing that an x25519 public key is being shared.
+///
+/// # Example
+#[cfg_attr(feature = "elligator2", doc = "```")]
+#[cfg_attr(not(feature = "elligator2"), doc = "```ignore")]
+/// use rand_core::OsRng;
+/// use rand_core::RngCore;
+///
+/// use x25519_dalek::x25519;
+/// use x25519_dalek::EphemeralSecret;
+/// use x25519_dalek::{PublicKey, PublicRepresentative};
+///
+/// // ~50% of points are not encodable as elligator representatives, but we
+/// // want to ensure we select a keypair that is.
+/// fn get_representable_ephemeral() -> EphemeralSecret {
+///     for i in 0_u8..255 {
+///         let secret = EphemeralSecret::random_from_rng(&mut OsRng);
+///         match Option::<PublicRepresentative>::from(&secret) {
+///             Some(_) => return secret,
+///             None => continue,
+///         }
+///     }
+///     panic!("we should definitely have found a key by now")
+/// }
+///
+/// // Generate Alice's key pair.
+/// let alice_secret = get_representable_ephemeral();
+/// let alice_representative = Option::<PublicRepresentative>::from(&alice_secret).unwrap();
+///
+/// // Generate Bob's key pair.
+/// let bob_secret = get_representable_ephemeral();
+/// let bob_representative = Option::<PublicRepresentative>::from(&bob_secret).unwrap();
+///
+/// // Alice and Bob should now exchange their representatives and reveal the
+/// // public key from the other person.
+/// let bob_public = PublicKey::from(&bob_representative);
+///
+/// let alice_public = PublicKey::from(&alice_representative);
+///
+/// // Once they've done so, they may generate a shared secret.
+/// let alice_shared = alice_secret.diffie_hellman(&bob_public);
+/// let bob_shared = bob_secret.diffie_hellman(&alice_public);
+///
+/// assert_eq!(alice_shared.as_bytes(), bob_shared.as_bytes());
+/// ```
+#[cfg(feature = "elligator2")]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
+pub struct PublicRepresentative([u8; 32]);
+
+#[cfg(feature = "elligator2")]
+impl PublicRepresentative {
+    /// View this public representative as a byte array.
+    #[inline]
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
+
+    /// Extract this representative's bytes for serialization.
+    #[inline]
+    pub fn to_bytes(&self) -> [u8; 32] {
+        self.0
+    }
+}
+
+#[cfg(feature = "elligator2")]
+impl AsRef<[u8]> for PublicRepresentative {
+    /// View this shared secret key as a byte array.
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}
+
+#[cfg(feature = "elligator2")]
+impl From<[u8; 32]> for PublicRepresentative {
+    /// Build a Elligator2 Public key Representative from bytes
+    fn from(r: [u8; 32]) -> PublicRepresentative {
+        PublicRepresentative(r)
+    }
+}
+
+#[cfg(feature = "elligator2")]
+impl<'a> From<&'a [u8; 32]> for PublicRepresentative {
+    /// Build a Elligator2 Public key Representative from bytes by reference
+    fn from(r: &'a [u8; 32]) -> PublicRepresentative {
+        PublicRepresentative(*r)
+    }
+}
+
+#[cfg(feature = "elligator2")]
+impl<'a> From<&'a EphemeralSecret> for Option<PublicRepresentative> {
+    /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicRepresentative`].
+    fn from(secret: &'a EphemeralSecret) -> Option<PublicRepresentative> {
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let res: Option<[u8; 32]> = repres;
+        Some(PublicRepresentative(res?))
+    }
+}
+
+#[cfg(feature = "reusable_secrets")]
+#[cfg(feature = "elligator2")]
+impl<'a> From<&'a ReusableSecret> for Option<PublicRepresentative> {
+    /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicRepresentative`].
+    fn from(secret: &'a ReusableSecret) -> Option<PublicRepresentative> {
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let res: Option<[u8; 32]> = repres;
+        Some(PublicRepresentative(res?))
+    }
+}
+
+#[cfg(feature = "static_secrets")]
+#[cfg(feature = "elligator2")]
+impl<'a> From<&'a StaticSecret> for Option<PublicRepresentative> {
+    /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicRepresentative`].
+    fn from(secret: &'a StaticSecret) -> Option<PublicRepresentative> {
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let res: Option<[u8; 32]> = repres;
+        Some(PublicRepresentative(res?))
+    }
+}
+
+#[cfg(feature = "elligator2")]
+impl<'a> From<&'a PublicRepresentative> for PublicKey {
+    /// Given an elligator2 [`PublicRepresentative`], compute its corresponding [`PublicKey`].
+    fn from(representative: &'a PublicRepresentative) -> PublicKey {
+        let point = curve25519_dalek::elligator2::map_to_point(&representative.0);
+        PublicKey(point)
+    }
+}

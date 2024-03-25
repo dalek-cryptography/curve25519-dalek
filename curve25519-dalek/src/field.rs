@@ -43,7 +43,7 @@ cfg_if! {
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
         /// implementations.
-        pub type FieldElement = backend::serial::u32e::field::Engine25519; 
+        pub type FieldElement = Engine25519;
 
     } else if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// A `FieldElement` represents an element of the field

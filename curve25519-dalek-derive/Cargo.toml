@@ -6,7 +6,7 @@ edition = "2021"
 repository = "https://github.com/dalek-cryptography/curve25519-dalek"
 homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/curve25519-dalek-derive"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
 description = "curve25519-dalek Derives"
 

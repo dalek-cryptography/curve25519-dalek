@@ -906,6 +906,23 @@ impl EdwardsPoint {
     ) -> EdwardsPoint {
         crate::backend::vartime_double_base_mul(a, A, b)
     }
+
+    /// Checks whether \\([8a]A + [8b]B = [8]C\\) in variable time.
+    ///
+    /// This can be used to implement [RFC 8032]-compatible Ed25519 signature validation.
+    /// Note that it includes a multiplication by the cofactor.
+    ///
+    /// [RFC 8032]: https://tools.ietf.org/html/rfc8032
+    pub fn vartime_check_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &EdwardsPoint,
+        b: &Scalar,
+        C: &EdwardsPoint,
+    ) -> bool {
+        crate::backend::scalar_mul_abglsv_pornin(a, A, b, C)
+            .mul_by_cofactor()
+            .is_identity()
+    }
 }
 
 #[cfg(feature = "precomputed-tables")]

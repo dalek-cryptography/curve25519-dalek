@@ -249,3 +249,27 @@ pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> Edwa
         BackendKind::Serial => serial::scalar_mul::vartime_double_base::mul(a, A, b),
     }
 }
+
+/// Checks whether \\([8a]A + [8b]B = [8]C\\) in variable time.
+///
+/// This can be used to implement [RFC 8032]-compatible Ed25519 signature validation.
+/// Note that it includes a multiplication by the cofactor.
+///
+/// [RFC 8032]: https://tools.ietf.org/html/rfc8032
+#[allow(non_snake_case)]
+pub(crate) fn scalar_mul_abglsv_pornin(
+    a: &Scalar,
+    A: &EdwardsPoint,
+    b: &Scalar,
+    C: &EdwardsPoint,
+) -> EdwardsPoint {
+    match get_selected_backend() {
+        #[cfg(curve25519_dalek_backend = "simd")]
+        BackendKind::Avx2 => vector::scalar_mul::abglsv_pornin::spec_avx2::mul(a, A, b, C),
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        BackendKind::Avx512 => {
+            vector::scalar_mul::abglsv_pornin::spec_avx512ifma_avx512vl::mul(a, A, b, C)
+        }
+        BackendKind::Serial => serial::scalar_mul::abglsv_pornin::mul(a, A, b, C),
+    }
+}

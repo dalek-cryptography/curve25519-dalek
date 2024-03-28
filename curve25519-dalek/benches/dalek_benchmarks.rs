@@ -56,6 +56,24 @@ mod edwards_benches {
         });
     }
 
+    fn vartime_check_double_scalar_mul_basepoint<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        c.bench_function(
+            "Variable-time 8(aA+bB)=8C, A&C variable, B fixed",
+            |bench| {
+                let mut rng = thread_rng();
+                let A = &Scalar::random(&mut rng) * constants::ED25519_BASEPOINT_TABLE;
+                let C = &Scalar::random(&mut rng) * constants::ED25519_BASEPOINT_TABLE;
+                bench.iter_batched(
+                    || (Scalar::random(&mut rng), Scalar::random(&mut rng)),
+                    |(a, b)| {
+                        EdwardsPoint::vartime_check_double_scalar_mul_basepoint(&a, &A, &b, &C)
+                    },
+                    BatchSize::SmallInput,
+                );
+            },
+        );
+    }
+
     pub(crate) fn edwards_benches() {
         let mut c = Criterion::default();
         let mut g = c.benchmark_group("edwards benches");
@@ -65,6 +83,7 @@ mod edwards_benches {
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
+        vartime_check_double_scalar_mul_basepoint(&mut g);
     }
 }
 

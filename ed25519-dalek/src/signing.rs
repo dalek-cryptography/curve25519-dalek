@@ -131,7 +131,7 @@ impl SigningKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA [`SigningKey`] or whose error value
-    /// is an `SignatureError` describing the error that occurred.
+    /// is a `SignatureError` describing the error that occurred.
     #[inline]
     pub fn from_keypair_bytes(bytes: &[u8; 64]) -> Result<SigningKey, SignatureError> {
         let (secret_key, verifying_key) = bytes.split_at(SECRET_KEY_LENGTH);

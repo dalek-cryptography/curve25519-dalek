@@ -254,9 +254,61 @@ impl MontgomeryPoint {
     }
 
     #[cfg(feature = "elligator2")]
-    /// This decodes an elligator2 hidden point to a curve point on Curve25519.
-    pub fn from_representative(&self) -> MontgomeryPoint {
-        elligator2::map_to_point(&self.0)
+    /// Perform the Elligator2 mapping to a [`MontgomeryPoint`].
+    ///
+    /// Calculates a point on elliptic curve E (Curve25519) from an element of
+    /// the finite field F over which E is defined. See section 6.7.1 of the
+    /// RFC. The unbounded variant does NOT assume that input values are always
+    /// going to be the least-square-root representation of the field element.
+    /// This is divergent from both the elligator2 specification and RFC9380,
+    /// however, some implementations miss this detail. This allows us to be
+    /// compatible with those alternate implementations if necessary, since the
+    /// resulting point will be different for inputs with either of the
+    /// high-order two bits set.
+    ///
+    /// The input u and output P are elements of the field F. Note that
+    /// the output P is a point on the Montgomery curve and as such it's byte
+    /// representation is distinguishable from uniform random.
+    ///
+    /// Input:
+    ///     * u -> an element of field F.
+    ///
+    /// Output:
+    ///     * P - a point on the Montgomery elliptic curve.
+    ///
+    /// See <https://datatracker.ietf.org/doc/rfc9380/>
+    pub fn map_to_point_unbounded(r: &[u8; 32]) -> MontgomeryPoint {
+        let r_0 = FieldElement::from_bytes(r);
+        let (p, _) = elligator2::map_fe_to_montgomery(&r_0);
+        MontgomeryPoint(p.as_bytes())
+    }
+
+    #[cfg(feature = "elligator2")]
+    /// Perform the Elligator2 mapping to a [`MontgomeryPoint`].
+    ///
+    /// Calculates a point on elliptic curve E (Curve25519) from an element of
+    /// the finite field F over which E is defined. See section 6.7.1 of the
+    /// RFC. It is assumed that input values are always going to be the
+    /// least-square-root representation of the field element in allignment
+    /// with both the elligator2 specification and RFC9380.
+    ///
+    /// The input u and output P are elements of the field F. Note that
+    /// the output P is a point on the Montgomery curve and as such it's byte
+    /// representation is distinguishable from uniform random.
+    ///
+    /// Input:
+    ///     * u -> an element of field F.
+    ///
+    /// Output:
+    ///     * P - a point on the Montgomery elliptic curve.
+    ///
+    /// See <https://datatracker.ietf.org/doc/rfc9380/>
+    pub fn map_to_point(r: &[u8; 32]) -> MontgomeryPoint {
+        let mut clamped = *r;
+        clamped[31] &= elligator2::MASK_UNSET_BYTE;
+        let r_0 = FieldElement::from_bytes(&clamped);
+        let (p, _) = elligator2::map_fe_to_montgomery(&r_0);
+        MontgomeryPoint(p.as_bytes())
     }
 }
 
@@ -414,6 +466,7 @@ mod test {
     use crate::constants;
 
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "elligator2")]
     use alloc::vec::Vec;
 
     use rand_core::{CryptoRng, RngCore};
@@ -631,7 +684,7 @@ mod test {
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
-        let eg = elligator2::map_to_point(&bits_in);
+        let eg = MontgomeryPoint::map_to_point(&bits_in);
         assert_eq!(eg.0, ELLIGATOR_CORRECT_OUTPUT);
     }
 
@@ -639,7 +692,7 @@ mod test {
     #[cfg(feature = "elligator2")]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
-        let eg = elligator2::map_to_point(&zero);
+        let eg = MontgomeryPoint::map_to_point(&zero);
         assert_eq!(eg.0, zero);
     }
 }

@@ -71,7 +71,7 @@ impl AsRef<[u8]> for PublicKey {
 /// generated from fresh randomness where the compiler statically checks that the resulting
 /// secret is used at most once.
 #[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
-pub struct EphemeralSecret(pub(crate) [u8; 32]);
+pub struct EphemeralSecret(pub(crate) [u8; 32], pub(crate) u8);
 
 impl EphemeralSecret {
     /// Perform a Diffie-Hellman key agreement between `self` and
@@ -93,8 +93,10 @@ impl EphemeralSecret {
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
+        let mut tweak = [0u8; 1];
         csprng.fill_bytes(&mut bytes);
-        EphemeralSecret(bytes)
+        csprng.fill_bytes(&mut tweak);
+        EphemeralSecret(bytes, tweak[0])
     }
 
     /// Generate a new [`EphemeralSecret`].
@@ -132,7 +134,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 #[cfg(feature = "reusable_secrets")]
 #[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
-pub struct ReusableSecret(pub(crate) [u8; 32]);
+pub struct ReusableSecret(pub(crate) [u8; 32], pub(crate) u8);
 
 #[cfg(feature = "reusable_secrets")]
 impl ReusableSecret {
@@ -155,8 +157,10 @@ impl ReusableSecret {
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
+        let mut tweak = [0u8; 1];
         csprng.fill_bytes(&mut bytes);
-        ReusableSecret(bytes)
+        csprng.fill_bytes(&mut tweak);
+        ReusableSecret(bytes, tweak[0])
     }
 
     /// Generate a new [`ReusableSecret`].
@@ -192,7 +196,7 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
-pub struct StaticSecret([u8; 32]);
+pub struct StaticSecret([u8; 32], u8);
 
 #[cfg(feature = "static_secrets")]
 impl StaticSecret {
@@ -215,8 +219,10 @@ impl StaticSecret {
     pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
+        let mut tweak = [0u8; 1];
         csprng.fill_bytes(&mut bytes);
-        StaticSecret(bytes)
+        csprng.fill_bytes(&mut tweak);
+        StaticSecret(bytes, tweak[0])
     }
 
     /// Generate a new [`StaticSecret`].
@@ -242,7 +248,7 @@ impl StaticSecret {
 impl From<[u8; 32]> for StaticSecret {
     /// Load a secret key from a byte array.
     fn from(bytes: [u8; 32]) -> StaticSecret {
-        StaticSecret(bytes)
+        StaticSecret(bytes, 0u8)
     }
 }
 
@@ -469,7 +475,7 @@ impl<'a> From<&'a [u8; 32]> for PublicRepresentative {
 impl<'a> From<&'a EphemeralSecret> for Option<PublicRepresentative> {
     /// Given an x25519 [`EphemeralSecret`] key, compute its corresponding [`PublicRepresentative`].
     fn from(secret: &'a EphemeralSecret) -> Option<PublicRepresentative> {
-        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0, secret.1);
         let res: Option<[u8; 32]> = repres;
         Some(PublicRepresentative(res?))
     }
@@ -480,7 +486,7 @@ impl<'a> From<&'a EphemeralSecret> for Option<PublicRepresentative> {
 impl<'a> From<&'a ReusableSecret> for Option<PublicRepresentative> {
     /// Given an x25519 [`ReusableSecret`] key, compute its corresponding [`PublicRepresentative`].
     fn from(secret: &'a ReusableSecret) -> Option<PublicRepresentative> {
-        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0, secret.1);
         let res: Option<[u8; 32]> = repres;
         Some(PublicRepresentative(res?))
     }
@@ -491,7 +497,7 @@ impl<'a> From<&'a ReusableSecret> for Option<PublicRepresentative> {
 impl<'a> From<&'a StaticSecret> for Option<PublicRepresentative> {
     /// Given an x25519 [`StaticSecret`] key, compute its corresponding [`PublicRepresentative`].
     fn from(secret: &'a StaticSecret) -> Option<PublicRepresentative> {
-        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0);
+        let repres = curve25519_dalek::elligator2::representative_from_privkey(&secret.0, secret.1);
         let res: Option<[u8; 32]> = repres;
         Some(PublicRepresentative(res?))
     }
@@ -501,7 +507,8 @@ impl<'a> From<&'a StaticSecret> for Option<PublicRepresentative> {
 impl<'a> From<&'a PublicRepresentative> for PublicKey {
     /// Given an elligator2 [`PublicRepresentative`], compute its corresponding [`PublicKey`].
     fn from(representative: &'a PublicRepresentative) -> PublicKey {
-        let point = curve25519_dalek::elligator2::map_to_point(&representative.0);
+        let point = MontgomeryPoint::map_to_point(&representative.0);
         PublicKey(point)
     }
 }
+

@@ -37,6 +37,8 @@ hex = "0.4.2"
 json = "0.12.4"
 rand = "0.8"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+rand_distr = "0.4.3"
+kolmogorov_smirnov = "1.1.0"
 
 [build-dependencies]
 rustc_version = "0.4.0"

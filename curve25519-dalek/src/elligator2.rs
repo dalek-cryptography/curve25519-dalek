@@ -12,17 +12,53 @@ use subtle::{
     CtOption,
 };
 
+/// bitmask for a single byte when clearing the high order two bits of a representative
+pub(crate) const MASK_UNSET_BYTE: u8 = 0x3f;
+/// bitmask for a single byte when setting the high order two bits of a representative
+pub(crate) const MASK_SET_BYTE: u8 = 0xc0;
+
 /// (p - 1) / 2 = 2^254 - 10
 pub(crate) const DIVIDE_MINUS_P_1_2_BYTES: [u8; 32] = [
     0xf6, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x3f,
 ];
 
-/// Gets the public representative for a key pair using the private key
-pub fn representative_from_privkey(privkey: &[u8; 32]) -> Option<[u8; 32]> {
+/// Gets a public representative for a key pair using the private key.
+///
+/// The `tweak` parameter is used to adjust the computed representative making
+/// it computationally indistinguishable from uniform random. If this property
+/// is not required then the provided tweak value does not matter.
+///
+/// The tweak allows us to overcome three limitations:
+/// - Representatives are not always canonical.
+/// - Bit 255 (the most significant bit) was always zero.
+/// - Only points from the large prime-order subgroup are represented.
+///
+/// In order for the returned representative to be canonical a tweak to the
+/// high order two bits must be applied.
+/// ```txt
+/// [An adversary could] observe a representative, interpret it as a field
+/// element, square it, then take the square root using the same
+/// non-canonical square root algorithm. With representatives produced by
+/// an affected version of [the elligator2 implementation], the output of
+/// the square-then-root operation would always match the input. With
+/// random strings, the output would match only half the time.
+/// ```
+///
+/// For a more in-depth explanation see:
+/// https://github.com/agl/ed25519/issues/27
+/// https://www.bamsoftware.com/papers/fep-flaws/
+pub fn representative_from_privkey(privkey: &[u8; 32], tweak: u8) -> Option<[u8; 32]> {
     let pubkey = EdwardsPoint::mul_base_clamped(*privkey).to_montgomery();
     let v_in_sqrt = v_in_sqrt(privkey);
-    point_to_representative(&pubkey, v_in_sqrt.into()).into()
+    let p: Option<[u8; 32]> = point_to_representative(&pubkey, v_in_sqrt.into()).into();
+    match p {
+        None => None,
+        Some(mut a) => {
+            a[31] |= MASK_SET_BYTE & tweak;
+            Some(a)
+        }
+    }
 }
 
 /// This function is used to map a curve point (i.e. an x25519 public key)
@@ -116,7 +152,7 @@ fn is_encodable(u: &FieldElement) -> Choice {
 #[inline]
 pub(crate) fn high_y(d: &FieldElement) -> Choice {
     let d_sq = &d.square();
-    let au = &MONTGOMERY_A * &d;
+    let au = &MONTGOMERY_A * d;
 
     let inner = &(d_sq + &au) + &FieldElement::ONE;
     let eps = d * &inner; /* eps = d^3 + Ad^2 + d */
@@ -184,32 +220,9 @@ pub fn v_in_sqrt_pubkey_edwards(pubkey: &EdwardsPoint) -> Choice {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-#[allow(unused, non_snake_case)]
-/// Perform the Elligator2 mapping to Curve25519 in accordance with RFC9380.
-///
-/// Calculates a point on elliptic curve E (Curve25519) from an element of
-/// the finite field F over which E is defined. See section 6.7.1 of the
-/// RFC.
-///
-/// The input r and outputs u and v are elements of the field F.  The
-/// affine coordinates (u, v) specify a point on an elliptic curve
-/// defined over F.  Note, however, that the point (u, v) is not a
-/// uniformly random point.
-///
-/// Input:
-///     * r -> an element of field F.
-///
-/// Output:
-///     * Q - a point in `(u,v)` for on the Montgomery elliptic curve.
-///
-/// See <https://datatracker.ietf.org/doc/rfc9380/>
-pub fn map_to_curve(r: &[u8; 32]) -> ([u8; 32], [u8; 32]) {
-    let fe = FieldElement::from_bytes(r);
-    let (x, y) = map_fe_to_curve(&fe);
-    (x.as_bytes(), y.as_bytes())
-}
-
-pub(crate) fn map_fe_to_curve(r: &FieldElement) -> (FieldElement, FieldElement) {
+fn map_to_curve_parts(
+    r: &FieldElement,
+) -> (FieldElement, FieldElement, FieldElement, FieldElement) {
     let zero = FieldElement::ZERO;
     let one = FieldElement::ONE;
     let mut minus_one = FieldElement::ONE;
@@ -239,30 +252,49 @@ pub(crate) fn map_fe_to_curve(r: &FieldElement) -> (FieldElement, FieldElement) 
     let (_, mut y) = FieldElement::sqrt_ratio_i(&y2, &one);
     y.conditional_negate(eps_is_sq ^ y.is_negative());
 
-    (x, y)
+    (&x * &d_1, d_1, y, one)
 }
 
-#[allow(unused, non_snake_case)]
-/// Perform the Elligator2 mapping to a [`MontgomeryPoint`].
-///
-/// Calculates a point on elliptic curve E (Curve25519) from an element of
-/// the finite field F over which E is defined. See section 6.7.1 of the
-/// RFC.
-///
-/// The input u and output P are elements of the field F. Note, however, that
-/// the output point P is not a uniformly random point.
-///
-/// Input:
-///     * u -> an element of field F.
-///
-/// Output:
-///     * P - a point on the Montgomery elliptic curve.
-///
-/// See <https://datatracker.ietf.org/doc/rfc9380/>
-pub fn map_to_point(r: &[u8; 32]) -> MontgomeryPoint {
-    let r_0 = FieldElement::from_bytes(r);
-    let (p, _) = map_fe_to_curve(&r_0);
-    MontgomeryPoint(p.as_bytes())
+pub(crate) fn map_fe_to_montgomery(r: &FieldElement) -> (FieldElement, FieldElement) {
+    let (xmn, xmd, y, _) = map_to_curve_parts(r);
+    (&xmn * &(xmd.invert()), y)
+}
+
+pub(crate) fn map_fe_to_edwards(r: &FieldElement) -> (FieldElement, FieldElement) {
+    // 1.  (xMn, xMd, yMn, yMd) = map_to_curve_elligator2_curve25519(u)
+    let (xmn, xmd, ymn, ymd) = map_to_curve_parts(r);
+    // c1 = sqrt(-486664)
+    // this cannot fail as it computes a constant
+    let c1 = &(&MONTGOMERY_A_NEG - &FieldElement::ONE) - &FieldElement::ONE;
+    let (_, c1) = FieldElement::sqrt_ratio_i(&c1, &FieldElement::ONE);
+
+    // 2.  xn = xMn * yMd
+    // 3.  xn = xn * c1
+    let mut xn = &(&xmn * &ymd) * &c1;
+
+    // 4.  xd = xMd * yMn    # xn / xd = c1 * xM / yM
+    let mut xd = &xmd * &ymn;
+
+    // 5.  yn = xMn - xMd
+    let mut yn = &xmn - &xmd;
+    // 6.  yd = xMn + xMd    # (n / d - 1) / (n / d + 1) = (n - d) / (n + d)
+    let mut yd = &xmn + &xmd;
+
+    // 7. tv1 = xd * yd
+    // 8.   e = tv1 == 0
+    let cond = (&xd * &yd).is_zero();
+
+    // 9.  xn = CMOV(xn, 0, e)
+    // 10. xd = CMOV(xd, 1, e)
+    // 11. yn = CMOV(yn, 1, e)
+    // 12. yd = CMOV(yd, 1, e)
+    xn = FieldElement::conditional_select(&xn, &FieldElement::ZERO, cond);
+    xd = FieldElement::conditional_select(&xd, &FieldElement::ONE, cond);
+    yn = FieldElement::conditional_select(&yn, &FieldElement::ONE, cond);
+    yd = FieldElement::conditional_select(&yd, &FieldElement::ONE, cond);
+
+    // 13. return (xn, xd, yn, yd)
+    (&xn * &(xd.invert()), &yn * &(yd.invert()))
 }
 
 // ------------------------------------------------------------------------
@@ -275,7 +307,7 @@ pub fn map_to_point(r: &[u8; 32]) -> MontgomeryPoint {
 mod test {
     use super::*;
 
-    const MASK_UNSET_BYTE: u8 = 0x3f;
+    use hex::FromHex;
 
     ////////////////////////////////////////////////////////////
     // Ntor tests                                             //
@@ -286,26 +318,26 @@ mod test {
     fn repres_from_pubkey_kleshni() {
         // testcases from kleshni
         for (i, testcase) in encoding_testcases().iter().enumerate() {
-            let point: [u8; 32] = hex::decode(testcase.point).unwrap().try_into().unwrap();
+            let point = <[u8; 32]>::from_hex(testcase.point).expect("failed to decode hex point");
 
             let edw_point = MontgomeryPoint(point)
                 .to_edwards(testcase.high_y as u8)
-                .unwrap();
+                .expect("failed to convert point to edwards");
             let v_in_sqrt = v_in_sqrt_pubkey_edwards(&edw_point);
 
             let repres: Option<[u8; 32]> =
                 point_to_representative(&MontgomeryPoint(point), v_in_sqrt.into()).into();
             if testcase.representative.is_some() {
                 assert_eq!(
-                    testcase.representative.unwrap(),
-                    hex::encode(repres.unwrap()),
+                    testcase.representative.expect("checked, is some"),
+                    hex::encode(repres.expect("failed to get representative from point")),
                     "[good case] kleshni ({i}) bad pubkey from true representative"
                 );
             } else {
                 assert!(
                     repres.is_none(),
                     "[good case] kleshni ({i}) expected none got repres {}",
-                    hex::encode(repres.unwrap())
+                    hex::encode(repres.expect("this should not fail"))
                 );
             }
         }
@@ -317,17 +349,16 @@ mod test {
     /// are generated from agl/ed25519 to ensure compatibility.
     fn repres_from_privkey_agl() {
         for (i, vector) in ntor_valid_test_vectors().iter().enumerate() {
-            let privkey: [u8; 32] = hex::decode(vector[0]).unwrap().try_into().unwrap();
+            let privkey = <[u8; 32]>::from_hex(vector[0]).expect("failed to decode hex privatekey");
             let true_repres = vector[2];
 
-            let repres_res = representative_from_privkey(&privkey);
+            let repres_res = representative_from_privkey(&privkey, 0u8);
             assert!(
                 Into::<bool>::into(repres_res.is_some()),
                 "failed to get representative when we should have gotten one :("
             );
-            let mut repres = repres_res.unwrap();
+            let repres = repres_res.expect("failed to get representative from pubkey");
 
-            repres[31] &= MASK_UNSET_BYTE;
             assert_eq!(
                 true_repres,
                 hex::encode(repres),
@@ -341,15 +372,20 @@ mod test {
     fn pubkey_from_repres() {
         // testcases from kleshni
         for (i, testcase) in decoding_testcases().iter().enumerate() {
-            let repres: [u8; 32] = hex::decode(testcase.representative)
-                .unwrap()
-                .try_into()
-                .unwrap();
+            let repres = <[u8; 32]>::from_hex(testcase.representative)
+                .expect("failed to decode hex representative");
 
-            let point = MontgomeryPoint::from_representative(&MontgomeryPoint(repres));
+            let point = MontgomeryPoint::map_to_point(&repres);
             assert_eq!(
                 testcase.point,
                 hex::encode(point.to_bytes()),
+                "[good case] kleshni ({i}) bad representative from point"
+            );
+
+            let point_from_unbounded = MontgomeryPoint::map_to_point_unbounded(&repres);
+            assert_eq!(
+                testcase.non_lsr_point,
+                hex::encode(point_from_unbounded.to_bytes()),
                 "[good case] kleshni ({i}) bad representative from point"
             );
         }
@@ -357,11 +393,12 @@ mod test {
         // testcases from golang agl/ed25519
         for (i, vector) in ntor_valid_test_vectors().iter().enumerate() {
             let true_pubkey = vector[1];
-            let repres: [u8; 32] = hex::decode(vector[2]).unwrap().try_into().unwrap();
+            let repres =
+                <[u8; 32]>::from_hex(vector[2]).expect("failed to decode hex representative");
 
             // ensure that the representative can be reversed to recover the
             // original public key.
-            let pubkey = MontgomeryPoint::from_representative(&MontgomeryPoint(repres));
+            let pubkey = MontgomeryPoint::map_to_point(&repres);
             assert_eq!(
                 true_pubkey,
                 hex::encode(pubkey.to_bytes()),
@@ -374,15 +411,15 @@ mod test {
     #[cfg(feature = "elligator2")]
     fn non_representable_points() {
         for (i, key) in ntor_invalid_keys().iter().enumerate() {
-            let privkey: [u8; 32] = hex::decode(key).unwrap().try_into().unwrap();
+            let privkey = <[u8; 32]>::from_hex(key).expect("failed to decode hex privkey");
 
             // ensure that the representative can be reversed to recover the
             // original public key.
-            let res: Option<[u8; 32]> = representative_from_privkey(&privkey).into();
+            let res: Option<[u8; 32]> = representative_from_privkey(&privkey, 0u8);
             assert!(
                 res.is_none(),
                 "[bad case] agl/ed25519 ({i}) expected None, got Some({})",
-                hex::encode(res.unwrap())
+                hex::encode(res.expect("this shouldn't happen"))
             );
         }
     }
@@ -534,7 +571,7 @@ mod test {
         ]
     }
 
-    const ENCODING_TESTS_COUNT: usize = 6;
+    const ENCODING_TESTS_COUNT: usize = 10;
     struct EncodingTestCase {
         high_y: bool,
         point: &'static str,
@@ -585,13 +622,50 @@ mod test {
                     "0000000000000000000000000000000000000000000000000000000000000000",
                 ),
             },
+            // A not encodable point with both "high_y" values
+            EncodingTestCase {
+                point: "10745497d35c6ede6ea6b330546a6fcbf15c903a7be28ae69b1ca14e0bf09b60",
+                high_y: false,
+                representative: Some(
+                    "d660db8cf212d31ce8c6f7139e69b9ac47fd81c7c0bfcb93e364b2d424e24813",
+                ),
+            },
+            EncodingTestCase {
+                point: "10745497d35c6ede6ea6b330546a6fcbf15c903a7be28ae69b1ca14e0bf09b60",
+                high_y: true,
+                representative: Some(
+                    "489a2e0f6955e08f1ae6eb8dcdbc0f867a87a96a02d2dfd2aca21d8b536f0f1b",
+                ),
+            },
+            // A not encodable point with both "high_y" values
+            EncodingTestCase {
+                point: "6d3187192afc3bcc05a497928816e3e2336dc539aa7fc296a9ee013f560db843",
+                high_y: false,
+                representative: Some(
+                    "63d0d79e7f3c279cf4a0a5c3833fd85aa1f2c004c4e466f3a3844b3c2e06e410",
+                ),
+            },
+            EncodingTestCase {
+                point: "6d3187192afc3bcc05a497928816e3e2336dc539aa7fc296a9ee013f560db843",
+                high_y: true,
+                representative: Some(
+                    "0f03b41c86aeb49acf2f76b39cc90a55a0b140b7290f1c9e032591ddcb074537",
+                ),
+            },
         ]
     }
 
     const DECODING_TESTS_COUNT: usize = 7;
     struct DecodingTestCase {
         representative: &'static str,
+        /// if we only allow least-square-root values as the representative and
+        /// clear the high order two bits (effectively) ensuring that the
+        /// representative value is less than `2^254 - 10`, this is the point
+        /// that we should receive.
         point: &'static str,
+        /// if we allow unbounded values to be used directly as representatives,
+        /// not only least-square-root values, this is the point we should receive.
+        non_lsr_point: &'static str,
     }
 
     fn decoding_testcases() -> [DecodingTestCase; DECODING_TESTS_COUNT] {
@@ -600,36 +674,45 @@ mod test {
             DecodingTestCase {
                 representative: "e73507d38bae63992b3f57aac48c0abc14509589288457995a2b4ca3490aa207",
                 point: "1e8afffed6bf53fe271ad572473262ded8faec68e5e67ef45ebb82eeba52604f",
+                non_lsr_point: "1e8afffed6bf53fe271ad572473262ded8faec68e5e67ef45ebb82eeba52604f",
             },
             // A small representative with true "high_y" property
             DecodingTestCase {
                 representative: "95a16019041dbefed9832048ede11928d90365f24a38aa7aef1b97e23954101b",
                 point: "794f05ba3e3a72958022468c88981e0be5782be1e1145ce2c3c6fde16ded5363",
+                non_lsr_point: "794f05ba3e3a72958022468c88981e0be5782be1e1145ce2c3c6fde16ded5363",
             },
             // The last representative returning true: (p - 1) / 2
             DecodingTestCase {
                 representative: "f6ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3f",
                 point: "9cdb525555555555555555555555555555555555555555555555555555555555",
+                non_lsr_point: "9cdb525555555555555555555555555555555555555555555555555555555555",
             },
             // The first representative returning false: (p + 1) / 2
             DecodingTestCase {
                 representative: "f7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff3f",
                 point: "9cdb525555555555555555555555555555555555555555555555555555555555",
-            },
-            // A large representative with false "high_y" property
-            DecodingTestCase {
-                representative: "179f24730ded2ce3173908ec61964653b8027e383f40346c1c9b4d2bdb1db76c",
-                point: "10745497d35c6ede6ea6b330546a6fcbf15c903a7be28ae69b1ca14e0bf09b60",
-            },
-            // A large representative with true "high_y" property
-            DecodingTestCase {
-                representative: "8a2f286180c3d8630b5f5a3c7cc027a55e0d3ffb3b1b990c5c7bb4c3d1f91b6f",
-                point: "6d3187192afc3bcc05a497928816e3e2336dc539aa7fc296a9ee013f560db843",
+                non_lsr_point: "9cdb525555555555555555555555555555555555555555555555555555555555",
             },
             // 0
             DecodingTestCase {
                 representative: "0000000000000000000000000000000000000000000000000000000000000000",
                 point: "0000000000000000000000000000000000000000000000000000000000000000",
+                non_lsr_point: "0000000000000000000000000000000000000000000000000000000000000000",
+            },
+            // These two tests are not least-square-root representations.
+
+            // A large representative with false "high_y" property
+            DecodingTestCase {
+                representative: "179f24730ded2ce3173908ec61964653b8027e383f40346c1c9b4d2bdb1db76c",
+                point: "e6e5355e0482e952cc951f13db26316ab111ae9edb58c45428a984ce7042d349",
+                non_lsr_point: "10745497d35c6ede6ea6b330546a6fcbf15c903a7be28ae69b1ca14e0bf09b60",
+            },
+            // A large representative with true "high_y" property
+            DecodingTestCase {
+                representative: "8a2f286180c3d8630b5f5a3c7cc027a55e0d3ffb3b1b990c5c7bb4c3d1f91b6f",
+                point: "27e222fec324b0293842a59a63b8201b0f97b1dd599ebcd478a896b7261aff3e",
+                non_lsr_point: "6d3187192afc3bcc05a497928816e3e2336dc539aa7fc296a9ee013f560db843",
             },
         ]
     }
@@ -645,15 +728,13 @@ mod rfc9380 {
 
     #[test]
     fn map_to_curve_test_go_ed25519_extra() {
-        for i in 0..CURVE25519_ELL2.len() {
-            let testcase = &CURVE25519_ELL2[i];
-
+        for (i, testcase) in CURVE25519_ELL2.iter().enumerate() {
             let u = testcase[0].must_from_be();
-            let mut clamped = u.clone();
+            let mut clamped = u;
             clamped[31] &= 63;
 
             // map point to curve
-            let (q_x, _) = map_fe_to_curve(&FieldElement::from_bytes(&clamped));
+            let (q_x, _) = map_fe_to_montgomery(&FieldElement::from_bytes(&clamped));
 
             // check resulting point
             assert_eq!(
@@ -666,12 +747,11 @@ mod rfc9380 {
 
     #[test]
     fn map_to_curve_test_curve25519() {
-        for i in 0..curve25519_XMD_SHA512_ELL2_NU.len() {
-            let testcase = &curve25519_XMD_SHA512_ELL2_NU[i];
+        for (i, testcase) in curve25519_XMD_SHA512_ELL2_NU.iter().enumerate() {
             let u = FieldElement::from_bytes(&testcase.u_0.must_from_le());
 
             // map point to curve
-            let (q_x, q_y) = map_fe_to_curve(&u);
+            let (q_x, q_y) = map_fe_to_montgomery(&u);
 
             // check resulting point
             assert_eq!(
@@ -687,14 +767,13 @@ mod rfc9380 {
                 testcase
             );
         }
-        for i in 0..curve25519_XMD_SHA512_ELL2_RO.len() {
-            let testcase = &curve25519_XMD_SHA512_ELL2_RO[i];
+        for (i, testcase) in curve25519_XMD_SHA512_ELL2_RO.iter().enumerate() {
             let u0 = FieldElement::from_bytes(&testcase.u_0.must_from_le());
             let u1 = FieldElement::from_bytes(&testcase.u_1.must_from_le());
 
             // map points to curve
-            let (q0_x, q0_y) = map_fe_to_curve(&u0);
-            let (q1_x, q1_y) = map_fe_to_curve(&u1);
+            let (q0_x, q0_y) = map_fe_to_montgomery(&u0);
+            let (q1_x, q1_y) = map_fe_to_montgomery(&u1);
 
             // check resulting points
             assert_eq!(
@@ -726,59 +805,55 @@ mod rfc9380 {
 
     #[test]
     fn map_to_curve_test_edwards25519() {
-        for i in 0..edwards25519_XMD_SHA512_ELL2_NU.len() {
-            let testcase = &curve25519_XMD_SHA512_ELL2_NU[i];
+        for (i, testcase) in edwards25519_XMD_SHA512_ELL2_NU.iter().enumerate() {
             let u = FieldElement::from_bytes(&testcase.u_0.must_from_le());
-
-            // map point to curve
-            let (q_x, q_y) = map_fe_to_curve(&u);
+            let (q_x, q_y) = map_fe_to_edwards(&u);
 
             // check resulting point
             assert_eq!(
                 q_x.encode_le(),
                 testcase.Q_x,
-                "({i}) incorrect Q0_x curve25519 NU\n{:?}",
+                "({i}) incorrect Q0_x edwards25519 NU\n{:?}",
                 testcase
             );
             assert_eq!(
                 q_y.encode_le(),
                 testcase.Q_y,
-                "({i}) incorrect Q0_y curve25519 NU\n{:?}",
+                "({i}) incorrect Q0_y edwards25519 NU\n{:?}",
                 testcase
             );
         }
-        for i in 0..edwards25519_XMD_SHA512_ELL2_RO.len() {
-            let testcase = &curve25519_XMD_SHA512_ELL2_RO[i];
+        for (i, testcase) in edwards25519_XMD_SHA512_ELL2_RO.iter().enumerate() {
             let u0 = FieldElement::from_bytes(&testcase.u_0.must_from_le());
             let u1 = FieldElement::from_bytes(&testcase.u_1.must_from_le());
 
             // map points to curve
-            let (q0_x, q0_y) = map_fe_to_curve(&u0);
-            let (q1_x, q1_y) = map_fe_to_curve(&u1);
+            let (q0_x, q0_y) = map_fe_to_edwards(&u0);
+            let (q1_x, q1_y) = map_fe_to_edwards(&u1);
 
             // check resulting points
             assert_eq!(
                 q0_x.encode_le(),
                 testcase.Q0_x,
-                "({i}) incorrect Q0_x curve25519 RO\n{:?}",
+                "({i}) incorrect Q0_x edwards25519 RO\n{:?}",
                 testcase
             );
             assert_eq!(
                 q0_y.encode_le(),
                 testcase.Q0_y,
-                "({i}) incorrect Q0_y curve25519 RO\n{:?}",
+                "({i}) incorrect Q0_y edwards25519 RO\n{:?}",
                 testcase
             );
             assert_eq!(
                 q1_x.encode_le(),
                 testcase.Q1_x,
-                "({i}) incorrect Q1_x curve25519 RO\n{:?}",
+                "({i}) incorrect Q1_x edwards25519 RO\n{:?}",
                 testcase
             );
             assert_eq!(
                 q1_y.encode_le(),
                 testcase.Q1_y,
-                "({i}) incorrect Q1_y curve25519 RO\n{:?}",
+                "({i}) incorrect Q1_y edwards25519 RO\n{:?}",
                 testcase
             );
         }
@@ -790,7 +865,7 @@ mod rfc9380 {
     /// 2. associated point
     ///
     /// These test cases need the upper two bits cleared to be properly mapped.
-    const CURVE25519_ELL2: [[&'static str; 2]; 14] = [
+    const CURVE25519_ELL2: [[&str; 2]; 14] = [
         [
             "0000000000000000000000000000000000000000000000000000000000000000",
             "0000000000000000000000000000000000000000000000000000000000000000",
@@ -1051,12 +1126,12 @@ mod rfc9380 {
 
     impl<'a> FromByteString for &'a str {
         fn must_from_le(&self) -> [u8; 32] {
-            let mut u = <[u8; 32]>::from_hex(self).unwrap();
+            let mut u = <[u8; 32]>::from_hex(self).expect("failed to unhex");
             u.reverse();
             u
         }
         fn must_from_be(&self) -> [u8; 32] {
-            <[u8; 32]>::from_hex(self).unwrap()
+            <[u8; 32]>::from_hex(self).expect("failed to unhex from be")
         }
     }
 
@@ -1069,7 +1144,7 @@ mod rfc9380 {
         fn encode_le(&self) -> String {
             let mut b = self.as_bytes();
             b.reverse();
-            hex::encode(&b)
+            hex::encode(b)
         }
 
         fn encode_be(&self) -> String {
@@ -1079,13 +1154,196 @@ mod rfc9380 {
 
     impl ToByteString for [u8; 32] {
         fn encode_le(&self) -> String {
-            let mut b = self.clone();
+            let mut b = *self;
             b.reverse();
-            hex::encode(&b)
+            hex::encode(b)
         }
 
         fn encode_be(&self) -> String {
             hex::encode(self)
         }
+    }
+}
+
+#[cfg(test)]
+#[cfg(feature = "elligator2")]
+mod randomness {
+    use super::*;
+
+    use kolmogorov_smirnov as ks;
+    use rand::{thread_rng, RngCore};
+    use rand_distr::{Binomial, Distribution};
+    use std::vec::Vec;
+
+    struct BitCounts {
+        counts: [[u64; 100]; 32 * 8],
+        entries: usize,
+    }
+
+    impl BitCounts {
+        fn new() -> Self {
+            BitCounts {
+                counts: [[0u64; 100]; 256],
+                entries: 0,
+            }
+        }
+        fn entry(&mut self, arr: &[u8; 32]) {
+            for (i, arr_byte) in arr.iter().enumerate() {
+                for j in 0..8 {
+                    self.counts[i * 8 + j][self.entries % 100] += ((arr_byte >> j) & 0x01) as u64;
+                }
+            }
+            self.entries += 1;
+        }
+        fn outliers(&self) -> Vec<usize> {
+            let mut rng = thread_rng();
+            let binomial_100 =
+                Binomial::new(100, 0.5).expect("failed to build binomial distribution");
+            let expected_dist: [u64; 100] = binomial_100
+                .sample_iter(&mut rng)
+                .take(100)
+                .collect::<Vec<u64>>()
+                .try_into()
+                .expect("failed to build example binomial expected distribution");
+            // this is a high confidence, but we want to avoid this test failing
+            // due to statistical variability on repeat runs.
+            let confidence = 0.95;
+            let mut outlier_indices = vec![];
+
+            for (n, bit_trial) in self.counts.iter().enumerate() {
+                let result = ks::test(bit_trial, &expected_dist, confidence);
+                // require reject_probability == 1.0 to avoid statistical variability on re-runs
+                if result.is_rejected && result.reject_probability == 1.0 {
+                    // samples definitely not from same distribution
+                    outlier_indices.push(n);
+                    println!(
+                        "{n}, {} {} {} {}",
+                        result.statistic,
+                        result.reject_probability,
+                        result.critical_value,
+                        result.confidence
+                    );
+                    if n == 255 {
+                        println!("{:?}\n{:?}", bit_trial, expected_dist);
+                    }
+                }
+            }
+            outlier_indices
+        }
+    }
+
+    #[test]
+    /// If we use a "random" value for the tweak the high order bits will be
+    /// set such that the representative is:
+    /// 1) unchanged w.r.t. the public key value derived from the representative
+    ///    i.e) it still derives the same public key value from the (clamped)
+    ///         representative that we get from the private key.
+    /// 2) statistically indistinguishable from uniform random.
+    /// 4) computationally indistinguishable from random strings for the `a ?= sqrt(a^2)` test.
+    ///
+    /// (To see this test fail change `rng.next_u32() as u8` to `0u8`)
+    fn bitwise_entropy() {
+        const ITERATIONS: usize = 10000;
+        // number of iterations
+        let mut i = 0usize;
+        let mut rng = thread_rng();
+        let mut privkey = [0u8; 32];
+
+        // count of occurences of a 1 per bit in the representative
+        let mut bitcounts = BitCounts::new();
+
+        while i < ITERATIONS {
+            rng.fill_bytes(&mut privkey);
+            let alice_representative =
+                match representative_from_privkey(&privkey, rng.next_u32() as u8) {
+                    None => continue,
+                    Some(r) => r,
+                };
+
+            bitcounts.entry(&alice_representative);
+
+            let pub_from_repr = MontgomeryPoint::map_to_point(&alice_representative);
+            let pub_from_priv = EdwardsPoint::mul_base_clamped(privkey).to_montgomery();
+            assert_eq!(
+                hex::encode(pub_from_priv.as_bytes()),
+                hex::encode(pub_from_repr.as_bytes()),
+                "failed pubkey match at iteration {i}"
+            );
+
+            i += 1;
+        }
+
+        let outliers = bitcounts.outliers();
+        assert!(outliers.is_empty(), "bad bits: {:?}", outliers);
+    }
+
+    /// TLDR: The sqrt_ratio_i function is canonical so this library does not
+    /// suffer from the describbed computational distinguisher.
+    ///
+    /// The specific issue that this is testing for can be described as:
+    /// ```txt
+    /// An instantiation of Elligator is parameterized by what might be called
+    /// a “canonical” square root function, one with the property that
+    /// `√a2 = √(−a)2` for all field elements `a`. That is, we designate just
+    /// over half the field elements as “non-negative,” and the image of the
+    /// square root function consists of exactly those elements. A convenient
+    /// definition of “non-negative” for Curve25519, suggested by its authors,
+    /// is the lower half of the field, the elements `{0, 1, …, (q − 1) / 2}`.
+    /// When there are two options for a square root, take the smaller of the two.
+    /// ```
+    ///
+    /// Any Elligator implementation that does not do this canonicalization of
+    /// the final square root, and instead it maps a given input systematically
+    /// to either its negative or non-negative root is vulnerable to the
+    /// following computational distinguisher.
+    ///
+    /// ```txt
+    /// [An adversary could] observe a representative, interpret it as a field
+    /// element, square it, then take the square root using the same
+    /// non-canonical square root algorithm. With representatives produced by
+    /// an affected version of [the elligator2 implementation], the output of
+    /// the square-then-root operation would always match the input. With
+    /// random strings, the output would match only half the time.
+    /// ```
+    ///
+    /// For a more in-depth explanation see:
+    /// https://github.com/agl/ed25519/issues/27
+    /// https://www.bamsoftware.com/papers/fep-flaws/
+    #[test]
+    fn test_canonical() {
+        const ITERATIONS: usize = 10000;
+        // number of iterations
+        let mut i = 0usize;
+        let mut rng = thread_rng();
+        let mut privkey = [0u8; 32];
+
+        // number of times the representative (interpreted as a point) squared, then square_rooted,
+        // equals the original representative. Should happen w/ 50% probability.
+        let mut squares_equal = 0usize;
+
+        while i < ITERATIONS {
+            rng.fill_bytes(&mut privkey);
+            let alice_representative = match representative_from_privkey(&privkey, 0u8) {
+                None => continue,
+                Some(r) => r,
+            };
+
+            if is_canonical(&alice_representative) {
+                squares_equal += 1;
+            }
+            i += 1;
+        }
+
+        let expected_range = 4500..5500; // if truly binomial n=10000, p=0.5 then this should "always" pass (> 10x std dev)
+        assert!(
+            expected_range.contains(&squares_equal),
+            "squares_equal: {squares_equal} is not in [4500:5500]"
+        );
+    }
+
+    fn is_canonical(repres: &[u8; 32]) -> bool {
+        let r_fe = FieldElement::from_bytes(repres);
+        let (ok, r_fe_prime) = FieldElement::sqrt_ratio_i(&r_fe.square(), &FieldElement::ONE);
+        (r_fe.ct_eq(&r_fe_prime) & ok).into()
     }
 }

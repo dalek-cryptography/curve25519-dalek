@@ -148,8 +148,9 @@ impl VerifyingKey {
     ///
     /// # Returns
     ///
-    /// A `Result` whose okay value is an EdDSA `VerifyingKey` or a decompression error if the
-    /// provided bytes do not represent the \\(y\\)-coordinate of a curve point.
+    /// On success, returns an EdDSA `VerifyingKey`. Returns a decompression error if the provided
+    /// bytes are not a valid verifying key, i.e., do not represent the \\(y\\)-coordinate of a
+    /// curve point.
     #[inline]
     pub fn from_bytes(bytes: &[u8; PUBLIC_KEY_LENGTH]) -> Result<VerifyingKey, SignatureError> {
         let compressed = CompressedEdwardsY(*bytes);

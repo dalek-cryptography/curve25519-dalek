@@ -124,12 +124,6 @@ impl VerifyingKey {
 
     /// Construct a `VerifyingKey` from a slice of bytes.
     ///
-    /// # Warning
-    ///
-    /// The caller is responsible for ensuring that the bytes passed into this
-    /// method actually represent a `curve25519_dalek::curve::CompressedEdwardsY`
-    /// and that said compressed point is actually a point on the curve.
-    ///
     /// # Example
     ///
     /// ```
@@ -154,8 +148,8 @@ impl VerifyingKey {
     ///
     /// # Returns
     ///
-    /// A `Result` whose okay value is an EdDSA `VerifyingKey` or whose error value
-    /// is a `SignatureError` describing the error that occurred.
+    /// A `Result` whose okay value is an EdDSA `VerifyingKey` or a decompression error if the
+    /// provided bytes do not represent the \\(y\\)-coordinate of a curve point.
     #[inline]
     pub fn from_bytes(bytes: &[u8; PUBLIC_KEY_LENGTH]) -> Result<VerifyingKey, SignatureError> {
         let compressed = CompressedEdwardsY(*bytes);

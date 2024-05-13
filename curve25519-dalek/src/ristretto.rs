@@ -653,7 +653,7 @@ impl RistrettoPoint {
     ///
     /// This method is not public because it's just used for hashing
     /// to a point -- proper elligator support is deferred for now.
-    pub fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
+    pub(crate) fn elligator_ristretto_flavor(r_0: &FieldElement) -> RistrettoPoint {
         let i = &constants::SQRT_M1;
         let d = &constants::EDWARDS_D;
         let one_minus_d_sq = &constants::ONE_MINUS_EDWARDS_D_SQUARED;

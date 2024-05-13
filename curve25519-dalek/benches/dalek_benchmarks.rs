@@ -7,7 +7,6 @@ use criterion::{
 };
 
 use curve25519_dalek::constants;
-use curve25519_dalek::field::FieldElement;
 use curve25519_dalek::scalar::Scalar;
 
 static BATCH_SIZES: [usize; 5] = [1, 2, 4, 8, 16];
@@ -245,11 +244,8 @@ mod ristretto_benches {
     }
 
     fn elligator<M: Measurement>(c: &mut BenchmarkGroup<M>) {
-        let fe_bytes = [0u8; 32];
-        let fe = FieldElement::from_bytes(&fe_bytes);
-
         c.bench_function("RistrettoPoint Elligator", |b| {
-            b.iter(|| RistrettoPoint::elligator_ristretto_flavor(&fe));
+            b.iter(|| RistrettoPoint::from_uniform_bytes_single_elligator(&[0u8; 32]));
         });
     }
 

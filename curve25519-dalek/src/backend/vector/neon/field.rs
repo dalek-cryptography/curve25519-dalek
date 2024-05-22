@@ -20,6 +20,7 @@
 //! changes where made to account for different structure in
 //! arm instructions.
 
+use core::arch::aarch64::{self, vuzp1_u32};
 use core::ops::{Add, Mul, Neg};
 
 use super::packed_simd::{u32x2, u32x4, i32x4, u64x2, u64x4};
@@ -213,6 +214,15 @@ impl FieldElement2625x4 {
             shuffle_lanes(self.0[4], control),
         ])
     }
+
+    pub fn shuffleABAB(&self) -> FieldElement2625x4 {
+        self.shuffle(Shuffle::ABAB)
+    }
+
+    pub fn shuffleBACD(&self) -> FieldElement2625x4 {
+        self.shuffle(Shuffle::BACD)
+    }
+
 
     // Can probably be sped up using multiple vset/vget instead of table
     #[inline]
@@ -457,17 +467,25 @@ impl FieldElement2625x4 {
             unsafe {
                 let z0: u64x2 = vmull_u32(x.0.into(), y.0.into()).into();
                 let z1: u64x2 = vmull_u32(x.1.into(), y.1.into()).into();
-                u64x4::new(z0.extract::<0>(), z0.extract::<1>(), z1.extract::<0>(), z1.extract::<1>())
+                u64x4((z0, z1))
             }
         }
 
         #[inline(always)]
         fn m_lo(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> (u32x2, u32x2) {
             use core::arch::aarch64::vmull_u32;
+            use core::arch::aarch64::vuzp1_u32;
+            use core::arch::aarch64::vget_low_u32;
+            use core::arch::aarch64::vget_high_u32;
             unsafe {
-                let x: (u32x4, u32x4) = (vmull_u32(x.0.into(), y.0.into()).into(),
-                                         vmull_u32(x.1.into(), y.1.into()).into());
-                (u32x2::new(x.0.extract::<0>(), x.0.extract::<2>()), u32x2::new(x.1.extract::<0>(), x.1.extract::<2>()))
+                let x: (u32x4, u32x4) = (
+                    vmull_u32(x.0.into(), y.0.into()).into(),
+                    vmull_u32(x.1.into(), y.1.into()).into(),
+                );
+                (
+                    vuzp1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())).into(),
+                    vuzp1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())).into()
+                )
             }
         }
 
@@ -516,9 +534,8 @@ impl FieldElement2625x4 {
                 use core::arch::aarch64::vget_high_u32;
                 use core::arch::aarch64::vcombine_u32;
 
-                let x = (u64x2::new(x_01.extract::<0>(), x_01.extract::<1>()), u64x2::new(x_01.extract::<2>(), x_01.extract::<3>()));
-                let p = (u64x2::new(p_01.extract::<0>(), p_01.extract::<1>()), u64x2::new(p_01.extract::<2>(), p_01.extract::<3>()));
-
+                let x = x_01.0;
+                let p = p_01.0;
                 (x.0.into(),
                  vcombine_u32(vget_low_u32(x.1.into()),
                               vget_high_u32((p.1 - x.1).into())).into())
@@ -615,21 +632,24 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
             unsafe {
                 let z0: u64x2 = vmull_u32(x.0.into(), y.0.into()).into();
                 let z1: u64x2 = vmull_u32(x.1.into(), y.1.into()).into();
-                u64x4::new(z0.extract::<0>(), z0.extract::<1>(), z1.extract::<0>(), z1.extract::<1>())
+                u64x4((z0, z1))
             }
         }
 
         #[inline(always)]
         fn m_lo(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> (u32x2, u32x2) {
             use core::arch::aarch64::vmull_u32;
+            use core::arch::aarch64::vuzp1_u32;
+            use core::arch::aarch64::vget_low_u32;
+            use core::arch::aarch64::vget_high_u32;
             unsafe {
                 let x: (u32x4, u32x4) = (
                     vmull_u32(x.0.into(), y.0.into()).into(),
                     vmull_u32(x.1.into(), y.1.into()).into(),
                 );
                 (
-                    u32x2::new(x.0.extract::<0>(), x.0.extract::<2>()),
-                    u32x2::new(x.1.extract::<0>(), x.1.extract::<2>()),
+                    vuzp1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())).into(),
+                    vuzp1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())).into()
                 )
             }
         }
@@ -677,8 +697,8 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
 
         let f = |x: u64x4| -> (u64x2, u64x2) {
             (
-                (u64x2::new(x.extract::<0>(), x.extract::<1>())).into(),
-                (u64x2::new(x.extract::<2>(), x.extract::<3>())).into(),
+                x.0.0,
+                x.0.1
             )
         };
 
@@ -816,3 +836,5 @@ mod test {
         assert_eq!(x3, splits[3]);
     }
 }
+
+

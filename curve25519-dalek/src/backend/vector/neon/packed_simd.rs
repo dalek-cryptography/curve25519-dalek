@@ -279,7 +279,7 @@ impl i32x4 {
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
-pub struct u64x4((u64x2, u64x2));
+pub struct u64x4(pub (u64x2, u64x2));
 
 impl u64x4 {
     #[inline]

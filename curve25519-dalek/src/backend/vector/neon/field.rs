@@ -121,8 +121,8 @@ fn repack_pair(x: (u32x4, u32x4), y: (u32x4, u32x4)) -> (u32x4, u32x4) {
                 vtrn1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())),
                 vtrn1_u32(vget_low_u32(y.0.into()), vget_high_u32(y.0.into()))).into(),
             vcombine_u32(
-                vtrn1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())),
-                vtrn1_u32(vget_low_u32(y.0.into()), vget_high_u32(y.0.into()))).into()
+                vtrn1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())),
+                vtrn1_u32(vget_low_u32(y.1.into()), vget_high_u32(y.1.into()))).into()
         )
     }
 }

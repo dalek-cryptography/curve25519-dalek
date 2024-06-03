@@ -29,14 +29,56 @@ use crate::backend::vector::neon::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
 
+#[cfg(all(target_arch = "aarch64"))]
+#[inline(always)]
+fn vget_high_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
+    use core::arch::asm;
+    let o;
+    unsafe {
+        asm! (
+            "DUP {o:d}, {v}.D[1]",
+            v = in(vreg) v,
+            o = out(vreg) o,
+        )
+    }
+    o
+}
+
+#[cfg(all(target_arch = "aarch64"))]
+#[inline(always)]
+fn vget_low_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
+    use core::arch::asm;
+    let o;
+    unsafe {
+        asm! (
+            "DUP {o:d}, {v}.D[0]",
+            v = in(vreg) v,
+            o = out(vreg) o,
+        )
+    }
+    o
+}
+#[cfg(not(target_arch = "aarch64"))]
+use core::arch::aarch64::vget_high_u32;
+#[cfg(not(target_arch = "aarch64"))]
+use core::arch::aarch64::vget_low_u32;
+
 macro_rules! shuffle {
     ($vec0:expr, $vec1:expr, $index:expr) => {
         unsafe {
+            let v_n: [u32;8] = [
+                $vec0.extract::<0>(),
+                $vec0.extract::<1>(),
+                $vec0.extract::<2>(),
+                $vec0.extract::<3>(),
+                $vec1.extract::<0>(),
+                $vec1.extract::<1>(),
+                $vec1.extract::<2>(),
+                $vec1.extract::<3>()
+            ];  
             core::mem::transmute::<[u32; 4], u32x4>(
-                *core::simd::simd_swizzle!(
-                    core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>($vec0)), 
-                    core::simd::Simd::from_array(core::mem::transmute::<u32x4, [u32; 4]>($vec1)), 
-                    $index).as_array())
+                [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]]
+            )
         }
     };
 }
@@ -53,7 +95,6 @@ fn unpack_pair(src: (u32x4, u32x4)) -> ((u32x2, u32x2), (u32x2, u32x2)) {
     let b0: u32x2;
     let b1: u32x2;
     unsafe {
-        use core::arch::aarch64::vget_high_u32;
         use core::arch::aarch64::vget_low_u32;
         a0 = vget_low_u32(src.0.into()).into();
         a1 = vget_low_u32(src.1.into()).into();
@@ -73,15 +114,16 @@ fn repack_pair(x: (u32x4, u32x4), y: (u32x4, u32x4)) -> (u32x4, u32x4) {
     unsafe {
         use core::arch::aarch64::vcombine_u32;
         use core::arch::aarch64::vget_low_u32;
-        use core::arch::aarch64::vgetq_lane_u32;
-        use core::arch::aarch64::vset_lane_u32;
+        use core::arch::aarch64::vtrn1_u32;
 
-        (vcombine_u32(
-                vset_lane_u32(vgetq_lane_u32(x.0.into(), 2) , vget_low_u32(x.0.into()), 1),
-                vset_lane_u32(vgetq_lane_u32(y.0.into(), 2) , vget_low_u32(y.0.into()), 1)).into(),
-         vcombine_u32(
-                vset_lane_u32(vgetq_lane_u32(x.1.into(), 2) , vget_low_u32(x.1.into()), 1),
-                vset_lane_u32(vgetq_lane_u32(y.1.into(), 2) , vget_low_u32(y.1.into()), 1)).into())
+        (
+            vcombine_u32(
+                vtrn1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())),
+                vtrn1_u32(vget_low_u32(y.0.into()), vget_high_u32(y.0.into()))).into(),
+            vcombine_u32(
+                vtrn1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())),
+                vtrn1_u32(vget_low_u32(y.0.into()), vget_high_u32(y.0.into()))).into()
+        )
     }
 }
 
@@ -318,7 +360,6 @@ impl FieldElement2625x4 {
         let rotated_carryout = |v: (u32x4, u32x4)| -> (u32x4, u32x4) {
             unsafe {
                 use core::arch::aarch64::vcombine_u32;
-                use core::arch::aarch64::vget_high_u32;
                 use core::arch::aarch64::vget_low_u32;
                 use core::arch::aarch64::vqshlq_u32;
 
@@ -344,7 +385,6 @@ impl FieldElement2625x4 {
         let combine = |v_lo: (u32x4, u32x4), v_hi: (u32x4, u32x4)| -> (u32x4, u32x4) {
             unsafe {
                 use core::arch::aarch64::vcombine_u32;
-                use core::arch::aarch64::vget_high_u32;
                 use core::arch::aarch64::vget_low_u32;
                 (
                     vcombine_u32(
@@ -476,7 +516,6 @@ impl FieldElement2625x4 {
             use core::arch::aarch64::vmull_u32;
             use core::arch::aarch64::vuzp1_u32;
             use core::arch::aarch64::vget_low_u32;
-            use core::arch::aarch64::vget_high_u32;
             unsafe {
                 let x: (u32x4, u32x4) = (
                     vmull_u32(x.0.into(), y.0.into()).into(),
@@ -531,7 +570,6 @@ impl FieldElement2625x4 {
         let negate_D = |x_01: u64x4, p_01: u64x4| -> (u64x2, u64x2) {
             unsafe {
                 use core::arch::aarch64::vget_low_u32;
-                use core::arch::aarch64::vget_high_u32;
                 use core::arch::aarch64::vcombine_u32;
 
                 let x = x_01.0;
@@ -641,7 +679,6 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
             use core::arch::aarch64::vmull_u32;
             use core::arch::aarch64::vuzp1_u32;
             use core::arch::aarch64::vget_low_u32;
-            use core::arch::aarch64::vget_high_u32;
             unsafe {
                 let x: (u32x4, u32x4) = (
                     vmull_u32(x.0.into(), y.0.into()).into(),

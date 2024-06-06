@@ -27,7 +27,7 @@ macro_rules! impl_shared {
         #[allow(non_camel_case_types)]
         #[derive(Copy, Clone, Debug)]
         #[repr(transparent)]
-        pub struct $ty(core::arch::aarch64::$internal_ty);
+        pub struct $ty(pub core::arch::aarch64::$internal_ty);
 
         impl From<$ty> for core::arch::aarch64::$internal_ty {
             #[inline]
@@ -249,6 +249,155 @@ impl From<core::arch::aarch64::uint32x4_t> for u64x2 {
     }
 }
 
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct u32x4x2(pub core::arch::aarch64::uint32x4x2_t);
+
+impl PartialEq for u32x4x2 {
+    fn eq(&self, other: &Self) -> bool {
+        u32x4::from(self.0.0) == u32x4::from(other.0.0)
+            && u32x4::from(self.0.1) == u32x4::from(other.0.1)
+    }
+}
+
+impl From<u32x4x2> for core::arch::aarch64::uint32x4x2_t {
+    #[inline]
+    fn from(value: u32x4x2) -> core::arch::aarch64::uint32x4x2_t {
+        value.0 
+    }
+}
+
+impl From<core::arch::aarch64::uint32x4x2_t> for u32x4x2 {
+    #[inline]
+    fn from(value: core::arch::aarch64::uint32x4x2_t) -> u32x4x2 {
+        u32x4x2(value)
+    }
+}
+
+impl BitXor for u32x4x2 {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        Self::new(
+            u32x4::from(self.0.0) ^ u32x4::from(rhs.0.0), 
+            u32x4::from(self.0.1) ^ u32x4::from(rhs.0.1))
+    }
+}
+
+impl BitXorAssign for u32x4x2 {
+    fn bitxor_assign(&mut self, rhs: Self) {
+        *self = *self ^ rhs;
+    }
+}
+
+impl BitAnd for u32x4x2 {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self::new(
+            u32x4::from(self.0.0) & u32x4::from(rhs.0.0), 
+            u32x4::from(self.0.1) & u32x4::from(rhs.0.1))
+
+    }
+}
+
+impl Add for u32x4x2 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+         Self::new(
+            u32x4::from(self.0.0) + u32x4::from(rhs.0.0), 
+            u32x4::from(self.0.1) + u32x4::from(rhs.0.1))   
+    }
+}
+
+impl Sub for u32x4x2 {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::new(
+            u32x4::from(self.0.0) - u32x4::from(rhs.0.0), 
+            u32x4::from(self.0.1) - u32x4::from(rhs.0.1))
+    }
+}
+
+impl u32x4x2 {
+    #[inline]
+    pub const fn new(x0: u32x4, x1: u32x4) -> Self {
+        Self(core::arch::aarch64::uint32x4x2_t(x0.0, x1.0))
+    }
+
+    #[inline]
+    pub const fn splat(x: u32) -> Self {
+        Self(core::arch::aarch64::uint32x4x2_t(u32x4::const_splat(x).0, u32x4::const_splat(x).0)) 
+    }
+
+    #[inline]
+    pub fn extract<const N: i32>(self) -> u32 {
+        match N {
+            0 => u32x4::from(self.0.0).extract::<0>(),
+            1 => u32x4::from(self.0.0).extract::<1>(),
+            2 => u32x4::from(self.0.0).extract::<2>(),
+            3 => u32x4::from(self.0.0).extract::<3>(),
+            4 => u32x4::from(self.0.1).extract::<0>(),
+            5 => u32x4::from(self.0.1).extract::<1>(),
+            6 => u32x4::from(self.0.1).extract::<2>(),
+            7 => u32x4::from(self.0.1).extract::<3>(),
+            _ => unreachable!()
+        }
+    }
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
+#[repr(transparent)]
+pub struct u32x2x2(pub core::arch::aarch64::uint32x2x2_t);
+
+impl PartialEq for u32x2x2 {
+    fn eq(&self, other: &Self) -> bool {
+        u32x2::from(self.0.0) == u32x2::from(other.0.0)
+            && u32x2::from(self.0.1) == u32x2::from(other.0.1)
+    }
+}
+
+impl Add for u32x2x2 {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::new(
+            u32x2::from(self.0.0) + u32x2::from(rhs.0.0),
+            u32x2::from(self.0.1) + u32x2::from(rhs.0.1)
+        )
+    }
+}
+
+impl u32x2x2 {
+    #[inline]
+    pub fn new(x0: u32x2, x1: u32x2) -> Self {
+        Self(core::arch::aarch64::uint32x2x2_t(x0.0, x1.0))
+    }
+
+    #[inline]
+    pub fn shl<const N: i32>(self) -> Self {
+        Self(core::arch::aarch64::uint32x2x2_t(
+                u32x2::from(self.0.0).shl::<N>().0,
+                u32x2::from(self.0.1).shl::<N>().0
+        ))
+    }
+
+    #[inline]
+    pub fn extract<const N: i32>(self) -> u32 {
+        match N {
+            0 => u32x2::from(self.0.0).extract::<0>(),
+            1 => u32x2::from(self.0.0).extract::<1>(),
+            2 => u32x2::from(self.0.1).extract::<0>(),
+            3 => u32x2::from(self.0.1).extract::<1>(),
+            _ => unreachable!()
+        }
+    }
+}
+
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
@@ -279,33 +428,35 @@ impl i32x4 {
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
-pub struct u64x4(pub (u64x2, u64x2));
+pub struct u64x4(pub core::arch::aarch64::uint64x2x2_t);
 
 impl u64x4 {
     #[inline]
-    pub fn new(x0: u64, x1: u64, x2: u64, x3: u64) -> Self {
-        Self((u64x2::new(x0, x1), u64x2::new(x2, x3)))
+    pub fn new(x0: u64x2, x1: u64x2) -> Self {
+        Self(core::arch::aarch64::uint64x2x2_t(x0.0, x1.0))
     }
 
     #[inline]
     pub fn splat(x: u64) -> Self {
-        Self::new(x, x, x, x)
+        Self::new(u64x2::splat(x), u64x2::splat(x))
     }
 
     #[inline]
     pub fn extract<const N: i32>(self) -> u64 {
         match N {
-            0 => self.0.0.extract::<0>(),
-            1 => self.0.0.extract::<1>(),
-            2 => self.0.1.extract::<0>(),
-            3 => self.0.1.extract::<1>(),
+            0 => u64x2::from(self.0.0).extract::<0>(),
+            1 => u64x2::from(self.0.0).extract::<1>(),
+            2 => u64x2::from(self.0.1).extract::<0>(),
+            3 => u64x2::from(self.0.1).extract::<1>(),
             _ => unreachable!()
         } 
     }
 
     #[inline]
     pub fn shl<const N: i32>(self) -> Self {
-        Self((self.0.0.shl::<N>(), self.0.1.shl::<N>()))
+        Self(core::arch::aarch64::uint64x2x2_t(
+                u64x2::from(self.0.0).shl::<N>().into(), 
+                u64x2::from(self.0.1).shl::<N>().into()))
     }
 }
 
@@ -314,7 +465,9 @@ impl Add for u64x4 {
 
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        Self((self.0.0 + rhs.0.0, self.0.1 + rhs.0.1))
+        Self(core::arch::aarch64::uint64x2x2_t(
+                (u64x2::from(self.0.0) + u64x2::from(rhs.0.0)).into(), 
+                (u64x2::from(self.0.1) + u64x2::from(rhs.0.1)).into()))
     }
 
 }

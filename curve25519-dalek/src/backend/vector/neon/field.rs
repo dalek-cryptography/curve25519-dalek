@@ -20,10 +20,9 @@
 //! changes where made to account for different structure in
 //! arm instructions.
 
-use core::arch::aarch64::{self, vuzp1_u32};
 use core::ops::{Add, Mul, Neg};
 
-use super::packed_simd::{u32x2, u32x4, i32x4, u64x2, u64x4};
+use super::packed_simd::{i32x4, u32x2, u32x2x2, u32x4, u32x4x2, u64x2, u64x4};
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::neon::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
@@ -63,8 +62,33 @@ use core::arch::aarch64::vget_high_u32;
 #[cfg(not(target_arch = "aarch64"))]
 use core::arch::aarch64::vget_low_u32;
 
+// Shuffle the lanes in a u32x4x2
 macro_rules! shuffle {
-    ($vec0:expr, $vec1:expr, $index:expr) => {
+    ($vec:expr , $index:expr) => {
+        unsafe {
+            let v_n: [u32;8] = [
+                $vec.extract::<0>(),
+                $vec.extract::<1>(),
+                $vec.extract::<2>(),
+                $vec.extract::<3>(),
+                $vec.extract::<4>(),
+                $vec.extract::<5>(),
+                $vec.extract::<6>(),
+                $vec.extract::<7>()
+            ];  
+            u32x4x2::new(
+                core::mem::transmute::<[u32; 4], u32x4>(
+                    [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]]),
+                core::mem::transmute::<[u32; 4], u32x4>(
+                    [v_n[$index[4]], v_n[$index[5]], v_n[$index[6]], v_n[$index[7]]])
+            )
+        }
+    };
+}
+
+// Blend the lanes of two u32x4
+macro_rules! blend {
+    ($vec0: expr, $vec1: expr, $index:expr) => {
         unsafe {
             let v_n: [u32;8] = [
                 $vec0.extract::<0>(),
@@ -77,8 +101,7 @@ macro_rules! shuffle {
                 $vec1.extract::<3>()
             ];  
             core::mem::transmute::<[u32; 4], u32x4>(
-                [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]]
-            )
+                [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]])        
         }
     };
 }
@@ -89,19 +112,18 @@ macro_rules! shuffle {
 /// ((a0, b0), (c0, d0))
 /// ((a1, b1), (c1, d1))
 #[inline(always)]
-fn unpack_pair(src: (u32x4, u32x4)) -> ((u32x2, u32x2), (u32x2, u32x2)) {
+fn unpack_pair(src: u32x4x2) -> (u32x2x2, u32x2x2) {
     let a0: u32x2;
     let a1: u32x2;
     let b0: u32x2;
     let b1: u32x2;
     unsafe {
-        use core::arch::aarch64::vget_low_u32;
-        a0 = vget_low_u32(src.0.into()).into();
-        a1 = vget_low_u32(src.1.into()).into();
-        b0 = vget_high_u32(src.0.into()).into();
-        b1 = vget_high_u32(src.1.into()).into();
+        a0 = vget_low_u32(src.0.0).into();
+        a1 = vget_low_u32(src.0.1).into();
+        b0 = vget_high_u32(src.0.0).into();
+        b1 = vget_high_u32(src.0.1).into();
     }
-    return ((a0, a1), (b0, b1));
+    return (u32x2x2::new(a0, a1), u32x2x2::new(b0, b1));
 }
 
 /// ((a0, 0, b0, 0), (c0, 0, d0, 0))
@@ -110,19 +132,19 @@ fn unpack_pair(src: (u32x4, u32x4)) -> ((u32x2, u32x2), (u32x2, u32x2)) {
 /// ((a0, b0, a1, b1), (c0, d0, c1, d1))
 #[inline(always)]
 #[rustfmt::skip] // Retain formatting of the return tuples
-fn repack_pair(x: (u32x4, u32x4), y: (u32x4, u32x4)) -> (u32x4, u32x4) {
+fn repack_pair(x: u32x4x2, y: u32x4x2) -> u32x4x2 {
     unsafe {
         use core::arch::aarch64::vcombine_u32;
         use core::arch::aarch64::vget_low_u32;
         use core::arch::aarch64::vtrn1_u32;
 
-        (
+        u32x4x2::new(
             vcombine_u32(
-                vtrn1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())),
-                vtrn1_u32(vget_low_u32(y.0.into()), vget_high_u32(y.0.into()))).into(),
+                vtrn1_u32(vget_low_u32(x.0.0), vget_high_u32(x.0.0)),
+                vtrn1_u32(vget_low_u32(y.0.0), vget_high_u32(y.0.0))).into(),
             vcombine_u32(
-                vtrn1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())),
-                vtrn1_u32(vget_low_u32(y.1.into()), vget_high_u32(y.1.into()))).into()
+                vtrn1_u32(vget_low_u32(x.0.1), vget_high_u32(x.0.1)),
+                vtrn1_u32(vget_low_u32(y.0.1), vget_high_u32(y.0.1))).into(),
         )
     }
 }
@@ -154,7 +176,7 @@ pub enum Shuffle {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct FieldElement2625x4(pub(crate) [(u32x4, u32x4); 5]);
+pub struct FieldElement2625x4(pub(crate) [u32x4x2; 5]);
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -166,44 +188,24 @@ impl ConditionallySelectable for FieldElement2625x4 {
         choice: Choice,
     ) -> FieldElement2625x4 {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
-        let mask_vec = u32x4::splat(mask);
+        let mask_vec = u32x4x2::splat(mask);
         FieldElement2625x4([
-            (
-                a.0[0].0 ^ (mask_vec & (a.0[0].0 ^ b.0[0].0)),
-                a.0[0].1 ^ (mask_vec & (a.0[0].1 ^ b.0[0].1)),
-            ),
-            (
-                a.0[1].0 ^ (mask_vec & (a.0[1].0 ^ b.0[1].0)),
-                a.0[1].1 ^ (mask_vec & (a.0[1].1 ^ b.0[1].1)),
-            ),
-            (
-                a.0[2].0 ^ (mask_vec & (a.0[2].0 ^ b.0[2].0)),
-                a.0[2].1 ^ (mask_vec & (a.0[2].1 ^ b.0[2].1)),
-            ),
-            (
-                a.0[3].0 ^ (mask_vec & (a.0[3].0 ^ b.0[3].0)),
-                a.0[3].1 ^ (mask_vec & (a.0[3].1 ^ b.0[3].1)),
-            ),
-            (
-                a.0[4].0 ^ (mask_vec & (a.0[4].0 ^ b.0[4].0)),
-                a.0[4].1 ^ (mask_vec & (a.0[4].1 ^ b.0[4].1)),
-            ),
+            a.0[0] ^ (mask_vec & (a.0[0] ^ b.0[0])),
+            a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
+            a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
+            a.0[3] ^ (mask_vec & (a.0[3] ^ b.0[3])),
+            a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4]))
         ])
     }
 
     fn conditional_assign(&mut self, other: &FieldElement2625x4, choice: Choice) {
         let mask = (-(choice.unwrap_u8() as i32)) as u32;
-        let mask_vec = u32x4::splat(mask);
-        self.0[0].0 ^= mask_vec & (self.0[0].0 ^ other.0[0].0);
-        self.0[0].1 ^= mask_vec & (self.0[0].1 ^ other.0[0].1);
-        self.0[1].0 ^= mask_vec & (self.0[1].0 ^ other.0[1].0);
-        self.0[1].1 ^= mask_vec & (self.0[1].1 ^ other.0[1].1);
-        self.0[2].0 ^= mask_vec & (self.0[2].0 ^ other.0[2].0);
-        self.0[2].1 ^= mask_vec & (self.0[2].1 ^ other.0[2].1);
-        self.0[3].0 ^= mask_vec & (self.0[3].0 ^ other.0[3].0);
-        self.0[3].1 ^= mask_vec & (self.0[3].1 ^ other.0[3].1);
-        self.0[4].0 ^= mask_vec & (self.0[4].0 ^ other.0[4].0);
-        self.0[4].1 ^= mask_vec & (self.0[4].1 ^ other.0[4].1);
+        let mask_vec = u32x4x2::splat(mask);
+        self.0[0] ^= mask_vec & (self.0[0] ^ other.0[0]);
+        self.0[1] ^= mask_vec & (self.0[1] ^ other.0[1]);
+        self.0[2] ^= mask_vec & (self.0[2] ^ other.0[2]);
+        self.0[3] ^= mask_vec & (self.0[3] ^ other.0[3]);
+        self.0[4] ^= mask_vec & (self.0[4] ^ other.0[4]);
     }
 }
 
@@ -211,14 +213,14 @@ impl FieldElement2625x4 {
     pub fn split(&self) -> [FieldElement51; 4] {
         let mut out = [FieldElement51::ZERO; 4];
         for i in 0..5 {
-            let a_2i = self.0[i].0.extract::<0>() as u64;
-            let b_2i = self.0[i].0.extract::<1>() as u64;
-            let a_2i_1 = self.0[i].0.extract::<2>() as u64;
-            let b_2i_1 = self.0[i].0.extract::<3>() as u64;
-            let c_2i = self.0[i].1.extract::<0>() as u64;
-            let d_2i = self.0[i].1.extract::<1>() as u64;
-            let c_2i_1 = self.0[i].1.extract::<2>() as u64;
-            let d_2i_1 = self.0[i].1.extract::<3>() as u64;
+            let a_2i = self.0[i].extract::<0>() as u64;
+            let b_2i = self.0[i].extract::<1>() as u64;
+            let a_2i_1 = self.0[i].extract::<2>() as u64;
+            let b_2i_1 = self.0[i].extract::<3>() as u64;
+            let c_2i = self.0[i].extract::<4>() as u64;
+            let d_2i = self.0[i].extract::<5>() as u64;
+            let c_2i_1 = self.0[i].extract::<6>() as u64;
+            let d_2i_1 = self.0[i].extract::<7>() as u64;
 
             out[0].0[i] = a_2i + (a_2i_1 << 26);
             out[1].0[i] = b_2i + (b_2i_1 << 26);
@@ -233,18 +235,18 @@ impl FieldElement2625x4 {
     pub fn shuffle(&self, control: Shuffle) -> FieldElement2625x4 {
         #[inline(always)]
         #[rustfmt::skip] // Retain format of the return tuples
-        fn shuffle_lanes(x: (u32x4, u32x4), control: Shuffle) -> (u32x4, u32x4) {
+        fn shuffle_lanes(x: u32x4x2, control: Shuffle) -> u32x4x2 {
             match control {
-                Shuffle::AAAA => (shuffle!(x.0, x.1, [0, 0, 2, 2]), shuffle!(x.0, x.1, [0, 0, 2, 2])),
-                Shuffle::BBBB => (shuffle!(x.0, x.1, [1, 1, 3, 3]), shuffle!(x.0, x.1, [1, 1, 3, 3])),
-                Shuffle::CACA => (shuffle!(x.0, x.1, [4, 0, 6, 2]), shuffle!(x.0, x.1, [4, 0, 6, 2])),
-                Shuffle::DBBD => (shuffle!(x.0, x.1, [5, 1, 7, 3]), shuffle!(x.0, x.1, [1, 5, 3, 7])),
-                Shuffle::ADDA => (shuffle!(x.0, x.1, [0, 5, 2, 7]), shuffle!(x.0, x.1, [5, 0, 7, 2])),
-                Shuffle::CBCB => (shuffle!(x.0, x.1, [4, 1, 6, 3]), shuffle!(x.0, x.1, [4, 1, 6, 3])),
-                Shuffle::ABAB => (shuffle!(x.0, x.1, [0, 1, 2, 3]), shuffle!(x.0, x.1, [0, 1, 2, 3])),
-                Shuffle::BADC => (shuffle!(x.0, x.1, [1, 0, 3, 2]), shuffle!(x.0, x.1, [5, 4, 7, 6])),
-                Shuffle::BACD => (shuffle!(x.0, x.1, [1, 0, 3, 2]), shuffle!(x.0, x.1, [4, 5, 6, 7])),
-                Shuffle::ABDC => (shuffle!(x.0, x.1, [0, 1, 2, 3]), shuffle!(x.0, x.1, [5, 4, 7, 6])),
+                Shuffle::AAAA => shuffle!(x, [0, 0, 2, 2, 0, 0, 2, 2]),
+                Shuffle::BBBB => shuffle!(x, [1, 1, 3, 3, 1, 1, 3, 3]),
+                Shuffle::CACA => shuffle!(x, [4, 0, 6, 2, 4, 0, 6, 2]),
+                Shuffle::DBBD => shuffle!(x, [5, 1, 7, 3, 1, 5, 3, 7]),
+                Shuffle::ADDA => shuffle!(x, [0, 5, 2, 7, 5, 0, 7, 2]),
+                Shuffle::CBCB => shuffle!(x, [4, 1, 6, 3, 4, 1, 6, 3]),
+                Shuffle::ABAB => shuffle!(x, [0, 1, 2, 3, 0, 1, 2, 3]),
+                Shuffle::BADC => shuffle!(x, [1, 0, 3, 2, 5, 4, 7, 6]),
+                Shuffle::BACD => shuffle!(x, [1, 0, 3, 2, 4, 5, 6, 7]),
+                Shuffle::ABDC => shuffle!(x, [0, 1, 2, 3, 5, 4, 7, 6]),
             }
         }
 
@@ -271,15 +273,19 @@ impl FieldElement2625x4 {
     pub fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
         #[inline(always)]
         #[rustfmt::skip] // Retain format of the return tuples
-        fn blend_lanes(x: (u32x4, u32x4), y: (u32x4, u32x4), control: Lanes) -> (u32x4, u32x4) {
+        fn blend_lanes(x: u32x4x2, y: u32x4x2, control: Lanes) -> u32x4x2 {
+            let x0 = u32x4::from(x.0.0);
+            let x1 = u32x4::from(x.0.1);
+            let y0 = u32x4::from(y.0.0);
+            let y1 = u32x4::from(y.0.1);
             match control {
-                Lanes::C  => (x.0, shuffle!(y.1, x.1, [0, 5, 2, 7])),
-                Lanes::D  => (x.0, shuffle!(y.1, x.1, [4, 1, 6, 3])),
-                Lanes::AD => (shuffle!(y.0, x.0, [0, 5, 2, 7]), shuffle!(y.1, x.1, [4, 1, 6, 3])),
-                Lanes::AB => (y.0, x.1),
-                Lanes::AC => (shuffle!(y.0, x.0, [0, 5, 2, 7]), shuffle!(y.1, x.1, [0, 5, 2, 7])),
-                Lanes::CD => (x.0, y.1),
-                Lanes::BC => (shuffle!(y.0, x.0, [4, 1, 6, 3]), shuffle!(y.1, x.1, [0, 5, 2, 7])),
+                Lanes::C  => u32x4x2::new(x0, blend!(y1, x1, [0, 5, 2, 7])),
+                Lanes::D  => u32x4x2::new(x0, blend!(y1, x1, [4, 1, 6, 3])),
+                Lanes::AD => u32x4x2::new(blend!(y0, x0, [0, 5, 2, 7]), blend!(y1, x1, [4, 1, 6, 3])),
+                Lanes::AB => u32x4x2::new(y0, x1),
+                Lanes::AC => u32x4x2::new(blend!(y0, x0, [0, 5, 2, 7]), blend!(y1, x1, [0, 5, 2, 7])),
+                Lanes::CD => u32x4x2::new(x0, y1),
+                Lanes::BC => u32x4x2::new(blend!(y0, x0, [4, 1, 6, 3]), blend!(y1, x1, [0, 5, 2, 7])),
                 Lanes::ABCD => y,
             }
         }
@@ -294,7 +300,7 @@ impl FieldElement2625x4 {
     }
 
     pub fn zero() -> FieldElement2625x4 {
-        FieldElement2625x4([(u32x4::splat(0), u32x4::splat(0)); 5])
+        FieldElement2625x4([u32x4x2::splat(0); 5])
     }
 
     pub fn splat(x: &FieldElement51) -> FieldElement2625x4 {
@@ -307,7 +313,7 @@ impl FieldElement2625x4 {
         x2: &FieldElement51,
         x3: &FieldElement51,
     ) -> FieldElement2625x4 {
-        let mut buf = [(u32x4::splat(0), u32x4::splat(0)); 5];
+        let mut buf = [u32x4x2::splat(0); 5];
         let low_26_bits = (1 << 26) - 1;
         for i in 0..5 {
             let a_2i = (x0.0[i] & low_26_bits) as u32;
@@ -319,9 +325,9 @@ impl FieldElement2625x4 {
             let d_2i = (x3.0[i] & low_26_bits) as u32;
             let d_2i_1 = (x3.0[i] >> 26) as u32;
 
-            buf[i] = (
+            buf[i] = u32x4x2::new(
                 u32x4::new(a_2i, b_2i, a_2i_1, b_2i_1),
-                u32x4::new(c_2i, d_2i, c_2i_1, d_2i_1),
+                u32x4::new(c_2i, d_2i, c_2i_1, d_2i_1)
             );
         }
         return FieldElement2625x4(buf).reduce();
@@ -330,11 +336,11 @@ impl FieldElement2625x4 {
     #[inline]
     pub fn negate_lazy(&self) -> FieldElement2625x4 {
         FieldElement2625x4([
-            (P_TIMES_2_LO.0 - self.0[0].0, P_TIMES_2_LO.1 - self.0[0].1),
-            (P_TIMES_2_HI.0 - self.0[1].0, P_TIMES_2_HI.1 - self.0[1].1),
-            (P_TIMES_2_HI.0 - self.0[2].0, P_TIMES_2_HI.1 - self.0[2].1),
-            (P_TIMES_2_HI.0 - self.0[3].0, P_TIMES_2_HI.1 - self.0[3].1),
-            (P_TIMES_2_HI.0 - self.0[4].0, P_TIMES_2_HI.1 - self.0[4].1),
+            P_TIMES_2_LO - self.0[0],
+            P_TIMES_2_HI - self.0[1],
+            P_TIMES_2_HI - self.0[2],
+            P_TIMES_2_HI - self.0[3],
+            P_TIMES_2_HI - self.0[4],
         ])
     }
 
@@ -351,50 +357,50 @@ impl FieldElement2625x4 {
             i32x4::new(-26, -26, -25, -25),
             i32x4::new(-26, -26, -25, -25),
         );
-        let masks = (
+        let masks = u32x4x2::new(
             u32x4::new((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
             u32x4::new((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
         );
 
         // Use mutliple transposes instead of table lookup?
-        let rotated_carryout = |v: (u32x4, u32x4)| -> (u32x4, u32x4) {
+        let rotated_carryout = |v: u32x4x2| -> u32x4x2 {
             unsafe {
                 use core::arch::aarch64::vcombine_u32;
                 use core::arch::aarch64::vget_low_u32;
                 use core::arch::aarch64::vqshlq_u32;
 
-                let c: (u32x4, u32x4) = (
-                    vqshlq_u32(v.0.into(), shifts.0.into()).into(),
-                    vqshlq_u32(v.1.into(), shifts.1.into()).into(),
+                let c: u32x4x2 = u32x4x2::new(
+                    vqshlq_u32(v.0.0, shifts.0.into()).into(),
+                    vqshlq_u32(v.0.1, shifts.1.into()).into(),
                 );
-                (
+                u32x4x2::new(
                     vcombine_u32(
-                        vget_high_u32(c.0.into()),
-                        vget_low_u32(c.0.into()),
+                        vget_high_u32(c.0.0),
+                        vget_low_u32(c.0.0),
                     )
                     .into(),
                     vcombine_u32(
-                        vget_high_u32(c.1.into()),
-                        vget_low_u32(c.1.into()),
+                        vget_high_u32(c.0.1),
+                        vget_low_u32(c.0.1),
                     )
                     .into(),
                 )
             }
         };
 
-        let combine = |v_lo: (u32x4, u32x4), v_hi: (u32x4, u32x4)| -> (u32x4, u32x4) {
+        let combine = |v_lo: u32x4x2, v_hi: u32x4x2| -> u32x4x2 {
             unsafe {
                 use core::arch::aarch64::vcombine_u32;
                 use core::arch::aarch64::vget_low_u32;
-                (
+                u32x4x2::new(
                     vcombine_u32(
-                        vget_low_u32(v_lo.0.into()),
-                        vget_high_u32(v_hi.0.into()),
+                        vget_low_u32(v_lo.0.0),
+                        vget_high_u32(v_hi.0.0),
                     )
                     .into(),
                     vcombine_u32(
-                        vget_low_u32(v_lo.1.into()),
-                        vget_high_u32(v_hi.1.into()),
+                        vget_low_u32(v_lo.0.1),
+                        vget_high_u32(v_hi.0.1),
                     )
                     .into(),
                 )
@@ -404,44 +410,46 @@ impl FieldElement2625x4 {
         let mut v = self.0;
 
         let c10 = rotated_carryout(v[0]);
-        let mut com = combine((u32x4::splat(0), u32x4::splat(0)), c10);
-        v[0] = ((v[0].0 & masks.0) + com.0, (v[0].1 & masks.1) + com.1);
+        let mut com = combine(u32x4x2::splat(0), c10);
+        v[0] = (v[0] & masks) + com;
 
         let c32 = rotated_carryout(v[1]);
         com = combine(c10, c32);
-        v[1] = ((v[1].0 & masks.0) + com.0, (v[1].1 & masks.1) + com.1);
+        v[1] = (v[1] & masks) + com;
 
         let c54 = rotated_carryout(v[2]);
         com = combine(c32, c54);
-        v[2] = ((v[2].0 & masks.0) + com.0, (v[2].1 & masks.1) + com.1);
+        v[2] = (v[2] & masks) + com;
 
         let c76 = rotated_carryout(v[3]);
         com = combine(c54, c76);
-        v[3] = ((v[3].0 & masks.0) + com.0, (v[3].1 & masks.1) + com.1);
+        v[3] = (v[3] & masks) + com;
 
         let c98 = rotated_carryout(v[4]);
         com = combine(c76, c98);
-        v[4] = ((v[4].0 & masks.0) + com.0, (v[4].1 & masks.1) + com.1);
+        v[4] = (v[4] & masks) + com;
 
         #[rustfmt::skip] // Retain formatting of return tuple
-        let c9_19: (u32x4, u32x4) = unsafe {
+        let c9_19: u32x4x2 = unsafe {
             use core::arch::aarch64::vcombine_u32;
             use core::arch::aarch64::vget_low_u32;
             use core::arch::aarch64::vmulq_n_u32;
 
-            let c9_19_spread: (u32x4, u32x4) = (
-                vmulq_n_u32(c98.0.into(), 19).into(),
-                vmulq_n_u32(c98.1.into(), 19).into(),
+            let c9_19_spread: u32x4x2 = u32x4x2::new(
+                vmulq_n_u32(c98.0.0, 19).into(),
+                vmulq_n_u32(c98.0.1, 19).into(),
             );
 
-            (vcombine_u32(vget_low_u32(c9_19_spread.0.into()), u32x2::splat(0).into()).into(),
-             vcombine_u32(vget_low_u32(c9_19_spread.1.into()), u32x2::splat(0).into()).into())
+            u32x4x2::new(
+                vcombine_u32(vget_low_u32(c9_19_spread.0.0), u32x2::splat(0).into()).into(),
+                vcombine_u32(vget_low_u32(c9_19_spread.0.1), u32x2::splat(0).into()).into())
         };
-        v[0] = (v[0].0 + c9_19.0, v[0].1 + c9_19.1);
+        v[0] = v[0] + c9_19;
 
         FieldElement2625x4(v)
     }
 
+    // TODO: use arm types
     #[inline]
     #[rustfmt::skip] // Retain formatting of carry and repacking
     fn reduce64(mut z: [(u64x2, u64x2); 10]) -> FieldElement2625x4 {
@@ -490,11 +498,11 @@ impl FieldElement2625x4 {
         carry(&mut z, 0);
 
         FieldElement2625x4([
-            repack_pair((z[0].0.into(), z[0].1.into()), (z[1].0.into(), z[1].1.into())),
-            repack_pair((z[2].0.into(), z[2].1.into()), (z[3].0.into(), z[3].1.into())),
-            repack_pair((z[4].0.into(), z[4].1.into()), (z[5].0.into(), z[5].1.into())),
-            repack_pair((z[6].0.into(), z[6].1.into()), (z[7].0.into(), z[7].1.into())),
-            repack_pair((z[8].0.into(), z[8].1.into()), (z[9].0.into(), z[9].1.into())),
+            repack_pair(u32x4x2::new(z[0].0.into(), z[0].1.into()), u32x4x2::new(z[1].0.into(), z[1].1.into())),
+            repack_pair(u32x4x2::new(z[2].0.into(), z[2].1.into()), u32x4x2::new(z[3].0.into(), z[3].1.into())),
+            repack_pair(u32x4x2::new(z[4].0.into(), z[4].1.into()), u32x4x2::new(z[5].0.into(), z[5].1.into())),
+            repack_pair(u32x4x2::new(z[6].0.into(), z[6].1.into()), u32x4x2::new(z[7].0.into(), z[7].1.into())),
+            repack_pair(u32x4x2::new(z[8].0.into(), z[8].1.into()), u32x4x2::new(z[9].0.into(), z[9].1.into())),
         ])
     }
 
@@ -502,33 +510,33 @@ impl FieldElement2625x4 {
     #[rustfmt::skip] // keep alignment of formulas
     pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
-        fn m(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> u64x4 {
+        fn m(x: u32x2x2, y: u32x2x2) -> u64x4 {
             use core::arch::aarch64::vmull_u32;
             unsafe {
-                let z0: u64x2 = vmull_u32(x.0.into(), y.0.into()).into();
-                let z1: u64x2 = vmull_u32(x.1.into(), y.1.into()).into();
-                u64x4((z0, z1))
+                let z0: u64x2 = vmull_u32(x.0.0, y.0.0).into();
+                let z1: u64x2 = vmull_u32(x.0.1, y.0.1).into();
+                u64x4::new(z0, z1)
             }
         }
 
         #[inline(always)]
-        fn m_lo(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> (u32x2, u32x2) {
+        fn m_lo(x: u32x2x2, y: u32x2x2) -> u32x2x2 {
             use core::arch::aarch64::vmull_u32;
             use core::arch::aarch64::vuzp1_u32;
             use core::arch::aarch64::vget_low_u32;
             unsafe {
-                let x: (u32x4, u32x4) = (
-                    vmull_u32(x.0.into(), y.0.into()).into(),
-                    vmull_u32(x.1.into(), y.1.into()).into(),
+                let x: u32x4x2 = u32x4x2::new(
+                    vmull_u32(x.0.0, y.0.0).into(),
+                    vmull_u32(x.0.1, y.0.1).into(),
                 );
-                (
-                    vuzp1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())).into(),
-                    vuzp1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())).into()
+                u32x2x2::new(
+                    vuzp1_u32(vget_low_u32(x.0.0), vget_high_u32(x.0.0)).into(),
+                    vuzp1_u32(vget_low_u32(x.0.1), vget_high_u32(x.0.1)).into()
                 )
             }
         }
 
-        let v19 = (u32x2::new(19, 19), u32x2::new(19, 19));
+        let v19 = u32x2x2::new(u32x2::new(19, 19), u32x2::new(19, 19));
 
         let (x0, x1) = unpack_pair(self.0[0]);
         let (x2, x3) = unpack_pair(self.0[1]);
@@ -536,14 +544,14 @@ impl FieldElement2625x4 {
         let (x6, x7) = unpack_pair(self.0[3]);
         let (x8, x9) = unpack_pair(self.0[4]);
 
-        let x0_2   = (x0.0.shl::<1>(), x0.1.shl::<1>());
-        let x1_2   = (x1.0.shl::<1>(), x1.1.shl::<1>());
-        let x2_2   = (x2.0.shl::<1>(), x2.1.shl::<1>());
-        let x3_2   = (x3.0.shl::<1>(), x3.1.shl::<1>());
-        let x4_2   = (x4.0.shl::<1>(), x4.1.shl::<1>());
-        let x5_2   = (x5.0.shl::<1>(), x5.1.shl::<1>());
-        let x6_2   = (x6.0.shl::<1>(), x6.1.shl::<1>());
-        let x7_2   = (x7.0.shl::<1>(), x7.1.shl::<1>());
+        let x0_2   = x0.shl::<1>();
+        let x1_2   = x1.shl::<1>();
+        let x2_2   = x2.shl::<1>();
+        let x3_2   = x3.shl::<1>();
+        let x4_2   = x4.shl::<1>();
+        let x5_2   = x5.shl::<1>();
+        let x6_2   = x6.shl::<1>();
+        let x7_2   = x7.shl::<1>();
 
         let x5_19  = m_lo(v19, x5);
         let x6_19  = m_lo(v19, x6);
@@ -569,14 +577,14 @@ impl FieldElement2625x4 {
 
         let negate_D = |x_01: u64x4, p_01: u64x4| -> (u64x2, u64x2) {
             unsafe {
-                use core::arch::aarch64::vget_low_u32;
                 use core::arch::aarch64::vcombine_u32;
+                use core::arch::aarch64::vreinterpretq_u32_u64;
+                use core::arch::aarch64::vsubq_u64;
 
-                let x = x_01.0;
-                let p = p_01.0;
-                (x.0.into(),
-                 vcombine_u32(vget_low_u32(x.1.into()),
-                              vget_high_u32((p.1 - x.1).into())).into())
+                (u64x2(x_01.0.0),
+                 vcombine_u32(
+                     vget_low_u32(vreinterpretq_u32_u64(x_01.0.1)),
+                     vget_high_u32(vreinterpretq_u32_u64(vsubq_u64(p_01.0.1, x_01.0.1)))).into())
             }
         };
 
@@ -600,11 +608,11 @@ impl Neg for FieldElement2625x4 {
     #[inline]
     fn neg(self) -> FieldElement2625x4 {
         FieldElement2625x4([
-            (P_TIMES_16_LO.0 - self.0[0].0, P_TIMES_16_LO.1 - self.0[0].1),
-            (P_TIMES_16_HI.0 - self.0[1].0, P_TIMES_16_HI.1 - self.0[1].1),
-            (P_TIMES_16_HI.0 - self.0[2].0, P_TIMES_16_HI.1 - self.0[2].1),
-            (P_TIMES_16_HI.0 - self.0[3].0, P_TIMES_16_HI.1 - self.0[3].1),
-            (P_TIMES_16_HI.0 - self.0[4].0, P_TIMES_16_HI.1 - self.0[4].1),
+            P_TIMES_16_LO - self.0[0],
+            P_TIMES_16_HI - self.0[1],
+            P_TIMES_16_HI - self.0[2],
+            P_TIMES_16_HI - self.0[3],
+            P_TIMES_16_HI - self.0[4],
         ])
         .reduce()
     }
@@ -615,11 +623,11 @@ impl Add<FieldElement2625x4> for FieldElement2625x4 {
     #[inline]
     fn add(self, rhs: FieldElement2625x4) -> FieldElement2625x4 {
         FieldElement2625x4([
-            (self.0[0].0 + rhs.0[0].0, self.0[0].1 + rhs.0[0].1),
-            (self.0[1].0 + rhs.0[1].0, self.0[1].1 + rhs.0[1].1),
-            (self.0[2].0 + rhs.0[2].0, self.0[2].1 + rhs.0[2].1),
-            (self.0[3].0 + rhs.0[3].0, self.0[3].1 + rhs.0[3].1),
-            (self.0[4].0 + rhs.0[4].0, self.0[4].1 + rhs.0[4].1),
+            self.0[0] + rhs.0[0],
+            self.0[1] + rhs.0[1],
+            self.0[2] + rhs.0[2],
+            self.0[3] + rhs.0[3],
+            self.0[4] + rhs.0[4],
         ])
     }
 }
@@ -644,16 +652,16 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
             let (b8, b9) = unpack_pair(self.0[4]);
 
             FieldElement2625x4::reduce64([
-                (vmull_u32(b0.0.into(), consts.0.into()).into(), vmull_u32(b0.1.into(), consts.1.into()).into()),
-                (vmull_u32(b1.0.into(), consts.0.into()).into(), vmull_u32(b1.1.into(), consts.1.into()).into()),
-                (vmull_u32(b2.0.into(), consts.0.into()).into(), vmull_u32(b2.1.into(), consts.1.into()).into()),
-                (vmull_u32(b3.0.into(), consts.0.into()).into(), vmull_u32(b3.1.into(), consts.1.into()).into()),
-                (vmull_u32(b4.0.into(), consts.0.into()).into(), vmull_u32(b4.1.into(), consts.1.into()).into()),
-                (vmull_u32(b5.0.into(), consts.0.into()).into(), vmull_u32(b5.1.into(), consts.1.into()).into()),
-                (vmull_u32(b6.0.into(), consts.0.into()).into(), vmull_u32(b6.1.into(), consts.1.into()).into()),
-                (vmull_u32(b7.0.into(), consts.0.into()).into(), vmull_u32(b7.1.into(), consts.1.into()).into()),
-                (vmull_u32(b8.0.into(), consts.0.into()).into(), vmull_u32(b8.1.into(), consts.1.into()).into()),
-                (vmull_u32(b9.0.into(), consts.0.into()).into(), vmull_u32(b9.1.into(), consts.1.into()).into())
+                (vmull_u32(b0.0.0, consts.0.into()).into(), vmull_u32(b0.0.1, consts.1.into()).into()),
+                (vmull_u32(b1.0.0, consts.0.into()).into(), vmull_u32(b1.0.1, consts.1.into()).into()),
+                (vmull_u32(b2.0.0, consts.0.into()).into(), vmull_u32(b2.0.1, consts.1.into()).into()),
+                (vmull_u32(b3.0.0, consts.0.into()).into(), vmull_u32(b3.0.1, consts.1.into()).into()),
+                (vmull_u32(b4.0.0, consts.0.into()).into(), vmull_u32(b4.0.1, consts.1.into()).into()),
+                (vmull_u32(b5.0.0, consts.0.into()).into(), vmull_u32(b5.0.1, consts.1.into()).into()),
+                (vmull_u32(b6.0.0, consts.0.into()).into(), vmull_u32(b6.0.1, consts.1.into()).into()),
+                (vmull_u32(b7.0.0, consts.0.into()).into(), vmull_u32(b7.0.1, consts.1.into()).into()),
+                (vmull_u32(b8.0.0, consts.0.into()).into(), vmull_u32(b8.0.1, consts.1.into()).into()),
+                (vmull_u32(b9.0.0, consts.0.into()).into(), vmull_u32(b9.0.1, consts.1.into()).into())
             ])
         }
     }
@@ -665,31 +673,32 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     #[rustfmt::skip] // Retain formatting of z_i computation
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
-        fn m(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> u64x4 {
+        fn m(x: u32x2x2, y: u32x2x2) -> u64x4 {
             use core::arch::aarch64::vmull_u32;
             unsafe {
-                let z0: u64x2 = vmull_u32(x.0.into(), y.0.into()).into();
-                let z1: u64x2 = vmull_u32(x.1.into(), y.1.into()).into();
-                u64x4((z0, z1))
+                let z0: u64x2 = vmull_u32(x.0.0, y.0.0).into();
+                let z1: u64x2 = vmull_u32(x.0.1, y.0.1).into();
+                u64x4::new(z0, z1)
             }
         }
 
         #[inline(always)]
-        fn m_lo(x: (u32x2, u32x2), y: (u32x2, u32x2)) -> (u32x2, u32x2) {
+        fn m_lo(x: u32x2x2, y: u32x2x2) -> u32x2x2 {
             use core::arch::aarch64::vmull_u32;
             use core::arch::aarch64::vuzp1_u32;
             use core::arch::aarch64::vget_low_u32;
             unsafe {
-                let x: (u32x4, u32x4) = (
-                    vmull_u32(x.0.into(), y.0.into()).into(),
-                    vmull_u32(x.1.into(), y.1.into()).into(),
+                let x: u32x4x2 = u32x4x2::new(
+                    vmull_u32(x.0.0, y.0.0).into(),
+                    vmull_u32(x.0.1, y.0.1).into(),
                 );
-                (
-                    vuzp1_u32(vget_low_u32(x.0.into()), vget_high_u32(x.0.into())).into(),
-                    vuzp1_u32(vget_low_u32(x.1.into()), vget_high_u32(x.1.into())).into()
+                u32x2x2::new(
+                    vuzp1_u32(vget_low_u32(x.0.0), vget_high_u32(x.0.0)).into(),
+                    vuzp1_u32(vget_low_u32(x.0.1), vget_high_u32(x.0.1)).into()
                 )
             }
         }
+
 
         let (x0, x1) = unpack_pair(self.0[0]);
         let (x2, x3) = unpack_pair(self.0[1]);
@@ -703,7 +712,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         let (y6, y7) = unpack_pair(rhs.0[3]);
         let (y8, y9) = unpack_pair(rhs.0[4]);
 
-        let v19 = (u32x2::new(19, 19), u32x2::new(19, 19));
+        let v19 = u32x2x2::new(u32x2::new(19, 19), u32x2::new(19, 19));
 
         let y1_19 = m_lo(v19, y1);
         let y2_19 = m_lo(v19, y2);
@@ -715,11 +724,11 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         let y8_19 = m_lo(v19, y8);
         let y9_19 = m_lo(v19, y9);
 
-        let x1_2 = (x1.0 + x1.0, x1.1 + x1.1);
-        let x3_2 = (x3.0 + x3.0, x3.1 + x3.1);
-        let x5_2 = (x5.0 + x5.0, x5.1 + x5.1);
-        let x7_2 = (x7.0 + x7.0, x7.1 + x7.1);
-        let x9_2 = (x9.0 + x9.0, x9.1 + x9.1);
+        let x1_2 = x1 + x1;
+        let x3_2 = x3 + x3;
+        let x5_2 = x5 + x5;
+        let x7_2 = x7 + x7;
+        let x9_2 = x9 + x9;
 
         let z0 = m(x0,y0) + m(x1_2,y9_19) + m(x2,y8_19) + m(x3_2,y7_19) + m(x4,y6_19) + m(x5_2,y5_19) + m(x6,y4_19) + m(x7_2,y3_19) + m(x8,y2_19) + m(x9_2,y1_19);
         let z1 = m(x0,y1) +   m(x1,y0)    + m(x2,y9_19) +   m(x3,y8_19) + m(x4,y7_19) +   m(x5,y6_19) + m(x6,y5_19) +   m(x7,y4_19) + m(x8,y3_19) + m(x9,y2_19);
@@ -734,8 +743,8 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
 
         let f = |x: u64x4| -> (u64x2, u64x2) {
             (
-                x.0.0,
-                x.0.1
+                x.0.0.into(),
+                x.0.1.into()
             )
         };
 
@@ -771,20 +780,20 @@ mod test {
 
         let (a, b) = unpack_pair(src);
 
-        let expected_a = (u32x2::new(10000, 10100), u32x2::new(10200, 10300));
-        let expected_b = (u32x2::new(10001, 10101), u32x2::new(10201, 10301));
+        let expected_a = u32x2x2::new(u32x2::new(10000, 10100), u32x2::new(10200, 10300));
+        let expected_b = u32x2x2::new(u32x2::new(10001, 10101), u32x2::new(10201, 10301));
 
         assert_eq!(a, expected_a);
         assert_eq!(b, expected_b);
 
         let expected_src = repack_pair(
-            (
-                u32x4::new(a.0.extract::<0>(), 0, a.0.extract::<1>(), 0),
-                u32x4::new(a.1.extract::<0>(), 0, a.1.extract::<1>(), 0),
+            u32x4x2::new(
+                u32x4::new(a.extract::<0>(), 0, a.extract::<1>(), 0),
+                u32x4::new(a.extract::<2>(), 0, a.extract::<3>(), 0),
             ),
-            (
-                u32x4::new(b.0.extract::<0>(), 0, b.0.extract::<1>(), 0),
-                u32x4::new(b.1.extract::<0>(), 0, b.1.extract::<1>(), 0),
+            u32x4x2::new(
+                u32x4::new(b.extract::<0>(), 0, b.extract::<1>(), 0),
+                u32x4::new(b.extract::<2>(), 0, b.extract::<3>(), 0),
             ),
         );
 

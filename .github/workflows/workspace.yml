@@ -90,6 +90,26 @@ jobs:
         components: clippy
     - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features
 
+  generated:
+    name: Check generated tables
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        bits: ['32', '64']
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - run: cargo test table_generators
+      env:
+        RUSTFLAGS: '--cfg curve25519_dalek_bits="${{ matrix.bits }}" --cfg curve25519_dalek_generate_tables'
+    - name: Verify working directory is not clean
+      run: if $(git diff --quiet); then false; else true; fi
+    - run: cargo fmt
+    - name: Verify working directory is clean
+      run: git diff --exit-code
+
   rustfmt:
     name: Check formatting
     runs-on: ubuntu-latest

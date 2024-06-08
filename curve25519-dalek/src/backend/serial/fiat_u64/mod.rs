@@ -24,5 +24,5 @@ pub mod scalar;
 
 pub mod field;
 
-#[path = "../u64/constants.rs"]
+#[path = "../u64/constants/mod.rs"]
 pub mod constants;

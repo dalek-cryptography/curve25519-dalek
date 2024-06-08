@@ -22,6 +22,11 @@ use crate::{
     window::{LookupTable, NafLookupTable8},
 };
 
+#[cfg(feature = "precomputed-tables")]
+mod affine_odd_multiples_of_b_shl_128;
+#[cfg(feature = "precomputed-tables")]
+pub(crate) use self::affine_odd_multiples_of_b_shl_128::AFFINE_ODD_MULTIPLES_OF_B_SHL_128;
+
 /// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51::from_limbs([
     2251799813685228,
@@ -172,6 +177,52 @@ pub const ED25519_BASEPOINT_POINT: EdwardsPoint = EdwardsPoint {
         1821297809914039,
     ]),
 };
+
+/// `[2^128]B`, as an `EdwardsPoint`.
+#[cfg(any(test, not(feature = "precomputed-tables")))]
+pub(crate) const ED25519_BASEPOINT_SHL_128: EdwardsPoint = EdwardsPoint {
+    X: FieldElement51::from_limbs([
+        1573694877509226,
+        2118644427590872,
+        940662180141619,
+        707110682864191,
+        1255997186674731,
+    ]),
+    Y: FieldElement51::from_limbs([
+        1162474291335259,
+        820106152083656,
+        523232807607258,
+        2134608004007539,
+        729879497843472,
+    ]),
+    Z: FieldElement51::from_limbs([
+        445134475408207,
+        1820906444767788,
+        40212681131971,
+        1448661247201044,
+        965705781338211,
+    ]),
+    T: FieldElement51::from_limbs([
+        1855274855831337,
+        1818119365171423,
+        269991889323070,
+        1370944576683708,
+        140790155072480,
+    ]),
+};
+
+#[test]
+fn b_shl_128() {
+    let s = crate::Scalar {
+        bytes: [
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        ],
+    };
+
+    assert_eq!(s * ED25519_BASEPOINT_POINT, ED25519_BASEPOINT_SHL_128);
+}
 
 /// The 8-torsion subgroup \\(\mathcal E \[8\]\\).
 ///
@@ -7767,3 +7818,37 @@ pub(crate) const AFFINE_ODD_MULTIPLES_OF_BASEPOINT: NafLookupTable8<AffineNielsP
             ]),
         },
     ]);
+
+#[cfg(all(test, feature = "precomputed-tables", curve25519_dalek_generate_tables))]
+mod table_generators {
+    use std::fs::File;
+    use std::io::Write;
+
+    use super::ED25519_BASEPOINT_SHL_128;
+    use crate::{backend::serial::curve_models::AffineNielsPoint, window::NafLookupTable8};
+
+    #[test]
+    fn affine_odd_multiples_of_b_shl_128() {
+        let table = NafLookupTable8::<AffineNielsPoint>::from(&ED25519_BASEPOINT_SHL_128);
+        let mut table_file = File::create(format!(
+            "{}/src/backend/serial/u64/constants/affine_odd_multiples_of_b_shl_128.rs",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .expect("can open file");
+
+        let table_file_contents = format!(
+            "//! Generated file, do not alter!
+
+            use super::super::field::FieldElement51;
+            use crate::{{backend::serial::curve_models::AffineNielsPoint, window::NafLookupTable8}};
+
+            /// Odd multiples of `[2^128]B`: `[[2^128]B, [3 2^128]B, [5 2^128]B, [7 2^128]B, ..., [127 2^128]B]`.
+            pub(crate) const AFFINE_ODD_MULTIPLES_OF_B_SHL_128: NafLookupTable8<AffineNielsPoint> =
+            {:?};
+            ",
+            table
+        ).replace("FieldElement51(", "FieldElement51::from_limbs(");
+
+        write!(table_file, "{}", table_file_contents).unwrap();
+    }
+}

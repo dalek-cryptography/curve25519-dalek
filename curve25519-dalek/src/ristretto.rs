@@ -1062,6 +1062,18 @@ impl RistrettoPoint {
             a, &A.0, b,
         ))
     }
+
+    /// Checks whether \\([a]A + [b]B = C\\) in variable time.
+    pub fn vartime_check_double_scalar_mul_basepoint(
+        a: &Scalar,
+        A: &RistrettoPoint,
+        b: &Scalar,
+        C: &RistrettoPoint,
+    ) -> bool {
+        use crate::traits::IsIdentity;
+
+        crate::backend::scalar_mul_abglsv_pornin(a, &A.0, b, &C.0).is_identity()
+    }
 }
 
 /// A precomputed table of multiples of a basepoint, used to accelerate

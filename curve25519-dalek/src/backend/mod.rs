@@ -249,3 +249,29 @@ pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> Edwa
         BackendKind::Serial => serial::scalar_mul::vartime_double_base::mul(a, A, b),
     }
 }
+
+/// Computes \\([δa]A + [δb]B - [δ]C\\) in variable time.
+///
+/// - \\(B\\) is the Ed25519 basepoint.
+/// - \\(δ\\) is a value invertible \\( \mod \ell \\), which is selected internally to
+///   this function.
+///
+/// This corresponds to the signature verification optimisation presented in
+/// [Antipa et al 2005](http://cacr.uwaterloo.ca/techreports/2005/cacr2005-28.pdf).
+#[allow(non_snake_case)]
+pub fn scalar_mul_abglsv_pornin(
+    a: &Scalar,
+    A: &EdwardsPoint,
+    b: &Scalar,
+    C: &EdwardsPoint,
+) -> EdwardsPoint {
+    match get_selected_backend() {
+        #[cfg(curve25519_dalek_backend = "simd")]
+        BackendKind::Avx2 => vector::scalar_mul::abglsv_pornin::spec_avx2::mul(a, A, b, C),
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        BackendKind::Avx512 => {
+            vector::scalar_mul::abglsv_pornin::spec_avx512ifma_avx512vl::mul(a, A, b, C)
+        }
+        BackendKind::Serial => serial::scalar_mul::abglsv_pornin::mul(a, A, b, C),
+    }
+}

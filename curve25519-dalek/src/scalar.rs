@@ -138,10 +138,8 @@ use digest::generic_array::typenum::U64;
 #[cfg(feature = "digest")]
 use digest::Digest;
 
-use subtle::Choice;
-use subtle::ConditionallySelectable;
-use subtle::ConstantTimeEq;
-use subtle::CtOption;
+use subtle::{Choice, CtOption};
+use subtle::{ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -259,9 +257,8 @@ impl Scalar {
     ///   if `bytes` is a canonical byte representation modulo the group order \\( \ell \\);
     /// - `None` if `bytes` is not a canonical byte representation.
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
-        let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
         let candidate = Scalar { bytes };
-        CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
+        CtOption::new(candidate, candidate.is_canonical())
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
@@ -1132,7 +1129,15 @@ impl Scalar {
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {
-        self.ct_eq(&self.reduce())
+        let mut over = Choice::from(0);
+        let mut under = Choice::from(0);
+        for (this, l) in self.unpack().0.iter().zip(&constants::L.0).rev() {
+            let gt = this.ct_gt(l);
+            let eq = this.ct_eq(l);
+            under |= (!gt & !eq) & !over;
+            over |= gt;
+        }
+        under
     }
 }
 
@@ -1790,15 +1795,42 @@ pub(crate) mod test {
             0, 0, 128,
         ];
 
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(canonical_bytes).is_some()
-        ));
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(non_canonical_bytes_because_unreduced).is_none()
-        ));
-        assert!(bool::from(
-            Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none()
-        ));
+        let canonical_l_minus_one = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15,
+        ];
+        let canonical_zero = [0u8; 32];
+        let canonical_255_minus_1 = [
+            132, 52, 71, 117, 71, 74, 127, 151, 35, 182, 58, 139, 233, 42, 231, 109, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15,
+        ];
+        let non_canonical_l = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16,
+        ];
+        let non_canonical_l_plus_one = [
+            237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17,
+        ];
+        let non_canonical_full = [0xFF; 32];
+        let non_canonical_255_minus_1 = {
+            let mut non_canonical_255_minus_1 = [0xFF; 32];
+            non_canonical_255_minus_1[31] = 0b0111_1111;
+            non_canonical_255_minus_1
+        };
+
+        let from_canonical_option = |b| Option::<Scalar>::from(Scalar::from_canonical_bytes(b));
+
+        assert!(from_canonical_option(canonical_bytes).is_some());
+        assert!(from_canonical_option(canonical_l_minus_one).is_some());
+        assert!(from_canonical_option(canonical_zero).is_some());
+        assert!(from_canonical_option(canonical_255_minus_1).is_some());
+        assert!(from_canonical_option(non_canonical_bytes_because_unreduced).is_none());
+        assert!(from_canonical_option(non_canonical_bytes_because_highbit).is_none());
+        assert!(from_canonical_option(non_canonical_l).is_none());
+        assert!(from_canonical_option(non_canonical_l_plus_one).is_none());
+        assert!(from_canonical_option(non_canonical_full).is_none());
+        assert!(from_canonical_option(non_canonical_255_minus_1).is_none());
     }
 
     #[test]

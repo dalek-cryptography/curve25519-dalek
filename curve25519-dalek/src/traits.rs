@@ -285,8 +285,8 @@ pub trait VartimeMultiscalarMul {
 ///   to be composed into the input iterators.
 ///
 /// All methods require that the lengths of the input iterators be
-/// known and matching, as if they were `ExactSizeIterator`s.  (It
-/// does not require `ExactSizeIterator` only because that trait is
+/// known, as if they were `ExactSizeIterator`s.  (It does not
+/// require `ExactSizeIterator` only because that trait is
 /// broken).
 pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// The type of point to be multiplied, e.g., `RistrettoPoint`.
@@ -306,8 +306,8 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// $$
     /// where the \\(B_j\\) are the points that were supplied to `new`.
     ///
-    /// It is an error to call this function with iterators of
-    /// inconsistent lengths.
+    /// It is valid for \\(b_i\\) to have a shorter length than \\(B_i\\).
+    /// In this case, any "unused" points are ignored in the computation.
     ///
     /// The trait bound aims for maximum flexibility: the input must
     /// be convertable to iterators (`I: IntoIter`), and the
@@ -337,8 +337,11 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// $$
     /// where the \\(B_j\\) are the points that were supplied to `new`.
     ///
-    /// It is an error to call this function with iterators of
-    /// inconsistent lengths.
+    /// It is valid for \\(b_i\\) to have a shorter length than \\(B_i\\).
+    /// In this case, any "unused" points are ignored in the computation.
+    ///
+    /// It is an error to call this function if the iterators \\(a_i\\)
+    /// and \\(A_i\\) do not have equal lengths.
     ///
     /// The trait bound aims for maximum flexibility: the inputs must be
     /// convertable to iterators (`I: IntoIter`), and the iterator's items
@@ -378,8 +381,11 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     ///
     /// If any of the dynamic points were `None`, return `None`.
     ///
-    /// It is an error to call this function with iterators of
-    /// inconsistent lengths.
+    /// It is valid for \\(b_i\\) to have a shorter length than \\(B_i\\).
+    /// In this case, any "unused" points are ignored in the computation.
+    ///
+    /// It is an error to call this function if the iterators \\(a_i\\)
+    /// and \\(A_i\\) do not have equal lengths.
     ///
     /// This function is particularly useful when verifying statements
     /// involving compressed points.  Accepting `Option<Point>` allows

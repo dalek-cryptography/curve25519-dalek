@@ -303,6 +303,29 @@ impl FieldElement {
     pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
+
+    #[cfg(feature = "group")]
+    /// Handle 48 bytes like a big integer and reduce mod order
+    /// i.e. big_int(48 bytes) % p
+    /// but without using any reduce methods
+    pub(crate) fn from_xmd_bytes_mod_order(bytes: &[u8]) -> FieldElement {
+        assert_eq!(bytes.len(), 48);
+        // XMD output is expected to be big endian but FieldElement51
+        // expects bytes to be little endian.
+        // Break the array in half with the 1st half as the hi value
+        // and the 2nd half as the lo value
+        let mut arr = [0u8; 32];
+        for i in 0..24 {
+            arr[i] = bytes[23 - i];
+        }
+        let mut hi = FieldElement::from_bytes(&arr);
+        for i in 0..24 {
+            arr[i] = bytes[47 - i];
+        }
+        let lo = FieldElement::from_bytes(&arr);
+        hi *= &FieldElement::F_2_192;
+        &hi + &lo
+    }
 }
 
 #[cfg(test)]

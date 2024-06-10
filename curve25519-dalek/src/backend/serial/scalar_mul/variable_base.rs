@@ -1,5 +1,7 @@
 #![allow(non_snake_case)]
 
+use core::panic;
+
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
@@ -9,6 +11,11 @@ use crate::window::LookupTable;
 /// Perform constant-time, variable-base scalar multiplication.
 #[rustfmt::skip] // keep alignment of explanatory comments
 pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+    #[cfg(all(target_os = "zkvm", target_vendor = "succinct", target_arch = "riscv32"))]
+    {
+        panic!("using variable_base:mul");
+    }
+
     // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
     let lookup_table = LookupTable::<ProjectiveNielsPoint>::from(point);
     // Setting s = scalar, compute

@@ -71,3 +71,13 @@ group-bits = ["group", "ff/bits"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+    'cfg(allow_unused_unsafe)',
+    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd"))',
+    'cfg(curve25519_dalek_diagnostics, values("build"))',
+    'cfg(curve25519_dalek_bits, values("32", "64"))',
+    'cfg(nightly)',
+]

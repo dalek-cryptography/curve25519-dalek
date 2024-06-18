@@ -629,7 +629,7 @@ impl<'a, 'b> Mul<&'b F51x4Reduced> for &'a F51x4Reduced {
     }
 }
 
-#[cfg(target_feature = "avx512ifma,avx512vl")]
+#[cfg(all(target_feature = "avx512ifma", target_feature = "avx512vl"))]
 #[cfg(test)]
 mod test {
     use super::*;

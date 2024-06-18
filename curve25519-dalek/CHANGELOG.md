@@ -7,7 +7,7 @@ major series.
 
 ### 4.1.3
 
-* Security: Fix timing leak in Scalar subtraction on u64 backend
+* Security: Fix timing leak in Scalar subtraction on u32, u64, fiat_u32, and fiat_u64 backends
 
 ### 4.1.2
 

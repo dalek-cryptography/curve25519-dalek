@@ -8,6 +8,7 @@ major series.
 ### 4.1.3
 
 * Security: Fix timing leak in Scalar subtraction on u32, u64, fiat_u32, and fiat_u64 backends
+* Fix assorted new warnings and lints from rustc and clippy
 
 ### 4.1.2
 

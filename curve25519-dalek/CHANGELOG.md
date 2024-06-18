@@ -5,6 +5,10 @@ major series.
 
 ## 4.x series
 
+### 4.1.3
+
+* Security: Fix timing leak in Scalar subtraction on u64 backend
+
 ### 4.1.2
 
 * Fix nightly SIMD build

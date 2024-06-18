@@ -127,17 +127,16 @@ jobs:
         # This should automatically pick up the simd backend in a x86_64 runner
         # It should pick AVX2 due to stable toolchain used since AVX512 requires nigthly
         RUSTFLAGS: '-C target_feature=+avx2'
-      run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize --target x86_64-unknown-linux-gnu
+      run: cargo test --no-default-features --features alloc,precomputed-tables,zeroize,group-bits --target x86_64-unknown-linux-gnu
 
   msrv:
     name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    # First run `cargo +nightly -Z minimal-verisons check` in order to get a
-    # Cargo.lock with the oldest possible deps
+    # Re-resolve Cargo.lock with minimal versions
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo -Z minimal-versions check --no-default-features --features serde
+    - run: cargo update -Z minimal-versions
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0

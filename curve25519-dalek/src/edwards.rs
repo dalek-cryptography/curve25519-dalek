@@ -96,7 +96,6 @@
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
-use core::iter::Iterator;
 use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
@@ -110,9 +109,11 @@ use digest::{generic_array::typenum::U64, Digest};
 #[cfg(feature = "group")]
 use {
     group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
-    rand_core::RngCore,
     subtle::CtOption,
 };
+
+#[cfg(feature = "group")]
+use rand_core::RngCore;
 
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
@@ -170,7 +171,7 @@ impl ConstantTimeEq for CompressedEdwardsY {
 }
 
 impl Debug for CompressedEdwardsY {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
     }
 }
@@ -258,7 +259,7 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl Serialize for EdwardsPoint {
@@ -301,7 +302,7 @@ impl<'de> Deserialize<'de> for EdwardsPoint {
         impl<'de> Visitor<'de> for EdwardsPointVisitor {
             type Value = EdwardsPoint;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str("a valid point in Edwards y + sign format")
             }
 
@@ -337,7 +338,7 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
         impl<'de> Visitor<'de> for CompressedEdwardsYVisitor {
             type Value = CompressedEdwardsY;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str("32 bytes of data")
             }
 
@@ -1052,7 +1053,7 @@ macro_rules! impl_basepoint_table {
         }
 
         impl Debug for $name {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(f, "{:?}([\n", stringify!($name))?;
                 for i in 0..32 {
                     write!(f, "\t{:?},\n", &self.0[i])?;
@@ -1263,7 +1264,7 @@ impl EdwardsPoint {
 // ------------------------------------------------------------------------
 
 impl Debug for EdwardsPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "EdwardsPoint{{\n\tX: {:?},\n\tY: {:?},\n\tZ: {:?},\n\tT: {:?}\n}}",
@@ -1591,16 +1592,16 @@ impl CofactorGroup for EdwardsPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{field::FieldElement, scalar::Scalar};
-    use subtle::ConditionallySelectable;
+
+    // If `group` is set, then this is already imported in super
+    #[cfg(not(feature = "group"))]
+    use rand_core::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
     #[cfg(feature = "precomputed-tables")]
     use crate::constants::ED25519_BASEPOINT_TABLE;
-
-    use rand_core::RngCore;
 
     /// X coordinate of the basepoint.
     /// = 15112221349535400772501151409588531511454012693041857206046113283949847762202

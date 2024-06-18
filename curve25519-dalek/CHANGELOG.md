@@ -5,6 +5,15 @@ major series.
 
 ## 4.x series
 
+### 4.1.3
+
+* Security: Fix timing leak in Scalar subtraction on u32, u64, fiat_u32, and fiat_u64 backends
+* Fix assorted new warnings and lints from rustc and clippy
+
+### 4.1.2
+
+* Fix nightly SIMD build
+
 ### 4.1.1
 
 * Mark `constants::BASEPOINT_ORDER` deprecated from pub API
@@ -123,7 +132,7 @@ major series.
 
 ### 2.1.2
 
-* Multiple documenation typo fixes.
+* Multiple documentation typo fixes.
 * Fix `alloc` feature working with stable rust.
 
 ### 2.1.1

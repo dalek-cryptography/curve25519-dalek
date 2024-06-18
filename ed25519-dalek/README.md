@@ -31,7 +31,7 @@ This crate is `#[no_std]` compatible with `default-features = false`.
 
 # Major Changes
 
-See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of this crate.
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past versions of this crate.
 
 ## Breaking Changes in 2.0.0
 
@@ -43,7 +43,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a list of changes made in past version of t
 * Make `rand_core` an optional dependency
 * Adopt [curve25519-backend selection](https://github.com/dalek-cryptography/curve25519-dalek/#backends) over features
 * Make all batch verification deterministic remove `batch_deterministic` ([#256](https://github.com/dalek-cryptography/ed25519-dalek/pull/256))
-* Remove `ExpandedSecretKey` API ((#205)[https://github.com/dalek-cryptography/ed25519-dalek/pull/205])
+* Remove `ExpandedSecretKey` API ([#205](https://github.com/dalek-cryptography/ed25519-dalek/pull/205))
 * Rename `Keypair` → `SigningKey` and `PublicKey` → `VerifyingKey`
 * Make `hazmat` feature to expose, `ExpandedSecretKey`, `raw_sign()`, `raw_sign_prehashed()`, `raw_verify()`, and `raw_verify_prehashed()`
 
@@ -63,7 +63,7 @@ SemVer exemptions are outlined below for MSRV and public API.
 | 2.x      | 1.60   |
 | 1.x      | 1.41   |
 
-From 2.x and on, MSRV changes will be accompanied by a minor version bump.
+From 2.x onwards, MSRV changes will be accompanied by a minor version bump.
 
 ## Public API SemVer Exemptions
 
@@ -130,7 +130,7 @@ Backend selection details and instructions can be found in the [curve25519-dalek
 
 # Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 # Batch Signature Verification
 

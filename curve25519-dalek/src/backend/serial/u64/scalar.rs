@@ -25,7 +25,7 @@ use crate::constants;
 pub struct Scalar52(pub [u64; 5]);
 
 impl Debug for Scalar52 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
     }
 }
@@ -174,6 +174,14 @@ impl Scalar52 {
 
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> Scalar52 {
+        // Optimization barrier to prevent compiler from inserting branch instructions
+        // TODO(tarcieri): find a better home (or abstraction) for this
+        fn black_box(value: u64) -> u64 {
+            // SAFETY: `u64` is a simple integer `Copy` type and `value` lives on the stack so
+            // a pointer to it will be valid.
+            unsafe { core::ptr::read_volatile(&value) }
+        }
+
         let mut difference = Scalar52::ZERO;
         let mask = (1u64 << 52) - 1;
 
@@ -188,7 +196,9 @@ impl Scalar52 {
         let underflow_mask = ((borrow >> 63) ^ 1).wrapping_sub(1);
         let mut carry: u64 = 0;
         for i in 0..5 {
-            carry = (carry >> 52) + difference[i] + (constants::L[i] & underflow_mask);
+            // SECURITY: `black_box` prevents LLVM from inserting a `jns` conditional on x86(_64)
+            // which can be used to bypass this section when `underflow_mask` is zero.
+            carry = (carry >> 52) + difference[i] + (constants::L[i] & black_box(underflow_mask));
             difference[i] = carry & mask;
         }
 

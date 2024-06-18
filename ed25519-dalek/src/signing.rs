@@ -9,6 +9,8 @@
 
 //! ed25519 signing keys.
 
+use core::fmt::Debug;
+
 #[cfg(feature = "pkcs8")]
 use ed25519::pkcs8;
 
@@ -58,7 +60,7 @@ pub type SecretKey = [u8; SECRET_KEY_LENGTH];
 // Invariant: `verifying_key` is always the public key of
 // `secret_key`. This prevents the signing function oracle attack
 // described in https://github.com/MystenLabs/ed25519-unsafe-libs
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SigningKey {
     /// The secret half of this signing key.
     pub(crate) secret_key: SecretKey,
@@ -129,7 +131,7 @@ impl SigningKey {
     /// # Returns
     ///
     /// A `Result` whose okay value is an EdDSA [`SigningKey`] or whose error value
-    /// is an `SignatureError` describing the error that occurred.
+    /// is a `SignatureError` describing the error that occurred.
     #[inline]
     pub fn from_keypair_bytes(bytes: &[u8; 64]) -> Result<SigningKey, SignatureError> {
         let (secret_key, verifying_key) = bytes.split_at(SECRET_KEY_LENGTH);
@@ -481,15 +483,43 @@ impl SigningKey {
         self.verifying_key.verify_strict(message, signature)
     }
 
-    /// Convert this signing key into a byte representation of a(n) (unreduced) Curve25519 scalar.
+    /// Convert this signing key into a byte representation of an unreduced, unclamped Curve25519
+    /// scalar. This is NOT the same thing as `self.to_scalar().to_bytes()`, since `to_scalar()`
+    /// performs a clamping step, which changes the value of the resulting scalar.
     ///
     /// This can be used for performing X25519 Diffie-Hellman using Ed25519 keys. The bytes output
-    /// by this function are a valid secret key for the X25519 public key given by
-    /// `self.verifying_key().to_montgomery()`.
+    /// by this function are a valid corresponding [`StaticSecret`](https://docs.rs/x25519-dalek/2.0.0/x25519_dalek/struct.StaticSecret.html#impl-From%3C%5Bu8;+32%5D%3E-for-StaticSecret)
+    /// for the X25519 public key given by `self.verifying_key().to_montgomery()`.
     ///
     /// # Note
     ///
-    /// We do NOT recommend this usage of a signing/verifying key. Signing keys are usually
+    /// We do NOT recommend using a signing/verifying key for encryption. Signing keys are usually
+    /// long-term keys, while keys used for key exchange should rather be ephemeral. If you can
+    /// help it, use a separate key for encryption.
+    ///
+    /// For more information on the security of systems which use the same keys for both signing
+    /// and Diffie-Hellman, see the paper
+    /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509).
+    pub fn to_scalar_bytes(&self) -> [u8; 32] {
+        // Per the spec, the ed25519 secret key sk is expanded to
+        //     (scalar_bytes, hash_prefix) = SHA-512(sk)
+        // where the two outputs are both 32 bytes. scalar_bytes is what we return. Its clamped and
+        // reduced form is what we use for signing (see impl ExpandedSecretKey)
+        let mut buf = [0u8; 32];
+        let scalar_and_hash_prefix = Sha512::default().chain_update(self.secret_key).finalize();
+        buf.copy_from_slice(&scalar_and_hash_prefix[..32]);
+        buf
+    }
+
+    /// Convert this signing key into a Curve25519 scalar. This is computed by clamping and
+    /// reducing the output of [`Self::to_scalar_bytes`].
+    ///
+    /// This can be used anywhere where a Curve25519 scalar is used as a private key, e.g., in
+    /// [`crypto_box`](https://docs.rs/crypto_box/0.9.1/crypto_box/struct.SecretKey.html#impl-From%3CScalar%3E-for-SecretKey).
+    ///
+    /// # Note
+    ///
+    /// We do NOT recommend using a signing/verifying key for encryption. Signing keys are usually
     /// long-term keys, while keys used for key exchange should rather be ephemeral. If you can
     /// help it, use a separate key for encryption.
     ///
@@ -497,6 +527,11 @@ impl SigningKey {
     /// and Diffie-Hellman, see the paper
     /// [On using the same key pair for Ed25519 and an X25519 based KEM](https://eprint.iacr.org/2021/509).
     pub fn to_scalar(&self) -> Scalar {
+        // Per the spec, the ed25519 secret key sk is expanded to
+        //     (scalar_bytes, hash_prefix) = SHA-512(sk)
+        // where the two outputs are both 32 bytes. To use for signing, scalar_bytes must be
+        // clamped and reduced (see ExpandedSecretKey::from_bytes). We return the clamped and
+        // reduced form.
         ExpandedSecretKey::from(&self.secret_key).scalar
     }
 }
@@ -504,6 +539,14 @@ impl SigningKey {
 impl AsRef<VerifyingKey> for SigningKey {
     fn as_ref(&self) -> &VerifyingKey {
         &self.verifying_key
+    }
+}
+
+impl Debug for SigningKey {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("SigningKey")
+            .field("verifying_key", &self.verifying_key)
+            .finish_non_exhaustive() // avoids printing `secret_key`
     }
 }
 
@@ -699,14 +742,11 @@ impl<'d> Deserialize<'d> for SigningKey {
         impl<'de> serde::de::Visitor<'de> for SigningKeyVisitor {
             type Value = SigningKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(formatter, concat!("An ed25519 signing (private) key"))
             }
 
-            fn visit_borrowed_bytes<E: serde::de::Error>(
-                self,
-                bytes: &'de [u8],
-            ) -> Result<Self::Value, E> {
+            fn visit_bytes<E: serde::de::Error>(self, bytes: &[u8]) -> Result<Self::Value, E> {
                 SigningKey::try_from(bytes).map_err(E::custom)
             }
 

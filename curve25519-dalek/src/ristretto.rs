@@ -364,7 +364,7 @@ impl TryFrom<&[u8]> for CompressedRistretto {
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
 impl Serialize for RistrettoPoint {
@@ -407,7 +407,7 @@ impl<'de> Deserialize<'de> for RistrettoPoint {
         impl<'de> Visitor<'de> for RistrettoPointVisitor {
             type Value = RistrettoPoint;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str("a valid point in Ristretto format")
             }
 
@@ -443,7 +443,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
         impl<'de> Visitor<'de> for CompressedRistrettoVisitor {
             type Value = CompressedRistretto;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 formatter.write_str("32 bytes of data")
             }
 
@@ -1155,13 +1155,13 @@ impl ConditionallySelectable for RistrettoPoint {
 // ------------------------------------------------------------------------
 
 impl Debug for CompressedRistretto {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "CompressedRistretto: {:?}", self.as_bytes())
     }
 }
 
 impl Debug for RistrettoPoint {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let coset = self.coset4();
         write!(
             f,
@@ -1277,8 +1277,6 @@ impl Zeroize for RistrettoPoint {
 mod test {
     use super::*;
     use crate::edwards::CompressedEdwardsY;
-    use crate::scalar::Scalar;
-    use crate::traits::Identity;
 
     use rand_core::OsRng;
 

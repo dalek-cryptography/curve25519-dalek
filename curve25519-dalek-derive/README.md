@@ -44,6 +44,7 @@ to build out more elaborate abstractions it starts to become painful to use.
     }
 
     struct AVX;
+    # #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     impl Backend for AVX {
         #[target_feature(enable = "avx")]
         unsafe fn sum(xs: &[u32]) -> u32 {
@@ -53,6 +54,7 @@ to build out more elaborate abstractions it starts to become painful to use.
     }
 
     struct AVX2;
+    # #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     impl Backend for AVX2 {
         #[target_feature(enable = "avx2")]
         unsafe fn sum(xs: &[u32]) -> u32 {
@@ -87,6 +89,7 @@ fn func() {}
 
 ```rust
 // It works, but must be `unsafe`
+# #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature(enable = "avx2")]
 unsafe fn func() {}
 ```
@@ -95,6 +98,7 @@ unsafe fn func() {}
 use curve25519_dalek_derive::unsafe_target_feature;
 
 // No `unsafe` on the function itself!
+# #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[unsafe_target_feature("avx2")]
 fn func() {}
 ```
@@ -119,6 +123,7 @@ use curve25519_dalek_derive::unsafe_target_feature;
 
 struct S;
 
+# #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[unsafe_target_feature("avx2")]
 impl core::ops::Add for S {
     type Output = S;
@@ -135,6 +140,7 @@ impl core::ops::Add for S {
 ```rust
 use curve25519_dalek_derive::unsafe_target_feature_specialize;
 
+# #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[unsafe_target_feature_specialize("sse2", "avx2", conditional("avx512ifma", nightly))]
 mod simd {
     #[for_target_feature("sse2")]
@@ -149,6 +155,7 @@ mod simd {
     pub fn func() { /* ... */ }
 }
 
+# #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 fn entry_point() {
     #[cfg(nightly)]
     if std::is_x86_feature_detected!("avx512ifma") {
@@ -179,8 +186,8 @@ fn entry_point() {
 
 Licensed under either of
 
-  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
-  * MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+  * Apache License, Version 2.0, [LICENSE-APACHE](LICENSE-APACHE)
+  * MIT license ([LICENSE-MIT](LICENSE-MIT))
 
 at your option.
 

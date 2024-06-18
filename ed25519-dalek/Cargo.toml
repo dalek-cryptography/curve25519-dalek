@@ -1,6 +1,6 @@
 [package]
 name = "ed25519-dalek"
-version = "2.0.0"
+version = "2.1.1"
 edition = "2021"
 authors = [
     "isis lovecruft <isis@patternsinthevoid.net>",
@@ -28,7 +28,7 @@ features = ["batch", "digest", "hazmat", "pem", "serde"]
 [dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
 ed25519 = { version = ">=2.2, <2.3", default-features = false }
-signature = { version = ">=2.0, <2.1", optional = true, default-features = false }
+signature = { version = ">=2.0, <2.3", optional = true, default-features = false }
 sha2 = { version = "0.10", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
@@ -40,6 +40,7 @@ zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
+x25519-dalek = { version = "2", path = "../x25519-dalek", default-features = false, features = ["static_secrets"] }
 blake2 = "0.10"
 sha3 = "0.10"
 hex = "0.4"

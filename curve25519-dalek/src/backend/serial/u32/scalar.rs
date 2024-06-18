@@ -24,7 +24,7 @@ use crate::constants;
 pub struct Scalar29(pub [u32; 9]);
 
 impl Debug for Scalar29 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar29: {:?}", &self.0[..])
     }
 }
@@ -185,6 +185,14 @@ impl Scalar29 {
 
     /// Compute `a - b` (mod l).
     pub fn sub(a: &Scalar29, b: &Scalar29) -> Scalar29 {
+        // Optimization barrier to prevent compiler from inserting branch instructions
+        // TODO(tarcieri): find a better home (or abstraction) for this
+        fn black_box(value: u32) -> u32 {
+            // SAFETY: `u32` is a simple integer `Copy` type and `value` lives on the stack so
+            // a pointer to it will be valid.
+            unsafe { core::ptr::read_volatile(&value) }
+        }
+
         let mut difference = Scalar29::ZERO;
         let mask = (1u32 << 29) - 1;
 
@@ -199,7 +207,7 @@ impl Scalar29 {
         let underflow_mask = ((borrow >> 31) ^ 1).wrapping_sub(1);
         let mut carry: u32 = 0;
         for i in 0..9 {
-            carry = (carry >> 29) + difference[i] + (constants::L[i] & underflow_mask);
+            carry = (carry >> 29) + difference[i] + (constants::L[i] & black_box(underflow_mask));
             difference[i] = carry & mask;
         }
 

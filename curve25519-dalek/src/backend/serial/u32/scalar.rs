@@ -12,6 +12,7 @@
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
+use subtle::BlackBox;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -185,30 +186,24 @@ impl Scalar29 {
 
     /// Compute `a - b` (mod l).
     pub fn sub(a: &Scalar29, b: &Scalar29) -> Scalar29 {
-        // Optimization barrier to prevent compiler from inserting branch instructions
-        // TODO(tarcieri): find a better home (or abstraction) for this
-        fn black_box(value: u32) -> u32 {
-            // SAFETY: `u32` is a simple integer `Copy` type and `value` lives on the stack so
-            // a pointer to it will be valid.
-            unsafe { core::ptr::read_volatile(&value) }
-        }
-
         let mut difference = Scalar29::ZERO;
-        let mask = (1u32 << 29) - 1;
+        let mask = BlackBox::new((1u32 << 29) - 1);
 
         // a - b
         let mut borrow: u32 = 0;
         for i in 0..9 {
             borrow = a[i].wrapping_sub(b[i] + (borrow >> 31));
-            difference[i] = borrow & mask;
+            difference[i] = borrow & mask.get();
         }
 
         // conditionally add l if the difference is negative
-        let underflow_mask = ((borrow >> 31) ^ 1).wrapping_sub(1);
+        let underflow_mask = BlackBox::new(((borrow >> 31) ^ 1).wrapping_sub(1));
         let mut carry: u32 = 0;
         for i in 0..9 {
-            carry = (carry >> 29) + difference[i] + (constants::L[i] & black_box(underflow_mask));
-            difference[i] = carry & mask;
+            // SECURITY: `BlackBox` prevents LLVM from inserting a `jns` conditional on x86(_64)
+            // which can be used to bypass this section when `underflow_mask` is zero.
+            carry = (carry >> 29) + difference[i] + (constants::L[i] & underflow_mask.get());
+            difference[i] = carry & mask.get();
         }
 
         difference

@@ -13,7 +13,7 @@
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
-use subtle::BlackBox;
+use subtle::{Choice, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -176,23 +176,22 @@ impl Scalar52 {
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> Scalar52 {
         let mut difference = Scalar52::ZERO;
-        let mask = BlackBox::new((1u64 << 52) - 1);
+        let mask = (1u64 << 52) - 1;
 
         // a - b
         let mut borrow: u64 = 0;
         for i in 0..5 {
             borrow = a[i].wrapping_sub(b[i] + (borrow >> 63));
-            difference[i] = borrow & mask.get();
+            difference[i] = borrow & mask;
         }
 
         // conditionally add l if the difference is negative
-        let underflow_mask = BlackBox::new(((borrow >> 63) ^ 1).wrapping_sub(1));
         let mut carry: u64 = 0;
         for i in 0..5 {
-            // SECURITY: `BlackBox` prevents LLVM from inserting a `jns` conditional on x86(_64)
-            // which can be used to bypass this section when `underflow_mask` is zero.
-            carry = (carry >> 52) + difference[i] + (constants::L[i] & underflow_mask.get());
-            difference[i] = carry & mask.get();
+            let underflow = Choice::from((borrow >> 63) as u8);
+            let addend = u64::conditional_select(&0, &constants::L[i], underflow);
+            carry = (carry >> 52) + difference[i] + addend;
+            difference[i] = carry & mask;
         }
 
         difference

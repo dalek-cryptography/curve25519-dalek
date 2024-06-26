@@ -1,10 +1,10 @@
 [workspace]
 members = [
-    "curve25519-dalek",
+    # "curve25519-dalek",
     "curve25519-elligator2",
-    "curve25519-dalek-derive",
-    "ed25519-dalek",
-    "x25519-dalek"
+    # "curve25519-dalek-derive",
+    # "ed25519-dalek",
+    # "x25519-dalek"
 ]
 resolver = "2"
 

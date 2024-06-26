@@ -1255,7 +1255,8 @@ impl EdwardsPoint {
     /// assert_eq!((P+Q).is_torsion_free(), false);
     /// ```
     pub fn is_torsion_free(&self) -> bool {
-        (self * constants::BASEPOINT_ORDER_PRIVATE).is_identity()
+        crate::backend::vartime_variable_base_mul(self, &constants::BASEPOINT_ORDER_PRIVATE)
+            .is_identity()
     }
 }
 

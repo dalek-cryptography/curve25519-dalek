@@ -4,17 +4,17 @@ on:
   push:
     branches: [ '**' ]
     paths:
-      - 'curve25519-dalek/**'
-      - '.github/workflows/curve25519-dalek.yml'
+      - 'curve25519-elligator2/**'
+      - '.github/workflows/curve25519-elligator2.yml'
   pull_request:
     branches: [ '**' ]
     paths:
-      - 'curve25519-dalek/**'
-      - '.github/workflows/curve25519-dalek.yml'
+      - 'curve25519-elligator2/**'
+      - '.github/workflows/curve25519-elligator2.yml'
 
 defaults:
   run:
-    working-directory: curve25519-dalek
+    working-directory: curve25519-elligator2
 
 env:
   CARGO_TERM_COLOR: always
@@ -35,7 +35,7 @@ jobs:
           # 64-bit target
           - target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
@@ -50,9 +50,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - crate: curve25519-dalek
+          - crate: curve25519-elligator2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
@@ -81,7 +81,7 @@ jobs:
           # 64-bit target
           - target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup target add ${{ matrix.target }}
       - run: ${{ matrix.deps }}
@@ -93,7 +93,7 @@ jobs:
     name: Test Build Script
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
@@ -104,7 +104,7 @@ jobs:
     name: Test simd backend (nightly)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@nightly
     - env:
         # This will:
@@ -119,7 +119,7 @@ jobs:
     name: Test simd backend (stable)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
     - env:
         # This will run AVX2-specific tests and run all of the normal tests
@@ -133,7 +133,7 @@ jobs:
     name: Current MSRV is 1.60.0
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     # Re-resolve Cargo.lock with minimal versions
     - uses: dtolnay/rust-toolchain@nightly
     - run: cargo update -Z minimal-versions

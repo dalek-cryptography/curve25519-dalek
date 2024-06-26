@@ -11,51 +11,51 @@ env:
   RUSTFLAGS: '-D warnings'
 
 jobs:
-  test-stable:
-    name: Test 32/64 bit stable
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          # 32-bit target
-          - target: i686-unknown-linux-gnu
-            deps: sudo apt update && sudo apt install gcc-multilib
-
-          # 64-bit target
-          - target: x86_64-unknown-linux-gnu
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@stable
-      - run: rustup target add ${{ matrix.target }}
-      - run: ${{ matrix.deps }}
-      - run: cargo test --target ${{ matrix.target }} --no-default-features
-      - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --all-features
-
-  test-nightly:
-    name: Test Nightly
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo test
-
-  bench:
-    name: Check that benchmarks compile
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dtolnay/rust-toolchain@stable
-    - name: Build u32 bench
-      env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
-      run: cargo build --benches
-    - name: Build u64 bench
-      env:
-        RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
-      run: cargo build --benches
-    - name: Build default (host native) bench
-      run: cargo build --benches
+  #   test-stable:
+  #     name: Test 32/64 bit stable
+  #     runs-on: ubuntu-latest
+  #     strategy:
+  #       matrix:
+  #         include:
+  #           # 32-bit target
+  #           - target: i686-unknown-linux-gnu
+  #             deps: sudo apt update && sudo apt install gcc-multilib
+  # 
+  #           # 64-bit target
+  #           - target: x86_64-unknown-linux-gnu
+  #     steps:
+  #       - uses: actions/checkout@v3
+  #       - uses: dtolnay/rust-toolchain@stable
+  #       - run: rustup target add ${{ matrix.target }}
+  #       - run: ${{ matrix.deps }}
+  #       - run: cargo test --target ${{ matrix.target }} --no-default-features
+  #       - run: cargo test --target ${{ matrix.target }}
+  #       - run: cargo test --target ${{ matrix.target }} --all-features
+  # 
+  #   test-nightly:
+  #     name: Test Nightly
+  #     runs-on: ubuntu-latest
+  #     steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: dtolnay/rust-toolchain@nightly
+  #     - run: cargo test
+  # 
+  #   bench:
+  #     name: Check that benchmarks compile
+  #     runs-on: ubuntu-latest
+  #     steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: dtolnay/rust-toolchain@stable
+  #     - name: Build u32 bench
+  #       env:
+  #         RUSTFLAGS: '--cfg curve25519_dalek_bits="32"'
+  #       run: cargo build --benches
+  #     - name: Build u64 bench
+  #       env:
+  #         RUSTFLAGS: '--cfg curve25519_dalek_bits="64"'
+  #       run: cargo build --benches
+  #     - name: Build default (host native) bench
+  #       run: cargo build --benches
 
   # Test no_std with serial (default)
   build-nostd-serial:
@@ -64,9 +64,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - crate: curve25519-dalek
-          - crate: ed25519-dalek
-          - crate: x25519-dalek
+          - crate: curve25519-elligator2
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
@@ -88,7 +86,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.73.0
       with:
         components: clippy
-    - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features
+    - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features -p curve25519-elligator2
 
   rustfmt:
     name: Check formatting
@@ -98,7 +96,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: rustfmt
-    - run: cargo fmt --all -- --check
+    - run: cargo fmt --all -p curve25519-elligator2 -- --check
 
   doc:
     name: Check docs
@@ -108,4 +106,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-      - run: cargo doc --all-features
+      - run: cargo doc --all-features -p curve25519-elligator2

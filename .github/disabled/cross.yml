@@ -32,11 +32,13 @@ jobs:
     # TODO: We only test x/ed/curve for cross as derive is platform specifics
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
       - run: ${{ matrix.deps }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
-      - run: cross test -p curve25519-elligator2 --release --target ${{ matrix.target }}
+      - run: cross test -p curve25519-dalek --release --target ${{ matrix.target }}
+      - run: cross test -p ed25519-dalek --release --target ${{ matrix.target }}
+      - run: cross test -p x25519-dalek --release --target ${{ matrix.target }}

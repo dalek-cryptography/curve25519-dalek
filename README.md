@@ -7,6 +7,13 @@
 
 # Dalek elliptic curve cryptography
 
+## THIS IS A FORK FOR CONVENIENCE
+
+This fork contains an implementation of `elligator2` that is awaiting potential
+inclusion in the mainstream curve25519-dalek crates. This crate exists for
+use in the interim period. 
+
+
 This repo contains pure-Rust crates for elliptic curve cryptography:
 
 |                 Crate                    |   Description  | Crates.io | Docs | CI                                                                                                                                                                                                                          |

@@ -27,7 +27,7 @@ rustdoc-args = [
     "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
     "--cfg", "docsrs",
 ]
-features = ["serde", "rand_core", "elligator2", "digest", "legacy_compatibility", "group-bits"]
+features = ["serde", "rand_core", "digest", "legacy_compatibility", "group-bits"]
 
 [dev-dependencies]
 sha2 = { version = "0.10", default-features = false }

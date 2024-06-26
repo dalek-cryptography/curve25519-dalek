@@ -103,8 +103,6 @@ use core::ops::{Mul, MulAssign};
 
 use cfg_if::cfg_if;
 
-#[cfg(feature = "elligator2")]
-use crate::elligator2::{map_fe_to_edwards, MASK_UNSET_BYTE};
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
 
@@ -590,6 +588,8 @@ impl EdwardsPoint {
     where
         D: Digest<OutputSize = U64> + Default,
     {
+        use crate::elligator2::Legacy;
+
         let mut hash = D::new();
         hash.update(bytes);
         let h = hash.finalize();
@@ -598,51 +598,15 @@ impl EdwardsPoint {
 
         let sign_bit = (res[31] & 0x80) >> 7;
 
-        let fe1 = MontgomeryPoint::map_to_point_unbounded(&res);
+        // rfc9380 should always result in a valid point since no field elements
+        // are invalid. so unwrap should be safe.
+        #[allow(clippy::unwrap_used)]
+        let fe1 = MontgomeryPoint::from_representative::<Legacy>(&res).unwrap();
         let E1_opt = fe1.to_edwards(sign_bit);
 
         E1_opt
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
-    }
-
-    #[cfg(feature = "elligator2")]
-    /// Perform the Elligator2 mapping to an [`EdwardsPoint`].
-    ///
-    /// Calculates a point on elliptic curve E (Curve25519) from an element of
-    /// the finite field F over which E is defined. See section 6.7.1 of the
-    /// RFC.
-    ///
-    /// The input u and output P are elements of the field F. Note that
-    /// the output P is a point on the edwards curve and as such it's byte
-    /// representation is distinguishable from uniform random.
-    ///
-    /// Input:
-    ///     * u -> an element of field F.
-    ///
-    /// Output:
-    ///     * P - a point on the Edwards elliptic curve.
-    ///
-    /// See <https://datatracker.ietf.org/doc/rfc9380/>
-    pub fn map_to_point(r: &[u8; 32]) -> EdwardsPoint {
-        let mut clamped = *r;
-        clamped[31] &= MASK_UNSET_BYTE;
-        let r_0 = FieldElement::from_bytes(&clamped);
-        let (x, y) = map_fe_to_edwards(&r_0);
-        Self::from_xy(&x, &y)
-    }
-
-    #[cfg(feature = "elligator2")]
-    fn from_xy(x: &FieldElement, y: &FieldElement) -> EdwardsPoint {
-        let z = FieldElement::ONE;
-        let t = x * y;
-
-        EdwardsPoint {
-            X: *x,
-            Y: *y,
-            Z: z,
-            T: t,
-        }
     }
 }
 

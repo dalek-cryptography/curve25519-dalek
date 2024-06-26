@@ -60,9 +60,6 @@ use crate::field::FieldElement;
 use crate::scalar::{clamp_integer, Scalar};
 use crate::traits::Identity;
 
-#[cfg(feature = "elligator2")]
-use crate::elligator2;
-
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
@@ -245,64 +242,6 @@ impl MontgomeryPoint {
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
-    }
-
-    #[cfg(feature = "elligator2")]
-    /// Perform the Elligator2 mapping to a [`MontgomeryPoint`].
-    ///
-    /// Calculates a point on elliptic curve E (Curve25519) from an element of
-    /// the finite field F over which E is defined. See section 6.7.1 of the
-    /// RFC. The unbounded variant does NOT assume that input values are always
-    /// going to be the least-square-root representation of the field element.
-    /// This is divergent from both the elligator2 specification and RFC9380,
-    /// however, some implementations miss this detail. This allows us to be
-    /// compatible with those alternate implementations if necessary, since the
-    /// resulting point will be different for inputs with either of the
-    /// high-order two bits set.
-    ///
-    /// The input u and output P are elements of the field F. Note that
-    /// the output P is a point on the Montgomery curve and as such it's byte
-    /// representation is distinguishable from uniform random.
-    ///
-    /// Input:
-    ///     * u -> an element of field F.
-    ///
-    /// Output:
-    ///     * P - a point on the Montgomery elliptic curve.
-    ///
-    /// See <https://datatracker.ietf.org/doc/rfc9380/>
-    pub fn map_to_point_unbounded(r: &[u8; 32]) -> MontgomeryPoint {
-        let r_0 = FieldElement::from_bytes(r);
-        let (p, _) = elligator2::map_fe_to_montgomery(&r_0);
-        MontgomeryPoint(p.as_bytes())
-    }
-
-    #[cfg(feature = "elligator2")]
-    /// Perform the Elligator2 mapping to a [`MontgomeryPoint`].
-    ///
-    /// Calculates a point on elliptic curve E (Curve25519) from an element of
-    /// the finite field F over which E is defined. See section 6.7.1 of the
-    /// RFC. It is assumed that input values are always going to be the
-    /// least-square-root representation of the field element in allignment
-    /// with both the elligator2 specification and RFC9380.
-    ///
-    /// The input u and output P are elements of the field F. Note that
-    /// the output P is a point on the Montgomery curve and as such it's byte
-    /// representation is distinguishable from uniform random.
-    ///
-    /// Input:
-    ///     * u -> an element of field F.
-    ///
-    /// Output:
-    ///     * P - a point on the Montgomery elliptic curve.
-    ///
-    /// See <https://datatracker.ietf.org/doc/rfc9380/>
-    pub fn map_to_point(r: &[u8; 32]) -> MontgomeryPoint {
-        let mut clamped = *r;
-        clamped[31] &= elligator2::MASK_UNSET_BYTE;
-        let r_0 = FieldElement::from_bytes(&clamped);
-        let (p, _) = elligator2::map_fe_to_montgomery(&r_0);
-        MontgomeryPoint(p.as_bytes())
     }
 }
 
@@ -664,7 +603,9 @@ mod test {
         }
     }
 
+    #[cfg(test)]
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "elligator2")]
     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
         0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
@@ -673,7 +614,7 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
-    #[cfg(feature = "elligator2")]
+    #[cfg(feature = "digest")]
     fn montgomery_elligator_correct() {
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");

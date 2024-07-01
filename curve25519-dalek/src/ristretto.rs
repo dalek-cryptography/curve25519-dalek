@@ -1869,4 +1869,148 @@ mod test {
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());
     }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_mixed_multiscalar_empty() {
+        let mut rng = rand::thread_rng();
+
+        let n_static = 16;
+        let n_dynamic = 8;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use zero scalars
+        let static_scalars = Vec::new();
+
+        let dynamic_points = (0..n_dynamic)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..n_dynamic)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+        for i in 0..n_dynamic {
+            result_manual += dynamic_points[i] * dynamic_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_mixed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let n_static = 16;
+        let n_dynamic = 8;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use one fewer scalars
+        let static_scalars = (0..n_static - 1)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_points = (0..n_dynamic)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..n_dynamic)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+        for i in 0..n_dynamic {
+            result_manual += dynamic_points[i] * dynamic_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let n_static = 16;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use one fewer scalars
+        let static_scalars = (0..n_static - 1)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_multiscalar_empty() {
+        let mut rng = rand::thread_rng();
+
+        let n_static = 16;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use zero scalars
+        let static_scalars = Vec::new();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
 }

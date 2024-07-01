@@ -83,7 +83,7 @@ pub mod spec {
 
             let sp = self.static_lookup_tables.len();
             let dp = dynamic_lookup_tables.len();
-            assert_eq!(sp, static_nafs.len());
+            assert!(sp >= static_nafs.len());
             assert_eq!(dp, dynamic_nafs.len());
 
             // We could save some doublings by looking for the highest
@@ -107,7 +107,7 @@ pub mod spec {
                 }
 
                 #[allow(clippy::needless_range_loop)]
-                for i in 0..sp {
+                for i in 0..static_nafs.len() {
                     let t_ij = static_nafs[i][j];
                     match t_ij.cmp(&0) {
                         Ordering::Greater => {

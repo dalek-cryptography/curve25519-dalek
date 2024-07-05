@@ -23,18 +23,12 @@ use crate::constants;
 /// The `Scalar52` struct represents an element in
 /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct Scalar52(pub [u64; 5]);
 
 impl Debug for Scalar52 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar52 {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

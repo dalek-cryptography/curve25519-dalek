@@ -192,6 +192,7 @@ cfg_if! {
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Hash)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -549,13 +550,6 @@ impl From<u128> for Scalar {
         let x_bytes = x.to_le_bytes();
         s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
         Scalar { bytes: s_bytes }
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
     }
 }
 

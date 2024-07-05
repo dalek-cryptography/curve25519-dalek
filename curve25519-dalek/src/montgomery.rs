@@ -72,6 +72,7 @@ use zeroize::Zeroize;
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
@@ -107,13 +108,6 @@ impl Identity for MontgomeryPoint {
     /// Return the group identity element, which has order 4.
     fn identity() -> MontgomeryPoint {
         MontgomeryPoint([0u8; 32])
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for MontgomeryPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

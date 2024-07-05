@@ -53,7 +53,7 @@ rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.6.0", default-features = false }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
-zeroize = { version = "1", default-features = false, optional = true }
+zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"

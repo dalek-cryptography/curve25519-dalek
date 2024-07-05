@@ -22,18 +22,12 @@ use crate::constants;
 /// The `Scalar29` struct represents an element in \\(\mathbb{Z} / \ell\mathbb{Z}\\) as 9 29-bit
 /// limbs
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct Scalar29(pub [u32; 9]);
 
 impl Debug for Scalar29 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar29: {:?}", &self.0[..])
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar29 {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

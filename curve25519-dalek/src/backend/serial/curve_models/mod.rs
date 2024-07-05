@@ -180,20 +180,12 @@ pub struct CompletedPoint {
 /// can be found in the module-level documentation.
 // Safe to derive Eq because affine coordinates.
 #[derive(Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[allow(missing_docs)]
 pub struct AffineNielsPoint {
     pub y_plus_x: FieldElement,
     pub y_minus_x: FieldElement,
     pub xy2d: FieldElement,
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for AffineNielsPoint {
-    fn zeroize(&mut self) {
-        self.y_plus_x.zeroize();
-        self.y_minus_x.zeroize();
-        self.xy2d.zeroize();
-    }
 }
 
 /// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
@@ -202,22 +194,13 @@ impl Zeroize for AffineNielsPoint {
 /// More details on the relationships between the different curve models
 /// can be found in the module-level documentation.
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[allow(missing_docs)]
 pub struct ProjectiveNielsPoint {
     pub Y_plus_X: FieldElement,
     pub Y_minus_X: FieldElement,
     pub Z: FieldElement,
     pub T2d: FieldElement,
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for ProjectiveNielsPoint {
-    fn zeroize(&mut self) {
-        self.Y_plus_X.zeroize();
-        self.Y_minus_X.zeroize();
-        self.Z.zeroize();
-        self.T2d.zeroize();
-    }
 }
 
 // ------------------------------------------------------------------------

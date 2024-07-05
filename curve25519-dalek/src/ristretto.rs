@@ -216,6 +216,7 @@ use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMul
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct CompressedRistretto(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedRistretto {
@@ -482,6 +483,7 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
 /// `EdwardsPoint`s.
 ///
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
@@ -1248,24 +1250,6 @@ impl CofactorGroup for RistrettoPoint {
 
     fn is_torsion_free(&self) -> Choice {
         Choice::from(1)
-    }
-}
-
-// ------------------------------------------------------------------------
-// Zeroize traits
-// ------------------------------------------------------------------------
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for CompressedRistretto {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for RistrettoPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

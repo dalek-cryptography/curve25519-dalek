@@ -51,18 +51,12 @@ use zeroize::Zeroize;
 /// The backend-specific type `FieldElement2625` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct FieldElement2625(pub(crate) [u32; 10]);
 
 impl Debug for FieldElement2625 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "FieldElement2625({:?})", &self.0[..])
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for FieldElement2625 {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
     }
 }
 

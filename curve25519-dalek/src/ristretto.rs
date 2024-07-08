@@ -76,9 +76,9 @@
 //! coordinates without requiring an inversion, so it is much faster.
 //!
 //! The `RistrettoPoint` struct implements the
-//! `subtle::ConstantTimeEq` trait for constant-time equality
-//! checking, and the Rust `Eq` trait for variable-time equality
-//! checking.
+//! [`subtle::ConstantTimeEq`] trait for constant-time equality
+//! checking, and also uses this to ensure `Eq` equality checking
+//! runs in constant time.
 //!
 //! ## Scalars
 //!

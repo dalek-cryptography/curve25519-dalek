@@ -143,6 +143,13 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
+#[cfg(feature = "group")]
+use elliptic_curve::{
+    bigint::{ArrayEncoding, Encoding, U256, U512},
+    ops::{Reduce, Invert},
+    scalar::{FromUintUnchecked, IsHigh},
+};
+
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -262,6 +269,15 @@ impl Scalar {
         let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
         let candidate = Scalar { bytes };
         CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
+    }
+
+    /// Converts from an integer representation in little endian into
+    /// its (congruent) `Scalar` representation.
+    /// Incorrectly using this can lead to mathematically invalid results,
+    /// which can lead to potential security vulnerabilities.
+    /// Use only if you know the input is congruent to a scalar.
+    pub const fn from_canonical_bytes_unchecked(bytes: [u8; 32]) -> Scalar {
+        Scalar { bytes }
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
@@ -1340,6 +1356,56 @@ impl PrimeFieldBits for Scalar {
 impl FromUniformBytes<64> for Scalar {
     fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
         Scalar::from_bytes_mod_order_wide(bytes)
+    }
+}
+
+#[cfg(feature = "group")]
+impl Reduce<U256> for Scalar {
+    type Bytes = [u8; 32];
+
+    fn reduce(n: U256) -> Self {
+        Scalar::from_bytes_mod_order(n.to_le_bytes())
+    }
+
+    fn reduce_bytes(bytes: &Self::Bytes) -> Self {
+        Scalar::from_bytes_mod_order(*bytes)
+    }
+}
+
+#[cfg(feature = "group")]
+impl Reduce<U512> for Scalar {
+    type Bytes = [u8; 64];
+
+    fn reduce(n: U512) -> Self {
+        Scalar::from_bytes_mod_order_wide(&n.to_le_bytes())
+    }
+
+    fn reduce_bytes(bytes: &Self::Bytes) -> Self {
+        Scalar::from_bytes_mod_order_wide(bytes)
+    }
+}
+
+#[cfg(feature = "group")]
+impl IsHigh for Scalar {
+    fn is_high(&self) -> Choice {
+        self.is_canonical()
+    }
+}
+
+#[cfg(feature = "group")]
+impl Invert for Scalar {
+    type Output = Self;
+    fn invert(&self) -> Self::Output {
+        self.invert()
+    }
+}
+
+#[cfg(feature = "group")]
+impl FromUintUnchecked for Scalar {
+    type Uint = U256;
+
+    fn from_uint_unchecked(n: Self::Uint) -> Self {
+        Scalar::from_bytes_mod_order(n.to_le_bytes())
     }
 }
 

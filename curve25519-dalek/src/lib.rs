@@ -42,8 +42,6 @@
     unused_lifetimes,
     unused_qualifications
 )]
-// Requires MSRV 1.77 as it does not allow build.rs gating
-#![allow(unexpected_cfgs)]
 
 //------------------------------------------------------------------------
 // External dependencies:

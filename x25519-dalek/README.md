@@ -31,18 +31,20 @@ the rest of the afternoon nomming some yummy pie!
 First, Alice uses `EphemeralSecret::random()` and then
 `PublicKey::from()` to produce her secret and public keys:
 
-```ignore
+```rust
+use rand_core::OsRng;
 use x25519_dalek::{EphemeralSecret, PublicKey};
 
-let alice_secret = EphemeralSecret::random();
+let alice_secret = EphemeralSecret::random_from_rng();
 let alice_public = PublicKey::from(&alice_secret);
 ```
 
 Bob does the same:
 
-```ignore
+```rust
+# use rand_core::OsRng;
 # use x25519_dalek::{EphemeralSecret, PublicKey};
-let bob_secret = EphemeralSecret::random();
+let bob_secret = EphemeralSecret::random_from_rng(OsRng);
 let bob_public = PublicKey::from(&bob_secret);
 ```
 

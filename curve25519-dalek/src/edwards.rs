@@ -104,7 +104,7 @@ use core::ops::{Mul, MulAssign};
 use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
-use digest::{generic_array::typenum::U64, Digest};
+use digest::{array::typenum::U64, Digest};
 
 #[cfg(feature = "group")]
 use {

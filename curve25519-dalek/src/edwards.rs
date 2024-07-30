@@ -1335,7 +1335,7 @@ impl GroupEncoding for EdwardsPoint {
 /// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
 /// guaranteed to be in the prime-order subgroup.
 #[cfg(feature = "group")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SubgroupPoint(EdwardsPoint);
 
 #[cfg(feature = "group")]
@@ -1509,6 +1509,20 @@ impl MulAssign<&Scalar> for SubgroupPoint {
 
 #[cfg(feature = "group")]
 define_mul_assign_variants!(LHS = SubgroupPoint, RHS = Scalar);
+
+#[cfg(feature = "group")]
+impl ConstantTimeEq for SubgroupPoint {
+    fn ct_eq(&self, other: &SubgroupPoint) -> Choice {
+        self.0.ct_eq(&other.0)
+    }
+}
+
+#[cfg(feature = "group")]
+impl ConditionallySelectable for SubgroupPoint {
+    fn conditional_select(a: &SubgroupPoint, b: &SubgroupPoint, choice: Choice) -> SubgroupPoint {
+        SubgroupPoint(EdwardsPoint::conditional_select(&a.0, &b.0, choice))
+    }
+}
 
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {

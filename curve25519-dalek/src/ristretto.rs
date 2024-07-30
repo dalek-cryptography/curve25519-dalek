@@ -1007,7 +1007,7 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 }
 
 /// Precomputation for variable-time multiscalar multiplication with `RistrettoPoint`s.
-/// 
+///
 /// Note that for large numbers of `RistrettoPoint`s, this functionality may be less
 /// efficient than the corresponding `VartimeMultiscalarMul` implementation.
 // This wraps the inner implementation in a facade type so that we can

@@ -19,8 +19,8 @@
 //! ## Equality Testing
 //!
 //! The `EdwardsPoint` struct implements the [`subtle::ConstantTimeEq`]
-//! trait for constant-time equality checking, and the Rust `Eq` trait
-//! for variable-time equality checking.
+//! trait for constant-time equality checking, and also uses this to
+//! ensure `Eq` equality checking runs in constant time.
 //!
 //! ## Cofactor-related functions
 //!
@@ -438,7 +438,7 @@ impl Zeroize for CompressedEdwardsY {
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for EdwardsPoint {
-    /// Reset this `CompressedEdwardsPoint` to the identity element.
+    /// Reset this `EdwardsPoint` to the identity element.
     fn zeroize(&mut self) {
         self.X.zeroize();
         self.Y = FieldElement::ONE;

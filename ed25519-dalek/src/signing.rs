@@ -774,7 +774,7 @@ impl<'d> Deserialize<'d> for SigningKey {
                     ));
                 }
 
-                SigningKey::try_from(bytes).map_err(serde::de::Error::custom)
+                Ok(SigningKey::from(bytes))
             }
         }
 

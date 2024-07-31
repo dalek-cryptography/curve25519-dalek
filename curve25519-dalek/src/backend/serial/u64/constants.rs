@@ -98,11 +98,13 @@ pub(crate) const SQRT_M1: FieldElement51 = FieldElement51::from_limbs([
 pub(crate) const APLUS2_OVER_FOUR: FieldElement51 =
     FieldElement51::from_limbs([121666, 0, 0, 0, 0]);
 
+#[cfg(feature = "elligator2")]
 /// `MONTGOMERY_A` is equal to 486662, which is a constant of the curve equation
 /// for Curve25519 in its Montgomery form. (This is used internally within the
 /// Elligator map.)
 pub(crate) const MONTGOMERY_A: FieldElement51 = FieldElement51::from_limbs([486662, 0, 0, 0, 0]);
 
+#[cfg(feature = "elligator2")]
 /// `MONTGOMERY_A_NEG` is equal to -486662. (This is used internally within the
 /// Elligator map.)
 pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([

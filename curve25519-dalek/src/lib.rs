@@ -57,6 +57,9 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
+#[cfg(all(target_os = "zkvm", target_vendor = "succinct"))]
+extern crate sp1_lib;
+
 #[cfg(feature = "digest")]
 pub use digest;
 

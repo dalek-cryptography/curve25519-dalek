@@ -62,6 +62,10 @@ cpufeatures = "0.2.6"
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = { version = "0.2.1", default-features = false }
 
+[target.'cfg(all(target_os = "zkvm", target_vendor = "succinct"))'.dependencies]
+sp1-lib = { git = "https://github.com/succinctlabs/sp1.git", branch = "ratan/add-ed-decompress-test" }
+anyhow = "1.0"
+
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]

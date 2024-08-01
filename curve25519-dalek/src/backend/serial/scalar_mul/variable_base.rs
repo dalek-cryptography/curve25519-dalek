@@ -1,10 +1,12 @@
 #![allow(non_snake_case)]
 
-use crate::backend::serial::curve_models::ProjectiveNielsPoint;
+use core::cmp::Ordering;
+
+use crate::backend::serial::curve_models::{ProjectiveNielsPoint, ProjectivePoint};
 use crate::edwards::EdwardsPoint;
 use crate::scalar::Scalar;
 use crate::traits::Identity;
-use crate::window::LookupTable;
+use crate::window::{LookupTable, NafLookupTable5};
 
 /// Perform constant-time, variable-base scalar multiplication.
 #[rustfmt::skip] // keep alignment of explanatory comments
@@ -45,4 +47,40 @@ pub(crate) fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
         // Now tmp1 = s_i*P + 16*(prev) in P1xP1 coords
     }
     tmp1.as_extended()
+}
+
+/// Perform variable-time, variable-base scalar multiplication.
+pub fn vartime_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+    let naf = scalar.non_adjacent_form(5);
+    let table = NafLookupTable5::<ProjectiveNielsPoint>::from(point);
+
+    // Find starting index
+    let mut i: usize = 255;
+    for j in (0..256).rev() {
+        i = j;
+        if naf[i] != 0 {
+            break;
+        }
+    }
+
+    let mut r = ProjectivePoint::identity();
+
+    loop {
+        let mut t = r.double();
+
+        match naf[i].cmp(&0) {
+            Ordering::Greater => t = &t.as_extended() + &table.select(naf[i] as usize),
+            Ordering::Less => t = &t.as_extended() - &table.select(-naf[i] as usize),
+            Ordering::Equal => {}
+        }
+
+        r = t.as_projective();
+
+        if i == 0 {
+            break;
+        }
+        i -= 1;
+    }
+
+    r.as_extended()
 }

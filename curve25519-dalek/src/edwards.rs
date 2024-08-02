@@ -1698,7 +1698,6 @@ impl GroupEncoding for SubgroupPoint {
 #[cfg(feature = "group")]
 impl PrimeGroup for SubgroupPoint {}
 
-/// Ristretto has a cofactor of 1.
 #[cfg(feature = "group")]
 impl CofactorGroup for EdwardsPoint {
     type Subgroup = SubgroupPoint;

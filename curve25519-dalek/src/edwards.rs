@@ -161,12 +161,20 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 ///
 /// The first 255 bits of a `CompressedEdwardsY` represent the
 /// \\(y\\)-coordinate.  The high bit of the 32nd byte gives the sign of \\(x\\).
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[allow(clippy::derived_hash_with_manual_eq)]
+#[derive(Copy, Clone, Hash)]
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedEdwardsY {
     fn ct_eq(&self, other: &CompressedEdwardsY) -> Choice {
         self.as_bytes().ct_eq(other.as_bytes())
+    }
+}
+
+impl Eq for CompressedEdwardsY {}
+impl PartialEq for CompressedEdwardsY {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
     }
 }
 

@@ -17,4 +17,4 @@ pub(crate) mod constants;
 
 pub(crate) use self::edwards::{CachedPoint, ExtendedPoint};
 
-mod packed_simd;
+pub mod packed_simd;

@@ -428,9 +428,30 @@ impl i32x4 {
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(transparent)]
-pub struct u64x4(pub core::arch::aarch64::uint64x2x2_t);
+pub struct u64x2x2(pub core::arch::aarch64::uint64x2x2_t);
 
-impl u64x4 {
+impl Add for u64x2x2 {
+    type Output = Self;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self {
+        Self(core::arch::aarch64::uint64x2x2_t(
+                (u64x2::from(self.0.0) + u64x2::from(rhs.0.0)).into(), 
+                (u64x2::from(self.0.1) + u64x2::from(rhs.0.1)).into()))
+    }
+}
+
+impl BitAnd for u64x2x2 {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(core::arch::aarch64::uint64x2x2_t(
+                (u64x2::from(self.0.0) & u64x2::from(rhs.0.0)).into(), 
+                (u64x2::from(self.0.1) & u64x2::from(rhs.0.1)).into()))    
+    }
+}
+
+impl u64x2x2 {
     #[inline]
     pub fn new(x0: u64x2, x1: u64x2) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(x0.0, x1.0))
@@ -458,16 +479,13 @@ impl u64x4 {
                 u64x2::from(self.0.0).shl::<N>().into(), 
                 u64x2::from(self.0.1).shl::<N>().into()))
     }
-}
-
-impl Add for u64x4 {
-    type Output = Self;
 
     #[inline]
-    fn add(self, rhs: Self) -> Self {
+    pub fn shr<const N: i32>(self) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(
-                (u64x2::from(self.0.0) + u64x2::from(rhs.0.0)).into(), 
-                (u64x2::from(self.0.1) + u64x2::from(rhs.0.1)).into()))
+                u64x2::from(self.0.0).shr::<N>().into(), 
+                u64x2::from(self.0.1).shr::<N>().into()))
     }
 
 }
+

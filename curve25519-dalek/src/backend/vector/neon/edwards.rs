@@ -29,6 +29,7 @@
 use core::convert::From;
 use core::ops::{Add, Neg, Sub};
 
+use curve25519_dalek_derive::unsafe_target_feature;
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
@@ -50,12 +51,14 @@ use super::field::{FieldElement2625x4, Lanes, Shuffle};
 #[derive(Copy, Clone, Debug)]
 pub struct ExtendedPoint(pub(super) FieldElement2625x4);
 
+#[unsafe_target_feature("neon")]
 impl From<edwards::EdwardsPoint> for ExtendedPoint {
     fn from(P: edwards::EdwardsPoint) -> ExtendedPoint {
         ExtendedPoint(FieldElement2625x4::new(&P.X, &P.Y, &P.Z, &P.T))
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl From<ExtendedPoint> for edwards::EdwardsPoint {
     fn from(P: ExtendedPoint) -> edwards::EdwardsPoint {
         let tmp = P.0.split();
@@ -68,6 +71,7 @@ impl From<ExtendedPoint> for edwards::EdwardsPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl ConditionallySelectable for ExtendedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         ExtendedPoint(FieldElement2625x4::conditional_select(&a.0, &b.0, choice))
@@ -78,18 +82,21 @@ impl ConditionallySelectable for ExtendedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl Default for ExtendedPoint {
     fn default() -> ExtendedPoint {
         ExtendedPoint::identity()
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl Identity for ExtendedPoint {
     fn identity() -> ExtendedPoint {
         constants::EXTENDEDPOINT_IDENTITY
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl ExtendedPoint {
     /// Compute the double of this point.
     pub fn double(&self) -> ExtendedPoint {
@@ -175,6 +182,7 @@ impl ExtendedPoint {
 #[derive(Copy, Clone, Debug)]
 pub struct CachedPoint(pub(super) FieldElement2625x4);
 
+#[unsafe_target_feature("neon")]
 impl From<ExtendedPoint> for CachedPoint {
     fn from(P: ExtendedPoint) -> CachedPoint {
         let mut x = P.0;
@@ -193,18 +201,21 @@ impl From<ExtendedPoint> for CachedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl Default for CachedPoint {
     fn default() -> CachedPoint {
         CachedPoint::identity()
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl Identity for CachedPoint {
     fn identity() -> CachedPoint {
         constants::CACHEDPOINT_IDENTITY
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl ConditionallySelectable for CachedPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         CachedPoint(FieldElement2625x4::conditional_select(&a.0, &b.0, choice))
@@ -215,6 +226,7 @@ impl ConditionallySelectable for CachedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a> Neg for &'a CachedPoint {
     type Output = CachedPoint;
     /// Lazily negate the point.
@@ -229,6 +241,7 @@ impl<'a> Neg for &'a CachedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -266,6 +279,7 @@ impl<'a, 'b> Add<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     type Output = ExtendedPoint;
 
@@ -279,6 +293,7 @@ impl<'a, 'b> Sub<&'b CachedPoint> for &'a ExtendedPoint {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
     fn from(point: &'a edwards::EdwardsPoint) -> Self {
         let P = ExtendedPoint::from(*point);
@@ -290,6 +305,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for LookupTable<CachedPoint> {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
     fn from(point: &'a edwards::EdwardsPoint) -> Self {
         let A = ExtendedPoint::from(*point);
@@ -303,6 +319,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable5<CachedPoint> {
     }
 }
 
+#[unsafe_target_feature("neon")]
 impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
     fn from(point: &'a edwards::EdwardsPoint) -> Self {
         let A = ExtendedPoint::from(*point);

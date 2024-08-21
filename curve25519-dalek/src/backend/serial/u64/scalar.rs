@@ -13,6 +13,7 @@
 
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
+use subtle::{Choice, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -25,7 +26,7 @@ use crate::constants;
 pub struct Scalar52(pub [u64; 5]);
 
 impl Debug for Scalar52 {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar52: {:?}", &self.0[..])
     }
 }
@@ -185,10 +186,11 @@ impl Scalar52 {
         }
 
         // conditionally add l if the difference is negative
-        let underflow_mask = ((borrow >> 63) ^ 1).wrapping_sub(1);
         let mut carry: u64 = 0;
         for i in 0..5 {
-            carry = (carry >> 52) + difference[i] + (constants::L[i] & underflow_mask);
+            let underflow = Choice::from((borrow >> 63) as u8);
+            let addend = u64::conditional_select(&0, &constants::L[i], underflow);
+            carry = (carry >> 52) + difference[i] + addend;
             difference[i] = carry & mask;
         }
 

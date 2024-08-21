@@ -35,7 +35,6 @@
 
 #![allow(non_snake_case)]
 
-use core::convert::From;
 use core::ops::{Add, Neg, Sub};
 
 use subtle::Choice;

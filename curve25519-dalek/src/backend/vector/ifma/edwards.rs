@@ -249,7 +249,7 @@ impl<'a> From<&'a edwards::EdwardsPoint> for NafLookupTable8<CachedPoint> {
     }
 }
 
-#[cfg(target_feature = "avx512ifma,avx512vl")]
+#[cfg(all(target_feature = "avx512ifma", target_feature = "avx512vl"))]
 #[cfg(test)]
 mod test {
     use super::*;

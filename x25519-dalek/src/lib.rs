@@ -15,7 +15,6 @@
 // README.md as the crate documentation.
 
 #![no_std]
-#![cfg_attr(feature = "bench", feature(test))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 #![deny(missing_docs)]

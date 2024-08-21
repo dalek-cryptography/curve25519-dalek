@@ -9,7 +9,6 @@
 
 //! ed25519 public keys.
 
-use core::convert::TryFrom;
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
@@ -643,7 +642,7 @@ impl<'d> Deserialize<'d> for VerifyingKey {
         impl<'de> serde::de::Visitor<'de> for VerifyingKeyVisitor {
             type Value = VerifyingKey;
 
-            fn expecting(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
                 write!(formatter, concat!("An ed25519 verifying (public) key"))
             }
 

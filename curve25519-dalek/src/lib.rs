@@ -22,6 +22,7 @@
     all(curve25519_dalek_backend = "simd", nightly),
     feature(avx512_target_feature)
 )]
+#![cfg_attr(all(nightly, target_arch = "aarch64"), feature(portable_simd))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 //------------------------------------------------------------------------

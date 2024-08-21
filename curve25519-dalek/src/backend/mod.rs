@@ -44,16 +44,22 @@ pub mod vector;
 
 #[derive(Copy, Clone)]
 enum BackendKind {
-    #[cfg(curve25519_dalek_backend = "simd")]
+    #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
     Avx2,
-    #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
     Avx512,
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+    Neon,
     Serial,
 }
 
 #[inline]
 fn get_selected_backend() -> BackendKind {
-    #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+    {
+        return BackendKind::Neon;
+    }
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
     {
         cpufeatures::new!(cpuid_avx512, "avx512ifma", "avx512vl");
         let token_avx512: cpuid_avx512::InitToken = cpuid_avx512::init();
@@ -62,7 +68,7 @@ fn get_selected_backend() -> BackendKind {
         }
     }
 
-    #[cfg(curve25519_dalek_backend = "simd")]
+    #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
     {
         cpufeatures::new!(cpuid_avx2, "avx2");
         let token_avx2: cpuid_avx2::InitToken = cpuid_avx2::init();
@@ -85,12 +91,15 @@ where
     use crate::traits::VartimeMultiscalarMul;
 
     match get_selected_backend() {
-        #[cfg(curve25519_dalek_backend = "simd")]
+        #[cfg(all(curve25519_dalek_backend = "simd", target_arch="x86_64"))]
         BackendKind::Avx2 =>
             vector::scalar_mul::pippenger::spec_avx2::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch="x86_64"))]
         BackendKind::Avx512 =>
             vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch="aarch64"))]
+        BackendKind::Neon =>
+            vector::scalar_mul::pippenger::spec_neon::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
         BackendKind::Serial =>
             serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
     }
@@ -98,12 +107,14 @@ where
 
 #[cfg(feature = "alloc")]
 pub(crate) enum VartimePrecomputedStraus {
-    #[cfg(curve25519_dalek_backend = "simd")]
+    #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
     Avx2(vector::scalar_mul::precomputed_straus::spec_avx2::VartimePrecomputedStraus),
-    #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
     Avx512ifma(
         vector::scalar_mul::precomputed_straus::spec_avx512ifma_avx512vl::VartimePrecomputedStraus,
     ),
+    #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+    Neon(vector::scalar_mul::precomputed_straus::spec_neon::VartimePrecomputedStraus),
     Scalar(serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus),
 }
 
@@ -117,12 +128,15 @@ impl VartimePrecomputedStraus {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
         match get_selected_backend() {
-            #[cfg(curve25519_dalek_backend = "simd")]
+            #[cfg(all(curve25519_dalek_backend = "simd", target_arch="x86_64"))]
             BackendKind::Avx2 =>
                 VartimePrecomputedStraus::Avx2(vector::scalar_mul::precomputed_straus::spec_avx2::VartimePrecomputedStraus::new(static_points)),
-            #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch="x86_64"))]
             BackendKind::Avx512 =>
                 VartimePrecomputedStraus::Avx512ifma(vector::scalar_mul::precomputed_straus::spec_avx512ifma_avx512vl::VartimePrecomputedStraus::new(static_points)),
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch="aarch64"))]
+            BackendKind::Neon =>
+                VartimePrecomputedStraus::Neon(vector::scalar_mul::precomputed_straus::spec_neon::VartimePrecomputedStraus::new(static_points)),
             BackendKind::Serial =>
                 VartimePrecomputedStraus::Scalar(serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
         }
@@ -144,14 +158,20 @@ impl VartimePrecomputedStraus {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
         match self {
-            #[cfg(curve25519_dalek_backend = "simd")]
+            #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
             VartimePrecomputedStraus::Avx2(inner) => inner.optional_mixed_multiscalar_mul(
                 static_scalars,
                 dynamic_scalars,
                 dynamic_points,
             ),
-            #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
             VartimePrecomputedStraus::Avx512ifma(inner) => inner.optional_mixed_multiscalar_mul(
+                static_scalars,
+                dynamic_scalars,
+                dynamic_points,
+            ),
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+            VartimePrecomputedStraus::Neon(inner) => inner.optional_mixed_multiscalar_mul(
                 static_scalars,
                 dynamic_scalars,
                 dynamic_points,
@@ -177,15 +197,19 @@ where
     use crate::traits::MultiscalarMul;
 
     match get_selected_backend() {
-        #[cfg(curve25519_dalek_backend = "simd")]
+        #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
         BackendKind::Avx2 => {
             vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul::<I, J>(scalars, points)
         }
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
         BackendKind::Avx512 => {
             vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul::<I, J>(
                 scalars, points,
             )
+        }
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+        BackendKind::Neon => {
+            vector::scalar_mul::straus::spec_neon::Straus::multiscalar_mul::<I, J>(scalars, points)
         }
         BackendKind::Serial => {
             serial::scalar_mul::straus::Straus::multiscalar_mul::<I, J>(scalars, points)
@@ -204,18 +228,24 @@ where
     use crate::traits::VartimeMultiscalarMul;
 
     match get_selected_backend() {
-        #[cfg(curve25519_dalek_backend = "simd")]
+        #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
         BackendKind::Avx2 => {
             vector::scalar_mul::straus::spec_avx2::Straus::optional_multiscalar_mul::<I, J>(
                 scalars, points,
             )
         }
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
         BackendKind::Avx512 => {
             vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::optional_multiscalar_mul::<
                 I,
                 J,
             >(scalars, points)
+        }
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+        BackendKind::Neon => {
+            vector::scalar_mul::straus::spec_neon::Straus::optional_multiscalar_mul::<I, J>(
+                scalars, points,
+            )
         }
         BackendKind::Serial => {
             serial::scalar_mul::straus::Straus::optional_multiscalar_mul::<I, J>(scalars, points)
@@ -226,12 +256,14 @@ where
 /// Perform constant-time, variable-base scalar multiplication.
 pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
     match get_selected_backend() {
-        #[cfg(curve25519_dalek_backend = "simd")]
+        #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
         BackendKind::Avx2 => vector::scalar_mul::variable_base::spec_avx2::mul(point, scalar),
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
         BackendKind::Avx512 => {
             vector::scalar_mul::variable_base::spec_avx512ifma_avx512vl::mul(point, scalar)
         }
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+        BackendKind::Neon => vector::scalar_mul::variable_base::spec_neon::mul(point, scalar),
         BackendKind::Serial => serial::scalar_mul::variable_base::mul(point, scalar),
     }
 }
@@ -240,12 +272,14 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint 
 #[allow(non_snake_case)]
 pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {
     match get_selected_backend() {
-        #[cfg(curve25519_dalek_backend = "simd")]
+        #[cfg(all(curve25519_dalek_backend = "simd", target_arch = "x86_64"))]
         BackendKind::Avx2 => vector::scalar_mul::vartime_double_base::spec_avx2::mul(a, A, b),
-        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "x86_64"))]
         BackendKind::Avx512 => {
             vector::scalar_mul::vartime_double_base::spec_avx512ifma_avx512vl::mul(a, A, b)
         }
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
+        BackendKind::Neon => vector::scalar_mul::vartime_double_base::spec_neon::mul(a, A, b),
         BackendKind::Serial => serial::scalar_mul::vartime_double_base::mul(a, A, b),
     }
 }

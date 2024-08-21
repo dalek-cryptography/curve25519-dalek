@@ -12,8 +12,9 @@
 #![allow(non_snake_case)]
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
-    "avx2",
-    conditional("avx512ifma,avx512vl", nightly)
+    conditional("avx2", target_arch = "x86_64"),
+    conditional("avx512ifma,avx512vl", all(nightly, target_arch = "x86_64")),
+    conditional("neon", all(nightly, target_arch = "aarch64"))
 )]
 pub mod spec {
 
@@ -25,6 +26,9 @@ pub mod spec {
     #[for_target_feature("avx512ifma")]
     use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
 
+    #[for_target_feature("neon")]
+    use crate::backend::vector::neon::{CachedPoint, ExtendedPoint};
+
     #[cfg(feature = "precomputed-tables")]
     #[for_target_feature("avx2")]
     use crate::backend::vector::avx2::constants::BASEPOINT_ODD_LOOKUP_TABLE;
@@ -32,6 +36,10 @@ pub mod spec {
     #[cfg(feature = "precomputed-tables")]
     #[for_target_feature("avx512ifma")]
     use crate::backend::vector::ifma::constants::BASEPOINT_ODD_LOOKUP_TABLE;
+
+    #[cfg(feature = "precomputed-tables")]
+    #[for_target_feature("neon")]
+    use crate::backend::vector::neon::constants::BASEPOINT_ODD_LOOKUP_TABLE;
 
     use crate::edwards::EdwardsPoint;
     use crate::scalar::Scalar;

@@ -66,7 +66,7 @@ use core::arch::aarch64::vget_low_u32;
 macro_rules! shuffle {
     ($vec:expr , $index:expr) => {
         unsafe {
-            let v_n: [u32;8] = [
+            let v_n: [u32; 8] = [
                 $vec.extract::<0>(),
                 $vec.extract::<1>(),
                 $vec.extract::<2>(),
@@ -74,13 +74,21 @@ macro_rules! shuffle {
                 $vec.extract::<4>(),
                 $vec.extract::<5>(),
                 $vec.extract::<6>(),
-                $vec.extract::<7>()
-            ];  
+                $vec.extract::<7>(),
+            ];
             u32x4x2::new(
-                core::mem::transmute::<[u32; 4], u32x4>(
-                    [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]]),
-                core::mem::transmute::<[u32; 4], u32x4>(
-                    [v_n[$index[4]], v_n[$index[5]], v_n[$index[6]], v_n[$index[7]]])
+                core::mem::transmute::<[u32; 4], u32x4>([
+                    v_n[$index[0]],
+                    v_n[$index[1]],
+                    v_n[$index[2]],
+                    v_n[$index[3]],
+                ]),
+                core::mem::transmute::<[u32; 4], u32x4>([
+                    v_n[$index[4]],
+                    v_n[$index[5]],
+                    v_n[$index[6]],
+                    v_n[$index[7]],
+                ]),
             )
         }
     };
@@ -90,7 +98,7 @@ macro_rules! shuffle {
 macro_rules! blend {
     ($vec0: expr, $vec1: expr, $index:expr) => {
         unsafe {
-            let v_n: [u32;8] = [
+            let v_n: [u32; 8] = [
                 $vec0.extract::<0>(),
                 $vec0.extract::<1>(),
                 $vec0.extract::<2>(),
@@ -98,10 +106,14 @@ macro_rules! blend {
                 $vec1.extract::<0>(),
                 $vec1.extract::<1>(),
                 $vec1.extract::<2>(),
-                $vec1.extract::<3>()
-            ];  
-            core::mem::transmute::<[u32; 4], u32x4>(
-                [v_n[$index[0]], v_n[$index[1]], v_n[$index[2]], v_n[$index[3]]])        
+                $vec1.extract::<3>(),
+            ];
+            core::mem::transmute::<[u32; 4], u32x4>([
+                v_n[$index[0]],
+                v_n[$index[1]],
+                v_n[$index[2]],
+                v_n[$index[3]],
+            ])
         }
     };
 }
@@ -118,10 +130,10 @@ fn unpack_pair(src: u32x4x2) -> (u32x2x2, u32x2x2) {
     let b0: u32x2;
     let b1: u32x2;
     unsafe {
-        a0 = vget_low_u32(src.0.0).into();
-        a1 = vget_low_u32(src.0.1).into();
-        b0 = vget_high_u32(src.0.0).into();
-        b1 = vget_high_u32(src.0.1).into();
+        a0 = vget_low_u32(src.0 .0).into();
+        a1 = vget_low_u32(src.0 .1).into();
+        b0 = vget_high_u32(src.0 .0).into();
+        b1 = vget_high_u32(src.0 .1).into();
     }
     return (u32x2x2::new(a0, a1), u32x2x2::new(b0, b1));
 }
@@ -193,7 +205,7 @@ impl ConditionallySelectable for FieldElement2625x4 {
             a.0[1] ^ (mask_vec & (a.0[1] ^ b.0[1])),
             a.0[2] ^ (mask_vec & (a.0[2] ^ b.0[2])),
             a.0[3] ^ (mask_vec & (a.0[3] ^ b.0[3])),
-            a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4]))
+            a.0[4] ^ (mask_vec & (a.0[4] ^ b.0[4])),
         ])
     }
 
@@ -266,7 +278,6 @@ impl FieldElement2625x4 {
         self.shuffle(Shuffle::BACD)
     }
 
-
     // Can probably be sped up using multiple vset/vget instead of table
     #[inline]
     pub fn blend(&self, other: FieldElement2625x4, control: Lanes) -> FieldElement2625x4 {
@@ -326,7 +337,7 @@ impl FieldElement2625x4 {
 
             buf[i] = u32x4x2::new(
                 u32x4::new(a_2i, b_2i, a_2i_1, b_2i_1),
-                u32x4::new(c_2i, d_2i, c_2i_1, d_2i_1)
+                u32x4::new(c_2i, d_2i, c_2i_1, d_2i_1),
             );
         }
         return FieldElement2625x4(buf).reduce();
@@ -368,20 +379,12 @@ impl FieldElement2625x4 {
                 use core::arch::aarch64::vqshlq_u32;
 
                 let c: u32x4x2 = u32x4x2::new(
-                    vqshlq_u32(v.0.0, shifts.0.into()).into(),
-                    vqshlq_u32(v.0.1, shifts.1.into()).into(),
+                    vqshlq_u32(v.0 .0, shifts.0.into()).into(),
+                    vqshlq_u32(v.0 .1, shifts.1.into()).into(),
                 );
                 u32x4x2::new(
-                    vcombine_u32(
-                        vget_high_u32(c.0.0),
-                        vget_low_u32(c.0.0),
-                    )
-                    .into(),
-                    vcombine_u32(
-                        vget_high_u32(c.0.1),
-                        vget_low_u32(c.0.1),
-                    )
-                    .into(),
+                    vcombine_u32(vget_high_u32(c.0 .0), vget_low_u32(c.0 .0)).into(),
+                    vcombine_u32(vget_high_u32(c.0 .1), vget_low_u32(c.0 .1)).into(),
                 )
             }
         };
@@ -390,16 +393,8 @@ impl FieldElement2625x4 {
             unsafe {
                 use core::arch::aarch64::vcombine_u32;
                 u32x4x2::new(
-                    vcombine_u32(
-                        vget_low_u32(v_lo.0.0),
-                        vget_high_u32(v_hi.0.0),
-                    )
-                    .into(),
-                    vcombine_u32(
-                        vget_low_u32(v_lo.0.1),
-                        vget_high_u32(v_hi.0.1),
-                    )
-                    .into(),
+                    vcombine_u32(vget_low_u32(v_lo.0 .0), vget_high_u32(v_hi.0 .0)).into(),
+                    vcombine_u32(vget_low_u32(v_lo.0 .1), vget_high_u32(v_hi.0 .1)).into(),
                 )
             }
         };
@@ -874,5 +869,3 @@ mod test {
         assert_eq!(x3, splits[3]);
     }
 }
-
-

@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
-    conditional("avx2", target_arch="x86_64"),
-    conditional("avx512ifma,avx512vl", all(nightly, target_arch="x86_64")),
-    conditional("neon", all(nightly, target_arch="aarch64"))
+    conditional("avx2", target_arch = "x86_64"),
+    conditional("avx512ifma,avx512vl", all(nightly, target_arch = "x86_64")),
+    conditional("neon", all(nightly, target_arch = "aarch64"))
 )]
 pub mod spec {
 

@@ -55,7 +55,6 @@ macro_rules! impl_shared {
 
         impl Eq for $ty {}
 
-
         impl Add for $ty {
             type Output = Self;
 
@@ -71,7 +70,7 @@ macro_rules! impl_shared {
                 *self = *self + rhs
             }
         }
-        
+
         impl Sub for $ty {
             type Output = Self;
 
@@ -128,23 +127,22 @@ macro_rules! impl_shared {
             pub fn shr<const N: i32>(self) -> Self {
                 unsafe { core::arch::aarch64::$shr_intrinsic(self.0, N).into() }
             }
-
         }
-    }
+    };
 }
 
 impl_shared!(
-  u32x4,
-  u32,
-  uint32x4_t,
-  vceqq_u32,
-  vaddq_u32,
-  vsubq_u32,
-  vandq_u32,
-  veorq_u32,
-  vshlq_n_u32,
-  vshrq_n_u32,
-  vgetq_lane_u32
+    u32x4,
+    u32,
+    uint32x4_t,
+    vceqq_u32,
+    vaddq_u32,
+    vsubq_u32,
+    vandq_u32,
+    veorq_u32,
+    vshlq_n_u32,
+    vshrq_n_u32,
+    vgetq_lane_u32
 );
 
 impl u32x4 {
@@ -171,7 +169,7 @@ impl u32x4 {
 
 impl From<u64x2> for core::arch::aarch64::uint32x4_t {
     #[inline]
-    fn from(value: u64x2) -> core::arch::aarch64::uint32x4_t  {
+    fn from(value: u64x2) -> core::arch::aarch64::uint32x4_t {
         unsafe { core::arch::aarch64::vreinterpretq_u32_u64(value.into()) }
     }
 }
@@ -184,7 +182,7 @@ impl From<core::arch::aarch64::uint64x2_t> for u32x4 {
 }
 
 impl From<u64x2> for u32x4 {
-   #[inline]
+    #[inline]
     fn from(value: u64x2) -> u32x4 {
         Into::<core::arch::aarch64::uint32x4_t>::into(value).into()
     }
@@ -217,17 +215,17 @@ impl u32x2 {
 }
 
 impl_shared!(
-  u64x2,
-  u64,
-  uint64x2_t,
-  vceqq_u64,
-  vaddq_u64,
-  vsubq_u64,
-  vandq_u64,
-  veorq_u64,
-  vshlq_n_u64,
-  vshrq_n_u64,
-  vgetq_lane_u64
+    u64x2,
+    u64,
+    uint64x2_t,
+    vceqq_u64,
+    vaddq_u64,
+    vsubq_u64,
+    vandq_u64,
+    veorq_u64,
+    vshlq_n_u64,
+    vshrq_n_u64,
+    vgetq_lane_u64
 );
 
 impl u64x2 {
@@ -256,15 +254,15 @@ pub struct u32x4x2(pub core::arch::aarch64::uint32x4x2_t);
 
 impl PartialEq for u32x4x2 {
     fn eq(&self, other: &Self) -> bool {
-        u32x4::from(self.0.0) == u32x4::from(other.0.0)
-            && u32x4::from(self.0.1) == u32x4::from(other.0.1)
+        u32x4::from(self.0 .0) == u32x4::from(other.0 .0)
+            && u32x4::from(self.0 .1) == u32x4::from(other.0 .1)
     }
 }
 
 impl From<u32x4x2> for core::arch::aarch64::uint32x4x2_t {
     #[inline]
     fn from(value: u32x4x2) -> core::arch::aarch64::uint32x4x2_t {
-        value.0 
+        value.0
     }
 }
 
@@ -280,8 +278,9 @@ impl BitXor for u32x4x2 {
 
     fn bitxor(self, rhs: Self) -> Self::Output {
         Self::new(
-            u32x4::from(self.0.0) ^ u32x4::from(rhs.0.0), 
-            u32x4::from(self.0.1) ^ u32x4::from(rhs.0.1))
+            u32x4::from(self.0 .0) ^ u32x4::from(rhs.0 .0),
+            u32x4::from(self.0 .1) ^ u32x4::from(rhs.0 .1),
+        )
     }
 }
 
@@ -296,9 +295,9 @@ impl BitAnd for u32x4x2 {
 
     fn bitand(self, rhs: Self) -> Self::Output {
         Self::new(
-            u32x4::from(self.0.0) & u32x4::from(rhs.0.0), 
-            u32x4::from(self.0.1) & u32x4::from(rhs.0.1))
-
+            u32x4::from(self.0 .0) & u32x4::from(rhs.0 .0),
+            u32x4::from(self.0 .1) & u32x4::from(rhs.0 .1),
+        )
     }
 }
 
@@ -306,9 +305,10 @@ impl Add for u32x4x2 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-         Self::new(
-            u32x4::from(self.0.0) + u32x4::from(rhs.0.0), 
-            u32x4::from(self.0.1) + u32x4::from(rhs.0.1))   
+        Self::new(
+            u32x4::from(self.0 .0) + u32x4::from(rhs.0 .0),
+            u32x4::from(self.0 .1) + u32x4::from(rhs.0 .1),
+        )
     }
 }
 
@@ -317,8 +317,9 @@ impl Sub for u32x4x2 {
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self::new(
-            u32x4::from(self.0.0) - u32x4::from(rhs.0.0), 
-            u32x4::from(self.0.1) - u32x4::from(rhs.0.1))
+            u32x4::from(self.0 .0) - u32x4::from(rhs.0 .0),
+            u32x4::from(self.0 .1) - u32x4::from(rhs.0 .1),
+        )
     }
 }
 
@@ -330,21 +331,24 @@ impl u32x4x2 {
 
     #[inline]
     pub const fn splat(x: u32) -> Self {
-        Self(core::arch::aarch64::uint32x4x2_t(u32x4::const_splat(x).0, u32x4::const_splat(x).0)) 
+        Self(core::arch::aarch64::uint32x4x2_t(
+            u32x4::const_splat(x).0,
+            u32x4::const_splat(x).0,
+        ))
     }
 
     #[inline]
     pub fn extract<const N: i32>(self) -> u32 {
         match N {
-            0 => u32x4::from(self.0.0).extract::<0>(),
-            1 => u32x4::from(self.0.0).extract::<1>(),
-            2 => u32x4::from(self.0.0).extract::<2>(),
-            3 => u32x4::from(self.0.0).extract::<3>(),
-            4 => u32x4::from(self.0.1).extract::<0>(),
-            5 => u32x4::from(self.0.1).extract::<1>(),
-            6 => u32x4::from(self.0.1).extract::<2>(),
-            7 => u32x4::from(self.0.1).extract::<3>(),
-            _ => unreachable!()
+            0 => u32x4::from(self.0 .0).extract::<0>(),
+            1 => u32x4::from(self.0 .0).extract::<1>(),
+            2 => u32x4::from(self.0 .0).extract::<2>(),
+            3 => u32x4::from(self.0 .0).extract::<3>(),
+            4 => u32x4::from(self.0 .1).extract::<0>(),
+            5 => u32x4::from(self.0 .1).extract::<1>(),
+            6 => u32x4::from(self.0 .1).extract::<2>(),
+            7 => u32x4::from(self.0 .1).extract::<3>(),
+            _ => unreachable!(),
         }
     }
 }
@@ -356,8 +360,8 @@ pub struct u32x2x2(pub core::arch::aarch64::uint32x2x2_t);
 
 impl PartialEq for u32x2x2 {
     fn eq(&self, other: &Self) -> bool {
-        u32x2::from(self.0.0) == u32x2::from(other.0.0)
-            && u32x2::from(self.0.1) == u32x2::from(other.0.1)
+        u32x2::from(self.0 .0) == u32x2::from(other.0 .0)
+            && u32x2::from(self.0 .1) == u32x2::from(other.0 .1)
     }
 }
 
@@ -366,8 +370,8 @@ impl Add for u32x2x2 {
 
     fn add(self, rhs: Self) -> Self::Output {
         Self::new(
-            u32x2::from(self.0.0) + u32x2::from(rhs.0.0),
-            u32x2::from(self.0.1) + u32x2::from(rhs.0.1)
+            u32x2::from(self.0 .0) + u32x2::from(rhs.0 .0),
+            u32x2::from(self.0 .1) + u32x2::from(rhs.0 .1),
         )
     }
 }
@@ -381,23 +385,22 @@ impl u32x2x2 {
     #[inline]
     pub fn shl<const N: i32>(self) -> Self {
         Self(core::arch::aarch64::uint32x2x2_t(
-                u32x2::from(self.0.0).shl::<N>().0,
-                u32x2::from(self.0.1).shl::<N>().0
+            u32x2::from(self.0 .0).shl::<N>().0,
+            u32x2::from(self.0 .1).shl::<N>().0,
         ))
     }
 
     #[inline]
     pub fn extract<const N: i32>(self) -> u32 {
         match N {
-            0 => u32x2::from(self.0.0).extract::<0>(),
-            1 => u32x2::from(self.0.0).extract::<1>(),
-            2 => u32x2::from(self.0.1).extract::<0>(),
-            3 => u32x2::from(self.0.1).extract::<1>(),
-            _ => unreachable!()
+            0 => u32x2::from(self.0 .0).extract::<0>(),
+            1 => u32x2::from(self.0 .0).extract::<1>(),
+            2 => u32x2::from(self.0 .1).extract::<0>(),
+            3 => u32x2::from(self.0 .1).extract::<1>(),
+            _ => unreachable!(),
         }
     }
 }
-
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
@@ -436,8 +439,9 @@ impl Add for u64x2x2 {
     #[inline]
     fn add(self, rhs: Self) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(
-                (u64x2::from(self.0.0) + u64x2::from(rhs.0.0)).into(), 
-                (u64x2::from(self.0.1) + u64x2::from(rhs.0.1)).into()))
+            (u64x2::from(self.0 .0) + u64x2::from(rhs.0 .0)).into(),
+            (u64x2::from(self.0 .1) + u64x2::from(rhs.0 .1)).into(),
+        ))
     }
 }
 
@@ -446,8 +450,9 @@ impl BitAnd for u64x2x2 {
 
     fn bitand(self, rhs: Self) -> Self::Output {
         Self(core::arch::aarch64::uint64x2x2_t(
-                (u64x2::from(self.0.0) & u64x2::from(rhs.0.0)).into(), 
-                (u64x2::from(self.0.1) & u64x2::from(rhs.0.1)).into()))    
+            (u64x2::from(self.0 .0) & u64x2::from(rhs.0 .0)).into(),
+            (u64x2::from(self.0 .1) & u64x2::from(rhs.0 .1)).into(),
+        ))
     }
 }
 
@@ -465,27 +470,27 @@ impl u64x2x2 {
     #[inline]
     pub fn extract<const N: i32>(self) -> u64 {
         match N {
-            0 => u64x2::from(self.0.0).extract::<0>(),
-            1 => u64x2::from(self.0.0).extract::<1>(),
-            2 => u64x2::from(self.0.1).extract::<0>(),
-            3 => u64x2::from(self.0.1).extract::<1>(),
-            _ => unreachable!()
-        } 
+            0 => u64x2::from(self.0 .0).extract::<0>(),
+            1 => u64x2::from(self.0 .0).extract::<1>(),
+            2 => u64x2::from(self.0 .1).extract::<0>(),
+            3 => u64x2::from(self.0 .1).extract::<1>(),
+            _ => unreachable!(),
+        }
     }
 
     #[inline]
     pub fn shl<const N: i32>(self) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(
-                u64x2::from(self.0.0).shl::<N>().into(), 
-                u64x2::from(self.0.1).shl::<N>().into()))
+            u64x2::from(self.0 .0).shl::<N>().into(),
+            u64x2::from(self.0 .1).shl::<N>().into(),
+        ))
     }
 
     #[inline]
     pub fn shr<const N: i32>(self) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(
-                u64x2::from(self.0.0).shr::<N>().into(), 
-                u64x2::from(self.0.1).shr::<N>().into()))
+            u64x2::from(self.0 .0).shr::<N>().into(),
+            u64x2::from(self.0 .1).shr::<N>().into(),
+        ))
     }
-
 }
-

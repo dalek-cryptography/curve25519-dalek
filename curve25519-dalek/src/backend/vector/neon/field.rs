@@ -28,9 +28,22 @@ use crate::backend::vector::neon::constants::{
     P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
 };
 
+#[cfg(target_arch = "aarch64")]
+use core::arch::aarch64 as core_neon;
+#[cfg(target_arch = "arm")]
+use core::arch::arm as core_neon;
+
+use core_neon::{
+    uint32x2_t, uint32x4_t, vcombine_u32, vmull_u32, vmulq_n_u32, vqshlq_u32,
+    vreinterpretq_u32_u64, vsubq_u64, vtrn1_u32, vuzp1_u32,
+};
+
+#[cfg(target_arch = "arm")]
+use core::arch::arm::{vget_high_u32, vget_low_u32};
+
 #[cfg(all(target_arch = "aarch64"))]
 #[inline(always)]
-fn vget_high_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
+fn vget_high_u32(v: uint32x4_t) -> uint32x2_t {
     use core::arch::asm;
     let o;
     unsafe {
@@ -45,7 +58,7 @@ fn vget_high_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uin
 
 #[cfg(all(target_arch = "aarch64"))]
 #[inline(always)]
-fn vget_low_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
+fn vget_low_u32(v: uint32x4_t) -> uint32x2_t {
     use core::arch::asm;
     let o;
     unsafe {
@@ -57,10 +70,6 @@ fn vget_low_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint
     }
     o
 }
-#[cfg(not(target_arch = "aarch64"))]
-use core::arch::aarch64::vget_high_u32;
-#[cfg(not(target_arch = "aarch64"))]
-use core::arch::aarch64::vget_low_u32;
 
 // Shuffle the lanes in a u32x4x2
 macro_rules! shuffle {
@@ -146,9 +155,6 @@ fn unpack_pair(src: u32x4x2) -> (u32x2x2, u32x2x2) {
 #[rustfmt::skip] // Retain formatting of the return tuples
 fn repack_pair(x: u32x4x2, y: u32x4x2) -> u32x4x2 {
     unsafe {
-        use core::arch::aarch64::vcombine_u32;
-        use core::arch::aarch64::vtrn1_u32;
-
         u32x4x2::new(
             vcombine_u32(
                 vtrn1_u32(vget_low_u32(x.0.0), vget_high_u32(x.0.0)),
@@ -375,9 +381,6 @@ impl FieldElement2625x4 {
         // Use mutliple transposes instead of table lookup?
         let rotated_carryout = |v: u32x4x2| -> u32x4x2 {
             unsafe {
-                use core::arch::aarch64::vcombine_u32;
-                use core::arch::aarch64::vqshlq_u32;
-
                 let c: u32x4x2 = u32x4x2::new(
                     vqshlq_u32(v.0 .0, shifts.0.into()).into(),
                     vqshlq_u32(v.0 .1, shifts.1.into()).into(),
@@ -391,7 +394,6 @@ impl FieldElement2625x4 {
 
         let combine = |v_lo: u32x4x2, v_hi: u32x4x2| -> u32x4x2 {
             unsafe {
-                use core::arch::aarch64::vcombine_u32;
                 u32x4x2::new(
                     vcombine_u32(vget_low_u32(v_lo.0 .0), vget_high_u32(v_hi.0 .0)).into(),
                     vcombine_u32(vget_low_u32(v_lo.0 .1), vget_high_u32(v_hi.0 .1)).into(),
@@ -423,9 +425,6 @@ impl FieldElement2625x4 {
 
         #[rustfmt::skip] // Retain formatting of return tuple
         let c9_19: u32x4x2 = unsafe {
-            use core::arch::aarch64::vcombine_u32;
-            use core::arch::aarch64::vmulq_n_u32;
-
             let c9_19_spread: u32x4x2 = u32x4x2::new(
                 vmulq_n_u32(c98.0.0, 19).into(),
                 vmulq_n_u32(c98.0.1, 19).into(),
@@ -471,9 +470,6 @@ impl FieldElement2625x4 {
         let mut c1: u64x2x2 = c.shr::<26>();
 
         unsafe {
-            use core::arch::aarch64::vmulq_n_u32;
-            use core::arch::aarch64::vreinterpretq_u32_u64;
-
             c0 = u64x2x2::new(
                 vmulq_n_u32(vreinterpretq_u32_u64(c0.0.0), 19).into(),
                 vmulq_n_u32(vreinterpretq_u32_u64(c0.0.1), 19).into());
@@ -500,7 +496,6 @@ impl FieldElement2625x4 {
     pub fn square_and_negate_D(&self) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x2x2, y: u32x2x2) -> u64x2x2 {
-            use core::arch::aarch64::vmull_u32;
             unsafe {
                 let z0: u64x2 = vmull_u32(x.0.0, y.0.0).into();
                 let z1: u64x2 = vmull_u32(x.0.1, y.0.1).into();
@@ -510,8 +505,6 @@ impl FieldElement2625x4 {
 
         #[inline(always)]
         fn m_lo(x: u32x2x2, y: u32x2x2) -> u32x2x2 {
-            use core::arch::aarch64::vmull_u32;
-            use core::arch::aarch64::vuzp1_u32;
             unsafe {
                 let x: u32x4x2 = u32x4x2::new(
                     vmull_u32(x.0.0, y.0.0).into(),
@@ -565,9 +558,6 @@ impl FieldElement2625x4 {
 
         let negate_D = |x_01: u64x2x2, p_01: u64x2x2| -> u64x2x2 {
             unsafe {
-                use core::arch::aarch64::vcombine_u32;
-                use core::arch::aarch64::vreinterpretq_u32_u64;
-                use core::arch::aarch64::vsubq_u64;
 
                 u64x2x2::new(u64x2(x_01.0.0),
                  vcombine_u32(
@@ -626,8 +616,6 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     #[rustfmt::skip] // Retain formatting of packing
     fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement2625x4 {
         unsafe {
-            use core::arch::aarch64::vmull_u32;
-
             let consts = (
                 u32x2::new(scalars.0, scalars.1),
                 u32x2::new(scalars.2, scalars.3),
@@ -662,7 +650,6 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
     fn mul(self, rhs: &'b FieldElement2625x4) -> FieldElement2625x4 {
         #[inline(always)]
         fn m(x: u32x2x2, y: u32x2x2) -> u64x2x2 {
-            use core::arch::aarch64::vmull_u32;
             unsafe {
                 let z0: u64x2 = vmull_u32(x.0.0, y.0.0).into();
                 let z1: u64x2 = vmull_u32(x.0.1, y.0.1).into();
@@ -672,8 +659,6 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
 
         #[inline(always)]
         fn m_lo(x: u32x2x2, y: u32x2x2) -> u32x2x2 {
-            use core::arch::aarch64::vmull_u32;
-            use core::arch::aarch64::vuzp1_u32;
             unsafe {
                 let x: u32x4x2 = u32x4x2::new(
                     vmull_u32(x.0.0, y.0.0).into(),

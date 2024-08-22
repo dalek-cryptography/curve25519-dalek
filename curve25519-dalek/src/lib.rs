@@ -23,6 +23,12 @@
     feature(avx512_target_feature)
 )]
 #![cfg_attr(all(nightly, target_arch = "aarch64"), feature(portable_simd))]
+#![cfg_attr(all(nightly, target_arch = "arm"), feature(portable_simd))]
+#![cfg_attr(all(nightly, target_arch = "arm"), feature(arm_target_feature))]
+#![cfg_attr(
+    all(nightly, target_arch = "arm"),
+    feature(stdarch_arm_neon_intrinsics)
+)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 //------------------------------------------------------------------------

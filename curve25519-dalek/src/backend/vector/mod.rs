@@ -21,7 +21,7 @@ pub mod avx2;
 #[cfg(all(nightly, target_arch = "x86_64"))]
 pub mod ifma;
 
-#[cfg(all(nightly, target_arch = "aarch64"))]
+#[cfg(all(nightly, any(target_arch = "arm", target_arch = "aarch64")))]
 pub mod neon;
 
 pub mod scalar_mul;

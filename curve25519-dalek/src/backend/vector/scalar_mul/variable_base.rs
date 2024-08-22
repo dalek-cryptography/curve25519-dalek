@@ -1,8 +1,12 @@
 #![allow(non_snake_case)]
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
-    "avx2",
-    conditional("avx512ifma,avx512vl", nightly)
+    conditional("avx2", target_arch = "x86_64"),
+    conditional("avx512ifma,avx512vl", all(nightly, target_arch = "x86_64")),
+    conditional(
+        "neon",
+        all(nightly, any(target_arch = "aarch64", target_arch = "arm"))
+    )
 )]
 pub mod spec {
 
@@ -11,6 +15,9 @@ pub mod spec {
 
     #[for_target_feature("avx512ifma")]
     use crate::backend::vector::ifma::{CachedPoint, ExtendedPoint};
+
+    #[for_target_feature("neon")]
+    use crate::backend::vector::neon::{CachedPoint, ExtendedPoint};
 
     use crate::edwards::EdwardsPoint;
     use crate::scalar::Scalar;

@@ -12,11 +12,16 @@
 #![doc = include_str!("../../../docs/parallel-formulas.md")]
 
 #[allow(missing_docs)]
+#[cfg(target_arch = "x86_64")]
 pub mod packed_simd;
 
+#[cfg(target_arch = "x86_64")]
 pub mod avx2;
 
-#[cfg(nightly)]
+#[cfg(all(nightly, target_arch = "x86_64"))]
 pub mod ifma;
+
+#[cfg(all(nightly, any(target_arch = "arm", target_arch = "aarch64")))]
+pub mod neon;
 
 pub mod scalar_mul;

@@ -90,11 +90,12 @@ This release also does a lot of dependency updates and relaxations to unblock up
 
 Curve arithmetic is implemented and used by one of the following backends:
 
-| Backend  | Selection | Implementation                                                | Bits / Word sizes |
-| :---     | :---      | :---                                                          | :---              |
-| `serial` | Automatic | An optimized, non-parllel implementation                      | `32` and `64`     |
-| `fiat`   | Manual    | Formally verified field arithmetic from [fiat-crypto]         | `32` and `64`     |
-| `simd`   | Automatic | Intel AVX2 / AVX512 IFMA accelerated backend                  | `64` only         |
+| Backend           | Selection | Implementation                                           | Bits / Word sizes |
+| :---              | :---      | :---                                                     | :---              |
+| `serial`          | Automatic | An optimized, non-parllel implementation                 | `32` and `64`     |
+| `fiat`            | Manual    | Formally verified field arithmetic from [fiat-crypto]    | `32` and `64`     |
+| `simd`            | Automatic | Intel AVX2 accelerated backend                           | `64` only         |
+| `unstable_avx512` | Manual    | Intel AVX512 IFMA accelerated backend (requires nightly) | `64` only         |
 
 At runtime, `curve25519-dalek` selects an arithmetic backend from the set of backends it was compiled to support. For Intel x86-64 targets, unless otherwise specified, it will build itself with `simd` support, and default to `serial` at runtime if the appropriate CPU features aren't detected. See [SIMD backend] for more details.
 
@@ -148,16 +149,16 @@ $ cargo build --target i686-unknown-linux-gnu
 
 ## SIMD backend
 
-The specific SIMD backend (AVX512 / AVX2 / `serial` default) is selected automatically at runtime, depending on the currently available CPU features, and whether Rust nightly is being used for compilation. The precise conditions are specified below.
+When the `simd` backend is selected, the AVX2 or `serial` implementation is selected automatically at runtime, depending on the currently available CPU features. Similarly, when the `unstable_avx512` backend is selected, the AVX512 implementation is selected automatically at runtime if available, or else selection falls through to the aforementioned `simd` backend logic.
 
 For a given CPU feature, you can also specify an appropriate `-C target_feature` to build a binary which assumes the required SIMD instructions are always available. Don't do this if you don't have a good reason.
 
 | Backend | `RUSTFLAGS`                               | Requires nightly? |
 | :---    | :---                                      | :---              |
-| avx2    | `-C target_feature=+avx2`                 | no                |
-| avx512  | `-C target_feature=+avx512ifma,+avx512vl` | yes               |
+| AVX2    | `-C target_feature=+avx2`                 | no                |
+| AVX512  | `-C target_feature=+avx512ifma,+avx512vl` | yes               |
 
-If compiled on a non-nightly compiler, `curve25519-dalek` will not include AVX512 code, and therefore will never select it at runtime.
+To reiterate, the `simd` backend will NOT use AVX512 code under any circumstance. The only way to enable AVX512 currently is to select the `unstable_avx512` backend and use a nightly compiler.
 
 # Documentation
 

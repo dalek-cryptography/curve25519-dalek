@@ -35,13 +35,16 @@ fn main() {
 
     println!("cargo:rustc-cfg=curve25519_dalek_bits=\"{curve25519_dalek_bits}\"");
 
-    if rustc_version::version_meta()
+    let nightly = if rustc_version::version_meta()
         .expect("failed to detect rustc version")
         .channel
         == rustc_version::Channel::Nightly
     {
         println!("cargo:rustc-cfg=nightly");
-    }
+        true
+    } else {
+        false
+    };
 
     let rustc_version = rustc_version::version().expect("failed to detect rustc version");
     if rustc_version.major == 1 && rustc_version.minor <= 64 {
@@ -51,25 +54,44 @@ fn main() {
     }
 
     // Backend overrides / defaults
-    let curve25519_dalek_backend =
-        match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND").as_deref() {
-            Ok("fiat") => "fiat",
-            Ok("serial") => "serial",
-            Ok("simd") => {
-                // simd can only be enabled on x86_64 & 64bit target_pointer_width
-                match is_capable_simd(&target_arch, curve25519_dalek_bits) {
-                    true => "simd",
-                    // If override is not possible this must result to compile error
-                    // See: issues/532
-                    false => panic!("Could not override curve25519_dalek_backend to simd"),
-                }
-            }
-            // default between serial / simd (if potentially capable)
-            _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+    let curve25519_dalek_backend = match std::env::var("CARGO_CFG_CURVE25519_DALEK_BACKEND")
+        .as_deref()
+    {
+        Ok("fiat") => "fiat",
+        Ok("serial") => "serial",
+        Ok("simd") => {
+            // simd can only be enabled on x86_64 & 64bit target_pointer_width
+            match is_capable_simd(&target_arch, curve25519_dalek_bits) {
                 true => "simd",
-                false => "serial",
-            },
-        };
+                // If override is not possible this must result to compile error
+                // See: issues/532
+                false => panic!("Could not override curve25519_dalek_backend to simd"),
+            }
+        }
+        Ok("unstable_avx512") if nightly => {
+            // simd can only be enabled on x86_64 & 64bit target_pointer_width
+            match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+                true => {
+                    // In addition enable Avx2 fallback through simd stable backend
+                    // NOTE: Compiler permits duplicate / multi value on the same key
+                    println!("cargo:rustc-cfg=curve25519_dalek_backend=\"simd\"");
+
+                    "unstable_avx512"
+                }
+                // If override is not possible this must result to compile error
+                // See: issues/532
+                false => panic!("Could not override curve25519_dalek_backend to unstable_avx512"),
+            }
+        }
+        Ok("unstable_avx512") if !nightly => {
+            panic!("Could not override curve25519_dalek_backend to unstable_avx512, as this is nigthly only");
+        }
+        // default between serial / simd (if potentially capable)
+        _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {
+            true => "simd",
+            false => "serial",
+        },
+    };
     println!("cargo:rustc-cfg=curve25519_dalek_backend=\"{curve25519_dalek_backend}\"");
 }
 

@@ -84,7 +84,7 @@ fn main() {
             }
         }
         Ok("unstable_avx512") if !nightly => {
-            panic!("Coult not override curve25519_dalek_backend to unstable_avx512 as this is nigthly only.");
+            panic!("Could not override curve25519_dalek_backend to unstable_avx512, as this is nigthly only");
         }
         // default between serial / simd (if potentially capable)
         _ => match is_capable_simd(&target_arch, curve25519_dalek_bits) {

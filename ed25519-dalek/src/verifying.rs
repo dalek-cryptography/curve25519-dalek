@@ -124,11 +124,8 @@ impl VerifyingKey {
 
     /// Construct a `VerifyingKey` from a slice of bytes.
     ///
-    /// # Warning
-    ///
-    /// The caller is responsible for ensuring that the bytes passed into this
-    /// method actually represent a `curve25519_dalek::curve::CompressedEdwardsY`
-    /// and that said compressed point is actually a point on the curve.
+    /// Verifies the point is valid under [ZIP-215] rules. RFC 8032 / NIST point validation criteria
+    /// are currently unsupported (see [dalek-cryptography/curve25519-dalek#626]).
     ///
     /// # Example
     ///
@@ -156,6 +153,9 @@ impl VerifyingKey {
     ///
     /// A `Result` whose okay value is an EdDSA `VerifyingKey` or whose error value
     /// is a `SignatureError` describing the error that occurred.
+    ///
+    /// [ZIP-215]: https://zips.z.cash/zip-0215
+    /// [dalek-cryptography/curve25519-dalek#626]: https://github.com/dalek-cryptography/curve25519-dalek/issues/626
     #[inline]
     pub fn from_bytes(bytes: &[u8; PUBLIC_KEY_LENGTH]) -> Result<VerifyingKey, SignatureError> {
         let compressed = CompressedEdwardsY(*bytes);

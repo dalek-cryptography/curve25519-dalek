@@ -713,10 +713,10 @@ impl From<&SigningKey> for pkcs8::KeypairBytes {
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<pkcs8::PrivateKeyInfo<'_>> for SigningKey {
+impl TryFrom<pkcs8::PrivateKeyInfoRef<'_>> for SigningKey {
     type Error = pkcs8::Error;
 
-    fn try_from(private_key: pkcs8::PrivateKeyInfo<'_>) -> pkcs8::Result<Self> {
+    fn try_from(private_key: pkcs8::PrivateKeyInfoRef<'_>) -> pkcs8::Result<Self> {
         pkcs8::KeypairBytes::try_from(private_key)?.try_into()
     }
 }

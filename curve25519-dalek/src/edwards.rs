@@ -52,19 +52,19 @@
 //! Scalar multiplication on Edwards points is provided by:
 //!
 //! * the `*` operator between a `Scalar` and a `EdwardsPoint`, which
-//! performs constant-time variable-base scalar multiplication;
+//!   performs constant-time variable-base scalar multiplication;
 //!
 //! * the `*` operator between a `Scalar` and a
-//! `EdwardsBasepointTable`, which performs constant-time fixed-base
-//! scalar multiplication;
+//!   `EdwardsBasepointTable`, which performs constant-time fixed-base
+//!   scalar multiplication;
 //!
 //! * an implementation of the
-//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
-//! constant-time variable-base multiscalar multiplication;
+//!   [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
+//!   constant-time variable-base multiscalar multiplication;
 //!
 //! * an implementation of the
-//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
-//! trait for variable-time variable-base multiscalar multiplication;
+//!   [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//!   trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Implementation
 //!
@@ -1234,9 +1234,9 @@ impl EdwardsPoint {
     /// # Return
     ///
     /// * `true` if `self` has zero torsion component and is in the
-    /// prime-order subgroup;
+    ///   prime-order subgroup;
     /// * `false` if `self` has a nonzero torsion component and is not
-    /// in the prime-order subgroup.
+    ///   in the prime-order subgroup.
     ///
     /// # Example
     ///

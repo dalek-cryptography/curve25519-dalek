@@ -93,19 +93,19 @@
 //! Scalar multiplication on Ristretto points is provided by:
 //!
 //! * the `*` operator between a `Scalar` and a `RistrettoPoint`, which
-//! performs constant-time variable-base scalar multiplication;
+//!   performs constant-time variable-base scalar multiplication;
 //!
 //! * the `*` operator between a `Scalar` and a
-//! `RistrettoBasepointTable`, which performs constant-time fixed-base
-//! scalar multiplication;
+//!   `RistrettoBasepointTable`, which performs constant-time fixed-base
+//!   scalar multiplication;
 //!
 //! * an implementation of the
-//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
-//! constant-time variable-base multiscalar multiplication;
+//!   [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
+//!   constant-time variable-base multiscalar multiplication;
 //!
 //! * an implementation of the
-//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
-//! trait for variable-time variable-base multiscalar multiplication;
+//!   [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//!   trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Random Points and Hashing to Ristretto
 //!
@@ -113,11 +113,11 @@
 //! used to implement
 //!
 //! * `RistrettoPoint::random()`, which generates random points from an
-//! RNG - enabled by `rand_core` feature;
+//!   RNG - enabled by `rand_core` feature;
 //!
 //! * `RistrettoPoint::from_hash()` and
-//! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
-//! group.
+//!   `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
+//!   group.
 //!
 //! The Elligator map itself is not currently exposed.
 //!

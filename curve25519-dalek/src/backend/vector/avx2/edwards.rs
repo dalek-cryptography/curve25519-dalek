@@ -14,7 +14,7 @@
 //! This module currently has two point types:
 //!
 //! * `ExtendedPoint`: a point stored in vector-friendly format, with
-//! vectorized doubling and addition;
+//!   vectorized doubling and addition;
 //!
 //! * `CachedPoint`: used for readdition.
 //!

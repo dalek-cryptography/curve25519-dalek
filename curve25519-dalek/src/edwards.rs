@@ -879,6 +879,14 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
         Self(crate::backend::VartimePrecomputedStraus::new(static_points))
     }
 
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,
@@ -2135,6 +2143,8 @@ mod test {
             .collect::<Vec<_>>();
 
         let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
+
+        assert_eq!(precomputation.len(), 128);
 
         let P = precomputation.vartime_mixed_multiscalar_mul(
             &static_scalars,

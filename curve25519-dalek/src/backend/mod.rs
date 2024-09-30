@@ -128,6 +128,30 @@ impl VartimePrecomputedStraus {
         }
     }
 
+    pub fn len(&self) -> usize {
+        use crate::traits::VartimePrecomputedMultiscalarMul;
+
+        match self {
+            #[cfg(curve25519_dalek_backend = "simd")]
+            VartimePrecomputedStraus::Avx2(inner) => inner.len(),
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+            VartimePrecomputedStraus::Avx512ifma(inner) => inner.len(),
+            VartimePrecomputedStraus::Scalar(inner) => inner.len(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        use crate::traits::VartimePrecomputedMultiscalarMul;
+
+        match self {
+            #[cfg(curve25519_dalek_backend = "simd")]
+            VartimePrecomputedStraus::Avx2(inner) => inner.is_empty(),
+            #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+            VartimePrecomputedStraus::Avx512ifma(inner) => inner.is_empty(),
+            VartimePrecomputedStraus::Scalar(inner) => inner.is_empty(),
+        }
+    }
+
     pub fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,

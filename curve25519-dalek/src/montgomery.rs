@@ -215,10 +215,10 @@ impl MontgomeryPoint {
     /// # Return
     ///
     /// * `Some(EdwardsPoint)` if `self` is the \\(u\\)-coordinate of a
-    /// point on (the Montgomery form of) Curve25519;
+    ///   point on (the Montgomery form of) Curve25519;
     ///
     /// * `None` if `self` is the \\(u\\)-coordinate of a point on the
-    /// twist of (the Montgomery form of) Curve25519;
+    ///   twist of (the Montgomery form of) Curve25519;
     ///
     pub fn to_edwards(&self, sign: u8) -> Option<EdwardsPoint> {
         // To decompress the Montgomery u coordinate to an

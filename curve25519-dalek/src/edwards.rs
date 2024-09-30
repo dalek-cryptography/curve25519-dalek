@@ -1524,6 +1524,13 @@ impl ConditionallySelectable for SubgroupPoint {
     }
 }
 
+#[cfg(all(feature = "group", feature = "zeroize"))]
+impl Zeroize for SubgroupPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {
     type Scalar = Scalar;

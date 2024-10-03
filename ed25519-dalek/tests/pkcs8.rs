@@ -4,7 +4,9 @@
 //! RFC5958 (PKCS#8) and RFC5280 (SPKI).
 
 #![cfg(feature = "pkcs8")]
-use ed25519_dalek::pkcs8::{spki::DynSignatureAlgorithmIdentifier, DecodePrivateKey, DecodePublicKey};
+use ed25519_dalek::pkcs8::{
+    spki::DynSignatureAlgorithmIdentifier, DecodePrivateKey, DecodePublicKey,
+};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use hex_literal::hex;
 

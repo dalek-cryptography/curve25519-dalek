@@ -666,6 +666,15 @@ impl pkcs8::EncodePrivateKey for SigningKey {
 }
 
 #[cfg(feature = "pkcs8")]
+impl pkcs8::spki::DynSignatureAlgorithmIdentifier for SigningKey {
+    fn signature_algorithm_identifier(&self) -> pkcs8::spki::Result<pkcs8::spki::AlgorithmIdentifierOwned> {
+        // From https://datatracker.ietf.org/doc/html/rfc8410
+        // `id-Ed25519   OBJECT IDENTIFIER ::= { 1 3 101 112 }`
+        Ok(pkcs8::spki::AlgorithmIdentifier { oid: ed25519::pkcs8::ALGORITHM_OID, parameters: None })
+    }
+}
+
+#[cfg(feature = "pkcs8")]
 impl TryFrom<pkcs8::KeypairBytes> for SigningKey {
     type Error = pkcs8::Error;
 

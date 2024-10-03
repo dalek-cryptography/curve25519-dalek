@@ -581,6 +581,15 @@ impl pkcs8::EncodePublicKey for VerifyingKey {
 }
 
 #[cfg(feature = "pkcs8")]
+impl pkcs8::spki::DynSignatureAlgorithmIdentifier for VerifyingKey {
+    fn signature_algorithm_identifier(&self) -> pkcs8::spki::Result<pkcs8::spki::AlgorithmIdentifierOwned> {
+        // From https://datatracker.ietf.org/doc/html/rfc8410
+        // `id-Ed25519   OBJECT IDENTIFIER ::= { 1 3 101 112 }`
+        Ok(ed25519::pkcs8::spki::AlgorithmIdentifierOwned { oid: ed25519::pkcs8::ALGORITHM_OID, parameters: None })
+    }
+}
+
+#[cfg(feature = "pkcs8")]
 impl TryFrom<pkcs8::PublicKeyBytes> for VerifyingKey {
     type Error = pkcs8::spki::Error;
 

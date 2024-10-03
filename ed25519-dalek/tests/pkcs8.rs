@@ -4,8 +4,7 @@
 //! RFC5958 (PKCS#8) and RFC5280 (SPKI).
 
 #![cfg(feature = "pkcs8")]
-
-use ed25519_dalek::pkcs8::{DecodePrivateKey, DecodePublicKey};
+use ed25519_dalek::pkcs8::{spki::DynSignatureAlgorithmIdentifier, DecodePrivateKey, DecodePublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use hex_literal::hex;
 
@@ -68,4 +67,17 @@ fn encode_verifying_key() {
 
     let verifying_key2 = VerifyingKey::from_public_key_der(verifying_key_der.as_bytes()).unwrap();
     assert_eq!(verifying_key, verifying_key2);
+}
+
+#[test]
+fn get_algo_identifier() {
+    let verifying_key = VerifyingKey::from_public_key_der(PUBLIC_KEY_DER).unwrap();
+    let identifier = verifying_key.signature_algorithm_identifier().unwrap();
+    assert!(identifier.parameters.is_none()); // According to rfc8410 this must be None
+    assert_eq!(identifier.oid, ed25519::pkcs8::ALGORITHM_OID);
+
+    let signing_key = SigningKey::from_bytes(&SK_BYTES);
+    let identifer = signing_key.signature_algorithm_identifier().unwrap();
+    assert!(identifer.parameters.is_none()); // According to rfc8410 this must be None
+    assert_eq!(identifer.oid, ed25519::pkcs8::ALGORITHM_OID);
 }

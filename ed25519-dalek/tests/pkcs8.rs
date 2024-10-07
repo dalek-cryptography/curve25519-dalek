@@ -4,14 +4,15 @@
 //! RFC5958 (PKCS#8) and RFC5280 (SPKI).
 
 #![cfg(feature = "pkcs8")]
-use ed25519_dalek::pkcs8::{
-    spki::DynSignatureAlgorithmIdentifier, DecodePrivateKey, DecodePublicKey,
-};
+use ed25519_dalek::pkcs8::{DecodePrivateKey, DecodePublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use hex_literal::hex;
 
 #[cfg(feature = "alloc")]
 use ed25519_dalek::pkcs8::{EncodePrivateKey, EncodePublicKey};
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+use ed25519_dalek::pkcs8::spki::DynSignatureAlgorithmIdentifier;
 
 /// Ed25519 PKCS#8 v1 private key encoded as ASN.1 DER.
 const PKCS8_V1_DER: &[u8] = include_bytes!("examples/pkcs8-v1.der");

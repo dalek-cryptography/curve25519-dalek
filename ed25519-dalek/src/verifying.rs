@@ -580,7 +580,7 @@ impl pkcs8::EncodePublicKey for VerifyingKey {
     }
 }
 
-#[cfg(feature = "pkcs8")]
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
 impl pkcs8::spki::DynSignatureAlgorithmIdentifier for VerifyingKey {
     fn signature_algorithm_identifier(
         &self,

@@ -72,6 +72,7 @@ fn encode_verifying_key() {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn get_algo_identifier() {
     let verifying_key = VerifyingKey::from_public_key_der(PUBLIC_KEY_DER).unwrap();
     let identifier = verifying_key.signature_algorithm_identifier().unwrap();

@@ -665,7 +665,7 @@ impl pkcs8::EncodePrivateKey for SigningKey {
     }
 }
 
-#[cfg(feature = "pkcs8")]
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
 impl pkcs8::spki::DynSignatureAlgorithmIdentifier for SigningKey {
     fn signature_algorithm_identifier(
         &self,

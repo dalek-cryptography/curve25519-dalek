@@ -36,10 +36,10 @@ impl Curve for Dalek {
     const ORDER: Self::Uint = U256::from_le_slice(BASEPOINT_ORDER_PRIVATE.as_bytes());
 }
 
+// Impls for EdwardsPoint
 impl MulByGenerator for EdwardsPoint {}
 
 // Impls for Scalar
-
 impl AsRef<Scalar> for Scalar {
     fn as_ref(&self) -> &Scalar {
         self

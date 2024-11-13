@@ -1256,14 +1256,12 @@ use elliptic_curve::consts::U32;
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
     type Repr = elliptic_curve::array::Array<u8, U32>;
-    // type Repr = [u8; 32];
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         Self::from_canonical_bytes(repr.0)
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
-        // Check that the high bit is not set
         let r: elliptic_curve::array::Array<
             u8,
             digest::typenum::UInt<
@@ -1284,6 +1282,8 @@ impl PrimeField for Scalar {
             >,
         > = repr;
         let t: [u8; 32] = r.0;
+
+        // Check that the high bit is not set
         if (t[31] >> 7) != 0u8 {
             return None;
         }
@@ -1299,7 +1299,8 @@ impl PrimeField for Scalar {
 
     fn to_repr(&self) -> Self::Repr {
         //FIXME Unwrap alert
-        elliptic_curve::array::Array::try_from(self.to_bytes()).unwrap()
+        elliptic_curve::array::Array::try_from(self.to_bytes())
+            .expect("Could not convert bytes to Array")
     }
 
     fn is_odd(&self) -> Choice {

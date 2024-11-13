@@ -1251,21 +1251,44 @@ impl Field for Scalar {
     }
 }
 
+use elliptic_curve::consts::U32;
+
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
-    type Repr = [u8; 32];
+    type Repr = elliptic_curve::array::Array<u8, U32>;
+    // type Repr = [u8; 32];
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
-        Self::from_canonical_bytes(repr)
+        Self::from_canonical_bytes(repr.0)
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
         // Check that the high bit is not set
-        if (repr[31] >> 7) != 0u8 {
+        let r: elliptic_curve::array::Array<
+            u8,
+            digest::typenum::UInt<
+                digest::typenum::UInt<
+                    digest::typenum::UInt<
+                        digest::typenum::UInt<
+                            digest::typenum::UInt<
+                                digest::typenum::UInt<digest::typenum::UTerm, digest::consts::B1>,
+                                digest::consts::B0,
+                            >,
+                            digest::consts::B0,
+                        >,
+                        digest::consts::B0,
+                    >,
+                    digest::consts::B0,
+                >,
+                digest::consts::B0,
+            >,
+        > = repr;
+        let t: [u8; 32] = r.0;
+        if (t[31] >> 7) != 0u8 {
             return None;
         }
 
-        let candidate = Scalar { bytes: repr };
+        let candidate = Scalar { bytes: t };
 
         if candidate == candidate.reduce() {
             Some(candidate)
@@ -1275,7 +1298,8 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        self.to_bytes()
+        //FIXME Unwrap alert
+        elliptic_curve::array::Array::try_from(self.to_bytes()).unwrap()
     }
 
     fn is_odd(&self) -> Choice {
@@ -1995,11 +2019,13 @@ pub(crate) mod test {
         // We should get back either the positive or negative root.
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
+        let res = elliptic_curve::array::Array::try_from([0xff; 32]).unwrap();
+
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
-        assert_eq!(Scalar::from_repr_vartime([0xff; 32]), None);
+        assert_eq!(Scalar::from_repr_vartime(res), None);
 
         assert_eq!(Scalar::from_repr(X.to_repr()).unwrap(), X);
-        assert!(bool::from(Scalar::from_repr([0xff; 32]).is_none()));
+        assert!(bool::from(Scalar::from_repr(res).is_none()));
     }
 
     #[test]

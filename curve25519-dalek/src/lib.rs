@@ -99,6 +99,8 @@ pub mod backend;
 #[cfg(not(docsrs))]
 pub(crate) mod backend;
 
+pub(crate) mod encodable_curve;
+
 // Generic code for window lookups
 pub(crate) mod window;
 

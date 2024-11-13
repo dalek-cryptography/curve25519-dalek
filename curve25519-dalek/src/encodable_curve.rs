@@ -1,3 +1,4 @@
+use core::ops::Not;
 use core::ops::ShrAssign;
 
 use elliptic_curve::array::Array;
@@ -47,7 +48,7 @@ impl From<ScalarPrimitive<Dalek>> for Scalar {
 }
 
 impl FromUintUnchecked for Scalar {
-    // TODO Is the 4 correct?
+    // CHECK! Is the 4 correct?
     type Uint = elliptic_curve::bigint::Uint<4>;
     fn from_uint_unchecked(uint: Self::Uint) -> Self {
         Scalar {
@@ -88,9 +89,10 @@ impl Invert for Scalar {
 }
 
 impl IsHigh for Scalar {
-    //FIXME
+    //FIXME: Can we do better?
     fn is_high(&self) -> Choice {
-        Choice::from(1)
+        let t = self.double().is_canonical();
+        Choice::not(t)
     }
 }
 

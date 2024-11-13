@@ -1,3 +1,8 @@
+// -*- mode: rust; -*-
+//
+// This file is part of curve25519-dalek fork by Arcium.
+//! Module for common traits.
+
 use core::ops::Not;
 use core::ops::ShrAssign;
 
@@ -21,6 +26,7 @@ use crate::constants::BASEPOINT_ORDER_PRIVATE;
 use crate::EdwardsPoint;
 use crate::Scalar;
 
+// Empty struct for the curve
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Dalek {}
 

@@ -86,6 +86,9 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+// Implementations for the Dalek structure
+pub mod encodable_curve;
+
 //------------------------------------------------------------------------
 // curve25519-dalek internal modules
 //------------------------------------------------------------------------
@@ -98,8 +101,6 @@ pub(crate) mod field;
 pub mod backend;
 #[cfg(not(docsrs))]
 pub(crate) mod backend;
-
-pub(crate) mod encodable_curve;
 
 // Generic code for window lookups
 pub(crate) mod window;

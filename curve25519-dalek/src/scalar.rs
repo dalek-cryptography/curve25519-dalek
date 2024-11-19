@@ -105,11 +105,13 @@
 //!
 //! assert_eq!(a, a2);
 //! # }
+//!
 //! ```
 //!
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
+//! ```
 
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -1262,25 +1264,7 @@ impl PrimeField for Scalar {
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
-        let r: elliptic_curve::array::Array<
-            u8,
-            digest::typenum::UInt<
-                digest::typenum::UInt<
-                    digest::typenum::UInt<
-                        digest::typenum::UInt<
-                            digest::typenum::UInt<
-                                digest::typenum::UInt<digest::typenum::UTerm, digest::consts::B1>,
-                                digest::consts::B0,
-                            >,
-                            digest::consts::B0,
-                        >,
-                        digest::consts::B0,
-                    >,
-                    digest::consts::B0,
-                >,
-                digest::consts::B0,
-            >,
-        > = repr;
+        let r: elliptic_curve::array::Array<u8, U32> = repr;
         let t: [u8; 32] = r.0;
 
         // Check that the high bit is not set

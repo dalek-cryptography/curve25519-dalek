@@ -36,7 +36,11 @@ impl Curve for Dalek {
 }
 
 // Impls for EdwardsPoint
-impl MulByGenerator for EdwardsPoint {}
+impl MulByGenerator for EdwardsPoint {
+    fn mul_by_generator(scalar: &Self::Scalar) -> Self {
+        <Self as group::Group>::generator() * scalar
+    }
+}
 
 // Impls for Scalar
 impl AsRef<Scalar> for Scalar {

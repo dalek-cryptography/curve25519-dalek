@@ -29,6 +29,13 @@ mod edwards_benches {
         });
     }
 
+    fn is_torsion_free<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let B = &constants::ED25519_BASEPOINT_POINT;
+        c.bench_function("EdwardsPoint is_torsion_free", move |b| {
+            b.iter(|| B.is_torsion_free())
+        });
+    }
+
     fn consttime_fixed_base_scalar_mul<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let s = Scalar::from(897987897u64).invert();
         c.bench_function("Constant-time fixed-base scalar mul", move |b| {
@@ -62,6 +69,7 @@ mod edwards_benches {
 
         compress(&mut g);
         decompress(&mut g);
+        is_torsion_free(&mut g);
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);

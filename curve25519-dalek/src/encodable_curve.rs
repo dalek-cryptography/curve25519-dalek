@@ -23,6 +23,7 @@ use subtle::CtOption;
 
 use crate::constants::BASEPOINT_ORDER_PRIVATE;
 use crate::EdwardsPoint;
+use crate::RistrettoPoint;
 use crate::Scalar;
 
 // Empty struct for the curve
@@ -42,6 +43,13 @@ impl MulByGenerator for EdwardsPoint {
     }
 }
 
+// Impls for EdwardsPoint
+impl MulByGenerator for RistrettoPoint {
+    fn mul_by_generator(scalar: &Self::Scalar) -> Self {
+        <Self as group::Group>::generator() * scalar
+    }
+}
+
 // Impls for Scalar
 impl AsRef<Scalar> for Scalar {
     fn as_ref(&self) -> &Scalar {
@@ -49,7 +57,6 @@ impl AsRef<Scalar> for Scalar {
     }
 }
 
-// NOTE: ScalarPrimitive is big endian. Dalek uses little endian
 impl From<ScalarPrimitive<Dalek>> for Scalar {
     fn from(value: ScalarPrimitive<Dalek>) -> Self {
         Scalar::from_bytes_mod_order(value.to_uint().to_le_bytes())
@@ -195,5 +202,25 @@ mod tests {
         let t: FieldBytes<Dalek> = FieldBytesEncoding::encode_field_bytes(&one);
         let one_bis: U256 = FieldBytesEncoding::decode_field_bytes(&t);
         assert_eq!(one, one_bis);
+    }
+
+    #[test]
+    fn test_scalar_encoding_decoding() {
+        let mut rng = rand::thread_rng();
+        let s = Scalar::random(&mut rng);
+        let s_256: U256 = s.into();
+        let s_again2: Scalar = s_256.into();
+
+        let s_array: Array<u8, U32> = s.into();
+        let field_bytes = U256::decode_field_bytes(&s_array);
+        let s_again: Scalar = field_bytes.into();
+
+        let s_field_bytes = s_256.encode_field_bytes();
+        let s_uint = U256::decode_field_bytes(&s_field_bytes);
+        let s_again3 = <Scalar as FromUintUnchecked>::from_uint_unchecked(s_uint);
+
+        assert_eq!(s, s_again);
+        assert_eq!(s, s_again2);
+        assert_eq!(s, s_again3);
     }
 }

@@ -124,26 +124,14 @@ impl PartialOrd for Scalar {
 
 impl Ord for Scalar {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        let mut res = None;
         for (s, o) in self.bits_le().rev().zip(other.bits_le().rev()) {
             match (s, o) {
-                (true, false) => {
-                    if res.is_none() {
-                        res = Some(core::cmp::Ordering::Greater);
-                    }
-                }
-                (false, true) => {
-                    if res.is_none() {
-                        res = Some(core::cmp::Ordering::Less)
-                    }
-                }
+                (true, false) => return core::cmp::Ordering::Greater,
+                (false, true) => return core::cmp::Ordering::Less,
                 _ => (),
             };
         }
-        match res {
-            Some(r) => r,
-            None => core::cmp::Ordering::Equal,
-        }
+        core::cmp::Ordering::Equal
     }
 }
 

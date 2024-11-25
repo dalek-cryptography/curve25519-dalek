@@ -63,7 +63,7 @@ cpufeatures = "0.2.6"
 fiat-crypto = { version = "0.2.1", default-features = false }
 
 [features]
-default = ["alloc", "precomputed-tables", "group"]
+default = ["alloc", "precomputed-tables", "zeroize", "group"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []

@@ -26,8 +26,8 @@ use crate::EdwardsPoint;
 use crate::RistrettoPoint;
 use crate::Scalar;
 
-// Empty struct for the curve
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
+/// Empty struct for the curve
 pub struct Dalek {}
 
 impl Curve for Dalek {
@@ -118,14 +118,32 @@ impl IsHigh for Scalar {
 
 impl PartialOrd for Scalar {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Scalar {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        let mut res = None;
         for (s, o) in self.bits_le().rev().zip(other.bits_le().rev()) {
             match (s, o) {
-                (true, false) => return Some(core::cmp::Ordering::Greater),
-                (false, true) => return Some(core::cmp::Ordering::Less),
+                (true, false) => {
+                    if res.is_none() {
+                        res = Some(core::cmp::Ordering::Greater);
+                    }
+                }
+                (false, true) => {
+                    if res.is_none() {
+                        res = Some(core::cmp::Ordering::Less)
+                    }
+                }
                 _ => (),
             };
         }
-        Some(core::cmp::Ordering::Equal)
+        match res {
+            Some(r) => r,
+            None => core::cmp::Ordering::Equal,
+        }
     }
 }
 

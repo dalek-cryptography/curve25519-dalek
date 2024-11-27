@@ -18,8 +18,8 @@ use elliptic_curve::FieldBytes;
 use elliptic_curve::FieldBytesEncoding;
 use elliptic_curve::PrimeField;
 use elliptic_curve::ScalarPrimitive;
-use subtle::Choice;
 use subtle::CtOption;
+use subtle::{Choice, ConstantTimeEq};
 
 use crate::constants::BASEPOINT_ORDER_PRIVATE;
 use crate::EdwardsPoint;
@@ -123,15 +123,26 @@ impl PartialOrd for Scalar {
 }
 
 impl Ord for Scalar {
+    // Perhaps we could implement Choice::greater_than instead and use that here
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        let mut carry_for_less_than = false;
+        let mut carry2_for_res_bit = false;
         for (s, o) in self.bits_le().rev().zip(other.bits_le().rev()) {
-            match (s, o) {
-                (true, false) => return core::cmp::Ordering::Greater,
-                (false, true) => return core::cmp::Ordering::Less,
-                _ => (),
-            };
+            let greater_than_bit = s & !o;
+            let less_than_bit = !s & o;
+            // This value is set to one after the first occurrence of `less_than_bit`== 1
+            carry_for_less_than |= less_than_bit;
+            // Picks up the value of `greater_than_bit` at the first occurrence of `carry_for_less_than`
+            let res_bit = greater_than_bit & !carry_for_less_than;
+            carry2_for_res_bit |= res_bit;
         }
-        core::cmp::Ordering::Equal
+        let are_eq = self.ct_eq(other).unwrap_u8() == 1;
+        match (are_eq, carry2_for_res_bit) {
+            (true, true) => core::cmp::Ordering::Equal,
+            (true, false) => core::cmp::Ordering::Equal,
+            (false, true) => core::cmp::Ordering::Greater,
+            (false, false) => core::cmp::Ordering::Less,
+        }
     }
 }
 
@@ -175,7 +186,9 @@ mod tests {
 
     #[test]
     fn test_partial_ord() {
-        assert!(Scalar::ZERO <= Scalar::ONE);
+        assert_eq!(Scalar::ZERO, Scalar::ZERO);
+        assert!(Scalar::ZERO < Scalar::ONE);
+        assert!(Scalar::ONE > Scalar::ZERO);
     }
 
     fn another_is_high(s: Scalar) -> Choice {

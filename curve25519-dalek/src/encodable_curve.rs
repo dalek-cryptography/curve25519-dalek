@@ -18,8 +18,8 @@ use elliptic_curve::FieldBytes;
 use elliptic_curve::FieldBytesEncoding;
 use elliptic_curve::PrimeField;
 use elliptic_curve::ScalarPrimitive;
-use subtle::CtOption;
 use subtle::{Choice, ConstantTimeEq};
+use subtle::{ConstantTimeGreater, CtOption};
 
 use crate::constants::BASEPOINT_ORDER_PRIVATE;
 use crate::EdwardsPoint;
@@ -122,11 +122,10 @@ impl PartialOrd for Scalar {
     }
 }
 
-impl Ord for Scalar {
-    // Perhaps we could implement Choice::greater_than instead and use that here
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+impl ConstantTimeGreater for Scalar {
+    fn ct_gt(&self, other: &Self) -> Choice {
         let mut carry_for_less_than = false;
-        let mut carry2_for_res_bit = false;
+        let mut carry_for_res_bit = false;
         for (s, o) in self.bits_le().rev().zip(other.bits_le().rev()) {
             let greater_than_bit = s & !o;
             let less_than_bit = !s & o;
@@ -134,10 +133,17 @@ impl Ord for Scalar {
             carry_for_less_than |= less_than_bit;
             // Picks up the value of `greater_than_bit` at the first occurrence of `carry_for_less_than`
             let res_bit = greater_than_bit & !carry_for_less_than;
-            carry2_for_res_bit |= res_bit;
+            carry_for_res_bit |= res_bit;
         }
-        let are_eq = self.ct_eq(other).unwrap_u8() == 1;
-        match (are_eq, carry2_for_res_bit) {
+        Choice::from(if carry_for_res_bit { 1 } else { 0 })
+    }
+}
+
+impl Ord for Scalar {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        let is_greater = self.ct_gt(other).into();
+        let are_eq = self.ct_eq(other).into();
+        match (are_eq, is_greater) {
             (true, true) => core::cmp::Ordering::Equal,
             (true, false) => core::cmp::Ordering::Equal,
             (false, true) => core::cmp::Ordering::Greater,

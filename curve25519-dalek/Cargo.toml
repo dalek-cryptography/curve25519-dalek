@@ -54,6 +54,7 @@ digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.6.0", default-features = false, features = ["const-generics"]}
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
+elliptic-curve = { version = "0.14.0-rc.1", features = ["serde", "arithmetic"] }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
@@ -62,7 +63,7 @@ cpufeatures = "0.2.6"
 fiat-crypto = { version = "0.2.1", default-features = false }
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = ["alloc", "precomputed-tables", "zeroize", "group"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []

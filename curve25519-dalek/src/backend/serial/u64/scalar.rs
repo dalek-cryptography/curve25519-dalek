@@ -197,16 +197,10 @@ impl Scalar52 {
         difference
     }
 
-    /// Compute `a * b` (mod l)
-    #[inline(never)]
-    pub fn mul_wide(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
-        Scalar52::mul_internal(a, b)
-    }
-
     /// Compute `a * b`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of z[*] calculations
-    pub fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
+    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9] {
         let mut z = [0u128; 9];
 
         z[0] = m(a[0], b[0]);
@@ -249,7 +243,7 @@ impl Scalar52 {
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of n* and r* calculations
-    pub fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar52 {
+    pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> Scalar52 {
 
         #[inline(always)]
         fn part1(sum: u128) -> (u128, u64) {

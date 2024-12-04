@@ -19,11 +19,15 @@ impl WideScalar52 {
         Self::new_from_montgomery(&Scalar52::montgomery_mul(a, b))
     }
 
-    pub fn add_assign<'a>(&mut self, rhs: &'a WideScalar52) {
+    pub fn add_assign(&mut self, rhs: &Self) {
         self.0
             .iter_mut()
             .zip(rhs.0.iter())
             .for_each(|(a, b)| *a += b);
+    }
+
+    pub fn mul_acc(&mut self, lhs: &Scalar52, rhs: &Scalar52) {
+        self.add_assign(&Self::mul(lhs, rhs));
     }
 
     pub fn into_scalar(&self) -> Scalar52 {

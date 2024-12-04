@@ -24,4 +24,6 @@ pub mod field;
 
 pub mod scalar;
 
+pub mod scalar_wide;
+
 pub mod constants;

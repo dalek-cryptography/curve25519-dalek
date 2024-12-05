@@ -167,7 +167,7 @@ cfg_if! {
             docsrs,
             doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
         )]
-        pub type WideScalar = backend::serial::fiat_u32::wide_scalar::WideScalar29;
+        type WideScalar = backend::serial::fiat_u32::wide_scalar::WideScalar29;
 
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -185,7 +185,7 @@ cfg_if! {
             docsrs,
             doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
-        pub type WideScalar = backend::serial::fiat_u64::wide_scalar::WideScalar52;
+        type WideScalar = backend::serial::fiat_u64::wide_scalar::WideScalar52;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -195,7 +195,7 @@ cfg_if! {
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
-        pub type WideScalar = backend::serial::u64::wide_scalar::WideScalar52;
+        type WideScalar = backend::serial::u64::wide_scalar::WideScalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -205,7 +205,7 @@ cfg_if! {
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
         
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
-        pub type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
+        type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
     }
 }
 
@@ -421,6 +421,7 @@ impl ConditionallySelectable for Scalar {
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -1141,11 +1142,20 @@ impl Scalar {
     }
 
     /// Transform this `Scalar` to a `WideScalar` for faster arithmetic with lazy modulus reduction
-    pub fn to_wide(&self) -> WideScalar {
+    pub fn to_wide(&self) -> WideScalar {    
         self.unpack().to_wide()
     }
 
-    /// Reduce this `Scalar` modulo \\(\ell\\).
+    /// Build a `Scalar` from a `WideScalar`
+    pub fn from_wide(wide: WideScalar) -> Self {
+        wide.to_scalar().pack()
+    }
+
+    /// Wide `Scalar` multiply accumulate
+    pub fn mul_acc(acc: &mut WideScalar, lhs: &Self, rhs: &Self) {
+        acc.mul_acc(&lhs.unpack(), &rhs.unpack());
+    }
+ 
     #[allow(non_snake_case)]
     fn reduce(&self) -> Scalar {
         let x = self.unpack();
@@ -1158,18 +1168,6 @@ impl Scalar {
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {
         self.ct_eq(&self.reduce())
-    }
-}
-
-impl From<&Scalar> for UnpackedScalar {
-    fn from(value: &Scalar) -> Self {
-        value.unpack()
-    }
-}
-
-impl From<WideScalar> for Scalar {
-    fn from(value: WideScalar) -> Self {
-        value.into_scalar().pack()
     }
 }
 

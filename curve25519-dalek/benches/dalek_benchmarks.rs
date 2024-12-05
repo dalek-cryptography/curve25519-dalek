@@ -298,8 +298,6 @@ mod montgomery_benches {
 }
 
 mod scalar_benches {
-    use curve25519_dalek::scalar::WideScalar;
-
     use super::*;
 
     fn scalar_arith<M: Measurement>(c: &mut BenchmarkGroup<M>) {
@@ -374,10 +372,10 @@ mod scalar_benches {
 
         fn dot_product_wide(a: &[Scalar], b: &[Scalar]) -> Scalar {
             let res = a.iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
-                acc.mul_acc(&ae.into(), &be.into());
+                Scalar::mul_acc(&mut acc, ae, be);
                 acc
             });
-            res.into()
+            Scalar::from_wide(res)
         }
 
         c.bench_function(format!("Scalar dot product {} wide", N), |b| {
@@ -398,7 +396,7 @@ mod scalar_benches {
         let mut g = c.benchmark_group("scalar benches");
 
         scalar_dot_product::<_, { 1 << 10 }>(&mut g);
-        scalar_dot_product::<_, { 1 << 20 }>(&mut g);
+        // scalar_dot_product::<_, { 1 << 20 }>(&mut g);
         // scalar_arith(&mut g);
         // batch_scalar_inversion(&mut g);
     }

@@ -7,7 +7,7 @@ pub struct WideScalar52(pub [u128; 5]);
 impl WideScalar52 {
     pub const ZERO: Self = Self([0u128; 5]);
 
-    pub fn new(x: &Scalar52) -> Self {
+    pub fn from_scalar(x: &Scalar52) -> Self {
         Self::new_from_montgomery(&x.from_montgomery())
     }
 
@@ -30,7 +30,7 @@ impl WideScalar52 {
         self.add_assign(&Self::mul(lhs, rhs));
     }
 
-    pub fn into_scalar(&self) -> Scalar52 {
+    pub fn to_scalar(&self) -> Scalar52 {
         /// `RRR` = (R^3) % L where R = 2^260
         const RRR: Scalar52 = Scalar52([
             0x0004f516a4e30429,

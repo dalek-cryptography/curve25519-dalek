@@ -325,7 +325,7 @@ impl Scalar52 {
     }
 
     pub fn to_wide(&self) -> WideScalar52 {
-        WideScalar52::new(self)
+        WideScalar52::from_scalar(self)
     }
 }
 
@@ -519,7 +519,7 @@ mod test {
         for (v, v_exp) in xx_mont.0.iter().zip(XX_MONT.0) {
             assert_eq!(*v, v_exp as u128);
         }
-        let xx = xx_mont.into_scalar();
+        let xx = xx_mont.to_scalar();
         for (v, v_exp) in xx.0.iter().zip(XX.0) {
             assert_eq!(*v, v_exp);
         }
@@ -528,7 +528,7 @@ mod test {
         for (v, v_exp) in xy_mont.0.iter().zip(XY_MONT.0) {
             assert_eq!(*v, v_exp as u128);
         }
-        let xy = xy_mont.into_scalar();
+        let xy = xy_mont.to_scalar();
         for (v, v_exp) in xy.0.iter().zip(XY.0) {
             assert_eq!(*v, v_exp);
         }
@@ -536,12 +536,12 @@ mod test {
 
     #[test]
     fn wide_dot_product() {
-        let mut r = WideScalar52::ZERO;
+        let mut r = Scalar52::ZERO.to_wide();
         for _ in 0..1 << 24 {
-            r.add_assign(&WideScalar52::mul(&X, &Y));
+            r.mul_acc(&X, &Y);
         }
 
-        let r = r.into_scalar();
+        let r = r.to_scalar();
         for (v, v_exp) in r.0.iter().zip(XY_24.0) {
             assert_eq!(*v, v_exp);
         }
@@ -553,12 +553,12 @@ mod test {
         for (v, v_exp) in r.0.iter().zip(XY_MONT.0) {
             assert_eq!(*v, v_exp as u128);
         }
-        let r = r.into_scalar();
+        let r = r.to_scalar();
         for (v, v_exp) in r.0.iter().zip(XY.0) {
             assert_eq!(*v, v_exp);
         }
 
-        let r = WideScalar52::new(&Y).into_scalar();
+        let r = WideScalar52::from_scalar(&Y).to_scalar();
         for (v, v_exp) in r.0.iter().zip(Y.0) {
             assert_eq!(*v, v_exp);
         }

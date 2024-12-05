@@ -373,11 +373,11 @@ mod scalar_benches {
         });
 
         fn dot_product_wide(a: &[Scalar], b: &[Scalar]) -> Scalar {
-            let res = a.iter().zip(b).fold(WideScalar::ZERO, |mut acc, (ae, be)| {
-                acc.mul_acc(&ae.unpack(), &be.unpack());
+            let res = a.iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+                acc.mul_acc(&ae.into(), &be.into());
                 acc
             });
-            res.into_scalar().pack()
+            res.into()
         }
 
         c.bench_function(format!("Scalar dot product {} wide", N), |b| {

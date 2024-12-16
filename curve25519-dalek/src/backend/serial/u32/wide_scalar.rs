@@ -25,11 +25,11 @@ impl WideScalar29 {
             .zip(rhs.0.iter())
             .for_each(|(a, b)| *a += b);
     }
-    
+
     pub fn mul_acc(&mut self, lhs: &Scalar29, rhs: &Scalar29) {
         self.add_assign(&Self::mul(lhs, rhs));
     }
-    
+
     pub fn to_scalar(&self) -> Scalar29 {
         /// `RRR` = (R^3) % L where R = 2^261
         const RRR: Scalar29 = Scalar29([

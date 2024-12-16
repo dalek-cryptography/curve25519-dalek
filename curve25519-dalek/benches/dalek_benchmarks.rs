@@ -351,8 +351,8 @@ mod scalar_benches {
     fn scalar_dot_product<M: Measurement, const N: usize>(c: &mut BenchmarkGroup<M>) {
         let mut rng = thread_rng();
 
-        fn dot_product(a: &[Scalar], b: &[Scalar]) -> Scalar {
-            a.iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
+        fn dot_product(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+            a.into_iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
                 acc += ae * be;
                 acc
             })
@@ -365,14 +365,14 @@ mod scalar_benches {
                     let b: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
                     (a, b)
                 },
-                |(a, b)| dot_product(&a, &b),
+                |(a, b)| dot_product(a, b),
                 BatchSize::SmallInput,
             );
         });
 
-        fn dot_product_wide(a: &[Scalar], b: &[Scalar]) -> Scalar {
-            let res = a.iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
-                Scalar::mul_acc(&mut acc, ae, be);
+        fn dot_product_wide(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+            let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+                Scalar::mul_acc(&mut acc, &ae, &be);
                 acc
             });
             Scalar::from_wide(res)
@@ -385,7 +385,7 @@ mod scalar_benches {
                     let b: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
                     (a, b)
                 },
-                |(a, b)| dot_product_wide(&a, &b),
+                |(a, b)| dot_product_wide(a, b),
                 BatchSize::SmallInput,
             );
         });
@@ -396,16 +396,15 @@ mod scalar_benches {
         let mut g = c.benchmark_group("scalar benches");
 
         scalar_dot_product::<_, { 1 << 10 }>(&mut g);
-        // scalar_dot_product::<_, { 1 << 20 }>(&mut g);
-        // scalar_arith(&mut g);
-        // batch_scalar_inversion(&mut g);
+        scalar_arith(&mut g);
+        batch_scalar_inversion(&mut g);
     }
 }
 
 criterion_main!(
     scalar_benches::scalar_benches,
-    // montgomery_benches::montgomery_benches,
-    // ristretto_benches::ristretto_benches,
-    // edwards_benches::edwards_benches,
-    // multiscalar_benches::multiscalar_benches,
+    montgomery_benches::montgomery_benches,
+    ristretto_benches::ristretto_benches,
+    edwards_benches::edwards_benches,
+    multiscalar_benches::multiscalar_benches,
 );

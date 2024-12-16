@@ -110,6 +110,30 @@
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
+//!
+//! # Lazy modulus reduction `Scalar` operations
+//!
+//! A `WideScalar` type can be used to perform multiply-accumulate operations (up to 2^32) with lazy
+//! modulus reductions. A typical use-case is the dot-product between 2 vectors of scalars:
+//!
+//! ```
+//! fn dot(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+//!     let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+//!         Scalar::mul_acc(&mut acc, &ae, &be);
+//!         acc
+//!     });
+//!     Scalar::from_wide(res)
+//! }
+//!
+//! // naive implementation, 2-3x slower
+//! fn dot_slow(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+//!     a.into_iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
+//!         acc += ae * be;
+//!         acc
+//!     })
+//! }
+//!
+//! ```
 
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -203,7 +227,7 @@ cfg_if! {
         /// module.
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
-        
+
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
         type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
     }
@@ -421,7 +445,6 @@ impl ConditionallySelectable for Scalar {
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
 
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -1142,7 +1165,7 @@ impl Scalar {
     }
 
     /// Transform this `Scalar` to a `WideScalar` for faster arithmetic with lazy modulus reduction
-    pub fn to_wide(&self) -> WideScalar {    
+    pub fn to_wide(&self) -> WideScalar {
         self.unpack().to_wide()
     }
 
@@ -1155,7 +1178,8 @@ impl Scalar {
     pub fn mul_acc(acc: &mut WideScalar, lhs: &Self, rhs: &Self) {
         acc.mul_acc(&lhs.unpack(), &rhs.unpack());
     }
- 
+
+    /// Reduce this `Scalar` modulo \\(\ell\\).
     #[allow(non_snake_case)]
     fn reduce(&self) -> Scalar {
         let x = self.unpack();

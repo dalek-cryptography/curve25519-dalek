@@ -22,6 +22,9 @@
 #[path = "../u64/scalar.rs"]
 pub mod scalar;
 
+#[path = "../u64/wide_scalar.rs"]
+pub mod wide_scalar;
+
 pub mod field;
 
 #[path = "../u64/constants.rs"]

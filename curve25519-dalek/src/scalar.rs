@@ -105,12 +105,34 @@
 //!
 //! assert_eq!(a, a2);
 //! # }
-//!
 //! ```
 //!
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
+//!
+//! # Lazy modulus reduction `Scalar` operations
+//!
+//! A `WideScalar` type can be used to perform multiply-accumulate operations (up to 2^32) with lazy
+//! modulus reductions. A typical use-case is the dot-product between 2 vectors of scalars:
+//!
+//! ```
+//! fn dot(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+//!     let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+//!         Scalar::mul_acc(&mut acc, &ae, &be);
+//!         acc
+//!     });
+//!     Scalar::from_wide(res)
+//! }
+//!
+//! // naive implementation, 2-3x slower
+//! fn dot_slow(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+//!     a.into_iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
+//!         acc += ae * be;
+//!         acc
+//!     })
+//! }
+//!
 //! ```
 
 use core::borrow::Borrow;
@@ -164,6 +186,13 @@ cfg_if! {
         )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
+        #[cfg(curve25519_dalek_bits = "32")]
+        #[cfg_attr(
+            docsrs,
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
+        )]
+        type WideScalar = backend::serial::fiat_u32::wide_scalar::WideScalar29;
+
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
@@ -174,6 +203,13 @@ cfg_if! {
             doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
+
+        #[cfg(curve25519_dalek_bits = "64")]
+        #[cfg_attr(
+            docsrs,
+            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
+        )]
+        type WideScalar = backend::serial::fiat_u64::wide_scalar::WideScalar52;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -181,13 +217,19 @@ cfg_if! {
         /// module.
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
+
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
+        type WideScalar = backend::serial::u64::wide_scalar::WideScalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
         /// This is a type alias for one of the scalar types in the `backend`
         /// module.
-        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+
+        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
+        type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
     }
 }
 
@@ -1120,6 +1162,21 @@ impl Scalar {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
+    }
+
+    /// Transform this `Scalar` to a `WideScalar` for faster arithmetic with lazy modulus reduction
+    pub fn to_wide(&self) -> WideScalar {
+        self.unpack().to_wide()
+    }
+
+    /// Build a `Scalar` from a `WideScalar`
+    pub fn from_wide(wide: WideScalar) -> Self {
+        wide.to_scalar().pack()
+    }
+
+    /// Wide `Scalar` multiply accumulate
+    pub fn mul_acc(acc: &mut WideScalar, lhs: &Self, rhs: &Self) {
+        acc.mul_acc(&lhs.unpack(), &rhs.unpack());
     }
 
     /// Reduce this `Scalar` modulo \\(\ell\\).

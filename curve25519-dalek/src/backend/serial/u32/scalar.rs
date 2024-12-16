@@ -19,6 +19,8 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
+use super::wide_scalar::WideScalar29;
+
 /// The `Scalar29` struct represents an element in \\(\mathbb{Z} / \ell\mathbb{Z}\\) as 9 29-bit
 /// limbs
 #[derive(Copy, Clone)]
@@ -392,6 +394,10 @@ impl Scalar29 {
         }
         Scalar29::montgomery_reduce(&limbs)
     }
+
+    pub fn to_wide(&self) -> WideScalar29 {
+        WideScalar29::from_scalar(self)
+    }
 }
 
 #[cfg(test)]
@@ -535,6 +541,65 @@ mod test {
         let reduced = Scalar29::from_bytes_wide(&bignum);
         for i in 0..9 {
             assert!(reduced[i] == C[i]);
+        }
+    }
+
+
+    /// x*y * 2^24 mod l
+    /// test carry propagation
+    pub static XY_24: Scalar29 = Scalar29([
+        0x0d000000, 0x1b5d3b19, 0x180bb9b5, 0x01ae3b09, 0x1a634ed5, 0x0000000d, 0x00000000,
+        0x00000000, 0x00000000,
+    ]);
+
+    #[test]
+    fn wide_multiplication() {
+        let xx_mont = WideScalar29::mul(&X, &X);
+        for (v, v_exp) in xx_mont.0.iter().zip(XX_MONT.0) {
+            assert_eq!(*v, v_exp as u64);
+        }
+        let xx = xx_mont.to_scalar();
+        for (v, v_exp) in xx.0.iter().zip(XX.0) {
+            assert_eq!(*v, v_exp);
+        }
+
+        let xy_mont = WideScalar29::mul(&X, &Y);
+        for (v, v_exp) in xy_mont.0.iter().zip(XY_MONT.0) {
+            assert_eq!(*v, v_exp as u64);
+        }
+        let xy = xy_mont.to_scalar();
+        for (v, v_exp) in xy.0.iter().zip(XY.0) {
+            assert_eq!(*v, v_exp);
+        }
+    }
+
+    #[test]
+    fn wide_dot_product() {
+        let mut r = Scalar29::ZERO.to_wide();
+        for _ in 0..1 << 24 {
+            r.mul_acc(&X, &Y);
+        }
+
+        let r = r.to_scalar();
+        for (v, v_exp) in r.0.iter().zip(XY_24.0) {
+            assert_eq!(*v, v_exp);
+        }
+    }
+
+    #[test]
+    fn wide_conversions() {
+        let r = WideScalar29::new_from_montgomery(&XY_MONT);
+        for (v, v_exp) in r.0.iter().zip(XY_MONT.0) {
+            assert_eq!(*v, v_exp as u64);
+        }
+        let r = r.to_scalar();
+        for (v, v_exp) in r.0.iter().zip(XY.0) {
+            assert_eq!(*v, v_exp);
+        }
+
+        let r = WideScalar29::from_scalar(&Y).to_scalar();
+        for (v, v_exp) in r.0.iter().zip(Y.0) {
+            assert_eq!(*v, v_exp);
         }
     }
 }

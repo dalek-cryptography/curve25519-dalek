@@ -348,10 +348,54 @@ mod scalar_benches {
         }
     }
 
+    fn scalar_dot_product<M: Measurement, const N: usize>(c: &mut BenchmarkGroup<M>) {
+        let mut rng = thread_rng();
+
+        fn dot_product(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+            a.into_iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
+                acc += ae * be;
+                acc
+            })
+        }
+
+        c.bench_function(format!("Scalar dot product {}", N), |b| {
+            b.iter_batched(
+                || {
+                    let a: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
+                    let b: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
+                    (a, b)
+                },
+                |(a, b)| dot_product(a, b),
+                BatchSize::SmallInput,
+            );
+        });
+
+        fn dot_product_wide(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
+            let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+                Scalar::mul_acc(&mut acc, &ae, &be);
+                acc
+            });
+            Scalar::from_wide(res)
+        }
+
+        c.bench_function(format!("Scalar dot product {} wide", N), |b| {
+            b.iter_batched(
+                || {
+                    let a: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
+                    let b: Vec<_> = (0..N).map(|_| Scalar::random(&mut rng)).collect();
+                    (a, b)
+                },
+                |(a, b)| dot_product_wide(a, b),
+                BatchSize::SmallInput,
+            );
+        });
+    }
+
     pub(crate) fn scalar_benches() {
         let mut c = Criterion::default();
         let mut g = c.benchmark_group("scalar benches");
 
+        scalar_dot_product::<_, { 1 << 10 }>(&mut g);
         scalar_arith(&mut g);
         batch_scalar_inversion(&mut g);
     }

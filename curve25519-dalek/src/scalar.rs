@@ -148,6 +148,7 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+use elliptic_curve::array::Array;
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -1320,14 +1321,14 @@ use elliptic_curve::consts::U32;
 
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
-    type Repr = elliptic_curve::array::Array<u8, U32>;
+    type Repr = Array<u8, U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         Self::from_canonical_bytes(repr.0)
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
-        let r: elliptic_curve::array::Array<u8, U32> = repr;
+        let r: Array<u8, U32> = repr;
         let t: [u8; 32] = r.0;
 
         // Check that the high bit is not set
@@ -1345,7 +1346,7 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        elliptic_curve::array::Array::try_from(self.to_bytes())
+        Array::try_from(self.to_bytes())
             .expect("Could not convert bytes to Array")
     }
 
@@ -1399,7 +1400,8 @@ impl PrimeFieldBits for Scalar {
     type ReprBits = [u8; 32];
 
     fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
-        self.to_repr().into()
+        let a: [u8; 32] = self.to_repr().into();
+        a.into()
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
@@ -2066,7 +2068,7 @@ pub(crate) mod test {
         // We should get back either the positive or negative root.
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
-        let res = elliptic_curve::array::Array::try_from([0xff; 32]).unwrap();
+        let res = Array::try_from([0xff; 32]).unwrap();
 
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
         assert_eq!(Scalar::from_repr_vartime(res), None);

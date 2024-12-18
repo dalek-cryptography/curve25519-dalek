@@ -117,6 +117,8 @@
 //! modulus reductions. A typical use-case is the dot-product between 2 vectors of scalars:
 //!
 //! ```
+//! use curve25519_dalek::Scalar;
+//! 
 //! fn dot(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
 //!     let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
 //!         Scalar::mul_acc(&mut acc, &ae, &be);

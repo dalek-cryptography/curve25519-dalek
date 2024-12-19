@@ -8,6 +8,7 @@ use elliptic_curve::array::Array;
 use elliptic_curve::bigint::ArrayEncoding;
 use elliptic_curve::bigint::U256;
 use elliptic_curve::consts::U32;
+use elliptic_curve::group;
 use elliptic_curve::ops::Invert;
 use elliptic_curve::ops::MulByGenerator;
 use elliptic_curve::scalar::FromUintUnchecked;
@@ -37,6 +38,7 @@ impl Curve for Dalek {
 }
 
 // Impls for EdwardsPoint
+#[cfg(feature = "group")]
 impl MulByGenerator for EdwardsPoint {
     fn mul_by_generator(scalar: &Self::Scalar) -> Self {
         <Self as group::Group>::generator() * scalar
@@ -44,6 +46,7 @@ impl MulByGenerator for EdwardsPoint {
 }
 
 // Impls for EdwardsPoint
+#[cfg(feature = "group")]
 impl MulByGenerator for RistrettoPoint {
     fn mul_by_generator(scalar: &Self::Scalar) -> Self {
         <Self as group::Group>::generator() * scalar
@@ -102,6 +105,7 @@ impl Into<U256> for &mut Scalar {
     }
 }
 
+#[cfg(feature = "group")]
 impl Invert for Scalar {
     type Output = CtOption<Self>;
     fn invert(&self) -> Self::Output {
@@ -109,6 +113,7 @@ impl Invert for Scalar {
     }
 }
 
+#[cfg(feature = "group")]
 impl IsHigh for Scalar {
     fn is_high(&self) -> Choice {
         let res = self >= &<Scalar as PrimeField>::TWO_INV;
@@ -203,6 +208,7 @@ mod tests {
         Choice::from(res as u8)
     }
     #[test]
+    #[cfg(feature = "group")]
     fn test_is_high() {
         let mut csprng = rand_core::OsRng;
         for _i in 0..10 {

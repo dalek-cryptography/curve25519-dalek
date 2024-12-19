@@ -8,22 +8,32 @@ use elliptic_curve::array::Array;
 use elliptic_curve::bigint::ArrayEncoding;
 use elliptic_curve::bigint::U256;
 use elliptic_curve::consts::U32;
+#[cfg(feature = "group")]
 use elliptic_curve::group;
+#[cfg(feature = "group")]
 use elliptic_curve::ops::Invert;
+#[cfg(feature = "group")]
 use elliptic_curve::ops::MulByGenerator;
 use elliptic_curve::scalar::FromUintUnchecked;
+#[cfg(feature = "group")]
 use elliptic_curve::scalar::IsHigh;
 use elliptic_curve::Curve;
+#[cfg(feature = "group")]
 use elliptic_curve::Field;
 use elliptic_curve::FieldBytes;
 use elliptic_curve::FieldBytesEncoding;
+#[cfg(feature = "group")]
 use elliptic_curve::PrimeField;
 use elliptic_curve::ScalarPrimitive;
+use subtle::ConstantTimeGreater;
+#[cfg(feature = "group")]
+use subtle::CtOption;
 use subtle::{Choice, ConstantTimeEq};
-use subtle::{ConstantTimeGreater, CtOption};
 
 use crate::constants::BASEPOINT_ORDER_PRIVATE;
+#[cfg(feature = "group")]
 use crate::EdwardsPoint;
+#[cfg(feature = "group")]
 use crate::RistrettoPoint;
 use crate::Scalar;
 

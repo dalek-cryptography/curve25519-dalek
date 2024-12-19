@@ -148,6 +148,7 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
 use elliptic_curve::array::Array;
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
@@ -1317,6 +1318,7 @@ impl Field for Scalar {
     }
 }
 
+#[cfg(feature = "group")]
 use elliptic_curve::consts::U32;
 
 #[cfg(feature = "group")]

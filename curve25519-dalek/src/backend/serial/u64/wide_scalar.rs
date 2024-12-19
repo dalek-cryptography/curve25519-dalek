@@ -13,7 +13,9 @@ impl WideScalar52 {
 
     pub(crate) fn new_from_montgomery(x: &Scalar52) -> Self {
         let mut y = Self::ZERO;
-        y.0.iter_mut().zip(x.0).for_each(|(ye, xe)| *ye = xe as u128);
+        y.0.iter_mut()
+            .zip(x.0)
+            .for_each(|(ye, xe)| *ye = xe as u128);
         y
     }
 

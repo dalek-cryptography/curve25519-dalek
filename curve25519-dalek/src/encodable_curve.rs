@@ -203,7 +203,9 @@ mod tests {
     use elliptic_curve::bigint::U256;
     #[cfg(feature = "group")]
     use elliptic_curve::scalar::IsHigh;
+    #[cfg(feature = "group")]
     use elliptic_curve::Curve;
+    #[cfg(feature = "group")]
     use subtle::Choice;
 
     #[test]

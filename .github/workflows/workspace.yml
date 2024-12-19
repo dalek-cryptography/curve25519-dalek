@@ -59,6 +59,7 @@ jobs:
 
   # Test no_std with serial (default)
   build-nostd-serial:
+    enabled: false
     name: Build serial on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
     strategy:

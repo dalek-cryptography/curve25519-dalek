@@ -118,7 +118,7 @@
 //!
 //! ```
 //! use curve25519_dalek::Scalar;
-//! 
+//!
 //! fn dot(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
 //!     let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
 //!         Scalar::mul_acc(&mut acc, &ae, &be);
@@ -1346,8 +1346,7 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        Array::try_from(self.to_bytes())
-            .expect("Could not convert bytes to Array")
+        Array::from(self.to_bytes())
     }
 
     fn is_odd(&self) -> Choice {

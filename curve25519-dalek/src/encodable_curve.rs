@@ -81,27 +81,27 @@ impl FromUintUnchecked for Scalar {
     }
 }
 
-impl Into<FieldBytes<Dalek>> for Scalar {
-    fn into(self) -> FieldBytes<Dalek> {
-        U256::encode_field_bytes(&U256::from_le_slice(&self.bytes))
+impl From<Scalar> for FieldBytes<Dalek> {
+    fn from(value: Scalar) -> Self {
+        U256::encode_field_bytes(&U256::from_le_slice(&value.bytes))
     }
 }
 
-impl Into<ScalarPrimitive<Dalek>> for Scalar {
-    fn into(self) -> ScalarPrimitive<Dalek> {
-        ScalarPrimitive::new(U256::from_le_slice(&self.bytes)).unwrap()
+impl From<Scalar> for ScalarPrimitive<Dalek> {
+    fn from(value: Scalar) -> Self {
+        ScalarPrimitive::new(U256::from_le_slice(&value.bytes)).unwrap()
     }
 }
 
-impl Into<U256> for Scalar {
-    fn into(self) -> U256 {
-        U256::from_le_slice(&self.bytes)
+impl From<Scalar> for U256 {
+    fn from(value: Scalar) -> Self {
+        U256::from_le_slice(&value.bytes)
     }
 }
 
-impl Into<U256> for &mut Scalar {
-    fn into(self) -> U256 {
-        U256::from_le_slice(&self.bytes)
+impl From<&mut Scalar> for U256 {
+    fn from(value: &mut Scalar) -> Self {
+        U256::from_le_slice(&value.bytes)
     }
 }
 
@@ -159,7 +159,7 @@ impl Ord for Scalar {
 
 impl ShrAssign<usize> for Scalar {
     fn shr_assign(&mut self, rhs: usize) {
-        let temp = Into::<U256>::into(self.clone())
+        let temp = Into::<U256>::into(*self)
             .shr_vartime(rhs as u32)
             .to_le_bytes();
         *self = Scalar::from_bytes_mod_order(temp);

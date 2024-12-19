@@ -324,8 +324,8 @@ impl Scalar52 {
         Scalar52::montgomery_reduce(&limbs)
     }
 
-    pub fn to_wide(&self) -> WideScalar52 {
-        WideScalar52::from_scalar(self)
+    pub fn to_wide(self) -> WideScalar52 {
+        WideScalar52::from_scalar(&self)
     }
 }
 

@@ -45,7 +45,7 @@ jobs:
 
   # Default no_std test only tests using serial across all crates
   build-nostd-fiat:
-    enabled: false
+    if: false
     name: Build fiat on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
     strategy:

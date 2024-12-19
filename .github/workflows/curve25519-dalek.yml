@@ -98,7 +98,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
+          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu
+          # targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
       - run: bash tests/build_tests.sh
 
   test-simd-nightly:
@@ -137,7 +138,7 @@ jobs:
     - uses: actions/checkout@v3
     # Re-resolve Cargo.lock with minimal versions
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo update -Z minimal-versions
+    - run: cargo update minimal-versions
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0

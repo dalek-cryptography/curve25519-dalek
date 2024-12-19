@@ -351,11 +351,16 @@ mod scalar_benches {
     fn scalar_dot_product<M: Measurement, const N: usize>(c: &mut BenchmarkGroup<M>) {
         let mut rng = thread_rng();
 
-        fn dot_product(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
-            a.into_iter().zip(b).fold(Scalar::ZERO, |mut acc, (ae, be)| {
-                acc += ae * be;
-                acc
-            })
+        fn dot_product(
+            a: impl IntoIterator<Item = Scalar>,
+            b: impl IntoIterator<Item = Scalar>,
+        ) -> Scalar {
+            a.into_iter()
+                .zip(b)
+                .fold(Scalar::ZERO, |mut acc, (ae, be)| {
+                    acc += ae * be;
+                    acc
+                })
         }
 
         c.bench_function(format!("Scalar dot product {}", N), |b| {
@@ -370,11 +375,17 @@ mod scalar_benches {
             );
         });
 
-        fn dot_product_wide(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
-            let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
-                Scalar::mul_acc(&mut acc, &ae, &be);
-                acc
-            });
+        fn dot_product_wide(
+            a: impl IntoIterator<Item = Scalar>,
+            b: impl IntoIterator<Item = Scalar>,
+        ) -> Scalar {
+            let res = a
+                .into_iter()
+                .zip(b)
+                .fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
+                    Scalar::mul_acc(&mut acc, &ae, &be);
+                    acc
+                });
             Scalar::from_wide(res)
         }
 

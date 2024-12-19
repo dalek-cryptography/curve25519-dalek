@@ -117,6 +117,8 @@
 //! modulus reductions. A typical use-case is the dot-product between 2 vectors of scalars:
 //!
 //! ```
+//! use curve25519_dalek::Scalar;
+//!
 //! fn dot(a: impl IntoIterator<Item = Scalar>, b: impl IntoIterator<Item = Scalar>) -> Scalar {
 //!     let res = a.into_iter().zip(b).fold(Scalar::ZERO.to_wide(), |mut acc, (ae, be)| {
 //!         Scalar::mul_acc(&mut acc, &ae, &be);
@@ -146,6 +148,8 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+#[cfg(feature = "group")]
+use elliptic_curve::array::Array;
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -186,12 +190,13 @@ cfg_if! {
         )]
         type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
 
+        /// A `WideScalar` represents a non-reduced product of 2 GF(l) elements with a 32-bit slack for additions.
         #[cfg(curve25519_dalek_bits = "32")]
         #[cfg_attr(
             docsrs,
             doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
         )]
-        type WideScalar = backend::serial::fiat_u32::wide_scalar::WideScalar29;
+        pub type WideScalar = backend::serial::fiat_u32::wide_scalar::WideScalar29;
 
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -204,12 +209,13 @@ cfg_if! {
         )]
         type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
 
+        /// A `WideScalar` represents a non-reduced product of 2 GF(l) elements with a 32-bit slack for additions.
         #[cfg(curve25519_dalek_bits = "64")]
         #[cfg_attr(
             docsrs,
             doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
         )]
-        type WideScalar = backend::serial::fiat_u64::wide_scalar::WideScalar52;
+        pub type WideScalar = backend::serial::fiat_u64::wide_scalar::WideScalar52;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -218,8 +224,9 @@ cfg_if! {
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
         type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
+        /// A `WideScalar` represents a non-reduced product of 2 GF(l) elements with a 32-bit slack for additions.
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
-        type WideScalar = backend::serial::u64::wide_scalar::WideScalar52;
+        pub type WideScalar = backend::serial::u64::wide_scalar::WideScalar52;
     } else {
         /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
         ///
@@ -228,8 +235,9 @@ cfg_if! {
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
         type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
 
+        /// A `WideScalar` represents a non-reduced product of 2 GF(l) elements with a 32-bit slack for additions.
         #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "32")))]
-        type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
+        pub type WideScalar = backend::serial::u32::wide_scalar::WideScalar29;
     }
 }
 
@@ -1310,18 +1318,19 @@ impl Field for Scalar {
     }
 }
 
+#[cfg(feature = "group")]
 use elliptic_curve::consts::U32;
 
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
-    type Repr = elliptic_curve::array::Array<u8, U32>;
+    type Repr = Array<u8, U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         Self::from_canonical_bytes(repr.0)
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
-        let r: elliptic_curve::array::Array<u8, U32> = repr;
+        let r: Array<u8, U32> = repr;
         let t: [u8; 32] = r.0;
 
         // Check that the high bit is not set
@@ -1339,8 +1348,7 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        elliptic_curve::array::Array::try_from(self.to_bytes())
-            .expect("Could not convert bytes to Array")
+        Array::from(self.to_bytes())
     }
 
     fn is_odd(&self) -> Choice {
@@ -1393,7 +1401,8 @@ impl PrimeFieldBits for Scalar {
     type ReprBits = [u8; 32];
 
     fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
-        self.to_repr().into()
+        let a: [u8; 32] = self.to_repr().into();
+        a.into()
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
@@ -2060,7 +2069,7 @@ pub(crate) mod test {
         // We should get back either the positive or negative root.
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
-        let res = elliptic_curve::array::Array::try_from([0xff; 32]).unwrap();
+        let res = Array::try_from([0xff; 32]).unwrap();
 
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
         assert_eq!(Scalar::from_repr_vartime(res), None);

@@ -544,7 +544,6 @@ mod test {
         }
     }
 
-
     /// x*y * 2^24 mod l
     /// test carry propagation
     pub static XY_24: Scalar29 = Scalar29([

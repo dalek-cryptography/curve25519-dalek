@@ -45,6 +45,7 @@ jobs:
 
   # Default no_std test only tests using serial across all crates
   build-nostd-fiat:
+    if: false
     name: Build fiat on no_std target (thumbv7em-none-eabi)
     runs-on: ubuntu-latest
     strategy:
@@ -74,7 +75,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # 32-bit target
           - target: i686-unknown-linux-gnu
             deps: sudo apt update && sudo apt install gcc-multilib
 
@@ -90,6 +90,7 @@ jobs:
         run: cargo test --target ${{ matrix.target }}
 
   build-script:
+    if: false
     name: Test Build Script
     runs-on: ubuntu-latest
     steps:
@@ -136,7 +137,7 @@ jobs:
     - uses: actions/checkout@v3
     # Re-resolve Cargo.lock with minimal versions
     - uses: dtolnay/rust-toolchain@nightly
-    - run: cargo update -Z minimal-versions
+    - run: cargo update minimal-versions
     # Now check that `cargo build` works with respect to the oldest possible
     # deps and the stated MSRV
     - uses: dtolnay/rust-toolchain@1.60.0

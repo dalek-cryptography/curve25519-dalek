@@ -8,21 +8,32 @@ use elliptic_curve::array::Array;
 use elliptic_curve::bigint::ArrayEncoding;
 use elliptic_curve::bigint::U256;
 use elliptic_curve::consts::U32;
+#[cfg(feature = "group")]
+use elliptic_curve::group;
+#[cfg(feature = "group")]
 use elliptic_curve::ops::Invert;
+#[cfg(feature = "group")]
 use elliptic_curve::ops::MulByGenerator;
 use elliptic_curve::scalar::FromUintUnchecked;
+#[cfg(feature = "group")]
 use elliptic_curve::scalar::IsHigh;
 use elliptic_curve::Curve;
+#[cfg(feature = "group")]
 use elliptic_curve::Field;
 use elliptic_curve::FieldBytes;
 use elliptic_curve::FieldBytesEncoding;
+#[cfg(feature = "group")]
 use elliptic_curve::PrimeField;
 use elliptic_curve::ScalarPrimitive;
+use subtle::ConstantTimeGreater;
+#[cfg(feature = "group")]
+use subtle::CtOption;
 use subtle::{Choice, ConstantTimeEq};
-use subtle::{ConstantTimeGreater, CtOption};
 
 use crate::constants::BASEPOINT_ORDER_PRIVATE;
+#[cfg(feature = "group")]
 use crate::EdwardsPoint;
+#[cfg(feature = "group")]
 use crate::RistrettoPoint;
 use crate::Scalar;
 
@@ -37,6 +48,7 @@ impl Curve for Dalek {
 }
 
 // Impls for EdwardsPoint
+#[cfg(feature = "group")]
 impl MulByGenerator for EdwardsPoint {
     fn mul_by_generator(scalar: &Self::Scalar) -> Self {
         <Self as group::Group>::generator() * scalar
@@ -44,6 +56,7 @@ impl MulByGenerator for EdwardsPoint {
 }
 
 // Impls for EdwardsPoint
+#[cfg(feature = "group")]
 impl MulByGenerator for RistrettoPoint {
     fn mul_by_generator(scalar: &Self::Scalar) -> Self {
         <Self as group::Group>::generator() * scalar
@@ -78,30 +91,31 @@ impl FromUintUnchecked for Scalar {
     }
 }
 
-impl Into<FieldBytes<Dalek>> for Scalar {
-    fn into(self) -> FieldBytes<Dalek> {
-        U256::encode_field_bytes(&U256::from_le_slice(&self.bytes))
+impl From<Scalar> for FieldBytes<Dalek> {
+    fn from(value: Scalar) -> Self {
+        U256::encode_field_bytes(&U256::from_le_slice(&value.bytes))
     }
 }
 
-impl Into<ScalarPrimitive<Dalek>> for Scalar {
-    fn into(self) -> ScalarPrimitive<Dalek> {
-        ScalarPrimitive::new(U256::from_le_slice(&self.bytes)).unwrap()
+impl From<Scalar> for ScalarPrimitive<Dalek> {
+    fn from(value: Scalar) -> Self {
+        ScalarPrimitive::new(U256::from_le_slice(&value.bytes)).unwrap()
     }
 }
 
-impl Into<U256> for Scalar {
-    fn into(self) -> U256 {
-        U256::from_le_slice(&self.bytes)
+impl From<Scalar> for U256 {
+    fn from(value: Scalar) -> Self {
+        U256::from_le_slice(&value.bytes)
     }
 }
 
-impl Into<U256> for &mut Scalar {
-    fn into(self) -> U256 {
-        U256::from_le_slice(&self.bytes)
+impl From<&mut Scalar> for U256 {
+    fn from(value: &mut Scalar) -> Self {
+        U256::from_le_slice(&value.bytes)
     }
 }
 
+#[cfg(feature = "group")]
 impl Invert for Scalar {
     type Output = CtOption<Self>;
     fn invert(&self) -> Self::Output {
@@ -109,6 +123,7 @@ impl Invert for Scalar {
     }
 }
 
+#[cfg(feature = "group")]
 impl IsHigh for Scalar {
     fn is_high(&self) -> Choice {
         let res = self >= &<Scalar as PrimeField>::TWO_INV;
@@ -154,7 +169,7 @@ impl Ord for Scalar {
 
 impl ShrAssign<usize> for Scalar {
     fn shr_assign(&mut self, rhs: usize) {
-        let temp = Into::<U256>::into(self.clone())
+        let temp = Into::<U256>::into(*self)
             .shr_vartime(rhs as u32)
             .to_le_bytes();
         *self = Scalar::from_bytes_mod_order(temp);
@@ -186,8 +201,11 @@ mod tests {
     use crate::encodable_curve::Dalek;
     use crate::Scalar;
     use elliptic_curve::bigint::U256;
+    #[cfg(feature = "group")]
     use elliptic_curve::scalar::IsHigh;
+    #[cfg(feature = "group")]
     use elliptic_curve::Curve;
+    #[cfg(feature = "group")]
     use subtle::Choice;
 
     #[test]
@@ -197,12 +215,15 @@ mod tests {
         assert!(Scalar::ONE > Scalar::ZERO);
     }
 
+    #[cfg(feature = "group")]
     fn another_is_high(s: Scalar) -> Choice {
         let s_as_uint: U256 = s.into();
         let res = (Dalek::ORDER - s_as_uint) < s_as_uint;
         Choice::from(res as u8)
     }
+
     #[test]
+    #[cfg(feature = "group")]
     fn test_is_high() {
         let mut csprng = rand_core::OsRng;
         for _i in 0..10 {

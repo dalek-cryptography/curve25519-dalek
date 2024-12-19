@@ -201,6 +201,7 @@ mod tests {
     use crate::encodable_curve::Dalek;
     use crate::Scalar;
     use elliptic_curve::bigint::U256;
+    #[cfg(feature = "group")]
     use elliptic_curve::scalar::IsHigh;
     use elliptic_curve::Curve;
     use subtle::Choice;
@@ -212,11 +213,13 @@ mod tests {
         assert!(Scalar::ONE > Scalar::ZERO);
     }
 
+    #[cfg(feature = "group")]
     fn another_is_high(s: Scalar) -> Choice {
         let s_as_uint: U256 = s.into();
         let res = (Dalek::ORDER - s_as_uint) < s_as_uint;
         Choice::from(res as u8)
     }
+
     #[test]
     #[cfg(feature = "group")]
     fn test_is_high() {

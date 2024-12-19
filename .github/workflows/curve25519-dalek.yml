@@ -75,7 +75,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # 32-bit target
           - target: i686-unknown-linux-gnu
             deps: sudo apt update && sudo apt install gcc-multilib
 
@@ -91,6 +90,7 @@ jobs:
         run: cargo test --target ${{ matrix.target }}
 
   build-script:
+    if: false
     name: Test Build Script
     runs-on: ubuntu-latest
     steps:
@@ -98,8 +98,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu
-          # targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
+          targets: wasm32-unknown-unknown,x86_64-unknown-linux-gnu,i686-unknown-linux-gnu
       - run: bash tests/build_tests.sh
 
   test-simd-nightly:

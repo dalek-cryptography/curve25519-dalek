@@ -46,6 +46,14 @@ impl VartimePrecomputedMultiscalarMul for VartimePrecomputedStraus {
         }
     }
 
+    fn len(&self) -> usize {
+        self.static_lookup_tables.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.static_lookup_tables.is_empty()
+    }
+
     fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,

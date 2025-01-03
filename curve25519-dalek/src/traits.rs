@@ -299,6 +299,12 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
         I: IntoIterator,
         I::Item: Borrow<Self::Point>;
 
+    /// Return the number of static points in the precomputation.
+    fn len(&self) -> usize;
+
+    /// Determine if the precomputation is empty.
+    fn is_empty(&self) -> bool;
+
     /// Given `static_scalars`, an iterator of public scalars
     /// \\(b_i\\), compute
     /// $$

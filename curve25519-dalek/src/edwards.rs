@@ -562,6 +562,41 @@ impl EdwardsPoint {
         MontgomeryPoint(u.as_bytes())
     }
 
+    /// Converts a large batch of points to Edwards at once.
+    #[cfg(feature = "alloc")]
+    pub fn batch_to_montgomery(eds: &[Self]) -> alloc::vec::Vec<MontgomeryPoint> {
+        // "Montgomery's trick" borrowed from https://github.com/bitcoin-core/secp256k1/pull/16
+        if eds.is_empty() {
+            return vec![];
+        }
+
+        let mut ret = alloc::vec::Vec::with_capacity(eds.len());
+        let mut w_invs = alloc::vec::Vec::with_capacity(eds.len());
+
+        // First build a list of W1, W1W2, W1W2W3, ...
+        w_invs.push(&eds[0].Z - &eds[0].Y);
+        for i in 1..eds.len() {
+            let last = w_invs[i - 1];
+            w_invs.push(&last * &(&eds[i].Z - &eds[i].Y));
+        }
+        // Then invert the final one to get a product of all inverses.
+        let mut w_inv = w_invs[eds.len() - 1].invert();
+        // Then, going backward, compute all the individual inverses.
+        for i in (0..eds.len() - 1).rev() {
+            w_invs[i + 1] = &w_inv * &w_invs[i];
+            w_inv *= &(&eds[i + 1].Z - &eds[i + 1].Y);
+        }
+        w_invs[0] = w_inv;
+
+        // Then complete the points
+        for (ed, w_inv) in eds.iter().zip(w_invs.iter()) {
+            let u = &(&ed.Z + &ed.Y) * w_inv;
+            ret.push(MontgomeryPoint(u.as_bytes()));
+        }
+
+        ret
+    }
+
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
@@ -2103,6 +2138,31 @@ mod test {
         let iters = 50;
         for _ in 0..iters {
             multiscalar_consistency_iter(1000);
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn batch_to_montgomery() {
+        let mut rng = rand::thread_rng();
+
+        let scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let points = scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
+
+        let single_monts = points
+            .iter()
+            .map(EdwardsPoint::to_montgomery)
+            .collect::<Vec<_>>();
+
+        for i in [0, 1, 2, 3, 10, 50, 128] {
+            let invs = EdwardsPoint::batch_to_montgomery(&points[..i]);
+            assert_eq!(&invs, &single_monts[..i]);
         }
     }
 

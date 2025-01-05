@@ -128,6 +128,7 @@ impl VartimePrecomputedStraus {
         }
     }
 
+    /// Return the number of static points in the precomputation.
     pub fn len(&self) -> usize {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 
@@ -140,6 +141,7 @@ impl VartimePrecomputedStraus {
         }
     }
 
+    /// Determine if the precomputation is empty.
     pub fn is_empty(&self) -> bool {
         use crate::traits::VartimePrecomputedMultiscalarMul;
 

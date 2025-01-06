@@ -252,7 +252,7 @@ bounded by \\(2^{52}\\), limbs in excess of \\(2^{52}\\) must be
 reduced before they can be used as an input.  The
 [Gueron-Krasnov][2016_gueron_krasnov] paper suggests normalizing
 values using a standard, sequential carry chain: for each limb, add
-the carryin from reducing the previous limb, compute the carryout and
+the carrying from reducing the previous limb, compute the carryout and
 reduce the current limb, then move to the next limb.
 
 However, when using a smaller radix, such as \\(51\\), each limb can

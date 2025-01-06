@@ -4,7 +4,7 @@ A pure-Rust implementation of x25519 elliptic curve Diffie-Hellman key exchange,
 with curve operations provided by
 [curve25519-dalek](https://github.com/dalek-cryptography/curve25519-dalek).
 
-This crate provides two levels of API: a bare byte-oriented `x25519`
+This create provides two levels of API: a bare byte-oriented `x25519`
 function which matches the function specified in [RFC7748][rfc7748], as
 well as a higher-level Rust API for static and ephemeral Diffie-Hellman.
 

@@ -1,0 +1,3 @@
+[registries.arcium]
+index = "sparse+https://crates.arcium.com/api/v1/crates/"
+credential-provider = ["cargo:token"]

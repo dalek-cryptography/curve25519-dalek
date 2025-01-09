@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: '-D warnings'
+  CARGO_REGISTRIES_ARCIUM_TOKEN: ${{ secrets.ARCIUM_REGISTRY_READ_TOKEN }}
 
 jobs:
 

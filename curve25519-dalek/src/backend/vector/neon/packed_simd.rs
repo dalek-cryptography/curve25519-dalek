@@ -147,23 +147,15 @@ impl_shared!(
 
 impl u32x4 {
     #[inline]
-    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
+    pub const fn new(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[u32; 4], Self>([x0, x1, x2, x3]) }
     }
 
     #[inline]
-    pub const fn const_new(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
-        unsafe { core::mem::transmute::<[u32; 4], Self>([x0, x1, x2, x3]) }
-    }
-
-    #[inline]
-    pub fn splat(x: u32) -> Self {
-        unsafe { core::mem::transmute::<[u32; 4], Self>([x, x, x, x]) }
-    }
-
-    #[inline]
-    pub const fn const_splat(x: u32) -> Self {
-        unsafe { core::mem::transmute::<[u32; 4], Self>([x, x, x, x]) }
+    pub const fn splat(x: u32) -> Self {
+        Self::new(x, x, x, x)
     }
 }
 
@@ -204,13 +196,13 @@ impl_shared!(
 
 impl u32x2 {
     #[inline]
-    pub fn new(x0: u32, x1: u32) -> Self {
+    pub const fn new(x0: u32, x1: u32) -> Self {
         unsafe { core::mem::transmute::<[u32; 2], Self>([x0, x1]) }
     }
 
     #[inline]
-    pub fn splat(x: u32) -> Self {
-        unsafe { core::mem::transmute::<[u32; 2], Self>([x, x]) }
+    pub const fn splat(x: u32) -> Self {
+        Self::new(x, x)
     }
 }
 
@@ -230,13 +222,13 @@ impl_shared!(
 
 impl u64x2 {
     #[inline]
-    pub fn new(x0: u64, x1: u64) -> Self {
+    pub const fn new(x0: u64, x1: u64) -> Self {
         unsafe { core::mem::transmute::<[u64; 2], Self>([x0, x1]) }
     }
 
     #[inline]
-    pub fn splat(x: u64) -> Self {
-        unsafe { core::mem::transmute::<[u64; 2], Self>([x, x]) }
+    pub const fn splat(x: u64) -> Self {
+        Self::new(x, x)
     }
 }
 
@@ -332,8 +324,8 @@ impl u32x4x2 {
     #[inline]
     pub const fn splat(x: u32) -> Self {
         Self(core::arch::aarch64::uint32x4x2_t(
-            u32x4::const_splat(x).0,
-            u32x4::const_splat(x).0,
+            u32x4::splat(x).0,
+            u32x4::splat(x).0,
         ))
     }
 
@@ -378,7 +370,7 @@ impl Add for u32x2x2 {
 
 impl u32x2x2 {
     #[inline]
-    pub fn new(x0: u32x2, x1: u32x2) -> Self {
+    pub const fn new(x0: u32x2, x1: u32x2) -> Self {
         Self(core::arch::aarch64::uint32x2x2_t(x0.0, x1.0))
     }
 
@@ -423,7 +415,9 @@ impl From<core::arch::aarch64::int32x4_t> for i32x4 {
 
 impl i32x4 {
     #[inline]
-    pub fn new(x0: i32, x1: i32, x2: i32, x3: i32) -> Self {
+    pub const fn new(x0: i32, x1: i32, x2: i32, x3: i32) -> Self {
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[i32; 4], Self>([x0, x1, x2, x3]) }
     }
 }
@@ -458,12 +452,12 @@ impl BitAnd for u64x2x2 {
 
 impl u64x2x2 {
     #[inline]
-    pub fn new(x0: u64x2, x1: u64x2) -> Self {
+    pub const fn new(x0: u64x2, x1: u64x2) -> Self {
         Self(core::arch::aarch64::uint64x2x2_t(x0.0, x1.0))
     }
 
     #[inline]
-    pub fn splat(x: u64) -> Self {
+    pub const fn splat(x: u64) -> Self {
         Self::new(u64x2::splat(x), u64x2::splat(x))
     }
 

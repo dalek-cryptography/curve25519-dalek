@@ -612,31 +612,26 @@ impl Mul<(u32, u32, u32, u32)> for FieldElement2625x4 {
     #[inline]
     #[rustfmt::skip] // Retain formatting of packing
     fn mul(self, scalars: (u32, u32, u32, u32)) -> FieldElement2625x4 {
-        unsafe {
-            let consts = (
-                u32x2::new(scalars.0, scalars.1),
-                u32x2::new(scalars.2, scalars.3),
-            );
+        let consts = (
+            u32x2::new(scalars.0, scalars.1),
+            u32x2::new(scalars.2, scalars.3),
+        );
 
-            let (b0, b1) = unpack_pair(self.0[0]);
-            let (b2, b3) = unpack_pair(self.0[1]);
-            let (b4, b5) = unpack_pair(self.0[2]);
-            let (b6, b7) = unpack_pair(self.0[3]);
-            let (b8, b9) = unpack_pair(self.0[4]);
+        let m = |b: u32x2x2| -> u64x2x2 {
+            unsafe {
+                u64x2x2::new(vmull_u32(b.0.0, consts.0.into()).into(), vmull_u32(b.0.1, consts.1.into()).into())
+            }
+        };
 
-            FieldElement2625x4::reduce64([
-                u64x2x2::new(vmull_u32(b0.0.0, consts.0.into()).into(), vmull_u32(b0.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b1.0.0, consts.0.into()).into(), vmull_u32(b1.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b2.0.0, consts.0.into()).into(), vmull_u32(b2.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b3.0.0, consts.0.into()).into(), vmull_u32(b3.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b4.0.0, consts.0.into()).into(), vmull_u32(b4.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b5.0.0, consts.0.into()).into(), vmull_u32(b5.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b6.0.0, consts.0.into()).into(), vmull_u32(b6.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b7.0.0, consts.0.into()).into(), vmull_u32(b7.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b8.0.0, consts.0.into()).into(), vmull_u32(b8.0.1, consts.1.into()).into()),
-                u64x2x2::new(vmull_u32(b9.0.0, consts.0.into()).into(), vmull_u32(b9.0.1, consts.1.into()).into())
-            ])
-        }
+        let (b0, b1) = unpack_pair(self.0[0]);
+        let (b2, b3) = unpack_pair(self.0[1]);
+        let (b4, b5) = unpack_pair(self.0[2]);
+        let (b6, b7) = unpack_pair(self.0[3]);
+        let (b8, b9) = unpack_pair(self.0[4]);
+
+        FieldElement2625x4::reduce64([
+            m(b0), m(b1), m(b2), m(b3), m(b4), m(b5), m(b6), m(b7), m(b8), m(b9)
+        ])
     }
 }
 

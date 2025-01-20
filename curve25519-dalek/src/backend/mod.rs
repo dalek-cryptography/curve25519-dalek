@@ -54,6 +54,7 @@ enum BackendKind {
 }
 
 #[inline]
+#[allow(unreachable_code)]
 fn get_selected_backend() -> BackendKind {
     #[cfg(all(curve25519_dalek_backend = "simd", nightly, target_arch = "aarch64"))]
     {

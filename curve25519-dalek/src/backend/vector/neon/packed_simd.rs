@@ -147,15 +147,25 @@ impl_shared!(
 
 impl u32x4 {
     #[inline]
-    pub const fn new(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
+    pub const fn new_const(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
         // SAFETY: Transmuting between an array and a SIMD type is safe
         // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[u32; 4], Self>([x0, x1, x2, x3]) }
     }
 
     #[inline]
-    pub const fn splat(x: u32) -> Self {
-        Self::new(x, x, x, x)
+    pub const fn splat_const(x: u32) -> Self {
+        Self::new_const(x, x, x, x)
+    }
+
+    #[inline]
+    pub fn new(x0: u32, x1: u32, x2: u32, x3: u32) -> Self {
+        unsafe { core::arch::aarch64::vld1q_u32([x0, x1, x2, x3].as_ptr()).into() } 
+    }
+
+    #[inline]
+    pub fn splat(x: u32) -> Self {
+        unsafe { core::arch::aarch64::vld1q_dup_u32([x].as_ptr()).into() }
     }
 }
 
@@ -196,13 +206,25 @@ impl_shared!(
 
 impl u32x2 {
     #[inline]
-    pub const fn new(x0: u32, x1: u32) -> Self {
+    pub const fn new_const(x0: u32, x1: u32) -> Self {
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[u32; 2], Self>([x0, x1]) }
     }
 
     #[inline]
-    pub const fn splat(x: u32) -> Self {
-        Self::new(x, x)
+    pub const fn splat_const(x: u32) -> Self {
+        Self::new_const(x, x)
+    }
+
+    #[inline]
+    pub fn new(x0: u32, x1: u32) -> Self {
+        unsafe { core::arch::aarch64::vld1_u32([x0, x1].as_ptr()).into() } 
+    }
+
+    #[inline]
+    pub fn splat(x: u32) -> Self {
+        unsafe { core::arch::aarch64::vld1_dup_u32([x].as_ptr()).into() }
     }
 }
 
@@ -222,13 +244,25 @@ impl_shared!(
 
 impl u64x2 {
     #[inline]
-    pub const fn new(x0: u64, x1: u64) -> Self {
+    pub const fn new_const(x0: u64, x1: u64) -> Self {
+        // SAFETY: Transmuting between an array and a SIMD type is safe
+        // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[u64; 2], Self>([x0, x1]) }
     }
 
     #[inline]
-    pub const fn splat(x: u64) -> Self {
-        Self::new(x, x)
+    pub const fn splat_const(x: u64) -> Self {
+        Self::new_const(x, x)
+    }
+
+        #[inline]
+    pub fn new(x0: u64, x1: u64) -> Self {
+        unsafe { core::arch::aarch64::vld1q_u64([x0, x1].as_ptr()).into() } 
+    }
+
+    #[inline]
+    pub fn splat(x: u64) -> Self {
+        unsafe { core::arch::aarch64::vld1q_dup_u64([x].as_ptr()).into() }
     }
 }
 
@@ -324,8 +358,8 @@ impl u32x4x2 {
     #[inline]
     pub const fn splat(x: u32) -> Self {
         Self(core::arch::aarch64::uint32x4x2_t(
-            u32x4::splat(x).0,
-            u32x4::splat(x).0,
+            u32x4::splat_const(x).0,
+            u32x4::splat_const(x).0,
         ))
     }
 
@@ -383,6 +417,7 @@ impl u32x2x2 {
     }
 
     #[inline]
+    #[allow(dead_code)]
     pub fn extract<const N: i32>(self) -> u32 {
         match N {
             0 => u32x2::from(self.0 .0).extract::<0>(),
@@ -415,10 +450,15 @@ impl From<core::arch::aarch64::int32x4_t> for i32x4 {
 
 impl i32x4 {
     #[inline]
-    pub const fn new(x0: i32, x1: i32, x2: i32, x3: i32) -> Self {
+    pub const fn new_const(x0: i32, x1: i32, x2: i32, x3: i32) -> Self {
         // SAFETY: Transmuting between an array and a SIMD type is safe
         // https://rust-lang.github.io/unsafe-code-guidelines/layout/packed-simd-vectors.html
         unsafe { core::mem::transmute::<[i32; 4], Self>([x0, x1, x2, x3]) }
+    }
+
+    #[inline]
+    pub fn new(x0: i32, x1: i32, x2: i32, x3: i32) -> Self {
+        unsafe { core::arch::aarch64::vld1q_s32([x0, x1, x2, x3].as_ptr()).into() }
     }
 }
 
@@ -457,19 +497,8 @@ impl u64x2x2 {
     }
 
     #[inline]
-    pub const fn splat(x: u64) -> Self {
-        Self::new(u64x2::splat(x), u64x2::splat(x))
-    }
-
-    #[inline]
-    pub fn extract<const N: i32>(self) -> u64 {
-        match N {
-            0 => u64x2::from(self.0 .0).extract::<0>(),
-            1 => u64x2::from(self.0 .0).extract::<1>(),
-            2 => u64x2::from(self.0 .1).extract::<0>(),
-            3 => u64x2::from(self.0 .1).extract::<1>(),
-            _ => unreachable!(),
-        }
+    pub const fn splat_const(x: u64) -> Self {
+        Self::new(u64x2::splat_const(x), u64x2::splat_const(x))
     }
 
     #[inline]

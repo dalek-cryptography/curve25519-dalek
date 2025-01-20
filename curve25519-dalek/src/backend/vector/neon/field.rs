@@ -29,6 +29,7 @@ use crate::backend::vector::neon::constants::{
 };
 
 #[cfg(all(target_arch = "aarch64"))]
+#[allow(asm_sub_register)]
 #[inline(always)]
 fn vget_high_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
     use core::arch::asm;
@@ -44,6 +45,7 @@ fn vget_high_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uin
 }
 
 #[cfg(all(target_arch = "aarch64"))]
+#[allow(asm_sub_register)]
 #[inline(always)]
 fn vget_low_u32(v: core::arch::aarch64::uint32x4_t) -> core::arch::aarch64::uint32x2_t {
     use core::arch::asm;
@@ -125,17 +127,10 @@ macro_rules! blend {
 /// ((a1, b1), (c1, d1))
 #[inline(always)]
 fn unpack_pair(src: u32x4x2) -> (u32x2x2, u32x2x2) {
-    let a0: u32x2;
-    let a1: u32x2;
-    let b0: u32x2;
-    let b1: u32x2;
-    unsafe {
-        a0 = vget_low_u32(src.0 .0).into();
-        a1 = vget_low_u32(src.0 .1).into();
-        b0 = vget_high_u32(src.0 .0).into();
-        b1 = vget_high_u32(src.0 .1).into();
-    }
-    return (u32x2x2::new(a0, a1), u32x2x2::new(b0, b1));
+    (
+        u32x2x2::new(vget_low_u32(src.0 .0).into(), vget_low_u32(src.0 .1).into()), 
+        u32x2x2::new(vget_high_u32(src.0 .0).into(), vget_high_u32(src.0 .1).into())
+    )
 }
 
 /// ((a0, 0, b0, 0), (c0, 0, d0, 0))
@@ -270,10 +265,12 @@ impl FieldElement2625x4 {
         ])
     }
 
+    #[allow(non_snake_case)]
     pub fn shuffleABAB(&self) -> FieldElement2625x4 {
         self.shuffle(Shuffle::ABAB)
     }
 
+    #[allow(non_snake_case)]
     pub fn shuffleBACD(&self) -> FieldElement2625x4 {
         self.shuffle(Shuffle::BACD)
     }
@@ -340,7 +337,7 @@ impl FieldElement2625x4 {
                 u32x4::new(c_2i, d_2i, c_2i_1, d_2i_1),
             );
         }
-        return FieldElement2625x4(buf).reduce();
+        FieldElement2625x4(buf).reduce()
     }
 
     #[inline]
@@ -364,12 +361,12 @@ impl FieldElement2625x4 {
     pub fn reduce(&self) -> FieldElement2625x4 {
         // Negated for shift right instead of left
         let shifts = (
-            i32x4::new(-26, -26, -25, -25),
-            i32x4::new(-26, -26, -25, -25),
+            i32x4::new_const(-26, -26, -25, -25),
+            i32x4::new_const(-26, -26, -25, -25),
         );
         let masks = u32x4x2::new(
-            u32x4::new((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
-            u32x4::new((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
+            u32x4::new_const((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
+            u32x4::new_const((1 << 26) - 1, (1 << 26) - 1, (1 << 25) - 1, (1 << 25) - 1),
         );
 
         // Use mutliple transposes instead of table lookup?
@@ -432,8 +429,8 @@ impl FieldElement2625x4 {
             );
 
             u32x4x2::new(
-                vcombine_u32(vget_low_u32(c9_19_spread.0.0), u32x2::splat(0).into()).into(),
-                vcombine_u32(vget_low_u32(c9_19_spread.0.1), u32x2::splat(0).into()).into())
+                vcombine_u32(vget_low_u32(c9_19_spread.0.0), u32x2::splat_const(0).into()).into(),
+                vcombine_u32(vget_low_u32(c9_19_spread.0.1), u32x2::splat_const(0).into()).into())
         };
         v[0] = v[0] + c9_19;
 
@@ -444,9 +441,9 @@ impl FieldElement2625x4 {
     #[rustfmt::skip] // Retain formatting of carry and repacking
     fn reduce64(mut z: [u64x2x2; 10]) -> FieldElement2625x4 {
         #[allow(non_snake_case)]
-        let LOW_25_BITS: u64x2x2 = u64x2x2::splat((1 << 25) - 1);
+        let LOW_25_BITS: u64x2x2 = u64x2x2::splat_const((1 << 25) - 1);
         #[allow(non_snake_case)]
-        let LOW_26_BITS: u64x2x2 = u64x2x2::splat((1 << 26) - 1);
+        let LOW_26_BITS: u64x2x2 = u64x2x2::splat_const((1 << 26) - 1);
 
         let carry = |z: &mut [u64x2x2; 10], i: usize| {
             debug_assert!(i < 9);
@@ -524,7 +521,7 @@ impl FieldElement2625x4 {
             }
         }
 
-        let v19 = u32x2x2::new(u32x2::new(19, 19), u32x2::new(19, 19));
+        let v19 = u32x2x2::new(u32x2::new_const(19, 19), u32x2::new_const(19, 19));
 
         let (x0, x1) = unpack_pair(self.0[0]);
         let (x2, x3) = unpack_pair(self.0[1]);
@@ -559,9 +556,9 @@ impl FieldElement2625x4 {
         let z9 = m(x0_2,x9) + m(x1_2,x8)    + m(x2_2,x7)    + m(x3_2,x6) + m(x4_2,x5);
 
 
-        let low__p37 = u64x2x2::splat(0x3ffffed << 37);
-        let even_p37 = u64x2x2::splat(0x3ffffff << 37);
-        let odd__p37 = u64x2x2::splat(0x1ffffff << 37);
+        let low__p37 = u64x2x2::splat_const(0x3ffffed << 37);
+        let even_p37 = u64x2x2::splat_const(0x3ffffff << 37);
+        let odd__p37 = u64x2x2::splat_const(0x1ffffff << 37);
 
         let negate_D = |x_01: u64x2x2, p_01: u64x2x2| -> u64x2x2 {
             unsafe {
@@ -699,7 +696,7 @@ impl<'a, 'b> Mul<&'b FieldElement2625x4> for &'a FieldElement2625x4 {
         let (y6, y7) = unpack_pair(rhs.0[3]);
         let (y8, y9) = unpack_pair(rhs.0[4]);
 
-        let v19 = u32x2x2::new(u32x2::new(19, 19), u32x2::new(19, 19));
+        let v19 = u32x2x2::new(u32x2::new_const(19, 19), u32x2::new_const(19, 19));
 
         let y1_19 = m_lo(v19, y1);
         let y2_19 = m_lo(v19, y2);
@@ -767,8 +764,8 @@ mod test {
 
         let (a, b) = unpack_pair(src);
 
-        let expected_a = u32x2x2::new(u32x2::new(10000, 10100), u32x2::new(10200, 10300));
-        let expected_b = u32x2x2::new(u32x2::new(10001, 10101), u32x2::new(10201, 10301));
+        let expected_a = u32x2x2::new(u32x2::new_const(10000, 10100), u32x2::new_const(10200, 10300));
+        let expected_b = u32x2x2::new(u32x2::new_const(10001, 10101), u32x2::new_const(10201, 10301));
 
         assert_eq!(a, expected_a);
         assert_eq!(b, expected_b);

@@ -567,6 +567,15 @@ impl TryFrom<&[u8]> for VerifyingKey {
     }
 }
 
+#[cfg(feature = "pkcs8")]
+impl pkcs8::spki::SignatureAlgorithmIdentifier for VerifyingKey {
+    type Params = pkcs8::spki::der::AnyRef<'static>;
+
+    const SIGNATURE_ALGORITHM_IDENTIFIER: pkcs8::spki::AlgorithmIdentifier<Self::Params> =
+        <ed25519::Signature as pkcs8::spki::AssociatedAlgorithmIdentifier>::ALGORITHM_IDENTIFIER;
+}
+
+
 impl From<VerifyingKey> for EdwardsPoint {
     fn from(vk: VerifyingKey) -> EdwardsPoint {
         vk.point

@@ -696,6 +696,14 @@ impl TryFrom<&pkcs8::KeypairBytes> for SigningKey {
 }
 
 #[cfg(feature = "pkcs8")]
+impl pkcs8::spki::SignatureAlgorithmIdentifier for SigningKey {
+    type Params = pkcs8::spki::der::AnyRef<'static>;
+
+    const SIGNATURE_ALGORITHM_IDENTIFIER: pkcs8::spki::AlgorithmIdentifier<Self::Params> =
+        <Signature as pkcs8::spki::AssociatedAlgorithmIdentifier>::ALGORITHM_IDENTIFIER;
+}
+
+#[cfg(feature = "pkcs8")]
 impl From<SigningKey> for pkcs8::KeypairBytes {
     fn from(signing_key: SigningKey) -> pkcs8::KeypairBytes {
         pkcs8::KeypairBytes::from(&signing_key)

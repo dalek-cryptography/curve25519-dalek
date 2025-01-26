@@ -86,7 +86,7 @@ impl ConstantTimeEq for FieldElement {
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> Choice {
-        self.as_bytes().ct_eq(&other.as_bytes())
+        self.to_bytes().ct_eq(&other.to_bytes())
     }
 }
 
@@ -99,7 +99,7 @@ impl FieldElement {
     ///
     /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_negative(&self) -> Choice {
-        let bytes = self.as_bytes();
+        let bytes = self.to_bytes();
         (bytes[0] & 1).into()
     }
 
@@ -110,7 +110,7 @@ impl FieldElement {
     /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_zero(&self) -> Choice {
         let zero = [0u8; 32];
-        let bytes = self.as_bytes();
+        let bytes = self.to_bytes();
 
         bytes.ct_eq(&zero)
     }
@@ -480,7 +480,7 @@ mod test {
         // Decode to a field element
         let one = FieldElement::from_bytes(&one_encoded_wrongly_bytes);
         // .. then check that the encoding is correct
-        let one_bytes = one.as_bytes();
+        let one_bytes = one.to_bytes();
         assert_eq!(one_bytes[0], 1);
         for byte in &one_bytes[1..] {
             assert_eq!(*byte, 0);

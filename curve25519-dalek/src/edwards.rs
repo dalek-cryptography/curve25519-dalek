@@ -93,6 +93,8 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+mod affine;
+
 use cfg_if::cfg_if;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
@@ -145,6 +147,8 @@ use crate::traits::BasepointTable;
 
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
+
+use affine::AffinePoint;
 
 #[cfg(feature = "alloc")]
 use crate::traits::MultiscalarMul;
@@ -528,7 +532,7 @@ impl EdwardsPoint {
         }
     }
 
-    /// Dehomogenize to a AffineNielsPoint.
+    /// Dehomogenize to a `AffineNielsPoint`.
     /// Mainly for testing.
     pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
@@ -540,6 +544,14 @@ impl EdwardsPoint {
             y_minus_x: &y - &x,
             xy2d,
         }
+    }
+
+    /// Dehomogenize to `AffinePoint`.
+    pub(crate) fn to_affine(self) -> AffinePoint {
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        AffinePoint { x, y }
     }
 
     /// Convert this `EdwardsPoint` on the Edwards model to the
@@ -560,15 +572,34 @@ impl EdwardsPoint {
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();
-        MontgomeryPoint(u.as_bytes())
+        MontgomeryPoint(u.to_bytes())
+    }
+
+    /// Converts a large batch of points to Edwards at once. This has the same
+    /// behavior on identity elements as [`Self::to_montgomery`].
+    #[cfg(feature = "alloc")]
+    pub fn to_montgomery_batch(eds: &[Self]) -> Vec<MontgomeryPoint> {
+        // Do the same thing as the above function. u = (1+y)/(1-y) = (Z+Y)/(Z-Y).
+        // We will do this in a batch, ie compute (Z-Y) for all the input
+        // points, then invert them all at once
+
+        // Compute the denominators in a batch
+        let mut denominators = eds.iter().map(|p| &p.Z - &p.Y).collect::<Vec<_>>();
+        FieldElement::batch_invert(&mut denominators);
+
+        // Now compute the Montgomery u coordinate for every point
+        let mut ret = Vec::with_capacity(eds.len());
+        for (ed, d) in eds.iter().zip(denominators.iter()) {
+            let u = &(&ed.Z + &ed.Y) * d;
+            ret.push(MontgomeryPoint(u.to_bytes()));
+        }
+
+        ret
     }
 
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
-        let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        Self::compress_affine(x, y)
+        self.to_affine().compress()
     }
 
     /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
@@ -584,17 +615,9 @@ impl EdwardsPoint {
             .map(|(input, recip)| {
                 let x = &input.X * recip;
                 let y = &input.Y * recip;
-                Self::compress_affine(x, y)
+                AffinePoint { x, y }.compress()
             })
             .collect()
-    }
-
-    /// Compress affine Edwards coordinates into `CompressedEdwardsY` format.
-    #[inline]
-    fn compress_affine(x: FieldElement, y: FieldElement) -> CompressedEdwardsY {
-        let mut s = y.as_bytes();
-        s[31] ^= x.is_negative().unwrap_u8() << 7;
-        CompressedEdwardsY(s)
     }
 
     #[cfg(feature = "digest")]
@@ -672,9 +695,9 @@ impl EdwardsPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'a> Add<&'a EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
-    fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+    fn add(self, other: &'a EdwardsPoint) -> EdwardsPoint {
         (self + &other.as_projective_niels()).as_extended()
     }
 }
@@ -685,17 +708,17 @@ define_add_variants!(
     Output = EdwardsPoint
 );
 
-impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
-    fn add_assign(&mut self, _rhs: &'b EdwardsPoint) {
+impl<'a> AddAssign<&'a EdwardsPoint> for EdwardsPoint {
+    fn add_assign(&mut self, _rhs: &'a EdwardsPoint) {
         *self = (self as &EdwardsPoint) + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
-impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'a> Sub<&'a EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
-    fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
+    fn sub(self, other: &'a EdwardsPoint) -> EdwardsPoint {
         (self - &other.as_projective_niels()).as_extended()
     }
 }
@@ -706,8 +729,8 @@ define_sub_variants!(
     Output = EdwardsPoint
 );
 
-impl<'b> SubAssign<&'b EdwardsPoint> for EdwardsPoint {
-    fn sub_assign(&mut self, _rhs: &'b EdwardsPoint) {
+impl<'a> SubAssign<&'a EdwardsPoint> for EdwardsPoint {
+    fn sub_assign(&mut self, _rhs: &'a EdwardsPoint) {
         *self = (self as &EdwardsPoint) - _rhs;
     }
 }
@@ -730,7 +753,7 @@ where
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a EdwardsPoint {
+impl Neg for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn neg(self) -> EdwardsPoint {
@@ -755,8 +778,8 @@ impl Neg for EdwardsPoint {
 // Scalar multiplication
 // ------------------------------------------------------------------------
 
-impl<'b> MulAssign<&'b Scalar> for EdwardsPoint {
-    fn mul_assign(&mut self, scalar: &'b Scalar) {
+impl<'a> MulAssign<&'a Scalar> for EdwardsPoint {
+    fn mul_assign(&mut self, scalar: &'a Scalar) {
         let result = (self as &EdwardsPoint) * scalar;
         *self = result;
     }
@@ -767,25 +790,25 @@ define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
 define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
+impl<'a> Mul<&'a Scalar> for &EdwardsPoint {
     type Output = EdwardsPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, scalar: &'b Scalar) -> EdwardsPoint {
+    fn mul(self, scalar: &'a Scalar) -> EdwardsPoint {
         crate::backend::variable_base_mul(self, scalar)
     }
 }
 
-impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
+impl<'a> Mul<&'a EdwardsPoint> for &Scalar {
     type Output = EdwardsPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
     ///
     /// For scalar multiplication of a basepoint,
     /// `EdwardsBasepointTable` is approximately 4x faster.
-    fn mul(self, point: &'b EdwardsPoint) -> EdwardsPoint {
+    fn mul(self, point: &'a EdwardsPoint) -> EdwardsPoint {
         point * self
     }
 }
@@ -2186,6 +2209,31 @@ mod test {
         let iters = 50;
         for _ in 0..iters {
             multiscalar_consistency_iter(1000);
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn batch_to_montgomery() {
+        let mut rng = rand::thread_rng();
+
+        let scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let points = scalars
+            .iter()
+            .map(EdwardsPoint::mul_base)
+            .collect::<Vec<_>>();
+
+        let single_monts = points
+            .iter()
+            .map(EdwardsPoint::to_montgomery)
+            .collect::<Vec<_>>();
+
+        for i in [0, 1, 2, 3, 10, 50, 128] {
+            let invs = EdwardsPoint::to_montgomery_batch(&points[..i]);
+            assert_eq!(&invs, &single_monts[..i]);
         }
     }
 

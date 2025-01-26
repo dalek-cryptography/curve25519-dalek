@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use rand::{RngCore, rngs::OsRng, thread_rng};
+use rand::{RngCore, TryRngCore, rng, rngs::OsRng};
 
 use criterion::{
     BatchSize, BenchmarkGroup, BenchmarkId, Criterion, criterion_main, measurement::Measurement,
@@ -76,7 +76,7 @@ mod edwards_benches {
 
     #[cfg(feature = "digest")]
     fn hash_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
         let mut msg = [0u8; 32];
         let mut domain_sep = [0u8; 32];

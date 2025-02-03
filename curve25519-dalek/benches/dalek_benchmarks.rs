@@ -3,7 +3,8 @@
 use rand::{rngs::OsRng, thread_rng};
 
 use criterion::{
-    criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
+    criterion_group, criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup,
+    BenchmarkId, Criterion,
 };
 
 use curve25519_dalek::constants;
@@ -56,8 +57,7 @@ mod edwards_benches {
         });
     }
 
-    pub(crate) fn edwards_benches() {
-        let mut c = Criterion::default();
+    pub(crate) fn edwards_benches(c: &mut Criterion) {
         let mut g = c.benchmark_group("edwards benches");
 
         compress(&mut g);
@@ -209,8 +209,7 @@ mod multiscalar_benches {
         }
     }
 
-    pub(crate) fn multiscalar_benches() {
-        let mut c = Criterion::default();
+    pub(crate) fn multiscalar_benches(c: &mut Criterion) {
         let mut g = c.benchmark_group("multiscalar benches");
 
         consttime_multiscalar_mul(&mut g);
@@ -259,8 +258,7 @@ mod ristretto_benches {
         }
     }
 
-    pub(crate) fn ristretto_benches() {
-        let mut c = Criterion::default();
+    pub(crate) fn ristretto_benches(c: &mut Criterion) {
         let mut g = c.benchmark_group("ristretto benches");
 
         compress(&mut g);
@@ -288,8 +286,7 @@ mod montgomery_benches {
         });
     }
 
-    pub(crate) fn montgomery_benches() {
-        let mut c = Criterion::default();
+    pub(crate) fn montgomery_benches(c: &mut Criterion) {
         let mut g = c.benchmark_group("montgomery benches");
 
         montgomery_ladder(&mut g);
@@ -348,8 +345,7 @@ mod scalar_benches {
         }
     }
 
-    pub(crate) fn scalar_benches() {
-        let mut c = Criterion::default();
+    pub(crate) fn scalar_benches(c: &mut Criterion) {
         let mut g = c.benchmark_group("scalar benches");
 
         scalar_arith(&mut g);
@@ -357,10 +353,19 @@ mod scalar_benches {
     }
 }
 
+criterion_group!(scalar_benches, scalar_benches::scalar_benches);
+criterion_group!(montgomery_benches, montgomery_benches::montgomery_benches);
+criterion_group!(ristretto_benches, ristretto_benches::ristretto_benches);
+criterion_group!(edwards_benches, edwards_benches::edwards_benches);
+criterion_group!(
+    multiscalar_benches,
+    multiscalar_benches::multiscalar_benches
+);
+
 criterion_main!(
-    scalar_benches::scalar_benches,
-    montgomery_benches::montgomery_benches,
-    ristretto_benches::ristretto_benches,
-    edwards_benches::edwards_benches,
-    multiscalar_benches::multiscalar_benches,
+    scalar_benches,
+    montgomery_benches,
+    ristretto_benches,
+    edwards_benches,
+    multiscalar_benches,
 );

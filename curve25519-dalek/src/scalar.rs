@@ -146,7 +146,7 @@ use subtle::CtOption;
 #[cfg(feature = "group")]
 use elliptic_curve::{
     bigint::{ArrayEncoding, Encoding, U256, U512},
-    ops::{Reduce, Invert},
+    ops::{Invert, Reduce},
     scalar::{FromUintUnchecked, IsHigh},
 };
 

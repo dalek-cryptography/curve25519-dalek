@@ -801,6 +801,27 @@ impl RistrettoPoint {
         // uniform distribution.
         R_1 + R_2
     }
+
+    #[cfg(feature = "group")]
+    /// Maps the input bytes to the curve. This implements the spec for
+    /// [`hash_to_curve`](https://datatracker.ietf.org/doc/rfc9380/) according to sections
+    /// 8.5 and Appendix B.
+    ///
+    /// A reasonable choice for `dst` is "ristretto255_XMD:SHA-512_R255MAP_RO_"
+    pub fn hash_to_curve<X>(msg: &[u8], dst: &[u8]) -> Self
+    where
+        X: for<'a> elliptic_curve::hash2curve::ExpandMsg<'a>,
+    {
+        use elliptic_curve::hash2curve::Expander;
+
+        let dst = [dst];
+        let mut random_bytes = [0u8; 64];
+        let mut expander =
+            X::expand_message(&[msg], &dst, random_bytes.len()).expect("expand_message failed");
+        expander.fill_bytes(&mut random_bytes);
+
+        RistrettoPoint::from_uniform_bytes(&random_bytes)
+    }
 }
 
 impl Identity for RistrettoPoint {

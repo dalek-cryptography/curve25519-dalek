@@ -375,6 +375,13 @@ pub struct EdwardsPoint {
     pub(crate) T: FieldElement,
 }
 
+impl EdwardsPoint {
+    /// Expose the inner coordinates
+    pub fn get_coordinates(&self) -> [FieldElement; 4] {
+        [self.X, self.Y, self.Z, self.T]
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------

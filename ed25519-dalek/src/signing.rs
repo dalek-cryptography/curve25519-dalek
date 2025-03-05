@@ -20,11 +20,15 @@ use rand_core::CryptoRng;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use sha2::{digest::{consts::U32, crypto_common::KeySizeUser, KeyInit}, Sha512};
+use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
-    digest::{Digest, array::typenum::U64},
+    digest::{
+        crypto_common::KeySizeUser,
+        generic_array::typenum::{U32, U64},
+        Digest, KeyInit,
+    },
     edwards::{CompressedEdwardsY, EdwardsPoint},
     scalar::Scalar,
 };
@@ -545,10 +549,12 @@ impl SigningKey {
     }
 }
 
+#[cfg(feature = "digest")]
 impl KeySizeUser for SigningKey {
     type KeySize = U32;
 }
 
+#[cfg(feature = "digest")]
 impl KeyInit for SigningKey {
     fn new(key: &sha2::digest::Key<Self>) -> Self {
         Self::from_bytes(key.as_ref())

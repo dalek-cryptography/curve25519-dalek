@@ -13,7 +13,11 @@ use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
 use curve25519_dalek::{
-    digest::{Digest, array::typenum::U64},
+    digest::{
+        crypto_common::KeySizeUser,
+        generic_array::typenum::{U32, U64},
+        Digest,
+    },
     edwards::{CompressedEdwardsY, EdwardsPoint},
     montgomery::MontgomeryPoint,
     scalar::Scalar,
@@ -114,6 +118,11 @@ impl From<EdwardsPoint> for VerifyingKey {
             compressed: point.compress(),
         }
     }
+}
+
+#[cfg(feature = "digest")]
+impl KeySizeUser for VerifyingKey {
+    type KeySize = U32;
 }
 
 impl VerifyingKey {

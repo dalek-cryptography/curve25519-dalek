@@ -42,7 +42,9 @@ use crate::{
     signing::SigningKey,
 };
 
+#[cfg(feature = "hazmat")]
 mod stream;
+#[cfg(feature = "hazmat")]
 pub use self::stream::StreamVerifier;
 
 /// An ed25519 public key.
@@ -405,6 +407,7 @@ impl VerifyingKey {
     /// Useful for cases where the whole message is not available all at once, allowing the
     /// internal signature state to be updated incrementally and verified at the end. In some cases,
     /// this will reduce the need for additional allocations.
+    #[cfg(feature = "hazmat")]
     pub fn verify_stream(
         &self,
         signature: &ed25519::Signature,

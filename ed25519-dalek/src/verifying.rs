@@ -9,15 +9,14 @@
 
 //! ed25519 public keys.
 
+#[cfg(feature = "digest")]
+use curve25519_dalek::digest::{crypto_common::KeySizeUser, typenum::U32};
+
 use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
 use curve25519_dalek::{
-    digest::{
-        crypto_common::KeySizeUser,
-        generic_array::typenum::{U32, U64},
-        Digest,
-    },
+    digest::{generic_array::typenum::U64, Digest},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     montgomery::MontgomeryPoint,
     scalar::Scalar,

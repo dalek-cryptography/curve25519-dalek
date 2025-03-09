@@ -20,15 +20,14 @@ use rand_core::CryptoRng;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+#[cfg(feature = "digest")]
+use curve25519_dalek::digest::{crypto_common::KeySizeUser, typenum::U32, KeyInit};
+
 use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
-    digest::{
-        crypto_common::KeySizeUser,
-        generic_array::typenum::{U32, U64},
-        Digest, KeyInit,
-    },
+    digest::{generic_array::typenum::U64, Digest},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     scalar::Scalar,
 };

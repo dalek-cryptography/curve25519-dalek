@@ -32,14 +32,14 @@ Integer Arithmetic Using Intel IFMA Extensions_][2016_gueron_krasnov].
 The basic idea is that multiplication of large integers (such as 1024,
 2048, or more bits) can be performed as follows.
 
-First, convert a “packed” 64-bit representation
+First, convert a "packed" 64-bit representation
 \\[
 \begin{aligned}
 x &= x'_0 + x'_1 2^{64} + x'_2 2^{128} + \cdots \\\\
 y &= y'_0 + y'_1 2^{64} + y'_2 2^{128} + \cdots 
 \end{aligned}
 \\]
-into a “redundant” 52-bit representation
+into a "redundant" 52-bit representation
 \\[
 \begin{aligned}
 x &= x_0 + x_1 2^{52} + x_2 2^{104} + \cdots \\\\
@@ -49,7 +49,7 @@ y &= y_0 + y_1 2^{52} + y_2 2^{104} + \cdots
 with each \\(x_i, y_j\\) in a 64-bit lane.
 
 Writing the product as \\(z = z_0 + z_1 2^{52} + z_2 2^{104} + \cdots\\),
-the “schoolbook” multiplication strategy gives
+the "schoolbook" multiplication strategy gives
 \\[
 \begin{aligned}
 &z_0   &&=& x_0      &   y_0    &           &          &           &          &           &          &        &       \\\\

@@ -6,7 +6,7 @@ edition = "2021"
 # - update html_root_url
 # - update CHANGELOG
 # - if any changes were made to README.md, mirror them in src/lib.rs docs
-version = "2.0.1"
+version = "3.2.1""
 authors = [
     "Isis Lovecruft <isis@patternsinthevoid.net>",
     "DebugSteven <debugsteven@gmail.com>",
@@ -46,8 +46,9 @@ rand = "0.8"
 
 [dev-dependencies]
 bincode = "1"
-criterion = "0.5"
+criterion = "0.4"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+mockito = "1.0"
 
 # L2/ZK dependencies
 solana-sdk = { version = "1.14.18", optional = true }
@@ -59,11 +60,12 @@ name = "x25519"
 harness = false
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = []
 getrandom = ["rand_core/getrandom"]
 zeroize = ["dep:zeroize", "curve25519-dalek/zeroize"]
-serde = ["dep:serde", "curve25519-dalek/serde"]
+serde = [ version = "1.0", features = ["derive"]]
 alloc = ["curve25519-dalek/alloc", "serde?/alloc", "zeroize?/alloc"]
 precomputed-tables = ["curve25519-dalek/precomputed-tables"]
 reusable_secrets = []
 static_secrets = []
+batching = ["serde"]

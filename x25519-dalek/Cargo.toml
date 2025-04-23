@@ -48,6 +48,11 @@ bincode = "1"
 criterion = "0.5"
 rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
+# L2/ZK dependencies
+solana-sdk = { version = "1.14.18", optional = true }
+helius-sdk = { version = "0.2.0", optional = true }
+
+
 [[bench]]
 name = "x25519"
 harness = false

@@ -316,20 +316,21 @@ impl FieldElement {
         let len_in_bytes = 48;
         let l_i_b_str = [0u8, len_in_bytes];
         let z_pad = [0u8; 128];
-        let dst_prime = [dst, &[dst.len() as u8]].concat();
 
         let b_0 = D::new()
             .chain_update(z_pad)
             .chain_update(bytes)
             .chain_update(l_i_b_str)
             .chain_update([0u8])
-            .chain_update(&dst_prime)
+            .chain_update(dst)
+            .chain_update([dst.len() as u8])
             .finalize();
 
         let b_1 = D::new()
             .chain_update(b_0.as_slice())
             .chain_update([1u8])
-            .chain_update(&dst_prime)
+            .chain_update(dst)
+            .chain_update([dst.len() as u8])
             .finalize();
 
         let mut bytes_wide = [0u8; 64];
@@ -343,7 +344,6 @@ impl FieldElement {
 #[cfg(test)]
 mod test {
     use crate::field::*;
-    use sha2::Sha512;
 
     /// Random element a of GF(2^255-19), from Sage
     /// a = 1070314506888354081329385823235218444233221\
@@ -530,6 +530,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "digest")]
     fn from_hash_wide() {
         let mut test_vec = [
             0x6d, 0x2f, 0x2f, 0xfa, 0x94, 0x12, 0xb4, 0x15, 0x2f, 0x6a, 0xb6, 0x28, 0x41, 0xb8,
@@ -589,6 +590,7 @@ mod test {
     #[test]
     #[cfg(feature = "digest")]
     fn hash_to_field() {
+        use sha2::Sha512;
         let message = [
             0xfc, 0x51, 0xcd, 0x8e, 0x62, 0x18, 0xa1, 0xa3, 0x8d, 0xa4, 0x7e, 0xd0, 0x02, 0x30,
             0xf0, 0x58, 0x08, 0x16, 0xed, 0x13, 0xba, 0x33, 0x03, 0xac, 0x5d, 0xeb, 0x91, 0x15,

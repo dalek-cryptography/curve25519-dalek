@@ -256,6 +256,7 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 // structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
+#[cfg(feature = "digest")]
 use constants::ED25519_SQRTAM2;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
@@ -2329,6 +2330,7 @@ mod test {
 
     // Hash-to-curve test vectors from
     //     https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/blob/master/draft-irtf-cfrg-hash-to-curve.md
+    #[cfg(all(feature = "alloc", feature = "digest"))]
     fn test_vectors_h2c() -> Vec<Vec<&'static str>> {
         vec![
             vec![
@@ -2355,6 +2357,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(all(feature = "alloc", feature = "digest"))]
     fn elligator_hash_to_curve_test_vectors() {
         let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
         for (index, vector) in test_vectors_h2c().iter().enumerate() {

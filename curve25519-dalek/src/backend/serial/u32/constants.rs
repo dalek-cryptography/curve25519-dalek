@@ -31,7 +31,8 @@ pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625::from_limbs([
 ]);
 
 /// sqrt(-486664)
-pub(crate) const ED25519_SQRTAM2: FieldElement2625 = FieldElement2625([
+#[cfg(feature = "digest")]
+pub(crate) const ED25519_SQRTAM2: FieldElement2625 = FieldElement2625::from_limbs([
     54885894, 25242303, 55597453, 9067496, 51808079, 33312638, 25456129, 14121551, 54921728,
     3972023,
 ]);

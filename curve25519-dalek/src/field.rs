@@ -35,6 +35,7 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
+#[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
 
 cfg_if! {
@@ -306,6 +307,7 @@ impl FieldElement {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
 
+    #[cfg(feature = "digest")]
     /// Hash_to_field as described in hash_to_curve standard
     pub fn hash_to_field<D>(bytes: &[u8], dst: &[u8]) -> Self
     where
@@ -585,6 +587,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "digest")]
     fn hash_to_field() {
         let message = [
             0xfc, 0x51, 0xcd, 0x8e, 0x62, 0x18, 0xa1, 0xa3, 0x8d, 0xa4, 0x7e, 0xd0, 0x02, 0x30,

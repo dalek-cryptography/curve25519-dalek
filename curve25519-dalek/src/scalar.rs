@@ -122,7 +122,6 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
-use elliptic_curve::bigint::Encoding;
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -1224,7 +1223,11 @@ impl UnpackedScalar {
 // removing the feature flag and implement all of its variants (with u8, &u8, u16, etc.) and the
 // non-assign `Shr` trait. We probably don't want to impl `Shl` as this can overflow the scalar
 // and break the invariants. If we don't want to expose this trait, we can also make it
-// `#[doc(hidden)]`.
+// `#[doc(hidden)]`. For reference, crates in the `RustCrypto/elliptic-curves` repository
+// implement:
+//  - `Shr<usize> for &Scalar`
+//  - `Shr<usize> for Scalar`
+//  - `ShrAssign<usize> for Scalar`
 //
 // QUESTION: I did not use constant-time because other elliptic-curves dont
 // (e.g., https://docs.rs/p256/0.13.2/src/p256/arithmetic/scalar.rs.html#426-432).
@@ -1252,7 +1255,7 @@ impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
     }
 }
 
-// QUESTION: Even though the traits asks for where &self is _greater that or equal_ to `n / 2`,
+// QUESTION: Even though the trait asks for "&self is _greater that or equal_ to `n / 2`",
 // every implementation I have looked at (e.g.,
 // https://docs.rs/p256/latest/src/p256/arithmetic/scalar.rs.html#413-415) uses `ct_gt`.
 // I decided to do the same, it this correct?
@@ -1266,6 +1269,7 @@ impl elliptic_curve::scalar::IsHigh for Scalar {
     }
 }
 
+#[cfg(feature = "elliptic-curve")]
 impl elliptic_curve::ops::Invert for Scalar {
     type Output = CtOption<Self>;
 
@@ -1275,12 +1279,14 @@ impl elliptic_curve::ops::Invert for Scalar {
     }
 }
 
+#[cfg(feature = "elliptic-curve")]
 impl PartialOrd for Scalar {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
+#[cfg(feature = "elliptic-curve")]
 impl Ord for Scalar {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         elliptic_curve::bigint::U256::from_le_bytes(self.bytes).cmp(

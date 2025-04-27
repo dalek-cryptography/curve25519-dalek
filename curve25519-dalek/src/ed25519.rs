@@ -2,6 +2,8 @@ use elliptic_curve::{bigint::U256, consts::U32, Curve, CurveArithmetic, FieldByt
 
 use crate::{constants::BASEPOINT_ORDER_PRIVATE, edwards::CompressedEdwardsY, EdwardsPoint, Scalar};
 
+/// QUESTION: I don't know where to put this singleton. Maybe in the crate's root?
+/// Otherwise, I thought of something like "singleton" or "curve".
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Ed25519;
 

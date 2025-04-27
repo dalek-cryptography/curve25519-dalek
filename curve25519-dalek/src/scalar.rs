@@ -140,6 +140,7 @@ use digest::Digest;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
+use subtle::ConstantTimeGreater;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
@@ -1245,6 +1246,19 @@ impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
 
     fn reduce_bytes(bytes: &Self::Bytes) -> Self {
         Scalar::from_bytes_mod_order(<[u8; 32]>::from(*bytes))
+    }
+}
+
+// QUESTION: Even though the traits asks for where &self is _greater that or equal_ to `n / 2`,
+// every implementation I have looked at (e.g.,
+// https://docs.rs/p256/latest/src/p256/arithmetic/scalar.rs.html#413-415) uses `ct_gt`.
+// I decided to do the same, it this correct?
+impl elliptic_curve::scalar::IsHigh for Scalar {
+    fn is_high(&self) -> Choice {
+        use elliptic_curve::bigint::{Encoding, U256};
+        U256::from_le_bytes(self.bytes).ct_gt(
+            &U256::from_le_bytes((constants::BASEPOINT_ORDER_PRIVATE * Self::TWO_INV ).bytes)
+        )
     }
 }
 

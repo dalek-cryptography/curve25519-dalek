@@ -109,3 +109,6 @@ pub use crate::{
 // Build time diagnostics for validation
 #[cfg(curve25519_dalek_diagnostics = "build")]
 mod diagnostics;
+
+#[cfg(feature = "elliptic-curve")]
+mod ed25519;

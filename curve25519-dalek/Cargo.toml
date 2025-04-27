@@ -54,6 +54,7 @@ digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.6.0", default-features = false, features = ["const-generics"]}
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
+elliptic-curve = { version = "0.13", optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"
@@ -66,8 +67,9 @@ default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
-group = ["dep:group", "rand_core"]
+group = ["dep:group", "rand_core", "digest"]
 group-bits = ["group", "ff/bits"]
+elliptic-curve = ["group", "dep:ff", "dep:elliptic-curve"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }

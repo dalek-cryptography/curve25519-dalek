@@ -1289,8 +1289,9 @@ impl PartialOrd for Scalar {
 #[cfg(feature = "elliptic-curve")]
 impl Ord for Scalar {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        elliptic_curve::bigint::U256::from_le_bytes(self.bytes).cmp(
-            &elliptic_curve::bigint::U256::from_le_bytes(other.bytes)
+        use elliptic_curve::bigint::{Encoding, U256};
+        U256::from_le_bytes(self.bytes).cmp(
+            &U256::from_le_bytes(other.bytes)
         )
     }
 }

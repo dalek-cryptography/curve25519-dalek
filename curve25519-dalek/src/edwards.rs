@@ -1667,7 +1667,8 @@ impl CofactorGroup for EdwardsPoint {
 // Interop between CompressedEdwardsY and EdwardsPoint for group traits
 // ------------------------------------------------------------------------
 
-// Again, here we assume throughout that CompressedEdwardsY is a valid point.
+// Again, we assume throughout that CompressedEdwardsY is a valid point (this is not what we
+// want, just something that somewhat works until we know what to do).
 
 impl From<CompressedEdwardsY> for EdwardsPoint {
     fn from(value: CompressedEdwardsY) -> Self {

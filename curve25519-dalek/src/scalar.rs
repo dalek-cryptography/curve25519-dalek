@@ -1388,9 +1388,6 @@ impl Field for Scalar {
 
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
-    // DISCUSSION: it sucks that we have to use this type but that's what `ArithmeticCurve`
-    // requires. This is only a minor version bump since this trait was already behind the "group"
-    // feature.
     type Repr = GenericArray<u8, U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {

@@ -814,6 +814,24 @@ impl EdwardsPoint {
 }
 
 // ------------------------------------------------------------------------
+// Elliptic curve traits
+// ------------------------------------------------------------------------
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::LinearCombination for EdwardsPoint {
+    fn lincomb(x: &Self, k: &Self::Scalar, y: &Self, l: &Self::Scalar) -> Self {
+        EdwardsPoint::multiscalar_mul([k, l], [x, y])
+    }
+}
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::MulByGenerator for EdwardsPoint {
+    fn mul_by_generator(scalar: &Self::Scalar) -> Self {
+        Self::mul_base(scalar)
+    }
+}
+
+
+// ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
 // ------------------------------------------------------------------------
 
@@ -1312,6 +1330,15 @@ impl Debug for EdwardsPoint {
 // group traits
 // ------------------------------------------------------------------------
 
+#[cfg(feature = "group")]
+impl group::Curve for EdwardsPoint {
+    type AffineRepr = CompressedEdwardsY;
+
+    fn to_affine(&self) -> Self::AffineRepr {
+        self.compress()
+    }
+}
+
 // Use the full trait path to avoid Group::identity overlapping Identity::identity in the
 // rest of the module (e.g. tests).
 #[cfg(feature = "group")]
@@ -1364,13 +1391,6 @@ impl GroupEncoding for EdwardsPoint {
 
     fn to_bytes(&self) -> Self::Repr {
         self.compress().to_bytes().into()
-    }
-}
-
-#[cfg(feature = "elliptic-curve")]
-impl elliptic_curve::ops::MulByGenerator for EdwardsPoint {
-    fn mul_by_generator(scalar: &Self::Scalar) -> Self {
-        Self::mul_base(scalar)
     }
 }
 
@@ -1647,6 +1667,83 @@ impl CofactorGroup for EdwardsPoint {
         (self * constants::BASEPOINT_ORDER_PRIVATE).ct_eq(&Self::identity())
     }
 }
+
+// ------------------------------------------------------------------------
+// Interop between CompressedEdwardsY and EdwardsPoint for group traits
+// ------------------------------------------------------------------------
+
+// Again, here we assume throughout that CompressedEdwardsY is a valid point.
+
+impl From<CompressedEdwardsY> for EdwardsPoint {
+    fn from(value: CompressedEdwardsY) -> Self {
+        let (_, X, Y, Z) = decompress::step_1(&value);
+        decompress::step_2(&value, X, Y, Z)
+    }
+}
+
+impl From<&CompressedEdwardsY> for EdwardsPoint {
+    fn from(value: &CompressedEdwardsY) -> Self {
+        let (_, X, Y, Z) = decompress::step_1(value);
+        decompress::step_2(value, X, Y, Z)
+    }
+}
+
+
+impl From<EdwardsPoint> for CompressedEdwardsY {
+    fn from(value: EdwardsPoint) -> Self {
+        value.compress()
+    }
+}
+
+impl From<&EdwardsPoint> for CompressedEdwardsY {
+    fn from(value: &EdwardsPoint) -> Self {
+        value.compress()
+    }
+}
+
+impl Add<&CompressedEdwardsY> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+
+    fn add(self, other: &CompressedEdwardsY) -> EdwardsPoint {
+        self + EdwardsPoint::from(other)
+    }
+}
+
+define_add_variants!(
+    LHS = EdwardsPoint,
+    RHS = CompressedEdwardsY,
+    Output = EdwardsPoint
+);
+
+impl AddAssign<&CompressedEdwardsY> for EdwardsPoint {
+    fn add_assign(&mut self, rhs: &CompressedEdwardsY) {
+        *self += EdwardsPoint::from(rhs);
+    }
+}
+
+define_add_assign_variants!(LHS = EdwardsPoint, RHS = CompressedEdwardsY);
+
+impl Sub<&CompressedEdwardsY> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+
+    fn sub(self, other: &CompressedEdwardsY) -> EdwardsPoint {
+        self - EdwardsPoint::from(other)
+    }
+}
+
+define_sub_variants!(
+    LHS = EdwardsPoint,
+    RHS = CompressedEdwardsY,
+    Output = EdwardsPoint
+);
+
+impl SubAssign<&CompressedEdwardsY> for EdwardsPoint {
+    fn sub_assign(&mut self, rhs: &CompressedEdwardsY) {
+        *self -= EdwardsPoint::from(rhs);
+    }
+}
+
+define_sub_assign_variants!(LHS = EdwardsPoint, RHS = CompressedEdwardsY);
 
 // ------------------------------------------------------------------------
 // Tests

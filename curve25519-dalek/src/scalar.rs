@@ -134,18 +134,18 @@ use rand_core::RngCore;
 use rand_core::CryptoRngCore;
 
 #[cfg(feature = "digest")]
-use digest::generic_array::typenum::U64;
+use digest::generic_array::{GenericArray, typenum::{U64, U32}};
 #[cfg(feature = "digest")]
 use digest::Digest;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
-use subtle::ConstantTimeGreater;
 use subtle::ConstantTimeEq;
+use subtle::ConstantTimeGreater;
 use subtle::CtOption;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::DefaultIsZeroes;
 
 use crate::backend;
 use crate::constants;
@@ -192,7 +192,7 @@ cfg_if! {
 
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Copy, Clone, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Hash)]
 pub struct Scalar {
     /// `bytes` is a little-endian byte encoding of an integer representing a scalar modulo the
     /// group order.
@@ -554,17 +554,14 @@ impl From<u128> for Scalar {
 }
 
 #[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
-    }
-}
+impl DefaultIsZeroes for Scalar {}
 
 impl AsRef<Scalar> for Scalar {
     fn as_ref(&self) -> &Scalar {
         self
     }
 }
+
 impl Scalar {
     /// The scalar \\( 0 \\).
     pub const ZERO: Self = Self { bytes: [0u8; 32] };
@@ -837,7 +834,7 @@ impl Scalar {
         }
 
         #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        zeroize::Zeroize::zeroize(&mut scratch);
 
         ret
     }
@@ -1239,9 +1236,9 @@ impl core::ops::ShrAssign<usize> for Scalar {
 
 #[cfg(feature = "elliptic-curve")]
 impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
-    type Bytes = elliptic_curve::generic_array::GenericArray<
+    type Bytes = GenericArray<
         u8,
-        elliptic_curve::generic_array::typenum::U32,
+        U32,
     >;
 
     fn reduce(n: elliptic_curve::bigint::U256) -> Self {
@@ -1258,12 +1255,78 @@ impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
 // every implementation I have looked at (e.g.,
 // https://docs.rs/p256/latest/src/p256/arithmetic/scalar.rs.html#413-415) uses `ct_gt`.
 // I decided to do the same, it this correct?
+#[cfg(feature = "elliptic-curve")]
 impl elliptic_curve::scalar::IsHigh for Scalar {
     fn is_high(&self) -> Choice {
         use elliptic_curve::bigint::{Encoding, U256};
-        U256::from_le_bytes(self.bytes).ct_gt(
-            &U256::from_le_bytes((constants::BASEPOINT_ORDER_PRIVATE * Self::TWO_INV ).bytes)
-        )
+        U256::from_le_bytes(self.bytes).ct_gt(&U256::from_le_bytes(
+            (constants::BASEPOINT_ORDER_PRIVATE * Self::TWO_INV).bytes,
+        ))
+    }
+}
+
+impl elliptic_curve::ops::Invert for Scalar {
+    type Output = CtOption<Self>;
+
+    fn invert(&self) -> Self::Output {
+        let invert = self.invert();
+        CtOption::new(invert, !self.is_zero())
+    }
+}
+
+impl PartialOrd for Scalar {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Scalar {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        // TODO:
+        todo!()
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<Scalar> for elliptic_curve::bigint::U256 {
+    fn from(value: Scalar) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        elliptic_curve::bigint::U256::from_le_bytes(value.bytes)
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>> for Scalar {
+    fn from(value: elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>) -> Self {
+        // TODO
+        todo!()
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<Scalar> for elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519> {
+    fn from(value: Scalar) -> Self {
+        // TODO
+        todo!()
+    }
+}
+
+#[cfg(feature = "digest")]
+impl From<Scalar> for GenericArray<u8, U32> {
+    fn from(value: Scalar) -> Self {
+        value.bytes.into()
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::scalar::FromUintUnchecked for Scalar {
+    type Uint = elliptic_curve::bigint::U256;
+
+    fn from_uint_unchecked(uint: Self::Uint) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        Self {
+            bytes: uint.to_le_bytes(),
+        }
     }
 }
 
@@ -1315,7 +1378,7 @@ impl PrimeField for Scalar {
     // DISCUSSION: it sucks that we have to use this type but that's what `ArithmeticCurve`
     // requires. This is only a minor version bump since this trait was already behind the "group"
     // feature.
-    type Repr = digest::generic_array::GenericArray<u8, digest::typenum::U32>;
+    type Repr = GenericArray<u8, U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         Self::from_canonical_bytes(repr.into())

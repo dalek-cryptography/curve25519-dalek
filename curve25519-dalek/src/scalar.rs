@@ -1208,6 +1208,29 @@ impl UnpackedScalar {
     }
 }
 
+// ----------------------------------------------------------------------
+// Elliptic Curve Arithmetic traits
+// ----------------------------------------------------------------------
+
+// QUESTION: This trait is needed for `CurveArithmetic`, hence why it is bounded behind the
+// "elliptic-curve" feature. If this is a fine trait to expose to the user, we can consider
+// removing the feature flag and implement all of its variants (with u8, &u8, u16, etc.) and the
+// non-assign `Shr` trait. We probably don't want to impl `Shl` as this can overflow the scalar
+// and break the invariants. If we don't want to expose this trait, we can also make it
+// `#[doc(hidden)]`.
+//
+// QUESTION: I did not use constant-time because other elliptic-curves dont
+// (e.g., https://docs.rs/p256/0.13.2/src/p256/arithmetic/scalar.rs.html#426-432).
+// Is constant-time necessary?
+#[cfg(feature = "elliptic-curve")]
+impl core::ops::ShrAssign<usize> for Scalar {
+    fn shr_assign(&mut self, rhs: usize) {
+        use elliptic_curve::bigint::Encoding;
+        let repr = elliptic_curve::bigint::U256::from_le_bytes(self.bytes);
+        self.bytes = (repr.shr_vartime(rhs)).to_le_bytes();
+    }
+}
+
 #[cfg(feature = "group")]
 impl Field for Scalar {
     const ZERO: Self = Self::ZERO;

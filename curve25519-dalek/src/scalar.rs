@@ -1251,12 +1251,15 @@ impl Field for Scalar {
     }
 }
 
-#[cfg(feature = "group")]
+#[cfg(all(feature = "group", feature = "digest"))]
 impl PrimeField for Scalar {
-    type Repr = [u8; 32];
+    // DISCUSSION: it sucks that we have to use this type but that's what `ArithmeticCurve`
+    // requires. This is only a minor version bump since this trait was already behind the "group"
+    // feature.
+    type Repr = digest::generic_array::GenericArray<u8, digest::typenum::U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
-        Self::from_canonical_bytes(repr)
+        Self::from_canonical_bytes(repr.into())
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
@@ -1265,7 +1268,7 @@ impl PrimeField for Scalar {
             return None;
         }
 
-        let candidate = Scalar { bytes: repr };
+        let candidate = Scalar { bytes: repr.into() };
 
         if candidate == candidate.reduce() {
             Some(candidate)
@@ -1275,7 +1278,7 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        self.to_bytes()
+        self.to_bytes().into()
     }
 
     fn is_odd(&self) -> Choice {
@@ -1328,7 +1331,7 @@ impl PrimeFieldBits for Scalar {
     type ReprBits = [u8; 32];
 
     fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
-        self.to_repr().into()
+        <[u8; 32]>::from(self.to_repr()).into()
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
@@ -1980,7 +1983,7 @@ pub(crate) mod test {
         );
     }
 
-    #[cfg(feature = "group")]
+    #[cfg(all(feature = "group", feature = "digest"))]
     #[test]
     fn ff_impls() {
         assert!(bool::from(Scalar::ZERO.is_even()));
@@ -1996,10 +1999,10 @@ pub(crate) mod test {
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
-        assert_eq!(Scalar::from_repr_vartime([0xff; 32]), None);
+        assert_eq!(Scalar::from_repr_vartime([0xff; 32].into()), None);
 
         assert_eq!(Scalar::from_repr(X.to_repr()).unwrap(), X);
-        assert!(bool::from(Scalar::from_repr([0xff; 32]).is_none()));
+        assert!(bool::from(Scalar::from_repr([0xff; 32].into()).is_none()));
     }
 
     #[test]

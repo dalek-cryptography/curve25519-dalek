@@ -271,8 +271,8 @@ impl elliptic_curve::point::AffineCoordinates for CompressedEdwardsY {
 
     fn x(&self) -> Self::FieldRepr {
         // QUESTION: here we assume that the CompressedEdwardsY valid, and it won't panic in dbg mode.
-        // We should either change the CompressedEdwardsY API to now allow instancing a
-        // `CompressedEdwardsY` that is invalid, or clearly document that case somewhere.
+        // We should either change the CompressedEdwardsY API to not allow instancing a
+        // `CompressedEdwardsY` that is invalid, or use another type.
         // How should we handle this?
         let (is_valid, mut X, _, _) =  decompress::step_1(self);
         debug_assert!(bool::from(is_valid));

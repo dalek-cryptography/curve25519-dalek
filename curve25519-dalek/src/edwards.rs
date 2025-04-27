@@ -105,7 +105,6 @@ use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::{U64, U32}, Digest};
-use zeroize::DefaultIsZeroes;
 
 #[cfg(feature = "group")]
 use {
@@ -122,7 +121,7 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::DefaultIsZeroes;
 
 use crate::constants;
 
@@ -1587,11 +1586,7 @@ impl ConditionallySelectable for SubgroupPoint {
 }
 
 #[cfg(all(feature = "group", feature = "zeroize"))]
-impl Zeroize for SubgroupPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+impl DefaultIsZeroes for SubgroupPoint {}
 
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {

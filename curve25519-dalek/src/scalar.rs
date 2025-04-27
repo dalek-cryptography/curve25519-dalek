@@ -1231,6 +1231,23 @@ impl core::ops::ShrAssign<usize> for Scalar {
     }
 }
 
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
+    type Bytes = elliptic_curve::generic_array::GenericArray<
+        u8,
+        elliptic_curve::generic_array::typenum::U32,
+    >;
+
+    fn reduce(n: elliptic_curve::bigint::U256) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        Scalar::from_bytes_mod_order(n.to_le_bytes())
+    }
+
+    fn reduce_bytes(bytes: &Self::Bytes) -> Self {
+        Scalar::from_bytes_mod_order(<[u8; 32]>::from(*bytes))
+    }
+}
+
 #[cfg(feature = "group")]
 impl Field for Scalar {
     const ZERO: Self = Self::ZERO;

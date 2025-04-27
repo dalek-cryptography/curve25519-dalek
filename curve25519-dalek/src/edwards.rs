@@ -285,7 +285,6 @@ impl elliptic_curve::point::AffineCoordinates for CompressedEdwardsY {
     }
 
     fn y_is_odd(&self) -> Choice {
-        // TODO: here I assume that the Y is encoded in little-endian, which I should check.
         Choice::from(self.as_bytes()[0] & 0x01)
     }
 }

@@ -1251,7 +1251,7 @@ impl Field for Scalar {
     }
 }
 
-#[cfg(all(feature = "group", feature = "digest"))]
+#[cfg(feature = "group")]
 impl PrimeField for Scalar {
     // DISCUSSION: it sucks that we have to use this type but that's what `ArithmeticCurve`
     // requires. This is only a minor version bump since this trait was already behind the "group"
@@ -1983,7 +1983,7 @@ pub(crate) mod test {
         );
     }
 
-    #[cfg(all(feature = "group", feature = "digest"))]
+    #[cfg(feature = "group")]
     #[test]
     fn ff_impls() {
         assert!(bool::from(Scalar::ZERO.is_even()));

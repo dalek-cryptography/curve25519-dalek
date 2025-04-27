@@ -144,7 +144,6 @@ use digest::Digest;
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::ConstantTimeGreater;
 use subtle::CtOption;
 
 #[cfg(feature = "zeroize")]
@@ -1263,6 +1262,7 @@ impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
 impl elliptic_curve::scalar::IsHigh for Scalar {
     fn is_high(&self) -> Choice {
         use elliptic_curve::bigint::{Encoding, U256};
+        use subtle::ConstantTimeGreater;
         U256::from_le_bytes(self.bytes).ct_gt(&U256::from_le_bytes(
             (constants::BASEPOINT_ORDER_PRIVATE * Self::TWO_INV).bytes,
         ))

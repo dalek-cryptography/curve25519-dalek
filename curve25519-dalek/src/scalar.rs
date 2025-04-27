@@ -560,6 +560,11 @@ impl Zeroize for Scalar {
     }
 }
 
+impl AsRef<Scalar> for Scalar {
+    fn as_ref(&self) -> &Scalar {
+        self
+    }
+}
 impl Scalar {
     /// The scalar \\( 0 \\).
     pub const ZERO: Self = Self { bytes: [0u8; 32] };

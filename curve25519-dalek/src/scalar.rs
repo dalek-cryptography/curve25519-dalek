@@ -122,6 +122,7 @@ use core::ops::{Sub, SubAssign};
 
 use cfg_if::cfg_if;
 
+use elliptic_curve::bigint::Encoding;
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -134,7 +135,10 @@ use rand_core::RngCore;
 use rand_core::CryptoRngCore;
 
 #[cfg(feature = "digest")]
-use digest::generic_array::{GenericArray, typenum::{U64, U32}};
+use digest::generic_array::{
+    typenum::{U32, U64},
+    GenericArray,
+};
 #[cfg(feature = "digest")]
 use digest::Digest;
 
@@ -1236,10 +1240,7 @@ impl core::ops::ShrAssign<usize> for Scalar {
 
 #[cfg(feature = "elliptic-curve")]
 impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
-    type Bytes = GenericArray<
-        u8,
-        U32,
-    >;
+    type Bytes = GenericArray<u8, U32>;
 
     fn reduce(n: elliptic_curve::bigint::U256) -> Self {
         use elliptic_curve::bigint::Encoding;
@@ -1282,8 +1283,9 @@ impl PartialOrd for Scalar {
 
 impl Ord for Scalar {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        // TODO:
-        todo!()
+        elliptic_curve::bigint::U256::from_le_bytes(self.bytes).cmp(
+            &elliptic_curve::bigint::U256::from_le_bytes(other.bytes)
+        )
     }
 }
 
@@ -1298,16 +1300,21 @@ impl From<Scalar> for elliptic_curve::bigint::U256 {
 #[cfg(feature = "elliptic-curve")]
 impl From<elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>> for Scalar {
     fn from(value: elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>) -> Self {
-        // TODO
-        todo!()
+        use elliptic_curve::bigint::Encoding;
+        Scalar {
+            bytes: value.to_uint().to_le_bytes(),
+        }
     }
 }
 
 #[cfg(feature = "elliptic-curve")]
 impl From<Scalar> for elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519> {
-    fn from(value: Scalar) -> Self {
-        // TODO
-        todo!()
+    fn from(mut value: Scalar) -> Self {
+        value.bytes.reverse();
+        let bytes: GenericArray<_, _> = value.bytes.into();
+
+        elliptic_curve::ScalarPrimitive::from_bytes(&bytes)
+            .expect("Scalar should have valid bytes")
     }
 }
 

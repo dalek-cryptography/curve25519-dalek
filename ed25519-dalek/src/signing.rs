@@ -651,6 +651,13 @@ impl Eq for SigningKey {}
 #[cfg(feature = "zeroize")]
 impl Drop for SigningKey {
     fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for SigningKey {
+    fn zeroize(&mut self) {
         self.secret_key.zeroize();
     }
 }

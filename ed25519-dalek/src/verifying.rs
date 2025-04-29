@@ -34,6 +34,9 @@ use crate::context::Context;
 #[cfg(feature = "digest")]
 use signature::DigestVerifier;
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 use crate::{
     constants::PUBLIC_KEY_LENGTH,
     errors::{InternalError, SignatureError},
@@ -84,6 +87,14 @@ impl Hash for VerifyingKey {
 impl PartialEq<VerifyingKey> for VerifyingKey {
     fn eq(&self, other: &VerifyingKey) -> bool {
         self.as_bytes() == other.as_bytes()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for VerifyingKey {
+    fn zeroize(&mut self) {
+        self.point.zeroize();
+        self.compressed.zeroize();
     }
 }
 

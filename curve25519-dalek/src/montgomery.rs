@@ -57,7 +57,7 @@ use core::{
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 
 use crate::traits::Identity;
 
@@ -437,7 +437,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    use rand_core::{CryptoRng, RngCore};
+    use rand_core::{CryptoRng, RngCore, TryRngCore};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -521,8 +521,8 @@ mod test {
     }
 
     /// Returns a random point on the prime-order subgroup
-    fn rand_prime_order_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
-        let s: Scalar = Scalar::random(&mut rng);
+    fn rand_prime_order_point<R: CryptoRng + ?Sized>(rng: &mut R) -> EdwardsPoint {
+        let s: Scalar = Scalar::random(rng);
         EdwardsPoint::mul_base(&s)
     }
 
@@ -540,10 +540,10 @@ mod test {
 
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
-            let p_edwards = rand_prime_order_point(csprng);
+            let p_edwards = rand_prime_order_point(&mut csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             let s: Scalar = Scalar::random(&mut csprng);
@@ -558,11 +558,11 @@ mod test {
     // multiplying by the Scalar representation of the same bits
     #[test]
     fn montgomery_mul_bits_be() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random prime-order point P
-            let p_edwards = rand_prime_order_point(csprng);
+            let p_edwards = rand_prime_order_point(&mut csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             // Make a random integer b
@@ -583,7 +583,7 @@ mod test {
     // integers b₁, b₂ and random (curve or twist) point P.
     #[test]
     fn montgomery_mul_bits_be_twist() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random point P on the curve or its twist
@@ -629,7 +629,7 @@ mod test {
         for _ in 0..100 {
             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
             let mut a_bytes = [0u8; 32];
-            csprng.fill_bytes(&mut a_bytes);
+            csprng.try_fill_bytes(&mut a_bytes).unwrap();
 
             assert_eq!(
                 MontgomeryPoint::mul_base_clamped(a_bytes),

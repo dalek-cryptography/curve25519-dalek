@@ -1,5 +1,5 @@
-use super::strobe::Strobe128;
 use super::MERLIN_PROTOCOL_LABEL;
+use super::strobe::Strobe128;
 
 fn encode_usize_as_u32(x: usize) -> [u8; 4] {
     u32::try_from(x).expect("usize too large").to_le_bytes()
@@ -198,11 +198,6 @@ impl rand_core::RngCore for TranscriptRng {
         let dest_len = encode_usize_as_u32(dest.len());
         self.strobe.meta_ad(&dest_len, false);
         self.strobe.prf(dest, false);
-    }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.fill_bytes(dest);
-        Ok(())
     }
 }
 

@@ -15,7 +15,7 @@ use core::fmt::Debug;
 use ed25519::pkcs8;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
+use rand_core::CryptoRng;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -188,9 +188,10 @@ impl SigningKey {
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # fn main() {
     /// use rand::rngs::OsRng;
+    /// use rand_core::TryRngCore;
     /// use ed25519_dalek::{Signature, SigningKey};
     ///
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// # }
     /// ```
@@ -199,7 +200,7 @@ impl SigningKey {
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_os::OsRng`.
     #[cfg(any(test, feature = "rand_core"))]
-    pub fn generate<R: CryptoRngCore + ?Sized>(csprng: &mut R) -> SigningKey {
+    pub fn generate<R: CryptoRng + ?Sized>(csprng: &mut R) -> SigningKey {
         let mut secret = SecretKey::default();
         csprng.fill_bytes(&mut secret);
         Self::from_bytes(&secret)
@@ -240,9 +241,10 @@ impl SigningKey {
     /// use ed25519_dalek::Signature;
     /// use sha2::Sha512;
     /// use rand::rngs::OsRng;
+    /// use rand_core::TryRngCore;
     ///
     /// # fn main() {
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///
@@ -285,9 +287,10 @@ impl SigningKey {
     /// # use ed25519_dalek::SignatureError;
     /// # use sha2::Sha512;
     /// # use rand::rngs::OsRng;
+    /// # use rand_core::TryRngCore;
     /// #
     /// # fn do_test() -> Result<Signature, SignatureError> {
-    /// # let mut csprng = OsRng;
+    /// # let mut csprng = OsRng.unwrap_err();
     /// # let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// # let message: &[u8] = b"All I want is to pet all of the dogs.";
     /// # let mut prehashed: Sha512 = Sha512::new();
@@ -364,9 +367,10 @@ impl SigningKey {
     /// use ed25519_dalek::SignatureError;
     /// use sha2::Sha512;
     /// use rand::rngs::OsRng;
+    /// use rand_core::TryRngCore;
     ///
     /// # fn do_test() -> Result<(), SignatureError> {
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let signing_key: SigningKey = SigningKey::generate(&mut csprng);
     /// let message: &[u8] = b"All I want is to pet all of the dogs.";
     ///

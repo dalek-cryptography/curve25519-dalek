@@ -169,22 +169,25 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
-
-#[cfg(feature = "digest")]
-use digest::array::typenum::U64;
 #[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use crate::constants;
 use crate::field::FieldElement;
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
-    rand_core::RngCore,
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
+    rand_core::TryRngCore,
     subtle::CtOption,
+};
+
+#[cfg(any(test, feature = "rand_core"))]
+use {
+    core::convert::Infallible,
+    rand_core::{CryptoRng, TryCryptoRng},
 };
 
 use subtle::Choice;
@@ -532,12 +535,12 @@ impl RistrettoPoint {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use rand_core::OsRng;
+    /// use rand_core::{OsRng, TryRngCore};
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng;
+    /// let mut rng = OsRng.unwrap_err();
     ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
@@ -696,8 +699,7 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRngCore`
-    ///   (i.e. `CryptoRng` + `RngCore`) interface.
+    /// * `rng`: any RNG which implements `CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -709,11 +711,34 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
-        let mut uniform_bytes = [0u8; 64];
-        rng.fill_bytes(&mut uniform_bytes);
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
+        Self::try_from_rng(rng)
+            .map_err(|_: Infallible| {})
+            .expect("[bug] unfallible rng failed")
+    }
 
-        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+    #[cfg(any(test, feature = "rand_core"))]
+    /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
+    ///
+    /// # Inputs
+    ///
+    /// * `rng`: any RNG which implements `TryCryptoRng` interface.
+    ///
+    /// # Returns
+    ///
+    /// A random element of the Ristretto group.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
+    pub fn try_from_rng<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        let mut uniform_bytes = [0u8; 64];
+        rng.try_fill_bytes(&mut uniform_bytes)?;
+
+        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
     }
 
     #[cfg(feature = "digest")]
@@ -1181,11 +1206,11 @@ impl Debug for RistrettoPoint {
 impl group::Group for RistrettoPoint {
     type Scalar = Scalar;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut uniform_bytes = [0u8; 64];
-        rng.fill_bytes(&mut uniform_bytes);
-        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+        rng.try_fill_bytes(&mut uniform_bytes)?;
+        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
     }
 
     fn identity() -> Self {
@@ -1278,7 +1303,7 @@ mod test {
     use super::*;
     use crate::edwards::CompressedEdwardsY;
 
-    use rand_core::OsRng;
+    use rand_core::{OsRng, TryRngCore};
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1471,7 +1496,7 @@ mod test {
 
     #[test]
     fn four_torsion_random() {
-        let mut rng = OsRng;
+        let mut rng = OsRng.unwrap_err();
         let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
         let P_coset = P.coset4();
         for point in P_coset {
@@ -1796,7 +1821,7 @@ mod test {
 
     #[test]
     fn random_roundtrip() {
-        let mut rng = OsRng;
+        let mut rng = OsRng.unwrap_err();
         for _ in 0..100 {
             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
@@ -1806,14 +1831,15 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "rand_core"))]
+    #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
     fn double_and_compress_1024_random_points() {
+        use group::Group;
         let mut rng = OsRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::random(&mut rng))
+            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
             .collect();
-        points[500] = RistrettoPoint::identity();
+        points[500] = <RistrettoPoint as Group>::identity();
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
 
@@ -1825,7 +1851,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1868,5 +1894,149 @@ mod test {
 
         assert_eq!(P.compress(), R.compress());
         assert_eq!(Q.compress(), R.compress());
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_mixed_multiscalar_empty() {
+        let mut rng = rand::rng();
+
+        let n_static = 16;
+        let n_dynamic = 8;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use zero scalars
+        let static_scalars = Vec::new();
+
+        let dynamic_points = (0..n_dynamic)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..n_dynamic)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+        for i in 0..n_dynamic {
+            result_manual += dynamic_points[i] * dynamic_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_mixed_multiscalar() {
+        let mut rng = rand::rng();
+
+        let n_static = 16;
+        let n_dynamic = 8;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use one fewer scalars
+        let static_scalars = (0..n_static - 1)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_points = (0..n_dynamic)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..n_dynamic)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+        for i in 0..n_dynamic {
+            result_manual += dynamic_points[i] * dynamic_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_multiscalar() {
+        let mut rng = rand::rng();
+
+        let n_static = 16;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use one fewer scalars
+        let static_scalars = (0..n_static - 1)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn partial_precomputed_multiscalar_empty() {
+        let mut rng = rand::rng();
+
+        let n_static = 16;
+
+        let static_points = (0..n_static)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        // Use zero scalars
+        let static_scalars = Vec::new();
+
+        // Compute the linear combination using precomputed multiscalar multiplication
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+        let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
+
+        // Compute the linear combination manually
+        let mut result_manual = RistrettoPoint::identity();
+        for i in 0..static_scalars.len() {
+            result_manual += static_points[i] * static_scalars[i];
+        }
+
+        assert_eq!(result_multiscalar, result_manual);
     }
 }

@@ -170,16 +170,16 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::array::typenum::U64;
-#[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use crate::constants;
 use crate::field::FieldElement;
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
     rand_core::TryRngCore,
     subtle::CtOption,
 };

@@ -1,6 +1,6 @@
 [package]
 name = "x25519-dalek"
-edition = "2021"
+edition = "2024"
 # Before changing this:
 # - update version in README.md
 # - update html_root_url
@@ -25,7 +25,7 @@ exclude = [
     ".travis.yml",
     "CONTRIBUTING.md",
 ]
-rust-version = "1.60"
+rust-version = "1.85"
 
 [badges]
 travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}

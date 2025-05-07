@@ -85,7 +85,7 @@ mod test {
 
     use crate::{Signature, SigningKey, VerifyingKey};
     use curve25519_dalek::digest::Digest;
-    use rand::{rngs::OsRng, TryRngCore};
+    use rand::{TryRngCore, rngs::OsRng};
     use sha2::Sha512;
     use signature::{DigestSigner, DigestVerifier};
 

@@ -2,7 +2,7 @@ use curve25519_dalek::edwards::CompressedEdwardsY;
 use sha2::Sha512;
 
 use crate::verifying::RCompute;
-use crate::{signature::InternalSignature, InternalError, SignatureError, VerifyingKey};
+use crate::{InternalError, SignatureError, VerifyingKey, signature::InternalSignature};
 
 /// An IUF verifier for ed25519.
 ///

@@ -1,6 +1,6 @@
 use super::{CompressedEdwardsY, EdwardsPoint};
 use crate::traits::Identity;
-use crate::{field::FieldElement, Scalar};
+use crate::{Scalar, field::FieldElement};
 use core::ops::Mul;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 

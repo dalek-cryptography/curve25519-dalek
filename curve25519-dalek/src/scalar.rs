@@ -134,9 +134,9 @@ use rand_core::TryRngCore;
 use rand_core::CryptoRng;
 
 #[cfg(feature = "digest")]
-use digest::array::typenum::U64;
-#[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -1023,9 +1023,9 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4..=7 => (256 + w - 1) / w,
+            4..=7 => 256_usize.div_ceil(w),
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1) / w + 1_usize,
+            8 => 256_usize.div_ceil(w) + 1_usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1072,7 +1072,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1) / w;
+        let digits_count = 256_usize.div_ceil(w);
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.

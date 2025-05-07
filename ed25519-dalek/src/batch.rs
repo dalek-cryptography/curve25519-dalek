@@ -27,10 +27,10 @@ use rand_core::RngCore;
 
 use sha2::Sha512;
 
+use crate::VerifyingKey;
 use crate::errors::InternalError;
 use crate::errors::SignatureError;
 use crate::signature::InternalSignature;
-use crate::VerifyingKey;
 
 /// An implementation of `rand_core::RngCore` which does nothing. This is necessary because merlin
 /// demands an `Rng` as input to `TranscriptRngBuilder::finalize()`. Using this with `finalize()`

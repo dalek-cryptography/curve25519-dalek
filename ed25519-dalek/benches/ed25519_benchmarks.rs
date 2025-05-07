@@ -7,7 +7,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 
-use criterion::{criterion_group, Criterion};
+use criterion::{Criterion, criterion_group};
 
 mod ed25519_benches {
     use super::*;

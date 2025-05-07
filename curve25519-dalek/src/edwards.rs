@@ -103,11 +103,11 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::{array::typenum::U64, Digest};
+use digest::{Digest, array::typenum::U64};
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
     rand_core::TryRngCore,
     subtle::CtOption,
 };
@@ -126,7 +126,7 @@ use zeroize::Zeroize;
 use crate::constants;
 
 use crate::field::FieldElement;
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 
 use crate::montgomery::MontgomeryPoint;
 
@@ -137,8 +137,8 @@ use crate::backend::serial::curve_models::ProjectivePoint;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::window::{
-    LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
-    LookupTableRadix64,
+    LookupTableRadix16, LookupTableRadix32, LookupTableRadix64, LookupTableRadix128,
+    LookupTableRadix256,
 };
 
 #[cfg(feature = "precomputed-tables")]
@@ -673,7 +673,7 @@ impl EdwardsPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self + &other.as_projective_niels()).as_extended()
@@ -694,7 +694,7 @@ impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
 
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
-impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self - &other.as_projective_niels()).as_extended()
@@ -731,7 +731,7 @@ where
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a EdwardsPoint {
+impl Neg for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn neg(self) -> EdwardsPoint {
@@ -768,7 +768,7 @@ define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
 define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
+impl<'b> Mul<&'b Scalar> for &EdwardsPoint {
     type Output = EdwardsPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
@@ -779,7 +779,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
+impl<'b> Mul<&'b EdwardsPoint> for &Scalar {
     type Output = EdwardsPoint;
 
     /// Scalar multiplication: compute `scalar * self`.

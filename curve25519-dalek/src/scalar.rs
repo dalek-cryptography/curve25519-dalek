@@ -134,9 +134,9 @@ use rand_core::TryRngCore;
 use rand_core::CryptoRng;
 
 #[cfg(feature = "digest")]
-use digest::array::typenum::U64;
-#[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
@@ -320,7 +320,7 @@ impl<'b> MulAssign<&'b Scalar> for Scalar {
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'b Scalar) -> Scalar {
         UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
@@ -337,7 +337,7 @@ impl<'b> AddAssign<&'b Scalar> for Scalar {
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+impl<'b> Add<&'b Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'b Scalar) -> Scalar {
@@ -357,7 +357,7 @@ impl<'b> SubAssign<&'b Scalar> for Scalar {
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'b> Sub<&'b Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn sub(self, rhs: &'b Scalar) -> Scalar {
@@ -369,7 +369,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -1023,9 +1023,9 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4..=7 => (256 + w - 1) / w,
+            4..=7 => 256_usize.div_ceil(w),
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1) / w + 1_usize,
+            8 => 256_usize.div_ceil(w) + 1_usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1072,7 +1072,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = (256 + w - 1) / w;
+        let digits_count = 256_usize.div_ceil(w);
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.

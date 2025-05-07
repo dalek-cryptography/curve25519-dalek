@@ -3,7 +3,7 @@
 use rand::{TryRngCore, rng, rngs::OsRng};
 
 use criterion::{
-    criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
+    BatchSize, BenchmarkGroup, BenchmarkId, Criterion, criterion_main, measurement::Measurement,
 };
 
 use curve25519_dalek::constants;

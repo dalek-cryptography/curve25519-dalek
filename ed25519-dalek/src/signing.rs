@@ -24,7 +24,7 @@ use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
-    digest::{array::typenum::U64, Digest},
+    digest::{Digest, array::typenum::U64},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     scalar::Scalar,
 };
@@ -40,12 +40,12 @@ use signature::DigestSigner;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::{
+    Signature,
     constants::{KEYPAIR_LENGTH, SECRET_KEY_LENGTH},
     errors::{InternalError, SignatureError},
     hazmat::ExpandedSecretKey,
     signature::InternalSignature,
     verifying::VerifyingKey,
-    Signature,
 };
 
 /// ed25519 secret key as defined in [RFC8032 § 5.1.5]:

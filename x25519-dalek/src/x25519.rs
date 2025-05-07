@@ -17,6 +17,8 @@
 use curve25519_dalek::{edwards::EdwardsPoint, montgomery::MontgomeryPoint, traits::IsIdentity};
 
 use rand_core::CryptoRng;
+#[cfg(feature = "os_rng")]
+use rand_core::TryRngCore;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;

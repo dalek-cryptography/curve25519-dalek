@@ -56,7 +56,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-cpufeatures = "0.2.6"
+cpufeatures = "0.2.17"
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = { version = "0.2.1", default-features = false }

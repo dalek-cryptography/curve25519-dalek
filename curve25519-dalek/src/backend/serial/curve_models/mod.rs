@@ -408,7 +408,7 @@ impl ProjectivePoint {
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -430,7 +430,7 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
@@ -452,7 +452,7 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
@@ -473,7 +473,7 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
     fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
@@ -497,7 +497,7 @@ impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a ProjectiveNielsPoint {
+impl Neg for &ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
     fn neg(self) -> ProjectiveNielsPoint {
@@ -510,7 +510,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
     }
 }
 
-impl<'a> Neg for &'a AffineNielsPoint {
+impl Neg for &AffineNielsPoint {
     type Output = AffineNielsPoint;
 
     fn neg(self) -> AffineNielsPoint {
@@ -558,7 +558,10 @@ impl Debug for AffineNielsPoint {
 
 impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
-               &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
+        write!(
+            f,
+            "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
+            &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d
+        )
     }
 }

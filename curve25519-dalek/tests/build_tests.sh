@@ -55,7 +55,7 @@ match_and_report "curve25519_dalek_bits is '32'" "$OUT"
 cargo clean
 OUT=build_5_1.txt
 env RUSTFLAGS="--cfg curve25519_dalek_diagnostics=\"build\" --cfg curve25519_dalek_backend=\"simd\"" cargo build --target wasm32-unknown-unknown > "$OUT" 2>&1
-# This overide must fail the compilation since "simd" is not available
+# This override must fail the compilation since "simd" is not available
 # See: issues/532
 match_and_report "Could not override curve25519_dalek_backend to simd" "$OUT"
 

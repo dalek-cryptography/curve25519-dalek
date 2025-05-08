@@ -9,6 +9,10 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
+// Nightly and stable currently disagree on the requirement of unsafe blocks when `unsafe_target_feature`
+// gets used.
+// See: https://github.com/rust-lang/rust/issues/132856
+#![allow(unused_unsafe)]
 #![allow(non_snake_case)]
 
 use crate::backend::vector::packed_simd::u64x4;

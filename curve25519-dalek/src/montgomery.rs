@@ -84,6 +84,12 @@ impl ConstantTimeEq for MontgomeryPoint {
     }
 }
 
+impl ConditionallySelectable for MontgomeryPoint {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        Self(<[u8; 32]>::conditional_select(&a.0, &b.0, choice))
+    }
+}
+
 impl PartialEq for MontgomeryPoint {
     fn eq(&self, other: &MontgomeryPoint) -> bool {
         self.ct_eq(other).into()

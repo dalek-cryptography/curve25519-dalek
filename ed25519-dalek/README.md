@@ -144,7 +144,7 @@ In this section, we mention some specific details about our validation criteria,
 
 ## Malleability and the `legacy_compatibility` Feature
 
-A signature scheme is considered to produce _malleable signatures_ if a passive attacker with knowledge of a public key _A_, message _m_, and valid signature _σ'_ can produce a distinct _σ'_ such that _σ'_ is a valid signature of _m_ with respect to _A_. A scheme is only malleable if the attacker can do this _without_ knowledge of the private key corresponding to _A_.
+A signature scheme is considered to produce _malleable signatures_ if a passive attacker with knowledge of a public key _A_, message _m_, and valid signature _σ_ can produce a distinct _σ'_ such that _σ'_ is a valid signature of _m_ with respect to _A_. A scheme is only malleable if the attacker can do this _without_ knowledge of the private key corresponding to _A_.
 
 `ed25519-dalek` is not a malleable signature scheme.
 

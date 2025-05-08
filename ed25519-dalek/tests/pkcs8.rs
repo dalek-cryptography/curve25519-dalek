@@ -4,13 +4,15 @@
 //! RFC5958 (PKCS#8) and RFC5280 (SPKI).
 
 #![cfg(feature = "pkcs8")]
-
 use ed25519_dalek::pkcs8::{DecodePrivateKey, DecodePublicKey};
 use ed25519_dalek::{SigningKey, VerifyingKey};
 use hex_literal::hex;
 
 #[cfg(feature = "alloc")]
 use ed25519_dalek::pkcs8::{EncodePrivateKey, EncodePublicKey};
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+use ed25519_dalek::pkcs8::spki::DynSignatureAlgorithmIdentifier;
 
 /// Ed25519 PKCS#8 v1 private key encoded as ASN.1 DER.
 const PKCS8_V1_DER: &[u8] = include_bytes!("examples/pkcs8-v1.der");
@@ -68,4 +70,18 @@ fn encode_verifying_key() {
 
     let verifying_key2 = VerifyingKey::from_public_key_der(verifying_key_der.as_bytes()).unwrap();
     assert_eq!(verifying_key, verifying_key2);
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn get_algo_identifier() {
+    let verifying_key = VerifyingKey::from_public_key_der(PUBLIC_KEY_DER).unwrap();
+    let identifier = verifying_key.signature_algorithm_identifier().unwrap();
+    assert!(identifier.parameters.is_none()); // According to rfc8410 this must be None
+    assert_eq!(identifier.oid, ed25519::pkcs8::ALGORITHM_OID);
+
+    let signing_key = SigningKey::from_bytes(&SK_BYTES);
+    let identifer = signing_key.signature_algorithm_identifier().unwrap();
+    assert!(identifer.parameters.is_none()); // According to rfc8410 this must be None
+    assert_eq!(identifer.oid, ed25519::pkcs8::ALGORITHM_OID);
 }

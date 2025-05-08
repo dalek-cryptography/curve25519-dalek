@@ -76,9 +76,9 @@
 //! coordinates without requiring an inversion, so it is much faster.
 //!
 //! The `RistrettoPoint` struct implements the
-//! `subtle::ConstantTimeEq` trait for constant-time equality
-//! checking, and the Rust `Eq` trait for variable-time equality
-//! checking.
+//! [`subtle::ConstantTimeEq`] trait for constant-time equality
+//! checking, and also uses this to ensure `Eq` equality checking
+//! runs in constant time.
 //!
 //! ## Scalars
 //!
@@ -1032,6 +1032,9 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 }
 
 /// Precomputation for variable-time multiscalar multiplication with `RistrettoPoint`s.
+///
+/// Note that for large numbers of `RistrettoPoint`s, this functionality may be less
+/// efficient than the corresponding `VartimeMultiscalarMul` implementation.
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
@@ -1050,6 +1053,14 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
         Self(crate::backend::VartimePrecomputedStraus::new(
             static_points.into_iter().map(|P| P.borrow().0),
         ))
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     fn optional_mixed_multiscalar_mul<I, J, K>(
@@ -1877,6 +1888,9 @@ mod test {
             .collect::<Vec<_>>();
 
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+
+        assert_eq!(precomputation.len(), 128);
+        assert!(!precomputation.is_empty());
 
         let P = precomputation.vartime_mixed_multiscalar_mul(
             &static_scalars,

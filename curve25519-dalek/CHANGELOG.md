@@ -3,6 +3,10 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
+## Unreleased
+
+* Move AVX-512 backend selection logic to a separate CFG flag that requires nightly
+
 ## 4.x series
 
 ### 4.1.3

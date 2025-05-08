@@ -19,8 +19,8 @@
 //! ## Equality Testing
 //!
 //! The `EdwardsPoint` struct implements the [`subtle::ConstantTimeEq`]
-//! trait for constant-time equality checking, and the Rust `Eq` trait
-//! for variable-time equality checking.
+//! trait for constant-time equality checking, and also uses this to
+//! ensure `Eq` equality checking runs in constant time.
 //!
 //! ## Cofactor-related functions
 //!
@@ -438,7 +438,7 @@ impl Zeroize for CompressedEdwardsY {
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for EdwardsPoint {
-    /// Reset this `CompressedEdwardsPoint` to the identity element.
+    /// Reset this `EdwardsPoint` to the identity element.
     fn zeroize(&mut self) {
         self.X.zeroize();
         self.Y = FieldElement::ONE;
@@ -877,6 +877,14 @@ impl VartimePrecomputedMultiscalarMul for VartimeEdwardsPrecomputation {
         I::Item: Borrow<Self::Point>,
     {
         Self(crate::backend::VartimePrecomputedStraus::new(static_points))
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     fn optional_mixed_multiscalar_mul<I, J, K>(
@@ -1335,7 +1343,7 @@ impl GroupEncoding for EdwardsPoint {
 /// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
 /// guaranteed to be in the prime-order subgroup.
 #[cfg(feature = "group")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SubgroupPoint(EdwardsPoint);
 
 #[cfg(feature = "group")]
@@ -1509,6 +1517,27 @@ impl MulAssign<&Scalar> for SubgroupPoint {
 
 #[cfg(feature = "group")]
 define_mul_assign_variants!(LHS = SubgroupPoint, RHS = Scalar);
+
+#[cfg(feature = "group")]
+impl ConstantTimeEq for SubgroupPoint {
+    fn ct_eq(&self, other: &SubgroupPoint) -> Choice {
+        self.0.ct_eq(&other.0)
+    }
+}
+
+#[cfg(feature = "group")]
+impl ConditionallySelectable for SubgroupPoint {
+    fn conditional_select(a: &SubgroupPoint, b: &SubgroupPoint, choice: Choice) -> SubgroupPoint {
+        SubgroupPoint(EdwardsPoint::conditional_select(&a.0, &b.0, choice))
+    }
+}
+
+#[cfg(all(feature = "group", feature = "zeroize"))]
+impl Zeroize for SubgroupPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {
@@ -2119,6 +2148,9 @@ mod test {
             .collect::<Vec<_>>();
 
         let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
+
+        assert_eq!(precomputation.len(), 128);
+        assert!(!precomputation.is_empty());
 
         let P = precomputation.vartime_mixed_multiscalar_mul(
             &static_scalars,

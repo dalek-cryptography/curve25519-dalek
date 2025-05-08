@@ -13,7 +13,10 @@
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
     "avx2",
-    conditional("avx512ifma,avx512vl", nightly)
+    conditional(
+        "avx512ifma,avx512vl",
+        all(curve25519_dalek_backend = "unstable_avx512", nightly)
+    )
 )]
 pub mod spec {
 
@@ -54,6 +57,14 @@ pub mod spec {
             }
         }
 
+        fn len(&self) -> usize {
+            self.static_lookup_tables.len()
+        }
+
+        fn is_empty(&self) -> bool {
+            self.static_lookup_tables.is_empty()
+        }
+
         fn optional_mixed_multiscalar_mul<I, J, K>(
             &self,
             static_scalars: I,
@@ -83,7 +94,7 @@ pub mod spec {
 
             let sp = self.static_lookup_tables.len();
             let dp = dynamic_lookup_tables.len();
-            assert_eq!(sp, static_nafs.len());
+            assert!(sp >= static_nafs.len());
             assert_eq!(dp, dynamic_nafs.len());
 
             // We could save some doublings by looking for the highest
@@ -107,7 +118,7 @@ pub mod spec {
                 }
 
                 #[allow(clippy::needless_range_loop)]
-                for i in 0..sp {
+                for i in 0..static_nafs.len() {
                     let t_ij = static_nafs[i][j];
                     match t_ij.cmp(&0) {
                         Ordering::Greater => {

@@ -124,11 +124,8 @@ impl VerifyingKey {
 
     /// Construct a `VerifyingKey` from a slice of bytes.
     ///
-    /// # Warning
-    ///
-    /// The caller is responsible for ensuring that the bytes passed into this
-    /// method actually represent a `curve25519_dalek::curve::CompressedEdwardsY`
-    /// and that said compressed point is actually a point on the curve.
+    /// Verifies the point is valid under [ZIP-215] rules. RFC 8032 / NIST point validation criteria
+    /// are currently unsupported (see [dalek-cryptography/curve25519-dalek#626]).
     ///
     /// # Example
     ///
@@ -156,6 +153,9 @@ impl VerifyingKey {
     ///
     /// A `Result` whose okay value is an EdDSA `VerifyingKey` or whose error value
     /// is a `SignatureError` describing the error that occurred.
+    ///
+    /// [ZIP-215]: https://zips.z.cash/zip-0215
+    /// [dalek-cryptography/curve25519-dalek#626]: https://github.com/dalek-cryptography/curve25519-dalek/issues/626
     #[inline]
     pub fn from_bytes(bytes: &[u8; PUBLIC_KEY_LENGTH]) -> Result<VerifyingKey, SignatureError> {
         let compressed = CompressedEdwardsY(*bytes);
@@ -577,6 +577,20 @@ impl From<VerifyingKey> for EdwardsPoint {
 impl pkcs8::EncodePublicKey for VerifyingKey {
     fn to_public_key_der(&self) -> pkcs8::spki::Result<pkcs8::Document> {
         pkcs8::PublicKeyBytes::from(self).to_public_key_der()
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "pkcs8"))]
+impl pkcs8::spki::DynSignatureAlgorithmIdentifier for VerifyingKey {
+    fn signature_algorithm_identifier(
+        &self,
+    ) -> pkcs8::spki::Result<pkcs8::spki::AlgorithmIdentifierOwned> {
+        // From https://datatracker.ietf.org/doc/html/rfc8410
+        // `id-Ed25519   OBJECT IDENTIFIER ::= { 1 3 101 112 }`
+        Ok(ed25519::pkcs8::spki::AlgorithmIdentifierOwned {
+            oid: ed25519::pkcs8::ALGORITHM_OID,
+            parameters: None,
+        })
     }
 }
 

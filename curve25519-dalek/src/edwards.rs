@@ -68,8 +68,8 @@
 //!
 //! ## Implementation
 //!
-//! The Edwards arithmetic is implemented using the “extended twisted
-//! coordinates” of Hisil, Wong, Carter, and Dawson, and the
+//! The Edwards arithmetic is implemented using the "extended twisted
+//! coordinates" of Hisil, Wong, Carter, and Dawson, and the
 //! corresponding complete formulas.  For more details,
 //! see the [`curve_models` submodule][curve_models]
 //! of the internal documentation.
@@ -1236,7 +1236,7 @@ impl EdwardsPoint {
         self.mul_by_cofactor().is_identity()
     }
 
-    /// Determine if this point is “torsion-free”, i.e., is contained in
+    /// Determine if this point is "torsion-free", i.e., is contained in
     /// the prime-order subgroup.
     ///
     /// # Return

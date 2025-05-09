@@ -12,8 +12,8 @@
 //! Scalar multiplication on the Montgomery form of Curve25519.
 //!
 //! To avoid notational confusion with the Edwards code, we use
-//! variables \\( u, v \\) for the Montgomery curve, so that “Montgomery
-//! \\(u\\)” here corresponds to “Montgomery \\(x\\)” elsewhere.
+//! variables \\( u, v \\) for the Montgomery curve, so that "Montgomery
+//! \\(u\\)" here corresponds to "Montgomery \\(x\\)" elsewhere.
 //!
 //! Montgomery arithmetic works not on the curve itself, but on the
 //! \\(u\\)-line, which discards sign information and unifies the curve

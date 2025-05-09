@@ -30,7 +30,7 @@ use cfg_if::cfg_if;
 use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
-use subtle::ConstantTimeEq;
+use subtle::{ConstantTimeEq, ConstantTimeGreater};
 
 use crate::backend;
 use crate::constants;
@@ -217,7 +217,7 @@ impl FieldElement {
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
     #[rustfmt::skip] // keep alignment of explanatory comments
     #[allow(clippy::let_and_return)]
-    fn pow_p58(&self) -> FieldElement {
+    pub(crate) fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //
         //                                 nonzero bits of exponent
@@ -302,6 +302,18 @@ impl FieldElement {
     ///
     pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
+    }
+}
+
+impl ConstantTimeGreater for FieldElement {
+    /// Test equality between two `FieldElement`s.  Since the
+    /// internal representation is not canonical, the field elements
+    /// are normalized to wire format before comparison.
+    ///
+    /// If self > other return Choice(1), otherwise return Choice(0)
+    ///
+    fn ct_gt(&self, other: &FieldElement) -> Choice {
+        self.gt(other)
     }
 }
 

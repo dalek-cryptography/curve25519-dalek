@@ -13,10 +13,13 @@
 // defined.
 #![allow(dead_code)]
 
+use core::fmt::Debug;
+
 use crate::{InternalError, SignatureError};
 
 use curve25519_dalek::scalar::{clamp_integer, Scalar};
 
+use subtle::{Choice, ConstantTimeEq};
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -40,6 +43,26 @@ pub struct ExpandedSecretKey {
     /// The domain separator used when hashing the message to generate the pseudorandom `r` value
     pub hash_prefix: [u8; 32],
 }
+
+impl Debug for ExpandedSecretKey {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ExpandedSecretKey").finish_non_exhaustive() // avoids printing secrets
+    }
+}
+
+impl ConstantTimeEq for ExpandedSecretKey {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.scalar.ct_eq(&other.scalar) & self.hash_prefix.ct_eq(&other.hash_prefix)
+    }
+}
+
+impl PartialEq for ExpandedSecretKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl Eq for ExpandedSecretKey {}
 
 #[cfg(feature = "zeroize")]
 impl Drop for ExpandedSecretKey {

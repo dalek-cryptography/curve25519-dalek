@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of curve25519-dalek.
+// This file is part of curve25519-dalek_ml.
 // Copyright (c) 2016-2021 isis lovecruft
 // Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
@@ -85,7 +85,7 @@
 //! successful decompression of a compressed point, or else by
 //! operations on other (valid) `EdwardsPoint`s.
 //!
-//! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
+//! [curve_models]: https://docs.rs/curve25519-dalek_ml/latest/curve25519-dalek/backend/serial/curve_models/index.html
 
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
@@ -604,6 +604,77 @@ impl EdwardsPoint {
         E1_opt
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
+    }
+
+    #[cfg(feature = "group")]
+    /// Maps the input bytes to the curve. This implements the spec for
+    /// [`hash_to_curve`](https://datatracker.ietf.org/doc/rfc9380/) according to sections
+    /// 8.5 and J.5
+    pub fn hash_to_curve<X>(msg: &[u8], dst: &[u8]) -> Self
+    where
+        X: for<'a> elliptic_curve::hash2curve::ExpandMsg<'a>,
+    {
+        use elliptic_curve::hash2curve::Expander;
+
+        let dst = [dst];
+        let mut random_bytes = [0u8; 96];
+        let mut expander =
+            X::expand_message(&[msg], &dst, random_bytes.len()).expect("expand_message failed");
+        expander.fill_bytes(&mut random_bytes);
+
+        let u0 = FieldElement::from_xmd_bytes_mod_order(&random_bytes[..48]);
+        let u1 = FieldElement::from_xmd_bytes_mod_order(&random_bytes[48..]);
+
+        let q0 = map_to_edwards(u0);
+        let q1 = map_to_edwards(u1);
+        let p = q0 + q1;
+        p.mul_by_cofactor()
+    }
+}
+
+#[cfg(feature = "group")]
+fn map_to_edwards(e: FieldElement) -> EdwardsPoint {
+    let (u, v) = elligator_encode(e);
+    let (x, y) = montgomery_to_edwards(u, v);
+    affine_to_edwards(x, y)
+}
+
+#[cfg(feature = "group")]
+fn elligator_encode(e: FieldElement) -> (FieldElement, FieldElement) {
+    let mut t1 = &(&FieldElement::ONE + &FieldElement::ONE) * &e.square(); // 2u^2
+    let e1 = t1.ct_eq(&FieldElement::MINUS_ONE);
+    t1.conditional_assign(&FieldElement::ZERO, e1); // if 2u^2 == -1, t1 = 0
+    let x1 = &(&t1 + &FieldElement::ONE).invert() * &FieldElement::EDWARDS_MINUS_ELL_A; // -A / t1 + 1
+    let min_x1 = -(&x1);
+
+    let gx1 = &(&(&(&x1 + &FieldElement::EDWARDS_ELL_A) * &x1) + &FieldElement::ONE) * &x1; // x1 * (x1 * (x1 + A) + 1)
+    let x2 = &min_x1 - &FieldElement::EDWARDS_ELL_A; // -x1 - A
+    let gx2 = &t1 * &gx1;
+    let (is_square, root1) = FieldElement::sqrt_ratio_i(&gx1, &FieldElement::ONE);
+    let neg_root1 = -(&root1);
+    let (_, root2) = FieldElement::sqrt_ratio_i(&gx2, &FieldElement::ONE);
+
+    let x = FieldElement::conditional_select(&x2, &x1, is_square);
+    let y = FieldElement::conditional_select(&root2, &neg_root1, is_square);
+    (x, y)
+}
+
+#[cfg(feature = "group")]
+fn montgomery_to_edwards(u: FieldElement, v: FieldElement) -> (FieldElement, FieldElement) {
+    let x = &(&v.invert() * &u) * &FieldElement::MONTGOMERY_TO_EDWARDS_INV_SQRT_D;
+    let u1 = &u - &FieldElement::ONE;
+    let u2 = &u + &FieldElement::ONE;
+    let y = &u1 * &u2.invert();
+    (x, y)
+}
+
+#[cfg(feature = "group")]
+fn affine_to_edwards(x: FieldElement, y: FieldElement) -> EdwardsPoint {
+    EdwardsPoint {
+        X: x,
+        Y: y,
+        Z: FieldElement::ONE,
+        T: &x * &y,
     }
 }
 
@@ -1219,7 +1290,7 @@ impl EdwardsPoint {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek_ml::constants;
     ///
     /// // Generator of the prime-order subgroup
     /// let P = constants::ED25519_BASEPOINT_POINT;
@@ -1249,7 +1320,7 @@ impl EdwardsPoint {
     /// # Example
     ///
     /// ```
-    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek_ml::constants;
     ///
     /// // Generator of the prime-order subgroup
     /// let P = constants::ED25519_BASEPOINT_POINT;
@@ -1343,7 +1414,7 @@ impl GroupEncoding for EdwardsPoint {
 /// A `SubgroupPoint` represents a point on the Edwards form of Curve25519, that is
 /// guaranteed to be in the prime-order subgroup.
 #[cfg(feature = "group")]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub struct SubgroupPoint(EdwardsPoint);
 
 #[cfg(feature = "group")]
@@ -2298,6 +2369,27 @@ mod test {
 
             let point = EdwardsPoint::nonspec_map_to_curve::<sha2::Sha512>(&input);
             assert_eq!(point.compress().to_bytes(), output[..]);
+        }
+    }
+
+    #[cfg(feature = "group")]
+    #[test]
+    fn hash_to_curve() {
+        const DST: &[u8] = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
+        let msgs: [(&[u8], &str); 5] = [
+            (b"", "09a6c8561a0b22bef63124c588ce4c62ea83a3c899763af26d795302e115dc21"),
+            (b"abc", "9a8395b88338f22e435bbd301183e7f20a5f9de643f11882fb237f88268a5531"),
+            (b"abcdef0123456789", "53060a3d140e7fbcda641ed3cf42c88a75411e648a1add71217f70ea8ec561a6"),
+            (b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", "2eca15e355fcfa39d2982f67ddb0eea138e2994f5956ed37b7f72eea5e89d2f7"),
+            (b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "6dc2fc04f266c5c27f236a80b14f92ccd051ef1ff027f26a07f8c0f327d8f995"),
+        ];
+        for (input, expected_hex) in msgs {
+            let pt = EdwardsPoint::hash_to_curve::<
+                elliptic_curve::hash2curve::ExpandMsgXmd<sha2::Sha512>,
+            >(input, DST);
+            let mut expected_bytes = hex::decode(expected_hex).unwrap();
+            expected_bytes.reverse();
+            assert_eq!(expected_bytes, pt.to_bytes());
         }
     }
 }

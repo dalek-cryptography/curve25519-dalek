@@ -1,19 +1,19 @@
 [package]
-name = "curve25519-dalek"
+name = "curve25519-dalek-ml"
 # Before incrementing:
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.1.3"
+version = "4.3.0"
 edition = "2021"
-rust-version = "1.60.0"
 authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
-           "Henry de Valence <hdevalence@hdevalence.ca>"]
+           "Henry de Valence <hdevalence@hdevalence.ca>",
+           "Michael Lodder <redmike7@gmail.com>"]
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/curve25519-dalek"
+repository = "https://github.com/mikelodder7/curve25519-dalek-ml/tree/main/curve25519-dalek"
 homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
-documentation = "https://docs.rs/curve25519-dalek"
+documentation = "https://docs.rs/curve25519-dalek-ml"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
 description = "A pure-Rust implementation of group operations on ristretto255 and Curve25519"
@@ -47,6 +47,7 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
+elliptic-curve = { version = "0.13", features = ["hash2curve"], optional = true }
 ff = { version = "0.13", default-features = false, optional = true }
 group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
@@ -62,11 +63,11 @@ cpufeatures = "0.2.17"
 fiat-crypto = { version = "0.2.1", default-features = false }
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = ["alloc", "group", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
-group = ["dep:group", "rand_core"]
+group = ["dep:group", "dep:elliptic-curve", "rand_core"]
 group-bits = ["group", "ff/bits"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]

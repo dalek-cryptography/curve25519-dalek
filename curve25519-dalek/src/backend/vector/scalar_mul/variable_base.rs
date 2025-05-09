@@ -9,6 +9,8 @@
 )]
 pub mod spec {
 
+    use core::cmp::Ordering;
+
     #[for_target_feature("avx2")]
     use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
 
@@ -18,7 +20,7 @@ pub mod spec {
     use crate::edwards::EdwardsPoint;
     use crate::scalar::Scalar;
     use crate::traits::Identity;
-    use crate::window::LookupTable;
+    use crate::window::{LookupTable, NafLookupTable5};
 
     /// Perform constant-time, variable-base scalar multiplication.
     pub fn mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
@@ -42,6 +44,44 @@ pub mod spec {
             Q = Q.mul_by_pow_2(4);
             Q = &Q + &lookup_table.select(scalar_digits[i]);
         }
+        Q.into()
+    }
+
+    /// Perform variable-time, variable-base scalar multiplication.
+    pub fn vartime_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+        let naf = scalar.non_adjacent_form(5);
+        let table = NafLookupTable5::<CachedPoint>::from(point);
+
+        // Find starting index
+        let mut i: usize = 255;
+        for j in (0..256).rev() {
+            i = j;
+            if naf[i] != 0 {
+                break;
+            }
+        }
+
+        let mut Q = ExtendedPoint::identity();
+
+        loop {
+            Q = Q.double();
+
+            match naf[i].cmp(&0) {
+                Ordering::Greater => {
+                    Q = &Q + &table.select(naf[i] as usize);
+                }
+                Ordering::Less => {
+                    Q = &Q - &table.select(-naf[i] as usize);
+                }
+                Ordering::Equal => {}
+            }
+
+            if i == 0 {
+                break;
+            }
+            i -= 1;
+        }
+
         Q.into()
     }
 }

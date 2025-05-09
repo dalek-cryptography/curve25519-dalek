@@ -262,6 +262,21 @@ pub fn variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint 
     }
 }
 
+/// Perform variable-time, variable-base scalar multiplication.
+pub fn vartime_variable_base_mul(point: &EdwardsPoint, scalar: &Scalar) -> EdwardsPoint {
+    match get_selected_backend() {
+        #[cfg(curve25519_dalek_backend = "simd")]
+        BackendKind::Avx2 => {
+            vector::scalar_mul::variable_base::spec_avx2::vartime_mul(point, scalar)
+        }
+        #[cfg(all(curve25519_dalek_backend = "simd", nightly))]
+        BackendKind::Avx512 => {
+            vector::scalar_mul::variable_base::spec_avx512ifma_avx512vl::vartime_mul(point, scalar)
+        }
+        BackendKind::Serial => serial::scalar_mul::variable_base::vartime_mul(point, scalar),
+    }
+}
+
 /// Compute \\(aA + bB\\) in variable time, where \\(B\\) is the Ed25519 basepoint.
 #[allow(non_snake_case)]
 pub fn vartime_double_base_mul(a: &Scalar, A: &EdwardsPoint, b: &Scalar) -> EdwardsPoint {

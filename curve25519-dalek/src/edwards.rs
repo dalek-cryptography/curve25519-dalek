@@ -623,11 +623,11 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform hashing to curve, with explicit hash function and DST using the suite
-    /// edwards25519_XMD:SHA-512_ELL2_NU_
+    /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`.
     ///
     /// See https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2
-    pub fn hash_to_curve_dst<D>(bytes: &[u8], dst: &[u8]) -> EdwardsPoint
+    pub fn hash_to_curve_domain_sep<D>(bytes: &[u8], dst: &[u8]) -> EdwardsPoint
     where
         D: Digest<OutputSize = U64> + Default,
     {
@@ -2481,7 +2481,7 @@ mod test {
             let mut output = hex::decode(vector[1]).unwrap();
             output.reverse();
 
-            let point = EdwardsPoint::hash_to_curve_dst::<sha2::Sha512>(&input, dst)
+            let point = EdwardsPoint::hash_to_curve_domain_sep::<sha2::Sha512>(&input, dst)
                 .compress()
                 .to_bytes();
             assert!(!(point != output[..]), "Failed in test {}", index);

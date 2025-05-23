@@ -178,6 +178,7 @@ mod test {
 
     /// Test that ED25519_SQRTAM2 squared is MONTGOMERY_A_NEG - 2
     #[test]
+    #[cfg(feature = "digest")]
     fn test_sqrt_a_minus_2() {
         let one = FieldElement::ONE;
         let a_minus_two = &(&constants::MONTGOMERY_A_NEG - &one) - &one;

@@ -626,7 +626,8 @@ impl EdwardsPoint {
     /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
     /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`.
     ///
-    /// See https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2
+    /// See
+    /// [`hash_to_curve` spec](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2)
     pub fn hash_to_curve_domain_sep<D>(bytes: &[u8], dst: &[u8]) -> EdwardsPoint
     where
         D: Digest<OutputSize = U64> + Default,
@@ -652,7 +653,7 @@ impl EdwardsPoint {
     /// function from the Elligator2 spec.
     ///
     /// For a hash to curve with uniform distribution and compatible with the spec, see
-    /// [`hash_to_curve_dst`].
+    /// [Self::hash_to_curve_domain_sep].
     #[deprecated(
         since = "4.0.0",
         note = "previously named `hash_from_bytes`, this is not a secure hash function"

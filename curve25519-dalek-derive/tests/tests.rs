@@ -122,10 +122,15 @@ mod inner_spec {
 #[test]
 fn test_sse2_only() {}
 
-#[unsafe_target_feature("avx2")]
+// it turns out that for compilation to succeed, the feature needs be supported by rustc. For this
+// test actually verify what happens when the target_feature is not enabled, this needs to be a
+// pretty esoteric feature. Looking at the table of supported avx512 features at
+// https://en.wikipedia.org/wiki/AVX-512#CPUs_with_AVX-512 it seems avx512vp2intersect is one of the
+// most unusual ones that has rustc knows about
+#[unsafe_target_feature("avx512vp2intersect")]
 #[test]
-fn test_avx2_only() {
-    compile_error!();
+fn test_unset_target_feature() {
+    compile_error!("When an unknown target_feature is set on a test, unsafe_target_feature is expected remove the function");
 }
 
 #[test]

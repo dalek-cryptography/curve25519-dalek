@@ -259,6 +259,26 @@ impl FieldElement51 {
         FieldElement51(limbs)
     }
 
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_ELL_A: FieldElement51 = FieldElement51::from_limbs([486662, 0, 0, 0, 0]);
+    /// Elligator2 constant for Edwards Curve
+    pub const EDWARDS_MINUS_ELL_A: FieldElement51 = FieldElement51::from_limbs([
+        0x7fffffff892e7,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+        0x7ffffffffffff,
+    ]);
+    /// 1/sqrt(D) used for converting a montgomery point to edwards
+    pub const MONTGOMERY_TO_EDWARDS_INV_SQRT_D: FieldElement51 = FieldElement51::from_limbs([
+        0x604aaff457e06,
+        0x2296fa350598d,
+        0x7f13dfb16874f,
+        0x35de93d846e01,
+        0x0f26edf460a00,
+    ]);
+    /// 2^192
+    pub const F_2_192: FieldElement51 = FieldElement51::from_limbs([0, 0, 0, 0x0008000000000, 0]);
     /// The scalar \\( 0 \\).
     pub const ZERO: FieldElement51 = FieldElement51::from_limbs([0, 0, 0, 0, 0]);
     /// The scalar \\( 1 \\).

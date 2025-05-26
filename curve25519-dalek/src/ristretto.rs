@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of curve25519-dalek.
+// This file is part of curve25519-dalek_ml.
 // Copyright (c) 2016-2021 isis lovecruft
 // Copyright (c) 2016-2020 Henry de Valence
 // See LICENSE for licensing information.
@@ -56,7 +56,7 @@
 //! [Why Ristretto?][why_ristretto] section of the Ristretto website.
 //!
 //! Ristretto
-//! points are provided in `curve25519-dalek` by the `RistrettoPoint`
+//! points are provided in `curve25519-dalek_ml` by the `RistrettoPoint`
 //! struct.
 //!
 //! ## Encoding and Decoding
@@ -531,7 +531,7 @@ impl RistrettoPoint {
     ///
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// # use curve25519_dalek_ml::ristretto::RistrettoPoint;
     /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -735,7 +735,7 @@ impl RistrettoPoint {
     ///
     #[cfg_attr(feature = "digest", doc = "```")]
     #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// # use curve25519_dalek_ml::ristretto::RistrettoPoint;
     /// use sha2::Sha512;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
@@ -800,6 +800,27 @@ impl RistrettoPoint {
         // Applying Elligator twice and adding the results ensures a
         // uniform distribution.
         R_1 + R_2
+    }
+
+    #[cfg(feature = "group")]
+    /// Maps the input bytes to the curve. This implements the spec for
+    /// [`hash_to_curve`](https://datatracker.ietf.org/doc/rfc9380/) according to sections
+    /// 8.5 and Appendix B.
+    ///
+    /// A reasonable choice for `dst` is "ristretto255_XMD:SHA-512_R255MAP_RO_"
+    pub fn hash_to_curve<X>(msg: &[u8], dst: &[u8]) -> Self
+    where
+        X: for<'a> elliptic_curve::hash2curve::ExpandMsg<'a>,
+    {
+        use elliptic_curve::hash2curve::Expander;
+
+        let dst = [dst];
+        let mut random_bytes = [0u8; 64];
+        let mut expander =
+            X::expand_message(&[msg], &dst, random_bytes.len()).expect("expand_message failed");
+        expander.fill_bytes(&mut random_bytes);
+
+        RistrettoPoint::from_uniform_bytes(&random_bytes)
     }
 }
 
@@ -1081,8 +1102,8 @@ impl RistrettoPoint {
 /// A precomputed table of multiples of the Ristretto basepoint is
 /// available in the `constants` module:
 /// ```
-/// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
-/// use curve25519_dalek::scalar::Scalar;
+/// use curve25519_dalek_ml::constants::RISTRETTO_BASEPOINT_TABLE;
+/// use curve25519_dalek_ml::scalar::Scalar;
 ///
 /// let a = Scalar::from(87329482u64);
 /// let P = &a * RISTRETTO_BASEPOINT_TABLE;
@@ -1136,9 +1157,9 @@ impl ConditionallySelectable for RistrettoPoint {
     /// use subtle::ConditionallySelectable;
     /// use subtle::Choice;
     /// #
-    /// # use curve25519_dalek::traits::Identity;
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// # use curve25519_dalek::constants;
+    /// # use curve25519_dalek_ml::traits::Identity;
+    /// # use curve25519_dalek_ml::ristretto::RistrettoPoint;
+    /// # use curve25519_dalek_ml::constants;
     /// # fn main() {
     ///
     /// let A = RistrettoPoint::identity();

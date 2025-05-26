@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of curve25519-dalek.
+// This file is part of curve25519-dalek_ml.
 // Copyright (c) 2016-2021 isis lovecruft
 // Copyright (c) 2016-2019 Henry de Valence
 // See LICENSE for licensing information.
@@ -97,10 +97,10 @@ pub trait MultiscalarMul {
     /// ```
     /// # #[cfg(feature = "alloc")]
     /// # {
-    /// use curve25519_dalek::constants;
-    /// use curve25519_dalek::traits::MultiscalarMul;
-    /// use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::constants;
+    /// use curve25519_dalek_ml::traits::MultiscalarMul;
+    /// use curve25519_dalek_ml::ristretto::RistrettoPoint;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// // Some scalars
     /// let a = Scalar::from(87329482u64);
@@ -152,10 +152,10 @@ pub trait VartimeMultiscalarMul {
     /// ```
     /// #[cfg(feature = "alloc")]
     /// # {
-    /// use curve25519_dalek::constants;
-    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
-    /// use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::constants;
+    /// use curve25519_dalek_ml::traits::VartimeMultiscalarMul;
+    /// use curve25519_dalek_ml::ristretto::RistrettoPoint;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// // Some scalars
     /// let a = Scalar::from(87329482u64);
@@ -218,10 +218,10 @@ pub trait VartimeMultiscalarMul {
     /// ```
     /// #[cfg(feature = "alloc")]
     /// # {
-    /// use curve25519_dalek::constants;
-    /// use curve25519_dalek::traits::VartimeMultiscalarMul;
-    /// use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek_ml::constants;
+    /// use curve25519_dalek_ml::traits::VartimeMultiscalarMul;
+    /// use curve25519_dalek_ml::ristretto::RistrettoPoint;
+    /// use curve25519_dalek_ml::scalar::Scalar;
     ///
     /// // Some scalars
     /// let a = Scalar::from(87329482u64);
@@ -420,7 +420,7 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
 /// Trait for checking whether a point is on the curve.
 ///
 /// This trait is only for debugging/testing, since it should be
-/// impossible for a `curve25519-dalek` user to construct an invalid
+/// impossible for a `curve25519-dalek_ml` user to construct an invalid
 /// point.
 #[allow(dead_code)]
 pub(crate) trait ValidityCheck {

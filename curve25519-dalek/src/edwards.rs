@@ -100,7 +100,6 @@ use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-
 use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
@@ -112,7 +111,7 @@ use {
     subtle::CtOption,
 };
 
-#[cfg(feature = "group")]
+#[cfg(feature = "rand_core")]
 use rand_core::RngCore;
 
 use subtle::Choice;
@@ -151,6 +150,8 @@ use crate::traits::{Identity, IsIdentity};
 use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -574,6 +575,22 @@ impl EdwardsPoint {
         CompressedEdwardsY(s)
     }
 
+    /// Compress several `EdwardsPoint`s into `CompressedEdwardsY`.
+    #[cfg(feature = "alloc")]
+    pub fn compress_batch(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
+        let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
+        FieldElement::batch_invert(&mut zs);
+
+        inputs.iter().zip(&zs).map(|(input, recip)| {
+            let x = &input.X * &recip;
+            let y = &input.Y * &recip;
+
+            let mut s = y.as_bytes();
+            s[31] ^= x.is_negative().unwrap_u8() << 7;
+            CompressedEdwardsY(s)
+        }).collect()
+    }
+
     #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that
@@ -604,6 +621,33 @@ impl EdwardsPoint {
         E1_opt
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
+    }
+
+    /// Return an `EdwardsPoint` chosen uniformly at random using a user-provided RNG.
+    ///
+    /// # Inputs
+    ///
+    /// * `rng`: any RNG which implements `RngCore`
+    ///
+    /// # Returns
+    ///
+    /// A random `EdwardsPoint`.
+    ///
+    /// # Implementation
+    ///
+    /// Uses rejection sampling, generating a random `CompressedEdwardsY` and then attempting point
+    /// decompression, rejecting invalid points.
+    #[cfg(feature = "rand_core")]
+    pub fn random(mut rng: impl RngCore) -> Self {
+        let mut repr = CompressedEdwardsY([0u8; 32]);
+        loop {
+            rng.fill_bytes(&mut repr.0);
+            if let Some(p) = repr.decompress() {
+                if !IsIdentity::is_identity(&p) {
+                    break p;
+                }
+            }
+        }
     }
 }
 
@@ -1291,16 +1335,8 @@ impl Debug for EdwardsPoint {
 impl group::Group for EdwardsPoint {
     type Scalar = Scalar;
 
-    fn random(mut rng: impl RngCore) -> Self {
-        let mut repr = CompressedEdwardsY([0u8; 32]);
-        loop {
-            rng.fill_bytes(&mut repr.0);
-            if let Some(p) = repr.decompress() {
-                if !IsIdentity::is_identity(&p) {
-                    break p;
-                }
-            }
-        }
+    fn random(rng: impl RngCore) -> Self {
+        Self::random(rng)
     }
 
     fn identity() -> Self {
@@ -2019,6 +2055,24 @@ mod test {
             EdwardsPoint::identity().compress(),
             CompressedEdwardsY::identity()
         );
+
+        #[cfg(feature = "alloc")]
+        {
+            let compressed = EdwardsPoint::compress_batch(&[EdwardsPoint::identity()]);
+            assert_eq!(&compressed, &[CompressedEdwardsY::identity()]);
+        }
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn compress_batch() {
+        // TODO(tarcieri): proptests?
+        let points = (1u64..16).map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n)).collect::<Vec<_>>();
+        let compressed = EdwardsPoint::compress_batch(&points);
+
+        for (point, compressed) in points.iter().zip(&compressed) {
+            assert_eq!(&point.compress(), compressed);
+        }
     }
 
     #[test]

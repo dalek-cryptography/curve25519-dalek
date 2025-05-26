@@ -22,6 +22,23 @@ mod edwards_benches {
         c.bench_function("EdwardsPoint compression", move |b| b.iter(|| B.compress()));
     }
 
+    #[cfg(feature = "alloc")]
+    fn compress_batch<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        for batch_size in BATCH_SIZES {
+            c.bench_with_input(
+                BenchmarkId::new("Batch EdwardsPoint compression", batch_size),
+                &batch_size,
+                |b, &size| {
+                    let mut rng = OsRng;
+                    let points: Vec<EdwardsPoint> = (0..size)
+                        .map(|_| EdwardsPoint::random(&mut rng))
+                        .collect();
+                    b.iter(|| EdwardsPoint::compress_batch(&points));
+                },
+            );
+        }
+    }
+
     fn decompress<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let B_comp = &constants::ED25519_BASEPOINT_COMPRESSED;
         c.bench_function("EdwardsPoint decompression", move |b| {
@@ -62,6 +79,8 @@ mod edwards_benches {
 
         compress(&mut g);
         decompress(&mut g);
+        #[cfg(feature = "alloc")]
+        compress_batch(&mut g);
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);

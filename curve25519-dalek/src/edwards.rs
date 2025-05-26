@@ -582,8 +582,8 @@ impl EdwardsPoint {
             .iter()
             .zip(&zs)
             .map(|(input, recip)| {
-                let x = &input.X * &recip;
-                let y = &input.Y * &recip;
+                let x = &input.X * recip;
+                let y = &input.Y * recip;
                 Self::compress_affine(x, y)
             })
             .collect()

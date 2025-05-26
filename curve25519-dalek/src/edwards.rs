@@ -103,11 +103,10 @@ use core::ops::{Mul, MulAssign};
 
 use cfg_if::cfg_if;
 
-use digest::consts::True;
-use digest::typenum::IsGreater;
 #[cfg(feature = "digest")]
 use digest::{
-    crypto_common::BlockSizeUser, generic_array::typenum::U64, Digest, FixedOutput, HashMarker,
+    consts::True, crypto_common::BlockSizeUser, generic_array::typenum::U64, typenum::IsGreater,
+    Digest, FixedOutput, HashMarker,
 };
 
 #[cfg(feature = "group")]

@@ -338,6 +338,7 @@ impl FieldElement {
 
         let domain_sep_len = u8::try_from(domain_sep_len)
             .expect("Unexpected overflow from domain separator's size.");
+        assert_ne!(domain_sep_len, 0, "Tags MUST have nonzero length.");
 
         let b_0 = hasher.chain_update([domain_sep_len]).finalize();
 

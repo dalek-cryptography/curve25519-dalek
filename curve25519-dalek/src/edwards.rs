@@ -568,14 +568,11 @@ impl EdwardsPoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
-        let mut s: [u8; 32];
-
-        s = y.as_bytes();
-        s[31] ^= x.is_negative().unwrap_u8() << 7;
-        CompressedEdwardsY(s)
+        Self::compress_affine(x, y)
     }
 
-    /// Compress several `EdwardsPoint`s into `CompressedEdwardsY`.
+    /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
+    /// for a significant speedup.
     #[cfg(feature = "alloc")]
     pub fn compress_batch(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
         let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
@@ -585,14 +582,19 @@ impl EdwardsPoint {
             .iter()
             .zip(&zs)
             .map(|(input, recip)| {
-                let x = &input.X * recip;
-                let y = &input.Y * recip;
-
-                let mut s = y.as_bytes();
-                s[31] ^= x.is_negative().unwrap_u8() << 7;
-                CompressedEdwardsY(s)
+                let x = &input.X * &recip;
+                let y = &input.Y * &recip;
+                Self::compress_affine(x, y)
             })
             .collect()
+    }
+
+    /// Compress affine Edwards coordinates into `CompressedEdwardsY` format.
+    #[inline]
+    fn compress_affine(x: FieldElement, y: FieldElement) -> CompressedEdwardsY {
+        let mut s = y.as_bytes();
+        s[31] ^= x.is_negative().unwrap_u8() << 7;
+        CompressedEdwardsY(s)
     }
 
     #[cfg(feature = "digest")]

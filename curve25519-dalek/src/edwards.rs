@@ -105,7 +105,9 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::{generic_array::typenum::U64, Digest};
+use digest::{
+    crypto_common::BlockSizeUser, generic_array::typenum::U64, Digest, FixedOutput, HashMarker,
+};
 
 #[cfg(feature = "group")]
 use {
@@ -628,9 +630,9 @@ impl EdwardsPoint {
     ///
     /// See
     /// [`hash_to_curve` spec](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2)
-    pub fn hash_to_curve_domain_sep<D>(bytes: &[u8], dst: &[u8]) -> EdwardsPoint
+    pub fn hash_to_curve_domain_sep<D>(bytes: &[&[u8]], dst: &[&[u8]]) -> EdwardsPoint
     where
-        D: Digest<OutputSize = U64> + Default,
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
     {
         let fe = FieldElement::hash_to_field::<D>(bytes, dst);
         let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
@@ -2482,7 +2484,7 @@ mod test {
             let mut output = hex::decode(vector[1]).unwrap();
             output.reverse();
 
-            let point = EdwardsPoint::hash_to_curve_domain_sep::<sha2::Sha512>(&input, dst)
+            let point = EdwardsPoint::hash_to_curve_domain_sep::<sha2::Sha512>(&[&input], &[dst])
                 .compress()
                 .to_bytes();
             assert!(!(point != output[..]), "Failed in test {}", index);

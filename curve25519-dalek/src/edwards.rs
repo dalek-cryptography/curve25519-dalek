@@ -104,6 +104,8 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
+use digest::consts::True;
+use digest::typenum::IsGreater;
 #[cfg(feature = "digest")]
 use digest::{
     crypto_common::BlockSizeUser, generic_array::typenum::U64, Digest, FixedOutput, HashMarker,
@@ -633,6 +635,7 @@ impl EdwardsPoint {
     pub fn hash_to_curve_domain_sep<D>(bytes: &[&[u8]], dst: &[&[u8]]) -> EdwardsPoint
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
         let fe = FieldElement::hash_to_field::<D>(bytes, dst);
         let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);

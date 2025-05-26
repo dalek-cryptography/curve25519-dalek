@@ -30,9 +30,8 @@ mod edwards_benches {
                 &batch_size,
                 |b, &size| {
                     let mut rng = OsRng;
-                    let points: Vec<EdwardsPoint> = (0..size)
-                        .map(|_| EdwardsPoint::random(&mut rng))
-                        .collect();
+                    let points: Vec<EdwardsPoint> =
+                        (0..size).map(|_| EdwardsPoint::random(&mut rng)).collect();
                     b.iter(|| EdwardsPoint::compress_batch(&points));
                 },
             );

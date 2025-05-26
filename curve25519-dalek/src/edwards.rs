@@ -93,6 +93,7 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+use cfg_if::cfg_if;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -100,7 +101,6 @@ use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
-use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
 use digest::{generic_array::typenum::U64, Digest};
@@ -581,14 +581,18 @@ impl EdwardsPoint {
         let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
         FieldElement::batch_invert(&mut zs);
 
-        inputs.iter().zip(&zs).map(|(input, recip)| {
-            let x = &input.X * &recip;
-            let y = &input.Y * &recip;
+        inputs
+            .iter()
+            .zip(&zs)
+            .map(|(input, recip)| {
+                let x = &input.X * &recip;
+                let y = &input.Y * &recip;
 
-            let mut s = y.as_bytes();
-            s[31] ^= x.is_negative().unwrap_u8() << 7;
-            CompressedEdwardsY(s)
-        }).collect()
+                let mut s = y.as_bytes();
+                s[31] ^= x.is_negative().unwrap_u8() << 7;
+                CompressedEdwardsY(s)
+            })
+            .collect()
     }
 
     #[cfg(feature = "digest")]
@@ -2067,7 +2071,9 @@ mod test {
     #[test]
     fn compress_batch() {
         // TODO(tarcieri): proptests?
-        let points = (1u64..16).map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n)).collect::<Vec<_>>();
+        let points = (1u64..16)
+            .map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n))
+            .collect::<Vec<_>>();
         let compressed = EdwardsPoint::compress_batch(&points);
 
         for (point, compressed) in points.iter().zip(&compressed) {

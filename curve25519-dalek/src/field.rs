@@ -36,7 +36,10 @@ use crate::backend;
 use crate::constants;
 
 #[cfg(feature = "digest")]
-use digest::{generic_array::typenum::U64, Digest};
+use digest::{
+    core_api::BlockSizeUser, generic_array::typenum::U64, typenum::Unsigned, Digest, FixedOutput,
+    HashMarker,
+};
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -309,29 +312,41 @@ impl FieldElement {
 
     #[cfg(feature = "digest")]
     /// Hash_to_field as described in hash_to_curve standard
-    pub fn hash_to_field<D>(bytes: &[u8], dst: &[u8]) -> Self
+    pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
     where
-        D: Digest<OutputSize = U64> + Default,
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
     {
-        let len_in_bytes = 48;
-        let l_i_b_str = [0u8, len_in_bytes];
-        let z_pad = [0u8; 128];
+        let l_i_b_str = 48u16.to_be_bytes();
+        let z_pad = vec![0u8; D::BlockSize::USIZE];
 
-        let b_0 = D::new()
-            .chain_update(z_pad)
-            .chain_update(bytes)
-            .chain_update(l_i_b_str)
-            .chain_update([0u8])
-            .chain_update(dst)
-            .chain_update([dst.len() as u8])
-            .finalize();
+        let mut hasher = D::new().chain_update(z_pad);
 
-        let b_1 = D::new()
-            .chain_update(b_0.as_slice())
-            .chain_update([1u8])
-            .chain_update(dst)
-            .chain_update([dst.len() as u8])
-            .finalize();
+        for slice in bytes {
+            hasher = hasher.chain_update(slice);
+        }
+
+        hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
+
+        let mut domain_sep_len = 0usize;
+        for slice in domain_sep {
+            hasher = hasher.chain_update(slice);
+            domain_sep_len = domain_sep_len
+                .checked_add(slice.len())
+                .expect("Unexpected overflow from domain separator's size.");
+        }
+
+        let domain_sep_len = u8::try_from(domain_sep_len)
+            .expect("Unexpected overflow from domain separator's size.");
+
+        let b_0 = hasher.chain_update([domain_sep_len]).finalize();
+
+        let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
+
+        for slice in domain_sep {
+            hasher = hasher.chain_update(slice)
+        }
+
+        let b_1 = hasher.chain_update([domain_sep_len]).finalize();
 
         let mut bytes_wide = [0u8; 64];
         bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
@@ -597,7 +612,7 @@ mod test {
             0x48, 0x90, 0x80, 0x25, 0xaf, 0x82,
         ];
         let dst = b"ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04";
-        let fe = FieldElement::hash_to_field::<Sha512>(&message, dst);
+        let fe = FieldElement::hash_to_field::<Sha512>(&[&message], &[dst]);
         let expected_fe = FieldElement::from_bytes(&[
             0xf6, 0x67, 0x5d, 0xc6, 0xd1, 0x7f, 0xc7, 0x90, 0xd4, 0xb3, 0xf1, 0xc6, 0xac, 0xf6,
             0x89, 0xa1, 0x3d, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
@@ -607,7 +622,7 @@ mod test {
 
         let message = "";
         let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
-        let fe = FieldElement::hash_to_field::<Sha512>(message.as_bytes(), dst.as_bytes());
+        let fe = FieldElement::hash_to_field::<Sha512>(&[message.as_bytes()], &[dst.as_bytes()]);
         let mut expected_fe_bytes = [
             0x7f, 0x3e, 0x7f, 0xb9, 0x42, 0x81, 0x03, 0xad, 0x7f, 0x52, 0xdb, 0x32, 0xf9, 0xdf,
             0x32, 0x50, 0x5d, 0x7b, 0x42, 0x7d, 0x89, 0x4c, 0x50, 0x93, 0xf7, 0xa0, 0xf0, 0x37,

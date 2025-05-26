@@ -37,8 +37,10 @@ use crate::constants;
 
 #[cfg(feature = "digest")]
 use digest::{
-    core_api::BlockSizeUser, generic_array::typenum::U64, typenum::Unsigned, Digest, FixedOutput,
-    HashMarker,
+    core_api::BlockSizeUser,
+    generic_array::{typenum::U64, GenericArray},
+    typenum::{IsGreater, True},
+    Digest, FixedOutput, HashMarker,
 };
 
 cfg_if! {
@@ -315,9 +317,10 @@ impl FieldElement {
     pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
         let l_i_b_str = 48u16.to_be_bytes();
-        let z_pad = vec![0u8; D::BlockSize::USIZE];
+        let z_pad = GenericArray::<u8, D::BlockSize>::default();
 
         let mut hasher = D::new().chain_update(z_pad);
 
@@ -330,9 +333,7 @@ impl FieldElement {
         let mut domain_sep_len = 0usize;
         for slice in domain_sep {
             hasher = hasher.chain_update(slice);
-            domain_sep_len = domain_sep_len
-                .checked_add(slice.len())
-                .expect("Unexpected overflow from domain separator's size.");
+            domain_sep_len += slice.len();
         }
 
         let domain_sep_len = u8::try_from(domain_sep_len)

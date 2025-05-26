@@ -585,8 +585,8 @@ impl EdwardsPoint {
             .iter()
             .zip(&zs)
             .map(|(input, recip)| {
-                let x = &input.X * &recip;
-                let y = &input.Y * &recip;
+                let x = &input.X * recip;
+                let y = &input.Y * recip;
 
                 let mut s = y.as_bytes();
                 s[31] ^= x.is_negative().unwrap_u8() << 7;

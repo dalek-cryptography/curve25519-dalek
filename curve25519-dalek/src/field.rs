@@ -313,7 +313,15 @@ impl FieldElement {
     }
 
     #[cfg(feature = "digest")]
-    /// Hash_to_field as described in hash_to_curve standard
+    /// Perform hashing to a [`FieldElement`], per the
+    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
+    /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// element of `domain_sep`, MUST be nonempty, and the final domain separator MUST NOT exceed
+    /// 255 bytes.
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
     pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
@@ -338,7 +346,10 @@ impl FieldElement {
 
         let domain_sep_len = u8::try_from(domain_sep_len)
             .expect("Unexpected overflow from domain separator's size.");
-        assert_ne!(domain_sep_len, 0, "Tags MUST have nonzero length.");
+        assert_ne!(
+            domain_sep_len, 0,
+            "Domain separator MUST have nonzero length."
+        );
 
         let b_0 = hasher.chain_update([domain_sep_len]).finalize();
 
@@ -350,6 +361,7 @@ impl FieldElement {
 
         let b_1 = hasher.chain_update([domain_sep_len]).finalize();
 
+        // §5.2, we only generate count * m * L = 1 * 1 * (256 + 128)/8 = 48 bytes
         let mut bytes_wide = [0u8; 64];
         bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
         bytes_wide[..48].reverse();

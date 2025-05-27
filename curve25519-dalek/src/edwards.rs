@@ -627,16 +627,22 @@ impl EdwardsPoint {
 
     #[cfg(feature = "digest")]
     /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
-    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`.
+    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// element of `domain_sep`, MUST be nonempty, and the final domain separator MUST NOT exceed
+    /// 255 bytes.
     ///
     /// See
     /// [`hash_to_curve` spec](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2)
-    pub fn hash_to_curve_domain_sep<D>(bytes: &[&[u8]], dst: &[&[u8]]) -> EdwardsPoint
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
-        let fe = FieldElement::hash_to_field::<D>(bytes, dst);
+        let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
         let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
         let mut E1_opt = M1
             .to_edwards(0)
@@ -2486,7 +2492,7 @@ mod test {
             let mut output = hex::decode(vector[1]).unwrap();
             output.reverse();
 
-            let point = EdwardsPoint::hash_to_curve_domain_sep::<sha2::Sha512>(&[&input], &[dst])
+            let point = EdwardsPoint::hash_to_curve::<sha2::Sha512>(&[&input], &[dst])
                 .compress()
                 .to_bytes();
             assert!(!(point != output[..]), "Failed in test {}", index);

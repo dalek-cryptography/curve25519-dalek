@@ -1342,6 +1342,7 @@ impl group::Group for EdwardsPoint {
     type Scalar = Scalar;
 
     fn random(rng: impl RngCore) -> Self {
+        // Call the inherent `pub fn random` defined above
         Self::random(rng)
     }
 

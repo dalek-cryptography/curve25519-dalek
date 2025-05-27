@@ -111,7 +111,7 @@ use {
     subtle::CtOption,
 };
 
-#[cfg(feature = "rand_core")]
+#[cfg(any(test, feature = "rand_core"))]
 use rand_core::RngCore;
 
 use subtle::Choice;
@@ -643,7 +643,7 @@ impl EdwardsPoint {
     ///
     /// Uses rejection sampling, generating a random `CompressedEdwardsY` and then attempting point
     /// decompression, rejecting invalid points.
-    #[cfg(feature = "rand_core")]
+    #[cfg(any(test, feature = "rand_core"))]
     pub fn random(mut rng: impl RngCore) -> Self {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
@@ -2072,12 +2072,17 @@ mod test {
     #[cfg(feature = "alloc")]
     #[test]
     fn compress_batch() {
+        let mut rng = rand::thread_rng();
+
         // TODO(tarcieri): proptests?
-        let points = (1u64..16)
+        // Make some points deterministically then randomly
+        let mut points = (1u64..16)
             .map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n))
             .collect::<Vec<_>>();
+        points.extend(core::iter::repeat_with(|| EdwardsPoint::random(&mut rng)).take(100));
         let compressed = EdwardsPoint::compress_batch(&points);
 
+        // Check that the batch-compressed points match the individually compressed ones
         for (point, compressed) in points.iter().zip(&compressed) {
             assert_eq!(&point.compress(), compressed);
         }

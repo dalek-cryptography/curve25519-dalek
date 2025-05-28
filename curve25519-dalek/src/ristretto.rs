@@ -215,8 +215,16 @@ use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMul
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[allow(clippy::derived_hash_with_manual_eq)]
+#[derive(Copy, Clone, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
+
+impl Eq for CompressedRistretto {}
+impl PartialEq for CompressedRistretto {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
 
 impl ConstantTimeEq for CompressedRistretto {
     fn ct_eq(&self, other: &CompressedRistretto) -> Choice {

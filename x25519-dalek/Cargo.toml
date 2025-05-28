@@ -39,14 +39,14 @@ features = ["getrandom", "reusable_secrets", "serde", "static_secrets"]
 
 [dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false }
-rand_core = { version = "0.6", default-features = false }
+rand_core = { version = "0.9", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
 
 [dev-dependencies]
 bincode = "1"
 criterion = "0.5"
-rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+rand_core = { version = "0.9", default-features = false, features = ["getrandom"] }
 
 [[bench]]
 name = "x25519"

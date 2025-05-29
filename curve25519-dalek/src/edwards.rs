@@ -644,6 +644,22 @@ impl EdwardsPoint {
     {
         let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
         let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
+
+        // The `to_edwards` conversion we're performing takes as input the sign of the Edwards
+        // `y` coordinate. However, the specification uses `is_sq` to determine the sign of the
+        // Montgomery `v` coordinate. Our approach reconciles this mismatch as follows:
+        //
+        // * We arbitrarily fix the sign of the Edwards `y` coordinate (we choose 0).
+        // * Using the Montgomery `u` coordinate and the Edwards `X` coordinate, we recover `v`.
+        // * We verify that the sign of `v` matches the expected one, i.e., `is_sq == mont_v.is_negative()`.
+        // * If it does not match, we conditionally negate to correct the sign.
+        //
+        // Note: This logic aligns with the RFC draft specification:
+        // https://datatracker.ietf.org/doc/html/rfc9380#name-elligator-2-method followed by the
+        // mapping https://datatracker.ietf.org/doc/html/rfc9380#name-mappings-for-twisted-edward.
+        // The only difference is that our `elligator_encode` returns only the Montgomery `u` coordinate,
+        // so we apply this workaround to reconstruct and validate the sign.
+
         let mut E1_opt = M1
             .to_edwards(0)
             .expect("Montgomery conversion to Edwards point in Elligator failed");

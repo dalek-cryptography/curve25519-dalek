@@ -103,7 +103,10 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::{generic_array::typenum::U64, Digest};
+use digest::{
+    consts::True, crypto_common::BlockSizeUser, generic_array::typenum::U64, typenum::IsGreater,
+    Digest, FixedOutput, HashMarker,
+};
 
 #[cfg(feature = "group")]
 use {
@@ -257,6 +260,8 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 // structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
+#[cfg(feature = "digest")]
+use constants::ED25519_SQRTAM2;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
@@ -598,11 +603,60 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
+    /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// element of `domain_sep`, MUST be nonempty, and the final domain separator MUST NOT exceed
+    /// 255 bytes.
+    ///
+    /// See
+    /// [`hash_to_curve` spec](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-12#section-6.8.2)
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
+    where
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    {
+        let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
+        let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
+
+        // The `to_edwards` conversion we're performing takes as input the sign of the Edwards
+        // `y` coordinate. However, the specification uses `is_sq` to determine the sign of the
+        // Montgomery `v` coordinate. Our approach reconciles this mismatch as follows:
+        //
+        // * We arbitrarily fix the sign of the Edwards `y` coordinate (we choose 0).
+        // * Using the Montgomery `u` coordinate and the Edwards `X` coordinate, we recover `v`.
+        // * We verify that the sign of `v` matches the expected one, i.e., `is_sq == mont_v.is_negative()`.
+        // * If it does not match, we conditionally negate to correct the sign.
+        //
+        // Note: This logic aligns with the RFC draft specification:
+        // https://datatracker.ietf.org/doc/html/rfc9380#name-elligator-2-method followed by the
+        // mapping https://datatracker.ietf.org/doc/html/rfc9380#name-mappings-for-twisted-edward.
+        // The only difference is that our `elligator_encode` returns only the Montgomery `u` coordinate,
+        // so we apply this workaround to reconstruct and validate the sign.
+
+        let mut E1_opt = M1
+            .to_edwards(0)
+            .expect("Montgomery conversion to Edwards point in Elligator failed");
+
+        // Now we recover v, to ensure that we got the sign right.
+        let mont_v =
+            &(&ED25519_SQRTAM2 * &FieldElement::from_bytes(&M1.to_bytes())) * &E1_opt.X.invert();
+        E1_opt.X.conditional_negate(is_sq ^ mont_v.is_negative());
+        E1_opt.mul_by_cofactor()
+    }
+
+    #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that
     /// resembles (but is not) half of the
     /// [`hash_to_curve`](https://www.ietf.org/archive/id/draft-irtf-cfrg-hash-to-curve-16.html#section-3-4.2.1)
     /// function from the Elligator2 spec.
+    ///
+    /// For a hash to curve with uniform distribution and compatible with the spec, see
+    /// [Self::hash_to_curve_domain_sep].
     #[deprecated(
         since = "4.0.0",
         note = "previously named `hash_from_bytes`, this is not a secure hash function"
@@ -621,7 +675,7 @@ impl EdwardsPoint {
 
         let fe = FieldElement::from_bytes(&res);
 
-        let M1 = crate::montgomery::elligator_encode(&fe);
+        let (M1, _) = crate::montgomery::elligator_encode(&fe);
         let E1_opt = M1.to_edwards(sign_bit);
 
         E1_opt
@@ -2366,6 +2420,50 @@ mod test {
 
             let point = EdwardsPoint::nonspec_map_to_curve::<sha2::Sha512>(&input);
             assert_eq!(point.compress().to_bytes(), output[..]);
+        }
+    }
+
+    // Hash-to-curve test vectors from
+    //     https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/blob/master/draft-irtf-cfrg-hash-to-curve.md
+    #[cfg(all(feature = "alloc", feature = "digest"))]
+    fn test_vectors_h2c() -> Vec<Vec<&'static str>> {
+        vec![
+            vec![
+                "",
+                "222e314d04a4d5725e9f2aff9fb2a6b69ef375a1214eb19021ceab2d687f0f9b",
+            ],
+            vec![
+                "abc",
+                "67732d50f9a26f73111dd1ed5dba225614e538599db58ba30aaea1f5c827fa42",
+            ],
+            vec![
+                "abcdef0123456789",
+                "af8a6c24dd1adde73909cada6a4a137577b0f179d336685c4a955a0a8e1a86fb",
+            ],
+            vec![
+                "q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+                "aaf6ff6ef5ebba128b0774f4296cb4c2279a074658b083b8dcca91f57a603450",
+            ],
+            vec![
+                "a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "ac90c3d39eb18ff291d33441b35f3262cdd307162cc97c31bfcc7a4245891a37",
+            ],
+        ]
+    }
+
+    #[test]
+    #[cfg(all(feature = "alloc", feature = "digest"))]
+    fn elligator_hash_to_curve_test_vectors() {
+        let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
+        for (index, vector) in test_vectors_h2c().iter().enumerate() {
+            let input = vector[0].as_bytes();
+            let mut output = hex::decode(vector[1]).unwrap();
+            output.reverse();
+
+            let point = EdwardsPoint::hash_to_curve::<sha2::Sha512>(&[&input], &[dst])
+                .compress()
+                .to_bytes();
+            assert!(!(point != output[..]), "Failed in test {}", index);
         }
     }
 }

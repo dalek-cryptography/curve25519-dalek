@@ -35,6 +35,14 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
+#[cfg(feature = "digest")]
+use digest::{
+    core_api::BlockSizeUser,
+    generic_array::{typenum::U64, GenericArray},
+    typenum::{IsGreater, True},
+    Digest, FixedOutput, HashMarker,
+};
+
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
         /// A `FieldElement` represents an element of the field
@@ -303,6 +311,63 @@ impl FieldElement {
     pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
+
+    #[cfg(feature = "digest")]
+    /// Perform hashing to a [`FieldElement`], per the
+    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
+    /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// element of `domain_sep`, MUST be nonempty, and the final domain separator MUST NOT exceed
+    /// 255 bytes.
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
+    where
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    {
+        let l_i_b_str = 48u16.to_be_bytes();
+        let z_pad = GenericArray::<u8, D::BlockSize>::default();
+
+        let mut hasher = D::new().chain_update(z_pad);
+
+        for slice in bytes {
+            hasher = hasher.chain_update(slice);
+        }
+
+        hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
+
+        let mut domain_sep_len = 0usize;
+        for slice in domain_sep {
+            hasher = hasher.chain_update(slice);
+            domain_sep_len += slice.len();
+        }
+
+        let domain_sep_len = u8::try_from(domain_sep_len)
+            .expect("Unexpected overflow from domain separator's size.");
+        assert_ne!(
+            domain_sep_len, 0,
+            "Domain separator MUST have nonzero length."
+        );
+
+        let b_0 = hasher.chain_update([domain_sep_len]).finalize();
+
+        let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
+
+        for slice in domain_sep {
+            hasher = hasher.chain_update(slice)
+        }
+
+        let b_1 = hasher.chain_update([domain_sep_len]).finalize();
+
+        // §5.2, we only generate count * m * L = 1 * 1 * (256 + 128)/8 = 48 bytes
+        let mut bytes_wide = [0u8; 64];
+        bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
+        bytes_wide[..48].reverse();
+
+        FieldElement::from_bytes_wide(&bytes_wide)
+    }
 }
 
 #[cfg(test)]
@@ -491,5 +556,94 @@ mod test {
     #[cfg(feature = "alloc")]
     fn batch_invert_empty() {
         FieldElement::batch_invert(&mut []);
+    }
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn from_hash_wide() {
+        let mut test_vec = [
+            0x6d, 0x2f, 0x2f, 0xfa, 0x94, 0x12, 0xb4, 0x15, 0x2f, 0x6a, 0xb6, 0x28, 0x41, 0xb8,
+            0x25, 0x92, 0x4a, 0x44, 0x90, 0x65, 0x15, 0x2b, 0x95, 0x47, 0x6f, 0x12, 0x1d, 0xe8,
+            0x99, 0xbb, 0x77, 0xbd, 0x48, 0x24, 0x6a, 0x37, 0x8e, 0x31, 0x33, 0xfb, 0x30, 0x23,
+            0x2a, 0xad, 0xa9, 0x20, 0xae, 0x04,
+        ];
+        let mut hash_wide = [0u8; 64];
+        hash_wide[..48].copy_from_slice(&test_vec);
+
+        let mut reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
+        let mut expected_reduced = [
+            0x30, 0x92, 0xf0, 0x33, 0xb1, 0x6d, 0x4d, 0x5f, 0x74, 0xa3, 0xf7, 0xdc, 0x70, 0x91,
+            0xfe, 0x43, 0x4b, 0x44, 0x90, 0x65, 0x15, 0x2b, 0x95, 0x47, 0x6f, 0x12, 0x1d, 0xe8,
+            0x99, 0xbb, 0x77, 0x3d,
+        ];
+
+        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+
+        test_vec = [
+            0xae, 0x69, 0x22, 0xd7, 0x28, 0xc1, 0x21, 0xf6, 0x90, 0x48, 0x61, 0xbd, 0x67, 0x49,
+            0x67, 0xb3, 0x19, 0xd4, 0x6d, 0xee, 0x9d, 0x04, 0x7f, 0x86, 0xc4, 0x27, 0xc5, 0x3f,
+            0x8b, 0x29, 0xa5, 0x5c, 0xdb, 0xe1, 0x5e, 0xae, 0x23, 0x4e, 0xb7, 0x84, 0xe5, 0x9d,
+            0x6d, 0x20, 0x2a, 0x78, 0x20, 0xd6,
+        ];
+        hash_wide = [0u8; 64];
+        hash_wide[..48].copy_from_slice(&test_vec);
+
+        reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
+        expected_reduced = [
+            0x30, 0xf0, 0x37, 0xb9, 0x74, 0x5a, 0x57, 0xa9, 0xa2, 0xb8, 0xa6, 0x8d, 0xa8, 0x1f,
+            0x39, 0x7c, 0x39, 0xd4, 0x6d, 0xee, 0x9d, 0x04, 0x7f, 0x86, 0xc4, 0x27, 0xc5, 0x3f,
+            0x8b, 0x29, 0xa5, 0x5c,
+        ];
+
+        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+
+        test_vec = [
+            0x3a, 0x7a, 0x2b, 0x29, 0x83, 0xe8, 0x88, 0x61, 0x25, 0x20, 0xcf, 0x6a, 0xfe, 0xbb,
+            0xea, 0x6b, 0x21, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
+            0x4c, 0xd6, 0xfa, 0x24, 0x6a, 0x35, 0xb7, 0xdb, 0xed, 0x1e, 0x8f, 0xdf, 0xfd, 0xcd,
+            0x36, 0x6e, 0x55, 0xed, 0x0a, 0xbe,
+        ];
+        hash_wide = [0u8; 64];
+        hash_wide[..48].copy_from_slice(&test_vec);
+
+        reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
+        expected_reduced = [
+            0xf6, 0x67, 0x5d, 0xc6, 0xd1, 0x7f, 0xc7, 0x90, 0xd4, 0xb3, 0xf1, 0xc6, 0xac, 0xf6,
+            0x89, 0xa1, 0x3d, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
+            0x4c, 0xd6, 0xfa, 0x24,
+        ];
+
+        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+    }
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn hash_to_field() {
+        use sha2::Sha512;
+        let message = [
+            0xfc, 0x51, 0xcd, 0x8e, 0x62, 0x18, 0xa1, 0xa3, 0x8d, 0xa4, 0x7e, 0xd0, 0x02, 0x30,
+            0xf0, 0x58, 0x08, 0x16, 0xed, 0x13, 0xba, 0x33, 0x03, 0xac, 0x5d, 0xeb, 0x91, 0x15,
+            0x48, 0x90, 0x80, 0x25, 0xaf, 0x82,
+        ];
+        let dst = b"ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04";
+        let fe = FieldElement::hash_to_field::<Sha512>(&[&message], &[dst]);
+        let expected_fe = FieldElement::from_bytes(&[
+            0xf6, 0x67, 0x5d, 0xc6, 0xd1, 0x7f, 0xc7, 0x90, 0xd4, 0xb3, 0xf1, 0xc6, 0xac, 0xf6,
+            0x89, 0xa1, 0x3d, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
+            0x4c, 0xd6, 0xfa, 0x24,
+        ]);
+        assert_eq!(fe, expected_fe);
+
+        let message = "";
+        let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
+        let fe = FieldElement::hash_to_field::<Sha512>(&[message.as_bytes()], &[dst.as_bytes()]);
+        let mut expected_fe_bytes = [
+            0x7f, 0x3e, 0x7f, 0xb9, 0x42, 0x81, 0x03, 0xad, 0x7f, 0x52, 0xdb, 0x32, 0xf9, 0xdf,
+            0x32, 0x50, 0x5d, 0x7b, 0x42, 0x7d, 0x89, 0x4c, 0x50, 0x93, 0xf7, 0xa0, 0xf0, 0x37,
+            0x4a, 0x30, 0x64, 0x1d,
+        ];
+        expected_fe_bytes.reverse();
+        let expected_fe = FieldElement::from_bytes(&expected_fe_bytes);
+        assert_eq!(fe, expected_fe);
     }
 }

@@ -377,9 +377,12 @@ impl FieldElement51 {
         // Add the masked off bits back to fe_f. The top bit of hash[31] is 2^255 ≡ 19 (mod q). The
         // top bit of hash[63] is 2^511 ≡ 722 (mod q)
         fe_f.0[0] = fe_f.0[0] + (hash[31] >> 7) as u64 * 19 + (hash[63] >> 7) as u64 * 722;
-        // Now add the high limbs into fe_f
+        // Now add the high limbs into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
         for i in 0..5 {
-            // The RHS is multiplied by 2^256 ≡ 38 (mod q)
+            // Each limb in the field element is at most (51 + epsilon) bits. Multiplying
+            // by 38 will not cause an overflow of the 64-bit limb capacity. We rely on
+            // the fact that 51 + log2(38) ≈ 57.2 < 64, so the result still fits safely
+            // in a u64. Full reduction is deferred until the end.
             fe_f.0[i] += 38 * fe_g.0[i];
         }
 

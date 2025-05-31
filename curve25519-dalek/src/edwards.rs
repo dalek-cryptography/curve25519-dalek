@@ -566,7 +566,7 @@ impl EdwardsPoint {
     /// Converts a large batch of points to Edwards at once. This has the same
     /// behavior on identity elements as [`Self::to_montgomery`].
     #[cfg(feature = "alloc")]
-    pub fn batch_to_montgomery(eds: &[Self]) -> Vec<MontgomeryPoint> {
+    pub fn to_montgomery_batch(eds: &[Self]) -> Vec<MontgomeryPoint> {
         // Do the same thing as the above function. u = (1+y)/(1-y) = (Z+Y)/(Z-Y).
         // We will do this in a batch, ie compute (Z-Y) for all the input
         // points, then invert them all at once
@@ -2231,7 +2231,7 @@ mod test {
             .collect::<Vec<_>>();
 
         for i in [0, 1, 2, 3, 10, 50, 128] {
-            let invs = EdwardsPoint::batch_to_montgomery(&points[..i]);
+            let invs = EdwardsPoint::to_montgomery_batch(&points[..i]);
             assert_eq!(&invs, &single_monts[..i]);
         }
     }

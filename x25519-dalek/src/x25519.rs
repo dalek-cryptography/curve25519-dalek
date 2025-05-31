@@ -17,10 +17,9 @@
 use curve25519_dalek::{edwards::EdwardsPoint, montgomery::MontgomeryPoint, traits::IsIdentity};
 
 use rand_core::CryptoRng;
-use rand_core::RngCore;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// A Diffie-Hellman public key
 ///
@@ -70,8 +69,7 @@ impl AsRef<[u8]> for PublicKey {
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
 /// generated from fresh randomness where the compiler statically checks that the resulting
 /// secret is used at most once.
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct EphemeralSecret(pub(crate) [u8; 32]);
 
 impl EphemeralSecret {
@@ -86,12 +84,12 @@ impl EphemeralSecret {
         since = "2.0.0",
         note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
     )]
-    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
-        Self::random_from_rng(&mut csprng)
+    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+        Self::random_from_rng(csprng)
     }
 
     /// Generate a new [`EphemeralSecret`] with the supplied RNG.
-    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
         csprng.fill_bytes(&mut bytes);
@@ -99,9 +97,9 @@ impl EphemeralSecret {
     }
 
     /// Generate a new [`EphemeralSecret`].
-    #[cfg(feature = "getrandom")]
+    #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(rand_core::OsRng)
+        Self::random_from_rng(&mut rand_core::OsRng.unwrap_err())
     }
 }
 
@@ -131,8 +129,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
 #[cfg(feature = "reusable_secrets")]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct ReusableSecret(pub(crate) [u8; 32]);
 
@@ -149,12 +146,12 @@ impl ReusableSecret {
         since = "2.0.0",
         note = "Renamed to `random_from_rng`. This will be removed in 2.1.0."
     )]
-    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
-        Self::random_from_rng(&mut csprng)
+    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+        Self::random_from_rng(csprng)
     }
 
     /// Generate a new [`ReusableSecret`] with the supplied RNG.
-    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
         csprng.fill_bytes(&mut bytes);
@@ -162,9 +159,9 @@ impl ReusableSecret {
     }
 
     /// Generate a new [`ReusableSecret`].
-    #[cfg(feature = "getrandom")]
+    #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(rand_core::OsRng)
+        Self::random_from_rng(&mut rand_core::OsRng.unwrap_mut())
     }
 }
 
@@ -192,8 +189,7 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// implications for many protocols.
 #[cfg(feature = "static_secrets")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct StaticSecret([u8; 32]);
 
@@ -210,12 +206,12 @@ impl StaticSecret {
         since = "2.0.0",
         note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
     )]
-    pub fn new<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
-        Self::random_from_rng(&mut csprng)
+    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+        Self::random_from_rng(csprng)
     }
 
     /// Generate a new [`StaticSecret`] with the supplied RNG.
-    pub fn random_from_rng<T: RngCore + CryptoRng>(mut csprng: T) -> Self {
+    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
         csprng.fill_bytes(&mut bytes);
@@ -223,9 +219,9 @@ impl StaticSecret {
     }
 
     /// Generate a new [`StaticSecret`].
-    #[cfg(feature = "getrandom")]
+    #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(rand_core::OsRng)
+        Self::random_from_rng(&mut rand_core::OsRng.unwrap_mut())
     }
 
     /// Extract this key's bytes for serialization.
@@ -270,8 +266,7 @@ impl AsRef<[u8]> for StaticSecret {
 ///
 /// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
 /// counterparty's [`PublicKey`].
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
 
 impl SharedSecret {
@@ -344,17 +339,20 @@ impl AsRef<[u8]> for SharedSecret {
 #[cfg_attr(not(feature = "static_secrets"), doc = "```ignore")]
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
+/// use rand_core::TryRngCore;
 ///
 /// use x25519_dalek::x25519;
 /// use x25519_dalek::StaticSecret;
 /// use x25519_dalek::PublicKey;
 ///
+/// let mut rng = OsRng.unwrap_err();
+///
 /// // Generate Alice's key pair.
-/// let alice_secret = StaticSecret::random_from_rng(&mut OsRng);
+/// let alice_secret = StaticSecret::random_from_rng(&mut rng);
 /// let alice_public = PublicKey::from(&alice_secret);
 ///
 /// // Generate Bob's key pair.
-/// let bob_secret = StaticSecret::random_from_rng(&mut OsRng);
+/// let bob_secret = StaticSecret::random_from_rng(&mut rng);
 /// let bob_public = PublicKey::from(&bob_secret);
 ///
 /// // Alice and Bob should now exchange their public keys.

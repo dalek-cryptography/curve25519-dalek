@@ -12,3 +12,5 @@ opt-level = 2
 
 [patch.crates-io]
 ed25519 = { git = "https://github.com/RustCrypto/signatures.git" }
+
+merlin = { git = "https://github.com/nresare/merlin.git", branch = "bump_to_rand_0.9" }

@@ -30,12 +30,12 @@ rustdoc-args = [
 features = ["serde", "rand_core", "digest", "legacy_compatibility", "group-bits"]
 
 [dev-dependencies]
-sha2 = { version = "=0.11.0-pre.4", default-features = false }
+sha2 = { version = "0.11.0-rc.0", default-features = false }
 bincode = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4.2"
-rand = "0.8"
-rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+rand = "0.9"
+rand_core = { version = "0.9", default-features = false, features = ["os_rng"] }
 
 [build-dependencies]
 rustc_version = "0.4.0"
@@ -47,16 +47,16 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
-ff = { version = "0.13", default-features = false, optional = true }
-group = { version = "0.13", default-features = false, optional = true }
-rand_core = { version = "0.6.4", default-features = false, optional = true }
-digest = { version = "=0.11.0-pre.9", default-features = false, optional = true }
-subtle = { version = "2.6.0", default-features = false }
+ff = { version = "=0.14.0-pre.0", default-features = false, optional = true }
+group = { version = "=0.14.0-pre.0", default-features = false, optional = true }
+rand_core = { version = "0.9", default-features = false, optional = true }
+digest = { version = "0.11.0-rc.0", default-features = false, optional = true }
+subtle = { version = "2.6.0", default-features = false, features = ["const-generics"]}
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-cpufeatures = "0.2.6"
+cpufeatures = "0.2.17"
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = { version = "0.2.1", default-features = false }
@@ -76,7 +76,7 @@ curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive"
 level = "warn"
 check-cfg = [
     'cfg(allow_unused_unsafe)',
-    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd"))',
+    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd", "unstable_avx512"))',
     'cfg(curve25519_dalek_diagnostics, values("build"))',
     'cfg(curve25519_dalek_bits, values("32", "64"))',
     'cfg(nightly)',

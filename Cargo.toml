@@ -9,6 +9,3 @@ resolver = "2"
 
 [profile.dev]
 opt-level = 2
-
-[patch.crates-io]
-ed25519 = { git = "https://github.com/RustCrypto/signatures.git" }

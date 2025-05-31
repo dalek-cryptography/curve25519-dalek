@@ -27,9 +27,9 @@ features = ["batch", "digest", "hazmat", "pem", "serde"]
 
 [dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
-ed25519 = { version = "=2.3.0-pre.0", default-features = false }
-signature = { version = "=2.3.0-pre.4", optional = true, default-features = false }
-sha2 = { version = "=0.11.0-pre.4", default-features = false }
+ed25519 = { version = "=3.0.0-pre.0", default-features = false }
+signature = { version = "3.0.0-rc.0", optional = true, default-features = false }
+sha2 = { version = "0.11.0-rc.0", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
 # optional features
@@ -41,8 +41,8 @@ zeroize = { version = "1.5", default-features = false, optional = true }
 [dev-dependencies]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
 x25519-dalek = { version = "2", path = "../x25519-dalek", default-features = false, features = ["static_secrets"] }
-blake2 = "=0.11.0-pre.4"
-sha3 = "=0.11.0-pre.4"
+blake2 = "0.11.0-rc.0"
+sha3 = "0.11.0-rc.0"
 hex = "0.4"
 bincode = "1.0"
 serde_json = "1.0"
@@ -60,8 +60,8 @@ required-features = ["rand_core"]
 
 [features]
 default = ["fast", "std", "zeroize"]
-alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "serde?/alloc", "zeroize/alloc"]
-std = ["alloc", "ed25519/std", "serde?/std", "sha2/std"]
+alloc = ["curve25519-dalek/alloc", "ed25519/alloc", "serde?/alloc", "signature/alloc", "zeroize/alloc"]
+std = ["alloc", "ed25519/std", "serde?/std"]
 
 batch = ["alloc", "merlin", "rand_core"]
 fast = ["curve25519-dalek/precomputed-tables"]

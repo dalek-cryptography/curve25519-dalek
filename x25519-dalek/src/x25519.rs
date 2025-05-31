@@ -20,7 +20,7 @@ use rand_core::CryptoRng;
 use rand_core::RngCore;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// A Diffie-Hellman public key
 ///
@@ -70,8 +70,7 @@ impl AsRef<[u8]> for PublicKey {
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
 /// generated from fresh randomness where the compiler statically checks that the resulting
 /// secret is used at most once.
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct EphemeralSecret(pub(crate) [u8; 32]);
 
 impl EphemeralSecret {
@@ -131,8 +130,7 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
 #[cfg(feature = "reusable_secrets")]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct ReusableSecret(pub(crate) [u8; 32]);
 
@@ -192,8 +190,7 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// implications for many protocols.
 #[cfg(feature = "static_secrets")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct StaticSecret([u8; 32]);
 
@@ -270,8 +267,7 @@ impl AsRef<[u8]> for StaticSecret {
 ///
 /// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
 /// counterparty's [`PublicKey`].
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
-#[cfg_attr(feature = "zeroize", zeroize(drop))]
+#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
 
 impl SharedSecret {

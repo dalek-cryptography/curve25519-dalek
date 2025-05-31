@@ -562,35 +562,25 @@ impl EdwardsPoint {
         MontgomeryPoint(u.as_bytes())
     }
 
-    /// Converts a large batch of points to Edwards at once.
+    /// Converts a large batch of points to Edwards at once. This has the same
+    /// behavior on identity elements as [`Self::to_montgomery`].
     #[cfg(feature = "alloc")]
     pub fn batch_to_montgomery(eds: &[Self]) -> alloc::vec::Vec<MontgomeryPoint> {
-        // "Montgomery's trick" borrowed from https://github.com/bitcoin-core/secp256k1/pull/16
-        if eds.is_empty() {
-            return vec![];
-        }
+        // Do the same thing as the above function. u = (1+y)/(1-y) = (Z+Y)/(Z-Y).
+        // We will do this in a batch, ie compute (Z-Y) for all the input
+        // points, then invert them all at once
 
+        // Compute the denominators in a batch
+        let mut denominators = eds
+            .iter()
+            .map(|p| &p.Z - &p.Y)
+            .collect::<alloc::vec::Vec<_>>();
+        FieldElement::batch_invert(&mut denominators);
+
+        // Now compute the Montgomery u coordinate for every point
         let mut ret = alloc::vec::Vec::with_capacity(eds.len());
-        let mut w_invs = alloc::vec::Vec::with_capacity(eds.len());
-
-        // First build a list of W1, W1W2, W1W2W3, ...
-        w_invs.push(&eds[0].Z - &eds[0].Y);
-        for i in 1..eds.len() {
-            let last = w_invs[i - 1];
-            w_invs.push(&last * &(&eds[i].Z - &eds[i].Y));
-        }
-        // Then invert the final one to get a product of all inverses.
-        let mut w_inv = w_invs[eds.len() - 1].invert();
-        // Then, going backward, compute all the individual inverses.
-        for i in (0..eds.len() - 1).rev() {
-            w_invs[i + 1] = &w_inv * &w_invs[i];
-            w_inv *= &(&eds[i + 1].Z - &eds[i + 1].Y);
-        }
-        w_invs[0] = w_inv;
-
-        // Then complete the points
-        for (ed, w_inv) in eds.iter().zip(w_invs.iter()) {
-            let u = &(&ed.Z + &ed.Y) * w_inv;
+        for (ed, d) in eds.iter().zip(denominators.iter()) {
+            let u = &(&ed.Z + &ed.Y) * d;
             ret.push(MontgomeryPoint(u.as_bytes()));
         }
 

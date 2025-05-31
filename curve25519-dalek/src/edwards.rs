@@ -93,9 +93,6 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-
 use cfg_if::cfg_if;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;

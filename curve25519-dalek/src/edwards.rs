@@ -93,6 +93,9 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
 use core::fmt::Debug;
@@ -565,20 +568,17 @@ impl EdwardsPoint {
     /// Converts a large batch of points to Edwards at once. This has the same
     /// behavior on identity elements as [`Self::to_montgomery`].
     #[cfg(feature = "alloc")]
-    pub fn batch_to_montgomery(eds: &[Self]) -> alloc::vec::Vec<MontgomeryPoint> {
+    pub fn batch_to_montgomery(eds: &[Self]) -> Vec<MontgomeryPoint> {
         // Do the same thing as the above function. u = (1+y)/(1-y) = (Z+Y)/(Z-Y).
         // We will do this in a batch, ie compute (Z-Y) for all the input
         // points, then invert them all at once
 
         // Compute the denominators in a batch
-        let mut denominators = eds
-            .iter()
-            .map(|p| &p.Z - &p.Y)
-            .collect::<alloc::vec::Vec<_>>();
+        let mut denominators = eds.iter().map(|p| &p.Z - &p.Y).collect::<Vec<_>>();
         FieldElement::batch_invert(&mut denominators);
 
         // Now compute the Montgomery u coordinate for every point
-        let mut ret = alloc::vec::Vec::with_capacity(eds.len());
+        let mut ret = Vec::with_capacity(eds.len());
         for (ed, d) in eds.iter().zip(denominators.iter()) {
             let u = &(&ed.Z + &ed.Y) * d;
             ret.push(MontgomeryPoint(u.as_bytes()));

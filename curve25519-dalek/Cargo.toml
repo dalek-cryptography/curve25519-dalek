@@ -51,12 +51,12 @@ ff = { version = "0.13", default-features = false, optional = true }
 group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "=0.11.0-pre.9", default-features = false, optional = true }
-subtle = { version = "2.6.0", default-features = false }
+subtle = { version = "2.6.0", default-features = false, features = ["const-generics"] }
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-cpufeatures = "0.2.6"
+cpufeatures = "0.2.17"
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
 fiat-crypto = { version = "0.2.1", default-features = false }
@@ -76,7 +76,7 @@ curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive"
 level = "warn"
 check-cfg = [
     'cfg(allow_unused_unsafe)',
-    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd"))',
+    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd", "unstable_avx512"))',
     'cfg(curve25519_dalek_diagnostics, values("build"))',
     'cfg(curve25519_dalek_bits, values("32", "64"))',
     'cfg(nightly)',

@@ -3,6 +3,11 @@
 // This file is part of curve25519-dalek.
 // See LICENSE for licensing information.
 
+// Nightly and stable currently disagree on the requirement of unsafe blocks when `unsafe_target_feature`
+// gets used.
+// See: https://github.com/rust-lang/rust/issues/132856
+#![allow(unused_unsafe)]
+
 //! This module defines wrappers over platform-specific SIMD types to make them
 //! more convenient to use.
 //!

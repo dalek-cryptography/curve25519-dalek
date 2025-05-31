@@ -16,7 +16,7 @@ pub mod packed_simd;
 
 pub mod avx2;
 
-#[cfg(nightly)]
+#[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
 pub mod ifma;
 
 pub mod scalar_mul;

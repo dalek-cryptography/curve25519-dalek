@@ -13,7 +13,10 @@
 
 #[curve25519_dalek_derive::unsafe_target_feature_specialize(
     "avx2",
-    conditional("avx512ifma,avx512vl", nightly)
+    conditional(
+        "avx512ifma,avx512vl",
+        all(curve25519_dalek_backend = "unstable_avx512", nightly)
+    )
 )]
 pub mod spec {
 
@@ -40,7 +43,7 @@ pub mod spec {
     /// method.  See the `Straus` struct in the serial backend for more
     /// details.
     ///
-    /// This exists as a seperate implementation from that one because the
+    /// This exists as a separate implementation from that one because the
     /// AVX2 code uses different curve models (it does not pass between
     /// multiple models during scalar mul), and it has to convert the
     /// point representation on the fly.

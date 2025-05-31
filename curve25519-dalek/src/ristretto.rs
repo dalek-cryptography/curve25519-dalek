@@ -169,22 +169,25 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
-
-#[cfg(feature = "digest")]
-use digest::array::typenum::U64;
 #[cfg(feature = "digest")]
 use digest::Digest;
+#[cfg(feature = "digest")]
+use digest::array::typenum::U64;
 
 use crate::constants;
 use crate::field::FieldElement;
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
-    rand_core::RngCore,
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
+    rand_core::TryRngCore,
     subtle::CtOption,
+};
+
+#[cfg(any(test, feature = "rand_core"))]
+use {
+    core::convert::Infallible,
+    rand_core::{CryptoRng, TryCryptoRng},
 };
 
 use subtle::Choice;
@@ -532,12 +535,12 @@ impl RistrettoPoint {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use rand_core::OsRng;
+    /// use rand_core::{OsRng, TryRngCore};
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng;
+    /// let mut rng = OsRng.unwrap_err();
     ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
@@ -696,8 +699,7 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRngCore`
-    ///   (i.e. `CryptoRng` + `RngCore`) interface.
+    /// * `rng`: any RNG which implements `CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -709,11 +711,34 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
-        let mut uniform_bytes = [0u8; 64];
-        rng.fill_bytes(&mut uniform_bytes);
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
+        Self::try_from_rng(rng)
+            .map_err(|_: Infallible| {})
+            .expect("[bug] unfallible rng failed")
+    }
 
-        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+    #[cfg(any(test, feature = "rand_core"))]
+    /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
+    ///
+    /// # Inputs
+    ///
+    /// * `rng`: any RNG which implements `TryCryptoRng` interface.
+    ///
+    /// # Returns
+    ///
+    /// A random element of the Ristretto group.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
+    pub fn try_from_rng<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        let mut uniform_bytes = [0u8; 64];
+        rng.try_fill_bytes(&mut uniform_bytes)?;
+
+        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
     }
 
     #[cfg(feature = "digest")]
@@ -848,7 +873,7 @@ impl Eq for RistrettoPoint {}
 // Arithmetic
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Add<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -862,7 +887,7 @@ define_add_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl AddAssign<&RistrettoPoint> for RistrettoPoint {
     fn add_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) + _rhs;
     }
@@ -870,7 +895,7 @@ impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
 
 define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
-impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Sub<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -884,7 +909,7 @@ define_sub_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl SubAssign<&RistrettoPoint> for RistrettoPoint {
     fn sub_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) - _rhs;
     }
@@ -904,7 +929,7 @@ where
     }
 }
 
-impl<'a> Neg for &'a RistrettoPoint {
+impl Neg for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn neg(self) -> RistrettoPoint {
@@ -927,7 +952,7 @@ impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
+impl<'b> Mul<&'b Scalar> for &RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -935,7 +960,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
+impl<'b> Mul<&'b RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
@@ -1093,7 +1118,7 @@ impl RistrettoPoint {
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
+impl<'b> Mul<&'b Scalar> for &RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -1102,7 +1127,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
 }
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
+impl<'a> Mul<&'a RistrettoBasepointTable> for &Scalar {
     type Output = RistrettoPoint;
 
     fn mul(self, basepoint_table: &'a RistrettoBasepointTable) -> RistrettoPoint {
@@ -1192,11 +1217,11 @@ impl Debug for RistrettoPoint {
 impl group::Group for RistrettoPoint {
     type Scalar = Scalar;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut uniform_bytes = [0u8; 64];
-        rng.fill_bytes(&mut uniform_bytes);
-        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
+        rng.try_fill_bytes(&mut uniform_bytes)?;
+        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
     }
 
     fn identity() -> Self {
@@ -1289,7 +1314,7 @@ mod test {
     use super::*;
     use crate::edwards::CompressedEdwardsY;
 
-    use rand_core::OsRng;
+    use rand_core::{OsRng, TryRngCore};
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1482,7 +1507,7 @@ mod test {
 
     #[test]
     fn four_torsion_random() {
-        let mut rng = OsRng;
+        let mut rng = OsRng.unwrap_err();
         let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
         let P_coset = P.coset4();
         for point in P_coset {
@@ -1807,7 +1832,7 @@ mod test {
 
     #[test]
     fn random_roundtrip() {
-        let mut rng = OsRng;
+        let mut rng = OsRng.unwrap_err();
         for _ in 0..100 {
             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
             let compressed_P = P.compress();
@@ -1817,14 +1842,15 @@ mod test {
     }
 
     #[test]
-    #[cfg(all(feature = "alloc", feature = "rand_core"))]
+    #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
     fn double_and_compress_1024_random_points() {
+        use group::Group;
         let mut rng = OsRng;
 
         let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::random(&mut rng))
+            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
             .collect();
-        points[500] = RistrettoPoint::identity();
+        points[500] = <RistrettoPoint as Group>::identity();
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
 
@@ -1836,7 +1862,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))
@@ -1887,7 +1913,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn partial_precomputed_mixed_multiscalar_empty() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let n_static = 16;
         let n_dynamic = 8;
@@ -1930,7 +1956,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn partial_precomputed_mixed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let n_static = 16;
         let n_dynamic = 8;
@@ -1975,7 +2001,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn partial_precomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let n_static = 16;
 
@@ -2004,7 +2030,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn partial_precomputed_multiscalar_empty() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let n_static = 16;
 

@@ -15,7 +15,7 @@
 
 use core::borrow::Borrow;
 
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 use subtle::ConstantTimeEq;
 
 // ------------------------------------------------------------------------

@@ -103,11 +103,12 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::{array::typenum::U64, Digest};
+use digest::{Digest, array::typenum::U64};
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
+    rand_core::TryRngCore,
     subtle::CtOption,
 };
 
@@ -125,7 +126,7 @@ use zeroize::Zeroize;
 use crate::constants;
 
 use crate::field::FieldElement;
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 
 use crate::montgomery::MontgomeryPoint;
 
@@ -136,8 +137,8 @@ use crate::backend::serial::curve_models::ProjectivePoint;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::window::{
-    LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
-    LookupTableRadix64,
+    LookupTableRadix16, LookupTableRadix32, LookupTableRadix64, LookupTableRadix128,
+    LookupTableRadix256,
 };
 
 #[cfg(feature = "precomputed-tables")]
@@ -644,7 +645,7 @@ impl EdwardsPoint {
     /// Uses rejection sampling, generating a random `CompressedEdwardsY` and then attempting point
     /// decompression, rejecting invalid points.
     #[cfg(any(test, feature = "rand_core"))]
-    pub fn random(mut rng: impl RngCore) -> Self {
+    pub fn random<R: RngCore + ?Sized>(rng: &mut R) -> Self {
         let mut repr = CompressedEdwardsY([0u8; 32]);
         loop {
             rng.fill_bytes(&mut repr.0);
@@ -672,7 +673,7 @@ impl EdwardsPoint {
 // Addition and Subtraction
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Add<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn add(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self + &other.as_projective_niels()).as_extended()
@@ -693,7 +694,7 @@ impl<'b> AddAssign<&'b EdwardsPoint> for EdwardsPoint {
 
 define_add_assign_variants!(LHS = EdwardsPoint, RHS = EdwardsPoint);
 
-impl<'a, 'b> Sub<&'b EdwardsPoint> for &'a EdwardsPoint {
+impl<'b> Sub<&'b EdwardsPoint> for &EdwardsPoint {
     type Output = EdwardsPoint;
     fn sub(self, other: &'b EdwardsPoint) -> EdwardsPoint {
         (self - &other.as_projective_niels()).as_extended()
@@ -730,7 +731,7 @@ where
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a EdwardsPoint {
+impl Neg for &EdwardsPoint {
     type Output = EdwardsPoint;
 
     fn neg(self) -> EdwardsPoint {
@@ -767,7 +768,7 @@ define_mul_assign_variants!(LHS = EdwardsPoint, RHS = Scalar);
 define_mul_variants!(LHS = EdwardsPoint, RHS = Scalar, Output = EdwardsPoint);
 define_mul_variants!(LHS = Scalar, RHS = EdwardsPoint, Output = EdwardsPoint);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
+impl<'b> Mul<&'b Scalar> for &EdwardsPoint {
     type Output = EdwardsPoint;
     /// Scalar multiplication: compute `scalar * self`.
     ///
@@ -778,7 +779,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a EdwardsPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b EdwardsPoint> for &'a Scalar {
+impl<'b> Mul<&'b EdwardsPoint> for &Scalar {
     type Output = EdwardsPoint;
 
     /// Scalar multiplication: compute `scalar * self`.
@@ -1341,9 +1342,16 @@ impl Debug for EdwardsPoint {
 impl group::Group for EdwardsPoint {
     type Scalar = Scalar;
 
-    fn random(rng: impl RngCore) -> Self {
-        // Call the inherent `pub fn random` defined above
-        Self::random(rng)
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+        let mut repr = CompressedEdwardsY([0u8; 32]);
+        loop {
+            rng.try_fill_bytes(&mut repr.0)?;
+            if let Some(p) = repr.decompress() {
+                if !IsIdentity::is_identity(&p) {
+                    break Ok(p);
+                }
+            }
+        }
     }
 
     fn identity() -> Self {
@@ -1586,20 +1594,20 @@ impl Zeroize for SubgroupPoint {
 impl group::Group for SubgroupPoint {
     type Scalar = Scalar;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         use group::ff::Field;
 
         // This will almost never loop, but `Group::random` is documented as returning a
         // non-identity element.
         let s = loop {
-            let s: Scalar = Field::random(&mut rng);
+            let s: Scalar = Field::try_from_rng(rng)?;
             if !s.is_zero_vartime() {
                 break s;
             }
         };
 
         // This gives an element of the prime-order subgroup.
-        Self::generator() * s
+        Ok(Self::generator() * s)
     }
 
     fn identity() -> Self {
@@ -1665,9 +1673,7 @@ impl CofactorGroup for EdwardsPoint {
 mod test {
     use super::*;
 
-    // If `group` is set, then this is already imported in super
-    #[cfg(not(feature = "group"))]
-    use rand_core::RngCore;
+    use rand_core::TryRngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1962,7 +1968,7 @@ mod test {
         #[cfg(feature = "precomputed-tables")]
         let random_point = {
             let mut b = [0u8; 32];
-            csprng.fill_bytes(&mut b);
+            csprng.try_fill_bytes(&mut b).unwrap();
             EdwardsPoint::mul_base_clamped(b) + constants::EIGHT_TORSION[1]
         };
         // Make a basepoint table from the random point. We'll use this with mul_base_clamped
@@ -1988,7 +1994,7 @@ mod test {
         for _ in 0..100 {
             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
             let mut a_bytes = [0u8; 32];
-            csprng.fill_bytes(&mut a_bytes);
+            csprng.try_fill_bytes(&mut a_bytes).unwrap();
 
             assert_eq!(
                 EdwardsPoint::mul_base_clamped(a_bytes),
@@ -2073,7 +2079,7 @@ mod test {
     #[cfg(feature = "alloc")]
     #[test]
     fn compress_batch() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // TODO(tarcieri): proptests?
         // Make some points deterministically then randomly
@@ -2129,7 +2135,7 @@ mod test {
     // A single iteration of a consistency check for MSM.
     #[cfg(feature = "alloc")]
     fn multiscalar_consistency_iter(n: usize) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
@@ -2192,7 +2198,7 @@ mod test {
     #[test]
     #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         let static_scalars = (0..128)
             .map(|_| Scalar::random(&mut rng))

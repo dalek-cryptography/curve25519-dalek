@@ -9,4 +9,3 @@ resolver = "2"
 
 [profile.dev]
 opt-level = 2
-

@@ -180,7 +180,7 @@ where
 /// Sha512`.
 ///
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 ///
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See

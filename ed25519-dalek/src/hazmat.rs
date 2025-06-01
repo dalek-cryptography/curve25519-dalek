@@ -169,34 +169,6 @@ where
     esk.raw_sign_prehashed::<CtxDigest, MsgDigest>(prehashed_message, verifying_key, context)
 }
 
-/// Compute an ordinary Ed25519 signature, with the message contents provided incrementally
-/// by updating a digest instance.
-///
-/// The `msg_update` closure provides the message content, updating a hash argument.
-/// It will be called twice.
-///
-/// `CtxDigest` is the digest used to
-/// calculate the pseudorandomness needed for signing. According to the Ed25519 spec, `CtxDigest =
-/// Sha512`.
-///
-///
-/// # ⚠️  Cryptographically Unsafe
-///
-/// Do NOT use this function unless you absolutely must. Using the wrong values in
-/// `ExpandedSecretKey` can leak your signing key. See
-/// [here](https://github.com/MystenLabs/ed25519-unsafe-libs) for more details on this attack.
-pub fn raw_sign_byupdate<CtxDigest, F>(
-    esk: &ExpandedSecretKey,
-    msg_update: F,
-    verifying_key: &VerifyingKey,
-) -> Result<Signature, SignatureError>
-where
-    CtxDigest: Digest<OutputSize = U64>,
-    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
-{
-    esk.raw_sign_byupdate::<CtxDigest, F>(msg_update, verifying_key)
-}
-
 /// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R
 /// values.`CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `CtxDigest = Sha512`.
@@ -228,26 +200,6 @@ where
     CtxDigest: Digest<OutputSize = U64>,
 {
     vk.raw_verify_prehashed::<CtxDigest, MsgDigest>(prehashed_message, context, signature)
-}
-
-/// Performs an ordinary Ed25519 verification check, with the message passed incrementally.
-///
-/// Instead of passing the message directly ([`raw_verify()`]), the caller
-/// provides a `msg_update` closure that will be called to feed the
-/// hash of the message being verified.
-///
-/// `CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
-/// According to the Ed25519 spec, `CtxDigest = Sha512`.
-pub fn raw_verify_byupdate<CtxDigest, F>(
-    vk: &VerifyingKey,
-    msg_update: F,
-    signature: &ed25519::Signature,
-) -> Result<(), SignatureError>
-where
-    CtxDigest: Digest<OutputSize = U64>,
-    F: FnOnce(&mut CtxDigest) -> Result<(), SignatureError>,
-{
-    vk.raw_verify_byupdate::<CtxDigest, F>(msg_update, signature)
 }
 
 #[cfg(test)]
@@ -310,112 +262,5 @@ mod test {
         let sig = raw_sign_prehashed::<CtxDigest, MsgDigest>(&esk, h.clone(), &vk, Some(ctx_str))
             .unwrap();
         raw_verify_prehashed::<CtxDigest, MsgDigest>(&vk, h, Some(ctx_str), &sig).unwrap();
-    }
-
-    #[test]
-    fn sign_byupdate() {
-        // Generate the keypair
-        let mut rng = OsRng;
-        let esk = ExpandedSecretKey::random(&mut rng);
-        let vk = VerifyingKey::from(&esk);
-
-        let msg = b"realistic";
-        // signatures are deterministic so we can compare with a good one
-        let good_sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
-
-        let sig = raw_sign_byupdate::<CtxDigest, _>(
-            &esk,
-            |h| {
-                h.update(msg);
-                Ok(())
-            },
-            &vk,
-        );
-        assert!(sig.unwrap() == good_sig, "sign byupdate matches");
-
-        let sig = raw_sign_byupdate::<CtxDigest, _>(
-            &esk,
-            |h| {
-                h.update(msg);
-                Err(SignatureError::new())
-            },
-            &vk,
-        );
-        assert!(sig.is_err(), "sign byupdate failure propagates");
-
-        let sig = raw_sign_byupdate::<CtxDigest, _>(
-            &esk,
-            |h| {
-                h.update(&msg[..1]);
-                h.update(&msg[1..]);
-                Ok(())
-            },
-            &vk,
-        );
-        assert!(sig.unwrap() == good_sig, "sign byupdate two part");
-    }
-
-    #[test]
-    fn verify_byupdate() {
-        // Generate the keypair
-        let mut rng = OsRng;
-        let esk = ExpandedSecretKey::random(&mut rng);
-        let vk = VerifyingKey::from(&esk);
-
-        let msg = b"Torrens title";
-        let sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
-        let wrong_sig = raw_sign::<CtxDigest>(&esk, b"nope", &vk);
-
-        let r = raw_verify_byupdate::<CtxDigest, _>(
-            &vk,
-            |h| {
-                h.update(msg);
-                Ok(())
-            },
-            &sig,
-        );
-        assert!(r.is_ok(), "verify byupdate success");
-
-        let r = raw_verify_byupdate::<CtxDigest, _>(
-            &vk,
-            |h| {
-                h.update(msg);
-                Ok(())
-            },
-            &wrong_sig,
-        );
-        assert!(r.is_err(), "verify byupdate wrong fails");
-
-        let r = raw_verify_byupdate::<CtxDigest, _>(
-            &vk,
-            |h| {
-                h.update(&msg[..5]);
-                h.update(&msg[5..]);
-                Ok(())
-            },
-            &sig,
-        );
-        assert!(r.is_ok(), "verify byupdate two-part");
-
-        let r = raw_verify_byupdate::<CtxDigest, _>(
-            &vk,
-            |h| {
-                h.update(msg);
-                h.update(b"X");
-                Ok(())
-            },
-            &sig,
-        );
-        assert!(r.is_err(), "verify byupdate extra fails");
-
-        let r = raw_verify_byupdate::<CtxDigest, _>(
-            &vk,
-            |h| {
-                h.update(msg);
-                Err(SignatureError::new())
-            },
-            &sig,
-        );
-        assert!(r.is_err(), "verify byupdate error propagates");
     }
 }

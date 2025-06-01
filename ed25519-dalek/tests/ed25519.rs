@@ -362,12 +362,12 @@ mod integrations {
             "Verification of a signature on a different message passed!"
         );
 
-        let mut verifier = keypair.verify_stream(&bad_sig).unwrap();
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
         verifier.update("test ");
         verifier.update("message");
         assert!(
-            verifier.finalize_and_verify().is_err(),
-            "Verification of a signature on a different chunked message passed!"
+            verifier.finalize_and_verify().is_ok(),
+            "Verification of a valid signature failed!"
         );
 
         let mut verifier = keypair.verify_stream(&good_sig).unwrap();

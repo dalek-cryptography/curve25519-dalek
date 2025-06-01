@@ -154,7 +154,7 @@ fn check_validation_criteria() {
 
         // If all the verify_strict-permitted flags here are ones we permit, then verify_strict()
         // should succeed. Otherwise, it should not.
-        let success = pubkey.verify_strict(&msg, &sig).is_ok();
+        let success = pubkey.verify_strict(&[&msg], &sig).is_ok();
         if flags.is_subset(&verify_strict_allowed_edgecases) {
             assert!(
                 success,
@@ -211,7 +211,7 @@ fn find_validation_criteria() {
 
         // If verify_strict() was a success, add all the associated flags to
         // verify_strict-permitted set
-        let success = pubkey.verify_strict(&msg, &sig).is_ok();
+        let success = pubkey.verify_strict(&[&msg], &sig).is_ok();
         if success {
             for flag in &flags {
                 verify_strict_allowed_edgecases.insert(*flag);

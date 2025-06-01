@@ -327,8 +327,8 @@ impl SigningKey {
     }
 
     /// Verify a signature on a message with this signing key's public key.
-    pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
-        self.verifying_key.verify(message, signature)
+    pub fn verify(&self, message: &[&[u8]], signature: &Signature) -> Result<(), SignatureError> {
+        self.verifying_key.raw_verify::<Sha512>(message, signature)
     }
 
     /// Verify a `signature` on a `prehashed_message` using the Ed25519ph algorithm.
@@ -477,7 +477,7 @@ impl SigningKey {
     #[allow(non_snake_case)]
     pub fn verify_strict(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         signature: &Signature,
     ) -> Result<(), SignatureError> {
         self.verifying_key.verify_strict(message, signature)
@@ -558,7 +558,7 @@ impl Signer<Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
     fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
-        Ok(expanded.raw_sign::<Sha512>(message, &self.verifying_key))
+        Ok(expanded.raw_sign::<Sha512>(&[message], &self.verifying_key))
     }
 }
 
@@ -823,7 +823,7 @@ impl ExpandedSecretKey {
     #[inline(always)]
     pub(crate) fn raw_sign<CtxDigest>(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         verifying_key: &VerifyingKey,
     ) -> Signature
     where
@@ -832,7 +832,7 @@ impl ExpandedSecretKey {
         let mut h = CtxDigest::new();
 
         h.update(self.hash_prefix);
-        h.update(message);
+        message.iter().for_each(|slice| h.update(slice));
 
         let r = Scalar::from_hash(h);
         let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
@@ -840,7 +840,7 @@ impl ExpandedSecretKey {
         h = CtxDigest::new();
         h.update(R.as_bytes());
         h.update(verifying_key.as_bytes());
-        h.update(message);
+        message.iter().for_each(|slice| h.update(slice));
 
         let k = Scalar::from_hash(h);
         let s: Scalar = (k * self.scalar) + r;

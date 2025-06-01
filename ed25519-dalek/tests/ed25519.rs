@@ -83,13 +83,13 @@ mod vectors {
 
             assert!(sig1 == sig2, "Signature bytes not equal on line {}", lineno);
             assert!(
-                signing_key.verify(&msg_bytes, &sig2).is_ok(),
+                signing_key.verify(&[&msg_bytes], &sig2).is_ok(),
                 "Signature verification failed on line {}",
                 lineno
             );
             assert!(
                 expected_verifying_key
-                    .verify_strict(&msg_bytes, &sig2)
+                    .verify_strict(&[&msg_bytes], &sig2)
                     .is_ok(),
                 "Signature strict verification failed on line {}",
                 lineno
@@ -234,8 +234,8 @@ mod vectors {
 
         // Now check that the sigs fail under verify_strict. This is because verify_strict rejects
         // small order pubkeys.
-        assert!(vk.verify_strict(message1, &sig).is_err());
-        assert!(vk.verify_strict(message2, &sig).is_err());
+        assert!(vk.verify_strict(&[message1], &sig).is_err());
+        assert!(vk.verify_strict(&[message2], &sig).is_err());
     }
 
     // Identical to repudiation() above, but testing verify_prehashed against
@@ -309,27 +309,27 @@ mod integrations {
         assert!(!verifying_key.is_weak());
 
         assert!(
-            signing_key.verify(good, &good_sig).is_ok(),
+            signing_key.verify(&[good], &good_sig).is_ok(),
             "Verification of a valid signature failed!"
         );
         assert!(
-            verifying_key.verify_strict(good, &good_sig).is_ok(),
+            verifying_key.verify_strict(&[good], &good_sig).is_ok(),
             "Strict verification of a valid signature failed!"
         );
         assert!(
-            signing_key.verify(good, &bad_sig).is_err(),
+            signing_key.verify(&[good], &bad_sig).is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
-            verifying_key.verify_strict(good, &bad_sig).is_err(),
+            verifying_key.verify_strict(&[good], &bad_sig).is_err(),
             "Strict verification of a signature on a different message passed!"
         );
         assert!(
-            signing_key.verify(bad, &good_sig).is_err(),
+            signing_key.verify(&[bad], &good_sig).is_err(),
             "Verification of a signature on a different message passed!"
         );
         assert!(
-            verifying_key.verify_strict(bad, &good_sig).is_err(),
+            verifying_key.verify_strict(&[bad], &good_sig).is_err(),
             "Strict verification of a signature on a different message passed!"
         );
     }

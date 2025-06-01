@@ -32,7 +32,7 @@ mod ed25519_benches {
         let sig: Signature = keypair.sign(msg);
 
         c.bench_function("Ed25519 signature verification", move |b| {
-            b.iter(|| keypair.verify(msg, &sig))
+            b.iter(|| keypair.verify(&[msg], &sig))
         });
     }
 
@@ -43,7 +43,7 @@ mod ed25519_benches {
         let sig: Signature = keypair.sign(msg);
 
         c.bench_function("Ed25519 strict signature verification", move |b| {
-            b.iter(|| keypair.verify_strict(msg, &sig))
+            b.iter(|| keypair.verify_strict(&[msg], &sig))
         });
     }
 

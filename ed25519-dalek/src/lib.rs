@@ -59,7 +59,7 @@
 //! # let message: &[u8] = b"This is a test of the tsunami alert system.";
 //! # let signature: Signature = signing_key.sign(message);
 //! use ed25519_dalek::Verifier;
-//! assert!(signing_key.verify(message, &signature).is_ok());
+//! assert!(signing_key.verify(&[message], &signature).is_ok());
 //! # }
 //! ```
 //!

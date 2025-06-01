@@ -113,7 +113,7 @@ impl TryFrom<&[u8]> for ExpandedSecretKey {
 /// [here](https://github.com/MystenLabs/ed25519-unsafe-libs) for more details on this attack.
 pub fn raw_sign<CtxDigest>(
     esk: &ExpandedSecretKey,
-    message: &[u8],
+    message: &[&[u8]],
     verifying_key: &VerifyingKey,
 ) -> Signature
 where
@@ -174,7 +174,7 @@ where
 /// According to the Ed25519 spec, `CtxDigest = Sha512`.
 pub fn raw_verify<CtxDigest>(
     vk: &VerifyingKey,
-    message: &[u8],
+    message: &[&[u8]],
     signature: &ed25519::Signature,
 ) -> Result<(), SignatureError>
 where
@@ -235,8 +235,8 @@ mod test {
         let msg = b"Then one day, a piano fell on my head";
 
         // Sign and verify
-        let sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
-        raw_verify::<CtxDigest>(&vk, msg, &sig).unwrap();
+        let sig = raw_sign::<CtxDigest>(&esk, &[msg], &vk);
+        raw_verify::<CtxDigest>(&vk, &[msg], &sig).unwrap();
     }
 
     // Check that raw_sign_prehashed and raw_verify_prehashed work when distinct, non-spec

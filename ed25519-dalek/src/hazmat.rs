@@ -245,7 +245,7 @@ pub fn raw_verify_byupdate<CtxDigest, F>(
 ) -> Result<(), SignatureError>
 where
     CtxDigest: Digest<OutputSize = U64>,
-    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+    F: FnOnce(&mut CtxDigest) -> Result<(), SignatureError>,
 {
     vk.raw_verify_byupdate::<CtxDigest, F>(msg_update, signature)
 }

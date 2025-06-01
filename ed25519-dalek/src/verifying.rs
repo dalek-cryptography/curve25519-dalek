@@ -224,7 +224,7 @@ impl VerifyingKey {
     ) -> Result<(), SignatureError>
     where
         CtxDigest: Digest<OutputSize = U64>,
-        F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+        F: FnOnce(&mut CtxDigest) -> Result<(), SignatureError>,
     {
         let signature = InternalSignature::try_from(signature)?;
 
@@ -504,16 +504,16 @@ impl VerifyingKey {
     }
 }
 
-// Helper for verification. Computes the _expected_ R component of the signature. The
-// caller compares this to the real R component.
-// This computes `H(R || A || M)` where `H` is the 512-bit hash function
-// given by `CtxDigest` (this is SHA-512 in spec-compliant Ed25519).
-
-// For prehashed variants a `h` with the context already included can be provided.
-// Note that this returns the compressed form of R and the caller does a byte comparison. This
-// means that all our verification functions do not accept non-canonically encoded R values.
-// See the validation criteria blog post for more details:
-//     https://hdevalence.ca/blog/2020-10-04-its-25519am
+/// Helper for verification. Computes the _expected_ R component of the signature. The
+/// caller compares this to the real R component.
+/// This computes `H(R || A || M)` where `H` is the 512-bit hash function
+/// given by `CtxDigest` (this is SHA-512 in spec-compliant Ed25519).
+///
+/// For pre-hashed variants a `h` with the context already included can be provided.
+/// Note that this returns the compressed form of R and the caller does a byte comparison. This
+/// means that all our verification functions do not accept non-canonically encoded R values.
+/// See the validation criteria blog post for more details:
+///     https://hdevalence.ca/blog/2020-10-04-its-25519am
 pub(crate) struct RCompute<CtxDigest> {
     key: VerifyingKey,
     signature: InternalSignature,
@@ -525,8 +525,9 @@ impl<CtxDigest> RCompute<CtxDigest>
 where
     CtxDigest: Digest<OutputSize = U64>,
 {
-    // If `prehash_ctx.is_some()`, this does the prehashed variant of the computation using its contents.
-    pub fn compute(
+    /// If `prehash_ctx.is_some()`, this does the prehashed variant of the computation using its
+    /// contents.
+    pub(crate) fn compute(
         key: &VerifyingKey,
         signature: InternalSignature,
         prehash_ctx: Option<&[u8]>,
@@ -537,7 +538,7 @@ where
         c.finish()
     }
 
-    pub fn new(
+    pub(crate) fn new(
         key: &VerifyingKey,
         signature: InternalSignature,
         prehash_ctx: Option<&[u8]>,
@@ -562,11 +563,11 @@ where
         }
     }
 
-    pub fn update(&mut self, m: &[u8]) {
+    pub(crate) fn update(&mut self, m: &[u8]) {
         self.h.update(m)
     }
 
-    pub fn finish(self) -> CompressedEdwardsY {
+    pub(crate) fn finish(self) -> CompressedEdwardsY {
         let k = Scalar::from_hash(self.h);
 
         let minus_A: EdwardsPoint = -self.key.point;

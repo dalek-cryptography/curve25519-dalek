@@ -39,6 +39,8 @@ use signature::DigestSigner;
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+#[cfg(feature = "hazmat")]
+use crate::verifying::StreamVerifier;
 use crate::{
     constants::{KEYPAIR_LENGTH, SECRET_KEY_LENGTH},
     errors::{InternalError, SignatureError},
@@ -481,6 +483,17 @@ impl SigningKey {
         signature: &Signature,
     ) -> Result<(), SignatureError> {
         self.verifying_key.verify_strict(message, signature)
+    }
+
+    /// Constructs stream verifier with candidate `signature`.
+    ///
+    /// See [`VerifyingKey::verify_stream()`] for more details.
+    #[cfg(feature = "hazmat")]
+    pub fn verify_stream(
+        &self,
+        signature: &ed25519::Signature,
+    ) -> Result<StreamVerifier, SignatureError> {
+        self.verifying_key.verify_stream(signature)
     }
 
     /// Convert this signing key into a byte representation of an unreduced, unclamped Curve25519

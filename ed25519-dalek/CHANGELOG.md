@@ -8,6 +8,8 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # Unreleased
 
+* Add `SigningKey::verify_stream()`, and `VerifyingKey::verify_stream()`
+  
 # 2.x series
 
 ## 2.1.1

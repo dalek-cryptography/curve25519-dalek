@@ -19,7 +19,7 @@ use curve25519_dalek::{
     scalar::Scalar,
 };
 
-use ed25519::signature::Verifier;
+use ed25519::signature::{MultipartVerifier, Verifier};
 
 use sha2::Sha512;
 
@@ -194,7 +194,7 @@ impl VerifyingKey {
         context: Option<&[u8]>,
         R: &CompressedEdwardsY,
         A: &CompressedEdwardsY,
-        M: &[u8],
+        M: &[&[u8]],
     ) -> Scalar
     where
         CtxDigest: Digest<OutputSize = U64>,
@@ -208,8 +208,7 @@ impl VerifyingKey {
         }
         h.update(R.as_bytes());
         h.update(A.as_bytes());
-        h.update(M);
-
+        M.iter().for_each(|slice| h.update(slice));
         Scalar::from_hash(h)
     }
 
@@ -225,7 +224,7 @@ impl VerifyingKey {
         &self,
         context: Option<&[u8]>,
         signature: &InternalSignature,
-        M: &[u8],
+        M: &[&[u8]],
     ) -> CompressedEdwardsY
     where
         CtxDigest: Digest<OutputSize = U64>,
@@ -245,7 +244,7 @@ impl VerifyingKey {
     #[allow(non_snake_case)]
     pub(crate) fn raw_verify<CtxDigest>(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         signature: &ed25519::Signature,
     ) -> Result<(), SignatureError>
     where
@@ -289,7 +288,7 @@ impl VerifyingKey {
         );
 
         let message = prehashed_message.finalize();
-        let expected_R = self.recompute_R::<CtxDigest>(Some(ctx), &signature, &message);
+        let expected_R = self.recompute_R::<CtxDigest>(Some(ctx), &signature, &[&message]);
 
         if expected_R == signature.R {
             Ok(())
@@ -415,7 +414,7 @@ impl VerifyingKey {
             return Err(InternalError::Verify.into());
         }
 
-        let expected_R = self.recompute_R::<Sha512>(None, &signature, message);
+        let expected_R = self.recompute_R::<Sha512>(None, &signature, &[message]);
         if expected_R == signature.R {
             Ok(())
         } else {
@@ -477,7 +476,7 @@ impl VerifyingKey {
         }
 
         let message = prehashed_message.finalize();
-        let expected_R = self.recompute_R::<Sha512>(Some(ctx), &signature, &message);
+        let expected_R = self.recompute_R::<Sha512>(Some(ctx), &signature, &[&message]);
 
         if expected_R == signature.R {
             Ok(())
@@ -518,6 +517,16 @@ impl Verifier<ed25519::Signature> for VerifyingKey {
     ///
     /// Returns `Ok(())` if the signature is valid, and `Err` otherwise.
     fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
+        self.multipart_verify(&[message], signature)
+    }
+}
+
+impl MultipartVerifier<ed25519::Signature> for VerifyingKey {
+    fn multipart_verify(
+        &self,
+        message: &[&[u8]],
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
         self.raw_verify::<Sha512>(message, signature)
     }
 }

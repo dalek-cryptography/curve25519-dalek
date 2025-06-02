@@ -24,12 +24,12 @@ use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
 use curve25519_dalek::{
-    digest::{generic_array::typenum::U64, Digest},
+    digest::{array::typenum::U64, Digest},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     scalar::Scalar,
 };
 
-use ed25519::signature::{KeypairRef, Signer, Verifier};
+use ed25519::signature::{KeypairRef, MultipartSigner, MultipartVerifier, Signer, Verifier};
 
 #[cfg(feature = "digest")]
 use crate::context::Context;
@@ -557,6 +557,12 @@ impl KeypairRef for SigningKey {
 impl Signer<Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
     fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
+        self.try_multipart_sign(&[message])
+    }
+}
+
+impl MultipartSigner<Signature> for SigningKey {
+    fn try_multipart_sign(&self, message: &[&[u8]]) -> Result<Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
         Ok(expanded.raw_sign::<Sha512>(message, &self.verifying_key))
     }
@@ -600,7 +606,17 @@ where
 impl Verifier<Signature> for SigningKey {
     /// Verify a signature on a message with this signing key's public key.
     fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
-        self.verifying_key.verify(message, signature)
+        self.multipart_verify(&[message], signature)
+    }
+}
+
+impl MultipartVerifier<Signature> for SigningKey {
+    fn multipart_verify(
+        &self,
+        message: &[&[u8]],
+        signature: &Signature,
+    ) -> Result<(), SignatureError> {
+        self.verifying_key.multipart_verify(message, signature)
     }
 }
 
@@ -727,10 +743,10 @@ impl From<&SigningKey> for pkcs8::KeypairBytes {
 }
 
 #[cfg(feature = "pkcs8")]
-impl TryFrom<pkcs8::PrivateKeyInfo<'_>> for SigningKey {
+impl TryFrom<pkcs8::PrivateKeyInfoRef<'_>> for SigningKey {
     type Error = pkcs8::Error;
 
-    fn try_from(private_key: pkcs8::PrivateKeyInfo<'_>) -> pkcs8::Result<Self> {
+    fn try_from(private_key: pkcs8::PrivateKeyInfoRef<'_>) -> pkcs8::Result<Self> {
         pkcs8::KeypairBytes::try_from(private_key)?.try_into()
     }
 }
@@ -823,7 +839,7 @@ impl ExpandedSecretKey {
     #[inline(always)]
     pub(crate) fn raw_sign<CtxDigest>(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         verifying_key: &VerifyingKey,
     ) -> Signature
     where
@@ -832,7 +848,7 @@ impl ExpandedSecretKey {
         let mut h = CtxDigest::new();
 
         h.update(self.hash_prefix);
-        h.update(message);
+        message.iter().for_each(|slice| h.update(slice));
 
         let r = Scalar::from_hash(h);
         let R: CompressedEdwardsY = EdwardsPoint::mul_base(&r).compress();
@@ -840,7 +856,7 @@ impl ExpandedSecretKey {
         h = CtxDigest::new();
         h.update(R.as_bytes());
         h.update(verifying_key.as_bytes());
-        h.update(message);
+        message.iter().for_each(|slice| h.update(slice));
 
         let k = Scalar::from_hash(h);
         let s: Scalar = (k * self.scalar) + r;

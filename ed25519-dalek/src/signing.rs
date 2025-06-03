@@ -833,6 +833,7 @@ impl ExpandedSecretKey {
     /// This definition is loose in its parameters so that end-users of the `hazmat` module can
     /// change how the `ExpandedSecretKey` is calculated and which hash function to use.
     #[allow(non_snake_case)]
+    #[allow(clippy::unwrap_used)]
     #[inline(always)]
     pub(crate) fn raw_sign<CtxDigest>(
         &self,

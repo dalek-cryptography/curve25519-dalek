@@ -854,8 +854,9 @@ impl ExpandedSecretKey {
         .unwrap()
     }
 
-    /// Sign a message provided in parts. The `msg_update` closure
-    /// will be called twice to hash the message parts.
+    /// Sign a message provided in parts. The `msg_update` closure will be called twice to hash the
+    /// message parts. This closure MUST leave its hasher in the same state (i.e., must hash the
+    /// same values) after both calls. Otherwise it will produce an invalid signature.
     #[allow(non_snake_case)]
     #[inline(always)]
     pub(crate) fn raw_sign_byupdate<CtxDigest, F>(

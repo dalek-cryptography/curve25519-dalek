@@ -106,7 +106,7 @@ impl TryFrom<&[u8]> for ExpandedSecretKey {
 /// calculate the pseudorandomness needed for signing. According to the Ed25519 spec, `CtxDigest =
 /// Sha512`.
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 ///
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See
@@ -127,7 +127,7 @@ where
 /// `CtxDigest` is the digest function used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `MsgDigest = CtxDigest = Sha512`.
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 //
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See
@@ -173,12 +173,13 @@ where
 /// updating a digest instance.
 ///
 /// The `msg_update` closure provides the message content, updating a hasher argument. It will be
-/// called twice.
+/// called twice. This closure MUST leave its hasher in the same state (i.e., must hash the same
+/// values) after both calls. Otherwise it will produce an invalid signature.
 ///
 /// `CtxDigest` is the digest used to calculate the pseudorandomness needed for signing. According
 /// to the Ed25519 spec, `CtxDigest = Sha512`.
 ///
-/// # ⚠️  Unsafe
+/// # ⚠️  Cryptographically Unsafe
 ///
 /// Do NOT use this function unless you absolutely must. Using the wrong values in
 /// `ExpandedSecretKey` can leak your signing key. See

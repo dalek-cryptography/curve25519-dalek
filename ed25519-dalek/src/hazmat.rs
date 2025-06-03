@@ -169,6 +169,32 @@ where
     esk.raw_sign_prehashed::<CtxDigest, MsgDigest>(prehashed_message, verifying_key, context)
 }
 
+/// Compute an ordinary Ed25519 signature, with the message contents provided incrementally by
+/// updating a digest instance.
+///
+/// The `msg_update` closure provides the message content, updating a hasher argument. It will be
+/// called twice.
+///
+/// `CtxDigest` is the digest used to calculate the pseudorandomness needed for signing. According
+/// to the Ed25519 spec, `CtxDigest = Sha512`.
+///
+/// # ⚠️  Unsafe
+///
+/// Do NOT use this function unless you absolutely must. Using the wrong values in
+/// `ExpandedSecretKey` can leak your signing key. See
+/// [here](https://github.com/MystenLabs/ed25519-unsafe-libs) for more details on this attack.
+pub fn raw_sign_byupdate<CtxDigest, F>(
+    esk: &ExpandedSecretKey,
+    msg_update: F,
+    verifying_key: &VerifyingKey,
+) -> Result<Signature, SignatureError>
+where
+    CtxDigest: Digest<OutputSize = U64>,
+    F: Fn(&mut CtxDigest) -> Result<(), SignatureError>,
+{
+    esk.raw_sign_byupdate::<CtxDigest, F>(msg_update, verifying_key)
+}
+
 /// The ordinary non-batched Ed25519 verification check, rejecting non-canonical R
 /// values.`CtxDigest` is the digest used to calculate the pseudorandomness needed for signing.
 /// According to the Ed25519 spec, `CtxDigest = Sha512`.
@@ -262,5 +288,48 @@ mod test {
         let sig = raw_sign_prehashed::<CtxDigest, MsgDigest>(&esk, h.clone(), &vk, Some(ctx_str))
             .unwrap();
         raw_verify_prehashed::<CtxDigest, MsgDigest>(&vk, h, Some(ctx_str), &sig).unwrap();
+    }
+
+    #[test]
+    fn sign_byupdate() {
+        // Generate the keypair
+        let mut rng = OsRng;
+        let esk = ExpandedSecretKey::random(&mut rng);
+        let vk = VerifyingKey::from(&esk);
+
+        let msg = b"realistic";
+        // signatures are deterministic so we can compare with a good one
+        let good_sig = raw_sign::<CtxDigest>(&esk, msg, &vk);
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate matches");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(msg);
+                Err(SignatureError::new())
+            },
+            &vk,
+        );
+        assert!(sig.is_err(), "sign byupdate failure propagates");
+
+        let sig = raw_sign_byupdate::<CtxDigest, _>(
+            &esk,
+            |h| {
+                h.update(&msg[..1]);
+                h.update(&msg[1..]);
+                Ok(())
+            },
+            &vk,
+        );
+        assert!(sig.unwrap() == good_sig, "sign byupdate two part");
     }
 }

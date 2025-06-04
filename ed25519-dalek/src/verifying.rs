@@ -567,6 +567,14 @@ impl TryFrom<&[u8]> for VerifyingKey {
     }
 }
 
+#[cfg(feature = "pkcs8")]
+impl pkcs8::spki::SignatureAlgorithmIdentifier for VerifyingKey {
+    type Params = pkcs8::spki::der::AnyRef<'static>;
+
+    const SIGNATURE_ALGORITHM_IDENTIFIER: pkcs8::spki::AlgorithmIdentifier<Self::Params> =
+        <ed25519::Signature as pkcs8::spki::AssociatedAlgorithmIdentifier>::ALGORITHM_IDENTIFIER;
+}
+
 impl From<VerifyingKey> for EdwardsPoint {
     fn from(vk: VerifyingKey) -> EdwardsPoint {
         vk.point
@@ -577,20 +585,6 @@ impl From<VerifyingKey> for EdwardsPoint {
 impl pkcs8::EncodePublicKey for VerifyingKey {
     fn to_public_key_der(&self) -> pkcs8::spki::Result<pkcs8::Document> {
         pkcs8::PublicKeyBytes::from(self).to_public_key_der()
-    }
-}
-
-#[cfg(all(feature = "alloc", feature = "pkcs8"))]
-impl pkcs8::spki::DynSignatureAlgorithmIdentifier for VerifyingKey {
-    fn signature_algorithm_identifier(
-        &self,
-    ) -> pkcs8::spki::Result<pkcs8::spki::AlgorithmIdentifierOwned> {
-        // From https://datatracker.ietf.org/doc/html/rfc8410
-        // `id-Ed25519   OBJECT IDENTIFIER ::= { 1 3 101 112 }`
-        Ok(ed25519::pkcs8::spki::AlgorithmIdentifierOwned {
-            oid: ed25519::pkcs8::ALGORITHM_OID,
-            parameters: None,
-        })
     }
 }
 

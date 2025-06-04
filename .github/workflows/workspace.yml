@@ -111,6 +111,7 @@ jobs:
       - run: cargo doc --all-features
 
   typos:
+    name: Check for typos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

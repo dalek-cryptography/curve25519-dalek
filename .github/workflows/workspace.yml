@@ -109,3 +109,9 @@ jobs:
         with:
           toolchain: stable
       - run: cargo doc --all-features
+
+  typos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@v1.33.1

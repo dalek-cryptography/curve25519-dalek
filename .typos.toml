@@ -1,0 +1,19 @@
+[files]
+extend-exclude = [
+    ".git/",
+    "*.svg",
+    "TESTVECTORS"
+]
+
+[default]
+extend-ignore-re = [
+    # Patterns which appear to be 36 or more characters of Base64/Base64url
+    '\b[0-9A-Za-z+/]{36,}\b',
+    '\b[0-9A-Za-z_-]{36,}\b',
+]
+
+[default.extend-words]
+"AKE" = "AKE" # Authenticated Key Exchange
+"Ono" = "Ono" # Surname
+"Tung" = "Tung" # Name
+"Monts" = "Monts" # Abbreviation for Montgomery

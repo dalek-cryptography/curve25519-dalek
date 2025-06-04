@@ -2043,7 +2043,7 @@ pub(crate) mod test {
 
     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
-    // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
+    // was reduced and b was clamped and unreduced. This checks that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
         let mut rng = rand::thread_rng();

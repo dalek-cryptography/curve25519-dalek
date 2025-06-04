@@ -216,7 +216,7 @@ besides the `rand_core` version bump, there are no other user-visible changes.
   for very large input sizes.
 * Add a more extensive randomized multiscalar multiplication consistency check
   to the test suite to prevent regressions.
-* Ensure that that multiscalar and NAF computations work correctly on extremal
+* Ensure that multiscalar and NAF computations work correctly on extremal
   `Scalar` values constructed via `from_bits`.
 
 ### 1.2.0

@@ -69,7 +69,7 @@
 //! and passed to \\( \mathbb P\^2 \\) by setting \\( x = W\_1 / W\_3
 //! \\), \\(y = W\_2 / W\_3 \\).
 //! Up to variable naming, this is the projective representation
-//! introduced in in [_Twisted Edwards
+//! introduced in [_Twisted Edwards
 //! Curves_][bernstein-birkner-joye-lange-peters-2008] by Bernstein,
 //! Birkner, Joye, Lange, and Peters.  In `curve25519-dalek`, it is
 //! represented by the `ProjectivePoint` struct.

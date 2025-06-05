@@ -54,16 +54,15 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::constants::APLUS2_OVER_FOUR;
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{clamp_integer, Scalar};
-
 use crate::traits::Identity;
 
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -252,35 +251,6 @@ impl MontgomeryPoint {
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point.
-///
-/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
-//
-// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
-//      draft gets into a more polished/accepted state.
-#[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
-    let one = FieldElement::ONE;
-    let d_1 = &one + &r_0.square2(); /* 2r^2 */
-
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
-
-    let d_sq = &d.square();
-    let au = &MONTGOMERY_A * &d;
-
-    let inner = &(d_sq + &au) + &one;
-    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
-
-    let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
-
-    let zero = FieldElement::ZERO;
-    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
-    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
-    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
-
-    MontgomeryPoint(u.as_bytes())
-}
-
 /// A `ProjectivePoint` holds a point on the projective line
 /// \\( \mathbb P(\mathbb F\_p) \\), which we identify with the Kummer
 /// line of the Montgomery curve.
@@ -435,6 +405,7 @@ mod test {
     use crate::constants;
 
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "elligator2")]
     use alloc::vec::Vec;
 
     use rand_core::{CryptoRng, RngCore};
@@ -638,7 +609,9 @@ mod test {
         }
     }
 
+    #[cfg(test)]
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "elligator2")]
     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
         0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
@@ -647,20 +620,20 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "digest")]
     fn montgomery_elligator_correct() {
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
-        let fe = FieldElement::from_bytes(&bits_in);
-        let eg = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+        let eg = MontgomeryPoint::map_to_point(&bits_in);
+        assert_eq!(eg.0, ELLIGATOR_CORRECT_OUTPUT);
     }
 
     #[test]
+    #[cfg(feature = "elligator2")]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
-        let fe = FieldElement::from_bytes(&zero);
-        let eg = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), zero);
+        let eg = MontgomeryPoint::map_to_point(&zero);
+        assert_eq!(eg.0, zero);
     }
 }

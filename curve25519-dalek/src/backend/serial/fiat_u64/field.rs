@@ -259,4 +259,24 @@ impl FieldElement51 {
         fiat_25519_carry(&mut output.0, &output_loose);
         output
     }
+
+    /// Returns 1 if self is greater than the other and 0 otherwise
+    // implementation based on C libgmp -> mpn_sub_n
+    pub(crate) fn gt(&self, other: &Self) -> Choice {
+        let mut _ul = 0_u64;
+        let mut _vl = 0_u64;
+        let mut _rl = 0_u64;
+
+        let mut cy = 0_u64;
+        for i in 0..5 {
+            _ul = self.0[i];
+            _vl = other.0[i];
+
+            let (_sl, _cy1) = _ul.overflowing_sub(_vl);
+            let (_rl, _cy2) = _sl.overflowing_sub(cy);
+            cy = _cy1 as u64 | _cy2 as u64;
+        }
+
+        Choice::from((cy != 0_u64) as u8)
+    }
 }

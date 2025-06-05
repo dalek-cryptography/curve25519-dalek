@@ -56,6 +56,7 @@ curve25519-dalek = ">= 4.0, < 4.2"
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
 | `group`            |          | Enables external `group` and `ff` crate traits |
+| `elligator2`       |          | Enables elligator2 functionality for supported types. This allows curve points to be encoded to uniform random representatives, and 32 byte values to be mapped (back) to curve points. |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To

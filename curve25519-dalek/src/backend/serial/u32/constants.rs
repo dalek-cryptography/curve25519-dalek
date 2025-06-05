@@ -30,6 +30,13 @@ pub(crate) const MINUS_ONE: FieldElement2625 = FieldElement2625::from_limbs([
     33554431,
 ]);
 
+/// sqrt(-486664)
+#[cfg(feature = "digest")]
+pub(crate) const ED25519_SQRTAM2: FieldElement2625 = FieldElement2625::from_limbs([
+    54885894, 25242303, 55597453, 9067496, 51808079, 33312638, 25456129, 14121551, 54921728,
+    3972023,
+]);
+
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub(crate) const EDWARDS_D: FieldElement2625 = FieldElement2625::from_limbs([
     56195235, 13857412, 51736253, 6949390, 114729, 24766616, 60832955, 30306712, 48412415, 21499315,

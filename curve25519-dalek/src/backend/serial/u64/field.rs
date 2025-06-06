@@ -55,33 +55,33 @@ impl Zeroize for FieldElement51 {
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
-    fn add_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
+    fn add_assign(&mut self, _rhs: &'a FieldElement51) {
         for i in 0..5 {
             self.0[i] += _rhs.0[i];
         }
     }
 }
 
-impl<'a, 'b> Add<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
-    fn add(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         let mut output = *self;
         output += _rhs;
         output
     }
 }
 
-impl<'b> SubAssign<&'b FieldElement51> for FieldElement51 {
-    fn sub_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
+    fn sub_assign(&mut self, _rhs: &'a FieldElement51) {
         let result = (self as &FieldElement51) - _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
-    fn sub(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn sub(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //
@@ -101,18 +101,18 @@ impl<'a, 'b> Sub<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
-    fn mul_assign(&mut self, _rhs: &'b FieldElement51) {
+impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
+    fn mul_assign(&mut self, _rhs: &'a FieldElement51) {
         let result = (self as &FieldElement51) * _rhs;
         self.0 = result.0;
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     #[rustfmt::skip] // keep alignment of c* calculations
-    fn mul(self, _rhs: &'b FieldElement51) -> FieldElement51 {
+    fn mul(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
         #[inline(always)]
@@ -213,7 +213,7 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
     }
 }
 
-impl<'a> Neg for &'a FieldElement51 {
+impl Neg for &FieldElement51 {
     type Output = FieldElement51;
     fn neg(self) -> FieldElement51 {
         let mut output = *self;

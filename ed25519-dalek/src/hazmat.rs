@@ -317,8 +317,8 @@ mod test {
     #[test]
     fn sign_byupdate() {
         // Generate the keypair
-        let mut rng = OsRng;
-        let esk = ExpandedSecretKey::random(&mut rng);
+        let rng = OsRng;
+        let esk = ExpandedSecretKey::random(rng);
         let vk = VerifyingKey::from(&esk);
 
         let msg = b"realistic";

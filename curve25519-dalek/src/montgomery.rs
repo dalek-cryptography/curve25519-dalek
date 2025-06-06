@@ -543,7 +543,7 @@ mod test {
         let mut csprng = rand_core::OsRng;
 
         for _ in 0..100 {
-            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_edwards = rand_prime_order_point(csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             let s: Scalar = Scalar::random(&mut csprng);
@@ -562,7 +562,7 @@ mod test {
 
         for _ in 0..100 {
             // Make a random prime-order point P
-            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_edwards = rand_prime_order_point(csprng);
             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
             // Make a random integer b

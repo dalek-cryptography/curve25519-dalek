@@ -408,10 +408,10 @@ impl ProjectivePoint {
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'a> Add<&'a ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.Y_plus_X;
@@ -430,10 +430,10 @@ impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
+impl<'a> Sub<&'a ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.Y_minus_X;
@@ -452,10 +452,10 @@ impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'a> Add<&'a AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'a AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.y_plus_x;
@@ -473,10 +473,10 @@ impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
+impl<'a> Sub<&'a AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'a AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.y_minus_x;
@@ -497,7 +497,7 @@ impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
 // Negation
 // ------------------------------------------------------------------------
 
-impl<'a> Neg for &'a ProjectiveNielsPoint {
+impl Neg for &ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
     fn neg(self) -> ProjectiveNielsPoint {
@@ -510,7 +510,7 @@ impl<'a> Neg for &'a ProjectiveNielsPoint {
     }
 }
 
-impl<'a> Neg for &'a AffineNielsPoint {
+impl Neg for &AffineNielsPoint {
     type Output = AffineNielsPoint;
 
     fn neg(self) -> AffineNielsPoint {

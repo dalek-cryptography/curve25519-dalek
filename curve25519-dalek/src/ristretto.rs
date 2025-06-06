@@ -848,7 +848,7 @@ impl Eq for RistrettoPoint {}
 // Arithmetic
 // ------------------------------------------------------------------------
 
-impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Add<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -862,7 +862,7 @@ define_add_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl AddAssign<&RistrettoPoint> for RistrettoPoint {
     fn add_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) + _rhs;
     }
@@ -870,7 +870,7 @@ impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
 
 define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
-impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
+impl<'b> Sub<&'b RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
@@ -884,7 +884,7 @@ define_sub_variants!(
     Output = RistrettoPoint
 );
 
-impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
+impl SubAssign<&RistrettoPoint> for RistrettoPoint {
     fn sub_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) - _rhs;
     }
@@ -904,7 +904,7 @@ where
     }
 }
 
-impl<'a> Neg for &'a RistrettoPoint {
+impl Neg for &RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn neg(self) -> RistrettoPoint {
@@ -927,7 +927,7 @@ impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
+impl<'b> Mul<&'b Scalar> for &RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -935,7 +935,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     }
 }
 
-impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
+impl<'b> Mul<&'b RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
@@ -1093,7 +1093,7 @@ impl RistrettoPoint {
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
+impl<'b> Mul<&'b Scalar> for &RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -1102,7 +1102,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
 }
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
+impl<'a> Mul<&'a RistrettoBasepointTable> for &Scalar {
     type Output = RistrettoPoint;
 
     fn mul(self, basepoint_table: &'a RistrettoBasepointTable) -> RistrettoPoint {

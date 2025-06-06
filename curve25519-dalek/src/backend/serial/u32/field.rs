@@ -428,10 +428,16 @@ impl FieldElement2625 {
         FieldElement2625::reduce(h)
     }
 
+    /// Renamed to `to_bytes`.
+    #[deprecated(since = "4.1.4", note = "use `to_bytes` instead")]
+    pub fn as_bytes(&self) -> [u8; 32] {
+        self.to_bytes()
+    }
+
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[allow(clippy::identity_op)]
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([

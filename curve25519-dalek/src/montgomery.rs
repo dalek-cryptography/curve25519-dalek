@@ -104,7 +104,7 @@ impl Hash for MontgomeryPoint {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // Do a round trip through a `FieldElement`. `as_bytes` is guaranteed to give a canonical
         // 32-byte encoding
-        let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
+        let canonical_bytes = FieldElement::from_bytes(&self.0).to_bytes();
         canonical_bytes.hash(state);
     }
 }
@@ -245,7 +245,7 @@ impl MontgomeryPoint {
 
         let y = &(&u - &one) * &(&u + &one).invert();
 
-        let mut y_bytes = y.as_bytes();
+        let mut y_bytes = y.to_bytes();
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
@@ -278,7 +278,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 
-    MontgomeryPoint(u.as_bytes())
+    MontgomeryPoint(u.to_bytes())
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -327,7 +327,7 @@ impl ProjectivePoint {
     /// * \\( 0 \\) if \\( W \eq 0 \\);
     pub fn as_affine(&self) -> MontgomeryPoint {
         let u = &self.U * &self.W.invert();
-        MontgomeryPoint(u.as_bytes())
+        MontgomeryPoint(u.to_bytes())
     }
 }
 
@@ -498,14 +498,14 @@ mod test {
         let one = FieldElement::ONE;
 
         // u = 2 corresponds to a point on the twist.
-        let two = MontgomeryPoint((&one + &one).as_bytes());
+        let two = MontgomeryPoint((&one + &one).to_bytes());
 
         assert!(two.to_edwards(0).is_none());
 
         // u = -1 corresponds to a point on the twist, but should be
         // checked explicitly because it's an exceptional point for the
         // birational map.  For instance, libsignal will accept it.
-        let minus_one = MontgomeryPoint((-&one).as_bytes());
+        let minus_one = MontgomeryPoint((-&one).to_bytes());
 
         assert!(minus_one.to_edwards(0).is_none());
     }

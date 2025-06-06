@@ -362,10 +362,16 @@ impl FieldElement51 {
         ])
     }
 
+    /// Renamed to `to_bytes`.
+    #[deprecated(since = "4.1.4", note = "use `to_bytes` instead")]
+    pub fn as_bytes(&self) -> [u8; 32] {
+        self.to_bytes()
+    }
+
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn as_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(&self) -> [u8; 32] {
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
         // Write h = pq + r with 0 <= r < p.

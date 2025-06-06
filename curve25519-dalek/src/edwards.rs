@@ -93,6 +93,8 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
+mod affine;
+
 use cfg_if::cfg_if;
 use core::array::TryFromSliceError;
 use core::borrow::Borrow;
@@ -145,6 +147,8 @@ use crate::traits::BasepointTable;
 
 use crate::traits::ValidityCheck;
 use crate::traits::{Identity, IsIdentity};
+
+use affine::AffinePoint;
 
 #[cfg(feature = "alloc")]
 use crate::traits::MultiscalarMul;
@@ -528,7 +532,7 @@ impl EdwardsPoint {
         }
     }
 
-    /// Dehomogenize to a AffineNielsPoint.
+    /// Dehomogenize to a `AffineNielsPoint`.
     /// Mainly for testing.
     pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
         let recip = self.Z.invert();
@@ -540,6 +544,14 @@ impl EdwardsPoint {
             y_minus_x: &y - &x,
             xy2d,
         }
+    }
+
+    /// Convert to `AffinePoint`.
+    pub(crate) fn to_affine(self) -> AffinePoint {
+        let recip = self.Z.invert();
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        AffinePoint { x, y }
     }
 
     /// Convert this `EdwardsPoint` on the Edwards model to the
@@ -587,10 +599,7 @@ impl EdwardsPoint {
 
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
-        let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        Self::compress_affine(x, y)
+        self.to_affine().compress()
     }
 
     /// Compress several `EdwardsPoint`s into `CompressedEdwardsY` format, using a batch inversion
@@ -606,17 +615,9 @@ impl EdwardsPoint {
             .map(|(input, recip)| {
                 let x = &input.X * recip;
                 let y = &input.Y * recip;
-                Self::compress_affine(x, y)
+                AffinePoint { x, y }.compress()
             })
             .collect()
-    }
-
-    /// Compress affine Edwards coordinates into `CompressedEdwardsY` format.
-    #[inline]
-    fn compress_affine(x: FieldElement, y: FieldElement) -> CompressedEdwardsY {
-        let mut s = y.to_bytes();
-        s[31] ^= x.is_negative().unwrap_u8() << 7;
-        CompressedEdwardsY(s)
     }
 
     #[cfg(feature = "digest")]

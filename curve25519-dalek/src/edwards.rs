@@ -560,7 +560,7 @@ impl EdwardsPoint {
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();
-        MontgomeryPoint(u.as_bytes())
+        MontgomeryPoint(u.to_bytes())
     }
 
     /// Converts a large batch of points to Edwards at once. This has the same
@@ -579,7 +579,7 @@ impl EdwardsPoint {
         let mut ret = Vec::with_capacity(eds.len());
         for (ed, d) in eds.iter().zip(denominators.iter()) {
             let u = &(&ed.Z + &ed.Y) * d;
-            ret.push(MontgomeryPoint(u.as_bytes()));
+            ret.push(MontgomeryPoint(u.to_bytes()));
         }
 
         ret
@@ -614,7 +614,7 @@ impl EdwardsPoint {
     /// Compress affine Edwards coordinates into `CompressedEdwardsY` format.
     #[inline]
     fn compress_affine(x: FieldElement, y: FieldElement) -> CompressedEdwardsY {
-        let mut s = y.as_bytes();
+        let mut s = y.to_bytes();
         s[31] ^= x.is_negative().unwrap_u8() << 7;
         CompressedEdwardsY(s)
     }

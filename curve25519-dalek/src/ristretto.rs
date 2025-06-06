@@ -848,10 +848,10 @@ impl Eq for RistrettoPoint {}
 // Arithmetic
 // ------------------------------------------------------------------------
 
-impl<'b> Add<&'b RistrettoPoint> for &RistrettoPoint {
+impl<'a> Add<&'a RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
-    fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
+    fn add(self, other: &'a RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self.0 + other.0)
     }
 }
@@ -870,10 +870,10 @@ impl AddAssign<&RistrettoPoint> for RistrettoPoint {
 
 define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
-impl<'b> Sub<&'b RistrettoPoint> for &RistrettoPoint {
+impl<'a> Sub<&'a RistrettoPoint> for &RistrettoPoint {
     type Output = RistrettoPoint;
 
-    fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
+    fn sub(self, other: &'a RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self.0 - other.0)
     }
 }
@@ -920,26 +920,26 @@ impl Neg for RistrettoPoint {
     }
 }
 
-impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
-    fn mul_assign(&mut self, scalar: &'b Scalar) {
+impl<'a> MulAssign<&'a Scalar> for RistrettoPoint {
+    fn mul_assign(&mut self, scalar: &'a Scalar) {
         let result = (self as &RistrettoPoint) * scalar;
         *self = result;
     }
 }
 
-impl<'b> Mul<&'b Scalar> for &RistrettoPoint {
+impl<'a> Mul<&'a Scalar> for &RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
-    fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
+    fn mul(self, scalar: &'a Scalar) -> RistrettoPoint {
         RistrettoPoint(self.0 * scalar)
     }
 }
 
-impl<'b> Mul<&'b RistrettoPoint> for &Scalar {
+impl<'a> Mul<&'a RistrettoPoint> for &Scalar {
     type Output = RistrettoPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
-    fn mul(self, point: &'b RistrettoPoint) -> RistrettoPoint {
+    fn mul(self, point: &'a RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self * point.0)
     }
 }

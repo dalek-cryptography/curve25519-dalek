@@ -408,10 +408,10 @@ impl ProjectivePoint {
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
-impl<'b> Add<&'b ProjectiveNielsPoint> for &EdwardsPoint {
+impl<'a> Add<&'a ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.Y_plus_X;
@@ -430,10 +430,10 @@ impl<'b> Add<&'b ProjectiveNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'b> Sub<&'b ProjectiveNielsPoint> for &EdwardsPoint {
+impl<'a> Sub<&'a ProjectiveNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.Y_minus_X;
@@ -452,10 +452,10 @@ impl<'b> Sub<&'b ProjectiveNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'b> Add<&'b AffineNielsPoint> for &EdwardsPoint {
+impl<'a> Add<&'a AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'a AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.y_plus_x;
@@ -473,10 +473,10 @@ impl<'b> Add<&'b AffineNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'b> Sub<&'b AffineNielsPoint> for &EdwardsPoint {
+impl<'a> Sub<&'a AffineNielsPoint> for &EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'a AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.y_minus_x;

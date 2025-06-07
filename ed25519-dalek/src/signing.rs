@@ -20,6 +20,9 @@ use rand_core::CryptoRngCore;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
+#[cfg(feature = "digest")]
+use curve25519_dalek::digest::{crypto_common::{KeySizeUser, KeyInit, Key}, typenum::U32};
+
 use sha2::Sha512;
 use subtle::{Choice, ConstantTimeEq};
 
@@ -546,6 +549,18 @@ impl SigningKey {
         // clamped and reduced (see ExpandedSecretKey::from_bytes). We return the clamped and
         // reduced form.
         ExpandedSecretKey::from(&self.secret_key).scalar
+    }
+}
+
+#[cfg(feature = "digest")]
+impl KeySizeUser for SigningKey {
+    type KeySize = U32;
+}
+
+#[cfg(feature = "digest")]
+impl KeyInit for SigningKey {
+    fn new(key: &Key<Self>) -> Self {
+        Self::from_bytes(key.as_ref())
     }
 }
 

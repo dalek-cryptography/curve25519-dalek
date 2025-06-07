@@ -546,7 +546,7 @@ impl EdwardsPoint {
         }
     }
 
-    /// Convert to `AffinePoint`.
+    /// Dehomogenize to `AffinePoint`.
     pub(crate) fn to_affine(self) -> AffinePoint {
         let recip = self.Z.invert();
         let x = &self.X * &recip;

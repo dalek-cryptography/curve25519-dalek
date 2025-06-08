@@ -104,13 +104,7 @@ use core::ops::{Mul, MulAssign};
 use cfg_if::cfg_if;
 
 #[cfg(feature = "digest")]
-use digest::{
-    generic_array::typenum::U64,
-    Digest,
-};
-
-#[cfg(feature = "elliptic-curve")]
-use digest::generic_array::typenum::U32;
+use digest::{generic_array::typenum::{U64, U32}, Digest};
 
 #[cfg(feature = "group")]
 use {
@@ -255,19 +249,42 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 }
 
 // ------------------------------------------------------------------------
+// Constant-time assignment
+// ------------------------------------------------------------------------
+
+impl ConditionallySelectable for CompressedEdwardsY {
+    fn conditional_select(a: &CompressedEdwardsY, b: &CompressedEdwardsY, choice: Choice) -> CompressedEdwardsY {
+        CompressedEdwardsY(
+            <[u8; 32]>::conditional_select(&a.0, &b.0, choice)
+        )
+    }
+}
+
+// ------------------------------------------------------------------------
 // Affine Coordinate
 // -----------------------------------------------------------------------
 
 #[cfg(feature = "elliptic-curve")]
-impl elliptic_curve::point::AffineCoordinates for AffineEdwardsPoint {
+impl elliptic_curve::point::AffineCoordinates for CompressedEdwardsY {
     type FieldRepr = digest::generic_array::GenericArray<u8, U32>;
 
     fn x(&self) -> Self::FieldRepr {
-        self.x.as_bytes().into()
+        // QUESTION: here we assume that the CompressedEdwardsY valid, and it won't panic in dbg mode.
+        // We should either change the CompressedEdwardsY API to not allow instancing a
+        // `CompressedEdwardsY` that is invalid, or use another type.
+        // How should we handle this?
+        let (is_valid, mut X, _, _) =  decompress::step_1(self);
+        debug_assert!(bool::from(is_valid));
+            
+        // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
+        // so we negate according to the supplied sign bit.
+        let compressed_sign_bit = Choice::from(self.as_bytes()[31] >> 7);
+        X.conditional_negate(compressed_sign_bit);
+        X.as_bytes().into()
     }
 
     fn y_is_odd(&self) -> Choice {
-        Choice::from(self.y.as_bytes()[0] & 1)
+        Choice::from(self.as_bytes()[0] & 0x01)
     }
 }
 
@@ -398,13 +415,6 @@ pub struct EdwardsPoint {
     pub(crate) T: FieldElement,
 }
 
-/// Represents a point on the Edwards form of Curve25519 in affine coordinates.
-#[derive(Copy, Clone, Debug)]
-pub struct AffineEdwardsPoint {
-    pub(crate) x: FieldElement,
-    pub(crate) y: FieldElement,
-}
-
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------
@@ -453,21 +463,6 @@ impl Default for EdwardsPoint {
     }
 }
 
-impl Identity for AffineEdwardsPoint {
-    fn identity() -> Self {
-        Self {
-            x: FieldElement::ZERO,
-            y: FieldElement::ONE,
-        }
-    }
-}
-
-impl Default for AffineEdwardsPoint {
-    fn default() -> Self {
-        Self::identity()
-    }
-}
-
 // ------------------------------------------------------------------------
 // Zeroize implementations for wiping points from memory
 // ------------------------------------------------------------------------
@@ -477,9 +472,6 @@ impl DefaultIsZeroes for CompressedEdwardsY {}
 
 #[cfg(feature = "zeroize")]
 impl DefaultIsZeroes for EdwardsPoint {}
-
-#[cfg(feature = "zeroize")]
-impl DefaultIsZeroes for AffineEdwardsPoint {}
 
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
@@ -494,12 +486,6 @@ impl ValidityCheck for EdwardsPoint {
     }
 }
 
-impl ValidityCheck for AffineEdwardsPoint {
-    fn is_valid(&self) -> bool {
-        self.as_projective().is_valid()
-    }
-}
-
 // ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
@@ -511,15 +497,6 @@ impl ConditionallySelectable for EdwardsPoint {
             Y: FieldElement::conditional_select(&a.Y, &b.Y, choice),
             Z: FieldElement::conditional_select(&a.Z, &b.Z, choice),
             T: FieldElement::conditional_select(&a.T, &b.T, choice),
-        }
-    }
-}
-
-impl ConditionallySelectable for AffineEdwardsPoint {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        AffineEdwardsPoint {
-            x: FieldElement::conditional_select(&a.x, &b.x, choice),
-            y: FieldElement::conditional_select(&a.y, &b.y, choice),
         }
     }
 }
@@ -548,20 +525,6 @@ impl PartialEq for EdwardsPoint {
 }
 
 impl Eq for EdwardsPoint {}
-
-impl ConstantTimeEq for AffineEdwardsPoint {
-    fn ct_eq(&self, other: &Self) -> Choice {
-        self.x.ct_eq(&other.x) & self.y.ct_eq(&other.y)
-    }
-}
-
-impl PartialEq for AffineEdwardsPoint {
-    fn eq(&self, other: &Self) -> bool {
-        self.ct_eq(other).into()
-    }
-}
-
-impl Eq for AffineEdwardsPoint {}
 
 // ------------------------------------------------------------------------
 // Point conversions
@@ -625,14 +588,6 @@ impl EdwardsPoint {
         MontgomeryPoint(u.as_bytes())
     }
 
-    /// Map this point to its affine representation.
-    pub fn as_affine(&self) -> AffineEdwardsPoint {
-        let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        AffineEdwardsPoint { x, y }
-    }
-
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
@@ -675,32 +630,6 @@ impl EdwardsPoint {
         E1_opt
             .expect("Montgomery conversion to Edwards point in Elligator failed")
             .mul_by_cofactor()
-    }
-}
-
-impl AffineEdwardsPoint {
-    /// Convert the representation of this point from affine
-    /// coordinates to projective coordinates.
-    ///
-    /// Free.
-    pub(crate) const fn as_projective(&self) -> ProjectivePoint {
-        ProjectivePoint {
-            X: self.x,
-            Y: self.y,
-            Z: FieldElement::ONE,
-        }
-    }
-
-    /// Convert to the \\( \mathbb P\^3 \\) model.
-    /// 
-    /// This costs \\(1 \mathrm M\\).
-    pub(crate) fn as_extended(&self) -> EdwardsPoint {
-        EdwardsPoint {
-            X: self.x,
-            Y: self.y,
-            Z: FieldElement::ONE,
-            T: &self.x * &self.y,
-        }
     }
 }
 
@@ -899,6 +828,7 @@ impl elliptic_curve::ops::MulByGenerator for EdwardsPoint {
         Self::mul_base(scalar)
     }
 }
+
 
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
@@ -1401,10 +1331,10 @@ impl Debug for EdwardsPoint {
 
 #[cfg(feature = "group")]
 impl group::Curve for EdwardsPoint {
-    type AffineRepr = AffineEdwardsPoint;
+    type AffineRepr = CompressedEdwardsY;
 
     fn to_affine(&self) -> Self::AffineRepr {
-        self.as_affine()
+        self.compress()
     }
 }
 
@@ -1734,79 +1664,82 @@ impl CofactorGroup for EdwardsPoint {
 }
 
 // ------------------------------------------------------------------------
-// Interop between AffineEdwardsPoint and EdwardsPoint for group traits
+// Interop between CompressedEdwardsY and EdwardsPoint for group traits
 // ------------------------------------------------------------------------
 
 // Again, we assume throughout that CompressedEdwardsY is a valid point (this is not what we
 // want, just something that somewhat works until we know what to do).
 
-impl From<AffineEdwardsPoint> for EdwardsPoint {
-    fn from(value: AffineEdwardsPoint) -> Self {
-        value.as_extended()
+impl From<CompressedEdwardsY> for EdwardsPoint {
+    fn from(value: CompressedEdwardsY) -> Self {
+        let (_, X, Y, Z) = decompress::step_1(&value);
+        decompress::step_2(&value, X, Y, Z)
     }
 }
 
-impl From<&AffineEdwardsPoint> for EdwardsPoint {
-    fn from(value: &AffineEdwardsPoint) -> Self {
-        value.as_extended()
+impl From<&CompressedEdwardsY> for EdwardsPoint {
+    fn from(value: &CompressedEdwardsY) -> Self {
+        let (_, X, Y, Z) = decompress::step_1(value);
+        decompress::step_2(value, X, Y, Z)
     }
 }
 
-impl From<EdwardsPoint> for AffineEdwardsPoint {
+
+impl From<EdwardsPoint> for CompressedEdwardsY {
     fn from(value: EdwardsPoint) -> Self {
-        value.as_affine()
+        value.compress()
     }
 }
 
-impl From<&EdwardsPoint> for AffineEdwardsPoint {
+impl From<&EdwardsPoint> for CompressedEdwardsY {
     fn from(value: &EdwardsPoint) -> Self {
-        value.as_affine()
+        value.compress()
     }
 }
 
-impl Add<&AffineEdwardsPoint> for &EdwardsPoint {
+impl Add<&CompressedEdwardsY> for &EdwardsPoint {
     type Output = EdwardsPoint;
 
-    fn add(self, other: &AffineEdwardsPoint) -> EdwardsPoint {
+    fn add(self, other: &CompressedEdwardsY) -> EdwardsPoint {
         self + EdwardsPoint::from(other)
     }
 }
 
 define_add_variants!(
     LHS = EdwardsPoint,
-    RHS = AffineEdwardsPoint,
+    RHS = CompressedEdwardsY,
     Output = EdwardsPoint
 );
 
-impl AddAssign<&AffineEdwardsPoint> for EdwardsPoint {
-    fn add_assign(&mut self, rhs: &AffineEdwardsPoint) {
+impl AddAssign<&CompressedEdwardsY> for EdwardsPoint {
+    fn add_assign(&mut self, rhs: &CompressedEdwardsY) {
         *self += EdwardsPoint::from(rhs);
     }
 }
 
-define_add_assign_variants!(LHS = EdwardsPoint, RHS = AffineEdwardsPoint);
+define_add_assign_variants!(LHS = EdwardsPoint, RHS = CompressedEdwardsY);
 
-impl Sub<&AffineEdwardsPoint> for &EdwardsPoint {
+impl Sub<&CompressedEdwardsY> for &EdwardsPoint {
     type Output = EdwardsPoint;
 
-    fn sub(self, other: &AffineEdwardsPoint) -> EdwardsPoint {
+    fn sub(self, other: &CompressedEdwardsY) -> EdwardsPoint {
         self - EdwardsPoint::from(other)
     }
 }
 
 define_sub_variants!(
     LHS = EdwardsPoint,
-    RHS = AffineEdwardsPoint,
+    RHS = CompressedEdwardsY,
     Output = EdwardsPoint
 );
 
-impl SubAssign<&AffineEdwardsPoint> for EdwardsPoint {
-    fn sub_assign(&mut self, rhs: &AffineEdwardsPoint) {
+impl SubAssign<&CompressedEdwardsY> for EdwardsPoint {
+    fn sub_assign(&mut self, rhs: &CompressedEdwardsY) {
         *self -= EdwardsPoint::from(rhs);
     }
 }
 
-define_sub_assign_variants!(LHS = EdwardsPoint, RHS = AffineEdwardsPoint);
+define_sub_assign_variants!(LHS = EdwardsPoint, RHS = CompressedEdwardsY);
 
 // ------------------------------------------------------------------------
 // Tests
@@ -1892,17 +1825,6 @@ mod test {
         // Check that decompression actually gives the correct X coordinate
         assert_eq!(base_X, bp.X);
         assert_eq!(bp.compress(), constants::ED25519_BASEPOINT_COMPRESSED);
-    }
-
-    /// Test round-trip `EdwardsPoint` <-> `AffineEdwardsPoint` for the basepoint
-    #[test]
-    fn basepoint_affine_roundtrip() {
-        let bp = constants::ED25519_BASEPOINT_POINT;
-        let affine = bp.as_affine();
-        assert!(affine.is_valid());
-        let bp_rt = EdwardsPoint::from(affine);
-        assert!(bp_rt.is_valid());
-        assert_eq!(bp, bp_rt);
     }
 
     /// Test sign handling in decompression

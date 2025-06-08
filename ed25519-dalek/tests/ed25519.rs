@@ -336,6 +336,50 @@ mod integrations {
 
     #[cfg(feature = "digest")]
     #[test]
+    fn sign_verify_digest_equivalence() {
+        // TestSignVerify
+
+        let mut csprng = OsRng {};
+
+        let good: &[u8] = "test message".as_bytes();
+        let bad: &[u8] = "wrong message".as_bytes();
+
+        let keypair: SigningKey = SigningKey::generate(&mut csprng);
+        let good_sig: Signature = keypair.sign(good);
+        let bad_sig: Signature = keypair.sign(bad);
+
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
+        verifier.update(good);
+        assert!(
+            verifier.finalize_and_verify().is_ok(),
+            "Verification of a valid signature failed!"
+        );
+
+        let mut verifier = keypair.verify_stream(&bad_sig).unwrap();
+        verifier.update(good);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
+        verifier.update("test ");
+        verifier.update("message");
+        assert!(
+            verifier.finalize_and_verify().is_ok(),
+            "Verification of a valid signature failed!"
+        );
+
+        let mut verifier = keypair.verify_stream(&good_sig).unwrap();
+        verifier.update(bad);
+        assert!(
+            verifier.finalize_and_verify().is_err(),
+            "Verification of a signature on a different message passed!"
+        );
+    }
+
+    #[cfg(feature = "digest")]
+    #[test]
     fn ed25519ph_sign_verify() {
         let good: &[u8] = b"test message";
         let bad: &[u8] = b"wrong message";

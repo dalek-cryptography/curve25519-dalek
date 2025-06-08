@@ -315,35 +315,35 @@ impl Index<usize> for Scalar {
     }
 }
 
-impl<'b> MulAssign<&'b Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> MulAssign<&'a Scalar> for Scalar {
+    fn mul_assign(&mut self, _rhs: &'a Scalar) {
         *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'a> Mul<&'a Scalar> for &Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'b Scalar) -> Scalar {
+    fn mul(self, _rhs: &'a Scalar) -> Scalar {
         UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> AddAssign<&'b Scalar> for Scalar {
-    fn add_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> AddAssign<&'a Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn add(self, _rhs: &'b Scalar) -> Scalar {
+    fn add(self, _rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
@@ -352,18 +352,18 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
 
 define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> SubAssign<&'b Scalar> for Scalar {
-    fn sub_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> SubAssign<&'a Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self - _rhs;
     }
 }
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'a> Sub<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn sub(self, rhs: &'b Scalar) -> Scalar {
+    fn sub(self, rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
@@ -372,7 +372,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -1145,7 +1145,7 @@ impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
         Scalar {
-            bytes: self.as_bytes(),
+            bytes: self.to_bytes(),
         }
     }
 
@@ -1867,7 +1867,7 @@ pub(crate) mod test {
     #[test]
     fn to_bytes_from_bytes_roundtrips() {
         let unpacked = X.unpack();
-        let bytes = unpacked.as_bytes();
+        let bytes = unpacked.to_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
@@ -2179,7 +2179,7 @@ pub(crate) mod test {
 
     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
-    // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
+    // was reduced and b was clamped and unreduced. This checks that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
         let mut rng = rand::thread_rng();

@@ -18,10 +18,6 @@
     ),
     feature(stdarch_x86_avx512)
 )]
-#![cfg_attr(
-    all(curve25519_dalek_backend = "simd", nightly),
-    feature(avx512_target_feature)
-)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg, doc_cfg_hide))]
 #![cfg_attr(docsrs, doc(cfg_hide(docsrs)))]
 //------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 use elliptic_curve::{bigint::U256, consts::U32, Curve, CurveArithmetic, FieldBytesEncoding};
 
-use crate::{constants::BASEPOINT_ORDER_PRIVATE, edwards::CompressedEdwardsY, EdwardsPoint, Scalar};
+use crate::{constants::BASEPOINT_ORDER_PRIVATE, edwards::AffineEdwardsPoint, EdwardsPoint, Scalar};
 
-/// QUESTION: I don't know where to put this singleton. Maybe in the crate's root?
+/// QUESTION: I don't know where to put this singleton. Maybe in the crate root?
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Ed25519;
 
@@ -15,7 +15,7 @@ impl Curve for Ed25519 {
 }
 
 impl CurveArithmetic for Ed25519 {
-    type AffinePoint = CompressedEdwardsY;
+    type AffinePoint = AffineEdwardsPoint;
 
     type ProjectivePoint = EdwardsPoint;
 

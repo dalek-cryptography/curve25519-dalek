@@ -107,12 +107,12 @@ impl Error for InternalError {}
 pub type SignatureError = ed25519::signature::Error;
 
 impl From<InternalError> for SignatureError {
-    #[cfg(not(feature = "std"))]
+    #[cfg(not(feature = "alloc"))]
     fn from(_err: InternalError) -> SignatureError {
         SignatureError::new()
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     fn from(err: InternalError) -> SignatureError {
         SignatureError::from_source(err)
     }

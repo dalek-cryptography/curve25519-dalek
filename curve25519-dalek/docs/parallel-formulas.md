@@ -9,7 +9,7 @@ using AVX2, and the other using AVX512-IFMA.
 # Overview
 
 The 2008 paper [_Twisted Edwards Curves Revisited_][hwcd08] by Hisil,
-Wong, Carter, and Dawson (HWCD) introduced the “extended coordinates”
+Wong, Carter, and Dawson (HWCD) introduced the "extended coordinates"
 and mixed-model representations which are used by most Edwards curve
 implementations.
 
@@ -242,7 +242,7 @@ possible to pre-multiply by \\(19\\).
 
 Second, the parallel doubling formulas incur both a theoretical and
 practical slowdown.  The parallel formulas described above work on the
-\\( \mathbb P\^3 \\) “extended” coordinates.  The \\( \mathbb P\^2 \\)
+\\( \mathbb P\^3 \\) "extended" coordinates.  The \\( \mathbb P\^2 \\)
 model introduced earlier by [Bernstein, Birkner, Joye, Lange, and
 Peters][bbjlp08] allows slightly faster doublings, so HWCD suggest
 mixing coordinate systems while performing scalar multiplication

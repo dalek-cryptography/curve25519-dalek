@@ -35,7 +35,7 @@
 //! small cofactor \\(h\\) (for instance, Edwards curves, which have
 //! cofactor at least \\(4\\)).
 //!
-//! This abstraction mismatch is commonly “handled” by pushing the
+//! This abstraction mismatch is commonly "handled" by pushing the
 //! complexity upwards, adding ad-hoc protocol modifications.  But
 //! these modifications require careful analysis and are a recurring
 //! source of [vulnerabilities][cryptonote] and [design
@@ -46,8 +46,8 @@
 //! the correct abstraction for cryptographic systems, while retaining
 //! the speed and safety benefits of an Edwards curve.
 //!
-//! Decaf is named “after the procedure which divides the effect of
-//! coffee by \\(4\\)”.  However, Curve25519 has a cofactor of
+//! Decaf is named "after the procedure which divides the effect of
+//! coffee by \\(4\\)".  However, Curve25519 has a cofactor of
 //! \\(8\\).  To eliminate its cofactor, Ristretto restricts further;
 //! this [additional restriction][ristretto_coffee] gives the
 //! _Ristretto_ encoding.

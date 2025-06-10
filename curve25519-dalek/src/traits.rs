@@ -427,3 +427,9 @@ pub(crate) trait ValidityCheck {
     /// Checks whether the point is on the curve. Not CT.
     fn is_valid(&self) -> bool;
 }
+
+// Reduce trait 
+
+pub trait Reduce<T>{
+    fn reduce(value:T) -> Self
+}

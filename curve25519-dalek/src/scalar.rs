@@ -1362,7 +1362,17 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
         );
     }
 }
+// Implementing the Reduce trait for curve25519_dalek::Scalar
+impl Reduce<U256> for Scalar {
+    fn reduce(value: U256) -> Self {
+        Self::from_bytes_mod_order(value.to_bytes())
+    }
+}
 
+impl Reduce<U512> for Scalar {
+    fn reduce(value: U512) -> Self {
+        Self::from_bytes_mod_order_wide(value.to_bytes())
+  
 /// _Clamps_ the given little-endian representation of a 32-byte integer. Clamping the value puts
 /// it in the range:
 ///

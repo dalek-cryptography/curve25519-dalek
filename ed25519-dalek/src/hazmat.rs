@@ -65,10 +65,17 @@ impl PartialEq for ExpandedSecretKey {
 impl Eq for ExpandedSecretKey {}
 
 #[cfg(feature = "zeroize")]
-impl Drop for ExpandedSecretKey {
-    fn drop(&mut self) {
+impl Zeroize for ExpandedSecretKey {
+    fn zeroize(&mut self) {
         self.scalar.zeroize();
         self.hash_prefix.zeroize()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Drop for ExpandedSecretKey {
+    fn drop(&mut self) {
+        self.zeroize()
     }
 }
 

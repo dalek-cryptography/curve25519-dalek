@@ -198,12 +198,6 @@ impl SigningKey {
     /// # Input
     ///
     /// A CSPRNG with a `fill_bytes()` method, e.g. `rand_os::OsRng`.
-    ///
-    /// The caller must also supply a hash function which implements the
-    /// `Digest` and `Default` traits, and which returns 512 bits of output.
-    /// The standard hash function used for most ed25519 libraries is SHA-512,
-    /// which is available with `use sha2::Sha512` as in the example above.
-    /// Other suitable hash functions include Keccak-512 and Blake2b-512.
     #[cfg(any(test, feature = "rand_core"))]
     pub fn generate<R: CryptoRngCore + ?Sized>(csprng: &mut R) -> SigningKey {
         let mut secret = SecretKey::default();

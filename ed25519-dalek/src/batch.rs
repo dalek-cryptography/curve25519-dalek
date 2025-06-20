@@ -9,6 +9,9 @@
 
 //! Batch signature verification.
 
+mod strobe;
+mod transcript;
+
 use alloc::vec::Vec;
 
 use core::iter::once;
@@ -21,7 +24,7 @@ use curve25519_dalek::traits::VartimeMultiscalarMul;
 
 pub use curve25519_dalek::digest::Digest;
 
-use merlin::Transcript;
+use transcript::Transcript;
 
 use rand_core::RngCore;
 
@@ -31,6 +34,14 @@ use crate::errors::InternalError;
 use crate::errors::SignatureError;
 use crate::signature::InternalSignature;
 use crate::VerifyingKey;
+
+/// Domain separation label to initialize the STROBE context.
+///
+/// This is not to be confused with the crate's semver string:
+/// the latter applies to the API, while this label defines the protocol.
+/// E.g. it is possible that crate 2.0 will have an incompatible API,
+/// but implement the same 1.0 protocol.
+const MERLIN_PROTOCOL_LABEL: &[u8] = b"Merlin v1.0";
 
 /// An implementation of `rand_core::RngCore` which does nothing. This is necessary because merlin
 /// demands an `Rng` as input to `TranscriptRngBuilder::finalize()`. Using this with `finalize()`

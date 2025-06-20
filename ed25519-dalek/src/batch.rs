@@ -9,6 +9,9 @@
 
 //! Batch signature verification.
 
+mod strobe;
+mod transcript;
+
 use alloc::vec::Vec;
 
 use core::iter::once;
@@ -21,16 +24,24 @@ use curve25519_dalek::traits::VartimeMultiscalarMul;
 
 pub use curve25519_dalek::digest::Digest;
 
-use merlin::Transcript;
+use transcript::Transcript;
 
 use rand_core::RngCore;
 
 use sha2::Sha512;
 
+use crate::VerifyingKey;
 use crate::errors::InternalError;
 use crate::errors::SignatureError;
 use crate::signature::InternalSignature;
-use crate::VerifyingKey;
+
+/// Domain separation label to initialize the STROBE context.
+///
+/// This is not to be confused with the crate's semver string:
+/// the latter applies to the API, while this label defines the protocol.
+/// E.g. it is possible that crate 2.0 will have an incompatible API,
+/// but implement the same 1.0 protocol.
+const MERLIN_PROTOCOL_LABEL: &[u8] = b"Merlin v1.0";
 
 /// An implementation of `rand_core::RngCore` which does nothing. This is necessary because merlin
 /// demands an `Rng` as input to `TranscriptRngBuilder::finalize()`. Using this with `finalize()`
@@ -55,11 +66,6 @@ impl rand_core::RngCore for ZeroRng {
     /// `ENC_{state}(00000000000000000000000000000000)` operation, which is
     /// identical to the STROBE `MAC` operation.
     fn fill_bytes(&mut self, _dest: &mut [u8]) {}
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.fill_bytes(dest);
-        Ok(())
-    }
 }
 
 // `TranscriptRngBuilder::finalize()` requires a `CryptoRng`
@@ -119,9 +125,10 @@ fn gen_u128<R: RngCore>(rng: &mut R) -> u128 {
 ///     verify_batch, SigningKey, VerifyingKey, Signer, Signature,
 /// };
 /// use rand::rngs::OsRng;
+/// use rand_core::TryRngCore;
 ///
 /// # fn main() {
-/// let mut csprng = OsRng;
+/// let mut csprng = OsRng.unwrap_err();
 /// let signing_keys: Vec<_> = (0..64).map(|_| SigningKey::generate(&mut csprng)).collect();
 /// let msg: &[u8] = b"They're good dogs Brant";
 /// let messages: Vec<_> = (0..64).map(|_| msg).collect();

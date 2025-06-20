@@ -81,7 +81,7 @@ fn get_algo_identifier() {
     assert_eq!(identifier.oid, ed25519::pkcs8::ALGORITHM_OID);
 
     let signing_key = SigningKey::from_bytes(&SK_BYTES);
-    let identifer = signing_key.signature_algorithm_identifier().unwrap();
-    assert!(identifer.parameters.is_none()); // According to rfc8410 this must be None
-    assert_eq!(identifer.oid, ed25519::pkcs8::ALGORITHM_OID);
+    let identifier = signing_key.signature_algorithm_identifier().unwrap();
+    assert!(identifier.parameters.is_none()); // According to rfc8410 this must be None
+    assert_eq!(identifier.oid, ed25519::pkcs8::ALGORITHM_OID);
 }

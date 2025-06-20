@@ -99,7 +99,7 @@ Curve arithmetic is implemented and used by one of the following backends:
 
 At runtime, `curve25519-dalek` selects an arithmetic backend from the set of backends it was compiled to support. For Intel x86-64 targets, unless otherwise specified, it will build itself with `simd` support, and default to `serial` at runtime if the appropriate CPU features aren't detected. See [SIMD backend] for more details.
 
-In the future, `simd` backend may be extended to cover more instruction sets. This change will be non-breaking as this is considered as implementation detail.
+In the future, `simd` backend may be extended to cover more instruction sets. This change will be non-breaking as this is considered an implementation detail.
 
 ## Manual Backend Override
 

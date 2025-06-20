@@ -15,7 +15,7 @@
 
 use core::borrow::Borrow;
 
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 use subtle::ConstantTimeEq;
 
 // ------------------------------------------------------------------------
@@ -90,7 +90,7 @@ pub trait MultiscalarMul {
     /// # Examples
     ///
     /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// convertible to iterators (`I: IntoIter`), and the iterator's items
     /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
     /// iterators returning either `Scalar`s or `&Scalar`s.
     ///
@@ -211,7 +211,7 @@ pub trait VartimeMultiscalarMul {
     /// # Examples
     ///
     /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// convertible to iterators (`I: IntoIter`), and the iterator's items
     /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
     /// iterators returning either `Scalar`s or `&Scalar`s.
     ///
@@ -318,7 +318,7 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// length than \\(B_j\\).
     ///
     /// The trait bound aims for maximum flexibility: the input must
-    /// be convertable to iterators (`I: IntoIter`), and the
+    /// be convertible to iterators (`I: IntoIter`), and the
     /// iterator's items must be `Borrow<Scalar>`, to allow iterators
     /// returning either `Scalar`s or `&Scalar`s.
     fn vartime_multiscalar_mul<I>(&self, static_scalars: I) -> Self::Point
@@ -352,7 +352,7 @@ pub trait VartimePrecomputedMultiscalarMul: Sized {
     /// the same length.
     ///
     /// The trait bound aims for maximum flexibility: the inputs must be
-    /// convertable to iterators (`I: IntoIter`), and the iterator's items
+    /// convertible to iterators (`I: IntoIter`), and the iterator's items
     /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
     /// iterators returning either `Scalar`s or `&Scalar`s.
     fn vartime_mixed_multiscalar_mul<I, J, K>(

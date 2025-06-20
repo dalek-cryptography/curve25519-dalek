@@ -203,10 +203,7 @@ fn process_mod(
                                         };
 
                                         let feature = feature.value();
-                                        if !spec_features
-                                            .iter()
-                                            .any(|enabled_feature| feature == *enabled_feature)
-                                        {
+                                        if !spec_features.contains(&feature) {
                                             *item = syn::Item::Verbatim(Default::default());
                                             continue 'next_item;
                                         }

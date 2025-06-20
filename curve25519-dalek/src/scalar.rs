@@ -127,11 +127,11 @@ use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
 
-#[cfg(any(test, feature = "group"))]
-use rand_core::RngCore;
+#[cfg(feature = "group")]
+use rand_core::TryRngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
+use rand_core::CryptoRng;
 
 #[cfg(feature = "digest")]
 use digest::array::typenum::U64;
@@ -312,35 +312,35 @@ impl Index<usize> for Scalar {
     }
 }
 
-impl<'b> MulAssign<&'b Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> MulAssign<&'a Scalar> for Scalar {
+    fn mul_assign(&mut self, _rhs: &'a Scalar) {
         *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
     }
 }
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'a> Mul<&'a Scalar> for &Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'b Scalar) -> Scalar {
+    fn mul(self, _rhs: &'a Scalar) -> Scalar {
         UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
     }
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> AddAssign<&'b Scalar> for Scalar {
-    fn add_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> AddAssign<&'a Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn add(self, _rhs: &'b Scalar) -> Scalar {
+    fn add(self, _rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
@@ -349,18 +349,18 @@ impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
 
 define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'b> SubAssign<&'b Scalar> for Scalar {
-    fn sub_assign(&mut self, _rhs: &'b Scalar) {
+impl<'a> SubAssign<&'a Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'a Scalar) {
         *self = *self - _rhs;
     }
 }
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'a> Sub<&'a Scalar> for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn sub(self, rhs: &'b Scalar) -> Scalar {
+    fn sub(self, rhs: &'a Scalar) -> Scalar {
         // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
@@ -369,7 +369,7 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -576,8 +576,7 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRngCore`
-    ///   (i.e. `CryptoRng` + `RngCore`) interface.
+    /// * `rng`: any RNG which implements `CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -589,12 +588,12 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::OsRng;
+    /// use rand_core::{OsRng, TryRngCore};
     ///
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
@@ -1140,7 +1139,7 @@ impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
         Scalar {
-            bytes: self.as_bytes(),
+            bytes: self.to_bytes(),
         }
     }
 
@@ -1213,11 +1212,11 @@ impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
     const ONE: Self = Self::ONE;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
-        Self::from_bytes_mod_order_wide(&scalar_bytes)
+        rng.try_fill_bytes(&mut scalar_bytes)?;
+        Ok(Self::from_bytes_mod_order_wide(&scalar_bytes))
     }
 
     fn square(&self) -> Self {
@@ -1393,6 +1392,7 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
+    use rand_core::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1552,7 +1552,7 @@ pub(crate) mod test {
 
     #[test]
     fn non_adjacent_form_random() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..1_000 {
             let x = Scalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {
@@ -1731,7 +1731,7 @@ pub(crate) mod test {
     #[test]
     fn to_bytes_from_bytes_roundtrips() {
         let unpacked = X.unpack();
-        let bytes = unpacked.as_bytes();
+        let bytes = unpacked.to_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
         assert_eq!(should_be_unpacked.0, unpacked.0);
@@ -2043,10 +2043,10 @@ pub(crate) mod test {
 
     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
-    // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
+    // was reduced and b was clamped and unreduced. This checks that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             // Also define c that's clamped. We'll make sure that clamping doesn't affect

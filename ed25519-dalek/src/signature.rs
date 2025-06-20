@@ -73,7 +73,7 @@ fn check_scalar(bytes: [u8; 32]) -> Result<Scalar, SignatureError> {
     // potential non-reduced scalars is performed.
     //
     // This is compatible with ed25519-donna and libsodium when
-    // -DED25519_COMPAT is NOT specified.
+    // `-D ED25519_COMPAT` is NOT specified.
     if bytes[31] & 224 != 0 {
         return Err(InternalError::ScalarFormat.into());
     }

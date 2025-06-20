@@ -57,7 +57,7 @@ use core::{
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 
 use crate::traits::Identity;
 
@@ -104,7 +104,7 @@ impl Hash for MontgomeryPoint {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // Do a round trip through a `FieldElement`. `as_bytes` is guaranteed to give a canonical
         // 32-byte encoding
-        let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
+        let canonical_bytes = FieldElement::from_bytes(&self.0).to_bytes();
         canonical_bytes.hash(state);
     }
 }
@@ -245,7 +245,7 @@ impl MontgomeryPoint {
 
         let y = &(&u - &one) * &(&u + &one).invert();
 
-        let mut y_bytes = y.as_bytes();
+        let mut y_bytes = y.to_bytes();
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
@@ -278,7 +278,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 
-    MontgomeryPoint(u.as_bytes())
+    MontgomeryPoint(u.to_bytes())
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -327,7 +327,7 @@ impl ProjectivePoint {
     /// * \\( 0 \\) if \\( W \eq 0 \\);
     pub fn as_affine(&self) -> MontgomeryPoint {
         let u = &self.U * &self.W.invert();
-        MontgomeryPoint(u.as_bytes())
+        MontgomeryPoint(u.to_bytes())
     }
 }
 
@@ -437,7 +437,7 @@ mod test {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
-    use rand_core::{CryptoRng, RngCore};
+    use rand_core::{CryptoRng, RngCore, TryRngCore};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -498,14 +498,14 @@ mod test {
         let one = FieldElement::ONE;
 
         // u = 2 corresponds to a point on the twist.
-        let two = MontgomeryPoint((&one + &one).as_bytes());
+        let two = MontgomeryPoint((&one + &one).to_bytes());
 
         assert!(two.to_edwards(0).is_none());
 
         // u = -1 corresponds to a point on the twist, but should be
         // checked explicitly because it's an exceptional point for the
         // birational map.  For instance, libsignal will accept it.
-        let minus_one = MontgomeryPoint((-&one).as_bytes());
+        let minus_one = MontgomeryPoint((-&one).to_bytes());
 
         assert!(minus_one.to_edwards(0).is_none());
     }
@@ -521,8 +521,8 @@ mod test {
     }
 
     /// Returns a random point on the prime-order subgroup
-    fn rand_prime_order_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
-        let s: Scalar = Scalar::random(&mut rng);
+    fn rand_prime_order_point<R: CryptoRng + ?Sized>(rng: &mut R) -> EdwardsPoint {
+        let s: Scalar = Scalar::random(rng);
         EdwardsPoint::mul_base(&s)
     }
 
@@ -540,7 +540,7 @@ mod test {
 
     #[test]
     fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
             let p_edwards = rand_prime_order_point(&mut csprng);
@@ -558,7 +558,7 @@ mod test {
     // multiplying by the Scalar representation of the same bits
     #[test]
     fn montgomery_mul_bits_be() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random prime-order point P
@@ -583,7 +583,7 @@ mod test {
     // integers b₁, b₂ and random (curve or twist) point P.
     #[test]
     fn montgomery_mul_bits_be_twist() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand_core::OsRng.unwrap_err();
 
         for _ in 0..100 {
             // Make a random point P on the curve or its twist
@@ -629,7 +629,7 @@ mod test {
         for _ in 0..100 {
             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
             let mut a_bytes = [0u8; 32];
-            csprng.fill_bytes(&mut a_bytes);
+            csprng.try_fill_bytes(&mut a_bytes).unwrap();
 
             assert_eq!(
                 MontgomeryPoint::mul_base_clamped(a_bytes),

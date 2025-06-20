@@ -93,7 +93,7 @@
 // affine and projective cakes and eat both of them too.
 #![allow(non_snake_case)]
 
-mod affine;
+pub(crate) mod affine;
 
 use cfg_if::cfg_if;
 use core::array::TryFromSliceError;
@@ -105,7 +105,7 @@ use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
-use digest::{generic_array::typenum::U64, Digest};
+use digest::{generic_array::typenum::{U64, U32}, Digest};
 
 #[cfg(feature = "group")]
 use {
@@ -122,7 +122,7 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::DefaultIsZeroes;
 
 use crate::constants;
 
@@ -433,24 +433,10 @@ impl Default for EdwardsPoint {
 // ------------------------------------------------------------------------
 
 #[cfg(feature = "zeroize")]
-impl Zeroize for CompressedEdwardsY {
-    /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-        self.0[0] = 1;
-    }
-}
+impl DefaultIsZeroes for CompressedEdwardsY {}
 
 #[cfg(feature = "zeroize")]
-impl Zeroize for EdwardsPoint {
-    /// Reset this `EdwardsPoint` to the identity element.
-    fn zeroize(&mut self) {
-        self.X.zeroize();
-        self.Y = FieldElement::ONE;
-        self.Z = FieldElement::ONE;
-        self.T.zeroize();
-    }
-}
+impl DefaultIsZeroes for EdwardsPoint {}
 
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
@@ -858,6 +844,24 @@ impl EdwardsPoint {
         Self::mul_base(&s)
     }
 }
+
+// ------------------------------------------------------------------------
+// Elliptic curve traits
+// ------------------------------------------------------------------------
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::LinearCombination for EdwardsPoint {
+    fn lincomb(x: &Self, k: &Self::Scalar, y: &Self, l: &Self::Scalar) -> Self {
+        EdwardsPoint::multiscalar_mul([k, l], [x, y])
+    }
+}
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::MulByGenerator for EdwardsPoint {
+    fn mul_by_generator(scalar: &Self::Scalar) -> Self {
+        Self::mul_base(scalar)
+    }
+}
+
 
 // ------------------------------------------------------------------------
 // Multiscalar Multiplication impls
@@ -1358,6 +1362,15 @@ impl Debug for EdwardsPoint {
 // group traits
 // ------------------------------------------------------------------------
 
+#[cfg(feature = "group")]
+impl group::Curve for EdwardsPoint {
+    type AffineRepr = AffinePoint;
+
+    fn to_affine(&self) -> Self::AffineRepr {
+        EdwardsPoint::to_affine(*self)
+    }
+}
+
 // Use the full trait path to avoid Group::identity overlapping Identity::identity in the
 // rest of the module (e.g. tests).
 #[cfg(feature = "group")]
@@ -1388,10 +1401,10 @@ impl group::Group for EdwardsPoint {
 
 #[cfg(feature = "group")]
 impl GroupEncoding for EdwardsPoint {
-    type Repr = [u8; 32];
+    type Repr = digest::generic_array::GenericArray<u8, U32>;
 
     fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
-        let repr = CompressedEdwardsY(*bytes);
+        let repr = CompressedEdwardsY(<[u8; 32]>::from(*bytes));
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(&repr);
         CtOption::new(decompress::step_2(&repr, X, Y, Z), is_valid_y_coord)
     }
@@ -1402,7 +1415,7 @@ impl GroupEncoding for EdwardsPoint {
     }
 
     fn to_bytes(&self) -> Self::Repr {
-        self.compress().to_bytes()
+        self.compress().to_bytes().into()
     }
 }
 
@@ -1599,11 +1612,7 @@ impl ConditionallySelectable for SubgroupPoint {
 }
 
 #[cfg(all(feature = "group", feature = "zeroize"))]
-impl Zeroize for SubgroupPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+impl DefaultIsZeroes for SubgroupPoint {}
 
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {
@@ -1655,7 +1664,7 @@ impl GroupEncoding for SubgroupPoint {
     }
 
     fn to_bytes(&self) -> Self::Repr {
-        self.0.compress().to_bytes()
+        self.0.compress().to_bytes().into()
     }
 }
 
@@ -1679,6 +1688,82 @@ impl CofactorGroup for EdwardsPoint {
         (self * constants::BASEPOINT_ORDER_PRIVATE).ct_eq(&Self::identity())
     }
 }
+
+// ------------------------------------------------------------------------
+// Interop between CompressedEdwardsY and EdwardsPoint for group traits
+// ------------------------------------------------------------------------
+
+// Again, we assume throughout that CompressedEdwardsY is a valid point (this is not what we
+// want, just something that somewhat works until we know what to do).
+
+impl From<AffinePoint> for EdwardsPoint {
+    fn from(value: AffinePoint) -> Self {
+        value.to_edwards()
+    }
+}
+
+impl From<&AffinePoint> for EdwardsPoint {
+    fn from(value: &AffinePoint) -> Self {
+        value.to_edwards()
+    }
+}
+
+
+impl From<EdwardsPoint> for AffinePoint {
+    fn from(value: EdwardsPoint) -> Self {
+        value.to_affine()
+    }
+}
+
+impl From<&EdwardsPoint> for AffinePoint {
+    fn from(value: &EdwardsPoint) -> Self {
+        value.to_affine()
+    }
+}
+
+impl Add<&AffinePoint> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+
+    fn add(self, other: &AffinePoint) -> EdwardsPoint {
+        self + EdwardsPoint::from(other)
+    }
+}
+
+define_add_variants!(
+    LHS = EdwardsPoint,
+    RHS = AffinePoint,
+    Output = EdwardsPoint
+);
+
+impl AddAssign<&AffinePoint> for EdwardsPoint {
+    fn add_assign(&mut self, rhs: &AffinePoint) {
+        *self += EdwardsPoint::from(rhs);
+    }
+}
+
+define_add_assign_variants!(LHS = EdwardsPoint, RHS = AffinePoint);
+
+impl Sub<&AffinePoint> for &EdwardsPoint {
+    type Output = EdwardsPoint;
+
+    fn sub(self, other: &AffinePoint) -> EdwardsPoint {
+        self - EdwardsPoint::from(other)
+    }
+}
+
+define_sub_variants!(
+    LHS = EdwardsPoint,
+    RHS = AffinePoint,
+    Output = EdwardsPoint
+);
+
+impl SubAssign<&AffinePoint> for EdwardsPoint {
+    fn sub_assign(&mut self, rhs: &AffinePoint) {
+        *self -= EdwardsPoint::from(rhs);
+    }
+}
+
+define_sub_assign_variants!(LHS = EdwardsPoint, RHS = AffinePoint);
 
 // ------------------------------------------------------------------------
 // Tests

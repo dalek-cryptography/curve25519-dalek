@@ -134,7 +134,10 @@ use rand_core::RngCore;
 use rand_core::CryptoRngCore;
 
 #[cfg(feature = "digest")]
-use digest::generic_array::typenum::U64;
+use digest::generic_array::{
+    typenum::{U32, U64},
+    GenericArray,
+};
 #[cfg(feature = "digest")]
 use digest::Digest;
 
@@ -144,7 +147,7 @@ use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::DefaultIsZeroes;
 
 use crate::backend;
 use crate::constants;
@@ -553,9 +556,11 @@ impl From<u128> for Scalar {
 }
 
 #[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
+impl DefaultIsZeroes for Scalar {}
+
+impl AsRef<Scalar> for Scalar {
+    fn as_ref(&self) -> &Scalar {
+        self
     }
 }
 
@@ -831,7 +836,7 @@ impl Scalar {
         }
 
         #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        zeroize::Zeroize::zeroize(&mut scratch);
 
         ret
     }
@@ -1208,6 +1213,137 @@ impl UnpackedScalar {
     }
 }
 
+// ----------------------------------------------------------------------
+// Elliptic Curve Arithmetic traits
+// ----------------------------------------------------------------------
+
+// QUESTION: This trait is needed for `CurveArithmetic`, hence why it is bounded behind the
+// "elliptic-curve" feature. If this is a fine trait to expose to the user, we can consider
+// removing the feature flag and implement all of its variants (with u8, &u8, u16, etc.) and the
+// non-assign `Shr` trait. We probably don't want to impl `Shl` as this can overflow the scalar
+// and break the invariants. If we don't want to expose this trait, we can also make it
+// `#[doc(hidden)]`. For reference, crates in the `RustCrypto/elliptic-curves` repository
+// implement:
+//  - `Shr<usize> for &Scalar`
+//  - `Shr<usize> for Scalar`
+//  - `ShrAssign<usize> for Scalar`
+//
+// QUESTION: I did not use constant-time because other elliptic-curves dont
+// (e.g., https://docs.rs/p256/0.13.2/src/p256/arithmetic/scalar.rs.html#426-432).
+// Is constant-time necessary?
+#[cfg(feature = "elliptic-curve")]
+impl core::ops::ShrAssign<usize> for Scalar {
+    fn shr_assign(&mut self, rhs: usize) {
+        use elliptic_curve::bigint::Encoding;
+        let repr = elliptic_curve::bigint::U256::from_le_bytes(self.bytes);
+        self.bytes = (repr.shr_vartime(rhs)).to_le_bytes();
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::Reduce<elliptic_curve::bigint::U256> for Scalar {
+    type Bytes = GenericArray<u8, U32>;
+
+    fn reduce(n: elliptic_curve::bigint::U256) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        Scalar::from_bytes_mod_order(n.to_le_bytes())
+    }
+
+    fn reduce_bytes(bytes: &Self::Bytes) -> Self {
+        Scalar::from_bytes_mod_order(<[u8; 32]>::from(*bytes))
+    }
+}
+
+// QUESTION: Even though the trait asks for "&self is _greater that or equal_ to `n / 2`",
+// every implementation I have looked at (e.g.,
+// https://docs.rs/p256/latest/src/p256/arithmetic/scalar.rs.html#413-415) uses `ct_gt`.
+// I decided to do the same, it this correct?
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::scalar::IsHigh for Scalar {
+    fn is_high(&self) -> Choice {
+        use elliptic_curve::bigint::{Encoding, U256};
+        use subtle::ConstantTimeGreater;
+        U256::from_le_bytes(self.bytes).ct_gt(&U256::from_le_bytes(
+            (constants::BASEPOINT_ORDER_PRIVATE * Self::TWO_INV).bytes,
+        ))
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::ops::Invert for Scalar {
+    type Output = CtOption<Self>;
+
+    fn invert(&self) -> Self::Output {
+        let invert = self.invert();
+        CtOption::new(invert, !self.is_zero())
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl PartialOrd for Scalar {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl Ord for Scalar {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        use elliptic_curve::bigint::{Encoding, U256};
+        U256::from_le_bytes(self.bytes).cmp(
+            &U256::from_le_bytes(other.bytes)
+        )
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<Scalar> for elliptic_curve::bigint::U256 {
+    fn from(value: Scalar) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        elliptic_curve::bigint::U256::from_le_bytes(value.bytes)
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>> for Scalar {
+    fn from(value: elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519>) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        Scalar {
+            bytes: value.to_uint().to_le_bytes(),
+        }
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl From<Scalar> for elliptic_curve::ScalarPrimitive<crate::ed25519::Ed25519> {
+    fn from(mut value: Scalar) -> Self {
+        value.bytes.reverse();
+        let bytes: GenericArray<_, _> = value.bytes.into();
+
+        elliptic_curve::ScalarPrimitive::from_bytes(&bytes)
+            .expect("Scalar should have valid bytes")
+    }
+}
+
+#[cfg(feature = "digest")]
+impl From<Scalar> for GenericArray<u8, U32> {
+    fn from(value: Scalar) -> Self {
+        value.bytes.into()
+    }
+}
+
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::scalar::FromUintUnchecked for Scalar {
+    type Uint = elliptic_curve::bigint::U256;
+
+    fn from_uint_unchecked(uint: Self::Uint) -> Self {
+        use elliptic_curve::bigint::Encoding;
+        Self {
+            bytes: uint.to_le_bytes(),
+        }
+    }
+}
+
 #[cfg(feature = "group")]
 impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
@@ -1253,10 +1389,10 @@ impl Field for Scalar {
 
 #[cfg(feature = "group")]
 impl PrimeField for Scalar {
-    type Repr = [u8; 32];
+    type Repr = GenericArray<u8, U32>;
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
-        Self::from_canonical_bytes(repr)
+        Self::from_canonical_bytes(repr.into())
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
@@ -1265,7 +1401,7 @@ impl PrimeField for Scalar {
             return None;
         }
 
-        let candidate = Scalar { bytes: repr };
+        let candidate = Scalar { bytes: repr.into() };
 
         if candidate == candidate.reduce() {
             Some(candidate)
@@ -1275,7 +1411,7 @@ impl PrimeField for Scalar {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        self.to_bytes()
+        self.to_bytes().into()
     }
 
     fn is_odd(&self) -> Choice {
@@ -1328,7 +1464,7 @@ impl PrimeFieldBits for Scalar {
     type ReprBits = [u8; 32];
 
     fn to_le_bits(&self) -> FieldBits<Self::ReprBits> {
-        self.to_repr().into()
+        <[u8; 32]>::from(self.to_repr()).into()
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
@@ -1996,10 +2132,10 @@ pub(crate) mod test {
         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
 
         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
-        assert_eq!(Scalar::from_repr_vartime([0xff; 32]), None);
+        assert_eq!(Scalar::from_repr_vartime([0xff; 32].into()), None);
 
         assert_eq!(Scalar::from_repr(X.to_repr()).unwrap(), X);
-        assert!(bool::from(Scalar::from_repr([0xff; 32]).is_none()));
+        assert!(bool::from(Scalar::from_repr([0xff; 32].into()).is_none()));
     }
 
     #[test]

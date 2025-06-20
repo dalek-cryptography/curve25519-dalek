@@ -93,6 +93,19 @@ impl Mul<&AffinePoint> for Scalar {
     }
 }
 
+#[cfg(feature = "elliptic-curve")]
+impl elliptic_curve::point::AffineCoordinates for AffinePoint {
+    type FieldRepr = digest::generic_array::GenericArray<u8, digest::consts::U32>;
+
+    fn x(&self) -> Self::FieldRepr {
+        self.x.to_bytes().into()
+    }
+
+    fn y_is_odd(&self) -> Choice {
+        Choice::from(self.y.to_bytes()[0] & 1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{AffinePoint, EdwardsPoint, Identity};

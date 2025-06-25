@@ -577,7 +577,7 @@ mod test {
             0x99, 0xbb, 0x77, 0x3d,
         ];
 
-        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
 
         test_vec = [
             0xae, 0x69, 0x22, 0xd7, 0x28, 0xc1, 0x21, 0xf6, 0x90, 0x48, 0x61, 0xbd, 0x67, 0x49,
@@ -595,7 +595,7 @@ mod test {
             0x8b, 0x29, 0xa5, 0x5c,
         ];
 
-        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
 
         test_vec = [
             0x3a, 0x7a, 0x2b, 0x29, 0x83, 0xe8, 0x88, 0x61, 0x25, 0x20, 0xcf, 0x6a, 0xfe, 0xbb,
@@ -613,7 +613,7 @@ mod test {
             0x4c, 0xd6, 0xfa, 0x24,
         ];
 
-        assert_eq!(reduce_fe.as_bytes(), expected_reduced);
+        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
     }
 
     #[test]

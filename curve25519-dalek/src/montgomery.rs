@@ -256,10 +256,8 @@ impl MontgomeryPoint {
 /// determining whether eps is a square. This is required by the standard to determine the
 /// sign of the v coordinate.
 ///
-/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
+/// See <https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method>
 //
-// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
-//      draft gets into a more polished/accepted state.
 #[allow(unused)]
 pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) {
     let one = FieldElement::ONE;

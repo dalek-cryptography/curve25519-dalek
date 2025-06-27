@@ -317,8 +317,7 @@ impl FieldElement {
     /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
     /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the final domain separator MUST NOT exceed
-    /// 255 bytes.
+    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
     ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`
@@ -616,34 +615,54 @@ mod test {
         assert_eq!(reduce_fe.to_bytes(), expected_reduced);
     }
 
+    /// Hash to field test vectors from
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
+    /// These are of the form (input_msg, output_field_elem)
+    #[cfg(all(feature = "digest"))]
+    const RFC_HASH_TO_FIELD_KAT: &[(&[u8], &str)] = &[
+        (
+            b"",
+            "7f3e7fb9428103ad7f52db32f9df32505d7b427d894c5093f7a0f0374a30641d"
+        ),
+        (
+            b"abc",
+            "09cfa30ad79bd59456594a0f5d3a76f6b71c6787b04de98be5cd201a556e253b"
+        ),
+        (
+            b"abcdef0123456789",
+            "475ccff99225ef90d78cc9338e9f6a6bb7b17607c0c4428937de75d33edba941",
+        ),
+        (
+            b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
+            qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            "049a1c8bd51bcb2aec339f387d1ff51428b88d0763a91bcdf6929814ac95d03d"
+        ),
+        (
+            b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "3cb0178a8137cefa5b79a3a57c858d7eeeaa787b2781be4a362a2f0750d24fa0"
+        )
+    ];
+
     #[test]
     #[cfg(feature = "digest")]
     fn hash_to_field() {
         use sha2::Sha512;
-        let message = [
-            0xfc, 0x51, 0xcd, 0x8e, 0x62, 0x18, 0xa1, 0xa3, 0x8d, 0xa4, 0x7e, 0xd0, 0x02, 0x30,
-            0xf0, 0x58, 0x08, 0x16, 0xed, 0x13, 0xba, 0x33, 0x03, 0xac, 0x5d, 0xeb, 0x91, 0x15,
-            0x48, 0x90, 0x80, 0x25, 0xaf, 0x82,
-        ];
-        let dst = b"ECVRF_edwards25519_XMD:SHA-512_ELL2_NU_\x04";
-        let fe = FieldElement::hash_to_field::<Sha512>(&[&message], &[dst]);
-        let expected_fe = FieldElement::from_bytes(&[
-            0xf6, 0x67, 0x5d, 0xc6, 0xd1, 0x7f, 0xc7, 0x90, 0xd4, 0xb3, 0xf1, 0xc6, 0xac, 0xf6,
-            0x89, 0xa1, 0x3d, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
-            0x4c, 0xd6, 0xfa, 0x24,
-        ]);
-        assert_eq!(fe, expected_fe);
-
-        let message = "";
         let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
-        let fe = FieldElement::hash_to_field::<Sha512>(&[message.as_bytes()], &[dst.as_bytes()]);
-        let mut expected_fe_bytes = [
-            0x7f, 0x3e, 0x7f, 0xb9, 0x42, 0x81, 0x03, 0xad, 0x7f, 0x52, 0xdb, 0x32, 0xf9, 0xdf,
-            0x32, 0x50, 0x5d, 0x7b, 0x42, 0x7d, 0x89, 0x4c, 0x50, 0x93, 0xf7, 0xa0, 0xf0, 0x37,
-            0x4a, 0x30, 0x64, 0x1d,
-        ];
-        expected_fe_bytes.reverse();
-        let expected_fe = FieldElement::from_bytes(&expected_fe_bytes);
-        assert_eq!(fe, expected_fe);
+
+        for (msg, expected_hash_hex) in RFC_HASH_TO_FIELD_KAT {
+            let fe = FieldElement::hash_to_field::<Sha512>(&[msg], &[dst.as_bytes()]);
+            let expected_fe = {
+                let mut expected_hash = hex::decode(expected_hash_hex).unwrap();
+                expected_hash.reverse();
+                FieldElement::from_bytes(&expected_hash.try_into().unwrap())
+            };
+
+            assert_eq!(fe, expected_fe);
+        }
     }
 }

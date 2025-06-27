@@ -453,7 +453,7 @@ impl FieldElement2625 {
         // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
         // gl_top_bit, if set, is 2^511 ≡ 722 (mod q). This operation adds at most 741 to the
         // bottom limb of fe_f, which is at most 2^26.007. So it's now at most 2^26.007 + 741
-        fe_f.0[0] = fe_f.0[0] + fl_top_bit * 19 + gl_top_bit * 722;
+        fe_f64[0] = fe_f64[0] + fl_top_bit * 19 + gl_top_bit * 722;
         // Now add the high limbs into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
         for i in 0..10 {
             // Each limb in the field element is at most 26.007 + epsilon bits. Multiplying

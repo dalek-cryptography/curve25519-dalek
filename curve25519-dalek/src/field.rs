@@ -618,7 +618,7 @@ mod test {
     /// Hash to field test vectors from
     /// https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
     /// These are of the form (input_msg, output_field_elem)
-    #[cfg(all(feature = "digest"))]
+    #[cfg(feature = "digest")]
     const RFC_HASH_TO_FIELD_KAT: &[(&[u8], &str)] = &[
         (
             b"",

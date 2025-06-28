@@ -680,7 +680,7 @@ impl EdwardsPoint {
     /// function from the Elligator2 spec.
     ///
     /// For a hash to curve with uniform distribution and compatible with the spec, see
-    /// [Self::hash_to_curve_domain_sep].
+    /// [`Self::hash_to_curve`].
     #[deprecated(
         since = "4.0.0",
         note = "previously named `hash_from_bytes`, this is not a secure hash function"

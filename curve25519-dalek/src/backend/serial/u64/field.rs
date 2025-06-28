@@ -363,11 +363,11 @@ impl FieldElement51 {
     }
 
     /// Load a `FieldElement51` from 64 bytes, by reducing modulo q.
-    pub fn from_bytes_wide(hash: &[u8; 64]) -> FieldElement51 {
+    pub fn from_bytes_wide(bytes: &[u8; 64]) -> FieldElement51 {
         let mut fl = [0u8; 32];
         let mut gl = [0u8; 32];
-        fl.copy_from_slice(&hash[..32]);
-        gl.copy_from_slice(&hash[32..]);
+        fl.copy_from_slice(&bytes[..32]);
+        gl.copy_from_slice(&bytes[32..]);
         // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
         // them back in later.
         let fl_top_bit = (fl[31] >> 7) as u64;

@@ -557,62 +557,124 @@ mod test {
         FieldElement::batch_invert(&mut []);
     }
 
+    // The following two consts were generated with the following sage script:
+    //
+    // import random
+    //
+    // F = GF(2**255 - 19)
+    // # Use a seed to make sure we produce the same test vectors every time
+    // random.seed("Ozamataz Buckshank")
+    //
+    // # Generates test vectors, each of the form (input_bytes, reduced_field_elem_bytes),
+    // # where input_bytes is length input_bytes_len
+    // def gen_example(input_bytes_len):
+    //     # Generate random bytes
+    //     input_bytes = [random.randint(0, 255) for _ in range(input_bytes_len)]
+    //
+    //     # Now convert to a field element and get the reduced byte representation
+    //     elem = F(int.from_bytes(input_bytes, byteorder='little'))
+    //     reduced_bytes = list(int(elem).to_bytes(32, byteorder='little'))
+    //
+    //     # Format input and output as hex strings
+    //     input_bytes_hex = ''.join(f'{byte:02x}' for byte in input_bytes)
+    //     reduced_bytes_hex = ''.join(f'{byte:02x}' for byte in reduced_bytes)
+    //     return f"(\"{input_bytes_hex}\", \"{reduced_bytes_hex}\")"
+    //
+    // print("SET 1: Input bytes are length 64")
+    // for _ in range(5):
+    //     print(gen_example(64))
+    //
+    // print("SET 2: Input bytes are length 48")
+    // for _ in range(5):
+    //     print(gen_example(48))
+
+    /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-64 bytestring,
+    /// reduced field element)
+    const FROM_BYTES_WIDE_KAT_BIG: &[(&str, &str)] = &[
+        (
+            "77b663085cac0e916f40dbeea5116f201816406e68ccf01b32a97162ae1d5bf95d0d01c2c72fbeeb27a63\
+            5b85b715d5ce6f74118a60a7aec53c798ad648a482f",
+            "62b38bd402c4498f5cead14643e54dd649e20a0810610e36a73f1f27a0a81f7e",
+        ),
+        (
+            "d437c75ec79886650243a79c62933bb307eb12ff16d05db4a6a8a877f4a91abb6eeb64d2e20519c021799\
+            3a1dc5639283a06639985a2c892208171503335afb5",
+            "3d2ec29972783de9043e8b982278beaba9d7c5c3ebef257e7cd38168928f1c33",
+        ),
+        (
+            "6daa9e1abe6c604fb6e841c04bf90a6ef88aef6b1eab17dd44f7207ef472cd2d54bac849f703e64f36e56\
+            77e7e86b82be7d26aa220daf1f208bb36dcc1a12338",
+            "28546a0e7303852bc6eead8312f06eeb48d9ca87f60bfeec98ba402ebb751703",
+        ),
+        (
+            "c3920e326dbf806a50105be78263c1dc9390fb4741587b250cd758c2bfa3ed70faedbbc5f9b1d024e00fe\
+            7d7daf796866853f42e72d638e6533c5eb5b7caf3c6",
+            "40eaf38b802a7be1956ba7f3fe2d2ad717f23f40342deb5180cb55ae04bb1d79",
+        ),
+        (
+            "23f143c72ead6c0f336b4e746a06921f0eb180002e8ce916d196de16216788617c6aeb90a074a85196f03\
+            81375011248927c1215e9ec65b382a6ec556fb3f504",
+            "b1bf354a04fd6d2e8321c24ecb3d3ed2c42e3f21c7b60ab8374effd7a709011e",
+        ),
+    ];
+
+    /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-48 bytestring,
+    /// reduced field element)
+    const FROM_BYTES_WIDE_KAT_MEDIUM: &[(&str, &str)] = &[
+        (
+            "82e9cbe4928e3d0bbf1f91824a91acfb30d929f7a2fa5cbcc967c63ea0f3357c29c19f1bc9dcad69d85c1\
+            c6265970685",
+            "989582fe6c540cbbdee7c612570aa7ba44d929f7a2fa5cbcc967c63ea0f3357c",
+        ),
+        (
+            "5480494df4fb3a3b19da17e1c8b9192ccb09ec76720321977079300c42c17b9e95b01eb37ffe7048fcd1c\
+            9e6094da6c4",
+            "85b6d7e3e8c200fc8b050d234129c95ce809ec76720321977079300c42c17b1e",
+        ),
+        (
+            "93ec8a480dde098f74bcd341ef4f248f6440cc6e631d7000784f66975a4fd628438bb1350ba4c1421fec3\
+            670decced06",
+            "8598e540b737c87718c9fae9f3b870966540cc6e631d7000784f66975a4fd628",
+        ),
+        (
+            "fd0154ff9a5c4c9ee4e8183c23db97018e0e6201a812f6d4faedda50652d51f65c110b9a1a100a3fc3ff1\
+            c4ea3cf22e4",
+            "b895f8dc8dc0caf9dfdf66d460adc2deaf0e6201a812f6d4faedda50652d5176",
+        ),
+        (
+            "0e829dc955e0a1e0dbda9849cb2022b295275782348bd6308b3d0c5836f3ca0130911a17fd54054c3a0f8\
+            b2486f8ce85",
+            "2e0f8f37e77d6c29831d3db6b404db8ea9275782348bd6308b3d0c5836f3ca01",
+        ),
+    ];
+
     #[test]
-    #[cfg(feature = "digest")]
     fn from_hash_wide() {
-        let mut test_vec = [
-            0x6d, 0x2f, 0x2f, 0xfa, 0x94, 0x12, 0xb4, 0x15, 0x2f, 0x6a, 0xb6, 0x28, 0x41, 0xb8,
-            0x25, 0x92, 0x4a, 0x44, 0x90, 0x65, 0x15, 0x2b, 0x95, 0x47, 0x6f, 0x12, 0x1d, 0xe8,
-            0x99, 0xbb, 0x77, 0xbd, 0x48, 0x24, 0x6a, 0x37, 0x8e, 0x31, 0x33, 0xfb, 0x30, 0x23,
-            0x2a, 0xad, 0xa9, 0x20, 0xae, 0x04,
-        ];
-        let mut hash_wide = [0u8; 64];
-        hash_wide[..48].copy_from_slice(&test_vec);
+        // Do the 64-byte input ones first
+        for (input_bytes, expected_reduced) in FROM_BYTES_WIDE_KAT_BIG {
+            let reduce_fe = FieldElement::from_bytes_wide(
+                &hex::decode(input_bytes)
+                    .unwrap()
+                    .as_slice()
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_eq!(
+                &reduce_fe.to_bytes(),
+                hex::decode(expected_reduced).unwrap().as_slice()
+            );
+        }
 
-        let mut reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
-        let mut expected_reduced = [
-            0x30, 0x92, 0xf0, 0x33, 0xb1, 0x6d, 0x4d, 0x5f, 0x74, 0xa3, 0xf7, 0xdc, 0x70, 0x91,
-            0xfe, 0x43, 0x4b, 0x44, 0x90, 0x65, 0x15, 0x2b, 0x95, 0x47, 0x6f, 0x12, 0x1d, 0xe8,
-            0x99, 0xbb, 0x77, 0x3d,
-        ];
-
-        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
-
-        test_vec = [
-            0xae, 0x69, 0x22, 0xd7, 0x28, 0xc1, 0x21, 0xf6, 0x90, 0x48, 0x61, 0xbd, 0x67, 0x49,
-            0x67, 0xb3, 0x19, 0xd4, 0x6d, 0xee, 0x9d, 0x04, 0x7f, 0x86, 0xc4, 0x27, 0xc5, 0x3f,
-            0x8b, 0x29, 0xa5, 0x5c, 0xdb, 0xe1, 0x5e, 0xae, 0x23, 0x4e, 0xb7, 0x84, 0xe5, 0x9d,
-            0x6d, 0x20, 0x2a, 0x78, 0x20, 0xd6,
-        ];
-        hash_wide = [0u8; 64];
-        hash_wide[..48].copy_from_slice(&test_vec);
-
-        reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
-        expected_reduced = [
-            0x30, 0xf0, 0x37, 0xb9, 0x74, 0x5a, 0x57, 0xa9, 0xa2, 0xb8, 0xa6, 0x8d, 0xa8, 0x1f,
-            0x39, 0x7c, 0x39, 0xd4, 0x6d, 0xee, 0x9d, 0x04, 0x7f, 0x86, 0xc4, 0x27, 0xc5, 0x3f,
-            0x8b, 0x29, 0xa5, 0x5c,
-        ];
-
-        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
-
-        test_vec = [
-            0x3a, 0x7a, 0x2b, 0x29, 0x83, 0xe8, 0x88, 0x61, 0x25, 0x20, 0xcf, 0x6a, 0xfe, 0xbb,
-            0xea, 0x6b, 0x21, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
-            0x4c, 0xd6, 0xfa, 0x24, 0x6a, 0x35, 0xb7, 0xdb, 0xed, 0x1e, 0x8f, 0xdf, 0xfd, 0xcd,
-            0x36, 0x6e, 0x55, 0xed, 0x0a, 0xbe,
-        ];
-        hash_wide = [0u8; 64];
-        hash_wide[..48].copy_from_slice(&test_vec);
-
-        reduce_fe = FieldElement::from_bytes_wide(&hash_wide);
-        expected_reduced = [
-            0xf6, 0x67, 0x5d, 0xc6, 0xd1, 0x7f, 0xc7, 0x90, 0xd4, 0xb3, 0xf1, 0xc6, 0xac, 0xf6,
-            0x89, 0xa1, 0x3d, 0x8b, 0x58, 0x15, 0xf2, 0x38, 0x80, 0x09, 0x2a, 0x92, 0x5a, 0xf9,
-            0x4c, 0xd6, 0xfa, 0x24,
-        ];
-
-        assert_eq!(reduce_fe.to_bytes(), expected_reduced);
+        // Now do the 48-byte inputs
+        for (input_bytes, expected_reduced) in FROM_BYTES_WIDE_KAT_MEDIUM {
+            let mut padded_input_bytes = [0u8; 64];
+            padded_input_bytes[..48].copy_from_slice(&hex::decode(input_bytes).unwrap());
+            let reduce_fe = FieldElement::from_bytes_wide(&padded_input_bytes);
+            assert_eq!(
+                &reduce_fe.to_bytes(),
+                hex::decode(expected_reduced).unwrap().as_slice()
+            );
+        }
     }
 
     /// Hash to field test vectors from

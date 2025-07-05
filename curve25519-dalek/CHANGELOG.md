@@ -6,6 +6,7 @@ major series.
 ## Unreleased
 
 * Move AVX-512 backend selection logic to a separate CFG flag that requires nightly
+* Add Elligator2 hashing methods `EdwardsPoint::hash_to_curve()` and `FieldElement::hash_to_field()`
 
 ## 4.x series
 

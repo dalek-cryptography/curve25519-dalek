@@ -335,30 +335,30 @@ impl FieldElement51 {
     /// canonical.
     ///
     #[rustfmt::skip] // keep alignment of bit shifts
-    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
-        let load8 = |input: &[u8]| -> u64 {
-               (input[0] as u64)
-            | ((input[1] as u64) << 8)
-            | ((input[2] as u64) << 16)
-            | ((input[3] as u64) << 24)
-            | ((input[4] as u64) << 32)
-            | ((input[5] as u64) << 40)
-            | ((input[6] as u64) << 48)
-            | ((input[7] as u64) << 56)
-        };
+    pub const fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+        const fn load8_at(input: &[u8], i: usize) -> u64 {
+               (input[i] as u64)
+            | ((input[i + 1] as u64) << 8)
+            | ((input[i + 2] as u64) << 16)
+            | ((input[i + 3] as u64) << 24)
+            | ((input[i + 4] as u64) << 32)
+            | ((input[i + 5] as u64) << 40)
+            | ((input[i + 6] as u64) << 48)
+            | ((input[i + 7] as u64) << 56)
+        }
 
         let low_51_bit_mask = (1u64 << 51) - 1;
         FieldElement51(
         // load bits [  0, 64), no shift
-        [  load8(&bytes[ 0..])        & low_51_bit_mask
+        [  load8_at(bytes,  0)        & low_51_bit_mask
         // load bits [ 48,112), shift to [ 51,112)
-        , (load8(&bytes[ 6..]) >>  3) & low_51_bit_mask
+        , (load8_at(bytes,  6) >>  3) & low_51_bit_mask
         // load bits [ 96,160), shift to [102,160)
-        , (load8(&bytes[12..]) >>  6) & low_51_bit_mask
+        , (load8_at(bytes, 12) >>  6) & low_51_bit_mask
         // load bits [152,216), shift to [153,216)
-        , (load8(&bytes[19..]) >>  1) & low_51_bit_mask
+        , (load8_at(bytes, 19) >>  1) & low_51_bit_mask
         // load bits [192,256), shift to [204,112)
-        , (load8(&bytes[24..]) >> 12) & low_51_bit_mask
+        , (load8_at(bytes, 24) >> 12) & low_51_bit_mask
         ])
     }
 

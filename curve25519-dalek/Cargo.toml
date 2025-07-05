@@ -59,7 +59,7 @@ zeroize = { version = "1", default-features = false, optional = true }
 cpufeatures = "0.2.17"
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
-fiat-crypto = { version = "0.2.1", default-features = false }
+fiat-crypto = { version = "0.3.0", default-features = false }
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]

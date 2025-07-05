@@ -207,7 +207,7 @@ impl FieldElement51 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     ///
-    pub fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+    pub const fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
         let mut temp = [0u8; 32];
         temp.copy_from_slice(bytes);
         temp[31] &= 127u8;

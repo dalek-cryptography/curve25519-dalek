@@ -99,6 +99,46 @@ impl ConstantTimeEq for FieldElement {
 }
 
 impl FieldElement {
+    /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
+    pub fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
+        let mut fl = [0u8; 32];
+        let mut gl = [0u8; 32];
+        fl.copy_from_slice(&bytes[..32]);
+        gl.copy_from_slice(&bytes[32..]);
+        // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
+        // them back in later.
+        let fl_top_bit = (fl[31] >> 7) as u16;
+        let gl_top_bit = (gl[31] >> 7) as u16;
+        fl[31] &= 0x7f;
+        gl[31] &= 0x7f;
+
+        // Interpret both sides as field elements
+        let mut fe_f = Self::from_bytes(&fl);
+        let fe_g = Self::from_bytes(&gl);
+
+        // The full field elem is now fe_f + 2²⁵⁵ fl_top_bit + 2²⁵⁶ fe_g + 2⁵¹¹ gl_top_bit
+
+        // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
+        // gl_top_bit, if set, is 2^511 ≡ 722 (mod q)
+        let top_bits_sum = {
+            // This only need to be a u16 because the max value is 741
+            let addend: u16 = fl_top_bit * 19 + gl_top_bit * 722;
+            let mut addend_bytes = [0u8; 32];
+            addend_bytes[..2].copy_from_slice(&addend.to_le_bytes());
+            Self::from_bytes(&addend_bytes)
+        };
+        fe_f += &top_bits_sum;
+
+        // Now add the high half into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
+        const THIRTY_EIGHT: FieldElement = FieldElement::from_bytes(&[
+            38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ]);
+        fe_f += &(&THIRTY_EIGHT * &fe_g);
+
+        fe_f
+    }
+
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is
     /// set.
@@ -649,7 +689,7 @@ mod test {
     ];
 
     #[test]
-    fn from_hash_wide() {
+    fn from_bytes_wide() {
         // Do the 64-byte input ones first
         for (input_bytes, expected_reduced) in FROM_BYTES_WIDE_KAT_BIG {
             let reduce_fe = FieldElement::from_bytes_wide(

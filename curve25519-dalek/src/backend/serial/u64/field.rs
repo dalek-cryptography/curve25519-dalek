@@ -362,41 +362,6 @@ impl FieldElement51 {
         ])
     }
 
-    /// Load a `FieldElement51` from 64 bytes, by reducing modulo q.
-    pub fn from_bytes_wide(bytes: &[u8; 64]) -> FieldElement51 {
-        let mut fl = [0u8; 32];
-        let mut gl = [0u8; 32];
-        fl.copy_from_slice(&bytes[..32]);
-        gl.copy_from_slice(&bytes[32..]);
-        // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
-        // them back in later.
-        let fl_top_bit = (fl[31] >> 7) as u64;
-        let gl_top_bit = (gl[31] >> 7) as u64;
-        fl[31] &= 0x7f;
-        gl[31] &= 0x7f;
-
-        // Interpret both sides as field elements
-        let mut fe_f = Self::from_bytes(&fl);
-        let fe_g = Self::from_bytes(&gl);
-
-        // The full field elem is now fe_f + 2²⁵⁵ fl_top_bit + 2²⁵⁶ fe_g + 2⁵¹¹ gl_top_bit
-
-        // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
-        // gl_top_bit, if set, is 2^511 ≡ 722 (mod q). This operation adds at most 741 to the
-        // bottom limb of fe_f, which is at most 2^51. So it's now at most 2^51 + 741
-        fe_f.0[0] = fe_f.0[0] + fl_top_bit * 19 + gl_top_bit * 722;
-        // Now add the high limbs into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
-        for i in 0..5 {
-            // Each limb in the field element is at most (51 + epsilon) bits. Multiplying
-            // by 38 will not cause an overflow of the 64-bit limb capacity. We rely on
-            // the fact that 51 + log2(38) ≈ 57.2 < 64, so the result still fits safely
-            // in a u64. Full reduction is deferred until the end.
-            fe_f.0[i] += 38 * fe_g.0[i];
-        }
-
-        Self::reduce(fe_f.0)
-    }
-
     /// Renamed to `to_bytes`.
     #[deprecated(since = "4.1.4", note = "use `to_bytes` instead")]
     pub fn as_bytes(&self) -> [u8; 32] {

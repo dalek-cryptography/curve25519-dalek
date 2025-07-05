@@ -631,6 +631,7 @@ mod test {
 
     /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-64 bytestring,
     /// reduced field element)
+    #[cfg(feature = "digest")]
     const FROM_BYTES_WIDE_KAT_BIG: &[(&str, &str)] = &[
         (
             "77b663085cac0e916f40dbeea5116f201816406e68ccf01b32a97162ae1d5bf95d0d01c2c72fbeeb27a63\
@@ -661,6 +662,7 @@ mod test {
 
     /// Test vectors for FieldElement::from_bytes_wide. Elements are of the form (len-48 bytestring,
     /// reduced field element)
+    #[cfg(feature = "digest")]
     const FROM_BYTES_WIDE_KAT_MEDIUM: &[(&str, &str)] = &[
         (
             "82e9cbe4928e3d0bbf1f91824a91acfb30d929f7a2fa5cbcc967c63ea0f3357c29c19f1bc9dcad69d85c1\
@@ -689,6 +691,7 @@ mod test {
         ),
     ];
 
+    #[cfg(feature = "digest")]
     #[test]
     fn from_bytes_wide() {
         // Do the 64-byte input ones first

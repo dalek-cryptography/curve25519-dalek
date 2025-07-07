@@ -185,24 +185,18 @@ mod rand_core {
 
     #[test]
     fn ephemeral_from_rng() {
-        #[allow(deprecated)]
-        EphemeralSecret::new(&mut OsRng.unwrap_err());
         EphemeralSecret::random_from_rng(&mut OsRng.unwrap_err());
     }
 
     #[test]
     #[cfg(feature = "reusable_secrets")]
     fn reusable_from_rng() {
-        #[allow(deprecated)]
-        ReusableSecret::new(&mut OsRng.unwrap_err());
         ReusableSecret::random_from_rng(&mut OsRng.unwrap_err());
     }
 
     #[test]
     #[cfg(feature = "static_secrets")]
     fn static_from_rng() {
-        #[allow(deprecated)]
-        StaticSecret::new(&mut OsRng.unwrap_err());
         StaticSecret::random_from_rng(&mut OsRng.unwrap_err());
     }
 }

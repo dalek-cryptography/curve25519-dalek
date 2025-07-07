@@ -29,7 +29,7 @@ mod vectors {
     };
 
     #[cfg(not(feature = "digest"))]
-    use sha2::{digest::Digest, Sha512};
+    use sha2::{Sha512, digest::Digest};
 
     use std::{
         fs::File,
@@ -104,7 +104,9 @@ mod vectors {
         let sec_bytes = hex!("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42");
         let pub_bytes = hex!("ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf");
         let msg_bytes = hex!("616263");
-        let sig_bytes = hex!("98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406");
+        let sig_bytes = hex!(
+            "98a70222f0b8121aa9d30f813d683f809e462b469c7ff87639499bb94e6dae4131f85042463c2a355a2003d062adf5aaa10b8c61e636062aaad11c2a26083406"
+        );
 
         let signing_key = SigningKey::from_bytes(&sec_bytes);
         let expected_verifying_key = VerifyingKey::from_bytes(&pub_bytes).unwrap();
@@ -268,20 +270,24 @@ mod vectors {
         let signature = serialize_signature(&r, &s);
         let vk = VerifyingKey::from_bytes(pubkey.compress().as_bytes()).unwrap();
         let sig = Signature::try_from(&signature[..]).unwrap();
-        assert!(vk
-            .verify_prehashed(message1.clone(), context_str, &sig)
-            .is_ok());
-        assert!(vk
-            .verify_prehashed(message2.clone(), context_str, &sig)
-            .is_ok());
+        assert!(
+            vk.verify_prehashed(message1.clone(), context_str, &sig)
+                .is_ok()
+        );
+        assert!(
+            vk.verify_prehashed(message2.clone(), context_str, &sig)
+                .is_ok()
+        );
 
         // Check that verify_prehashed_strict fails on both sigs
-        assert!(vk
-            .verify_prehashed_strict(message1.clone(), context_str, &sig)
-            .is_err());
-        assert!(vk
-            .verify_prehashed_strict(message2.clone(), context_str, &sig)
-            .is_err());
+        assert!(
+            vk.verify_prehashed_strict(message1.clone(), context_str, &sig)
+                .is_err()
+        );
+        assert!(
+            vk.verify_prehashed_strict(message2.clone(), context_str, &sig)
+                .is_err()
+        );
     }
 }
 

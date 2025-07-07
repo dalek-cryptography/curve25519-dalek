@@ -50,7 +50,7 @@ use core::ops::{Add, Mul, Neg};
 
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::vector::avx2::constants::{
-    P_TIMES_16_HI, P_TIMES_16_LO, P_TIMES_2_HI, P_TIMES_2_LO,
+    P_TIMES_2_HI, P_TIMES_2_LO, P_TIMES_16_HI, P_TIMES_16_LO,
 };
 
 use curve25519_dalek_derive::unsafe_target_feature;

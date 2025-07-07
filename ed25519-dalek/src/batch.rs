@@ -30,10 +30,10 @@ use rand_core::RngCore;
 
 use sha2::Sha512;
 
+use crate::VerifyingKey;
 use crate::errors::InternalError;
 use crate::errors::SignatureError;
 use crate::signature::InternalSignature;
-use crate::VerifyingKey;
 
 /// Domain separation label to initialize the STROBE context.
 ///

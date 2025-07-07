@@ -37,10 +37,10 @@ use crate::constants;
 
 #[cfg(feature = "digest")]
 use digest::{
-    core_api::BlockSizeUser,
-    generic_array::{typenum::U64, GenericArray},
-    typenum::{IsGreater, True},
     Digest, FixedOutput, HashMarker,
+    core_api::BlockSizeUser,
+    generic_array::{GenericArray, typenum::U64},
+    typenum::{IsGreater, True},
 };
 
 cfg_if! {

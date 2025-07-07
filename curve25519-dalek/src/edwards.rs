@@ -106,13 +106,13 @@ use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
 use digest::{
-    consts::True, crypto_common::BlockSizeUser, generic_array::typenum::U64, typenum::IsGreater,
-    Digest, FixedOutput, HashMarker,
+    Digest, FixedOutput, HashMarker, consts::True, crypto_common::BlockSizeUser,
+    generic_array::typenum::U64, typenum::IsGreater,
 };
 
 #[cfg(feature = "group")]
 use {
-    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
     subtle::CtOption,
 };
 
@@ -130,7 +130,7 @@ use zeroize::Zeroize;
 use crate::constants;
 
 use crate::field::FieldElement;
-use crate::scalar::{clamp_integer, Scalar};
+use crate::scalar::{Scalar, clamp_integer};
 
 use crate::montgomery::MontgomeryPoint;
 
@@ -141,8 +141,8 @@ use crate::backend::serial::curve_models::ProjectivePoint;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::window::{
-    LookupTableRadix128, LookupTableRadix16, LookupTableRadix256, LookupTableRadix32,
-    LookupTableRadix64,
+    LookupTableRadix16, LookupTableRadix32, LookupTableRadix64, LookupTableRadix128,
+    LookupTableRadix256,
 };
 
 #[cfg(feature = "precomputed-tables")]

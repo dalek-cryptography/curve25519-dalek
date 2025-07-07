@@ -20,7 +20,7 @@ env:
 jobs:
 
   msrv:
-    name: Current MSRV is 1.60.0
+    name: Current MSRV is 1.85.0
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -29,5 +29,5 @@ jobs:
     - run: cargo update -Z minimal-versions
       # Now check that `cargo build` works with respect to the oldest possible
       # deps and the stated MSRV
-    - uses: dtolnay/rust-toolchain@1.60.0
+    - uses: dtolnay/rust-toolchain@1.85.0
     - run: cargo build

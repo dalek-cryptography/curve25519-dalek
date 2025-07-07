@@ -87,7 +87,6 @@ impl Display for InternalError {
     }
 }
 
-#[cfg(feature = "alloc")]
 impl Error for InternalError {}
 
 /// Errors which may occur while processing signatures and keypairs.

@@ -271,10 +271,6 @@ impl Scalar {
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
-    #[deprecated(
-        since = "4.0.0",
-        note = "This constructor outputs scalars with undefined scalar-scalar arithmetic. See docs."
-    )]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.

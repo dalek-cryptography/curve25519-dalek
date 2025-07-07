@@ -136,7 +136,7 @@ use rand_core::CryptoRngCore;
 #[cfg(feature = "digest")]
 use digest::Digest;
 #[cfg(feature = "digest")]
-use digest::generic_array::typenum::U64;
+use digest::array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;

@@ -38,8 +38,8 @@ use crate::constants;
 #[cfg(feature = "digest")]
 use digest::{
     Digest, FixedOutput, HashMarker,
-    core_api::BlockSizeUser,
-    generic_array::{GenericArray, typenum::U64},
+    array::{Array, typenum::U64},
+    block_api::BlockSizeUser,
     typenum::{IsGreater, True},
 };
 
@@ -368,7 +368,7 @@ impl FieldElement {
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
         let l_i_b_str = 48u16.to_be_bytes();
-        let z_pad = GenericArray::<u8, D::BlockSize>::default();
+        let z_pad = Array::<u8, D::BlockSize>::default();
 
         let mut hasher = D::new().chain_update(z_pad);
 

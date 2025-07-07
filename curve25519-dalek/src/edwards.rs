@@ -106,8 +106,8 @@ use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
 use digest::{
-    Digest, FixedOutput, HashMarker, array::typenum::U64, consts::True,
-    crypto_common::BlockSizeUser, typenum::IsGreater,
+    FixedOutput, HashMarker, array::typenum::U64, consts::True, crypto_common::BlockSizeUser,
+    typenum::IsGreater,
 };
 
 #[cfg(feature = "group")]
@@ -671,41 +671,6 @@ impl EdwardsPoint {
             &(&ED25519_SQRTAM2 * &FieldElement::from_bytes(&M1.to_bytes())) * &E1_opt.X.invert();
         E1_opt.X.conditional_negate(is_sq ^ mont_v.is_negative());
         E1_opt.mul_by_cofactor()
-    }
-
-    #[cfg(feature = "digest")]
-    /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
-    /// it produces points with a non-uniform distribution. Rather, it performs something that
-    /// resembles (but is not) half of the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-3-4.2.1)
-    /// function from the Elligator2 spec.
-    ///
-    /// For a hash to curve with uniform distribution and compatible with the spec, see
-    /// [`Self::hash_to_curve`].
-    #[deprecated(
-        since = "4.0.0",
-        note = "previously named `hash_from_bytes`, this is not a secure hash function"
-    )]
-    pub fn nonspec_map_to_curve<D>(bytes: &[u8]) -> EdwardsPoint
-    where
-        D: Digest<OutputSize = U64> + Default,
-    {
-        let mut hash = D::new();
-        hash.update(bytes);
-        let h = hash.finalize();
-        let mut res = [0u8; 32];
-        res.copy_from_slice(&h[..32]);
-
-        let sign_bit = (res[31] & 0x80) >> 7;
-
-        let fe = FieldElement::from_bytes(&res);
-
-        let (M1, _) = crate::montgomery::elligator_encode(&fe);
-        let E1_opt = M1.to_edwards(sign_bit);
-
-        E1_opt
-            .expect("Montgomery conversion to Edwards point in Elligator failed")
-            .mul_by_cofactor()
     }
 
     /// Return an `EdwardsPoint` chosen uniformly at random using a user-provided RNG.
@@ -1392,7 +1357,7 @@ impl EdwardsPoint {
     /// assert_eq!((P+Q).is_torsion_free(), false);
     /// ```
     pub fn is_torsion_free(&self) -> bool {
-        (self * constants::BASEPOINT_ORDER_PRIVATE).is_identity()
+        (self * constants::BASEPOINT_ORDER).is_identity()
     }
 }
 
@@ -1739,7 +1704,7 @@ impl CofactorGroup for EdwardsPoint {
     }
 
     fn is_torsion_free(&self) -> Choice {
-        (self * constants::BASEPOINT_ORDER_PRIVATE).ct_eq(&Self::identity())
+        (self * constants::BASEPOINT_ORDER).ct_eq(&Self::identity())
     }
 }
 
@@ -1926,7 +1891,7 @@ mod test {
     /// Test that multiplication by the basepoint order kills the basepoint
     #[test]
     fn basepoint_mult_by_basepoint_order() {
-        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER_PRIVATE);
+        let should_be_id = EdwardsPoint::mul_base(&constants::BASEPOINT_ORDER);
         assert!(should_be_id.is_identity());
     }
 
@@ -2412,70 +2377,6 @@ mod test {
         let raw_bytes = constants::ED25519_BASEPOINT_COMPRESSED.as_bytes();
         let bp: EdwardsPoint = bincode::deserialize(raw_bytes).unwrap();
         assert_eq!(bp, constants::ED25519_BASEPOINT_POINT);
-    }
-
-    ////////////////////////////////////////////////////////////
-    // Signal tests from                                      //
-    //     https://github.com/signalapp/libsignal-protocol-c/ //
-    ////////////////////////////////////////////////////////////
-
-    #[cfg(all(feature = "alloc", feature = "digest"))]
-    fn signal_test_vectors() -> Vec<Vec<&'static str>> {
-        vec![
-            vec![
-                "214f306e1576f5a7577636fe303ca2c625b533319f52442b22a9fa3b7ede809f",
-                "c95becf0f93595174633b9d4d6bbbeb88e16fa257176f877ce426e1424626052",
-            ],
-            vec![
-                "2eb10d432702ea7f79207da95d206f82d5a3b374f5f89f17a199531f78d3bea6",
-                "d8f8b508edffbb8b6dab0f602f86a9dd759f800fe18f782fdcac47c234883e7f",
-            ],
-            vec![
-                "84cbe9accdd32b46f4a8ef51c85fd39d028711f77fb00e204a613fc235fd68b9",
-                "93c73e0289afd1d1fc9e4e78a505d5d1b2642fbdf91a1eff7d281930654b1453",
-            ],
-            vec![
-                "c85165952490dc1839cb69012a3d9f2cc4b02343613263ab93a26dc89fd58267",
-                "43cbe8685fd3c90665b91835debb89ff1477f906f5170f38a192f6a199556537",
-            ],
-            vec![
-                "26e7fc4a78d863b1a4ccb2ce0951fbcd021e106350730ee4157bacb4502e1b76",
-                "b6fc3d738c2c40719479b2f23818180cdafa72a14254d4016bbed8f0b788a835",
-            ],
-            vec![
-                "1618c08ef0233f94f0f163f9435ec7457cd7a8cd4bb6b160315d15818c30f7a2",
-                "da0b703593b29dbcd28ebd6e7baea17b6f61971f3641cae774f6a5137a12294c",
-            ],
-            vec![
-                "48b73039db6fcdcb6030c4a38e8be80b6390d8ae46890e77e623f87254ef149c",
-                "ca11b25acbc80566603eabeb9364ebd50e0306424c61049e1ce9385d9f349966",
-            ],
-            vec![
-                "a744d582b3a34d14d311b7629da06d003045ae77cebceeb4e0e72734d63bd07d",
-                "fad25a5ea15d4541258af8785acaf697a886c1b872c793790e60a6837b1adbc0",
-            ],
-            vec![
-                "80a6ff33494c471c5eff7efb9febfbcf30a946fe6535b3451cda79f2154a7095",
-                "57ac03913309b3f8cd3c3d4c49d878bb21f4d97dc74a1eaccbe5c601f7f06f47",
-            ],
-            vec![
-                "f06fc939bc10551a0fd415aebf107ef0b9c4ee1ef9a164157bdd089127782617",
-                "785b2a6a00a5579cc9da1ff997ce8339b6f9fb46c6f10cf7a12ff2986341a6e0",
-            ],
-        ]
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    #[cfg(all(feature = "alloc", feature = "digest"))]
-    fn elligator_signal_test_vectors() {
-        for vector in signal_test_vectors().iter() {
-            let input = hex::decode(vector[0]).unwrap();
-            let output = hex::decode(vector[1]).unwrap();
-
-            let point = EdwardsPoint::nonspec_map_to_curve::<sha2::Sha512>(&input);
-            assert_eq!(point.compress().to_bytes(), output[..]);
-        }
     }
 
     // Hash-to-curve test vectors from

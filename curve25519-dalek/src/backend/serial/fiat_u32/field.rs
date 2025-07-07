@@ -239,12 +239,6 @@ impl FieldElement2625 {
         FieldElement2625(output)
     }
 
-    /// Renamed to `to_bytes`.
-    #[deprecated(since = "4.1.4", note = "use `to_bytes` instead")]
-    pub fn as_bytes(&self) -> [u8; 32] {
-        self.to_bytes()
-    }
-
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     pub fn to_bytes(self) -> [u8; 32] {

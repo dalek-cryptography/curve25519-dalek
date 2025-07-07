@@ -87,15 +87,6 @@ impl EphemeralSecret {
     }
 
     /// Generate a new [`EphemeralSecret`] with the supplied RNG.
-    #[deprecated(
-        since = "2.0.0",
-        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
-    )]
-    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
-        Self::random_from_rng(csprng)
-    }
-
-    /// Generate a new [`EphemeralSecret`] with the supplied RNG.
     pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
@@ -165,15 +156,6 @@ impl ReusableSecret {
     }
 
     /// Generate a new [`ReusableSecret`] with the supplied RNG.
-    #[deprecated(
-        since = "2.0.0",
-        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0."
-    )]
-    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
-        Self::random_from_rng(csprng)
-    }
-
-    /// Generate a new [`ReusableSecret`] with the supplied RNG.
     pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
@@ -239,15 +221,6 @@ impl StaticSecret {
     /// `their_public` key to produce a `SharedSecret`.
     pub fn diffie_hellman(&self, their_public: &PublicKey) -> SharedSecret {
         SharedSecret(their_public.0.mul_clamped(self.0))
-    }
-
-    /// Generate a new [`StaticSecret`] with the supplied RNG.
-    #[deprecated(
-        since = "2.0.0",
-        note = "Renamed to `random_from_rng`. This will be removed in 2.1.0"
-    )]
-    pub fn new<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
-        Self::random_from_rng(csprng)
     }
 
     /// Generate a new [`StaticSecret`] with the supplied RNG.

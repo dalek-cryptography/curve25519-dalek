@@ -29,7 +29,6 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 /// (in this crate) does *not* automatically happen, but either must be derived
 /// for Drop or explicitly called.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct PublicKey(pub(crate) MontgomeryPoint);
 
@@ -62,6 +61,13 @@ impl AsRef<[u8]> for PublicKey {
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl Zeroize for PublicKey {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
 /// A short-lived Diffie-Hellman secret key that can only be used to compute a single
 /// [`SharedSecret`].
 ///
@@ -70,7 +76,6 @@ impl AsRef<[u8]> for PublicKey {
 /// are no serialization methods defined.  This means that [`EphemeralSecret`]s can only be
 /// generated from fresh randomness where the compiler statically checks that the resulting
 /// secret is used at most once.
-#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct EphemeralSecret(pub(crate) [u8; 32]);
 
 impl EphemeralSecret {
@@ -111,6 +116,23 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
     }
 }
 
+impl Drop for EphemeralSecret {
+    fn drop(&mut self) {
+        #[cfg(feature = "zeroize")]
+        self.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for EphemeralSecret {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl ZeroizeOnDrop for EphemeralSecret {}
+
 /// A Diffie-Hellman secret key which may be used more than once, but is
 /// purposefully not serialiseable in order to discourage key-reuse.  This is
 /// implemented to facilitate protocols such as Noise (e.g. Noise IK key usage,
@@ -130,7 +152,6 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 /// secret keys are never reused, which can have very serious security
 /// implications for many protocols.
 #[cfg(feature = "reusable_secrets")]
-#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct ReusableSecret(pub(crate) [u8; 32]);
 
@@ -174,6 +195,24 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
     }
 }
 
+#[cfg(feature = "reusable_secrets")]
+impl Drop for ReusableSecret {
+    fn drop(&mut self) {
+        #[cfg(feature = "zeroize")]
+        self.zeroize();
+    }
+}
+
+#[cfg(all(feature = "reusable_secrets", feature = "zeroize"))]
+impl Zeroize for ReusableSecret {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[cfg(all(feature = "reusable_secrets", feature = "zeroize"))]
+impl ZeroizeOnDrop for ReusableSecret {}
+
 /// A Diffie-Hellman secret key that can be used to compute multiple [`SharedSecret`]s.
 ///
 /// This type is identical to the [`EphemeralSecret`] type, except that the
@@ -190,7 +229,6 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 /// implications for many protocols.
 #[cfg(feature = "static_secrets")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 #[derive(Clone)]
 pub struct StaticSecret([u8; 32]);
 
@@ -263,11 +301,28 @@ impl AsRef<[u8]> for StaticSecret {
     }
 }
 
+#[cfg(feature = "static_secrets")]
+impl Drop for StaticSecret {
+    fn drop(&mut self) {
+        #[cfg(feature = "zeroize")]
+        self.zeroize();
+    }
+}
+
+#[cfg(all(feature = "static_secrets", feature = "zeroize"))]
+impl Zeroize for StaticSecret {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[cfg(all(feature = "static_secrets", feature = "zeroize"))]
+impl ZeroizeOnDrop for StaticSecret {}
+
 /// The result of a Diffie-Hellman key exchange.
 ///
 /// Each party computes this using their [`EphemeralSecret`] or [`StaticSecret`] and their
 /// counterparty's [`PublicKey`].
-#[cfg_attr(feature = "zeroize", derive(Zeroize, ZeroizeOnDrop))]
 pub struct SharedSecret(pub(crate) MontgomeryPoint);
 
 impl SharedSecret {
@@ -329,6 +384,23 @@ impl AsRef<[u8]> for SharedSecret {
         self.as_bytes()
     }
 }
+
+impl Drop for SharedSecret {
+    fn drop(&mut self) {
+        #[cfg(feature = "zeroize")]
+        self.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for SharedSecret {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl ZeroizeOnDrop for SharedSecret {}
 
 /// The bare, byte-oriented x25519 function, exactly as specified in RFC7748.
 ///

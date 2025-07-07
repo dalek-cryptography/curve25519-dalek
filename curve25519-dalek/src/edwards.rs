@@ -106,8 +106,8 @@ use core::ops::{Mul, MulAssign};
 
 #[cfg(feature = "digest")]
 use digest::{
-    Digest, FixedOutput, HashMarker, consts::True, crypto_common::BlockSizeUser,
-    generic_array::typenum::U64, typenum::IsGreater,
+    Digest, FixedOutput, HashMarker, array::typenum::U64, consts::True,
+    crypto_common::BlockSizeUser, typenum::IsGreater,
 };
 
 #[cfg(feature = "group")]

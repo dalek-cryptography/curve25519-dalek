@@ -258,7 +258,7 @@ mod test {
 
     use super::*;
 
-    use rand::{CryptoRng, RngCore, rngs::OsRng};
+    use rand::{CryptoRng, TryRngCore, rngs::OsRng};
 
     // Pick distinct, non-spec 512-bit hash functions for message and sig-context hashing
     type CtxDigest = blake2::Blake2b512;
@@ -267,7 +267,7 @@ mod test {
     impl ExpandedSecretKey {
         // Make a random expanded secret key for testing purposes. This is NOT how you generate
         // expanded secret keys IRL. They're the hash of a seed.
-        fn random<R: RngCore + CryptoRng>(mut rng: R) -> Self {
+        fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
             let mut bytes = [0u8; 64];
             rng.fill_bytes(&mut bytes);
             ExpandedSecretKey::from_bytes(&bytes)
@@ -278,8 +278,8 @@ mod test {
     #[test]
     fn sign_verify_nonspec() {
         // Generate the keypair
-        let rng = OsRng;
-        let esk = ExpandedSecretKey::random(rng);
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
         let msg = b"Then one day, a piano fell on my head";
@@ -297,8 +297,8 @@ mod test {
         use curve25519_dalek::digest::Digest;
 
         // Generate the keypair
-        let rng = OsRng;
-        let esk = ExpandedSecretKey::random(rng);
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
         // Hash the message
@@ -317,8 +317,8 @@ mod test {
     #[test]
     fn sign_byupdate() {
         // Generate the keypair
-        let rng = OsRng;
-        let esk = ExpandedSecretKey::random(rng);
+        let mut rng = OsRng.unwrap_err();
+        let esk = ExpandedSecretKey::random(&mut rng);
         let vk = VerifyingKey::from(&esk);
 
         let msg = b"realistic";

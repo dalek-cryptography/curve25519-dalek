@@ -127,11 +127,11 @@ use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
 
-#[cfg(any(test, feature = "group"))]
-use rand_core::RngCore;
+#[cfg(feature = "group")]
+use rand_core::TryRngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRngCore;
+use rand_core::CryptoRng;
 
 #[cfg(feature = "digest")]
 use digest::Digest;
@@ -576,8 +576,7 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRngCore`
-    ///   (i.e. `CryptoRng` + `RngCore`) interface.
+    /// * `rng`: any RNG which implements `CryptoRng` interface.
     ///
     /// # Returns
     ///
@@ -589,12 +588,12 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::OsRng;
+    /// use rand_core::{OsRng, TryRngCore};
     ///
-    /// let mut csprng = OsRng;
+    /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
@@ -1213,11 +1212,11 @@ impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
     const ONE: Self = Self::ONE;
 
-    fn random(mut rng: impl RngCore) -> Self {
+    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut scalar_bytes = [0u8; 64];
-        rng.fill_bytes(&mut scalar_bytes);
-        Self::from_bytes_mod_order_wide(&scalar_bytes)
+        rng.try_fill_bytes(&mut scalar_bytes)?;
+        Ok(Self::from_bytes_mod_order_wide(&scalar_bytes))
     }
 
     fn square(&self) -> Self {
@@ -1393,6 +1392,7 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
+    use rand_core::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1552,7 +1552,7 @@ pub(crate) mod test {
 
     #[test]
     fn non_adjacent_form_random() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..1_000 {
             let x = Scalar::random(&mut rng);
             for w in &[5, 6, 7, 8] {
@@ -2046,7 +2046,7 @@ pub(crate) mod test {
     // was reduced and b was clamped and unreduced. This checks that was always well-defined.
     #[test]
     fn test_mul_reduction_invariance() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..10 {
             // Also define c that's clamped. We'll make sure that clamping doesn't affect

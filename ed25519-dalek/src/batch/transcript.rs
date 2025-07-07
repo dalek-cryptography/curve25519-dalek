@@ -199,11 +199,6 @@ impl rand_core::RngCore for TranscriptRng {
         self.strobe.meta_ad(&dest_len, false);
         self.strobe.prf(dest, false);
     }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.fill_bytes(dest);
-        Ok(())
-    }
 }
 
 impl rand_core::CryptoRng for TranscriptRng {}

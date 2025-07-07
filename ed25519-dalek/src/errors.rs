@@ -13,11 +13,9 @@
 // Display) should be snake cased, for some reason.
 #![allow(non_snake_case)]
 
+use core::error::Error;
 use core::fmt;
 use core::fmt::Display;
-
-#[cfg(feature = "alloc")]
-use core::error::Error;
 
 /// Internal errors.  Most application-level developers will likely not
 /// need to pay any attention to these.

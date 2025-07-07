@@ -13,7 +13,7 @@ use core::fmt::Debug;
 use core::hash::{Hash, Hasher};
 
 use curve25519_dalek::{
-    digest::{generic_array::typenum::U64, Digest},
+    digest::{Digest, generic_array::typenum::U64},
     edwards::{CompressedEdwardsY, EdwardsPoint},
     montgomery::MontgomeryPoint,
     scalar::Scalar,

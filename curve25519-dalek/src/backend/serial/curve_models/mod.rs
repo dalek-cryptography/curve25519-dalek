@@ -558,7 +558,10 @@ impl Debug for AffineNielsPoint {
 
 impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
-               &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
+        write!(
+            f,
+            "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
+            &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d
+        )
     }
 }

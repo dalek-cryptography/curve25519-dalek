@@ -285,10 +285,10 @@ pub use crate::signing::*;
 pub use crate::verifying::*;
 
 // Re-export the `Signer` and `Verifier` traits from the `signature` crate
+pub use ed25519::Signature;
 #[cfg(feature = "digest")]
 pub use ed25519::signature::{DigestSigner, DigestVerifier};
 pub use ed25519::signature::{Signer, Verifier};
-pub use ed25519::Signature;
 
 #[cfg(feature = "pkcs8")]
 pub use ed25519::pkcs8;

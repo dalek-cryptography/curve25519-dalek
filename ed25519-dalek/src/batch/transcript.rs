@@ -1,5 +1,5 @@
-use super::strobe::Strobe128;
 use super::MERLIN_PROTOCOL_LABEL;
+use super::strobe::Strobe128;
 
 fn encode_usize_as_u32(x: usize) -> [u8; 4] {
     u32::try_from(x).expect("usize too large").to_le_bytes()

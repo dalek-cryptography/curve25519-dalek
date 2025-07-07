@@ -1,7 +1,7 @@
 use ed25519::signature::Verifier;
 use ed25519_dalek::{Signature, VerifyingKey};
 
-use serde::{de::Error as SError, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de::Error as SError};
 use std::{collections::BTreeSet as Set, fs::File};
 
 /// The set of edge cases that [`VerifyingKey::verify()`] permits.

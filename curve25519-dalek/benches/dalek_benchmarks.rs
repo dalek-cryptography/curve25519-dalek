@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
-use rand::{rngs::OsRng, thread_rng, RngCore};
+use rand::{RngCore, rngs::OsRng, thread_rng};
 
 use criterion::{
-    criterion_main, measurement::Measurement, BatchSize, BenchmarkGroup, BenchmarkId, Criterion,
+    BatchSize, BenchmarkGroup, BenchmarkId, Criterion, criterion_main, measurement::Measurement,
 };
 #[cfg(feature = "digest")]
 use sha2::Sha512;

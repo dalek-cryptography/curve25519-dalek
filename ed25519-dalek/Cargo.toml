@@ -1,7 +1,7 @@
 [package]
 name = "ed25519-dalek"
-version = "2.1.1"
-edition = "2021"
+version = "3.0.0-pre"
+edition = "2024"
 authors = [
     "isis lovecruft <isis@patternsinthevoid.net>",
     "Tony Arcieri <bascule@gmail.com>",
@@ -16,7 +16,7 @@ keywords = ["cryptography", "ed25519", "curve25519", "signature", "ECC"]
 categories = ["cryptography", "no-std"]
 description = "Fast and efficient ed25519 EdDSA key generations, signing, and verification in pure Rust."
 exclude = [ ".gitignore", "TESTVECTORS", "VALIDATIONVECTORS", "res/*" ]
-rust-version = "1.81"
+rust-version = "1.85"
 
 [package.metadata.docs.rs]
 rustdoc-args = [
@@ -26,7 +26,7 @@ rustdoc-args = [
 features = ["batch", "digest", "hazmat", "pem", "serde"]
 
 [dependencies]
-curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
+curve25519-dalek = { version = "=5.0.0-pre", path = "../curve25519-dalek", default-features = false, features = ["digest"] }
 ed25519 = { version = ">=2.2, <2.3", default-features = false }
 signature = { version = ">=2.0, <2.3", optional = true, default-features = false }
 sha2 = { version = "0.10", default-features = false }
@@ -39,8 +39,8 @@ serde = { version = "1.0", default-features = false, optional = true }
 zeroize = { version = "1.5", default-features = false, optional = true }
 
 [dev-dependencies]
-curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
-x25519-dalek = { version = "2", path = "../x25519-dalek", default-features = false, features = ["static_secrets"] }
+curve25519-dalek = { version = "=5.0.0-pre", path = "../curve25519-dalek", default-features = false, features = ["digest", "rand_core"] }
+x25519-dalek = { version = "=3.0.0-pre", path = "../x25519-dalek", default-features = false, features = ["static_secrets"] }
 blake2 = "0.10"
 sha3 = "0.10"
 hex = "0.4"

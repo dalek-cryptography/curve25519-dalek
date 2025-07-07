@@ -41,7 +41,7 @@ features = ["getrandom", "reusable_secrets", "serde", "static_secrets"]
 curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false }
 rand_core = { version = "0.6", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
-zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
+zeroize = { version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 bincode = "1"

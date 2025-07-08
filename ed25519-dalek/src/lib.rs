@@ -257,7 +257,7 @@
 #[cfg(feature = "batch")]
 extern crate alloc;
 
-#[cfg(any(feature = "std", test))]
+#[cfg(test)]
 #[macro_use]
 extern crate std;
 
@@ -295,8 +295,8 @@ pub use crate::verifying::*;
 // Re-export the `Signer` and `Verifier` traits from the `signature` crate
 #[cfg(feature = "digest")]
 pub use ::signature::{DigestSigner, DigestVerifier};
-pub use ed25519::Signature;
 pub use ed25519::signature::{Signer, Verifier};
+pub use ed25519::Signature;
 
 #[cfg(feature = "pkcs8")]
 pub use ed25519::pkcs8;

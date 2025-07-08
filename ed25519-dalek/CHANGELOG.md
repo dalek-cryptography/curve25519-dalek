@@ -13,6 +13,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
 * Update `ed25519` and `signature` deps
+* Remove `std` feature
 * Make signing and verifying keys use `pkcs8::spki::SignatureAlgorithmIdentifier` instead of `DynSignatureAlgorithmIdentifier`
 
 # 2.x series

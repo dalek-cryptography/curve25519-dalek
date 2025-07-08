@@ -2,9 +2,15 @@
 
 Entries are listed in reverse chronological order.
 
-## Unreleased
+# 3.x Series
 
+## 3.0.0-pre
+
+* Update edition to 2024
+* Update the MSRV from 1.60 to 1.85
+* Update `rand_core` dep
 * Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop.
+* Remove deprecated functions `{Ephemeral,Reusable,Static}Secret::new()`
 
 # 2.x Series
 

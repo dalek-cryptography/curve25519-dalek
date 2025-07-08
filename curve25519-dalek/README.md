@@ -35,20 +35,20 @@ cofactor-related abstraction mismatches.
 To import `curve25519-dalek`, add the following to the dependencies section of
 your project's `Cargo.toml`:
 ```toml
-curve25519-dalek = "4"
+curve25519-dalek = "5.0.0-pre"
 ```
 
 If opting into [SemVer-exempted features](#public-api-semver-exemptions) a range
 can be used to scope the tested compatible version range e.g.:
 ```toml
-curve25519-dalek = ">= 4.0, < 4.2"
+curve25519-dalek = ">= 5.0, < 5.2"
 ```
 
 ## Feature Flags
 
 | Feature            | Default? | Description |
 | :---               |  :---:   | :---        |
-| `alloc`            |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. Also enables `zeroize`. |
+| `alloc`            |    ✓     | Enables Edwards and Ristretto multiscalar multiplication, batch scalar inversion, and batch Ristretto double-and-compress. |
 | `zeroize`          |    ✓     | Enables [`Zeroize`][zeroize-trait] for all scalar and curve point types. |
 | `precomputed-tables` |    ✓     | Includes precomputed basepoint multiplication tables. This speeds up `EdwardsPoint::mul_base` and `RistrettoPoint::mul_base` by ~4x, at the cost of ~30KB added to the code size. |
 | `rand_core`        |          | Enables `Scalar::random` and `RistrettoPoint::random`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
@@ -67,24 +67,13 @@ Breaking changes for each major version release can be found in
 [`CHANGELOG.md`](CHANGELOG.md), under the "Breaking changes" subheader. The
 latest breaking changes in high level are below:
 
-### Breaking changes in 4.0.0
+### Breaking changes in 5.0.0
 
-* Update the MSRV from 1.41 to 1.60
-* Provide SemVer policy
-* Make `digest` and `rand_core` optional features
-* Remove `std` and `nightly` features
-* Replace backend selection - See [CHANGELOG.md](CHANGELOG.md) and [backends](#backends)
-* Replace methods `Scalar::{zero, one}` with constants `Scalar::{ZERO, ONE}`
-* `Scalar::from_canonical_bytes` now returns `CtOption`
-* `Scalar::is_canonical` now returns `Choice`
-* Remove `Scalar::from_bytes_clamped` and `Scalar::reduce`
-* Deprecate and feature-gate `Scalar::from_bits` behind `legacy_compatibility`
-* Deprecate `EdwardsPoint::hash_from_bytes` and rename it
-  `EdwardsPoint::nonspec_map_to_curve`
-* Require including a new trait, `use curve25519_dalek::traits::BasepointTable`
-  whenever using `EdwardsBasepointTable` or `RistrettoBasepointTable`
-
-This release also does a lot of dependency updates and relaxations to unblock upstream build issues.
+* Update edition to 2024
+* Update the MSRV from 1.60 to 1.85
+* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
+* Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
+* Undeprecate `Scalar::from_bits()`
 
 # Backends
 
@@ -188,6 +177,7 @@ for MSRV and public API.
 
 | Releases | MSRV   |
 | :---     |:-------|
+| 5.x      | 1.85.0 |
 | 4.x      | 1.60.0 |
 | 3.x      | 1.41.0 |
 
@@ -200,6 +190,7 @@ _some_ version bump. Below are the specific policies:
 
 | Releases | Public API Component(s)                         | Policy              |
 | :---     | :---                                            | :---                |
+| 5.x      | Dependencies `group`, `digest` and `rand_core`  | Minor SemVer bump   |
 | 4.x      | Dependencies `group`, `digest` and `rand_core`  | Minor SemVer bump   |
 
 # Safety

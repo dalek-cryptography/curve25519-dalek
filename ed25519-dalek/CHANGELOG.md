@@ -6,11 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Entries are listed in reverse chronological order per undeprecated major series.
 
-# Unreleased
-
-* Add `SigningKey::verify_stream()`, and `VerifyingKey::verify_stream()`
-  
 # 2.x series
+
+## 2.2.0
+
+* Add `hazmat`-gated methods `SigningKey::verify_stream()` and `VerifyingKey::verify_stream()`
+* Add `Debug` and `Eq` traits for `hazmat::ExpandedSecretKey`
 
 ## 2.1.1
 

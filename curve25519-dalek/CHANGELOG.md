@@ -3,12 +3,16 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
-## Unreleased
+## 4.x series
+
+### 4.2.0
 
 * Move AVX-512 backend selection logic to a separate CFG flag that requires nightly
 * Add Elligator2 hashing methods `EdwardsPoint::hash_to_curve()` and `FieldElement::hash_to_field()`
-
-## 4.x series
+* Deprecate `FieldElement::as_bytes` in favor of `FieldElement::to_bytes`
+* Remove deprecated `FieldElement::as_bytes`
+* Add batch conversion function `EdwardsPoint::to_montgomery_batch()`
+* Make `VartimePrecomputedStraus::optional_mixed_multiscalar_mul()` and `VartimeRistrettoPrecomputation::vartime_mixed_multiscalar_mul()` accept more points than static scalars
 
 ### 4.1.3
 

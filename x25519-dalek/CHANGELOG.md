@@ -2,6 +2,10 @@
 
 Entries are listed in reverse chronological order.
 
+## Unreleased
+
+* Remove `Zeroize` impl for `x25519::{EphemeralSecret, ReusableSecret, SharedSecret, StaticSecret}` to prevent misuse. These are now only zeroized on drop.
+
 # 2.x Series
 
 * Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases. 

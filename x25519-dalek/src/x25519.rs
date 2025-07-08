@@ -111,13 +111,6 @@ impl<'a> From<&'a EphemeralSecret> for PublicKey {
 impl Drop for EphemeralSecret {
     fn drop(&mut self) {
         #[cfg(feature = "zeroize")]
-        self.zeroize();
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for EphemeralSecret {
-    fn zeroize(&mut self) {
         self.0.zeroize();
     }
 }
@@ -182,13 +175,6 @@ impl<'a> From<&'a ReusableSecret> for PublicKey {
 impl Drop for ReusableSecret {
     fn drop(&mut self) {
         #[cfg(feature = "zeroize")]
-        self.zeroize();
-    }
-}
-
-#[cfg(all(feature = "reusable_secrets", feature = "zeroize"))]
-impl Zeroize for ReusableSecret {
-    fn zeroize(&mut self) {
         self.0.zeroize();
     }
 }
@@ -279,13 +265,6 @@ impl AsRef<[u8]> for StaticSecret {
 impl Drop for StaticSecret {
     fn drop(&mut self) {
         #[cfg(feature = "zeroize")]
-        self.zeroize();
-    }
-}
-
-#[cfg(all(feature = "static_secrets", feature = "zeroize"))]
-impl Zeroize for StaticSecret {
-    fn zeroize(&mut self) {
         self.0.zeroize();
     }
 }
@@ -362,13 +341,6 @@ impl AsRef<[u8]> for SharedSecret {
 impl Drop for SharedSecret {
     fn drop(&mut self) {
         #[cfg(feature = "zeroize")]
-        self.zeroize();
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for SharedSecret {
-    fn zeroize(&mut self) {
         self.0.zeroize();
     }
 }

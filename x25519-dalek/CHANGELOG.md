@@ -4,7 +4,7 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
-## 3.0.0-pre
+## 3.0.0-pre.0
 
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
@@ -14,7 +14,7 @@ Entries are listed in reverse chronological order.
 
 # 2.x Series
 
-* Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases. 
+* Note: All `x255919-dalek` 2.x releases are in sync with the underlying `curve25519-dalek` 4.x releases.
 
 ## 2.0.1
 
@@ -108,5 +108,4 @@ Entries are listed in reverse chronological order.
 
 * Adds support for static and ephemeral keys.
 
-[curve25519-dalek backend]: https://github.com/dalek-cryptography/curve25519-dalek/#backends 
-
+[curve25519-dalek backend]: https://github.com/dalek-cryptography/curve25519-dalek/#backends

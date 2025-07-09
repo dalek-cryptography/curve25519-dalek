@@ -8,7 +8,7 @@ Entries are listed in reverse chronological order per undeprecated major series.
 
 # 3.x series
 
-## 3.0.0-pre
+## 3.0.0-pre.0
 
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85

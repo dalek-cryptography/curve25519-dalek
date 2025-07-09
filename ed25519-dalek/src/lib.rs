@@ -257,7 +257,7 @@
 #[cfg(feature = "batch")]
 extern crate alloc;
 
-#[cfg(any(feature = "std", test))]
+#[cfg(test)]
 #[macro_use]
 extern crate std;
 

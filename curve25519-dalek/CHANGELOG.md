@@ -5,7 +5,7 @@ major series.
 
 ## 5.x series
 
-## 5.0.0-pre
+## 5.0.0-pre.0
 
 * Update edition to 2024
 * Update the MSRV from 1.60 to 1.85
@@ -284,4 +284,3 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 ### 1.0.0
 
 Initial stable release.  Yanked due to a dependency mistake (see above).
-

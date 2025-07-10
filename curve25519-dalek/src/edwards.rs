@@ -678,6 +678,15 @@ impl EdwardsPoint {
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
     /// 255 bytes.
     ///
+    /// # Warning
+    /// `encode_to_curve` is a nonuniform encoding from byte strings to points in `G`. That is,
+    /// the distribution of its output is not uniformly random in `G`: the set of possible outputs
+    /// of encode_to_curve is only a fraction of the points in `G`, and some points in this set
+    /// are more likely to be output than others.
+    ///
+    /// If your application needs the distribution of the output to be statistically close to
+    /// uniform in `G`, use [hash_to_curve] instead.
+    ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`
     pub fn encode_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint

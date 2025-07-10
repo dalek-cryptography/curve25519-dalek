@@ -355,7 +355,7 @@ impl FieldElement {
 
     #[cfg(feature = "digest")]
     /// Perform hashing to a [`FieldElement`], per the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
+    /// [`encode_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
     /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.

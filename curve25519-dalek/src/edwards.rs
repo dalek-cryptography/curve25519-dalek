@@ -635,7 +635,7 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// Perform map to curve, with explicit hash function and domain separator, `domain_sep`,
     /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
@@ -643,7 +643,7 @@ impl EdwardsPoint {
     ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`
-    pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
+    pub fn encode_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
@@ -2448,7 +2448,7 @@ mod test {
                 }
             };
 
-            let computed = EdwardsPoint::hash_to_curve::<sha2::Sha512>(&[&input], &[dst]);
+            let computed = EdwardsPoint::encode_to_curve::<sha2::Sha512>(&[&input], &[dst]);
             assert_eq!(computed, expected_output, "Failed in test {}", index);
         }
     }

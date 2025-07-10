@@ -75,7 +75,7 @@ mod edwards_benches {
     }
 
     #[cfg(feature = "digest")]
-    fn hash_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+    fn encode_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
         let mut rng = rng();
 
         let mut msg = [0u8; 32];
@@ -85,7 +85,7 @@ mod edwards_benches {
 
         c.bench_function(
             "Elligator2 hash to curve (SHA-512, input size 32 bytes)",
-            |b| b.iter(|| EdwardsPoint::hash_to_curve::<Sha512>(&[&msg], &[&domain_sep])),
+            |b| b.iter(|| EdwardsPoint::encode_to_curve::<Sha512>(&[&msg], &[&domain_sep])),
         );
     }
 
@@ -100,7 +100,7 @@ mod edwards_benches {
         consttime_fixed_base_scalar_mul(&mut g);
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
-        hash_to_curve(&mut g);
+        encode_to_curve(&mut g);
     }
 }
 

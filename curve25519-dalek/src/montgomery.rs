@@ -501,9 +501,6 @@ mod test {
     use super::*;
     use crate::constants;
 
-    #[cfg(feature = "alloc")]
-    use alloc::vec::Vec;
-
     use rand_core::{CryptoRng, RngCore, TryRngCore};
 
     #[test]
@@ -706,6 +703,7 @@ mod test {
     }
 
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "digest")]
     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
         0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
@@ -716,6 +714,7 @@ mod test {
     #[cfg(feature = "alloc")]
     #[cfg(feature = "digest")]
     fn montgomery_elligator_correct() {
+        use alloc::vec::Vec;
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 

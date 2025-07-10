@@ -688,34 +688,34 @@ impl EdwardsPoint {
         // For reference see
         // https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
 
-        let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
-        let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
+        let fe = FieldElement::hash_to_field::<D, 1>(bytes, domain_sep);
+        let Q = Self::map_to_curve(fe[0]);
+        Q.mul_by_cofactor()
+    }
 
-        // The `to_edwards` conversion we're performing takes as input the sign of the Edwards
-        // `y` coordinate. However, the specification uses `is_sq` to determine the sign of the
-        // Montgomery `v` coordinate. Our approach reconciles this mismatch as follows:
-        //
-        // * We arbitrarily fix the sign of the Edwards `y` coordinate (we choose 0).
-        // * Using the Montgomery `u` coordinate and the Edwards `X` coordinate, we recover `v`.
-        // * We verify that the sign of `v` matches the expected one, i.e., `is_sq == mont_v.is_negative()`.
-        // * If it does not match, we conditionally negate to correct the sign.
-        //
-        // Note: This logic aligns with the RFC draft specification:
-        //     https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
-        // followed by the mapping
-        //     https://www.rfc-editor.org/rfc/rfc9380.html#name-mappings-for-twisted-edward
-        // The only difference is that our `elligator_encode` returns only the Montgomery `u` coordinate,
-        // so we apply this workaround to reconstruct and validate the sign.
+    #[cfg(feature = "digest")]
+    /// Perform a hash to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// using the suite `edwards25519_XMD:SHA-512_ELL2_RO_`. The input is the concatenation of the
+    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
+    /// 255 bytes.
+    ///
+    /// # Panics
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
+    where
+        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    {
+        // For reference see
+        // https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
 
-        let mut E1_opt = M1
-            .to_edwards(0)
-            .expect("Montgomery conversion to Edwards point in Elligator failed");
+        let fe = FieldElement::hash_to_field::<D, 2>(bytes, domain_sep);
+        let Q0 = Self::map_to_curve(fe[0]);
+        let Q1 = Self::map_to_curve(fe[1]);
 
-        // Now we recover v, to ensure that we got the sign right.
-        let mont_v =
-            &(&ED25519_SQRTAM2 * &FieldElement::from_bytes(&M1.to_bytes())) * &E1_opt.X.invert();
-        E1_opt.X.conditional_negate(is_sq ^ mont_v.is_negative());
-        E1_opt.mul_by_cofactor()
+        let R = Q0 + Q1;
+        R.mul_by_cofactor()
     }
 
     /// Return an `EdwardsPoint` chosen uniformly at random using a user-provided RNG.
@@ -2427,7 +2427,7 @@ mod test {
     // https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
     // These are of the form (input_msg, output_x, output_y)
     #[cfg(all(feature = "alloc", feature = "digest"))]
-    const RFC_HASH_TO_CURVE_KAT: &[(&[u8], &str, &str)] = &[
+    const RFC_HASH_TO_CURVE_KAT_NU: &[(&[u8], &str, &str)] = &[
         (
             b"",
             "1ff2b70ecf862799e11b7ae744e3489aa058ce805dd323a936375a84695e76da",
@@ -2463,9 +2463,9 @@ mod test {
 
     #[test]
     #[cfg(all(feature = "alloc", feature = "digest"))]
-    fn elligator_hash_to_curve_test_vectors() {
+    fn elligator_map_to_curve_test_vectors() {
         let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
-        for (index, vector) in RFC_HASH_TO_CURVE_KAT.iter().enumerate() {
+        for (index, vector) in RFC_HASH_TO_CURVE_KAT_NU.iter().enumerate() {
             let input = vector.0;
 
             let expected_output = {
@@ -2487,6 +2487,73 @@ mod test {
 
             let computed = EdwardsPoint::encode_to_curve::<sha2::Sha512>(&[&input], &[dst]);
             assert_eq!(computed, expected_output, "Failed in test {}", index);
+        }
+    }
+
+    // Hash-to-curve test vectors from
+    // https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell
+    // These are of the form (input_msg, output_x, output_y, q0_x, q0_y, q1_x, q1_y, u0, u1)
+    #[cfg(all(feature = "alloc", feature = "digest"))]
+    const RFC_HASH_TO_CURVE_KAT_RO: &[(&[u8], &str, &str)] = &[
+        (
+            b"",
+            "3c3da6925a3c3c268448dcabb47ccde5439559d9599646a8260e47b1e4822fc6",
+            "09a6c8561a0b22bef63124c588ce4c62ea83a3c899763af26d795302e115dc21",
+        ),
+
+        (
+            b"abc",
+            "608040b42285cc0d72cbb3985c6b04c935370c7361f4b7fbdb1ae7f8c1a8ecad",
+            "1a8395b88338f22e435bbd301183e7f20a5f9de643f11882fb237f88268a5531",
+        ),
+
+        (
+            b"abcdef0123456789",
+            "6d7fabf47a2dc03fe7d47f7dddd21082c5fb8f86743cd020f3fb147d57161472",
+            "53060a3d140e7fbcda641ed3cf42c88a75411e648a1add71217f70ea8ec561a6",
+        ),
+        (
+            b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
+            qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            "5fb0b92acedd16f3bcb0ef83f5c7b7a9466b5f1e0d8d217421878ea3686f8524",
+            "2eca15e355fcfa39d2982f67ddb0eea138e2994f5956ed37b7f72eea5e89d2f7",
+        ),
+        (
+            b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "0efcfde5898a839b00997fbe40d2ebe950bc81181afbd5cd6b9618aa336c1e8c",
+            "6dc2fc04f266c5c27f236a80b14f92ccd051ef1ff027f26a07f8c0f327d8f995"
+        )
+    ];
+
+    #[test]
+    #[cfg(all(feature = "alloc", feature = "digest"))]
+    fn elligator_hash_to_curve_test_vectors() {
+        let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
+        for (index, vector) in RFC_HASH_TO_CURVE_KAT_RO.iter().enumerate() {
+            let input = vector.0;
+
+            let hex_str_to_fe = |hex_str: &str| -> FieldElement {
+                let hex_bytes = hex::decode(hex_str).unwrap();
+                let mut string = hex_bytes.to_vec();
+                string.reverse();
+                FieldElement::from_bytes(&string.try_into().unwrap())
+            };
+
+            let expected_output = {
+                let x = hex_str_to_fe(vector.1);
+                let y = hex_str_to_fe(vector.2);
+
+                AffinePoint { x, y }.to_edwards()
+            };
+
+            let computed = EdwardsPoint::hash_to_curve::<sha2::Sha512>(&[&input], &[dst]);
+
+            assert_eq!(expected_output, computed, "Failed in test {}", index);
         }
     }
 }

@@ -25,8 +25,6 @@
 
 #![allow(unused_qualifications)]
 
-use alloc::vec::Vec;
-
 use cfg_if::cfg_if;
 
 use subtle::Choice;
@@ -363,7 +361,8 @@ impl FieldElement {
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
     ///
     /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`.
+    /// If COUNT > 2.
     pub fn hash_to_field<D, const COUNT: usize>(
         bytes: &[&[u8]],
         domain_sep: &[&[u8]],
@@ -372,9 +371,13 @@ impl FieldElement {
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
-        let count: u16 = COUNT
-            .try_into()
-            .expect("COUNT must be smaller than 2^16 - 1.");
+        // We only use `hash_to_field` for Elligator2, which uses COUNT <= 2. We use
+        // that to statically allocated the array of output hash bytes, and therefore
+        // we run a runtime check to ensure it.
+        // This could be generalised if we require feature "alloc" for hash_to_curve.
+        assert!(COUNT <= 2);
+
+        let count: u16 = COUNT as u16;
 
         // §5.2, we only generate count * m * L = COUNT * 1 * (256 + 128)/8
         let len_in_bytes = count * 48;
@@ -406,7 +409,8 @@ impl FieldElement {
             "Domain separator MUST have nonzero length."
         );
 
-        let mut outputs = Vec::with_capacity(ell);
+        // We statically allocate `hash_outputs` to its maximum permited length.
+        let mut hash_outputs = [Array::<u8, D::OutputSize>::default(); 48 * 2];
         let b_0 = hasher.chain_update([domain_sep_len]).finalize();
 
         let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
@@ -415,14 +419,14 @@ impl FieldElement {
             hasher = hasher.chain_update(slice)
         }
 
-        let b_1 = hasher.chain_update([domain_sep_len]).finalize();
-        outputs.push(b_1);
+        hash_outputs[0] = hasher.chain_update([domain_sep_len]).finalize();
 
         for i in 2..=ell {
-            let mut xor_bs = b_0.to_vec();
+            let mut xor_bs = b_0;
             xor_bs
+                .as_mut_slice()
                 .iter_mut()
-                .zip(outputs[i - 2].as_slice())
+                .zip(hash_outputs[i - 2].as_slice())
                 .for_each(|(l, r)| *l ^= *r);
 
             let mut hasher = D::new().chain_update(xor_bs).chain_update([i as u8]);
@@ -431,14 +435,15 @@ impl FieldElement {
                 hasher = hasher.chain_update(slice)
             }
 
-            let b = hasher.chain_update([domain_sep_len]).finalize();
-            outputs.push(b);
+            hash_outputs[i - 1] = hasher.chain_update([domain_sep_len]).finalize();
         }
 
-        let concatenated_outputs = outputs
-            .iter()
-            .flat_map(|out| out.to_vec())
-            .collect::<Vec<_>>();
+        let concatenated_outputs: &[u8] = unsafe {
+            core::slice::from_raw_parts(
+                hash_outputs.as_ptr() as *const u8,
+                48 * 2 * D::output_size(),
+            )
+        };
 
         let mut result = [FieldElement::ONE; COUNT];
 

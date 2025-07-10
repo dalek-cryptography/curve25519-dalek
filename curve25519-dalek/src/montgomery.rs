@@ -253,11 +253,11 @@ impl MontgomeryPoint {
     }
 }
 
+#[cfg(feature = "digest")]
 /// Perform the Elligator2 mapping to a tuple `(xn, xd, yn, yd)` such that
 /// `(xn / xd, yn / yd)` is a point on curve25519.
 ///
 /// See <https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method>
-//
 pub(crate) fn elligator_encode(
     u: &FieldElement,
 ) -> (FieldElement, FieldElement, FieldElement, FieldElement) {

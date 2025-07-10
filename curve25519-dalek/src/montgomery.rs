@@ -54,7 +54,9 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::constants::APLUS2_OVER_FOUR;
+#[cfg(feature = "digest")]
+use crate::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG, SQRT_M1};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{Scalar, clamp_integer};
@@ -65,7 +67,6 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-use crate::constants;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -300,7 +301,7 @@ pub(crate) fn elligator_encode(
     // 17. y11 = y11 * tv3
     let y11 = &y11 * &tv3;
     // 18. y12 = y11 * c3
-    let y12 = &y11 * &constants::SQRT_M1;
+    let y12 = &y11 * &SQRT_M1;
     // 19. tv2 = y11^2
     let tv2 = y11.square();
     // 20. tv2 = tv2 * gxd
@@ -316,7 +317,7 @@ pub(crate) fn elligator_encode(
     // 25. y21 = y21 * c2
     let y21 = &y21 * &c2;
     // 26. y22 = y21 * c3
-    let y22 = &y21 * &constants::SQRT_M1;
+    let y22 = &y21 * &SQRT_M1;
     // 27. gx2 = gx1 * tv1
     let gx2 = &gx1 * &tv1;
     // 28. tv2 = y21^2

@@ -409,7 +409,7 @@ impl FieldElement {
             "Domain separator MUST have nonzero length."
         );
 
-        // We statically allocate `hash_outputs` to its maximum permited length.
+        // We statically allocate `hash_outputs` to its maximum permitted length.
         let mut hash_outputs = [Array::<u8, D::OutputSize>::default(); 48 * 2];
         let b_0 = hasher.chain_update([domain_sep_len]).finalize();
 

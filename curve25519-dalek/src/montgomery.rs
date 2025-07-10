@@ -62,9 +62,10 @@ use crate::scalar::{Scalar, clamp_integer};
 use crate::traits::Identity;
 
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
+use crate::constants;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
@@ -252,33 +253,98 @@ impl MontgomeryPoint {
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point. Returns a Montgomery point and a `Choice`
-/// determining whether eps is a square. This is required by the standard to determine the
-/// sign of the v coordinate.
+/// Perform the Elligator2 mapping to a tuple `(xn, xd, yn, yd)` such that
+/// `(xn / xd, yn / yd)` is a point on curve25519.
 ///
 /// See <https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method>
 //
-#[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) {
+pub(crate) fn elligator_encode(
+    u: &FieldElement,
+) -> (FieldElement, FieldElement, FieldElement, FieldElement) {
+    use core::ops::Neg;
     let one = FieldElement::ONE;
-    let d_1 = &one + &r_0.square2(); /* 2r^2 */
+    let two = &one + &one;
+    let c2 = &two * &(two.pow_p58());
 
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
+    // 1.  tv1 = u^2
+    // 2.  tv1 = 2 * tv1
+    let tv1 = u.square2();
+    // 3.   xd = tv1 + 1
+    let xd = &one + &tv1;
+    // 4.  x1n = -J
+    let x1n = MONTGOMERY_A_NEG;
+    // 5.  tv2 = xd^2
+    let tv2 = xd.square();
+    // 6.  gxd = tv2 * xd
+    let gxd = &tv2 * &xd;
+    // 7.  gx1 = J * tv1
+    let gx1 = &MONTGOMERY_A * &tv1;
+    // 8.  gx1 = gx1 * x1n
+    let gx1 = &gx1 * &x1n;
+    // 9.  gx1 = gx1 + tv2
+    let gx1 = &gx1 + &tv2;
+    // 10. gx1 = gx1 * x1n
+    let gx1 = &gx1 * &x1n;
+    // 11. tv3 = gxd^2
+    let tv3 = gxd.square();
+    // 12. tv2 = tv3^2
+    let tv2 = tv3.square();
+    // 13. tv3 = tv3 * gxd
+    let tv3 = &tv3 * &gxd;
+    // 14. tv3 = tv3 * gx1
+    let tv3 = &tv3 * &gx1;
+    // 15. tv2 = tv2 * tv3
+    let tv2 = &tv2 * &tv3;
+    // 16. y11 = tv2^c4
+    let y11 = tv2.pow_p58();
+    // 17. y11 = y11 * tv3
+    let y11 = &y11 * &tv3;
+    // 18. y12 = y11 * c3
+    let y12 = &y11 * &constants::SQRT_M1;
+    // 19. tv2 = y11^2
+    let tv2 = y11.square();
+    // 20. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 21.  e1 = tv2 == gx1
+    let e1 = tv2.ct_eq(&gx1);
+    // 22.  y1 = CMOV(y12, y11, e1)
+    let y1 = FieldElement::conditional_select(&y12, &y11, e1);
+    // 23. x2n = x1n * tv1
+    let x2n = &x1n * &tv1;
+    // 24. y21 = y11 * u
+    let y21 = &y11 * u;
+    // 25. y21 = y21 * c2
+    let y21 = &y21 * &c2;
+    // 26. y22 = y21 * c3
+    let y22 = &y21 * &constants::SQRT_M1;
+    // 27. gx2 = gx1 * tv1
+    let gx2 = &gx1 * &tv1;
+    // 28. tv2 = y21^2
+    let tv2 = y21.square();
+    // 29. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 30.  e2 = tv2 == gx2
+    let e2 = tv2.ct_eq(&gx2);
+    // 31.  y2 = CMOV(y22, y21, e2)
+    let y2 = FieldElement::conditional_select(&y22, &y21, e2);
+    // 32. tv2 = y1^2
+    let tv2 = y1.square();
+    // 33. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 34.  e3 = tv2 == gx1
+    let e3 = tv2.ct_eq(&gx1);
+    // 35.  xn = CMOV(x2n, x1n, e3)
+    let xn = FieldElement::conditional_select(&x2n, &x1n, e3);
+    // 36.   y = CMOV(y2, y1, e3)
+    let y = FieldElement::conditional_select(&y2, &y1, e3);
+    // 37.  e4 = sgn0(y) == 1
+    // TODO: check that this step is correct
+    let e4 = y.is_negative();
+    // 38.   y = CMOV(y, -y, e3 XOR e4)
+    let y = FieldElement::conditional_select(&y, &y.neg(), e3 ^ e4);
+    // 39. return (xn, xd, y, 1)
 
-    let d_sq = &d.square();
-    let au = &MONTGOMERY_A * &d;
-
-    let inner = &(d_sq + &au) + &one;
-    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
-
-    let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
-
-    let zero = FieldElement::ZERO;
-    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
-    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
-    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
-
-    (MontgomeryPoint(u.to_bytes()), eps_is_sq)
+    (xn, xd, y, one)
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -652,15 +718,17 @@ mod test {
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);
-        let (eg, _) = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+        let (un, ud, ..) = elligator_encode(&fe);
+        let u = &un * &ud.invert();
+        assert_eq!(u.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
     }
 
     #[test]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
         let fe = FieldElement::from_bytes(&zero);
-        let (eg, _) = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), zero);
+        let (un, ud, ..) = elligator_encode(&fe);
+        let u = &un * &ud.invert();
+        assert_eq!(u.to_bytes(), zero);
     }
 }

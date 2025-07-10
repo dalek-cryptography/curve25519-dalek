@@ -635,7 +635,44 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform map to curve, with explicit hash function and domain separator, `domain_sep`,
+    // The function `map_to_curve` calculates an [EdwardsPoint] from a [FieldElement].
+    fn map_to_curve(fe: FieldElement) -> EdwardsPoint {
+        let c1 = ED25519_SQRTAM2;
+
+        // 1.  (xMn, xMd, yMn, yMd) = map_to_curve_elligator2_curve25519(u)
+        let (xMn, xMd, yMn, yMd) = crate::montgomery::elligator_encode(&fe);
+        // 2.  xn = xMn * yMd
+        let xn = &xMn * &yMd;
+        // 3.  xn = xn * c1
+        let xn = &xn * &c1;
+        // 4.  xd = xMd * yMn
+        let xd = &xMd * &yMn;
+        // 5.  yn = xMn - xMd
+        let yn = &xMn - &xMd;
+        // 6.  yd = xMn + xMd
+        let yd = &xMn + &xMd;
+        // 7. tv1 = xd * yd
+        let tv1 = &xd * &yd;
+        // 8.   e = tv1 == 0
+        let e = tv1.ct_eq(&FieldElement::ZERO);
+        // 9.  xn = CMOV(xn, 0, e)
+        let xn = FieldElement::conditional_select(&xn, &FieldElement::ZERO, e);
+        // 10. xd = CMOV(xd, 1, e)
+        let xd = FieldElement::conditional_select(&xd, &FieldElement::ONE, e);
+        // 11. yn = CMOV(yn, 1, e)
+        let yn = FieldElement::conditional_select(&yn, &FieldElement::ONE, e);
+        // 12. yd = CMOV(yd, 1, e)
+        let yd = FieldElement::conditional_select(&yd, &FieldElement::ONE, e);
+        // 13. return (xn, xd, yn, yd)
+
+        let x = &xn * &xd.invert();
+        let y = &yn * &yd.invert();
+
+        AffinePoint { x, y }.to_edwards()
+    }
+
+    #[cfg(feature = "digest")]
+    /// Perform encode to curve, with explicit hash function and domain separator, `domain_sep`,
     /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed

@@ -30,7 +30,6 @@
     unused_lifetimes,
     unused_qualifications
 )]
-#![cfg_attr(feature = "group", allow(clippy::op_ref))]
 
 //------------------------------------------------------------------------
 // External dependencies:
@@ -92,7 +91,7 @@ pub(crate) mod backend;
 pub(crate) mod window;
 
 pub use crate::{
-    edwards::EdwardsPoint, field::FieldElement, montgomery::MontgomeryPoint,
+    edwards::EdwardsPoint, field::FfFieldElement as FieldElement, montgomery::MontgomeryPoint,
     ristretto::RistrettoPoint, scalar::Scalar,
 };
 

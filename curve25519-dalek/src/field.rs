@@ -49,39 +49,35 @@ cfg_if! {
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations. Its size and internals are not guaranteed to have
-        /// any specific properties and are not covered by semver.
+        /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(curve25519_dalek_bits = "32")]
-        pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+        pub(crate) type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations. Its size and internals are not guaranteed to have
-        /// any specific properties and are not covered by semver.
+        /// implementations.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(curve25519_dalek_bits = "64")]
-        pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+        pub(crate) type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations. Its size and internals are not guaranteed to have
-        /// any specific properties and are not covered by semver.
-        pub type FieldElement = backend::serial::u64::field::FieldElement51;
+        /// implementations.
+        pub(crate) type FieldElement = backend::serial::u64::field::FieldElement51;
     } else {
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations. Its size and internals are not guaranteed to have
-        /// any specific properties and are not covered by semver.
-        pub type FieldElement = backend::serial::u32::field::FieldElement2625;
+        /// implementations.
+        pub(crate) type FieldElement = backend::serial::u32::field::FieldElement2625;
     }
 }
 
@@ -416,150 +412,204 @@ impl FieldElement {
 
 #[cfg(feature = "group")]
 mod group {
-    use super::*;
+    use super::FieldElement;
     use core::{
+        fmt::Debug,
         iter::{Product, Sum},
         ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     };
     use ff::{Field, PrimeField};
-    use subtle::CtOption;
+    use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-    impl Default for FieldElement {
+    /// A `FieldElement` represents an element of the field
+    /// \\( \mathbb Z / (2\^{255} - 19)\\).
+    ///
+    /// The `FieldElement` type is an alias for one of the platform-specific
+    /// implementations. Its size and internals are not guaranteed to have
+    /// any specific properties and are not covered by semver.
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    pub struct FfFieldElement(FieldElement);
+
+    impl Default for FfFieldElement {
         fn default() -> Self {
-            FieldElement::ZERO
+            FfFieldElement(FieldElement::ZERO)
         }
     }
 
-    impl From<u64> for FieldElement {
+    impl Debug for FfFieldElement {
+        fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+            write!(f, "FfFieldElement{{\n\tbytes: {:?},\n}}", &self.0.to_bytes())
+        }
+    }
+
+    impl From<u64> for FfFieldElement {
         fn from(a: u64) -> Self {
+            // Portable method to convert a u64 to a FfFieldElement,
+            // regardless of the internal representation
             let mut bytes = [0; 32];
             bytes[..8].copy_from_slice(&a.to_le_bytes());
-            Self::from_bytes(&bytes)
+            Self(FieldElement::from_bytes(&bytes))
         }
     }
 
-    impl Add for FieldElement {
+    impl Add<&FfFieldElement> for FfFieldElement {
         type Output = Self;
-        fn add(self, other: FieldElement) -> Self {
-            &self + &other
+        fn add(self, other: &Self) -> Self {
+            let unreduced = &self.0 + &other.0;
+            // Force a reduction
+            Self(FieldElement::from_bytes(&unreduced.to_bytes()))
         }
     }
-    impl Add<&FieldElement> for FieldElement {
+    impl Add for FfFieldElement {
         type Output = Self;
-        fn add(self, other: &FieldElement) -> Self {
-            &self + other
+        fn add(self, other: Self) -> Self {
+            self + &other
         }
     }
-    impl Neg for FieldElement {
-        type Output = Self;
-        fn neg(self) -> Self {
-            FieldElement::ZERO - self
+    impl AddAssign for FfFieldElement {
+        fn add_assign(&mut self, other: Self) {
+            *self = *self + &other;
         }
     }
-    impl Sub for FieldElement {
-        type Output = Self;
-        fn sub(self, other: FieldElement) -> Self {
-            &self - &other
-        }
-    }
-    impl Sub<&FieldElement> for FieldElement {
-        type Output = Self;
-        fn sub(self, other: &FieldElement) -> Self {
-            &self - other
-        }
-    }
-    impl Mul for FieldElement {
-        type Output = Self;
-        fn mul(self, other: FieldElement) -> Self {
-            &self * &other
-        }
-    }
-    impl Mul<&FieldElement> for FieldElement {
-        type Output = Self;
-        fn mul(self, other: &FieldElement) -> Self {
-            &self * other
-        }
-    }
-
-    impl AddAssign for FieldElement {
-        fn add_assign(&mut self, other: FieldElement) {
+    impl AddAssign<&FfFieldElement> for FfFieldElement {
+        fn add_assign(&mut self, other: &Self) {
             *self = *self + other;
         }
     }
-    impl SubAssign for FieldElement {
-        fn sub_assign(&mut self, other: FieldElement) {
+
+    impl Sub<&FfFieldElement> for FfFieldElement {
+        type Output = Self;
+        fn sub(self, other: &Self) -> Self {
+            let unreduced = &self.0 - &other.0;
+            // Force a reduction
+            Self(FieldElement::from_bytes(&unreduced.to_bytes()))
+        }
+    }
+    impl Sub for FfFieldElement {
+        type Output = Self;
+        fn sub(self, other: Self) -> Self {
+            self - &other
+        }
+    }
+    impl SubAssign for FfFieldElement {
+        fn sub_assign(&mut self, other: Self) {
+            *self = *self - &other;
+        }
+    }
+    impl SubAssign<&FfFieldElement> for FfFieldElement {
+        fn sub_assign(&mut self, other: &Self) {
             *self = *self - other;
         }
     }
-    impl MulAssign for FieldElement {
-        fn mul_assign(&mut self, other: FieldElement) {
+
+    impl Neg for FfFieldElement {
+        type Output = Self;
+        fn neg(self) -> Self {
+            FfFieldElement::ZERO - self
+        }
+    }
+
+    impl Mul<&FfFieldElement> for FfFieldElement {
+        type Output = Self;
+        fn mul(self, other: &Self) -> Self {
+            let unreduced = &self.0 * &other.0;
+            // Force a reduction
+            Self(FieldElement::from_bytes(&unreduced.to_bytes()))
+        }
+    }
+    impl Mul for FfFieldElement {
+        type Output = Self;
+        fn mul(self, other: Self) -> Self {
+            self * &other
+        }
+    }
+    impl MulAssign for FfFieldElement {
+        fn mul_assign(&mut self, other: Self) {
+            *self = *self * other;
+        }
+    }
+    impl MulAssign<&FfFieldElement> for FfFieldElement {
+        fn mul_assign(&mut self, other: &Self) {
             *self = *self * other;
         }
     }
 
-    impl Sum for FieldElement {
-        fn sum<I: Iterator<Item = FieldElement>>(iter: I) -> FieldElement {
-            let mut res = FieldElement::ZERO;
+    impl Sum for FfFieldElement {
+        fn sum<I: Iterator<Item = FfFieldElement>>(iter: I) -> Self {
+            let mut res = FfFieldElement::ZERO;
             for item in iter {
                 res += item;
             }
             res
         }
     }
-    impl<'a> Sum<&'a FieldElement> for FieldElement {
-        fn sum<I: Iterator<Item = &'a FieldElement>>(iter: I) -> FieldElement {
+    impl<'a> Sum<&'a FfFieldElement> for FfFieldElement {
+        fn sum<I: Iterator<Item = &'a FfFieldElement>>(iter: I) -> Self {
             iter.copied().sum()
         }
     }
 
-    impl Product<FieldElement> for FieldElement {
-        fn product<I: Iterator<Item = FieldElement>>(iter: I) -> FieldElement {
-            let mut res = FieldElement::ONE;
+    impl Product<FfFieldElement> for FfFieldElement {
+        fn product<I: Iterator<Item = FfFieldElement>>(iter: I) -> Self {
+            let mut res = FfFieldElement::ONE;
             for item in iter {
                 res *= item;
             }
             res
         }
     }
-    impl<'a> Product<&'a FieldElement> for FieldElement {
-        fn product<I: Iterator<Item = &'a FieldElement>>(iter: I) -> FieldElement {
+    impl<'a> Product<&'a FfFieldElement> for FfFieldElement {
+        fn product<I: Iterator<Item = &'a FfFieldElement>>(iter: I) -> Self {
             iter.copied().product()
         }
     }
 
-    impl Field for FieldElement {
-        const ZERO: Self = Self::ZERO;
-        const ONE: Self = Self::ONE;
+    impl ConstantTimeEq for FfFieldElement {
+        fn ct_eq(&self, other: &Self) -> Choice {
+            self.0.ct_eq(&other.0)
+        }
+    }
+
+    impl ConditionallySelectable for FfFieldElement {
+        fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+            Self(<_>::conditional_select(&a.0, &b.0, choice))
+        }
+    }
+
+    impl Field for FfFieldElement {
+        const ZERO: Self = Self(FieldElement::ZERO);
+        const ONE: Self = Self(FieldElement::ONE);
 
         fn try_from_rng<R: rand_core::TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
             let mut bytes = [0; 64];
             rng.try_fill_bytes(&mut bytes)?;
-            Ok(FieldElement::from_bytes_wide(&bytes))
+            Ok(Self(FieldElement::from_bytes_wide(&bytes)))
         }
 
         fn square(&self) -> Self {
-            self * self
+            *self * self
         }
 
         fn double(&self) -> Self {
-            self + self
+            *self + self
         }
 
         fn invert(&self) -> CtOption<Self> {
-            CtOption::new(self.invert(), !self.is_zero())
+            CtOption::new(Self(self.0.invert()), !self.is_zero())
         }
 
         fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
-            FieldElement::sqrt_ratio_i(num, div)
+            let res = FieldElement::sqrt_ratio_i(&num.0, &div.0);
+            (res.0, Self(res.1))
         }
     }
 
-    impl PrimeField for FieldElement {
+    impl PrimeField for FfFieldElement {
         type Repr = [u8; 32];
 
         fn from_repr(repr: Self::Repr) -> CtOption<Self> {
-            let res = Self::from_bytes(&repr);
-            CtOption::new(res, repr.ct_eq(&res.to_bytes()))
+            let res = Self(FieldElement::from_bytes(&repr));
+            CtOption::new(res, repr.ct_eq(&res.0.to_bytes()))
         }
 
         fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
@@ -567,11 +617,11 @@ mod group {
         }
 
         fn to_repr(&self) -> Self::Repr {
-            self.to_bytes()
+            self.0.to_bytes()
         }
 
         fn is_odd(&self) -> Choice {
-            Choice::from(self.to_bytes()[0] & 1)
+            Choice::from(self.0.to_bytes()[0] & 1)
         }
 
         const MODULUS: &'static str =
@@ -579,31 +629,31 @@ mod group {
         const NUM_BITS: u32 = 255;
         const CAPACITY: u32 = 254;
 
-        const TWO_INV: Self = Self::from_bytes(&[
+        const TWO_INV: Self = Self(FieldElement::from_bytes(&[
             247, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63,
-        ]);
-        const MULTIPLICATIVE_GENERATOR: Self = Self::from_bytes(&[
+        ]));
+        const MULTIPLICATIVE_GENERATOR: Self = Self(FieldElement::from_bytes(&[
             2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
-        ]);
+        ]));
         const S: u32 = 2;
-        const ROOT_OF_UNITY: Self = Self::from_bytes(&[
+        const ROOT_OF_UNITY: Self = Self(FieldElement::from_bytes(&[
             176, 160, 14, 74, 39, 27, 238, 196, 120, 228, 47, 173, 6, 24, 67, 47, 167, 215, 251,
             61, 153, 0, 77, 43, 11, 223, 193, 79, 128, 36, 131, 43,
-        ]);
-        const ROOT_OF_UNITY_INV: Self = Self::from_bytes(&[
+        ]));
+        const ROOT_OF_UNITY_INV: Self = Self(FieldElement::from_bytes(&[
             61, 95, 241, 181, 216, 228, 17, 59, 135, 27, 208, 82, 249, 231, 188, 208, 88, 40, 4,
             194, 102, 255, 178, 212, 244, 32, 62, 176, 127, 219, 124, 84,
-        ]);
-        const DELTA: Self = Self::from_bytes(&[
+        ]));
+        const DELTA: Self = Self(FieldElement::from_bytes(&[
             16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
-        ]);
+        ]));
     }
 
     #[cfg(feature = "group-bits")]
-    impl ff::PrimeFieldBits for FieldElement {
+    impl ff::PrimeFieldBits for FfFieldElement {
         type ReprBits = [u8; 32];
 
         fn to_le_bits(&self) -> ff::FieldBits<Self::ReprBits> {
@@ -612,13 +662,15 @@ mod group {
 
         fn char_le_bits() -> ff::FieldBits<Self::ReprBits> {
             [
-                127, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 237,
+                237, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127,
             ]
             .into()
         }
     }
 }
+#[cfg(feature = "group")]
+pub use group::FfFieldElement;
 
 #[cfg(test)]
 mod test {

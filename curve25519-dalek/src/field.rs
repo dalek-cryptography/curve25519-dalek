@@ -104,7 +104,7 @@ impl ConstantTimeEq for FieldElement {
 
 impl FieldElement {
     /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
-    #[cfg(feature = "digest")]
+    #[cfg(any(feature = "digest", feature = "group"))]
     pub(crate) fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
         let mut fl = [0u8; 32];
         let mut gl = [0u8; 32];
@@ -600,6 +600,23 @@ mod group {
             16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0,
         ]);
+    }
+
+    #[cfg(feature = "group-bits")]
+    impl ff::PrimeFieldBits for FieldElement {
+        type ReprBits = [u8; 32];
+
+        fn to_le_bits(&self) -> ff::FieldBits<Self::ReprBits> {
+            self.to_repr().into()
+        }
+
+        fn char_le_bits() -> ff::FieldBits<Self::ReprBits> {
+            [
+                127, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+                255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 237,
+            ]
+            .into()
+        }
     }
 }
 

@@ -438,7 +438,11 @@ mod group {
 
     impl Debug for FfFieldElement {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            write!(f, "FfFieldElement{{\n\tbytes: {:?},\n}}", &self.0.to_bytes())
+            write!(
+                f,
+                "FfFieldElement{{\n\tbytes: {:?},\n}}",
+                &self.0.to_bytes()
+            )
         }
     }
 

@@ -605,3 +605,8 @@ impl FieldElement2625 {
         FieldElement2625::reduce(coeffs)
     }
 }
+
+#[cfg(feature = "expose-field")]
+impl crate::UnderlyingCapacity for FieldElement51 {
+    type Capacity = typenum::U3;
+}

@@ -55,8 +55,9 @@ curve25519-dalek = ">= 5.0, < 5.2"
 | `digest`           |          | Enables `RistrettoPoint::{from_hash, hash_from_bytes}` and `Scalar::{from_hash, hash_from_bytes}`. This is an optional dependency whose version is not subject to SemVer. See [below](#public-api-semver-exemptions) for more details. |
 | `serde`            |          | Enables `serde` serialization/deserialization for all the point and scalar types. |
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
+| `expose-field`     |          | Enables `FieldElement` satisfying `ff` traits and bespoke traits for lazy reduction |
 | `group`            |          | Enables external `group` and `ff` crate traits. |
-| `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`.  |
+| `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`, and `FieldElement` if `expose-field`.  |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To

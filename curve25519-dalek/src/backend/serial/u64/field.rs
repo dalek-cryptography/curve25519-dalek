@@ -573,3 +573,8 @@ impl FieldElement51 {
         square
     }
 }
+
+#[cfg(feature = "expose-field")]
+impl crate::UnderlyingCapacity for FieldElement51 {
+    type Capacity = typenum::U8;
+}

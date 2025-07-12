@@ -100,7 +100,7 @@ impl ConstantTimeEq for FieldElement {
 
 impl FieldElement {
     /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
-    #[cfg(feature = "digest")]
+    #[cfg(any(feature = "digest", feature = "group", feature = "expose-field"))]
     pub(crate) fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
         let mut fl = [0u8; 32];
         let mut gl = [0u8; 32];

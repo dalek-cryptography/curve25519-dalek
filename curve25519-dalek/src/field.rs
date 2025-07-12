@@ -508,8 +508,9 @@ mod group {
 
     impl Neg for FfFieldElement {
         type Output = Self;
-        fn neg(self) -> Self {
-            FfFieldElement::ZERO - self
+        fn neg(mut self) -> Self {
+            self.0.negate();
+            Self(FieldElement::from_bytes(&self.0.to_bytes()))
         }
     }
 

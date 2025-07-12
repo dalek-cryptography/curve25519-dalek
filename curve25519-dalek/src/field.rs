@@ -410,6 +410,195 @@ impl FieldElement {
     }
 }
 
+#[cfg(feature = "group")]
+mod group_support {
+    use super::*;
+    use core::{
+        iter::{Product, Sum},
+        ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+    };
+    use ff::{Field, PrimeField};
+    use subtle::CtOption;
+
+    impl Default for FieldElement {
+        fn default() -> Self {
+            FieldElement::ZERO
+        }
+    }
+
+    impl From<u64> for FieldElement {
+        fn from(a: u64) -> Self {
+            let mut bytes = [0; 32];
+            bytes[..8].copy_from_slice(&a.to_le_bytes());
+            Self::from_bytes(&bytes)
+        }
+    }
+
+    impl Add for FieldElement {
+        type Output = Self;
+        fn add(self, other: FieldElement) -> Self {
+            &self + &other
+        }
+    }
+    impl Add<&FieldElement> for FieldElement {
+        type Output = Self;
+        fn add(self, other: &FieldElement) -> Self {
+            &self + other
+        }
+    }
+    impl Neg for FieldElement {
+        type Output = Self;
+        fn neg(self) -> Self {
+            FieldElement::ZERO - self
+        }
+    }
+    impl Sub for FieldElement {
+        type Output = Self;
+        fn sub(self, other: FieldElement) -> Self {
+            &self - &other
+        }
+    }
+    impl Sub<&FieldElement> for FieldElement {
+        type Output = Self;
+        fn sub(self, other: &FieldElement) -> Self {
+            &self - other
+        }
+    }
+    impl Mul for FieldElement {
+        type Output = Self;
+        fn mul(self, other: FieldElement) -> Self {
+            &self * &other
+        }
+    }
+    impl Mul<&FieldElement> for FieldElement {
+        type Output = Self;
+        fn mul(self, other: &FieldElement) -> Self {
+            &self * other
+        }
+    }
+
+    impl AddAssign for FieldElement {
+        fn add_assign(&mut self, other: FieldElement) {
+            *self = *self + other;
+        }
+    }
+    impl SubAssign for FieldElement {
+        fn sub_assign(&mut self, other: FieldElement) {
+            *self = *self - other;
+        }
+    }
+    impl MulAssign for FieldElement {
+        fn mul_assign(&mut self, other: FieldElement) {
+            *self = *self * other;
+        }
+    }
+
+    impl Sum for FieldElement {
+        fn sum<I: Iterator<Item = FieldElement>>(iter: I) -> FieldElement {
+            let mut res = FieldElement::ZERO;
+            for item in iter {
+                res += item;
+            }
+            res
+        }
+    }
+    impl<'a> Sum<&'a FieldElement> for FieldElement {
+        fn sum<I: Iterator<Item = &'a FieldElement>>(iter: I) -> FieldElement {
+            iter.copied().sum()
+        }
+    }
+
+    impl Product<FieldElement> for FieldElement {
+        fn product<I: Iterator<Item = FieldElement>>(iter: I) -> FieldElement {
+            let mut res = FieldElement::ONE;
+            for item in iter {
+                res *= item;
+            }
+            res
+        }
+    }
+    impl<'a> Product<&'a FieldElement> for FieldElement {
+        fn product<I: Iterator<Item = &'a FieldElement>>(iter: I) -> FieldElement {
+            iter.copied().product()
+        }
+    }
+
+    impl Field for FieldElement {
+        const ZERO: Self = Self::ZERO;
+        const ONE: Self = Self::ONE;
+
+        fn try_from_rng<R: rand_core::TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+            let mut bytes = [0; 64];
+            rng.try_fill_bytes(&mut bytes)?;
+            Ok(FieldElement::from_bytes_wide(&bytes))
+        }
+
+        fn square(&self) -> Self {
+            self * self
+        }
+
+        fn double(&self) -> Self {
+            self + self
+        }
+
+        fn invert(&self) -> CtOption<Self> {
+            CtOption::new(self.invert(), !self.is_zero())
+        }
+
+        fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
+            FieldElement::sqrt_ratio_i(num, div)
+        }
+    }
+
+    impl PrimeField for FieldElement {
+        type Repr = [u8; 32];
+
+        fn from_repr(repr: Self::Repr) -> CtOption<Self> {
+            let res = Self::from_bytes(&repr);
+            CtOption::new(res, repr.ct_eq(&res.to_bytes()))
+        }
+
+        fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
+            Self::from_repr(repr).into()
+        }
+
+        fn to_repr(&self) -> Self::Repr {
+            self.to_bytes()
+        }
+
+        fn is_odd(&self) -> Choice {
+            Choice::from(self.to_bytes()[0] & 1)
+        }
+
+        const MODULUS: &'static str =
+            "0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed";
+        const NUM_BITS: u32 = 255;
+        const CAPACITY: u32 = 254;
+
+        const TWO_INV: Self = Self::from_bytes(&[
+            247, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63,
+        ]);
+        const MULTIPLICATIVE_GENERATOR: Self = Self::from_bytes(&[
+            2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ]);
+        const S: u32 = 2;
+        const ROOT_OF_UNITY: Self = Self::from_bytes(&[
+            176, 160, 14, 74, 39, 27, 238, 196, 120, 228, 47, 173, 6, 24, 67, 47, 167, 215, 251,
+            61, 153, 0, 77, 43, 11, 223, 193, 79, 128, 36, 131, 43,
+        ]);
+        const ROOT_OF_UNITY_INV: Self = Self::from_bytes(&[
+            61, 95, 241, 181, 216, 228, 17, 59, 135, 27, 208, 82, 249, 231, 188, 208, 88, 40, 4,
+            194, 102, 255, 178, 212, 244, 32, 62, 176, 127, 219, 124, 84,
+        ]);
+        const DELTA: Self = Self::from_bytes(&[
+            16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ]);
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::field::*;

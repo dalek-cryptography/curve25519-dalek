@@ -30,6 +30,7 @@
     unused_lifetimes,
     unused_qualifications
 )]
+#![cfg_attr(feature = "group", allow(clippy::op_ref))]
 
 //------------------------------------------------------------------------
 // External dependencies:

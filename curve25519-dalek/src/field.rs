@@ -49,35 +49,39 @@ cfg_if! {
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
+        /// implementations. Its size and internals are not guaranteed to have
+        /// any specific properties and are not covered by semver.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(curve25519_dalek_bits = "32")]
-        pub(crate) type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+        pub type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
 
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
+        /// implementations. Its size and internals are not guaranteed to have
+        /// any specific properties and are not covered by semver.
         ///
         /// Using formally-verified field arithmetic from fiat-crypto.
         #[cfg(curve25519_dalek_bits = "64")]
-        pub(crate) type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
+        pub type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
     } else if #[cfg(curve25519_dalek_bits = "64")] {
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        pub(crate) type FieldElement = backend::serial::u64::field::FieldElement51;
+        /// implementations. Its size and internals are not guaranteed to have
+        /// any specific properties and are not covered by semver.
+        pub type FieldElement = backend::serial::u64::field::FieldElement51;
     } else {
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        pub(crate) type FieldElement = backend::serial::u32::field::FieldElement2625;
+        /// implementations. Its size and internals are not guaranteed to have
+        /// any specific properties and are not covered by semver.
+        pub type FieldElement = backend::serial::u32::field::FieldElement2625;
     }
 }
 
@@ -411,7 +415,7 @@ impl FieldElement {
 }
 
 #[cfg(feature = "group")]
-mod group_support {
+mod group {
     use super::*;
     use core::{
         iter::{Product, Sum},

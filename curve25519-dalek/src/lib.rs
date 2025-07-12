@@ -92,7 +92,8 @@ pub(crate) mod backend;
 pub(crate) mod window;
 
 pub use crate::{
-    edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
+    edwards::EdwardsPoint, field::FieldElement, montgomery::MontgomeryPoint,
+    ristretto::RistrettoPoint, scalar::Scalar,
 };
 
 // Build time diagnostics for validation

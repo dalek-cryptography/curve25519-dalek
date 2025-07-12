@@ -581,6 +581,13 @@ mod group {
         }
     }
 
+    #[cfg(feature = "zeroize")]
+    impl zeroize::Zeroize for FfFieldElement {
+        fn zeroize(&mut self) {
+            self.0.zeroize();
+        }
+    }
+
     impl Field for FfFieldElement {
         const ZERO: Self = Self(FieldElement::ZERO);
         const ONE: Self = Self(FieldElement::ONE);

@@ -464,6 +464,7 @@ mod group {
             Self(FieldElement::from_bytes(&unreduced.to_bytes()))
         }
     }
+    #[allow(clippy::op_ref)]
     impl Add for FfFieldElement {
         type Output = Self;
         fn add(self, other: Self) -> Self {
@@ -472,7 +473,7 @@ mod group {
     }
     impl AddAssign for FfFieldElement {
         fn add_assign(&mut self, other: Self) {
-            *self = *self + &other;
+            *self = *self + other;
         }
     }
     impl AddAssign<&FfFieldElement> for FfFieldElement {
@@ -489,6 +490,7 @@ mod group {
             Self(FieldElement::from_bytes(&unreduced.to_bytes()))
         }
     }
+    #[allow(clippy::op_ref)]
     impl Sub for FfFieldElement {
         type Output = Self;
         fn sub(self, other: Self) -> Self {
@@ -497,7 +499,7 @@ mod group {
     }
     impl SubAssign for FfFieldElement {
         fn sub_assign(&mut self, other: Self) {
-            *self = *self - &other;
+            *self = *self - other;
         }
     }
     impl SubAssign<&FfFieldElement> for FfFieldElement {
@@ -522,6 +524,7 @@ mod group {
             Self(FieldElement::from_bytes(&unreduced.to_bytes()))
         }
     }
+    #[allow(clippy::op_ref)]
     impl Mul for FfFieldElement {
         type Output = Self;
         fn mul(self, other: Self) -> Self {

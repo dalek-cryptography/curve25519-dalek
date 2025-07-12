@@ -94,7 +94,7 @@ pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
 };
 #[cfg(feature = "group")]
-use field::FfFieldElement as FieldElement;
+pub use field::FfFieldElement as FieldElement;
 
 // Build time diagnostics for validation
 #[cfg(curve25519_dalek_diagnostics = "build")]

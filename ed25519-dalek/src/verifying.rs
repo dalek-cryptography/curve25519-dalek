@@ -19,7 +19,7 @@ use curve25519_dalek::{
     scalar::Scalar,
 };
 
-use ed25519::signature::Verifier;
+use ed25519::signature::{MultipartVerifier, Verifier};
 
 use sha2::Sha512;
 
@@ -200,7 +200,7 @@ impl VerifyingKey {
     #[allow(non_snake_case)]
     pub(crate) fn raw_verify<CtxDigest>(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         signature: &ed25519::Signature,
     ) -> Result<(), SignatureError>
     where
@@ -245,7 +245,7 @@ impl VerifyingKey {
 
         let message = prehashed_message.finalize();
 
-        let expected_R = RCompute::<CtxDigest>::compute(self, signature, Some(ctx), &message);
+        let expected_R = RCompute::<CtxDigest>::compute(self, signature, Some(ctx), &[&message]);
 
         if expected_R == signature.R {
             Ok(())
@@ -371,7 +371,7 @@ impl VerifyingKey {
             return Err(InternalError::Verify.into());
         }
 
-        let expected_R = RCompute::<Sha512>::compute(self, signature, None, message);
+        let expected_R = RCompute::<Sha512>::compute(self, signature, None, &[message]);
         if expected_R == signature.R {
             Ok(())
         } else {
@@ -447,7 +447,7 @@ impl VerifyingKey {
         }
 
         let message = prehashed_message.finalize();
-        let expected_R = RCompute::<Sha512>::compute(self, signature, Some(ctx), &message);
+        let expected_R = RCompute::<Sha512>::compute(self, signature, Some(ctx), &[&message]);
 
         if expected_R == signature.R {
             Ok(())
@@ -508,10 +508,10 @@ where
         key: &VerifyingKey,
         signature: InternalSignature,
         prehash_ctx: Option<&[u8]>,
-        message: &[u8],
+        message: &[&[u8]],
     ) -> CompressedEdwardsY {
         let mut c = Self::new(key, signature, prehash_ctx);
-        c.update(message);
+        message.iter().for_each(|slice| c.update(slice));
         c.finish()
     }
 
@@ -561,6 +561,16 @@ impl Verifier<ed25519::Signature> for VerifyingKey {
     ///
     /// Returns `Ok(())` if the signature is valid, and `Err` otherwise.
     fn verify(&self, message: &[u8], signature: &ed25519::Signature) -> Result<(), SignatureError> {
+        self.multipart_verify(&[message], signature)
+    }
+}
+
+impl MultipartVerifier<ed25519::Signature> for VerifyingKey {
+    fn multipart_verify(
+        &self,
+        message: &[&[u8]],
+        signature: &ed25519::Signature,
+    ) -> Result<(), SignatureError> {
         self.raw_verify::<Sha512>(message, signature)
     }
 }

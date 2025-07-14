@@ -29,7 +29,7 @@ use curve25519_dalek::{
     scalar::Scalar,
 };
 
-use ed25519::signature::{KeypairRef, Signer, Verifier};
+use ed25519::signature::{KeypairRef, MultipartSigner, MultipartVerifier, Signer, Verifier};
 
 #[cfg(feature = "digest")]
 use crate::context::Context;
@@ -568,6 +568,12 @@ impl KeypairRef for SigningKey {
 impl Signer<Signature> for SigningKey {
     /// Sign a message with this signing key's secret key.
     fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
+        self.try_multipart_sign(&[message])
+    }
+}
+
+impl MultipartSigner<Signature> for SigningKey {
+    fn try_multipart_sign(&self, message: &[&[u8]]) -> Result<Signature, SignatureError> {
         let expanded: ExpandedSecretKey = (&self.secret_key).into();
         Ok(expanded.raw_sign::<Sha512>(message, &self.verifying_key))
     }
@@ -612,6 +618,16 @@ impl Verifier<Signature> for SigningKey {
     /// Verify a signature on a message with this signing key's public key.
     fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
         self.verifying_key.verify(message, signature)
+    }
+}
+
+impl MultipartVerifier<Signature> for SigningKey {
+    fn multipart_verify(
+        &self,
+        message: &[&[u8]],
+        signature: &Signature,
+    ) -> Result<(), SignatureError> {
+        self.verifying_key.multipart_verify(message, signature)
     }
 }
 
@@ -829,7 +845,7 @@ impl ExpandedSecretKey {
     #[inline(always)]
     pub(crate) fn raw_sign<CtxDigest>(
         &self,
-        message: &[u8],
+        message: &[&[u8]],
         verifying_key: &VerifyingKey,
     ) -> Signature
     where
@@ -838,7 +854,7 @@ impl ExpandedSecretKey {
         // OK unwrap, update can't fail.
         self.raw_sign_byupdate(
             |h: &mut CtxDigest| {
-                h.update(message);
+                message.iter().for_each(|slice| h.update(slice));
                 Ok(())
             },
             verifying_key,

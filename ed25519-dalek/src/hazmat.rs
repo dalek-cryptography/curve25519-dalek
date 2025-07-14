@@ -142,7 +142,7 @@ pub fn raw_sign<CtxDigest>(
 where
     CtxDigest: Digest<OutputSize = U64>,
 {
-    esk.raw_sign::<CtxDigest>(message, verifying_key)
+    esk.raw_sign::<CtxDigest>(&[message], verifying_key)
 }
 
 /// Compute a signature over the given prehashed message, the Ed25519ph algorithm defined in
@@ -230,7 +230,7 @@ pub fn raw_verify<CtxDigest>(
 where
     CtxDigest: Digest<OutputSize = U64>,
 {
-    vk.raw_verify::<CtxDigest>(message, signature)
+    vk.raw_verify::<CtxDigest>(&[message], signature)
 }
 
 /// The batched Ed25519 verification check, rejecting non-canonical R values. `MsgDigest` is the

@@ -25,3 +25,6 @@ pub mod field;
 pub mod scalar;
 
 pub mod constants;
+
+#[cfg(feature = "verus")]
+pub mod scalar_verus;

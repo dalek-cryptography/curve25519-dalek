@@ -377,7 +377,7 @@ mod scalar_benches {
                         (0..size).map(|_| Scalar::random(&mut rng)).collect();
                     b.iter(|| {
                         let mut s = scalars.clone();
-                        Scalar::batch_invert(&mut s);
+                        Scalar::batch_alloc_invert(&mut s);
                     });
                 },
             );

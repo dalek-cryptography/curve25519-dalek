@@ -53,6 +53,9 @@ harness = false
 required-features = ["alloc", "rand_core"]
 
 [dependencies]
+vstd = { git = "https://github.com/verus-lang/verus", rev = "9b557d70faab565829c0642c4d56609a44814d82" }
+builtin = { git = "https://github.com/verus-lang/verus", rev = "9b557d70faab565829c0642c4d56609a44814d82" }
+builtin_macros = { git = "https://github.com/verus-lang/verus", rev = "9b557d70faab565829c0642c4d56609a44814d82" }
 cfg-if = "1"
 ff = { version = "=0.14.0-pre.0", default-features = false, optional = true }
 group = { version = "=0.14.0-pre.0", default-features = false, optional = true }
@@ -96,3 +99,6 @@ check-cfg = [
     'cfg(curve25519_dalek_bits, values("32", "64"))',
     'cfg(nightly)',
 ]
+
+[package.metadata.verus]
+verify = true

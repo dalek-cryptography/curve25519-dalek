@@ -3,62 +3,30 @@
 use vstd::prelude::*;
 use vstd::calc;
 use vstd::arithmetic::power2::*;
-// Inline subtle_verus functionality for direct Verus compilation
-// use crate::subtle_verus::{Choice, ConditionallySelectable, choice_from_borrow};
-// use crate::constants; // We manually import needed constants 
+use subtle::{Choice, ConditionallySelectable};
+// use crate::constants; // We manually import needed constants
+
 
 verus! {
 
+        #[verifier::external_type_specification]
+        #[verifier::external_body]
+        pub struct ExChoice(Choice);
 
-        /****** INLINE SUBTLE_VERUS FUNCTIONALITY ******/
-        
-        /// A type representing a choice between two values.
-        /// This is equivalent to a `u8` that is guaranteed to be either `0` or `1`.
-        #[derive(Copy, Clone, Debug)]
-        pub struct Choice {
-            pub value: u8,
-        }
+        pub uninterp spec fn boolify(c: Choice) -> bool;
 
-        impl Choice {
-            /// Create a `Choice` from a `u8` that is supposed to be either `0` or `1`.
-            pub fn from(x: u8) -> (result: Choice)
-            requires 
-                x == 0u8 || x == 1u8,
-            ensures 
-                result.value == x,
-            {
-                Choice { value: x }
-            }
-        }
+        pub assume_specification [Choice::from](u: u8) -> (c: Choice)
+            ensures u == 0 ==> boolify(c) == false,
+                    u == 1 ==> boolify(c) == true;
 
-        /// Trait for types that can be conditionally selected in constant time.
-        pub trait ConditionallySelectable: Copy {
-            fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: Self);
-        }
-
-        /// Implementation of `ConditionallySelectable` for `u64`.
-        impl ConditionallySelectable for u64 {
-            #[inline]
-            fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: u64)
-            ensures 
-                result == if choice.value == 1 { *a } else { *b },
-            {
-                let mask = if choice.value == 1 { u64::MAX } else { 0u64 };
-                let result = (*a & mask) | (*b & !mask);
-                assume(false);
-                result
-            }
-        }
-
-        /// Helper function to create a Choice from a borrow bit.
-        pub fn choice_from_borrow(borrow_bit: u64) -> (result: Choice)
-        ensures 
-            result.value == if borrow_bit != 0 { 1u8 } else { 0u8 },
+        #[verifier::external_body]
+        fn select(x: &u64, y: &u64, c: Choice) -> (res: u64)
+            ensures boolify(c) ==> res == x,
+                    ! boolify(c) ==> res == y
         {
-            Choice::from(if borrow_bit != 0 { 1u8 } else { 0u8 })
+            u64::conditional_select(x, y, c)
         }
 
-        /****** END INLINE SUBTLE_VERUS FUNCTIONALITY ******/
 
         /* MANUALLY IMPORTED FROM curve25519-dalek/src/backend/serial/u64/constants.rs */
         /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
@@ -437,25 +405,16 @@ verus! {
         // conditionally add l if the difference is negative
         let mut carry: u64 = 0;
         for i in 0..5 {
-          /*** BEGIN: ORIGINAL SUBTLE CODE (commented out) ***/
-          // let underflow = Choice::from((borrow >> 63) as u8);
-          // let addend = u64::conditional_select(&0, &constants::L[i], underflow);
-          /*** END: ORIGINAL SUBTLE CODE ***/
-
-          /*** BEGIN: INITIAL VERUS WORKAROUND (commented out) ***/
-          // let underflow = (borrow >> 63) != 0;
-          // let addend = if underflow { L.limbs[i] } else { 0 };
-          /*** END: INITIAL VERUS WORKAROUND ***/
-
-          /*** BEGIN: VERUS-COMPATIBLE SUBTLE CODE ***/
-          // Use our Verus-compatible subtle operations
-          let underflow = choice_from_borrow(borrow >> 63);
-          let addend = u64::conditional_select(&0, &L.limbs[i], underflow);
-          /*** END: VERUS-COMPATIBLE SUBTLE CODE ***/
-          
-          assume(false);
-          carry = (carry >> 52) + difference.limbs[i] + addend;
-          difference.limbs[i] = carry & mask;
+            let underflow = Choice::from((borrow >> 63) as u8);
+          /*** BEGIN: ADAPTED CODE BLOCK ***/
+          // ORIGINAL CODE
+         //   let addend = u64::conditional_select(&0, &constants::L[i], underflow);
+        // OUR ADAPTED CODE FOR VERUS
+            let addend = select(&0, &L.limbs[i], underflow);
+        /*** END: ADAPTED CODE BLOCK ***/
+            assume(false);
+            carry = (carry >> 52) + difference.limbs[i] + addend;
+            difference.limbs[i] = carry & mask;
         }
         assume(false); // TODO: complete the proof
         difference

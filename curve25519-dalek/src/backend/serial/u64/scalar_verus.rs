@@ -19,13 +19,35 @@ verus! {
 
         /******  SPECIFICATION FUNCTIONS ********/
 
+        // Generic function to convert array of integers to natural number
+        // Takes: array of integers, number of limbs, bits per limb
+        // Note: Generic types not supported in Verus yet. 
+        // These are specification functions that work only with the u64 and u32 types
+        pub open spec fn to_nat_gen_u64(limbs: &[u64], num_limbs: int, bits_per_limb: int) -> nat
+        decreases num_limbs
+        {
+            if num_limbs <= 0 {
+                0
+            } else {
+                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
+                limb_value + to_nat_gen_u64(limbs, num_limbs - 1, bits_per_limb)
+            }
+        }
+
+        pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
+        decreases num_limbs
+        {
+            if num_limbs <= 0 {
+                0
+            } else {
+                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
+                limb_value + to_nat_gen_u32(limbs, num_limbs - 1, bits_per_limb)
+            }
+        }
+
         // Interpret limbs as a little-endian integer with 52-bit limbs
         pub open spec fn to_nat(limbs: &[u64; 5]) -> nat {
-            limbs[0] as nat
-            + (limbs[1] as nat) * ((1u64 << 52) as nat)  // 2^52
-            + (limbs[2] as nat) * ((1u64 << 104) as nat)  // 2^104
-            + (limbs[3] as nat) * ((1u64 << 156) as nat)  // 2^156
-            + (limbs[4] as nat) * ((1u64 << 208) as nat)  // 2^208
+            to_nat_gen_u64(limbs, 5, 52)
         }
     
         // Modular reduction of to_nat mod L
@@ -49,18 +71,35 @@ verus! {
             }
         }
     
-        // natural value of a 256 bit bitstring represented as an array of 4  words of 64 bites
-        pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
-            words_to_nat_rec(words, 0)
-        }
-        pub open spec fn words_to_nat_rec(words: &[u64; 4], index: int) -> nat 
-        decreases 4 - index
+        // Generic function to convert array of words to natural number
+        // Takes: array of words, number of words, bits per word
+        // Note: This is a specification function that works with concrete types
+        pub open spec fn words_to_nat_gen_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
+        decreases num_words
         {
-            if index >= 4 {
+            if num_words <= 0 {
                 0
             } else {
-                (words[index] as nat) * pow2(index as nat) + words_to_nat_rec(words, index + 1)
+                let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+                word_value + words_to_nat_gen_u64(words, num_words - 1, bits_per_word)
             }
+        }
+
+        pub open spec fn words_to_nat_gen_u32(words: &[u32], num_words: int, bits_per_word: int) -> nat
+        decreases num_words
+        {
+            if num_words <= 0 {
+                0
+            } else {
+                let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+                word_value + words_to_nat_gen_u32(words, num_words - 1, bits_per_word)
+            }
+        }
+
+        // natural value of a 256 bit bitstring represented as an array of 4 words of 64 bits
+        // Now implemented using the generic function
+        pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
+            words_to_nat_gen_u64(words, 4, 64)
         }
     
         // Group order: the value of L as a natural number

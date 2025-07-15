@@ -28,7 +28,6 @@
     missing_docs,
     rust_2018_idioms,
     unused_lifetimes,
-    unused_qualifications
 )]
 
 //------------------------------------------------------------------------

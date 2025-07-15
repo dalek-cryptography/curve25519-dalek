@@ -189,7 +189,6 @@ verus! {
                         assert ((x as u128) * (1u128 << 52) == 0);
                     }
                   };
-                assert((x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52));
                 assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
             }
             (x as u128) * (y as u128)

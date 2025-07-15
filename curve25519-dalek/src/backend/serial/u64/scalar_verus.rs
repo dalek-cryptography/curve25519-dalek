@@ -190,11 +190,9 @@ verus! {
                     (x as u128) * (1u128 << 52); (<) {
                         lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int);
                     }
-                    (1u128 << 52) * (1u128 << 52); (==) {
-                        assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
-                    }
-                    (1u128 << 104) as int;
+                    (1u128 << 52) * (1u128 << 52);
                 }
+                assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
             }
             (x as u128) * (y as u128)
         }

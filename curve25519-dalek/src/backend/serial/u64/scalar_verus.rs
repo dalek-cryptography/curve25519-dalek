@@ -8,6 +8,7 @@ use vstd::arithmetic::power2::*;
 
 verus! {
 
+
         /****** INLINE SUBTLE_VERUS FUNCTIONALITY ******/
         
         /// A type representing a choice between two values.
@@ -198,14 +199,10 @@ verus! {
             }
         }
 
-        /// Custom wrapping multiplication: a * b, wrapping on overflow
-        fn wrapping_mul_verus(a: u64, b: u64) -> (result: u64)
-        ensures
-            result == ((a as nat * b as nat) % ((1u64 << 64) as nat)) as u64,
-        {
-            assume(false);
-            ((a as u128) * (b as u128)) as u64
-        }
+        // TODO vstd defines wrapping sub using a conditional subtraction,
+        // which is maybe easier to reason about
+        pub assume_specification[u64::wrapping_mul](x: u64, y: u64) -> u64
+            returns ((x as nat * y as nat) % ((1u64 << 64) as nat)) as u64;
 
         /// u64 * u64 = u128 multiply helper
         #[inline(always)]
@@ -576,8 +573,7 @@ verus! {
     fn montgomery_part1(sum: u128) -> (u128, u64)
     {
         assume(false); // TODO: Add proper bounds checking and proofs
-        // Use our Verus-compatible wrapping multiplication
-        let p = wrapping_mul_verus(sum as u64, LFACTOR) & ((1u64 << 52) - 1);
+        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
         let carry = (sum + m(p, L.limbs[0])) >> 52;
         (carry, p)
     }

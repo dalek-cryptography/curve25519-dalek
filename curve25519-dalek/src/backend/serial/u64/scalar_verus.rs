@@ -428,9 +428,7 @@ verus! {
                       forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
         {
             proof {
-                assert (b.limbs[i as int] < (1u64 << 52));
                 assert ((borrow >> 63) < 2) by (bit_vector);
-                assert (b.limbs[i as int] + (borrow >> 63) <= (1u64 << 52) + 2);
             }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;

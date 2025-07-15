@@ -1,7 +1,6 @@
 // scalar64_verus.rs
 #![allow(unused)]
 use vstd::prelude::*;
-use vstd::arithmetic::mul::lemma_mul_by_zero_is_zero;
 use vstd::arithmetic::mul::lemma_mul_strict_inequality;
 use vstd::calc;
 use vstd::arithmetic::power2::*;
@@ -178,6 +177,7 @@ verus! {
                 assert((x as u128) < (1u128 << 52));
                 assert((x as u128) * (1u128 << 52) < (1u128 << 52) * (1u128 << 52)) by
                   {lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int)};
+                assert((y as u128) < (1u128 << 52));
                 assert((x as u128) * (y as u128) <= (x as u128) * (1u128 << 52)) by
                   {
 
@@ -186,8 +186,8 @@ verus! {
                       lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int)
                     } else {
                         assert (x == 0);
-                        assert ((x as u128) * (y as u128) == 0) by {lemma_mul_by_zero_is_zero(x as int)};
-                        assert ((x as u128) * (1u128 << 52) == 0) by {lemma_mul_by_zero_is_zero(x as int)};
+                        assert ((x as u128) * (y as u128) == 0);
+                        assert ((x as u128) * (1u128 << 52) == 0);
                     }
                   };
                 assert((x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52));

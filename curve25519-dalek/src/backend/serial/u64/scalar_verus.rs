@@ -437,7 +437,7 @@ verus! {
                     (2u64 << 52) as int + 10 <= (2u64 << 53) as int
                 ) by (compute_only);
             }
-            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + borrow >> 63);
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
         }
 

@@ -209,7 +209,6 @@ verus! {
 
         /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
         #[rustfmt::skip] // keep alignment of s[*] calculations
-
         /* ADAPTED CODE LINE: we give a name to the output: "s" */
         pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52) 
         // SPECIFICATION: unpacking keeps the same nat value
@@ -268,6 +267,7 @@ verus! {
     /// Pack the limbs of this `Scalar52` into 32 bytes
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_bytes(self) -> (s: [u8; 32]) 
     // DIFF-SPEC-3: we give a name to the output: "s"
     // SPECIFICATION: packing keeps the same nat value
@@ -375,11 +375,10 @@ verus! {
         assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
         assume(false); // TODO: complete the proof
 
-        let mut s = Scalar52::sub(&sum, &l_value);
+        Scalar52::sub(&sum, &l_value)
         
         /*** END: ADAPTED CODE BLOCK ***/
 
-        s
     }
 
     /// Compute `a - b` (mod l)

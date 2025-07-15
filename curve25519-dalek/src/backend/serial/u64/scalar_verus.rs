@@ -169,6 +169,7 @@ verus! {
             y < (1u64 << 52),
         ensures 
             z < (1u128 << 104),
+            z == x * y
         {
             proof {
                 assert(x < (1u64 << 52));

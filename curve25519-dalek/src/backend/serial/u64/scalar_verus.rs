@@ -425,7 +425,13 @@ verus! {
         for i in 0..5 
             invariant 0 <= i <= 5,
         {
-            assume(false);
+            proof {
+                assert (0 <= a.limbs[i as int].wrapping_sub(b.limbs[i as int]));
+                assume (2u64 << 52 >= a.limbs[i as int].wrapping_sub(b.limbs[i as int]));
+                assume ((borrow >> 63) <= 10);
+                assume (2u64 << 52 + 10 <= 2u64 << 53);
+                assume (2u64 << 53 >= a.limbs[i as int].wrapping_sub(b.limbs[i as int]) + (borrow >> 63) );
+            }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i]) + (borrow >> 63);
             difference.limbs[i] = borrow & mask;
         }

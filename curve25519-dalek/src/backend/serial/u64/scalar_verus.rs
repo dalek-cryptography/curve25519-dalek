@@ -412,7 +412,9 @@ verus! {
         // OUR ADAPTED CODE FOR VERUS
             let addend = select(&0, &L.limbs[i], underflow);
         /*** END: ADAPTED CODE BLOCK ***/
-            assume(false);
+            assume (carry >> 52 < 2);
+            assume (difference.limbs[i as int] < 1 << 52);
+            assume (addend < 1 << 52);
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
         }

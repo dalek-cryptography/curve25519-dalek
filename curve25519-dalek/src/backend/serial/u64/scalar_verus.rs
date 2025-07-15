@@ -1,6 +1,7 @@
 // scalar64_verus.rs
 #![allow(unused)]
 use vstd::prelude::*;
+use vstd::calc;
 use vstd::arithmetic::power2::*;
 // Inline subtle_verus functionality for direct Verus compilation
 // use crate::subtle_verus::{Choice, ConditionallySelectable, choice_from_borrow};
@@ -426,11 +427,15 @@ verus! {
             invariant 0 <= i <= 5,
         {
             proof {
-                assert (0 <= a.limbs[i as int].wrapping_sub(b.limbs[i as int]));
-                assume (2u64 << 52 >= a.limbs[i as int].wrapping_sub(b.limbs[i as int]));
-                assume ((borrow >> 63) <= 10);
-                assume (2u64 << 52 + 10 <= 2u64 << 53);
-                assume (2u64 << 53 >= a.limbs[i as int].wrapping_sub(b.limbs[i as int]) + (borrow >> 63) );
+                calc! {
+                    (<=)
+                    a.limbs[i as int].wrapping_sub(b.limbs[i as int]) + (borrow >> 63); {assume (false);}
+                    (2u64 << 52) as int + (borrow >> 63); {assert (borrow >> 63 < 10) by (bit_vector);}
+                    (2u64 << 52) as int + 10;
+                }
+                assert (
+                    (2u64 << 52) as int + 10 <= (2u64 << 53) as int
+                ) by (compute_only);
             }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i]) + (borrow >> 63);
             difference.limbs[i] = borrow & mask;

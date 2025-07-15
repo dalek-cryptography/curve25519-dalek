@@ -427,15 +427,6 @@ verus! {
             invariant 0 <= i <= 5,
         {
             proof {
-                calc! {
-                    (<=)
-                    a.limbs[i as int].wrapping_sub(b.limbs[i as int]) + (borrow >> 63); {assume (false);}
-                    (2u64 << 52) as int + (borrow >> 63); {assert (borrow >> 63 < 10) by (bit_vector);}
-                    (2u64 << 52) as int + 10;
-                }
-                assert (
-                    (2u64 << 52) as int + 10 <= (2u64 << 53) as int
-                ) by (compute_only);
                 assume (b.limbs[i as int] + (borrow >> 63) <= 2 << 53);
             }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));

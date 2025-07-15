@@ -414,7 +414,7 @@ verus! {
         /*** END: ADAPTED CODE BLOCK ***/
             assume (carry >> 52 < 2);
             assume (difference.limbs[i as int] < 1 << 52);
-            assume (addend < 1 << 52);
+            assume (L.limbs[i as int] < 1 << 52);
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
         }

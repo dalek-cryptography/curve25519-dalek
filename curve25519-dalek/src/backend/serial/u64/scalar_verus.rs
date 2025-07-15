@@ -183,8 +183,7 @@ verus! {
                 assume((1u128 << 52) * (1u128 << 52) < (1u128 << 104)); // by (nonlinear_arith);
                 assert((x as u128) * (y as u128) < (1u128 << 104));
             }
-            let z = (x as u128) * (y as u128);
-            z
+            (x as u128) * (y as u128)
         }
 
         pub struct Scalar52 {

@@ -407,8 +407,8 @@ verus! {
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires 
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+        forall|j: int| 0 <= j < 5 ==> a.limbs[j] < (1u64 << 52),
+        forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
     ensures 
         to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
     {
@@ -425,9 +425,12 @@ verus! {
         let mut borrow: u64 = 0;
         for i in 0..5 
             invariant 0 <= i <= 5,
+                      forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
         {
             proof {
-                assume (b.limbs[i as int] + (borrow >> 63) <= 2 << 53);
+                assert (b.limbs[i as int] < (1u64 << 52));
+                assert ((borrow >> 63) < 2) by (bit_vector);
+                assert (b.limbs[i as int] + (borrow >> 63) <= (1u64 << 52) + 2);
             }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;

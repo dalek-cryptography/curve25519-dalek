@@ -95,6 +95,52 @@ pub trait MultiscalarMul {
     /// iterators returning either `Scalar`s or `&Scalar`s.
     ///
     /// ```
+    /// use curve25519_dalek::constants;
+    /// use curve25519_dalek::traits::MultiscalarMul;
+    /// use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use curve25519_dalek::scalar::Scalar;
+    ///
+    /// // Some scalars
+    /// let a = Scalar::from(87329482u64);
+    /// let b = Scalar::from(37264829u64);
+    /// let c = Scalar::from(98098098u64);
+    ///
+    /// // Some points
+    /// let P = constants::RISTRETTO_BASEPOINT_POINT;
+    /// let Q = P + P;
+    /// let R = P + Q;
+    ///
+    /// // A1 = a*P + b*Q + c*R
+    /// let abc = [a,b,c];
+    /// let A1 = RistrettoPoint::multiscalar_mul(&abc, &[P,Q,R]);
+    ///
+    /// // A2 = (-a)*P + (-b)*Q + (-c)*R
+    /// let minus_abc = abc.map(|x| -x);
+    /// let A2 = RistrettoPoint::multiscalar_mul(&minus_abc, &[P,Q,R]);
+    ///
+    /// assert_eq!(A1.compress(), (-A2).compress());
+    /// ```
+    fn multiscalar_mul<const N: usize>(
+        scalars: &[Scalar; N],
+        points: &[Self::Point; N],
+    ) -> Self::Point;
+
+    /// Given an iterator of (possibly secret) scalars and an iterator of
+    /// public points, compute
+    /// $$
+    /// Q = c\_1 P\_1 + \cdots + c\_n P\_n.
+    /// $$
+    ///
+    /// It is an error to call this function with two iterators of different lengths.
+    ///
+    /// # Examples
+    ///
+    /// The trait bound aims for maximum flexibility: the inputs must be
+    /// convertible to iterators (`I: IntoIter`), and the iterator's items
+    /// must be `Borrow<Scalar>` (or `Borrow<Point>`), to allow
+    /// iterators returning either `Scalar`s or `&Scalar`s.
+    ///
+    /// ```
     /// # #[cfg(feature = "alloc")]
     /// # {
     /// use curve25519_dalek::constants;
@@ -114,18 +160,19 @@ pub trait MultiscalarMul {
     ///
     /// // A1 = a*P + b*Q + c*R
     /// let abc = [a,b,c];
-    /// let A1 = RistrettoPoint::multiscalar_mul(&abc, &[P,Q,R]);
+    /// let A1 = RistrettoPoint::multiscalar_mul_alloc(&abc, &[P,Q,R]);
     /// // Note: (&abc).into_iter(): Iterator<Item=&Scalar>
     ///
     /// // A2 = (-a)*P + (-b)*Q + (-c)*R
     /// let minus_abc = abc.iter().map(|x| -x);
-    /// let A2 = RistrettoPoint::multiscalar_mul(minus_abc, &[P,Q,R]);
+    /// let A2 = RistrettoPoint::multiscalar_mul_alloc(minus_abc, &[P,Q,R]);
     /// // Note: minus_abc.into_iter(): Iterator<Item=Scalar>
     ///
     /// assert_eq!(A1.compress(), (-A2).compress());
     /// # }
     /// ```
-    fn multiscalar_mul<I, J>(scalars: I, points: J) -> Self::Point
+    #[cfg(feature = "alloc")]
+    fn multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> Self::Point
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,

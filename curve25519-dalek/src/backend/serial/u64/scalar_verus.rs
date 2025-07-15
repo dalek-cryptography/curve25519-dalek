@@ -187,18 +187,6 @@ verus! {
             (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
         }
 
-        /// Custom wrapping subtraction: a - b, wrapping on underflow
-        fn wrapping_sub_verus(a: u64, b: u64) -> (result: u64)
-        ensures 
-            result == if a >= b { a - b } else { u64::MAX - (b - a) + 1 },
-        {
-            if a >= b {
-                a - b
-            } else {
-                u64::MAX - (b - a) + 1
-            }
-        }
-
         // TODO vstd defines wrapping sub using a conditional subtraction,
         // which is maybe easier to reason about
         pub assume_specification[u64::wrapping_mul](x: u64, y: u64) -> u64
@@ -438,7 +426,7 @@ verus! {
             invariant 0 <= i <= 5,
         {
             assume(false);
-            borrow = wrapping_sub_verus(a.limbs[i], b.limbs[i] + (borrow >> 63));
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i]) + (borrow >> 63);
             difference.limbs[i] = borrow & mask;
         }
 

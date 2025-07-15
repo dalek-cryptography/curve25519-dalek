@@ -384,8 +384,8 @@ verus! {
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires 
-        forall|j: int| 0 <= j < 5 ==> a.limbs[j] < (1u64 << 52),
-        forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures 
         to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
     {

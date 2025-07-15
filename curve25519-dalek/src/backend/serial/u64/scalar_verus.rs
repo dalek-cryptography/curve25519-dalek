@@ -1,7 +1,7 @@
 // scalar64_verus.rs
 #![allow(unused)]
 use vstd::prelude::*;
-use vstd::arithmetic::mul::lemma_mul_strict_inequality;
+use vstd::arithmetic::mul::*;
 use vstd::calc;
 use vstd::arithmetic::power2::*;
 use subtle::{Choice, ConditionallySelectable};

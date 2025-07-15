@@ -1,6 +1,7 @@
 // scalar64_verus.rs
 #![allow(unused)]
 use vstd::prelude::*;
+use vstd::arithmetic::mul::lemma_mul_strict_inequality;
 use vstd::calc;
 use vstd::arithmetic::power2::*;
 use subtle::{Choice, ConditionallySelectable};
@@ -178,10 +179,14 @@ verus! {
                 assert((y as u128) == y as u64); 
                 assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
                 assert((x as u128) < (1u128 << 52));
+                assert((x as u128) * (1u128 << 52) < (1u128 << 52) * (1u128 << 52)) by
+                  {lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int)};
                 assert((y as u128) < (1u128 << 52));
-                assert((1u128 << 52) * (1u128 << 52) < u128::MAX) by (bit_vector);
-                assume((x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52)); 
-                assume((1u128 << 52) * (1u128 << 52) < (1u128 << 104)); // by (nonlinear_arith);
+                assume (x > 0);
+                assert((x as u128) * (y as u128) < (x as u128) * (1u128 << 52)) by
+                  {lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int)};
+                assert((x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52));
+                assert((1u128 << 52) * (1u128 << 52) <= (1u128 << 104)) by (compute);
                 assert((x as u128) * (y as u128) < (1u128 << 104));
             }
             (x as u128) * (y as u128)

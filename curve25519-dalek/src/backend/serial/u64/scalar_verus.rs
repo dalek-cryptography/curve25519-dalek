@@ -176,10 +176,9 @@ verus! {
                 assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
                 assert((x as u128) < (1u128 << 52));
                 assert((y as u128) < (1u128 << 52));
-                // Start here AI
                 calc! {
-                    (<=)
-                    (x as u128) * (y as u128); {
+                    (<)
+                    (x as u128) * (y as u128); (<=) {
                         if x > 0 {
                             lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int);
                         } else {
@@ -188,15 +187,14 @@ verus! {
                             assert((x as u128) * (1u128 << 52) == 0);
                         }
                     }
-                    (x as u128) * (1u128 << 52); {
+                    (x as u128) * (1u128 << 52); (<) {
                         lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int);
                     }
-                    (1u128 << 52) * (1u128 << 52); {
+                    (1u128 << 52) * (1u128 << 52); (==) {
                         assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
                     }
-                    (1u128 << 104);
+                    (1u128 << 104) as int;
                 }
-                // Finish here AI
             }
             (x as u128) * (y as u128)
         }

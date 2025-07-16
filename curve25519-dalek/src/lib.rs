@@ -35,15 +35,7 @@
 // Linting:
 //------------------------------------------------------------------------
 #![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
-#![warn(
-    clippy::unwrap_used,
-    missing_docs,
-    rust_2018_idioms,
-    unused_lifetimes,
-    unused_qualifications
-)]
-// Requires MSRV 1.77 as it does not allow build.rs gating
-#![allow(unexpected_cfgs)]
+#![warn(clippy::unwrap_used, missing_docs, rust_2018_idioms, unused_lifetimes)]
 
 //------------------------------------------------------------------------
 // External dependencies:

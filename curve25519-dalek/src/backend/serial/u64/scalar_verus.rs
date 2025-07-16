@@ -1,62 +1,32 @@
 // scalar64_verus.rs
 #![allow(unused)]
-use vstd::prelude::*;
+use subtle::{Choice, ConditionallySelectable};
+use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
-// Inline subtle_verus functionality for direct Verus compilation
-// use crate::subtle_verus::{Choice, ConditionallySelectable, choice_from_borrow};
-// use crate::constants; // We manually import needed constants 
+use vstd::calc;
+use vstd::prelude::*;
+// use crate::constants; // We manually import needed constants
 
 verus! {
 
-        /****** INLINE SUBTLE_VERUS FUNCTIONALITY ******/
-        
-        /// A type representing a choice between two values.
-        /// This is equivalent to a `u8` that is guaranteed to be either `0` or `1`.
-        #[derive(Copy, Clone, Debug)]
-        pub struct Choice {
-            pub value: u8,
-        }
+        #[verifier::external_type_specification]
+        #[verifier::external_body]
+        pub struct ExChoice(Choice);
 
-        impl Choice {
-            /// Create a `Choice` from a `u8` that is supposed to be either `0` or `1`.
-            pub fn from(x: u8) -> (result: Choice)
-            requires 
-                x == 0u8 || x == 1u8,
-            ensures 
-                result.value == x,
-            {
-                Choice { value: x }
-            }
-        }
+        pub uninterp spec fn boolify(c: Choice) -> bool;
 
-        /// Trait for types that can be conditionally selected in constant time.
-        pub trait ConditionallySelectable: Copy {
-            fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: Self);
-        }
+        pub assume_specification [Choice::from](u: u8) -> (c: Choice)
+            ensures u == 0 ==> boolify(c) == false,
+                    u == 1 ==> boolify(c) == true;
 
-        /// Implementation of `ConditionallySelectable` for `u64`.
-        impl ConditionallySelectable for u64 {
-            #[inline]
-            fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (result: u64)
-            ensures 
-                result == if choice.value == 1 { *a } else { *b },
-            {
-                let mask = if choice.value == 1 { u64::MAX } else { 0u64 };
-                let result = (*a & mask) | (*b & !mask);
-                assume(false);
-                result
-            }
-        }
-
-        /// Helper function to create a Choice from a borrow bit.
-        pub fn choice_from_borrow(borrow_bit: u64) -> (result: Choice)
-        ensures 
-            result.value == if borrow_bit != 0 { 1u8 } else { 0u8 },
+        #[verifier::external_body]
+        fn select(x: &u64, y: &u64, c: Choice) -> (res: u64)
+            ensures boolify(c) ==> res == x,
+                    ! boolify(c) ==> res == y
         {
-            Choice::from(if borrow_bit != 0 { 1u8 } else { 0u8 })
+            u64::conditional_select(x, y, c)
         }
 
-        /****** END INLINE SUBTLE_VERUS FUNCTIONALITY ******/
 
         /* MANUALLY IMPORTED FROM curve25519-dalek/src/backend/serial/u64/constants.rs */
         /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
@@ -78,7 +48,7 @@ verus! {
         ]};
 
         /// `LFACTOR` = (-(L^(-1))) mod 2^52
-        pub const LFACTOR: u64 = 0x51da312547e1b; 
+        pub const LFACTOR: u64 = 0x51da312547e1b;
 
         /******  SPECIFICATION FUNCTIONS ********/
 
@@ -100,7 +70,7 @@ verus! {
 
         // Generic function to convert array of integers to natural number
         // Takes: array of integers, number of limbs, bits per limb
-        // Note: Generic types not supported in Verus yet. 
+        // Note: Generic types not supported in Verus yet.
         // These are specification functions that work only with the u64 and u32 types
         pub open spec fn to_nat_gen_u64(limbs: &[u64], num_limbs: int, bits_per_limb: int) -> nat
         decreases num_limbs
@@ -128,19 +98,19 @@ verus! {
         pub open spec fn to_nat(limbs: &[u64; 5]) -> nat {
             to_nat_gen_u64(limbs, 5, 52)
         }
-    
+
         // Modular reduction of to_nat mod L
         spec fn to_scalar(limbs: &[u64; 5]) -> nat {
             to_nat(limbs) % group_order()
         }
-    
+
         /// natural value of a 256 bit bitstring represented as array of 32 bytes
         pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {
             // Convert bytes to nat in little-endian order using recursive helper
             bytes_to_nat_rec(bytes, 0)
         }
-    
-        pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat 
+
+        pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat
         decreases 32 - index
         {
             if index >= 32 {
@@ -149,7 +119,7 @@ verus! {
                 (bytes[index] as nat) * pow2(index as nat) + bytes_to_nat_rec(bytes, index + 1)
             }
         }
-    
+
         // Generic function to convert array of words to natural number
         // Takes: array of words, number of words, bits per word
         // Note: This is a specification function that works with concrete types
@@ -180,62 +150,55 @@ verus! {
         pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
             words_to_nat_gen_u64(words, 4, 64)
         }
-    
+
         // Group order: the value of L as a natural number
         pub open spec fn group_order() -> nat {
             (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
         }
 
-        /// Custom wrapping subtraction: a - b, wrapping on underflow
-        fn wrapping_sub_verus(a: u64, b: u64) -> (result: u64)
-        ensures 
-            result == if a >= b { a - b } else { u64::MAX - (b - a) + 1 },
-        {
-            if a >= b {
-                a - b
-            } else {
-                u64::MAX - (b - a) + 1
-            }
-        }
-
-        /// Custom wrapping multiplication: a * b, wrapping on overflow
-        fn wrapping_mul_verus(a: u64, b: u64) -> (result: u64)
-        ensures
-            result == ((a as nat * b as nat) % ((1u64 << 64) as nat)) as u64,
-        {
-            assume(false);
-            ((a as u128) * (b as u128)) as u64
-        }
+        // TODO vstd defines wrapping sub using a conditional subtraction,
+        // which is maybe easier to reason about
+        pub assume_specification[u64::wrapping_mul](x: u64, y: u64) -> u64
+            returns ((x as nat * y as nat) % ((1u64 << 64) as nat)) as u64;
 
         /// u64 * u64 = u128 multiply helper
         #[inline(always)]
         fn m(x: u64, y: u64) -> (z: u128)
-        requires 
+        requires
             x < (1u64 << 52),
             y < (1u64 << 52),
-        ensures 
+        ensures
             z < (1u128 << 104),
+            z == x * y
         {
             proof {
-                assert(x < (1u64 << 52));
-                assert(y < (1u64 << 52));
-                assert((x as u128) == x as u64); 
-                assert((y as u128) == y as u64); 
                 assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
                 assert((x as u128) < (1u128 << 52));
                 assert((y as u128) < (1u128 << 52));
-                assert((1u128 << 52) * (1u128 << 52) < u128::MAX) by (bit_vector);
-                assume((x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52)); 
-                assume((1u128 << 52) * (1u128 << 52) < (1u128 << 104)); // by (nonlinear_arith);
-                assert((x as u128) * (y as u128) < (1u128 << 104));
+                calc! {
+                    (<)
+                    (x as u128) * (y as u128); (<=) {
+                        if x > 0 {
+                            lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int);
+                        } else {
+                            assert(x == 0);
+                            assert((x as u128) * (y as u128) == 0);
+                            assert((x as u128) * (1u128 << 52) == 0);
+                        }
+                    }
+                    (x as u128) * (1u128 << 52); (<) {
+                        lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int);
+                    }
+                    (1u128 << 52) * (1u128 << 52);
+                }
+                assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
             }
-            let z = (x as u128) * (y as u128);
-            z
+            (x as u128) * (y as u128)
         }
 
         pub struct Scalar52 {
             // ADAPTED CODE LINE: we give a name to the field: "limbs"
-            pub limbs: [u64; 5], 
+            pub limbs: [u64; 5],
         }
 
     impl Scalar52 {
@@ -245,17 +208,16 @@ verus! {
 
         /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
         #[rustfmt::skip] // keep alignment of s[*] calculations
-
         /* ADAPTED CODE LINE: we give a name to the output: "s" */
-        pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52) 
+        pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
         // SPECIFICATION: unpacking keeps the same nat value
         ensures bytes_to_nat(bytes) == to_nat(&s.limbs)
         {
             let mut words = [0u64; 4];
-            for i in 0..4 
+            for i in 0..4
                 invariant 0 <= i <= 4 // proof
             {
-                for j in 0..8 
+                for j in 0..8
                     invariant 0 <= j <= 8 && i < 4
                 {
                     proof {
@@ -273,7 +235,7 @@ verus! {
                 assert(1u64 << 48 > 0) by (bit_vector);
                 // TODO: prove property about words array
             }
-        
+
         let mask = (1u64 << 52) - 1;
         let top_mask = (1u64 << 48) - 1;
         // let mut s = Scalar52::ZERO; // ORIGINAL IMPLEMENTATION
@@ -298,13 +260,14 @@ verus! {
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
         // TODO; just signature for now
-        Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] } 
+        Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }
     }
 
     /// Pack the limbs of this `Scalar52` into 32 bytes
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
-    pub fn to_bytes(self) -> (s: [u8; 32]) 
+    #[allow(clippy::wrong_self_convention)]
+    pub fn to_bytes(self) -> (s: [u8; 32])
     // DIFF-SPEC-3: we give a name to the output: "s"
     // SPECIFICATION: packing keeps the same nat value
     ensures bytes_to_nat(&s) == to_nat(&self.limbs)
@@ -351,10 +314,10 @@ verus! {
 
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
     {
         //let mut sum = Scalar52::ZERO;
@@ -365,7 +328,7 @@ verus! {
             assert(1u64 << 52 > 0) by (bit_vector);
         }
         let mask = (1u64 << 52) - 1;
-                 
+
         // a + b
         let mut carry: u64 = 0;
         proof {
@@ -373,7 +336,7 @@ verus! {
             assert(1u64 << 54 < u64::MAX) by (bit_vector);
             assert(0u64 < (1u64 << 54)) by (bit_vector);
         }
-        for i in 0..5 
+        for i in 0..5
            invariant //0 <= i <= 5,
            // forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
             (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52),
@@ -401,29 +364,28 @@ verus! {
         }
 
         // subtract l if the sum is >= l
-        
+
         /*** BEGIN: ADAPTED CODE BLOCK ***/
 
-        /* ORIGINAL CODE */ 
+        /* ORIGINAL CODE */
         /*let mut s = Scalar52::sub(&sum, &Self::L);*/
         /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
         let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
         assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
         assume(false); // TODO: complete the proof
 
-        let mut s = Scalar52::sub(&sum, &l_value);
-        
+        Scalar52::sub(&sum, &l_value)
+
         /*** END: ADAPTED CODE BLOCK ***/
 
-        s
     }
 
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
     {
         //let mut difference = Scalar52::ZERO;
@@ -437,36 +399,32 @@ verus! {
 
         // a - b
         let mut borrow: u64 = 0;
-        for i in 0..5 
+        for i in 0..5
             invariant 0 <= i <= 5,
+                      forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
         {
-            assume(false);
-            borrow = wrapping_sub_verus(a.limbs[i], b.limbs[i] + (borrow >> 63));
+            proof {
+                assert ((borrow >> 63) < 2) by (bit_vector);
+            }
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
         }
 
         // conditionally add l if the difference is negative
         let mut carry: u64 = 0;
         for i in 0..5 {
-          /*** BEGIN: ORIGINAL SUBTLE CODE (commented out) ***/
-          // let underflow = Choice::from((borrow >> 63) as u8);
-          // let addend = u64::conditional_select(&0, &constants::L[i], underflow);
-          /*** END: ORIGINAL SUBTLE CODE ***/
-
-          /*** BEGIN: INITIAL VERUS WORKAROUND (commented out) ***/
-          // let underflow = (borrow >> 63) != 0;
-          // let addend = if underflow { L.limbs[i] } else { 0 };
-          /*** END: INITIAL VERUS WORKAROUND ***/
-
-          /*** BEGIN: VERUS-COMPATIBLE SUBTLE CODE ***/
-          // Use our Verus-compatible subtle operations
-          let underflow = choice_from_borrow(borrow >> 63);
-          let addend = u64::conditional_select(&0, &L.limbs[i], underflow);
-          /*** END: VERUS-COMPATIBLE SUBTLE CODE ***/
-          
-          assume(false);
-          carry = (carry >> 52) + difference.limbs[i] + addend;
-          difference.limbs[i] = carry & mask;
+            let underflow = Choice::from((borrow >> 63) as u8);
+          /*** BEGIN: ADAPTED CODE BLOCK ***/
+          // ORIGINAL CODE
+         //   let addend = u64::conditional_select(&0, &constants::L[i], underflow);
+        // OUR ADAPTED CODE FOR VERUS
+            let addend = select(&0, &L.limbs[i], underflow);
+        /*** END: ADAPTED CODE BLOCK ***/
+            assume (carry >> 52 < 2);
+            assume (difference.limbs[i as int] < 1 << 52);
+            assume (L.limbs[i as int] < 1 << 52);
+            carry = (carry >> 52) + difference.limbs[i] + addend;
+            difference.limbs[i] = carry & mask;
         }
         assume(false); // TODO: complete the proof
         difference
@@ -476,7 +434,7 @@ verus! {
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of z[*] calculations
     pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9]
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     {
@@ -500,7 +458,7 @@ verus! {
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of calculations
     pub (crate) fn square_internal(a: &Scalar52) -> [u128; 9]
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     {
         let mut z = [0u128; 9];
@@ -522,10 +480,10 @@ verus! {
     /// Compute `a * b` (mod l)
     #[inline(never)]
     pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
@@ -536,9 +494,9 @@ verus! {
     /// Compute `a^2` (mod l)
     #[inline(never)]
     pub fn square(&self) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
@@ -549,10 +507,10 @@ verus! {
     /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(never)]
     pub fn montgomery_mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
@@ -562,9 +520,9 @@ verus! {
     /// Compute `(a^2) / R` (mod l) in Montgomery form, where R is the Montgomery modulus 2^260
     #[inline(never)]
     pub fn montgomery_square(&self) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
@@ -576,13 +534,12 @@ verus! {
     fn montgomery_part1(sum: u128) -> (u128, u64)
     {
         assume(false); // TODO: Add proper bounds checking and proofs
-        // Use our Verus-compatible wrapping multiplication
-        let p = wrapping_mul_verus(sum as u64, LFACTOR) & ((1u64 << 52) - 1);
+        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
         let carry = (sum + m(p, L.limbs[0])) >> 52;
         (carry, p)
     }
 
-    /// Helper function for part2 of Montgomery reduction  
+    /// Helper function for part2 of Montgomery reduction
     #[inline(always)]
     fn montgomery_part2(sum: u128) -> (u128, u64)
     {
@@ -596,7 +553,7 @@ verus! {
     /// This is the core of Montgomery arithmetic - it computes (x / R) mod L
     /// where R = 2^260 and L is the scalar field order
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
-    ensures 
+    ensures
         // TODO: Add proper specification for Montgomery reduction
         true,
     {
@@ -623,9 +580,9 @@ verus! {
     /// Puts a Scalar52 into Montgomery form, i.e. computes `a*R (mod L)`
     #[inline(never)]
     pub fn as_montgomery(&self) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         // TODO: Add proper specification for Montgomery form conversion
         true,
     {
@@ -637,9 +594,9 @@ verus! {
     #[allow(clippy::wrong_self_convention)]
     #[inline(never)]
     pub fn from_montgomery(&self) -> (result: Scalar52)
-    requires 
+    requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-    ensures 
+    ensures
         // TODO: Add proper specification for Montgomery form conversion
         true,
     {
@@ -662,21 +619,21 @@ verus! {
    //     requires to_scalar(&self.limbs) != 0
     //    ensures (to_scalar(&self.limbs) * invert_spec(&self.limbs)) % group_order() == 1
     {
-        assume(false); 
-        
+        assume(false);
+
     }
 
 }
 
 
-fn main() 
+fn main()
 {
     // Test scalar creation from bytes
     let test_bytes: [u8; 32] = [
         42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     ];
-    
+
     let scalar = Scalar52::from_bytes(&test_bytes);
     let inv_scalar = scalar.invert();
 }

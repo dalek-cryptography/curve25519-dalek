@@ -15,7 +15,9 @@ major series.
 
 ## 4.x series
 
-### 4.2.0
+### 4.2.0 [YANKED]
+
+NOTE: yanked because `hash_to_curve` was improperly implemented (#785)
 
 * Move AVX-512 backend selection logic to a separate CFG flag that requires nightly
 * Add Elligator2 hashing methods `EdwardsPoint::hash_to_curve()` and `FieldElement::hash_to_field()`

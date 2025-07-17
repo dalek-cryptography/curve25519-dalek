@@ -155,7 +155,7 @@ mod multiscalar_benches {
                     // rerandomize the scalars for every call just in case.
                     b.iter_batched(
                         || construct_scalars(size),
-                        |scalars| EdwardsPoint::multiscalar_mul_alloc(&scalars, &points),
+                        |scalars| EdwardsPoint::multiscalar_mul_alloc(points.iter().zip(scalars)),
                         BatchSize::SmallInput,
                     );
                 },

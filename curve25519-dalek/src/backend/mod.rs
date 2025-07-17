@@ -194,13 +194,12 @@ impl VartimePrecomputedStraus {
 
 #[allow(missing_docs)]
 pub fn straus_multiscalar_mul<const N: usize>(
-    scalars: &[Scalar; N],
-    points: &[EdwardsPoint; N],
+    points_and_scalars: &[(EdwardsPoint, Scalar); N],
 ) -> EdwardsPoint {
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => {
-            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul(scalars, points)
+            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul(points_and_scalars)
         }
         #[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
         BackendKind::Avx512 => {
@@ -208,35 +207,33 @@ pub fn straus_multiscalar_mul<const N: usize>(
                 scalars, points,
             )
         }
-        BackendKind::Serial => serial::scalar_mul::straus::Straus::multiscalar_mul(scalars, points),
+        BackendKind::Serial => {
+            serial::scalar_mul::straus::Straus::multiscalar_mul(points_and_scalars)
+        }
     }
 }
 
 #[allow(missing_docs)]
 #[cfg(feature = "alloc")]
-pub fn straus_multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> EdwardsPoint
+pub fn straus_multiscalar_mul_alloc<I, P, S>(points_and_scalars: I) -> EdwardsPoint
 where
-    I: IntoIterator,
-    I::Item: core::borrow::Borrow<Scalar>,
-    J: IntoIterator,
-    J::Item: core::borrow::Borrow<EdwardsPoint>,
+    I: IntoIterator<Item = (P, S)>,
+    P: core::borrow::Borrow<EdwardsPoint>,
+    S: core::borrow::Borrow<Scalar>,
 {
     match get_selected_backend() {
         #[cfg(curve25519_dalek_backend = "simd")]
         BackendKind::Avx2 => {
-            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul_alloc::<I, J>(
-                scalars, points,
-            )
+            vector::scalar_mul::straus::spec_avx2::Straus::multiscalar_mul_alloc(points_and_scalars)
         }
         #[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
         BackendKind::Avx512 => {
-            vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul_alloc::<
-                I,
-                J,
-            >(scalars, points)
+            vector::scalar_mul::straus::spec_avx512ifma_avx512vl::Straus::multiscalar_mul_alloc(
+                points_and_scalars,
+            )
         }
         BackendKind::Serial => {
-            serial::scalar_mul::straus::Straus::multiscalar_mul_alloc::<I, J>(scalars, points)
+            serial::scalar_mul::straus::Straus::multiscalar_mul_alloc(points_and_scalars)
         }
     }
 }

@@ -954,38 +954,19 @@ impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
     fn multiscalar_mul<const N: usize>(
-        scalars: &[Scalar; N],
-        points: &[Self::Point; N],
+        points_and_scalars: &[(Self::Point, Scalar); N],
     ) -> Self::Point {
-        crate::backend::straus_multiscalar_mul(scalars, points)
+        crate::backend::straus_multiscalar_mul(points_and_scalars)
     }
 
     #[cfg(feature = "alloc")]
-    fn multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn multiscalar_mul_alloc<I, P, S>(points_and_scalars: I) -> EdwardsPoint
     where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        I: IntoIterator<Item = (P, S)>,
+        P: Borrow<Self::Point>,
+        S: Borrow<Scalar>,
     {
-        // Sanity-check lengths of input iterators
-        let mut scalars = scalars.into_iter();
-        let mut points = points.into_iter();
-
-        // Lower and upper bounds on iterators
-        let (s_lo, s_hi) = scalars.by_ref().size_hint();
-        let (p_lo, p_hi) = points.by_ref().size_hint();
-
-        // They should all be equal
-        assert_eq!(s_lo, p_lo);
-        assert_eq!(s_hi, Some(s_lo));
-        assert_eq!(p_hi, Some(p_lo));
-
-        // Now we know there's a single size.  When we do
-        // size-dependent algorithm dispatch, use this as the hint.
-        let _size = s_lo;
-
-        crate::backend::straus_multiscalar_mul_alloc(scalars, points)
+        crate::backend::straus_multiscalar_mul_alloc(points_and_scalars)
     }
 }
 
@@ -2258,7 +2239,7 @@ mod test {
         let Gs = xs.iter().map(EdwardsPoint::mul_base).collect::<Vec<_>>();
 
         // Compute H1 = <xs, Gs> (consttime)
-        let H1 = EdwardsPoint::multiscalar_mul_alloc(&xs, &Gs);
+        let H1 = EdwardsPoint::multiscalar_mul_alloc(Gs.iter().zip(&xs));
         // Compute H2 = <xs, Gs> (vartime)
         let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
@@ -2416,8 +2397,9 @@ mod test {
                 &[A, constants::ED25519_BASEPOINT_POINT],
             );
             let result_consttime = EdwardsPoint::multiscalar_mul_alloc(
-                &[A_SCALAR, B_SCALAR],
-                &[A, constants::ED25519_BASEPOINT_POINT],
+                [A, constants::ED25519_BASEPOINT_POINT]
+                    .into_iter()
+                    .zip([A_SCALAR, B_SCALAR]),
             );
 
             assert_eq!(result_vartime.compress(), result_consttime.compress());

@@ -1011,26 +1011,26 @@ impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
     fn multiscalar_mul<const N: usize>(
-        scalars: &[Scalar; N],
-        points: &[Self::Point; N],
-    ) -> Self::Point {
-        let extended_points: [_; N] = core::array::from_fn(|index| points[index].0);
-        RistrettoPoint(EdwardsPoint::multiscalar_mul(scalars, &extended_points))
+        points_and_scalars: &[(RistrettoPoint, Scalar); N],
+    ) -> RistrettoPoint {
+        let points_and_scalars: [_; N] = core::array::from_fn(|index| {
+            let (p, s) = points_and_scalars[index];
+            (p.0, s)
+        });
+        RistrettoPoint(EdwardsPoint::multiscalar_mul(&points_and_scalars))
     }
 
     #[cfg(feature = "alloc")]
-    fn multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> RistrettoPoint
+    fn multiscalar_mul_alloc<I, P, S>(points_and_scalars: I) -> RistrettoPoint
     where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<RistrettoPoint>,
+        I: IntoIterator<Item = (P, S)>,
+        P: Borrow<RistrettoPoint>,
+        S: Borrow<Scalar>,
     {
-        let extended_points = points.into_iter().map(|P| P.borrow().0);
-        RistrettoPoint(EdwardsPoint::multiscalar_mul_alloc(
-            scalars,
-            extended_points,
-        ))
+        let points_and_scalars = points_and_scalars
+            .into_iter()
+            .map(|(p, s)| (p.borrow().0, s));
+        RistrettoPoint(EdwardsPoint::multiscalar_mul_alloc(points_and_scalars))
     }
 }
 

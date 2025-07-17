@@ -55,38 +55,38 @@ impl MultiscalarMul for Straus {
     type Point = EdwardsPoint;
 
     fn multiscalar_mul<const N: usize>(
-        scalars: &[Scalar; N],
-        points: &[EdwardsPoint; N],
+        points_and_scalars: &[(EdwardsPoint, Scalar); N],
     ) -> EdwardsPoint {
-        let lookup_tables: [_; N] =
-            core::array::from_fn(|index| LookupTable::<ProjectiveNielsPoint>::from(&points[index]));
+        let lookup_tables: [_; N] = core::array::from_fn(|index| {
+            LookupTable::<ProjectiveNielsPoint>::from(&points_and_scalars[index].0)
+        });
 
-        let scalar_digits: [_; N] = core::array::from_fn(|index| scalars[index].as_radix_16());
+        let scalar_digits: [_; N] =
+            core::array::from_fn(|index| points_and_scalars[index].1.as_radix_16());
 
         multiscalar_mul(&scalar_digits, &lookup_tables)
     }
 
     #[cfg(feature = "alloc")]
-    fn multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn multiscalar_mul_alloc<I, P, S>(points_and_scalars: I) -> EdwardsPoint
     where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<EdwardsPoint>,
+        I: IntoIterator<Item = (P, S)>,
+        P: Borrow<EdwardsPoint>,
+        S: Borrow<Scalar>,
     {
-        let lookup_tables: Vec<_> = points
-            .into_iter()
-            .map(|point| LookupTable::<ProjectiveNielsPoint>::from(point.borrow()))
-            .collect();
-
         // This puts the scalar digits into a heap-allocated Vec.
         // To ensure that these are erased, pass ownership of the Vec into a
         // Zeroizing wrapper.
         #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-        let mut scalar_digits: Vec<_> = scalars
+        let (lookup_tables, mut scalar_digits): (Vec<_>, Vec<_>) = points_and_scalars
             .into_iter()
-            .map(|s| s.borrow().as_radix_16())
-            .collect();
+            .map(|(p, s)| {
+                (
+                    LookupTable::<ProjectiveNielsPoint>::from(p.borrow()),
+                    s.borrow().as_radix_16(),
+                )
+            })
+            .unzip();
 
         let Q = multiscalar_mul(&scalar_digits, &lookup_tables);
 

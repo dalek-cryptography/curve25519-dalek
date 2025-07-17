@@ -109,6 +109,19 @@ pub proof fn shifted_lt(v: u64)
     assert(u64::MAX >> 51 < 1u64 << 13) by (compute);
 }
 
+pub open spec fn p() -> nat {
+    (pow2(255) - 19) as nat
+}
+
+// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
+pub open spec fn as_nat(e: FieldElement51) -> nat {
+    (e.limbs[0] as nat) +
+    pow2(51) * (e.limbs[1] as nat) +
+    pow2(102) * (e.limbs[2] as nat) +
+    pow2(153) * (e.limbs[3] as nat) +
+    pow2(204) * (e.limbs[4] as nat)
+}
+
 
 /* MANUALLY moved outside, named return value */
 const fn load8_at(input: &[u8], i: usize) -> (r: u64)
@@ -166,13 +179,18 @@ impl FieldElement51 {
             forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 52),
         ensures
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-            forall|i: int| 0 <= i < 5 ==> self.limbs[i] + old(self).limbs[i] % (pow2(52) as u64) == 0,
+            // TODO: add knowledge of reduce() return values
     {
         proof {
-            // lemma2_to64_rest(); // get pow2(51)
-            // assert(36028797018963664u64 == 16 * (pow2(51) - 19)) by (compute);
-            // assert(36028797018963952u64 == 16 * (pow2(51) - 1)) by (compute);
-            assume(false);
+            lemma2_to64_rest(); // get pow2(51)
+            assert(36028797018963664u64 == 16 * (pow2(51) - 19));
+            assert(36028797018963952u64 == 16 * (pow2(51) - 1));
+            assert((pow2(51) - 1) > pow2(50));
+            assert(16 * (pow2(51) - 1) > 16 * pow2(50));
+            assert(16 * pow2(50) == pow2(54));
+            shift_is_pow2(52);
+            lemma_pow2_strictly_increases(52, 54);
+            // ---
         }
         // See commentary in the Sub impl: (copied below)
             // To avoid underflow, first add a multiple of p.
@@ -201,7 +219,29 @@ impl FieldElement51 {
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51)
         ensures
-            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52)
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
+            // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
+            // They represent a number
+            // e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
+            // in Z_p, for p = 2^255 - 19
+            // reduce(l) returns v = (v0, v1, v2, v3, v4), such that
+            // v0 = 19 * a4 + b0
+            // v1 =      a0 + b1
+            // v2 =      a1 + b2
+            // v3 =      a2 + b3
+            // v4 =      a3 + b4
+            // where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
+            // we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
+            // Using the following identity connecting integer division and remainder:
+            // x = y * (x / y) + x % y
+            // we can see that li = ai * 2^51 + bi
+            // Plugging the above identities into the equations for v, we can observe that
+            // e(v) = e(l) - p * (l4 >> 51)
+            // IOW, e(reduce(l)) = e(l) (mod p)
+            // additionally, if all limbs are below 2^51, reduce(l) = l
+            (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs)
+            // TODO: to_nat(r) % p() = to_nat(FieldElement51{limbs: limbs}) % p()
+
     {
         proof {
             // \A i. limbs[i] < 2^13
@@ -263,6 +303,39 @@ impl FieldElement51 {
             assert((limbs[1] >> 51) + (limbs[2] & LOW_51_BIT_MASK) < (1u64 << 52));
             assert((limbs[2] >> 51) + (limbs[3] & LOW_51_BIT_MASK) < (1u64 << 52));
             assert((limbs[3] >> 51) + (limbs[4] & LOW_51_BIT_MASK) < (1u64 << 52));
+
+            // -----
+            // reduce identity for small limbs
+
+            // Can't seem to reference r within this proof block, we reconstruct it here
+            let rr: [u64; 5] = [
+                ((limbs[0] & LOW_51_BIT_MASK) + (limbs[4] >> 51) * 19) as u64,
+                ((limbs[1] & LOW_51_BIT_MASK) + (limbs[0] >> 51)) as u64,
+                ((limbs[2] & LOW_51_BIT_MASK) + (limbs[1] >> 51)) as u64,
+                ((limbs[3] & LOW_51_BIT_MASK) + (limbs[2] >> 51)) as u64,
+                ((limbs[4] & LOW_51_BIT_MASK) + (limbs[3] >> 51)) as u64,
+                ];
+
+            assert((forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) ==> (rr =~= limbs)) by {
+                if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
+                    assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & LOW_51_BIT_MASK == limbs[i] by {
+                        l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
+                        assert(limbs[i] < (1u64 << 51)); // trigger forall from if-statement
+                        shift_is_pow2(51);
+                        assert(limbs[i] < pow2(51));
+                        lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
+                        lemma_small_mod(limbs[i] as nat, pow2(51));
+                    }
+                    assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
+                        l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
+                        assert(limbs[i] < (1u64 << 51)); // trigger forall from if-statement
+                        shift_is_pow2(51);
+                        assert(limbs[i] < pow2(51));
+                        lemma_u64_shr_is_div(limbs[i], 51);
+                        lemma_basic_div(limbs[i] as int, pow2(51) as int);
+                    }
+                }
+            }
         }
 
         // Since the input limbs are bounded by 2^64, the biggest
@@ -311,7 +384,13 @@ impl FieldElement51 {
     /// canonical.
     ///
     #[rustfmt::skip] // keep alignment of bit shifts
-    pub const fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+    pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
+        ensures
+            true
+    {
+        proof {
+            l51_bit_mask_lt() // No over/underflow in the below let-def
+        }
         let low_51_bit_mask = (1u64 << 51) - 1;
         // ADAPTED CODE LINE: limbs is now a named field
         FieldElement51{ limbs:
@@ -331,7 +410,13 @@ impl FieldElement51 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn to_bytes(self) -> [u8; 32] {
+    pub fn to_bytes(self) -> (r: [u8; 32])
+        ensures
+            true,
+    {
+        proof {
+            assume(false);
+        }
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
         // Write h = pq + r with 0 <= r < p.

@@ -42,7 +42,7 @@ rustdoc-args = [
 features = ["os_rng", "reusable_secrets", "serde", "static_secrets"]
 
 [dependencies]
-curve25519-dalek = { version = "=5.0.0-pre.0", path = "../curve25519-dalek", default-features = false }
+curve25519-dalek = { version = "=5.0.0-pre.0", default-features = false }
 rand_core = { version = "0.9", default-features = false }
 serde = { version = "1", default-features = false, optional = true, features = [
     "derive",

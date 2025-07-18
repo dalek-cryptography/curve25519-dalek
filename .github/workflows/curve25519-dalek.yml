@@ -132,11 +132,11 @@ jobs:
       run: |
         wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.06.14.9b557d7/verus-0.2025.06.14.9b557d7-x86-linux.zip
         unzip verus-0.2025.06.14.9b557d7-x86-linux.zip
-        mkdir -p ~/.cargo/bin
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus
     - name: Run test
       run: |
+        ls
         cd curve25519-dalek
         cargo verus verify

@@ -601,8 +601,8 @@ verus! {
         true,
     {
         let mut limbs = [0u128; 9];
-        for (i, &limb) in self.limbs.iter().enumerate().take(5) {
-            limbs[i] = limb as u128;
+        for i in 0..5 {
+            limbs[i] = self.limbs[i] as u128;
         }
         Scalar52::montgomery_reduce(&limbs)
     }

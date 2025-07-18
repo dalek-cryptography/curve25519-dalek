@@ -113,15 +113,78 @@ pub open spec fn p() -> nat {
     (pow2(255) - 19) as nat
 }
 
-// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat(e: FieldElement51) -> nat {
-    (e.limbs[0] as nat) +
-    pow2(51) * (e.limbs[1] as nat) +
-    pow2(102) * (e.limbs[2] as nat) +
-    pow2(153) * (e.limbs[3] as nat) +
-    pow2(204) * (e.limbs[4] as nat)
+// Proof that 2^255 > 19
+pub proof fn pow255_gt_19()
+    ensures
+        pow2(255) > 19
+{
+    lemma2_to64(); // 2^5
+    assert(19 < pow2(5));
+    lemma_pow2_strictly_increases(5, 255);
 }
 
+// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
+pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
+    (limbs[0] as nat) +
+    pow2(51) * (limbs[1] as nat) +
+    pow2(102) * (limbs[2] as nat) +
+    pow2(153) * (limbs[3] as nat) +
+    pow2(204) * (limbs[4] as nat)
+}
+
+// Auxiliary lemma; shift is division (for 51 fixed)
+pub proof fn lemma_shift(ai: u64, v: u64)
+    requires
+        ai == v >> 51
+    ensures
+        ai == (v as nat) / pow2(51)
+{
+    lemma_u64_shr_is_div(v, 51);
+    assert(v >> 51 == (v as nat) / pow2(51));
+}
+
+// Auxiliary lemma; mask is mod (for 51 fixed)
+pub proof fn lemma_mask(bi: u64, v: u64)
+    requires
+        bi == v & LOW_51_BIT_MASK
+    ensures
+        bi == v % (pow2(51) as u64)
+{
+    l51_bit_mask_lt();
+    lemma_u64_low_bits_mask_is_mod(v, 51);
+    assert(v & (low_bits_mask(51) as u64) == v % (pow2(51) as u64));
+}
+
+// Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d
+pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64)
+    requires
+        ai == v >> 51,
+        bi == v & LOW_51_BIT_MASK
+    ensures
+        ai == (v as nat) / pow2(51),
+        bi == v % (pow2(51) as u64),
+        v == ai * pow2(51) + bi
+{
+    lemma_shift(ai, v);
+    lemma_mask(bi, v);
+    lemma_pow2_pos(51); // pow2(51) != 0
+    assert(pow2(51) <= u64::MAX) by {
+        lemma2_to64_rest();
+    }
+    assert(bi == (v as int) % (pow2(51) as int));
+    lemma_fundamental_div_mod(v as int, pow2(51) as int);
+}
+
+// Rewriting lemma; 2^((t + 1) * 51) * x = 2^(t*51) * (2^51 * x)
+// Parenthesis placement matters here
+pub proof fn lemma_two_factoring(k : nat, ai: u64)
+    ensures
+        pow2(k + 51) * ai == pow2(k) * (pow2(51) * ai)
+{
+    lemma_pow2_adds(k, 51);
+    assert(pow2(k + 51) * ai == pow2(k) * pow2(51) * ai); // note the lack of ()
+    lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, ai as int);
+}
 
 /* MANUALLY moved outside, named return value */
 const fn load8_at(input: &[u8], i: usize) -> (r: u64)
@@ -239,9 +302,8 @@ impl FieldElement51 {
             // e(v) = e(l) - p * (l4 >> 51)
             // IOW, e(reduce(l)) = e(l) (mod p)
             // additionally, if all limbs are below 2^51, reduce(l) = l
-            (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs)
-            // TODO: to_nat(r) % p() = to_nat(FieldElement51{limbs: limbs}) % p()
-
+            (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
+            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
     {
         proof {
             // \A i. limbs[i] < 2^13
@@ -335,6 +397,114 @@ impl FieldElement51 {
                         lemma_basic_div(limbs[i] as int, pow2(51) as int);
                     }
                 }
+            }
+
+            // -- as_nat identity
+
+            // ai = limbs[i] / 2^52
+            let a0 = (limbs[0] >> 51);
+            let a1 = (limbs[1] >> 51);
+            let a2 = (limbs[2] >> 51);
+            let a3 = (limbs[3] >> 51);
+            let a4 = (limbs[4] >> 51);
+
+            // bi = limbs[i] % 2^52
+            let b0 = (limbs[0] & LOW_51_BIT_MASK);
+            let b1 = (limbs[1] & LOW_51_BIT_MASK);
+            let b2 = (limbs[2] & LOW_51_BIT_MASK);
+            let b3 = (limbs[3] & LOW_51_BIT_MASK);
+            let b4 = (limbs[4] & LOW_51_BIT_MASK);
+
+            // write out as_nat
+            assert(as_nat(rr) ==
+                19 *  a4 + b0 +
+                pow2(51) * (a0 + b1) +
+                pow2(102) * (a1 + b2) +
+                pow2(153) * (a2 + b3) +
+                pow2(204) * (a3 + b4)
+            );
+
+            // distribute
+            assert(as_nat(rr) ==
+                19 *  a4 + b0 +
+                pow2(51) * a0 + pow2(51) * b1 +
+                pow2(102) * a1 + pow2(102) * b2 +
+                pow2(153) * a2 + pow2(153) * b3 +
+                pow2(204) * a3 + pow2(204) * b4
+            ) by {
+                lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
+                lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
+                lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
+                lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
+            }
+
+            // factor out
+            assert(as_nat(rr) ==
+                19 *  a4 + b0 +
+                pow2(51) * a0 + pow2(51) * b1 +
+                pow2(51) * (pow2(51) * a1) + pow2(102) * b2 +
+                pow2(102) * (pow2(51) * a2) + pow2(153) * b3 +
+                pow2(153) * (pow2(51) * a3) + pow2(204) * b4
+            ) by {
+                lemma_two_factoring(51, a1);
+                lemma_two_factoring(102, a2);
+                lemma_two_factoring(153, a3);
+            }
+
+            // change groupings
+            assert(as_nat(rr) ==
+                (b0 + pow2(51) * a0) +
+                pow2(51) * (b1 + pow2(51) * a1) +
+                pow2(102) * (b2 + pow2(51) * a2) +
+                pow2(153) * (b3 + pow2(51) * a3) +
+                pow2(204) * b4 + 19 * a4
+            ) by {
+                lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) * a1 as int, b1 as int);
+                lemma_mul_is_distributive_add(pow2(102) as int, pow2(51) * a2 as int, b2 as int);
+                lemma_mul_is_distributive_add(pow2(153) as int, pow2(51) * a3 as int, b3 as int);
+            }
+
+            // invoke div/mod identity
+            assert(as_nat(rr) ==
+                limbs[0] +
+                pow2(51) * limbs[1] +
+                pow2(102) * limbs[2] +
+                pow2(153) * limbs[3] +
+                pow2(204) * b4 + 19 * a4
+            ) by {
+                lemma_div_and_mod(a0, b0, limbs[0]);
+                lemma_div_and_mod(a1, b1, limbs[1]);
+                lemma_div_and_mod(a2, b2, limbs[2]);
+                lemma_div_and_mod(a3, b3, limbs[3]);
+            }
+
+            // Add missing limbs[4] parts
+            assert(as_nat(rr) ==
+                limbs[0] +
+                pow2(51) * limbs[1] +
+                pow2(102) * limbs[2] +
+                pow2(153) * limbs[3] +
+                pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+            ) by {
+                lemma_div_and_mod(a4, b4, limbs[4]);
+                assert(pow2(204) * limbs[4] == pow2(204) * (b4 + pow2(51) * a4));
+                assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
+                    lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
+                }
+                assert(pow2(204) * b4 == pow2(204) * limbs[4] - pow2(204)* (pow2(51) * a4 ));
+            }
+
+            // collect components of as_nat(limbs)
+            assert(as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4);
+            // pull in minus
+            assert(as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4));
+
+            // collect components of p() * a4
+            assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
+                lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, a4 as int);
+                lemma_pow2_adds(204, 51);
+                lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
+                pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
             }
         }
 

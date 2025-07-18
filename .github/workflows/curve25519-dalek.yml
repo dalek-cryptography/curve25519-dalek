@@ -137,6 +137,4 @@ jobs:
         ln -s verus-x86-linux/cargo-verus
     - name: Run test
       run: |
-        ls
-        cd curve25519-dalek
         cargo verus verify

@@ -84,7 +84,7 @@ group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
-curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
+curve25519-dalek-derive = "0.1"
 
 [lints.rust.unexpected_cfgs]
 level = "warn"

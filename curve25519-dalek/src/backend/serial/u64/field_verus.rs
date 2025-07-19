@@ -246,13 +246,7 @@ impl FieldElement51 {
     {
         proof {
             lemma2_to64_rest(); // get pow2(51)
-            assert(36028797018963664u64 == 16 * (pow2(51) - 19));
-            assert(36028797018963952u64 == 16 * (pow2(51) - 1));
-            assert((pow2(51) - 1) > pow2(50));
-            assert(16 * (pow2(51) - 1) > 16 * pow2(50));
-            assert(16 * pow2(50) == pow2(54));
             shift_is_pow2(52);
-            lemma_pow2_strictly_increases(52, 54);
             // ---
         }
         // See commentary in the Sub impl: (copied below)

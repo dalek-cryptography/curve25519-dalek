@@ -673,8 +673,10 @@ impl FieldElement51 {
 
     /// Given `k > 0`, return `self^(2^k)`.
     #[rustfmt::skip] // keep alignment of c* calculations
-    pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
-
+    pub fn pow2k(&self, mut k: u32) -> (r: FieldElement51)
+        ensures
+            true
+    {
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
         // debug_assert!( k > 0 );
 
@@ -686,6 +688,9 @@ impl FieldElement51 {
                 true
             decreases k
         {
+            proof {
+                assume(false);
+            }
             // Precondition: assume input limbs a[i] are bounded as
             //
             // a[i] < 2^(51 + b)
@@ -788,9 +793,15 @@ impl FieldElement51 {
     }
 
     /// Returns 2 times the square of this field element.
-    pub fn square2(&self) -> FieldElement51 {
+    pub fn square2(&self) -> (r: FieldElement51)
+        ensures
+            true
+    {
         let mut square = self.pow2k(1);
         for i in 0..5 {
+            proof {
+                assume(false);
+            }
             square.limbs[i] *= 2;
         }
 

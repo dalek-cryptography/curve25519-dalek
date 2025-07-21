@@ -83,15 +83,7 @@ pub proof fn masked_lt(v: u64)
     ensures
         v & LOW_51_BIT_MASK < (1u64 << 51),
 {
-    l51_bit_mask_lt();
-    assert(LOW_51_BIT_MASK == low_bits_mask(51) as u64);
-    assert(v & LOW_51_BIT_MASK == v & (low_bits_mask(51) as u64));
-    lemma_u64_low_bits_mask_is_mod(v, 51);
-    assert(v & (low_bits_mask(51) as u64) == v % (pow2(51) as u64));
-    lemma_pow2_pos(51);
-    lemma_mod_division_less_than_divisor(v as int, pow2(51) as int);
-    assert(v & (low_bits_mask(51) as u64) < pow2(51));
-    shift_is_pow2(51);
+    assert (v & 2251799813685247u64 < (1u64 << 51)) by (bit_vector);
 }
 
 // right-shifting a u64 gives at most 2^13 - 1

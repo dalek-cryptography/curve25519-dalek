@@ -601,6 +601,7 @@ verus! {
         true,
     {
         let mut limbs = [0u128; 9];
+        #[allow(clippy::needless_range_loop)]
         for i in 0..5 {
             limbs[i] = self.limbs[i] as u128;
         }

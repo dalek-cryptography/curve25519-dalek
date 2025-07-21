@@ -222,7 +222,7 @@ pub struct FieldElement51 {
 impl FieldElement51 {
     pub(crate) const fn from_limbs(limbs: [u64; 5]) -> FieldElement51 {
         // ADAPTED CODE LINE: limbs is now a named field
-        FieldElement51{limbs: limbs}
+        FieldElement51{limbs}
     }
 
     // Modified to use direct struct
@@ -538,7 +538,7 @@ impl FieldElement51 {
         limbs[4] += c3;
 
         // ADAPTED CODE LINE: limbs is now a named field
-        FieldElement51{limbs: limbs}
+        FieldElement51{limbs}
     }
 
     /// Load a `FieldElement51` from the low 255 bits of a 256-bit
@@ -580,6 +580,7 @@ impl FieldElement51 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip] // keep alignment of s[*] calculations
+    #[allow(clippy::wrong_self_convention)]
     pub fn to_bytes(self) -> (r: [u8; 32])
         ensures
             true,

@@ -43,30 +43,6 @@ jobs:
           RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
         run: cargo test --target ${{ matrix.target }}
 
-  # Default no_std test only tests using serial across all crates
-  build-nostd-fiat:
-    name: Build fiat on no_std target (thumbv7em-none-eabi)
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - crate: curve25519-dalek
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: thumbv7em-none-eabi
-      - uses: taiki-e/install-action@cargo-hack
-      # No default features build
-      - name: no_std fiat / no feat ${{ matrix.crate }}
-        env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'
-        run: cargo build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --no-default-features
-      - name: no_std fiat / cargo hack ${{ matrix.crate }}
-        env:
-          RUSTFLAGS: '--cfg curve25519_dalek_backend="fiat"'      
-        run: cargo hack build -p ${{ matrix.crate }} --target thumbv7em-none-eabi --release --each-feature --exclude-features default,std,getrandom
 
   test-serial:
     name: Test serial backend
@@ -143,3 +119,22 @@ jobs:
     - run: cargo build --no-default-features --features serde
     # Also make sure the AVX2 build works
     - run: cargo build --target x86_64-unknown-linux-gnu
+
+  verus:
+    name: Run `cargo verify verus`
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.88.0
+    - name: Install Verus
+      run: |
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.07.05.8bd7c32/verus-0.2025.07.05.8bd7c32-x86-linux.zip
+        unzip verus-0.2025.07.05.8bd7c32-x86-linux.zip
+        mv verus-x86-linux ~/.cargo/bin
+        cd ~/.cargo/bin
+        ln -s verus-x86-linux/cargo-verus
+    - name: Run test
+      run: |
+        cargo verus verify

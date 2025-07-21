@@ -293,6 +293,7 @@ impl FieldElement51 {
             //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
             // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
             as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
+            // Reducing mod p, this implies `as_nat(self.limbs) == - as_nat(old(self).limbs)`
     {
         proof {
             let c0 = (pow2(51) - 19);

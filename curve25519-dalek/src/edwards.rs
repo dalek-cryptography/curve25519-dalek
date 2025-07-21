@@ -665,10 +665,12 @@ impl EdwardsPoint {
         let yd = FieldElement::conditional_select(&yd, &FieldElement::ONE, e);
         // 13. return (xn, xd, yn, yd)
 
-        let x = &xn * &xd.invert();
-        let y = &yn * &yd.invert();
-
-        AffinePoint { x, y }.to_edwards()
+        EdwardsPoint {
+            X: &xn * &yd,
+            Y: &xd * &yn,
+            Z: &xd * &yd,
+            T: &xn * &yn,
+        }
     }
 
     #[cfg(feature = "digest")]
@@ -2433,7 +2435,7 @@ mod test {
     }
 
     // Hash-to-curve test vectors from
-    // https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
+    // https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.2
     // These are of the form (input_msg, output_x, output_y)
     #[cfg(all(feature = "alloc", feature = "digest"))]
     const RFC_HASH_TO_CURVE_KAT_NU: &[(&[u8], &str, &str)] = &[
@@ -2472,7 +2474,7 @@ mod test {
 
     #[test]
     #[cfg(all(feature = "alloc", feature = "digest"))]
-    fn elligator_map_to_curve_test_vectors() {
+    fn elligator_encode_to_curve_test_vectors() {
         let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
         for (index, vector) in RFC_HASH_TO_CURVE_KAT_NU.iter().enumerate() {
             let input = vector.0;
@@ -2500,7 +2502,7 @@ mod test {
     }
 
     // Hash-to-curve test vectors from
-    // https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell
+    // https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.1
     // These are of the form (input_msg, output_x, output_y, q0_x, q0_y, q1_x, q1_y, u0, u1)
     #[cfg(all(feature = "alloc", feature = "digest"))]
     const RFC_HASH_TO_CURVE_KAT_RO: &[(&[u8], &str, &str)] = &[

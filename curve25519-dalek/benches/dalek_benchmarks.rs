@@ -84,7 +84,7 @@ mod edwards_benches {
         rng.fill_bytes(&mut domain_sep);
 
         c.bench_function(
-            "Elligator2 hash to curve (SHA-512, input size 32 bytes)",
+            "Elligator2 encode to curve (SHA-512, input size 32 bytes)",
             |b| b.iter(|| EdwardsPoint::encode_to_curve::<Sha512>(&[&msg], &[&domain_sep])),
         );
     }

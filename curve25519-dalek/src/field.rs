@@ -778,7 +778,7 @@ mod test {
     }
 
     /// Hash to field test vectors from
-    /// https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.2
     /// These are of the form (input_msg, output_field_elem)
     #[cfg(feature = "digest")]
     const RFC_HASH_TO_FIELD_KAT: &[(&[u8], &str)] = &[
@@ -825,7 +825,7 @@ mod test {
     }
 
     /// Hash to field test vectors from
-    /// https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.1
     /// These are of the form (input_msg, output_field_elem, output_field_elem)
     #[cfg(feature = "digest")]
     const RFC_HASH_TO_FIELD_KAT_2: &[(&[u8], &str, &str)] = &[

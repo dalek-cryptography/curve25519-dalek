@@ -132,6 +132,41 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
     pow2(204) * (limbs[4] as nat)
 }
 
+// Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)
+pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
+    requires
+        forall |i:int| 0 <= i < 5 ==> b[i] < a[i]
+    ensures
+        as_nat([
+            (a[0] - b[0]) as u64,
+            (a[1] - b[1]) as u64,
+            (a[2] - b[2]) as u64,
+            (a[3] - b[3]) as u64,
+            (a[4] - b[4]) as u64
+        ]) == as_nat(a) - as_nat(b)
+{
+    let c: [u64;5] = [
+        (a[0] - b[0]) as u64,
+        (a[1] - b[1]) as u64,
+        (a[2] - b[2]) as u64,
+        (a[3] - b[3]) as u64,
+        (a[4] - b[4]) as u64
+    ];
+    // distribute pow2
+    assert( as_nat(c) ==
+        (a[0] - b[0]) +
+        pow2(51) * a[1] - pow2(51) * b[1] +
+        pow2(102) * a[2] - pow2(102) * b[2] +
+        pow2(153) * a[3] - pow2(153) * b[3] +
+        pow2(204) * a[4] - pow2(204) * b[4]
+    ) by {
+        lemma_mul_is_distributive_sub(pow2(51) as int, a[1] as int, b[1] as int);
+        lemma_mul_is_distributive_sub(pow2(102) as int, a[2] as int, b[2] as int);
+        lemma_mul_is_distributive_sub(pow2(153) as int, a[3] as int, b[3] as int);
+        lemma_mul_is_distributive_sub(pow2(204) as int, a[4] as int, b[4] as int);
+    }
+}
+
 // Auxiliary lemma; shift is division (for 51 fixed)
 pub proof fn lemma_shift(ai: u64, v: u64)
     requires
@@ -239,21 +274,87 @@ impl FieldElement51 {
     /// Invert the sign of this field element
     pub fn negate(&mut self)
         requires
-            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 52),
+            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 51),
         ensures
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-            // TODO: add knowledge of reduce() return values
+            // Assume we start with l = (l0, l1, l2, l3, l4).
+            // Using c0 = 2^51 - 19 and c = 2^51 - 1, we can see that
+            // ( 36028797018963664u64 - l0,
+            //   36028797018963952u64 - l1,
+            //   36028797018963952u64 - l2,
+            //   36028797018963952u64 - l3,
+            //   36028797018963952u64 - l4 )
+            // is just 16 * (c0, c, c, c, c) - l (in vector notation)
+            // Further, as_nat((c0, c, c, c, c)) = p, so
+            // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
+            // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
+            // This gives us the identity
+            // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
+            //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
+            // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
+            as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
     {
         proof {
+            let c0 = (pow2(51) - 19);
+            let c  = (pow2(51) - 1);
             lemma2_to64_rest(); // get pow2(51)
-            assert(36028797018963664u64 == 16 * (pow2(51) - 19));
-            assert(36028797018963952u64 == 16 * (pow2(51) - 1));
-            assert((pow2(51) - 1) > pow2(50));
-            assert(16 * (pow2(51) - 1) > 16 * pow2(50));
-            assert(16 * pow2(50) == pow2(54));
-            shift_is_pow2(52);
-            lemma_pow2_strictly_increases(52, 54);
-            // ---
+            // solver knows 36028797018963664u64 == 16 * c0
+            // solver knows 36028797018963952u64 == 16 * c;
+
+            assert forall |i: int| 0 <= i < 5 implies old(self).limbs[i] < 16 * c0 by {
+                assert(c0 > pow2(50));
+                assert(16 * pow2(50) == pow2(54));
+                shift_is_pow2(51);
+                lemma_pow2_strictly_increases(51, 54);
+            }
+
+            // Introduce 16p as a vector
+            let v = [(16 * c0) as u64,(16 * c) as u64,(16 * c) as u64,(16 * c) as u64,(16 * c) as u64];
+
+            assert(as_nat(v) == 16 * p()) by {
+                // by definition of as_nat
+                assert( as_nat(v) ==
+                    16 * c0 +
+                    pow2(51) * (16 * c) +
+                    pow2(102) * (16 * c) +
+                    pow2(153) * (16 * c) +
+                    pow2(204) * (16 * c)
+                );
+
+                // solver can reorder factors and pull out 16 on its own
+                // ...
+
+                // Write out `c`s and sum up powers
+                assert( p() ==
+                    c0 +
+                    pow2(51) * c +
+                    pow2(102) * c +
+                    pow2(153) * c +
+                    pow2(204) * c
+                ) by {
+                    lemma_pow2_adds(51, 51);
+                    lemma_pow2_adds(51, 102);
+                    lemma_pow2_adds(51, 153);
+                    lemma_pow2_adds(51, 204);
+                }
+            }
+
+            let l0 = old(self).limbs[0];
+            let l1 = old(self).limbs[1];
+            let l2 = old(self).limbs[2];
+            let l3 = old(self).limbs[3];
+            let l4 = old(self).limbs[4];
+
+            assert(as_nat([
+                (16 * c0 - l0) as u64,
+                (16 * c - l1) as u64,
+                (16 * c - l2) as u64,
+                (16 * c - l3) as u64,
+                (16 * c - l4) as u64,
+                ]) == as_nat(v) - as_nat(old(self).limbs)
+            ) by {
+                lemma_as_nat_sub(v, old(self).limbs);
+            }
         }
         // See commentary in the Sub impl: (copied below)
             // To avoid underflow, first add a multiple of p.

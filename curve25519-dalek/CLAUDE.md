@@ -1,0 +1,54 @@
+# Development Notes
+
+## Verus Verification
+
+Run Verus verification from the `curve25519-dalek` directory:
+```bash
+cd curve25519-dalek && cargo verus verify -- --multiple-errors 5
+```
+
+This ensures proper compilation and avoids dependency issues with other crates in the workspace.
+
+## Strategies for Debugging Verus Proofs
+
+### 1. Replace `assume(false)` with `assert` to Find Issues
+When encountering `assume(false)` statements, replace them with `assert` to see what Verus cannot prove. The error messages will point to the specific properties that need verification.
+
+### 2. Analyze Overflow Errors by Removing All Bounds
+When facing "possible arithmetic overflow" errors:
+- Remove all loop invariants and bounds temporarily
+- Run verification to see the raw overflow locations
+- This reveals what bounds are actually needed to prevent overflow
+
+### 3. Use Iteration-Dependent Loop Invariants
+For loops where values grow over iterations:
+- Instead of fixed bounds like `x < 2^54`, use `x < 2^(base + i)`
+- This allows values to grow incrementally while maintaining bounds
+- Example: `carry < (1u64 << (52 + i as u64))` for a 5-iteration loop
+
+### 4. Test Necessity of Assumptions
+When you have multiple `assume` statements:
+- Remove them one by one to see which are actually necessary
+- This identifies the minimal set of assumptions needed
+- Helps focus proof efforts on the essential constraints
+
+### 5. Break Down Complex Assertions
+When a complex assertion fails:
+- Add separate `assume` statements for each component
+- Then try to `assert` the combination
+- This isolates whether the issue is individual bounds or their combination
+- Example: If `assert(a + b + c < bound)` fails, try assuming bounds on `a`, `b`, `c` separately
+
+### 6. Study Working Examples for Patterns
+Look at similar verified code (like `field_verus.rs`) to understand:
+- Common proof patterns and lemma usage
+- How bounds are established and maintained
+- Typical `proof { ... }` block structures
+- Use of vstd lemmas like `lemma_pow2_pos`, `lemma_mul_strict_inequality`
+
+### 7. Mathematical Reasoning vs Formal Proof
+Remember that:
+- Sound mathematical reasoning in comments doesn't automatically translate to Verus proofs
+- Even obvious mathematical facts need explicit proof steps using vstd lemmas
+- `assume` statements verify mathematical structure but don't constitute formal proofs
+- Convert assumes to proper proofs incrementally using appropriate lemmas

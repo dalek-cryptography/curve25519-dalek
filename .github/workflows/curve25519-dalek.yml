@@ -127,7 +127,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@1.85.1
+      uses: dtolnay/rust-toolchain@1.88.0
     - name: Install Verus
       run: |
         wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.07.05.8bd7c32/verus-0.2025.07.05.8bd7c32-x86-linux.zip

@@ -37,7 +37,6 @@ pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
     ensures
         a1 * a2 < b1 * b2,
 {
-    assert(1+1 == 3);
     assert(b1 > 0);
     if (a2 == 0) {
         assert(a1 * a2 == 0);

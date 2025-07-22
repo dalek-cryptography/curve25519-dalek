@@ -474,15 +474,6 @@ impl FieldElement51 {
             let b3 = (limbs[3] & LOW_51_BIT_MASK);
             let b4 = (limbs[4] & LOW_51_BIT_MASK);
 
-            // write out as_nat
-            assert(as_nat(rr) ==
-                19 *  a4 + b0 +
-                pow2(51) * (a0 + b1) +
-                pow2(102) * (a1 + b2) +
-                pow2(153) * (a2 + b3) +
-                pow2(204) * (a3 + b4)
-            );
-
             // distribute
             assert(as_nat(rr) ==
                 19 *  a4 + b0 +

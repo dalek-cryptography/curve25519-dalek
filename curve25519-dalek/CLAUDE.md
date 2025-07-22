@@ -52,3 +52,13 @@ Remember that:
 - Even obvious mathematical facts need explicit proof steps using vstd lemmas
 - `assume` statements verify mathematical structure but don't constitute formal proofs
 - Convert assumes to proper proofs incrementally using appropriate lemmas
+
+### 8. Be Careful with Bit Shifting
+When working with bit shifts in Verus proofs:
+- **Important**: `1u128 << 128` evaluates to 0, not 2^128!
+  - u128 only has 128 bits, so shifting by 128 positions shifts all bits out
+  - The maximum meaningful shift for u128 is 127 bits
+  - For pow2(128), use vstd's `pow2` function instead of bit shifting
+- The `bit_vector` solver has limitations with large shifts (especially for u128)
+- Use vstd's `pow2` and related lemmas for large power-of-2 values
+- For smaller shifts (< 64), `bit_vector` solver usually works well

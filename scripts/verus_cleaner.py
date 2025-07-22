@@ -8,10 +8,10 @@ Implements the cleaning process described in CLAUDE.md:
 3. Keep removed statements that don't break verification (redundant statements)
 
 Usage:
-    python verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
+    scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
 
 Example:
-    python verus_cleaner.py src/field.rs 10 50 "assert.*"
+    scripts/verus_cleaner.py src/field.rs 10 50 "assert.*"
 """
 
 import sys
@@ -189,8 +189,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python verus_cleaner.py curve25519-dalek/src/field_verus.rs 100 200 '^[^/]*lemma'
-  python verus_cleaner.py curve25519-dalek/src/scalar_verus.rs 50 150 "assert"
+  scripts/verus_cleaner.py curve25519-dalek/src/field_verus.rs 100 200 '^[^/]*lemma'
+  scripts/verus_cleaner.py curve25519-dalek/src/scalar_verus.rs 50 150 "assert"
   
 This implements the cleaning process from CLAUDE.md:
 - For each matching statement in the range:

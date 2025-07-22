@@ -26,7 +26,6 @@ pub proof fn l51_bit_mask_lt()
     lemma2_to64_rest();
     lemma_pow2_pos(51);
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
-    assert(LOW_51_BIT_MASK == low_bits_mask(51)) by (compute);
 }
 
 // Auxiliary lemma for multiplication (of nat!)
@@ -37,16 +36,13 @@ pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
     ensures
         a1 * a2 < b1 * b2,
 {
-    assert(b1 > 0);
     if (a2 == 0) {
-        assert(a1 * a2 == 0);
         assert(b1 * b2 > 0) by {
             // a * b != 0 <==> a != 0 /\ b != 0
             lemma_mul_nonzero(b1 as int, b2 as int);
         }
     }
     else {
-        assert(a2 > 0);
         // a1 < b1 /\ a2 > 0 ==> a1 * a2 < b1 * a2
         lemma_mul_strict_inequality(a1 as int, b1  as int, a2 as int);
         // a2 < b2 /\ b2 > 0 ==> a2 * b1 < b2 * b1
@@ -74,8 +70,6 @@ pub proof fn shift_is_pow2(k: nat)
 {
     pow2_le_max64(k);
     lemma_u64_shl_is_mul(1u64, k as u64);
-    assert((1u64 << k) == 1u64 * pow2(k));
-    assert(1u64 * pow2(k) == pow2(k));
 }
 
 // Masking with low_bits_mask(k) gives a value bounded by 2^k
@@ -92,12 +86,10 @@ pub proof fn shifted_lt(v: u64)
         v >> 51 < 1u64 << 13
 {
     shift_is_pow2(13);
-    assert(v <= u64::MAX);
     lemma_u64_shr_is_div(u64::MAX, 51);
     lemma_u64_shr_is_div(v, 51);
     lemma_pow2_pos(51);
     lemma_div_is_ordered(v as int, u64::MAX as int, pow2(51) as int);
-    assert(v >> 51 <= u64::MAX >> 51);
     assert(u64::MAX >> 51 < 1u64 << 13) by (compute);
 }
 
@@ -111,7 +103,6 @@ pub proof fn pow255_gt_19()
         pow2(255) > 19
 {
     lemma2_to64(); // 2^5
-    assert(19 < pow2(5));
     lemma_pow2_strictly_increases(5, 255);
 }
 
@@ -167,7 +158,6 @@ pub proof fn lemma_shift(ai: u64, v: u64)
         ai == (v as nat) / pow2(51)
 {
     lemma_u64_shr_is_div(v, 51);
-    assert(v >> 51 == (v as nat) / pow2(51));
 }
 
 // Auxiliary lemma; mask is mod (for 51 fixed)
@@ -179,7 +169,6 @@ pub proof fn lemma_mask(bi: u64, v: u64)
 {
     l51_bit_mask_lt();
     lemma_u64_low_bits_mask_is_mod(v, 51);
-    assert(v & (low_bits_mask(51) as u64) == v % (pow2(51) as u64));
 }
 
 // Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d
@@ -198,7 +187,6 @@ pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64)
     assert(pow2(51) <= u64::MAX) by {
         lemma2_to64_rest();
     }
-    assert(bi == (v as int) % (pow2(51) as int));
     lemma_fundamental_div_mod(v as int, pow2(51) as int);
 }
 
@@ -209,7 +197,6 @@ pub proof fn lemma_two_factoring(k : nat, ai: u64)
         pow2(k + 51) * ai == pow2(k) * (pow2(51) * ai)
 {
     lemma_pow2_adds(k, 51);
-    assert(pow2(k + 51) * ai == pow2(k) * pow2(51) * ai); // note the lack of ()
     lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, ai as int);
 }
 
@@ -295,8 +282,6 @@ impl FieldElement51 {
             // solver knows 36028797018963952u64 == 16 * c;
 
             assert forall |i: int| 0 <= i < 5 implies old(self).limbs[i] < 16 * c0 by {
-                assert(c0 > pow2(50));
-                assert(16 * pow2(50) == pow2(54));
                 shift_is_pow2(51);
                 lemma_pow2_strictly_increases(51, 54);
             }
@@ -421,21 +406,10 @@ impl FieldElement51 {
                 shift_is_pow2(13);
                 shift_is_pow2(18);
                 lemma_pow2_adds(13, 5);
-                assert((1u64 << 5) == pow2(5));
-                assert((1u64 << 13) == pow2(13));
-                assert((1u64 << 13) * (1u64 << 5) == pow2(13) * pow2(5));
-                assert(pow2(13) * pow2(5) == pow2(18));
-                assert((1u64 << 18) == pow2(18));
-                assert((1u64 << 13) * (1u64 << 5) == (1u64 << 18));
                 mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
             }
 
             // The final values (limbs[i] += cX) are all bounded by 2^51 + eps, for eps \in {2^18, 2^13}.
-            assert(((limbs[4] >> 51) * 19) + (limbs[0] & LOW_51_BIT_MASK) < ((1u64 << 18)) + (1u64 << 51) );
-            assert((limbs[0] >> 51) + (limbs[1] & LOW_51_BIT_MASK) < ((1u64 << 13)) + (1u64 << 51) );
-            assert((limbs[1] >> 51) + (limbs[2] & LOW_51_BIT_MASK) < ((1u64 << 13)) + (1u64 << 51) );
-            assert((limbs[2] >> 51) + (limbs[3] & LOW_51_BIT_MASK) < ((1u64 << 13)) + (1u64 << 51) );
-            assert((limbs[3] >> 51) + (limbs[4] & LOW_51_BIT_MASK) < ((1u64 << 13)) + (1u64 << 51) );
 
             assert(((1u64 << 18)) + (1u64 << 51) < (1u64 << 52)) by {
                 shift_is_pow2(18);
@@ -454,11 +428,6 @@ impl FieldElement51 {
             }
 
             // In summary, they're all bounded by 2^52
-            assert(((limbs[4] >> 51) * 19) + (limbs[0] & LOW_51_BIT_MASK) < (1u64 << 52));
-            assert((limbs[0] >> 51) + (limbs[1] & LOW_51_BIT_MASK) < (1u64 << 52));
-            assert((limbs[1] >> 51) + (limbs[2] & LOW_51_BIT_MASK) < (1u64 << 52));
-            assert((limbs[2] >> 51) + (limbs[3] & LOW_51_BIT_MASK) < (1u64 << 52));
-            assert((limbs[3] >> 51) + (limbs[4] & LOW_51_BIT_MASK) < (1u64 << 52));
 
             // -----
             // reduce identity for small limbs
@@ -476,17 +445,13 @@ impl FieldElement51 {
                 if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
                     assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & LOW_51_BIT_MASK == limbs[i] by {
                         l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
-                        assert(limbs[i] < (1u64 << 51)); // trigger forall from if-statement
                         shift_is_pow2(51);
-                        assert(limbs[i] < pow2(51));
                         lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
                         lemma_small_mod(limbs[i] as nat, pow2(51));
                     }
                     assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
                         l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
-                        assert(limbs[i] < (1u64 << 51)); // trigger forall from if-statement
                         shift_is_pow2(51);
-                        assert(limbs[i] < pow2(51));
                         lemma_u64_shr_is_div(limbs[i], 51);
                         lemma_basic_div(limbs[i] as int, pow2(51) as int);
                     }
@@ -581,17 +546,13 @@ impl FieldElement51 {
                 pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
             ) by {
                 lemma_div_and_mod(a4, b4, limbs[4]);
-                assert(pow2(204) * limbs[4] == pow2(204) * (b4 + pow2(51) * a4));
                 assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
                     lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
                 }
-                assert(pow2(204) * b4 == pow2(204) * limbs[4] - pow2(204)* (pow2(51) * a4 ));
             }
 
             // collect components of as_nat(limbs)
-            assert(as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4);
             // pull in minus
-            assert(as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4));
 
             // collect components of p() * a4
             assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
@@ -761,7 +722,6 @@ impl FieldElement51 {
 
         // High bit should be zero.
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
-        // debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
 
         s
     }
@@ -773,7 +733,6 @@ impl FieldElement51 {
             true
     {
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
-        // debug_assert!( k > 0 );
 
 
         let mut a: [u64; 5] = self.limbs;
@@ -825,11 +784,6 @@ impl FieldElement51 {
             //
             // So we require b < 3 to ensure this fits.
             // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
-            // debug_assert!(a[0] < (1 << 54));
-            // debug_assert!(a[1] < (1 << 54));
-            // debug_assert!(a[2] < (1 << 54));
-            // debug_assert!(a[3] < (1 << 54));
-            // debug_assert!(a[4] < (1 << 54));
 
             // const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1; // already defined
 

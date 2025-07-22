@@ -441,10 +441,36 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], b.limbs[0]);
-        assume(false);
+
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 2^104 + 2^104 = 2^105 < 2^128
+            assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
+        }
         z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
+
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
+            assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+        }
         z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
+
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
+
+            assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
+            assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
+        }
         z[3] = m(a.limbs[0], b.limbs[3]) + m(a.limbs[1], b.limbs[2]) + m(a.limbs[2], b.limbs[1]) + m(a.limbs[3], b.limbs[0]);
+
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
+            assert(8u128 == (1u128 << 3)) by (bit_vector);
+            assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
+        }
         z[4] = m(a.limbs[0], b.limbs[4]) + m(a.limbs[1], b.limbs[3]) + m(a.limbs[2], b.limbs[2]) + m(a.limbs[3], b.limbs[1]) + m(a.limbs[4], b.limbs[0]);
         z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);
         z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
@@ -464,10 +490,40 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], a.limbs[0]);
-        assume(false);
+
+        proof {
+            // m() ensures its result is < 2^104
+            // Since m_result < 2^104, we have m_result * 2 < 2^105
+            // and 2^105 is well within u128 bounds
+            assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
+        }
         z[1] = m(a.limbs[0], a.limbs[1]) * 2;
+
+        proof {
+            // Each m() result is < 2^104
+            // m_term1 * 2 < 2^105
+
+            // Sum: 2^105 + 2^104 = 3 * 2^104 < 2^106 < 2^128
+            assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+        }
         z[2] = m(a.limbs[0], a.limbs[2]) * 2 + m(a.limbs[1], a.limbs[1]);
+
+        proof {
+            // Each m() result is < 2^104
+            // Each * 2 gives < 2^105
+
+            // Sum: 2^105 + 2^105 = 2^106 < 2^128
+            assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
+        }
         z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
+
+        proof {
+            // Each m() result is < 2^104
+            // First two terms * 2 give < 2^105
+
+            // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
+            assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
+        }
         z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);
         z[5] =                 m(a.limbs[1], a.limbs[4]) * 2 + m(a.limbs[2], a.limbs[3]) * 2;
         z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);

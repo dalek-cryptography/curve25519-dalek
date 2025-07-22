@@ -59,6 +59,16 @@ When working with bit shifts in Verus proofs:
   - u128 only has 128 bits, so shifting by 128 positions shifts all bits out
   - The maximum meaningful shift for u128 is 127 bits
   - For pow2(128), use vstd's `pow2` function instead of bit shifting
-- The `bit_vector` solver has limitations with large shifts (especially for u128)
 - Use vstd's `pow2` and related lemmas for large power-of-2 values
-- For smaller shifts (< 64), `bit_vector` solver usually works well
+
+### 9. Incremental Proof Strategy: Moving assume(false)
+A powerful technique for gradually proving complex functions:
+- Start with `assume(false)` at the beginning of the function body
+- Move it down one line at a time, proving each line as you go
+- When Verus reports an error, add the necessary proof block before that line
+- This approach lets you:
+  - Focus on one verification challenge at a time
+  - Build confidence incrementally as each line passes verification
+  - Identify the exact point where overflow or other issues occur
+- Example: In `square_internal`, moved `assume(false)` from after `z[0]` to after `z[1]`, requiring a proof that `m(...) * 2` doesn't overflow
+- Continue until `assume(false)` reaches the end of the function

@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""
-cleaning script - systematically tests removal of statements using Verus verification.
-
-Implements the cleaning process described in CLAUDE.md:
-1. Find statements matching regex pattern within specified line range
-2. For each statement: remove it, run Verus verification, restore if verification fails
-3. Keep removed statements that don't break verification (redundant statements)
-
-Usage:
-    scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
-
-Example:
-    scripts/verus_cleaner.py src/field.rs 10 50 "assert.*"
-"""
 
 import sys
 import re
@@ -188,11 +174,13 @@ def main():
         description="Systematically test removal of statements using Verus verification",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Usage:
+  scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
+
 Examples:
   scripts/verus_cleaner.py curve25519-dalek/src/field_verus.rs 100 200 '^[^/]*lemma'
   scripts/verus_cleaner.py curve25519-dalek/src/scalar_verus.rs 50 150 "assert"
   
-This implements the cleaning process from CLAUDE.md:
 - For each matching statement in the range:
   1. Remove the statement from the file
   2. Run 'cargo verus verify -- --multiple-errors 20' 

@@ -100,7 +100,6 @@ impl FieldElement51 {
     }
 }
 
-
 // Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
 //pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
 //    (limbs[0] as nat) +

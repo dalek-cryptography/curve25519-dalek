@@ -187,8 +187,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python verus_cleaner.py curve25519-dalek/src/field.rs 100 200 "assert\\("
-  python verus_cleaner.py curve25519-dalek/src/scalar.rs 50 150 "assert.*<"
+  python verus_cleaner.py curve25519-dalek/src/field_verus.rs 100 200 '^[^/]*lemma'
+  python verus_cleaner.py curve25519-dalek/src/scalar_verus.rs 50 150 "assert"
   
 This implements the cleaning process from CLAUDE.md:
 - For each matching statement in the range:

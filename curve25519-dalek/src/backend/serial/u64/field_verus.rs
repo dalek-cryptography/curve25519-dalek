@@ -711,6 +711,7 @@ impl FieldElement51 {
 
         // High bit should be zero.
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
+        // debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
 
         s
     }
@@ -722,6 +723,7 @@ impl FieldElement51 {
             true
     {
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
+        // debug_assert!( k > 0 );
 
 
         let mut a: [u64; 5] = self.limbs;
@@ -773,6 +775,11 @@ impl FieldElement51 {
             //
             // So we require b < 3 to ensure this fits.
             // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
+            // debug_assert!(a[0] < (1 << 54));
+            // debug_assert!(a[1] < (1 << 54));
+            // debug_assert!(a[2] < (1 << 54));
+            // debug_assert!(a[3] < (1 << 54));
+            // debug_assert!(a[4] < (1 << 54));
 
             // const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1; // already defined
 

@@ -4,7 +4,7 @@
 
 Run Verus verification from the `curve25519-dalek` directory:
 ```bash
-cd curve25519-dalek && cargo verus verify -- --multiple-errors 5
+cd curve25519-dalek && cargo verus verify -- --multiple-errors 20
 ```
 
 This ensures proper compilation and avoids dependency issues with other crates in the workspace.
@@ -86,12 +86,12 @@ After proving functions completely, clean up redundant assertions before submitt
 
 **Process**: For each `assert` statement in your proven functions:
 1. Remove the assert statement
-2. Run `cargo verus verify -- --multiple-errors 5`
+2. Run verus as described above.
 3. If verification still passes: keep it removed (was redundant)
 4. If verification fails: put the assert back (was necessary)
 5. Move to the next assert
 
-**IMPORTANT**: When asked to test assertion removal systematically:
+**IMPORTANT**: When asked to test assertion removal:
 - **Test every single assert individually** - do not skip steps or batch similar-looking assertions
 - **Be thorough even if it takes many cargo verify runs** - this is exactly the kind of careful, systematic work that LLMs excel at
 - **Complete ALL tests when asked** - do not stop halfway through even if patterns become clear
@@ -100,24 +100,12 @@ After proving functions completely, clean up redundant assertions before submitt
 - Taking shortcuts undermines the value of systematic verification
 - When asked to test "all" assertions, continue until every single one has been individually tested
 
-**Common patterns found to be redundant**:
-- Individual bounds like `assert(m_term1 < (1u128 << 104))` when the `m()` function postcondition already guarantees this
+#### Patterns that are often redundant
+- Individual bounds like `assert(m_term1 < (1u128 << 104))` where `m_term1 = m(...)` and the `m()` function postcondition already guarantees the bound
 - Intermediate steps in multi-step calculations where only the final result matters
 - Duplicate calculations that Verus can derive automatically
 
-**Common patterns that are necessary**:
+#### Patterns that are often necessary
 - Bit vector calculations: `assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector)`
 - Final bounds: `assert(sum < (1u128 << 107))` where `sum` is the actual value being bounded
 - Complex arithmetic relationships that Verus cannot derive automatically
-
-**Example cleanup results from scalar_verus.rs**:
-- Started with ~50 individual assert statements across `mul_internal` and `square_internal`
-- Removed ~30 redundant assertions (individual m_term bounds, intermediate steps)
-- Kept ~20 essential assertions (bit_vector calculations, final bounds)
-- Verification still passes with cleaner, more readable proofs
-
-**Benefits**:
-- Cleaner code for PR review
-- Faster compilation (fewer assertions to check)
-- Easier to understand the essential proof structure
-- Reduced maintenance burden

@@ -459,7 +459,7 @@ verus! {
         proof {
             // Each m() result is < 2^104
             // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
-           
+
             assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
             assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
         }
@@ -502,7 +502,7 @@ verus! {
         proof {
             // Each m() result is < 2^104
             // m_term1 * 2 < 2^105
-          
+
             // Sum: 2^105 + 2^104 = 3 * 2^104 < 2^106 < 2^128
             assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
         }
@@ -511,7 +511,7 @@ verus! {
         proof {
             // Each m() result is < 2^104
             // Each * 2 gives < 2^105
-            
+
             // Sum: 2^105 + 2^105 = 2^106 < 2^128
             assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
         }
@@ -520,7 +520,7 @@ verus! {
         proof {
             // Each m() result is < 2^104
             // First two terms * 2 give < 2^105
-           
+
             // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
             assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
         }

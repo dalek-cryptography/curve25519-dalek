@@ -71,3 +71,12 @@ A powerful technique for gradually proving complex functions:
   - Build confidence incrementally as each line passes verification
   - Identify the exact point where overflow or other issues occur
 - Continue until `assume(false)` reaches the end of the function, then remove it
+- **Important**: Commit after every successful step to preserve progress and create a clear history
+
+### 10. Version Control Best Practices
+For Verus proof development:
+- **Commit frequently**: After every successful verification step or meaningful progress
+- **Commit early**: Even partial proofs with `assume` statements are valuable progress
+- **Clear commit messages**: Describe what was proven and any key insights
+- **Preserve working states**: Don't lose progress by making multiple changes without committing
+- Use the incremental approach: prove one thing, commit, prove the next thing, commit

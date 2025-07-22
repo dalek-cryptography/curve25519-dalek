@@ -441,11 +441,76 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], b.limbs[0]);
-        assume(false);
-        z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
-        z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
-        z[3] = m(a.limbs[0], b.limbs[3]) + m(a.limbs[1], b.limbs[2]) + m(a.limbs[2], b.limbs[1]) + m(a.limbs[3], b.limbs[0]);
-        z[4] = m(a.limbs[0], b.limbs[4]) + m(a.limbs[1], b.limbs[3]) + m(a.limbs[2], b.limbs[2]) + m(a.limbs[3], b.limbs[1]) + m(a.limbs[4], b.limbs[0]);
+        
+        let m_term1 = m(a.limbs[0], b.limbs[1]);
+        let m_term2 = m(a.limbs[1], b.limbs[0]);
+        proof {
+            // Each m() result is < 2^104
+            assert(m_term1 < (1u128 << 104));
+            assert(m_term2 < (1u128 << 104));
+            // Sum: 2^104 + 2^104 = 2^105 < 2^128
+            assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
+            assert(m_term1 + m_term2 < (1u128 << 105));
+        }
+        z[1] = m_term1 + m_term2;
+        
+        let m_term3 = m(a.limbs[0], b.limbs[2]);
+        let m_term4 = m(a.limbs[1], b.limbs[1]);
+        let m_term5 = m(a.limbs[2], b.limbs[0]);
+        proof {
+            // Each m() result is < 2^104
+            assert(m_term3 < (1u128 << 104));
+            assert(m_term4 < (1u128 << 104));
+            assert(m_term5 < (1u128 << 104));
+            // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
+            assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+            assert(m_term3 + m_term4 + m_term5 < 3u128 * (1u128 << 104));
+            assert(m_term3 + m_term4 + m_term5 < (1u128 << 106));
+        }
+        z[2] = m_term3 + m_term4 + m_term5;
+        
+        let m_term6 = m(a.limbs[0], b.limbs[3]);
+        let m_term7 = m(a.limbs[1], b.limbs[2]);
+        let m_term8 = m(a.limbs[2], b.limbs[1]);
+        let m_term9 = m(a.limbs[3], b.limbs[0]);
+        proof {
+            // Each m() result is < 2^104
+            assert(m_term6 < (1u128 << 104));
+            assert(m_term7 < (1u128 << 104));
+            assert(m_term8 < (1u128 << 104));
+            assert(m_term9 < (1u128 << 104));
+            // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
+            assert(4u128 == (1u128 << 2)) by (bit_vector);
+            assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
+            assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
+            assert(m_term6 + m_term7 + m_term8 + m_term9 < 4u128 * (1u128 << 104));
+            assert(m_term6 + m_term7 + m_term8 + m_term9 < (1u128 << 106));
+        }
+        z[3] = m_term6 + m_term7 + m_term8 + m_term9;
+        
+        let m_term10 = m(a.limbs[0], b.limbs[4]);
+        let m_term11 = m(a.limbs[1], b.limbs[3]);
+        let m_term12 = m(a.limbs[2], b.limbs[2]);
+        let m_term13 = m(a.limbs[3], b.limbs[1]);
+        let m_term14 = m(a.limbs[4], b.limbs[0]);
+        proof {
+            // Each m() result is < 2^104
+            assert(m_term10 < (1u128 << 104));
+            assert(m_term11 < (1u128 << 104));
+            assert(m_term12 < (1u128 << 104));
+            assert(m_term13 < (1u128 << 104));
+            assert(m_term14 < (1u128 << 104));
+            // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
+            assert(5u128 < 8u128) by (bit_vector);
+            assert(8u128 == (1u128 << 3)) by (bit_vector);
+            assert(5u128 * (1u128 << 104) < 8u128 * (1u128 << 104));
+            assert(8u128 * (1u128 << 104) == (1u128 << 3) * (1u128 << 104)) by (bit_vector);
+            assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
+            let sum = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
+            assert(sum < 5u128 * (1u128 << 104));
+            assert(sum < (1u128 << 107));
+        }
+        z[4] = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
         z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);
         z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
         z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);

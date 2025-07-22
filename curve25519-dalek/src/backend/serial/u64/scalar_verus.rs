@@ -83,6 +83,21 @@ verus! {
             }
         }
 
+        pub open spec fn nine_limbs_to_nat(limbs: &[u128; 9]) -> nat {
+            nine_limbs_to_nat_rec(limbs, 0)
+        }
+
+
+        pub open spec fn nine_limbs_to_nat_rec(limbs: &[u128; 9], index: int) -> nat
+        decreases 9 - index
+        {
+            if index >= 9 {
+                0
+            } else {
+                (limbs[index] as nat) * pow2((index * 52) as nat) + nine_limbs_to_nat_rec(limbs, index + 1)
+            }
+        }
+
         pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
         decreases num_limbs
         {

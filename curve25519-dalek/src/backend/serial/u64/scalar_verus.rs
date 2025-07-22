@@ -442,24 +442,19 @@ verus! {
 
         z[0] = m(a.limbs[0], b.limbs[0]);
 
-        let m_term1 = m(a.limbs[0], b.limbs[1]);
-        let m_term2 = m(a.limbs[1], b.limbs[0]);
         proof {
             // Each m() result is < 2^104
             // Sum: 2^104 + 2^104 = 2^105 < 2^128
             assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
         }
-        z[1] = m_term1 + m_term2;
+        z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
 
-        let m_term3 = m(a.limbs[0], b.limbs[2]);
-        let m_term4 = m(a.limbs[1], b.limbs[1]);
-        let m_term5 = m(a.limbs[2], b.limbs[0]);
         proof {
             // Each m() result is < 2^104
             // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
             assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
         }
-        z[2] = m_term3 + m_term4 + m_term5;
+        z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
 
         let m_term6 = m(a.limbs[0], b.limbs[3]);
         let m_term7 = m(a.limbs[1], b.limbs[2]);

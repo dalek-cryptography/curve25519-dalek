@@ -1,35 +1,92 @@
 #!/usr/bin/env python3
 """
-Assert cleaning script - removes lines matching a regex pattern within a specified range.
+Assert cleaning script - systematically tests removal of assert statements using Verus verification.
+
+Implements the cleaning process described in CLAUDE.md:
+1. Find assert statements matching regex pattern within specified line range
+2. For each assert: remove it, run Verus verification, restore if verification fails
+3. Keep removed asserts that don't break verification (redundant assertions)
 
 Usage:
     python assert_cleaner.py <file> <start_line> <end_line> <regex_pattern>
 
 Example:
-    python assert_cleaner.py src/main.rs 10 50 "assert.*debug"
+    python assert_cleaner.py src/field.rs 10 50 "assert.*"
 """
 
 import sys
 import re
 import argparse
+import subprocess
+import os
+import tempfile
+import shutil
+
+
+def run_verus_verification():
+    """
+    Run Verus verification as described in CLAUDE.md.
+    Returns True if verification passes, False otherwise.
+    """
+    try:
+        # Change to curve25519-dalek directory and run verification
+        result = subprocess.run(
+            ['cargo', 'verus', 'verify', '--', '--multiple-errors', '20'],
+            cwd='curve25519-dalek',
+            capture_output=True,
+            text=True,
+            timeout=60  # 60 second timeout
+        )
+        return result.returncode == 0
+    except subprocess.TimeoutExpired:
+        print("Verus verification timed out", file=sys.stderr)
+        return False
+    except Exception as e:
+        print(f"Error running Verus verification: {e}", file=sys.stderr)
+        return False
+
+
+def find_assert_lines(lines, start_line, end_line, regex_pattern):
+    """
+    Find all assert statements matching the pattern in the specified range.
+    
+    Returns:
+        List of tuples (line_number, line_content) for matching asserts
+    """
+    try:
+        pattern = re.compile(regex_pattern)
+    except re.error as e:
+        print(f"Error: Invalid regex pattern: {e}", file=sys.stderr)
+        return []
+    
+    assert_lines = []
+    for i, line in enumerate(lines, 1):
+        if start_line <= i <= end_line:
+            if pattern.search(line.strip()):
+                assert_lines.append((i, line))
+    
+    return assert_lines
 
 
 def clean_asserts(file_path, start_line, end_line, regex_pattern):
     """
-    Remove lines matching regex pattern within the specified line range.
+    Systematically test removal of assert statements using Verus verification.
     
     Args:
         file_path: Path to the file to process
-        start_line: Starting line number (1-indexed)
+        start_line: Starting line number (1-indexed)  
         end_line: Ending line number (1-indexed, inclusive)
-        regex_pattern: Regex pattern to match lines for removal
+        regex_pattern: Regex pattern to match assert statements
     """
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-    except FileNotFoundError:
+    # Validate file exists
+    if not os.path.exists(file_path):
         print(f"Error: File '{file_path}' not found.", file=sys.stderr)
         return False
+    
+    # Read original file
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            original_lines = f.readlines()
     except Exception as e:
         print(f"Error reading file: {e}", file=sys.stderr)
         return False
@@ -39,65 +96,113 @@ def clean_asserts(file_path, start_line, end_line, regex_pattern):
         print("Error: Line numbers must be >= 1", file=sys.stderr)
         return False
     
-    if start_line > len(lines) or end_line > len(lines):
-        print(f"Error: Line range exceeds file length ({len(lines)} lines)", file=sys.stderr)
+    if start_line > len(original_lines) or end_line > len(original_lines):
+        print(f"Error: Line range exceeds file length ({len(original_lines)} lines)", file=sys.stderr)
         return False
     
     if start_line > end_line:
         print("Error: Start line must be <= end line", file=sys.stderr)
         return False
     
-    # Compile regex
-    try:
-        pattern = re.compile(regex_pattern)
-    except re.error as e:
-        print(f"Error: Invalid regex pattern: {e}", file=sys.stderr)
-        return False
+    # Find all assert statements in range
+    assert_lines = find_assert_lines(original_lines, start_line, end_line, regex_pattern)
     
-    # Process lines in the specified range
-    removed_count = 0
-    new_lines = []
+    if not assert_lines:
+        print("No matching assert statements found in the specified range.")
+        return True
     
-    for i, line in enumerate(lines, 1):
-        # Check if line is in the specified range
-        if start_line <= i <= end_line:
-            if pattern.search(line.strip()):
-                print(f"Removing line {i}: {line.rstrip()}")
-                removed_count += 1
-                continue
+    print(f"Found {len(assert_lines)} assert statements to test:")
+    for line_num, line_content in assert_lines:
+        print(f"  Line {line_num}: {line_content.strip()}")
+    print()
+    
+    # Test each assert statement individually
+    removed_asserts = []
+    kept_asserts = []
+    
+    for line_num, line_content in assert_lines:
+        print(f"Testing removal of assert at line {line_num}...")
+        print(f"  Content: {line_content.strip()}")
         
-        new_lines.append(line)
-    
-    # Write back to file if changes were made
-    if removed_count > 0:
+        # Create modified content with this assert removed
+        modified_lines = original_lines.copy()
+        modified_lines.pop(line_num - 1)  # Remove the assert line (convert to 0-indexed)
+        
+        # Write modified content to file
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
-                f.writelines(new_lines)
-            print(f"Successfully removed {removed_count} lines from {file_path}")
-            return True
+                f.writelines(modified_lines)
         except Exception as e:
-            print(f"Error writing file: {e}", file=sys.stderr)
-            return False
-    else:
-        print("No matching lines found in the specified range.")
-        return True
+            print(f"  Error writing modified file: {e}", file=sys.stderr)
+            continue
+        
+        # Run Verus verification
+        print("  Running Verus verification...")
+        if run_verus_verification():
+            print(f"  ✓ Verification passed - assert at line {line_num} is redundant")
+            removed_asserts.append((line_num, line_content))
+            # Keep the file without this assert - update our working copy
+            original_lines = modified_lines.copy()
+            # Adjust line numbers for remaining asserts
+            for i in range(len(assert_lines)):
+                if assert_lines[i][0] > line_num:
+                    assert_lines[i] = (assert_lines[i][0] - 1, assert_lines[i][1])
+        else:
+            print(f"  ✗ Verification failed - assert at line {line_num} is necessary")
+            kept_asserts.append((line_num, line_content))
+            # Restore original file
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.writelines(original_lines)
+            except Exception as e:
+                print(f"  Error restoring file: {e}", file=sys.stderr)
+                return False
+        
+        print()
+    
+    # Summary
+    print("=" * 60)
+    print("CLEANING SUMMARY")
+    print("=" * 60)
+    print(f"Total asserts tested: {len(assert_lines)}")
+    print(f"Redundant asserts removed: {len(removed_asserts)}")
+    print(f"Necessary asserts kept: {len(kept_asserts)}")
+    
+    if removed_asserts:
+        print("\nRemoved (redundant) assertions:")
+        for line_num, line_content in removed_asserts:
+            print(f"  Line {line_num}: {line_content.strip()}")
+    
+    if kept_asserts:
+        print("\nKept (necessary) assertions:")
+        for line_num, line_content in kept_asserts:
+            print(f"  Line {line_num}: {line_content.strip()}")
+    
+    return True
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Remove lines matching a regex pattern within a specified line range",
+        description="Systematically test removal of assert statements using Verus verification",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python assert_cleaner.py src/main.rs 10 50 "assert.*debug"
-  python assert_cleaner.py test.py 1 100 "^\\s*assert\\s"
+  python assert_cleaner.py curve25519-dalek/src/field.rs 100 200 "assert\\("
+  python assert_cleaner.py curve25519-dalek/src/scalar.rs 50 150 "assert.*<"
+  
+This implements the cleaning process from CLAUDE.md:
+- For each matching assert statement in the range:
+  1. Remove the assert from the file
+  2. Run 'cargo verus verify -- --multiple-errors 20' 
+  3. If verification passes: keep it removed (redundant)
+  4. If verification fails: restore it (necessary)
         """
     )
     
-    parser.add_argument('file', help='File to process')
+    parser.add_argument('file', help='File to process (relative to project root)')
     parser.add_argument('start_line', type=int, help='Starting line number (1-indexed)')
     parser.add_argument('end_line', type=int, help='Ending line number (1-indexed, inclusive)')
-    parser.add_argument('regex', help='Regex pattern to match lines for removal')
+    parser.add_argument('regex', help='Regex pattern to match assert statements')
     
     args = parser.parse_args()
     

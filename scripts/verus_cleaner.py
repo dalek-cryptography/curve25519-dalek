@@ -178,8 +178,8 @@ Usage:
   scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
 
 Examples:
-  scripts/verus_cleaner.py curve25519-dalek/src/field_verus.rs 100 200 '^[^/]*lemma'
-  scripts/verus_cleaner.py curve25519-dalek/src/scalar_verus.rs 50 150 "assert"
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/field_verus.rs 100 200 '^[^/]*lemma'
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/scalar_verus.rs 50 150 "assert"
   
 - For each matching statement in the range:
   1. Remove the statement from the file

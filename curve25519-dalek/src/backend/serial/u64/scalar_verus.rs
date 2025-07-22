@@ -490,8 +490,23 @@ verus! {
             assert(m_term1 * 2 + m_term2 < (1u128 << 106));
         }
         z[2] = m_term1 * 2 + m_term2;
+        
+        let m_term3 = m(a.limbs[0], a.limbs[3]);
+        let m_term4 = m(a.limbs[1], a.limbs[2]);
+        proof {
+            // Each m() result is < 2^104
+            assert(m_term3 < (1u128 << 104));
+            assert(m_term4 < (1u128 << 104));
+            // Each * 2 gives < 2^105
+            assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
+            assert(m_term3 * 2 < (1u128 << 105));
+            assert(m_term4 * 2 < (1u128 << 105));
+            // Sum: 2^105 + 2^105 = 2^106 < 2^128
+            assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
+            assert(m_term3 * 2 + m_term4 * 2 < (1u128 << 106));
+        }
+        z[3] = m_term3 * 2 + m_term4 * 2;
         assume(false);
-        z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
         z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);
         z[5] =                 m(a.limbs[1], a.limbs[4]) * 2 + m(a.limbs[2], a.limbs[3]) * 2;
         z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);

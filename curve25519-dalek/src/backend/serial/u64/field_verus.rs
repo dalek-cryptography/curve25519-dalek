@@ -24,7 +24,6 @@ pub proof fn l51_bit_mask_lt()
         LOW_51_BIT_MASK < (1u64 << 51) as nat,
 {
     lemma2_to64_rest();
-    lemma_pow2_pos(51);
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
 }
 
@@ -283,7 +282,6 @@ impl FieldElement51 {
 
             assert forall |i: int| 0 <= i < 5 implies old(self).limbs[i] < 16 * c0 by {
                 shift_is_pow2(51);
-                lemma_pow2_strictly_increases(51, 54);
             }
 
             // Introduce 16p as a vector

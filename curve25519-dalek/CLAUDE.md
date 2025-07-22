@@ -80,3 +80,35 @@ For Verus proof development:
 - **Clear commit messages**: Describe what was proven and any key insights
 - **Preserve working states**: Don't lose progress by making multiple changes without committing
 - Use the incremental approach: prove one thing, commit, prove the next thing, commit
+
+### 11. Cleaning Up Redundant Assertions for PR
+After proving functions completely, clean up redundant assertions before submitting PRs:
+
+**Process**: For each `assert` statement in your proven functions:
+1. Remove the assert statement
+2. Run `cargo verus verify -- --multiple-errors 5`
+3. If verification still passes: keep it removed (was redundant)
+4. If verification fails: put the assert back (was necessary)
+5. Move to the next assert
+
+**Common patterns found to be redundant**:
+- Individual bounds like `assert(m_term1 < (1u128 << 104))` when the `m()` function postcondition already guarantees this
+- Intermediate steps in multi-step calculations where only the final result matters
+- Duplicate calculations that Verus can derive automatically
+
+**Common patterns that are necessary**:
+- Bit vector calculations: `assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector)`
+- Final bounds: `assert(sum < (1u128 << 107))` where `sum` is the actual value being bounded
+- Complex arithmetic relationships that Verus cannot derive automatically
+
+**Example cleanup results from scalar_verus.rs**:
+- Started with ~50 individual assert statements across `mul_internal` and `square_internal`
+- Removed ~30 redundant assertions (individual m_term bounds, intermediate steps)
+- Kept ~20 essential assertions (bit_vector calculations, final bounds)
+- Verification still passes with cleaner, more readable proofs
+
+**Benefits**:
+- Cleaner code for PR review
+- Faster compilation (fewer assertions to check)
+- Easier to understand the essential proof structure
+- Reduced maintenance burden

@@ -91,6 +91,13 @@ After proving functions completely, clean up redundant assertions before submitt
 4. If verification fails: put the assert back (was necessary)
 5. Move to the next assert
 
+**IMPORTANT**: When asked to test assertion removal systematically:
+- **Test every single assert individually** - do not skip steps or batch similar-looking assertions
+- **Be thorough even if it takes many cargo verify runs** - this is exactly the kind of careful, systematic work that LLMs excel at
+- **Document what you tested and what you didn't** - be explicit about your methodology  
+- LLMs can handle repetitive verification tasks that would be tedious for humans
+- Taking shortcuts undermines the value of systematic verification
+
 **Common patterns found to be redundant**:
 - Individual bounds like `assert(m_term1 < (1u128 << 104))` when the `m()` function postcondition already guarantees this
 - Intermediate steps in multi-step calculations where only the final result matters

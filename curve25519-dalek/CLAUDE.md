@@ -99,13 +99,8 @@ After proving functions completely, clean up redundant assertions before submitt
 - LLMs can handle repetitive verification tasks that would be tedious for humans
 - Taking shortcuts undermines the value of systematic verification
 - When asked to test "all" assertions, continue until every single one has been individually tested
-
+ 
 #### Patterns that are often redundant
 - Individual bounds like `assert(m_term1 < (1u128 << 104))` where `m_term1 = m(...)` and the `m()` function postcondition already guarantees the bound
 - Intermediate steps in multi-step calculations where only the final result matters
 - Duplicate calculations that Verus can derive automatically
-
-#### Patterns that are often necessary
-- Bit vector calculations: `assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector)`
-- Final bounds: `assert(sum < (1u128 << 107))` where `sum` is the actual value being bounded
-- Complex arithmetic relationships that Verus cannot derive automatically

@@ -28,13 +28,24 @@ pub fn m(x: u64, y: u64) -> u128 {
     (x as u128) * (y as u128)
 }
 
-/// Field element structure with 5 limbs of 51 bits each
-pub struct FieldElement51 {
-    pub limbs: [u64; 5],
-}
+/// A `FieldElement51` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// In the 64-bit implementation, a `FieldElement` is represented in
+/// radix \\(2\^{51}\\) as five `u64`s; the coefficients are allowed to
+/// grow up to \\(2\^{54}\\) between reductions modulo \\(p\\).
+///
+/// # Note
+///
+/// The `curve25519_dalek::field` module provides a type alias
+/// `curve25519_dalek::field::FieldElement` to either `FieldElement51`
+/// or `FieldElement2625`.
+///
+/// The backend-specific type `FieldElement51` should not be used
+/// outside of the `curve25519_dalek::field` module.
+#[derive(Copy, Clone)]
+pub struct FieldElement51(pub(crate) [u64; 5]);
 
-/// Low 51-bit mask constant: 2^51 - 1
-pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64; // 2^51 - 1
 
 impl FieldElement51 {
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
@@ -45,6 +56,7 @@ impl FieldElement51 {
     /// - `forall i in 0..5: result.limbs[i] < (1u64 << 52)`
     /// - If all input limbs are < 2^51, then `result.limbs == limbs` (identity)
     /// - `as_nat(result.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)`
+    ///    - which implies that as_nat(result.limbs) is congruent to as_nat(limbs) mod p
     /// 
     /// ## Mathematical interpretation:
     /// - Input limbs `l = (l0, l1, l2, l3, l4)` represent: `e(l) = l0 + l1*2^51 + l2*2^102 + l3*2^153 + l4*2^204`
@@ -67,7 +79,9 @@ impl FieldElement51 {
     /// 3. The mathematical identity connecting input and output via modular arithmetic
     /// 4. For inputs already < 2^51 per limb, the function acts as identity
     #[inline(always)]
-    pub fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
+    fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
+        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+
         // Since the input limbs are bounded by 2^64, the biggest
         // carry-out is bounded by 2^13.
         //
@@ -97,6 +111,6 @@ impl FieldElement51 {
         limbs[3] += c2;
         limbs[4] += c3;
 
-        FieldElement51 { limbs }
+        FieldElement51(limbs)
     }
 }

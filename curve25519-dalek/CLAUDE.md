@@ -70,5 +70,4 @@ A powerful technique for gradually proving complex functions:
   - Focus on one verification challenge at a time
   - Build confidence incrementally as each line passes verification
   - Identify the exact point where overflow or other issues occur
-- Example: In `square_internal`, moved `assume(false)` from after `z[0]` to after `z[1]`, requiring a proof that `m(...) * 2` doesn't overflow
-- Continue until `assume(false)` reaches the end of the function
+- Continue until `assume(false)` reaches the end of the function, then remove it

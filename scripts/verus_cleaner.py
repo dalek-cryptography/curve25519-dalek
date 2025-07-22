@@ -183,16 +183,16 @@ def clean_asserts(file_path, start_line, end_line, regex_pattern):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Systematically test removal of assert statements using Verus verification",
+        description="Systematically test removal of statements using Verus verification",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python assert_cleaner.py curve25519-dalek/src/field.rs 100 200 "assert\\("
-  python assert_cleaner.py curve25519-dalek/src/scalar.rs 50 150 "assert.*<"
+  python verus_cleaner.py curve25519-dalek/src/field.rs 100 200 "assert\\("
+  python verus_cleaner.py curve25519-dalek/src/scalar.rs 50 150 "assert.*<"
   
 This implements the cleaning process from CLAUDE.md:
-- For each matching assert statement in the range:
-  1. Remove the assert from the file
+- For each matching statement in the range:
+  1. Remove the statement from the file
   2. Run 'cargo verus verify -- --multiple-errors 20' 
   3. If verification passes: keep it removed (redundant)
   4. If verification fails: restore it (necessary)
@@ -202,11 +202,11 @@ This implements the cleaning process from CLAUDE.md:
     parser.add_argument('file', help='File to process (relative to project root)')
     parser.add_argument('start_line', type=int, help='Starting line number (1-indexed)')
     parser.add_argument('end_line', type=int, help='Ending line number (1-indexed, inclusive)')
-    parser.add_argument('regex', help='Regex pattern to match assert statements')
+    parser.add_argument('regex', help='Regex pattern to match statements')
     
     args = parser.parse_args()
     
-    success = clean_asserts(args.file, args.start_line, args.end_line, args.regex)
+    success = clean_statements(args.file, args.start_line, args.end_line, args.regex)
     sys.exit(0 if success else 1)
 
 

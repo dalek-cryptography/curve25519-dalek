@@ -98,6 +98,26 @@ verus! {
             }
         }
 
+        pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
+            (limbs[0] as nat) +
+            (limbs[1] as nat) * pow2(52) +
+            (limbs[2] as nat) * pow2(104) +
+            (limbs[3] as nat) * pow2(156) +
+            (limbs[4] as nat) * pow2(208) +
+            (limbs[5] as nat) * pow2(260) +
+            (limbs[6] as nat) * pow2(312) +
+            (limbs[7] as nat) * pow2(364) +
+            (limbs[8] as nat) * pow2(416)
+        }
+
+        pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {
+            (limbs[0] as nat) +
+            pow2(52) * (limbs[1] as nat) +
+            pow2(104) * (limbs[2] as nat) +
+            pow2(156) * (limbs[3] as nat) +
+            pow2(208) * (limbs[4] as nat)
+        }
+
         pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
         decreases num_limbs
         {
@@ -490,9 +510,11 @@ verus! {
     /// Compute `a^2`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of calculations
-    pub (crate) fn square_internal(a: &Scalar52) -> [u128; 9]
+    pub (crate) fn square_internal(a: &Scalar52) -> (z: [u128; 9])
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+    ensures
+        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(a.limbs),
     {
         let mut z = [0u128; 9];
 

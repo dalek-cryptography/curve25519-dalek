@@ -441,7 +441,7 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], b.limbs[0]);
-        
+
         let m_term1 = m(a.limbs[0], b.limbs[1]);
         let m_term2 = m(a.limbs[1], b.limbs[0]);
         proof {
@@ -450,7 +450,7 @@ verus! {
             assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
         }
         z[1] = m_term1 + m_term2;
-        
+
         let m_term3 = m(a.limbs[0], b.limbs[2]);
         let m_term4 = m(a.limbs[1], b.limbs[1]);
         let m_term5 = m(a.limbs[2], b.limbs[0]);
@@ -460,7 +460,7 @@ verus! {
             assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
         }
         z[2] = m_term3 + m_term4 + m_term5;
-        
+
         let m_term6 = m(a.limbs[0], b.limbs[3]);
         let m_term7 = m(a.limbs[1], b.limbs[2]);
         let m_term8 = m(a.limbs[2], b.limbs[1]);
@@ -473,7 +473,7 @@ verus! {
             assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
         }
         z[3] = m_term6 + m_term7 + m_term8 + m_term9;
-        
+
         let m_term10 = m(a.limbs[0], b.limbs[4]);
         let m_term11 = m(a.limbs[1], b.limbs[3]);
         let m_term12 = m(a.limbs[2], b.limbs[2]);
@@ -506,7 +506,7 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], a.limbs[0]);
-        
+
         let m_result = m(a.limbs[0], a.limbs[1]);
         proof {
             // m() ensures its result is < 2^104
@@ -515,7 +515,7 @@ verus! {
             assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
         }
         z[1] = m_result * 2;
-        
+
         let m_term1 = m(a.limbs[0], a.limbs[2]);
         let m_term2 = m(a.limbs[1], a.limbs[1]);
         proof {
@@ -526,7 +526,7 @@ verus! {
             assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
         }
         z[2] = m_term1 * 2 + m_term2;
-        
+
         let m_term3 = m(a.limbs[0], a.limbs[3]);
         let m_term4 = m(a.limbs[1], a.limbs[2]);
         proof {
@@ -537,7 +537,7 @@ verus! {
             assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
         }
         z[3] = m_term3 * 2 + m_term4 * 2;
-        
+
         let m_term5 = m(a.limbs[0], a.limbs[4]);
         let m_term6 = m(a.limbs[1], a.limbs[3]);
         let m_term7 = m(a.limbs[2], a.limbs[2]);

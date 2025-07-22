@@ -485,7 +485,6 @@ verus! {
             assert(5u128 < 8u128) by (bit_vector);
             assert(8u128 == (1u128 << 3)) by (bit_vector);
             assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
-            let sum = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
         }
         z[4] = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
         z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);

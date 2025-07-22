@@ -39,32 +39,30 @@ impl FieldElement51 {
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     ///
     /// # Verus Specification:
-
-    //    ensures
-    //        forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
-    //        (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
-    //        as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
-    //
-    // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
-    // They represent a number
-    // e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
-    // in Z_p, for p = 2^255 - 19
-    // reduce(l) returns v = (v0, v1, v2, v3, v4), such that
-    // v0 = 19 * a4 + b0
-    // v1 =      a0 + b1
-    // v2 =      a1 + b2
-    // v3 =      a2 + b3
-    // v4 =      a3 + b4
-    // where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
-    // we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
-    // Using the following identity connecting integer division and remainder:
-    // x = y * (x / y) + x % y
-    // we can see that li = ai * 2^51 + bi
-    // Plugging the above identities into the equations for v, we can observe that
-    // e(v) = e(l) - p * (l4 >> 51)
-    // IOW, e(reduce(l)) = e(l) (mod p)
-    // additionally, if all limbs are below 2^51, reduce(l) = l
-
+    ///    ensures
+    ///        forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
+    ///        (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
+    ///        as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
+    ///
+    /// Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
+    /// They represent a number
+    /// e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
+    /// in Z_p, for p = 2^255 - 19
+    /// reduce(l) returns v = (v0, v1, v2, v3, v4), such that
+    /// v0 = 19 * a4 + b0
+    /// v1 =      a0 + b1
+    /// v2 =      a1 + b2
+    /// v3 =      a2 + b3
+    /// v4 =      a3 + b4
+    /// where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
+    /// we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
+    /// Using the following identity connecting integer division and remainder:
+    /// x = y * (x / y) + x % y
+    /// we can see that li = ai * 2^51 + bi
+    /// Plugging the above identities into the equations for v, we can observe that
+    /// e(v) = e(l) - p * (l4 >> 51)
+    /// IOW, e(reduce(l)) = e(l) (mod p)
+    /// additionally, if all limbs are below 2^51, reduce(l) = l
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
         const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;

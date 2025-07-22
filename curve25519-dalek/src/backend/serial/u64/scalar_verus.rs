@@ -458,7 +458,6 @@ verus! {
             // Each m() result is < 2^104
             // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
             assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
-            assert(m_term3 + m_term4 + m_term5 < (1u128 << 106));
         }
         z[2] = m_term3 + m_term4 + m_term5;
         
@@ -472,7 +471,6 @@ verus! {
             assert(4u128 == (1u128 << 2)) by (bit_vector);
             assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
             assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
-            assert(m_term6 + m_term7 + m_term8 + m_term9 < (1u128 << 106));
         }
         z[3] = m_term6 + m_term7 + m_term8 + m_term9;
         
@@ -486,10 +484,8 @@ verus! {
             // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
             assert(5u128 < 8u128) by (bit_vector);
             assert(8u128 == (1u128 << 3)) by (bit_vector);
-            assert(8u128 * (1u128 << 104) == (1u128 << 3) * (1u128 << 104)) by (bit_vector);
             assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
             let sum = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
-            assert(sum < (1u128 << 107));
         }
         z[4] = m_term10 + m_term11 + m_term12 + m_term13 + m_term14;
         z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);

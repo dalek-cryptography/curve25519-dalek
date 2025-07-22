@@ -1,28 +1,17 @@
 //! Small Aeneas - Standalone functions extracted from curve25519-dalek
 //!
-//! This crate contains the `m` function from scalar arithmetic and the `reduce` function 
-//! from field arithmetic, along with their Verus specifications converted to documentation.
 
 /// u64 * u64 = u128 multiply helper
-/// 
+///
 /// # Verus Specification (converted from original Verus code):
-/// 
+///
 /// ## Requires:
 /// - `x < (1u64 << 52)`
 /// - `y < (1u64 << 52)`
-/// 
+///
 /// ## Ensures:
 /// - `result < (1u128 << 104)`
 /// - `result == x * y`
-/// 
-/// ## Proof outline:
-/// The original Verus proof showed:
-/// 1. `(x as u128) < (1u128 << 52)`
-/// 2. `(y as u128) < (1u128 << 52)`  
-/// 3. `(x as u128) * (y as u128) < (1u128 << 52) * (1u128 << 52)`
-/// 4. `(1u128 << 52) * (1u128 << 52) == (1u128 << 104)`
-/// 
-/// This ensures no overflow when multiplying two 52-bit values.
 #[inline(always)]
 pub fn m(x: u64, y: u64) -> u128 {
     (x as u128) * (y as u128)
@@ -46,38 +35,36 @@ pub fn m(x: u64, y: u64) -> u128 {
 #[derive(Copy, Clone)]
 pub struct FieldElement51(pub(crate) [u64; 5]);
 
-
 impl FieldElement51 {
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
-    /// 
-    /// # Verus Specification (converted from original Verus code):
-    /// 
-    /// ## Ensures:
-    /// - `forall i in 0..5: result.limbs[i] < (1u64 << 52)`
-    /// - If all input limbs are < 2^51, then `result.limbs == limbs` (identity)
-    /// - `as_nat(result.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)`
-    ///    - which implies that as_nat(result.limbs) is congruent to as_nat(limbs) mod p
-    /// 
-    /// ## Mathematical interpretation:
-    /// - Input limbs `l = (l0, l1, l2, l3, l4)` represent: `e(l) = l0 + l1*2^51 + l2*2^102 + l3*2^153 + l4*2^204`
-    /// - In field Z_p where `p = 2^255 - 19`  
-    /// - Returns `v = (v0, v1, v2, v3, v4)` where:
-    ///   - `v0 = 19 * a4 + b0`
-    ///   - `v1 = a0 + b1` 
-    ///   - `v2 = a1 + b2`
-    ///   - `v3 = a2 + b3`
-    ///   - `v4 = a3 + b4`
-    /// - Where `ai = li >> 51` (equivalent to `li / 2^51`) and `bi = li & LOW_51_BIT_MASK` (equivalent to `li % 2^51`)
-    /// 
-    /// ## Key property:
-    /// `e(reduce(l)) = e(l) (mod p)` - the reduction preserves the field element value modulo p
-    /// 
-    /// ## Proof outline:
-    /// The original Verus proof established:
-    /// 1. All carries are properly bounded (< 2^13 for most, < 2^18 for the first)
-    /// 2. Final limbs are bounded by 2^52 after the weak reduction
-    /// 3. The mathematical identity connecting input and output via modular arithmetic
-    /// 4. For inputs already < 2^51 per limb, the function acts as identity
+    ///
+    /// # Verus Specification:
+
+    //    ensures
+    //        forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
+    //        (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
+    //        as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
+    //
+    // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
+    // They represent a number
+    // e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
+    // in Z_p, for p = 2^255 - 19
+    // reduce(l) returns v = (v0, v1, v2, v3, v4), such that
+    // v0 = 19 * a4 + b0
+    // v1 =      a0 + b1
+    // v2 =      a1 + b2
+    // v3 =      a2 + b3
+    // v4 =      a3 + b4
+    // where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
+    // we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
+    // Using the following identity connecting integer division and remainder:
+    // x = y * (x / y) + x % y
+    // we can see that li = ai * 2^51 + bi
+    // Plugging the above identities into the equations for v, we can observe that
+    // e(v) = e(l) - p * (l4 >> 51)
+    // IOW, e(reduce(l)) = e(l) (mod p)
+    // additionally, if all limbs are below 2^51, reduce(l) = l
+
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
         const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;

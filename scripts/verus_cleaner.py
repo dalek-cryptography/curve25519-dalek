@@ -177,6 +177,8 @@ def clean_statements(file_path, start_line, end_line, regex_pattern):
         print("\nKept (necessary) statements:")
         for line_num, line_content in kept_statements:
             print(f"  Line {line_num}: {line_content.strip()}")
+
+    print("Warning: This script works line by line and won't remove multi-line statements.")
     
     return True
 

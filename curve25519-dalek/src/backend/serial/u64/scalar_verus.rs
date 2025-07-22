@@ -464,8 +464,18 @@ verus! {
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], a.limbs[0]);
+        
+        let m_result = m(a.limbs[0], a.limbs[1]);
+        proof {
+            // m() ensures its result is < 2^104
+            assert(m_result < (1u128 << 104));
+            // Since m_result < 2^104, we have m_result * 2 < 2^105
+            // and 2^105 is well within u128 bounds
+            assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
+            assert(m_result * 2 < (1u128 << 105));
+        }
+        z[1] = m_result * 2;
         assume(false);
-        z[1] = m(a.limbs[0], a.limbs[1]) * 2;
         z[2] = m(a.limbs[0], a.limbs[2]) * 2 + m(a.limbs[1], a.limbs[1]);
         z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
         z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);

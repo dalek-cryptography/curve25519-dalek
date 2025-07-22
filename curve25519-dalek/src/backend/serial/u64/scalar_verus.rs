@@ -546,7 +546,6 @@ verus! {
             // First two terms * 2 give < 2^105
             assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
             // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
-            assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
             assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
         }
         z[4] = m_term5 * 2 + m_term6 * 2 + m_term7;

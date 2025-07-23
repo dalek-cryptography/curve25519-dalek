@@ -673,7 +673,18 @@ verus! {
                 a3*a3*pow2(156)*pow2(156) + (a2*a4*pow2(104)*pow2(208) + a4*a2*pow2(208)*pow2(104)) +
                 (a3*a4*pow2(156)*pow2(208) + a4*a3*pow2(208)*pow2(156)) + a4*a4*pow2(208)*pow2(208); {
                     // Combine powers using pow2 arithmetic and factor out common terms
-                    assume(false);
+
+                    assume(pow2(52) * pow2(52) == pow2(104))   ;
+                    assume(pow2(52) * pow2(104) == pow2(156))  ;
+                    assume(pow2(52) * pow2(156) == pow2(208))  ;
+                    assume(pow2(52) * pow2(208) == pow2(260))  ;
+                    assume(pow2(104) * pow2(104) == pow2(208)) ;
+                    assume(pow2(104) * pow2(156) == pow2(260)) ;
+                    assume(pow2(104) * pow2(208) == pow2(312)) ;
+                    assume(pow2(156) * pow2(156) == pow2(312)) ;
+                    assume(pow2(156) * pow2(208) == pow2(364)) ;
+                    assume(pow2(208) * pow2(208) == pow2(416)) ;
+
                 }
                 // Simplify: 2*a*b + collect like powers
                 a0*a0 + 

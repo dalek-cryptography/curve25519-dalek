@@ -9,6 +9,26 @@ use vstd::prelude::*;
 
 verus! {
 
+        pub proof fn example(a0: nat, a1: nat)
+        ensures (a0 + a1) * (a0 + a1) * (a0 + a1) == a0*a0*a0 + 3*a0*a0*a1 + 3*a0*a1*a1 + a1*a1*a1
+        {
+            calc! {
+                (==)
+                (a0 + a1) * (a0 + a1) * (a0 + a1); {
+                }
+                (a0*a0 + 2*a0*a1 + a1*a1) * (a0 + a1); {
+                  broadcast use group_mul_is_distributive;
+                }
+                (a0*a0 + 2*a0*a1 + a1*a1)*a0 + (a0*a0 + 2*a0*a1 + a1*a1)*a1; {
+                  broadcast use group_mul_is_distributive;
+                }
+                a0*a0*a0 + 2*a0*a1*a0 + a1*a1*a0 + a0*a0*a1 + 2*a0*a1*a1 + a1*a1*a1; {
+                    broadcast use lemma_mul_is_associative;
+                }
+                a0*a0*a0 + 3*a0*a0*a1 + 3*a0*a1*a1 + a1*a1*a1;
+            }
+        }
+
         #[verifier::external_type_specification]
         #[verifier::external_body]
         pub struct ExChoice(Choice);

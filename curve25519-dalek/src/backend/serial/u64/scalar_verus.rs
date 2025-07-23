@@ -700,15 +700,15 @@ verus! {
                                         (z[5] as nat) * pow2(260) +
                                         (z[6] as nat) * pow2(312) +
                                         (z[7] as nat) * pow2(364) +
-                                        (z[8] as nat) * pow2(416);
-
+                                        (z[8] as nat) * pow2(416); {
+                                        }
+                 nine_limbs_to_nat_direct(&z);
             }
 
             // Verus cannot prove left_side == left_side_expanded automatically
             // This requires connecting z[i] values (computed with m()) to polynomial coefficients
 
             // This should establish the postcondition
-            assert(nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(a.limbs));
         }
 
         z

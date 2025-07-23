@@ -613,10 +613,6 @@ verus! {
                     // right_side is defined as polynomial * polynomial
             broadcast use lemma_mul_is_commutative;
                 }
-                (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) *
-                (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
-                    // Apply distributive property to expand the multiplication
-                }
                 // First, all the a0 * (everything) terms
                 a0 * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
                 // Then all the (a1 * pow2(52)) * (everything) terms  

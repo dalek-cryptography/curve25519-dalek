@@ -114,6 +114,44 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
     pow2(204) * (limbs[4] as nat)
 }
 
+// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
+pub open spec fn as_nat_32_u8(limbs: [u8; 32]) -> nat {
+    // Verus error: `core::iter::range::impl&%15::fold` is not supported
+    // we write them out manually
+    (limbs[0] as nat) +
+    pow2( 1 * 8) * (limbs[ 1] as nat) +
+    pow2( 2 * 8) * (limbs[ 2] as nat) +
+    pow2( 3 * 8) * (limbs[ 3] as nat) +
+    pow2( 4 * 8) * (limbs[ 4] as nat) +
+    pow2( 5 * 8) * (limbs[ 5] as nat) +
+    pow2( 6 * 8) * (limbs[ 6] as nat) +
+    pow2( 7 * 8) * (limbs[ 7] as nat) +
+    pow2( 8 * 8) * (limbs[ 8] as nat) +
+    pow2( 9 * 8) * (limbs[ 9] as nat) +
+    pow2(10 * 8) * (limbs[10] as nat) +
+    pow2(11 * 8) * (limbs[11] as nat) +
+    pow2(12 * 8) * (limbs[12] as nat) +
+    pow2(13 * 8) * (limbs[13] as nat) +
+    pow2(14 * 8) * (limbs[14] as nat) +
+    pow2(15 * 8) * (limbs[15] as nat) +
+    pow2(16 * 8) * (limbs[16] as nat) +
+    pow2(17 * 8) * (limbs[17] as nat) +
+    pow2(18 * 8) * (limbs[18] as nat) +
+    pow2(19 * 8) * (limbs[19] as nat) +
+    pow2(20 * 8) * (limbs[20] as nat) +
+    pow2(21 * 8) * (limbs[21] as nat) +
+    pow2(22 * 8) * (limbs[22] as nat) +
+    pow2(23 * 8) * (limbs[23] as nat) +
+    pow2(24 * 8) * (limbs[24] as nat) +
+    pow2(25 * 8) * (limbs[25] as nat) +
+    pow2(26 * 8) * (limbs[26] as nat) +
+    pow2(27 * 8) * (limbs[27] as nat) +
+    pow2(28 * 8) * (limbs[28] as nat) +
+    pow2(29 * 8) * (limbs[29] as nat) +
+    pow2(30 * 8) * (limbs[30] as nat) +
+    pow2(31 * 8) * (limbs[31] as nat)
+}
+
 // Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)
 pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
     requires
@@ -197,6 +235,238 @@ pub proof fn lemma_two_factoring(k : nat, ai: u64)
 {
     lemma_pow2_adds(k, 51);
     lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, ai as int);
+}
+
+pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
+    let r = [
+        ((limbs[0] & LOW_51_BIT_MASK) + (limbs[4] >> 51) * 19) as u64,
+        ((limbs[1] & LOW_51_BIT_MASK) + (limbs[0] >> 51)) as u64,
+        ((limbs[2] & LOW_51_BIT_MASK) + (limbs[1] >> 51)) as u64,
+        ((limbs[3] & LOW_51_BIT_MASK) + (limbs[2] >> 51)) as u64,
+        ((limbs[4] & LOW_51_BIT_MASK) + (limbs[3] >> 51)) as u64,
+    ];
+    r
+}
+
+// Each component of spec_reduce is bounded.
+// The reason we _don't_ write
+// ensures forall |i: int| 0 <= i < 5 ==> spec_reduce(limbs)[i] < (1u64 << 52)
+// is that the solver treats `spec_reduce`` above as symbolic and does _not_ instantiate e.g.
+// ((limbs[4] & LOW_51_BIT_MASK) + (limbs[3] >> 51)) as u64 < (1u64 << 52)
+pub proof fn lemma_boundaries(limbs: [u64; 5])
+    ensures
+        ((limbs[0] & LOW_51_BIT_MASK) + (limbs[4] >> 51) * 19) < (1u64 << 52),
+        ((limbs[1] & LOW_51_BIT_MASK) + (limbs[0] >> 51)) < (1u64 << 52),
+        ((limbs[2] & LOW_51_BIT_MASK) + (limbs[1] >> 51)) < (1u64 << 52),
+        ((limbs[3] & LOW_51_BIT_MASK) + (limbs[2] >> 51)) < (1u64 << 52),
+        ((limbs[4] & LOW_51_BIT_MASK) + (limbs[3] >> 51)) < (1u64 << 52)
+
+{
+    // \A i. limbs[i] < 2^13
+    shifted_lt(limbs[0]);
+    shifted_lt(limbs[1]);
+    shifted_lt(limbs[2]);
+    shifted_lt(limbs[3]);
+    shifted_lt(limbs[4]);
+
+    // \A i. limbs[i] & LOW_51_BIT_MASK < 2^51
+    masked_lt(limbs[0]);
+    masked_lt(limbs[1]);
+    masked_lt(limbs[2]);
+    masked_lt(limbs[3]);
+    masked_lt(limbs[4]);
+
+    // Since 19 < 2^5 and (limbs[4] >> 51) < 2^13, their product is less than 2^18
+    assert((limbs[4] >> 51) * 19 < (1u64 << 18) as nat) by {
+        assert(19 < (1u64 << 5)) by (bit_vector);
+        shift_is_pow2(5);
+        shift_is_pow2(13);
+        shift_is_pow2(18);
+        lemma_pow2_adds(13, 5);
+        // If (limbs[4] >> 51) < 2^13 and 19 < 2^5 then their product is less than 2^18
+        mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
+    }
+
+    // The final values (limbs[i] += cX) are all bounded by 2^51 + eps, for eps \in {2^18, 2^13}.
+    assert(((1u64 << 18)) + (1u64 << 51) < (1u64 << 52)) by (bit_vector);
+    assert(((1u64 << 13)) + (1u64 << 51) < (1u64 << 52)) by (bit_vector);
+
+    // In summary, they're all bounded by 2^52
+    // The solver can prove this automatically
+}
+
+pub proof fn lemma_reduce(limbs: [u64; 5])
+    ensures
+        forall|i: int| 0 <= i < 5 ==> spec_reduce(limbs)[i] < (1u64 << 52),
+        // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
+        // They represent a number
+        // e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
+        // in Z_p, for p = 2^255 - 19
+        // reduce(l) returns v = (v0, v1, v2, v3, v4), such that
+        // v0 = 19 * a4 + b0
+        // v1 =      a0 + b1
+        // v2 =      a1 + b2
+        // v3 =      a2 + b3
+        // v4 =      a3 + b4
+        // where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
+        // we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
+        // Using the following identity connecting integer division and remainder:
+        // x = y * (x / y) + x % y
+        // we can see that li = ai * 2^51 + bi
+        // Plugging the above identities into the equations for v, we can observe that
+        // e(v) = e(l) - p * (l4 >> 51)
+        // IOW, e(reduce(l)) = e(l) (mod p)
+        // additionally, if all limbs are below 2^51, reduce(l) = l
+        (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (spec_reduce(limbs) =~= limbs),
+        as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51)
+{
+
+    // -----
+    // reduce identity for small limbs
+
+    // Can't seem to reference r within this proof block, we reconstruct it here
+    let rr: [u64; 5] = spec_reduce(limbs);
+
+    assert((forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) ==> (rr =~= limbs)) by {
+        if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
+            assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & LOW_51_BIT_MASK == limbs[i] by {
+                l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
+                shift_is_pow2(51);
+                lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
+                lemma_small_mod(limbs[i] as nat, pow2(51));
+            }
+            assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
+                l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
+                shift_is_pow2(51);
+                lemma_u64_shr_is_div(limbs[i], 51);
+                lemma_basic_div(limbs[i] as int, pow2(51) as int);
+            }
+        }
+    }
+
+    // -- as_nat identity
+
+    // ai = limbs[i] / 2^52
+    let a0 = (limbs[0] >> 51);
+    let a1 = (limbs[1] >> 51);
+    let a2 = (limbs[2] >> 51);
+    let a3 = (limbs[3] >> 51);
+    let a4 = (limbs[4] >> 51);
+
+    // bi = limbs[i] % 2^52
+    let b0 = (limbs[0] & LOW_51_BIT_MASK);
+    let b1 = (limbs[1] & LOW_51_BIT_MASK);
+    let b2 = (limbs[2] & LOW_51_BIT_MASK);
+    let b3 = (limbs[3] & LOW_51_BIT_MASK);
+    let b4 = (limbs[4] & LOW_51_BIT_MASK);
+
+    lemma_boundaries(limbs);
+
+    // distribute
+    assert(as_nat(rr) ==
+        19 *  a4 + b0 +
+        pow2(51) * a0 + pow2(51) * b1 +
+        pow2(102) * a1 + pow2(102) * b2 +
+        pow2(153) * a2 + pow2(153) * b3 +
+        pow2(204) * a3 + pow2(204) * b4
+    ) by {
+        lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
+        lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
+        lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
+        lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
+    }
+
+    // factor out
+    assert(as_nat(rr) ==
+        19 *  a4 + b0 +
+        pow2(51) * a0 + pow2(51) * b1 +
+        pow2(51) * (pow2(51) * a1) + pow2(102) * b2 +
+        pow2(102) * (pow2(51) * a2) + pow2(153) * b3 +
+        pow2(153) * (pow2(51) * a3) + pow2(204) * b4
+    ) by {
+        lemma_two_factoring(51, a1);
+        lemma_two_factoring(102, a2);
+        lemma_two_factoring(153, a3);
+    }
+
+    // change groupings
+    assert(as_nat(rr) ==
+        (b0 + pow2(51) * a0) +
+        pow2(51) * (b1 + pow2(51) * a1) +
+        pow2(102) * (b2 + pow2(51) * a2) +
+        pow2(153) * (b3 + pow2(51) * a3) +
+        pow2(204) * b4 + 19 * a4
+    ) by {
+        lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) * a1 as int, b1 as int);
+        lemma_mul_is_distributive_add(pow2(102) as int, pow2(51) * a2 as int, b2 as int);
+        lemma_mul_is_distributive_add(pow2(153) as int, pow2(51) * a3 as int, b3 as int);
+    }
+
+    // invoke div/mod identity
+    assert(as_nat(rr) ==
+        limbs[0] +
+        pow2(51) * limbs[1] +
+        pow2(102) * limbs[2] +
+        pow2(153) * limbs[3] +
+        pow2(204) * b4 + 19 * a4
+    ) by {
+        lemma_div_and_mod(a0, b0, limbs[0]);
+        lemma_div_and_mod(a1, b1, limbs[1]);
+        lemma_div_and_mod(a2, b2, limbs[2]);
+        lemma_div_and_mod(a3, b3, limbs[3]);
+    }
+
+    // Add missing limbs[4] parts
+    assert(as_nat(rr) ==
+        limbs[0] +
+        pow2(51) * limbs[1] +
+        pow2(102) * limbs[2] +
+        pow2(153) * limbs[3] +
+        pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+    ) by {
+        lemma_div_and_mod(a4, b4, limbs[4]);
+        assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
+            lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
+        }
+    }
+
+    // The solver can collect components of as_nat(limbs) automatically:
+    // as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+    // ... as well as pull in minus
+    // as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4)
+
+    // collect components of p() * a4
+    assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
+        lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, a4 as int);
+        lemma_pow2_adds(204, 51);
+        lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
+        pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
+    }
+}
+
+pub proof fn lemma_add_then_shift(a: u64, b: u64)
+    requires
+        a < (1u64 << 52),
+        b < (1u64 << 52)
+    ensures
+        (a + b) < (1u64 << 53),
+        ((a + b) as u64 >> 51) < 4
+{
+    lemma2_to64_rest();
+    assert((a + b) < 1u64 << 53) by {
+        assert((1u64 << 52) + (1u64 << 52) == 1u64 << 53) by (compute);
+    }
+    assert(1u64 << 53 == (1u64 << 51) * 4) by (bit_vector);
+    // 0 < b  /\ a < b * c => a/b < c
+    lemma_multiply_divide_lt((a + b) as int, (1u64 << 51) as int, 4int);
+    shift_is_pow2(51);
+    shift_is_pow2(53);
+    assert((a + b) as u64 >> 51 == (a + b) as u64 / (pow2(51) as u64)) by {
+        lemma_u64_shr_is_div((a + b) as u64, 51);
+    }
+    assert(pow2(53) / pow2(51) == 4) by {
+        lemma_pow2_subtracts(51, 53);
+    }
 }
 
 /* MANUALLY moved outside, named return value */
@@ -359,200 +629,14 @@ impl FieldElement51 {
     #[inline(always)]
     fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51)
         ensures
+            r.limbs == spec_reduce(limbs),
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
-            // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
-            // They represent a number
-            // e(l) =  l0 + l1 * 2^51 + l2 * 2^102 + l3 * 2^153 + l4 * 2^204
-            // in Z_p, for p = 2^255 - 19
-            // reduce(l) returns v = (v0, v1, v2, v3, v4), such that
-            // v0 = 19 * a4 + b0
-            // v1 =      a0 + b1
-            // v2 =      a1 + b2
-            // v3 =      a2 + b3
-            // v4 =      a3 + b4
-            // where ai = li >> 51 and bi = li & LOW_51_BIT_MASK
-            // we can reformulate this as ai = li / 2^51 (flooring division) and bi = li % 2^51
-            // Using the following identity connecting integer division and remainder:
-            // x = y * (x / y) + x % y
-            // we can see that li = ai * 2^51 + bi
-            // Plugging the above identities into the equations for v, we can observe that
-            // e(v) = e(l) - p * (l4 >> 51)
-            // IOW, e(reduce(l)) = e(l) (mod p)
-            // additionally, if all limbs are below 2^51, reduce(l) = l
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
             as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
     {
         proof {
-            // \A i. limbs[i] < 2^13
-            shifted_lt(limbs[0]);
-            shifted_lt(limbs[1]);
-            shifted_lt(limbs[2]);
-            shifted_lt(limbs[3]);
-            shifted_lt(limbs[4]);
-
-            // \A i. limbs[i] & LOW_51_BIT_MASK < 2^51
-            masked_lt(limbs[0]);
-            masked_lt(limbs[1]);
-            masked_lt(limbs[2]);
-            masked_lt(limbs[3]);
-            masked_lt(limbs[4]);
-
-            // Since 19 < 2^5 and (limbs[4] >> 51) < 2^13, their product is less than 2^18
-            assert((limbs[4] >> 51) * 19 < (1u64 << 18) as nat) by {
-                assert(19 < (1u64 << 5)) by (bit_vector);
-                shift_is_pow2(5);
-                shift_is_pow2(13);
-                shift_is_pow2(18);
-                lemma_pow2_adds(13, 5);
-                // If (limbs[4] >> 51) < 2^13 and 19 < 2^5 then their product is less than 2^18
-                mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
-            }
-
-            // The final values (limbs[i] += cX) are all bounded by 2^51 + eps, for eps \in {2^18, 2^13}.
-            assert(((1u64 << 18)) + (1u64 << 51) < (1u64 << 52)) by {
-                shift_is_pow2(18);
-                shift_is_pow2(51);
-                shift_is_pow2(52);
-                lemma_pow2_strictly_increases(18, 51);
-                lemma_pow2_unfold(52);
-            }
-
-            assert(((1u64 << 13)) + (1u64 << 51) < (1u64 << 52)) by {
-                shift_is_pow2(13);
-                shift_is_pow2(51);
-                shift_is_pow2(52);
-                lemma_pow2_strictly_increases(13, 51);
-                lemma_pow2_unfold(52);
-            }
-
-            // In summary, they're all bounded by 2^52
-            // The solver can prove this automatically
-
-            // -----
-            // reduce identity for small limbs
-
-            // Can't seem to reference r within this proof block, we reconstruct it here
-            let rr: [u64; 5] = [
-                ((limbs[0] & LOW_51_BIT_MASK) + (limbs[4] >> 51) * 19) as u64,
-                ((limbs[1] & LOW_51_BIT_MASK) + (limbs[0] >> 51)) as u64,
-                ((limbs[2] & LOW_51_BIT_MASK) + (limbs[1] >> 51)) as u64,
-                ((limbs[3] & LOW_51_BIT_MASK) + (limbs[2] >> 51)) as u64,
-                ((limbs[4] & LOW_51_BIT_MASK) + (limbs[3] >> 51)) as u64,
-                ];
-
-            assert((forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) ==> (rr =~= limbs)) by {
-                if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
-                    assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & LOW_51_BIT_MASK == limbs[i] by {
-                        l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
-                        shift_is_pow2(51);
-                        lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
-                        lemma_small_mod(limbs[i] as nat, pow2(51));
-                    }
-                    assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
-                        l51_bit_mask_lt(); // LOW_51_BIT_MASK = low_bits_mask(51)
-                        shift_is_pow2(51);
-                        lemma_u64_shr_is_div(limbs[i], 51);
-                        lemma_basic_div(limbs[i] as int, pow2(51) as int);
-                    }
-                }
-            }
-
-            // -- as_nat identity
-
-            // ai = limbs[i] / 2^52
-            let a0 = (limbs[0] >> 51);
-            let a1 = (limbs[1] >> 51);
-            let a2 = (limbs[2] >> 51);
-            let a3 = (limbs[3] >> 51);
-            let a4 = (limbs[4] >> 51);
-
-            // bi = limbs[i] % 2^52
-            let b0 = (limbs[0] & LOW_51_BIT_MASK);
-            let b1 = (limbs[1] & LOW_51_BIT_MASK);
-            let b2 = (limbs[2] & LOW_51_BIT_MASK);
-            let b3 = (limbs[3] & LOW_51_BIT_MASK);
-            let b4 = (limbs[4] & LOW_51_BIT_MASK);
-
-            // distribute
-            assert(as_nat(rr) ==
-                19 *  a4 + b0 +
-                pow2(51) * a0 + pow2(51) * b1 +
-                pow2(102) * a1 + pow2(102) * b2 +
-                pow2(153) * a2 + pow2(153) * b3 +
-                pow2(204) * a3 + pow2(204) * b4
-            ) by {
-                lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
-                lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
-                lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
-                lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
-            }
-
-            // factor out
-            assert(as_nat(rr) ==
-                19 *  a4 + b0 +
-                pow2(51) * a0 + pow2(51) * b1 +
-                pow2(51) * (pow2(51) * a1) + pow2(102) * b2 +
-                pow2(102) * (pow2(51) * a2) + pow2(153) * b3 +
-                pow2(153) * (pow2(51) * a3) + pow2(204) * b4
-            ) by {
-                lemma_two_factoring(51, a1);
-                lemma_two_factoring(102, a2);
-                lemma_two_factoring(153, a3);
-            }
-
-            // change groupings
-            assert(as_nat(rr) ==
-                (b0 + pow2(51) * a0) +
-                pow2(51) * (b1 + pow2(51) * a1) +
-                pow2(102) * (b2 + pow2(51) * a2) +
-                pow2(153) * (b3 + pow2(51) * a3) +
-                pow2(204) * b4 + 19 * a4
-            ) by {
-                lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) * a1 as int, b1 as int);
-                lemma_mul_is_distributive_add(pow2(102) as int, pow2(51) * a2 as int, b2 as int);
-                lemma_mul_is_distributive_add(pow2(153) as int, pow2(51) * a3 as int, b3 as int);
-            }
-
-            // invoke div/mod identity
-            assert(as_nat(rr) ==
-                limbs[0] +
-                pow2(51) * limbs[1] +
-                pow2(102) * limbs[2] +
-                pow2(153) * limbs[3] +
-                pow2(204) * b4 + 19 * a4
-            ) by {
-                lemma_div_and_mod(a0, b0, limbs[0]);
-                lemma_div_and_mod(a1, b1, limbs[1]);
-                lemma_div_and_mod(a2, b2, limbs[2]);
-                lemma_div_and_mod(a3, b3, limbs[3]);
-            }
-
-            // Add missing limbs[4] parts
-            assert(as_nat(rr) ==
-                limbs[0] +
-                pow2(51) * limbs[1] +
-                pow2(102) * limbs[2] +
-                pow2(153) * limbs[3] +
-                pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
-            ) by {
-                lemma_div_and_mod(a4, b4, limbs[4]);
-                assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
-                    lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
-                }
-            }
-
-            // The solver can collect components of as_nat(limbs) automatically:
-            // as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4
-            // ... as well as pull in minus
-            // as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4)
-
-            // collect components of p() * a4
-            assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
-                lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, a4 as int);
-                lemma_pow2_adds(204, 51);
-                lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
-                pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
-            }
+            lemma_boundaries(limbs);
+            lemma_reduce(limbs);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest
@@ -604,6 +688,8 @@ impl FieldElement51 {
     pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
         ensures
             true
+            // TODO:
+            // as_nat(r.limbs) =?= as_nat_32_u8(bytes)
     {
         proof {
             l51_bit_mask_lt() // No over/underflow in the below let-def
@@ -630,10 +716,96 @@ impl FieldElement51 {
     #[allow(clippy::wrong_self_convention)]
     pub fn to_bytes(self) -> (r: [u8; 32])
         ensures
-            true,
+            true // No overflow
+            // TODO:
+            // as_nat(self.limbs) =?= as_nat_32_u8(r),
+            // canonical encoding
+            // forall|i: int| 0 <= i < 5 ==> r[i] < (1u64 << 51)
     {
         proof {
-            assume(false);
+            let l = spec_reduce(self.limbs);
+            lemma_reduce(self.limbs);
+
+            let q0 = (l[0] + 19) as u64 >> 51;
+            let q1 = (l[1] + q0) as u64 >> 51;
+            let q2 = (l[2] + q1) as u64 >> 51;
+            let q3 = (l[3] + q2) as u64 >> 51;
+            let q4 = (l[4] + q3) as u64 >> 51;
+
+            assert(19 < (1u64 << 52)) by (bit_vector);
+            lemma_add_then_shift(l[0], 19);
+            lemma_add_then_shift(l[1], q0);
+            lemma_add_then_shift(l[2], q1);
+            lemma_add_then_shift(l[3], q2);
+            lemma_add_then_shift(l[4], q3);
+
+            let l0 = (l[0] + 19 * q4) as u64;
+            let l1 = (l[1] + (l0 >> 51)) as u64;
+            let l2 = (l[2] + (l1 >> 51)) as u64;
+            let l3 = (l[3] + (l2 >> 51)) as u64;
+            let l4 = (l[3] + (l3 >> 51)) as u64;
+
+            assert( 19 * q4 < 1u64 << 7) by {
+                // Explicit values for pow2(k) for k < 64
+                lemma2_to64();
+                shift_is_pow2(5); // now we know 19 < 1u64 << 5 for free
+                shift_is_pow2(2);
+                shift_is_pow2(7);
+                lemma_pow2_adds(5, 2);
+            }
+            assert(((1u64 << 7)) + (1u64 << 52) < (1u64 << 53)) by (bit_vector);
+            assert(((1u64 << 13)) + (1u64 << 52) < (1u64 << 53)) by (bit_vector);
+            shifted_lt(l0);
+            shifted_lt(l1);
+            shifted_lt(l2);
+            shifted_lt(l3);
+
+            l51_bit_mask_lt();
+
+            // TODO
+            // let rr = [
+            //     l0 & LOW_51_BIT_MASK,
+            //     l1 & LOW_51_BIT_MASK,
+            //     l2 & LOW_51_BIT_MASK,
+            //     l3 & LOW_51_BIT_MASK,
+            //     l4 & LOW_51_BIT_MASK
+            // ];
+
+            // let r = [
+            //     rr[0]                           as u8,
+            //     (rr[0] >>  8)                    as u8,
+            //     (rr[0] >> 16)                    as u8,
+            //     (rr[0] >> 24)                    as u8,
+            //     (rr[0] >> 32)                    as u8,
+            //     (rr[0] >> 40)                    as u8,
+            //     ((rr[0] >> 48) | (rr[1] << 3)) as u8,
+            //     (rr[1] >>  5)                    as u8,
+            //     (rr[1] >> 13)                    as u8,
+            //     (rr[1] >> 21)                    as u8,
+            //     (rr[1] >> 29)                    as u8,
+            //     (rr[1] >> 37)                    as u8,
+            //     ((rr[1] >> 45) | (rr[2] << 6)) as u8,
+            //     (rr[2] >>  2)                    as u8,
+            //     (rr[2] >> 10)                    as u8,
+            //     (rr[2] >> 18)                    as u8,
+            //     (rr[2] >> 26)                    as u8,
+            //     (rr[2] >> 34)                    as u8,
+            //     (rr[2] >> 42)                    as u8,
+            //     ((rr[2] >> 50) | (rr[3] << 1)) as u8,
+            //     (rr[3] >>  7)                    as u8,
+            //     (rr[3] >> 15)                    as u8,
+            //     (rr[3] >> 23)                    as u8,
+            //     (rr[3] >> 31)                    as u8,
+            //     (rr[3] >> 39)                    as u8,
+            //     ((rr[3] >> 47) | (rr[4] << 4)) as u8,
+            //     (rr[4] >>  4)                    as u8,
+            //     (rr[4] >> 12)                    as u8,
+            //     (rr[4] >> 20)                    as u8,
+            //     (rr[4] >> 28)                    as u8,
+            //     (rr[4] >> 36)                    as u8,
+            //     (rr[4] >> 44)                    as u8
+            // ];
+
         }
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //

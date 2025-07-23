@@ -15,6 +15,8 @@ verus! {
             calc! {
                 (==)
                 (a0 + a1) * (a0 + a1) * (a0 + a1); {
+                  broadcast use group_mul_is_distributive;
+                  broadcast use lemma_mul_is_associative;
                 }
                 (a0*a0 + 2*a0*a1 + a1*a1) * (a0 + a1); {
                   broadcast use group_mul_is_distributive;

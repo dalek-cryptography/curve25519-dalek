@@ -614,16 +614,6 @@ verus! {
             broadcast use lemma_mul_is_commutative;
             broadcast use lemma_mul_is_associative;
                 }
-                // Expand each distributed term
-                (a0*a0 + a0*a1*pow2(52) + a0*a2*pow2(104) + a0*a3*pow2(156) + a0*a4*pow2(208)) +
-                (a1*pow2(52)*a0 + a1*pow2(52)*a1*pow2(52) + a1*pow2(52)*a2*pow2(104) + a1*pow2(52)*a3*pow2(156) + a1*pow2(52)*a4*pow2(208)) +
-                (a2*pow2(104)*a0 + a2*pow2(104)*a1*pow2(52) + a2*pow2(104)*a2*pow2(104) + a2*pow2(104)*a3*pow2(156) + a2*pow2(104)*a4*pow2(208)) +
-                (a3*pow2(156)*a0 + a3*pow2(156)*a1*pow2(52) + a3*pow2(156)*a2*pow2(104) + a3*pow2(156)*a3*pow2(156) + a3*pow2(156)*a4*pow2(208)) +
-                (a4*pow2(208)*a0 + a4*pow2(208)*a1*pow2(52) + a4*pow2(208)*a2*pow2(104) + a4*pow2(208)*a3*pow2(156) + a4*pow2(208)*a4*pow2(208)); {
-                    // Apply commutativity and associativity to rearrange terms
-                broadcast use lemma_mul_is_associative;
-            broadcast use lemma_mul_is_commutative;
-                }
                 // Rearrange using commutativity and combine like powers of 2
                 a0*a0 + 
                 (a0*a1*pow2(52) + a1*a0*pow2(52)) +

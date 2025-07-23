@@ -641,7 +641,6 @@ verus! {
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
                     // Apply distributive property to expand the multiplication
                     broadcast use group_mul_is_distributive;
-                    assume(false);
                 }
                 // First, all the a0 * (everything) terms
                 a0 * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
@@ -691,7 +690,6 @@ verus! {
                 2*a3*a4*pow2(364) +
                 a4*a4*pow2(416); {
                     // Final rearrangement to match target form
-                    assume(false);
                 }
                 (a0 * a0) +
                 (2 * a0 * a1) * pow2(52) +

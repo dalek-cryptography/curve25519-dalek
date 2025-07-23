@@ -626,18 +626,6 @@ verus! {
                     lemma_pow2_adds(208, 208);   // pow2(208) * pow2(208) == pow2(416)
 
                 }
-                // Simplify: 2*a*b + collect like powers
-                                (z[0] as nat) +
-                                        (z[1] as nat) * pow2(52) +
-                                        (z[2] as nat) * pow2(104) +
-                                        (z[3] as nat) * pow2(156) +
-                                        (z[4] as nat) * pow2(208) +
-                                        (z[5] as nat) * pow2(260) +
-                                        (z[6] as nat) * pow2(312) +
-                                        (z[7] as nat) * pow2(364) +
-                                        (z[8] as nat) * pow2(416); {
-                broadcast use lemma_mul_is_associative;
-                                        }
                  nine_limbs_to_nat_direct(&z);
             }
 

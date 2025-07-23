@@ -610,8 +610,6 @@ verus! {
             // z[8] = m(a4, a4) = a4 * a4
 
             // Right side: to_nat_direct(a.limbs) * to_nat_direct(a.limbs)
-            let polynomial = a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208);
-            let right_side = polynomial * polynomial;
 
             // Now we can see both sides clearly:
             // left_side_expanded: coefficients computed from z[i] values
@@ -622,13 +620,8 @@ verus! {
             broadcast use lemma_mul_is_commutative, lemma_mul_is_associative;
             calc! {
                 (==)
-                right_side; {
+                to_nat_direct(a.limbs) * to_nat_direct(a.limbs); {
                     // right_side is defined as polynomial * polynomial
-                    assert(right_side == polynomial * polynomial);
-                }
-                polynomial * polynomial; {
-                    // Substitute the definition of polynomial
-                    assert(polynomial == a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208));
                 }
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) *
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {

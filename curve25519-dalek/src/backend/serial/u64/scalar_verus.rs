@@ -117,6 +117,7 @@ verus! {
             }
         }
 
+        // TODO Should there be an indirect version?
         pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
             (limbs[0] as nat) +
             (limbs[1] as nat) * pow2(52) +

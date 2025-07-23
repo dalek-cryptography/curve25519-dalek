@@ -654,7 +654,6 @@ verus! {
                 // Finally all the (a4 * pow2(208)) * (everything) terms
                 (a4 * pow2(208)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
                     // Distribute each term
-                    assume(false);
                 }
                 // Expand each distributed term
                 (a0*a0 + a0*a1*pow2(52) + a0*a2*pow2(104) + a0*a3*pow2(156) + a0*a4*pow2(208)) +
@@ -663,7 +662,6 @@ verus! {
                 (a3*pow2(156)*a0 + a3*pow2(156)*a1*pow2(52) + a3*pow2(156)*a2*pow2(104) + a3*pow2(156)*a3*pow2(156) + a3*pow2(156)*a4*pow2(208)) +
                 (a4*pow2(208)*a0 + a4*pow2(208)*a1*pow2(52) + a4*pow2(208)*a2*pow2(104) + a4*pow2(208)*a3*pow2(156) + a4*pow2(208)*a4*pow2(208)); {
                     // Apply commutativity and associativity to rearrange terms
-                    assume(false);
                 }
                 // Rearrange using commutativity and combine like powers of 2
                 a0*a0 + 

@@ -53,9 +53,9 @@ harness = false
 required-features = ["alloc", "rand_core"]
 
 [dependencies]
-vstd = { git = "https://github.com/verus-lang/verus", rev = "8bd7c3292aad57d3926ed8024cde13ca53d6e1a7" }
-builtin = { git = "https://github.com/verus-lang/verus", rev = "8bd7c3292aad57d3926ed8024cde13ca53d6e1a7" }
-builtin_macros = { git = "https://github.com/verus-lang/verus", rev = "8bd7c3292aad57d3926ed8024cde13ca53d6e1a7" }
+vstd = { git = "https://github.com/verus-lang/verus" }
+builtin = { git = "https://github.com/verus-lang/verus" }
+builtin_macros = { git = "https://github.com/verus-lang/verus" }
 cfg-if = "1"
 ff = { version = "=0.14.0-pre.0", default-features = false, optional = true }
 group = { version = "=0.14.0-pre.0", default-features = false, optional = true }

@@ -612,19 +612,7 @@ verus! {
                 to_nat_direct(a.limbs) * to_nat_direct(a.limbs); {
                     // right_side is defined as polynomial * polynomial
             broadcast use lemma_mul_is_commutative;
-                }
-                // First, all the a0 * (everything) terms
-                a0 * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
-                // Then all the (a1 * pow2(52)) * (everything) terms  
-                (a1 * pow2(52)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
-                // Then all the (a2 * pow2(104)) * (everything) terms
-                (a2 * pow2(104)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
-                // Then all the (a3 * pow2(156)) * (everything) terms
-                (a3 * pow2(156)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
-                // Finally all the (a4 * pow2(208)) * (everything) terms
-                (a4 * pow2(208)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
-                    // Distribute each term
-                broadcast use lemma_mul_is_associative;
+            broadcast use lemma_mul_is_associative;
                 }
                 // Expand each distributed term
                 (a0*a0 + a0*a1*pow2(52) + a0*a2*pow2(104) + a0*a3*pow2(156) + a0*a4*pow2(208)) +

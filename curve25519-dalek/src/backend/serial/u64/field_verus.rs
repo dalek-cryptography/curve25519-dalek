@@ -404,11 +404,11 @@ impl FieldElement51 {
                 shift_is_pow2(13);
                 shift_is_pow2(18);
                 lemma_pow2_adds(13, 5);
+                // If (limbs[4] >> 51) < 2^13 and 19 < 2^5 then their product is less than 2^18
                 mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
             }
 
             // The final values (limbs[i] += cX) are all bounded by 2^51 + eps, for eps \in {2^18, 2^13}.
-
             assert(((1u64 << 18)) + (1u64 << 51) < (1u64 << 52)) by {
                 shift_is_pow2(18);
                 shift_is_pow2(51);
@@ -426,6 +426,7 @@ impl FieldElement51 {
             }
 
             // In summary, they're all bounded by 2^52
+            // The solver can prove this automatically
 
             // -----
             // reduce identity for small limbs
@@ -540,8 +541,10 @@ impl FieldElement51 {
                 }
             }
 
-            // collect components of as_nat(limbs)
-            // pull in minus
+            // The solver can collect components of as_nat(limbs) automatically:
+            // as_nat(rr) == as_nat(limbs) - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+            // ... as well as pull in minus
+            // as_nat(rr) == as_nat(limbs) - (pow2(204) * (pow2(51) * a4 ) - 19 * a4)
 
             // collect components of p() * a4
             assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {

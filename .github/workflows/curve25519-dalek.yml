@@ -130,8 +130,10 @@ jobs:
       uses: dtolnay/rust-toolchain@1.88.0
     - name: Install Verus
       run: |
-        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.07.05.8bd7c32/verus-0.2025.07.05.8bd7c32-x86-linux.zip
-        unzip verus-0.2025.07.05.8bd7c32-x86-linux.zip
+        LATEST_RELEASE=$(curl -s https://api.github.com/repos/verus-lang/verus/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+        DOWNLOAD_URL="https://github.com/verus-lang/verus/releases/download/${LATEST_RELEASE}/verus-${LATEST_RELEASE#release/}-x86-linux.zip"
+        wget $DOWNLOAD_URL
+        unzip verus-${LATEST_RELEASE#release/}-x86-linux.zip
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus

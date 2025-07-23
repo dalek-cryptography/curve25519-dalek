@@ -601,10 +601,10 @@ verus! {
             // right_side: polynomial square expansion
             // They should be mathematically equal
             
-            broadcast use group_mul_is_distributive;
             assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
                 broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
+                broadcast use group_mul_is_distributive;
                 // Combine powers using pow2 arithmetic and factor out common terms
 
                 lemma_pow2_adds(52, 52);     // pow2(52) * pow2(52) == pow2(104)

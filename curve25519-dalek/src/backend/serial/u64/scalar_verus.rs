@@ -607,27 +607,22 @@ verus! {
             // They should be mathematically equal
             
             broadcast use group_mul_is_distributive;
-            calc! {
-                (==)
-                to_nat_direct(a.limbs) * to_nat_direct(a.limbs); {
-            broadcast use lemma_mul_is_commutative;
+            assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
+                broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
-                    // Combine powers using pow2 arithmetic and factor out common terms
+                // Combine powers using pow2 arithmetic and factor out common terms
 
-                    lemma_pow2_adds(52, 52);     // pow2(52) * pow2(52) == pow2(104)
-                    lemma_pow2_adds(52, 104);    // pow2(52) * pow2(104) == pow2(156)
-                    lemma_pow2_adds(52, 156);    // pow2(52) * pow2(156) == pow2(208)
-                    lemma_pow2_adds(52, 208);    // pow2(52) * pow2(208) == pow2(260)
-                    lemma_pow2_adds(104, 104);   // pow2(104) * pow2(104) == pow2(208)
-                    lemma_pow2_adds(104, 156);   // pow2(104) * pow2(156) == pow2(260)
-                    lemma_pow2_adds(104, 208);   // pow2(104) * pow2(208) == pow2(312)
-                    lemma_pow2_adds(156, 156);   // pow2(156) * pow2(156) == pow2(312)
-                    lemma_pow2_adds(156, 208);   // pow2(156) * pow2(208) == pow2(364)
-                    lemma_pow2_adds(208, 208);   // pow2(208) * pow2(208) == pow2(416)
-
-                }
-                 nine_limbs_to_nat_direct(&z);
-            }
+                lemma_pow2_adds(52, 52);     // pow2(52) * pow2(52) == pow2(104)
+                lemma_pow2_adds(52, 104);    // pow2(52) * pow2(104) == pow2(156)
+                lemma_pow2_adds(52, 156);    // pow2(52) * pow2(156) == pow2(208)
+                lemma_pow2_adds(52, 208);    // pow2(52) * pow2(208) == pow2(260)
+                lemma_pow2_adds(104, 104);   // pow2(104) * pow2(104) == pow2(208)
+                lemma_pow2_adds(104, 156);   // pow2(104) * pow2(156) == pow2(260)
+                lemma_pow2_adds(104, 208);   // pow2(104) * pow2(208) == pow2(312)
+                lemma_pow2_adds(156, 156);   // pow2(156) * pow2(156) == pow2(312)
+                lemma_pow2_adds(156, 208);   // pow2(156) * pow2(208) == pow2(364)
+                lemma_pow2_adds(208, 208);   // pow2(208) * pow2(208) == pow2(416)
+            };
 
             // Verus cannot prove left_side == left_side_expanded automatically
             // This requires connecting z[i] values (computed with m()) to polynomial coefficients

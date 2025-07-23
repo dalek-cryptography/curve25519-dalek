@@ -12,8 +12,6 @@ verus! {
         pub proof fn example(a0: nat, a1: nat)
         ensures (a0 + a1) * (a0 + a1) * (a0 + a1) == a0*a0*a0 + 3*a0*a0*a1 + 3*a0*a1*a1 + a1*a1*a1
         {
-            {
-            // Put the uses inside {} to limit their scope
             broadcast use group_mul_is_distributive;
             broadcast use lemma_mul_is_associative;
             calc! {
@@ -27,7 +25,6 @@ verus! {
                 a0*a0*a0 + 2*a0*a1*a0 + a1*a1*a0 + a0*a0*a1 + 2*a0*a1*a1 + a1*a1*a1; {
                 }
                 a0*a0*a0 + 3*a0*a0*a1 + 3*a0*a1*a1 + a1*a1*a1;
-            }
             }
         }
 

@@ -665,16 +665,16 @@ verus! {
                 (a3*a4*pow2(156)*pow2(208) + a4*a3*pow2(208)*pow2(156)) + a4*a4*pow2(208)*pow2(208); {
                     // Combine powers using pow2 arithmetic and factor out common terms
 
-                    assume(pow2(52) * pow2(52) == pow2(104))   ;
-                    assume(pow2(52) * pow2(104) == pow2(156))  ;
-                    assume(pow2(52) * pow2(156) == pow2(208))  ;
-                    assume(pow2(52) * pow2(208) == pow2(260))  ;
-                    assume(pow2(104) * pow2(104) == pow2(208)) ;
-                    assume(pow2(104) * pow2(156) == pow2(260)) ;
-                    assume(pow2(104) * pow2(208) == pow2(312)) ;
-                    assume(pow2(156) * pow2(156) == pow2(312)) ;
-                    assume(pow2(156) * pow2(208) == pow2(364)) ;
-                    assume(pow2(208) * pow2(208) == pow2(416)) ;
+                    lemma_pow2_adds(52, 52);     // pow2(52) * pow2(52) == pow2(104)
+                    lemma_pow2_adds(52, 104);    // pow2(52) * pow2(104) == pow2(156)
+                    lemma_pow2_adds(52, 156);    // pow2(52) * pow2(156) == pow2(208)
+                    lemma_pow2_adds(52, 208);    // pow2(52) * pow2(208) == pow2(260)
+                    lemma_pow2_adds(104, 104);   // pow2(104) * pow2(104) == pow2(208)
+                    lemma_pow2_adds(104, 156);   // pow2(104) * pow2(156) == pow2(260)
+                    lemma_pow2_adds(104, 208);   // pow2(104) * pow2(208) == pow2(312)
+                    lemma_pow2_adds(156, 156);   // pow2(156) * pow2(156) == pow2(312)
+                    lemma_pow2_adds(156, 208);   // pow2(156) * pow2(208) == pow2(364)
+                    lemma_pow2_adds(208, 208);   // pow2(208) * pow2(208) == pow2(416)
 
                 }
                 // Simplify: 2*a*b + collect like powers

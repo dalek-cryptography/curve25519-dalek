@@ -173,8 +173,6 @@ verus! {
         {
             proof {
                 assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
-                assert((x as u128) < (1u128 << 52));
-                assert((y as u128) < (1u128 << 52));
                 calc! {
                     (<)
                     (x as u128) * (y as u128); (<=) {
@@ -183,7 +181,6 @@ verus! {
                         } else {
                             assert(x == 0);
                             assert((x as u128) * (y as u128) == 0);
-                            assert((x as u128) * (1u128 << 52) == 0);
                         }
                     }
                     (x as u128) * (1u128 << 52); (<) {

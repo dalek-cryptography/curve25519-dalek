@@ -581,11 +581,6 @@ verus! {
 
         proof {
             // Let's expand both sides explicitly
-            let a0 = a.limbs[0] as nat;
-            let a1 = a.limbs[1] as nat;
-            let a2 = a.limbs[2] as nat;
-            let a3 = a.limbs[3] as nat;
-            let a4 = a.limbs[4] as nat;
 
 
             // Left side expressed in terms of a0,a1,a2,a3,a4 using what z[i] actually computes

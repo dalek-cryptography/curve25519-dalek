@@ -627,6 +627,8 @@ verus! {
             // They should be mathematically equal
             
             // Prove that right_side == left_side_expanded
+            broadcast use group_mul_is_distributive;
+            broadcast use lemma_mul_is_commutative, lemma_mul_is_associative;
             calc! {
                 (==)
                 right_side; {
@@ -640,7 +642,6 @@ verus! {
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) *
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
                     // Apply distributive property to expand the multiplication
-                    broadcast use group_mul_is_distributive;
                 }
                 // First, all the a0 * (everything) terms
                 a0 * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
@@ -653,7 +654,6 @@ verus! {
                 // Finally all the (a4 * pow2(208)) * (everything) terms
                 (a4 * pow2(208)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
                     // Distribute each term
-                    broadcast use group_mul_is_distributive;
                     assume(false);
                 }
                 // Expand each distributed term
@@ -663,7 +663,6 @@ verus! {
                 (a3*pow2(156)*a0 + a3*pow2(156)*a1*pow2(52) + a3*pow2(156)*a2*pow2(104) + a3*pow2(156)*a3*pow2(156) + a3*pow2(156)*a4*pow2(208)) +
                 (a4*pow2(208)*a0 + a4*pow2(208)*a1*pow2(52) + a4*pow2(208)*a2*pow2(104) + a4*pow2(208)*a3*pow2(156) + a4*pow2(208)*a4*pow2(208)); {
                     // Apply commutativity and associativity to rearrange terms
-                    broadcast use lemma_mul_is_commutative, lemma_mul_is_associative;
                     assume(false);
                 }
                 // Rearrange using commutativity and combine like powers of 2
@@ -676,7 +675,6 @@ verus! {
                 a3*a3*pow2(156)*pow2(156) + (a2*a4*pow2(104)*pow2(208) + a4*a2*pow2(208)*pow2(104)) +
                 (a3*a4*pow2(156)*pow2(208) + a4*a3*pow2(208)*pow2(156)) + a4*a4*pow2(208)*pow2(208); {
                     // Combine powers using pow2 arithmetic and factor out common terms
-                    broadcast use lemma_mul_is_commutative;
                     assume(false);
                 }
                 // Simplify: 2*a*b + collect like powers

@@ -634,11 +634,64 @@ verus! {
                     assert(right_side == polynomial * polynomial);
                 }
                 polynomial * polynomial; {
-                    // Expand polynomial * polynomial = (a0 + a1*2^52 + a2*2^104 + a3*2^156 + a4*2^208)^2
-                    broadcast use group_mul_is_distributive, lemma_mul_is_associative, lemma_mul_is_commutative;
+                    // Substitute the definition of polynomial
                     assert(polynomial == a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208));
-                    // (a0 + a1*x + a2*x^2 + a3*x^3 + a4*x^4)^2 where x = 2^52
-                    assume(false); // TODO: Expand the full polynomial multiplication
+                }
+                (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) *
+                (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
+                    // Apply distributive property to expand the multiplication
+                    broadcast use group_mul_is_distributive;
+                    assume(false);
+                }
+                // First, all the a0 * (everything) terms
+                a0 * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
+                // Then all the (a1 * pow2(52)) * (everything) terms  
+                (a1 * pow2(52)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
+                // Then all the (a2 * pow2(104)) * (everything) terms
+                (a2 * pow2(104)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
+                // Then all the (a3 * pow2(156)) * (everything) terms
+                (a3 * pow2(156)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) +
+                // Finally all the (a4 * pow2(208)) * (everything) terms
+                (a4 * pow2(208)) * (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
+                    // Distribute each term
+                    broadcast use group_mul_is_distributive;
+                    assume(false);
+                }
+                // Expand each distributed term
+                (a0*a0 + a0*a1*pow2(52) + a0*a2*pow2(104) + a0*a3*pow2(156) + a0*a4*pow2(208)) +
+                (a1*pow2(52)*a0 + a1*pow2(52)*a1*pow2(52) + a1*pow2(52)*a2*pow2(104) + a1*pow2(52)*a3*pow2(156) + a1*pow2(52)*a4*pow2(208)) +
+                (a2*pow2(104)*a0 + a2*pow2(104)*a1*pow2(52) + a2*pow2(104)*a2*pow2(104) + a2*pow2(104)*a3*pow2(156) + a2*pow2(104)*a4*pow2(208)) +
+                (a3*pow2(156)*a0 + a3*pow2(156)*a1*pow2(52) + a3*pow2(156)*a2*pow2(104) + a3*pow2(156)*a3*pow2(156) + a3*pow2(156)*a4*pow2(208)) +
+                (a4*pow2(208)*a0 + a4*pow2(208)*a1*pow2(52) + a4*pow2(208)*a2*pow2(104) + a4*pow2(208)*a3*pow2(156) + a4*pow2(208)*a4*pow2(208)); {
+                    // Apply commutativity and associativity to rearrange terms
+                    broadcast use lemma_mul_is_commutative, lemma_mul_is_associative;
+                    assume(false);
+                }
+                // Rearrange using commutativity and combine like powers of 2
+                a0*a0 + 
+                (a0*a1*pow2(52) + a1*a0*pow2(52)) +
+                (a0*a2*pow2(104) + a2*a0*pow2(104)) + a1*a1*pow2(52)*pow2(52) +
+                (a0*a3*pow2(156) + a3*a0*pow2(156)) + (a1*a2*pow2(52)*pow2(104) + a2*a1*pow2(104)*pow2(52)) +
+                (a0*a4*pow2(208) + a4*a0*pow2(208)) + (a1*a3*pow2(52)*pow2(156) + a3*a1*pow2(156)*pow2(52)) + a2*a2*pow2(104)*pow2(104) +
+                (a1*a4*pow2(52)*pow2(208) + a4*a1*pow2(208)*pow2(52)) + (a2*a3*pow2(104)*pow2(156) + a3*a2*pow2(156)*pow2(104)) +
+                a3*a3*pow2(156)*pow2(156) + (a2*a4*pow2(104)*pow2(208) + a4*a2*pow2(208)*pow2(104)) +
+                (a3*a4*pow2(156)*pow2(208) + a4*a3*pow2(208)*pow2(156)) + a4*a4*pow2(208)*pow2(208); {
+                    // Combine powers using pow2 arithmetic and factor out common terms
+                    broadcast use lemma_mul_is_commutative;
+                    assume(false);
+                }
+                // Simplify: 2*a*b + collect like powers
+                a0*a0 + 
+                2*a0*a1*pow2(52) +
+                (2*a0*a2 + a1*a1)*pow2(104) +
+                (2*a0*a3 + 2*a1*a2)*pow2(156) +
+                (2*a0*a4 + 2*a1*a3 + a2*a2)*pow2(208) +
+                (2*a1*a4 + 2*a2*a3)*pow2(260) +
+                (2*a2*a4 + a3*a3)*pow2(312) +
+                2*a3*a4*pow2(364) +
+                a4*a4*pow2(416); {
+                    // Final rearrangement to match target form
+                    assume(false);
                 }
                 (a0 * a0) +
                 (2 * a0 * a1) * pow2(52) +

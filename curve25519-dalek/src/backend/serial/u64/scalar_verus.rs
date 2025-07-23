@@ -698,25 +698,6 @@ verus! {
                 (2 * a2 * a4 + a3 * a3) * pow2(312) +
                 (2 * a3 * a4) * pow2(364) +
                 (a4 * a4) * pow2(416);  {
-                    // Now show that each coefficient matches what z[i] computes
-                    // z[0] = m(a0, a0) = a0 * a0
-                    assert((z[0] as nat) == a0 * a0);
-                    // z[1] = m(a0, a1) * 2 = 2 * a0 * a1  
-                    assert((z[1] as nat) == 2 * a0 * a1);
-                    // z[2] = m(a0, a2) * 2 + m(a1, a1) = 2 * a0 * a2 + a1 * a1
-                    assert((z[2] as nat) == 2 * a0 * a2 + a1 * a1);
-                    // z[3] = m(a0, a3) * 2 + m(a1, a2) * 2 = 2 * a0 * a3 + 2 * a1 * a2
-                    assert((z[3] as nat) == 2 * a0 * a3 + 2 * a1 * a2);
-                    // z[4] = m(a0, a4) * 2 + m(a1, a3) * 2 + m(a2, a2) = 2 * a0 * a4 + 2 * a1 * a3 + a2 * a2
-                    assert((z[4] as nat) == 2 * a0 * a4 + 2 * a1 * a3 + a2 * a2);
-                    // z[5] = m(a1, a4) * 2 + m(a2, a3) * 2 = 2 * a1 * a4 + 2 * a2 * a3
-                    assert((z[5] as nat) == 2 * a1 * a4 + 2 * a2 * a3);
-                    // z[6] = m(a2, a4) * 2 + m(a3, a3) = 2 * a2 * a4 + a3 * a3
-                    assert((z[6] as nat) == 2 * a2 * a4 + a3 * a3);
-                    // z[7] = m(a3, a4) * 2 = 2 * a3 * a4
-                    assert((z[7] as nat) == 2 * a3 * a4);
-                    // z[8] = m(a4, a4) = a4 * a4
-                    assert((z[8] as nat) == a4 * a4);
                 }
                 (z[0] as nat) +
                                         (z[1] as nat) * pow2(52) +

@@ -22,7 +22,7 @@ def run_verus_verification():
             cwd='curve25519-dalek',
             capture_output=True,
             text=True,
-            timeout=60  # 60 second timeout
+            timeout=10
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:

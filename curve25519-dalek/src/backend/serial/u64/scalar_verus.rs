@@ -582,9 +582,9 @@ verus! {
         proof {
 
             assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
-                broadcast use lemma_mul_is_commutative;
+                broadcast use group_mul_is_commutative_and_distributive;
                 broadcast use lemma_mul_is_associative;
-                broadcast use group_mul_is_distributive;
+
                 lemma_pow2_adds(52, 52);
                 lemma_pow2_adds(52, 104);
                 lemma_pow2_adds(52, 156);

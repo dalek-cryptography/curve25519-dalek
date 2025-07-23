@@ -587,16 +587,6 @@ verus! {
             let a3 = a.limbs[3] as nat;
             let a4 = a.limbs[4] as nat;
 
-            // Left side: nine_limbs_to_nat_direct(&z)
-            let left_side = (z[0] as nat) +
-                           (z[1] as nat) * pow2(52) +
-                           (z[2] as nat) * pow2(104) +
-                           (z[3] as nat) * pow2(156) +
-                           (z[4] as nat) * pow2(208) +
-                           (z[5] as nat) * pow2(260) +
-                           (z[6] as nat) * pow2(312) +
-                           (z[7] as nat) * pow2(364) +
-                           (z[8] as nat) * pow2(416);
 
             // Left side expressed in terms of a0,a1,a2,a3,a4 using what z[i] actually computes
             // z[0] = m(a0, a0) = a0 * a0

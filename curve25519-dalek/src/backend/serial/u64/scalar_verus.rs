@@ -480,10 +480,12 @@ verus! {
     /// Compute `a * b`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of z[*] calculations
-    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9]
+    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> (z: [u128; 9])
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(b.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -523,6 +525,24 @@ verus! {
         z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
         z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);
         z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
+
+        proof {
+            assert(to_nat_direct(a.limbs) * to_nat_direct(b.limbs) == nine_limbs_to_nat_direct(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
+
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+        }
 
         z
     }

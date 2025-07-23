@@ -580,49 +580,23 @@ verus! {
         z[8] =                                                                 m(a.limbs[4], a.limbs[4]);
 
         proof {
-            // Let's expand both sides explicitly
 
-
-            // Left side expressed in terms of a0,a1,a2,a3,a4 using what z[i] actually computes
-            // z[0] = m(a0, a0) = a0 * a0
-            // z[1] = m(a0, a1) * 2 = 2 * a0 * a1
-            // z[2] = m(a0, a2) * 2 + m(a1, a1) = 2 * a0 * a2 + a1 * a1
-            // z[3] = m(a0, a3) * 2 + m(a1, a2) * 2 = 2 * a0 * a3 + 2 * a1 * a2
-            // z[4] = m(a0, a4) * 2 + m(a1, a3) * 2 + m(a2, a2) = 2 * a0 * a4 + 2 * a1 * a3 + a2 * a2
-            // z[5] = m(a1, a4) * 2 + m(a2, a3) * 2 = 2 * a1 * a4 + 2 * a2 * a3
-            // z[6] = m(a2, a4) * 2 + m(a3, a3) = 2 * a2 * a4 + a3 * a3
-            // z[7] = m(a3, a4) * 2 = 2 * a3 * a4
-            // z[8] = m(a4, a4) = a4 * a4
-
-            // Right side: to_nat_direct(a.limbs) * to_nat_direct(a.limbs)
-
-            // Now we can see both sides clearly:
-            // left_side_expanded: coefficients computed from z[i] values
-            // right_side: polynomial square expansion
-            // They should be mathematically equal
-            
             assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
                 broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
                 broadcast use group_mul_is_distributive;
-                // Combine powers using pow2 arithmetic and factor out common terms
-
-                lemma_pow2_adds(52, 52);     // pow2(52) * pow2(52) == pow2(104)
-                lemma_pow2_adds(52, 104);    // pow2(52) * pow2(104) == pow2(156)
-                lemma_pow2_adds(52, 156);    // pow2(52) * pow2(156) == pow2(208)
-                lemma_pow2_adds(52, 208);    // pow2(52) * pow2(208) == pow2(260)
-                lemma_pow2_adds(104, 104);   // pow2(104) * pow2(104) == pow2(208)
-                lemma_pow2_adds(104, 156);   // pow2(104) * pow2(156) == pow2(260)
-                lemma_pow2_adds(104, 208);   // pow2(104) * pow2(208) == pow2(312)
-                lemma_pow2_adds(156, 156);   // pow2(156) * pow2(156) == pow2(312)
-                lemma_pow2_adds(156, 208);   // pow2(156) * pow2(208) == pow2(364)
-                lemma_pow2_adds(208, 208);   // pow2(208) * pow2(208) == pow2(416)
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
             };
 
-            // Verus cannot prove left_side == left_side_expanded automatically
-            // This requires connecting z[i] values (computed with m()) to polynomial coefficients
-
-            // This should establish the postcondition
         }
 
         z

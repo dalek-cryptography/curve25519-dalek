@@ -7,6 +7,7 @@ import subprocess
 import os
 import tempfile
 import shutil
+import uuid
 
 
 def run_verus_verification():
@@ -75,6 +76,21 @@ def clean_statements(file_path, start_line, end_line, regex_pattern):
             original_lines = f.readlines()
     except Exception as e:
         print(f"Error reading file: {e}", file=sys.stderr)
+        return False
+    
+    # Create backup before any modifications
+    unique_id = str(uuid.uuid4())
+    file_name = os.path.basename(file_path)
+    file_name_no_ext, file_ext = os.path.splitext(file_name)
+    backup_path = f"/tmp/{file_name_no_ext}-{unique_id}{file_ext}"
+    
+    try:
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            f.writelines(original_lines)
+        print(f"Created backup at: {backup_path}")
+        print()
+    except Exception as e:
+        print(f"Error creating backup: {e}", file=sys.stderr)
         return False
     
     # Validate line range

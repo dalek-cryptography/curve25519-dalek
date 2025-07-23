@@ -627,18 +627,7 @@ verus! {
 
                 }
                 // Simplify: 2*a*b + collect like powers
-                (a0 * a0) +
-                (2 * a0 * a1) * pow2(52) +
-                (2 * a0 * a2 + a1 * a1) * pow2(104) +
-                (2 * a0 * a3 + 2 * a1 * a2) * pow2(156) +
-                (2 * a0 * a4 + 2 * a1 * a3 + a2 * a2) * pow2(208) +
-                (2 * a1 * a4 + 2 * a2 * a3) * pow2(260) +
-                (2 * a2 * a4 + a3 * a3) * pow2(312) +
-                (2 * a3 * a4) * pow2(364) +
-                (a4 * a4) * pow2(416);  {
-                broadcast use lemma_mul_is_associative;
-                }
-                (z[0] as nat) +
+                                (z[0] as nat) +
                                         (z[1] as nat) * pow2(52) +
                                         (z[2] as nat) * pow2(104) +
                                         (z[3] as nat) * pow2(156) +

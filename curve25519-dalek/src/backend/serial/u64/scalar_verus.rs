@@ -607,11 +607,11 @@ verus! {
             // They should be mathematically equal
             
             broadcast use group_mul_is_distributive;
-            broadcast use lemma_mul_is_commutative;
             calc! {
                 (==)
                 to_nat_direct(a.limbs) * to_nat_direct(a.limbs); {
                     // right_side is defined as polynomial * polynomial
+            broadcast use lemma_mul_is_commutative;
                 }
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)) *
                 (a0 + a1 * pow2(52) + a2 * pow2(104) + a3 * pow2(156) + a4 * pow2(208)); {
@@ -638,6 +638,7 @@ verus! {
                 (a4*pow2(208)*a0 + a4*pow2(208)*a1*pow2(52) + a4*pow2(208)*a2*pow2(104) + a4*pow2(208)*a3*pow2(156) + a4*pow2(208)*a4*pow2(208)); {
                     // Apply commutativity and associativity to rearrange terms
                 broadcast use lemma_mul_is_associative;
+            broadcast use lemma_mul_is_commutative;
                 }
                 // Rearrange using commutativity and combine like powers of 2
                 a0*a0 + 
@@ -648,6 +649,7 @@ verus! {
                 (a1*a4*pow2(52)*pow2(208) + a4*a1*pow2(208)*pow2(52)) + (a2*a3*pow2(104)*pow2(156) + a3*a2*pow2(156)*pow2(104)) +
                 a3*a3*pow2(156)*pow2(156) + (a2*a4*pow2(104)*pow2(208) + a4*a2*pow2(208)*pow2(104)) +
                 (a3*a4*pow2(156)*pow2(208) + a4*a3*pow2(208)*pow2(156)) + a4*a4*pow2(208)*pow2(208); {
+            broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
                     // Combine powers using pow2 arithmetic and factor out common terms
 

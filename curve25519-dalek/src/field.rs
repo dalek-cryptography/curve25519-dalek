@@ -25,6 +25,8 @@
 
 #![allow(unused_qualifications)]
 
+use core::iter::once;
+
 use cfg_if::cfg_if;
 
 use subtle::Choice;
@@ -357,99 +359,36 @@ impl FieldElement {
     /// Perform hashing to a [`FieldElement`], per the
     /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
     /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    /// elements of `msg`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
     ///
     /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`.
-    /// If COUNT > 2.
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2`.
     pub fn hash_to_field<D, const COUNT: usize>(
-        bytes: &[&[u8]],
+        msg: &[&[u8]],
         domain_sep: &[&[u8]],
     ) -> [Self; COUNT]
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
-        // We only use `hash_to_field` for Elligator2, which uses COUNT <= 2. We use
-        // that to statically allocated the array of output hash bytes, and therefore
-        // we run a runtime check to ensure it.
-        // This could be generalised if we require feature "alloc" for hash_to_curve.
+        // We only use `hash_to_field` for Elligator2, which uses COUNT <= 2
         assert!(COUNT <= 2);
 
-        let count: u16 = COUNT as u16;
-
-        // §5.2, we only generate count * m * L = COUNT * 1 * (256 + 128)/8
-        let len_in_bytes = count * 48;
-        let ell = (len_in_bytes as usize).div_ceil(D::output_size());
-
-        assert!(ell <= 255);
-
-        let l_i_b_str = len_in_bytes.to_be_bytes();
-        let z_pad = Array::<u8, D::BlockSize>::default();
-
-        let mut hasher = D::new().chain_update(z_pad);
-
-        for slice in bytes {
-            hasher = hasher.chain_update(slice);
-        }
-
-        hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
-
-        let mut domain_sep_len = 0usize;
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice);
-            domain_sep_len += slice.len();
-        }
-
-        let domain_sep_len = u8::try_from(domain_sep_len)
-            .expect("Unexpected overflow from domain separator's size.");
-        assert_ne!(
-            domain_sep_len, 0,
-            "Domain separator MUST have nonzero length."
-        );
-
-        // We statically allocate `hash_outputs` to its maximum permitted length.
-        let mut hash_outputs = [Array::<u8, D::OutputSize>::default(); 48 * 2];
-        let b_0 = hasher.chain_update([domain_sep_len]).finalize();
-
-        let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
-
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice)
-        }
-
-        hash_outputs[0] = hasher.chain_update([domain_sep_len]).finalize();
-
-        for i in 2..=ell {
-            let mut xor_bs = b_0;
-            xor_bs
-                .as_mut_slice()
-                .iter_mut()
-                .zip(hash_outputs[i - 2].as_slice())
-                .for_each(|(l, r)| *l ^= *r);
-
-            let mut hasher = D::new().chain_update(xor_bs).chain_update([i as u8]);
-
-            for slice in domain_sep {
-                hasher = hasher.chain_update(slice)
-            }
-
-            hash_outputs[i - 1] = hasher.chain_update([domain_sep_len]).finalize();
-        }
-
-        let concatenated_outputs: &[u8] = unsafe {
-            core::slice::from_raw_parts(
-                hash_outputs.as_ptr() as *const u8,
-                48 * 2 * D::output_size(),
-            )
-        };
+        // §5.2, we generate count * m * L = COUNT * 1 * (256 + 128)/8 bytes
+        let len_in_bytes = COUNT * 48;
+        // Buffer should hold however many digests we need to produce len_in_bytes bytes.
+        // len_in_bytes is at most 2*48=96, and the digest is 64B. So that's 2 digests, or 128B
+        let mut buf = [0u8; 128];
+        // We can call this without worrying about panics: len_in_bytes is at most 96, and buf is
+        // bigger than it. Further, if `domain_sep` is too large, that's also a panic condition of
+        // this function so it's fine
+        let uniform_bytes = expand_msg_xmd::<D>(msg, domain_sep, &mut buf, len_in_bytes);
 
         let mut result = [FieldElement::ONE; COUNT];
-
         for i in 0..COUNT {
             let mut bytes_wide = [0u8; 64];
-            bytes_wide[..48].copy_from_slice(&concatenated_outputs[48 * i..48 * (i + 1)]);
+            bytes_wide[..48].copy_from_slice(&uniform_bytes[48 * i..48 * (i + 1)]);
             bytes_wide[..48].reverse();
 
             result[i] = FieldElement::from_bytes_wide(&bytes_wide);
@@ -457,6 +396,91 @@ impl FieldElement {
 
         result
     }
+}
+
+/// Hashes the concatenation of the elements of `msg` with domain separator equal to the
+/// concatenation of `domain_sep`. The output is an `outlen`-length slice into `buf`. Follows
+/// https://www.rfc-editor.org/rfc/rfc9380.html#section-5.3.1
+///
+/// # Panics
+/// Panics if the domain separator is empty, if the total length of the domain separator is more
+/// than 255 bytes, if `outlen` is more than `255 * D::output_size()`, if `outlen is more than
+/// 65535, or if `dst.len() < outlen`.
+#[cfg(feature = "digest")]
+fn expand_msg_xmd<'a, D>(
+    msg: &[&[u8]],
+    domain_sep: &[&[u8]],
+    buf: &'a mut [u8],
+    outlen: usize,
+) -> &'a [u8]
+where
+    D: BlockSizeUser + Default + FixedOutput + HashMarker,
+{
+    // The notation we use in this function is the same as in the spec
+    let len_in_bytes = u16::try_from(outlen).expect("outlen must not exceed 65535");
+
+    assert!(buf.len() >= outlen);
+    let ell = u8::try_from((len_in_bytes as usize).div_ceil(D::output_size()))
+        .expect("output length cannot exceed 255 times digest size");
+    let domain_sep_len = u8::try_from(domain_sep.iter().map(|c| c.len()).sum::<usize>())
+        .expect("unexpected overflow from domain separator's size.");
+    assert_ne!(
+        domain_sep_len, 0,
+        "domain separator MUST have nonzero length."
+    );
+
+    let domain_sep_len_slice = &[domain_sep_len][..];
+    let dst_prime = domain_sep.iter().copied().chain(once(domain_sep_len_slice));
+    let z_pad = Array::<u8, D::BlockSize>::default();
+    let l_i_b_str = len_in_bytes.to_be_bytes();
+
+    // Collect the components of msg_prime
+    let msg_prime = once(z_pad.as_slice())
+        .chain(msg.iter().copied())
+        .chain(once(l_i_b_str.as_slice()))
+        .chain(once(&[0u8][..]))
+        .chain(dst_prime.clone());
+    // Hash all of msg_prime
+    let b_0 = msg_prime
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+
+    // Collect the input components for the b_1 hash
+    let b_1_input = once(b_0.as_slice())
+        .chain(once(&[1u8][..]))
+        .chain(dst_prime.clone());
+    let b_1 = b_1_input
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+    // Write b_1 to the output buffer
+    buf[..D::output_size()].copy_from_slice(&b_1);
+
+    for i in 2..=ell {
+        // Get the last digest we produced
+        let i_ = i as usize;
+        let last_b = &buf[(i_ - 2) * D::output_size()..(i_ - 1) * D::output_size()];
+        // XOR it with b_0
+        let mut xor_bs = b_0.clone();
+        xor_bs
+            .as_mut_slice()
+            .iter_mut()
+            .zip(last_b)
+            .for_each(|(l, r)| *l ^= *r);
+
+        // Hash (b_0 ^ b_{i-1}) || i || dst_prime
+        let i_slice = &[i][..];
+        let b_i_input = once(xor_bs.as_slice())
+            .chain(once(i_slice))
+            .chain(dst_prime.clone());
+        let b_i = b_i_input
+            .fold(D::new(), |h, slice| h.chain_update(slice))
+            .finalize();
+
+        // Write b_i to the output buffer
+        buf[(i_ - 1) * D::output_size()..i_ * D::output_size()].copy_from_slice(&b_i);
+    }
+
+    &buf[..outlen]
 }
 
 #[cfg(test)]

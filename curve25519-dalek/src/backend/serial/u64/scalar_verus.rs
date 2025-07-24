@@ -153,8 +153,36 @@ verus! {
                   ) * pow2(52)
                  ) * pow2(52)
                 ) * pow2(52));
+
+            // Now assert the same thing but with limbs[i] as nat instead of seq[i]
+            assert(seq_to_nat(seq) == 
+                (limbs[0] as nat) + 
+                ((limbs[1] as nat) + 
+                 ((limbs[2] as nat) + 
+                  ((limbs[3] as nat) + 
+                   ((limbs[4] as nat) + 
+                    ((limbs[5] as nat) + 
+                     ((limbs[6] as nat) + 
+                      ((limbs[7] as nat) + 
+                       (limbs[8] as nat) * pow2(52)
+                      ) * pow2(52)
+                     ) * pow2(52)
+                    ) * pow2(52)
+                   ) * pow2(52)
+                  ) * pow2(52)
+                 ) * pow2(52)
+                ) * pow2(52));
             
-            assume(false);
+            lemma_pow2_adds(52, 52);
+            lemma_pow2_adds(52, 104);
+            lemma_pow2_adds(52, 156);
+            lemma_pow2_adds(52, 208);
+            lemma_pow2_adds(52, 260);
+            lemma_pow2_adds(52, 312);
+            lemma_pow2_adds(52, 364);
+            
+            broadcast use group_mul_is_commutative_and_distributive;
+            broadcast use lemma_mul_is_associative;
         }
 
         pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {

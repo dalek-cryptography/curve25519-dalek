@@ -141,25 +141,7 @@ verus! {
                 seq_to_nat(seq); {
                     reveal_with_fuel(seq_to_nat, 10);
                 }
-                seq[0] + 
-                (seq[1] + 
-                 (seq[2] + 
-                  (seq[3] + 
-                   (seq[4] + 
-                    (seq[5] + 
-                     (seq[6] + 
-                      (seq[7] + 
-                       seq[8] * pow2(52)
-                      ) * pow2(52)
-                     ) * pow2(52)
-                    ) * pow2(52)
-                   ) * pow2(52)
-                  ) * pow2(52)
-                 ) * pow2(52)
-                ) * pow2(52); {
-                    // Replace seq[i] with (limbs[i] as nat)
-                }
-                (limbs[0] as nat) + 
+                (limbs[0] as nat) +
                 ((limbs[1] as nat) + 
                  ((limbs[2] as nat) + 
                   ((limbs[3] as nat) + 

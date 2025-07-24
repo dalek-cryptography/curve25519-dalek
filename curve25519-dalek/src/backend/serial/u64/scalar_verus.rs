@@ -157,7 +157,6 @@ verus! {
                   ) * pow2(52)
                  ) * pow2(52)
                 ) * pow2(52); {
-                    // Distribute and use power addition lemmas
 
 
             lemma_pow2_adds(52, 52);

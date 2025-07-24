@@ -85,16 +85,16 @@ verus! {
 
         pub open spec fn slice_to_nat(limbs: &[u64]) -> nat
         {
-            seq_to_nat(limbs@)
+            seq_to_nat(limbs@.map(|i, x| x as nat))
         }
 
-        pub open spec fn seq_to_nat(limbs: Seq<u64>) -> nat
+        pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
         decreases limbs.len()
         {
             if limbs.len() == 0 {
                 0
             } else {
-                (limbs[0] as nat) + seq_to_nat(limbs.subrange(1 as int, limbs.len() as int)) * pow2(64)
+                limbs[0] + seq_to_nat(limbs.subrange(1 as int, limbs.len() as int)) * pow2(64)
             }
         }
 

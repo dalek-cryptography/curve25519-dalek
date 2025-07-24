@@ -103,18 +103,6 @@ verus! {
             }
         }
 
-        // pub open spec fn to_nat_gen<T>(limbs: &[T], num_limbs: int, bits_per_limb: int) -> nat
-        // where
-        //     T: core::marker::Copy + Into<nat>
-        // decreases num_limbs
-        // {
-        //     if num_limbs <= 0 {
-        //         0
-        //     } else {
-        //         let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-        //         limb_value + to_nat_gen(limbs, num_limbs - 1, bits_per_limb)
-        //     }
-        // }
 
 
 

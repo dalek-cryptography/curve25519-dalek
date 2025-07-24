@@ -88,6 +88,11 @@ verus! {
             seq_to_nat(limbs@.map(|i, x| x as nat))
         }
 
+        pub open spec fn slice_to_nat64(limbs: &[u64]) -> nat
+        {
+            seq_to_nat(limbs@.map(|i, x| x as nat))
+        }
+
         pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
         decreases limbs.len()
         {
@@ -168,6 +173,43 @@ verus! {
                 broadcast use lemma_mul_is_associative;
                 }
                 nine_limbs_to_nat_direct(limbs);
+            }
+        }
+
+        proof fn lemma_five_limbs_equals_slice_to_nat64(limbs: &[u64; 5])
+        ensures 
+            to_nat_direct(*limbs) == slice_to_nat64(limbs)
+        {
+            let seq = limbs@.map(|i, x| x as nat);
+
+            calc! {
+                (==)
+                slice_to_nat64(limbs); {
+                }
+                seq_to_nat(seq); {
+                    reveal_with_fuel(seq_to_nat, 6);
+                }
+                (limbs[0] as nat) +
+                ((limbs[1] as nat) + 
+                 ((limbs[2] as nat) + 
+                  ((limbs[3] as nat) + 
+                   (limbs[4] as nat) * pow2(52)
+                  ) * pow2(52)
+                 ) * pow2(52)
+                ) * pow2(52); {
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(104, 52);
+                lemma_pow2_adds(156, 52);
+                broadcast use group_mul_is_distributive;
+                broadcast use lemma_mul_is_associative;
+                }
+                (limbs[0] as nat) +
+                pow2(52) * (limbs[1] as nat) +
+                pow2(104) * (limbs[2] as nat) +
+                pow2(156) * (limbs[3] as nat) +
+                pow2(208) * (limbs[4] as nat); {
+                }
+                to_nat_direct(*limbs);
             }
         }
 

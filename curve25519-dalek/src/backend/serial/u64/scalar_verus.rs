@@ -158,12 +158,6 @@ verus! {
                  ) * pow2(52)
                 ) * pow2(52); {
                 lemma_pow2_adds(52, 52);
-                lemma_pow2_adds(52, 104);
-                lemma_pow2_adds(52, 156);
-                lemma_pow2_adds(52, 208);
-                lemma_pow2_adds(52, 260);
-                lemma_pow2_adds(52, 312);
-                lemma_pow2_adds(52, 364);
 
                 lemma_pow2_adds(104, 52);
                 lemma_pow2_adds(156, 52);
@@ -172,7 +166,6 @@ verus! {
                 lemma_pow2_adds(312, 52);
                 lemma_pow2_adds(364, 52);
                 broadcast use group_mul_is_distributive;
-                broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
                 }
                 nine_limbs_to_nat_direct(limbs);

@@ -156,11 +156,6 @@ verus! {
             (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
         }
 
-        // TODO vstd defines wrapping sub using a conditional subtraction,
-        // which is maybe easier to reason about
-        pub assume_specification[u64::wrapping_mul](x: u64, y: u64) -> u64
-            returns ((x as nat * y as nat) % ((1u64 << 64) as nat)) as u64;
-
         /// u64 * u64 = u128 multiply helper
         #[inline(always)]
         fn m(x: u64, y: u64) -> (z: u128)

@@ -83,6 +83,37 @@ verus! {
             }
         }
 
+        pub open spec fn slice_to_nat(limbs: &[u64]) -> nat
+        {
+            seq_to_nat(limbs@)
+        }
+
+        pub open spec fn seq_to_nat(limbs: Seq<u64>) -> nat
+        decreases limbs.len()
+        {
+            if limbs.len() == 0 {
+                0
+            } else {
+                (limbs[0] as nat) + seq_to_nat(limbs.subrange(1 as int, limbs.len() as int)) * pow2(64)
+            }
+        }
+
+        // pub open spec fn to_nat_gen<T>(limbs: &[T], num_limbs: int, bits_per_limb: int) -> nat
+        // where
+        //     T: core::marker::Copy + Into<nat>
+        // decreases num_limbs
+        // {
+        //     if num_limbs <= 0 {
+        //         0
+        //     } else {
+        //         let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
+        //         limb_value + to_nat_gen(limbs, num_limbs - 1, bits_per_limb)
+        //     }
+        // }
+
+
+
+
         // TODO There should be an indirect version
         pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
             (limbs[0] as nat) +

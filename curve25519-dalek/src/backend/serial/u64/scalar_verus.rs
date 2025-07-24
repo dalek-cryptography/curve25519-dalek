@@ -83,6 +83,27 @@ verus! {
             }
         }
 
+        // TODO There should be an indirect version
+        pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
+            (limbs[0] as nat) +
+            (limbs[1] as nat) * pow2(52) +
+            (limbs[2] as nat) * pow2(104) +
+            (limbs[3] as nat) * pow2(156) +
+            (limbs[4] as nat) * pow2(208) +
+            (limbs[5] as nat) * pow2(260) +
+            (limbs[6] as nat) * pow2(312) +
+            (limbs[7] as nat) * pow2(364) +
+            (limbs[8] as nat) * pow2(416)
+        }
+
+        pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {
+            (limbs[0] as nat) +
+            pow2(52) * (limbs[1] as nat) +
+            pow2(104) * (limbs[2] as nat) +
+            pow2(156) * (limbs[3] as nat) +
+            pow2(208) * (limbs[4] as nat)
+        }
+
         pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
         decreases num_limbs
         {
@@ -425,10 +446,12 @@ verus! {
     /// Compute `a * b`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of z[*] calculations
-    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9]
+    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> (z: [u128; 9])
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(b.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -469,15 +492,35 @@ verus! {
         z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);
         z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
 
+        proof {
+            assert(to_nat_direct(a.limbs) * to_nat_direct(b.limbs) == nine_limbs_to_nat_direct(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
+
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+        }
+
         z
     }
 
     /// Compute `a^2`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of calculations
-    pub (crate) fn square_internal(a: &Scalar52) -> [u128; 9]
+    pub (crate) fn square_internal(a: &Scalar52) -> (z: [u128; 9])
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+    ensures
+        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(a.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -521,6 +564,26 @@ verus! {
         z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);
         z[7] =                                                 m(a.limbs[3], a.limbs[4]) * 2;
         z[8] =                                                                 m(a.limbs[4], a.limbs[4]);
+
+        proof {
+
+            assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
+
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+
+        }
 
         z
     }

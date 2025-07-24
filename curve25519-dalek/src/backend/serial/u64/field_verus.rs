@@ -85,8 +85,7 @@ pub proof fn shifted_lt(v: u64)
         v >> 51 < 1u64 << 13
 {
     shift_is_pow2(13);
-    lemma_u64_shr_is_div(u64::MAX, 51);
-    lemma_u64_shr_is_div(v, 51);
+    broadcast use lemma_u64_shr_is_div;
     lemma_pow2_pos(51);
     lemma_div_is_ordered(v as int, u64::MAX as int, pow2(51) as int);
     assert(u64::MAX >> 51 < 1u64 << 13) by (compute);
@@ -180,10 +179,7 @@ pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
         pow2(153) * a[3] - pow2(153) * b[3] +
         pow2(204) * a[4] - pow2(204) * b[4]
     ) by {
-        lemma_mul_is_distributive_sub(pow2(51) as int, a[1] as int, b[1] as int);
-        lemma_mul_is_distributive_sub(pow2(102) as int, a[2] as int, b[2] as int);
-        lemma_mul_is_distributive_sub(pow2(153) as int, a[3] as int, b[3] as int);
-        lemma_mul_is_distributive_sub(pow2(204) as int, a[4] as int, b[4] as int);
+        broadcast use lemma_mul_is_distributive_sub;
     }
 }
 
@@ -370,10 +366,7 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * a2 + pow2(153) * b3 +
         pow2(204) * a3 + pow2(204) * b4
     ) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
-        lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
-        lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
-        lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
+        broadcast use lemma_mul_is_distributive_add;
     }
 
     // factor out
@@ -397,9 +390,7 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * (b3 + pow2(51) * a3) +
         pow2(204) * b4 + 19 * a4
     ) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) * a1 as int, b1 as int);
-        lemma_mul_is_distributive_add(pow2(102) as int, pow2(51) * a2 as int, b2 as int);
-        lemma_mul_is_distributive_add(pow2(153) as int, pow2(51) * a3 as int, b3 as int);
+        broadcast use lemma_mul_is_distributive_add;
     }
 
     // invoke div/mod identity

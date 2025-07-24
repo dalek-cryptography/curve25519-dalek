@@ -104,3 +104,31 @@ After proving functions completely, clean up redundant assertions before submitt
 - Individual bounds like `assert(m_term1 < (1u128 << 104))` where `m_term1 = m(...)` and the `m()` function postcondition already guarantees the bound
 - Intermediate steps in multi-step calculations where only the final result matters
 - Duplicate calculations that Verus can derive automatically
+
+### 12. Using the Verus Cleaner Script
+
+The `verus_cleaner.py` script automates the process of testing whether proof statements are necessary or redundant. It systematically removes each matching statement, runs verification, and reports which ones can be safely removed.
+
+It must be run from the root `curve25519-dalek`, not from `curve25519-dalek/curve25519-dalek`.
+
+#### Basic Usage
+
+```bash
+python3 scripts/verus_cleaner.py <file_path> <start_line> <end_line> '<pattern>'
+```
+
+- `end_line` is inclusive
+- `pattern`: Regex pattern to match statements to test
+
+#### Examples
+
+**Clean broadcasts and lemmas:**
+```bash
+python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'broadcast|lemma'
+```
+
+**Clean assert statements:**
+```bash
+python3 scripts/verus_cleaner.py src/backend/serial/u64/field_verus.rs 150 200 'assert'
+```
+

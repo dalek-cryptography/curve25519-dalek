@@ -25,8 +25,6 @@
 
 #![allow(unused_qualifications)]
 
-use core::iter::once;
-
 use cfg_if::cfg_if;
 
 use subtle::Choice;
@@ -357,10 +355,10 @@ impl FieldElement {
 
     #[cfg(feature = "digest")]
     /// Perform hashing to a [`FieldElement`], per the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
-    /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `msg`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
+    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification,
+    /// using hash-based expansion (not XOF). The input is the concatenation of the elements of
+    /// `msg`. Likewise for the domain separator with `domain_sep`. At least one element of
+    /// `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
     ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2`.
@@ -416,6 +414,8 @@ fn expand_msg_xmd<'a, D>(
 where
     D: BlockSizeUser + Default + FixedOutput + HashMarker,
 {
+    use core::iter::once;
+
     // The notation we use in this function is the same as in the spec
     let len_in_bytes = u16::try_from(outlen).expect("outlen must not exceed 65535");
 

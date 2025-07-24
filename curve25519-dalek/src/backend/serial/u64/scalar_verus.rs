@@ -625,7 +625,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     ensures
-        slice_to_nat128(&z) == to_nat_direct(a.limbs) * to_nat_direct(a.limbs),
+        slice_to_nat128(&z) == slice_to_nat64(&a.limbs) * slice_to_nat64(&a.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -688,6 +688,7 @@ verus! {
                 lemma_pow2_adds(208, 208);
             };
             lemma_nine_limbs_equals_slice_to_nat128(&z);
+            lemma_five_limbs_equals_slice_to_nat64(&a.limbs);
         }
 
         z

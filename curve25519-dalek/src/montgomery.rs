@@ -70,6 +70,20 @@ use subtle::ConstantTimeEq;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+// We need the const 2^((p+3)/8) for elligator_encode. These defs are checked in tests::consts()
+#[cfg(all(curve25519_dalek_bits = "32", feature = "digest"))]
+const FE_C2: FieldElement = FieldElement::from_limbs([
+    34513073, 25610706, 9377949, 3500415, 12389472, 33281959, 41962654, 31548777, 326685, 11406482,
+]);
+#[cfg(all(curve25519_dalek_bits = "64", feature = "digest"))]
+const FE_C2: FieldElement = FieldElement::from_limbs([
+    1718705420411057,
+    234908883556509,
+    2233514472574048,
+    2117202627021982,
+    765476049583133,
+]);
+
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Default)]
@@ -262,10 +276,11 @@ impl MontgomeryPoint {
 pub(crate) fn elligator_encode(
     u: &FieldElement,
 ) -> (FieldElement, FieldElement, FieldElement, FieldElement) {
+    // We follow https://www.rfc-editor.org/rfc/rfc9380.html#appendix-G.2.1
+
     use core::ops::Neg;
     let one = FieldElement::ONE;
-    let two = &one + &one;
-    let c2 = &two * &(two.pow_p58());
+    let c2 = FE_C2;
 
     // 1.  tv1 = u^2
     // 2.  tv1 = 2 * tv1
@@ -339,7 +354,6 @@ pub(crate) fn elligator_encode(
     // 36.   y = CMOV(y2, y1, e3)
     let y = FieldElement::conditional_select(&y2, &y1, e3);
     // 37.  e4 = sgn0(y) == 1
-    // TODO: check that this step is correct
     let e4 = y.is_negative();
     // 38.   y = CMOV(y, -y, e3 XOR e4)
     let y = FieldElement::conditional_select(&y, &y.neg(), e3 ^ e4);
@@ -732,5 +746,17 @@ mod test {
         let (un, ud, ..) = elligator_encode(&fe);
         let u = &un * &ud.invert();
         assert_eq!(u.to_bytes(), zero);
+    }
+
+    // Check that FE_C2 is correctly defined
+    #[test]
+    #[cfg(feature = "digest")]
+    fn c2() {
+        let one = FieldElement::ONE;
+        let two = &one + &one;
+        // c2 = 2^((p+3)/8) = 2^((p-5)/8 + 8/8) = 2*2^((p-5)/8)
+        let c2 = &two * &(two.pow_p58());
+
+        assert_eq!(c2, FE_C2);
     }
 }

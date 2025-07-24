@@ -158,7 +158,6 @@ verus! {
                  ) * pow2(52)
                 ) * pow2(52); {
                 lemma_pow2_adds(52, 52);
-
                 lemma_pow2_adds(104, 52);
                 lemma_pow2_adds(156, 52);
                 lemma_pow2_adds(208, 52);

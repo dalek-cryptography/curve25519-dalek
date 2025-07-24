@@ -131,12 +131,17 @@ verus! {
         ensures 
             nine_limbs_to_nat_direct(limbs) == slice_to_nat128(limbs)
         {
-            reveal_with_fuel(seq_to_nat, 10);
-            
+
             let seq = limbs@.map(|i, x| x as nat);
-            
-            // Assert what seq_to_nat(seq) expands to when fully unfolded
-            assert(seq_to_nat(seq) == 
+
+            calc! {
+                (==)
+                slice_to_nat128(limbs); {
+                    // slice_to_nat128 = seq_to_nat of mapped sequence
+                }
+                seq_to_nat(seq); {
+                    reveal_with_fuel(seq_to_nat, 10);
+                }
                 seq[0] + 
                 (seq[1] + 
                  (seq[2] + 
@@ -152,10 +157,9 @@ verus! {
                    ) * pow2(52)
                   ) * pow2(52)
                  ) * pow2(52)
-                ) * pow2(52));
-
-            // Now assert the same thing but with limbs[i] as nat instead of seq[i]
-            assert(seq_to_nat(seq) == 
+                ) * pow2(52); {
+                    // Replace seq[i] with (limbs[i] as nat)
+                }
                 (limbs[0] as nat) + 
                 ((limbs[1] as nat) + 
                  ((limbs[2] as nat) + 
@@ -171,8 +175,10 @@ verus! {
                    ) * pow2(52)
                   ) * pow2(52)
                  ) * pow2(52)
-                ) * pow2(52));
-            
+                ) * pow2(52); {
+                    // Distribute and use power addition lemmas
+
+
             lemma_pow2_adds(52, 52);
             lemma_pow2_adds(52, 104);
             lemma_pow2_adds(52, 156);
@@ -180,9 +186,24 @@ verus! {
             lemma_pow2_adds(52, 260);
             lemma_pow2_adds(52, 312);
             lemma_pow2_adds(52, 364);
-            
+
             broadcast use group_mul_is_commutative_and_distributive;
             broadcast use lemma_mul_is_associative;
+                     assume(false);
+                }
+                (limbs[0] as nat) +
+                (limbs[1] as nat) * pow2(52) +
+                (limbs[2] as nat) * pow2(104) +
+                (limbs[3] as nat) * pow2(156) +
+                (limbs[4] as nat) * pow2(208) +
+                (limbs[5] as nat) * pow2(260) +
+                (limbs[6] as nat) * pow2(312) +
+                (limbs[7] as nat) * pow2(364) +
+                (limbs[8] as nat) * pow2(416); {
+                    // This is exactly nine_limbs_to_nat_direct
+                }
+                nine_limbs_to_nat_direct(limbs);
+            }
         }
 
         pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {

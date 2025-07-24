@@ -137,7 +137,6 @@ verus! {
             calc! {
                 (==)
                 slice_to_nat128(limbs); {
-                    // slice_to_nat128 = seq_to_nat of mapped sequence
                 }
                 seq_to_nat(seq); {
                     reveal_with_fuel(seq_to_nat, 10);

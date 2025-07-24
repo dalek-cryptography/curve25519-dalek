@@ -196,17 +196,6 @@ verus! {
             broadcast use group_mul_is_commutative_and_distributive;
             broadcast use lemma_mul_is_associative;
                 }
-                (limbs[0] as nat) +
-                (limbs[1] as nat) * pow2(52) +
-                (limbs[2] as nat) * pow2(104) +
-                (limbs[3] as nat) * pow2(156) +
-                (limbs[4] as nat) * pow2(208) +
-                (limbs[5] as nat) * pow2(260) +
-                (limbs[6] as nat) * pow2(312) +
-                (limbs[7] as nat) * pow2(364) +
-                (limbs[8] as nat) * pow2(416); {
-                    // This is exactly nine_limbs_to_nat_direct
-                }
                 nine_limbs_to_nat_direct(limbs);
             }
         }

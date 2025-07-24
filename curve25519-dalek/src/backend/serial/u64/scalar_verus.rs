@@ -171,7 +171,8 @@ verus! {
                 lemma_pow2_adds(260, 52);
                 lemma_pow2_adds(312, 52);
                 lemma_pow2_adds(364, 52);
-                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use group_mul_is_distributive;
+                broadcast use lemma_mul_is_commutative;
                 broadcast use lemma_mul_is_associative;
                 }
                 nine_limbs_to_nat_direct(limbs);

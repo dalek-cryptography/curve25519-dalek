@@ -10,7 +10,7 @@ import shutil
 import uuid
 
 
-def run_verus_verification(timeout):
+def run_verus_verification():
     """
     Run Verus verification as described in CLAUDE.md.
     Returns True if verification passes, False otherwise.
@@ -22,11 +22,11 @@ def run_verus_verification(timeout):
             cwd='curve25519-dalek',
             capture_output=True,
             text=True,
-            timeout=timeout
+            timeout=60  # 60 second timeout
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:
-        print(f"Verus verification timed out after {timeout} seconds", file=sys.stderr)
+        print("Verus verification timed out", file=sys.stderr)
         return False
     except Exception as e:
         print(f"Error running Verus verification: {e}", file=sys.stderr)
@@ -55,7 +55,7 @@ def find_matching_lines(lines, start_line, end_line, regex_pattern):
     return matching_lines
 
 
-def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
+def clean_statements(file_path, start_line, end_line, regex_pattern):
     """
     Systematically test removal of statements using Verus verification.
     
@@ -64,7 +64,6 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
         start_line: Starting line number (1-indexed)  
         end_line: Ending line number (1-indexed, inclusive)
         regex_pattern: Regex pattern to match statements
-        timeout: Timeout in seconds for Verus verification (default: 60)
     """
     # Validate file exists
     if not os.path.exists(file_path):
@@ -141,7 +140,7 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
         
         # Run Verus verification
         print("  Running Verus verification...")
-        if run_verus_verification(timeout):
+        if run_verus_verification():
             print(f"  ✓ Verification passed - statement at line {line_num} is redundant")
             removed_statements.append((line_num, line_content))
             # Keep the file without this statement - update our working copy
@@ -192,11 +191,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage:
-  scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern> [--timeout SECONDS]
+  scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern>
 
 Examples:
   scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/field_verus.rs 100 200 '^[^/]*lemma'
-  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/scalar_verus.rs 50 150 "assert" --timeout 120
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/scalar_verus.rs 50 150 "assert"
   
 - For each matching statement in the range:
   1. Remove the statement from the file
@@ -210,11 +209,10 @@ Examples:
     parser.add_argument('start_line', type=int, help='Starting line number (1-indexed)')
     parser.add_argument('end_line', type=int, help='Ending line number (1-indexed, inclusive)')
     parser.add_argument('regex', help='Regex pattern to match statements')
-    parser.add_argument('--timeout', type=int, default=60, help='Timeout in seconds for Verus verification (default: 60)')
     
     args = parser.parse_args()
     
-    success = clean_statements(args.file, args.start_line, args.end_line, args.regex, args.timeout)
+    success = clean_statements(args.file, args.start_line, args.end_line, args.regex)
     sys.exit(0 if success else 1)
 
 

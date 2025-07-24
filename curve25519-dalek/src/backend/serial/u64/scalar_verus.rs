@@ -127,6 +127,36 @@ verus! {
             (limbs[8] as nat) * pow2(416)
         }
 
+        proof fn lemma_nine_limbs_equals_slice_to_nat128(limbs: &[u128; 9])
+        ensures 
+            nine_limbs_to_nat_direct(limbs) == slice_to_nat128(limbs)
+        {
+            reveal_with_fuel(seq_to_nat, 10);
+            
+            let seq = limbs@.map(|i, x| x as nat);
+            
+            // Assert what seq_to_nat(seq) expands to when fully unfolded
+            assert(seq_to_nat(seq) == 
+                seq[0] + 
+                (seq[1] + 
+                 (seq[2] + 
+                  (seq[3] + 
+                   (seq[4] + 
+                    (seq[5] + 
+                     (seq[6] + 
+                      (seq[7] + 
+                       seq[8] * pow2(52)
+                      ) * pow2(52)
+                     ) * pow2(52)
+                    ) * pow2(52)
+                   ) * pow2(52)
+                  ) * pow2(52)
+                 ) * pow2(52)
+                ) * pow2(52));
+            
+            assume(false);
+        }
+
         pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {
             (limbs[0] as nat) +
             pow2(52) * (limbs[1] as nat) +

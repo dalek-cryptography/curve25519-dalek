@@ -187,9 +187,14 @@ verus! {
             lemma_pow2_adds(52, 312);
             lemma_pow2_adds(52, 364);
 
+            lemma_pow2_adds(104, 52);
+            lemma_pow2_adds(156, 52);
+            lemma_pow2_adds(208, 52);
+            lemma_pow2_adds(260, 52);
+            lemma_pow2_adds(312, 52);
+            lemma_pow2_adds(364, 52);
             broadcast use group_mul_is_commutative_and_distributive;
             broadcast use lemma_mul_is_associative;
-                     assume(false);
                 }
                 (limbs[0] as nat) +
                 (limbs[1] as nat) * pow2(52) +

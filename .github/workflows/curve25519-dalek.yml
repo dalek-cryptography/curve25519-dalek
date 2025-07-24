@@ -131,6 +131,7 @@ jobs:
     - name: Install Verus
       run: |
         LATEST_RELEASE=$(curl -s https://api.github.com/repos/verus-lang/verus/releases/latest | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')
+        echo $LATEST_RELEASE
         DOWNLOAD_URL="https://github.com/verus-lang/verus/releases/download/${LATEST_RELEASE}/verus-${LATEST_RELEASE#release/}-x86-linux.zip"
         wget $DOWNLOAD_URL
         unzip verus-${LATEST_RELEASE#release/}-x86-linux.zip

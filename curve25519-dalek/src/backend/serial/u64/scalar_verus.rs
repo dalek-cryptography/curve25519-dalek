@@ -68,6 +68,7 @@ verus! {
         }
         */
 
+        // TODO Remove these?
         // Generic function to convert array of integers to natural number
         // Takes: array of integers, number of limbs, bits per limb
         // Note: Generic types not supported in Verus yet.
@@ -556,6 +557,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
+            // TODO Update this one
         nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(b.limbs),
     {
         let mut z = [0u128; 9];
@@ -625,6 +627,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     ensures
+        // TODO These functions need better names
         slice_to_nat128(&z) == slice_to_nat64(&a.limbs) * slice_to_nat64(&a.limbs),
     {
         let mut z = [0u128; 9];

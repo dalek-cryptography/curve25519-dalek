@@ -120,11 +120,14 @@ python3 scripts/verus_cleaner.py <file_path> <start_line> <end_line> '<pattern>'
 - `end_line` is inclusive
 - `pattern`: Regex pattern to match statements to test
 
+**Important**: Due to shell interpretation issues, pipe characters (`|`) in regex patterns don't work properly. Use separate commands instead:
+
 #### Examples
 
-**Clean broadcasts and lemmas:**
+**Clean broadcasts and lemmas (run separately):**
 ```bash
-python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'broadcast|lemma'
+python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'broadcast'
+python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'lemma'
 ```
 
 **Clean assert statements:**

@@ -2,13 +2,65 @@
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
+use vstd::arithmetic::power::pow;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
+use vstd::calc_macro::*;
 use vstd::prelude::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 
 verus! {
+
+// vstd does _not_ export this macro, so if we want to use it for u128 we have to ugly-copy it.
+macro_rules! lemma_shr_is_div {
+    ($name:ident, $uN:ty) => {
+        #[cfg(verus_keep_ghost)]
+        verus! {
+        #[doc = "Proof that for x and n of type "]
+        #[doc = stringify!($uN)]
+        #[doc = ", shifting x right by n is equivalent to division of x by 2^n."]
+        pub broadcast proof fn $name(x: $uN, shift: $uN)
+            requires
+                0 <= shift < <$uN>::BITS,
+            ensures
+                #[trigger] (x >> shift) == x as nat / pow2(shift as nat),
+            decreases shift,
+        {
+            reveal(pow2);
+            if shift == 0 {
+                assert(x >> 0 == x) by (bit_vector);
+                reveal(pow);
+                assert(pow2(0) == 1) by (compute_only);
+            } else {
+                assert(x >> shift == (x >> ((sub(shift, 1)) as $uN)) / 2) by (bit_vector)
+                    requires
+                        0 < shift < <$uN>::BITS,
+                ;
+                calc!{ (==)
+                    (x >> shift) as nat;
+                        {}
+                    ((x >> ((sub(shift, 1)) as $uN)) / 2) as nat;
+                        { $name(x, (shift - 1) as $uN); }
+                    (x as nat / pow2((shift - 1) as nat)) / 2;
+                        {
+                            lemma_pow2_pos((shift - 1) as nat);
+                            lemma2_to64();
+                            lemma_div_denominator(x as int, pow2((shift - 1) as nat) as int, 2);
+                        }
+                    x as nat / (pow2((shift - 1) as nat) * pow2(1));
+                        {
+                            lemma_pow2_adds((shift - 1) as nat, 1);
+                        }
+                    x as nat / pow2(shift as nat);
+                }
+            }
+        }
+        }
+    };
+}
+
+lemma_shr_is_div!(lemma_u128_shr_is_div, u128);
 
 
 /* MANUALLY moved outside and made explicit */
@@ -26,6 +78,9 @@ pub proof fn l51_bit_mask_lt()
     lemma2_to64_rest();
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
 }
+
+// ceiling(2^59.75). Needed for pow2 bounds
+pub const POW2_59_PT_75: u64 = 969487560292816560u64;
 
 // Auxiliary lemma for multiplication (of nat!)
 pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
@@ -47,6 +102,19 @@ pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
         // a2 < b2 /\ b2 > 0 ==> a2 * b1 < b2 * b1
         lemma_mul_strict_inequality(a2 as int, b2 as int, b1 as int);
     }
+}
+
+pub proof fn mul_le(a1:nat, b1:nat, a2:nat, b2:nat)
+    requires
+        a1 <= b1,
+        a2 <= b2,
+    ensures
+        a1 * a2 <= b1 * b2,
+{
+    // a1 < b1 /\ a2 > 0 ==> a1 * a2 < b1 * a2
+    lemma_mul_inequality(a1 as int, b1  as int, a2 as int);
+    // a2 < b2 /\ b2 > 0 ==> a2 * b1 < b2 * b1
+    lemma_mul_inequality(a2 as int, b2 as int, b1 as int);
 }
 
 // Auxiliary lemma for exponentiation
@@ -202,6 +270,18 @@ pub proof fn lemma_mask(bi: u64, v: u64)
 {
     l51_bit_mask_lt();
     lemma_u64_low_bits_mask_is_mod(v, 51);
+}
+
+pub proof fn lemma_mask_bound(x: u64, v: u64)
+    requires
+        x == v & LOW_51_BIT_MASK
+    ensures
+        x < (1u64 << 51)
+{
+    lemma_mask(x, v);
+    lemma_pow2_pos(51);
+    lemma_mod_division_less_than_divisor(v as int, pow2(51) as int);
+    shift_is_pow2(51);
 }
 
 // Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d
@@ -460,6 +540,30 @@ pub proof fn lemma_add_then_shift(a: u64, b: u64)
     }
 }
 
+pub proof fn lemma_shr_51_le(a: u128, b: u128)
+    requires
+        a <= b
+    ensures
+        (a >> 51) <= (b >> 51)
+{
+    lemma_pow2_pos(51);
+    lemma2_to64_rest(); // pow2(51) value
+    lemma_u128_shr_is_div(a, 51);
+    lemma_u128_shr_is_div(b, 51);
+    lemma_div_is_ordered(a as int, b as int, 51);
+}
+
+pub proof fn lemma_shr_51_fits_u64(a: u128)
+    requires
+        a <= (u64::MAX as u128) << 51
+    ensures
+        (a >> 51) <= (u64::MAX as u128)
+
+{
+    assert(((u64::MAX as u128) << 51) >> 51 == (u64::MAX as u128)) by (compute);
+    lemma_shr_51_le(a, (u64::MAX as u128) << 51);
+}
+
 /* MANUALLY moved outside, named return value */
 const fn load8_at(input: &[u8], i: usize) -> (r: u64)
     requires
@@ -480,13 +584,26 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
 /* MANUALLY moved outside */
 #[inline(always)]
 fn m(x: u64, y: u64) -> (r: u128)
-    requires
-        (x as nat) * (y as nat) < (u128::MAX as nat),
     ensures
         (r as nat) == (x as nat) * (y as nat),
+        r <= u128::MAX
+
 {
+    proof {
+        mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
+    }
     (x as u128) * (y as u128)
 }
+
+pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
+    requires
+        x < bx,
+        y < by
+    ensures
+        (x as u128) * (y as u128) < (bx as u128) * (by as u128)
+{
+    mul_lt(x as nat, bx as nat, y as nat, by as nat);
+ }
 
 pub struct FieldElement51 {
     // ADAPTED CODE LINE: we give a name to the field: "limbs"
@@ -885,22 +1002,153 @@ impl FieldElement51 {
     /// Given `k > 0`, return `self^(2^k)`.
     #[rustfmt::skip] // keep alignment of c* calculations
     pub fn pow2k(&self, mut k: u32) -> (r: FieldElement51)
+        requires
+            k > 0,
+            forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54 // 51 + b for b = 3
         ensures
-            true
+            true // No overflow
     {
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
         // debug_assert!( k > 0 );
-
-
         let mut a: [u64; 5] = self.limbs;
 
         loop
+            invariant_except_break
+                k > 0
             invariant
-                true
+                forall |i: int| 0 <= i < 5 ==> a[i] < 1u64 << 54
             decreases k
         {
             proof {
-                assume(false);
+                lemma2_to64_rest(); // pow2(51 | 54)
+                shift_is_pow2(54);
+
+                let bound = 1u64 << 54;
+                let bound19 = (19 * bound) as u64;
+                let bound_sq = 1u128 << 108;
+
+                // bv arithmetic
+                assert(19 < (1u64 << 5)) by (bit_vector);
+                assert((1u64 << 51) < (1u64 << 52)) by (bit_vector);
+                assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
+                assert((1u64 << 54) < (1u64 << 59)) by (bit_vector);
+                assert((1u64 << 54) * (1u64 << 5) == (1u64 << 59)) by (bit_vector);
+                assert(19 * bound < (1u64 << 59));
+                assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108)) by (bit_vector);
+                assert(((1u64 << 54) as u128) * ((1u64 << 59) as u128) == (1u128 << 113)) by (bit_vector);
+
+                let a3_19 = (19 * a[3]) as u64;
+                let a4_19 = (19 * a[4]) as u64;
+
+                // c0
+                let c0_0: u128 = (a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19)) as u128;
+                lemma_m(a[0], a[0], bound, bound);
+                lemma_m(a[1], a4_19, bound, bound19);
+                lemma_m(a[2], a3_19, bound, bound19);
+                // conclusion, (1 + 2 * (19 + 19)) = 77
+                assert(c0_0 < 77 * bound_sq);
+
+                // c1
+                let c1_0: u128 = (a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19)) as u128;
+                lemma_m(a[3], a3_19, bound, bound19);
+                lemma_m(a[0],  a[1], bound, bound);
+                lemma_m(a[2], a4_19, bound, bound19);
+                // conclusion, (19 + 2 * (1 + 19)) = 59
+                assert(c1_0 < 59 * bound_sq);
+
+                // c2
+                let c2_0: u128 = (a[1] *  a[1] + 2*( a[0] *  a[2] + a[4] * a3_19)) as u128;
+                lemma_m(a[1],  a[1], bound, bound);
+                lemma_m(a[0],  a[2], bound, bound);
+                lemma_m(a[4], a3_19, bound, bound19);
+                // conclusion, (1 + 2 * (1 + 19)) = 41
+                assert(c2_0 < 41 * bound_sq);
+
+                // c3
+                let c3_0: u128 = (a[4] * a4_19 + 2*( a[0] *  a[3] + a[1] *  a[2])) as u128;
+                lemma_m(a[4], a4_19, bound, bound19);
+                lemma_m(a[0],  a[3], bound, bound);
+                lemma_m(a[1],  a[2], bound, bound);
+                // conclusion, (19 + 2 * (1 + 1)) = 23
+                assert(c3_0 < 23 * bound_sq);
+
+                // c4
+                let c4_0: u128 = (a[2] *  a[2] + 2*( a[0] *  a[4] + a[1] *  a[3])) as u128;
+                lemma_m(a[2],  a[2], bound, bound);
+                lemma_m(a[0],  a[4], bound, bound);
+                lemma_m(a[1],  a[3], bound, bound);
+                // conclusion, (1 + 2 * (1 + 1)) = 5
+                assert(c4_0 < 5 * bound_sq);
+
+                assert( 77 * bound_sq <= ((u64::MAX as u128) << 51)) by (compute); // all ci_0 are then < MAX << 51
+
+                lemma_shr_51_fits_u64(c0_0);
+
+                let c1 = (c1_0 + ((c0_0 >> 51) as u64) as u128) as u128;
+                let a0_0 = (c0_0 as u64) & LOW_51_BIT_MASK;
+
+                lemma_shr_51_fits_u64(c1);
+                // a0_0 < (1u64 << 51)
+                lemma_mask_bound(a0_0, c0_0 as u64);
+
+                let c2 = (c2_0 + ((c1 >> 51) as u64) as u128) as u128;
+                let a1_0 = (c1 as u64) & LOW_51_BIT_MASK;
+
+                lemma_shr_51_fits_u64(c2);
+                // a1_0 < (1u64 << 51)
+                lemma_mask_bound(a1_0, c1 as u64);
+
+                let c3 = (c3_0 + ((c2 >> 51) as u64) as u128) as u128;
+                let a2 = (c2 as u64) & LOW_51_BIT_MASK;
+
+                lemma_shr_51_fits_u64(c3);
+                // a2 < (1u64 << 51)
+                lemma_mask_bound(a2, c2 as u64);
+
+                let c4 = (c4_0 + ((c3 >> 51) as u64) as u128) as u128;
+                let a3 = (c3 as u64) & LOW_51_BIT_MASK;
+
+                lemma_shr_51_fits_u64(c4);
+                // a3 < (1u64 << 51)
+                lemma_mask_bound(a3, c3 as u64);
+
+                let carry: u64 = (c4 >> 51) as u64;
+                let a4 = (c4 as u64) & LOW_51_BIT_MASK;
+
+                // a4 < (1u64 << 51)
+                lemma_mask_bound(a4, c4 as u64);
+
+                assert(c4 <= c4_0 + (u64::MAX as u128));
+                lemma_shr_51_le(c4, (5 * bound_sq + (u64::MAX as u128)) as u128 );
+
+                // From the comments below:
+                // c4 < 2^110.33  so that carry < 2^59.33
+                // and
+                // a[0] + carry * 19 < 2^51 + 19 * 2^59.33 < 2^63.58
+
+                // ceil(2^59.33)
+                let pow2_5933 = 724618875532318195u64;
+
+                assert((5 * (1u128 << 108) + (u64::MAX as u128)) as u128 >> 51 < (pow2_5933 as u128)) by (compute);
+                assert(carry < pow2_5933);
+
+
+                // a[0] += carry * 19 fits in u64
+                assert((1u64 << 51) + 19 * pow2_5933 <= u64::MAX) by (compute);
+                let a0_1 = (a0_0 + carry * 19) as u64;
+
+                lemma_shr_51_le(a0_1 as u128, u64::MAX as u128);
+                assert( ((u64::MAX as u128) >> 51) < (1u64 << 13) ) by (compute);
+
+                // a1_0 < (1u64 << 51)
+                assert((1u64 << 51) + (1u64 << 13) < (1u64 << 52)) by (compute);
+
+                // Now a[1] < 2^51 + 2^(64 -51) = 2^51 + 2^13 < 2^(51 + epsilon).
+                assert(a1_0 + (a0_1 >> 51) < (1u64 << 52));
+
+                let a0_2 = a0_1 & LOW_51_BIT_MASK;
+                lemma_mask_bound(a0_2, a0_1);
+
             }
             // Precondition: assume input limbs a[i] are bounded as
             //
@@ -999,13 +1247,27 @@ impl FieldElement51 {
     }
 
     /// Returns the square of this field element.
-    pub fn square(&self) -> FieldElement51 {
+    pub fn square(&self) -> (r: FieldElement51)
+        requires
+            // The precondition in pow2k loop propagates to here
+            forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54
+        ensures
+            // TODO
+            // as_nat(square(x)) = as_nat(x) * as_nat(x)
+            true
+
+    {
         self.pow2k(1)
     }
 
     /// Returns 2 times the square of this field element.
     pub fn square2(&self) -> (r: FieldElement51)
+        requires
+            // The precondition in pow2k loop propagates to here
+            forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54
         ensures
+            // TODO
+            // as_nat(square2(x)) = 2 * as_nat(x) * as_nat(x)
             true
     {
         let mut square = self.pow2k(1);

@@ -108,8 +108,7 @@ verus! {
 
 
 
-        // TODO There should be an indirect version
-        pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
+        pub open spec fn nine_limbs_to_nat(limbs: &[u128; 9]) -> nat {
             (limbs[0] as nat) +
             (limbs[1] as nat) * pow2(52) +
             (limbs[2] as nat) * pow2(104) +
@@ -123,7 +122,7 @@ verus! {
 
         proof fn lemma_nine_limbs_equals_slice_to_nat128(limbs: &[u128; 9])
         ensures 
-            nine_limbs_to_nat_direct(limbs) == slice_to_nat128(limbs)
+            nine_limbs_to_nat(limbs) == slice_to_nat128(limbs)
         {
 
             let seq = limbs@.map(|i, x| x as nat);
@@ -161,13 +160,13 @@ verus! {
                 broadcast use group_mul_is_distributive;
                 broadcast use lemma_mul_is_associative;
                 }
-                nine_limbs_to_nat_direct(limbs);
+                nine_limbs_to_nat(limbs);
             }
         }
 
         proof fn lemma_five_limbs_equals_slice_to_nat64(limbs: &[u64; 5])
         ensures 
-            to_nat_direct(*limbs) == slice_to_nat64(limbs)
+            five_limbs_to_nat(*limbs) == slice_to_nat64(limbs)
         {
             let seq = limbs@.map(|i, x| x as nat);
 
@@ -198,11 +197,11 @@ verus! {
                 pow2(156) * (limbs[3] as nat) +
                 pow2(208) * (limbs[4] as nat); {
                 }
-                to_nat_direct(*limbs);
+                five_limbs_to_nat(*limbs);
             }
         }
 
-        pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {
+        pub open spec fn five_limbs_to_nat(limbs: [u64; 5]) -> nat {
             (limbs[0] as nat) +
             pow2(52) * (limbs[1] as nat) +
             pow2(104) * (limbs[2] as nat) +
@@ -599,7 +598,7 @@ verus! {
         z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
 
         proof {
-            assert(to_nat_direct(a.limbs) * to_nat_direct(b.limbs) == nine_limbs_to_nat_direct(&z)) by {
+            assert(five_limbs_to_nat(a.limbs) * five_limbs_to_nat(b.limbs) == nine_limbs_to_nat(&z)) by {
                 broadcast use group_mul_is_commutative_and_distributive;
                 broadcast use lemma_mul_is_associative;
 
@@ -629,7 +628,6 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     ensures
-        // TODO These functions need better names
         slice_to_nat128(&z) == slice_to_nat64(&a.limbs) * slice_to_nat64(&a.limbs),
     {
         let mut z = [0u128; 9];
@@ -677,7 +675,7 @@ verus! {
 
         proof {
 
-            assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
+            assert(five_limbs_to_nat(a.limbs) * five_limbs_to_nat(a.limbs) == nine_limbs_to_nat(&z)) by {
                 broadcast use group_mul_is_commutative_and_distributive;
                 broadcast use lemma_mul_is_associative;
 

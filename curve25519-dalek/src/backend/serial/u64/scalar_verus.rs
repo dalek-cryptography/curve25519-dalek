@@ -50,7 +50,15 @@ verus! {
         /// `LFACTOR` = (-(L^(-1))) mod 2^52
         pub const LFACTOR: u64 = 0x51da312547e1b;
 
-        /******  SPECIFICATION FUNCTIONS ********/
+        pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
+        decreases limbs.len()
+        {
+            if limbs.len() == 0 {
+                0
+            } else {
+                limbs[0] + seq_to_nat(limbs.subrange(1, limbs.len() as int)) * pow2(52)
+            }
+        }
 
         pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
         {
@@ -62,20 +70,6 @@ verus! {
             seq_to_nat(limbs@.map(|i, x| x as nat))
         }
 
-        pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
-        decreases limbs.len()
-        {
-            if limbs.len() == 0 {
-                0
-            } else {
-                limbs[0] + seq_to_nat(limbs.subrange(1, limbs.len() as int)) * pow2(52)
-            }
-        }
-
-
-
-
-
         pub open spec fn nine_limbs_to_nat_aux(limbs: &[u128; 9]) -> nat {
             (limbs[0] as nat) +
             (limbs[1] as nat) * pow2(52) +
@@ -86,6 +80,14 @@ verus! {
             (limbs[6] as nat) * pow2(312) +
             (limbs[7] as nat) * pow2(364) +
             (limbs[8] as nat) * pow2(416)
+        }
+
+        pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
+            (limbs[0] as nat) +
+            pow2(52) * (limbs[1] as nat) +
+            pow2(104) * (limbs[2] as nat) +
+            pow2(156) * (limbs[3] as nat) +
+            pow2(208) * (limbs[4] as nat)
         }
 
         proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
@@ -167,14 +169,6 @@ verus! {
                 }
                 five_limbs_to_nat_aux(*limbs);
             }
-        }
-
-        pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
-            (limbs[0] as nat) +
-            pow2(52) * (limbs[1] as nat) +
-            pow2(104) * (limbs[2] as nat) +
-            pow2(156) * (limbs[3] as nat) +
-            pow2(208) * (limbs[4] as nat)
         }
 
 

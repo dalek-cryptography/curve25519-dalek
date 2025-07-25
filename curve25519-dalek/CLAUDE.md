@@ -114,7 +114,7 @@ It must be run from the root `curve25519-dalek`, not from `curve25519-dalek/curv
 #### Basic Usage
 
 ```bash
-python3 scripts/verus_cleaner.py <file_path> <start_line> <end_line> '<pattern>'
+scripts/verus_cleaner.py <file_path> <start_line> <end_line> '<pattern>'
 ```
 
 - `end_line` is inclusive
@@ -126,12 +126,12 @@ python3 scripts/verus_cleaner.py <file_path> <start_line> <end_line> '<pattern>'
 
 **Clean broadcasts and lemmas (run separately):**
 ```bash
-python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'broadcast'
-python3 scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'lemma'
+scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'broadcast'
+scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'lemma'
 ```
 
 **Clean assert statements:**
 ```bash
-python3 scripts/verus_cleaner.py src/backend/serial/u64/field_verus.rs 150 200 'assert'
+scripts/verus_cleaner.py src/backend/serial/u64/field_verus.rs 150 200 'assert'
 ```
 

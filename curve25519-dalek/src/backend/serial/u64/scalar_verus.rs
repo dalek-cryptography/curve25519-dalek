@@ -84,12 +84,12 @@ verus! {
             }
         }
 
-        pub open spec fn slice_to_nat128(limbs: &[u128]) -> nat
+        pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
         {
             seq_to_nat(limbs@.map(|i, x| x as nat))
         }
 
-        pub open spec fn slice_to_nat64(limbs: &[u64]) -> nat
+        pub open spec fn slice64_to_nat(limbs: &[u64]) -> nat
         {
             seq_to_nat(limbs@.map(|i, x| x as nat))
         }
@@ -120,16 +120,16 @@ verus! {
             (limbs[8] as nat) * pow2(416)
         }
 
-        proof fn lemma_nine_limbs_equals_slice_to_nat128(limbs: &[u128; 9])
+        proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
         ensures 
-            nine_limbs_to_nat(limbs) == slice_to_nat128(limbs)
+            nine_limbs_to_nat(limbs) == slice128_to_nat(limbs)
         {
 
             let seq = limbs@.map(|i, x| x as nat);
 
             calc! {
                 (==)
-                slice_to_nat128(limbs); {
+                slice128_to_nat(limbs); {
                 }
                 seq_to_nat(seq); {
                     reveal_with_fuel(seq_to_nat, 10);
@@ -164,15 +164,15 @@ verus! {
             }
         }
 
-        proof fn lemma_five_limbs_equals_slice_to_nat64(limbs: &[u64; 5])
+        proof fn lemma_five_limbs_equals_slice64_to_nat(limbs: &[u64; 5])
         ensures 
-            five_limbs_to_nat(*limbs) == slice_to_nat64(limbs)
+            five_limbs_to_nat(*limbs) == slice64_to_nat(limbs)
         {
             let seq = limbs@.map(|i, x| x as nat);
 
             calc! {
                 (==)
-                slice_to_nat64(limbs); {
+                slice64_to_nat(limbs); {
                 }
                 seq_to_nat(seq); {
                     reveal_with_fuel(seq_to_nat, 6);
@@ -556,7 +556,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        slice_to_nat128(&z) == slice_to_nat64(&a.limbs) * slice_to_nat64(&b.limbs),
+        slice128_to_nat(&z) == slice64_to_nat(&a.limbs) * slice64_to_nat(&b.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -613,9 +613,9 @@ verus! {
                 lemma_pow2_adds(156, 208);
                 lemma_pow2_adds(208, 208);
             };
-            lemma_nine_limbs_equals_slice_to_nat128(&z);
-            lemma_five_limbs_equals_slice_to_nat64(&a.limbs);
-            lemma_five_limbs_equals_slice_to_nat64(&b.limbs);
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_slice64_to_nat(&a.limbs);
+            lemma_five_limbs_equals_slice64_to_nat(&b.limbs);
         }
 
         z
@@ -628,7 +628,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     ensures
-        slice_to_nat128(&z) == slice_to_nat64(&a.limbs) * slice_to_nat64(&a.limbs),
+        slice128_to_nat(&z) == slice64_to_nat(&a.limbs) * slice64_to_nat(&a.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -690,8 +690,8 @@ verus! {
                 lemma_pow2_adds(156, 208);
                 lemma_pow2_adds(208, 208);
             };
-            lemma_nine_limbs_equals_slice_to_nat128(&z);
-            lemma_five_limbs_equals_slice_to_nat64(&a.limbs);
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_slice64_to_nat(&a.limbs);
         }
 
         z

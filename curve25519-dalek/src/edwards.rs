@@ -2472,6 +2472,7 @@ mod test {
         )
     ];
 
+    #[cfg(all(feature = "alloc", feature = "digest"))]
     fn hex_str_to_fe(hex_str: &str) -> FieldElement {
         let mut bytes = hex::decode(hex_str).unwrap().to_vec();
         bytes.reverse();

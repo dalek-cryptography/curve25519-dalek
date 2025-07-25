@@ -2438,7 +2438,7 @@ mod test {
     // https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.2
     // These are of the form (input_msg, output_x, output_y)
     #[cfg(all(feature = "alloc", feature = "digest"))]
-    const RFC_HASH_TO_CURVE_KAT_NU: &[(&[u8], &str, &str)] = &[
+    const RFC_ENCODE_TO_CURVE_KAT: &[(&[u8], &str, &str)] = &[
         (
             b"",
             "1ff2b70ecf862799e11b7ae744e3489aa058ce805dd323a936375a84695e76da",
@@ -2472,28 +2472,23 @@ mod test {
         )
     ];
 
+    fn hex_str_to_fe(hex_str: &str) -> FieldElement {
+        let mut bytes = hex::decode(hex_str).unwrap().to_vec();
+        bytes.reverse();
+        FieldElement::from_bytes(&bytes.try_into().unwrap())
+    }
+
     #[test]
     #[cfg(all(feature = "alloc", feature = "digest"))]
     fn elligator_encode_to_curve_test_vectors() {
         let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
-        for (index, vector) in RFC_HASH_TO_CURVE_KAT_NU.iter().enumerate() {
+        for (index, vector) in RFC_ENCODE_TO_CURVE_KAT.iter().enumerate() {
             let input = vector.0;
 
             let expected_output = {
-                let mut x_bytes = hex::decode(vector.1).unwrap();
-                x_bytes.reverse();
-                let x = FieldElement::from_bytes(&x_bytes.try_into().unwrap());
-
-                let mut y_bytes = hex::decode(vector.2).unwrap();
-                y_bytes.reverse();
-                let y = FieldElement::from_bytes(&y_bytes.try_into().unwrap());
-
-                EdwardsPoint {
-                    X: x,
-                    Y: y,
-                    Z: FieldElement::ONE,
-                    T: &x * &y,
-                }
+                let x = hex_str_to_fe(vector.1);
+                let y = hex_str_to_fe(vector.2);
+                AffinePoint { x, y }.to_edwards()
             };
 
             let computed = EdwardsPoint::encode_to_curve::<sha2::Sha512>(&[&input], &[dst]);
@@ -2503,9 +2498,9 @@ mod test {
 
     // Hash-to-curve test vectors from
     // https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.1
-    // These are of the form (input_msg, output_x, output_y, q0_x, q0_y, q1_x, q1_y, u0, u1)
+    // These are of the form (input_msg, output_x, output_y)
     #[cfg(all(feature = "alloc", feature = "digest"))]
-    const RFC_HASH_TO_CURVE_KAT_RO: &[(&[u8], &str, &str)] = &[
+    const RFC_HASH_TO_CURVE_KAT: &[(&[u8], &str, &str)] = &[
         (
             b"",
             "3c3da6925a3c3c268448dcabb47ccde5439559d9599646a8260e47b1e4822fc6",
@@ -2545,15 +2540,8 @@ mod test {
     #[cfg(all(feature = "alloc", feature = "digest"))]
     fn elligator_hash_to_curve_test_vectors() {
         let dst = b"QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
-        for (index, vector) in RFC_HASH_TO_CURVE_KAT_RO.iter().enumerate() {
+        for (index, vector) in RFC_HASH_TO_CURVE_KAT.iter().enumerate() {
             let input = vector.0;
-
-            let hex_str_to_fe = |hex_str: &str| -> FieldElement {
-                let hex_bytes = hex::decode(hex_str).unwrap();
-                let mut string = hex_bytes.to_vec();
-                string.reverse();
-                FieldElement::from_bytes(&string.try_into().unwrap())
-            };
 
             let expected_output = {
                 let x = hex_str_to_fe(vector.1);

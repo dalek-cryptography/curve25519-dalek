@@ -50,41 +50,27 @@ verus! {
         /// `LFACTOR` = (-(L^(-1))) mod 2^52
         pub const LFACTOR: u64 = 0x51da312547e1b;
 
-        /******  SPECIFICATION FUNCTIONS ********/
-
-        // FUTURE VERUS FEATURE: Generic function to convert array of integers to natural number
-        // This is what we would like to have, but Verus doesn't support generic types yet.
-        // When Verus adds generic support, this could replace the concrete u64/u32 versions below.
-        /*
-        pub open spec fn to_nat_gen<T>(limbs: &[T], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
+        pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
+        decreases limbs.len()
         {
-            if num_limbs <= 0 {
+            if limbs.len() == 0 {
                 0
             } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen(limbs, num_limbs - 1, bits_per_limb)
-            }
-        }
-        */
-
-        // Generic function to convert array of integers to natural number
-        // Takes: array of integers, number of limbs, bits per limb
-        // Note: Generic types not supported in Verus yet.
-        // These are specification functions that work only with the u64 and u32 types
-        pub open spec fn to_nat_gen_u64(limbs: &[u64], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
-        {
-            if num_limbs <= 0 {
-                0
-            } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen_u64(limbs, num_limbs - 1, bits_per_limb)
+                limbs[0] + seq_to_nat(limbs.subrange(1, limbs.len() as int)) * pow2(52)
             }
         }
 
-        // TODO There should be an indirect version
-        pub open spec fn nine_limbs_to_nat_direct(limbs: &[u128; 9]) -> nat {
+        pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
+        {
+            seq_to_nat(limbs@.map(|i, x| x as nat))
+        }
+
+        pub open spec fn to_nat(limbs: &[u64]) -> nat
+        {
+            seq_to_nat(limbs@.map(|i, x| x as nat))
+        }
+
+        pub open spec fn nine_limbs_to_nat_aux(limbs: &[u128; 9]) -> nat {
             (limbs[0] as nat) +
             (limbs[1] as nat) * pow2(52) +
             (limbs[2] as nat) * pow2(104) +
@@ -96,7 +82,7 @@ verus! {
             (limbs[8] as nat) * pow2(416)
         }
 
-        pub open spec fn to_nat_direct(limbs: [u64; 5]) -> nat {
+        pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
             (limbs[0] as nat) +
             pow2(52) * (limbs[1] as nat) +
             pow2(104) * (limbs[2] as nat) +
@@ -104,21 +90,88 @@ verus! {
             pow2(208) * (limbs[4] as nat)
         }
 
-        pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
+        proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
+        ensures
+            nine_limbs_to_nat_aux(limbs) == slice128_to_nat(limbs)
         {
-            if num_limbs <= 0 {
-                0
-            } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen_u32(limbs, num_limbs - 1, bits_per_limb)
+
+            let seq = limbs@.map(|i, x| x as nat);
+
+            calc! {
+                (==)
+                slice128_to_nat(limbs); {
+                }
+                seq_to_nat(seq); {
+                    reveal_with_fuel(seq_to_nat, 10);
+                }
+                (limbs[0] as nat) +
+                ((limbs[1] as nat) +
+                 ((limbs[2] as nat) +
+                  ((limbs[3] as nat) +
+                   ((limbs[4] as nat) +
+                    ((limbs[5] as nat) +
+                     ((limbs[6] as nat) +
+                      ((limbs[7] as nat) +
+                       (limbs[8] as nat) * pow2(52)
+                      ) * pow2(52)
+                     ) * pow2(52)
+                    ) * pow2(52)
+                   ) * pow2(52)
+                  ) * pow2(52)
+                 ) * pow2(52)
+                ) * pow2(52); {
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(104, 52);
+                lemma_pow2_adds(156, 52);
+                lemma_pow2_adds(208, 52);
+                lemma_pow2_adds(260, 52);
+                lemma_pow2_adds(312, 52);
+                lemma_pow2_adds(364, 52);
+                broadcast use group_mul_is_distributive;
+                broadcast use lemma_mul_is_associative;
+                }
+                nine_limbs_to_nat_aux(limbs);
             }
         }
 
-        // Interpret limbs as a little-endian integer with 52-bit limbs
-        pub open spec fn to_nat(limbs: &[u64; 5]) -> nat {
-            to_nat_gen_u64(limbs, 5, 52)
+        proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
+        ensures
+            five_limbs_to_nat_aux(*limbs) == to_nat(limbs)
+        {
+            let seq = limbs@.map(|i, x| x as nat);
+
+            calc! {
+                (==)
+                to_nat(limbs); {
+                }
+                seq_to_nat(seq); {
+                    reveal_with_fuel(seq_to_nat, 6);
+                }
+                (limbs[0] as nat) +
+                ((limbs[1] as nat) +
+                 ((limbs[2] as nat) +
+                  ((limbs[3] as nat) +
+                   (limbs[4] as nat) * pow2(52)
+                  ) * pow2(52)
+                 ) * pow2(52)
+                ) * pow2(52); {
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(104, 52);
+                lemma_pow2_adds(156, 52);
+                broadcast use group_mul_is_distributive;
+                broadcast use lemma_mul_is_associative;
+                }
+                (limbs[0] as nat) +
+                pow2(52) * (limbs[1] as nat) +
+                pow2(104) * (limbs[2] as nat) +
+                pow2(156) * (limbs[3] as nat) +
+                pow2(208) * (limbs[4] as nat); {
+                }
+                five_limbs_to_nat_aux(*limbs);
+            }
         }
+
+
 
         // Modular reduction of to_nat mod L
         spec fn to_scalar(limbs: &[u64; 5]) -> nat {
@@ -451,7 +504,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(b.limbs),
+        slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&b.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -493,7 +546,7 @@ verus! {
         z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
 
         proof {
-            assert(to_nat_direct(a.limbs) * to_nat_direct(b.limbs) == nine_limbs_to_nat_direct(&z)) by {
+            assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(b.limbs) == nine_limbs_to_nat_aux(&z)) by {
                 broadcast use group_mul_is_commutative_and_distributive;
                 broadcast use lemma_mul_is_associative;
 
@@ -508,6 +561,9 @@ verus! {
                 lemma_pow2_adds(156, 208);
                 lemma_pow2_adds(208, 208);
             };
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_to_nat(&a.limbs);
+            lemma_five_limbs_equals_to_nat(&b.limbs);
         }
 
         z
@@ -520,7 +576,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
     ensures
-        nine_limbs_to_nat_direct(&z) == to_nat_direct(a.limbs) * to_nat_direct(a.limbs),
+        slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
     {
         let mut z = [0u128; 9];
 
@@ -567,7 +623,7 @@ verus! {
 
         proof {
 
-            assert(to_nat_direct(a.limbs) * to_nat_direct(a.limbs) == nine_limbs_to_nat_direct(&z)) by {
+            assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(a.limbs) == nine_limbs_to_nat_aux(&z)) by {
                 broadcast use group_mul_is_commutative_and_distributive;
                 broadcast use lemma_mul_is_associative;
 
@@ -582,7 +638,8 @@ verus! {
                 lemma_pow2_adds(156, 208);
                 lemma_pow2_adds(208, 208);
             };
-
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_to_nat(&a.limbs);
         }
 
         z

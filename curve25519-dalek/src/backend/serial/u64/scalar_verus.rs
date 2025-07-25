@@ -51,21 +51,6 @@ verus! {
         pub const LFACTOR: u64 = 0x51da312547e1b;
 
         /******  SPECIFICATION FUNCTIONS ********/
-        // TODO Remove these?
-        // Generic function to convert array of integers to natural number
-        // Takes: array of integers, number of limbs, bits per limb
-        // Note: Generic types not supported in Verus yet.
-        // These are specification functions that work only with the u64 and u32 types
-        pub open spec fn to_nat_gen_u64(limbs: &[u64], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
-        {
-            if num_limbs <= 0 {
-                0
-            } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen_u64(limbs, num_limbs - 1, bits_per_limb)
-            }
-        }
 
         pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
         {
@@ -193,14 +178,10 @@ verus! {
         }
 
 
-        // Interpret limbs as a little-endian integer with 52-bit limbs
-        pub open spec fn to_nat(limbs: &[u64; 5]) -> nat {
-            to_nat_gen_u64(limbs, 5, 52)
-        }
 
         // Modular reduction of to_nat mod L
         spec fn to_scalar(limbs: &[u64; 5]) -> nat {
-            to_nat(limbs) % group_order()
+            slice64_to_nat(limbs) % group_order()
         }
 
         /// natural value of a 256 bit bitstring represented as array of 32 bytes
@@ -302,7 +283,7 @@ verus! {
         /* ADAPTED CODE LINE: we give a name to the output: "s" */
         pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
         // SPECIFICATION: unpacking keeps the same nat value
-        ensures bytes_to_nat(bytes) == to_nat(&s.limbs)
+        ensures bytes_to_nat(bytes) == slice64_to_nat(&s.limbs)
         {
             let mut words = [0u64; 4];
             for i in 0..4
@@ -361,7 +342,7 @@ verus! {
     pub fn to_bytes(self) -> (s: [u8; 32])
     // DIFF-SPEC-3: we give a name to the output: "s"
     // SPECIFICATION: packing keeps the same nat value
-    ensures bytes_to_nat(&s) == to_nat(&self.limbs)
+    ensures bytes_to_nat(&s) == slice64_to_nat(&self.limbs)
     {
         let mut s = [0u8; 32];
 
@@ -409,7 +390,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
+        slice64_to_nat(&s.limbs) == slice64_to_nat(&a.limbs) + slice64_to_nat(&b.limbs),
     {
         //let mut sum = Scalar52::ZERO;
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -462,7 +443,7 @@ verus! {
         /*let mut s = Scalar52::sub(&sum, &Self::L);*/
         /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
         let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
-        assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
+        assert(slice64_to_nat(&l_value.limbs) == slice64_to_nat(&L.limbs));
         assume(false); // TODO: complete the proof
 
         Scalar52::sub(&sum, &l_value)
@@ -477,7 +458,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+        slice64_to_nat(&s.limbs) == slice64_to_nat(&a.limbs) - slice64_to_nat(&b.limbs),
     {
         //let mut difference = Scalar52::ZERO;
          let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -677,7 +658,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+        slice64_to_nat(&result.limbs) == (slice64_to_nat(&a.limbs) * slice64_to_nat(&b.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
@@ -690,7 +671,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+        slice64_to_nat(&result.limbs) == (slice64_to_nat(&self.limbs) * slice64_to_nat(&self.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
@@ -704,7 +685,7 @@ verus! {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+        slice64_to_nat(&result.limbs) == (slice64_to_nat(&a.limbs) * slice64_to_nat(&b.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
@@ -716,7 +697,7 @@ verus! {
     requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+        slice64_to_nat(&result.limbs) == (slice64_to_nat(&self.limbs) * slice64_to_nat(&self.limbs)) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_reduce(&Scalar52::square_internal(self))

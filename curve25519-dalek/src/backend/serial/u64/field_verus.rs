@@ -15,11 +15,7 @@ verus! {
 // vstd does _not_ export this macro, so if we want to use it for u128 we have to ugly-copy it.
 macro_rules! lemma_shr_is_div {
     ($name:ident, $uN:ty) => {
-        #[cfg(verus_keep_ghost)]
         verus! {
-        #[doc = "Proof that for x and n of type "]
-        #[doc = stringify!($uN)]
-        #[doc = ", shifting x right by n is equivalent to division of x by 2^n."]
         pub broadcast proof fn $name(x: $uN, shift: $uN)
             requires
                 0 <= shift < <$uN>::BITS,

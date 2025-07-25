@@ -51,23 +51,6 @@ verus! {
         pub const LFACTOR: u64 = 0x51da312547e1b;
 
         /******  SPECIFICATION FUNCTIONS ********/
-
-        // FUTURE VERUS FEATURE: Generic function to convert array of integers to natural number
-        // This is what we would like to have, but Verus doesn't support generic types yet.
-        // When Verus adds generic support, this could replace the concrete u64/u32 versions below.
-        /*
-        pub open spec fn to_nat_gen<T>(limbs: &[T], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
-        {
-            if num_limbs <= 0 {
-                0
-            } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen(limbs, num_limbs - 1, bits_per_limb)
-            }
-        }
-        */
-
         // TODO Remove these?
         // Generic function to convert array of integers to natural number
         // Takes: array of integers, number of limbs, bits per limb
@@ -209,16 +192,6 @@ verus! {
             pow2(208) * (limbs[4] as nat)
         }
 
-        pub open spec fn to_nat_gen_u32(limbs: &[u32], num_limbs: int, bits_per_limb: int) -> nat
-        decreases num_limbs
-        {
-            if num_limbs <= 0 {
-                0
-            } else {
-                let limb_value = (limbs[num_limbs - 1] as nat) * pow2(((num_limbs - 1) * bits_per_limb) as nat);
-                limb_value + to_nat_gen_u32(limbs, num_limbs - 1, bits_per_limb)
-            }
-        }
 
         // Interpret limbs as a little-endian integer with 52-bit limbs
         pub open spec fn to_nat(limbs: &[u64; 5]) -> nat {

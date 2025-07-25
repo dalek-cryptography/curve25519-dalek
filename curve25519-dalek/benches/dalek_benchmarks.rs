@@ -89,6 +89,21 @@ mod edwards_benches {
         );
     }
 
+    #[cfg(feature = "digest")]
+    fn hash_to_curve<M: Measurement>(c: &mut BenchmarkGroup<M>) {
+        let mut rng = rng();
+
+        let mut msg = [0u8; 32];
+        let mut domain_sep = [0u8; 32];
+        rng.fill_bytes(&mut msg);
+        rng.fill_bytes(&mut domain_sep);
+
+        c.bench_function(
+            "Elligator2 hash to curve (SHA-512, input size 32 bytes)",
+            |b| b.iter(|| EdwardsPoint::hash_to_curve::<Sha512>(&[&msg], &[&domain_sep])),
+        );
+    }
+
     pub(crate) fn edwards_benches() {
         let mut c = Criterion::default();
         let mut g = c.benchmark_group("edwards benches");
@@ -101,6 +116,7 @@ mod edwards_benches {
         consttime_variable_base_scalar_mul(&mut g);
         vartime_double_base_scalar_mul(&mut g);
         encode_to_curve(&mut g);
+        hash_to_curve(&mut g);
     }
 }
 

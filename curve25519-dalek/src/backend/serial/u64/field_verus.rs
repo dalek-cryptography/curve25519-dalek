@@ -79,9 +79,6 @@ pub proof fn l51_bit_mask_lt()
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
 }
 
-// ceiling(2^59.75). Needed for pow2 bounds
-pub const POW2_59_PT_75: u64 = 969487560292816560u64;
-
 // Auxiliary lemma for multiplication (of nat!)
 pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
     requires
@@ -540,6 +537,8 @@ pub proof fn lemma_add_then_shift(a: u64, b: u64)
     }
 }
 
+// >> preserves [<=]. Unfortunately, these operations are u128 and
+// we need lemma_u128_shr_is_div.
 pub proof fn lemma_shr_51_le(a: u128, b: u128)
     requires
         a <= b
@@ -553,6 +552,7 @@ pub proof fn lemma_shr_51_le(a: u128, b: u128)
     lemma_div_is_ordered(a as int, b as int, 51);
 }
 
+// Corollary of above, using the identity (a << x) >> x == a for u64::MAX
 pub proof fn lemma_shr_51_fits_u64(a: u128)
     requires
         a <= (u64::MAX as u128) << 51
@@ -595,6 +595,7 @@ fn m(x: u64, y: u64) -> (r: u128)
     (x as u128) * (y as u128)
 }
 
+// m(_,_) multiplication is bounded by the product of the individual bounds
 pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
     requires
         x < bx,
@@ -1003,13 +1004,11 @@ impl FieldElement51 {
     #[rustfmt::skip] // keep alignment of c* calculations
     pub fn pow2k(&self, mut k: u32) -> (r: FieldElement51)
         requires
-            k > 0,
+            k > 0, // debug_assert!( k > 0 );
             forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54 // 51 + b for b = 3
         ensures
             true // No overflow
     {
-        // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
-        // debug_assert!( k > 0 );
         let mut a: [u64; 5] = self.limbs;
 
         loop
@@ -1033,7 +1032,6 @@ impl FieldElement51 {
                 assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
                 assert((1u64 << 54) < (1u64 << 59)) by (bit_vector);
                 assert((1u64 << 54) * (1u64 << 5) == (1u64 << 59)) by (bit_vector);
-                assert(19 * bound < (1u64 << 59));
                 assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108)) by (bit_vector);
                 assert(((1u64 << 54) as u128) * ((1u64 << 59) as u128) == (1u128 << 113)) by (bit_vector);
 
@@ -1132,7 +1130,6 @@ impl FieldElement51 {
                 assert((5 * (1u128 << 108) + (u64::MAX as u128)) as u128 >> 51 < (pow2_5933 as u128)) by (compute);
                 assert(carry < pow2_5933);
 
-
                 // a[0] += carry * 19 fits in u64
                 assert((1u64 << 51) + 19 * pow2_5933 <= u64::MAX) by (compute);
                 let a0_1 = (a0_0 + carry * 19) as u64;
@@ -1147,8 +1144,8 @@ impl FieldElement51 {
                 assert(a1_0 + (a0_1 >> 51) < (1u64 << 52));
 
                 let a0_2 = a0_1 & LOW_51_BIT_MASK;
+                // a0_2 < (1u64 << 51)
                 lemma_mask_bound(a0_2, a0_1);
-
             }
             // Precondition: assume input limbs a[i] are bounded as
             //

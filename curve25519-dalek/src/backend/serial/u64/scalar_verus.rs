@@ -91,7 +91,7 @@ verus! {
         }
 
         proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
-        ensures 
+        ensures
             nine_limbs_to_nat_aux(limbs) == slice128_to_nat(limbs)
         {
 
@@ -105,13 +105,13 @@ verus! {
                     reveal_with_fuel(seq_to_nat, 10);
                 }
                 (limbs[0] as nat) +
-                ((limbs[1] as nat) + 
-                 ((limbs[2] as nat) + 
-                  ((limbs[3] as nat) + 
-                   ((limbs[4] as nat) + 
-                    ((limbs[5] as nat) + 
-                     ((limbs[6] as nat) + 
-                      ((limbs[7] as nat) + 
+                ((limbs[1] as nat) +
+                 ((limbs[2] as nat) +
+                  ((limbs[3] as nat) +
+                   ((limbs[4] as nat) +
+                    ((limbs[5] as nat) +
+                     ((limbs[6] as nat) +
+                      ((limbs[7] as nat) +
                        (limbs[8] as nat) * pow2(52)
                       ) * pow2(52)
                      ) * pow2(52)
@@ -135,7 +135,7 @@ verus! {
         }
 
         proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
-        ensures 
+        ensures
             five_limbs_to_nat_aux(*limbs) == to_nat(limbs)
         {
             let seq = limbs@.map(|i, x| x as nat);
@@ -148,9 +148,9 @@ verus! {
                     reveal_with_fuel(seq_to_nat, 6);
                 }
                 (limbs[0] as nat) +
-                ((limbs[1] as nat) + 
-                 ((limbs[2] as nat) + 
-                  ((limbs[3] as nat) + 
+                ((limbs[1] as nat) +
+                 ((limbs[2] as nat) +
+                  ((limbs[3] as nat) +
                    (limbs[4] as nat) * pow2(52)
                   ) * pow2(52)
                  ) * pow2(52)

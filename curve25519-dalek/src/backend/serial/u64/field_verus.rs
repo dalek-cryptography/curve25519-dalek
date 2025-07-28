@@ -730,12 +730,8 @@ impl FieldElement51 {
         ]);
         proof {
             let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
-            calc! {
-                (==)
-                (16 * p() - p() * k) as int; {
-                    lemma_mul_is_distributive_sub(p() as int, 16 as int, k as int);
-                }
-                (p() * (16 - k)) as int;
+            assert(16 * p() - p() * k == p() * (16 - k)) by {
+                broadcast use lemma_mul_is_distributive_sub;
             }
             lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
         }

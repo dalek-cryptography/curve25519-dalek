@@ -431,7 +431,7 @@ impl FieldElement2625 {
         FieldElement2625::reduce(h)
     }
 
-    /// Serialize this `FieldElement51` to a 32-byte array.  The
+    /// Serialize this `FieldElement2625` to a 32-byte array.  The
     /// encoding is canonical.
     #[allow(clippy::identity_op)]
     pub fn to_bytes(self) -> [u8; 32] {

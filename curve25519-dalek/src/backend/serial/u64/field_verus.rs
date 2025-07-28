@@ -737,7 +737,8 @@ impl FieldElement51 {
             r.limbs == spec_reduce(limbs),
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
-            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
+            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
+            as_nat(r.limbs) % p() == as_nat(limbs) % p()
     {
         proof {
             lemma_boundaries(limbs);

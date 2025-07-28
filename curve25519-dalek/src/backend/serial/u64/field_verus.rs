@@ -728,6 +728,43 @@ impl FieldElement51 {
             36028797018963952u64 - self.limbs[3],
             36028797018963952u64 - self.limbs[4],
         ]);
+        proof {
+            // Prove the modular arithmetic postcondition
+            // We need to prove: (as_nat(neg.limbs) + as_nat(old(self).limbs)) % p() == 0
+            
+            // Prove p() > 0
+            pow255_gt_19();
+            assert(p() > 0);
+            
+            // From the postcondition stated in ensures clause:
+            // as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
+            // Since self.limbs = neg.limbs at the end, this means:
+            // as_nat(neg.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * k  where k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
+            
+            let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
+            assert(as_nat(neg.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * k);
+            
+            // Rearranging:
+            // as_nat(neg.limbs) + as_nat(old(self).limbs) == 16 * p() - p() * k
+            // as_nat(neg.limbs) + as_nat(old(self).limbs) == p() * (16 - k)
+            
+            calc! {
+                (==)
+                (as_nat(neg.limbs) + as_nat(old(self).limbs)) as int; {}
+                (16 * p() - as_nat(old(self).limbs) - p() * k + as_nat(old(self).limbs)) as int; {}
+                (16 * p() - p() * k) as int; {
+                    lemma_mul_is_distributive_sub(p() as int, 16 as int, k as int);
+                }
+                (p() * (16 - k)) as int;
+            }
+            
+            // Now show that p() * (16 - k) % p() == 0
+            lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
+            assert(((p() * (16 - k)) as int) % (p() as int) == 0);
+            
+            // Therefore:
+            assert(((as_nat(neg.limbs) + as_nat(old(self).limbs)) as int) % (p() as int) == 0);
+        }
         self.limbs = neg.limbs;
     }
 

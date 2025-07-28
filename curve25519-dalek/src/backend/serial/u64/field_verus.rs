@@ -645,8 +645,8 @@ impl FieldElement51 {
             // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
             //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
             // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
-            as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
-            // Reducing mod p, this implies `as_nat(self.limbs) == - as_nat(old(self).limbs)`
+            as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
+            (as_nat(self.limbs) + as_nat(old(self).limbs)) % p() == 0
     {
         proof {
             let c0 = (pow2(51) - 19);
@@ -727,6 +727,11 @@ impl FieldElement51 {
             36028797018963952u64 - self.limbs[3],
             36028797018963952u64 - self.limbs[4],
         ]);
+        proof {
+            let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
+            broadcast use lemma_mul_is_distributive_sub;
+            lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
+        }
         self.limbs = neg.limbs;
     }
 
@@ -737,11 +742,14 @@ impl FieldElement51 {
             r.limbs == spec_reduce(limbs),
             forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
-            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51)
+            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
+            as_nat(r.limbs) % p() == as_nat(limbs) % p()
     {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
+            pow255_gt_19();
+            lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest

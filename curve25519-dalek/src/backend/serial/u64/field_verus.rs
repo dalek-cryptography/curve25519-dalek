@@ -729,25 +729,10 @@ impl FieldElement51 {
             36028797018963952u64 - self.limbs[4],
         ]);
         proof {
-            // Prove the modular arithmetic postcondition
-            // We need to prove: (as_nat(neg.limbs) + as_nat(old(self).limbs)) % p() == 0
-            
-            // Prove p() > 0
             pow255_gt_19();
             assert(p() > 0);
-            
-            // From the postcondition stated in ensures clause:
-            // as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
-            // Since self.limbs = neg.limbs at the end, this means:
-            // as_nat(neg.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * k  where k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51)
-            
             let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
             assert(as_nat(neg.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * k);
-            
-            // Rearranging:
-            // as_nat(neg.limbs) + as_nat(old(self).limbs) == 16 * p() - p() * k
-            // as_nat(neg.limbs) + as_nat(old(self).limbs) == p() * (16 - k)
-            
             calc! {
                 (==)
                 (as_nat(neg.limbs) + as_nat(old(self).limbs)) as int; {}
@@ -757,12 +742,8 @@ impl FieldElement51 {
                 }
                 (p() * (16 - k)) as int;
             }
-            
-            // Now show that p() * (16 - k) % p() == 0
             lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
             assert(((p() * (16 - k)) as int) % (p() as int) == 0);
-            
-            // Therefore:
             assert(((as_nat(neg.limbs) + as_nat(old(self).limbs)) as int) % (p() as int) == 0);
         }
         self.limbs = neg.limbs;
@@ -781,15 +762,9 @@ impl FieldElement51 {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
-            // Prove p() > 0 for the precondition of lemma_mod_multiples_vanish
             pow255_gt_19();
             assert(p() == pow2(255) - 19);
             assert(p() > 0);
-            // Prove modular equivalence using vstd lemma
-            // lemma_reduce proves: as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51)
-            // Which means: as_nat(limbs) == as_nat(spec_reduce(limbs)) + p() * (limbs[4] >> 51)
-            // We need to prove: as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p()
-            // Using lemma_mod_multiples_vanish: ((m * a + b) % m) == b % m
             lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 

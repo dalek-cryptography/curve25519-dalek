@@ -729,22 +729,15 @@ impl FieldElement51 {
             36028797018963952u64 - self.limbs[4],
         ]);
         proof {
-            pow255_gt_19();
-            assert(p() > 0);
             let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
-            assert(as_nat(neg.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * k);
             calc! {
                 (==)
-                (as_nat(neg.limbs) + as_nat(old(self).limbs)) as int; {}
-                (16 * p() - as_nat(old(self).limbs) - p() * k + as_nat(old(self).limbs)) as int; {}
                 (16 * p() - p() * k) as int; {
                     lemma_mul_is_distributive_sub(p() as int, 16 as int, k as int);
                 }
                 (p() * (16 - k)) as int;
             }
             lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
-            assert(((p() * (16 - k)) as int) % (p() as int) == 0);
-            assert(((as_nat(neg.limbs) + as_nat(old(self).limbs)) as int) % (p() as int) == 0);
         }
         self.limbs = neg.limbs;
     }

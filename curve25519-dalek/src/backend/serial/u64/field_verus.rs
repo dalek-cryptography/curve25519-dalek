@@ -743,6 +743,16 @@ impl FieldElement51 {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
+            // Prove p() > 0 for the precondition of lemma_mod_multiples_vanish
+            pow255_gt_19();
+            assert(p() == pow2(255) - 19);
+            assert(p() > 0);
+            // Prove modular equivalence using vstd lemma
+            // lemma_reduce proves: as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51)
+            // Which means: as_nat(limbs) == as_nat(spec_reduce(limbs)) + p() * (limbs[4] >> 51)
+            // We need to prove: as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p()
+            // Using lemma_mod_multiples_vanish: ((m * a + b) % m) == b % m
+            lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest

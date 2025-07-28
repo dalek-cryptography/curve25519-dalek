@@ -750,8 +750,6 @@ impl FieldElement51 {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
             pow255_gt_19();
-            assert(p() == pow2(255) - 19);
-            assert(p() > 0);
             lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 

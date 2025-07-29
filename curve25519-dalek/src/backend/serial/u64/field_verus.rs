@@ -2,62 +2,16 @@
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
-use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
-use vstd::calc_macro::*;
 use vstd::prelude::*;
+
+use super::common_verus::*;
+use super::vstd_u128_verus::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 
 verus! {
-
-// vstd does _not_ export this macro, so if we want to use it for u128 we have to ugly-copy it.
-macro_rules! lemma_shr_is_div {
-    ($name:ident, $uN:ty) => {
-        verus! {
-        pub broadcast proof fn $name(x: $uN, shift: $uN)
-            requires
-                0 <= shift < <$uN>::BITS,
-            ensures
-                #[trigger] (x >> shift) == x as nat / pow2(shift as nat),
-            decreases shift,
-        {
-            reveal(pow2);
-            if shift == 0 {
-                assert(x >> 0 == x) by (bit_vector);
-                reveal(pow);
-                assert(pow2(0) == 1) by (compute_only);
-            } else {
-                assert(x >> shift == (x >> ((sub(shift, 1)) as $uN)) / 2) by (bit_vector)
-                    requires
-                        0 < shift < <$uN>::BITS,
-                ;
-                calc!{ (==)
-                    (x >> shift) as nat;
-                        {}
-                    ((x >> ((sub(shift, 1)) as $uN)) / 2) as nat;
-                        { $name(x, (shift - 1) as $uN); }
-                    (x as nat / pow2((shift - 1) as nat)) / 2;
-                        {
-                            lemma_pow2_pos((shift - 1) as nat);
-                            lemma2_to64();
-                            lemma_div_denominator(x as int, pow2((shift - 1) as nat) as int, 2);
-                        }
-                    x as nat / (pow2((shift - 1) as nat) * pow2(1));
-                        {
-                            lemma_pow2_adds((shift - 1) as nat, 1);
-                        }
-                    x as nat / pow2(shift as nat);
-                }
-            }
-        }
-        }
-    };
-}
-
-lemma_shr_is_div!(lemma_u128_shr_is_div, u128);
-
 
 /* MANUALLY moved outside and made explicit */
 // LOW_51_BIT_MASK: u64 = (1u64 << 51) -1; originally
@@ -75,62 +29,6 @@ pub proof fn l51_bit_mask_lt()
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
 }
 
-// Auxiliary lemma for multiplication (of nat!)
-pub proof fn mul_lt(a1:nat, b1:nat, a2:nat, b2:nat)
-    requires
-        a1 < b1,
-        a2 < b2,
-    ensures
-        a1 * a2 < b1 * b2,
-{
-    if (a2 == 0) {
-        assert(b1 * b2 > 0) by {
-            // a * b != 0 <==> a != 0 /\ b != 0
-            lemma_mul_nonzero(b1 as int, b2 as int);
-        }
-    }
-    else {
-        // a1 < b1 /\ a2 > 0 ==> a1 * a2 < b1 * a2
-        lemma_mul_strict_inequality(a1 as int, b1  as int, a2 as int);
-        // a2 < b2 /\ b2 > 0 ==> a2 * b1 < b2 * b1
-        lemma_mul_strict_inequality(a2 as int, b2 as int, b1 as int);
-    }
-}
-
-pub proof fn mul_le(a1:nat, b1:nat, a2:nat, b2:nat)
-    requires
-        a1 <= b1,
-        a2 <= b2,
-    ensures
-        a1 * a2 <= b1 * b2,
-{
-    // a1 < b1 /\ a2 > 0 ==> a1 * a2 < b1 * a2
-    lemma_mul_inequality(a1 as int, b1  as int, a2 as int);
-    // a2 < b2 /\ b2 > 0 ==> a2 * b1 < b2 * b1
-    lemma_mul_inequality(a2 as int, b2 as int, b1 as int);
-}
-
-// Auxiliary lemma for exponentiation
-pub proof fn pow2_le_max64(k: nat)
-    requires
-        k < 64,
-    ensures
-        pow2(k) <= u64::MAX
-    {
-        lemma2_to64();
-        lemma2_to64_rest();
-    }
-
-// Specialization of lemma_u64_shl_is_mul for x = 1
-pub proof fn shift_is_pow2(k: nat)
-    requires
-        k < 64,
-    ensures
-        (1u64 << k) == pow2(k)
-{
-    pow2_le_max64(k);
-    lemma_u64_shl_is_mul(1u64, k as u64);
-}
 
 // Masking with low_bits_mask(k) gives a value bounded by 2^k
 pub proof fn masked_lt(v: u64)
@@ -272,9 +170,7 @@ pub proof fn lemma_mask_bound(x: u64, v: u64)
         x < (1u64 << 51)
 {
     lemma_mask(x, v);
-    lemma_pow2_pos(51);
-    lemma_mod_division_less_than_divisor(v as int, pow2(51) as int);
-    shift_is_pow2(51);
+    masked_lt(v);
 }
 
 // Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d

@@ -245,4 +245,108 @@ pub proof fn shr_nonincreasing(v: u64, a: nat, b: nat)
 }
 
 
+// u64::MAX = 2^64 - 1
+// u64::MAX >> k = 2^(64 - k) - 1
+// 1u64 << (64 - k) = 2^(64 - k)
+pub proof fn lemma_u64_max_shifting(k:nat)
+    requires
+        1 <= k < 64
+    ensures
+        u64::MAX >> k < 1u64 << (64 - k)
+    decreases 64-k
+{
+    let M = u64::MAX;
+
+    // recursion base case
+    if (k == 63){
+        assert(u64::MAX >> 63 < 1u64 << 1) by (compute);
+    }
+    else {
+        // M >> (k + 1) < 1 << (63 - k)
+        lemma_u64_max_shifting(k + 1);
+
+        // M >> (k + 1) = (M >> k) >> 1
+        shr_decomposition(M, k, 1);
+
+        // precondition
+        lemma2_to64_rest(); // pow2(63)
+        lemma_pow2_strictly_increases((63 - k) as nat, (64 - k) as nat);
+
+        assert(1u64 * pow2((64 - k) as nat) <= 1u64 * pow2(63)) by {
+            if (k == 1) {
+                // 64 - k = 63
+                // tautology
+            }
+            else {
+                // 64 - k < 63
+                lemma_pow2_strictly_increases((64 - k) as nat, 63);
+            }
+            mul_le(1u64 as nat, 1u64 as nat, pow2((64 - k) as nat), pow2(63));
+        }
+        assert( 1u64 * pow2(63) <= u64::MAX) by (compute);
+
+        // 1 << 64 - k = (1 << 63 - k) << 1
+        shl_decomposition(1u64, (63 - k) as nat, 1);
+
+        // (M >> k) >> 1 = (M >> k) / pow2(1);
+        lemma_u64_shr_is_div( M >> k, 1);
+
+        // lemma_u64_shl_is_mul(x, n) precondition: x * pow2(n) <= u64::MAX
+        assert((1u64 << ((63 - k))) * pow2(1) <= u64::MAX) by {
+            shift_is_pow2((63 - k) as nat);
+            lemma_pow2_adds((63-k) as nat, 1);
+        }
+
+        // (1 << 63 - k) << 1 = (1 << 63 - k) * pow2(1);
+        lemma_u64_shl_is_mul( 1u64 << ((63 - k)), 1);
+
+        lemma2_to64(); // pow2(1) = 2
+
+        assert((1u64 << ((64 - k) as u64)) / 2 == (1u64 << ((63 - k) as u64))) by {
+            lemma_div_multiples_vanish((1u64 << (63 - k) as u64) as int, 2);
+        }
+    }
+}
+
+// Corollary of lemma_u64_max_shifting, since for any
+// v: u64 it holds that v <= u64::MAX and >> preserves [<=]
+pub proof fn shifted_lt(v: u64, k: nat)
+    requires
+        1 <= k <= 64
+    ensures
+        v >> k < 1u64 << (64 - k)
+{
+    if (k == 64) {
+        assert( v >> 64 == 0) by (bit_vector);
+        shl_zero_is_id(1u64);
+    }
+    else {
+        // (v >> k) <= (u64::MAX >> k)
+        lemma_shr_le_u64(v, u64::MAX, k);
+        // u64::MAX >> k < 1u64 << (64 - k)
+        lemma_u64_max_shifting(k);
+    }
+}
+
+// Because &-ing low_bits_mask(k) is a mod operation, it follows that
+// v & (low_bits_mask(k) as u64) = v % pow2(k) < pow2(k)
+pub proof fn masked_lt(v: u64, k: nat)
+    requires
+        0 <= k < 64
+    ensures
+        v & (low_bits_mask(k) as u64) < (1u64 << k)
+{
+    // v & (low_bits_mask(k) as u64) = v % pow2(k)
+    lemma_u64_low_bits_mask_is_mod(v, k);
+    // pow2(k) > 0
+    lemma_pow2_pos(k);
+    // v % pow2(k) < pow2(k)
+    lemma_mod_bound(v as int, pow2(k) as int);
+    // 1 << k = pow2(k)
+    shift_is_pow2(k);
+}
+
+// dummy, so we can call `verus common_verus.rs`
+fn main() {}
+
 }

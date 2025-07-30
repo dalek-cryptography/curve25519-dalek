@@ -22,6 +22,8 @@ use crate::{
     window::{LookupTable, NafLookupTable8},
 };
 
+use vstd::prelude::*;
+
 /// The value of minus one, equal to `-&FieldElement::ONE`
 pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51::from_limbs([
     2251799813685228,
@@ -123,6 +125,8 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([
     2251799813685247,
 ]);
 
+
+verus!{
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52 {
     limbs: [
@@ -158,6 +162,7 @@ pub(crate) const RR: Scalar52 = Scalar52 {
         0x000009411b7c309a,
     ],
 };
+}
 
 /// The Ed25519 basepoint, as an `EdwardsPoint`.
 ///

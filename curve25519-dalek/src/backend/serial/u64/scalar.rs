@@ -14,13 +14,16 @@
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
+
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
+use crate::constants;
+
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::calc;
 use vstd::prelude::*;
-
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
 
 verus! {
 
@@ -312,26 +315,8 @@ ensures
     (x as u128) * (y as u128)
 }
 
-/// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
-pub const L: Scalar52 = Scalar52 { limbs: [
-    0x0002631a5cf5d3ed,
-    0x000dea2f79cd6581,
-    0x000000000014def9,
-    0x0000000000000000,
-    0x0000100000000000,
-]};
 
-/// `RR` = (R^2) mod L where R = 2^260
-pub const RR: Scalar52 = Scalar52 { limbs: [
-    0x0009d265e952d13b,
-    0x000d63c715bea69f,
-    0x0005be65cb687604,
-    0x0003dceec73d217f,
-    0x000009411b7c309a,
-]};
 
-/// `LFACTOR` = (-(L^(-1))) mod 2^52
-pub const LFACTOR: u64 = 0x51da312547e1b;
 
 impl Scalar52 {
     /// The scalar \\( 0 \\).
@@ -502,7 +487,7 @@ impl Scalar52 {
         /*let mut s = Scalar52::sub(&sum, &Self::L);*/
         /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
         let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
-        assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
+        assert(to_nat(&l_value.limbs) == to_nat(&constants::L.limbs));
         assume(false); // TODO: complete the proof
 
         Scalar52::sub(&sum, &l_value)
@@ -549,11 +534,11 @@ impl Scalar52 {
             // ORIGINAL CODE
             //   let addend = u64::conditional_select(&0, &L[i], underflow);
         // OUR ADAPTED CODE FOR VERUS
-            let addend = select(&0, &L.limbs[i], underflow);
+            let addend = select(&0, &constants::L.limbs[i], underflow);
         /*** END: ADAPTED CODE BLOCK ***/
             assume (carry >> 52 < 2);
             assume (difference.limbs[i as int] < 1 << 52);
-            assume (L.limbs[i as int] < 1 << 52);
+            assume (constants::L.limbs[i as int] < 1 << 52);
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
         }
@@ -727,21 +712,21 @@ impl Scalar52 {
         assume(false); // TODO: Add proper bounds checking and proofs
         // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
         let (carry, n0) = Self::part1(limbs[0]);
-        let (carry, n1) = Self::part1(carry + limbs[1] + m(n0, L.limbs[1]));
-        let (carry, n2) = Self::part1(carry + limbs[2] + m(n0, L.limbs[2]) + m(n1, L.limbs[1]));
-        let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, L.limbs[2]) + m(n2, L.limbs[1]));
-        let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, L.limbs[4]) + m(n2, L.limbs[2]) + m(n3, L.limbs[1]));
+        let (carry, n1) = Self::part1(carry + limbs[1] + m(n0, constants::L.limbs[1]));
+        let (carry, n2) = Self::part1(carry + limbs[2] + m(n0, constants::L.limbs[2]) + m(n1, constants::L.limbs[1]));
+        let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, constants::L.limbs[2]) + m(n2, constants::L.limbs[1]));
+        let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, constants::L.limbs[4]) + m(n2, constants::L.limbs[2]) + m(n3, constants::L.limbs[1]));
 
         // Second half: limbs is now divisible by R, so divide by R by taking upper half
-        let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, L.limbs[4]) + m(n3, L.limbs[2]) + m(n4, L.limbs[1]));
-        let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, L.limbs[4]) + m(n4, L.limbs[2]));
-        let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, L.limbs[4]));
-        let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, L.limbs[4]));
+        let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, constants::L.limbs[4]) + m(n3, constants::L.limbs[2]) + m(n4, constants::L.limbs[1]));
+        let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, constants::L.limbs[4]) + m(n4, constants::L.limbs[2]));
+        let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, constants::L.limbs[4]));
+        let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, constants::L.limbs[4]));
         let r4 = carry as u64;
 
         // Result may be >= L, so attempt to subtract L
         let result = Scalar52 { limbs: [r0, r1, r2, r3, r4] };
-        Scalar52::sub(&result, &L)
+        Scalar52::sub(&result, &constants::L)
     }
 
 
@@ -750,8 +735,8 @@ impl Scalar52 {
     fn part1(sum: u128) -> (u128, u64)
     {
         assume(false); // TODO: Add proper bounds checking and proofs
-        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
-        let carry = (sum + m(p, L.limbs[0])) >> 52;
+        let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
+        let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         (carry, p)
     }
 
@@ -777,7 +762,7 @@ impl Scalar52 {
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &RR))
+        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
     }
 
     /// Compute `a^2` (mod l)
@@ -790,7 +775,7 @@ impl Scalar52 {
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &RR))
+        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
     }
 
     /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
@@ -829,7 +814,7 @@ impl Scalar52 {
         true,
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
-        Scalar52::montgomery_mul(self, &RR)
+        Scalar52::montgomery_mul(self, &constants::RR)
     }
 
     /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod L)`

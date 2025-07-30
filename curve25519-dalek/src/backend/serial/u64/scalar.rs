@@ -20,8 +20,11 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
+#[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
 use vstd::calc;
 use vstd::prelude::*;
 
@@ -31,6 +34,7 @@ verus! {
 
 #[verifier::external_type_specification]
 #[verifier::external_body]
+#[allow(dead_code)]
 pub struct ExChoice(Choice);
 
 pub uninterp spec fn boolify(c: Choice) -> bool;

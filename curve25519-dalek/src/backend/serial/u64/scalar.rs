@@ -378,470 +378,470 @@ impl Scalar52 {
     s
 }
 
-/// Reduce a 64 byte / 512 bit scalar mod l
-#[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
-pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
-    // TODO; just signature for now
-    Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }
-}
-
-/// Pack the limbs of this `Scalar52` into 32 bytes
-#[rustfmt::skip] // keep alignment of s[*] calculations
-#[allow(clippy::identity_op)]
-#[allow(clippy::wrong_self_convention)]
-pub fn to_bytes(self) -> (s: [u8; 32])
-// DIFF-SPEC-3: we give a name to the output: "s"
-// SPECIFICATION: packing keeps the same nat value
-ensures bytes_to_nat(&s) == to_nat(&self.limbs)
-{
-    let mut s = [0u8; 32];
-
-    s[ 0] =  (self.limbs[ 0] >>  0)                      as u8;
-    s[ 1] =  (self.limbs[ 0] >>  8)                      as u8;
-    s[ 2] =  (self.limbs[ 0] >> 16)                      as u8;
-    s[ 3] =  (self.limbs[ 0] >> 24)                      as u8;
-    s[ 4] =  (self.limbs[ 0] >> 32)                      as u8;
-    s[ 5] =  (self.limbs[ 0] >> 40)                      as u8;
-    s[ 6] = ((self.limbs[ 0] >> 48) | (self.limbs[ 1] << 4)) as u8;
-    s[ 7] =  (self.limbs[ 1] >>  4)                      as u8;
-    s[ 8] =  (self.limbs[ 1] >> 12)                      as u8;
-    s[ 9] =  (self.limbs[ 1] >> 20)                      as u8;
-    s[10] =  (self.limbs[ 1] >> 28)                      as u8;
-    s[11] =  (self.limbs[ 1] >> 36)                      as u8;
-    s[12] =  (self.limbs[ 1] >> 44)                      as u8;
-    s[13] =  (self.limbs[ 2] >>  0)                      as u8;
-    s[14] =  (self.limbs[ 2] >>  8)                      as u8;
-    s[15] =  (self.limbs[ 2] >> 16)                      as u8;
-    s[16] =  (self.limbs[ 2] >> 24)                      as u8;
-    s[17] =  (self.limbs[ 2] >> 32)                      as u8;
-    s[18] =  (self.limbs[ 2] >> 40)                      as u8;
-    s[19] = ((self.limbs[ 2] >> 48) | (self.limbs[ 3] << 4)) as u8;
-    s[20] =  (self.limbs[ 3] >>  4)                      as u8;
-    s[21] =  (self.limbs[ 3] >> 12)                      as u8;
-    s[22] =  (self.limbs[ 3] >> 20)                      as u8;
-    s[23] =  (self.limbs[ 3] >> 28)                      as u8;
-    s[24] =  (self.limbs[ 3] >> 36)                      as u8;
-    s[25] =  (self.limbs[ 3] >> 44)                      as u8;
-    s[26] =  (self.limbs[ 4] >>  0)                      as u8;
-    s[27] =  (self.limbs[ 4] >>  8)                      as u8;
-    s[28] =  (self.limbs[ 4] >> 16)                      as u8;
-    s[29] =  (self.limbs[ 4] >> 24)                      as u8;
-    s[30] =  (self.limbs[ 4] >> 32)                      as u8;
-    s[31] =  (self.limbs[ 4] >> 40)                      as u8;
-
-    assume(false); // TODO: complete the proof
-
-    s
-}
-
-/// Compute `a + b` (mod l)
-pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-    forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
-{
-    //let mut sum = Scalar52::ZERO;
-    let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-    proof {
-        assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-        assert(sum == Scalar52::ZERO);
-        assert(1u64 << 52 > 0) by (bit_vector);
+    /// Reduce a 64 byte / 512 bit scalar mod l
+    #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
+    pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
+        // TODO; just signature for now
+        Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }
     }
-    let mask = (1u64 << 52) - 1;
 
-    // a + b
-    let mut carry: u64 = 0;
-    proof {
-        assert(carry == 0u64);
-        assert(1u64 << 54 < u64::MAX) by (bit_vector);
-        assert(0u64 < (1u64 << 54)) by (bit_vector);
-    }
-    for i in 0..5
-        invariant //0 <= i <= 5,
-        // forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
-        (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52),
-        (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52),
-        carry < (1u64 << 54),
+    /// Pack the limbs of this `Scalar52` into 32 bytes
+    #[rustfmt::skip] // keep alignment of s[*] calculations
+    #[allow(clippy::identity_op)]
+    #[allow(clippy::wrong_self_convention)]
+    pub fn to_bytes(self) -> (s: [u8; 32])
+    // DIFF-SPEC-3: we give a name to the output: "s"
+    // SPECIFICATION: packing keeps the same nat value
+    ensures bytes_to_nat(&s) == to_nat(&self.limbs)
     {
-        proof {
-            assert(0 <= i < 5);
-            assert(a.limbs[i as int] < 1u64 << 52);
-            assert(b.limbs[i as int] < 1u64 << 52);
-            assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-            assert(a.limbs[i as int] + b.limbs[i as int] < 1u64 << 53);
-            assert(carry < (1u64 << 54));
-            assert(carry >> 52 >= 0u64);
-            assert((carry >> 52) < (1u64 << 54)) by (bit_vector);
-            assert((1u64 << 53) + 3 < (1u64 << 54)) by (bit_vector);
-            assert((1u64 << 53) + (1u64 << 54) <= (1u64 << 55)) by (bit_vector);
-            assert((a.limbs[i as int] + b.limbs[i as int] + (carry >> 52)) < (1u64 << 55));
-        }
-        carry = a.limbs[i] + b.limbs[i] + (carry >> 52);
-        sum.limbs[i] = carry & mask;
-        assume( (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52));
-        assume( (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52));
-        assume(false);
+        let mut s = [0u8; 32];
+
+        s[ 0] =  (self.limbs[ 0] >>  0)                      as u8;
+        s[ 1] =  (self.limbs[ 0] >>  8)                      as u8;
+        s[ 2] =  (self.limbs[ 0] >> 16)                      as u8;
+        s[ 3] =  (self.limbs[ 0] >> 24)                      as u8;
+        s[ 4] =  (self.limbs[ 0] >> 32)                      as u8;
+        s[ 5] =  (self.limbs[ 0] >> 40)                      as u8;
+        s[ 6] = ((self.limbs[ 0] >> 48) | (self.limbs[ 1] << 4)) as u8;
+        s[ 7] =  (self.limbs[ 1] >>  4)                      as u8;
+        s[ 8] =  (self.limbs[ 1] >> 12)                      as u8;
+        s[ 9] =  (self.limbs[ 1] >> 20)                      as u8;
+        s[10] =  (self.limbs[ 1] >> 28)                      as u8;
+        s[11] =  (self.limbs[ 1] >> 36)                      as u8;
+        s[12] =  (self.limbs[ 1] >> 44)                      as u8;
+        s[13] =  (self.limbs[ 2] >>  0)                      as u8;
+        s[14] =  (self.limbs[ 2] >>  8)                      as u8;
+        s[15] =  (self.limbs[ 2] >> 16)                      as u8;
+        s[16] =  (self.limbs[ 2] >> 24)                      as u8;
+        s[17] =  (self.limbs[ 2] >> 32)                      as u8;
+        s[18] =  (self.limbs[ 2] >> 40)                      as u8;
+        s[19] = ((self.limbs[ 2] >> 48) | (self.limbs[ 3] << 4)) as u8;
+        s[20] =  (self.limbs[ 3] >>  4)                      as u8;
+        s[21] =  (self.limbs[ 3] >> 12)                      as u8;
+        s[22] =  (self.limbs[ 3] >> 20)                      as u8;
+        s[23] =  (self.limbs[ 3] >> 28)                      as u8;
+        s[24] =  (self.limbs[ 3] >> 36)                      as u8;
+        s[25] =  (self.limbs[ 3] >> 44)                      as u8;
+        s[26] =  (self.limbs[ 4] >>  0)                      as u8;
+        s[27] =  (self.limbs[ 4] >>  8)                      as u8;
+        s[28] =  (self.limbs[ 4] >> 16)                      as u8;
+        s[29] =  (self.limbs[ 4] >> 24)                      as u8;
+        s[30] =  (self.limbs[ 4] >> 32)                      as u8;
+        s[31] =  (self.limbs[ 4] >> 40)                      as u8;
+
+        assume(false); // TODO: complete the proof
+
+        s
     }
 
-    // subtract l if the sum is >= l
-
-    /*** BEGIN: ADAPTED CODE BLOCK ***/
-
-    /* ORIGINAL CODE */
-    /*let mut s = Scalar52::sub(&sum, &Self::L);*/
-    /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
-    let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
-    assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
-    assume(false); // TODO: complete the proof
-
-    Scalar52::sub(&sum, &l_value)
-
-    /*** END: ADAPTED CODE BLOCK ***/
-
-}
-
-/// Compute `a - b` (mod l)
-pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-    forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
-{
-    //let mut difference = Scalar52::ZERO;
-        let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-    proof {
-        assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-        assert(difference == Scalar52::ZERO);
-        assert(1u64 << 52 > 0) by (bit_vector);
-    }
-    let mask = (1u64 << 52) - 1;
-
-    // a - b
-    let mut borrow: u64 = 0;
-    for i in 0..5
-        invariant 0 <= i <= 5,
-                    forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+    /// Compute `a + b` (mod l)
+    pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
     {
+        //let mut sum = Scalar52::ZERO;
+        let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof {
-            assert ((borrow >> 63) < 2) by (bit_vector);
+            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
+            assert(sum == Scalar52::ZERO);
+            assert(1u64 << 52 > 0) by (bit_vector);
         }
-        borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
-        difference.limbs[i] = borrow & mask;
-    }
+        let mask = (1u64 << 52) - 1;
 
-    // conditionally add l if the difference is negative
-    let mut carry: u64 = 0;
-    for i in 0..5 {
-        let underflow = Choice::from((borrow >> 63) as u8);
+        // a + b
+        let mut carry: u64 = 0;
+        proof {
+            assert(carry == 0u64);
+            assert(1u64 << 54 < u64::MAX) by (bit_vector);
+            assert(0u64 < (1u64 << 54)) by (bit_vector);
+        }
+        for i in 0..5
+            invariant //0 <= i <= 5,
+            // forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
+            (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52),
+            (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52),
+            carry < (1u64 << 54),
+        {
+            proof {
+                assert(0 <= i < 5);
+                assert(a.limbs[i as int] < 1u64 << 52);
+                assert(b.limbs[i as int] < 1u64 << 52);
+                assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+                assert(a.limbs[i as int] + b.limbs[i as int] < 1u64 << 53);
+                assert(carry < (1u64 << 54));
+                assert(carry >> 52 >= 0u64);
+                assert((carry >> 52) < (1u64 << 54)) by (bit_vector);
+                assert((1u64 << 53) + 3 < (1u64 << 54)) by (bit_vector);
+                assert((1u64 << 53) + (1u64 << 54) <= (1u64 << 55)) by (bit_vector);
+                assert((a.limbs[i as int] + b.limbs[i as int] + (carry >> 52)) < (1u64 << 55));
+            }
+            carry = a.limbs[i] + b.limbs[i] + (carry >> 52);
+            sum.limbs[i] = carry & mask;
+            assume( (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52));
+            assume( (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52));
+            assume(false);
+        }
+
+        // subtract l if the sum is >= l
+
         /*** BEGIN: ADAPTED CODE BLOCK ***/
-        // ORIGINAL CODE
-        //   let addend = u64::conditional_select(&0, &L[i], underflow);
-    // OUR ADAPTED CODE FOR VERUS
-        let addend = select(&0, &L.limbs[i], underflow);
-    /*** END: ADAPTED CODE BLOCK ***/
-        assume (carry >> 52 < 2);
-        assume (difference.limbs[i as int] < 1 << 52);
-        assume (L.limbs[i as int] < 1 << 52);
-        carry = (carry >> 52) + difference.limbs[i] + addend;
-        difference.limbs[i] = carry & mask;
-    }
-    assume(false); // TODO: complete the proof
-    difference
-}
 
-/// Compute `a * b`
-#[inline(always)]
-#[rustfmt::skip] // keep alignment of z[*] calculations
-pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> (z: [u128; 9])
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-    forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-ensures
-    slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&b.limbs),
-{
-    let mut z = [0u128; 9];
+        /* ORIGINAL CODE */
+        /*let mut s = Scalar52::sub(&sum, &Self::L);*/
+        /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
+        let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
+        assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
+        assume(false); // TODO: complete the proof
 
-    z[0] = m(a.limbs[0], b.limbs[0]);
+        Scalar52::sub(&sum, &l_value)
 
-    proof {
-        // Each m() result is < 2^104
-        // Sum: 2^104 + 2^104 = 2^105 < 2^128
-        assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
-    }
-    z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
+        /*** END: ADAPTED CODE BLOCK ***/
 
-    proof {
-        // Each m() result is < 2^104
-        // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
-        assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
-    }
-    z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
-
-    proof {
-        // Each m() result is < 2^104
-        // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
-
-        assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
-        assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
-    }
-    z[3] = m(a.limbs[0], b.limbs[3]) + m(a.limbs[1], b.limbs[2]) + m(a.limbs[2], b.limbs[1]) + m(a.limbs[3], b.limbs[0]);
-
-    proof {
-        // Each m() result is < 2^104
-        // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
-        assert(8u128 == (1u128 << 3)) by (bit_vector);
-        assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
-    }
-    z[4] = m(a.limbs[0], b.limbs[4]) + m(a.limbs[1], b.limbs[3]) + m(a.limbs[2], b.limbs[2]) + m(a.limbs[3], b.limbs[1]) + m(a.limbs[4], b.limbs[0]);
-    z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);
-    z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
-    z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);
-    z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
-
-    proof {
-        assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(b.limbs) == nine_limbs_to_nat_aux(&z)) by {
-            broadcast use group_mul_is_commutative_and_distributive;
-            broadcast use lemma_mul_is_associative;
-
-            lemma_pow2_adds(52, 52);
-            lemma_pow2_adds(52, 104);
-            lemma_pow2_adds(52, 156);
-            lemma_pow2_adds(52, 208);
-            lemma_pow2_adds(104, 104);
-            lemma_pow2_adds(104, 156);
-            lemma_pow2_adds(104, 208);
-            lemma_pow2_adds(156, 156);
-            lemma_pow2_adds(156, 208);
-            lemma_pow2_adds(208, 208);
-        };
-        lemma_nine_limbs_equals_slice128_to_nat(&z);
-        lemma_five_limbs_equals_to_nat(&a.limbs);
-        lemma_five_limbs_equals_to_nat(&b.limbs);
     }
 
-    z
-}
+    /// Compute `a - b` (mod l)
+    pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+    {
+        //let mut difference = Scalar52::ZERO;
+            let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+        proof {
+            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
+            assert(difference == Scalar52::ZERO);
+            assert(1u64 << 52 > 0) by (bit_vector);
+        }
+        let mask = (1u64 << 52) - 1;
 
-/// Compute `a^2`
-#[inline(always)]
-#[rustfmt::skip] // keep alignment of calculations
-pub (crate) fn square_internal(a: &Scalar52) -> (z: [u128; 9])
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-ensures
-    slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
-{
-    let mut z = [0u128; 9];
+        // a - b
+        let mut borrow: u64 = 0;
+        for i in 0..5
+            invariant 0 <= i <= 5,
+                        forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+        {
+            proof {
+                assert ((borrow >> 63) < 2) by (bit_vector);
+            }
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
+            difference.limbs[i] = borrow & mask;
+        }
 
-    z[0] = m(a.limbs[0], a.limbs[0]);
-
-    proof {
-        // m() ensures its result is < 2^104
-        // Since m_result < 2^104, we have m_result * 2 < 2^105
-        // and 2^105 is well within u128 bounds
-        assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
-    }
-    z[1] = m(a.limbs[0], a.limbs[1]) * 2;
-
-    proof {
-        // Each m() result is < 2^104
-        // m_term1 * 2 < 2^105
-
-        // Sum: 2^105 + 2^104 = 3 * 2^104 < 2^106 < 2^128
-        assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
-    }
-    z[2] = m(a.limbs[0], a.limbs[2]) * 2 + m(a.limbs[1], a.limbs[1]);
-
-    proof {
-        // Each m() result is < 2^104
-        // Each * 2 gives < 2^105
-
-        // Sum: 2^105 + 2^105 = 2^106 < 2^128
-        assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
-    }
-    z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
-
-    proof {
-        // Each m() result is < 2^104
-        // First two terms * 2 give < 2^105
-
-        // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
-        assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
-    }
-    z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);
-    z[5] =                 m(a.limbs[1], a.limbs[4]) * 2 + m(a.limbs[2], a.limbs[3]) * 2;
-    z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);
-    z[7] =                                                 m(a.limbs[3], a.limbs[4]) * 2;
-    z[8] =                                                                 m(a.limbs[4], a.limbs[4]);
-
-    proof {
-
-        assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(a.limbs) == nine_limbs_to_nat_aux(&z)) by {
-            broadcast use group_mul_is_commutative_and_distributive;
-            broadcast use lemma_mul_is_associative;
-
-            lemma_pow2_adds(52, 52);
-            lemma_pow2_adds(52, 104);
-            lemma_pow2_adds(52, 156);
-            lemma_pow2_adds(52, 208);
-            lemma_pow2_adds(104, 104);
-            lemma_pow2_adds(104, 156);
-            lemma_pow2_adds(104, 208);
-            lemma_pow2_adds(156, 156);
-            lemma_pow2_adds(156, 208);
-            lemma_pow2_adds(208, 208);
-        };
-        lemma_nine_limbs_equals_slice128_to_nat(&z);
-        lemma_five_limbs_equals_to_nat(&a.limbs);
+        // conditionally add l if the difference is negative
+        let mut carry: u64 = 0;
+        for i in 0..5 {
+            let underflow = Choice::from((borrow >> 63) as u8);
+            /*** BEGIN: ADAPTED CODE BLOCK ***/
+            // ORIGINAL CODE
+            //   let addend = u64::conditional_select(&0, &L[i], underflow);
+        // OUR ADAPTED CODE FOR VERUS
+            let addend = select(&0, &L.limbs[i], underflow);
+        /*** END: ADAPTED CODE BLOCK ***/
+            assume (carry >> 52 < 2);
+            assume (difference.limbs[i as int] < 1 << 52);
+            assume (L.limbs[i as int] < 1 << 52);
+            carry = (carry >> 52) + difference.limbs[i] + addend;
+            difference.limbs[i] = carry & mask;
+        }
+        assume(false); // TODO: complete the proof
+        difference
     }
 
-    z
-}
+    /// Compute `a * b`
+    #[inline(always)]
+    #[rustfmt::skip] // keep alignment of z[*] calculations
+    pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> (z: [u128; 9])
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&b.limbs),
+    {
+        let mut z = [0u128; 9];
 
-/// Compute `a * b` (mod l)
-#[inline(never)]
-pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-    forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
-{
-    assume(false); // TODO: Add proper Montgomery arithmetic proofs
-    let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
-    Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &RR))
-}
+        z[0] = m(a.limbs[0], b.limbs[0]);
 
-/// Compute `a^2` (mod l)
-#[inline(never)]
-pub fn square(&self) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
-{
-    assume(false); // TODO: Add proper Montgomery arithmetic proofs
-    let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-    Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &RR))
-}
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 2^104 + 2^104 = 2^105 < 2^128
+            assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
+        }
+        z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
 
-/// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
-#[inline(never)]
-pub fn montgomery_mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-    forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
-{
-    assume(false); // TODO: Add proper Montgomery arithmetic proofs
-    Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
-}
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
+            assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+        }
+        z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
 
-/// Compute `(a^2) / R` (mod l) in Montgomery form, where R is the Montgomery modulus 2^260
-#[inline(never)]
-pub fn montgomery_square(&self) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-ensures
-    to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
-{
-    assume(false); // TODO: Add proper Montgomery arithmetic proofs
-    Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
-}
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
 
-/// Helper function for part1 of Montgomery reduction
-#[inline(always)]
-fn montgomery_part1(sum: u128) -> (u128, u64)
-{
-    assume(false); // TODO: Add proper bounds checking and proofs
-    let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
-    let carry = (sum + m(p, L.limbs[0])) >> 52;
-    (carry, p)
-}
+            assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
+            assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
+        }
+        z[3] = m(a.limbs[0], b.limbs[3]) + m(a.limbs[1], b.limbs[2]) + m(a.limbs[2], b.limbs[1]) + m(a.limbs[3], b.limbs[0]);
 
-/// Helper function for part2 of Montgomery reduction
-#[inline(always)]
-fn montgomery_part2(sum: u128) -> (u128, u64)
-{
-    assume(false); // TODO: Add proper bounds checking and proofs
-    let w = (sum as u64) & ((1u64 << 52) - 1);
-    let carry = sum >> 52;
-    (carry, w)
-}
+        proof {
+            // Each m() result is < 2^104
+            // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
+            assert(8u128 == (1u128 << 3)) by (bit_vector);
+            assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
+        }
+        z[4] = m(a.limbs[0], b.limbs[4]) + m(a.limbs[1], b.limbs[3]) + m(a.limbs[2], b.limbs[2]) + m(a.limbs[3], b.limbs[1]) + m(a.limbs[4], b.limbs[0]);
+        z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);
+        z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
+        z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);
+        z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
 
-/// Montgomery reduction: reduces a 9-limb number to a 5-limb scalar
-/// This is the core of Montgomery arithmetic - it computes (x / R) mod L
-/// where R = 2^260 and L is the scalar field order
-pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
-ensures
-    // TODO: Add proper specification for Montgomery reduction
-    true,
-{
-    assume(false); // TODO: Add proper bounds checking and proofs
-    // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
-    let (carry, n0) = Scalar52::montgomery_part1(limbs[0]);
-    let (carry, n1) = Scalar52::montgomery_part1(carry + limbs[1] + m(n0, L.limbs[1]));
-    let (carry, n2) = Scalar52::montgomery_part1(carry + limbs[2] + m(n0, L.limbs[2]) + m(n1, L.limbs[1]));
-    let (carry, n3) = Scalar52::montgomery_part1(carry + limbs[3] + m(n1, L.limbs[2]) + m(n2, L.limbs[1]));
-    let (carry, n4) = Scalar52::montgomery_part1(carry + limbs[4] + m(n0, L.limbs[4]) + m(n2, L.limbs[2]) + m(n3, L.limbs[1]));
+        proof {
+            assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(b.limbs) == nine_limbs_to_nat_aux(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
 
-    // Second half: limbs is now divisible by R, so divide by R by taking upper half
-    let (carry, r0) = Scalar52::montgomery_part2(carry + limbs[5] + m(n1, L.limbs[4]) + m(n3, L.limbs[2]) + m(n4, L.limbs[1]));
-    let (carry, r1) = Scalar52::montgomery_part2(carry + limbs[6] + m(n2, L.limbs[4]) + m(n4, L.limbs[2]));
-    let (carry, r2) = Scalar52::montgomery_part2(carry + limbs[7] + m(n3, L.limbs[4]));
-    let (carry, r3) = Scalar52::montgomery_part2(carry + limbs[8] + m(n4, L.limbs[4]));
-    let r4 = carry as u64;
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_to_nat(&a.limbs);
+            lemma_five_limbs_equals_to_nat(&b.limbs);
+        }
 
-    // Result may be >= L, so attempt to subtract L
-    let result = Scalar52 { limbs: [r0, r1, r2, r3, r4] };
-    Scalar52::sub(&result, &L)
-}
-
-/// Puts a Scalar52 into Montgomery form, i.e. computes `a*R (mod L)`
-#[inline(never)]
-pub fn as_montgomery(&self) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-ensures
-    // TODO: Add proper specification for Montgomery form conversion
-    true,
-{
-    assume(false); // TODO: Add proper Montgomery arithmetic proofs
-    Scalar52::montgomery_mul(self, &RR)
-}
-
-/// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod L)`
-#[allow(clippy::wrong_self_convention)]
-#[inline(never)]
-pub fn from_montgomery(&self) -> (result: Scalar52)
-requires
-    forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-ensures
-    // TODO: Add proper specification for Montgomery form conversion
-    true,
-{
-    let mut limbs = [0u128; 9];
-    #[allow(clippy::needless_range_loop)]
-    for i in 0..5 {
-        limbs[i] = self.limbs[i] as u128;
+        z
     }
-    Scalar52::montgomery_reduce(&limbs)
-}
+
+    /// Compute `a^2`
+    #[inline(always)]
+    #[rustfmt::skip] // keep alignment of calculations
+    pub (crate) fn square_internal(a: &Scalar52) -> (z: [u128; 9])
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+    ensures
+        slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
+    {
+        let mut z = [0u128; 9];
+
+        z[0] = m(a.limbs[0], a.limbs[0]);
+
+        proof {
+            // m() ensures its result is < 2^104
+            // Since m_result < 2^104, we have m_result * 2 < 2^105
+            // and 2^105 is well within u128 bounds
+            assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
+        }
+        z[1] = m(a.limbs[0], a.limbs[1]) * 2;
+
+        proof {
+            // Each m() result is < 2^104
+            // m_term1 * 2 < 2^105
+
+            // Sum: 2^105 + 2^104 = 3 * 2^104 < 2^106 < 2^128
+            assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+        }
+        z[2] = m(a.limbs[0], a.limbs[2]) * 2 + m(a.limbs[1], a.limbs[1]);
+
+        proof {
+            // Each m() result is < 2^104
+            // Each * 2 gives < 2^105
+
+            // Sum: 2^105 + 2^105 = 2^106 < 2^128
+            assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
+        }
+        z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
+
+        proof {
+            // Each m() result is < 2^104
+            // First two terms * 2 give < 2^105
+
+            // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
+            assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
+        }
+        z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);
+        z[5] =                 m(a.limbs[1], a.limbs[4]) * 2 + m(a.limbs[2], a.limbs[3]) * 2;
+        z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);
+        z[7] =                                                 m(a.limbs[3], a.limbs[4]) * 2;
+        z[8] =                                                                 m(a.limbs[4], a.limbs[4]);
+
+        proof {
+
+            assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(a.limbs) == nine_limbs_to_nat_aux(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
+
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_to_nat(&a.limbs);
+        }
+
+        z
+    }
+
+    /// Compute `a * b` (mod l)
+    #[inline(never)]
+    pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+    {
+        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
+        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &RR))
+    }
+
+    /// Compute `a^2` (mod l)
+    #[inline(never)]
+    pub fn square(&self) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+    {
+        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
+        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &RR))
+    }
+
+    /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
+    #[inline(never)]
+    pub fn montgomery_mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+    {
+        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
+    }
+
+    /// Compute `(a^2) / R` (mod l) in Montgomery form, where R is the Montgomery modulus 2^260
+    #[inline(never)]
+    pub fn montgomery_square(&self) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+    ensures
+        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+    {
+        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
+    }
+
+    /// Helper function for part1 of Montgomery reduction
+    #[inline(always)]
+    fn montgomery_part1(sum: u128) -> (u128, u64)
+    {
+        assume(false); // TODO: Add proper bounds checking and proofs
+        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
+        let carry = (sum + m(p, L.limbs[0])) >> 52;
+        (carry, p)
+    }
+
+    /// Helper function for part2 of Montgomery reduction
+    #[inline(always)]
+    fn montgomery_part2(sum: u128) -> (u128, u64)
+    {
+        assume(false); // TODO: Add proper bounds checking and proofs
+        let w = (sum as u64) & ((1u64 << 52) - 1);
+        let carry = sum >> 52;
+        (carry, w)
+    }
+
+    /// Montgomery reduction: reduces a 9-limb number to a 5-limb scalar
+    /// This is the core of Montgomery arithmetic - it computes (x / R) mod L
+    /// where R = 2^260 and L is the scalar field order
+    pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
+    ensures
+        // TODO: Add proper specification for Montgomery reduction
+        true,
+    {
+        assume(false); // TODO: Add proper bounds checking and proofs
+        // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
+        let (carry, n0) = Scalar52::montgomery_part1(limbs[0]);
+        let (carry, n1) = Scalar52::montgomery_part1(carry + limbs[1] + m(n0, L.limbs[1]));
+        let (carry, n2) = Scalar52::montgomery_part1(carry + limbs[2] + m(n0, L.limbs[2]) + m(n1, L.limbs[1]));
+        let (carry, n3) = Scalar52::montgomery_part1(carry + limbs[3] + m(n1, L.limbs[2]) + m(n2, L.limbs[1]));
+        let (carry, n4) = Scalar52::montgomery_part1(carry + limbs[4] + m(n0, L.limbs[4]) + m(n2, L.limbs[2]) + m(n3, L.limbs[1]));
+
+        // Second half: limbs is now divisible by R, so divide by R by taking upper half
+        let (carry, r0) = Scalar52::montgomery_part2(carry + limbs[5] + m(n1, L.limbs[4]) + m(n3, L.limbs[2]) + m(n4, L.limbs[1]));
+        let (carry, r1) = Scalar52::montgomery_part2(carry + limbs[6] + m(n2, L.limbs[4]) + m(n4, L.limbs[2]));
+        let (carry, r2) = Scalar52::montgomery_part2(carry + limbs[7] + m(n3, L.limbs[4]));
+        let (carry, r3) = Scalar52::montgomery_part2(carry + limbs[8] + m(n4, L.limbs[4]));
+        let r4 = carry as u64;
+
+        // Result may be >= L, so attempt to subtract L
+        let result = Scalar52 { limbs: [r0, r1, r2, r3, r4] };
+        Scalar52::sub(&result, &L)
+    }
+
+    /// Puts a Scalar52 into Montgomery form, i.e. computes `a*R (mod L)`
+    #[inline(never)]
+    pub fn as_montgomery(&self) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+    ensures
+        // TODO: Add proper specification for Montgomery form conversion
+        true,
+    {
+        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        Scalar52::montgomery_mul(self, &RR)
+    }
+
+    /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod L)`
+    #[allow(clippy::wrong_self_convention)]
+    #[inline(never)]
+    pub fn from_montgomery(&self) -> (result: Scalar52)
+    requires
+        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+    ensures
+        // TODO: Add proper specification for Montgomery form conversion
+        true,
+    {
+        let mut limbs = [0u128; 9];
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..5 {
+            limbs[i] = self.limbs[i] as u128;
+        }
+        Scalar52::montgomery_reduce(&limbs)
+    }
 
 
 
-/// Verification: scalar * scalar.invert() ≡ 1 mod L
-proof fn verify_invert_correct(&self)
-//     requires to_scalar(&self.limbs) != 0
-//    ensures (to_scalar(&self.limbs) * invert_spec(&self.limbs)) % group_order() == 1
-{
-    assume(false);
+    /// Verification: scalar * scalar.invert() ≡ 1 mod L
+    proof fn verify_invert_correct(&self)
+    //     requires to_scalar(&self.limbs) != 0
+    //    ensures (to_scalar(&self.limbs) * invert_spec(&self.limbs)) % group_order() == 1
+    {
+        assume(false);
 
-}
+    }
 
 }
 

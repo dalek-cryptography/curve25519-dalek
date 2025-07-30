@@ -499,8 +499,6 @@ impl Scalar52 {
 
         assume(false);
         Scalar52::sub(&sum, &constants::L)
-
-
     }
 
     /// Compute `a - b` (mod l)
@@ -547,7 +545,6 @@ impl Scalar52 {
         difference
     }
 
-    // TODO Make this function more like the original?
     /// Compute `a * b`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of z[*] calculations

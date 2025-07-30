@@ -271,7 +271,7 @@ impl Zeroize for Scalar52 {
 verus! {
 impl Index<usize> for Scalar52 {
     type Output = u64;
-    // TODO Do we need this?
+    // TODO Verify this
     #[verifier::external_body]
     fn index(&self, _index: usize) -> &u64 {
         &(self.limbs[_index])

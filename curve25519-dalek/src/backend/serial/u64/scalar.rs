@@ -237,6 +237,39 @@ pub struct Scalar52 {
     pub limbs: [u64; 5],
 }
 
+} // verus!
+
+impl Debug for Scalar52 {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Scalar52: {:?}", self.limbs)
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.limbs.zeroize();
+    }
+}
+
+verus!{
+impl Index<usize> for Scalar52 {
+    type Output = u64;
+    #[verifier::external_body]
+    fn index(&self, _index: usize) -> &u64 {
+        &(self.limbs[_index])
+    }
+}
+} // verus!
+
+impl IndexMut<usize> for Scalar52 {
+    fn index_mut(&mut self, _index: usize) -> &mut u64 {
+        &mut (self.limbs[_index])
+    }
+}
+
+verus!{
+
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]
 fn m(x: u64, y: u64) -> (z: u128)
@@ -812,14 +845,6 @@ proof fn verify_invert_correct(&self)
 }
 
 
-impl Index<usize> for Scalar52 {
-    type Output = u64;
-    #[verifier::external_body]
-    fn index(&self, _index: usize) -> &u64 {
-        &(self.limbs[_index])
-    }
-}
-
 // Tests moved outside of verus block for now
 #[cfg(test)]
 mod test {
@@ -850,21 +875,3 @@ mod test {
 }
 }
 
-impl Debug for Scalar52 {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Scalar52: {:?}", self.limbs)
-    }
-}
-
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar52 {
-    fn zeroize(&mut self) {
-        self.limbs.zeroize();
-    }
-}
-
-impl IndexMut<usize> for Scalar52 {
-    fn index_mut(&mut self, _index: usize) -> &mut u64 {
-        &mut (self.limbs[_index])
-    }
-}

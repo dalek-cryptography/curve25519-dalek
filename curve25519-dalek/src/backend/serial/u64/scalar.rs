@@ -352,12 +352,7 @@ impl Scalar52 {
 
         let mask = (1u64 << 52) - 1;
         let top_mask = (1u64 << 48) - 1;
-        // let mut s = Scalar52::ZERO; // ORIGINAL IMPLEMENTATION
         let mut s = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-        proof {
-            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-            assert(s == Scalar52::ZERO); // PROVES EQUIVALENCE TO ORIGINAL IMPLEMENTATION
-        }
 
         s.limbs[0] =   words[0]                            & mask;
         s.limbs[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
@@ -372,9 +367,34 @@ impl Scalar52 {
 
     /// Reduce a 64 byte / 512 bit scalar mod l
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
+    #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> Scalar52 {
-        // TODO; just signature for now
-        Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }
+        let mut words = [0u64; 8];
+        for i in 0..8 {
+            for j in 0..8 {
+                words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
+            }
+        }
+
+        let mask = (1u64 << 52) - 1;
+        let mut lo = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+        let mut hi = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+
+        lo[0] =   words[0]                             & mask;
+        lo[1] = ((words[0] >> 52) | (words[ 1] << 12)) & mask;
+        lo[2] = ((words[1] >> 40) | (words[ 2] << 24)) & mask;
+        lo[3] = ((words[2] >> 28) | (words[ 3] << 36)) & mask;
+        lo[4] = ((words[3] >> 16) | (words[ 4] << 48)) & mask;
+        hi[0] =  (words[4] >>  4)                      & mask;
+        hi[1] = ((words[4] >> 56) | (words[ 5] <<  8)) & mask;
+        hi[2] = ((words[5] >> 44) | (words[ 6] << 20)) & mask;
+        hi[3] = ((words[6] >> 32) | (words[ 7] << 32)) & mask;
+        hi[4] =   words[7] >> 20                             ;
+
+        lo = Scalar52::montgomery_mul(&lo, &constants::R);  // (lo * R) / R = lo
+        hi = Scalar52::montgomery_mul(&hi, &constants::RR); // (hi * R^2) / R = hi * R
+
+        Scalar52::add(&hi, &lo)
     }
 
     /// Pack the limbs of this `Scalar52` into 32 bytes

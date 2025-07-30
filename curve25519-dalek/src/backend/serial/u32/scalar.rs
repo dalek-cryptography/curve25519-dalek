@@ -22,31 +22,33 @@ use crate::constants;
 /// The `Scalar29` struct represents an element in \\(\mathbb{Z} / \ell\mathbb{Z}\\) as 9 29-bit
 /// limbs
 #[derive(Copy, Clone)]
-pub struct Scalar29(pub [u32; 9]);
+pub struct Scalar29 {
+    pub limbs: [u32; 9],
+}
 
 impl Debug for Scalar29 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Scalar29: {:?}", &self.0[..])
+        write!(f, "Scalar29: {:?}", &self.limbs[..])
     }
 }
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar29 {
     fn zeroize(&mut self) {
-        self.0.zeroize();
+        self.limbs.zeroize();
     }
 }
 
 impl Index<usize> for Scalar29 {
     type Output = u32;
     fn index(&self, _index: usize) -> &u32 {
-        &(self.0[_index])
+        &(self.limbs[_index])
     }
 }
 
 impl IndexMut<usize> for Scalar29 {
     fn index_mut(&mut self, _index: usize) -> &mut u32 {
-        &mut (self.0[_index])
+        &mut (self.limbs[_index])
     }
 }
 
@@ -58,7 +60,7 @@ fn m(x: u32, y: u32) -> u64 {
 
 impl Scalar29 {
     /// The scalar \\( 0 \\).
-    pub const ZERO: Scalar29 = Scalar29([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    pub const ZERO: Scalar29 = Scalar29 { limbs: [0, 0, 0, 0, 0, 0, 0, 0, 0] };
 
     /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
@@ -132,38 +134,38 @@ impl Scalar29 {
     pub fn to_bytes(self) -> [u8; 32] {
         let mut s = [0u8; 32];
 
-        s[ 0] =  (self.0[0] >>  0)                      as u8;
-        s[ 1] =  (self.0[0] >>  8)                      as u8;
-        s[ 2] =  (self.0[0] >> 16)                      as u8;
-        s[ 3] = ((self.0[0] >> 24) | (self.0[1] << 5))  as u8;
-        s[ 4] =  (self.0[1] >>  3)                      as u8;
-        s[ 5] =  (self.0[1] >> 11)                      as u8;
-        s[ 6] =  (self.0[1] >> 19)                      as u8;
-        s[ 7] = ((self.0[1] >> 27) | (self.0[2] << 2))  as u8;
-        s[ 8] =  (self.0[2] >>  6)                      as u8;
-        s[ 9] =  (self.0[2] >> 14)                      as u8;
-        s[10] = ((self.0[2] >> 22) | (self.0[3] << 7))  as u8;
-        s[11] =  (self.0[3] >>  1)                      as u8;
-        s[12] =  (self.0[3] >>  9)                      as u8;
-        s[13] =  (self.0[3] >> 17)                      as u8;
-        s[14] = ((self.0[3] >> 25) | (self.0[4] << 4))  as u8;
-        s[15] =  (self.0[4] >>  4)                      as u8;
-        s[16] =  (self.0[4] >> 12)                      as u8;
-        s[17] =  (self.0[4] >> 20)                      as u8;
-        s[18] = ((self.0[4] >> 28) | (self.0[5] << 1))  as u8;
-        s[19] =  (self.0[5] >>  7)                      as u8;
-        s[20] =  (self.0[5] >> 15)                      as u8;
-        s[21] = ((self.0[5] >> 23) | (self.0[6] << 6))  as u8;
-        s[22] =  (self.0[6] >>  2)                      as u8;
-        s[23] =  (self.0[6] >> 10)                      as u8;
-        s[24] =  (self.0[6] >> 18)                      as u8;
-        s[25] = ((self.0[6] >> 26) | (self.0[7] << 3))  as u8;
-        s[26] =  (self.0[7] >>  5)                      as u8;
-        s[27] =  (self.0[7] >> 13)                      as u8;
-        s[28] =  (self.0[7] >> 21)                      as u8;
-        s[29] =  (self.0[8] >>  0)                      as u8;
-        s[30] =  (self.0[8] >>  8)                      as u8;
-        s[31] =  (self.0[8] >> 16)                      as u8;
+        s[ 0] =  (self.limbs[0] >>  0)                      as u8;
+        s[ 1] =  (self.limbs[0] >>  8)                      as u8;
+        s[ 2] =  (self.limbs[0] >> 16)                      as u8;
+        s[ 3] = ((self.limbs[0] >> 24) | (self.limbs[1] << 5))  as u8;
+        s[ 4] =  (self.limbs[1] >>  3)                      as u8;
+        s[ 5] =  (self.limbs[1] >> 11)                      as u8;
+        s[ 6] =  (self.limbs[1] >> 19)                      as u8;
+        s[ 7] = ((self.limbs[1] >> 27) | (self.limbs[2] << 2))  as u8;
+        s[ 8] =  (self.limbs[2] >>  6)                      as u8;
+        s[ 9] =  (self.limbs[2] >> 14)                      as u8;
+        s[10] = ((self.limbs[2] >> 22) | (self.limbs[3] << 7))  as u8;
+        s[11] =  (self.limbs[3] >>  1)                      as u8;
+        s[12] =  (self.limbs[3] >>  9)                      as u8;
+        s[13] =  (self.limbs[3] >> 17)                      as u8;
+        s[14] = ((self.limbs[3] >> 25) | (self.limbs[4] << 4))  as u8;
+        s[15] =  (self.limbs[4] >>  4)                      as u8;
+        s[16] =  (self.limbs[4] >> 12)                      as u8;
+        s[17] =  (self.limbs[4] >> 20)                      as u8;
+        s[18] = ((self.limbs[4] >> 28) | (self.limbs[5] << 1))  as u8;
+        s[19] =  (self.limbs[5] >>  7)                      as u8;
+        s[20] =  (self.limbs[5] >> 15)                      as u8;
+        s[21] = ((self.limbs[5] >> 23) | (self.limbs[6] << 6))  as u8;
+        s[22] =  (self.limbs[6] >>  2)                      as u8;
+        s[23] =  (self.limbs[6] >> 10)                      as u8;
+        s[24] =  (self.limbs[6] >> 18)                      as u8;
+        s[25] = ((self.limbs[6] >> 26) | (self.limbs[7] << 3))  as u8;
+        s[26] =  (self.limbs[7] >>  5)                      as u8;
+        s[27] =  (self.limbs[7] >> 13)                      as u8;
+        s[28] =  (self.limbs[7] >> 21)                      as u8;
+        s[29] =  (self.limbs[8] >>  0)                      as u8;
+        s[30] =  (self.limbs[8] >>  8)                      as u8;
+        s[31] =  (self.limbs[8] >> 16)                      as u8;
 
         s
     }
@@ -347,7 +349,7 @@ impl Scalar29 {
         let         r8 = carry as u32;
 
         // result may be >= l, so attempt to subtract l
-        Scalar29::sub(&Scalar29([r0,r1,r2,r3,r4,r5,r6,r7,r8]), l)
+        Scalar29::sub(&Scalar29 { limbs: [r0,r1,r2,r3,r4,r5,r6,r7,r8] }, l)
     }
 
     /// Compute `a * b` (mod l).
@@ -404,65 +406,85 @@ mod test {
     /// x = 2^253-1 = 14474011154664524427946373126085988481658748083205070504932198000989141204991
     /// x = 7237005577332262213973186563042994240801631723825162898930247062703686954002 mod l
     /// x = 5147078182513738803124273553712992179887200054963030844803268920753008712037*R mod l in Montgomery form
-    pub static X: Scalar29 = Scalar29([
-        0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff,
-        0x1fffffff, 0x001fffff,
-    ]);
+    pub static X: Scalar29 = Scalar29 {
+        limbs: [
+            0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff, 0x1fffffff,
+            0x1fffffff, 0x001fffff,
+        ],
+    };
 
     /// x^2 = 3078544782642840487852506753550082162405942681916160040940637093560259278169 mod l
-    pub static XX: Scalar29 = Scalar29([
-        0x00217559, 0x000b3401, 0x103ff43b, 0x1462a62c, 0x1d6f9f38, 0x18e7a42f, 0x09a3dcee,
-        0x008dbe18, 0x0006ce65,
-    ]);
+    pub static XX: Scalar29 = Scalar29 {
+        limbs: [
+            0x00217559, 0x000b3401, 0x103ff43b, 0x1462a62c, 0x1d6f9f38, 0x18e7a42f, 0x09a3dcee,
+            0x008dbe18, 0x0006ce65,
+        ],
+    };
 
     /// x^2 = 2912514428060642753613814151688322857484807845836623976981729207238463947987*R mod l in Montgomery form
-    pub static XX_MONT: Scalar29 = Scalar29([
-        0x152b4d2e, 0x0571d53b, 0x1da6d964, 0x188663b6, 0x1d1b5f92, 0x19d50e3f, 0x12306c29,
-        0x0c6f26fe, 0x00030edb,
-    ]);
+    pub static XX_MONT: Scalar29 = Scalar29 {
+        limbs: [
+            0x152b4d2e, 0x0571d53b, 0x1da6d964, 0x188663b6, 0x1d1b5f92, 0x19d50e3f, 0x12306c29,
+            0x0c6f26fe, 0x00030edb,
+        ],
+    };
 
     /// y = 6145104759870991071742105800796537629880401874866217824609283457819451087098
-    pub static Y: Scalar29 = Scalar29([
-        0x1e1458fa, 0x165ba838, 0x1d787b36, 0x0e577f3a, 0x1d2baf06, 0x1d689a19, 0x1fff3047,
-        0x117704ab, 0x000d9601,
-    ]);
+    pub static Y: Scalar29 = Scalar29 {
+        limbs: [
+            0x1e1458fa, 0x165ba838, 0x1d787b36, 0x0e577f3a, 0x1d2baf06, 0x1d689a19, 0x1fff3047,
+            0x117704ab, 0x000d9601,
+        ],
+    };
 
     /// x*y = 36752150652102274958925982391442301741
-    pub static XY: Scalar29 = Scalar29([
-        0x0ba7632d, 0x017736bb, 0x15c76138, 0x0c69daa1, 0x000001ba, 0x00000000, 0x00000000,
-        0x00000000, 0x00000000,
-    ]);
+    pub static XY: Scalar29 = Scalar29 {
+        limbs: [
+            0x0ba7632d, 0x017736bb, 0x15c76138, 0x0c69daa1, 0x000001ba, 0x00000000, 0x00000000,
+            0x00000000, 0x00000000,
+        ],
+    };
 
     /// x*y = 3783114862749659543382438697751927473898937741870308063443170013240655651591*R mod l in Montgomery form
-    pub static XY_MONT: Scalar29 = Scalar29([
-        0x077b51e1, 0x1c64e119, 0x02a19ef5, 0x18d2129e, 0x00de0430, 0x045a7bc8, 0x04cfc7c9,
-        0x1c002681, 0x000bdc1c,
-    ]);
+    pub static XY_MONT: Scalar29 = Scalar29 {
+        limbs: [
+            0x077b51e1, 0x1c64e119, 0x02a19ef5, 0x18d2129e, 0x00de0430, 0x045a7bc8, 0x04cfc7c9,
+            0x1c002681, 0x000bdc1c,
+        ],
+    };
 
     /// a = 2351415481556538453565687241199399922945659411799870114962672658845158063753
-    pub static A: Scalar29 = Scalar29([
-        0x07b3be89, 0x02291b60, 0x14a99f03, 0x07dc3787, 0x0a782aae, 0x16262525, 0x0cfdb93f,
-        0x13f5718d, 0x000532da,
-    ]);
+    pub static A: Scalar29 = Scalar29 {
+        limbs: [
+            0x07b3be89, 0x02291b60, 0x14a99f03, 0x07dc3787, 0x0a782aae, 0x16262525, 0x0cfdb93f,
+            0x13f5718d, 0x000532da,
+        ],
+    };
 
     /// b = 4885590095775723760407499321843594317911456947580037491039278279440296187236
-    pub static B: Scalar29 = Scalar29([
-        0x15421564, 0x1e69fd72, 0x093d9692, 0x161785be, 0x1587d69f, 0x09d9dada, 0x130246c0,
-        0x0c0a8e72, 0x000acd25,
-    ]);
+    pub static B: Scalar29 = Scalar29 {
+        limbs: [
+            0x15421564, 0x1e69fd72, 0x093d9692, 0x161785be, 0x1587d69f, 0x09d9dada, 0x130246c0,
+            0x0c0a8e72, 0x000acd25,
+        ],
+    };
 
     /// a+b = 0
     /// a-b = 4702830963113076907131374482398799845891318823599740229925345317690316127506
-    pub static AB: Scalar29 = Scalar29([
-        0x0f677d12, 0x045236c0, 0x09533e06, 0x0fb86f0f, 0x14f0555c, 0x0c4c4a4a, 0x19fb727f,
-        0x07eae31a, 0x000a65b5,
-    ]);
+    pub static AB: Scalar29 = Scalar29 {
+        limbs: [
+            0x0f677d12, 0x045236c0, 0x09533e06, 0x0fb86f0f, 0x14f0555c, 0x0c4c4a4a, 0x19fb727f,
+            0x07eae31a, 0x000a65b5,
+        ],
+    };
 
     // c = (2^512 - 1) % l = 1627715501170711445284395025044413883736156588369414752970002579683115011840
-    pub static C: Scalar29 = Scalar29([
-        0x049c0f00, 0x00308f1a, 0x0164d1e9, 0x1c374ed1, 0x1be65d00, 0x19e90bfa, 0x08f73bb1,
-        0x036f8613, 0x00039941,
-    ]);
+    pub static C: Scalar29 = Scalar29 {
+        limbs: [
+            0x049c0f00, 0x00308f1a, 0x0164d1e9, 0x1c374ed1, 0x1be65d00, 0x19e90bfa, 0x08f73bb1,
+            0x036f8613, 0x00039941,
+        ],
+    };
 
     #[test]
     fn mul_max() {

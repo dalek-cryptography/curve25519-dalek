@@ -60,7 +60,9 @@ fn m(x: u32, y: u32) -> u64 {
 
 impl Scalar29 {
     /// The scalar \\( 0 \\).
-    pub const ZERO: Scalar29 = Scalar29 { limbs: [0, 0, 0, 0, 0, 0, 0, 0, 0] };
+    pub const ZERO: Scalar29 = Scalar29 {
+        limbs: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    };
 
     /// Unpack a 32 byte / 256 bit scalar into 9 29-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations

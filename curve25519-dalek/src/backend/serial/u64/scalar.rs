@@ -855,7 +855,8 @@ impl Scalar52 {
 }
 
 
-// Tests moved outside of verus block for now
+} // verus!
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -866,22 +867,167 @@ mod test {
     /// x = 14474011154664524427946373126085988481658748083205070504932198000989141204991
     /// x = 7237005577332262213973186563042994240801631723825162898930247062703686954002 mod l
     /// x = 3057150787695215392275360544382990118917283750546154083604586903220563173085*R mod l in Montgomery form
-    pub static X: Scalar52 = Scalar52 { limbs: [
+    pub static X: Scalar52 = Scalar52([
         0x000fffffffffffff,
         0x000fffffffffffff,
         0x000fffffffffffff,
         0x000fffffffffffff,
         0x00001fffffffffff,
-    ]};
+    ]);
 
     /// x^2 = 3078544782642840487852506753550082162405942681916160040940637093560259278169 mod l
-    pub static XX: Scalar52 = Scalar52 { limbs: [
+    pub static XX: Scalar52 = Scalar52([
         0x0001668020217559,
         0x000531640ffd0ec0,
         0x00085fd6f9f38a31,
         0x000c268f73bb1cf4,
         0x000006ce65046df0,
-    ]};
-}
-}
+    ]);
 
+    /// x^2 = 4413052134910308800482070043710297189082115023966588301924965890668401540959*R mod l in Montgomery form
+    pub static XX_MONT: Scalar52 = Scalar52([
+        0x000c754eea569a5c,
+        0x00063b6ed36cb215,
+        0x0008ffa36bf25886,
+        0x000e9183614e7543,
+        0x0000061db6c6f26f,
+    ]);
+
+    /// y = 6145104759870991071742105800796537629880401874866217824609283457819451087098
+    pub static Y: Scalar52 = Scalar52([
+        0x000b75071e1458fa,
+        0x000bf9d75e1ecdac,
+        0x000433d2baf0672b,
+        0x0005fffcc11fad13,
+        0x00000d96018bb825,
+    ]);
+
+    /// x*y = 36752150652102274958925982391442301741 mod l
+    pub static XY: Scalar52 = Scalar52([
+        0x000ee6d76ba7632d,
+        0x000ed50d71d84e02,
+        0x00000000001ba634,
+        0x0000000000000000,
+        0x0000000000000000,
+    ]);
+
+    /// x*y = 658448296334113745583381664921721413881518248721417041768778176391714104386*R mod l in Montgomery form
+    pub static XY_MONT: Scalar52 = Scalar52([
+        0x0006d52bf200cfd5,
+        0x00033fb1d7021570,
+        0x000f201bc07139d8,
+        0x0001267e3e49169e,
+        0x000007b839c00268,
+    ]);
+
+    /// a = 2351415481556538453565687241199399922945659411799870114962672658845158063753
+    pub static A: Scalar52 = Scalar52([
+        0x0005236c07b3be89,
+        0x0001bc3d2a67c0c4,
+        0x000a4aa782aae3ee,
+        0x0006b3f6e4fec4c4,
+        0x00000532da9fab8c,
+    ]);
+
+    /// b = 4885590095775723760407499321843594317911456947580037491039278279440296187236
+    pub static B: Scalar52 = Scalar52([
+        0x000d3fae55421564,
+        0x000c2df24f65a4bc,
+        0x0005b5587d69fb0b,
+        0x00094c091b013b3b,
+        0x00000acd25605473,
+    ]);
+
+    /// a+b = 0
+    /// a-b = 4702830963113076907131374482398799845891318823599740229925345317690316127506
+    pub static AB: Scalar52 = Scalar52([
+        0x000a46d80f677d12,
+        0x0003787a54cf8188,
+        0x0004954f0555c7dc,
+        0x000d67edc9fd8989,
+        0x00000a65b53f5718,
+    ]);
+
+    // c = (2^512 - 1) % l = 1627715501170711445284395025044413883736156588369414752970002579683115011840
+    pub static C: Scalar52 = Scalar52([
+        0x000611e3449c0f00,
+        0x000a768859347a40,
+        0x0007f5be65d00e1b,
+        0x0009a3dceec73d21,
+        0x00000399411b7c30,
+    ]);
+
+    #[test]
+    fn mul_max() {
+        let res = Scalar52::mul(&X, &X);
+        for i in 0..5 {
+            assert!(res[i] == XX[i]);
+        }
+    }
+
+    #[test]
+    fn square_max() {
+        let res = X.square();
+        for i in 0..5 {
+            assert!(res[i] == XX[i]);
+        }
+    }
+
+    #[test]
+    fn montgomery_mul_max() {
+        let res = Scalar52::montgomery_mul(&X, &X);
+        for i in 0..5 {
+            assert!(res[i] == XX_MONT[i]);
+        }
+    }
+
+    #[test]
+    fn montgomery_square_max() {
+        let res = X.montgomery_square();
+        for i in 0..5 {
+            assert!(res[i] == XX_MONT[i]);
+        }
+    }
+
+    #[test]
+    fn mul() {
+        let res = Scalar52::mul(&X, &Y);
+        for i in 0..5 {
+            assert!(res[i] == XY[i]);
+        }
+    }
+
+    #[test]
+    fn montgomery_mul() {
+        let res = Scalar52::montgomery_mul(&X, &Y);
+        for i in 0..5 {
+            assert!(res[i] == XY_MONT[i]);
+        }
+    }
+
+    #[test]
+    fn add() {
+        let res = Scalar52::add(&A, &B);
+        let zero = Scalar52::ZERO;
+        for i in 0..5 {
+            assert!(res[i] == zero[i]);
+        }
+    }
+
+    #[test]
+    fn sub() {
+        let res = Scalar52::sub(&A, &B);
+        for i in 0..5 {
+            assert!(res[i] == AB[i]);
+        }
+    }
+
+    #[test]
+    fn from_bytes_wide() {
+        let bignum = [255u8; 64]; // 2^512 - 1
+        let reduced = Scalar52::from_bytes_wide(&bignum);
+        for i in 0..5 {
+            assert!(reduced[i] == C[i]);
+        }
+    }
+}

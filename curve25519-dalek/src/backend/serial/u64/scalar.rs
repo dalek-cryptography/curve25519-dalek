@@ -707,18 +707,23 @@ impl Scalar52 {
         true,
     {
         assume(false); // TODO: Add proper bounds checking and proofs
-        // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
+
+
+        // note: l[3] is zero, so its multiples can be skipped
+        let l = &constants::L;
+
+        // the first half computes the Montgomery adjustment factor n, and begins adding n*l to make limbs divisible by R
         let (carry, n0) = Self::part1(limbs[0]);
-        let (carry, n1) = Self::part1(carry + limbs[1] + m(n0, constants::L.limbs[1]));
-        let (carry, n2) = Self::part1(carry + limbs[2] + m(n0, constants::L.limbs[2]) + m(n1, constants::L.limbs[1]));
-        let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, constants::L.limbs[2]) + m(n2, constants::L.limbs[1]));
-        let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, constants::L.limbs[4]) + m(n2, constants::L.limbs[2]) + m(n3, constants::L.limbs[1]));
+        let (carry, n1) = Self::part1(carry + limbs[1] + m(n0, l.limbs[1]));
+        let (carry, n2) = Self::part1(carry + limbs[2] + m(n0, l.limbs[2]) + m(n1, l.limbs[1]));
+        let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, l.limbs[2]) + m(n2, l.limbs[1]));
+        let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, l.limbs[4]) + m(n2, l.limbs[2]) + m(n3, l.limbs[1]));
 
         // Second half: limbs is now divisible by R, so divide by R by taking upper half
-        let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, constants::L.limbs[4]) + m(n3, constants::L.limbs[2]) + m(n4, constants::L.limbs[1]));
-        let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, constants::L.limbs[4]) + m(n4, constants::L.limbs[2]));
-        let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, constants::L.limbs[4]));
-        let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, constants::L.limbs[4]));
+        let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, l.limbs[4]) + m(n3, l.limbs[2]) + m(n4, l.limbs[1]));
+        let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, l.limbs[4]) + m(n4, l.limbs[2]));
+        let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, l.limbs[4]));
+        let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, l.limbs[4]));
         let r4 = carry as u64;
 
         // Result may be >= L, so attempt to subtract L

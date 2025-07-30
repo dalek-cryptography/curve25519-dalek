@@ -111,6 +111,7 @@
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
 
+use vstd::prelude::*;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -189,6 +190,7 @@ cfg_if! {
     }
 }
 
+verus!{
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Hash)]
@@ -229,6 +231,12 @@ pub struct Scalar {
     /// always holds.
     ///
     pub(crate) bytes: [u8; 32],
+}
+
+
+pub open spec fn is_a_scalar(s: Scalar) -> bool {
+   true
+}
 }
 
 impl Scalar {

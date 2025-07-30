@@ -695,9 +695,6 @@ impl Scalar52 {
         z
     }
 
-
-
-
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of n* and r* calculations

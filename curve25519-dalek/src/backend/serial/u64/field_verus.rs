@@ -30,25 +30,15 @@ pub proof fn l51_bit_mask_lt()
 
 
 // Masking with low_bits_mask(k) gives a value bounded by 2^k
-pub proof fn masked_lt(v: u64)
+pub proof fn masked_lt_51(v: u64)
     ensures
         v & LOW_51_BIT_MASK < (1u64 << 51),
 {
-    assert (v & 2251799813685247u64 < (1u64 << 51)) by (bit_vector);
+    l51_bit_mask_lt(); // LOW_51_BIT_MASK == low_bits_mask(51)
+    masked_lt(v, 51);
 }
 
-// right-shifting a u64 gives at most 2^13 - 1
-pub proof fn shifted_lt(v: u64)
-    ensures
-        v >> 51 < 1u64 << 13
-{
-    shift_is_pow2(13);
-    broadcast use lemma_u64_shr_is_div;
-    lemma_pow2_pos(51);
-    lemma_div_is_ordered(v as int, u64::MAX as int, pow2(51) as int);
-    assert(u64::MAX >> 51 < 1u64 << 13) by (compute);
-}
-
+// p = 2^255 - 19
 pub open spec fn p() -> nat {
     (pow2(255) - 19) as nat
 }
@@ -141,53 +131,29 @@ pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
     }
 }
 
-// Auxiliary lemma; shift is division (for 51 fixed)
-pub proof fn lemma_shift(ai: u64, v: u64)
-    requires
-        ai == v >> 51
-    ensures
-        ai == (v as nat) / pow2(51)
-{
-    lemma_u64_shr_is_div(v, 51);
-}
-
-// Auxiliary lemma; mask is mod (for 51 fixed)
-pub proof fn lemma_mask(bi: u64, v: u64)
-    requires
-        bi == v & LOW_51_BIT_MASK
-    ensures
-        bi == v % (pow2(51) as u64)
-{
-    l51_bit_mask_lt();
-    lemma_u64_low_bits_mask_is_mod(v, 51);
-}
-
-pub proof fn lemma_mask_bound(x: u64, v: u64)
-    requires
-        x == v & LOW_51_BIT_MASK
-    ensures
-        x < (1u64 << 51)
-{
-    lemma_mask(x, v);
-    masked_lt(v);
-}
-
 // Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d
 pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64)
     requires
         ai == v >> 51,
         bi == v & LOW_51_BIT_MASK
     ensures
-        ai == (v as nat) / pow2(51),
+        ai == v / (pow2(51) as u64),
         bi == v % (pow2(51) as u64),
         v == ai * pow2(51) + bi
 {
-    lemma_shift(ai, v);
-    lemma_mask(bi, v);
+    // v >> 51 = v / pow2(51);
+    lemma_u64_shr_is_div(v, 51);
+
+    // v & LOW_51_BIT_MASK = v % pow2(51);
+    l51_bit_mask_lt();
+    lemma_u64_low_bits_mask_is_mod(v, 51);
+
     lemma_pow2_pos(51); // pow2(51) != 0
     assert(pow2(51) <= u64::MAX) by {
         lemma2_to64_rest();
     }
+
+    // v = (pow2(51) * (v / pow2(51)) + (v % pow2(51)))
     lemma_fundamental_div_mod(v as int, pow2(51) as int);
 }
 
@@ -227,18 +193,18 @@ pub proof fn lemma_boundaries(limbs: [u64; 5])
 
 {
     // \A i. limbs[i] < 2^13
-    shifted_lt(limbs[0]);
-    shifted_lt(limbs[1]);
-    shifted_lt(limbs[2]);
-    shifted_lt(limbs[3]);
-    shifted_lt(limbs[4]);
+    shifted_lt(limbs[0], 51);
+    shifted_lt(limbs[1], 51);
+    shifted_lt(limbs[2], 51);
+    shifted_lt(limbs[3], 51);
+    shifted_lt(limbs[4], 51);
 
     // \A i. limbs[i] & LOW_51_BIT_MASK < 2^51
-    masked_lt(limbs[0]);
-    masked_lt(limbs[1]);
-    masked_lt(limbs[2]);
-    masked_lt(limbs[3]);
-    masked_lt(limbs[4]);
+    masked_lt_51(limbs[0]);
+    masked_lt_51(limbs[1]);
+    masked_lt_51(limbs[2]);
+    masked_lt_51(limbs[3]);
+    masked_lt_51(limbs[4]);
 
     // Since 19 < 2^5 and (limbs[4] >> 51) < 2^13, their product is less than 2^18
     assert((limbs[4] >> 51) * 19 < (1u64 << 18) as nat) by {
@@ -763,10 +729,10 @@ impl FieldElement51 {
             }
             assert(((1u64 << 7)) + (1u64 << 52) < (1u64 << 53)) by (bit_vector);
             assert(((1u64 << 13)) + (1u64 << 52) < (1u64 << 53)) by (bit_vector);
-            shifted_lt(l0);
-            shifted_lt(l1);
-            shifted_lt(l2);
-            shifted_lt(l3);
+            shifted_lt(l0, 51);
+            shifted_lt(l1, 51);
+            shifted_lt(l2, 51);
+            shifted_lt(l3, 51);
 
             l51_bit_mask_lt();
 
@@ -986,34 +952,34 @@ impl FieldElement51 {
 
                 lemma_shr_51_fits_u64(c1);
                 // a0_0 < (1u64 << 51)
-                lemma_mask_bound(a0_0, c0_0 as u64);
+                masked_lt_51(c0_0 as u64);
 
                 let c2 = (c2_0 + ((c1 >> 51) as u64) as u128) as u128;
                 let a1_0 = (c1 as u64) & LOW_51_BIT_MASK;
 
                 lemma_shr_51_fits_u64(c2);
                 // a1_0 < (1u64 << 51)
-                lemma_mask_bound(a1_0, c1 as u64);
+                masked_lt_51(c1 as u64);
 
                 let c3 = (c3_0 + ((c2 >> 51) as u64) as u128) as u128;
                 let a2 = (c2 as u64) & LOW_51_BIT_MASK;
 
                 lemma_shr_51_fits_u64(c3);
                 // a2 < (1u64 << 51)
-                lemma_mask_bound(a2, c2 as u64);
+                masked_lt_51(c2 as u64);
 
                 let c4 = (c4_0 + ((c3 >> 51) as u64) as u128) as u128;
                 let a3 = (c3 as u64) & LOW_51_BIT_MASK;
 
                 lemma_shr_51_fits_u64(c4);
                 // a3 < (1u64 << 51)
-                lemma_mask_bound(a3, c3 as u64);
+                masked_lt_51(c3 as u64);
 
                 let carry: u64 = (c4 >> 51) as u64;
                 let a4 = (c4 as u64) & LOW_51_BIT_MASK;
 
                 // a4 < (1u64 << 51)
-                lemma_mask_bound(a4, c4 as u64);
+                masked_lt_51(c4 as u64);
 
                 assert(c4 <= c4_0 + (u64::MAX as u128));
                 lemma_shr_51_le(c4, (5 * bound_sq + (u64::MAX as u128)) as u128 );
@@ -1044,7 +1010,7 @@ impl FieldElement51 {
 
                 let a0_2 = a0_1 & LOW_51_BIT_MASK;
                 // a0_2 < (1u64 << 51)
-                lemma_mask_bound(a0_2, a0_1);
+                masked_lt_51(a0_1 as u64);
             }
             // Precondition: assume input limbs a[i] are bounded as
             //

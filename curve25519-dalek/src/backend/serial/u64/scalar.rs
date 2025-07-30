@@ -719,16 +719,15 @@ impl Scalar52 {
         let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, l.limbs[2]) + m(n2, l.limbs[1]));
         let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, l.limbs[4]) + m(n2, l.limbs[2]) + m(n3, l.limbs[1]));
 
-        // Second half: limbs is now divisible by R, so divide by R by taking upper half
+        // limbs is divisible by R now, so we can divide by R by simply storing the upper half as the result
         let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, l.limbs[4]) + m(n3, l.limbs[2]) + m(n4, l.limbs[1]));
         let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, l.limbs[4]) + m(n4, l.limbs[2]));
         let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, l.limbs[4]));
         let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, l.limbs[4]));
         let r4 = carry as u64;
 
-        // Result may be >= L, so attempt to subtract L
-        let result = Scalar52 { limbs: [r0, r1, r2, r3, r4] };
-        Scalar52::sub(&result, &constants::L)
+        // result may be >= l, so attempt to subtract l
+        Scalar52::sub(&Scalar52 { limbs: [r0, r1, r2, r3, r4] }, l)
     }
 
 

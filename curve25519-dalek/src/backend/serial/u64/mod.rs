@@ -26,7 +26,6 @@ pub mod scalar;
 
 pub mod constants;
 
-
 pub mod field_verus;
 
 pub mod field_lemmas;

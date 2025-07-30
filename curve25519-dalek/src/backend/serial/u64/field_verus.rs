@@ -7,6 +7,7 @@ use vstd::bits::*;
 use vstd::prelude::*;
 
 use super::common_verus::*;
+use super::field_lemmas::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 
@@ -28,8 +29,7 @@ pub proof fn l51_bit_mask_lt()
     assert(LOW_51_BIT_MASK < (1u64 << 51) as nat) by (compute);
 }
 
-
-// Masking with low_bits_mask(k) gives a value bounded by 2^k
+// Masking with low_bits_mask(51) gives a value bounded by 2^51
 pub proof fn masked_lt_51(v: u64)
     ensures
         v & LOW_51_BIT_MASK < (1u64 << 51),
@@ -38,101 +38,8 @@ pub proof fn masked_lt_51(v: u64)
     masked_lt(v, 51);
 }
 
-// p = 2^255 - 19
-pub open spec fn p() -> nat {
-    (pow2(255) - 19) as nat
-}
-
-// Proof that 2^255 > 19
-pub proof fn pow255_gt_19()
-    ensures
-        pow2(255) > 19
-{
-    lemma2_to64(); // 2^5
-    lemma_pow2_strictly_increases(5, 255);
-}
-
-// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
-    (limbs[0] as nat) +
-    pow2(51) * (limbs[1] as nat) +
-    pow2(102) * (limbs[2] as nat) +
-    pow2(153) * (limbs[3] as nat) +
-    pow2(204) * (limbs[4] as nat)
-}
-
-// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat_32_u8(limbs: [u8; 32]) -> nat {
-    // Verus error: `core::iter::range::impl&%15::fold` is not supported
-    // we write them out manually
-    (limbs[0] as nat) +
-    pow2( 1 * 8) * (limbs[ 1] as nat) +
-    pow2( 2 * 8) * (limbs[ 2] as nat) +
-    pow2( 3 * 8) * (limbs[ 3] as nat) +
-    pow2( 4 * 8) * (limbs[ 4] as nat) +
-    pow2( 5 * 8) * (limbs[ 5] as nat) +
-    pow2( 6 * 8) * (limbs[ 6] as nat) +
-    pow2( 7 * 8) * (limbs[ 7] as nat) +
-    pow2( 8 * 8) * (limbs[ 8] as nat) +
-    pow2( 9 * 8) * (limbs[ 9] as nat) +
-    pow2(10 * 8) * (limbs[10] as nat) +
-    pow2(11 * 8) * (limbs[11] as nat) +
-    pow2(12 * 8) * (limbs[12] as nat) +
-    pow2(13 * 8) * (limbs[13] as nat) +
-    pow2(14 * 8) * (limbs[14] as nat) +
-    pow2(15 * 8) * (limbs[15] as nat) +
-    pow2(16 * 8) * (limbs[16] as nat) +
-    pow2(17 * 8) * (limbs[17] as nat) +
-    pow2(18 * 8) * (limbs[18] as nat) +
-    pow2(19 * 8) * (limbs[19] as nat) +
-    pow2(20 * 8) * (limbs[20] as nat) +
-    pow2(21 * 8) * (limbs[21] as nat) +
-    pow2(22 * 8) * (limbs[22] as nat) +
-    pow2(23 * 8) * (limbs[23] as nat) +
-    pow2(24 * 8) * (limbs[24] as nat) +
-    pow2(25 * 8) * (limbs[25] as nat) +
-    pow2(26 * 8) * (limbs[26] as nat) +
-    pow2(27 * 8) * (limbs[27] as nat) +
-    pow2(28 * 8) * (limbs[28] as nat) +
-    pow2(29 * 8) * (limbs[29] as nat) +
-    pow2(30 * 8) * (limbs[30] as nat) +
-    pow2(31 * 8) * (limbs[31] as nat)
-}
-
-// Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)
-pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
-    requires
-        forall |i:int| 0 <= i < 5 ==> b[i] < a[i]
-    ensures
-        as_nat([
-            (a[0] - b[0]) as u64,
-            (a[1] - b[1]) as u64,
-            (a[2] - b[2]) as u64,
-            (a[3] - b[3]) as u64,
-            (a[4] - b[4]) as u64
-        ]) == as_nat(a) - as_nat(b)
-{
-    let c: [u64;5] = [
-        (a[0] - b[0]) as u64,
-        (a[1] - b[1]) as u64,
-        (a[2] - b[2]) as u64,
-        (a[3] - b[3]) as u64,
-        (a[4] - b[4]) as u64
-    ];
-    // distribute pow2
-    assert( as_nat(c) ==
-        (a[0] - b[0]) +
-        pow2(51) * a[1] - pow2(51) * b[1] +
-        pow2(102) * a[2] - pow2(102) * b[2] +
-        pow2(153) * a[3] - pow2(153) * b[3] +
-        pow2(204) * a[4] - pow2(204) * b[4]
-    ) by {
-        broadcast use lemma_mul_is_distributive_sub;
-    }
-}
-
-// Combination of the above lemmas, and the basic div/mod property that a = d * (a/d) + a % d
-pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64)
+// lemma_div_and_mod specialization for k = 51, using LOW_51_BIT_MASK == low_bits_mask(51)
+pub proof fn lemma_div_and_mod_51(ai:u64, bi: u64, v: u64)
     requires
         ai == v >> 51,
         bi == v & LOW_51_BIT_MASK
@@ -141,30 +48,8 @@ pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64)
         bi == v % (pow2(51) as u64),
         v == ai * pow2(51) + bi
 {
-    // v >> 51 = v / pow2(51);
-    lemma_u64_shr_is_div(v, 51);
-
-    // v & LOW_51_BIT_MASK = v % pow2(51);
-    l51_bit_mask_lt();
-    lemma_u64_low_bits_mask_is_mod(v, 51);
-
-    lemma_pow2_pos(51); // pow2(51) != 0
-    assert(pow2(51) <= u64::MAX) by {
-        lemma2_to64_rest();
-    }
-
-    // v = (pow2(51) * (v / pow2(51)) + (v % pow2(51)))
-    lemma_fundamental_div_mod(v as int, pow2(51) as int);
-}
-
-// Rewriting lemma; 2^((t + 1) * 51) * x = 2^(t*51) * (2^51 * x)
-// Parenthesis placement matters here
-pub proof fn lemma_two_factoring(k : nat, ai: u64)
-    ensures
-        pow2(k + 51) * ai == pow2(k) * (pow2(51) * ai)
-{
-    lemma_pow2_adds(k, 51);
-    lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, ai as int);
+    l51_bit_mask_lt(); // LOW_51_BIT_MASK == low_bits_mask(51)
+    lemma_div_and_mod(ai, bi, v, 51);
 }
 
 pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
@@ -311,9 +196,9 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(102) * (pow2(51) * a2) + pow2(153) * b3 +
         pow2(153) * (pow2(51) * a3) + pow2(204) * b4
     ) by {
-        lemma_two_factoring(51, a1);
-        lemma_two_factoring(102, a2);
-        lemma_two_factoring(153, a3);
+        lemma_two_factoring_51(51, a1);
+        lemma_two_factoring_51(102, a2);
+        lemma_two_factoring_51(153, a3);
     }
 
     // change groupings
@@ -335,10 +220,10 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * limbs[3] +
         pow2(204) * b4 + 19 * a4
     ) by {
-        lemma_div_and_mod(a0, b0, limbs[0]);
-        lemma_div_and_mod(a1, b1, limbs[1]);
-        lemma_div_and_mod(a2, b2, limbs[2]);
-        lemma_div_and_mod(a3, b3, limbs[3]);
+        lemma_div_and_mod_51(a0, b0, limbs[0]);
+        lemma_div_and_mod_51(a1, b1, limbs[1]);
+        lemma_div_and_mod_51(a2, b2, limbs[2]);
+        lemma_div_and_mod_51(a3, b3, limbs[3]);
     }
 
     // Add missing limbs[4] parts
@@ -349,7 +234,7 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * limbs[3] +
         pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
     ) by {
-        lemma_div_and_mod(a4, b4, limbs[4]);
+        lemma_div_and_mod_51(a4, b4, limbs[4]);
         assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
             lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
         }
@@ -367,58 +252,6 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
         pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
     }
-}
-
-pub proof fn lemma_add_then_shift(a: u64, b: u64)
-    requires
-        a < (1u64 << 52),
-        b < (1u64 << 52)
-    ensures
-        (a + b) < (1u64 << 53),
-        ((a + b) as u64 >> 51) < 4
-{
-    lemma2_to64_rest();
-    assert((a + b) < 1u64 << 53) by {
-        assert((1u64 << 52) + (1u64 << 52) == 1u64 << 53) by (compute);
-    }
-    assert(1u64 << 53 == (1u64 << 51) * 4) by (bit_vector);
-    // 0 < b  /\ a < b * c => a/b < c
-    lemma_multiply_divide_lt((a + b) as int, (1u64 << 51) as int, 4int);
-    shift_is_pow2(51);
-    shift_is_pow2(53);
-    assert((a + b) as u64 >> 51 == (a + b) as u64 / (pow2(51) as u64)) by {
-        lemma_u64_shr_is_div((a + b) as u64, 51);
-    }
-    assert(pow2(53) / pow2(51) == 4) by {
-        lemma_pow2_subtracts(51, 53);
-    }
-}
-
-// >> preserves [<=]. Unfortunately, these operations are u128 and
-// we need lemma_u128_shr_is_div.
-pub proof fn lemma_shr_51_le(a: u128, b: u128)
-    requires
-        a <= b
-    ensures
-        (a >> 51) <= (b >> 51)
-{
-    lemma_pow2_pos(51);
-    lemma2_to64_rest(); // pow2(51) value
-    lemma_u128_shr_is_div(a, 51);
-    lemma_u128_shr_is_div(b, 51);
-    lemma_div_is_ordered(a as int, b as int, 51);
-}
-
-// Corollary of above, using the identity (a << x) >> x == a for u64::MAX
-pub proof fn lemma_shr_51_fits_u64(a: u128)
-    requires
-        a <= (u64::MAX as u128) << 51
-    ensures
-        (a >> 51) <= (u64::MAX as u128)
-
-{
-    assert(((u64::MAX as u128) << 51) >> 51 == (u64::MAX as u128)) by (compute);
-    lemma_shr_51_le(a, (u64::MAX as u128) << 51);
 }
 
 /* MANUALLY moved outside, named return value */
@@ -451,17 +284,6 @@ fn m(x: u64, y: u64) -> (r: u128)
     }
     (x as u128) * (y as u128)
 }
-
-// m(_,_) multiplication is bounded by the product of the individual bounds
-pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
-    requires
-        x < bx,
-        y < by
-    ensures
-        (x as u128) * (y as u128) < (bx as u128) * (by as u128)
-{
-    mul_lt(x as nat, bx as nat, y as nat, by as nat);
- }
 
 pub struct FieldElement51 {
     // ADAPTED CODE LINE: we give a name to the field: "limbs"

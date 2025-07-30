@@ -833,9 +833,6 @@ impl Scalar52 {
         }
         Scalar52::montgomery_reduce(&limbs)
     }
-
-
-
 }
 
 

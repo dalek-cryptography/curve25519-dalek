@@ -53,6 +53,16 @@ pub proof fn pow2_le_max64(k: nat)
         lemma2_to64_rest();
     }
 
+// Rewriting lemma; 2^(a + b) * x = 2^a * (2^b * x)
+// Parenthesis placement matters here
+pub proof fn lemma_two_factoring(a : nat, b: nat, v: u64)
+    ensures
+        pow2(a + b) * v == pow2(a) * (pow2(b) * v)
+{
+    lemma_pow2_adds(a, b);
+    lemma_mul_is_associative(pow2(a) as int, pow2(b) as int, v as int);
+}
+
 // Specialization of lemma_u64_shl_is_mul for x = 1
 pub proof fn shift_is_pow2(k: nat)
     requires
@@ -244,7 +254,6 @@ pub proof fn shr_nonincreasing(v: u64, a: nat, b: nat)
     }
 }
 
-
 // u64::MAX = 2^64 - 1
 // u64::MAX >> k = 2^(64 - k) - 1
 // 1u64 << (64 - k) = 2^(64 - k)
@@ -344,6 +353,86 @@ pub proof fn masked_lt(v: u64, k: nat)
     lemma_mod_bound(v as int, pow2(k) as int);
     // 1 << k = pow2(k)
     shift_is_pow2(k);
+}
+
+pub proof fn low_bits_mask_increases(a: nat, b: nat)
+    requires
+        a < b
+    ensures
+        low_bits_mask(a) < low_bits_mask(b)
+    decreases a + b
+{
+    if (a == 0){
+         // lbm(0) = 0
+        lemma_low_bits_mask_values();
+        // lbm(b) = 2 * lbm(b - 1) + 1, in particular, > 0
+        lemma_low_bits_mask_unfold(b);
+    }
+    else {
+        // lbm(b) / 2 = lbm(b - 1)
+        lemma_low_bits_mask_div2(b);
+        // lbm(a) / 2 = lbm(a - 1)
+        lemma_low_bits_mask_div2(a);
+        // lbm(a - 1) < lbm(b - 1)
+        low_bits_mask_increases((a - 1) as nat, (b - 1) as nat);
+    }
+
+}
+
+pub proof fn low_bits_masks_fit_u64(k: nat)
+    requires
+        k <= 64
+    ensures
+        low_bits_mask(k) <= u64::MAX
+{
+    lemma_low_bits_mask_values(); // lbm(0) = 0, lbm(64) = 2^64
+    assert(low_bits_mask(64) <= u64::MAX) by (compute);
+    if (k < 64){
+        low_bits_mask_increases(k, 64);
+    }
+}
+
+pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64, k: nat)
+    requires
+        k < 64,
+        ai == v >> k,
+        bi == v & (low_bits_mask(k) as u64)
+    ensures
+        ai == v / (pow2(k) as u64),
+        bi == v % (pow2(k) as u64),
+        v == ai * pow2(k) + bi
+{
+    lemma2_to64();
+    lemma2_to64_rest(); // pow2(63) = 0x8000000000000000
+
+    // v >> k = v / pow2(k);
+    lemma_u64_shr_is_div(v, k as u64);
+
+    // v & low_bits_mask(k) = v % pow2(k);
+    lemma_u64_low_bits_mask_is_mod(v, k);
+
+    // 0 < pow2(k) <= u64::MAX
+    lemma_pow2_pos(k);
+    assert(pow2(k) <= u64::MAX) by {
+        assert(0x8000000000000000 <= u64::MAX) by (compute);
+        if (k < 63) {
+            lemma_pow2_strictly_increases(k, 63);
+        }
+    }
+
+    // v = (pow2(k) * (v / pow2(k)) + (v % pow2(k)))
+    lemma_fundamental_div_mod(v as int, pow2(k) as int);
+}
+
+// m(_,_) multiplication is bounded by the product of the individual bounds
+pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
+    requires
+        x < bx,
+        y < by
+    ensures
+        (x as u128) * (y as u128) < (bx as u128) * (by as u128)
+{
+    mul_lt(x as nat, bx as nat, y as nat, by as nat);
 }
 
 // dummy, so we can call `verus common_verus.rs`

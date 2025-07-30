@@ -30,4 +30,6 @@ pub mod scalar_verus;
 
 pub mod field_verus;
 
+pub mod field_lemmas;
+
 pub mod common_verus;

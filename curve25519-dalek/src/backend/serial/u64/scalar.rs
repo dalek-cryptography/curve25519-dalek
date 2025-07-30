@@ -25,6 +25,10 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
+use vstd::arithmetic::div_mod::*;
+use vstd::bits::lemma_u64_shr_is_div;
+use super::common_verus::shift_is_pow2;
+use crate::backend::serial::u64::constants::L;
 use vstd::prelude::*;
 
 verus! {
@@ -218,7 +222,7 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % to_nat(&L.limbs),
+        to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
         //let mut sum = Scalar52::ZERO;
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -364,7 +368,7 @@ impl Scalar52 {
         let result = Scalar52::sub(&sum, &l_value);
 
         // We've proven no overflow occurs. The mathematical correctness is assumed.
-        assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % to_nat(&L.limbs));
+        assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
 
         result
 
@@ -378,7 +382,7 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&L.limbs) - to_nat(&b.limbs)) % (to_nat(&L.limbs) as int)
+        to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
     {
         //let mut difference = Scalar52::ZERO;
          let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -558,7 +562,7 @@ impl Scalar52 {
                 assert((carry >> 52) < 2);
             }
         }
-        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + to_nat(&L.limbs) - to_nat(&b.limbs)) % (to_nat(&L.limbs) as int));
+        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));
         difference
     }
 

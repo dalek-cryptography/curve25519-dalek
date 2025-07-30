@@ -230,6 +230,13 @@ ensures
 // Executable code
 
 
+/// The `Scalar52` struct represents an element in
+/// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
+#[derive(Copy, Clone)]
+pub struct Scalar52 {
+    pub limbs: [u64; 5],
+}
+
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]
 fn m(x: u64, y: u64) -> (z: u128)
@@ -260,13 +267,6 @@ ensures
         assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
     }
     (x as u128) * (y as u128)
-}
-
-/// The `Scalar52` struct represents an element in
-/// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
-#[derive(Copy, Clone)]
-pub struct Scalar52 {
-    pub limbs: [u64; 5],
 }
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493

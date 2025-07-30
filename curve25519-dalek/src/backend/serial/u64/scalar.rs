@@ -24,6 +24,8 @@ use zeroize::Zeroize;
 
 verus! {
 
+// Tell Verus what Choice does
+
 #[verifier::external_type_specification]
 #[verifier::external_body]
 pub struct ExChoice(Choice);
@@ -43,6 +45,7 @@ fn select(x: &u64, y: &u64, c: Choice) -> (res: u64)
 }
 
 
+// Spec functions
 
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
 decreases limbs.len()
@@ -83,6 +86,65 @@ pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
     pow2(156) * (limbs[3] as nat) +
     pow2(208) * (limbs[4] as nat)
 }
+
+// Modular reduction of to_nat mod L
+spec fn to_scalar(limbs: &[u64; 5]) -> nat {
+    to_nat(limbs) % group_order()
+}
+
+/// natural value of a 256 bit bitstring represented as array of 32 bytes
+pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {
+    // Convert bytes to nat in little-endian order using recursive helper
+    bytes_to_nat_rec(bytes, 0)
+}
+
+pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat
+decreases 32 - index
+{
+    if index >= 32 {
+        0
+    } else {
+        (bytes[index] as nat) * pow2(index as nat) + bytes_to_nat_rec(bytes, index + 1)
+    }
+}
+
+// Generic function to convert array of words to natural number
+// Takes: array of words, number of words, bits per word
+// Note: This is a specification function that works with concrete types
+pub open spec fn words_to_nat_gen_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
+decreases num_words
+{
+    if num_words <= 0 {
+        0
+    } else {
+        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+        word_value + words_to_nat_gen_u64(words, num_words - 1, bits_per_word)
+    }
+}
+
+pub open spec fn words_to_nat_gen_u32(words: &[u32], num_words: int, bits_per_word: int) -> nat
+decreases num_words
+{
+    if num_words <= 0 {
+        0
+    } else {
+        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+        word_value + words_to_nat_gen_u32(words, num_words - 1, bits_per_word)
+    }
+}
+
+// natural value of a 256 bit bitstring represented as an array of 4 words of 64 bits
+// Now implemented using the generic function
+pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
+    words_to_nat_gen_u64(words, 4, 64)
+}
+
+// Group order: the value of L as a natural number
+pub open spec fn group_order() -> nat {
+    (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
+}
+
+// Proof functions
 
 proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
 ensures
@@ -165,64 +227,8 @@ ensures
     }
 }
 
+// Executable code
 
-
-// Modular reduction of to_nat mod L
-spec fn to_scalar(limbs: &[u64; 5]) -> nat {
-    to_nat(limbs) % group_order()
-}
-
-/// natural value of a 256 bit bitstring represented as array of 32 bytes
-pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {
-    // Convert bytes to nat in little-endian order using recursive helper
-    bytes_to_nat_rec(bytes, 0)
-}
-
-pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat
-decreases 32 - index
-{
-    if index >= 32 {
-        0
-    } else {
-        (bytes[index] as nat) * pow2(index as nat) + bytes_to_nat_rec(bytes, index + 1)
-    }
-}
-
-// Generic function to convert array of words to natural number
-// Takes: array of words, number of words, bits per word
-// Note: This is a specification function that works with concrete types
-pub open spec fn words_to_nat_gen_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
-decreases num_words
-{
-    if num_words <= 0 {
-        0
-    } else {
-        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
-        word_value + words_to_nat_gen_u64(words, num_words - 1, bits_per_word)
-    }
-}
-
-pub open spec fn words_to_nat_gen_u32(words: &[u32], num_words: int, bits_per_word: int) -> nat
-decreases num_words
-{
-    if num_words <= 0 {
-        0
-    } else {
-        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
-        word_value + words_to_nat_gen_u32(words, num_words - 1, bits_per_word)
-    }
-}
-
-// natural value of a 256 bit bitstring represented as an array of 4 words of 64 bits
-// Now implemented using the generic function
-pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
-    words_to_nat_gen_u64(words, 4, 64)
-}
-
-// Group order: the value of L as a natural number
-pub open spec fn group_order() -> nat {
-    (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
-}
 
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]

@@ -319,9 +319,6 @@ ensures
     (x as u128) * (y as u128)
 }
 
-
-
-
 impl Scalar52 {
     /// The scalar \\( 0 \\).
     pub const ZERO: Scalar52 = Scalar52 { limbs: [0, 0, 0, 0, 0] };

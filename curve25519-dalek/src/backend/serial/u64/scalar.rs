@@ -701,32 +701,59 @@ impl Scalar52 {
         z
     }
 
-    /// Montgomery reduction: reduces a 9-limb number to a 5-limb scalar
-    /// This is the core of Montgomery arithmetic - it computes (x / R) mod L
-    /// where R = 2^260 and L is the scalar field order
+
+
+
+    /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
+    #[inline(always)]
+    #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
     ensures
         // TODO: Add proper specification for Montgomery reduction
         true,
     {
+
+
+
         assume(false); // TODO: Add proper bounds checking and proofs
         // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
-        let (carry, n0) = Scalar52::montgomery_part1(limbs[0]);
-        let (carry, n1) = Scalar52::montgomery_part1(carry + limbs[1] + m(n0, L.limbs[1]));
-        let (carry, n2) = Scalar52::montgomery_part1(carry + limbs[2] + m(n0, L.limbs[2]) + m(n1, L.limbs[1]));
-        let (carry, n3) = Scalar52::montgomery_part1(carry + limbs[3] + m(n1, L.limbs[2]) + m(n2, L.limbs[1]));
-        let (carry, n4) = Scalar52::montgomery_part1(carry + limbs[4] + m(n0, L.limbs[4]) + m(n2, L.limbs[2]) + m(n3, L.limbs[1]));
+        let (carry, n0) = Self::part1(limbs[0]);
+        let (carry, n1) = Self::part1(carry + limbs[1] + m(n0, L.limbs[1]));
+        let (carry, n2) = Self::part1(carry + limbs[2] + m(n0, L.limbs[2]) + m(n1, L.limbs[1]));
+        let (carry, n3) = Self::part1(carry + limbs[3] + m(n1, L.limbs[2]) + m(n2, L.limbs[1]));
+        let (carry, n4) = Self::part1(carry + limbs[4] + m(n0, L.limbs[4]) + m(n2, L.limbs[2]) + m(n3, L.limbs[1]));
 
         // Second half: limbs is now divisible by R, so divide by R by taking upper half
-        let (carry, r0) = Scalar52::montgomery_part2(carry + limbs[5] + m(n1, L.limbs[4]) + m(n3, L.limbs[2]) + m(n4, L.limbs[1]));
-        let (carry, r1) = Scalar52::montgomery_part2(carry + limbs[6] + m(n2, L.limbs[4]) + m(n4, L.limbs[2]));
-        let (carry, r2) = Scalar52::montgomery_part2(carry + limbs[7] + m(n3, L.limbs[4]));
-        let (carry, r3) = Scalar52::montgomery_part2(carry + limbs[8] + m(n4, L.limbs[4]));
+        let (carry, r0) = Self::part2(carry + limbs[5] + m(n1, L.limbs[4]) + m(n3, L.limbs[2]) + m(n4, L.limbs[1]));
+        let (carry, r1) = Self::part2(carry + limbs[6] + m(n2, L.limbs[4]) + m(n4, L.limbs[2]));
+        let (carry, r2) = Self::part2(carry + limbs[7] + m(n3, L.limbs[4]));
+        let (carry, r3) = Self::part2(carry + limbs[8] + m(n4, L.limbs[4]));
         let r4 = carry as u64;
 
         // Result may be >= L, so attempt to subtract L
         let result = Scalar52 { limbs: [r0, r1, r2, r3, r4] };
         Scalar52::sub(&result, &L)
+    }
+
+
+    /// Helper function for Montgomery reduction
+    #[inline(always)]
+    fn part1(sum: u128) -> (u128, u64)
+    {
+        assume(false); // TODO: Add proper bounds checking and proofs
+        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
+        let carry = (sum + m(p, L.limbs[0])) >> 52;
+        (carry, p)
+    }
+
+    /// Helper function for Montgomery reduction
+    #[inline(always)]
+    fn part2(sum: u128) -> (u128, u64)
+    {
+        assume(false); // TODO: Add proper bounds checking and proofs
+        let w = (sum as u64) & ((1u64 << 52) - 1);
+        let carry = sum >> 52;
+        (carry, w)
     }
 
 
@@ -782,25 +809,6 @@ impl Scalar52 {
         Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
     }
 
-    /// Helper function for part1 of Montgomery reduction
-    #[inline(always)]
-    fn montgomery_part1(sum: u128) -> (u128, u64)
-    {
-        assume(false); // TODO: Add proper bounds checking and proofs
-        let p = (sum as u64).wrapping_mul(LFACTOR) & ((1u64 << 52) - 1);
-        let carry = (sum + m(p, L.limbs[0])) >> 52;
-        (carry, p)
-    }
-
-    /// Helper function for part2 of Montgomery reduction
-    #[inline(always)]
-    fn montgomery_part2(sum: u128) -> (u128, u64)
-    {
-        assume(false); // TODO: Add proper bounds checking and proofs
-        let w = (sum as u64) & ((1u64 << 52) - 1);
-        let carry = sum >> 52;
-        (carry, w)
-    }
 
     /// Puts a Scalar52 into Montgomery form, i.e. computes `a*R (mod L)`
     #[inline(never)]

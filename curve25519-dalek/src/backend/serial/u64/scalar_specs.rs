@@ -97,6 +97,7 @@ pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
 
 // Group order: the value of L as a natural number
 pub open spec fn group_order() -> nat {
+    // TODO I think << is wrong
     (1u64 << 252) as nat + 27742317777372353535851937790883648493nat
 }
 

@@ -769,6 +769,7 @@ impl Scalar52 {
 
     /// Compute `a^2` (mod l)
     #[inline(never)]
+    #[allow(dead_code)] // XXX we don't expose square() via the Scalar API
     pub fn square(&self) -> (result: Scalar52)
     requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
@@ -806,7 +807,7 @@ impl Scalar52 {
     }
 
 
-    /// Puts a Scalar52 into Montgomery form, i.e. computes `a*R (mod L)`
+    /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod L)`
     #[inline(never)]
     pub fn as_montgomery(&self) -> (result: Scalar52)
     requires

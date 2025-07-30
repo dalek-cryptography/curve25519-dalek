@@ -7,7 +7,6 @@ use vstd::bits::*;
 use vstd::prelude::*;
 
 use super::common_verus::*;
-use super::vstd_u128_verus::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 

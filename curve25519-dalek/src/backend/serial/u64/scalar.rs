@@ -324,9 +324,7 @@ impl Scalar52 {
 
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    /* ADAPTED CODE LINE: we give a name to the output: "s" */
     pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
-    // SPECIFICATION: unpacking keeps the same nat value
     ensures bytes_to_nat(bytes) == to_nat(&s.limbs)
     {
         let mut words = [0u64; 4];
@@ -352,25 +350,25 @@ impl Scalar52 {
             // TODO: prove property about words array
         }
 
-    let mask = (1u64 << 52) - 1;
-    let top_mask = (1u64 << 48) - 1;
-    // let mut s = Scalar52::ZERO; // ORIGINAL IMPLEMENTATION
-    let mut s = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-    proof {
-        assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-        assert(s == Scalar52::ZERO); // PROVES EQUIVALENCE TO ORIGINAL IMPLEMENTATION
+        let mask = (1u64 << 52) - 1;
+        let top_mask = (1u64 << 48) - 1;
+        // let mut s = Scalar52::ZERO; // ORIGINAL IMPLEMENTATION
+        let mut s = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+        proof {
+            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
+            assert(s == Scalar52::ZERO); // PROVES EQUIVALENCE TO ORIGINAL IMPLEMENTATION
+        }
+
+        s.limbs[0] =   words[0]                            & mask;
+        s.limbs[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
+        s.limbs[2] = ((words[1] >> 40) | (words[2] << 24)) & mask;
+        s.limbs[3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
+        s.limbs[4] =  (words[3] >> 16)                     & top_mask;
+
+        assume(false); // TODO: complete the proof
+
+        s
     }
-
-    s.limbs[0] =   words[0]                            & mask;
-    s.limbs[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
-    s.limbs[2] = ((words[1] >> 40) | (words[2] << 24)) & mask;
-    s.limbs[3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
-    s.limbs[4] =  (words[3] >> 16)                     & top_mask;
-
-    assume(false); // TODO: complete the proof
-
-    s
-}
 
     /// Reduce a 64 byte / 512 bit scalar mod l
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations

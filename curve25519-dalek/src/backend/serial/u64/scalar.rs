@@ -227,6 +227,15 @@ ensures
     }
 }
 
+/// Verification: scalar * scalar.invert() ≡ 1 mod L
+proof fn verify_invert_correct(&self)
+//     requires to_scalar(&self.limbs) != 0
+//    ensures (to_scalar(&self.limbs) * invert_spec(&self.limbs)) % group_order() == 1
+{
+    assume(false);
+
+}
+
 // Executable code
 
 
@@ -842,15 +851,6 @@ impl Scalar52 {
     }
 
 
-
-    /// Verification: scalar * scalar.invert() ≡ 1 mod L
-    proof fn verify_invert_correct(&self)
-    //     requires to_scalar(&self.limbs) != 0
-    //    ensures (to_scalar(&self.limbs) * invert_spec(&self.limbs)) % group_order() == 1
-    {
-        assume(false);
-
-    }
 
 }
 

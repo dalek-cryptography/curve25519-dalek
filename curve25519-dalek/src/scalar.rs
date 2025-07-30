@@ -1730,7 +1730,7 @@ pub(crate) mod test {
         let bytes = unpacked.to_bytes();
         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
-        assert_eq!(should_be_unpacked.0, unpacked.0);
+        assert_eq!(should_be_unpacked.limbs, unpacked.limbs);
     }
 
     #[test]
@@ -1762,8 +1762,8 @@ pub(crate) mod test {
         let montgomery_reduced = UnpackedScalar::montgomery_reduce(&interim);
 
         // The Montgomery reduced scalar should match the reduced one, as well as the expected
-        assert_eq!(montgomery_reduced.0, reduced.unpack().0);
-        assert_eq!(montgomery_reduced.0, expected.unpack().0)
+        assert_eq!(montgomery_reduced.limbs, reduced.unpack().limbs);
+        assert_eq!(montgomery_reduced.limbs, expected.unpack().limbs)
     }
 
     #[test]

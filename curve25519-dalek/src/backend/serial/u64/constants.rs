@@ -125,8 +125,7 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([
     2251799813685247,
 ]);
 
-
-verus!{
+verus! {
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52 {
     limbs: [

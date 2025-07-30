@@ -264,7 +264,7 @@ impl Zeroize for Scalar52 {
     }
 }
 
-verus!{
+verus! {
 impl Index<usize> for Scalar52 {
     type Output = u64;
     // TODO Do we need this?
@@ -281,7 +281,7 @@ impl IndexMut<usize> for Scalar52 {
     }
 }
 
-verus!{
+verus! {
 
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]

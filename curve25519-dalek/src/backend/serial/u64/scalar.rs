@@ -402,8 +402,6 @@ impl Scalar52 {
     #[allow(clippy::identity_op)]
     #[allow(clippy::wrong_self_convention)]
     pub fn to_bytes(self) -> (s: [u8; 32])
-    // DIFF-SPEC-3: we give a name to the output: "s"
-    // SPECIFICATION: packing keeps the same nat value
     ensures bytes_to_nat(&s) == to_nat(&self.limbs)
     {
         let mut s = [0u8; 32];
@@ -454,7 +452,6 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
     {
-        //let mut sum = Scalar52::ZERO;
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof {
             assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
@@ -499,18 +496,8 @@ impl Scalar52 {
 
         // subtract l if the sum is >= l
 
-        /*** BEGIN: ADAPTED CODE BLOCK ***/
+        Scalar52::sub(&sum, &constants::L)
 
-        /* ORIGINAL CODE */
-        /*let mut s = Scalar52::sub(&sum, &Self::L);*/
-        /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
-        let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
-        assert(to_nat(&l_value.limbs) == to_nat(&constants::L.limbs));
-        assume(false); // TODO: complete the proof
-
-        Scalar52::sub(&sum, &l_value)
-
-        /*** END: ADAPTED CODE BLOCK ***/
 
     }
 
@@ -522,8 +509,7 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
     {
-        //let mut difference = Scalar52::ZERO;
-            let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+        let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof {
             assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
             assert(difference == Scalar52::ZERO);
@@ -548,12 +534,7 @@ impl Scalar52 {
         let mut carry: u64 = 0;
         for i in 0..5 {
             let underflow = Choice::from((borrow >> 63) as u8);
-            /*** BEGIN: ADAPTED CODE BLOCK ***/
-            // ORIGINAL CODE
-            //   let addend = u64::conditional_select(&0, &L[i], underflow);
-        // OUR ADAPTED CODE FOR VERUS
             let addend = select(&0, &constants::L.limbs[i], underflow);
-        /*** END: ADAPTED CODE BLOCK ***/
             assume (carry >> 52 < 2);
             assume (difference.limbs[i as int] < 1 << 52);
             assume (constants::L.limbs[i as int] < 1 << 52);

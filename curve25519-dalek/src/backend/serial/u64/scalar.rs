@@ -706,9 +706,6 @@ impl Scalar52 {
         // TODO: Add proper specification for Montgomery reduction
         true,
     {
-
-
-
         assume(false); // TODO: Add proper bounds checking and proofs
         // First half: compute Montgomery adjustment factor n and add n*L to make limbs divisible by R
         let (carry, n0) = Self::part1(limbs[0]);

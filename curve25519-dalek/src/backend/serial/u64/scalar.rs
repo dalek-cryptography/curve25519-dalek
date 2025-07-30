@@ -1,14 +1,29 @@
-// scalar64_verus.rs
-#![allow(unused)]
+//! Arithmetic mod \\(2\^{252} + 27742317777372353535851937790883648493\\)
+//! with five \\(52\\)-bit unsigned limbs.
+//!
+//! \\(51\\)-bit limbs would cover the desired bit range (\\(253\\)
+//! bits), but isn't large enough to reduce a \\(512\\)-bit number with
+//! Montgomery multiplication, so \\(52\\) bits is used instead.  To see
+//! that this is safe for intermediate results, note that the largest
+//! limb in a \\(5\times 5\\) product of \\(52\\)-bit limbs will be
+//!
+//! ```text
+//! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
+//! ```
+
+use core::fmt::Debug;
+use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::calc;
 use vstd::prelude::*;
-// use crate::constants; // We manually import needed constants
+
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
+
+
 
 verus! {
 
@@ -31,27 +46,6 @@ verus! {
         }
 
 
-        /* MANUALLY IMPORTED FROM curve25519-dalek/src/backend/serial/u64/constants.rs */
-        /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
-        pub const L: Scalar52 = Scalar52 { limbs: [
-            0x0002631a5cf5d3ed,
-            0x000dea2f79cd6581,
-            0x000000000014def9,
-            0x0000000000000000,
-            0x0000100000000000,
-        ]};
-
-        /// `RR` = (R^2) mod L where R = 2^260
-        pub const RR: Scalar52 = Scalar52 { limbs: [
-            0x0009d265e952d13b,
-            0x000d63c715bea69f,
-            0x0005ea65f25dd3d5,
-            0x000e571d6372e9c5,
-            0x0000039da6b19ca7,
-        ]};
-
-        /// `LFACTOR` = (-(L^(-1))) mod 2^52
-        pub const LFACTOR: u64 = 0x51da312547e1b;
 
         pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
         decreases limbs.len()
@@ -265,15 +259,37 @@ verus! {
             (x as u128) * (y as u128)
         }
 
+        /// The `Scalar52` struct represents an element in
+        /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
+        #[derive(Copy, Clone)]
         pub struct Scalar52 {
-            // ADAPTED CODE LINE: we give a name to the field: "limbs"
             pub limbs: [u64; 5],
         }
 
-        impl Scalar52 {
+        /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
+        pub const L: Scalar52 = Scalar52 { limbs: [
+            0x0002631a5cf5d3ed,
+            0x000dea2f79cd6581,
+            0x000000000014def9,
+            0x0000000000000000,
+            0x0000100000000000,
+        ]};
 
-            /****** IMPLEMENTATION CONSTANTS AND FUNCTIONS ********/
-            pub const ZERO: Scalar52 = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
+        /// `RR` = (R^2) mod L where R = 2^260
+        pub const RR: Scalar52 = Scalar52 { limbs: [
+            0x0009d265e952d13b,
+            0x000d63c715bea69f,
+            0x0005be65cb687604,
+            0x0003dceec73d217f,
+            0x000009411b7c309a,
+        ]};
+
+        /// `LFACTOR` = (-(L^(-1))) mod 2^52
+        pub const LFACTOR: u64 = 0x51da312547e1b;
+
+        impl Scalar52 {
+            /// The scalar \\( 0 \\).
+            pub const ZERO: Scalar52 = Scalar52 { limbs: [0, 0, 0, 0, 0] };
 
             /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
             #[rustfmt::skip] // keep alignment of s[*] calculations
@@ -485,7 +501,7 @@ verus! {
                 let underflow = Choice::from((borrow >> 63) as u8);
               /*** BEGIN: ADAPTED CODE BLOCK ***/
               // ORIGINAL CODE
-             //   let addend = u64::conditional_select(&0, &constants::L[i], underflow);
+             //   let addend = u64::conditional_select(&0, &L[i], underflow);
             // OUR ADAPTED CODE FOR VERUS
                 let addend = select(&0, &L.limbs[i], underflow);
             /*** END: ADAPTED CODE BLOCK ***/
@@ -792,25 +808,14 @@ verus! {
 
     }
 
-    // Add compatibility methods for external interface
-    impl core::ops::Index<usize> for Scalar52 {
+
+    impl Index<usize> for Scalar52 {
         type Output = u64;
-        fn index(&self, _index: usize) -> &u64 
-        requires
-            _index < 5,
-        {
+        #[verifier::external_body]
+        fn index(&self, _index: usize) -> &u64 {
             &(self.limbs[_index])
         }
     }
-
-
-    impl Copy for Scalar52 {}
-    impl Clone for Scalar52 {
-        fn clone(&self) -> Self {
-            *self
-        }
-    }
-
 
     // Tests moved outside of verus block for now
     #[cfg(test)]
@@ -842,21 +847,21 @@ verus! {
     }
 }
 
-impl core::fmt::Debug for Scalar52 {
+impl Debug for Scalar52 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar52: {:?}", self.limbs)
     }
 }
 
-impl core::ops::IndexMut<usize> for Scalar52 {
-    fn index_mut(&mut self, _index: usize) -> &mut u64 {
-        &mut (self.limbs[_index])
+#[cfg(feature = "zeroize")]
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.limbs.zeroize();
     }
 }
 
-#[cfg(feature = "zeroize")]
-impl zeroize::Zeroize for Scalar52 {
-    fn zeroize(&mut self) {
-        self.limbs.zeroize();
+impl IndexMut<usize> for Scalar52 {
+    fn index_mut(&mut self, _index: usize) -> &mut u64 {
+        &mut (self.limbs[_index])
     }
 }

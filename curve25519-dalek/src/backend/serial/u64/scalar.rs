@@ -423,7 +423,6 @@ impl Scalar52 {
         (carry, w)
     }
 
-
     /// Compute `a * b` (mod l)
     #[inline(never)]
     pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
@@ -476,7 +475,6 @@ impl Scalar52 {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
     }
-
 
     /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod L)`
     #[inline(never)]

@@ -30,8 +30,8 @@ pub mod constants;
 #[path = "../u64/bounds.rs"]
 pub mod bounds;
 
-#[path = "../u64/choice_spec.rs"]
-pub mod choice_spec;
+#[path = "../u64/subtle_assumes.rs"]
+pub mod subtle_assumes;
 
 #[path = "../u64/scalar_lemmas.rs"]
 pub mod scalar_lemmas;

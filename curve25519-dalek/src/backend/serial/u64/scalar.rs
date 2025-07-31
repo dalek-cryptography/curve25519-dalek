@@ -13,7 +13,7 @@
 
 #[allow(unused_imports)]
 use super::bounds::*;
-use super::choice_spec::*;
+use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use super::scalar_lemmas::*;
 #[allow(unused_imports)]

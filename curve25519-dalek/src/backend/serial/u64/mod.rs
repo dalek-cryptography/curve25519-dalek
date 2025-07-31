@@ -32,7 +32,7 @@ pub mod field_lemmas;
 
 pub mod common_verus;
 
-pub mod choice_spec;
+pub mod subtle_assumes;
 
 pub mod to_nat;
 

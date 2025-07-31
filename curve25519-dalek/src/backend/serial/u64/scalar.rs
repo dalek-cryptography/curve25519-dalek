@@ -489,7 +489,7 @@ impl Scalar52 {
         Scalar52::montgomery_mul(self, &constants::RR)
     }
 
-    /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod L)`
+    /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod l)`
     #[allow(clippy::wrong_self_convention)]
     #[inline(never)]
     pub fn from_montgomery(&self) -> (result: Scalar52)

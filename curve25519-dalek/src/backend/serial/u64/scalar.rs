@@ -12,12 +12,12 @@
 //! ```
 
 #[allow(unused_imports)]
-use super::bounds::*;
-use super::choice_spec::*;
+use crate::backend::serial::u64::bounds::*;
+use crate::backend::serial::u64::choice_spec::*;
 #[allow(unused_imports)]
-use super::scalar_lemmas::*;
+use crate::backend::serial::u64::scalar_lemmas::*;
 #[allow(unused_imports)]
-use super::to_nat::*;
+use crate::backend::serial::u64::to_nat::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 #[allow(unused_imports)]

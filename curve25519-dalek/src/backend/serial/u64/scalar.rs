@@ -226,12 +226,8 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
-        //let mut sum = Scalar52::ZERO;
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-        proof {
-            lemma_add_initialization();
-            assert(sum == Scalar52::ZERO);
-        }
+        proof { assert(1u64 << 52 > 0) by (bit_vector); }
         let mask = (1u64 << 52) - 1;
 
         // a + b

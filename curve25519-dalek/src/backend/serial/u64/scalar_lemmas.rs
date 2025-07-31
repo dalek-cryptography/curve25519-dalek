@@ -385,14 +385,6 @@ pub proof fn lemma_all_limbs_bounded(limbs: &[u64; 5])
     }
 }
 
-pub proof fn lemma_add_initialization()
-    ensures
-        Scalar52::ZERO == (Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }),
-        1u64 << 52 > 0,
-{
-    assert(Scalar52::ZERO == (Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] }));
-    assert(1u64 << 52 > 0) by (bit_vector);
-}
 
 pub proof fn lemma_carry_initialization()
     ensures

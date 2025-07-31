@@ -12,10 +12,10 @@
 //! ```
 
 // TODO Clean up imports
-use super::choice_spec::*;
-use super::to_nat::*;
 use super::bounds::*;
+use super::choice_spec::*;
 use super::scalar_lemmas::*;
+use super::to_nat::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};

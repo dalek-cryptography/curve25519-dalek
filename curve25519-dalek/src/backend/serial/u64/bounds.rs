@@ -1,9 +1,9 @@
-use vstd::prelude::*;
-use vstd::calc;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+use vstd::calc;
+use vstd::prelude::*;
 
-verus!{
+verus! {
 
 pub proof fn lemma_52_52(x: u64, y: u64)
 requires

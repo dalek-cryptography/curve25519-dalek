@@ -1,11 +1,11 @@
-use vstd::prelude::*;
 use super::to_nat::*;
 #[allow(unused_imports)]
-use vstd::arithmetic::power2::*;
-#[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
+use vstd::prelude::*;
 
-verus!{
+verus! {
 
 
 pub proof fn lemma_square_internal_no_overflow()

@@ -25,12 +25,12 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
+use super::common_verus::shift_is_pow2;
+use crate::backend::serial::u64::constants::L;
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::lemma_u64_shr_is_div;
-use super::common_verus::shift_is_pow2;
-use crate::backend::serial::u64::constants::L;
 use vstd::prelude::*;
 
 verus! {

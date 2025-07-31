@@ -391,6 +391,7 @@ impl Scalar52 {
 
     proof fn lemma_square_nat_equivalence(a: &[u64; 5], z: &[u128; 9])
         requires
+            forall|i: int| 0 <= i < 5 ==> a[i] < (1u64 << 52),
             z[0] == (a[0] * a[0]) as u128,
             z[1] == (a[0] * a[1]) as u128 * 2,
             z[2] == (a[0] * a[2]) as u128 * 2 + (a[1] * a[1]) as u128,
@@ -402,8 +403,25 @@ impl Scalar52 {
             z[8] == (a[4] * a[4]) as u128,
         ensures
             slice128_to_nat(z) == to_nat(a) * to_nat(a),
+
     {
-        assume(false);
+            assert(five_limbs_to_nat_aux(*a) * five_limbs_to_nat_aux(*a) == nine_limbs_to_nat_aux(&z)) by {
+                broadcast use group_mul_is_commutative_and_distributive;
+                broadcast use lemma_mul_is_associative;
+
+                lemma_pow2_adds(52, 52);
+                lemma_pow2_adds(52, 104);
+                lemma_pow2_adds(52, 156);
+                lemma_pow2_adds(52, 208);
+                lemma_pow2_adds(104, 104);
+                lemma_pow2_adds(104, 156);
+                lemma_pow2_adds(104, 208);
+                lemma_pow2_adds(156, 156);
+                lemma_pow2_adds(156, 208);
+                lemma_pow2_adds(208, 208);
+            };
+            lemma_nine_limbs_equals_slice128_to_nat(&z);
+            lemma_five_limbs_equals_to_nat(&a);
     }
 
     // TODO Make this function more like the original?
@@ -462,23 +480,6 @@ impl Scalar52 {
         proof {
 
             Self::lemma_square_nat_equivalence(&a.limbs, &z);
-        //     assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(a.limbs) == nine_limbs_to_nat_aux(&z)) by {
-        //         broadcast use group_mul_is_commutative_and_distributive;
-        //         broadcast use lemma_mul_is_associative;
-
-        //         lemma_pow2_adds(52, 52);
-        //         lemma_pow2_adds(52, 104);
-        //         lemma_pow2_adds(52, 156);
-        //         lemma_pow2_adds(52, 208);
-        //         lemma_pow2_adds(104, 104);
-        //         lemma_pow2_adds(104, 156);
-        //         lemma_pow2_adds(104, 208);
-        //         lemma_pow2_adds(156, 156);
-        //         lemma_pow2_adds(156, 208);
-        //         lemma_pow2_adds(208, 208);
-        //     };
-        //     lemma_nine_limbs_equals_slice128_to_nat(&z);
-        //     lemma_five_limbs_equals_to_nat(&a.limbs);
         }
 
         z

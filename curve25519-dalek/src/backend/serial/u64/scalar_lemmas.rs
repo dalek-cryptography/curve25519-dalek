@@ -267,6 +267,7 @@ pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64,
     }
     assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
 }
+
 pub proof fn lemma_borrow_and_mask_bounded(borrow: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
@@ -275,6 +276,7 @@ pub proof fn lemma_borrow_and_mask_bounded(borrow: u64, mask: u64)
 {
     assert((borrow & mask) <= mask) by (bit_vector);
 }
+
 pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
@@ -310,6 +312,7 @@ pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
     }
     assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
 }
+
 pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
@@ -329,6 +332,7 @@ pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
     let r = carry % (1u64 << 52);
     lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
 }
+
 pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
     requires
         l_value.limbs[0] == 0x0002631a5cf5d3ed,

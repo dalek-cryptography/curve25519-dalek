@@ -11,7 +11,6 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-// TODO Clean up imports
 #[allow(unused_imports)]
 use super::bounds::*;
 use super::choice_spec::*;

@@ -150,10 +150,3 @@ Executable code is easier to read if multiline proof blocks are replaced by lemm
 3. Put the contents of the proof block into the lemma to actually prove it. 
 
 Verify at each step
-
-#### Tips
-- Start with minimal preconditions and add more as needed
-- If the proof needs access to constants or complex state, pass them as parameters
-- Verify after each change to catch issues early
-- Keep lemmas focused on one specific property
-

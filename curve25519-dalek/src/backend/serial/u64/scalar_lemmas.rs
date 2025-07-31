@@ -386,14 +386,6 @@ pub proof fn lemma_all_limbs_bounded(limbs: &[u64; 5])
 }
 
 
-pub proof fn lemma_carry_initialization()
-    ensures
-        1u64 << 54 < u64::MAX,
-        0u64 < (1u64 << 54),
-{
-    assert(1u64 << 54 < u64::MAX) by (bit_vector);
-    assert(0u64 < (1u64 << 54)) by (bit_vector);
-}
 
 pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
     requires

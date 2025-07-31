@@ -232,10 +232,6 @@ impl Scalar52 {
 
         // a + b
         let mut carry: u64 = 0;
-        proof {
-            assert(carry == 0u64);
-            lemma_carry_initialization();
-        }
         for i in 0..5
            invariant 0 <= i <= 5,
                     forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,

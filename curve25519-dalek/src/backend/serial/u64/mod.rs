@@ -38,4 +38,6 @@ pub mod to_nat;
 
 pub mod scalar52_proofs;
 
+pub mod scalar_lemmas;
+
 pub mod bounds;

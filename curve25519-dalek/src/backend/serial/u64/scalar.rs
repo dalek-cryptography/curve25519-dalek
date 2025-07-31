@@ -387,9 +387,7 @@ impl Scalar52 {
         to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-        proof {
-            assert(1u64 << 52 > 0) by (bit_vector);
-        }
+        proof { assert(1u64 << 52 > 0) by (bit_vector);}
         let mask = (1u64 << 52) - 1;
 
         // a - b
@@ -400,14 +398,10 @@ impl Scalar52 {
                       forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
                       mask == (1u64 << 52) - 1,
         {
-            proof {
-                assert ((borrow >> 63) < 2) by (bit_vector);
-            }
+            proof { assert ((borrow >> 63) < 2) by (bit_vector); }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
-            proof {
-                lemma_borrow_and_mask_bounded(borrow, mask);
-            }
+            proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 
         proof {
@@ -440,9 +434,7 @@ impl Scalar52 {
             }
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
-            proof {
-                lemma_carry_bounded_after_mask(carry, mask);
-            }
+            proof { lemma_carry_bounded_after_mask(carry, mask); }
         }
         assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));
         difference

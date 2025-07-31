@@ -328,65 +328,21 @@ impl Scalar52 {
     ensures
         slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&b.limbs),
     {
+        proof {lemma_mul_internal_no_overflow()}
+
         let mut z = [0u128; 9];
 
         z[0] = m(a.limbs[0], b.limbs[0]);
-
-        proof {
-            // Each m() result is < 2^104
-            // Sum: 2^104 + 2^104 = 2^105 < 2^128
-            assert((1u128 << 104) + (1u128 << 104) == (1u128 << 105)) by (bit_vector);
-        }
         z[1] = m(a.limbs[0], b.limbs[1]) + m(a.limbs[1], b.limbs[0]);
-
-        proof {
-            // Each m() result is < 2^104
-            // Sum: 3 * 2^104 = 3 * 2^104 < 2^106 < 2^128
-            assert(3u128 * (1u128 << 104) < (1u128 << 106)) by (bit_vector);
-        }
         z[2] = m(a.limbs[0], b.limbs[2]) + m(a.limbs[1], b.limbs[1]) + m(a.limbs[2], b.limbs[0]);
-
-        proof {
-            // Each m() result is < 2^104
-            // Sum: 4 * 2^104 = 2^2 * 2^104 = 2^106 < 2^128
-
-            assert(4u128 * (1u128 << 104) == (1u128 << 2) * (1u128 << 104)) by (bit_vector);
-            assert((1u128 << 2) * (1u128 << 104) == (1u128 << 106)) by (bit_vector);
-        }
         z[3] = m(a.limbs[0], b.limbs[3]) + m(a.limbs[1], b.limbs[2]) + m(a.limbs[2], b.limbs[1]) + m(a.limbs[3], b.limbs[0]);
-
-        proof {
-            // Each m() result is < 2^104
-            // Sum: 5 * 2^104 < 8 * 2^104 = 2^3 * 2^104 = 2^107 < 2^128
-            assert(8u128 == (1u128 << 3)) by (bit_vector);
-            assert((1u128 << 3) * (1u128 << 104) == (1u128 << 107)) by (bit_vector);
-        }
         z[4] = m(a.limbs[0], b.limbs[4]) + m(a.limbs[1], b.limbs[3]) + m(a.limbs[2], b.limbs[2]) + m(a.limbs[3], b.limbs[1]) + m(a.limbs[4], b.limbs[0]);
         z[5] =                 m(a.limbs[1], b.limbs[4]) + m(a.limbs[2], b.limbs[3]) + m(a.limbs[3], b.limbs[2]) + m(a.limbs[4], b.limbs[1]);
         z[6] =                                 m(a.limbs[2], b.limbs[4]) + m(a.limbs[3], b.limbs[3]) + m(a.limbs[4], b.limbs[2]);
         z[7] =                                                 m(a.limbs[3], b.limbs[4]) + m(a.limbs[4], b.limbs[3]);
         z[8] =                                                                 m(a.limbs[4], b.limbs[4]);
 
-        proof {
-            assert(five_limbs_to_nat_aux(a.limbs) * five_limbs_to_nat_aux(b.limbs) == nine_limbs_to_nat_aux(&z)) by {
-                broadcast use group_mul_is_commutative_and_distributive;
-                broadcast use lemma_mul_is_associative;
-
-                lemma_pow2_adds(52, 52);
-                lemma_pow2_adds(52, 104);
-                lemma_pow2_adds(52, 156);
-                lemma_pow2_adds(52, 208);
-                lemma_pow2_adds(104, 104);
-                lemma_pow2_adds(104, 156);
-                lemma_pow2_adds(104, 208);
-                lemma_pow2_adds(156, 156);
-                lemma_pow2_adds(156, 208);
-                lemma_pow2_adds(208, 208);
-            };
-            lemma_nine_limbs_equals_slice128_to_nat(&z);
-            lemma_five_limbs_equals_to_nat(&a.limbs);
-            lemma_five_limbs_equals_to_nat(&b.limbs);
-        }
+        proof {lemma_mul_internal_correct(&a.limbs, &b.limbs, &z);}
 
         z
     }

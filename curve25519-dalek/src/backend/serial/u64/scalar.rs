@@ -423,12 +423,7 @@ impl Scalar52 {
         {
             #[verifier::truncate]
             let underflow = Choice::from((borrow >> 63) as u8);
-          /*** BEGIN: ADAPTED CODE BLOCK ***/
-          // ORIGINAL CODE
-         //   let addend = u64::conditional_select(&0, &constants::L[i], underflow);
-        // OUR ADAPTED CODE FOR VERUS
             let addend = select(&0, &L.limbs[i], underflow);
-        /*** END: ADAPTED CODE BLOCK ***/
             proof {
                 lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);
             }

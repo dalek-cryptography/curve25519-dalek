@@ -17,12 +17,9 @@ ensures (x as u128) * (y as u128) < (1u128 << 104)
         (x as u128) * (y as u128); (<=) {
             if x > 0 {
                 lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int);
-                assert( y * x < (1u128 << 52) * x );
                 assert( x * y < x * (1u128 << 52)  );
             } else {
-                assert(x == 0);
                 assert((0 as u128) * (y as u128) == 0);
-                assert((x as u128) * (y as u128) == 0);
             }
         }
         (x as u128) * (1u128 << 52); (<) {

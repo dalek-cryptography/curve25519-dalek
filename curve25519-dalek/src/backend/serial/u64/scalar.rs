@@ -405,10 +405,7 @@ impl Scalar52 {
         }
 
         proof {
-            // After the first loop, all difference.limbs are bounded
-            assert forall|j: int| 0 <= j < 5 implies difference.limbs[j] < (1u64 << 52) by {
-                assert(difference.limbs[j] < (1u64 << 52));
-            }
+            lemma_all_limbs_bounded(&difference.limbs);
         }
 
         // conditionally add l if the difference is negative

@@ -407,8 +407,6 @@ impl Scalar52 {
             difference.limbs[i] = borrow & mask;
             proof {
                 lemma_borrow_and_mask_bounded(borrow, mask);
-                assert(difference.limbs[i as int] == (borrow & mask));
-                assert(difference.limbs[i as int] < (1u64 << 52));
             }
         }
 

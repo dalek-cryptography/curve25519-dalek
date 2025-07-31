@@ -371,17 +371,6 @@ pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
     assert((carry >> 52) <= 1);
 }
 
-pub proof fn lemma_all_limbs_bounded(limbs: &[u64; 5])
-    requires
-        forall|j: int| 0 <= j < 5 ==> limbs[j] < (1u64 << 52),
-    ensures
-        forall|j: int| 0 <= j < 5 ==> limbs[j] < (1u64 << 52),
-{
-    // After the first loop, all difference.limbs are bounded
-    assert forall|j: int| 0 <= j < 5 implies limbs[j] < (1u64 << 52) by {
-        assert(limbs[j] < (1u64 << 52));
-    }
-}
 
 
 

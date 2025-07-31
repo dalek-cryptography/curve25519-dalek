@@ -26,3 +26,15 @@ pub mod field;
 
 #[path = "../u64/constants.rs"]
 pub mod constants;
+
+#[path = "../u64/bounds.rs"]
+pub mod bounds;
+
+#[path = "../u64/choice_spec.rs"]
+pub mod choice_spec;
+
+#[path = "../u64/scalar_lemmas.rs"]
+pub mod scalar_lemmas;
+
+#[path = "../u64/to_nat.rs"]
+pub mod to_nat;

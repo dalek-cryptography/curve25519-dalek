@@ -1,5 +1,12 @@
 # Development Notes
 
+## Fiat Backend Testing
+
+To test compilation with the fiat backend:
+```bash
+RUSTFLAGS='--cfg curve25519_dalek_backend="fiat"' cargo check
+```
+
 ## Verus Verification
 
 Run Verus verification from the `curve25519-dalek` directory:

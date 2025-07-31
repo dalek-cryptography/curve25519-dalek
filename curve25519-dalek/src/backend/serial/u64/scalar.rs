@@ -416,7 +416,6 @@ impl Scalar52 {
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
         {
-            #[verifier::truncate]
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &L.limbs[i], underflow);
             proof {

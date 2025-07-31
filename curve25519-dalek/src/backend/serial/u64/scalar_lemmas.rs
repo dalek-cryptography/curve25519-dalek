@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use super::scalar_specs::*;
 #[allow(unused_imports)]
+use super::scalar::Scalar52;
+#[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
@@ -221,15 +223,58 @@ ensures
 }
 
 
-pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32)
+pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, L: &Scalar52)
     requires
-        (carry >> 52) <= 1,
-        difference_limb < (1u64 << 52),
-        addend < (1u64 << 52),
         i < 5,
+        difference_limb < (1u64 << 52),
+        addend == 0 || addend == L.limbs[i as int],
+        i == 0 ==> carry == 0,
+        i >= 1 ==> (carry >> 52) < 2,
+        // L constant values
+        L.limbs[0] == 0x0002631a5cf5d3ed,
+        L.limbs[1] == 0x000dea2f79cd6581,
+        L.limbs[2] == 0x000000000014def9,
+        L.limbs[3] == 0x0000000000000000,
+        L.limbs[4] == 0x0000100000000000,
     ensures
         (carry >> 52) + difference_limb + addend < (1u64 << 53),
 {
+    // Prove L.limbs[i] < 2^52 for each i
+    if i == 0 {
+        assert(L.limbs[0] == 0x0002631a5cf5d3ed);
+        assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+        assert(L.limbs[0] < (1u64 << 52));
+    } else if i == 1 {
+        assert(L.limbs[1] == 0x000dea2f79cd6581);
+        assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
+        assert(L.limbs[1] < (1u64 << 52));
+    } else if i == 2 {
+        assert(L.limbs[2] == 0x000000000014def9);
+        assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
+        assert(L.limbs[2] < (1u64 << 52));
+    } else if i == 3 {
+        assert(L.limbs[3] == 0x0000000000000000);
+        assert(0x0000000000000000 < (1u64 << 52)) by (bit_vector);
+        assert(L.limbs[3] < (1u64 << 52));
+    } else {
+        assert(i == 4);
+        assert(L.limbs[4] == 0x0000100000000000);
+        assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
+        assert(L.limbs[4] < (1u64 << 52));
+    }
+    assert(L.limbs[i as int] < (1u64 << 52));
+    assert(addend < (1u64 << 52));
+    
+    // Prove bounds on carry >> 52
+    if i == 0 {
+        assert(carry == 0);
+        assert((0u64 >> 52) == 0) by (bit_vector);
+        assert((carry >> 52) == 0);
+    } else {
+        assert((carry >> 52) < 2);
+    }
+    assert((carry >> 52) <= 1);
+    
     // Now prove no overflow
     // We have: (carry >> 52) <= 1, difference_limb < 2^52, addend < 2^52
     assert((carry >> 52) + difference_limb + addend <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);

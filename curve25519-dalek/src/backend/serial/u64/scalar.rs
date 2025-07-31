@@ -456,49 +456,17 @@ impl Scalar52 {
             proof {
                 use crate::backend::serial::u64::scalar_lemmas::lemma_scalar_subtract_no_overflow;
                 
-                // Establish preconditions for the lemma
-                assert(difference.limbs[i as int] < (1u64 << 52)); // from loop invariant
-                
-                // Prove bounds on addend
+                // Establish lemma preconditions that aren't already in loop invariants
                 assert(addend == 0 || addend == L.limbs[i as int]); // select returns one of these
                 
-                // Prove L.limbs[i] < 2^52 for each i
-                if i == 0 {
-                    assert(L.limbs[0] == 0x0002631a5cf5d3ed);
-                    assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
-                    assert(L.limbs[0] < (1u64 << 52));
-                } else if i == 1 {
-                    assert(L.limbs[1] == 0x000dea2f79cd6581);
-                    assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
-                    assert(L.limbs[1] < (1u64 << 52));
-                } else if i == 2 {
-                    assert(L.limbs[2] == 0x000000000014def9);
-                    assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
-                    assert(L.limbs[2] < (1u64 << 52));
-                } else if i == 3 {
-                    assert(L.limbs[3] == 0x0000000000000000);
-                    assert(0x0000000000000000 < (1u64 << 52)) by (bit_vector);
-                    assert(L.limbs[3] < (1u64 << 52));
-                } else {
-                    assert(i == 4);
-                    assert(L.limbs[4] == 0x0000100000000000);
-                    assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
-                    assert(L.limbs[4] < (1u64 << 52));
-                }
-                assert(L.limbs[i as int] < (1u64 << 52));
-                assert(addend < (1u64 << 52));
+                // Assert L constant values (these are compile-time constants)
+                assert(L.limbs[0] == 0x0002631a5cf5d3ed);
+                assert(L.limbs[1] == 0x000dea2f79cd6581);
+                assert(L.limbs[2] == 0x000000000014def9);
+                assert(L.limbs[3] == 0x0000000000000000);
+                assert(L.limbs[4] == 0x0000100000000000);
                 
-                // Prove bounds on carry >> 52
-                if i == 0 {
-                    assert(carry == 0);
-                    assert((0u64 >> 52) == 0) by (bit_vector);
-                    assert((carry >> 52) == 0);
-                } else {
-                    assert((carry >> 52) < 2);
-                }
-                assert((carry >> 52) <= 1);
-                
-                lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32);
+                lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);
             }
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;

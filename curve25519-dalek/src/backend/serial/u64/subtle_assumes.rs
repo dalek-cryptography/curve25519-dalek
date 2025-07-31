@@ -1,10 +1,10 @@
+//! Tell Verus what Choice does
 use subtle::{Choice, ConditionallySelectable};
 
 use vstd::prelude::*;
 
 verus! {
 
-// Tell Verus what Choice does
 
 #[verifier::external_type_specification]
 #[verifier::external_body]

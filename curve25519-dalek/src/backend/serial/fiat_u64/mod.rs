@@ -26,3 +26,12 @@ pub mod field;
 
 #[path = "../u64/constants.rs"]
 pub mod constants;
+
+#[path = "../u64/subtle_assumes.rs"]
+pub mod subtle_assumes;
+
+#[path = "../u64/scalar_lemmas.rs"]
+pub mod scalar_lemmas;
+
+#[path = "../u64/scalar_specs.rs"]
+pub mod scalar_specs;

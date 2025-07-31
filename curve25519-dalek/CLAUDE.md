@@ -142,3 +142,91 @@ scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'lemma'
 scripts/verus_cleaner.py src/backend/serial/u64/field_verus.rs 150 200 'assert'
 ```
 
+### 13. Moving Proof Blocks to Lemmas
+
+When refactoring Verus proofs, it's often beneficial to extract proof blocks into reusable lemmas. Here's a systematic approach:
+
+#### Step-by-Step Process
+
+1. **Replace with assume statement first**
+   - Identify what the proof block proves (usually preventing overflow or establishing bounds)
+   - Replace the entire proof block with a single `assume` statement that captures the key property
+   - Verify this works - this confirms you understand what needs to be proven
+
+2. **Create lemma skeleton with assume(false)**
+   - Create a new lemma in the appropriate `_lemmas.rs` file
+   - Add minimal preconditions based on the assume statement
+   - Use `assume(false)` in the lemma body initially
+   - Replace the assume statement with a lemma call
+   - Verify - this tests the lemma signature is correct
+
+3. **Move proof content to lemma**
+   - Copy the original proof block content into the lemma
+   - Add any additional preconditions needed by the proof
+   - The lemma may need access to constants or context from the original location
+   - Verify at each step
+
+#### Example
+
+Original code with proof block:
+```rust
+proof {
+    // Prove bounds on addend
+    if i == 0 {
+        assert(L.limbs[0] == 0x0002631a5cf5d3ed);
+        assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+    }
+    // ... more bounds proofs ...
+    assert((carry >> 52) + difference.limbs[i] + addend < (1u64 << 53));
+}
+carry = (carry >> 52) + difference.limbs[i] + addend;
+```
+
+Step 1 - Replace with assume:
+```rust
+assume((carry >> 52) + difference.limbs[i as int] + addend < (1u64 << 53));
+carry = (carry >> 52) + difference.limbs[i] + addend;
+```
+
+Step 2 - Create lemma and call it:
+```rust
+// In lemmas file:
+pub proof fn lemma_no_overflow(carry: u64, diff: u64, addend: u64)
+    requires
+        (carry >> 52) <= 1,
+        diff < (1u64 << 52),
+        addend < (1u64 << 52),
+    ensures
+        (carry >> 52) + diff + addend < (1u64 << 53),
+{
+    assume(false);
+}
+
+// At call site:
+proof {
+    lemma_no_overflow(carry, difference.limbs[i as int], addend);
+}
+```
+
+Step 3 - Move proof content:
+```rust
+pub proof fn lemma_no_overflow(carry: u64, diff: u64, addend: u64)
+    requires
+        (carry >> 52) <= 1,
+        diff < (1u64 << 52),
+        addend < (1u64 << 52),
+    ensures
+        (carry >> 52) + diff + addend < (1u64 << 53),
+{
+    assert((carry >> 52) + diff + addend <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
+    assert((carry >> 52) + diff + addend < 2 * (1u64 << 52));
+    assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+}
+```
+
+#### Tips
+- Start with minimal preconditions and add more as needed
+- If the proof needs access to constants or complex state, pass them as parameters
+- Verify after each change to catch issues early
+- Keep lemmas focused on one specific property
+

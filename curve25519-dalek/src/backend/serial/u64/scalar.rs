@@ -26,7 +26,6 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
-use crate::backend::serial::u64::constants::L;
 use vstd::prelude::*;
 
 verus! {
@@ -287,8 +286,8 @@ impl Scalar52 {
                       i >= 1 ==> (carry >> 52) < 2,
         {
             let underflow = Choice::from((borrow >> 63) as u8);
-            let addend = select(&0, &L.limbs[i], underflow);
-            proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);}
+            let addend = select(&0, &constants::L.limbs[i], underflow);
+            proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
             proof { lemma_carry_bounded_after_mask(carry, mask); }

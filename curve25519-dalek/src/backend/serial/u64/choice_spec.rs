@@ -1,18 +1,7 @@
-use core::fmt::Debug;
-use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
 
-use crate::constants;
 
-#[allow(unused_imports)]
-use vstd::arithmetic::mul::*;
-#[allow(unused_imports)]
-use vstd::arithmetic::power2::*;
-#[allow(unused_imports)]
-use vstd::calc;
 use vstd::prelude::*;
 
 verus! {

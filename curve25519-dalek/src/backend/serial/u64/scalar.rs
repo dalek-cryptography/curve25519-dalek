@@ -25,10 +25,6 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
-#[allow(unused_imports)]
-use vstd::arithmetic::power2::*;
-#[allow(unused_imports)]
-use vstd::calc;
 use vstd::prelude::*;
 
 verus! {

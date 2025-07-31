@@ -1,8 +1,8 @@
-//! This module provides functionality for...
-//! 
-//! Currently contains verus code which is required in several places.
-//! 
 #![allow(unused)]
+//! This module provides functionality for...
+//!
+//! Currently contains verus code which is required in several places.
+//!
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;

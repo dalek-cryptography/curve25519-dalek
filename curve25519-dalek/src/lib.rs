@@ -69,7 +69,7 @@ pub mod constants;
 pub mod traits;
 
 // Verus
-pub mod common_verus; 
+pub mod common_verus;
 pub mod scalar_verus;
 
 //------------------------------------------------------------------------

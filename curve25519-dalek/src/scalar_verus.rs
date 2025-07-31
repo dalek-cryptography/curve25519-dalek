@@ -1,9 +1,9 @@
 // scalar_verus.rs
 
 //! This module provides functionality for...
-//! 
+//!
 //! Currently natural language definitions for all the public api functions in scalar.rs
-//! 
+//!
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
@@ -17,7 +17,7 @@ use super::common_verus::*;
 verus! {
 
 // ## Constants
-// 
+//
 // - Prime order of the Ristretto group and the Ed25519 basepoint:
 //   ℓ = 2^{252} + 27742317777372353535851937790883648493
 //
@@ -115,7 +115,7 @@ verus! {
 // pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256]
 // Permitted in source only for (2 <= w <= 8)
 // Called "w-Non-Adjacent Form"
-// 
+//
 // let n_i denote the output
 //
 // 1. k = \sum_i n_i 2^i,
@@ -138,7 +138,7 @@ verus! {
 // curve25519_dalek::scalar::Scalar
 // pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize
 //
-// Unclear how to specify, returns a size hint indicating how many entries 
+// Unclear how to specify, returns a size hint indicating how many entries
 // of the return value of `to_radix_2w` are nonzero.
 // Might not be relevant except for speed concerns.
 
@@ -146,7 +146,7 @@ verus! {
 // curve25519_dalek::scalar::Scalar
 // pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64]
 // Permitted in source only for w = 4, 5, 6, 7, 8
-// 
+//
 // let a_i denote the output coefficients
 //
 // 1. a = a_0 + a_1 2^1 w + \cdots + a_{n-1} 2^{w*(n-1)}
@@ -174,7 +174,7 @@ verus! {
 // ## Specification for:
 // `curve25519_dalek::scalar``
 // `pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32]`
-// 
+//
 // Let n denote the 32 byte output interpreted as an integer in little endian format (`as_nat_32_u8`)
 //
 // 1. 2^254 ≤ n

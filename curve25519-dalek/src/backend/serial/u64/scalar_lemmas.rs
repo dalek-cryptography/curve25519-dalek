@@ -3,9 +3,9 @@ use super::scalar_specs::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
-use vstd::calc;
-#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
+use vstd::calc;
 use vstd::prelude::*;
 
 verus! {

@@ -454,11 +454,9 @@ impl Scalar52 {
             let addend = select(&0, &L.limbs[i], underflow);
         /*** END: ADAPTED CODE BLOCK ***/
             proof {
-                use crate::backend::serial::u64::scalar_lemmas::lemma_scalar_subtract_no_overflow;
-                
+
                 // Establish lemma preconditions that aren't already in loop invariants
-                assert(addend == 0 || addend == L.limbs[i as int]); // select returns one of these
-                
+
                 // Assert L constant values (these are compile-time constants)
                 assert(L.limbs[0] == 0x0002631a5cf5d3ed);
                 assert(L.limbs[1] == 0x000dea2f79cd6581);

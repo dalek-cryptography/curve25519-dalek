@@ -221,4 +221,21 @@ ensures
 }
 
 
+pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32)
+    requires
+        (carry >> 52) <= 1,
+        difference_limb < (1u64 << 52),
+        addend < (1u64 << 52),
+        i < 5,
+    ensures
+        (carry >> 52) + difference_limb + addend < (1u64 << 53),
+{
+    // Now prove no overflow
+    // We have: (carry >> 52) <= 1, difference_limb < 2^52, addend < 2^52
+    assert((carry >> 52) + difference_limb + addend <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
+    assert((carry >> 52) + difference_limb + addend < 2 * (1u64 << 52));
+    assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+    assert((carry >> 52) + difference_limb + addend < (1u64 << 53));
+}
+
 } // verus!

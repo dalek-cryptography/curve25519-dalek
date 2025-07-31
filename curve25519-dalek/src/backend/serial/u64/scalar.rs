@@ -454,13 +454,15 @@ impl Scalar52 {
             let addend = select(&0, &L.limbs[i], underflow);
         /*** END: ADAPTED CODE BLOCK ***/
             proof {
-                // Prove bounds on difference.limbs[i]
-                // difference.limbs[i] was set to (borrow & mask) in the first loop
-                // From the first loop, we know difference.limbs[i] < (1u64 << 52)
-                assert(difference.limbs[i as int] < (1u64 << 52));
-
+                use crate::backend::serial::u64::scalar_lemmas::lemma_scalar_subtract_no_overflow;
+                
+                // Establish preconditions for the lemma
+                assert(difference.limbs[i as int] < (1u64 << 52)); // from loop invariant
+                
                 // Prove bounds on addend
-                // select returns either 0 or L.limbs[i]
+                assert(addend == 0 || addend == L.limbs[i as int]); // select returns one of these
+                
+                // Prove L.limbs[i] < 2^52 for each i
                 if i == 0 {
                     assert(L.limbs[0] == 0x0002631a5cf5d3ed);
                     assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
@@ -484,11 +486,9 @@ impl Scalar52 {
                     assert(L.limbs[4] < (1u64 << 52));
                 }
                 assert(L.limbs[i as int] < (1u64 << 52));
-                assert(addend == 0 || addend == L.limbs[i as int]);
                 assert(addend < (1u64 << 52));
-
-                // Now prove no overflow
-                // Use the loop invariant
+                
+                // Prove bounds on carry >> 52
                 if i == 0 {
                     assert(carry == 0);
                     assert((0u64 >> 52) == 0) by (bit_vector);
@@ -497,11 +497,8 @@ impl Scalar52 {
                     assert((carry >> 52) < 2);
                 }
                 assert((carry >> 52) <= 1);
-                assert((carry >> 52) + difference.limbs[i as int] + addend <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
-                assert((carry >> 52) + difference.limbs[i as int] + addend < 2 * (1u64 << 52));
-                assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-                assert((carry >> 52) + difference.limbs[i as int] + addend < (1u64 << 53));
-                assert((1u64 << 53) < u64::MAX) by (bit_vector);
+                
+                lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32);
             }
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;

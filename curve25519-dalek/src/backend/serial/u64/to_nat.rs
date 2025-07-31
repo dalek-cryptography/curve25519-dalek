@@ -17,7 +17,7 @@ use vstd::prelude::*;
 
 // Spec functions
 
-verus!{
+verus! {
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
 decreases limbs.len()
 {

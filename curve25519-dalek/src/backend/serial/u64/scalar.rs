@@ -11,11 +11,11 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
+use super::choice_spec::*;
+use super::to_nat::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
-use super::choice_spec::*;
-use super::to_nat::*;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;

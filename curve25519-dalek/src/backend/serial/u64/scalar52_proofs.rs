@@ -1,7 +1,7 @@
+use super::scalar::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
-use super::scalar::*;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -16,7 +16,7 @@ use vstd::arithmetic::power2::*;
 use vstd::calc;
 use vstd::prelude::*;
 
-verus!{
+verus! {
 /// Verification: scalar * scalar.invert() ≡ 1 mod L
 proof fn verify_invert_correct(x: Scalar52)
 //     requires to_scalar(&x.limbs) != 0

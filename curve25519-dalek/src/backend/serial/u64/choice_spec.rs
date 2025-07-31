@@ -15,7 +15,7 @@ use vstd::arithmetic::power2::*;
 use vstd::calc;
 use vstd::prelude::*;
 
-verus!{
+verus! {
 
 // Tell Verus what Choice does
 

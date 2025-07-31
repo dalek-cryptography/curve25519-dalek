@@ -342,7 +342,5 @@ pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
 {
     assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
     assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
-    assert forall|j: int| 0 <= j < 5 implies sum.limbs[j] < (1u64 << 52) by {
-    }
 }
 } // verus!

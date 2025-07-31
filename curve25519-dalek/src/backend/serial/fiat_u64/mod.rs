@@ -27,9 +27,6 @@ pub mod field;
 #[path = "../u64/constants.rs"]
 pub mod constants;
 
-#[path = "../u64/bounds.rs"]
-pub mod bounds;
-
 #[path = "../u64/subtle_assumes.rs"]
 pub mod subtle_assumes;
 

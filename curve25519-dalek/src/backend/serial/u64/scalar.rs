@@ -11,8 +11,6 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-#[allow(unused_imports)]
-use super::bounds::*;
 use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use super::scalar_lemmas::*;

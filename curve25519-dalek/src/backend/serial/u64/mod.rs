@@ -40,4 +40,3 @@ pub mod scalar52_proofs;
 
 pub mod scalar_lemmas;
 
-pub mod bounds;

@@ -1,4 +1,9 @@
 // scalar_verus.rs
+
+//! This module provides functionality for...
+//! 
+//! Currently natural language definitions for all the public api functions in scalar.rs
+//! 
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;

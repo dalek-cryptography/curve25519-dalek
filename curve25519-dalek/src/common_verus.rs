@@ -1,3 +1,7 @@
+//! This module provides functionality for...
+//! 
+//! Currently contains verus code which is required in several places.
+//! 
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;

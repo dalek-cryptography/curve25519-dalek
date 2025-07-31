@@ -7,6 +7,19 @@ use vstd::arithmetic::mul::*;
 
 verus!{
 
+
+pub proof fn lemma_square_internal_no_overflow()
+    ensures
+         (1u128 << 105) + (1u128 << 105) == (1u128 << 106),
+         (1u128 << 105) + (1u128 << 104) < (1u128 << 106),
+         (1u128 << 104) * 2 == (1u128 << 105),
+{
+    assert((1u128 << 105) + (1u128 << 105) == (1u128 << 106)) by (bit_vector);
+    assert((1u128 << 105) + (1u128 << 104) < (1u128 << 106)) by (bit_vector);
+    assert((1u128 << 104) * 2 == (1u128 << 105)) by (bit_vector);
+}
+
+
 pub proof fn lemma_square_internal_correct(a: &[u64; 5], z: &[u128; 9])
     requires
         forall|i: int| 0 <= i < 5 ==> a[i] < (1u64 << 52),

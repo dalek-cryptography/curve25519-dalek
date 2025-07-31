@@ -443,60 +443,10 @@ impl Scalar52 {
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
             proof {
-                assert(mask == (1u64 << 52) - 1);
-                assert(difference.limbs[i as int] == (carry & mask));
-                assert((carry & mask) <= mask) by (bit_vector);
-                assert(mask < (1u64 << 52));
-                assert((carry & mask) < (1u64 << 52));
-                assert(difference.limbs[i as int] < (1u64 << 52));
-                // Prove invariant is maintained for next iteration
                 assert(carry < (1u64 << 53));
-                // If carry < 2^53, then carry >> 52 < 2
-                assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
-                assert(carry < 2 * (1u64 << 52));
-                // This means carry / 2^52 < 2, so carry >> 52 <= 1
-                // We know carry < 2^53, and 2^53 = 2 * 2^52
-                // So carry / 2^52 < 2
-                // Since the result is an integer, carry >> 52 <= 1
-                // Prove carry >> 52 <= 1
-                broadcast use lemma_u64_shr_is_div;
-                lemma_pow2_pos(52);
-                shift_is_pow2(52);
-                assert((1u64 << 52) == pow2(52));
-                assert(carry >> 52 == carry / (1u64 << 52));
-
-                // We have: carry < 2 * (1u64 << 52)
-                // Need to show: carry / (1u64 << 52) <= 1
-                // Which is equivalent to: carry < 2 * (1u64 << 52)
-                assert(carry < 2 * (1u64 << 52));
-
-                // Use the fact that for positive integers a, b, c:
-                // If a < b * c, then a / c < b
-                // Here: carry < 2 * (1u64 << 52), so carry / (1u64 << 52) < 2
-                // For integer division, x < 2 implies x <= 1
-                lemma_div_pos_is_pos(carry as int, (1u64 << 52) as int);
-                assert(0 <= carry / (1u64 << 52));
-
-                // Key insight: carry is bounded by 2 * 2^52
-                // So carry = q * 2^52 + r where q < 2 and 0 <= r < 2^52
-                // This means q must be 0 or 1
-                lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
-                let q = carry / (1u64 << 52);
-                let r = carry % (1u64 << 52);
-                assert(carry == q * (1u64 << 52) + r);
-                assert(0 <= r < (1u64 << 52));
-
-                // Since carry < 2 * (1u64 << 52), we have:
-                // q * (1u64 << 52) + r < 2 * (1u64 << 52)
-                // Therefore: q * (1u64 << 52) < 2 * (1u64 << 52)
-                // So: q < 2
-                assert(q * (1u64 << 52) <= carry);
-                assert(carry < 2 * (1u64 << 52));
-                assert(q * (1u64 << 52) < 2 * (1u64 << 52));
-                lemma_mul_strictly_positive(q as int, (1u64 << 52) as int);
-                lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
-                assert(q < 2);
-                assert(q <= 1);
+                lemma_carry_bounded_after_mask(carry, mask);
+                assert(difference.limbs[i as int] == (carry & mask));
+                assert(difference.limbs[i as int] < (1u64 << 52));
                 assert((carry >> 52) <= 1);
                 assert((carry >> 52) < 2);
             }

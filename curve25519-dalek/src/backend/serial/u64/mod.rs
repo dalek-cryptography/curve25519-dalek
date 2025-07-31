@@ -31,3 +31,5 @@ pub mod field_verus;
 pub mod field_lemmas;
 
 pub mod common_verus;
+
+pub mod choice_spec;

@@ -244,7 +244,6 @@ pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64,
         addend == 0 || addend == l_value.limbs[i as int],
         i == 0 ==> carry == 0,
         i >= 1 ==> (carry >> 52) < 2,
-        // L constant values
         l_value.limbs[0] == 0x0002631a5cf5d3ed,
         l_value.limbs[1] == 0x000dea2f79cd6581,
         l_value.limbs[2] == 0x000000000014def9,
@@ -253,71 +252,29 @@ pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64,
     ensures
         (carry >> 52) + difference_limb + addend < (1u64 << 53),
 {
-    // Prove l_value.limbs[i] < 2^52 for each i
     if i == 0 {
-        assert(l_value.limbs[0] == 0x0002631a5cf5d3ed);
         assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
-        assert(l_value.limbs[0] < (1u64 << 52));
     } else if i == 1 {
-        assert(l_value.limbs[1] == 0x000dea2f79cd6581);
         assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
-        assert(l_value.limbs[1] < (1u64 << 52));
     } else if i == 2 {
-        assert(l_value.limbs[2] == 0x000000000014def9);
         assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
-        assert(l_value.limbs[2] < (1u64 << 52));
     } else if i == 3 {
-        assert(l_value.limbs[3] == 0x0000000000000000);
-        assert(0x0000000000000000 < (1u64 << 52)) by (bit_vector);
-        assert(l_value.limbs[3] < (1u64 << 52));
     } else {
-        assert(i == 4);
-        assert(l_value.limbs[4] == 0x0000100000000000);
         assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
-        assert(l_value.limbs[4] < (1u64 << 52));
     }
-    assert(l_value.limbs[i as int] < (1u64 << 52));
-    assert(addend < (1u64 << 52));
-    
-    // Prove bounds on carry >> 52
     if i == 0 {
-        assert(carry == 0);
         assert((0u64 >> 52) == 0) by (bit_vector);
-        assert((carry >> 52) == 0);
-    } else {
-        assert((carry >> 52) < 2);
     }
-    assert((carry >> 52) <= 1);
-    
-    // Now prove no overflow
-    // We have: (carry >> 52) <= 1, difference_limb < 2^52, addend < 2^52
-    assert((carry >> 52) + difference_limb + addend <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
-    assert((carry >> 52) + difference_limb + addend < 2 * (1u64 << 52));
     assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-    assert((carry >> 52) + difference_limb + addend < (1u64 << 53));
 }
-
 pub proof fn lemma_borrow_and_mask_bounded(borrow: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
     ensures
         (borrow & mask) < (1u64 << 52),
 {
-    // Since mask = 2^52 - 1, we know (borrow & mask) < 2^52
-    assert(mask == (1u64 << 52) - 1);
-    // Any value ANDed with mask is at most mask
-    // This is a fundamental property of AND
-    // Since mask = 2^52 - 1, it has all bits 0-51 set to 1
-    // (borrow & mask) can only have bits 0-51 set, so it's at most mask
-    // We'll use the fact that for any x: (x & mask) & (~mask) == 0
-    assert((borrow & mask) & (!(mask as u64)) == 0) by (bit_vector);
-    // This means all bits of (borrow & mask) outside of mask are 0
-    // Therefore (borrow & mask) <= mask
     assert((borrow & mask) <= mask) by (bit_vector);
-    assert(mask < (1u64 << 52));
-    assert((borrow & mask) < (1u64 << 52));
 }
-
 pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
@@ -326,53 +283,17 @@ pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
         (carry & mask) < (1u64 << 52),
         (carry >> 52) <= 1,
 {
-    assert(mask == (1u64 << 52) - 1);
     assert((carry & mask) <= mask) by (bit_vector);
-    assert(mask < (1u64 << 52));
-    assert((carry & mask) < (1u64 << 52));
-    
-    // Prove carry >> 52 <= 1
     assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
-    assert(carry < 2 * (1u64 << 52));
-    
     broadcast use lemma_u64_shr_is_div;
     lemma_pow2_pos(52);
     shift_is_pow2(52);
-    assert((1u64 << 52) == pow2(52));
     assert(carry >> 52 == carry / (1u64 << 52));
-    
-    // We have: carry < 2 * (1u64 << 52)
-    // Need to show: carry / (1u64 << 52) <= 1
-    assert(carry < 2 * (1u64 << 52));
-    
-    lemma_div_pos_is_pos(carry as int, (1u64 << 52) as int);
-    assert(0 <= carry / (1u64 << 52));
-    
-    // Key insight: carry is bounded by 2 * 2^52
-    // So carry = q * 2^52 + r where q < 2 and 0 <= r < 2^52
-    // This means q must be 0 or 1
     lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
     let q = carry / (1u64 << 52);
     let r = carry % (1u64 << 52);
-    assert(carry == q * (1u64 << 52) + r);
-    assert(0 <= r < (1u64 << 52));
-    
-    // Since carry < 2 * (1u64 << 52), we have:
-    // q * (1u64 << 52) + r < 2 * (1u64 << 52)
-    // Therefore: q * (1u64 << 52) < 2 * (1u64 << 52)
-    // So: q < 2
-    assert(q * (1u64 << 52) <= carry);
-    assert(carry < 2 * (1u64 << 52));
-    assert(q * (1u64 << 52) < 2 * (1u64 << 52));
-    lemma_mul_strictly_positive(q as int, (1u64 << 52) as int);
     lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
-    assert(q < 2);
-    assert(q <= 1);
-    assert((carry >> 52) <= 1);
 }
-
-
-
 
 pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
     requires
@@ -382,29 +303,13 @@ pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
         i == 0 ==> carry == 0,
         i >= 1 ==> (carry >> 52) < 2,
     ensures
-        (carry >> 52) <= 1,
         (carry >> 52) + a_limb + b_limb < (1u64 << 53),
 {
-    // Prove carry >> 52 bound
     if i == 0 {
-        assert(carry == 0);
         assert((0u64 >> 52) == 0) by (bit_vector);
-        assert((carry >> 52) == 0);
-    } else {
-        assert((carry >> 52) < 2);
     }
-    assert((carry >> 52) <= 1);
-
-    // Prove no overflow
     assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-    assert(a_limb + b_limb < 1u64 << 53);
-    assert((carry >> 52) + a_limb + b_limb <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
-    assert((carry >> 52) + a_limb + b_limb < 2 * (1u64 << 52));
-    assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-    assert((carry >> 52) + a_limb + b_limb < (1u64 << 53));
-    assert((1u64 << 53) < u64::MAX) by (bit_vector);
 }
-
 pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
@@ -413,47 +318,17 @@ pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
         (carry & mask) < (1u64 << 52),
         (carry >> 52) < 2,
 {
-    // Prove sum.limbs[i] < 2^52
-    assert(mask == (1u64 << 52) - 1);
     assert((carry & mask) <= mask) by (bit_vector);
-    assert(mask < (1u64 << 52));
-    assert((carry & mask) < (1u64 << 52));
-
-    // Prove carry >> 52 < 2 for next iteration
     assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
-    assert(carry < (1u64 << 53));
-    assert(carry < 2 * (1u64 << 52));
-    
     broadcast use lemma_u64_shr_is_div;
     lemma_pow2_pos(52);
     shift_is_pow2(52);
-    assert((1u64 << 52) == pow2(52));
     assert(carry >> 52 == carry / (1u64 << 52));
-
-    // We have: carry < 2 * (1u64 << 52)
-    // So carry / (1u64 << 52) < 2
-    lemma_div_pos_is_pos(carry as int, (1u64 << 52) as int);
-    assert(0 <= carry / (1u64 << 52));
-
     lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
     let q = carry / (1u64 << 52);
     let r = carry % (1u64 << 52);
-    assert(carry == q * (1u64 << 52) + r);
-    assert(0 <= r < (1u64 << 52));
-
-    // Since carry < 2 * (1u64 << 52), we have:
-    // q * (1u64 << 52) + r < 2 * (1u64 << 52)
-    // Therefore: q * (1u64 << 52) < 2 * (1u64 << 52)
-    // So: q < 2
-    assert(q * (1u64 << 52) <= carry);
-    assert(carry < 2 * (1u64 << 52));
-    assert(q * (1u64 << 52) < 2 * (1u64 << 52));
-    lemma_mul_strictly_positive(q as int, (1u64 << 52) as int);
     lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
-    assert(q < 2);
-    assert((carry >> 52) < 2);
 }
-
 pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
     requires
         l_value.limbs[0] == 0x0002631a5cf5d3ed,
@@ -464,34 +339,10 @@ pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
         forall|j: int| 0 <= j < 5 ==> sum.limbs[j] < (1u64 << 52),
     ensures
         forall|j: int| 0 <= j < 5 ==> l_value.limbs[j] < (1u64 << 52),
-        forall|j: int| 0 <= j < 5 ==> sum.limbs[j] < (1u64 << 52),
 {
-
-    // Prove all l_value limbs are < 2^52
-    assert(l_value.limbs[0] == 0x0002631a5cf5d3ed);
     assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
-    assert(l_value.limbs[0] < (1u64 << 52));
-
-    assert(l_value.limbs[1] == 0x000dea2f79cd6581);
     assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
-    assert(l_value.limbs[1] < (1u64 << 52));
-
-    assert(l_value.limbs[2] == 0x000000000014def9);
-    assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
-    assert(l_value.limbs[2] < (1u64 << 52));
-
-    assert(l_value.limbs[3] == 0x0000000000000000);
-    assert(0x0000000000000000 < (1u64 << 52)) by (bit_vector);
-    assert(l_value.limbs[3] < (1u64 << 52));
-
-    assert(l_value.limbs[4] == 0x0000100000000000);
-    assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
-    assert(l_value.limbs[4] < (1u64 << 52));
-
-    // After the loop, all sum.limbs are bounded by 2^52
     assert forall|j: int| 0 <= j < 5 implies sum.limbs[j] < (1u64 << 52) by {
-        assert(sum.limbs[j] < (1u64 << 52));
     }
 }
-
 } // verus!

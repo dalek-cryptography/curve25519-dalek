@@ -15,8 +15,6 @@ use vstd::arithmetic::div_mod::*;
 use vstd::bits::lemma_u64_shr_is_div;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::common_verus::shift_is_pow2;
-#[allow(unused_imports)]
-use crate::backend::serial::u64::constants::L;
 
 verus! {
 

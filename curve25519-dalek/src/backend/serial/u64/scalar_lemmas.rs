@@ -3,7 +3,7 @@ use super::scalar::Scalar52;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::*;
+use super::common_verus::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]

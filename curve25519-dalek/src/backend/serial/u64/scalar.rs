@@ -229,13 +229,12 @@ impl Scalar52 {
         // a + b
         let mut carry: u64 = 0;
         for i in 0..5
-           invariant 0 <= i <= 5,
+           invariant
                     forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
                     forall|j: int| 0 <= j < 5 ==> a.limbs[j] < (1u64 << 52),
                     forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
                     mask == (1u64 << 52) - 1,
                     i == 0 ==> carry == 0,
-                    i >= 1 ==> carry < (1u64 << 53),
                     i >= 1 ==> (carry >> 52) < 2,
         {
             proof {lemma_add_loop_bounds(i as int, carry, a.limbs[i as int], b.limbs[i as int]);}
@@ -267,7 +266,7 @@ impl Scalar52 {
         // a - b
         let mut borrow: u64 = 0;
         for i in 0..5
-            invariant 0 <= i <= 5,
+            invariant
                       forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
                       forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
                       mask == (1u64 << 52) - 1,
@@ -281,8 +280,7 @@ impl Scalar52 {
         // conditionally add l if the difference is negative
         let mut carry: u64 = 0;
         for i in 0..5
-            invariant 0 <= i <= 5,
-                      forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
+            invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,

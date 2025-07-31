@@ -1,3 +1,5 @@
+//! This file contains lemmas that must import scalar.rs,
+//! e.g. lemmas about the Scalar52 type
 #[allow(unused_imports)]
 use super::scalar::*;
 

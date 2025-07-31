@@ -229,9 +229,8 @@ impl Scalar52 {
         //let mut sum = Scalar52::ZERO;
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof {
-            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
+            lemma_add_initialization();
             assert(sum == Scalar52::ZERO);
-            assert(1u64 << 52 > 0) by (bit_vector);
         }
         let mask = (1u64 << 52) - 1;
 
@@ -239,8 +238,7 @@ impl Scalar52 {
         let mut carry: u64 = 0;
         proof {
             assert(carry == 0u64);
-            assert(1u64 << 54 < u64::MAX) by (bit_vector);
-            assert(0u64 < (1u64 << 54)) by (bit_vector);
+            lemma_carry_initialization();
         }
         for i in 0..5
            invariant 0 <= i <= 5,
@@ -256,69 +254,15 @@ impl Scalar52 {
                 assert(0 <= i < 5);
                 assert(a.limbs[i as int] < 1u64 << 52);
                 assert(b.limbs[i as int] < 1u64 << 52);
-
-                // Prove carry >> 52 bound
-                if i == 0 {
-                    assert(carry == 0);
-                    assert((0u64 >> 52) == 0) by (bit_vector);
-                    assert((carry >> 52) == 0);
-                } else {
-                    assert((carry >> 52) < 2);
-                }
-                assert((carry >> 52) <= 1);
-
-                // Prove no overflow
-                assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-                assert(a.limbs[i as int] + b.limbs[i as int] < 1u64 << 53);
-                assert((carry >> 52) + a.limbs[i as int] + b.limbs[i as int] <= 1 + (1u64 << 52) - 1 + (1u64 << 52) - 1);
-                assert((carry >> 52) + a.limbs[i as int] + b.limbs[i as int] < 2 * (1u64 << 52));
-                assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-                assert((carry >> 52) + a.limbs[i as int] + b.limbs[i as int] < (1u64 << 53));
-                assert((1u64 << 53) < u64::MAX) by (bit_vector);
+                lemma_add_loop_bounds(i as int, carry, a.limbs[i as int], b.limbs[i as int]);
             }
             carry = a.limbs[i] + b.limbs[i] + (carry >> 52);
             sum.limbs[i] = carry & mask;
             proof {
-                // Prove sum.limbs[i] < 2^52
-                assert(mask == (1u64 << 52) - 1);
                 assert(sum.limbs[i as int] == (carry & mask));
-                assert((carry & mask) <= mask) by (bit_vector);
-                assert(mask < (1u64 << 52));
-                assert((carry & mask) < (1u64 << 52));
+                lemma_add_carry_and_sum_bounds(carry, mask);
                 assert(sum.limbs[i as int] < (1u64 << 52));
-
-                // Prove carry bound for next iteration
                 assert(carry < (1u64 << 53));
-
-                // Prove carry >> 52 < 2 for next iteration
-                broadcast use lemma_u64_shr_is_div;
-                lemma_pow2_pos(52);
-                shift_is_pow2(52);
-                assert((1u64 << 52) == pow2(52));
-                assert(carry >> 52 == carry / (1u64 << 52));
-
-                // We have: carry < 2 * (1u64 << 52)
-                // So carry / (1u64 << 52) < 2
-                lemma_div_pos_is_pos(carry as int, (1u64 << 52) as int);
-                assert(0 <= carry / (1u64 << 52));
-
-                lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
-                let q = carry / (1u64 << 52);
-                let r = carry % (1u64 << 52);
-                assert(carry == q * (1u64 << 52) + r);
-                assert(0 <= r < (1u64 << 52));
-
-                // Since carry < 2 * (1u64 << 52), we have:
-                // q * (1u64 << 52) + r < 2 * (1u64 << 52)
-                // Therefore: q * (1u64 << 52) < 2 * (1u64 << 52)
-                // So: q < 2
-                assert(q * (1u64 << 52) <= carry);
-                assert(carry < 2 * (1u64 << 52));
-                assert(q * (1u64 << 52) < 2 * (1u64 << 52));
-                lemma_mul_strictly_positive(q as int, (1u64 << 52) as int);
-                lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
-                assert(q < 2);
-                assert((carry >> 52) < 2);
             }
         }
 
@@ -331,40 +275,7 @@ impl Scalar52 {
         /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
         let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
         proof {
-            // Prove that l_value == L
-            assert(l_value.limbs[0] == L.limbs[0]);
-            assert(l_value.limbs[1] == L.limbs[1]);
-            assert(l_value.limbs[2] == L.limbs[2]);
-            assert(l_value.limbs[3] == L.limbs[3]);
-            assert(l_value.limbs[4] == L.limbs[4]);
-            assert(l_value.limbs =~= L.limbs);
-            assert(to_nat(&l_value.limbs) == to_nat(&L.limbs));
-
-            // Prove all l_value limbs are < 2^52
-            assert(l_value.limbs[0] == 0x0002631a5cf5d3ed);
-            assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
-            assert(l_value.limbs[0] < (1u64 << 52));
-
-            assert(l_value.limbs[1] == 0x000dea2f79cd6581);
-            assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
-            assert(l_value.limbs[1] < (1u64 << 52));
-
-            assert(l_value.limbs[2] == 0x000000000014def9);
-            assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
-            assert(l_value.limbs[2] < (1u64 << 52));
-
-            assert(l_value.limbs[3] == 0x0000000000000000);
-            assert(0x0000000000000000 < (1u64 << 52)) by (bit_vector);
-            assert(l_value.limbs[3] < (1u64 << 52));
-
-            assert(l_value.limbs[4] == 0x0000100000000000);
-            assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
-            assert(l_value.limbs[4] < (1u64 << 52));
-
-            // After the loop, all sum.limbs are bounded by 2^52
-            assert forall|j: int| 0 <= j < 5 implies sum.limbs[j] < (1u64 << 52) by {
-                assert(sum.limbs[j] < (1u64 << 52));
-            }
+            lemma_l_value_properties(&l_value, &sum);
         }
 
         let result = Scalar52::sub(&sum, &l_value);

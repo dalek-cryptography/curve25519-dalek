@@ -35,3 +35,5 @@ pub mod common_verus;
 pub mod choice_spec;
 
 pub mod to_nat;
+
+pub mod scalar52_proofs;

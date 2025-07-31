@@ -443,12 +443,7 @@ impl Scalar52 {
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
             proof {
-                assert(carry < (1u64 << 53));
                 lemma_carry_bounded_after_mask(carry, mask);
-                assert(difference.limbs[i as int] == (carry & mask));
-                assert(difference.limbs[i as int] < (1u64 << 52));
-                assert((carry >> 52) <= 1);
-                assert((carry >> 52) < 2);
             }
         }
         assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));

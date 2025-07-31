@@ -442,7 +442,6 @@ impl Scalar52 {
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
-                      i >= 1 ==> carry < (1u64 << 53),
                       i >= 1 ==> (carry >> 52) < 2,
         {
             #[verifier::truncate]

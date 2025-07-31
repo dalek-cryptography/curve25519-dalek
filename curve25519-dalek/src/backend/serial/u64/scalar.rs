@@ -18,8 +18,7 @@ use super::scalar_specs::*;
 use super::subtle_assumes::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
-#[allow(unused_imports)]
-use subtle::{Choice, ConditionallySelectable};
+use subtle::Choice;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;

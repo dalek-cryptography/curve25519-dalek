@@ -290,9 +290,7 @@ impl Scalar52 {
         {
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &L.limbs[i], underflow);
-            proof {
-                lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);
-            }
+            proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
             proof { lemma_carry_bounded_after_mask(carry, mask); }

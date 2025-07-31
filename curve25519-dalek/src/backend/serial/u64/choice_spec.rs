@@ -1,7 +1,5 @@
 use subtle::{Choice, ConditionallySelectable};
 
-
-
 use vstd::prelude::*;
 
 verus! {

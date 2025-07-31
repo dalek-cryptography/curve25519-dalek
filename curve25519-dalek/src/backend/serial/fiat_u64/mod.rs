@@ -33,5 +33,5 @@ pub mod subtle_assumes;
 #[path = "../u64/scalar_lemmas.rs"]
 pub mod scalar_lemmas;
 
-#[path = "../u64/to_nat.rs"]
-pub mod to_nat;
+#[path = "../u64/scalar_specs.rs"]
+pub mod scalar_specs;

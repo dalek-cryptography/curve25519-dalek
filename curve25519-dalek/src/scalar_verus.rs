@@ -120,25 +120,51 @@ verus! {
 // 5. at most one of any w consecutive coefficients is nonzero
 
 // ## Specification for:
-
-
-// ## Specification for:
-
-
-// ## Specification for:
-
-
-// ## Specification for:
-
+// curve25519_dalek::scalar::Scalar
+// pub(crate) fn as_radix_16(&self) -> [i8; 64]
+//
+// let a_i denote the output
+//
+// Requires that self < 2^{255}
+// 1. a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63}
+// 2. -8 <= a_i < 8
 
 // ## Specification for:
-
+// curve25519_dalek::scalar::Scalar
+// pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize
+//
+// Unclear how to specify, returns a size hint indicating how many entries 
+// of the return value of `to_radix_2w` are nonzero.
+// Might not be relevant except for speed concerns.
 
 // ## Specification for:
-
+// curve25519_dalek::scalar::Scalar
+// pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64]
+// Permitted in source only for w = 4, 5, 6, 7, 8
+// 
+// let a_i denote the output coefficients
+//
+// 1. a = a_0 + a_1 2^1 w + \cdots + a_{n-1} 2^{w*(n-1)}
+// 2. -2^w/2 \leq a_i < 2^w/2 if 0 \leq i < (n-1)
+// 3. -2^w/2 \leq a_{n-1} \leq 2^w/2
 
 // ## Specification for:
+// curve25519_dalek::scalar::Scalar
+// pub(crate) fn unpack(&self) -> UnpackedScalar
+//
+// 1. The output (5 52-bit limbs) represents the same integer as the 32 byte input
 
+// ## Specification for:
+// curve25519_dalek::scalar::Scalar52
+// pub fn montgomery_invert(&self) -> UnpackedScalar
+//
+// 1. If self is in montgomery form then output is the inverse
+
+// ## Specification for:
+// curve25519_dalek::scalar::Scalar52
+// pub fn invert(&self) -> UnpackedScalar
+//
+// 1. self * result = 1 (mod ℓ) (surely self ≠ 0 is required although not stated in the docs)
 
 // ## Specification for:
 // `curve25519_dalek::scalar``

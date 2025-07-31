@@ -1,5 +1,6 @@
 use vstd::prelude::*;
-use vstd::arithmetic::power2::pow2;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
 
 verus! {
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat

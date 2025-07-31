@@ -12,12 +12,16 @@
 //! ```
 
 // TODO Clean up imports
+#[allow(unused_imports)]
 use super::bounds::*;
 use super::choice_spec::*;
+#[allow(unused_imports)]
 use super::scalar_lemmas::*;
+#[allow(unused_imports)]
 use super::to_nat::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
+#[allow(unused_imports)]
 use subtle::{Choice, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]

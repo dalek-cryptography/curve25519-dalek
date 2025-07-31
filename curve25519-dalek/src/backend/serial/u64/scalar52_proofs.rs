@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use super::scalar::*;
 
 use vstd::prelude::*;

@@ -1,5 +1,6 @@
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
 use vstd::calc;
 use vstd::prelude::*;
 

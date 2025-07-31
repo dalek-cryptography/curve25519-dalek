@@ -13,6 +13,7 @@
 
 use super::choice_spec::*;
 use super::to_nat::*;
+use super::bounds::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::{Choice, ConditionallySelectable};
@@ -85,25 +86,7 @@ ensures
     z < (1u128 << 104),
     z == x * y
 {
-    proof {
-        assert(1u128 << 52 == 1u64 << 52) by (bit_vector);
-        calc! {
-            (<)
-            (x as u128) * (y as u128); (<=) {
-                if x > 0 {
-                    lemma_mul_strict_inequality(y as int, (1u128 << 52) as int, x as int);
-                } else {
-                    assert(x == 0);
-                    assert((x as u128) * (y as u128) == 0);
-                }
-            }
-            (x as u128) * (1u128 << 52); (<) {
-                lemma_mul_strict_inequality(x as int, (1u128 << 52) as int, (1u128 << 52) as int);
-            }
-            (1u128 << 52) * (1u128 << 52);
-        }
-        assert((1u128 << 52) * (1u128 << 52) == (1u128 << 104)) by (compute);
-    }
+    proof {lemma_52_52(x, y);}
     (x as u128) * (y as u128)
 }
 

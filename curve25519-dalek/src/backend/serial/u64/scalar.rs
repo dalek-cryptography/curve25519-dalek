@@ -389,6 +389,23 @@ impl Scalar52 {
         z
     }
 
+    proof fn lemma_square_nat_equivalence(a: &[u64; 5], z: &[u128; 9])
+        requires
+            z[0] == (a[0] * a[0]) as u128,
+            z[1] == (a[0] * a[1]) as u128 * 2,
+            z[2] == (a[0] * a[2]) as u128 * 2 + (a[1] * a[1]) as u128,
+            z[3] == (a[0] * a[3]) as u128 * 2 + (a[1] * a[2]) as u128 * 2,
+            z[4] == (a[0] * a[4]) as u128 * 2 + (a[1] * a[3]) as u128 * 2 + (a[2] * a[2]) as u128,
+            z[5] == (a[1] * a[4]) as u128 * 2 + (a[2] * a[3]) as u128 * 2,
+            z[6] == (a[2] * a[4]) as u128 * 2 + (a[3] * a[3]) as u128,
+            z[7] == (a[3] * a[4]) as u128 * 2,
+            z[8] == (a[4] * a[4]) as u128,
+        ensures
+            five_limbs_to_nat_aux(*a) * five_limbs_to_nat_aux(*a) == nine_limbs_to_nat_aux(z),
+    {
+        assume(false);
+    }
+
     // TODO Make this function more like the original?
     /// Compute `a^2`
     #[inline(always)]

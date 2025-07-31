@@ -454,16 +454,6 @@ impl Scalar52 {
             let addend = select(&0, &L.limbs[i], underflow);
         /*** END: ADAPTED CODE BLOCK ***/
             proof {
-
-                // Establish lemma preconditions that aren't already in loop invariants
-
-                // Assert L constant values (these are compile-time constants)
-                assert(L.limbs[0] == 0x0002631a5cf5d3ed);
-                assert(L.limbs[1] == 0x000dea2f79cd6581);
-                assert(L.limbs[2] == 0x000000000014def9);
-                assert(L.limbs[3] == 0x0000000000000000);
-                assert(L.limbs[4] == 0x0000100000000000);
-                
                 lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &L);
             }
             carry = (carry >> 52) + difference.limbs[i] + addend;

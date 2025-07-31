@@ -243,18 +243,12 @@ impl Scalar52 {
                     i >= 1 ==> (carry >> 52) < 2,
         {
             proof {
-                assert(0 <= i < 5);
-                assert(a.limbs[i as int] < 1u64 << 52);
-                assert(b.limbs[i as int] < 1u64 << 52);
                 lemma_add_loop_bounds(i as int, carry, a.limbs[i as int], b.limbs[i as int]);
             }
             carry = a.limbs[i] + b.limbs[i] + (carry >> 52);
             sum.limbs[i] = carry & mask;
             proof {
-                assert(sum.limbs[i as int] == (carry & mask));
                 lemma_add_carry_and_sum_bounds(carry, mask);
-                assert(sum.limbs[i as int] < (1u64 << 52));
-                assert(carry < (1u64 << 53));
             }
         }
 

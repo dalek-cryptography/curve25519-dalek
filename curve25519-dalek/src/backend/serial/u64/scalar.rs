@@ -476,7 +476,7 @@ impl Scalar52 {
         Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
     }
 
-    /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod L)`
+    /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod l)`
     #[inline(never)]
     pub fn as_montgomery(&self) -> (result: Scalar52)
     requires

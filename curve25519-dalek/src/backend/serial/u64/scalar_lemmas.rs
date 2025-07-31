@@ -1,9 +1,9 @@
 #[allow(unused_imports)]
+use super::common_verus::*;
+#[allow(unused_imports)]
 use super::scalar::Scalar52;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
-#[allow(unused_imports)]
-use super::common_verus::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]

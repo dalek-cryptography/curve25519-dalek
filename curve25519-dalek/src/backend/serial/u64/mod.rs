@@ -34,9 +34,8 @@ pub mod common_verus;
 
 pub mod subtle_assumes;
 
-pub mod to_nat;
-
 pub mod scalar52_proofs;
 
 pub mod scalar_lemmas;
 
+pub mod scalar_specs;

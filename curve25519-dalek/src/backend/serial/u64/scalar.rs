@@ -15,7 +15,7 @@ use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use super::scalar_lemmas::*;
 #[allow(unused_imports)]
-use super::to_nat::*;
+use super::scalar_specs::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 #[allow(unused_imports)]

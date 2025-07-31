@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use super::to_nat::*;
+use super::scalar_specs::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
@@ -137,5 +137,88 @@ pub proof fn lemma_mul_internal_correct(a: &[u64; 5], b: &[u64; 5], z: &[u128; 9
     lemma_five_limbs_equals_to_nat(&a);
     lemma_five_limbs_equals_to_nat(&b);
 }
+
+
+pub proof fn lemma_nine_limbs_equals_slice128_to_nat(limbs: &[u128; 9])
+ensures
+    nine_limbs_to_nat_aux(limbs) == slice128_to_nat(limbs)
+{
+
+    let seq = limbs@.map(|i, x| x as nat);
+
+    calc! {
+        (==)
+        slice128_to_nat(limbs); {
+        }
+        seq_to_nat(seq); {
+            reveal_with_fuel(seq_to_nat, 10);
+        }
+        (limbs[0] as nat) +
+        ((limbs[1] as nat) +
+            ((limbs[2] as nat) +
+            ((limbs[3] as nat) +
+            ((limbs[4] as nat) +
+            ((limbs[5] as nat) +
+                ((limbs[6] as nat) +
+                ((limbs[7] as nat) +
+                (limbs[8] as nat) * pow2(52)
+                ) * pow2(52)
+                ) * pow2(52)
+            ) * pow2(52)
+            ) * pow2(52)
+            ) * pow2(52)
+            ) * pow2(52)
+        ) * pow2(52); {
+        lemma_pow2_adds(52, 52);
+        lemma_pow2_adds(104, 52);
+        lemma_pow2_adds(156, 52);
+        lemma_pow2_adds(208, 52);
+        lemma_pow2_adds(260, 52);
+        lemma_pow2_adds(312, 52);
+        lemma_pow2_adds(364, 52);
+        broadcast use group_mul_is_distributive;
+        broadcast use lemma_mul_is_associative;
+        }
+        nine_limbs_to_nat_aux(limbs);
+    }
+}
+
+pub proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
+ensures
+    five_limbs_to_nat_aux(*limbs) == to_nat(limbs)
+{
+    let seq = limbs@.map(|i, x| x as nat);
+
+    calc! {
+        (==)
+        to_nat(limbs); {
+        }
+        seq_to_nat(seq); {
+            reveal_with_fuel(seq_to_nat, 6);
+        }
+        (limbs[0] as nat) +
+        ((limbs[1] as nat) +
+            ((limbs[2] as nat) +
+            ((limbs[3] as nat) +
+            (limbs[4] as nat) * pow2(52)
+            ) * pow2(52)
+            ) * pow2(52)
+        ) * pow2(52); {
+        lemma_pow2_adds(52, 52);
+        lemma_pow2_adds(104, 52);
+        lemma_pow2_adds(156, 52);
+        broadcast use group_mul_is_distributive;
+        broadcast use lemma_mul_is_associative;
+        }
+        (limbs[0] as nat) +
+        pow2(52) * (limbs[1] as nat) +
+        pow2(104) * (limbs[2] as nat) +
+        pow2(156) * (limbs[3] as nat) +
+        pow2(208) * (limbs[4] as nat); {
+        }
+        five_limbs_to_nat_aux(*limbs);
+    }
+}
+
 
 } // verus!

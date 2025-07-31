@@ -14,11 +14,12 @@ verus! {
 
 // ## Specification for: `clamp_integer(mut bytes: [u8; 32]) -> [u8; 32]`
 // 
-// Let `n` denote the 32 byte output interpreted as an integer in little endian format (`as_nat_32_u8`)
+// Let n denote the 32 byte output interpreted as an integer in little endian format (`as_nat_32_u8`)
 //
 // 1. 2^254 ≤ n
 // 2. n < 2^255
-// 3. If the input is uniformly random then the output is uniformly random
+// 3. n is divisible by 8 (the cofactor of curve25519)
+// 4. If the input is uniformly random then the output is uniformly random
 //
 // [Further info](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/)
 

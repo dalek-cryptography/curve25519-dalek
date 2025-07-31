@@ -19,6 +19,7 @@ use super::subtle_assumes::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
+use vstd::arithmetic::power2::*;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;

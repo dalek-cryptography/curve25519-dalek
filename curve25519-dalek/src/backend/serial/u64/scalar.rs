@@ -401,46 +401,20 @@ impl Scalar52 {
     ensures
         slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
     {
-        proof {
-            lemma_square_internal_no_overflow()
-        }
+        proof {lemma_square_internal_no_overflow()}
+
         let mut z = [0u128; 9];
-
         z[0] = m(a.limbs[0], a.limbs[0]);
-
-        proof {
-            // m() ensures its result is < 2^104
-            // Since m_result < 2^104, we have m_result * 2 < 2^105
-            // and 2^105 is well within u128 bounds
-        }
         z[1] = m(a.limbs[0], a.limbs[1]) * 2;
-
-        proof {
-            // Each m() result is < 2^104
-            // m_term1 * 2 < 2^105
-
-            // Sum: 2^105 + 2^104 = 3 * 2^104 < 2^106 < 2^128
-        }
         z[2] = m(a.limbs[0], a.limbs[2]) * 2 + m(a.limbs[1], a.limbs[1]);
-
         z[3] = m(a.limbs[0], a.limbs[3]) * 2 + m(a.limbs[1], a.limbs[2]) * 2;
-
-        proof {
-            // Each m() result is < 2^104
-            // First two terms * 2 give < 2^105
-
-            // Sum: 2^105 + 2^105 + 2^104 = 2^106 + 2^104 < 2^107 < 2^128
-            assert((1u128 << 106) + (1u128 << 104) < (1u128 << 107)) by (bit_vector);
-        }
         z[4] = m(a.limbs[0], a.limbs[4]) * 2 + m(a.limbs[1], a.limbs[3]) * 2 + m(a.limbs[2], a.limbs[2]);
         z[5] =                 m(a.limbs[1], a.limbs[4]) * 2 + m(a.limbs[2], a.limbs[3]) * 2;
         z[6] =                                 m(a.limbs[2], a.limbs[4]) * 2 + m(a.limbs[3], a.limbs[3]);
         z[7] =                                                 m(a.limbs[3], a.limbs[4]) * 2;
         z[8] =                                                                 m(a.limbs[4], a.limbs[4]);
 
-        proof {
-            lemma_square_internal_correct(&a.limbs, &z);
-        }
+        proof {lemma_square_internal_correct(&a.limbs, &z);}
 
         z
     }

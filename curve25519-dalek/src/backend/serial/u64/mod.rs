@@ -33,3 +33,5 @@ pub mod field_lemmas;
 pub mod common_verus;
 
 pub mod choice_spec;
+
+pub mod to_nat;

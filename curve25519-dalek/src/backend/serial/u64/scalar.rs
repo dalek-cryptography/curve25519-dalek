@@ -253,25 +253,10 @@ impl Scalar52 {
         }
 
         // subtract l if the sum is >= l
-
-        /*** BEGIN: ADAPTED CODE BLOCK ***/
-
-        /* ORIGINAL CODE */
-        /*let mut s = Scalar52::sub(&sum, &Self::L);*/
-        /* OUR ADAPTED CODE FOR VERUS; PROVED EQUIVALENT TO ORIGINAL CODE */
-        let l_value = Scalar52 { limbs: [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000] };
-        proof {
-            lemma_l_value_properties(&l_value, &sum);
-        }
-
-        let result = Scalar52::sub(&sum, &l_value);
-
-        // We've proven no overflow occurs. The mathematical correctness is assumed.
+        proof { lemma_l_value_properties(&constants::L, &sum); }
+        let result = Scalar52::sub(&sum, &constants::L);
         assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
-
         result
-
-        /*** END: ADAPTED CODE BLOCK ***/
 
     }
 

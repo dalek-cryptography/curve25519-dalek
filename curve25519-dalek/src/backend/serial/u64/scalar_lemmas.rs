@@ -283,4 +283,25 @@ pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64,
     assert((carry >> 52) + difference_limb + addend < (1u64 << 53));
 }
 
+pub proof fn lemma_borrow_and_mask_bounded(borrow: u64, mask: u64)
+    requires
+        mask == (1u64 << 52) - 1,
+    ensures
+        (borrow & mask) < (1u64 << 52),
+{
+    // Since mask = 2^52 - 1, we know (borrow & mask) < 2^52
+    assert(mask == (1u64 << 52) - 1);
+    // Any value ANDed with mask is at most mask
+    // This is a fundamental property of AND
+    // Since mask = 2^52 - 1, it has all bits 0-51 set to 1
+    // (borrow & mask) can only have bits 0-51 set, so it's at most mask
+    // We'll use the fact that for any x: (x & mask) & (~mask) == 0
+    assert((borrow & mask) & (!(mask as u64)) == 0) by (bit_vector);
+    // This means all bits of (borrow & mask) outside of mask are 0
+    // Therefore (borrow & mask) <= mask
+    assert((borrow & mask) <= mask) by (bit_vector);
+    assert(mask < (1u64 << 52));
+    assert((borrow & mask) < (1u64 << 52));
+}
+
 } // verus!

@@ -1,20 +1,20 @@
 #[allow(unused_imports)]
+use super::scalar::Scalar52;
+#[allow(unused_imports)]
 use super::scalar_specs::*;
 #[allow(unused_imports)]
-use super::scalar::Scalar52;
+use crate::backend::serial::u64::common_verus::shift_is_pow2;
+#[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 #[allow(unused_imports)]
-use vstd::calc;
-use vstd::prelude::*;
-#[allow(unused_imports)]
-use vstd::arithmetic::div_mod::*;
-#[allow(unused_imports)]
 use vstd::bits::lemma_u64_shr_is_div;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::shift_is_pow2;
+use vstd::calc;
+use vstd::prelude::*;
 
 verus! {
 

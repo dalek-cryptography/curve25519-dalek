@@ -404,9 +404,7 @@ impl Scalar52 {
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 
-        proof {
-            lemma_all_limbs_bounded(&difference.limbs);
-        }
+        proof {lemma_all_limbs_bounded(&difference.limbs); }
 
         // conditionally add l if the difference is negative
         let mut carry: u64 = 0;

@@ -348,21 +348,6 @@ pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
     assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
 }
 
-pub proof fn lemma_montgomery_mul_correct(
-    ab: &[u128; 9],
-    result: &Scalar52,
-    a_limbs: &[u64; 5],
-    b_limbs: &[u64; 5]
-)
-    requires
-        slice128_to_nat(ab) == to_nat(a_limbs) * to_nat(b_limbs),
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(ab) % group_order(),
-    ensures
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order(),
-{
-    assert(slice128_to_nat(ab) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order());
-    assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order());
-}
 
 pub proof fn lemma_from_montgomery_limbs_conversion(
     limbs: &[u128; 9],
@@ -424,20 +409,6 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
 }
 
 
-pub proof fn lemma_from_montgomery_correct(
-    limbs: &[u128; 9],
-    result: &Scalar52,
-    self_limbs: &[u64; 5]
-)
-    requires
-        slice128_to_nat(limbs) == to_nat(self_limbs),
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
-    ensures
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(self_limbs) % group_order(),
-{
-    assert(slice128_to_nat(limbs) % group_order() == to_nat(self_limbs) % group_order());
-    assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(self_limbs) % group_order());
-}
 
 pub proof fn lemma_rr_limbs_bounded()
     ensures
@@ -475,18 +446,4 @@ pub proof fn lemma_rr_constants_to_nat(rr_limbs: &[u64; 5])
 
 
 
-pub proof fn lemma_montgomery_square_correct(
-    aa: &[u128; 9],
-    result: &Scalar52,
-    self_limbs: &[u64; 5]
-)
-    requires
-        slice128_to_nat(aa) == to_nat(self_limbs) * to_nat(self_limbs),
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(aa) % group_order(),
-    ensures
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(self_limbs) * to_nat(self_limbs)) % group_order(),
-{
-    assert(slice128_to_nat(aa) % group_order() == (to_nat(self_limbs) * to_nat(self_limbs)) % group_order());
-    assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(self_limbs) * to_nat(self_limbs)) % group_order());
-}
 } // verus!

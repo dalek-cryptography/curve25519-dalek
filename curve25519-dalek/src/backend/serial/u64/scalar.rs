@@ -463,10 +463,15 @@ impl Scalar52 {
     requires
         limbs_bounded(self),
     ensures
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+        limbs_bounded(&result),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
-        Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
+        let aa = Scalar52::square_internal(self);
+        let result = Scalar52::montgomery_reduce(&aa);
+        proof {
+            lemma_montgomery_square_correct(&aa, &result, &self.limbs);
+        }
+        result
     }
 
     /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod l)`
@@ -484,7 +489,9 @@ impl Scalar52 {
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
         proof {
-            assume(to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order());
+            lemma_rr_constants_to_nat(&constants::RR.limbs);
+            lemma_rr_is_r_squared();
+            assert(to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order());
             lemma_as_montgomery_correct(&result, &self.limbs, &constants::RR.limbs);
         }
         result

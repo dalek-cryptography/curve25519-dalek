@@ -364,23 +364,9 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
     lemma_five_limbs_equals_to_nat(self_limbs);
     
     // Now we need to prove: nine_limbs_to_nat_aux(limbs) == five_limbs_to_nat_aux(*self_limbs)
-    assert(nine_limbs_to_nat_aux(limbs) == 
-           (limbs[0] as nat) +
-           (limbs[1] as nat) * pow2(52) +
-           (limbs[2] as nat) * pow2(104) +
-           (limbs[3] as nat) * pow2(156) +
-           (limbs[4] as nat) * pow2(208) +
-           (limbs[5] as nat) * pow2(260) +
-           (limbs[6] as nat) * pow2(312) +
-           (limbs[7] as nat) * pow2(364) +
-           (limbs[8] as nat) * pow2(416));
+    assert(nine_limbs_to_nat_aux(limbs) == (limbs[0] as nat) + (limbs[1] as nat) * pow2(52) + (limbs[2] as nat) * pow2(104) + (limbs[3] as nat) * pow2(156) + (limbs[4] as nat) * pow2(208) + (limbs[5] as nat) * pow2(260) + (limbs[6] as nat) * pow2(312) + (limbs[7] as nat) * pow2(364) + (limbs[8] as nat) * pow2(416));
     
-    assert(five_limbs_to_nat_aux(*self_limbs) ==
-           (self_limbs[0] as nat) +
-           pow2(52) * (self_limbs[1] as nat) +
-           pow2(104) * (self_limbs[2] as nat) +
-           pow2(156) * (self_limbs[3] as nat) +
-           pow2(208) * (self_limbs[4] as nat));
+    assert(five_limbs_to_nat_aux(*self_limbs) == (self_limbs[0] as nat) + pow2(52) * (self_limbs[1] as nat) + pow2(104) * (self_limbs[2] as nat) + pow2(156) * (self_limbs[3] as nat) + pow2(208) * (self_limbs[4] as nat));
     
     // Since limbs[5..8] are all 0 and limbs[0..4] == self_limbs[0..4], the sums are equal
     assert(limbs[5] == 0 && limbs[6] == 0 && limbs[7] == 0 && limbs[8] == 0);
@@ -394,16 +380,7 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
     assert(limbs[4] == self_limbs[4] as u128);
     
     // The nine_limbs expansion with zeros in the high positions equals the five_limbs expansion
-    assert(nine_limbs_to_nat_aux(limbs) == 
-           (self_limbs[0] as nat) +
-           (self_limbs[1] as nat) * pow2(52) +
-           (self_limbs[2] as nat) * pow2(104) +
-           (self_limbs[3] as nat) * pow2(156) +
-           (self_limbs[4] as nat) * pow2(208) +
-           0 * pow2(260) +
-           0 * pow2(312) +
-           0 * pow2(364) +
-           0 * pow2(416));
+    assert(nine_limbs_to_nat_aux(limbs) == (self_limbs[0] as nat) + (self_limbs[1] as nat) * pow2(52) + (self_limbs[2] as nat) * pow2(104) + (self_limbs[3] as nat) * pow2(156) + (self_limbs[4] as nat) * pow2(208) + 0 * pow2(260) + 0 * pow2(312) + 0 * pow2(364) + 0 * pow2(416));
            
     assert(nine_limbs_to_nat_aux(limbs) == five_limbs_to_nat_aux(*self_limbs));
 }

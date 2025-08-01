@@ -354,7 +354,7 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
     self_limbs: &[u64; 5]
 )
     requires
-        forall|j: int| 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128,
+        forall|j: int| #![auto] 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128,
         forall|j: int| 5 <= j < 9 ==> limbs[j] == 0,
     ensures
         slice128_to_nat(limbs) == to_nat(self_limbs),
@@ -384,7 +384,7 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
     
     // Since limbs[5..8] are all 0 and limbs[0..4] == self_limbs[0..4], the sums are equal
     assert(limbs[5] == 0 && limbs[6] == 0 && limbs[7] == 0 && limbs[8] == 0);
-    assert(forall|j: int| 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128);
+    assert(forall|j: int| #![auto] 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128);
     
     // Expand the equation step by step
     assert(limbs[0] == self_limbs[0] as u128);

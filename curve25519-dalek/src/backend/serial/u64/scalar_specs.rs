@@ -1,4 +1,6 @@
 #[allow(unused_imports)]
+use super::scalar::Scalar52;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
@@ -60,7 +62,23 @@ decreases 32 - index
     if index >= 32 {
         0
     } else {
-        (bytes[index] as nat) * pow2(index as nat) + bytes_to_nat_rec(bytes, index + 1)
+        (bytes[index] as nat) * pow2((index * 8) as nat) + bytes_to_nat_rec(bytes, index + 1)
+    }
+}
+
+/// natural value of a 512 bit bitstring represented as array of 64 bytes
+pub open spec fn bytes_wide_to_nat(bytes: &[u8; 64]) -> nat {
+    // Convert bytes to nat in little-endian order using recursive helper
+    bytes_wide_to_nat_rec(bytes, 0)
+}
+
+pub open spec fn bytes_wide_to_nat_rec(bytes: &[u8; 64], index: int) -> nat
+decreases 64 - index
+{
+    if index >= 64 {
+        0
+    } else {
+        (bytes[index] as nat) * pow2((index * 8) as nat) + bytes_wide_to_nat_rec(bytes, index + 1)
     }
 }
 
@@ -98,6 +116,16 @@ pub open spec fn words_to_nat(words: &[u64; 4]) -> nat {
 // Group order: the value of L as a natural number
 pub open spec fn group_order() -> nat {
     pow2(252) + 27742317777372353535851937790883648493nat
+}
+
+// Montgomery radix R = 2^260
+pub open spec fn montgomery_radix() -> nat {
+    pow2(260)
+}
+
+// Check that all limbs of a Scalar52 are properly bounded (< 2^52)
+pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
+    forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
 }
 
 } // verus!

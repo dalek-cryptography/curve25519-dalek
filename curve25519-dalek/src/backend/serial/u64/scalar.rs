@@ -138,9 +138,8 @@ impl Scalar52 {
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
-        forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52), // Not human-approved yet
-        // The result is exactly the 512-bit input reduced modulo the group order
-        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(), // Not human-approved yet
+        forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52),
+        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(),
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];

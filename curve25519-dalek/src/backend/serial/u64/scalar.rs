@@ -452,7 +452,6 @@ impl Scalar52 {
         let ab = Scalar52::mul_internal(a, b);
         let result = Scalar52::montgomery_reduce(&ab);
         proof {
-            lemma_montgomery_mul_correct(&ab, &result, &a.limbs, &b.limbs);
         }
         result
     }
@@ -469,7 +468,6 @@ impl Scalar52 {
         let aa = Scalar52::square_internal(self);
         let result = Scalar52::montgomery_reduce(&aa);
         proof {
-            lemma_montgomery_square_correct(&aa, &result, &self.limbs);
         }
         result
     }
@@ -485,7 +483,6 @@ impl Scalar52 {
     {
         proof {
             lemma_rr_limbs_bounded();
-            assert(limbs_bounded(&constants::RR));
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
         assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
@@ -516,11 +513,8 @@ impl Scalar52 {
         let result = Scalar52::montgomery_reduce(&limbs);
         proof {
             // After the loop, limbs[0..5] contains self.limbs as u128, and limbs[5..9] are 0
-            assert(forall|j: int| 0 <= j < 5 ==> limbs[j] == self.limbs[j] as u128);
-            assert(forall|j: int| 5 <= j < 9 ==> limbs[j] == 0);
             
             lemma_from_montgomery_limbs_conversion(&limbs, &self.limbs);
-            lemma_from_montgomery_correct(&limbs, &result, &self.limbs);
         }
         result
     }

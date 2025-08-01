@@ -347,4 +347,36 @@ pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
     assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
     assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
 }
+
+
+pub proof fn lemma_from_montgomery_limbs_conversion(
+    limbs: &[u128; 9],
+    self_limbs: &[u64; 5]
+)
+    requires
+        forall|j: int| #![auto] 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128,
+        forall|j: int| 5 <= j < 9 ==> limbs[j] == 0,
+    ensures
+        slice128_to_nat(limbs) == to_nat(self_limbs),
+{
+    lemma_nine_limbs_equals_slice128_to_nat(limbs);
+    lemma_five_limbs_equals_to_nat(self_limbs);
+    assert(limbs[0] == self_limbs[0] as u128);
+    assert(nine_limbs_to_nat_aux(limbs) == (self_limbs[0] as nat) +
+           (self_limbs[1] as nat) * pow2(52) +
+           (self_limbs[2] as nat) * pow2(104) +
+           (self_limbs[3] as nat) * pow2(156) +
+           (self_limbs[4] as nat) * pow2(208) +
+           0 * pow2(260) + 0 * pow2(312) + 0 * pow2(364) + 0 * pow2(416));
+}
+
+
+
+pub proof fn lemma_rr_limbs_bounded()
+    ensures
+        0x000d63c715bea69fu64 < (1u64 << 52),
+{
+    // Verus can figure that out the other 4 limbs are bounded
+    assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
+}
 } // verus!

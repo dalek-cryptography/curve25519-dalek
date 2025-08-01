@@ -446,9 +446,9 @@ impl Scalar52 {
         limbs_bounded(a),
         limbs_bounded(b),
     ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+        limbs_bounded(&result),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
     }
 
@@ -458,9 +458,9 @@ impl Scalar52 {
     requires
         limbs_bounded(self),
     ensures
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+        limbs_bounded(&result),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
     }
 
@@ -473,8 +473,12 @@ impl Scalar52 {
         limbs_bounded(&result),
         to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
-        Scalar52::montgomery_mul(self, &constants::RR)
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+        let result = Scalar52::montgomery_mul(self, &constants::RR);
+        assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
+        result
     }
 
     /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod l)`
@@ -487,13 +491,20 @@ impl Scalar52 {
         limbs_bounded(&result),
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let mut limbs = [0u128; 9];
         #[allow(clippy::needless_range_loop)]
-        for i in 0..5 {
+        for i in 0..5
+            invariant
+                forall|j: int| #![auto] 0 <= j < i ==> limbs[j] == self.limbs[j] as u128,
+                forall|j: int| #![auto] i <= j < 9 ==> limbs[j] == 0,
+        {
             limbs[i] = self.limbs[i] as u128;
         }
-        Scalar52::montgomery_reduce(&limbs)
+        let result = Scalar52::montgomery_reduce(&limbs);
+        proof {
+            lemma_from_montgomery_limbs_conversion(&limbs, &self.limbs);
+        }
+        result
     }
 }
 

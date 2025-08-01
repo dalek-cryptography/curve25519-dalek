@@ -394,11 +394,6 @@ impl Scalar52 {
     /// Helper function for Montgomery reduction
     #[inline(always)]
     fn part1(sum: u128) -> (res: (u128, u64))
-    requires
-        sum < (1u128 << 127), // Reasonable bound for intermediate calculation // Not human-approved yet
-    ensures
-        res.1 < (1u64 << 52), // Not human-approved yet
-        res.0 < (1u128 << 76), // Output carry is bounded // Not human-approved yet
     {
         assume(false); // TODO: Add proper bounds checking and proofs
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
@@ -409,11 +404,6 @@ impl Scalar52 {
     /// Helper function for Montgomery reduction
     #[inline(always)]
     fn part2(sum: u128) -> (res: (u128, u64))
-    requires
-        sum < (1u128 << 127), // Reasonable bound for intermediate calculation // Not human-approved yet
-    ensures
-        res.1 < (1u64 << 52), // Not human-approved yet
-        res.0 == sum >> 52, // Not human-approved yet
     {
         assume(false); // TODO: Add proper bounds checking and proofs
         let w = (sum as u64) & ((1u64 << 52) - 1);

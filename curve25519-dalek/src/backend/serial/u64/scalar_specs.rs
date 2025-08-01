@@ -60,7 +60,7 @@ decreases 32 - index
     if index >= 32 {
         0
     } else {
-        (bytes[index] as nat) * pow2(index as nat) + bytes_to_nat_rec(bytes, index + 1)
+        (bytes[index] as nat) * pow2((index * 8) as nat) + bytes_to_nat_rec(bytes, index + 1)
     }
 }
 
@@ -76,7 +76,7 @@ decreases 64 - index
     if index >= 64 {
         0
     } else {
-        (bytes[index] as nat) * pow2(index as nat) + bytes_wide_to_nat_rec(bytes, index + 1)
+        (bytes[index] as nat) * pow2((index * 8) as nat) + bytes_wide_to_nat_rec(bytes, index + 1)
     }
 }
 

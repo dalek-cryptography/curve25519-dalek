@@ -361,14 +361,13 @@ pub proof fn lemma_from_montgomery_limbs_conversion(
 {
     lemma_nine_limbs_equals_slice128_to_nat(limbs);
     lemma_five_limbs_equals_to_nat(self_limbs);
-    
-    
-    
-    
     assert(limbs[0] == self_limbs[0] as u128);
-    
-    assert(nine_limbs_to_nat_aux(limbs) == (self_limbs[0] as nat) + (self_limbs[1] as nat) * pow2(52) + (self_limbs[2] as nat) * pow2(104) + (self_limbs[3] as nat) * pow2(156) + (self_limbs[4] as nat) * pow2(208) + 0 * pow2(260) + 0 * pow2(312) + 0 * pow2(364) + 0 * pow2(416));
-           
+    assert(nine_limbs_to_nat_aux(limbs) == (self_limbs[0] as nat) +
+           (self_limbs[1] as nat) * pow2(52) +
+           (self_limbs[2] as nat) * pow2(104) +
+           (self_limbs[3] as nat) * pow2(156) +
+           (self_limbs[4] as nat) * pow2(208) +
+           0 * pow2(260) + 0 * pow2(312) + 0 * pow2(364) + 0 * pow2(416));
 }
 
 

@@ -362,8 +362,6 @@ impl Scalar52 {
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
-    requires
-        forall|i: int| 0 <= i < 9 ==> limbs[i] < (1u128 << 116), // Reasonable bound for input // Not human-approved yet
     ensures
         (to_nat(&result.limbs) * pow2(260)) % group_order() == slice128_to_nat(limbs) % group_order(),
         forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),

@@ -138,8 +138,8 @@ impl Scalar52 {
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
-        limbs_bounded(&s), // Not human-approved yet
-        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(), // Not human-approved yet
+        limbs_bounded(&s),
+        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(),
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];
@@ -470,8 +470,8 @@ impl Scalar52 {
     requires
         limbs_bounded(self),
     ensures
-        limbs_bounded(&result), // Not human-approved yet
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(), // Not human-approved yet
+        limbs_bounded(&result),
+        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_mul(self, &constants::RR)
@@ -484,8 +484,8 @@ impl Scalar52 {
     requires
         limbs_bounded(self),
     ensures
-        limbs_bounded(&result), // Not human-approved yet
-        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs) % group_order(), // Not human-approved yet
+        limbs_bounded(&result),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs) % group_order(),
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let mut limbs = [0u128; 9];

@@ -425,25 +425,6 @@ pub proof fn lemma_rr_limbs_bounded()
     assert(0x000009411b7c309au64 < (1u64 << 52)) by (bit_vector);
 }
 
-pub proof fn lemma_rr_constants_to_nat(rr_limbs: &[u64; 5])
-    requires
-        rr_limbs[0] == 0x0009d265e952d13bu64,
-        rr_limbs[1] == 0x000d63c715bea69fu64,
-        rr_limbs[2] == 0x0005be65cb687604u64,
-        rr_limbs[3] == 0x0003dceec73d217fu64,
-        rr_limbs[4] == 0x000009411b7c309au64,
-    ensures
-        to_nat(rr_limbs) == 
-        ((0x0009d265e952d13bu64 as nat) +
-         pow2(52) * (0x000d63c715bea69fu64 as nat) +
-         pow2(104) * (0x0005be65cb687604u64 as nat) +
-         pow2(156) * (0x0003dceec73d217fu64 as nat) +
-         pow2(208) * (0x000009411b7c309au64 as nat)),
-{
-    lemma_five_limbs_equals_to_nat(rr_limbs);
-    assert(to_nat(rr_limbs) == five_limbs_to_nat_aux(*rr_limbs));
-}
-
 
 
 } // verus!

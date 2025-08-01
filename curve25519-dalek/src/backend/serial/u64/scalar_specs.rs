@@ -64,6 +64,22 @@ decreases 32 - index
     }
 }
 
+/// natural value of a 512 bit bitstring represented as array of 64 bytes
+pub open spec fn bytes_wide_to_nat(bytes: &[u8; 64]) -> nat {
+    // Convert bytes to nat in little-endian order using recursive helper
+    bytes_wide_to_nat_rec(bytes, 0)
+}
+
+pub open spec fn bytes_wide_to_nat_rec(bytes: &[u8; 64], index: int) -> nat
+decreases 64 - index
+{
+    if index >= 64 {
+        0
+    } else {
+        (bytes[index] as nat) * pow2(index as nat) + bytes_wide_to_nat_rec(bytes, index + 1)
+    }
+}
+
 // Generic function to convert array of words to natural number
 // Takes: array of words, number of words, bits per word
 // Note: This is a specification function that works with concrete types

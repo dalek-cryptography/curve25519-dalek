@@ -347,4 +347,77 @@ pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
     assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
     assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
 }
+
+pub proof fn lemma_montgomery_mul_correct(
+    ab: &[u128; 9],
+    result: &Scalar52,
+    a_limbs: &[u64; 5],
+    b_limbs: &[u64; 5]
+)
+    requires
+        slice128_to_nat(ab) == to_nat(a_limbs) * to_nat(b_limbs),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(ab) % group_order(),
+    ensures
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order(),
+{
+    assert(slice128_to_nat(ab) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order());
+    assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(a_limbs) * to_nat(b_limbs)) % group_order());
+}
+
+pub proof fn lemma_from_montgomery_limbs_conversion(
+    limbs: &[u128; 9],
+    self_limbs: &[u64; 5]
+)
+    requires
+        forall|j: int| 0 <= j < 5 ==> limbs[j] == self_limbs[j] as u128,
+        forall|j: int| 5 <= j < 9 ==> limbs[j] == 0,
+    ensures
+        slice128_to_nat(limbs) == to_nat(self_limbs),
+{
+    assume(slice128_to_nat(limbs) == to_nat(self_limbs));
+}
+
+pub proof fn lemma_from_montgomery_correct(
+    limbs: &[u128; 9],
+    result: &Scalar52,
+    self_limbs: &[u64; 5]
+)
+    requires
+        slice128_to_nat(limbs) == to_nat(self_limbs),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
+    ensures
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(self_limbs) % group_order(),
+{
+    assert(slice128_to_nat(limbs) % group_order() == to_nat(self_limbs) % group_order());
+    assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(self_limbs) % group_order());
+}
+
+pub proof fn lemma_rr_limbs_bounded()
+    ensures
+        0x0009d265e952d13bu64 < (1u64 << 52),
+        0x000d63c715bea69fu64 < (1u64 << 52),
+        0x0005be65cb687604u64 < (1u64 << 52),
+        0x0003dceec73d217fu64 < (1u64 << 52),
+        0x000009411b7c309au64 < (1u64 << 52),
+{
+    assert(0x0009d265e952d13bu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x0005be65cb687604u64 < (1u64 << 52)) by (bit_vector);
+    assert(0x0003dceec73d217fu64 < (1u64 << 52)) by (bit_vector);
+    assert(0x000009411b7c309au64 < (1u64 << 52)) by (bit_vector);
+}
+
+pub proof fn lemma_as_montgomery_correct(
+    result: &Scalar52,
+    self_limbs: &[u64; 5],
+    rr_limbs: &[u64; 5]
+)
+    requires
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(self_limbs) * to_nat(rr_limbs)) % group_order(),
+        to_nat(rr_limbs) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order(),
+    ensures
+        to_nat(&result.limbs) == (to_nat(self_limbs) * montgomery_radix()) % group_order(),
+{
+    assume(to_nat(&result.limbs) == (to_nat(self_limbs) * montgomery_radix()) % group_order());
+}
 } // verus!

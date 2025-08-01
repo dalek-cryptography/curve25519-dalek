@@ -379,7 +379,4 @@ pub proof fn lemma_rr_limbs_bounded()
     // Verus can figure that out the other 4 limbs are bounded
     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
-
-
-
 } // verus!

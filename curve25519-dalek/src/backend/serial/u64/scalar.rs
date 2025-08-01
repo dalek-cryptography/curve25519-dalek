@@ -450,7 +450,6 @@ impl Scalar52 {
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b))
-
     }
 
     /// Compute `(a^2) / R` (mod l) in Montgomery form, where R is the Montgomery modulus 2^260

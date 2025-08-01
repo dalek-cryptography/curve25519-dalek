@@ -1,15 +1,31 @@
 #[allow(unused_imports)]
+use super::common_verus::*;
+#[allow(unused_imports)]
+use super::scalar::Scalar52;
+#[allow(unused_imports)]
 use super::scalar_specs::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
+use vstd::bits::*;
 #[allow(unused_imports)]
 use vstd::calc;
 use vstd::prelude::*;
 
 verus! {
 
+/// Verification: scalar * scalar.invert() ≡ 1 mod L
+proof fn verify_invert_correct(x: Scalar52)
+//     requires to_scalar(&x.limbs) != 0
+//    ensures (to_scalar(&x.limbs) * invert_spec(&x.limbs)) % group_order() == 1
+{
+    assume(false);
+
+}
 
 pub proof fn lemma_52_52(x: u64, y: u64)
 requires
@@ -221,4 +237,114 @@ ensures
 }
 
 
+pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, l_value: &Scalar52)
+    requires
+        i < 5,
+        difference_limb < (1u64 << 52),
+        addend == 0 || addend == l_value.limbs[i as int],
+        i == 0 ==> carry == 0,
+        i >= 1 ==> (carry >> 52) < 2,
+        l_value.limbs[0] == 0x0002631a5cf5d3ed,
+        l_value.limbs[1] == 0x000dea2f79cd6581,
+        l_value.limbs[2] == 0x000000000014def9,
+        l_value.limbs[3] == 0x0000000000000000,
+        l_value.limbs[4] == 0x0000100000000000,
+    ensures
+        (carry >> 52) + difference_limb + addend < (1u64 << 53),
+{
+    if i == 0 {
+        assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+    } else if i == 1 {
+        assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
+    } else if i == 2 {
+        assert(0x000000000014def9 < (1u64 << 52)) by (bit_vector);
+    } else if i == 3 {
+    } else {
+        assert(0x0000100000000000 < (1u64 << 52)) by (bit_vector);
+    }
+    if i == 0 {
+        assert((0u64 >> 52) == 0) by (bit_vector);
+    }
+    assert(2 * (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+}
+
+pub proof fn lemma_borrow_and_mask_bounded(borrow: u64, mask: u64)
+    requires
+        mask == (1u64 << 52) - 1,
+    ensures
+        (borrow & mask) < (1u64 << 52),
+{
+    assert((borrow & mask) <= mask) by (bit_vector);
+}
+
+pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
+    requires
+        mask == (1u64 << 52) - 1,
+        carry < (1u64 << 53),
+    ensures
+        (carry & mask) < (1u64 << 52),
+        (carry >> 52) <= 1,
+{
+    assert((carry & mask) <= mask) by (bit_vector);
+    assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
+    broadcast use lemma_u64_shr_is_div;
+    lemma_pow2_pos(52);
+    shift_is_pow2(52);
+    assert(carry >> 52 == carry / (1u64 << 52));
+    lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    let q = carry / (1u64 << 52);
+    let r = carry % (1u64 << 52);
+    lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+}
+
+pub proof fn lemma_add_loop_bounds(i: int, carry: u64, a_limb: u64, b_limb: u64)
+    requires
+        0 <= i < 5,
+        a_limb < (1u64 << 52),
+        b_limb < (1u64 << 52),
+        i == 0 ==> carry == 0,
+        i >= 1 ==> (carry >> 52) < 2,
+    ensures
+        (carry >> 52) + a_limb + b_limb < (1u64 << 53),
+{
+    if i == 0 {
+        assert((0u64 >> 52) == 0) by (bit_vector);
+    }
+    assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
+}
+
+pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
+    requires
+        mask == (1u64 << 52) - 1,
+        carry < (1u64 << 53),
+    ensures
+        (carry & mask) < (1u64 << 52),
+        (carry >> 52) < 2,
+{
+    assert((carry & mask) <= mask) by (bit_vector);
+    assert((1u64 << 53) == 2 * (1u64 << 52)) by (bit_vector);
+    broadcast use lemma_u64_shr_is_div;
+    lemma_pow2_pos(52);
+    shift_is_pow2(52);
+    assert(carry >> 52 == carry / (1u64 << 52));
+    lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
+    let q = carry / (1u64 << 52);
+    let r = carry % (1u64 << 52);
+    lemma_mul_strict_inequality_converse(q as int, 2int, (1u64 << 52) as int);
+}
+
+pub proof fn lemma_l_value_properties(l_value: &Scalar52, sum: &Scalar52)
+    requires
+        l_value.limbs[0] == 0x0002631a5cf5d3ed,
+        l_value.limbs[1] == 0x000dea2f79cd6581,
+        l_value.limbs[2] == 0x000000000014def9,
+        l_value.limbs[3] == 0x0000000000000000,
+        l_value.limbs[4] == 0x0000100000000000,
+        forall|j: int| 0 <= j < 5 ==> sum.limbs[j] < (1u64 << 52),
+    ensures
+        forall|j: int| 0 <= j < 5 ==> l_value.limbs[j] < (1u64 << 52),
+{
+    assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+    assert(0x000dea2f79cd6581 < (1u64 << 52)) by (bit_vector);
+}
 } // verus!

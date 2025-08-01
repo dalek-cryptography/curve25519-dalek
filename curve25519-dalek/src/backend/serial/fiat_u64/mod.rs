@@ -35,3 +35,6 @@ pub mod scalar_lemmas;
 
 #[path = "../u64/scalar_specs.rs"]
 pub mod scalar_specs;
+
+#[path = "../u64/common_verus.rs"]
+pub mod common_verus;

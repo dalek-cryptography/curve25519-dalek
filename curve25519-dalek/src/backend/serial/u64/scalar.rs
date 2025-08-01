@@ -11,11 +11,6 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-#[allow(unused_imports)]
-use super::scalar_lemmas::*;
-#[allow(unused_imports)]
-use super::scalar_specs::*;
-use super::subtle_assumes::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
@@ -25,12 +20,16 @@ use zeroize::Zeroize;
 
 use crate::constants;
 
+#[allow(unused_imports)]
+use super::scalar_lemmas::*;
+#[allow(unused_imports)]
+use super::scalar_specs::*;
+use super::subtle_assumes::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {
-
-
-
 /// The `Scalar52` struct represents an element in
 /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
 #[derive(Copy, Clone)]
@@ -111,6 +110,7 @@ impl Scalar52 {
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
+        //TODO: prove that bytes_to_nat(bytes) == words_to_nat(&words)
         assume(bytes_to_nat(bytes) == words_to_nat(&words));
         proof {
             assert(1u64 << 52 > 0) by (bit_vector);
@@ -218,54 +218,35 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs),
+        to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-        proof {
-            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-            assert(sum == Scalar52::ZERO);
-            assert(1u64 << 52 > 0) by (bit_vector);
-        }
+        proof { assert(1u64 << 52 > 0) by (bit_vector); }
         let mask = (1u64 << 52) - 1;
 
         // a + b
         let mut carry: u64 = 0;
-        proof {
-            assert(carry == 0u64);
-            assert(1u64 << 54 < u64::MAX) by (bit_vector);
-            assert(0u64 < (1u64 << 54)) by (bit_vector);
-        }
         for i in 0..5
-            invariant //0 <= i <= 5,
-            // forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
-            (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52),
-            (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52),
-            carry < (1u64 << 54),
+           invariant
+                    forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
+                    forall|j: int| 0 <= j < 5 ==> a.limbs[j] < (1u64 << 52),
+                    forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+                    mask == (1u64 << 52) - 1,
+                    i == 0 ==> carry == 0,
+                    i >= 1 ==> (carry >> 52) < 2,
         {
-            proof {
-                assert(0 <= i < 5);
-                assert(a.limbs[i as int] < 1u64 << 52);
-                assert(b.limbs[i as int] < 1u64 << 52);
-                assert((1u64 << 52) + (1u64 << 52) == (1u64 << 53)) by (bit_vector);
-                assert(a.limbs[i as int] + b.limbs[i as int] < 1u64 << 53);
-                assert(carry < (1u64 << 54));
-                assert(carry >> 52 >= 0u64);
-                assert((carry >> 52) < (1u64 << 54)) by (bit_vector);
-                assert((1u64 << 53) + 3 < (1u64 << 54)) by (bit_vector);
-                assert((1u64 << 53) + (1u64 << 54) <= (1u64 << 55)) by (bit_vector);
-                assert((a.limbs[i as int] + b.limbs[i as int] + (carry >> 52)) < (1u64 << 55));
-            }
+            proof {lemma_add_loop_bounds(i as int, carry, a.limbs[i as int], b.limbs[i as int]);}
             carry = a.limbs[i] + b.limbs[i] + (carry >> 52);
             sum.limbs[i] = carry & mask;
-            assume( (0 <= i < 5) ==> a.limbs[i as int] < (1u64 << 52));
-            assume( (0 <= i < 5) ==> b.limbs[i as int] < (1u64 << 52));
-            assume(false);
+            proof {lemma_add_carry_and_sum_bounds(carry, mask);}
         }
 
         // subtract l if the sum is >= l
+        proof { lemma_l_value_properties(&constants::L, &sum); }
+        let result = Scalar52::sub(&sum, &constants::L);
+        assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
+        result
 
-        assume(false);
-        Scalar52::sub(&sum, &constants::L)
     }
 
     /// Compute `a - b` (mod l)
@@ -274,41 +255,43 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
         forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
     ensures
-        to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+        to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-        proof {
-            assert(Scalar52::ZERO == Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] });
-            assert(difference == Scalar52::ZERO);
-            assert(1u64 << 52 > 0) by (bit_vector);
-        }
+        proof { assert(1u64 << 52 > 0) by (bit_vector);}
         let mask = (1u64 << 52) - 1;
 
         // a - b
         let mut borrow: u64 = 0;
         for i in 0..5
-            invariant 0 <= i <= 5,
-                        forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+            invariant
+                      forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+                      forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
+                      mask == (1u64 << 52) - 1,
         {
-            proof {
-                assert ((borrow >> 63) < 2) by (bit_vector);
-            }
+            proof { assert ((borrow >> 63) < 2) by (bit_vector); }
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
+            proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 
         // conditionally add l if the difference is negative
         let mut carry: u64 = 0;
-        for i in 0..5 {
+        for i in 0..5
+            invariant
+                      forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
+                      mask == (1u64 << 52) - 1,
+                      i == 0 ==> carry == 0,
+                      i >= 1 ==> (carry >> 52) < 2,
+        {
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &constants::L.limbs[i], underflow);
-            assume (carry >> 52 < 2);
-            assume (difference.limbs[i as int] < 1 << 52);
-            assume (constants::L.limbs[i as int] < 1 << 52);
+            proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;
+            proof { lemma_carry_bounded_after_mask(carry, mask); }
         }
-        assume(false); // TODO: complete the proof
+        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));
         difference
     }
 
@@ -375,8 +358,8 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
     ensures
-        // TODO: Add proper specification for Montgomery reduction
-        true,
+        (to_nat(&result.limbs) * pow2(260)) % group_order() == slice128_to_nat(limbs) % group_order(),
+        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),
     {
         assume(false); // TODO: Add proper bounds checking and proofs
 

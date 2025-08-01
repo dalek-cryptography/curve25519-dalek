@@ -138,8 +138,8 @@ impl Scalar52 {
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
-        forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52),
-        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(),
+        limbs_bounded(&s), // Not human-approved yet
+        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(), // Not human-approved yet
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];
@@ -220,8 +220,8 @@ impl Scalar52 {
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==>  b.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
+        limbs_bounded(b),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
@@ -234,8 +234,8 @@ impl Scalar52 {
         for i in 0..5
            invariant
                     forall|j: int| 0 <= j < i ==> sum.limbs[j] < 1u64 << 52,
-                    forall|j: int| 0 <= j < 5 ==> a.limbs[j] < (1u64 << 52),
-                    forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+                    limbs_bounded(a),
+                    limbs_bounded(b),
                     mask == (1u64 << 52) - 1,
                     i == 0 ==> carry == 0,
                     i >= 1 ==> (carry >> 52) < 2,
@@ -257,8 +257,8 @@ impl Scalar52 {
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
+        limbs_bounded(b),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
     {
@@ -270,7 +270,7 @@ impl Scalar52 {
         let mut borrow: u64 = 0;
         for i in 0..5
             invariant
-                      forall|j: int| 0 <= j < 5 ==> b.limbs[j] < (1u64 << 52),
+                      limbs_bounded(b),
                       forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
                       mask == (1u64 << 52) - 1,
         {
@@ -305,8 +305,8 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of z[*] calculations
     pub (crate) fn mul_internal(a: &Scalar52, b: &Scalar52) -> (z: [u128; 9])
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
+        limbs_bounded(b),
     ensures
         slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&b.limbs),
     {
@@ -336,7 +336,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of calculations
     pub (crate) fn square_internal(a: &Scalar52) -> (z: [u128; 9])
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
     ensures
         slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
     {
@@ -363,8 +363,8 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
     ensures
-        (to_nat(&result.limbs) * pow2(260)) % group_order() == slice128_to_nat(limbs) % group_order(),
-        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
+        limbs_bounded(&result),
     {
         assume(false); // TODO: Add proper bounds checking and proofs
 
@@ -415,8 +415,8 @@ impl Scalar52 {
     #[inline(never)]
     pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
+        limbs_bounded(b),
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
@@ -430,7 +430,7 @@ impl Scalar52 {
     #[allow(dead_code)] // XXX we don't expose square() via the Scalar API
     pub fn square(&self) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+        limbs_bounded(self),
     ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
@@ -443,8 +443,8 @@ impl Scalar52 {
     #[inline(never)]
     pub fn montgomery_mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52),
-        forall|i: int| 0 <= i < 5 ==> b.limbs[i] < (1u64 << 52),
+        limbs_bounded(a),
+        limbs_bounded(b),
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
@@ -456,7 +456,7 @@ impl Scalar52 {
     #[inline(never)]
     pub fn montgomery_square(&self) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+        limbs_bounded(self),
     ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
@@ -468,10 +468,9 @@ impl Scalar52 {
     #[inline(never)]
     pub fn as_montgomery(&self) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+        limbs_bounded(self),
     ensures
-        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
-        // Result is exactly self * R mod l, where R = 2^260
+        limbs_bounded(&result), // Not human-approved yet
         to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
@@ -483,10 +482,9 @@ impl Scalar52 {
     #[inline(never)]
     pub fn from_montgomery(&self) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+        limbs_bounded(self),
     ensures
-        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
-        // Result satisfies: (result * R) mod l = self mod l
+        limbs_bounded(&result), // Not human-approved yet
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs) % group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs

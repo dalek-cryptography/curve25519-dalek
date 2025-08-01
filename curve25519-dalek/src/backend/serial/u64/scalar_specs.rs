@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
+use crate::backend::serial::u64::scalar::Scalar52;
 
 verus! {
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
@@ -119,6 +120,11 @@ pub open spec fn group_order() -> nat {
 // Montgomery radix R = 2^260
 pub open spec fn montgomery_radix() -> nat {
     pow2(260)
+}
+
+// Check that all limbs of a Scalar52 are properly bounded (< 2^52)
+pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
+    forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
 }
 
 } // verus!

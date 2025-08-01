@@ -505,8 +505,6 @@ impl Scalar52 {
         
         let result = Scalar52::montgomery_reduce(&limbs);
         proof {
-            // After the loop, limbs[0..5] contains self.limbs as u128, and limbs[5..9] are 0
-            
             lemma_from_montgomery_limbs_conversion(&limbs, &self.limbs);
         }
         result

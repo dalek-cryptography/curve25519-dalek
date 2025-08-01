@@ -137,7 +137,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
-    ensures 
+    ensures
         forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52), // Not human-approved yet
         // The result represents the 512-bit input reduced modulo the group order
         to_nat(&s.limbs) < group_order(), // Not human-approved yet

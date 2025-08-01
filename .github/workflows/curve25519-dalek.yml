@@ -131,7 +131,7 @@ jobs:
     - name: Install Verus
       run: |
         wget https://github.com/verus-lang/verus/releases/download/release%2Frolling%2F0.2025.08.01.76473c7/verus-0.2025.08.01.76473c7-x86-linux.zip
-        unzip verus-0.2025.07.30.2496084-x86-linux.zip
+        unzip verus-0.2025.08.01.76473c7-x86-linux.zip
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus

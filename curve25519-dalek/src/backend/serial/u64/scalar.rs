@@ -11,28 +11,25 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-#[allow(unused_imports)]
-use super::scalar_lemmas::*;
-#[allow(unused_imports)]
-use super::scalar_specs::*;
-use super::subtle_assumes::*;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
-#[allow(unused_imports)]
-use vstd::arithmetic::power2::*;
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
 use crate::constants;
 
+#[allow(unused_imports)]
+use super::scalar_lemmas::*;
+#[allow(unused_imports)]
+use super::scalar_specs::*;
+use super::subtle_assumes::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {
-
-
-
 /// The `Scalar52` struct represents an element in
 /// \\(\mathbb Z / \ell \mathbb Z\\) as 5 \\(52\\)-bit limbs.
 #[derive(Copy, Clone)]
@@ -113,6 +110,7 @@ impl Scalar52 {
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
+        //TODO: prove that bytes_to_nat(bytes) == words_to_nat(&words)
         assume(bytes_to_nat(bytes) == words_to_nat(&words));
         proof {
             assert(1u64 << 52 > 0) by (bit_vector);

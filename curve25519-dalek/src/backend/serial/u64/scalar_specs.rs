@@ -1,7 +1,8 @@
 #[allow(unused_imports)]
+use crate::backend::serial::u64::scalar::Scalar52;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
-use crate::backend::serial::u64::scalar::Scalar52;
 
 verus! {
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat

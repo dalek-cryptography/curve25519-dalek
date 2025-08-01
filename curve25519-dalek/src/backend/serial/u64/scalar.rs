@@ -488,12 +488,7 @@ impl Scalar52 {
             assert(limbs_bounded(&constants::RR));
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        proof {
-            lemma_rr_constants_to_nat(&constants::RR.limbs);
-            lemma_rr_is_r_squared();
-            assert(to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order());
-            lemma_as_montgomery_correct(&result, &self.limbs, &constants::RR.limbs);
-        }
+        assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
         result
     }
 

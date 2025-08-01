@@ -462,11 +462,7 @@ impl Scalar52 {
         limbs_bounded(&result),
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        let aa = Scalar52::square_internal(self);
-        let result = Scalar52::montgomery_reduce(&aa);
-        proof {
-        }
-        result
+        Scalar52::montgomery_reduce(&Scalar52::square_internal(self))
     }
 
     /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod l)`

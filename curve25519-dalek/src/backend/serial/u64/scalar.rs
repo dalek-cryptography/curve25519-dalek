@@ -138,9 +138,9 @@ impl Scalar52 {
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures 
-        forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52), // Not human-approved yet
         // The result represents the 512-bit input reduced modulo the group order
-        to_nat(&s.limbs) < group_order(),
+        to_nat(&s.limbs) < group_order(), // Not human-approved yet
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];
@@ -364,7 +364,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of n* and r* calculations
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
     requires
-        forall|i: int| 0 <= i < 9 ==> limbs[i] < (1u128 << 116), // Reasonable bound for input
+        forall|i: int| 0 <= i < 9 ==> limbs[i] < (1u128 << 116), // Reasonable bound for input // Not human-approved yet
     ensures
         (to_nat(&result.limbs) * pow2(260)) % group_order() == slice128_to_nat(limbs) % group_order(),
         forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),
@@ -398,10 +398,10 @@ impl Scalar52 {
     #[inline(always)]
     fn part1(sum: u128) -> (res: (u128, u64))
     requires
-        sum < (1u128 << 127), // Reasonable bound for intermediate calculation
+        sum < (1u128 << 127), // Reasonable bound for intermediate calculation // Not human-approved yet
     ensures
-        res.1 < (1u64 << 52),
-        res.0 < (1u128 << 76), // Output carry is bounded
+        res.1 < (1u64 << 52), // Not human-approved yet
+        res.0 < (1u128 << 76), // Output carry is bounded // Not human-approved yet
     {
         assume(false); // TODO: Add proper bounds checking and proofs
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
@@ -413,10 +413,10 @@ impl Scalar52 {
     #[inline(always)]
     fn part2(sum: u128) -> (res: (u128, u64))
     requires
-        sum < (1u128 << 127), // Reasonable bound for intermediate calculation
+        sum < (1u128 << 127), // Reasonable bound for intermediate calculation // Not human-approved yet
     ensures
-        res.1 < (1u64 << 52),
-        res.0 == sum >> 52,
+        res.1 < (1u64 << 52), // Not human-approved yet
+        res.0 == sum >> 52, // Not human-approved yet
     {
         assume(false); // TODO: Add proper bounds checking and proofs
         let w = (sum as u64) & ((1u64 << 52) - 1);
@@ -483,9 +483,9 @@ impl Scalar52 {
     requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
-        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
         // Result is in Montgomery form: result = (self * R) mod l, where R = 2^260
-        to_nat(&result.limbs) < group_order(),
+        to_nat(&result.limbs) < group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_mul(self, &constants::RR)
@@ -498,9 +498,9 @@ impl Scalar52 {
     requires
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
-        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
         // Result is out of Montgomery form: result = (self / R) mod l, where R = 2^260
-        to_nat(&result.limbs) < group_order(),
+        to_nat(&result.limbs) < group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let mut limbs = [0u128; 9];

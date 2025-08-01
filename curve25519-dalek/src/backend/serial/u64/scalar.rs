@@ -471,8 +471,8 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
         forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
-        // Result is in Montgomery form: result = (self * R) mod l, where R = 2^260
-        to_nat(&result.limbs) < group_order(), // Not human-approved yet
+        // Result is exactly self * R mod l, where R = 2^260
+        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         Scalar52::montgomery_mul(self, &constants::RR)
@@ -486,8 +486,8 @@ impl Scalar52 {
         forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
     ensures
         forall|i: int| 0 <= i < 5 ==> result.limbs[i] < (1u64 << 52), // Not human-approved yet
-        // Result is out of Montgomery form: result = (self / R) mod l, where R = 2^260
-        to_nat(&result.limbs) < group_order(), // Not human-approved yet
+        // Result satisfies: (result * R) mod l = self mod l
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == to_nat(&self.limbs) % group_order(), // Not human-approved yet
     {
         assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let mut limbs = [0u128; 9];

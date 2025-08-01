@@ -116,4 +116,9 @@ pub open spec fn group_order() -> nat {
     pow2(252) + 27742317777372353535851937790883648493nat
 }
 
+// Montgomery radix R = 2^260
+pub open spec fn montgomery_radix() -> nat {
+    pow2(260)
+}
+
 } // verus!

@@ -1,0 +1,341 @@
+name: Generate Verus Function Graphs
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened]
+  
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: 'Base reference to compare against (default: main)'
+        required: false
+        default: 'main'
+      test_mode:
+        description: 'Enable test mode (skip PR comment)'
+        type: boolean
+        required: false
+        default: false
+      depth:
+        description: 'Graph depth (default: 5)'
+        required: false
+        default: '5'
+  
+  # Allow testing on feature branches
+  push:
+    branches: 
+      - 'feature/**'
+      - 'test/**'
+      - 'graph-test/**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  generate-graphs:
+    name: Generate Function Call Graphs
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Determine execution context
+        id: context
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "mode=pr" >> $GITHUB_OUTPUT
+            echo "base_ref=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            echo "test_mode=false" >> $GITHUB_OUTPUT
+            echo "depth=5" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "mode=manual" >> $GITHUB_OUTPUT
+            echo "base_ref=origin/${{ github.event.inputs.base_ref || 'main' }}" >> $GITHUB_OUTPUT
+            echo "test_mode=${{ github.event.inputs.test_mode || 'false' }}" >> $GITHUB_OUTPUT
+            echo "depth=${{ github.event.inputs.depth || '5' }}" >> $GITHUB_OUTPUT
+          else
+            # Push to feature branch
+            echo "mode=push" >> $GITHUB_OUTPUT
+            echo "base_ref=origin/main" >> $GITHUB_OUTPUT
+            echo "test_mode=true" >> $GITHUB_OUTPUT
+            echo "depth=5" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Mode: $(cat $GITHUB_OUTPUT | grep mode= | cut -d= -f2)"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Setup Python and make scripts executable
+        run: |
+          chmod +x scripts/*.py
+          python3 --version
+          echo "Current directory: $(pwd)"
+          echo "Available scripts:"
+          ls -la scripts/
+
+      - name: Validate scripts
+        run: |
+          echo "Validating Python scripts functionality..."
+          python3 scripts/validate_scripts.py
+
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Download rust-analyzer-test dependencies
+        run: |
+          # Clone the rust-analyzer-test repository
+          echo "Cloning rust-analyzer-test repository..."
+          git clone https://github.com/Beneficial-AI-Foundation/rust-analyzer-test.git /tmp/rust-analyzer-test
+          
+          # Copy the SCIP JSON file from the cloned repository
+          echo "Using SCIP JSON file from repository..."
+          cp /tmp/rust-analyzer-test/index_scip_libsignal_deps.json ./
+          
+          # Verify files were copied
+          echo "Verifying SCIP JSON file..."
+          ls -la index_scip_libsignal_deps.json
+          file index_scip_libsignal_deps.json
+          echo "SCIP JSON file size: $(wc -c < index_scip_libsignal_deps.json) bytes"
+
+      - name: Build graph generation tool
+        run: |
+          cd /tmp/rust-analyzer-test
+          cargo build --release --bin generate_function_subgraph_dot
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get list of changed .rs files using dynamic base reference
+          echo "Comparing against base: ${{ steps.context.outputs.base_ref }}"
+          git diff --name-only ${{ steps.context.outputs.base_ref }}..HEAD -- '*.rs' > changed_files.txt
+          echo "Changed Rust files:"
+          cat changed_files.txt
+          
+          # Store as output for next step
+          {
+            echo 'CHANGED_FILES<<EOF'
+            cat changed_files.txt
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Find Verus functions in changed files
+        id: find-functions
+        run: |
+          # Create output directory for call graphs
+          mkdir -p function_graphs
+          
+          # Use the improved script to find newly added Verus functions in the diff
+          echo "Analyzing git diff to find newly verified Verus functions..."
+          echo "Base reference: ${{ steps.context.outputs.base_ref }}"
+          python3 scripts/find_new_verus_functions.py ${{ steps.context.outputs.base_ref }} > new_functions.txt 2>analysis.log
+          
+          echo "Analysis log:"
+          cat analysis.log
+          
+          if [[ -s new_functions.txt ]]; then
+            echo "Found newly verified Verus functions:"
+            cat new_functions.txt
+            
+            # Remove duplicates and store unique functions
+            sort new_functions.txt | uniq > unique_functions.txt
+            echo "Unique new Verus functions:"
+            cat unique_functions.txt
+            
+            # Store as output
+            {
+              echo 'FUNCTIONS<<EOF'
+              cat unique_functions.txt
+              echo 'EOF'
+            } >> $GITHUB_OUTPUT
+          else
+            echo "No newly verified Verus functions found in this PR"
+            echo 'FUNCTIONS=' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create function symbol mapping script
+        run: |
+          # The symbol mapping is now handled by a dedicated Python script
+          echo "Symbol mapping will be handled by scripts/map_functions_to_symbols.py"
+
+      - name: Generate function call graphs
+        id: generate-graphs
+        run: |
+          mkdir -p function_graphs
+          
+          if [[ -f unique_functions.txt && -s unique_functions.txt ]]; then
+            echo "Generating call graphs for functions..."
+            
+            # Step 1: Map functions to symbols
+            echo "Mapping functions to SCIP symbols..."
+            python3 scripts/map_functions_to_symbols.py \
+              index_scip_libsignal_deps.json \
+              unique_functions.txt \
+              --output function_symbol_mapping.txt \
+              --format pipe
+            
+            echo "Function to symbol mapping:"
+            cat function_symbol_mapping.txt
+            
+            # Step 2: Generate call graphs using the dedicated script
+            echo "Generating call graphs..."
+            echo "Graph depth: ${{ steps.context.outputs.depth }}"
+            python3 scripts/generate_dependency_graphs.py \
+              /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot \
+              index_scip_libsignal_deps.json \
+              function_symbol_mapping.txt \
+              function_graphs \
+              --depth ${{ steps.context.outputs.depth }} \
+              --summary graph_summary.md \
+              --successful-list successful_graphs.txt
+            
+          else
+            echo "No functions to process"
+            echo "## No Verus Functions Found" > graph_summary.md
+            echo "No newly verified Verus functions were detected in this PR." >> graph_summary.md
+          fi
+
+      - name: Upload call graph artifacts
+        uses: actions/upload-artifact@v4
+        if: hashFiles('function_graphs/*') != ''
+        with:
+          name: verus-function-call-graphs
+          path: |
+            function_graphs/
+            graph_summary.md
+            function_symbol_mapping.txt
+          retention-days: 30
+
+      - name: Comment on PR with results
+        uses: actions/github-script@v7
+        if: always() && steps.context.outputs.test_mode == 'false' && github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🔍 Verus Function Call Graphs\n\n';
+            comment += `🔗 **Workflow Run**: [View Details](${context.payload.repository.html_url}/actions/runs/${context.runId})\n\n`;
+            
+            try {
+              // Read the summary
+              if (fs.existsSync('graph_summary.md')) {
+                const summary = fs.readFileSync('graph_summary.md', 'utf8');
+                comment += summary + '\n';
+              }
+              
+              // Add links to artifacts if graphs were generated
+              if (fs.existsSync('successful_graphs.txt')) {
+                const successfulGraphs = fs.readFileSync('successful_graphs.txt', 'utf8')
+                  .split('\n')
+                  .filter(line => line.trim());
+                
+                if (successfulGraphs.length > 0) {
+                  comment += '### 📊 Generated Graphs\n\n';
+                  comment += 'The following call graphs have been generated and are available in the workflow artifacts:\n\n';
+                  
+                  successfulGraphs.forEach(func => {
+                    comment += `- **\`${func}\`** - Shows dependency paths to libsignal functions (depth ${{ steps.context.outputs.depth }})\n`;
+                  });
+                  
+                  comment += '\n### 📥 How to View the Graphs\n\n';
+                  comment += '1. Click the [workflow run link](';
+                  comment += `${context.payload.repository.html_url}/actions/runs/${context.runId}) above\n`;
+                  comment += '2. Scroll down to the "Artifacts" section\n';
+                  comment += '3. Download the `verus-function-graphs` artifact\n';
+                  comment += '4. Extract the zip file to view SVG/PNG graph files\n\n';
+                  comment += '**Graph Types Available:**\n';
+                  comment += '- `.svg` files - Best quality, can be opened in browsers\n';
+                  comment += '- `.png` files - Image format for quick viewing\n';
+                  comment += '- `.dot` files - Source files for Graphviz\n\n';
+                }
+              }
+              
+              // Add information about what the graphs show
+              comment += '### ℹ️ About These Graphs\n\n';
+              comment += 'These call graphs show:\n';
+              comment += '- **Nodes**: Functions and their relationships\n';
+              comment += '- **Edges**: Call relationships between functions\n';
+              comment += '- **Focus**: Paths from Verus-verified functions to libsignal functions\n';
+              comment += `- **Depth**: Up to ${{ steps.context.outputs.depth }} levels of function calls\n`;
+              comment += '- **Filtering**: Non-libsignal sources are filtered out for clarity\n\n';
+              
+              comment += '---\n';
+              comment += '*This analysis was automatically generated for newly verified Verus functions in this PR.*';
+              
+            } catch (error) {
+              comment += '❌ **Error generating summary**: ' + error.message + '\n\n';
+              comment += 'Please check the [workflow logs](';
+              comment += `${context.payload.repository.html_url}/actions/runs/${context.runId}) for more details.`;
+            }
+            
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Test mode summary
+        if: always() && steps.context.outputs.test_mode == 'true'
+        run: |
+          echo "🧪 **TEST MODE SUMMARY**"
+          echo "======================"
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Base ref: ${{ steps.context.outputs.base_ref }}"
+          echo "Depth: ${{ steps.context.outputs.depth }}"
+          echo ""
+          
+          if [[ -f graph_summary.md ]]; then
+            echo "📊 Generated Summary:"
+            echo "-------------------"
+            cat graph_summary.md
+          else
+            echo "No summary generated"
+          fi
+          
+          echo ""
+          echo "💡 Tip: This was a test run. In PR mode, results would be posted as a comment."
+          echo "📁 Check the uploaded artifacts to see generated graphs."
+
+      - name: Create graph gallery (if graphs exist)
+        if: hashFiles('function_graphs/*.svg') != ''
+        run: |
+          echo "Creating graph gallery..."
+          python3 scripts/create_graph_gallery.py \
+            function_graphs \
+            GRAPHS.md \
+            --title "Verus Function call graphs - PR #${{ github.event.number }}"
+
+      - name: Upload graph gallery
+        uses: actions/upload-artifact@v4
+        if: hashFiles('GRAPHS.md') != ''
+        with:
+          name: graph-gallery
+          path: GRAPHS.md
+          retention-days: 30

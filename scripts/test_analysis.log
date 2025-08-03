@@ -1,0 +1,3 @@
+Analyzing git diff against origin/develop...
+Error running git diff: Command '['git', 'diff', 'origin/develop..HEAD', '--unified=3', '*.rs']' returned non-zero exit status 128.
+No diff output found

@@ -1,6 +1,7 @@
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
+use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
@@ -434,6 +435,104 @@ pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
 {
     mul_lt(x as nat, bx as nat, y as nat, by as nat);
 }
+
+pub proof fn lemma_cast_then_mod_51(x: u128)
+    ensures
+        (x as u64) % (pow2(51) as u64) == x % (pow2(51) as u128)
+{
+    lemma2_to64_rest(); // pow2(51 | 64)
+    assert( (x as u64) % 0x8000000000000 == x % 0x8000000000000) by (bit_vector);
+}
+
+pub proof fn lemma_pow2_square(v: int, i: nat)
+    ensures
+        pow(v, pow2(i)) * pow(v, pow2(i)) == pow(v, pow2(i + 1))
+{
+    // pow(v, pow2(i)) * pow(v, pow2(i)) = pow(v, pow2(i) + pow2(i));
+    lemma_pow_adds(v as int, pow2(i), pow2(i));
+    // 2 * pow2(i) = pow2(i + 1)
+    lemma_pow2_unfold(i + 1);
+}
+
+pub proof fn lemma_mod_sum_factor(a: int, b: int, m: int)
+    requires
+        m > 0
+    ensures
+        (a * m + b) % m == b % m
+{
+    // (a * m + b) % m == ((a * m) % m + b % m) % m
+    lemma_add_mod_noop(a * m, b, m);
+    // (a * m) % m == 0
+    lemma_mod_multiples_basic(a, m);
+    // b % m % m = b % m
+    lemma_mod_twice(b, m);
+}
+
+pub proof fn lemma_pow_nat_is_nat(v: nat, i: nat)
+    ensures
+        pow(v as int, pow2(i)) >= 0
+{
+    lemma_pow2_pos(i); // pow2(i) > 0
+    if (v == 0) {
+        lemma0_pow(pow2(i));
+    }
+    else {
+        lemma_pow_positive(v as int, pow2(i));
+    }
+}
+
+// pub proof fn lemma_cast_then_mod_pow2(x: u128, k: nat)
+//     requires
+//         k < 64
+//     ensures
+//         (x as u64) % (pow2(k) as u64) == x % (pow2(k) as u128)
+// {
+//     // 1. pow2(k) fits in u64
+//     lemma2_to64_rest(); // pow2(63) = 0x8000000000000000
+//     assert(0x8000000000000000 <= u64::MAX) by (compute);
+//     if (k < 63) {
+//         lemma_pow2_strictly_increases(k, 64);
+//     }
+//     // Thus pow2(k) is the same in both types
+//     assert(pow2(k) as u64 == pow2(k) as u128);
+
+//     // x as u64 == x % 2^64
+//     assert((x as u64) == x % 0x10000000000000000) by (bit_vector);
+//     // i.e. assert((x as u64) == (x % (pow2(64) as u128)));
+
+//     // We can write
+//     // x = a + b * 2^64,
+//     // where a < 2^64
+//     // Then, a = (x as u64)
+
+//     // x = x % 2^64 + 2^64 * (x / 2^64)
+//     // conversely, x % 2^64 = x - 2^64 * (x / 2^64)
+//     lemma_fundamental_div_mod(x as int, pow2(64) as int);
+
+//     // We don't care about this bit so we hide it under a symbol
+//     let divCoef = (x / (pow2(64) as u128));
+//     assert((x as u64) == x - pow2(64) * divCoef);
+
+//     assert((x - pow2(64) * divCoef) % (pow2(k) as int) == x % (pow2(k) as u128)) by {
+//         lemma_pow2_pos(k); // pow2(k) > 0
+//         // (x - 2^64 * y) % 2^k = ( x % 2^k  - (2^64 * y) % 2^k ) % 2^k
+//         lemma_sub_mod_noop(x as int, (pow2(64) * divCoef) as int, (pow2(k) as int));
+//         // (2^64 * y) % 2^k = 0 since 2^k | 2^64
+//         assert( (pow2(64) * divCoef) % (pow2(k) as int) == 0) by {
+//             assert(pow2(64) * divCoef == pow2(k) * (pow2((64 - k) as nat) * divCoef)) by {
+//                 // 2^64 = 2^k * 2^(64 - k)
+//                 lemma_pow2_adds(k, (64 - k) as nat);
+//                 broadcast use lemma_mul_is_associative;
+//             }
+
+//             lemma_mod_multiples_basic((pow2((64 - k) as nat) * divCoef) as int, pow2(k) as int);
+//         }
+//         // (x % 2^k) % 2^k = x % 2^k
+//         lemma_mod_twice(x as int, pow2(k) as int );
+//     }
+//     assume(false);
+
+// }
 
 // dummy, so we can call `verus common_verus.rs`
 fn main() {}

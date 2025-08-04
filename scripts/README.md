@@ -180,7 +180,8 @@ The workflow can be tested in multiple ways without creating a PR:
   - **Depth**: Graph generation depth (default: 5)
 
 #### 2. Feature Branch Testing
-Push to branches matching these patterns:
+
+You can trigger the workflow by pushing to branches matching these patterns (e.g., `feature/*`, `test/*`, `graph-test/*`). This is useful for testing changes without opening a pull request. Unlike PR testing, the workflow will run on your branch, but it will **not** post comments to a pull request. Instead, you can view the workflow results directly in the "Actions" tab for your branch. This allows you to verify that the workflow completes successfully and review any generated artifacts before creating a PR.
 ```bash
 # Any of these will trigger the workflow
 git push origin feature/my-test

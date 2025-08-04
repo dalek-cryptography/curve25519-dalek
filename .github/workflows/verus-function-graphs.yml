@@ -21,6 +21,10 @@ on:
         description: 'Graph depth (default: 5)'
         required: false
         default: '5'
+      filter_sources:
+        description: 'Source filtering mode (none, filter-non-libsignal-sources, or custom filter)'
+        required: false
+        default: 'filter-non-libsignal-sources'
   
   # Allow testing on feature branches
   push:
@@ -46,17 +50,20 @@ jobs:
             echo "base_ref=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
             echo "test_mode=false" >> $GITHUB_OUTPUT
             echo "depth=5" >> $GITHUB_OUTPUT
+            echo "filter_sources=filter-non-libsignal-sources" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "mode=manual" >> $GITHUB_OUTPUT
             echo "base_ref=origin/${{ github.event.inputs.base_ref || 'main' }}" >> $GITHUB_OUTPUT
             echo "test_mode=${{ github.event.inputs.test_mode || 'false' }}" >> $GITHUB_OUTPUT
             echo "depth=${{ github.event.inputs.depth || '5' }}" >> $GITHUB_OUTPUT
+            echo "filter_sources=${{ github.event.inputs.filter_sources || 'filter-non-libsignal-sources' }}" >> $GITHUB_OUTPUT
           else
             # Push to feature branch
             echo "mode=push" >> $GITHUB_OUTPUT
             echo "base_ref=origin/main" >> $GITHUB_OUTPUT
             echo "test_mode=true" >> $GITHUB_OUTPUT
             echo "depth=5" >> $GITHUB_OUTPUT
+            echo "filter_sources=filter-non-libsignal-sources" >> $GITHUB_OUTPUT
           fi
           
           echo "Event: ${{ github.event_name }}"
@@ -108,9 +115,13 @@ jobs:
 
       - name: Download rust-analyzer-test dependencies
         run: |
-          # Clone the rust-analyzer-test repository
+          # Clone the rust-analyzer-test repository at a specific commit for security and reproducibility
           echo "Cloning rust-analyzer-test repository..."
           git clone https://github.com/Beneficial-AI-Foundation/rust-analyzer-test.git /tmp/rust-analyzer-test
+          cd /tmp/rust-analyzer-test
+          # Pin to a specific commit hash for security and reproducibility
+          git checkout f390ad68f810047e88ec7072584a9ee7573190fe
+          cd -
           
           # Copy the SCIP JSON file from the cloned repository
           echo "Using SCIP JSON file from repository..."
@@ -204,14 +215,25 @@ jobs:
             # Step 2: Generate call graphs using the dedicated script
             echo "Generating call graphs..."
             echo "Graph depth: ${{ steps.context.outputs.depth }}"
-            python3 scripts/generate_dependency_graphs.py \
+            echo "Filter sources: ${{ steps.context.outputs.filter_sources }}"
+            
+            # Build the command with optional filter flag
+            GRAPH_CMD="python3 scripts/generate_dependency_graphs.py \
               /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot \
               index_scip_libsignal_deps.json \
               function_symbol_mapping.txt \
               function_graphs \
               --depth ${{ steps.context.outputs.depth }} \
               --summary graph_summary.md \
-              --successful-list successful_graphs.txt
+              --successful-list successful_graphs.txt"
+            
+            # Add filter flag if not 'none'
+            if [[ "${{ steps.context.outputs.filter_sources }}" != "none" ]]; then
+              GRAPH_CMD="$GRAPH_CMD --filter-sources ${{ steps.context.outputs.filter_sources }}"
+            fi
+            
+            echo "Running command: $GRAPH_CMD"
+            eval $GRAPH_CMD
             
           else
             echo "No functions to process"
@@ -281,7 +303,7 @@ jobs:
               comment += '- **Edges**: Call relationships between functions\n';
               comment += '- **Focus**: Paths from Verus-verified functions to libsignal functions\n';
               comment += `- **Depth**: Up to ${{ steps.context.outputs.depth }} levels of function calls\n`;
-              comment += '- **Filtering**: Non-libsignal sources are filtered out for clarity\n\n';
+              comment += `- **Filtering**: ${{ steps.context.outputs.filter_sources }} mode\n\n`;
               
               comment += '---\n';
               comment += '*This analysis was automatically generated for newly verified Verus functions in this PR.*';
@@ -309,6 +331,7 @@ jobs:
           echo "Branch: ${{ github.ref_name }}"
           echo "Base ref: ${{ steps.context.outputs.base_ref }}"
           echo "Depth: ${{ steps.context.outputs.depth }}"
+          echo "Filter sources: ${{ steps.context.outputs.filter_sources }}"
           echo ""
           
           if [[ -f graph_summary.md ]]; then

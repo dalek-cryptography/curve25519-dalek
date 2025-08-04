@@ -13,11 +13,12 @@ import os
 
 
 class CallGraphGenerator:
-    def __init__(self, graph_tool_path, scip_file, output_dir):
+    def __init__(self, graph_tool_path, scip_file, output_dir, filter_sources=None):
         """Initialize the call graph generator."""
         self.graph_tool_path = Path(graph_tool_path)
         self.scip_file = Path(scip_file)
         self.output_dir = Path(output_dir)
+        self.filter_sources = filter_sources
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Verify tool exists
@@ -41,10 +42,16 @@ class CallGraphGenerator:
             str(self.scip_file),
             str(output_dot),
             symbol_id,
-            "--filter-non-libsignal-sources",
+        ]
+        
+        # Add filter flag if specified
+        if self.filter_sources:
+            cmd.append(f"--{self.filter_sources}")
+        
+        cmd.extend([
             "--include-callers",
             "--depth", str(depth)
-        ]
+        ])
         
         try:
             # Run the graph generation tool
@@ -197,12 +204,14 @@ def main():
     parser.add_argument('--depth', type=int, default=5, help='Graph depth (default: 5)')
     parser.add_argument('--summary', help='Output file for summary report')
     parser.add_argument('--successful-list', help='Output file for list of successful functions')
+    parser.add_argument('--filter-sources', 
+                       help='Filter flag to pass to graph tool (e.g., "filter-non-libsignal-sources")')
     
     args = parser.parse_args()
     
     try:
         # Create generator
-        generator = CallGraphGenerator(args.graph_tool, args.scip_file, args.output_dir)
+        generator = CallGraphGenerator(args.graph_tool, args.scip_file, args.output_dir, args.filter_sources)
         
         # Generate graphs
         results = generator.generate_graphs_from_mapping(args.mapping_file, args.depth)

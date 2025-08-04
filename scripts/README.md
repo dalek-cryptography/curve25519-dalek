@@ -76,9 +76,11 @@ This directory contains Python scripts that support the automated generation of 
 - `--depth`: Graph depth (default: 5)
 - `--summary`: Output file for summary report
 - `--successful-list`: Output file for list of successful functions
+- `--filter-sources`: Source filtering mode (e.g., "filter-non-libsignal-sources", "none", or custom filter)
 
 **Features**:
 - Coordinates the entire graph generation process
+- Configurable source filtering for different project types
 - Handles timeouts and error recovery
 - Converts DOT files to SVG and PNG formats
 - Creates detailed summary reports
@@ -94,6 +96,22 @@ This directory contains Python scripts that support the automated generation of 
   output_graphs/ \
   --summary report.md \
   --successful-list success.txt
+
+# Generate graphs with libsignal filtering for libsignal projects
+./generate_dependency_graphs.py \
+  /path/to/tool \
+  scip_data.json \
+  mapping.txt \
+  output_graphs/ \
+  --filter-sources filter-non-libsignal-sources
+
+# Generate graphs without any filtering
+./generate_dependency_graphs.py \
+  /path/to/tool \
+  scip_data.json \
+  mapping.txt \
+  output_graphs/ \
+  --filter-sources none
 ```
 
 ### 🖼️ `create_graph_gallery.py`

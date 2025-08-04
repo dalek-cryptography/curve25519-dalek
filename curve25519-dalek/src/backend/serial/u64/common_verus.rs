@@ -466,12 +466,12 @@ pub proof fn lemma_mod_sum_factor(a: int, b: int, m: int)
 
 pub proof fn lemma_mod_diff_factor(a: int, b: int, m: int)
     requires
-        m > 0
+        m > 0,
     ensures
         (b - a * m) % m == b % m
 {
     // (b - a * m) % m == (b % m - (a * m) % m) % m
-    lemma_sub_mod_noop(a * m, b, m);
+    lemma_sub_mod_noop(b, a * m, m);
     // (a * m) % m == 0
     lemma_mod_multiples_basic(a, m);
     // b % m % m = b % m

@@ -166,48 +166,19 @@ pub proof fn lemma_shr_51_fits_u64(a: u128)
     lemma_shr_51_le(a, (u64::MAX as u128) << 51);
 }
 
-pub proof fn lemma_mod_decomposition(a: nat, b: nat, c: nat, d: nat)
-    requires
-        a > 0
+// Auxiliary datatype lemma
+// Should work for any k <= 64, but the proofs are convoluted and we can't use BV
+// (x as u64) = x % 2^64, so x = 2^64 * (x / 2^64) + (x as u64). Thus
+// (x as u64) % 2^k = (x as u64) % 2^k, because 2^k | 2^64 * (...) for k <= 64
+pub proof fn lemma_cast_then_mod_51(x: u128)
     ensures
-        (c * (a + b) * d) % a == (c * (b * d)) % a
+        (x as u64) % (pow2(51) as u64) == x % (pow2(51) as u128)
 {
-    // Hints for the solver
-    assert(a * (c * d) == (c * d) * a);
-
-    assert(b * (c * d) == c * (b * d)) by {
-        broadcast use lemma_mul_is_associative;
-    }
-
-    assert( c * (a + b) * d ==
-        (c * d) * (a + b)
-    ) by {
-        broadcast use lemma_mul_is_associative;
-    }
-
-    assert( (c * d) * (a + b) ==
-        a * (c * d) + b * (c * d)
-    ) by {
-        broadcast use lemma_mul_is_distributive_add;
-    }
-
-    assert((a * (c * d) + b * (c * d)) % a ==
-        (((a * (c * d)) % a) + ((b * (c * d)) % a)) % a
-    ) by {
-        lemma_add_mod_noop((a * (c * d)) as int, (b * (c * d)) as int, a as int);
-    }
-
-    assert((a * (c * d) + b * (c * d)) % a ==
-        ((b * (c * d)) % a) % a ==
-        ((b * (c * d)) % a)
-    ) by {
-        // cd * a % a == 0
-        lemma_mod_multiples_basic((c * d) as int, a as int);
-        broadcast use lemma_mod_twice;
-    }
-
+    lemma2_to64_rest(); // pow2(51 | 64)
+    assert( (x as u64) % 0x8000000000000 == x % 0x8000000000000) by (bit_vector);
 }
 
+// Explicit and mod-p identities for squaring as_nat conversion
 pub proof fn as_nat_squared(v: [u64; 5])
     ensures
         as_nat(v) * as_nat(v) ==
@@ -438,7 +409,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
         lemma_mul_is_distributive_add(c0_x19 as int, p() as int, 19);
     }
 
-    // in summary, we can reorder and regroup terns to get X * p() + Y
+    // in summary, we can reorder and regroup terms to get X * p() + Y
     assert(as_nat(v) * as_nat(v) ==
         p() * ( s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19 ) +
         (
@@ -472,8 +443,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(as_nat(v) * as_nat(v) == k * p() + sum);
     assert(k * p() + sum == (k as nat) * p() + (sum as nat));
 
-    // // Now, we simply move to mod p
-    // assert( (k * p() + sum) % p() == sum % p());
+    // Now, we simply move to mod p
 
     assert((as_nat(v) * as_nat(v)) % p() == ((k as nat) * p() + (sum as nat)) % p() );
     assert(
@@ -489,6 +459,19 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(s2 * c2 == pow2(2 * 51) * (v[1] * v[1] + 2 * (v[0] *  v[2]) + 19 * (2 * (v[3] * v[4]))));
     assert(s1 * c1 == pow2(1 * 51) * (2 * (v[0] *  v[1]) + 19 * (v[3] * v[3] + 2 * (v[2] * v[4]))));
     assert(c0 == (v[0] *  v[0] + 19 * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4]))));
+}
+
+// Auxiliary lemma for reordering terms in the pow2k proof
+pub proof fn lemma_reorder_mul(a: int, b: int)
+    ensures
+        2 * (a * (19 * b)) == 19 * (2 * (a * b))
+{
+    // 2*( a * (19 * b)) = (2 * a) * (19 * b)
+    lemma_mul_is_associative(2, a, 19 * b);
+    // (2 * a) * (19 * b) = (19 * b) * (2 * a) = 19 * (b * (2 * a))
+    lemma_mul_is_associative(19, b, 2 * a);
+    // (b * (2 * a)) = (b * (a * 2)) = 2 * (a * b)
+    lemma_mul_is_associative(b, a, 2);
 }
 
 // dummy, so we can call `verus`

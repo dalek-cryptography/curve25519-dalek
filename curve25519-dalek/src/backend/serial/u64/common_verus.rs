@@ -1,6 +1,7 @@
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
+use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
@@ -355,6 +356,7 @@ pub proof fn masked_lt(v: u64, k: nat)
     shift_is_pow2(k);
 }
 
+// a < b => (2^a - 1) < (2^b - 1)
 pub proof fn low_bits_mask_increases(a: nat, b: nat)
     requires
         a < b
@@ -379,6 +381,7 @@ pub proof fn low_bits_mask_increases(a: nat, b: nat)
 
 }
 
+// k <= 64 => 2^k - 1 <= u64::MAX = 2^64 - 1
 pub proof fn low_bits_masks_fit_u64(k: nat)
     requires
         k <= 64
@@ -433,6 +436,60 @@ pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
         (x as u128) * (y as u128) < (bx as u128) * (by as u128)
 {
     mul_lt(x as nat, bx as nat, y as nat, by as nat);
+}
+
+// (v^(2^k))^2 = v^(2^(k + 1))
+pub proof fn lemma_pow2_square(v: int, i: nat)
+    ensures
+        pow(v, pow2(i)) * pow(v, pow2(i)) == pow(v, pow2(i + 1))
+{
+    // pow(v, pow2(i)) * pow(v, pow2(i)) = pow(v, pow2(i) + pow2(i));
+    lemma_pow_adds(v as int, pow2(i), pow2(i));
+    // 2 * pow2(i) = pow2(i + 1)
+    lemma_pow2_unfold(i + 1);
+}
+
+// Combination of mod lemmas, (b +- a * m) % m = b % m
+pub proof fn lemma_mod_sum_factor(a: int, b: int, m: int)
+    requires
+        m > 0
+    ensures
+        (a * m + b) % m == b % m
+{
+    // (a * m + b) % m == ((a * m) % m + b % m) % m
+    lemma_add_mod_noop(a * m, b, m);
+    // (a * m) % m == 0
+    lemma_mod_multiples_basic(a, m);
+    // b % m % m = b % m
+    lemma_mod_twice(b, m);
+}
+
+pub proof fn lemma_mod_diff_factor(a: int, b: int, m: int)
+    requires
+        m > 0,
+    ensures
+        (b - a * m) % m == b % m
+{
+    // (b - a * m) % m == (b % m - (a * m) % m) % m
+    lemma_sub_mod_noop(b, a * m, m);
+    // (a * m) % m == 0
+    lemma_mod_multiples_basic(a, m);
+    // b % m % m = b % m
+    lemma_mod_twice(b, m);
+}
+
+// v^(2^i) >= 0
+pub proof fn lemma_pow_nat_is_nat(v: nat, i: nat)
+    ensures
+        pow(v as int, pow2(i)) >= 0
+{
+    lemma_pow2_pos(i); // pow2(i) > 0
+    if (v == 0) {
+        lemma0_pow(pow2(i));
+    }
+    else {
+        lemma_pow_positive(v as int, pow2(i));
+    }
 }
 
 // dummy, so we can call `verus common_verus.rs`

@@ -461,6 +461,40 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(c0 == (v[0] *  v[0] + 19 * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4]))));
 }
 
+pub proof fn as_nat_k(a: [u64;5], k: u64)
+    requires
+        forall |i:int| 0 <= i < 5 ==> (k * a[i]) <= u64::MAX
+    ensures
+        as_nat([
+            (k * a[0]) as u64,
+            (k * a[1]) as u64,
+            (k * a[2]) as u64,
+            (k * a[3]) as u64,
+            (k * a[4]) as u64
+            ]) == k * as_nat(a)
+{
+    let ka = [
+            (k * a[0]) as u64,
+            (k * a[1]) as u64,
+            (k * a[2]) as u64,
+            (k * a[3]) as u64,
+            (k * a[4]) as u64
+            ];
+    lemma_mul_is_associative(pow2( 51) as int, a[1] as int, k as int);
+    lemma_mul_is_associative(pow2(102) as int, a[2] as int, k as int);
+    lemma_mul_is_associative(pow2(153) as int, a[3] as int, k as int);
+    lemma_mul_is_associative(pow2(204) as int, a[4] as int, k as int);
+
+    assert(as_nat(ka) ==
+        k * a[0] +
+        k * (pow2( 51) * a[1]) +
+        k * (pow2(102) * a[2]) +
+        k * (pow2(153) * a[3]) +
+        k * (pow2(204) * a[4])
+    );
+    broadcast use lemma_mul_is_distributive_add;
+}
+
 // Auxiliary lemma for reordering terms in the pow2k proof
 pub proof fn lemma_reorder_mul(a: int, b: int)
     ensures

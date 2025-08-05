@@ -704,7 +704,8 @@ impl FieldElement51 {
             k > 0, // debug_assert!( k > 0 );
             forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54 // 51 + b for b = 3
         ensures
-            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(k as nat)) as nat % p(),
+            forall |i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
+            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(k as nat)) as nat % p()
     {
         let mut a: [u64; 5] = self.limbs;
 
@@ -1205,11 +1206,13 @@ impl FieldElement51 {
             // The precondition in pow2k loop propagates to here
             forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54
         ensures
-            // TODO
-            // as_nat(square(x)) = as_nat(x) * as_nat(x)
-            true
+            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p()
 
     {
+        proof {
+            // pow2(1) == 2
+            lemma2_to64();
+        }
         self.pow2k(1)
     }
 
@@ -1219,15 +1222,78 @@ impl FieldElement51 {
             // The precondition in pow2k loop propagates to here
             forall |i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54
         ensures
-            // TODO
-            // as_nat(square2(x)) = 2 * as_nat(x) * as_nat(x)
-            true
+            as_nat(r.limbs) % p() == (2 * pow(as_nat(self.limbs) as int, 2)) as nat % p()
     {
         let mut square = self.pow2k(1);
-        for i in 0..5 {
-            proof {
-                assume(false);
+
+        // invisible to Rust, can be referenced in proofs
+        // Since square is mut, we save the initial value
+        let ghost old_limbs = square.limbs;
+
+        proof {
+            // forall |i: int| 0 <= i < 5 ==> 2 * old_limbs[i] <= u64::MAX
+            assert forall |i: int| 0 <= i < 5 implies 2 * square.limbs[i] <= u64::MAX by {
+                // if LHS < RHS, then 2 * LHS < 2 * RHS
+                lemma_mul_left_inequality(2, square.limbs[i] as int, (1u64 << 54) as int);
+                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
             }
+
+            let ka = [
+                (2 * square.limbs[0]) as u64,
+                (2 * square.limbs[1]) as u64,
+                (2 * square.limbs[2]) as u64,
+                (2 * square.limbs[3]) as u64,
+                (2 * square.limbs[4]) as u64
+            ];
+
+            // as_nat(ka) == 2 * as_nat(square.limbs)
+            // and
+            // as_nat(ka) % p() == (2 * as_nat(square.limbs)) % p()
+            as_nat_k(square.limbs, 2);
+
+            // By pow2k ensures:
+            // as_nat(square.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(1)) as nat % p()
+            // We just need pow2(1) == 2
+            lemma2_to64();
+
+            // p > 0
+            pow255_gt_19();
+
+            assert(as_nat(ka) % p() ==
+                ((2nat % p()) * (as_nat(square.limbs) % p())) % p()
+                ==
+                ((2nat % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p()
+            ) by {
+                lemma_mul_mod_noop(2, as_nat(square.limbs) as int, p() as int);
+            }
+
+            // as_nat(self.limbs)^2 >= 0
+            assert(pow(as_nat(self.limbs) as int, 2) >= 0) by {
+                lemma_pow_nat_is_nat(as_nat(self.limbs), 1);
+            }
+
+            assert(
+                ((2nat % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p()
+                ==
+                (2 * (pow(as_nat(self.limbs) as int, 2))) as nat % p()
+            ) by {
+                lemma_mul_mod_noop(2, pow(as_nat(self.limbs) as int, 2) as int, p() as int);
+            }
+
+            assert(as_nat(ka) % p() == (2 * (pow(as_nat(self.limbs) as int, 2))) as nat % p());
+        }
+
+        for i in 0..5
+            invariant
+                forall |j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 54),
+                forall |j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
+                forall |j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
+        {
+            proof {
+                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
+                lemma_mul_left_inequality(2, square.limbs[i as int] as int, (1u64 << 54) as int);
+            }
+
             square.limbs[i] *= 2;
         }
 

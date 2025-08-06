@@ -1291,7 +1291,7 @@ impl FieldElement51 {
         {
             proof {
                 assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
-                lemma_mul_left_inequality(2, square.limbs[i as int] as int, (1u64 << 54) as int);
+                lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 54) as int, 2);
             }
 
             square.limbs[i] *= 2;

@@ -1290,14 +1290,10 @@ impl FieldElement51 {
                 forall |j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
             {
             proof {
-                assert(square.limbs[i as int] < 1u64 << 54);
-                assert((square.limbs[i as int] as int) < (1u64 << 54) as int);
-                assert( square.limbs[i as int] * 2 <  (1u64 << 54) * 2) by
                     {
                     lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 54) as int, 2);
                     }
                 assert( (1u64 << 54) * 2 == 2u64 << 54 ) by (compute);
-                assert( square.limbs[i as int] * 2 <  2u64 << 54);
             }
 
             square.limbs[i] *= 2;

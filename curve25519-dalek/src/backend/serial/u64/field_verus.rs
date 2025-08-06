@@ -1285,7 +1285,7 @@ impl FieldElement51 {
 
         for i in 0..5
             invariant
-                forall |j : int| i <= j < 5 ==> square.limbs[j as int] < 1u64 << 54,
+                forall |j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 54),
                 forall |j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
                 forall |j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
             {

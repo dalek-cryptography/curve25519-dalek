@@ -121,7 +121,7 @@ impl Scalar52 {
         let mask = (1u64 << 52) - 1;
         let top_mask = (1u64 << 48) - 1;
         let mut s = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
-
+        //test workflow graphs
         s.limbs[0] =   words[0]                            & mask;
         s.limbs[1] = ((words[0] >> 52) | (words[1] << 12)) & mask;
         s.limbs[2] = ((words[1] >> 40) | (words[2] << 24)) & mask;

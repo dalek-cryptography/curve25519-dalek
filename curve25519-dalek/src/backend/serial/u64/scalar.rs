@@ -99,7 +99,7 @@ impl Scalar52 {
             invariant 0 <= i <= 4 // proof
         {
             for j in 0..8
-                invariant 0 <= j <= 8 && i < 4
+                invariant 0 <= j <= 8 && i < 9
             {
                 proof {
                     assert(i < 4 && j < 8);

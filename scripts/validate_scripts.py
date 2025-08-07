@@ -117,12 +117,13 @@ index 1234567..abcdefg 100644
 """
     
     sys.path.insert(0, str(Path(__file__).parent))
-    from find_new_verus_functions import extract_added_verus_functions
+    from find_changed_verus_constructs import extract_changed_verus_constructs
     
-    functions = extract_added_verus_functions(mock_diff)
+    constructs = extract_changed_verus_constructs(mock_diff)
+    all_functions = constructs['all']
     
-    assert 'new_verified_function' in functions, "Function not detected in diff"
-    print(f"Detected functions: {functions}")
+    assert 'new_verified_function' in all_functions, "Function not detected in diff"
+    print(f"Detected functions: {all_functions}")
     print("✓ Function detector test passed")
 
 def main():

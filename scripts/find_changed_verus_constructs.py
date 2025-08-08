@@ -155,6 +155,65 @@ def is_inside_verus_context(lines: List[str], line_idx: int) -> bool:
     return False
 
 
+def has_verus_syntax_in_function(lines: List[str], func_name: str, all_functions_in_diff: Dict[str, Tuple[int, bool]]) -> bool:
+    """Check if a function contains Verus-specific syntax in its body."""
+    if func_name not in all_functions_in_diff:
+        return False
+    
+    func_def_line, _ = all_functions_in_diff[func_name]
+    
+    # Look for Verus-specific patterns in the function body
+    verus_patterns = [
+        r'assert\s*\([^)]+\)\s*by\s*\(',  # assert(...) by (...)
+        r'proof\s*\{',                    # proof { ... }
+        r'requires\s',                    # requires clause
+        r'ensures\s',                     # ensures clause
+        r'decreases\s',                   # decreases clause
+        r'invariant\s',                   # invariant clause
+        r'recommends\s',                  # recommends clause
+        r'\bspec\b',                      # spec keyword
+        r'\bproof\b',                     # proof keyword (in context)
+        r'\bexec\b',                      # exec keyword
+        r'broadcast\s+use',               # broadcast use
+        r'assume\s*\(',                   # assume(...)
+    ]
+    
+    # Search from function definition until next function or end of scope
+    search_end = len(lines)
+    brace_count = 0
+    found_opening_brace = False
+    
+    # Find the end of this function by counting braces
+    for i in range(func_def_line, len(lines)):
+        line = lines[i]
+        clean_line = line[1:] if line and line[0] in ['+', '-', ' '] else line
+        
+        # Count braces to find function end
+        for char in clean_line:
+            if char == '{':
+                brace_count += 1
+                found_opening_brace = True
+            elif char == '}':
+                brace_count -= 1
+                if found_opening_brace and brace_count == 0:
+                    search_end = i + 1
+                    break
+        
+        if found_opening_brace and brace_count == 0:
+            break
+    
+    # Search for Verus patterns in the function body
+    for i in range(func_def_line, search_end):
+        line = lines[i]
+        clean_line = line[1:] if line and line[0] in ['+', '-', ' '] else line
+        
+        for pattern in verus_patterns:
+            if re.search(pattern, clean_line):
+                return True
+    
+    return False
+
+
 def extract_changed_verus_constructs(diff_output: str) -> Dict[str, List[str]]:
     """Extract Verus constructs (functions) that were added or modified from git diff output."""
     constructs = {
@@ -228,6 +287,11 @@ def extract_changed_verus_constructs(diff_output: str) -> Dict[str, List[str]]:
                 if re.search(r'(?:proof|spec|exec|open|closed)\s+fn', clean_func_line):
                     is_verus = True
                     print(f"DEBUG: Function '{enclosing_func}' is a proof/spec/exec function", file=sys.stderr)
+            
+            # Check 4: Does the function contain Verus-specific syntax?
+            if not is_verus and has_verus_syntax_in_function(lines, enclosing_func, all_functions_in_diff):
+                is_verus = True
+                print(f"DEBUG: Function '{enclosing_func}' contains Verus-specific syntax", file=sys.stderr)
             
             if is_verus:
                 changed_functions.add(enclosing_func)

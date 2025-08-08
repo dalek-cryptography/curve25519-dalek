@@ -195,7 +195,10 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * a2 + pow2(153) * b3 +
         pow2(204) * a3 + pow2(204) * b4
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
+        lemma_mul_is_distributive_add(pow2( 51) as int, a0 as int, b1 as int);
+        lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
+        lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
+        lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
     }
 
     // factor out
@@ -220,6 +223,9 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(204) * b4 + 19 * a4
     ) by {
         broadcast use lemma_mul_is_distributive_add;
+        // lemma_mul_is_distributive_add(pow2( 51) as int, b1 as int, pow2(51) * a1);
+        // lemma_mul_is_distributive_add(pow2(102) as int, b2 as int, pow2(51) * a2);
+        // lemma_mul_is_distributive_add(pow2(153) as int, b3 as int, pow2(51) * a3);
     }
 
     // invoke div/mod identity

@@ -13,12 +13,14 @@ import os
 
 
 class CallGraphGenerator:
-    def __init__(self, graph_tool_path, scip_file, output_dir, filter_sources=None):
+    def __init__(self, graph_tool_path, scip_file, output_dir, filter_sources=None, include_callees=False, include_callers=False):
         """Initialize the call graph generator."""
         self.graph_tool_path = Path(graph_tool_path)
         self.scip_file = Path(scip_file)
         self.output_dir = Path(output_dir)
         self.filter_sources = filter_sources
+        self.include_callees = include_callees
+        self.include_callers = include_callers
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Verify tool exists
@@ -48,8 +50,13 @@ class CallGraphGenerator:
         if self.filter_sources:
             cmd.append(f"--{self.filter_sources}")
         
+        # Add include flags if specified
+        if self.include_callees:
+            cmd.append("--include-callees")
+        if self.include_callers:
+            cmd.append("--include-callers")
+            
         cmd.extend([
-            "--include-callers",
             "--depth", str(depth)
         ])
         
@@ -206,12 +213,17 @@ def main():
     parser.add_argument('--successful-list', help='Output file for list of successful functions')
     parser.add_argument('--filter-sources', 
                        help='Filter flag to pass to graph tool (e.g., "filter-non-libsignal-sources")')
+    parser.add_argument('--include-callees', action='store_true', 
+                       help='Include callees in the graph (functions called by the target)')
+    parser.add_argument('--include-callers', action='store_true',
+                       help='Include callers in the graph (functions that call the target)')
     
     args = parser.parse_args()
     
     try:
         # Create generator
-        generator = CallGraphGenerator(args.graph_tool, args.scip_file, args.output_dir, args.filter_sources)
+        generator = CallGraphGenerator(args.graph_tool, args.scip_file, args.output_dir, 
+                                     args.filter_sources, args.include_callees, args.include_callers)
         
         # Generate graphs
         results = generator.generate_graphs_from_mapping(args.mapping_file, args.depth)

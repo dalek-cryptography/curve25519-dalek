@@ -110,7 +110,10 @@ pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
         pow2(153) * a[3] - pow2(153) * b[3] +
         pow2(204) * a[4] - pow2(204) * b[4]
     ) by {
-        broadcast use lemma_mul_is_distributive_sub;
+        lemma_mul_is_distributive_sub(pow2(1 * 51) as int, a[1] as int, b[1] as int);
+        lemma_mul_is_distributive_sub(pow2(2 * 51) as int, a[2] as int, b[2] as int);
+        lemma_mul_is_distributive_sub(pow2(3 * 51) as int, a[3] as int, b[3] as int);
+        lemma_mul_is_distributive_sub(pow2(4 * 51) as int, a[4] as int, b[4] as int);
     }
 }
 
@@ -626,10 +629,6 @@ pub proof fn as_nat_k(a: [u64;5], k: u64)
             (k * a[3]) as u64,
             (k * a[4]) as u64
             ];
-    lemma_mul_is_associative(pow2( 51) as int, a[1] as int, k as int);
-    lemma_mul_is_associative(pow2(102) as int, a[2] as int, k as int);
-    lemma_mul_is_associative(pow2(153) as int, a[3] as int, k as int);
-    lemma_mul_is_associative(pow2(204) as int, a[4] as int, k as int);
 
     assert(as_nat(ka) ==
         k * a[0] +
@@ -637,8 +636,33 @@ pub proof fn as_nat_k(a: [u64;5], k: u64)
         k * (pow2(102) * a[2]) +
         k * (pow2(153) * a[3]) +
         k * (pow2(204) * a[4])
-    );
-    broadcast use lemma_mul_is_distributive_add;
+    ) by {
+        lemma_mul_is_associative(pow2( 51) as int, a[1] as int, k as int);
+        lemma_mul_is_associative(pow2(102) as int, a[2] as int, k as int);
+        lemma_mul_is_associative(pow2(153) as int, a[3] as int, k as int);
+        lemma_mul_is_associative(pow2(204) as int, a[4] as int, k as int);
+    }
+
+    assert(
+        k * a[0] +
+        k * (pow2( 51) * a[1]) +
+        k * (pow2(102) * a[2]) +
+        k * (pow2(153) * a[3]) +
+        k * (pow2(204) * a[4])
+        ==
+        k * (
+            a[0] +
+            (pow2( 51) * a[1]) +
+            (pow2(102) * a[2]) +
+            (pow2(153) * a[3]) +
+            (pow2(204) * a[4])
+        )
+    ) by {
+        lemma_mul_is_distributive_add(k as int, a[0] as int, pow2( 51) * a[1]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1], pow2(102) * a[2]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1] + pow2(102) * a[2], pow2(153) * a[3]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1] + pow2(102) * a[2] + pow2(153) * a[3], (pow2(204) * a[4]));
+    }
 }
 
 // Auxiliary lemma for reordering terms in the pow2k proof

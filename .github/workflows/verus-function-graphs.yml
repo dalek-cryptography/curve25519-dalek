@@ -567,33 +567,6 @@ jobs:
             index.scip
           retention-days: 30
 
-      - name: Find largest PNG for preview
-        id: find-largest-png
-        run: |
-          if [[ -d function_graphs && $(find function_graphs -name "*.png" | wc -l) -gt 0 ]]; then
-            # Find the largest PNG file by file size
-            LARGEST_PNG=$(find function_graphs -name "*.png" -exec ls -la {} \; | sort -k5 -nr | head -1 | awk '{print $NF}')
-            echo "largest_png=$LARGEST_PNG" >> $GITHUB_OUTPUT
-            echo "Found largest PNG: $LARGEST_PNG ($(du -h "$LARGEST_PNG" | cut -f1))"
-            
-            # Get the function name for the largest PNG
-            FUNCTION_NAME=$(basename "$LARGEST_PNG" .png)
-            echo "function_name=$FUNCTION_NAME" >> $GITHUB_OUTPUT
-            
-            # Convert PNG to base64 for inline display
-            PNG_BASE64=$(base64 -w 0 "$LARGEST_PNG")
-            echo "png_size=$(echo -n "$PNG_BASE64" | wc -c)" >> $GITHUB_OUTPUT
-            
-            # Store base64 in a file to avoid GitHub output size limits
-            echo "$PNG_BASE64" > largest_png_base64.txt
-            echo "Encoded PNG to base64 ($(echo -n "$PNG_BASE64" | wc -c) chars)"
-          else
-            echo "largest_png=" >> $GITHUB_OUTPUT
-            echo "function_name=" >> $GITHUB_OUTPUT
-            echo "png_size=0" >> $GITHUB_OUTPUT
-            echo "No PNG files found"
-          fi
-
       - name: Comment on PR with results
         uses: actions/github-script@v7
         if: always() && github.event_name == 'pull_request'
@@ -613,36 +586,6 @@ jobs:
                 
                 if (successfulGraphs.length > 0) {
                   comment += `📊 **Generated ${successfulGraphs.length} call graph${successfulGraphs.length > 1 ? 's' : ''}** for changed Verus constructs\n\n`;
-                  
-                  // Show the largest PNG as inline base64 image if available and not too large
-                  const largestPng = '${{ steps.find-largest-png.outputs.largest_png }}';
-                  const functionName = '${{ steps.find-largest-png.outputs.function_name }}';
-                  const pngSize = parseInt('${{ steps.find-largest-png.outputs.png_size }}');
-                  
-                  if (largestPng && functionName) {
-                    comment += `### Preview (largest graph): \`${functionName}\`\n\n`;
-
-                    // GitHub has limits on comment size (65536 chars), so only embed if very small
-                    // Base64 adds ~33% overhead, so max PNG should be ~30KB to stay under limit
-                    if (pngSize > 0 && pngSize < 30000 && fs.existsSync('largest_png_base64.txt')) {
-                      try {
-                        const base64Data = fs.readFileSync('largest_png_base64.txt', 'utf8').trim();
-                        // Double check total comment size won't exceed GitHub limit
-                        if ((comment.length + base64Data.length + 200) < 60000) {
-                          comment += `<img src="data:image/png;base64,${base64Data}" alt="${functionName} call graph" width="600">\n\n`;
-                          comment += `*Graph shows call dependencies for \`${functionName}\` (depth ${{ steps.context.outputs.depth }})*\n\n`;
-                        } else {
-                          comment += `*Preview unavailable (would exceed GitHub comment limit)*\n\n`;
-                        }
-                      } catch (e) {
-                        comment += `*Preview unavailable (error loading image)*\n\n`;
-                      }
-                    } else if (pngSize >= 30000) {
-                      comment += `*Preview unavailable (image too large: ${Math.round(pngSize/1024)}KB, GitHub limit ~30KB)*\n\n`;
-                    } else {
-                      comment += `*Preview unavailable (please download artifact)*\n\n`;
-                    }
-                  }
                   
                   comment += '### 📥 Download All Graphs\n\n';
                   comment += `[**Download Complete Artifact**](${context.payload.repository.html_url}/actions/runs/${context.runId}) `;

@@ -106,7 +106,8 @@ pub proof fn shl_decomposition(v: u64, a: nat, b: nat)
         lemma_u64_shl_is_mul(v, (a + b) as u64);
         // v << a = v * 2^a
         lemma_u64_shl_is_mul(v, a as u64);
-        broadcast use lemma_mul_is_associative; // (v * 2^a) * 2^b = v * (2^a * 2^b)
+        // (v * 2^a) * 2^b = v * (2^a * 2^b)
+        lemma_mul_is_associative(v as int, pow2(a) as int, pow2(b) as int);
         // (v * 2^a) << b = (v * 2^a) * 2^b
         lemma_u64_shl_is_mul((v * pow2(a)) as u64, b as u64);
     }
@@ -170,7 +171,7 @@ pub proof fn shl_nondecreasing(v: u64, a: nat, b: nat)
         lemma_pow2_adds(a, d as nat);
 
         assert( (v << (d as u64)) * pow2(a) <= u64::MAX ) by {
-            broadcast use lemma_mul_is_associative;
+            lemma_mul_is_associative(v as int, pow2(d as nat) as int, pow2(a) as int);
         }
 
         // [v <= v << d] => [(v << a) <= (v << d) << a]

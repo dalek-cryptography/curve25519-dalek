@@ -228,7 +228,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(s1 * s4 == s4 * s1 == s5) by {
         lemma_pow2_adds(51, 204)
     }
-    assert(s2 * s2 ==s4) by {
+    assert(s2 * s2 == s4) by {
         lemma_pow2_adds(102, 102)
     }
     assert(s2 * s3 == s3 * s2 == s5) by {
@@ -489,8 +489,44 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s1 * (s5 * c1_x19 + c1_base) +
              (s5 * c0_x19 + c0_base)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        // s3 terms
+        assert(
+            s8 * c3_x19 + s3 * c3_base
+            ==
+            s3 * (s5 * c3_x19 + c3_base)
+        ) by {
+            assert(s8 == (s3 * s5)) by {
+                lemma_pow2_adds(3 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s3 as int, s5 as int, c3_x19);
+            lemma_mul_is_distributive_add(s3 as int, s5 * c3_x19, c3_base)
+        }
+
+        // s2 terms
+        assert(
+            s7 * c2_x19 + s2 * c2_base
+            ==
+            s2 * (s5 * c2_x19 + c2_base)
+        ) by {
+            assert(s7 == (s2 * s5)) by {
+                lemma_pow2_adds(2 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s2 as int, s5 as int, c2_x19);
+            lemma_mul_is_distributive_add(s2 as int, s5 * c2_x19, c2_base)
+        }
+
+        // s1 terms
+        assert(
+            s6 * c1_x19 + s1 * c1_base
+            ==
+            s1 * (s5 * c1_x19 + c1_base)
+        ) by {
+            assert(s6 == (s1 * s5)) by {
+                lemma_pow2_adds(1 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s1 as int, s5 as int, c1_x19);
+            lemma_mul_is_distributive_add(s1 as int, s5 * c1_x19, c1_base)
+        }
     }
 
     // Next we use the identity s5 = p + 19
@@ -521,14 +557,23 @@ pub proof fn as_nat_squared(v: [u64; 5])
                  c0
         )
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        // we don't broadcast assoc, too many trigger matches
-        lemma_mul_is_associative(s3 as int, p() as int, c3_x19 as int);
-        lemma_mul_is_associative(s2 as int, p() as int, c2_x19 as int);
-        lemma_mul_is_associative(s1 as int, p() as int, c1_x19 as int);
-        lemma_mul_is_associative(p() as int, s3 as int, c3_x19 as int);
-        lemma_mul_is_associative(p() as int, s2 as int, c2_x19 as int);
-        lemma_mul_is_associative(p() as int, s1 as int, c1_x19 as int);
+        lemma_mul_is_distributive_add(s3 as int, p() * c3_x19, c3 as int);
+        lemma_mul_is_distributive_add(s2 as int, p() * c2_x19, c2 as int);
+        lemma_mul_is_distributive_add(s1 as int, p() * c1_x19, c1 as int);
+
+        assert(
+            s3 * (p() * c3_x19) + s2 * (p() * c2_x19) + s1 * (p() * c1_x19) + p() * c0_x19
+            ==
+            p() * ( s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19 )
+        ) by {
+            lemma_mul_is_associative(s3 as int, c3_x19 as int, p() as int);
+            lemma_mul_is_associative(s2 as int, c2_x19 as int, p() as int);
+            lemma_mul_is_associative(s1 as int, c1_x19 as int, p() as int);
+
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19, s2 * c2_x19);
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19, s1 * c1_x19);
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19, c0_x19 as int);
+        }
     }
 
 

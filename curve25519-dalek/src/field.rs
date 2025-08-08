@@ -266,7 +266,7 @@ impl FieldElement {
     /// Raise this field element to the power (p-5)/8 = 2^252 -3.
     #[rustfmt::skip] // keep alignment of explanatory comments
     #[allow(clippy::let_and_return)]
-    fn pow_p58(&self) -> FieldElement {
+    pub(crate) fn pow_p58(&self) -> FieldElement {
         // The bits of (p-5)/8 are 101111.....11.
         //
         //                                 nonzero bits of exponent
@@ -354,60 +354,137 @@ impl FieldElement {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform hashing to a [`FieldElement`], per the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
-    /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
+    /// Hashes the given message and domain separator to produce `COUNT` [`FieldElement`]s, per RFC
+    /// 9380. The hash's input is the concatenation of the elements of `msg`. Likewise for the
+    /// domain separator with `domain_sep`. At least one element of `domain_sep`, MUST be nonempty,
+    /// its concatenation MUST NOT exceed 255 bytes, and `COUNT` MUST be 1 or 2.
+    ///
+    /// The specification names SHA-512 as an example of a secure hash to use with this function,
+    /// but you may use any 512-bit hash within reason (see the
+    /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).
     ///
     /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
-    pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2` or
+    /// `COUNT == 0`.
+    pub fn hash_to_field<D, const COUNT: usize>(
+        msg: &[&[u8]],
+        domain_sep: &[&[u8]],
+    ) -> [Self; COUNT]
     where
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
-        let l_i_b_str = 48u16.to_be_bytes();
-        let z_pad = Array::<u8, D::BlockSize>::default();
+        // We only use `hash_to_field` for Elligator2, which uses 0 < COUNT <= 2
+        assert!(COUNT == 1 || COUNT == 2);
 
-        let mut hasher = D::new().chain_update(z_pad);
+        // §5.2, we generate count * m * L = COUNT * 1 * (256 + 128)/8 bytes
+        let len_in_bytes = COUNT * 48;
+        // Buffer should hold however many digests we need to produce len_in_bytes bytes.
+        // len_in_bytes is at most 2*48=96, and the digest is 64B. So that's 2 digests, or 128B
+        let mut buf = [0u8; 128];
+        // We can call this without worrying about panics: len_in_bytes is at most 96, and buf is
+        // bigger than it. Further, if `domain_sep` is too large, that's also a panic condition of
+        // this function so it's fine
+        let uniform_bytes = expand_msg_xmd::<D>(msg, domain_sep, &mut buf, len_in_bytes);
 
-        for slice in bytes {
-            hasher = hasher.chain_update(slice);
+        let mut result = [FieldElement::ONE; COUNT];
+        for i in 0..COUNT {
+            let mut bytes_wide = [0u8; 64];
+            bytes_wide[..48].copy_from_slice(&uniform_bytes[48 * i..48 * (i + 1)]);
+            bytes_wide[..48].reverse();
+
+            result[i] = FieldElement::from_bytes_wide(&bytes_wide);
         }
 
-        hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
-
-        let mut domain_sep_len = 0usize;
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice);
-            domain_sep_len += slice.len();
-        }
-
-        let domain_sep_len = u8::try_from(domain_sep_len)
-            .expect("Unexpected overflow from domain separator's size.");
-        assert_ne!(
-            domain_sep_len, 0,
-            "Domain separator MUST have nonzero length."
-        );
-
-        let b_0 = hasher.chain_update([domain_sep_len]).finalize();
-
-        let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
-
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice)
-        }
-
-        let b_1 = hasher.chain_update([domain_sep_len]).finalize();
-
-        // §5.2, we only generate count * m * L = 1 * 1 * (256 + 128)/8 = 48 bytes
-        let mut bytes_wide = [0u8; 64];
-        bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
-        bytes_wide[..48].reverse();
-
-        FieldElement::from_bytes_wide(&bytes_wide)
+        result
     }
+}
+
+/// Hashes the concatenation of the elements of `msg` with domain separator equal to the
+/// concatenation of `domain_sep`. The output is an `outlen`-length slice into `buf`. Follows
+/// https://www.rfc-editor.org/rfc/rfc9380.html#section-5.3.1
+///
+/// # Panics
+/// Panics if the domain separator is empty, if the total length of the domain separator is more
+/// than 255 bytes, if `outlen` is more than `255 * D::output_size()`, if `outlen is more than
+/// 65535, or if `dst.len() < outlen`.
+#[cfg(feature = "digest")]
+fn expand_msg_xmd<'a, D>(
+    msg: &[&[u8]],
+    domain_sep: &[&[u8]],
+    buf: &'a mut [u8],
+    outlen: usize,
+) -> &'a [u8]
+where
+    D: BlockSizeUser + Default + FixedOutput + HashMarker,
+{
+    use core::iter::once;
+
+    // The notation we use in this function is the same as in the spec
+    let len_in_bytes = u16::try_from(outlen).expect("outlen must not exceed 65535");
+
+    assert!(buf.len() >= outlen);
+    let ell = u8::try_from((len_in_bytes as usize).div_ceil(D::output_size()))
+        .expect("output length cannot exceed 255 times digest size");
+    let domain_sep_len = u8::try_from(domain_sep.iter().map(|c| c.len()).sum::<usize>())
+        .expect("unexpected overflow from domain separator's size.");
+    assert_ne!(
+        domain_sep_len, 0,
+        "domain separator MUST have nonzero length."
+    );
+
+    let domain_sep_len_slice = &[domain_sep_len][..];
+    let dst_prime = domain_sep.iter().copied().chain(once(domain_sep_len_slice));
+    let z_pad = Array::<u8, D::BlockSize>::default();
+    let l_i_b_str = len_in_bytes.to_be_bytes();
+
+    // Collect the components of msg_prime
+    let msg_prime = once(z_pad.as_slice())
+        .chain(msg.iter().copied())
+        .chain(once(l_i_b_str.as_slice()))
+        .chain(once(&[0u8][..]))
+        .chain(dst_prime.clone());
+    // Hash all of msg_prime
+    let b_0 = msg_prime
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+
+    // Collect the input components for the b_1 hash
+    let b_1_input = once(b_0.as_slice())
+        .chain(once(&[1u8][..]))
+        .chain(dst_prime.clone());
+    let b_1 = b_1_input
+        .fold(D::new(), |h, slice| h.chain_update(slice))
+        .finalize();
+    // Write b_1 to the output buffer
+    buf[..D::output_size()].copy_from_slice(&b_1);
+
+    for i in 2..=ell {
+        // Get the last digest we produced
+        let i_ = i as usize;
+        let last_b = &buf[(i_ - 2) * D::output_size()..(i_ - 1) * D::output_size()];
+        // XOR it with b_0
+        let mut xor_bs = b_0.clone();
+        xor_bs
+            .as_mut_slice()
+            .iter_mut()
+            .zip(last_b)
+            .for_each(|(l, r)| *l ^= *r);
+
+        // Hash (b_0 ^ b_{i-1}) || i || dst_prime
+        let i_slice = &[i][..];
+        let b_i_input = once(xor_bs.as_slice())
+            .chain(once(i_slice))
+            .chain(dst_prime.clone());
+        let b_i = b_i_input
+            .fold(D::new(), |h, slice| h.chain_update(slice))
+            .finalize();
+
+        // Write b_i to the output buffer
+        buf[(i_ - 1) * D::output_size()..i_ * D::output_size()].copy_from_slice(&b_i);
+    }
+
+    &buf[..outlen]
 }
 
 #[cfg(test)]
@@ -721,8 +798,15 @@ mod test {
         }
     }
 
+    #[cfg(feature = "digest")]
+    fn fe_from_test_vector(expected_hex: &str) -> FieldElement {
+        let mut expected_hash = hex::decode(expected_hex).unwrap();
+        expected_hash.reverse();
+        FieldElement::from_bytes(&expected_hash.try_into().unwrap())
+    }
+
     /// Hash to field test vectors from
-    /// https://www.rfc-editor.org/rfc/rfc9380.html#name-edwards25519_xmdsha-512_ell2
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.2
     /// These are of the form (input_msg, output_field_elem)
     #[cfg(feature = "digest")]
     const RFC_HASH_TO_FIELD_KAT: &[(&[u8], &str)] = &[
@@ -761,14 +845,67 @@ mod test {
         let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_";
 
         for (msg, expected_hash_hex) in RFC_HASH_TO_FIELD_KAT {
-            let fe = FieldElement::hash_to_field::<Sha512>(&[msg], &[dst.as_bytes()]);
-            let expected_fe = {
-                let mut expected_hash = hex::decode(expected_hash_hex).unwrap();
-                expected_hash.reverse();
-                FieldElement::from_bytes(&expected_hash.try_into().unwrap())
-            };
+            let fe = FieldElement::hash_to_field::<Sha512, 1>(&[msg], &[dst.as_bytes()])[0];
+            let expected_fe = fe_from_test_vector(expected_hash_hex);
 
             assert_eq!(fe, expected_fe);
+        }
+    }
+
+    /// Hash to field test vectors from
+    /// https://www.rfc-editor.org/rfc/rfc9380.html#appendix-J.5.1
+    /// These are of the form (input_msg, output_field_elem, output_field_elem)
+    #[cfg(feature = "digest")]
+    const RFC_HASH_TO_FIELD_KAT_2: &[(&[u8], &str, &str)] = &[
+        (
+            b"",
+            "03fef4813c8cb5f98c6eef88fae174e6e7d5380de2b007799ac7ee712d203f3a",
+            "780bdddd137290c8f589dc687795aafae35f6b674668d92bf92ae793e6a60c75"
+        ),
+        (
+            b"abc",
+            "5081955c4141e4e7d02ec0e36becffaa1934df4d7a270f70679c78f9bd57c227",
+            "005bdc17a9b378b6272573a31b04361f21c371b256252ae5463119aa0b925b76"
+        ),
+        (
+            b"abcdef0123456789",
+            "285ebaa3be701b79871bcb6e225ecc9b0b32dff2d60424b4c50642636a78d5b3",
+            "2e253e6a0ef658fedb8e4bd6a62d1544fd6547922acb3598ec6b369760b81b31"
+        ),
+        (
+            b"q128_qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
+            qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+            "4fedd25431c41f2a606952e2945ef5e3ac905a42cf64b8b4d4a83c533bf321af",
+            "02f20716a5801b843987097a8276b6d869295b2e11253751ca72c109d37485a9"
+        ),
+        (
+            b"a512_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "6e34e04a5106e9bd59f64aba49601bf09d23b27f7b594e56d5de06df4a4ea33b",
+            "1c1c2cb59fc053f44b86c5d5eb8c1954b64976d0302d3729ff66e84068f5fd96"
+        )
+    ];
+
+    #[test]
+    #[cfg(feature = "digest")]
+    fn hash_to_field_2() {
+        use sha2::Sha512;
+        let dst = "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_";
+
+        for (msg, expected_hash_hex_1, expected_hash_hex_2) in
+            crate::field::test::RFC_HASH_TO_FIELD_KAT_2
+        {
+            let fe = FieldElement::hash_to_field::<Sha512, 2>(&[msg], &[dst.as_bytes()]);
+
+            let expected_fe_1 = fe_from_test_vector(expected_hash_hex_1);
+            assert_eq!(fe[0], expected_fe_1);
+
+            let expected_fe_2 = fe_from_test_vector(expected_hash_hex_2);
+            assert_eq!(fe[1], expected_fe_2);
         }
     }
 }

@@ -64,7 +64,7 @@ def isqrt_i(x):
     else: return False,1/sqrt(x*gen)
 
 class QuotientEdwardsPoint(object):
-    """Abstract class for point an a quotiented Edwards curve; needs F,a,d,cofactor to work"""
+    """Abstract class for point on a quotiented Edwards curve; needs F,a,d,cofactor to work"""
     def __init__(self,x=0,y=1):
         x = self.x = self.F(x)
         y = self.y = self.F(y)

@@ -354,14 +354,18 @@ impl FieldElement {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform hashing to a [`FieldElement`], per the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification,
-    /// using hash-based expansion (not XOF). The input is the concatenation of the elements of
-    /// `msg`. Likewise for the domain separator with `domain_sep`. At least one element of
-    /// `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
+    /// Hashes the given message and domain separator to produce `COUNT` [`FieldElement`]s, per RFC
+    /// 9380. The hash's input is the concatenation of the elements of `msg`. Likewise for the
+    /// domain separator with `domain_sep`. At least one element of `domain_sep`, MUST be nonempty,
+    /// its concatenation MUST NOT exceed 255 bytes, and `COUNT` MUST be 1 or 2.
+    ///
+    /// The specification names SHA-512 as an example of a secure hash to use with this function,
+    /// but you may use any 512-bit hash within reason (see the
+    /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).
     ///
     /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2`.
+    /// Panics if `domain_sep.collect().len() == 0` or `> 255`. Also panics if `COUNT > 2` or
+    /// `COUNT == 0`.
     pub fn hash_to_field<D, const COUNT: usize>(
         msg: &[&[u8]],
         domain_sep: &[&[u8]],
@@ -370,8 +374,8 @@ impl FieldElement {
         D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
         D::BlockSize: IsGreater<D::OutputSize, Output = True>,
     {
-        // We only use `hash_to_field` for Elligator2, which uses COUNT <= 2
-        assert!(COUNT <= 2);
+        // We only use `hash_to_field` for Elligator2, which uses 0 < COUNT <= 2
+        assert!(COUNT == 1 || COUNT == 2);
 
         // §5.2, we generate count * m * L = COUNT * 1 * (256 + 128)/8 bytes
         let len_in_bytes = COUNT * 48;

@@ -674,7 +674,7 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform encode to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// Perform encode to curve per RFC 9380, with explicit hash function and domain separator, `domain_sep`,
     /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
@@ -687,7 +687,7 @@ impl EdwardsPoint {
     /// are more likely to be output than others.
     ///
     /// If your application needs the distribution of the output to be statistically close to
-    /// uniform in `G`, use [hash_to_curve] instead.
+    /// uniform in `G`, use [Self::hash_to_curve] instead.
     ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`
@@ -705,7 +705,7 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform a hash to curve, with explicit hash function and domain separator, `domain_sep`,
+    /// Perform a hash to curve per RFC 9380, with explicit hash function and domain separator, `domain_sep`,
     /// using the suite `edwards25519_XMD:SHA-512_ELL2_RO_`. The input is the concatenation of the
     /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
     /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed

@@ -567,59 +567,6 @@ jobs:
             index.scip
           retention-days: 30
 
-      - name: Comment on PR with results
-        uses: actions/github-script@v7
-        if: always() && github.event_name == 'pull_request'
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            let comment = '## 🔍 Verus Function Call Graphs\n\n';
-            
-            try {
-              // Check if graphs were generated
-              if (fs.existsSync('successful_graphs.txt')) {
-                const successfulGraphs = fs.readFileSync('successful_graphs.txt', 'utf8')
-                  .split('\n')
-                  .filter(line => line.trim());
-                
-                if (successfulGraphs.length > 0) {
-                  comment += `📊 **Generated ${successfulGraphs.length} call graph${successfulGraphs.length > 1 ? 's' : ''}** for changed Verus constructs\n\n`;
-                  
-                  comment += '### 📥 Download All Graphs\n\n';
-                  comment += `[**Download Complete Artifact**](${context.payload.repository.html_url}/actions/runs/${context.runId}) `;
-                  comment += '→ Scroll to "Artifacts" → `verus-function-graphs`\n\n';
-                  comment += `Contains ${successfulGraphs.length} graphs in SVG, PNG, and DOT formats\n\n`;
-                } else {
-                  comment += '📊 No call graphs generated - no Verus constructs found in changes\n\n';
-                }
-              } else {
-                // Read the summary for error cases
-                if (fs.existsSync('graph_summary.md')) {
-                  const summary = fs.readFileSync('graph_summary.md', 'utf8');
-                  comment += summary + '\n';
-                } else {
-                  comment += '📊 No call graphs generated - no Verus constructs found in changes\n\n';
-                }
-              }
-              
-              comment += '---\n';
-              comment += `*Analysis depth: ${{ steps.context.outputs.depth }} • [View workflow details](${context.payload.repository.html_url}/actions/runs/${context.runId})*`;
-              
-            } catch (error) {
-              comment += '❌ **Error generating graphs**: ' + error.message + '\n\n';
-              comment += `[View workflow logs for details](${context.payload.repository.html_url}/actions/runs/${context.runId})`;
-            }
-            
-            // Post comment
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
       - name: Create graph gallery (if graphs exist)
         if: hashFiles('function_graphs/*.svg') != ''
         run: |

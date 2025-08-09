@@ -355,7 +355,7 @@ impl Scalar52 {
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
-                      borrow >> 63 == 0 ==> carry == difference.limbs[i-1]
+                      (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1]
         {
             let underflow = Choice::from((borrow >> 63) as u8);
             if (borrow >> 63 == 0) {
@@ -371,6 +371,15 @@ impl Scalar52 {
             }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
+            if (borrow >> 63 == 0) {
+                assert(carry == difference.limbs[i as int]);
+                assert( carry & mask == carry ) by (bit_vector)
+                    requires
+                    carry < 1u64 <<52,
+                    mask == (1u64 << 52) - 1;
+            }
+            assert( borrow >> 63 == 0 ==> carry == difference.limbs[i as int] );
+            assert( (i >= 1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int] );
             difference.limbs[i] = carry & mask;
             proof { lemma_carry_bounded_after_mask(carry, mask); }
         }

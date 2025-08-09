@@ -434,6 +434,14 @@ impl Scalar52 {
                             assert(carry == (old_carry >> 52) + old_difference.limbs[i as int] + constants::L.limbs[i as int]);
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + carry as nat * pow2(52 * i as nat); {
+                            assert(carry == (carry >> 52) * (1u64<<52) + (carry & mask)) by (bit_vector)
+                                requires mask == (1u64 << 52) - 1;
+                            assert(carry == (carry >> 52) * pow2(52) + difference.limbs[i as int]) by {
+                                lemma2_to64_rest();
+                                assert(0x10000000000000 == 1u64 << 52) by (compute_only);};
+                                assert(difference.limbs[i as int] == carry & mask);
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + ((carry >> 52) as nat * pow2(52) + difference.limbs[i as int] as nat) * pow2(52 * i as nat); {
                             assume(false);
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i+1)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat);

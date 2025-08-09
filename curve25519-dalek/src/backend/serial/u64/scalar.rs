@@ -297,6 +297,32 @@ impl Scalar52 {
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
             // CLAUDE
+            proof {
+                calc! {
+                    (==)
+                    seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1)); {
+                        lemma_seq_u64_to_nat_subrange_extend(a.limbs@, i as int);
+                        lemma_seq_u64_to_nat_subrange_extend(b.limbs@, i as int);
+                    }
+                    seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i] * pow2(52 * i as nat) - 
+                    (seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i] * pow2(52 * i as nat)); {
+                        // Rearrange terms
+                    }
+                    seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
+                    (a.limbs[i] - b.limbs[i]) * pow2(52 * i as nat); {
+                        // Use loop invariant
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (borrow >> 63) * pow2(52 * i as nat) +
+                    (a.limbs[i] - b.limbs[i]) * pow2(52 * i as nat); {
+                        // Note: borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63))
+                        // So: a.limbs[i] - b.limbs[i] - (borrow >> 63) = some value that when wrapped gives borrow
+                        // And: difference.limbs[i] = borrow & mask captures the low 52 bits
+                        lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                        // TODO: Need additional reasoning about wrapping_sub and masking
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+                }
+            }
             assert(seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1)) ==
                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat)));
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }

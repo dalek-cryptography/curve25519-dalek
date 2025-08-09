@@ -23,8 +23,8 @@ pub assume_specification [Choice::from](u: u8) -> (c: Choice)
 
 #[verifier::external_body]
 pub fn select(a: &u64, b: &u64, c: Choice) -> (res: u64)
-    ensures reveal_choice(c) == RevealedChoice::Choice1 ==> res == a,
-            reveal_choice(c) == RevealedChoice::Choice0 ==> res == b
+    ensures reveal_choice(c) == RevealedChoice::Choice0 ==> res == a,
+            reveal_choice(c) == RevealedChoice::Choice1 ==> res == b
 {
     u64::conditional_select(a, b, c)
 }

@@ -325,7 +325,7 @@ impl Scalar52 {
                         assume(false);
                         // Use loop invariant
                     }
-                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (borrow >> 63) * pow2(52 * i as nat) +
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (old_borrow >> 63) * pow2(52 * i as nat) +
                     (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {
                         // Note: borrow = a.limbs[i as int].wrapping_sub(b.limbs[i as int] + (borrow >> 63))
                         // So: a.limbs[i as int] - b.limbs[i as int] - (borrow >> 63) = some value that when wrapped gives borrow
@@ -357,7 +357,15 @@ impl Scalar52 {
                       i >= 1 ==> (carry >> 52) < 2,
         {
             let underflow = Choice::from((borrow >> 63) as u8);
+            if (borrow >> 63 == 0) {
+                assert(!boolify(underflow));
+            }
             let addend = select(&0, &constants::L.limbs[i], underflow);
+            if (borrow >> 63 == 0) {
+                assert(!boolify(underflow));
+                assert(! boolify(underflow) ==> addend == constants::L.limbs[i as int]);
+                assert(addend == constants::L.limbs[i as int]);
+            }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             difference.limbs[i] = carry & mask;

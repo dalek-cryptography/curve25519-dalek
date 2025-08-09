@@ -413,8 +413,7 @@ impl Scalar52 {
                         }
                         seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + old_difference.limbs[i as int] as nat * pow2(52 * i as nat) +
                         seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) + constants::L.limbs[i as int] as nat * pow2(52 * i as nat); {
-                            // Rearrange terms
-                            assume(false);  // Need arithmetic properties
+                            broadcast use group_mul_is_distributive;
                         }
                         seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {

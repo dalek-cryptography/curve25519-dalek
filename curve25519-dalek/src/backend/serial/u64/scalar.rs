@@ -486,6 +486,10 @@ impl Scalar52 {
             assert(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
         if borrow >> 63 == 1 {
+            assert(
+                          seq_u64_to_nat(old_difference.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) ==
+                          seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2(52 * 5 as nat)
+            );
             assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
         difference

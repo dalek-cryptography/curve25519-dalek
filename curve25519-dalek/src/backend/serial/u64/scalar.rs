@@ -520,6 +520,25 @@ impl Scalar52 {
             assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
                    seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
                    seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int))  );
+            assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
+                   to_nat(&a.limbs) - to_nat(&b.limbs) ==
+                   to_nat(&difference.limbs)  );
+            assume(to_nat(&constants::L.limbs) == group_order());
+            assume(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order());
+            assert(group_order() +
+                   to_nat(&a.limbs) - to_nat(&b.limbs) ==
+                   to_nat(&difference.limbs)  );
+            proof{
+                assert(group_order() > 0);
+                assert( (group_order() as int +
+                   to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) ==
+                         (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) )
+                    by
+                    {
+
+                lemma_mod_add_multiples_vanish((to_nat(&a.limbs) - to_nat(&b.limbs)) as int, group_order() as int);
+                    };
+            }
             assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
         difference

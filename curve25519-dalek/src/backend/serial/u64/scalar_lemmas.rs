@@ -406,4 +406,17 @@ pub proof fn lemma_bound_scalar(a: &Scalar52)
     // lemma_five_limbs_equals_to_nat(old_difference.limbs);
     assume(false);
 }
+
+pub proof fn lemma_general_bound(a: &[u64])
+    requires forall|i: int| 0 <= i < a.len() ==> a[i] < (1u64 << 52)
+    ensures to_nat(&a) < pow2((52 * a.len() as nat))
+{
+    if a.len() > 0 {
+        assert(seq_u64_to_nat(&a@.subrange(1, a.len())) < pow2((52 * (a.len() - 1) as nat)));
+    }
+    assume(false);
+
+        //a[0] + seq_to_nat(a.subrange(1, limbs.len() as int)) * pow2(52)
+}
+
 } // verus!

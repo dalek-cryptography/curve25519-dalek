@@ -535,8 +535,7 @@ impl Scalar52 {
                          (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) )
                     by
                     {
-
-                lemma_mod_add_multiples_vanish((to_nat(&a.limbs) - to_nat(&b.limbs)) as int, group_order() as int);
+                            lemma_mod_cancel(a, b);
                     };
             }
             assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));

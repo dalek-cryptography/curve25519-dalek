@@ -525,15 +525,21 @@ impl Scalar52 {
                    to_nat(&difference.limbs)  );
             assume(to_nat(&constants::L.limbs) == group_order());
             assume(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order());
-            assert(group_order() +
-                   to_nat(&a.limbs) - to_nat(&b.limbs) ==
-                   to_nat(&difference.limbs)  );
             assert(group_order() > 0);
-            assert( (group_order() as int +
-                to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) ==
-                        (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) )
-                by {lemma_mod_cancel(a, b);};
-            assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
+            proof{
+                calc! {
+                    (==)
+                    to_nat(&difference.limbs) as int; {
+                    }
+                    group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs); {
+                        assume(false);
+                    }
+                    (group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int); {
+                        lemma_mod_cancel(a, b);
+                    }
+                    (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int);
+                }
+            }
         }
         difference
     }

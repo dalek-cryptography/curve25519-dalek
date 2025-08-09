@@ -358,7 +358,10 @@ impl Scalar52 {
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
                       (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1],
-                      borrow >> 63 == 0 ==> old_difference == difference
+                      borrow >> 63 == 0 ==> old_difference == difference,
+                      borrow >> 63 == 1 ==>
+                          seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
+                          seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) * pow2(52 * i as nat)
 
         {
             let underflow = Choice::from((borrow >> 63) as u8);

@@ -20,6 +20,11 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
     seq_to_nat(limbs@.map(|i, x| x as nat))
 }
 
+pub open spec fn seq_u64_to_nat(limbs: Seq<u64>) -> nat
+{
+    seq_to_nat(limbs.map(|i, x| x as nat))
+}
+
 pub open spec fn to_nat(limbs: &[u64]) -> nat
 {
     seq_to_nat(limbs@.map(|i, x| x as nat))
@@ -126,6 +131,11 @@ pub open spec fn montgomery_radix() -> nat {
 // Check that all limbs of a Scalar52 are properly bounded (< 2^52)
 pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
     forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
+}
+
+
+pub open spec fn scalar_reduced(s: &Scalar52) -> bool {
+    to_nat(&s.limbs) < group_order()
 }
 
 } // verus!

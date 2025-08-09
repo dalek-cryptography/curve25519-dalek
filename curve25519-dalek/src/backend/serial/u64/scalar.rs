@@ -532,7 +532,15 @@ impl Scalar52 {
                     to_nat(&difference.limbs) as int; {
                     }
                     group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs); {
-                        assume(group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs) < group_order());
+                        assert(group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs) < group_order()) by {
+                            assert( seq_u64_to_nat(old_difference.limbs@.subrange(0, 5 as int)) == to_nat(&old_difference.limbs)) by {
+                                assert( seq_u64_to_nat(old_difference.limbs@) == to_nat(&old_difference.limbs));
+                                assert( old_difference.limbs@ == old_difference.limbs@.subrange(0, 5 as int));
+                            }
+                            assert(to_nat(&a.limbs) - to_nat(&b.limbs ) ==
+                            to_nat(&old_difference.limbs ) - pow2((52 * (5) as nat)) );
+                            assume(to_nat(&old_difference.limbs ) < pow2((52 * (5) as nat)) );
+                        };
                         lemma_small_mod((group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs)) as nat, group_order());
                     }
                     (group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int); {

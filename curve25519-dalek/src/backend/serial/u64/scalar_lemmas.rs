@@ -411,9 +411,9 @@ pub proof fn lemma_bound_scalar(a: &Scalar52)
     assert(a.limbs.len() as nat == 5);
 }
 
-pub proof fn lemma_general_bound(a: &[u64])
+pub proof fn lemma_general_bound(a: Seq<u64>)
     requires forall|i: int| 0 <= i < a.len() ==> a[i] < (1u64 << 52)
-    ensures to_nat(&a) < pow2((52 * a.len() as nat))
+    ensures seq_u64_to_nat(&a) < pow2((52 * a.len() as nat))
     decreases a.len()
 {
     if a.len() == 0 {
@@ -447,7 +447,8 @@ pub proof fn lemma_general_bound(a: &[u64])
             assert(seq_u64_to_nat(tail_seq) < pow2((52 * tail_seq.len() as nat)));
         } else {
             // For larger sequences, we'd need recursion but can assume it for now
-            assume(seq_u64_to_nat(tail_seq) < pow2((52 * tail_seq.len() as nat)));
+            lemma_general_bound(tail_seq);
+            assert(seq_u64_to_nat(tail_seq) < pow2((52 * tail_seq.len() as nat)));
         }
         
         // Now prove for the full sequence

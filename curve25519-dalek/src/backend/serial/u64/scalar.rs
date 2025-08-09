@@ -501,6 +501,19 @@ impl Scalar52 {
             assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
                    seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2(52 * 5 as nat)
                     - seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) - pow2((52 * (5) as nat)) );
+            assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
+                   seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                   seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2(52 * 5 as nat)
+                     - pow2((52 * (5) as nat)) );
+            if carry >> 52 == 0 {
+                // Get a contradiction because the sides in the above equation have different signs
+                assume(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
+                    seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) >=0);
+                assume(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) < pow2((52 * (5) as nat)));
+                assume((carry >> 52) * pow2(52 * 5 as nat) == 0);
+                assert(false);
+            }
+            assert(carry >> 52 ==1);
             assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
         difference

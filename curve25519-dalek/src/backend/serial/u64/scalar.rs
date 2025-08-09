@@ -528,16 +528,11 @@ impl Scalar52 {
             assert(group_order() +
                    to_nat(&a.limbs) - to_nat(&b.limbs) ==
                    to_nat(&difference.limbs)  );
-            proof{
-                assert(group_order() > 0);
-                assert( (group_order() as int +
-                   to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) ==
-                         (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) )
-                    by
-                    {
-                            lemma_mod_cancel(a, b);
-                    };
-            }
+            assert(group_order() > 0);
+            assert( (group_order() as int +
+                to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) ==
+                        (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) )
+                by {lemma_mod_cancel(a, b);};
             assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
         difference

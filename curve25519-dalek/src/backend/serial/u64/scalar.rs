@@ -372,7 +372,6 @@ impl Scalar52 {
 
         {
             let ghost old_carry = carry;
-            let ghost d = difference;
             let underflow = Choice::from((borrow >> 63) as u8);
             if (borrow >> 63 == 0) {
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0);
@@ -394,6 +393,7 @@ impl Scalar52 {
                     carry < 1u64 <<52,
                     mask == (1u64 << 52) - 1;
             }
+            let ghost difference_loop_start = difference;
             difference.limbs[i] = carry & mask;
             if (borrow >> 63 == 0) {
                 assert(old_difference.limbs[i as int] == difference.limbs[i as int]);
@@ -421,9 +421,9 @@ impl Scalar52 {
                         seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
                         }
-                        seq_u64_to_nat(d.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
+                        seq_u64_to_nat(difference_loop_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
-                            assert(d.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int) );
+                            assert(difference_loop_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int) );
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {

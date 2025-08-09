@@ -445,13 +445,12 @@ impl Scalar52 {
                             broadcast use lemma_mul_is_distributive_add_other_way;
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) as nat * pow2(52) * pow2(52 * i as nat) + difference.limbs[i as int] as nat * pow2(52 * i as nat); {
-                            assume(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat));
+                            assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
                             assert(52 + 52 * i as nat == 52 * (i+1) as nat);
-                            assert((carry >> 52) as nat * pow2(52) * pow2(52 * i as nat) == (carry >> 52) as nat * pow2(52 * (i+1) as nat))
-                                by {
+                            assert((carry >> 52) as nat * pow2(52) * pow2(52 * i as nat) == (carry >> 52) as nat * pow2(52 * (i+1) as nat)) by {
                                     assert(pow2(52) * pow2(52 * i as nat) == pow2(52 * (i+1) as nat));
                                     lemma_mul_is_associative((carry >> 52) as int, pow2(52) as int, pow2(52 * i as nat) as int);
-                                };
+                            };
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat) + difference.limbs[i as int] as nat * pow2(52 * i as nat); {
                             lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);

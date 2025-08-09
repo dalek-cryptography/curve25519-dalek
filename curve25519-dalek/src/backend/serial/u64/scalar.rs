@@ -358,13 +358,13 @@ impl Scalar52 {
         {
             let underflow = Choice::from((borrow >> 63) as u8);
             if (borrow >> 63 == 0) {
-                assert(!boolify(underflow));
+                assert(reveal_choice(underflow) == RevealedChoice::Choice0);
             }
             let addend = select(&0, &constants::L.limbs[i], underflow);
             if (borrow >> 63 == 0) {
-                assert(!boolify(underflow));
-                assert(! boolify(underflow) ==> addend == constants::L.limbs[i as int]);
-                assert(addend == constants::L.limbs[i as int]);
+                assert(reveal_choice(underflow) == RevealedChoice::Choice0);
+                assert(reveal_choice(underflow) == RevealedChoice::Choice0 ==> addend == 0);
+                assert(addend == 0);
             }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;

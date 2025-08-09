@@ -360,6 +360,7 @@ impl Scalar52 {
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
+                      forall|j: int| i <= j < 5 ==> difference.limbs[j] == old_difference.limbs[j],
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
@@ -430,9 +431,11 @@ impl Scalar52 {
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + ((old_carry >> 52) as nat +
                         old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
+                            assert(carry == (old_carry >> 52) + old_difference.limbs[i as int] + constants::L.limbs[i as int]);
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + carry as nat * pow2(52 * i as nat); {
                             assume(false);
                         }
-
                         seq_u64_to_nat(difference.limbs@.subrange(0, i+1)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat);
                     }
                 }

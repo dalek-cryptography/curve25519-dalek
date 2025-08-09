@@ -349,13 +349,16 @@ impl Scalar52 {
         // conditionally add l if the difference is negative
         assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;
+        let ghost old_difference = difference;
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
-                      (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1]
+                      (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1],
+                      borrow >> 63 == 0 ==> old_difference == difference
+
         {
             let underflow = Choice::from((borrow >> 63) as u8);
             if (borrow >> 63 == 0) {
@@ -379,6 +382,11 @@ impl Scalar52 {
                     mask == (1u64 << 52) - 1;
             }
             difference.limbs[i] = carry & mask;
+            if (borrow >> 63 == 0) {
+                assert(old_difference.limbs[i as int] == difference.limbs[i as int]);
+                assert(forall |j :int| 0<=j<5 ==> old_difference.limbs[j] == difference.limbs[j]);
+                assert(old_difference.limbs == difference.limbs);
+            }
             proof { lemma_carry_bounded_after_mask(carry, mask); }
         }
         assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));

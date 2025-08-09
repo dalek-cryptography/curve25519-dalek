@@ -390,11 +390,11 @@ pub proof fn lemma_rr_limbs_bounded()
     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
 
+/// Using lemma_mod_add_multiples_vanish in a big proof made the proof hang
 pub proof fn lemma_mod_cancel(a: &Scalar52, b: &Scalar52)
     ensures (group_order() + to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int) ==
             (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int)
 {
-    assume(false);
-// lemma_mod_add_multiples_vanish((to_nat(&a.limbs) - to_nat(&b.limbs)) as int, group_order() as int);
+    lemma_mod_add_multiples_vanish((to_nat(&a.limbs) - to_nat(&b.limbs)) as int, group_order() as int);
 }
 } // verus!

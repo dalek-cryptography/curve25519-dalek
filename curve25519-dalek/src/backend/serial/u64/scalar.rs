@@ -426,6 +426,10 @@ impl Scalar52 {
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
+                            broadcast use lemma_mul_is_distributive_add_other_way;
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + ((old_carry >> 52) as nat +
+                        old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
                             assume(false);
                         }
 

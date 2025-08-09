@@ -442,7 +442,16 @@ impl Scalar52 {
                                 assert(difference.limbs[i as int] == carry & mask);
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + ((carry >> 52) as nat * pow2(52) + difference.limbs[i as int] as nat) * pow2(52 * i as nat); {
+                            broadcast use lemma_mul_is_distributive_add_other_way;
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) as nat * pow2(52) * pow2(52 * i as nat) + difference.limbs[i as int] as nat * pow2(52 * i as nat); {
+                            //lemma_pow2_pow2(52, 52 * i as nat);
                             assume(false);
+                            assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat));
+                            assert(52 + 52 * i as nat == 52 * (i + 1) as nat);
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat) + difference.limbs[i as int] as nat * pow2(52 * i as nat); {
+                            lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i+1)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat);
                     }

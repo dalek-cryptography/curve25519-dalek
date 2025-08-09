@@ -265,7 +265,7 @@ impl Scalar52 {
         limbs_bounded(b),
         scalar_reduced(b),
     ensures
-        to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
+        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int)
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}
@@ -389,7 +389,26 @@ impl Scalar52 {
             }
             proof { lemma_carry_bounded_after_mask(carry, mask); }
         }
-        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));
+        if borrow >> 63 == 0 {
+
+            assert(              seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                                        seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)) );
+            assert(              seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                                        seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) );
+            assert( seq_u64_to_nat(a.limbs@) == to_nat(&a.limbs));
+            assert( a.limbs@ == a.limbs@.subrange(0, 5 as int));
+            assert( seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs));
+            assert( seq_u64_to_nat(b.limbs@) == to_nat(&b.limbs));
+            assert( b.limbs@ == b.limbs@.subrange(0, 5 as int));
+            assert( seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs));
+            assert( seq_u64_to_nat(difference.limbs@) == to_nat(&difference.limbs));
+            assert( difference.limbs@ == difference.limbs@.subrange(0, 5 as int));
+            assert( seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs));
+            assert(              to_nat(&a.limbs) - to_nat(&b.limbs) ==
+                                        to_nat(&difference.limbs) );
+            assert(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
+        }
+        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         difference
     }
 

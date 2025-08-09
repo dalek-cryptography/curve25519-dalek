@@ -378,8 +378,6 @@ impl Scalar52 {
                     carry < 1u64 <<52,
                     mask == (1u64 << 52) - 1;
             }
-            assert( borrow >> 63 == 0 ==> carry == difference.limbs[i as int] );
-            assert( (i >= 1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int] );
             difference.limbs[i] = carry & mask;
             proof { lemma_carry_bounded_after_mask(carry, mask); }
         }

@@ -398,7 +398,7 @@ impl Scalar52 {
                 assert(old_difference.limbs == difference.limbs);
             }
             // Prove the invariant for borrow >> 63 == 1 case
-            if (borrow >> 63 == 1 && i < 4) {
+            if (borrow >> 63 == 1) {
                 proof {
                     // When underflow, addend = L.limbs[i]
                     assert(reveal_choice(underflow) == RevealedChoice::Choice1);

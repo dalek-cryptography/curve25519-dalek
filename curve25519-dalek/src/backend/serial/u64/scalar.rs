@@ -351,6 +351,11 @@ impl Scalar52 {
         assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;
         let ghost old_difference = difference;
+        assert(seq_u64_to_nat(old_difference.limbs@.subrange(0, 0 as int)) == 0);
+        assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 0 as int)) == 0);
+        assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
+        assert(pow2(52 * 0 as nat) == 1);
+        assert((carry >> 52) as nat * pow2(52 * 0 as nat) == 0);
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
@@ -359,7 +364,7 @@ impl Scalar52 {
                       i >= 1 ==> (carry >> 52) < 2,
                       (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1],
                       borrow >> 63 == 0 ==> old_difference == difference,
-                      borrow >> 63 == 1 && i > 0 ==>
+                      borrow >> 63 == 1 ==>
                           seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
                           seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) * pow2(52 * i as nat)
 
@@ -399,34 +404,23 @@ impl Scalar52 {
                     assert(addend == constants::L.limbs[i as int]);
                     // carry = (old_carry >> 52) + old_difference.limbs[i] + L.limbs[i]
                     // difference.limbs[i] = carry & mask
-                    
-                    if i > 0 {
-                        // Use the invariant from the previous iteration
-                        calc! {
-                            (==)
-                            seq_u64_to_nat(old_difference.limbs@.subrange(0, i+1)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i+1)); {
-                                lemma_seq_u64_to_nat_subrange_extend(old_difference.limbs@, i as int);
-                                lemma_seq_u64_to_nat_subrange_extend(constants::L.limbs@, i as int);
-                            }
-                            seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + old_difference.limbs[i as int] as nat * pow2(52 * i as nat) +
-                            seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) + constants::L.limbs[i as int] as nat * pow2(52 * i as nat); {
-                                // Rearrange terms
-                                assume(false);  // Need arithmetic properties
-                            }
-                            seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) +
-                            (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
-                                // Use loop invariant and properties of carry
-                                assume(false);
-                            }
-                            seq_u64_to_nat(difference.limbs@.subrange(0, i+1)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat);
+                    calc! {
+                        (==)
+                        seq_u64_to_nat(old_difference.limbs@.subrange(0, i+1)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i+1)); {
+                            lemma_seq_u64_to_nat_subrange_extend(old_difference.limbs@, i as int);
+                            lemma_seq_u64_to_nat_subrange_extend(constants::L.limbs@, i as int);
                         }
-                    } else {
-                        // Base case: i == 0
-                        assert(seq_u64_to_nat(old_difference.limbs@.subrange(0, 0 as int)) == 0);
-                        assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 0 as int)) == 0);
-                        assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
-                        assert(pow2(52 * 0 as nat) == 1);
-                        assert((carry >> 52) as nat * pow2(52 * 0 as nat) == 0);
+                        seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + old_difference.limbs[i as int] as nat * pow2(52 * i as nat) +
+                        seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) + constants::L.limbs[i as int] as nat * pow2(52 * i as nat); {
+                            // Rearrange terms
+                            assume(false);  // Need arithmetic properties
+                        }
+                        seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) +
+                        (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
+                            // Use loop invariant and properties of carry
+                            assume(false);
+                        }
+                        seq_u64_to_nat(difference.limbs@.subrange(0, i+1)) + (carry >> 52) as nat * pow2(52 * (i+1) as nat);
                     }
                 }
             }

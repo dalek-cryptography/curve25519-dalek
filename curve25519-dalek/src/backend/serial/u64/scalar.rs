@@ -254,11 +254,17 @@ impl Scalar52 {
 
     }
 
+    pub open spec fn scalar_reduced(s: &Scalar52) -> bool {
+        to_nat(&s.limbs) < group_order()
+    }
+
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
         limbs_bounded(a),
+        scalar_reduced(a),
         limbs_bounded(b),
+        scalar_reduced(b),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
     {

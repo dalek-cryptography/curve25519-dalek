@@ -29,6 +29,8 @@ use super::subtle_assumes::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 use vstd::calc;
+#[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
 
 verus! {
 /// The `Scalar52` struct represents an element in
@@ -295,8 +297,14 @@ impl Scalar52 {
                                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int )) - (borrow >> 63) * pow2((52 * (i) as nat))
         {
             proof { assert ((borrow >> 63) < 2) by (bit_vector); }
+            let ghost old_borrow = borrow;
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
+            // assert(
+
+            //           seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
+            //                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int )) - (old_borrow >> 63) * pow2((52 * (i) as nat))
+            // );
             // CLAUDE
             proof {
                 calc! {
@@ -307,10 +315,14 @@ impl Scalar52 {
                     }
                     seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i as int] * pow2(52 * i as nat) -
                     (seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i as int] * pow2(52 * i as nat)); {
-                        // Rearrange terms
+                        assume(false);
+                        //broadcast use group_mul_is_commutative_and_distributive;
+                        //broadcast use lemma_mul_is_associative;
                     }
                     seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
                     (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {
+
+                        assume(false);
                         // Use loop invariant
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (borrow >> 63) * pow2(52 * i as nat) +
@@ -319,6 +331,7 @@ impl Scalar52 {
                         // So: a.limbs[i as int] - b.limbs[i as int] - (borrow >> 63) = some value that when wrapped gives borrow
                         // And: difference.limbs[i as int] = borrow & mask captures the low 52 bits
                         lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                        assume(false);
                         // TODO: Need additional reasoning about wrapping_sub and masking
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));

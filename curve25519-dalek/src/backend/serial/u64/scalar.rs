@@ -354,7 +354,8 @@ impl Scalar52 {
         assert(seq_u64_to_nat(old_difference.limbs@.subrange(0, 0 as int)) == 0);
         assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 0 as int)) == 0);
         assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
-        assert(pow2(52 * 0 as nat) == 1);
+        assert(carry >> 52 == 0) by (bit_vector)
+            requires carry == 0;
         assert((carry >> 52) as nat * pow2(52 * 0 as nat) == 0);
         for i in 0..5
             invariant

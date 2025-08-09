@@ -31,6 +31,7 @@ use vstd::prelude::*;
 use vstd::calc;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+use vstd::arithmetic::div_mod::*;
 
 verus! {
 /// The `Scalar52` struct represents an element in
@@ -406,9 +407,16 @@ impl Scalar52 {
             assert( seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs));
             assert(              to_nat(&a.limbs) - to_nat(&b.limbs) ==
                                         to_nat(&difference.limbs) );
+            assert(to_nat(&a.limbs) - to_nat(&b.limbs) >= 0);
+            assert(to_nat(&a.limbs) - to_nat(&b.limbs) < group_order());
+            proof{
+                lemma_small_mod((to_nat(&a.limbs) - to_nat(&b.limbs)) as nat, group_order());
+            }
             assert(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
         }
-        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
+        if borrow >> 63 == 1 {
+            assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int));
+        }
         difference
     }
 

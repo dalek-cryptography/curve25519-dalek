@@ -297,12 +297,6 @@ impl Scalar52 {
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference.limbs[i] = borrow & mask;
             // CLAUDE
-            // At this point in iteration i:
-            // - borrow contains the full 64-bit result of a.limbs[i] - b.limbs[i] - (previous borrow)
-            // - difference.limbs[i] contains the low 52 bits of borrow
-            // - borrow >> 63 is either 0 (no borrow needed) or 1 (borrow needed for next iteration)
-            // Mathematical relationship: to_nat(a[0..i+1]) - to_nat(b[0..i+1]) = to_nat(difference[0..i+1]) - (borrow >> 63) * 2^(52*(i+1))
-            // The correction term represents the borrow that will be subtracted from the next higher limb
             assert(seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1)) ==
                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat)));
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }

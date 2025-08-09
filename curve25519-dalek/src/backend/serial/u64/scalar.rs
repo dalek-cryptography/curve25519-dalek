@@ -279,8 +279,8 @@ impl Scalar52 {
                                     seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int ))
 
         );
-        assert( (0 >> 63) == 0 ) by (bit_vector);
-        assert( (borrow >> 63) == 0 );
+        assert( (borrow >> 63) == 0 ) by (bit_vector)
+            requires borrow == 0;
         assert( (borrow >> 63) * pow2((52 * (0) as nat)) == 0 );
         assert(
 
@@ -355,6 +355,7 @@ impl Scalar52 {
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
+                      borrow >> 63 == 0 ==> carry == difference.limbs[i-1]
         {
             let underflow = Choice::from((borrow >> 63) as u8);
             if (borrow >> 63 == 0) {
@@ -365,6 +366,8 @@ impl Scalar52 {
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0);
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0 ==> addend == 0);
                 assert(addend == 0);
+                assert(carry >> 52 == 0) by (bit_vector)
+                    requires carry < 1u64 <<52;
             }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;

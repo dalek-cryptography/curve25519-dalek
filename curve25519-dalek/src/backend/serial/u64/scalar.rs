@@ -539,7 +539,7 @@ impl Scalar52 {
                             }
                             assert(to_nat(&a.limbs) - to_nat(&b.limbs ) ==
                             to_nat(&old_difference.limbs ) - pow2((52 * (5) as nat)) );
-                            assume(to_nat(&old_difference.limbs ) < pow2((52 * (5) as nat)) );
+                            lemma_bound_scalar(&old_difference);
                         };
                         lemma_small_mod((group_order() as int + to_nat(&a.limbs) - to_nat(&b.limbs)) as nat, group_order());
                     }

@@ -397,4 +397,13 @@ pub proof fn lemma_mod_cancel(a: &Scalar52, b: &Scalar52)
 {
     lemma_mod_add_multiples_vanish((to_nat(&a.limbs) - to_nat(&b.limbs)) as int, group_order() as int);
 }
+
+
+pub proof fn lemma_bound_scalar(a: &Scalar52)
+    requires limbs_bounded(a)
+    ensures to_nat(&a.limbs ) < pow2((52 * (5) as nat))
+{
+    // lemma_five_limbs_equals_to_nat(old_difference.limbs);
+    assume(false);
+}
 } // verus!

@@ -236,6 +236,16 @@ ensures
     }
 }
 
+pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
+    requires
+        0 <= i < seq.len(),
+    ensures
+        seq_u64_to_nat(seq.subrange(0, i + 1)) == 
+        seq_u64_to_nat(seq.subrange(0, i)) + seq[i] * pow2(52 * i as nat)
+{
+    assume(false); // TODO: Prove this lemma
+}
+
 
 pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, l_value: &Scalar52)
     requires

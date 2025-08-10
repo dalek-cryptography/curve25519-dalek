@@ -63,23 +63,24 @@ proof fn lemma_l_equals_group_order()
         to_nat(&constants::L.limbs) == group_order(),
         seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order()
 {
-    // Constants L is defined to represent the group order
-    // L = [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000]
-    // These values when interpreted as limbs in base 2^52 represent exactly the group order
-    
     // First show that the subrange equals the full array
     assert(constants::L.limbs@ == constants::L.limbs@.subrange(0, 5 as int));
     assert(seq_u64_to_nat(constants::L.limbs@) == seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)));
     assert(to_nat(&constants::L.limbs) == seq_u64_to_nat(constants::L.limbs@));
     
-    // Now we need to verify that these specific limb values represent group_order()
-    // group_order() = 2^252 + 27742317777372353535851937790883648493
-    // This is a mathematical fact about the curve25519 group order
+    assert(pow2(52) == 0x10000000000000) by {lemma2_to64_rest();};
+    lemma_pow2_adds(52, 52);
+    assert(pow2(104) == 0x100000000000000000000000000);
+    lemma_pow2_adds(104, 104);
+    assert(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
+    assert(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000) by
+    {
+        assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
+        lemma_pow2_adds(63, 63);
+        assert(pow2(126) == 0x40000000000000000000000000000000);
+        lemma_pow2_adds(126, 126);
+    }
     lemma_five_limbs_equals_to_nat(&constants::L.limbs);
-    assume(pow2(52) == 0x10000000000000);
-    assume(pow2(104) == 0x100000000000000000000000000);
-    assume(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
-    assume(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000);
     assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 

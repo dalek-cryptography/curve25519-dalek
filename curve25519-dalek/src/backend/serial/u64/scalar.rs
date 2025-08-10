@@ -292,6 +292,7 @@ impl Scalar52 {
         for i in 0..5
             invariant
                       limbs_bounded(b),
+                      limbs_bounded(a),
                       forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
                       mask == (1u64 << 52) - 1,
                       seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
@@ -358,6 +359,11 @@ impl Scalar52 {
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
                                     (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {
                                         lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                                    assert (borrow < 1u64 << 52) by {
+                                        assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
+                                        assert(a.limbs[i as int] < (1u64 << 52));
+                                        assert((b.limbs[i as int] + (old_borrow >> 63)) as u64 >= 0);
+                                    }
                                     assume(borrow >> 52 == 0);
                                     assume(borrow >> 63 == 0);
                                     }

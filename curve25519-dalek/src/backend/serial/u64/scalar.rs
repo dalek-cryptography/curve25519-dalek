@@ -314,8 +314,8 @@ impl Scalar52 {
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 
-        assert(              seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
-                                     seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)) );
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)) );
         // conditionally add l if the difference is negative
         assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;
@@ -325,7 +325,6 @@ impl Scalar52 {
         assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
         assert(carry >> 52 == 0) by (bit_vector)
             requires carry == 0;
-        assert((carry >> 52) as nat * pow2(52 * 0 as nat) == 0);
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop

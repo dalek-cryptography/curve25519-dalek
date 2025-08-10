@@ -558,7 +558,11 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
             if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
 
                 assert(borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52)) by {
+                    assert(old_borrow >> 63 <= 1) by (bit_vector);
+                    assert(b.limbs[i as int] <= (1u64 << 52) - 1);
                     assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+                    assert((b.limbs[i as int] + (old_borrow >> 63)) as u64 <= 1u64 << 52);
+                    assert(borrow >= (a.limbs[i as int] - (1u64 << 52) + 0x1_0000_0000_0000_0000) as u64);
                 };
                 calc! {
                     (==)

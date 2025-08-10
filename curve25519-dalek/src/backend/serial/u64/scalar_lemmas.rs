@@ -248,10 +248,37 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
         reveal_with_fuel(seq_to_nat, 3);
         assert(seq.len()>0);
         assert(seq.subrange(0, 1) == seq![seq[0]]);
-        assert(seq_u64_to_nat(seq.subrange(0, 1)) == seq[0]);
-        assert(seq_u64_to_nat(seq.subrange(0, 0 + 1 as int)) ==
-               seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat));
-        // CLAUDE
+        calc! {
+            (==)
+            seq_u64_to_nat(seq.subrange(0, 0 + 1 as int)); {
+                assert(seq.subrange(0, 1) == seq![seq[0]]);
+            }
+            seq_u64_to_nat(seq![seq[0]]); {
+                let single_elem = seq![seq[0]];
+                let nat_single = single_elem.map(|idx, x| x as nat);
+                assert(nat_single == seq![seq[0] as nat]);
+                assert(seq_u64_to_nat(single_elem) == seq_to_nat(nat_single));
+                assert(nat_single.len() == 1);
+                assert(seq_to_nat(nat_single) == nat_single[0] + seq_to_nat(nat_single.subrange(1, 1)) * pow2(52));
+                assert(nat_single.subrange(1, 1).len() == 0);
+                assert(seq_to_nat(nat_single.subrange(1, 1)) == 0);
+                assert(seq_to_nat(nat_single) == nat_single[0]);
+                assert(nat_single[0] == seq[0] as nat);
+            }
+            seq[0] as nat; {
+                lemma2_to64(); // Establishes pow2(0) == 1
+                assert(pow2(0) == 1);
+                assert(52 * 0 == 0);
+                assert(pow2(52 * 0 as nat) == pow2(0));
+                assert((seq[0] * pow2(0)) as nat == (seq[0] * 1) as nat);
+                assert((seq[0] * 1) as nat == seq[0] as nat);
+            }
+            (seq[0] * pow2(52 * 0 as nat)) as nat; {
+                assert(seq.subrange(0, 0).len() == 0);
+                assert(seq_u64_to_nat(seq.subrange(0, 0)) == 0);
+            }
+            (seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat)) as nat;
+        }
         return;
     }
     else {

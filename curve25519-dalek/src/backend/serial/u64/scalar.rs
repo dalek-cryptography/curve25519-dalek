@@ -440,6 +440,7 @@ impl Scalar52 {
             }
             proof { lemma_carry_bounded_after_mask(carry, mask); }
         }
+        proof { lemma_sub_correct_after_loops(difference, carry, a, b, old_difference, borrow);}
         difference
     }
 

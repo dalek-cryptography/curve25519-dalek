@@ -389,7 +389,14 @@ impl Scalar52 {
                                     (borrow >> 52) * pow2(52 * (i+1) as nat) - 0x1_0000_0000_0000_0000 * pow2(52 * i as nat); {
                                     assert(borrow >> 52 == (1u64<<12) - 1) by (bit_vector)
                                             requires borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52);
-                                    assume( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) );
+                                    assert( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) ) by
+                                    {
+                                        assume(0x1_0000_0000_0000_0000 == pow2(64));
+                                        assume(1u64 << 12 == pow2(12));
+                                        lemma_pow2_adds(64, 52 * i as nat);
+                                        lemma_pow2_adds(12, 52 * (i + 1) as nat);
+                                        assume(64 + 52 * i as nat == 12 + 52 * (i + 1) as nat);
+                                    }
                                     lemma_mul_is_distributive_sub_other_way(pow2(52 * (i+1) as nat) as int, (1u64<<12) - 1, (1u64 << 12) as int);
                                     }
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +

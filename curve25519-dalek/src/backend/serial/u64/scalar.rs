@@ -396,7 +396,7 @@ impl Scalar52 {
                                         assert(1u64 << 12 == pow2(12)) by (compute);
                                         lemma_pow2_adds(64, 52 * i as nat);
                                         lemma_pow2_adds(12, 52 * (i + 1) as nat);
-                                        assume(64 + 52 * i as nat == 12 + 52 * (i + 1) as nat);
+                                        assert(64 + 52 * i as nat == 12 + 52 * (i + 1) as nat);
                                     }
                                     lemma_mul_is_distributive_sub_other_way(pow2(52 * (i+1) as nat) as int, (1u64<<12) - 1, (1u64 << 12) as int);
                                     }

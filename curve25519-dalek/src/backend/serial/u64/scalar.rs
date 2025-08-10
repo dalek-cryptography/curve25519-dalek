@@ -57,6 +57,27 @@ impl Zeroize for Scalar52 {
 }
 
 verus! {
+
+proof fn lemma_l_equals_group_order()
+    ensures
+        to_nat(&constants::L.limbs) == group_order(),
+        seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order()
+{
+    // Constants L is defined to represent the group order
+    // L = [0x0002631a5cf5d3ed, 0x000dea2f79cd6581, 0x000000000014def9, 0x0000000000000000, 0x0000100000000000]
+    // These values when interpreted as limbs in base 2^52 represent exactly the group order
+    
+    // First show that the subrange equals the full array
+    assert(constants::L.limbs@ == constants::L.limbs@.subrange(0, 5 as int));
+    assert(seq_u64_to_nat(constants::L.limbs@) == seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)));
+    assert(to_nat(&constants::L.limbs) == seq_u64_to_nat(constants::L.limbs@));
+    
+    // Now we need to verify that these specific limb values represent group_order()
+    // group_order() = 2^252 + 27742317777372353535851937790883648493
+    // This is a mathematical fact about the curve25519 group order
+    assume(to_nat(&constants::L.limbs) == group_order()); // TODO: This could be proven by explicit calculation
+}
+
 impl Index<usize> for Scalar52 {
     type Output = u64;
     // TODO Verify this
@@ -546,9 +567,25 @@ impl Scalar52 {
                      - pow2((52 * (5) as nat)) );
             if carry >> 52 == 0 {
                 // Get a contradiction because the sides in the above equation have different signs
-                assume(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
-                    seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) >=0);
-                assume(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) < pow2((52 * (5) as nat)));
+                assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
+                    seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) >=0) by {
+                    // Since a and b are both scalar_reduced, they are both < group_order()
+                    // And L represents the group order, so L + a - b >= L - group_order() + a >= 0
+                    assert(to_nat(&a.limbs) < group_order());
+                    assert(to_nat(&b.limbs) < group_order());
+                    // Since L = group_order and both a, b < group_order, we have L + a - b >= L - group_order() = 0
+                    assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) >= group_order()) by {
+                        // This follows from the fact that L represents group_order
+                        lemma_l_equals_group_order();
+                    };
+                    assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs));
+                    assert(seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs));
+                };
+                assert(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) < pow2((52 * (5) as nat))) by {
+                    // The difference limbs are bounded by lemma_bound_scalar since difference has limbs_bounded property
+                    assert(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs));
+                    lemma_bound_scalar(&difference);
+                };
                 assert((carry >> 52) * pow2(52 * 5 as nat) == 0);
                 assert(false);
             }
@@ -559,8 +596,12 @@ impl Scalar52 {
             assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
                    to_nat(&a.limbs) - to_nat(&b.limbs) ==
                    to_nat(&difference.limbs)  );
-            assume(to_nat(&constants::L.limbs) == group_order());
-            assume(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order());
+            assert(to_nat(&constants::L.limbs) == group_order()) by {
+                lemma_l_equals_group_order();
+            };
+            assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order()) by {
+                lemma_l_equals_group_order();
+            };
             assert(group_order() > 0);
             proof{
                 calc! {

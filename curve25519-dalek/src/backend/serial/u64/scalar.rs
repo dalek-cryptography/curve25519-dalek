@@ -336,12 +336,6 @@ impl Scalar52 {
                         lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
                         assert(borrow == a.limbs[i as int].wrapping_sub((b.limbs[i as int] + (old_borrow >> 63)) as u64));
                         assert(difference.limbs[i as int] == borrow & mask);
-
-                        assert(forall|x: u64, y: u64| x.wrapping_sub(y) == (if x - y < 0 {
-                            (x - y + 0x1_0000_0000_0000_0000) as u64
-                        } else {
-                            (x - y) as u64
-                        }));
                         assert(borrow ==
                             (if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
                                 (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64

@@ -617,7 +617,7 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
                         assume(false);
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow) * pow2(52 * i as nat); {
-                        assume(borrow == (borrow >> 52) * pow2(52) + (borrow & mask));
+                        lemma_decompose(borrow, mask);
                         assert(borrow == (borrow >> 52) * pow2(52) + difference.limbs[i as int]);
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +

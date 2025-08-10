@@ -774,7 +774,19 @@ pub(crate) proof fn lemma_l_equals_group_order()
     assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 
-pub proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u64, a: &Scalar52, b: &Scalar52, old_difference: Scalar52, borrow: u64)
+pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u64, a: &Scalar52, b: &Scalar52, old_difference: Scalar52, borrow: u64)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
+        borrow >> 63 == 0 ==> old_difference == difference,
+        borrow >> 63 == 1 ==>
+        seq_u64_to_nat(old_difference.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) ==
+        seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2(52 * 5 as nat),
+        seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                seq_u64_to_nat(old_difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)),
+    ensures
+            to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int)
 {
         assert( seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs)) by {
             assert( seq_u64_to_nat(difference.limbs@) == to_nat(&difference.limbs));

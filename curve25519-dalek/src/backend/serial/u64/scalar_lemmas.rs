@@ -476,4 +476,11 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
     }
 }
 
+pub proof fn lemma_decompose(a: u64, mask: u64)
+    requires mask == (1u64 << 52) - 1
+    ensures a == (a >> 52) * pow2(52) + (a & mask)
+{
+   assume(false);
+}
+
 } // verus!

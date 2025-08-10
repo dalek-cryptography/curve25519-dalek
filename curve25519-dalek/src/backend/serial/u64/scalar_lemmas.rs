@@ -624,9 +624,13 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
                         ((borrow >> 52) * pow2(52) + difference.limbs[i as int]) * pow2(52 * i as nat); {
-                        assume(false);
-                //assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
-                //assert(52 + 52 * i as nat == 52 * (i+1) as nat);
+                        assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
+                        assert(52 + 52 * i as nat == 52 * (i+1) as nat);
+                        broadcast use lemma_mul_is_distributive_add_other_way;
+                        assert((borrow >> 52) as nat * pow2(52) * pow2(52 * i as nat) == (borrow >> 52) as nat * pow2(52 * (i+1) as nat)) by {
+                                assert(pow2(52) * pow2(52 * i as nat) == pow2(52 * (i+1) as nat));
+                                lemma_mul_is_associative((borrow >> 52) as int, pow2(52) as int, pow2(52 * i as nat) as int);
+                        };
                         }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
                         (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {

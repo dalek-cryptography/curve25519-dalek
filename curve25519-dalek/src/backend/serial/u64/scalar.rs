@@ -53,8 +53,6 @@ impl Zeroize for Scalar52 {
 }
 
 verus! {
-
-
 impl Index<usize> for Scalar52 {
     type Output = u64;
     // TODO Verify this

@@ -636,8 +636,10 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
                             assert(a.limbs[i as int] < (1u64 << 52));
                             assert((b.limbs[i as int] + (old_borrow >> 63)) as u64 >= 0);
                         }
-                        assume(borrow >> 52 == 0);
-                        assume(borrow >> 63 == 0);
+                        assert(borrow >> 52 == 0) by (bit_vector)
+                                requires borrow < 1u64 << 52;
+                        assert(borrow >> 63 == 0) by (bit_vector)
+                                requires borrow < 1u64 << 52;
                         }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
                 }

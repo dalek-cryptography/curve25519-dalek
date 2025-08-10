@@ -245,7 +245,13 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     decreases i
 {
     if i == 0 {
-        assume(false);
+        reveal_with_fuel(seq_to_nat, 3);
+        assert(seq.len()>0);
+        assert(seq.subrange(0, 1) == seq![seq[0]]);
+        assert(seq_u64_to_nat(seq.subrange(0, 1)) == seq[0]);
+        assert(seq_u64_to_nat(seq.subrange(0, 0 + 1 as int)) ==
+               seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat));
+        // CLAUDE
         return;
     }
     else {

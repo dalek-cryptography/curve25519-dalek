@@ -394,10 +394,6 @@ impl Scalar52 {
                                     }
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
                             }
-
-
-
-                            assume(false);
                         }
                         else {
 

@@ -330,21 +330,40 @@ impl Scalar52 {
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
                     (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
-                        // Note: borrow = a.limbs[i as int].wrapping_sub(b.limbs[i as int] + (borrow >> 63))
-                        // So: a.limbs[i as int] - b.limbs[i as int] - (borrow >> 63) = some value that when wrapped gives borrow
-                        // And: difference.limbs[i as int] = borrow & mask captures the low 52 bits
-                        lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
                         assert(borrow == a.limbs[i as int].wrapping_sub((b.limbs[i as int] + (old_borrow >> 63)) as u64));
                         assert(difference.limbs[i as int] == borrow & mask);
                         // Expand wrapping sub
                         if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
                             assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+                            assume(false);
                         }
                         else {
-                            assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
+
+                            calc! {
+                                (==)
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
+                                (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
+                                    assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
+                                }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow) * pow2(52 * i as nat); {
+                                    assume(borrow == (borrow >> 52) * pow2(52) + (borrow & mask));
+                                    assert(borrow == (borrow >> 52) * pow2(52) + difference.limbs[i as int]);
+                                }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                                    ((borrow >> 52) * pow2(52) + difference.limbs[i as int]) * pow2(52 * i as nat); {
+                                    assume(false);
+                            //assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
+                            //assert(52 + 52 * i as nat == 52 * (i+1) as nat);
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                                    (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {
+                                        lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                                    assume(borrow >> 52 == 0);
+                                    assume(borrow >> 63 == 0);
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+                            }
                         }
-                        assume(false);
-                        // TODO: Need additional reasoning about wrapping_sub and masking
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
                 }

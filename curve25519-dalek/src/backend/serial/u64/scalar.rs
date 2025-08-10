@@ -338,12 +338,6 @@ impl Scalar52 {
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             let ghost difference_loop1_start = difference;
             difference.limbs[i] = borrow & mask;
-            // assert(
-
-            //           seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
-            //                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int )) - (old_borrow >> 63) * pow2((52 * (i) as nat))
-            // );
-            // CLAUDE
             assert(difference_loop1_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
             assert(
             seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
@@ -356,8 +350,6 @@ impl Scalar52 {
 
         assert(              seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
                                      seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)) );
-        // assert(to_nat(&a.limbs) - to_nat(&b.limbs) ==
-        //         to_nat(&difference.limbs) - (borrow >> 63) * pow2((52 * 5 as nat)));
         // conditionally add l if the difference is negative
         assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;

@@ -569,7 +569,8 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
                     (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
                         assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
-                        assume(false);
+                        assert(b.limbs[i as int] < 1u64 << 52);
+                        assert(old_borrow >> 63 <= 1) by (bit_vector);
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow - 0x1_0000_0000_0000_0000) * pow2(52 * i as nat); {
                         lemma_decompose(borrow, mask);
@@ -614,7 +615,8 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
                     (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
                         assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
-                        assume(false);
+                        assert(b.limbs[i as int] < 1u64 << 52);
+                        assert(old_borrow >> 63 <= 1) by (bit_vector);
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow) * pow2(52 * i as nat); {
                         lemma_decompose(borrow, mask);

@@ -75,7 +75,12 @@ proof fn lemma_l_equals_group_order()
     // Now we need to verify that these specific limb values represent group_order()
     // group_order() = 2^252 + 27742317777372353535851937790883648493
     // This is a mathematical fact about the curve25519 group order
-    assume(to_nat(&constants::L.limbs) == group_order()); // TODO: This could be proven by explicit calculation
+    lemma_five_limbs_equals_to_nat(&constants::L.limbs);
+    assume(pow2(52) == 0x10000000000000);
+    assume(pow2(104) == 0x100000000000000000000000000);
+    assume(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
+    assume(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000);
+    assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 
 impl Index<usize> for Scalar52 {

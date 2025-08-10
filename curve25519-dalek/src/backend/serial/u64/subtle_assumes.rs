@@ -5,6 +5,7 @@ use vstd::prelude::*;
 
 verus! {
 
+#[allow(dead_code)]
 pub enum RevealedChoice {
     Choice0,
     Choice1,

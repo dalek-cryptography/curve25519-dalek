@@ -351,11 +351,11 @@ impl Scalar52 {
         {
             let ghost old_carry = carry;
             let underflow = Choice::from((borrow >> 63) as u8);
-            if (borrow >> 63 == 0) {
+            if borrow >> 63 == 0 {
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0);
             }
             let addend = select(&0, &constants::L.limbs[i], underflow);
-            if (borrow >> 63 == 0) {
+            if borrow >> 63 == 0 {
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0);
                 assert(reveal_choice(underflow) == RevealedChoice::Choice0 ==> addend == 0);
                 assert(addend == 0);
@@ -364,7 +364,7 @@ impl Scalar52 {
             }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
-            if (borrow >> 63 == 0) {
+            if borrow >> 63 == 0 {
                 assert(carry == difference.limbs[i as int]);
                 assert( carry & mask == carry ) by (bit_vector)
                     requires
@@ -373,13 +373,13 @@ impl Scalar52 {
             }
             let ghost difference_loop2_start = difference;
             difference.limbs[i] = carry & mask;
-            if (borrow >> 63 == 0) {
+            if borrow >> 63 == 0 {
                 assert(old_difference.limbs[i as int] == difference.limbs[i as int]);
                 assert(forall |j :int| 0<=j<5 ==> old_difference.limbs[j] == difference.limbs[j]);
                 assert(old_difference.limbs == difference.limbs);
             }
             // Prove the invariant for borrow >> 63 == 1 case
-            if (borrow >> 63 == 1) {
+            if borrow >> 63 == 1 {
                 proof {
                     // When underflow, addend = L.limbs[i]
                     assert(reveal_choice(underflow) == RevealedChoice::Choice1);

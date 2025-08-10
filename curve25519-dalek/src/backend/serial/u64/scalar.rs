@@ -351,13 +351,8 @@ impl Scalar52 {
         {
             let ghost old_carry = carry;
             let underflow = Choice::from((borrow >> 63) as u8);
-            if borrow >> 63 == 0 {
-                assert(reveal_choice(underflow) == RevealedChoice::Choice0);
-            }
             let addend = select(&0, &constants::L.limbs[i], underflow);
             if borrow >> 63 == 0 {
-                assert(reveal_choice(underflow) == RevealedChoice::Choice0);
-                assert(reveal_choice(underflow) == RevealedChoice::Choice0 ==> addend == 0);
                 assert(addend == 0);
                 assert(carry >> 52 == 0) by (bit_vector)
                     requires carry < 1u64 <<52;

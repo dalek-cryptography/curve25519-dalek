@@ -352,6 +352,12 @@ impl Scalar52 {
             let ghost old_carry = carry;
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &constants::L.limbs[i], underflow);
+            if borrow >> 63 == 0 {
+                assert(addend == 0);
+            }
+            if borrow >> 63 == 1 {
+                assert(addend == constants::L.limbs[i as int]);
+            }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             let ghost difference_loop2_start = difference;

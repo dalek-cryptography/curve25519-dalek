@@ -300,6 +300,7 @@ impl Scalar52 {
             proof { assert ((borrow >> 63) < 2) by (bit_vector); }
             let ghost old_borrow = borrow;
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
+            let ghost difference_loop1_start = difference;
             difference.limbs[i] = borrow & mask;
             // assert(
 
@@ -320,8 +321,7 @@ impl Scalar52 {
                     }
                     seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
                     (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {
-
-                        assume(false);
+                        assert(difference_loop1_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
                         // Use loop invariant
                     }
                     seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (old_borrow >> 63) * pow2(52 * i as nat) +
@@ -391,7 +391,7 @@ impl Scalar52 {
                     carry < 1u64 <<52,
                     mask == (1u64 << 52) - 1;
             }
-            let ghost difference_loop_start = difference;
+            let ghost difference_loop2_start = difference;
             difference.limbs[i] = carry & mask;
             if (borrow >> 63 == 0) {
                 assert(old_difference.limbs[i as int] == difference.limbs[i as int]);
@@ -420,9 +420,9 @@ impl Scalar52 {
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
                             // Use invariant
                         }
-                        seq_u64_to_nat(difference_loop_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
+                        seq_u64_to_nat(difference_loop2_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
-                            assert(difference_loop_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int) );
+                            assert(difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int) );
                         }
                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
                         (old_difference.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {

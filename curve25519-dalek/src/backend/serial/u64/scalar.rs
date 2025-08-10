@@ -26,8 +26,6 @@ use super::scalar_lemmas::*;
 use super::scalar_specs::*;
 use super::subtle_assumes::*;
 #[allow(unused_imports)]
-use vstd::arithmetic::mul::*;
-#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 

@@ -904,12 +904,16 @@ pub proof fn lemma_old_carry(old_carry: u64)
         requires old_carry < 1u64 <<52;
 }
 
-pub proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a: &Scalar52, b: &Scalar52, mask: u64, old_difference: Scalar52, difference_loop2_start: Scalar52, carry: u64, old_carry: u64, addend: u64, borrow: u64, underflow: Choice)
+pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a: &Scalar52, b: &Scalar52, mask: u64, old_difference: Scalar52, difference_loop2_start: Scalar52, carry: u64, old_carry: u64, addend: u64, borrow: u64, underflow: Choice)
     requires
-        limbs_bounded(a),
-        limbs_bounded(b),
         0 <= i < 5,
         mask == (1u64 << 52) - 1,
+    ensures
+        (i+1 >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int],
+        borrow >> 63 == 0 ==> old_difference == difference,
+        borrow >> 63 == 1 ==>
+            seq_u64_to_nat(old_difference.limbs@.subrange(0, i+1 as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i+1 as int)) ==
+            seq_u64_to_nat(difference.limbs@.subrange(0, i+1 as int)) + (carry >> 52) * pow2(52 * (i+1) as nat)
 {
     if borrow >> 63 == 0 {
         lemma_old_carry(old_carry);

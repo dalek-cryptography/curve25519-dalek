@@ -387,7 +387,8 @@ impl Scalar52 {
                                     assert(borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52)) by {
                                         assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
                                     };
-                                    assume(borrow >> 52 == (1u64<<12) - 1);
+                                    assert(borrow >> 52 == (1u64<<12) - 1) by (bit_vector)
+                                            requires borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52);
                                     assume( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) );
                                     lemma_mul_is_distributive_sub_other_way(pow2(52 * (i+1) as nat) as int, (1u64<<12) - 1, (1u64 << 12) as int);
                                     }

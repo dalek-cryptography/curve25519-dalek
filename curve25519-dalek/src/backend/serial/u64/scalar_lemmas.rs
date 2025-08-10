@@ -476,11 +476,45 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
     }
 }
 
+/// Claude wrote this proof. Could the proof by shorter?
 pub proof fn lemma_decompose(a: u64, mask: u64)
     requires mask == (1u64 << 52) - 1
     ensures a == (a >> 52) * pow2(52) + (a & mask)
 {
-   assume(false);
+    // First, establish that bit shifting is division by pow2(52)
+    broadcast use lemma_u64_shr_is_div;
+    lemma_pow2_pos(52);
+    shift_is_pow2(52);
+    lemma2_to64_rest(); // Establishes pow2(52) == 0x10000000000000
+    assert((1u64 << 52) == 0x10000000000000) by (bit_vector);
+    assert(pow2(52) == 0x10000000000000);
+    assert((1u64 << 52) as nat == pow2(52));
+    
+    assert(a >> 52 == a / (1u64 << 52));
+    
+    // Apply fundamental division theorem: a = q * d + r
+    lemma_fundamental_div_mod(a as int, pow2(52) as int);
+    let q = a as nat / pow2(52);
+    let r = a as nat % pow2(52);
+    assert(a as nat == q * pow2(52) + r);
+    assert(0 <= r < pow2(52));
+    
+    // Now prove that (a & mask) == r
+    // mask is all 1s in the lower 52 bits
+    assert(mask == (1u64 << 52) - 1);
+    
+    // Key insight: a & mask gives us the lower 52 bits, which is exactly a % pow2(52)
+    lemma_u64_low_bits_mask_is_mod(a, 52);
+    assert(a & mask == a % (1u64 << 52));
+    assert((a % (1u64 << 52)) as nat == a as nat % pow2(52));
+    assert((a & mask) as nat == r);
+    
+    // Now show that a >> 52 == q
+    assert((a >> 52) as nat == a as nat / pow2(52));
+    assert((a >> 52) as nat == q);
+    
+    // Combine everything  
+    assert(a as nat == (a >> 52) as nat * pow2(52) + (a & mask) as nat);
 }
 
 } // verus!

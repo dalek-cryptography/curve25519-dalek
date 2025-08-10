@@ -5,8 +5,6 @@ use super::scalar::Scalar52;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
 #[allow(unused_imports)]
-use super::constants;
-#[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
@@ -477,6 +475,5 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
         assert(seq_u64_to_nat(a) < pow2(52 * a.len() as nat));
     }
 }
-
 
 } // verus!

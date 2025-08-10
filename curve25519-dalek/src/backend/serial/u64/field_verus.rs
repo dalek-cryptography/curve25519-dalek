@@ -405,6 +405,27 @@ impl FieldElement51 {
             ) by {
                 lemma_as_nat_sub(v, old(self).limbs);
             }
+
+            let k = (16 * c - l4) as u64 >> 51;
+
+            assert(
+                16 * p() - as_nat(old(self).limbs) - p() * k + as_nat(old(self).limbs)
+                ==
+                p() * (16 - k)
+            ) by {
+                lemma_mul_is_distributive_sub(p() as int, 16, k as int)
+            }
+
+            assert((p() * (16 - k)) as nat % p() == 0) by {
+                assert(k <= 16) by {
+                    assert(k <= (16 * pow2(51)) as u64 >> 51) by {
+                        lemma_shr_le_u64((16 * c - l4) as u64, (16 * pow2(51)) as u64, 51);
+                    }
+                    // 16 * 2^51 / 2^51 = 16
+                    assert(((16 * 0x8000000000000) as u64 >> 51) == 16) by (compute);
+                }
+                lemma_mod_multiples_basic((16 - k) as int, p() as int);
+            }
         }
         // See commentary in the Sub impl: (copied below)
             // To avoid underflow, first add a multiple of p.
@@ -426,11 +447,6 @@ impl FieldElement51 {
             36028797018963952u64 - self.limbs[3],
             36028797018963952u64 - self.limbs[4],
         ]);
-        proof {
-            let k = ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51) as nat;
-            broadcast use lemma_mul_is_distributive_sub;
-            lemma_mod_multiples_vanish((16 - k) as int, 0 as int, p() as int);
-        }
         self.limbs = neg.limbs;
     }
 

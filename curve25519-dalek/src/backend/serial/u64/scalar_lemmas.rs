@@ -917,7 +917,9 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
         borrow >> 63 == 0 ==> old_difference == difference_loop2_start,
         borrow >> 63 == 1 ==>
             seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
-            seq_u64_to_nat(difference_loop2_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) * pow2(52 * i as nat)
+            seq_u64_to_nat(difference_loop2_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) * pow2(52 * i as nat),
+        difference.limbs[i as int] == carry & mask,
+        difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int),
     ensures
         (i+1 >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int],
         borrow >> 63 == 0 ==> old_difference == difference,

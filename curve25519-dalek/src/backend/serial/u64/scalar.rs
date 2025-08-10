@@ -358,6 +358,7 @@ impl Scalar52 {
             difference.limbs[i] = carry & mask;
             proof {
                 lemma_carry_bounded_after_mask(carry, mask);
+                assert(difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
                 lemma_sub_loop2_invariant(difference, i, a, b, mask, old_difference, difference_loop2_start, carry, old_carry, addend, borrow, underflow);
             }
         }

@@ -316,9 +316,7 @@ impl Scalar52 {
                     }
                     seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i as int] * pow2(52 * i as nat) -
                     (seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i as int] * pow2(52 * i as nat)); {
-                        assume(false);
-                        //broadcast use group_mul_is_commutative_and_distributive;
-                        //broadcast use lemma_mul_is_associative;
+                        broadcast use lemma_mul_is_distributive_sub_other_way;
                     }
                     seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
                     (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {

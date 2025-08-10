@@ -273,8 +273,16 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
                 assert((seq[0] * 1) as nat == seq[0] as nat);
             }
             (seq[0] * pow2(52 * 0 as nat)) as nat; {
-                assume(false);
                 assert(seq.subrange(0, 0).len() == 0);
+                let empty: vstd::seq::Seq<u64> = seq![];
+                let empty_nat: vstd::seq::Seq<nat> = seq![];
+                assume(false);
+                assert(empty.map(|i, x| x as nat).len() == 0);
+                assert(empty.map(|i, x| x as nat) =~= empty_nat);
+                assume(false);
+                assert(seq.subrange(0, 0) == empty);
+                assert(seq_to_nat(seq![]) == 0);
+                assert(seq_u64_to_nat(empty) == 0);
                 assert(seq_u64_to_nat(seq.subrange(0, 0)) == 0);
             }
             (seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat)) as nat;
@@ -325,6 +333,12 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     }
 }
 
+pub proof fn lemma_empty_is_empty()
+{
+    let empty: vstd::seq::Seq<u64> = seq![];
+    let empty_nat: vstd::seq::Seq<nat> = seq![];
+    assert(empty.map(|i, x| x as nat) == empty_nat);
+}
 
 pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, l_value: &Scalar52)
     requires

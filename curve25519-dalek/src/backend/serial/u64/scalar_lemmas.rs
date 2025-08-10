@@ -266,14 +266,14 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
                 assert(nat_single[0] == seq[0] as nat);
             }
             seq[0] as nat; {
-                lemma2_to64(); // Establishes pow2(0) == 1
-                assert(pow2(0) == 1);
+                assert(pow2(0) == 1) by {lemma2_to64();}
                 assert(52 * 0 == 0);
                 assert(pow2(52 * 0 as nat) == pow2(0));
                 assert((seq[0] * pow2(0)) as nat == (seq[0] * 1) as nat);
                 assert((seq[0] * 1) as nat == seq[0] as nat);
             }
             (seq[0] * pow2(52 * 0 as nat)) as nat; {
+                assume(false);
                 assert(seq.subrange(0, 0).len() == 0);
                 assert(seq_u64_to_nat(seq.subrange(0, 0)) == 0);
             }

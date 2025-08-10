@@ -23,6 +23,7 @@ pub assume_specification [Choice::from](u: u8) -> (c: Choice)
             u == 1 ==> reveal_choice(c) == RevealedChoice::Choice1;
 
 #[verifier::external_body]
+/// See https://docs.rs/subtle/latest/subtle/trait.ConditionallySelectable.html#tymethod.conditional_select
 pub fn select(a: &u64, b: &u64, c: Choice) -> (res: u64)
     ensures reveal_choice(c) == RevealedChoice::Choice0 ==> res == a,
             reveal_choice(c) == RevealedChoice::Choice1 ==> res == b

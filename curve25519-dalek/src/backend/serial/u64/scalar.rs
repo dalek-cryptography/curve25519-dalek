@@ -352,14 +352,11 @@ impl Scalar52 {
             let ghost old_carry = carry;
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &constants::L.limbs[i], underflow);
-            if borrow >> 63 == 0 {
-                assert(addend == 0);
-                assert(carry >> 52 == 0) by (bit_vector)
-                    requires carry < 1u64 <<52;
-            }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
             if borrow >> 63 == 0 {
+                proof { lemma_old_carry(old_carry);}
+                assert(addend == 0);
                 assert(carry == difference.limbs[i as int]);
                 assert( carry & mask == carry ) by (bit_vector)
                     requires

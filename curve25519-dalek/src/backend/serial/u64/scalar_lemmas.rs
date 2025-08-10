@@ -891,4 +891,12 @@ pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u
         }
 }
 
+pub proof fn lemma_old_carry(old_carry: u64)
+    requires old_carry < 1u64 <<52,
+    ensures old_carry >> 52 == 0,
+{
+    assert(old_carry >> 52 == 0) by (bit_vector)
+        requires old_carry < 1u64 <<52;
+}
+
 } // verus!

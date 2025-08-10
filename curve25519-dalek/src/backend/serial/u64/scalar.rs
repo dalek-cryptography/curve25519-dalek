@@ -334,7 +334,7 @@ impl Scalar52 {
                         // So: a.limbs[i as int] - b.limbs[i as int] - (borrow >> 63) = some value that when wrapped gives borrow
                         // And: difference.limbs[i as int] = borrow & mask captures the low 52 bits
                         lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
-                        assert(borrow == a.limbs[i as int].wrapping_sub((b.limbs[i as int] as u64 + (old_borrow >> 63) as u64) as u64));
+                        assert(borrow == a.limbs[i as int].wrapping_sub((b.limbs[i as int] + (old_borrow >> 63)) as u64));
                         assert(difference.limbs[i as int] == borrow & mask);
 
                         assert(forall|x: u64, y: u64| x.wrapping_sub(y) == (if x - y < 0 {

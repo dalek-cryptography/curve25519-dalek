@@ -242,8 +242,61 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     ensures
         seq_u64_to_nat(seq.subrange(0, i + 1)) == 
         seq_u64_to_nat(seq.subrange(0, i)) + seq[i] * pow2(52 * i as nat)
+    decreases i
 {
-    assume(false); // TODO: Prove this lemma
+    if i == 0 {
+        assume(false);
+        return;
+    }
+    else {
+        let head = seq[0];
+        let tail = seq.subrange(1, i + 1);
+        assert(i >= 1);
+        assert(0 <= i-1 < tail.len());
+        lemma_seq_u64_to_nat_subrange_extend(tail, i-1);
+        assert(seq_u64_to_nat(tail.subrange(0, i)) ==
+               seq_u64_to_nat(tail.subrange(0, i - 1)) + tail[i -1 ] * pow2(52 * (i-1) as nat));
+        assert( tail.subrange(0, i) == seq.subrange(1, i + 1) );
+        assert( tail.subrange(0, i - 1) == seq.subrange(1, i ) );
+        assert(seq_u64_to_nat(seq.subrange(1, i + 1)) ==
+               seq_u64_to_nat(seq.subrange(1, i )) + seq[i] * pow2(52 * (i-1) as nat));
+        assert(seq.subrange(0, i + 1).len() > 0);
+        let limbs1 = seq.subrange(0, i + 1).map(|i, x| x as nat);
+        assert( seq_to_nat(limbs1) ==
+        limbs1[0] + seq_to_nat(limbs1.subrange(1, limbs1.len() as int)) * pow2(52)
+        );
+        let limbs2 = seq.subrange(0, i).map(|i, x| x as nat);
+        assert( seq_to_nat(limbs2) ==
+        limbs2[0] + seq_to_nat(limbs2.subrange(1, limbs2.len() as int)) * pow2(52)
+        );
+        calc! {
+            (==)
+            seq_u64_to_nat(seq.subrange(0, i + 1)); {
+            }
+            limbs1[0] + seq_to_nat(limbs1.subrange(1, limbs1.len() as int)) * pow2(52); {
+                assert(seq.subrange(1, i + 1).map(|i, x| x as nat) == limbs1.subrange(1, limbs1.len() as int));
+            }
+            limbs1[0] + seq_u64_to_nat(seq.subrange(1, i + 1)) * pow2(52); {
+            }
+            limbs1[0] + ((seq_u64_to_nat(seq.subrange(1, i )) + seq[i] * pow2(52 * (i-1) as nat)) * pow2(52)) as nat; {
+                broadcast use lemma_mul_is_distributive_add_other_way;
+            }
+            (limbs1[0] + seq_u64_to_nat(seq.subrange(1, i )) * pow2(52) + seq[i] * pow2(52 * (i-1) as nat) * pow2(52)) as nat; {
+                broadcast use lemma_mul_is_associative;
+                lemma_pow2_adds(52 * (i-1) as nat, 52);
+            }
+            (limbs1[0] + seq_u64_to_nat(seq.subrange(1, i )) * pow2(52) + seq[i] * pow2(52 * i as nat)) as nat; {
+                assert(seq.subrange(1, i ).map(|i, x| x as nat) == limbs2.subrange(1, limbs2.len() as int));
+            }
+            (limbs2[0] + seq_to_nat(limbs2.subrange(1, limbs2.len() as int)) * pow2(52) + seq[i] * pow2(52 * i as nat)) as nat; {
+            }
+            (seq_to_nat(limbs2) + seq[i] * pow2(52 * i as nat)) as nat; {
+            }
+            (seq_u64_to_nat(seq.subrange(0, i)) + seq[i] * pow2(52 * i as nat)) as nat;
+
+        }
+        //assert(seq_u64_to_nat(seq.subrange(0, i + 1)) == seq.subrange(0, i + 1)[0] + seq_u64_to_nat(seq.subrange(0, i + 1).subrange(1, seq.subrange(0, i + 1).len() as int)) * pow2(52));
+    }
 }
 
 

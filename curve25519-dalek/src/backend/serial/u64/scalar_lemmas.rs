@@ -273,7 +273,7 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
                 assert((seq[0] * 1) as nat == seq[0] as nat);
             }
             (seq[0] * pow2(52 * 0 as nat)) as nat; {
-                foo(seq);
+                lemma_empty_seq_as_nat(seq);
             }
             (seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat)) as nat;
         }
@@ -323,18 +323,14 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     }
 }
 
-pub proof fn foo(a: Seq<u64>)
+/// Verus times out when this assertion is inside
+/// lemma_seq_u64_to_nat_subrange_extend
+pub proof fn lemma_empty_seq_as_nat(a: Seq<u64>)
     ensures seq_u64_to_nat(a.subrange(0, 0)) == 0
 {
     assert(seq_u64_to_nat(a.subrange(0, 0)) == 0);
 }
 
-pub proof fn lemma_empty_is_empty(a: Seq<u64>, b: Seq<nat>)
-requires a.len() == 0,
-         b.len() == 0
-{
-    assert(a.map(|i, x| x as nat) == b);
-}
 
 pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, l_value: &Scalar52)
     requires

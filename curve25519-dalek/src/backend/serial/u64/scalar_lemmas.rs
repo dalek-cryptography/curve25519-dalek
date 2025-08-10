@@ -273,15 +273,6 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
                 assert((seq[0] * 1) as nat == seq[0] as nat);
             }
             (seq[0] * pow2(52 * 0 as nat)) as nat; {
-                assert(seq.subrange(0, 0).len() == 0);
-                let empty: vstd::seq::Seq<u64> = seq![];
-                let empty_nat: vstd::seq::Seq<nat> = seq![];
-                assert(empty.map(|i, x| x as nat).len() == 0);
-                assert(empty.map(|i, x| x as nat) == empty_nat);
-                assert(seq.subrange(0, 0) == empty);
-                assume(seq_to_nat(seq![]) == 0);
-                assume(seq_u64_to_nat(empty) == 0);
-                assume(seq.subrange(0, 0) == empty);
                 assume(seq_u64_to_nat(seq.subrange(0, 0)) == 0);
             }
             (seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat)) as nat;

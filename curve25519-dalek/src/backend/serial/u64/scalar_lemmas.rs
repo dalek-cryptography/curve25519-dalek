@@ -908,6 +908,16 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
     requires
         0 <= i < 5,
         mask == (1u64 << 52) - 1,
+        forall|j: int| 0 <= j < 5 ==> difference_loop2_start.limbs[j] < (1u64 << 52),
+        forall|j: int| i <= j < 5 ==> difference_loop2_start.limbs[j] == old_difference.limbs[j],
+        mask == (1u64 << 52) - 1,
+        i == 0 ==> old_carry == 0,
+        i >= 1 ==> (old_carry >> 52) < 2,
+        (i >=1 && borrow >> 63 == 0) ==> old_carry == difference_loop2_start.limbs[i-1],
+        borrow >> 63 == 0 ==> old_difference == difference_loop2_start,
+        borrow >> 63 == 1 ==>
+            seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
+            seq_u64_to_nat(difference_loop2_start.limbs@.subrange(0, i as int)) + (old_carry >> 52) * pow2(52 * i as nat)
     ensures
         (i+1 >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int],
         borrow >> 63 == 0 ==> old_difference == difference,

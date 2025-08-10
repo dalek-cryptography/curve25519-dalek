@@ -323,6 +323,11 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     }
 }
 
+pub proof fn foo(a: Seq<u64>)
+{
+    assert(seq_u64_to_nat(a.subrange(0, 0)) == 0);
+}
+
 pub proof fn lemma_empty_is_empty(a: Seq<u64>, b: Seq<nat>)
 requires a.len() == 0,
          b.len() == 0

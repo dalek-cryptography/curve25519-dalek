@@ -791,6 +791,7 @@ pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u
     ensures
             to_nat(&difference.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int)
 {
+        assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         assert( seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs)) by {
             assert( seq_u64_to_nat(difference.limbs@) == to_nat(&difference.limbs));
             assert( difference.limbs@ == difference.limbs@.subrange(0, 5 as int));

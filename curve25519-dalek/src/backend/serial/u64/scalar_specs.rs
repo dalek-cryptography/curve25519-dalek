@@ -133,9 +133,4 @@ pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
     forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
 }
 
-
-pub open spec fn scalar_reduced(s: &Scalar52) -> bool {
-    to_nat(&s.limbs) < group_order()
-}
-
 } // verus!

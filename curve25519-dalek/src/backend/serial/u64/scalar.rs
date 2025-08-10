@@ -392,9 +392,6 @@ impl Scalar52 {
                                     lemma_mul_is_distributive_sub_other_way(pow2(52 * (i+1) as nat) as int, (1u64<<12) - 1, (1u64 << 12) as int);
                                     }
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
-                                    ((1u64<<12) - 1 - (1u64 << 12)) * pow2(52 * (i+1) as nat) ; {
-                                    }
-                                seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
                                     (-1) * pow2(52 * (i+1) as nat) ; {
                                     assume(borrow >> 63 == 1);
                                     }

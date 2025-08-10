@@ -342,6 +342,12 @@ impl Scalar52 {
                         } else {
                             (x - y) as u64
                         }));
+                        assert(borrow ==
+                            (if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
+                                (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64
+                        } else {
+                                (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64
+                        }));
                         assume(false);
                         // TODO: Need additional reasoning about wrapping_sub and masking
                     }

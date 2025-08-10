@@ -362,7 +362,30 @@ impl Scalar52 {
                         assert(difference.limbs[i as int] == borrow & mask);
                         // Expand wrapping sub
                         if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
-                            assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+
+                            calc! {
+                                (==)
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
+                                (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
+                                    assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+                                }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow - 0x1_0000_0000_0000_0000) * pow2(52 * i as nat); {
+                                    assume(false);
+                                }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                                    ((borrow >> 52) * pow2(52) + difference.limbs[i as int]) * pow2(52 * i as nat); {
+                                    assume(false);
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                                    (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {
+                                        lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                                    assume(false);
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+                            }
+
+
+
                             assume(false);
                         }
                         else {

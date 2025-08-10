@@ -336,6 +336,9 @@ impl Scalar52 {
             //                         seq_u64_to_nat(difference.limbs@.subrange(0, i as int )) - (old_borrow >> 63) * pow2((52 * (i) as nat))
             // );
             // CLAUDE
+            assert(
+            seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
+                        seq_u64_to_nat(difference_loop1_start.limbs@.subrange(0, i as int )) - (old_borrow >> 63) * pow2((52 * (i) as nat)));
             proof{
                 lemma_sub_loop1_invariant(difference, borrow, i, a, b, old_borrow, mask, difference_loop1_start);
             }

@@ -290,14 +290,13 @@ impl Scalar52 {
     requires
         limbs_bounded(a),
         limbs_bounded(b),
+        // Without the following condition, all we can prove is something like:
+        // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+        // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
+        // In particular, `sub` doesn't always do subtraction mod group_order
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
-        // TODO Ideally we want a spec like s = (a - b) % group_order,
-        // but this is only true for relatively small values of a and b.
-        // Look at all the functions that call sub and find out how large
-        // a and b are in practice.
-        // TODO What about L > a-b >= -L ==> (a-b) mod L = s?
-        to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
-        to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
+        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };

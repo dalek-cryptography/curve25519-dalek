@@ -910,6 +910,7 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
         mask == (1u64 << 52) - 1,
         forall|j: int| 0 <= j < 5 ==> difference_loop2_start.limbs[j] < (1u64 << 52),
         forall|j: int| i <= j < 5 ==> difference_loop2_start.limbs[j] == old_difference.limbs[j],
+        forall|j: int| (0 <= j < 5 && j!=i) ==> difference_loop2_start.limbs[j] == difference.limbs[j],
         mask == (1u64 << 52) - 1,
         i == 0 ==> old_carry == 0,
         i >= 1 ==> (old_carry >> 52) < 2,

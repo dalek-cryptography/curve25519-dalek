@@ -58,31 +58,6 @@ impl Zeroize for Scalar52 {
 
 verus! {
 
-proof fn lemma_l_equals_group_order()
-    ensures
-        to_nat(&constants::L.limbs) == group_order(),
-        seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order()
-{
-    // First show that the subrange equals the full array
-    assert(constants::L.limbs@ == constants::L.limbs@.subrange(0, 5 as int));
-    assert(seq_u64_to_nat(constants::L.limbs@) == seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)));
-    assert(to_nat(&constants::L.limbs) == seq_u64_to_nat(constants::L.limbs@));
-    
-    assert(pow2(52) == 0x10000000000000) by {lemma2_to64_rest();};
-    lemma_pow2_adds(52, 52);
-    assert(pow2(104) == 0x100000000000000000000000000);
-    lemma_pow2_adds(104, 104);
-    assert(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
-    assert(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000) by
-    {
-        assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
-        lemma_pow2_adds(63, 63);
-        assert(pow2(126) == 0x40000000000000000000000000000000);
-        lemma_pow2_adds(126, 126);
-    }
-    lemma_five_limbs_equals_to_nat(&constants::L.limbs);
-    assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
-}
 
 impl Index<usize> for Scalar52 {
     type Output = u64;

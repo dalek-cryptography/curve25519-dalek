@@ -9,7 +9,6 @@ use vstd::prelude::*;
 
 use super::common_verus::*;
 use super::field_lemmas::*;
-use super::vstd_u128::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 
@@ -222,10 +221,9 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         pow2(153) * (b3 + pow2(51) * a3) +
         pow2(204) * b4 + 19 * a4
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        // lemma_mul_is_distributive_add(pow2( 51) as int, b1 as int, pow2(51) * a1);
-        // lemma_mul_is_distributive_add(pow2(102) as int, b2 as int, pow2(51) * a2);
-        // lemma_mul_is_distributive_add(pow2(153) as int, b3 as int, pow2(51) * a3);
+        lemma_mul_is_distributive_add(pow2( 51) as int, b1 as int, pow2(51) * a1);
+        lemma_mul_is_distributive_add(pow2(102) as int, b2 as int, pow2(51) * a2);
+        lemma_mul_is_distributive_add(pow2(153) as int, b3 as int, pow2(51) * a3);
     }
 
     // invoke div/mod identity
@@ -860,7 +858,10 @@ impl FieldElement51 {
                 assert(carry < pow2_5933);
 
                 // a[0] += carry * 19 fits in u64
-                assert((1u64 << 51) + 19 * pow2_5933 <= u64::MAX) by (compute);
+                assert(a0_0 + carry * 19 <= u64::MAX) by {
+                    assert((1u64 << 51) + 19 * pow2_5933 <= u64::MAX) by (compute);
+                }
+
                 let a0_1 = (a0_0 + carry * 19) as u64;
 
                 lemma_shr_51_le(a0_1 as u128, u64::MAX as u128);
@@ -910,10 +911,29 @@ impl FieldElement51 {
                         pow2(153) * ((c3 as u64) % (pow2(51) as u64)) +
                         pow2(204) * ((c4 as u64) % (pow2(51) as u64))
                     ) by {
-                        // TODO: we need lemma_u128_low_bits_mask_is_mod in vstd!
-                        broadcast use lemma_cast_then_mask_51;
-                        broadcast use lemma_u128_low_bits_mask_is_mod;
                         l51_bit_mask_lt();
+
+                        assert((pow2(51) as u64) == (pow2(51) as u128));
+
+                        assert(a0_1 == ((c0_0 as u64) % (pow2(51) as u64)) + 19 * carry) by {
+                            lemma_u64_low_bits_mask_is_mod(c0_0 as u64, 51);
+                        }
+
+                        assert(a1_0 == (c1 as u64) % (pow2(51) as u64)) by {
+                            lemma_u64_low_bits_mask_is_mod(c1 as u64, 51);
+                        }
+
+                        assert(a2 == (c2 as u64) % (pow2(51) as u64)) by {
+                            lemma_u64_low_bits_mask_is_mod(c2 as u64, 51);
+                        }
+
+                        assert(a3 == (c3 as u64) % (pow2(51) as u64)) by {
+                            lemma_u64_low_bits_mask_is_mod(c3 as u64, 51);
+                        }
+
+                        assert(a4 == (c4 as u64) % (pow2(51) as u64)) by {
+                            lemma_u64_low_bits_mask_is_mod(c4 as u64, 51);
+                        }
                     }
 
                     // We can see all mod operations in u128
@@ -940,7 +960,11 @@ impl FieldElement51 {
                         pow2(153) * (c3 - pow2(51) * (c3/ (pow2(51) as u128))) +
                         pow2(204) * (c4 - pow2(51) * (c4/ (pow2(51) as u128)))
                     ) by {
-                        broadcast use lemma_fundamental_div_mod;
+                        lemma_fundamental_div_mod(c0_0 as int, pow2(51) as int);
+                        lemma_fundamental_div_mod(c1 as int, pow2(51) as int);
+                        lemma_fundamental_div_mod(c2 as int, pow2(51) as int);
+                        lemma_fundamental_div_mod(c3 as int, pow2(51) as int);
+                        lemma_fundamental_div_mod(c4 as int, pow2(51) as int);
                     }
 
                     // Then, we know that
@@ -956,7 +980,11 @@ impl FieldElement51 {
                         pow2(153) * (c3 - pow2(51) * (c4 - c4_0)) +
                         pow2(204) * (c4 - pow2(51) * carry)
                     ) by {
-                        broadcast use lemma_u128_shr_is_div;
+                        lemma_u128_shr_is_div(c0_0, 51);
+                        lemma_u128_shr_is_div(c1, 51);
+                        lemma_u128_shr_is_div(c2, 51);
+                        lemma_u128_shr_is_div(c3, 51);
+                        lemma_u128_shr_is_div(c4, 51);
                     }
 
                     // Now we use distributivity and pow exponent sums, which cancels out any ci terms and leaves only ci_0 terms
@@ -969,17 +997,47 @@ impl FieldElement51 {
                         pow2(204) * c4_0 -
                         p() * carry
                     ) by {
-                        broadcast use lemma_mul_is_associative;
-                        broadcast use lemma_mul_is_distributive_sub;
+                        assert(c0_0 - pow2(51) * (c1 - c1_0) == c0_0 - pow2(51) * c1 + pow2(51) * c1_0) by {
+                            lemma_mul_is_distributive_sub(pow2(51) as int, c1 as int, c1_0 as int);
+                        }
 
-                        lemma_pow2_adds(51, 51);
-                        lemma_pow2_adds(51, 102);
-                        lemma_pow2_adds(51, 153);
-                        lemma_pow2_adds(51, 204);
+                        assert(pow2( 51) * (c1 - pow2(51) * (c2 - c2_0)) == pow2( 51) * c1 - pow2(102) * c2 + pow2(102) * c2_0) by {
+                            lemma_mul_sub(c1 as int, c2 as int, c2_0 as int, 51);
+                        }
+
+                        assert(pow2(102) * (c2 - pow2(51) * (c3 - c3_0)) == pow2(102) * c2 - pow2(153) * c3 + pow2(153) * c3_0) by {
+                            lemma_mul_sub(c2 as int, c3 as int, c3_0 as int, 102);
+                        }
+
+                        assert(pow2(153) * (c3 - pow2(51) * (c4 - c4_0)) == pow2(153) * c3 - pow2(204) * c4 + pow2(204) * c4_0) by {
+                            lemma_mul_sub(c3 as int, c4 as int, c4_0 as int, 153);
+                        }
+
+                        assert(pow2(204) * (c4 - pow2(51) * carry) == pow2(204) * c4 - pow2(255) * carry) by {
+                            lemma_mul_is_distributive_sub(pow2(204) as int, c4 as int, pow2(51) * carry);
+                            lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, carry as int);
+                            lemma_pow2_adds(204, 51);
+                        }
 
                         // carry on the right, get p
-                        broadcast use lemma_mul_is_distributive_sub_other_way;
-                        pow255_gt_19();
+                        assert(
+                            c0_0 +
+                            pow2(51) * c1_0 +
+                            pow2(102) * c2_0 +
+                            pow2(153) * c3_0 +
+                            pow2(204) * c4_0 +
+                            19 * carry - pow2(255) * carry
+                            ==
+                            c0_0 +
+                            pow2(51) * c1_0 +
+                            pow2(102) * c2_0 +
+                            pow2(153) * c3_0 +
+                            pow2(204) * c4_0 -
+                            p() * carry
+                        ) by {
+                            pow255_gt_19();
+                            lemma_mul_is_distributive_sub_other_way(carry as int, pow2(255) as int, 19);
+                        }
                     }
 
                     let c_arr_as_nat = (c0_0 +

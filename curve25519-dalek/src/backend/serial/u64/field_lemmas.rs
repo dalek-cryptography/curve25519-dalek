@@ -678,6 +678,20 @@ pub proof fn lemma_reorder_mul(a: int, b: int)
     lemma_mul_is_associative(b, a, 2);
 }
 
+pub proof fn lemma_mul_sub(ci: int, cj: int, cj_0: int, k: nat)
+    ensures
+        pow2(k) * (ci - pow2(51) * (cj - cj_0)) == pow2(k) * ci - pow2(k + 51) * cj + pow2(k + 51) * cj_0
+{
+    // 2^k (ci - X) = 2^k ci - 2^k X
+    lemma_mul_is_distributive_sub(pow2(k) as int, ci, pow2(51) * (cj - cj_0));
+    // 2^k (2^51 * Y) = (2^k * 2^51) * Y
+    lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, cj - cj_0);
+    // 2^k * 2^51 = 2^(k + 51)
+    lemma_pow2_adds(k, 51);
+    // 2^(k + 51) * (cj - cj_0) = 2^(k + 51) * cj - 2^(k + 51) * cj_0
+    lemma_mul_is_distributive_sub(pow2(k + 51) as int, cj, cj_0);
+}
+
 // dummy, so we can call `verus`
 fn main() {}
 

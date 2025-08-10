@@ -923,6 +923,7 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
         difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int),
         borrow >> 63 == 0 ==> addend == 0,
         borrow >> 63 == 1 ==> addend == constants::L.limbs[i as int],
+        carry == (old_carry >> 52) + difference_loop2_start.limbs[i as int] + addend,
     ensures
         (i+1 >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i as int],
         borrow >> 63 == 0 ==> old_difference == difference,

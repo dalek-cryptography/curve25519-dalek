@@ -315,8 +315,8 @@ impl Scalar52 {
         // conditionally add l if the difference is negative
         assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;
-        let ghost old_difference = difference;
-        assert(seq_u64_to_nat(old_difference.limbs@.subrange(0, 0 as int)) == 0);
+        let ghost difference_after_loop1 = difference;
+        assert(seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, 0 as int)) == 0);
         assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 0 as int)) == 0);
         assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
         assert(carry >> 52 == 0) by (bit_vector)
@@ -324,14 +324,14 @@ impl Scalar52 {
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
-                      forall|j: int| i <= j < 5 ==> difference.limbs[j] == old_difference.limbs[j],
+                      forall|j: int| i <= j < 5 ==> difference.limbs[j] == difference_after_loop1.limbs[j],
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
                       (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1],
-                      borrow >> 63 == 0 ==> old_difference == difference,
+                      borrow >> 63 == 0 ==> difference_after_loop1 == difference,
                       borrow >> 63 == 1 ==>
-                          seq_u64_to_nat(old_difference.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
+                          seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
                           seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) * pow2(52 * i as nat)
 
         {
@@ -351,10 +351,10 @@ impl Scalar52 {
             proof {
                 lemma_carry_bounded_after_mask(carry, mask);
                 assert(difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
-                lemma_sub_loop2_invariant(difference, i, a, b, mask, old_difference, difference_loop2_start, carry, old_carry, addend, borrow);
+                lemma_sub_loop2_invariant(difference, i, a, b, mask, difference_after_loop1, difference_loop2_start, carry, old_carry, addend, borrow);
             }
         }
-        proof { lemma_sub_correct_after_loops(difference, carry, a, b, old_difference, borrow);}
+        proof { lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);}
         difference
     }
 
@@ -763,5 +763,3 @@ mod test {
         }
     }
 }
-
-// TODO Rename old_difference

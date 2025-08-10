@@ -289,11 +289,15 @@ impl Scalar52 {
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
         limbs_bounded(a),
-        scalar_reduced(a),
         limbs_bounded(b),
-        scalar_reduced(b),
     ensures
-        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int)
+        // TODO Ideally we want a spec like s = (a - b) % group_order,
+        // but this is only true for relatively small values of a and b.
+        // Look at all the functions that call sub and find out how large
+        // a and b are in practice.
+        to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+        to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
+        limbs_bounded(&s),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}

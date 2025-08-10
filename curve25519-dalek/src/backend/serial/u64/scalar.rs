@@ -25,12 +25,10 @@ use super::scalar_lemmas::*;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
 use super::subtle_assumes::*;
-use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
-use vstd::calc;
 use vstd::prelude::*;
 
 verus! {

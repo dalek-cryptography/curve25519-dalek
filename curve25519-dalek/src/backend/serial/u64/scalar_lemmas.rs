@@ -1,6 +1,5 @@
 use subtle::Choice;
 
-use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use super::common_verus::*;
 #[allow(unused_imports)]

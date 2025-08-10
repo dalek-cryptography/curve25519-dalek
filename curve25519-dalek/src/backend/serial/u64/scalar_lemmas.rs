@@ -1,5 +1,3 @@
-use subtle::Choice;
-
 #[allow(unused_imports)]
 use super::common_verus::*;
 #[allow(unused_imports)]
@@ -903,7 +901,7 @@ pub proof fn lemma_old_carry(old_carry: u64)
         requires old_carry < 1u64 <<52;
 }
 
-pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a: &Scalar52, b: &Scalar52, mask: u64, old_difference: Scalar52, difference_loop2_start: Scalar52, carry: u64, old_carry: u64, addend: u64, borrow: u64, underflow: Choice)
+pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a: &Scalar52, b: &Scalar52, mask: u64, old_difference: Scalar52, difference_loop2_start: Scalar52, carry: u64, old_carry: u64, addend: u64, borrow: u64)
     requires
         0 <= i < 5,
         mask == (1u64 << 52) - 1,

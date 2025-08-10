@@ -391,8 +391,9 @@ impl Scalar52 {
                                             requires borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52);
                                     assert( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) ) by
                                     {
-                                        assume(0x1_0000_0000_0000_0000 == pow2(64));
-                                        assume(1u64 << 12 == pow2(12));
+                                        lemma2_to64();
+                                        assert(0x1_0000_0000_0000_0000 == pow2(64));
+                                        assert(1u64 << 12 == pow2(12)) by (compute);
                                         lemma_pow2_adds(64, 52 * i as nat);
                                         lemma_pow2_adds(12, 52 * (i + 1) as nat);
                                         assume(64 + 52 * i as nat == 12 + 52 * (i + 1) as nat);

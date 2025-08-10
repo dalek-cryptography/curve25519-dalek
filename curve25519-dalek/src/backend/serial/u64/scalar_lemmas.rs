@@ -14,6 +14,8 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 #[allow(unused_imports)]
 use vstd::calc;
+#[allow(unused_imports)]
+use super::constants;
 use vstd::prelude::*;
 
 verus! {
@@ -745,7 +747,7 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
     }
 }
 
-proof fn lemma_l_equals_group_order()
+pub(crate) proof fn lemma_l_equals_group_order()
     ensures
         to_nat(&constants::L.limbs) == group_order(),
         seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) == group_order()

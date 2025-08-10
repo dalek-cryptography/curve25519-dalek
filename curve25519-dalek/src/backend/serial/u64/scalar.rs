@@ -519,20 +519,13 @@ impl Scalar52 {
                 // Get a contradiction because the sides in the above equation have different signs
                 assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) +
                     seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) >=0) by {
-                    // Since a and b are both scalar_reduced, they are both < group_order()
-                    // And L represents the group order, so L + a - b >= L - group_order() + a >= 0
-                    assert(to_nat(&a.limbs) < group_order());
-                    assert(to_nat(&b.limbs) < group_order());
-                    // Since L = group_order and both a, b < group_order, we have L + a - b >= L - group_order() = 0
                     assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 5 as int)) >= group_order()) by {
-                        // This follows from the fact that L represents group_order
                         lemma_l_equals_group_order();
                     };
                     assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs));
                     assert(seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs));
                 };
                 assert(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) < pow2((52 * (5) as nat))) by {
-                    // The difference limbs are bounded by lemma_bound_scalar since difference has limbs_bounded property
                     assert(seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int)) == to_nat(&difference.limbs));
                     lemma_bound_scalar(&difference);
                 };

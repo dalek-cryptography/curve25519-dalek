@@ -295,6 +295,7 @@ impl Scalar52 {
         // but this is only true for relatively small values of a and b.
         // Look at all the functions that call sub and find out how large
         // a and b are in practice.
+        // TODO What about L > a-b >= -L ==> (a-b) mod L = s?
         to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
         limbs_bounded(&s),

@@ -284,21 +284,13 @@ impl Scalar52 {
 
         // a - b
         let mut borrow: u64 = 0;
-        assert(
-
-                      seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
-                                    seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int ))
-
-        );
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int )));
         assert( (borrow >> 63) == 0 ) by (bit_vector)
             requires borrow == 0;
         assert( (borrow >> 63) * pow2((52 * (0) as nat)) == 0 );
-        assert(
-
-                      seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
-                                    seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int )) - (borrow >> 63) * pow2((52 * (0) as nat))
-
-        );
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int )) - (borrow >> 63) * pow2((52 * (0) as nat)));
         for i in 0..5
             invariant
                       limbs_bounded(b),

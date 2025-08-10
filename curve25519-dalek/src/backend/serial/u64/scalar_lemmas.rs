@@ -403,13 +403,7 @@ pub proof fn lemma_bound_scalar(a: &Scalar52)
     requires limbs_bounded(a)
     ensures to_nat(&a.limbs) < pow2((52 * (5) as nat))
 {
-    // limbs_bounded(a) means forall|i: int| 0 <= i < 5 ==> a.limbs[i] < (1u64 << 52)
-    assert(a.limbs.len() == 5);
-    assert(forall|i: int| 0 <= i < a.limbs@.len() ==> a.limbs@[i] < (1u64 << 52));
     lemma_general_bound(a.limbs@);
-    assert(seq_u64_to_nat(a.limbs@) < pow2((52 * a.limbs@.len() as nat)));
-    assert(seq_u64_to_nat(a.limbs@) == to_nat(&a.limbs));
-    assert(a.limbs@.len() as nat == 5);
 }
 
 pub proof fn lemma_general_bound(a: Seq<u64>)
@@ -418,11 +412,9 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
     decreases a.len()
 {
     if a.len() == 0 {
-        // Base case: empty sequence
         assert(seq_u64_to_nat(a) == 0);
         lemma2_to64(); // Gives us pow2(0) == 1 among other facts
         assert(pow2(0) == 1);
-        assert(0 < 1);
     } else {
         // Inductive case
         let tail = a.subrange(1, a.len() as int);
@@ -439,12 +431,6 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
         assert(seq_u64_to_nat(tail) < pow2((52 * tail.len() as nat)));
         
         // Now prove for the full sequence
-        assert(a.len() > 0);
-        
-        // For non-empty sequences, seq_u64_to_nat expands as follows
-        // seq_u64_to_nat(a) = seq_to_nat(a.map(|i, x| x as nat))
-        // By definition of seq_to_nat, for non-empty sequences:
-        // seq_to_nat(limbs) = limbs[0] + seq_to_nat(limbs.subrange(1, limbs.len())) * pow2(52)
         assert(seq_u64_to_nat(a) == seq_to_nat(a.map(|i, x| x as nat)));
         assert(a.map(|i, x| x as nat).len() == a.len());
         assert(a.map(|i, x| x as nat)[0] == a[0] as nat);
@@ -464,18 +450,7 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
         // We have seq_u64_to_nat(a) == a[0] + seq_u64_to_nat(tail) * pow2(52)
         // We know a[0] < pow2(52) and seq_u64_to_nat(tail) < pow2(52 * (a.len() - 1))
         
-        // The key insight: pow2(52) - 1 + pow2(52 * (a.len() - 1) - 1) * pow2(52) is the maximum value
-        // But we need a tighter bound. Let's use the fact that:
-        // a[0] <= pow2(52) - 1
-        // seq_u64_to_nat(tail) <= pow2(52 * (a.len() - 1)) - 1
-        
-        // So seq_u64_to_nat(a) <= (pow2(52) - 1) + (pow2(52 * (a.len() - 1)) - 1) * pow2(52)
-        //                      = pow2(52) - 1 + pow2(52 * (a.len() - 1)) * pow2(52) - pow2(52)
-        //                      = pow2(52 * (a.len() - 1)) * pow2(52) - 1
-        //                      = pow2(52 * (a.len() - 1) + 52) - 1
-        //                      = pow2(52 * a.len()) - 1
-        //                      < pow2(52 * a.len())
-        
+
         assert(a[0] as nat <= pow2(52) - 1);
         assert(seq_u64_to_nat(tail) <= pow2(52 * (a.len() - 1) as nat) - 1);
         

@@ -378,8 +378,18 @@ impl Scalar52 {
                                     assume(false);
                                     }
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
-                                    (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {
+                                    (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat) -
+                                    0x1_0000_0000_0000_0000 * pow2(52 * i as nat); {
                                         lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
+                                    (borrow >> 52) * pow2(52 * (i+1) as nat) - 0x1_0000_0000_0000_0000 * pow2(52 * i as nat); {
+                                    assume(borrow >> 52 == (1u64<<12) - 1);
+                                    assume( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) );
+                                    }
+                                seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
+                                    ((1u64<<12) - 1) * pow2(52 * (i+1) as nat) - (1u64 << 12) * pow2(52 * (i + 1) as nat); {
+                                    assume(borrow >> 63 == 1);
                                     assume(false);
                                     }
                                 seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));

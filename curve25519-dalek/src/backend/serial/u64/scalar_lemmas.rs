@@ -778,6 +778,9 @@ pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u
     requires
         limbs_bounded(a),
         limbs_bounded(b),
+        limbs_bounded(&difference),
+        limbs_bounded(&old_difference),
+        (carry >> 52) < 2,
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
         borrow >> 63 == 0 ==> old_difference == difference,
         borrow >> 63 == 1 ==>

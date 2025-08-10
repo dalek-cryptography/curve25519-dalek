@@ -25,13 +25,13 @@ use super::scalar_lemmas::*;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
 use super::subtle_assumes::*;
-#[allow(unused_imports)]
-use vstd::arithmetic::power2::*;
-use vstd::prelude::*;
-use vstd::calc;
+use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
-use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
+use vstd::calc;
+use vstd::prelude::*;
 
 verus! {
 /// The `Scalar52` struct represents an element in

@@ -1,6 +1,8 @@
 #[allow(unused_imports)]
 use super::common_verus::*;
 #[allow(unused_imports)]
+use super::constants;
+#[allow(unused_imports)]
 use super::scalar::Scalar52;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
@@ -14,8 +16,6 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 #[allow(unused_imports)]
 use vstd::calc;
-#[allow(unused_imports)]
-use super::constants;
 use vstd::prelude::*;
 
 verus! {
@@ -506,18 +506,18 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
     } else {
         // Inductive case
         let tail = a.subrange(1, a.len() as int);
-        
+
         // Apply induction hypothesis on tail
         assert(forall|i: int| 0 <= i < tail.len() ==> tail[i] < (1u64 << 52)) by {
             assert(forall|i: int| 0 <= i < tail.len() ==> tail[i] == a[i + 1]);
         };
-        
+
         assert(tail.len() == a.len() - 1);
-        
+
         // Apply induction hypothesis
         lemma_general_bound(tail);
         assert(seq_u64_to_nat(tail) < pow2((52 * tail.len() as nat)));
-        
+
         // Now prove for the full sequence
         assert(seq_u64_to_nat(a) == seq_to_nat(a.map(|i, x| x as nat)));
         assert(a.map(|i, x| x as nat).len() == a.len());
@@ -525,40 +525,40 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
         assert(a.map(|i, x| x as nat).subrange(1, a.len() as int) == a.subrange(1, a.len() as int).map(|i, x| x as nat));
         // Therefore:
         assert(seq_u64_to_nat(a) == a[0] as nat + seq_u64_to_nat(a.subrange(1, a.len() as int)) * pow2(52));
-        
+
         assert(a.subrange(1, a.len() as int) == tail);
-        
+
         // From precondition
         assert(a[0] < (1u64 << 52));
         lemma2_to64_rest();
         assert(0x10000000000000 == 1u64 << 52) by (compute_only);
         assert(0x10000000000000 == pow2(52));
         assert((1u64 << 52) == pow2(52));
-        
+
         // We have seq_u64_to_nat(a) == a[0] + seq_u64_to_nat(tail) * pow2(52)
         // We know a[0] < pow2(52) and seq_u64_to_nat(tail) < pow2(52 * (a.len() - 1))
-        
+
 
         assert(a[0] as nat <= pow2(52) - 1);
         assert(seq_u64_to_nat(tail) <= pow2(52 * (a.len() - 1) as nat) - 1);
-        
+
         assert(seq_u64_to_nat(a) <= (pow2(52) - 1) + (pow2(52 * (a.len() - 1) as nat) - 1) * pow2(52)) by {
             lemma_mul_inequality((pow2(52 * (a.len() - 1) as nat) - 1) as int, pow2(52 * (a.len() - 1) as nat) as int, pow2(52) as int);
         };
-        
+
         // Expand the right side
         assert((pow2(52) - 1) + (pow2(52 * (a.len() - 1) as nat) - 1) * pow2(52) ==
                pow2(52) - 1 + pow2(52 * (a.len() - 1) as nat) * pow2(52) - pow2(52)) by {
             broadcast use lemma_mul_is_distributive_sub;
         };
-        
+
         assert(pow2(52) - 1 + pow2(52 * (a.len() - 1) as nat) * pow2(52) - pow2(52) ==
                pow2(52 * (a.len() - 1) as nat) * pow2(52) - 1);
-        
+
         lemma_pow2_adds(52 * (a.len() - 1) as nat, 52);
         assert(pow2(52 * (a.len() - 1) as nat) * pow2(52) == pow2(52 * (a.len() - 1) as nat + 52));
         assert(52 * (a.len() - 1) as nat + 52 == 52 * a.len() as nat);
-        
+
         assert(seq_u64_to_nat(a) <= pow2(52 * a.len() as nat) - 1);
         assert(seq_u64_to_nat(a) < pow2(52 * a.len() as nat));
     }
@@ -577,31 +577,31 @@ pub proof fn lemma_decompose(a: u64, mask: u64)
     assert((1u64 << 52) == 0x10000000000000) by (bit_vector);
     assert(pow2(52) == 0x10000000000000);
     assert((1u64 << 52) as nat == pow2(52));
-    
+
     assert(a >> 52 == a / (1u64 << 52));
-    
+
     // Apply fundamental division theorem: a = q * d + r
     lemma_fundamental_div_mod(a as int, pow2(52) as int);
     let q = a as nat / pow2(52);
     let r = a as nat % pow2(52);
     assert(a as nat == q * pow2(52) + r);
     assert(0 <= r < pow2(52));
-    
+
     // Now prove that (a & mask) == r
     // mask is all 1s in the lower 52 bits
     assert(mask == (1u64 << 52) - 1);
-    
+
     // Key insight: a & mask gives us the lower 52 bits, which is exactly a % pow2(52)
     lemma_u64_low_bits_mask_is_mod(a, 52);
     assert(a & mask == a % (1u64 << 52));
     assert((a % (1u64 << 52)) as nat == a as nat % pow2(52));
     assert((a & mask) as nat == r);
-    
+
     // Now show that a >> 52 == q
     assert((a >> 52) as nat == a as nat / pow2(52));
     assert((a >> 52) as nat == q);
-    
-    // Combine everything  
+
+    // Combine everything
     assert(a as nat == (a >> 52) as nat * pow2(52) + (a & mask) as nat);
 }
 

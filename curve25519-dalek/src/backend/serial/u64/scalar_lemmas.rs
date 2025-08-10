@@ -517,4 +517,116 @@ pub proof fn lemma_decompose(a: u64, mask: u64)
     assert(a as nat == (a >> 52) as nat * pow2(52) + (a & mask) as nat);
 }
 
+pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usize, a: &Scalar52, b: &Scalar52, old_borrow: u64, mask: u64, difference_loop1_start: Scalar52)
+    ensures seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat))
+        == seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1))
+{
+    calc! {
+        (==)
+        seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1)); {
+            lemma_seq_u64_to_nat_subrange_extend(a.limbs@, i as int);
+            lemma_seq_u64_to_nat_subrange_extend(b.limbs@, i as int);
+        }
+        seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i as int] * pow2(52 * i as nat) -
+        (seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i as int] * pow2(52 * i as nat)); {
+            broadcast use lemma_mul_is_distributive_sub_other_way;
+        }
+        seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
+        (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {
+            assert(difference_loop1_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
+            // Use loop invariant
+        }
+        seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) - (old_borrow >> 63) * pow2(52 * i as nat) +
+        (a.limbs[i as int] - b.limbs[i as int]) * pow2(52 * i as nat); {
+            broadcast use lemma_mul_is_distributive_sub_other_way;
+        }
+        seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
+        (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
+            assert(borrow == a.limbs[i as int].wrapping_sub((b.limbs[i as int] + (old_borrow >> 63)) as u64));
+            assert(difference.limbs[i as int] == borrow & mask);
+            // Expand wrapping sub
+            if a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) < 0 {
+
+                assert(borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52)) by {
+                    assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+                };
+                calc! {
+                    (==)
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
+                    (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
+                        assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64) + 0x1_0000_0000_0000_0000) as u64);
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow - 0x1_0000_0000_0000_0000) * pow2(52 * i as nat); {
+                        lemma_decompose(borrow, mask);
+                        assert(borrow == (borrow >> 52) * pow2(52) + difference.limbs[i as int]);
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                        ((borrow >> 52) * pow2(52) + difference.limbs[i as int] - 0x1_0000_0000_0000_0000) * pow2(52 * i as nat); {
+                        assume(false);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                        (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat) -
+                        0x1_0000_0000_0000_0000 * pow2(52 * i as nat); {
+                            lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
+                        (borrow >> 52) * pow2(52 * (i+1) as nat) - 0x1_0000_0000_0000_0000 * pow2(52 * i as nat); {
+                        assert(borrow >> 52 == (1u64<<12) - 1) by (bit_vector)
+                                requires borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52);
+                        assert( 0x1_0000_0000_0000_0000 * pow2(52 * i as nat) == (1u64 << 12) * pow2(52 * (i + 1) as nat) ) by
+                        {
+                            lemma2_to64();
+                            assert(0x1_0000_0000_0000_0000 == pow2(64));
+                            assert(1u64 << 12 == pow2(12)) by (compute);
+                            lemma_pow2_adds(64, 52 * i as nat);
+                            lemma_pow2_adds(12, 52 * (i + 1) as nat);
+                            assert(64 + 52 * i as nat == 12 + 52 * (i + 1) as nat);
+                        }
+                        lemma_mul_is_distributive_sub_other_way(pow2(52 * (i+1) as nat) as int, (1u64<<12) - 1, (1u64 << 12) as int);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) +
+                        (-1) * pow2(52 * (i+1) as nat) ; {
+                        assert(borrow >> 63 == 1) by (bit_vector)
+                                requires borrow >= 0x1_0000_0000_0000_0000 - (1u64<<52);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+                }
+            }
+            else {
+
+                calc! {
+                    (==)
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int))  +
+                    (a.limbs[i as int] - b.limbs[i as int] - (old_borrow >> 63)) * pow2(52 * i as nat); {
+                        assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (borrow) * pow2(52 * i as nat); {
+                        assume(borrow == (borrow >> 52) * pow2(52) + (borrow & mask));
+                        assert(borrow == (borrow >> 52) * pow2(52) + difference.limbs[i as int]);
+                    }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                        ((borrow >> 52) * pow2(52) + difference.limbs[i as int]) * pow2(52 * i as nat); {
+                        assume(false);
+                //assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
+                //assert(52 + 52 * i as nat == 52 * (i+1) as nat);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) +
+                        (borrow >> 52) * pow2(52 * (i+1) as nat) + difference.limbs[i as int] * pow2(52 * i as nat); {
+                            lemma_seq_u64_to_nat_subrange_extend(difference.limbs@, i as int);
+                        assert (borrow < 1u64 << 52) by {
+                            assert(borrow == (a.limbs[i as int] - ((b.limbs[i as int] + (old_borrow >> 63)) as u64)) as u64);
+                            assert(a.limbs[i as int] < (1u64 << 52));
+                            assert((b.limbs[i as int] + (old_borrow >> 63)) as u64 >= 0);
+                        }
+                        assume(borrow >> 52 == 0);
+                        assume(borrow >> 63 == 0);
+                        }
+                    seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+                }
+            }
+        }
+        seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
+    }
+}
+
 } // verus!

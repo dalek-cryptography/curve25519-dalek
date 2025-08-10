@@ -444,8 +444,6 @@ impl Scalar52 {
                     seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat));
                 }
             }
-            assert(seq_u64_to_nat(a.limbs@.subrange(0, i + 1)) - seq_u64_to_nat(b.limbs@.subrange(0, i + 1)) ==
-                   seq_u64_to_nat(difference.limbs@.subrange(0, i + 1)) - (borrow >> 63) * pow2((52 * (i + 1) as nat)));
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 

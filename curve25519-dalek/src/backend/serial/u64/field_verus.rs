@@ -819,32 +819,23 @@ impl FieldElement51 {
                 assert((c4 >> 51) <= (u64::MAX as u128));
 
                 let a0_0 = (c0_0 as u64) & LOW_51_BIT_MASK;
-
                 // a0_0 < (1u64 << 51)
                 masked_lt_51(c0_0 as u64);
 
                 let a1_0 = (c1 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c2);
                 // a1_0 < (1u64 << 51)
                 masked_lt_51(c1 as u64);
 
-
                 let a2 = (c2 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c3);
                 // a2 < (1u64 << 51)
                 masked_lt_51(c2 as u64);
 
-
                 let a3 = (c3 as u64) & LOW_51_BIT_MASK;
-
                 // a3 < (1u64 << 51)
                 masked_lt_51(c3 as u64);
 
                 let carry: u64 = (c4 >> 51) as u64;
                 let a4 = (c4 as u64) & LOW_51_BIT_MASK;
-
                 // a4 < (1u64 << 51)
                 masked_lt_51(c4 as u64);
 

@@ -248,6 +248,9 @@ impl Scalar52 {
 
         // subtract l if the sum is >= l
         proof { lemma_l_value_properties(&constants::L, &sum); }
+        assume(to_nat(&sum.limbs) < 2 * group_order());
+        assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
+        proof{lemma_l_equals_group_order();}
         let result = Scalar52::sub(&sum, &constants::L);
         assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
         result
@@ -259,8 +262,14 @@ impl Scalar52 {
     requires
         limbs_bounded(a),
         limbs_bounded(b),
+        // Without the following condition, all we can prove is something like:
+        // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
+        // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
+        // In the 2nd case, `sub` doesn't always do subtraction mod group_order
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
-        to_nat(&s.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int)
+        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
+        limbs_bounded(&s),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}
@@ -268,35 +277,81 @@ impl Scalar52 {
 
         // a - b
         let mut borrow: u64 = 0;
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int )));
+        assert( (borrow >> 63) == 0 ) by (bit_vector)
+            requires borrow == 0;
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 0 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 0 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int )) - (borrow >> 63) * pow2((52 * (0) as nat)));
         for i in 0..5
             invariant
                       limbs_bounded(b),
+                      limbs_bounded(a),
                       forall|j: int| 0 <= j < i ==> difference.limbs[j] < (1u64 << 52),
                       mask == (1u64 << 52) - 1,
+                      seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
+                                    seq_u64_to_nat(difference.limbs@.subrange(0, i as int )) - (borrow >> 63) * pow2((52 * (i) as nat))
         {
             proof { assert ((borrow >> 63) < 2) by (bit_vector); }
+            let ghost old_borrow = borrow;
             borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
+            let ghost difference_loop1_start = difference;
             difference.limbs[i] = borrow & mask;
+            assert(difference_loop1_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
+            assert(
+            seq_u64_to_nat(a.limbs@.subrange(0, i as int)) - seq_u64_to_nat(b.limbs@.subrange(0, i as int )) ==
+                        seq_u64_to_nat(difference_loop1_start.limbs@.subrange(0, i as int )) - (old_borrow >> 63) * pow2((52 * (i) as nat)));
+            proof{
+                lemma_sub_loop1_invariant(difference, borrow, i, a, b, old_borrow, mask, difference_loop1_start);
+            }
             proof { lemma_borrow_and_mask_bounded(borrow, mask); }
         }
 
+        assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) - seq_u64_to_nat(b.limbs@.subrange(0, 5 as int )) ==
+                seq_u64_to_nat(difference.limbs@.subrange(0, 5 as int )) - (borrow >> 63) * pow2((52 * (5) as nat)) );
         // conditionally add l if the difference is negative
+        assert(borrow >> 63 == 1 || borrow >> 63 == 0) by (bit_vector);
         let mut carry: u64 = 0;
+        let ghost difference_after_loop1 = difference;
+        assert(seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, 0 as int)) == 0);
+        assert(seq_u64_to_nat(constants::L.limbs@.subrange(0, 0 as int)) == 0);
+        assert(seq_u64_to_nat(difference.limbs@.subrange(0, 0 as int)) == 0);
+        assert(carry >> 52 == 0) by (bit_vector)
+            requires carry == 0;
         for i in 0..5
             invariant
                       forall|j: int| 0 <= j < 5 ==> difference.limbs[j] < (1u64 << 52),  // from first loop
+                      forall|j: int| i <= j < 5 ==> difference.limbs[j] == difference_after_loop1.limbs[j],
                       mask == (1u64 << 52) - 1,
                       i == 0 ==> carry == 0,
                       i >= 1 ==> (carry >> 52) < 2,
+                      (i >=1 && borrow >> 63 == 0) ==> carry == difference.limbs[i-1],
+                      borrow >> 63 == 0 ==> difference_after_loop1 == difference,
+                      borrow >> 63 == 1 ==>
+                          seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) ==
+                          seq_u64_to_nat(difference.limbs@.subrange(0, i as int)) + (carry >> 52) * pow2(52 * i as nat)
+
         {
+            let ghost old_carry = carry;
             let underflow = Choice::from((borrow >> 63) as u8);
             let addend = select(&0, &constants::L.limbs[i], underflow);
+            if borrow >> 63 == 0 {
+                assert(addend == 0);
+            }
+            if borrow >> 63 == 1 {
+                assert(addend == constants::L.limbs[i as int]);
+            }
             proof {lemma_scalar_subtract_no_overflow(carry, difference.limbs[i as int], addend, i as u32, &constants::L);}
             carry = (carry >> 52) + difference.limbs[i] + addend;
+            let ghost difference_loop2_start = difference;
             difference.limbs[i] = carry & mask;
-            proof { lemma_carry_bounded_after_mask(carry, mask); }
+            proof {
+                lemma_carry_bounded_after_mask(carry, mask);
+                assert(difference_loop2_start.limbs@.subrange(0, i as int) == difference.limbs@.subrange(0, i as int));
+                lemma_sub_loop2_invariant(difference, i, a, b, mask, difference_after_loop1, difference_loop2_start, carry, old_carry, addend, borrow);
+            }
         }
-        assume(to_nat(&difference.limbs) == (to_nat(&a.limbs) + group_order() - to_nat(&b.limbs)) % (group_order() as int));
+        proof { lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);}
         difference
     }
 

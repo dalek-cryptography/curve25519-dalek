@@ -20,6 +20,11 @@ pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
     seq_to_nat(limbs@.map(|i, x| x as nat))
 }
 
+pub open spec fn seq_u64_to_nat(limbs: Seq<u64>) -> nat
+{
+    seq_to_nat(limbs.map(|i, x| x as nat))
+}
+
 pub open spec fn to_nat(limbs: &[u64]) -> nat
 {
     seq_to_nat(limbs@.map(|i, x| x as nat))

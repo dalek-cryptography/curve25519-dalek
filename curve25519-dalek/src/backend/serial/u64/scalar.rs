@@ -248,7 +248,6 @@ impl Scalar52 {
 
         // subtract l if the sum is >= l
         proof { lemma_l_value_properties(&constants::L, &sum); }
-        assert(to_nat(&sum.limbs) >= 0);
         assume(to_nat(&sum.limbs) < 2 * group_order());
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}

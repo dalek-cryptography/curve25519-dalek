@@ -750,8 +750,27 @@ impl FieldElement51 {
                 let bound = 1u64 << 54;
                 let bound19 = (19 * bound) as u64;
                 let bound_sq = 1u128 << 108;
+
                 // u64 to u128 conversion forces extra assert
                 assert( (1u64 << 54) * ((19 * (1u64 << 54)) as u64) == 19 * (1u128 << 108)) by (bit_vector);
+                assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108)) by (bit_vector);
+
+                // precond for term_product_bounds
+                assert( 19 * bound <= u64::MAX) by {
+                    assert( 19 * (1u64 << 54) <= u64::MAX) by (compute);
+                }
+                // If a[i] < 2^54 then a[i] * a[j] < 2^108 and a[i] * (19 * a[j]) < 19 * 2^108
+                term_product_bounds(a, bound);
+
+                // ci_0 < 77 * (1u128 << 108)
+                c_i_0_bounded(a, bound);
+
+                // precond for c_i_shift_bounded
+                assert(77 * (bound * bound) + u64::MAX <= ((u64::MAX as u128) << 51)) by {
+                    assert( 77 * (1u128 << 108)+ u64::MAX <= ((u64::MAX as u128) << 51)) by (compute);
+                }
+                // ci >> 51 <= u64::MAX
+                c_i_shift_bounded(a, bound);
 
                 // bv arithmetic
                 assert(19 < (1u64 << 5)) by (bit_vector);
@@ -759,87 +778,64 @@ impl FieldElement51 {
                 assert((1u64 << 52) < (1u64 << 54)) by (bit_vector);
                 assert((1u64 << 54) < (1u64 << 59)) by (bit_vector);
                 assert((1u64 << 54) * (1u64 << 5) == (1u64 << 59)) by (bit_vector);
-                assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108)) by (bit_vector);
                 assert(((1u64 << 54) as u128) * ((1u64 << 59) as u128) == (1u128 << 113)) by (bit_vector);
 
                 let a3_19 = (19 * a[3]) as u64;
                 let a4_19 = (19 * a[4]) as u64;
 
-                // c0
-                let c0_0: u128 = (a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19)) as u128;
-                lemma_m(a[0], a[0], bound, bound);
-                lemma_m(a[1], a4_19, bound, bound19);
-                lemma_m(a[2], a3_19, bound, bound19);
-                // conclusion, (1 + 2 * (19 + 19)) = 77
+                // NOTE: we assert the properties derived from c_i_0_bounded
+                // and c_i_shift_bounded after every variable declaration,
+                // to trigger the solver instantiation
+
+                // ci_0 defs
+
+                let c0_0: u128 = c0_0_val(a); // a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19
                 assert(c0_0 < 77 * bound_sq);
 
-                // c1
-                let c1_0: u128 = (a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19)) as u128;
-                lemma_m(a[3], a3_19, bound, bound19);
-                lemma_m(a[0],  a[1], bound, bound);
-                lemma_m(a[2], a4_19, bound, bound19);
-                // conclusion, (19 + 2 * (1 + 19)) = 59
+                let c1_0: u128 = c1_0_val(a); // a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19
                 assert(c1_0 < 59 * bound_sq);
 
-                // c2
-                let c2_0: u128 = (a[1] *  a[1] + 2*( a[0] *  a[2] + a[4] * a3_19)) as u128;
-                lemma_m(a[1],  a[1], bound, bound);
-                lemma_m(a[0],  a[2], bound, bound);
-                lemma_m(a[4], a3_19, bound, bound19);
-                // conclusion, (1 + 2 * (1 + 19)) = 41
+                let c2_0: u128 = c2_0_val(a); // a[1] *  a[1] + 2*( a[0] *  a[2] + a[4] * a3_19
                 assert(c2_0 < 41 * bound_sq);
 
-                // c3
-                let c3_0: u128 = (a[4] * a4_19 + 2*( a[0] *  a[3] + a[1] *  a[2])) as u128;
-                lemma_m(a[4], a4_19, bound, bound19);
-                lemma_m(a[0],  a[3], bound, bound);
-                lemma_m(a[1],  a[2], bound, bound);
-                // conclusion, (19 + 2 * (1 + 1)) = 23
+                let c3_0: u128 =  c3_0_val(a); // a[4] * a4_19 + 2*( a[0] *  a[3] + a[1] *  a[2]
                 assert(c3_0 < 23 * bound_sq);
 
-                // c4
-                let c4_0: u128 = (a[2] *  a[2] + 2*( a[0] *  a[4] + a[1] *  a[3])) as u128;
-                lemma_m(a[2],  a[2], bound, bound);
-                lemma_m(a[0],  a[4], bound, bound);
-                lemma_m(a[1],  a[3], bound, bound);
-                // conclusion, (1 + 2 * (1 + 1)) = 5
+                let c4_0: u128 =  c4_0_val(a); // a[2] *  a[2] + 2*( a[0] *  a[4] + a[1] *  a[3]
                 assert(c4_0 < 5 * bound_sq);
 
-                assert( 77 * bound_sq <= ((u64::MAX as u128) << 51)) by (compute); // all ci_0 are then < MAX << 51
+                // ci defs
 
-                lemma_shr_51_fits_u64(c0_0);
+                let c1 = c1_val(a); // (c1_0 + ((c0_0 >> 51) as u64) as u128) as u128;
+                assert((c1 >> 51) <= (u64::MAX as u128));
 
-                let c1 = (c1_0 + ((c0_0 >> 51) as u64) as u128) as u128;
+                let c2 = c2_val(a); // (c2_0 + ((c1 >> 51) as u64) as u128) as u128;
+                assert((c2 >> 51) <= (u64::MAX as u128));
+
+                let c3 = c3_val(a); // (c3_0 + ((c2 >> 51) as u64) as u128) as u128;
+                assert((c3 >> 51) <= (u64::MAX as u128));
+
+                let c4 = c4_val(a); // (c4_0 + ((c3 >> 51) as u64) as u128) as u128;
+                assert((c4 >> 51) <= (u64::MAX as u128));
+
                 let a0_0 = (c0_0 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c1);
                 // a0_0 < (1u64 << 51)
                 masked_lt_51(c0_0 as u64);
 
-                let c2 = (c2_0 + ((c1 >> 51) as u64) as u128) as u128;
                 let a1_0 = (c1 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c2);
                 // a1_0 < (1u64 << 51)
                 masked_lt_51(c1 as u64);
 
-                let c3 = (c3_0 + ((c2 >> 51) as u64) as u128) as u128;
                 let a2 = (c2 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c3);
                 // a2 < (1u64 << 51)
                 masked_lt_51(c2 as u64);
 
-                let c4 = (c4_0 + ((c3 >> 51) as u64) as u128) as u128;
                 let a3 = (c3 as u64) & LOW_51_BIT_MASK;
-
-                lemma_shr_51_fits_u64(c4);
                 // a3 < (1u64 << 51)
                 masked_lt_51(c3 as u64);
 
                 let carry: u64 = (c4 >> 51) as u64;
                 let a4 = (c4 as u64) & LOW_51_BIT_MASK;
-
                 // a4 < (1u64 << 51)
                 masked_lt_51(c4 as u64);
 

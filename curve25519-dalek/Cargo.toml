@@ -47,10 +47,10 @@ rand_core = { version = "0.9", default-features = false, features = ["os_rng"] }
 [build-dependencies]
 rustc_version = "0.4.0"
 
-[[bench]]
-name = "dalek_benchmarks"
-harness = false
-required-features = ["alloc", "rand_core"]
+# [[bench]]
+# name = "dalek_benchmarks"
+# harness = false
+# required-features = ["alloc", "rand_core"]
 
 [dependencies]
 vstd = { git = "https://github.com/verus-lang/verus", rev = "33c6cec7bd19818e51d2b61f629d5d2484778bed"}
@@ -86,8 +86,8 @@ group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
 
-[target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
-curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
+# [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
+# curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
 
 [lints.rust.unexpected_cfgs]
 level = "warn"

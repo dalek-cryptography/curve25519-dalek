@@ -266,7 +266,7 @@ impl Scalar52 {
         // Without the following condition, all we can prove is something like:
         // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
-        // In particular, `sub` doesn't always do subtraction mod group_order
+        // In the 2nd case, `sub` doesn't always do subtraction mod group_order
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),

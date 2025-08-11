@@ -282,6 +282,21 @@ mod test {
         );
     }
 
+    // Tests that lizard_decode of a random point is None
+    // TODO: what's the false positive rate on this?
+    #[test]
+    fn test_lizard_invalid() {
+        let mut rng = rand::rng();
+        for _ in 0..100 {
+            let pt = RistrettoPoint::random(&mut rng);
+            assert!(
+                pt.lizard_decode::<Sha256>().is_none(),
+                "random point {:02x?} is a valid Lizard encoding",
+                pt.compress().to_bytes()
+            )
+        }
+    }
+
     #[test]
     fn test_elligator_inv() {
         let mut rng = rand::rng();

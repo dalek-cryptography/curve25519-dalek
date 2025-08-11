@@ -2,8 +2,8 @@
 
 #![allow(non_snake_case)]
 
-use digest::generic_array::typenum::U32;
 use digest::Digest;
+use digest::generic_array::typenum::U32;
 
 use crate::constants;
 use crate::field::FieldElement;
@@ -65,11 +65,7 @@ impl RistrettoPoint {
             }
             n_found += ok.unwrap_u8();
         }
-        if n_found == 1 {
-            Some(result)
-        } else {
-            None
-        }
+        if n_found == 1 { Some(result) } else { None }
     }
 
     /// Directly encode 253 bits as a RistrettoPoint, using Elligator

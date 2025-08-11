@@ -37,6 +37,3 @@ pub mod subtle_assumes;
 pub mod scalar_lemmas;
 
 pub mod scalar_specs;
-
-// Placeholder
-pub mod vstd_u128;

@@ -110,7 +110,10 @@ pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
         pow2(153) * a[3] - pow2(153) * b[3] +
         pow2(204) * a[4] - pow2(204) * b[4]
     ) by {
-        broadcast use lemma_mul_is_distributive_sub;
+        lemma_mul_is_distributive_sub(pow2(1 * 51) as int, a[1] as int, b[1] as int);
+        lemma_mul_is_distributive_sub(pow2(2 * 51) as int, a[2] as int, b[2] as int);
+        lemma_mul_is_distributive_sub(pow2(3 * 51) as int, a[3] as int, b[3] as int);
+        lemma_mul_is_distributive_sub(pow2(4 * 51) as int, a[4] as int, b[4] as int);
     }
 }
 
@@ -228,7 +231,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(s1 * s4 == s4 * s1 == s5) by {
         lemma_pow2_adds(51, 204)
     }
-    assert(s2 * s2 ==s4) by {
+    assert(s2 * s2 == s4) by {
         lemma_pow2_adds(102, 102)
     }
     assert(s2 * s3 == s3 * s2 == s5) by {
@@ -254,27 +257,33 @@ pub proof fn as_nat_squared(v: [u64; 5])
         (s3 * v3) * as_nat(v) +
         (s4 * v4) * as_nat(v)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        // (x1 + x2 + x3 + x4 + x5) * n == x1 * n + x2 * n + x3 * n + x4 * n + x5 * n
+        mul_5_terms_other_way(
+            as_nat(v) as int,
+            v0 as int,
+            s1 * v1,
+            s2 * v2,
+            s3 * v3,
+            s4 * v4
+        );
     }
 
     // because of the sheer number of possible associativity/distributivity groupings we have
     // to help the solver along by intermittently asserting chunks
     assert(v0 * as_nat(v) ==
-        v0 * v0 +
-        v0 * (s1 * v1) +
-        v0 * (s2 * v2) +
-        v0 * (s3 * v3) +
-        v0 * (s4 * v4)
-        ==
         s4 * (v0 * v4) +
         s3 * (v0 * v3) +
         s2 * (v0 * v2) +
         s1 * (v0 * v1) +
         v0 * v0
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        mul_v0_and_reorder(
+            v0 as int,
+            s1 as int, v1 as int,
+            s2 as int, v2 as int,
+            s3 as int, v3 as int,
+            s4 as int, v4 as int
+        );
     }
 
     assert((s1 * v1) * as_nat(v) ==
@@ -284,8 +293,14 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s2 * (v1 * v1) +
         s1 * (v0 * v1)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        mul_si_vi_and_reorder(
+            s1 as int, v1 as int,
+            v0 as int,
+            s1 as int, v1 as int,
+            s2 as int, v2 as int,
+            s3 as int, v3 as int,
+            s4 as int, v4 as int
+        )
     }
 
     assert((s2 * v2) * as_nat(v) ==
@@ -295,8 +310,14 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s3 * (v1 * v2) +
         s2 * (v0 * v2)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        mul_si_vi_and_reorder(
+            s2 as int, v2 as int,
+            v0 as int,
+            s1 as int, v1 as int,
+            s2 as int, v2 as int,
+            s3 as int, v3 as int,
+            s4 as int, v4 as int
+        )
     }
 
     assert((s3 * v3) * as_nat(v) ==
@@ -306,8 +327,14 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s4 * (v1 * v3) +
         s3 * (v0 * v3)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        mul_si_vi_and_reorder(
+            s3 as int, v3 as int,
+            v0 as int,
+            s1 as int, v1 as int,
+            s2 as int, v2 as int,
+            s3 as int, v3 as int,
+            s4 as int, v4 as int
+        )
     }
 
     assert((s4 * v4) * as_nat(v) ==
@@ -317,8 +344,14 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s5 * (v1 * v4) +
         s4 * (v0 * v4)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        mul_si_vi_and_reorder(
+            s4 as int, v4 as int,
+            v0 as int,
+            s1 as int, v1 as int,
+            s2 as int, v2 as int,
+            s3 as int, v3 as int,
+            s4 as int, v4 as int
+        )
     }
 
     // we now mash them all together
@@ -333,18 +366,89 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s1 * (2 * (v0 * v1)) +
              (v0 * v0)
     ) by {
-        broadcast use lemma_mul_is_associative;
-        broadcast use lemma_mul_is_distributive_add;
-        assert(v0 * v1 + v0 * v1 == 2 * (v0 * v1));
-        assert(v0 * v2 + v0 * v2 == 2 * (v0 * v2));
-        assert(v0 * v3 + v0 * v3 == 2 * (v0 * v3));
-        assert(v0 * v4 + v0 * v4 == 2 * (v0 * v4));
-        assert(v1 * v2 + v1 * v2 == 2 * (v1 * v2));
-        assert(v1 * v3 + v1 * v3 == 2 * (v1 * v3));
-        assert(v1 * v4 + v1 * v4 == 2 * (v1 * v4));
-        assert(v2 * v3 + v2 * v3 == 2 * (v2 * v3));
-        assert(v2 * v4 + v2 * v4 == 2 * (v2 * v4));
-        assert(v3 * v4 + v3 * v4 == 2 * (v3 * v4));
+        // These assert(a + a = 2a) statements aren't strictly necessary, but they improve the solve time
+
+        // s1 terms
+        assert(
+            s1 * (v0 * v1) + s1 * (v0 * v1)
+            ==
+            s1 * (2 * (v0 * v1))
+        ) by {
+            assert(v0 * v1 + v0 * v1 == 2 * (v0 * v1));
+            lemma_mul_is_distributive_add(s1 as int, v0 * v1, v0 * v1);
+        }
+
+        // s2 terms
+        assert(
+            s2 * (v0 * v2) + s2 * (v1 * v1) + s2 * (v0 * v2)
+            ==
+            s2 * (v1 * v1 + 2 * (v0 * v2))
+        ) by {
+            assert(v0 * v2 + v0 * v2 == 2 * (v0 * v2));
+            lemma_mul_is_distributive_add(s2 as int, v0 * v2, v0 * v2);
+            lemma_mul_is_distributive_add(s2 as int, 2 * (v0 * v2), v1 * v1);
+        }
+
+        // s3 terms
+        assert(
+            s3 * (v0 * v3) + s3 * (v1 * v2) + s3 * (v1 * v2) + s3 * (v0 * v3)
+            ==
+            s3 * (2 * (v1 * v2) + 2 * (v0 * v3))
+        ) by {
+            assert(v1 * v2 + v1 * v2 == 2 * (v1 * v2));
+            assert(v0 * v3 + v0 * v3 == 2 * (v0 * v3));
+            lemma_mul_is_distributive_add(s3 as int, v1 * v2, v1 * v2);
+            lemma_mul_is_distributive_add(s3 as int, v0 * v3, v0 * v3);
+            lemma_mul_is_distributive_add(s3 as int, 2 * (v1 * v2), 2 * (v0 * v3));
+        }
+
+        // s4 terms
+        assert(
+            s4 * (v0 * v4) + s4 * (v1 * v3) + s4 * (v2 * v2) + s4 * (v1 * v3) + s4 * (v0 * v4)
+            ==
+            s4 * (v2 * v2 + 2 * (v1 * v3) + 2 * (v0 * v4))
+        ) by {
+            assert(v0 * v4 + v0 * v4 == 2 * (v0 * v4));
+            assert(v1 * v3 + v1 * v3 == 2 * (v1 * v3));
+            lemma_mul_is_distributive_add(s4 as int, v0 * v4, v0 * v4);
+            lemma_mul_is_distributive_add(s4 as int, v1 * v3, v1 * v3);
+            lemma_mul_is_distributive_add(s4 as int, v2 * v2, 2 * (v1 * v3));
+            lemma_mul_is_distributive_add(s4 as int, v2 * v2 + 2 * (v1 * v3), 2 * (v0 * v4));
+        }
+
+        // s5 terms
+        assert(
+            s5 * (v1 * v4) + s5 * (v2 * v3) + s5 * (v2 * v3) + s5 * (v1 * v4)
+            ==
+            s5 * (2 * (v2 * v3) + 2 * (v1 * v4))
+        ) by {
+            assert(v1 * v4 + v1 * v4 == 2 * (v1 * v4));
+            assert(v2 * v3 + v2 * v3 == 2 * (v2 * v3));
+            lemma_mul_is_distributive_add(s5 as int, v1 * v4, v1 * v4);
+            lemma_mul_is_distributive_add(s5 as int, v2 * v3, v2 * v3);
+            lemma_mul_is_distributive_add(s5 as int, 2 * (v1 * v4), 2 * (v2 * v3));
+        }
+
+        // s6 terms
+        assert(
+            s6 * (v2 * v4) + s6 * (v3 * v3) + s6 * (v2 * v4)
+            ==
+            s6 * (v3 * v3 + 2 * (v2 * v4))
+        ) by {
+            assert(v2 * v4 + v2 * v4 == 2 * (v2 * v4));
+            lemma_mul_is_distributive_add(s6 as int, v2 * v4, v2 * v4);
+            lemma_mul_is_distributive_add(s6 as int, 2 * (v2 * v4), v3 * v3);
+        }
+
+        // s7 terms
+        assert(
+            s7 * (v3 * v4) + s7 * (v3 * v4)
+            ==
+            s7 * (2 * (v3 * v4))
+        ) by {
+            assert(v3 * v4 + v3 * v4 == 2 * (v3 * v4));
+            lemma_mul_is_distributive_add(s7 as int, v3 * v4, v3 * v4);
+        }
     }
 
     // This is the explicit version, now we can take everything mod p
@@ -388,8 +492,44 @@ pub proof fn as_nat_squared(v: [u64; 5])
         s1 * (s5 * c1_x19 + c1_base) +
              (s5 * c0_x19 + c0_base)
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        broadcast use lemma_mul_is_associative;
+        // s3 terms
+        assert(
+            s8 * c3_x19 + s3 * c3_base
+            ==
+            s3 * (s5 * c3_x19 + c3_base)
+        ) by {
+            assert(s8 == (s3 * s5)) by {
+                lemma_pow2_adds(3 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s3 as int, s5 as int, c3_x19);
+            lemma_mul_is_distributive_add(s3 as int, s5 * c3_x19, c3_base)
+        }
+
+        // s2 terms
+        assert(
+            s7 * c2_x19 + s2 * c2_base
+            ==
+            s2 * (s5 * c2_x19 + c2_base)
+        ) by {
+            assert(s7 == (s2 * s5)) by {
+                lemma_pow2_adds(2 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s2 as int, s5 as int, c2_x19);
+            lemma_mul_is_distributive_add(s2 as int, s5 * c2_x19, c2_base)
+        }
+
+        // s1 terms
+        assert(
+            s6 * c1_x19 + s1 * c1_base
+            ==
+            s1 * (s5 * c1_x19 + c1_base)
+        ) by {
+            assert(s6 == (s1 * s5)) by {
+                lemma_pow2_adds(1 * 51, 5 * 51);
+            }
+            lemma_mul_is_associative(s1 as int, s5 as int, c1_x19);
+            lemma_mul_is_distributive_add(s1 as int, s5 * c1_x19, c1_base)
+        }
     }
 
     // Next we use the identity s5 = p + 19
@@ -420,14 +560,23 @@ pub proof fn as_nat_squared(v: [u64; 5])
                  c0
         )
     ) by {
-        broadcast use lemma_mul_is_distributive_add;
-        // we don't broadcast assoc, too many trigger matches
-        lemma_mul_is_associative(s3 as int, p() as int, c3_x19 as int);
-        lemma_mul_is_associative(s2 as int, p() as int, c2_x19 as int);
-        lemma_mul_is_associative(s1 as int, p() as int, c1_x19 as int);
-        lemma_mul_is_associative(p() as int, s3 as int, c3_x19 as int);
-        lemma_mul_is_associative(p() as int, s2 as int, c2_x19 as int);
-        lemma_mul_is_associative(p() as int, s1 as int, c1_x19 as int);
+        lemma_mul_is_distributive_add(s3 as int, p() * c3_x19, c3 as int);
+        lemma_mul_is_distributive_add(s2 as int, p() * c2_x19, c2 as int);
+        lemma_mul_is_distributive_add(s1 as int, p() * c1_x19, c1 as int);
+
+        assert(
+            s3 * (p() * c3_x19) + s2 * (p() * c2_x19) + s1 * (p() * c1_x19) + p() * c0_x19
+            ==
+            p() * ( s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19 + c0_x19 )
+        ) by {
+            lemma_mul_is_associative(s3 as int, c3_x19 as int, p() as int);
+            lemma_mul_is_associative(s2 as int, c2_x19 as int, p() as int);
+            lemma_mul_is_associative(s1 as int, c1_x19 as int, p() as int);
+
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19, s2 * c2_x19);
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19, s1 * c1_x19);
+            lemma_mul_is_distributive_add(p() as int, s3 * c3_x19 + s2 * c2_x19 + s1 * c1_x19, c0_x19 as int);
+        }
     }
 
 
@@ -480,10 +629,6 @@ pub proof fn as_nat_k(a: [u64;5], k: u64)
             (k * a[3]) as u64,
             (k * a[4]) as u64
             ];
-    lemma_mul_is_associative(pow2( 51) as int, a[1] as int, k as int);
-    lemma_mul_is_associative(pow2(102) as int, a[2] as int, k as int);
-    lemma_mul_is_associative(pow2(153) as int, a[3] as int, k as int);
-    lemma_mul_is_associative(pow2(204) as int, a[4] as int, k as int);
 
     assert(as_nat(ka) ==
         k * a[0] +
@@ -491,8 +636,33 @@ pub proof fn as_nat_k(a: [u64;5], k: u64)
         k * (pow2(102) * a[2]) +
         k * (pow2(153) * a[3]) +
         k * (pow2(204) * a[4])
-    );
-    broadcast use lemma_mul_is_distributive_add;
+    ) by {
+        lemma_mul_is_associative(pow2( 51) as int, a[1] as int, k as int);
+        lemma_mul_is_associative(pow2(102) as int, a[2] as int, k as int);
+        lemma_mul_is_associative(pow2(153) as int, a[3] as int, k as int);
+        lemma_mul_is_associative(pow2(204) as int, a[4] as int, k as int);
+    }
+
+    assert(
+        k * a[0] +
+        k * (pow2( 51) * a[1]) +
+        k * (pow2(102) * a[2]) +
+        k * (pow2(153) * a[3]) +
+        k * (pow2(204) * a[4])
+        ==
+        k * (
+            a[0] +
+            (pow2( 51) * a[1]) +
+            (pow2(102) * a[2]) +
+            (pow2(153) * a[3]) +
+            (pow2(204) * a[4])
+        )
+    ) by {
+        lemma_mul_is_distributive_add(k as int, a[0] as int, pow2( 51) * a[1]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1], pow2(102) * a[2]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1] + pow2(102) * a[2], pow2(153) * a[3]);
+        lemma_mul_is_distributive_add(k as int, a[0] + pow2( 51) * a[1] + pow2(102) * a[2] + pow2(153) * a[3], (pow2(204) * a[4]));
+    }
 }
 
 // Auxiliary lemma for reordering terms in the pow2k proof
@@ -506,6 +676,20 @@ pub proof fn lemma_reorder_mul(a: int, b: int)
     lemma_mul_is_associative(19, b, 2 * a);
     // (b * (2 * a)) = (b * (a * 2)) = 2 * (a * b)
     lemma_mul_is_associative(b, a, 2);
+}
+
+pub proof fn lemma_mul_sub(ci: int, cj: int, cj_0: int, k: nat)
+    ensures
+        pow2(k) * (ci - pow2(51) * (cj - cj_0)) == pow2(k) * ci - pow2(k + 51) * cj + pow2(k + 51) * cj_0
+{
+    // 2^k (ci - X) = 2^k ci - 2^k X
+    lemma_mul_is_distributive_sub(pow2(k) as int, ci, pow2(51) * (cj - cj_0));
+    // 2^k (2^51 * Y) = (2^k * 2^51) * Y
+    lemma_mul_is_associative(pow2(k) as int, pow2(51) as int, cj - cj_0);
+    // 2^k * 2^51 = 2^(k + 51)
+    lemma_pow2_adds(k, 51);
+    // 2^(k + 51) * (cj - cj_0) = 2^(k + 51) * cj - 2^(k + 51) * cj_0
+    lemma_mul_is_distributive_sub(pow2(k + 51) as int, cj, cj_0);
 }
 
 // dummy, so we can call `verus`

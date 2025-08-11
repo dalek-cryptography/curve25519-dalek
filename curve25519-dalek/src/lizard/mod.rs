@@ -8,6 +8,6 @@ mod u32_constants;
 #[cfg(curve25519_dalek_bits = "64")]
 mod u64_constants;
 
-pub mod jacobi_quartic;
-pub mod lizard_constants;
+mod jacobi_quartic;
+mod lizard_constants;
 pub mod lizard_ristretto;

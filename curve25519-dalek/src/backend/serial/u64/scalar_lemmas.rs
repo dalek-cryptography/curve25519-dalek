@@ -382,6 +382,13 @@ pub proof fn lemma_rr_limbs_bounded()
     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
 
+/// Need to use induction because the postcondition expands
+/// seq_u64_to_nat in the opposite way from how it's defined.
+/// The base case is straightforward, but it takes a few steps
+/// to get Verus to prove it.
+/// Induction case: Take off the first element using definition of
+/// seq_u64_to_nat, apply induction hypothesis to the remaining sequence,
+/// then put the first element back on and simplify all the powers.
 pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
     requires
         0 <= i < seq.len(),
@@ -487,6 +494,7 @@ pub proof fn lemma_mod_cancel(a: &Scalar52, b: &Scalar52)
 }
 
 
+/// The corollary of limbs_bounded(a)
 pub proof fn lemma_bound_scalar(a: &Scalar52)
     requires limbs_bounded(a)
     ensures to_nat(&a.limbs) < pow2((52 * (5) as nat))
@@ -494,6 +502,8 @@ pub proof fn lemma_bound_scalar(a: &Scalar52)
     lemma_general_bound(a.limbs@);
 }
 
+/// The general case of lemma_bound_scalar so we
+/// can prove via straightforward induction.
 pub proof fn lemma_general_bound(a: Seq<u64>)
     requires forall|i: int| 0 <= i < a.len() ==> a[i] < (1u64 << 52)
     ensures seq_u64_to_nat(a) < pow2((52 * a.len() as nat))
@@ -565,6 +575,7 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
 }
 
 /// Claude wrote this proof. Could the proof be shorter?
+/// Moved this to a lemma to get under rlimit.
 pub proof fn lemma_decompose(a: u64, mask: u64)
     requires mask == (1u64 << 52) - 1
     ensures a == (a >> 52) * pow2(52) + (a & mask)
@@ -605,6 +616,15 @@ pub proof fn lemma_decompose(a: u64, mask: u64)
     assert(a as nat == (a >> 52) as nat * pow2(52) + (a & mask) as nat);
 }
 
+/// The loop invariant says that subtraction is correct if we only subtract
+/// the first i items of each array, plus there's a borrow term.
+/// The first parts of the calc statement expand using the previous invariant.
+/// Then we have cases depending if the wrapping_sub wrapped.
+/// If it didn't wrap, we show that borrow must be small, and borrow >> 52 == 0.
+/// If it did wrap, we show that borrow is so large that its bit-shifts are all
+/// the maximum amount.
+/// Either way, we then use the preconditions about what was mutated,
+/// and shuffle around the powers of 52.
 pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usize, a: &Scalar52, b: &Scalar52, old_borrow: u64, mask: u64, difference_loop1_start: Scalar52)
     requires
         limbs_bounded(a),
@@ -750,6 +770,7 @@ pub proof fn lemma_sub_loop1_invariant(difference: Scalar52, borrow: u64, i: usi
     }
 }
 
+/// Just a proof by computation
 pub(crate) proof fn lemma_l_equals_group_order()
     ensures
         to_nat(&constants::L.limbs) == group_order(),
@@ -776,6 +797,12 @@ pub(crate) proof fn lemma_l_equals_group_order()
     assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 
+/// If borrow >> 63 == 0, we apply
+/// (1) `-group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order()`,
+/// and that's enough to show that to_nat(&difference.limbs) is between
+/// 0 and group order.
+/// If borrow >> 63 == 1, we apply (1) to show that carry >> 52 can't be 0.
+/// This makes the excess terms in the borrow >> 63 == 1 precondition disappear
 pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u64, a: &Scalar52, b: &Scalar52, difference_after_loop1: Scalar52, borrow: u64)
     requires
         limbs_bounded(a),
@@ -893,6 +920,7 @@ pub(crate) proof fn lemma_sub_correct_after_loops(difference: Scalar52, carry: u
         }
 }
 
+/// Moving this out to get under rlimit
 pub proof fn lemma_old_carry(old_carry: u64)
     requires old_carry < 1u64 <<52,
     ensures old_carry >> 52 == 0,
@@ -901,6 +929,12 @@ pub proof fn lemma_old_carry(old_carry: u64)
         requires old_carry < 1u64 <<52;
 }
 
+/// If borrow >> 63 == 0, we just prove that the loop step has no effect.
+/// If borrow >> 63 == 1, we substitute in the loop's updates
+/// `like difference.limbs[i as int] == carry & mask`.
+/// In that case we're proving that subtraction is correct if we only
+/// consider the first i items of each array, except there's also a
+/// `(carry >> 52) * pow2(52 * (i+1) as nat)` term that doesn't go away.
 pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a: &Scalar52, b: &Scalar52, mask: u64, difference_after_loop1: Scalar52, difference_loop2_start: Scalar52, carry: u64, old_carry: u64, addend: u64, borrow: u64)
     requires
         0 <= i < 5,

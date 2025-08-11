@@ -931,7 +931,7 @@ pub proof fn lemma_old_carry(old_carry: u64)
 
 /// If borrow >> 63 == 0, we just prove that the loop step has no effect.
 /// If borrow >> 63 == 1, we substitute in the loop's updates
-/// `like difference.limbs[i as int] == carry & mask`.
+/// like `difference.limbs[i as int] == carry & mask`.
 /// In that case we're proving that subtraction is correct if we only
 /// consider the first i items of each array, except there's also a
 /// `(carry >> 52) * pow2(52 * (i+1) as nat)` term that doesn't go away.

@@ -1,8 +1,7 @@
 //! Defines additional methods on RistrettoPoint for Lizard
 
-#![allow(non_snake_case)]
-
 use digest::Digest;
+use digest::HashMarker;
 use digest::consts::U32;
 
 use crate::constants;
@@ -12,25 +11,18 @@ use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-use crate::edwards::EdwardsPoint;
-
 use super::jacobi_quartic::JacobiPoint;
 use super::lizard_constants;
 
 use crate::ristretto::RistrettoPoint;
-#[allow(unused_imports)]
-use core::prelude::*;
 
 impl RistrettoPoint {
-    /// Directly encode 253 bits as a RistrettoPoint, using Elligator
-    pub fn from_uniform_bytes_single_elligator(bytes: &[u8; 32]) -> RistrettoPoint {
-        RistrettoPoint::elligator_ristretto_flavor(&FieldElement::from_bytes(bytes))
-    }
-
-    /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method
+    /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method. The secure hash
+    /// function `D` is used internally to produce a unique encoding for `data. Use SHA-256 if
+    /// otherwise unsure.
     pub fn lizard_encode<D: Digest>(data: &[u8; 16]) -> RistrettoPoint
     where
-        D: Digest<OutputSize = U32>,
+        D: Digest<OutputSize = U32> + HashMarker,
     {
         let mut fe_bytes: [u8; 32] = Default::default();
 
@@ -43,10 +35,13 @@ impl RistrettoPoint {
         RistrettoPoint::elligator_ristretto_flavor(&fe)
     }
 
-    /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method
+    /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method. Returns `None` if
+    /// this point was not generated using Lizard.
+    // TODO: This also fails if more than one inverse exists. How likely is this? Should we test for
+    // this in the encoding step?
     pub fn lizard_decode<D: Digest>(&self) -> Option<[u8; 16]>
     where
-        D: Digest<OutputSize = U32>,
+        D: Digest<OutputSize = U32> + HashMarker,
     {
         let mut result: [u8; 16] = Default::default();
         let mut h: [u8; 32] = Default::default();
@@ -68,44 +63,12 @@ impl RistrettoPoint {
         if n_found == 1 { Some(result) } else { None }
     }
 
-    /// Directly encode 253 bits as a RistrettoPoint, using Elligator
-    pub fn encode_253_bits(data: &[u8; 32]) -> Option<RistrettoPoint> {
-        if data.len() != 32 {
-            return None;
-        }
-
-        let fe = FieldElement::from_bytes(data);
-        let p = RistrettoPoint::elligator_ristretto_flavor(&fe);
-        Some(p)
-    }
-
-    /// Directly decode a RistrettoPoint as 253 bits, using Elligator
-    pub fn decode_253_bits(&self) -> (u8, [[u8; 32]; 8]) {
-        let mut ret = [[0u8; 32]; 8];
-        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
-
-        for j in 0..8 {
-            ret[j] = fes[j].to_bytes();
-        }
-        (mask, ret)
-    }
-
-    /// Return the coset self + E[4], for debugging.
-    pub fn xcoset4(&self) -> [EdwardsPoint; 4] {
-        [
-            self.0,
-            self.0 + constants::EIGHT_TORSION[2],
-            self.0 + constants::EIGHT_TORSION[4],
-            self.0 + constants::EIGHT_TORSION[6],
-        ]
-    }
-
     /// Computes the at most 8 positive FieldElements f such that
-    /// self == elligator_ristretto_flavor(f).
+    /// `self == RistrettoPoint::elligator_ristretto_flavor(f)`.
     /// Assumes self is even.
     ///
     /// Returns a bitmask of which elements in fes are set.
-    pub fn elligator_ristretto_flavor_inverse(&self) -> (u8, [FieldElement; 8]) {
+    fn elligator_ristretto_flavor_inverse(&self) -> (u8, [FieldElement; 8]) {
         // Elligator2 computes a Point from a FieldElement in two steps: first
         // it computes a (s,t) on the Jacobi quartic and then computes the
         // corresponding even point on the Edwards curve.
@@ -226,25 +189,30 @@ impl RistrettoPoint {
     }
 }
 
-// ------------------------------------------------------------------------
-// Tests
-// ------------------------------------------------------------------------
-
 #[cfg(test)]
 mod test {
-
-    use sha2;
-
-    use self::sha2::Sha256;
     use super::*;
-    use crate::ristretto::CompressedRistretto;
+    use crate::{edwards::EdwardsPoint, ristretto::CompressedRistretto};
     use rand_core::RngCore;
+    use sha2::Sha256;
 
-    fn test_lizard_encode_helper(data: &[u8; 16], result: &[u8; 32]) {
+    /// Return the coset self + E\[4\]
+    fn xcoset4(pt: &RistrettoPoint) -> [EdwardsPoint; 4] {
+        [
+            pt.0,
+            pt.0 + constants::EIGHT_TORSION[2],
+            pt.0 + constants::EIGHT_TORSION[4],
+            pt.0 + constants::EIGHT_TORSION[6],
+        ]
+    }
+
+    /// Checks
+    /// `lizard_decode(lizard_encode(data)) == lizard_decode(expected_pt_bytes) == data`
+    fn test_lizard_encode_helper(data: &[u8; 16], expected_pt_bytes: &[u8; 32]) {
         let p = RistrettoPoint::lizard_encode::<Sha256>(data);
-        let p_bytes = p.compress().to_bytes();
-        assert!(&p_bytes == result);
-        let p = CompressedRistretto::from_slice(&p_bytes)
+        let pt_bytes = p.compress().to_bytes();
+        assert!(&pt_bytes == expected_pt_bytes);
+        let p = CompressedRistretto::from_slice(&pt_bytes)
             .unwrap()
             .decompress()
             .unwrap();
@@ -322,8 +290,8 @@ mod test {
             let fe = FieldElement::from_bytes(&fe_bytes);
 
             let pt = RistrettoPoint::elligator_ristretto_flavor(&fe);
-            for pt2 in &pt.xcoset4() {
-                let (mask, fes) = RistrettoPoint(*pt2).elligator_ristretto_flavor_inverse();
+            for pt2 in xcoset4(&pt) {
+                let (mask, fes) = RistrettoPoint(pt2).elligator_ristretto_flavor_inverse();
 
                 let mut found = false;
                 for (j, fe_j) in fes.iter().enumerate() {

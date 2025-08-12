@@ -4,8 +4,8 @@ use crate::{Scalar, field::FieldElement};
 use core::ops::Mul;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
-#[cfg(feature = "zeroize")]
-use zeroize::DefaultIsZeroes;
+// #[cfg(feature = "zeroize")]
+// use zeroize::DefaultIsZeroes;
 
 /// Affine Edwards point on untwisted curve.
 #[derive(Copy, Clone, Debug)]
@@ -52,8 +52,8 @@ impl PartialEq for AffinePoint {
 
 impl Eq for AffinePoint {}
 
-#[cfg(feature = "zeroize")]
-impl DefaultIsZeroes for AffinePoint {}
+// #[cfg(feature = "zeroize")]
+// impl DefaultIsZeroes for AffinePoint {}
 
 impl AffinePoint {
     /// Convert to extended coordinates.

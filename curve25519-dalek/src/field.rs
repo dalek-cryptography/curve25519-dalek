@@ -35,13 +35,13 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
-#[cfg(feature = "digest")]
-use digest::{
-    Digest, FixedOutput, HashMarker,
-    array::{Array, typenum::U64},
-    block_api::BlockSizeUser,
-    typenum::{IsGreater, True},
-};
+// #[cfg(feature = "digest")]
+// use digest::{
+//     Digest, FixedOutput, HashMarker,
+//     array::{Array, typenum::U64},
+//     block_api::BlockSizeUser,
+//     typenum::{IsGreater, True},
+// };
 
 cfg_if! {
     if #[cfg(curve25519_dalek_backend = "fiat")] {
@@ -100,45 +100,45 @@ impl ConstantTimeEq for FieldElement {
 
 impl FieldElement {
     /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
-    #[cfg(feature = "digest")]
-    pub(crate) fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
-        let mut fl = [0u8; 32];
-        let mut gl = [0u8; 32];
-        fl.copy_from_slice(&bytes[..32]);
-        gl.copy_from_slice(&bytes[32..]);
-        // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
-        // them back in later.
-        let fl_top_bit = (fl[31] >> 7) as u16;
-        let gl_top_bit = (gl[31] >> 7) as u16;
-        fl[31] &= 0x7f;
-        gl[31] &= 0x7f;
+    // #[cfg(feature = "digest")]
+    // pub(crate) fn from_bytes_wide(bytes: &[u8; 64]) -> Self {
+    //     let mut fl = [0u8; 32];
+    //     let mut gl = [0u8; 32];
+    //     fl.copy_from_slice(&bytes[..32]);
+    //     gl.copy_from_slice(&bytes[32..]);
+    //     // Mask off the top bits of both halves, since from_bytes masks them off anyway. We'll add
+    //     // them back in later.
+    //     let fl_top_bit = (fl[31] >> 7) as u16;
+    //     let gl_top_bit = (gl[31] >> 7) as u16;
+    //     fl[31] &= 0x7f;
+    //     gl[31] &= 0x7f;
 
-        // Interpret both sides as field elements
-        let mut fe_f = Self::from_bytes(&fl);
-        let fe_g = Self::from_bytes(&gl);
+    //     // Interpret both sides as field elements
+    //     let mut fe_f = Self::from_bytes(&fl);
+    //     let fe_g = Self::from_bytes(&gl);
 
-        // The full field elem is now fe_f + 2²⁵⁵ fl_top_bit + 2²⁵⁶ fe_g + 2⁵¹¹ gl_top_bit
+    //     // The full field elem is now fe_f + 2²⁵⁵ fl_top_bit + 2²⁵⁶ fe_g + 2⁵¹¹ gl_top_bit
 
-        // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
-        // gl_top_bit, if set, is 2^511 ≡ 722 (mod q)
-        let top_bits_sum = {
-            // This only need to be a u16 because the max value is 741
-            let addend: u16 = fl_top_bit * 19 + gl_top_bit * 722;
-            let mut addend_bytes = [0u8; 32];
-            addend_bytes[..2].copy_from_slice(&addend.to_le_bytes());
-            Self::from_bytes(&addend_bytes)
-        };
-        fe_f += &top_bits_sum;
+    //     // Add the masked off bits back to fe_f. fl_top_bit, if set, is 2^255 ≡ 19 (mod q).
+    //     // gl_top_bit, if set, is 2^511 ≡ 722 (mod q)
+    //     let top_bits_sum = {
+    //         // This only need to be a u16 because the max value is 741
+    //         let addend: u16 = fl_top_bit * 19 + gl_top_bit * 722;
+    //         let mut addend_bytes = [0u8; 32];
+    //         addend_bytes[..2].copy_from_slice(&addend.to_le_bytes());
+    //         Self::from_bytes(&addend_bytes)
+    //     };
+    //     fe_f += &top_bits_sum;
 
-        // Now add the high half into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
-        const THIRTY_EIGHT: FieldElement = FieldElement::from_bytes(&[
-            38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,
-        ]);
-        fe_f += &(&THIRTY_EIGHT * &fe_g);
+    //     // Now add the high half into fe_f. The RHS is multiplied by 2^256 ≡ 38 (mod q)
+    //     const THIRTY_EIGHT: FieldElement = FieldElement::from_bytes(&[
+    //         38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    //         0, 0, 0,
+    //     ]);
+    //     fe_f += &(&THIRTY_EIGHT * &fe_g);
 
-        fe_f
-    }
+    //     fe_f
+    // }
 
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is
@@ -353,61 +353,61 @@ impl FieldElement {
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
     }
 
-    #[cfg(feature = "digest")]
-    /// Perform hashing to a [`FieldElement`], per the
-    /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
-    /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
-    ///
-    /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
-    pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
-    where
-        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
-        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
-    {
-        let l_i_b_str = 48u16.to_be_bytes();
-        let z_pad = Array::<u8, D::BlockSize>::default();
+    // #[cfg(feature = "digest")]
+    // /// Perform hashing to a [`FieldElement`], per the
+    // /// [`hash_to_curve`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) specification.
+    // /// Uses the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    // /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    // /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255 bytes.
+    // ///
+    // /// # Panics
+    // /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    // pub fn hash_to_field<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> Self
+    // where
+    //     D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+    //     D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    // {
+    //     let l_i_b_str = 48u16.to_be_bytes();
+    //     let z_pad = Array::<u8, D::BlockSize>::default();
 
-        let mut hasher = D::new().chain_update(z_pad);
+    //     let mut hasher = D::new().chain_update(z_pad);
 
-        for slice in bytes {
-            hasher = hasher.chain_update(slice);
-        }
+    //     for slice in bytes {
+    //         hasher = hasher.chain_update(slice);
+    //     }
 
-        hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
+    //     hasher = hasher.chain_update(l_i_b_str).chain_update([0u8]);
 
-        let mut domain_sep_len = 0usize;
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice);
-            domain_sep_len += slice.len();
-        }
+    //     let mut domain_sep_len = 0usize;
+    //     for slice in domain_sep {
+    //         hasher = hasher.chain_update(slice);
+    //         domain_sep_len += slice.len();
+    //     }
 
-        let domain_sep_len = u8::try_from(domain_sep_len)
-            .expect("Unexpected overflow from domain separator's size.");
-        assert_ne!(
-            domain_sep_len, 0,
-            "Domain separator MUST have nonzero length."
-        );
+    //     let domain_sep_len = u8::try_from(domain_sep_len)
+    //         .expect("Unexpected overflow from domain separator's size.");
+    //     assert_ne!(
+    //         domain_sep_len, 0,
+    //         "Domain separator MUST have nonzero length."
+    //     );
 
-        let b_0 = hasher.chain_update([domain_sep_len]).finalize();
+    //     let b_0 = hasher.chain_update([domain_sep_len]).finalize();
 
-        let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
+    //     let mut hasher = D::new().chain_update(b_0.as_slice()).chain_update([1u8]);
 
-        for slice in domain_sep {
-            hasher = hasher.chain_update(slice)
-        }
+    //     for slice in domain_sep {
+    //         hasher = hasher.chain_update(slice)
+    //     }
 
-        let b_1 = hasher.chain_update([domain_sep_len]).finalize();
+    //     let b_1 = hasher.chain_update([domain_sep_len]).finalize();
 
-        // §5.2, we only generate count * m * L = 1 * 1 * (256 + 128)/8 = 48 bytes
-        let mut bytes_wide = [0u8; 64];
-        bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
-        bytes_wide[..48].reverse();
+    //     // §5.2, we only generate count * m * L = 1 * 1 * (256 + 128)/8 = 48 bytes
+    //     let mut bytes_wide = [0u8; 64];
+    //     bytes_wide[..48].copy_from_slice(&b_1.as_slice()[..48]);
+    //     bytes_wide[..48].reverse();
 
-        FieldElement::from_bytes_wide(&bytes_wide)
-    }
+    //     FieldElement::from_bytes_wide(&bytes_wide)
+    // }
 }
 
 // #[cfg(test)]

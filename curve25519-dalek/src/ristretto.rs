@@ -169,10 +169,10 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(feature = "digest")]
-use digest::Digest;
-#[cfg(feature = "digest")]
-use digest::array::typenum::U64;
+// #[cfg(feature = "digest")]
+// use digest::Digest;
+// #[cfg(feature = "digest")]
+// use digest::array::typenum::U64;
 
 use crate::constants;
 use crate::field::FieldElement;
@@ -195,8 +195,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+// #[cfg(feature = "zeroize")]
+// use zeroize::Zeroize;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::edwards::EdwardsBasepointTable;
@@ -749,62 +749,62 @@ impl RistrettoPoint {
         Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
     }
 
-    #[cfg(feature = "digest")]
-    /// Hash a slice of bytes into a `RistrettoPoint`.
-    ///
-    /// Takes a type parameter `D`, which is any `Digest` producing 64
-    /// bytes of output.
-    ///
-    /// Convenience wrapper around `from_hash`.
-    ///
-    /// # Implementation
-    ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
-    /// discrete log of the output point with respect to any other
-    /// point should be unknown.  The map is applied twice and the
-    /// results are added, to ensure a uniform distribution.
-    ///
-    /// # Example
-    ///
-    #[cfg_attr(feature = "digest", doc = "```")]
-    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use sha2::Sha512;
-    ///
-    /// # // Need fn main() here in comment so the doctest compiles
-    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
-    /// # fn main() {
-    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
-    /// # }
-    /// ```
-    ///
-    pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
-    where
-        D: Digest<OutputSize = U64> + Default,
-    {
-        let mut hash = D::default();
-        hash.update(input);
-        RistrettoPoint::from_hash(hash)
-    }
+    // #[cfg(feature = "digest")]
+    // /// Hash a slice of bytes into a `RistrettoPoint`.
+    // ///
+    // /// Takes a type parameter `D`, which is any `Digest` producing 64
+    // /// bytes of output.
+    // ///
+    // /// Convenience wrapper around `from_hash`.
+    // ///
+    // /// # Implementation
+    // ///
+    // /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    // /// discrete log of the output point with respect to any other
+    // /// point should be unknown.  The map is applied twice and the
+    // /// results are added, to ensure a uniform distribution.
+    // ///
+    // /// # Example
+    // ///
+    // #[cfg_attr(feature = "digest", doc = "```")]
+    // #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
+    // /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    // /// use sha2::Sha512;
+    // ///
+    // /// # // Need fn main() here in comment so the doctest compiles
+    // /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    // /// # fn main() {
+    // /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    // /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
+    // /// # }
+    // /// ```
+    // ///
+    // pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
+    // where
+    //     D: Digest<OutputSize = U64> + Default,
+    // {
+    //     let mut hash = D::default();
+    //     hash.update(input);
+    //     RistrettoPoint::from_hash(hash)
+    // }
 
-    #[cfg(feature = "digest")]
-    /// Construct a `RistrettoPoint` from an existing `Digest` instance.
-    ///
-    /// Use this instead of `hash_from_bytes` if it is more convenient
-    /// to stream data into the `Digest` than to pass a single byte
-    /// slice.
-    pub fn from_hash<D>(hash: D) -> RistrettoPoint
-    where
-        D: Digest<OutputSize = U64> + Default,
-    {
-        // dealing with generic arrays is clumsy, until const generics land
-        let output = hash.finalize();
-        let mut output_bytes = [0u8; 64];
-        output_bytes.copy_from_slice(output.as_slice());
+    // #[cfg(feature = "digest")]
+    // /// Construct a `RistrettoPoint` from an existing `Digest` instance.
+    // ///
+    // /// Use this instead of `hash_from_bytes` if it is more convenient
+    // /// to stream data into the `Digest` than to pass a single byte
+    // /// slice.
+    // pub fn from_hash<D>(hash: D) -> RistrettoPoint
+    // where
+    //     D: Digest<OutputSize = U64> + Default,
+    // {
+    //     // dealing with generic arrays is clumsy, until const generics land
+    //     let output = hash.finalize();
+    //     let mut output_bytes = [0u8; 64];
+    //     output_bytes.copy_from_slice(output.as_slice());
 
-        RistrettoPoint::from_uniform_bytes(&output_bytes)
-    }
+    //     RistrettoPoint::from_uniform_bytes(&output_bytes)
+    // }
 
     /// Construct a `RistrettoPoint` from 64 bytes of data.
     ///
@@ -1299,19 +1299,19 @@ impl CofactorGroup for RistrettoPoint {
 // Zeroize traits
 // ------------------------------------------------------------------------
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for CompressedRistretto {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for CompressedRistretto {
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//     }
+// }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for RistrettoPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for RistrettoPoint {
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//     }
+// }
 
 // ------------------------------------------------------------------------
 // Tests

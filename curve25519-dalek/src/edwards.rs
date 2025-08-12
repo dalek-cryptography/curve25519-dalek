@@ -104,11 +104,11 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-#[cfg(feature = "digest")]
-use digest::{
-    FixedOutput, HashMarker, array::typenum::U64, consts::True, crypto_common::BlockSizeUser,
-    typenum::IsGreater,
-};
+// #[cfg(feature = "digest")]
+// use digest::{
+//     FixedOutput, HashMarker, array::typenum::U64, consts::True, crypto_common::BlockSizeUser,
+//     typenum::IsGreater,
+// };
 
 #[cfg(feature = "group")]
 use {
@@ -125,8 +125,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+// #[cfg(feature = "zeroize")]
+// use zeroize::Zeroize;
 
 use crate::constants;
 
@@ -273,8 +273,8 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 // structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
 
-#[cfg(feature = "digest")]
-use constants::ED25519_SQRTAM2;
+// #[cfg(feature = "digest")]
+// use constants::ED25519_SQRTAM2;
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
@@ -446,25 +446,25 @@ impl Default for EdwardsPoint {
 // Zeroize implementations for wiping points from memory
 // ------------------------------------------------------------------------
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for CompressedEdwardsY {
-    /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-        self.0[0] = 1;
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for CompressedEdwardsY {
+//     /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//         self.0[0] = 1;
+//     }
+// }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for EdwardsPoint {
-    /// Reset this `EdwardsPoint` to the identity element.
-    fn zeroize(&mut self) {
-        self.X.zeroize();
-        self.Y = FieldElement::ONE;
-        self.Z = FieldElement::ONE;
-        self.T.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for EdwardsPoint {
+//     /// Reset this `EdwardsPoint` to the identity element.
+//     fn zeroize(&mut self) {
+//         self.X.zeroize();
+//         self.Y = FieldElement::ONE;
+//         self.Z = FieldElement::ONE;
+//         self.T.zeroize();
+//     }
+// }
 
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
@@ -634,52 +634,52 @@ impl EdwardsPoint {
             .collect()
     }
 
-    #[cfg(feature = "digest")]
-    /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
-    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
-    /// 255 bytes.
-    ///
-    /// # Panics
-    /// Panics if `domain_sep.collect().len() == 0` or `> 255`
-    pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
-    where
-        D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
-        D::BlockSize: IsGreater<D::OutputSize, Output = True>,
-    {
-        // For reference see
-        // https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
+    // #[cfg(feature = "digest")]
+    // /// Perform hashing to curve, with explicit hash function and domain separator, `domain_sep`,
+    // /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
+    // /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
+    // /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
+    // /// 255 bytes.
+    // ///
+    // /// # Panics
+    // /// Panics if `domain_sep.collect().len() == 0` or `> 255`
+    // pub fn hash_to_curve<D>(bytes: &[&[u8]], domain_sep: &[&[u8]]) -> EdwardsPoint
+    // where
+    //     D: BlockSizeUser + Default + FixedOutput<OutputSize = U64> + HashMarker,
+    //     D::BlockSize: IsGreater<D::OutputSize, Output = True>,
+    // {
+    //     // For reference see
+    //     // https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
 
-        let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
-        let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
+    //     let fe = FieldElement::hash_to_field::<D>(bytes, domain_sep);
+    //     let (M1, is_sq) = crate::montgomery::elligator_encode(&fe);
 
-        // The `to_edwards` conversion we're performing takes as input the sign of the Edwards
-        // `y` coordinate. However, the specification uses `is_sq` to determine the sign of the
-        // Montgomery `v` coordinate. Our approach reconciles this mismatch as follows:
-        //
-        // * We arbitrarily fix the sign of the Edwards `y` coordinate (we choose 0).
-        // * Using the Montgomery `u` coordinate and the Edwards `X` coordinate, we recover `v`.
-        // * We verify that the sign of `v` matches the expected one, i.e., `is_sq == mont_v.is_negative()`.
-        // * If it does not match, we conditionally negate to correct the sign.
-        //
-        // Note: This logic aligns with the RFC draft specification:
-        //     https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
-        // followed by the mapping
-        //     https://www.rfc-editor.org/rfc/rfc9380.html#name-mappings-for-twisted-edward
-        // The only difference is that our `elligator_encode` returns only the Montgomery `u` coordinate,
-        // so we apply this workaround to reconstruct and validate the sign.
+    //     // The `to_edwards` conversion we're performing takes as input the sign of the Edwards
+    //     // `y` coordinate. However, the specification uses `is_sq` to determine the sign of the
+    //     // Montgomery `v` coordinate. Our approach reconciles this mismatch as follows:
+    //     //
+    //     // * We arbitrarily fix the sign of the Edwards `y` coordinate (we choose 0).
+    //     // * Using the Montgomery `u` coordinate and the Edwards `X` coordinate, we recover `v`.
+    //     // * We verify that the sign of `v` matches the expected one, i.e., `is_sq == mont_v.is_negative()`.
+    //     // * If it does not match, we conditionally negate to correct the sign.
+    //     //
+    //     // Note: This logic aligns with the RFC draft specification:
+    //     //     https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method-2
+    //     // followed by the mapping
+    //     //     https://www.rfc-editor.org/rfc/rfc9380.html#name-mappings-for-twisted-edward
+    //     // The only difference is that our `elligator_encode` returns only the Montgomery `u` coordinate,
+    //     // so we apply this workaround to reconstruct and validate the sign.
 
-        let mut E1_opt = M1
-            .to_edwards(0)
-            .expect("Montgomery conversion to Edwards point in Elligator failed");
+    //     let mut E1_opt = M1
+    //         .to_edwards(0)
+    //         .expect("Montgomery conversion to Edwards point in Elligator failed");
 
-        // Now we recover v, to ensure that we got the sign right.
-        let mont_v =
-            &(&ED25519_SQRTAM2 * &FieldElement::from_bytes(&M1.to_bytes())) * &E1_opt.X.invert();
-        E1_opt.X.conditional_negate(is_sq ^ mont_v.is_negative());
-        E1_opt.mul_by_cofactor()
-    }
+    //     // Now we recover v, to ensure that we got the sign right.
+    //     let mont_v =
+    //         &(&ED25519_SQRTAM2 * &FieldElement::from_bytes(&M1.to_bytes())) * &E1_opt.X.invert();
+    //     E1_opt.X.conditional_negate(is_sq ^ mont_v.is_negative());
+    //     E1_opt.mul_by_cofactor()
+    // }
 
     /// Return an `EdwardsPoint` chosen uniformly at random using a user-provided RNG.
     ///
@@ -1634,12 +1634,12 @@ impl ConditionallySelectable for SubgroupPoint {
     }
 }
 
-#[cfg(all(feature = "group", feature = "zeroize"))]
-impl Zeroize for SubgroupPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// #[cfg(all(feature = "group", feature = "zeroize"))]
+// impl Zeroize for SubgroupPoint {
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//     }
+// }
 
 #[cfg(feature = "group")]
 impl group::Group for SubgroupPoint {

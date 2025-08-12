@@ -88,24 +88,24 @@
 //! [`Scalar::hash_from_bytes`], which takes a buffer, or
 //! [`Scalar::from_hash`], which allows an IUF API.
 //!
-#![cfg_attr(feature = "digest", doc = "```")]
-#![cfg_attr(not(feature = "digest"), doc = "```ignore")]
-//! # fn main() {
-//! use sha2::{Digest, Sha512};
-//! use curve25519_dalek::scalar::Scalar;
-//!
-//! // Hashing a single byte slice
-//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
-//!
-//! // Streaming data into a hash object
-//! let mut hasher = Sha512::default();
-//! hasher.update(b"Abolish ");
-//! hasher.update(b"ICE");
-//! let a2 = Scalar::from_hash(hasher);
-//!
-//! assert_eq!(a, a2);
-//! # }
-//! ```
+// #![cfg_attr(feature = "digest", doc = "```")]
+// #![cfg_attr(not(feature = "digest"), doc = "```ignore")]
+// //! # fn main() {
+// //! use sha2::{Digest, Sha512};
+// //! use curve25519_dalek::scalar::Scalar;
+// //!
+// //! // Hashing a single byte slice
+// //! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
+// //!
+// //! // Streaming data into a hash object
+// //! let mut hasher = Sha512::default();
+// //! hasher.update(b"Abolish ");
+// //! hasher.update(b"ICE");
+// //! let a2 = Scalar::from_hash(hasher);
+// //!
+// //! assert_eq!(a, a2);
+// //! # }
+// //! ```
 //!
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
@@ -133,18 +133,18 @@ use rand_core::TryRngCore;
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRng;
 
-#[cfg(feature = "digest")]
-use digest::Digest;
-#[cfg(feature = "digest")]
-use digest::array::typenum::U64;
+// #[cfg(feature = "digest")]
+// use digest::Digest;
+// #[cfg(feature = "digest")]
+// use digest::array::typenum::U64;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+// #[cfg(feature = "zeroize")]
+// use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
@@ -548,12 +548,12 @@ impl From<u128> for Scalar {
     }
 }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for Scalar {
+//     fn zeroize(&mut self) {
+//         self.bytes.zeroize();
+//     }
+// }
 
 impl Scalar {
     /// The scalar \\( 0 \\).
@@ -595,82 +595,82 @@ impl Scalar {
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 
-    #[cfg(feature = "digest")]
-    /// Hash a slice of bytes into a scalar.
-    ///
-    /// Takes a type parameter `D`, which is any `Digest` producing 64
-    /// bytes (512 bits) of output.
-    ///
-    /// Convenience wrapper around `from_hash`.
-    ///
-    /// # Example
-    ///
-    #[cfg_attr(feature = "digest", doc = "```")]
-    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// use sha2::Sha512;
-    ///
-    /// # // Need fn main() here in comment so the doctest compiles
-    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
-    /// # fn main() {
-    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
-    /// # }
-    /// ```
-    pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-    where
-        D: Digest<OutputSize = U64> + Default,
-    {
-        let mut hash = D::default();
-        hash.update(input);
-        Scalar::from_hash(hash)
-    }
+    // #[cfg(feature = "digest")]
+    // /// Hash a slice of bytes into a scalar.
+    // ///
+    // /// Takes a type parameter `D`, which is any `Digest` producing 64
+    // /// bytes (512 bits) of output.
+    // ///
+    // /// Convenience wrapper around `from_hash`.
+    // ///
+    // /// # Example
+    // ///
+    // #[cfg_attr(feature = "digest", doc = "```")]
+    // #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
+    // /// # use curve25519_dalek::scalar::Scalar;
+    // /// use sha2::Sha512;
+    // ///
+    // /// # // Need fn main() here in comment so the doctest compiles
+    // /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    // /// # fn main() {
+    // /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    // /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
+    // /// # }
+    // /// ```
+    // pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
+    // where
+    //     D: Digest<OutputSize = U64> + Default,
+    // {
+    //     let mut hash = D::default();
+    //     hash.update(input);
+    //     Scalar::from_hash(hash)
+    // }
 
-    #[cfg(feature = "digest")]
-    /// Construct a scalar from an existing `Digest` instance.
-    ///
-    /// Use this instead of `hash_from_bytes` if it is more convenient
-    /// to stream data into the `Digest` than to pass a single byte
-    /// slice.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use curve25519_dalek::scalar::Scalar;
-    /// use curve25519_dalek::digest::Update;
-    ///
-    /// use sha2::Digest;
-    /// use sha2::Sha512;
-    ///
-    /// # fn main() {
-    /// let mut h = Sha512::new()
-    ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
-    ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
-    ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
-    ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
-    ///     .chain("perhaps all architecture, rather than being about functional standards, is")
-    ///     .chain("about love and death.");
-    ///
-    /// let s = Scalar::from_hash(h);
-    ///
-    /// println!("{:?}", s.to_bytes());
-    /// assert_eq!(
-    ///     s.to_bytes(),
-    ///     [  21,  88, 208, 252,  63, 122, 210, 152,
-    ///       154,  38,  15,  23,  16, 167,  80, 150,
-    ///       192, 221,  77, 226,  62,  25, 224, 148,
-    ///       239,  48, 176,  10, 185,  69, 168,  11, ],
-    /// );
-    /// # }
-    /// ```
-    pub fn from_hash<D>(hash: D) -> Scalar
-    where
-        D: Digest<OutputSize = U64>,
-    {
-        let mut output = [0u8; 64];
-        output.copy_from_slice(hash.finalize().as_slice());
-        Scalar::from_bytes_mod_order_wide(&output)
-    }
+    // #[cfg(feature = "digest")]
+    // /// Construct a scalar from an existing `Digest` instance.
+    // ///
+    // /// Use this instead of `hash_from_bytes` if it is more convenient
+    // /// to stream data into the `Digest` than to pass a single byte
+    // /// slice.
+    // ///
+    // /// # Example
+    // ///
+    // /// ```
+    // /// # use curve25519_dalek::scalar::Scalar;
+    // /// use curve25519_dalek::digest::Update;
+    // ///
+    // /// use sha2::Digest;
+    // /// use sha2::Sha512;
+    // ///
+    // /// # fn main() {
+    // /// let mut h = Sha512::new()
+    // ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
+    // ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
+    // ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
+    // ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
+    // ///     .chain("perhaps all architecture, rather than being about functional standards, is")
+    // ///     .chain("about love and death.");
+    // ///
+    // /// let s = Scalar::from_hash(h);
+    // ///
+    // /// println!("{:?}", s.to_bytes());
+    // /// assert_eq!(
+    // ///     s.to_bytes(),
+    // ///     [  21,  88, 208, 252,  63, 122, 210, 152,
+    // ///       154,  38,  15,  23,  16, 167,  80, 150,
+    // ///       192, 221,  77, 226,  62,  25, 224, 148,
+    // ///       239,  48, 176,  10, 185,  69, 168,  11, ],
+    // /// );
+    // /// # }
+    // /// ```
+    // pub fn from_hash<D>(hash: D) -> Scalar
+    // where
+    //     D: Digest<OutputSize = U64>,
+    // {
+    //     let mut output = [0u8; 64];
+    //     output.copy_from_slice(hash.finalize().as_slice());
+    //     Scalar::from_bytes_mod_order_wide(&output)
+    // }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
     ///
@@ -825,8 +825,8 @@ impl Scalar {
             acc = tmp;
         }
 
-        #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        // #[cfg(feature = "zeroize")]
+        // Zeroize::zeroize(&mut scratch);
 
         ret
     }

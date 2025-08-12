@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verus-verify:
+    name: Verus Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install verus-analyzer
+        run: |
+          curl -L https://github.com/verus-lang/verus-analyzer/releases/latest/download/verus-analyzer-x86_64-unknown-linux-gnu.gz | gunzip -c > verus-analyzer
+          sudo mv verus-analyzer /usr/local/bin/
+          sudo chmod +x /usr/local/bin/verus-analyzer
+      - name: Run cargo verify verus
+        run: cargo verify verus
+
+  format:
+    name: Check formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --all-features -- -D warnings

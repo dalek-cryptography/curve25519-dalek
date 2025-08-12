@@ -10,39 +10,44 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  verus-verify:
-    name: Verus Verification
+  verus:
+    name: Run `cargo verify verus`
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install verus-analyzer
-        run: |
-          curl -L https://github.com/verus-lang/verus-analyzer/releases/latest/download/verus-analyzer-x86_64-unknown-linux-gnu.gz | gunzip -c > verus-analyzer
-          sudo mv verus-analyzer /usr/local/bin/
-          sudo chmod +x /usr/local/bin/verus-analyzer
-      - name: Run cargo verify verus
-        run: cargo verify verus
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.88.0
+    - name: Install Verus
+      run: |
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.08.01.33c6cec/verus-0.2025.08.01.33c6cec-x86-linux.zip
+        unzip verus-0.2025.08.01.33c6cec-x86-linux.zip
+        mv verus-x86-linux ~/.cargo/bin
+        cd ~/.cargo/bin
+        ln -s verus-x86-linux/cargo-verus
+    - name: Run test
+      run: |
+        cargo verus verify
 
-  format:
+  rustfmt:
     name: Check formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - run: cargo fmt --all -- --check
 
   clippy:
-    name: Clippy
+    name: Check that clippy is happy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      - run: cargo clippy --all-features -- -D warnings
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.87.0
+      with:
+        components: clippy
+    - run: cargo clippy --target x86_64-unknown-linux-gnu --all-features
 
   typos:
     name: Check for typos

@@ -43,3 +43,10 @@ jobs:
         with:
           components: clippy
       - run: cargo clippy --all-features -- -D warnings
+
+  typos:
+    name: Check for typos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crate-ci/typos@v1.33.1

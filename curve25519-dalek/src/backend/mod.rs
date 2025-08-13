@@ -91,8 +91,11 @@ where
         // #[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
         // BackendKind::Avx512 =>
         //     vector::scalar_mul::pippenger::spec_avx512ifma_avx512vl::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
-        BackendKind::Serial =>
-            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(scalars, points),
+        BackendKind::Serial => {
+            serial::scalar_mul::pippenger::Pippenger::optional_multiscalar_mul::<I, J>(
+                scalars, points,
+            )
+        }
     }
 }
 
@@ -123,8 +126,11 @@ impl VartimePrecomputedStraus {
             // #[cfg(all(curve25519_dalek_backend = "unstable_avx512", nightly))]
             // BackendKind::Avx512 =>
             //     VartimePrecomputedStraus::Avx512ifma(vector::scalar_mul::precomputed_straus::spec_avx512ifma_avx512vl::VartimePrecomputedStraus::new(static_points)),
-            BackendKind::Serial =>
-                VartimePrecomputedStraus::Scalar(serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(static_points))
+            BackendKind::Serial => VartimePrecomputedStraus::Scalar(
+                serial::scalar_mul::precomputed_straus::VartimePrecomputedStraus::new(
+                    static_points,
+                ),
+            ),
         }
     }
 

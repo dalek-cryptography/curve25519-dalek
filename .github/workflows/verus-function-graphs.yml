@@ -1,0 +1,592 @@
+name: Generate Verus Function Graphs
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened]
+  
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: 'Base reference to compare against (default: main)'
+        required: false
+        default: 'main'
+      depth:
+        description: 'Graph depth (default: 5)'
+        required: false
+        default: '5'
+      filter_sources:
+        description: 'Source filtering mode (none, filter-non-libsignal-sources, or custom filter)'
+        required: false
+        default: 'none'
+      include_callers:
+        description: 'Include callers in the graph (shows functions that call the target)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  generate-graphs:
+    name: Generate Function Call Graphs
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Determine execution context
+        id: context
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "mode=pr" >> $GITHUB_OUTPUT
+            echo "base_ref=origin/${{ github.base_ref }}" >> $GITHUB_OUTPUT
+            echo "depth=5" >> $GITHUB_OUTPUT
+            echo "filter_sources=none" >> $GITHUB_OUTPUT
+            echo "include_callers=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "mode=manual" >> $GITHUB_OUTPUT
+            echo "base_ref=origin/${{ github.event.inputs.base_ref || 'main' }}" >> $GITHUB_OUTPUT
+            echo "depth=${{ github.event.inputs.depth || '5' }}" >> $GITHUB_OUTPUT
+            echo "filter_sources=${{ github.event.inputs.filter_sources || 'none' }}" >> $GITHUB_OUTPUT
+            echo "include_callers=${{ github.event.inputs.include_callers || 'false' }}" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Mode: $(cat $GITHUB_OUTPUT | grep mode= | cut -d= -f2)"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      
+      - name: Fetch base branch
+        run: |
+          echo "Fetching base branch for comparison..."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          else
+            git fetch origin ${{ steps.context.outputs.base_ref || 'main' }}:refs/remotes/origin/${{ steps.context.outputs.base_ref || 'main' }} || true
+          fi
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Setup Python and make scripts executable
+        run: |
+          # Make scripts executable if they exist
+          if [[ -d scripts ]]; then
+            find scripts -name '*.py' -type f -exec chmod +x {} \; 2>/dev/null || echo "No Python scripts to make executable"
+          fi
+          python3 --version
+          echo "Current directory: $(pwd)"
+          echo "Available scripts:"
+          ls -la scripts/ 2>/dev/null || echo "Scripts directory not found"
+          echo "Working directory contents:"
+          ls -la
+
+      - name: Validate scripts
+        run: |
+          echo "Validating Python scripts functionality..."
+          echo "Current working directory: $(pwd)"
+          
+          if [[ -f scripts/validate_scripts.py ]]; then
+            echo "✅ Found validate_scripts.py, running validation..."
+            python3 scripts/validate_scripts.py
+          else
+            echo "⚠️  validate_scripts.py not found, performing basic validation"
+            echo "Available files in current directory:"
+            ls -la
+            echo "Available scripts:"
+            ls -la scripts/ 2>/dev/null || echo "Scripts directory not found"
+            
+            # Check for essential scripts
+            essential_scripts=(
+              "scripts/find_changed_verus_constructs.py"
+              "scripts/map_functions_to_symbols.py"
+              "scripts/generate_dependency_graphs.py"
+              "scripts/create_graph_gallery.py"
+            )
+            
+            missing_scripts=()
+            for script in "${essential_scripts[@]}"; do
+              if [[ ! -f "$script" ]]; then
+                missing_scripts+=("$script")
+              else
+                echo "✓ Found: $script"
+              fi
+            done
+            
+            if [[ ${#missing_scripts[@]} -gt 0 ]]; then
+              echo "❌ Missing essential scripts:"
+              printf '%s\n' "${missing_scripts[@]}"
+              exit 1
+            else
+              echo "✅ All essential scripts found"
+            fi
+          fi
+
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
+      - name: Install verus-analyzer and SCIP
+        run: |
+          # Install verus-analyzer
+          curl -L https://github.com/verus-lang/verus-analyzer/releases/latest/download/verus-analyzer-x86_64-unknown-linux-gnu.gz | gunzip -c > verus-analyzer
+          sudo mv verus-analyzer /usr/local/bin/
+          sudo chmod +x /usr/local/bin/verus-analyzer
+          
+          # Install SCIP
+          env \
+            TAG="v0.5.2" \
+            OS="$(uname -s | tr '[:upper:]' '[:lower:]')" \
+            ARCH="$(uname -m | sed -e 's/x86_64/amd64/')" \
+            bash -c 'curl -L "https://github.com/sourcegraph/scip/releases/download/$TAG/scip-$OS-$ARCH.tar.gz"' \
+            | tar xzf - scip
+          sudo mv scip /usr/local/bin/
+          sudo chmod +x /usr/local/bin/scip
+          
+          # Verify installations
+          verus-analyzer --version || echo "verus-analyzer installed"
+          scip --version
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Generate SCIP index
+        id: generate-scip
+        run: |
+          # Determine project name for SCIP filename
+          PROJECT_NAME="curve25519-dalek"
+          SCIP_JSON_FILE="index_scip_${PROJECT_NAME}.json"
+          
+          echo "=== Generating SCIP index for $PROJECT_NAME ==="
+          
+          # Generate SCIP index using verus-analyzer
+          echo "Running verus-analyzer scip ..."
+          verus-analyzer scip .
+          
+          # Convert SCIP to JSON format
+          echo "Converting SCIP index to JSON format..."
+          scip print --json index.scip > "${SCIP_JSON_FILE}"
+          
+          # Verify the generated SCIP JSON file
+          echo "Verifying generated SCIP JSON file..."
+          ls -la "${SCIP_JSON_FILE}"
+          file "${SCIP_JSON_FILE}"
+          echo "SCIP JSON file size: $(wc -c < ${SCIP_JSON_FILE}) bytes"
+          
+          # Check if the JSON is valid
+          echo "=== JSON file validation ==="
+          echo "First 200 characters of JSON file:"
+          head -c 200 "${SCIP_JSON_FILE}"
+          echo ""
+          echo "Last 200 characters of JSON file:"
+          tail -c 200 "${SCIP_JSON_FILE}"
+          echo ""
+          
+          # Try to validate JSON syntax
+          if python3 -c "import json; data=json.load(open('${SCIP_JSON_FILE}')); print(f'JSON valid, contains {len(data)} entries')" 2>/dev/null; then
+            echo "✅ Generated SCIP JSON file is valid"
+          else
+            echo "❌ Generated SCIP JSON file is corrupted or invalid!"
+            echo "JSON validation error:"
+            python3 -c "import json; json.load(open('${SCIP_JSON_FILE}'))" 2>&1 || true
+            echo "Hex dump of first 50 bytes:"
+            hexdump -C "${SCIP_JSON_FILE}" | head -5
+            exit 1
+          fi
+          
+          echo "✅ SCIP JSON file ready for use"
+          echo "Absolute path: $(pwd)/${SCIP_JSON_FILE}"
+          
+          # Store the SCIP filename for later steps
+          echo "SCIP_JSON_FILE=${SCIP_JSON_FILE}" >> $GITHUB_ENV
+
+      - name: Upload SCIP index as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scip-index-debug
+          path: |
+            index.scip
+            index_scip_*.json
+          retention-days: 7
+
+      - name: Download rust-analyzer-test binary
+        run: |
+          # Download the pre-built binary from GitHub releases
+          echo "Downloading pre-built binary from GitHub releases..."
+          RELEASE_VERSION="v1.0.1"
+          BINARY_NAME="generate_function_subgraph_dot-linux-x86_64.tar.gz"
+          
+          # Create directory structure
+          mkdir -p /tmp/rust-analyzer-test/target/release
+          
+          # Download the binary
+          curl -L -o /tmp/${BINARY_NAME} \
+            "https://github.com/Beneficial-AI-Foundation/rust-analyzer-test/releases/download/${RELEASE_VERSION}/${BINARY_NAME}"
+          
+          # Extract the binary
+          cd /tmp
+          echo "Inspecting archive contents..."
+          tar -tzf ${BINARY_NAME}
+          
+          echo "Extracting archive..."
+          tar -xzf ${BINARY_NAME}
+          
+          echo "Contents after extraction:"
+          ls -la
+          
+          # Find and move the binary to expected location (exclude the .tar.gz file)
+          BINARY_FILE=$(find . -name "generate_function_subgraph_dot*" -type f ! -name "*.tar.gz" | head -1)
+          if [[ -n "$BINARY_FILE" ]]; then
+            echo "Found binary at: $BINARY_FILE"
+            mv "$BINARY_FILE" /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot
+          else
+            echo "Binary not found, looking for any executable files (excluding archives)..."
+            find . -type f -executable ! -name "*.tar.gz" -ls
+            echo "Available files:"
+            ls -la
+            exit 1
+          fi
+          chmod +x /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot
+          
+          # Verify binary works
+          echo "Verifying binary..."
+          /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot --help || echo "Binary verification complete"
+          
+          # Return to the repository root
+          cd $GITHUB_WORKSPACE
+          echo "Current working directory: $(pwd)"
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get list of changed .rs files using dynamic base reference
+          echo "Comparing against base: ${{ steps.context.outputs.base_ref }}"
+          git diff --name-only ${{ steps.context.outputs.base_ref }}..HEAD -- '*.rs' > changed_files.txt
+          echo "Changed Rust files:"
+          cat changed_files.txt
+          
+          # Store as output for next step
+          {
+            echo 'CHANGED_FILES<<EOF'
+            cat changed_files.txt
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Find Verus functions in changed files
+        id: find-functions
+        run: |
+          # Create output directory for call graphs
+          mkdir -p function_graphs
+          
+          # Debug: Check git state
+          echo "=== DEBUG: Git state ==="
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "Current commit: $(git rev-parse HEAD)"
+          echo "Base reference: ${{ steps.context.outputs.base_ref }}"
+          echo "Checking if base ref exists..."
+          git rev-parse ${{ steps.context.outputs.base_ref }} || echo "Base ref does not exist!"
+          echo "Base ref resolves to: $(git rev-parse ${{ steps.context.outputs.base_ref }} 2>/dev/null || echo 'ERROR')"
+          
+          # Debug: Show available remotes and branches
+          echo "=== DEBUG: Available remotes ==="
+          git remote -v
+          echo "=== DEBUG: Available branches ==="
+          git branch -a | head -20
+          
+          # Debug: Show changed files
+          echo "=== DEBUG: Changed Rust files ==="
+          git diff --name-only ${{ steps.context.outputs.base_ref }}..HEAD -- '*.rs' || echo "Error getting changed files"
+          
+          # Debug: Show raw diff for first few changed files
+          echo "=== DEBUG: Sample diff output ==="
+          git diff ${{ steps.context.outputs.base_ref }}..HEAD -- '*.rs' | head -200 || echo "Error getting diff"
+          
+          # Debug: Test the script on a known Verus file first
+          echo "=== DEBUG: Testing script on known Verus file ==="
+          if [[ -f curve25519-dalek/src/backend/serial/u64/field_verus.rs ]]; then
+            python3 scripts/find_changed_verus_constructs.py --test curve25519-dalek/src/backend/serial/u64/field_verus.rs 2>&1 | head -20
+          else
+            echo "Test file not found, skipping test"
+          fi
+          
+          # Use the improved script to find newly added AND modified Verus constructs in the diff
+          echo "=== Running Verus construct detection ==="
+          echo "Analyzing git diff to find changed (added/modified) Verus constructs..."
+          echo "Base reference: ${{ steps.context.outputs.base_ref }}"
+          python3 scripts/find_changed_verus_constructs.py ${{ steps.context.outputs.base_ref }} > new_functions.txt 2>analysis.log
+          
+          echo "=== Analysis log (stderr output) ==="
+          cat analysis.log
+          
+          echo "=== New functions output (stdout) ==="
+          cat new_functions.txt || echo "new_functions.txt is empty or missing"
+          
+          echo "=== Debug: File sizes ==="
+          ls -la new_functions.txt analysis.log || echo "Files not found"
+          
+          echo "=== Debug: Changed files content ==="
+          if [[ -f changed_files.txt ]]; then
+            echo "changed_files.txt contents:"
+            cat changed_files.txt
+          else
+            echo "changed_files.txt not found"
+          fi
+          
+          echo "=== Debug: Sample git diff output ==="
+          echo "Showing first 2000 characters of git diff for context:"
+          git diff ${{ steps.context.outputs.base_ref }}..HEAD -- '*.rs' | head -c 2000 || echo "Error getting diff sample"
+          
+          # Debug: Show final file status regardless of content
+          echo "=== DEBUG: Final file analysis ==="
+          if [[ -f new_functions.txt ]]; then
+            echo "new_functions.txt file size: $(wc -c < new_functions.txt) bytes"
+            echo "new_functions.txt line count: $(wc -l < new_functions.txt) lines"
+            if [[ -s new_functions.txt ]]; then
+              echo "new_functions.txt has content"
+            else
+              echo "new_functions.txt is empty"
+            fi
+          else
+            echo "new_functions.txt does not exist"
+          fi
+          
+          if [[ -s new_functions.txt ]]; then
+            echo "=== Found changed Verus constructs ==="
+            cat new_functions.txt
+            
+            # Remove duplicates and store unique functions
+            sort new_functions.txt | uniq > unique_functions.txt
+            echo "Unique changed Verus constructs:"
+            cat unique_functions.txt
+            
+            # Store as output
+            {
+              echo 'FUNCTIONS<<EOF'
+              cat unique_functions.txt
+              echo 'EOF'
+            } >> $GITHUB_OUTPUT
+          else
+            echo "No changed Verus constructs found in this PR"
+            echo "This could be because:"
+            echo "1. No .rs files were changed"
+            echo "2. Changed files don't contain Verus constructs (functions)"
+            echo "3. The construct detection script encountered an error"
+            echo 'FUNCTIONS=' >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create function symbol mapping script
+        run: |
+          # The symbol mapping is now handled by a dedicated Python script
+          echo "Symbol mapping will be handled by scripts/map_functions_to_symbols.py"
+
+      - name: Generate function call graphs
+        id: generate-graphs
+        run: |
+          # Ensure we're in the repository root
+          cd $GITHUB_WORKSPACE
+          echo "Working directory: $(pwd)"
+          
+          mkdir -p function_graphs
+          
+          # Debug: Check working directory and required files
+          echo "=== DEBUG: Working directory and required files ==="
+          echo "Current directory: $(pwd)"
+          echo "All files in current directory:"
+          ls -la
+          
+          # Specifically check for the generated SCIP JSON file
+          echo "=== DEBUG: Checking for SCIP JSON file ==="
+          if [[ -f "${SCIP_JSON_FILE}" ]]; then
+            echo "✅ ${SCIP_JSON_FILE} found"
+            ls -la "${SCIP_JSON_FILE}"
+            echo "File size: $(wc -c < ${SCIP_JSON_FILE}) bytes"
+            echo "Absolute path: $(pwd)/${SCIP_JSON_FILE}"
+            
+            # Re-validate JSON syntax before using it
+            echo "=== Re-validating JSON file before use ==="
+            echo "First 100 characters:"
+            head -c 100 "${SCIP_JSON_FILE}"
+            echo ""
+            echo "Last 100 characters:"
+            tail -c 100 "${SCIP_JSON_FILE}"
+            echo ""
+            
+            if python3 -c "import json; data=json.load(open('${SCIP_JSON_FILE}')); print(f'JSON valid, contains {len(data)} entries')" 2>/dev/null; then
+              echo "✅ JSON file is still valid before processing"
+            else
+              echo "❌ JSON file became corrupted!"
+              echo "JSON validation error before processing:"
+              python3 -c "import json; json.load(open('${SCIP_JSON_FILE}'))" 2>&1 || true
+              exit 1
+            fi
+          else
+            echo "❌ ${SCIP_JSON_FILE} NOT FOUND"
+            echo "Looking for any JSON files..."
+            find . -name "*.json" -type f || echo "No JSON files found anywhere"
+          fi
+          
+          # Debug: Check what files exist and their contents
+          echo "=== DEBUG: Checking for function files ==="
+          echo "Files in current directory:"
+          ls -la *.txt 2>/dev/null || echo "No .txt files found"
+          
+          if [[ -f new_functions.txt ]]; then
+            echo "new_functions.txt exists, size: $(wc -c < new_functions.txt) bytes"
+            echo "new_functions.txt contents:"
+            cat new_functions.txt
+          else
+            echo "new_functions.txt does not exist"
+          fi
+          
+          if [[ -f unique_functions.txt ]]; then
+            echo "unique_functions.txt exists, size: $(wc -c < unique_functions.txt) bytes"
+            echo "unique_functions.txt contents:"
+            cat unique_functions.txt
+          else
+            echo "unique_functions.txt does not exist"
+          fi
+          
+          if [[ -f unique_functions.txt && -s unique_functions.txt ]]; then
+            echo "Generating call graphs for functions..."
+            
+            # Step 0: Analyze available functions for SCIP indexing
+            echo "=== Analyzing SCIP data requirements ==="
+            echo "Available functions from curve25519-dalek:"
+            cat unique_functions.txt
+            echo ""
+            echo "Checking if these functions are in the generated SCIP index..."
+            
+            # Step 1: Map functions to symbols
+            echo "Mapping functions to SCIP symbols..."
+            echo "Using SCIP file: $(pwd)/${SCIP_JSON_FILE}"
+            
+            python3 scripts/map_functions_to_symbols.py \
+              "$(pwd)/${SCIP_JSON_FILE}" \
+              unique_functions.txt \
+              --output function_symbol_mapping.txt \
+              --format pipe
+            
+            echo "Function to symbol mapping:"
+            cat function_symbol_mapping.txt
+            
+            # Check if any functions were mapped
+            if [[ ! -s function_symbol_mapping.txt ]]; then
+              echo "⚠️  No functions found in generated SCIP index"
+              echo "This could indicate that the functions were not successfully indexed or"
+              echo "that there was an issue with the SCIP generation process."
+              echo ""
+              echo "Since no mappings were found, we'll skip graph generation for now."
+              echo "## No Function Mappings Found" > graph_summary.md
+              echo "" >> graph_summary.md
+              echo "The detected Verus constructs were not found in the generated SCIP index:" >> graph_summary.md
+              echo "" >> graph_summary.md
+              while read -r func; do
+                echo "- \`$func\`" >> graph_summary.md
+              done < unique_functions.txt
+              echo "" >> graph_summary.md
+              echo "**Next Steps:**" >> graph_summary.md
+              echo "- Review the SCIP generation process for completeness" >> graph_summary.md
+              echo "- Check if the functions exist with different symbol names" >> graph_summary.md
+              
+              echo "Skipping graph generation due to no function mappings"
+              exit 0
+            fi
+            
+            # Step 2: Generate call graphs using the dedicated script
+            echo "Generating call graphs..."
+            echo "Graph depth: ${{ steps.context.outputs.depth }}"
+            echo "Filter sources: ${{ steps.context.outputs.filter_sources }}"
+            echo "Include callers: ${{ steps.context.outputs.include_callers }}"
+            
+            # Build the command with appropriate flags
+            GRAPH_CMD="python3 scripts/generate_dependency_graphs.py \
+              /tmp/rust-analyzer-test/target/release/generate_function_subgraph_dot \
+              \"$(pwd)/${SCIP_JSON_FILE}\" \
+              function_symbol_mapping.txt \
+              function_graphs \
+              --depth ${{ steps.context.outputs.depth }} \
+              --include-callees \
+              --summary graph_summary.md \
+              --successful-list successful_graphs.txt"
+            
+            # Add filter flag if not 'none'
+            if [[ "${{ steps.context.outputs.filter_sources }}" != "none" ]]; then
+              GRAPH_CMD="$GRAPH_CMD --filter-sources ${{ steps.context.outputs.filter_sources }}"
+            fi
+            
+            # Add callers flag if requested
+            if [[ "${{ steps.context.outputs.include_callers }}" == "true" ]]; then
+              GRAPH_CMD="$GRAPH_CMD --include-callers"
+            fi
+            
+            echo "Running command: $GRAPH_CMD"
+            eval $GRAPH_CMD
+            
+          else
+            echo "No functions to process"
+            echo "## No Verus Constructs Found" > graph_summary.md
+            echo "No changed Verus constructs were detected in this PR." >> graph_summary.md
+            echo "" >> graph_summary.md
+            echo "**Possible reasons:**" >> graph_summary.md
+            echo "- No .rs files were changed in this PR" >> graph_summary.md
+            echo "- Changed files don't contain Verus constructs" >> graph_summary.md
+            echo "- Only non-Verus code was modified" >> graph_summary.md
+          fi
+
+      - name: Upload call graph artifacts
+        uses: actions/upload-artifact@v4
+        if: hashFiles('function_graphs/*') != ''
+        with:
+          name: verus-function-call-graphs
+          path: |
+            function_graphs/
+            graph_summary.md
+            function_symbol_mapping.txt
+            index_scip_*.json
+            index.scip
+          retention-days: 30
+
+      - name: Create graph gallery (if graphs exist)
+        if: hashFiles('function_graphs/*.svg') != ''
+        run: |
+          echo "Creating graph gallery..."
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            python3 scripts/create_graph_gallery.py \
+              function_graphs \
+              GRAPHS.md \
+              --title "Verus Function call graphs - PR #${{ github.event.number }}"
+          else
+            python3 scripts/create_graph_gallery.py \
+              function_graphs \
+              GRAPHS.md \
+              --title "Verus Function call graphs - Manual run"
+          fi
+
+      - name: Upload graph gallery
+        uses: actions/upload-artifact@v4
+        if: hashFiles('GRAPHS.md') != ''
+        with:
+          name: graph-gallery
+          path: GRAPHS.md
+          retention-days: 30

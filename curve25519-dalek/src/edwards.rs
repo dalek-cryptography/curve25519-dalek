@@ -599,7 +599,7 @@ impl EdwardsPoint {
 
         // Compute the denominators in a batch
         let mut denominators = eds.iter().map(|p| &p.Z - &p.Y).collect::<Vec<_>>();
-        FieldElement::batch_invert(&mut denominators);
+        FieldElement::batch_alloc_invert(&mut denominators);
 
         // Now compute the Montgomery u coordinate for every point
         let mut ret = Vec::with_capacity(eds.len());
@@ -621,7 +621,7 @@ impl EdwardsPoint {
     #[cfg(feature = "alloc")]
     pub fn compress_batch(inputs: &[EdwardsPoint]) -> Vec<CompressedEdwardsY> {
         let mut zs = inputs.iter().map(|input| input.Z).collect::<Vec<_>>();
-        FieldElement::batch_invert(&mut zs);
+        FieldElement::batch_alloc_invert(&mut zs);
 
         inputs
             .iter()

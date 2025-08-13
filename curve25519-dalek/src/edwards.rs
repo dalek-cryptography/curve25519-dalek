@@ -154,7 +154,6 @@ use crate::traits::{Identity, IsIdentity};
 
 use affine::AffinePoint;
 
-#[cfg(feature = "alloc")]
 use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
@@ -895,11 +894,18 @@ impl EdwardsPoint {
 // These use the iterator's size hint and the target settings to
 // forward to a specific backend implementation.
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for EdwardsPoint {
     type Point = EdwardsPoint;
 
-    fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+    fn multiscalar_mul<const N: usize>(
+        scalars: &[Scalar; N],
+        points: &[Self::Point; N],
+    ) -> Self::Point {
+        crate::backend::straus_multiscalar_mul(scalars, points)
+    }
+
+    #[cfg(feature = "alloc")]
+    fn multiscalar_alloc_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
     where
         I: IntoIterator,
         I::Item: Borrow<Scalar>,
@@ -923,7 +929,7 @@ impl MultiscalarMul for EdwardsPoint {
         // size-dependent algorithm dispatch, use this as the hint.
         let _size = s_lo;
 
-        crate::backend::straus_multiscalar_mul(scalars, points)
+        crate::backend::straus_multiscalar_alloc_mul(scalars, points)
     }
 }
 
@@ -2196,7 +2202,7 @@ mod test {
         let Gs = xs.iter().map(EdwardsPoint::mul_base).collect::<Vec<_>>();
 
         // Compute H1 = <xs, Gs> (consttime)
-        let H1 = EdwardsPoint::multiscalar_mul(&xs, &Gs);
+        let H1 = EdwardsPoint::multiscalar_alloc_mul(&xs, &Gs);
         // Compute H2 = <xs, Gs> (vartime)
         let H2 = EdwardsPoint::vartime_multiscalar_mul(&xs, &Gs);
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
@@ -2353,7 +2359,7 @@ mod test {
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
             );
-            let result_consttime = EdwardsPoint::multiscalar_mul(
+            let result_consttime = EdwardsPoint::multiscalar_alloc_mul(
                 &[A_SCALAR, B_SCALAR],
                 &[A, constants::ED25519_BASEPOINT_POINT],
             );

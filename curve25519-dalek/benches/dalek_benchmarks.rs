@@ -289,7 +289,7 @@ mod ristretto_benches {
                     let points: Vec<RistrettoPoint> = (0..size)
                         .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
                         .collect();
-                    b.iter(|| RistrettoPoint::double_and_compress_batch(&points));
+                    b.iter(|| RistrettoPoint::double_and_compress_alloc_batch(&points));
                 },
             );
         }

@@ -27,7 +27,7 @@ jobs:
         ln -s verus-x86-linux/cargo-verus
     - name: Run test
       run: |
-        cargo verus verify
+        cargo verus verify -- --smt-option smt.random_seed=0
 
   rustfmt:
     name: Check formatting

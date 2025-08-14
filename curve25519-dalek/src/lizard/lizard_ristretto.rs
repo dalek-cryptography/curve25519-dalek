@@ -207,10 +207,13 @@ mod test {
 
     /// Checks
     /// `lizard_decode(lizard_encode(data)) == lizard_decode(expected_pt_bytes) == data`
-    fn test_lizard_encode_helper(data: &[u8; 16], expected_pt_bytes: &[u8; 32]) {
-        let p = RistrettoPoint::lizard_encode::<Sha256>(data);
+    fn test_lizard_encode_helper(data: &[u8], expected_pt_bytes: &[u8]) {
+        assert_eq!(data.len(), 16);
+        assert_eq!(expected_pt_bytes.len(), 32);
+
+        let p = RistrettoPoint::lizard_encode::<Sha256>(data.try_into().unwrap());
         let pt_bytes = p.compress().to_bytes();
-        assert!(&pt_bytes == expected_pt_bytes);
+        assert!(pt_bytes == expected_pt_bytes);
         let p = CompressedRistretto::from_slice(&pt_bytes)
             .unwrap()
             .decompress()
@@ -221,32 +224,30 @@ mod test {
 
     #[test]
     fn test_lizard_encode() {
-        test_lizard_encode_helper(
-            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            &[
-                0xf0, 0xb7, 0xe3, 0x44, 0x84, 0xf7, 0x4c, 0xf0, 0xf, 0x15, 0x2, 0x4b, 0x73, 0x85,
-                0x39, 0x73, 0x86, 0x46, 0xbb, 0xbe, 0x1e, 0x9b, 0xc7, 0x50, 0x9a, 0x67, 0x68, 0x15,
-                0x22, 0x7e, 0x77, 0x4f,
-            ],
-        );
-
-        test_lizard_encode_helper(
-            &[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            &[
-                0xcc, 0x92, 0xe8, 0x1f, 0x58, 0x5a, 0xfc, 0x5c, 0xaa, 0xc8, 0x86, 0x60, 0xd8, 0xd1,
-                0x7e, 0x90, 0x25, 0xa4, 0x44, 0x89, 0xa3, 0x63, 0x4, 0x21, 0x23, 0xf6, 0xaf, 0x7,
-                0x2, 0x15, 0x6e, 0x65,
-            ],
-        );
-
-        test_lizard_encode_helper(
-            &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            &[
-                0xc8, 0x30, 0x57, 0x3f, 0x8a, 0x8e, 0x77, 0x78, 0x67, 0x1f, 0x76, 0xcd, 0xc7, 0x96,
-                0xdc, 0xa, 0x23, 0x5c, 0xf1, 0x77, 0xf1, 0x97, 0xd9, 0xfc, 0xba, 0x6, 0xe8, 0x4e,
-                0x96, 0x24, 0x74, 0x44,
-            ],
-        );
+        // Test vectors are of the form (x, y) where y is the compressed encoding of the Ristretto
+        // point given by lizard_encode(x).
+        // These values come from the testLizard() function in vendor/ristretto.sage
+        let test_vectors = [
+            (
+                "00000000000000000000000000000000",
+                "f0b7e34484f74cf00f15024b738539738646bbbe1e9bc7509a676815227e774f",
+            ),
+            (
+                "01010101010101010101010101010101",
+                "cc92e81f585afc5caac88660d8d17e9025a44489a363042123f6af0702156e65",
+            ),
+            (
+                "000102030405060708090a0b0c0d0e0f",
+                "c830573f8a8e7778671f76cdc796dc0a235cf177f197d9fcba06e84e96247444",
+            ),
+            (
+                "dddddddddddddddddddddddddddddddd",
+                "ccb60554c081841037f821fa827b6a5bc2531f80e2647f1a858611f4ccfe3056",
+            ),
+        ];
+        for tv in test_vectors {
+            test_lizard_encode_helper(&hex::decode(tv.0).unwrap(), &hex::decode(tv.1).unwrap());
+        }
     }
 
     // Tests that lizard_decode of a random point is None

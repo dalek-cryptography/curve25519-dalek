@@ -843,7 +843,7 @@ impl Scalar {
 
         let carry = scalar.shr1_assign();
         debug_assert_eq!(carry, 0);
-        
+
         scalar.pack()
     }
 
@@ -1698,18 +1698,16 @@ pub(crate) mod test {
         // test a range of small scalars
         for i in 0u64..32 {
             let scalar = Scalar::from(i);
-            let double = scalar + scalar;
-            let dividend = double.div_by_2();
-            assert_eq!(scalar, dividend);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
         }
 
-        // test odd value near the order
-        let scalar = Scalar::ZERO - Scalar::from(2u64);
-        #[cfg(feature = "group")]
-        assert!(bool::from(scalar.is_odd()));
-
-        let dividend = scalar.div_by_2();
-        assert_eq!(scalar, dividend + dividend);
+        // test a range of scalars near the modulus
+        for i in 0u64..32 {
+            let scalar = Scalar::ZERO - Scalar::from(i);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
+        }
     }
 
     #[test]

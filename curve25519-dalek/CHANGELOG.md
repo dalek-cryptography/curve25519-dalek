@@ -5,6 +5,10 @@ major series.
 
 ## 5.x series
 
+## Unreleased
+
+* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard`.
+
 ## 5.0.0-pre.1
 
 * Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.

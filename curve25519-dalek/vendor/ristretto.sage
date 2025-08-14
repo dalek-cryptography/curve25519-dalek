@@ -1,4 +1,5 @@
 import binascii
+from hashlib import sha256
 class InvalidEncodingException(Exception): pass
 class NotOnCurveException(Exception): pass
 class SpecException(Exception): pass
@@ -836,6 +837,23 @@ def testDoubleAndEncode(cls,n):
         u = cls.elligator(r1) + cls.elligator(r2)
         u.doubleAndEncode()
 
+# Prints test vectors for the Lizard encoding function. Output is the encoding of a compressed
+# Ristretto point
+def testLizard():
+    # 16-byte strings, in hex
+    inputs = ["00000000000000000000000000000000", "01010101010101010101010101010101"]
+
+    for payload in map(binascii.unhexlify, inputs):
+        # Do the lizard encoding of the field element
+        data = bytearray(sha256(payload).digest())
+        data[8:24] = payload
+        data[0] &= 0b11111110
+        data[31] &= 0b00111111
+
+        # Encode to Ristretto (Ed25519Point is actually Ristretto), and print the byte repr
+        pt = Ed25519Point.elligator(data)
+        print("lizard({}) = {}".format(binascii.hexlify(payload), binascii.hexlify(pt.encode())))
+
 testDoubleAndEncode(Ed25519Point,100)
 testDoubleAndEncode(NegEd25519Point,100)
 testDoubleAndEncode(IsoEd25519Point,100)
@@ -853,5 +871,6 @@ testDoubleAndEncode(TwistedEd448GoldilocksPoint,100)
 #testElligator(IsoEd448Point,100)
 #testElligator(Ed448GoldilocksPoint,100)
 #testElligator(TwistedEd448GoldilocksPoint,100)
+#testLizard()
 #gangtest([IsoEd448Point,TwistedEd448GoldilocksPoint,Ed448GoldilocksPoint],100)
 #gangtest([Ed25519Point,IsoEd25519Point],100)

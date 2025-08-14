@@ -20,7 +20,7 @@ impl RistrettoPoint {
     /// Encode 16 bytes of data to a RistrettoPoint, using the Lizard method. The secure hash
     /// function `D` is used internally to produce a unique encoding for `data. Use SHA-256 if
     /// otherwise unsure.
-    pub fn lizard_encode<D: Digest>(data: &[u8; 16]) -> RistrettoPoint
+    pub fn lizard_encode<D>(data: &[u8; 16]) -> RistrettoPoint
     where
         D: Digest<OutputSize = U32> + HashMarker,
     {
@@ -37,9 +37,7 @@ impl RistrettoPoint {
 
     /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method. Returns `None` if
     /// this point was not generated using Lizard.
-    // TODO: This also fails if more than one inverse exists. How likely is this? Should we test for
-    // this in the encoding step?
-    pub fn lizard_decode<D: Digest>(&self) -> Option<[u8; 16]>
+    pub fn lizard_decode<D>(&self) -> Option<[u8; 16]>
     where
         D: Digest<OutputSize = U32> + HashMarker,
     {
@@ -60,6 +58,7 @@ impl RistrettoPoint {
             }
             n_found += ok.unwrap_u8();
         }
+        // Per the README, the likelihood that n_found == 2 is something like 2^-122
         if n_found == 1 { Some(result) } else { None }
     }
 
@@ -251,7 +250,6 @@ mod test {
     }
 
     // Tests that lizard_decode of a random point is None
-    // TODO: what's the false positive rate on this?
     #[test]
     fn test_lizard_invalid() {
         let mut rng = rand::rng();

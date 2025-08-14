@@ -29,7 +29,7 @@ impl RistrettoPoint {
         let digest = D::digest(data);
         fe_bytes[0..32].copy_from_slice(digest.as_slice());
         fe_bytes[8..24].copy_from_slice(data);
-        fe_bytes[0] &= 254; // make positive since Elligator on r and -r is the same
+        fe_bytes[0] &= 254;
         fe_bytes[31] &= 63;
         let fe = FieldElement::from_bytes(&fe_bytes);
         RistrettoPoint::elligator_ristretto_flavor(&fe)
@@ -47,8 +47,8 @@ impl RistrettoPoint {
         let mut n_found = 0;
         for (j, fe_j) in fes.iter().enumerate() {
             let mut ok = Choice::from((mask >> j) & 1);
-            let buf2 = fe_j.to_bytes(); // array
-            h.copy_from_slice(&D::digest(&buf2[8..24])); // array
+            let buf2 = fe_j.to_bytes();
+            h.copy_from_slice(&D::digest(&buf2[8..24]));
             h[8..24].copy_from_slice(&buf2[8..24]);
             h[0] &= 254;
             h[31] &= 63;

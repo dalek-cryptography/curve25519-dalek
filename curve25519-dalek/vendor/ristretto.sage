@@ -6,7 +6,7 @@ class SpecException(Exception): pass
 def lobit(x): return int(x) & 1
 def hibit(x): return lobit(2*x)
 def negative(x): return lobit(x)
-def enc_le(x,n): return bytearray([int(x)>>(8*i) & 0xFF for i in xrange(n)])
+def enc_le(x,n): return bytearray([int(x)>>(8*i) & 0xFF for i in range(n)])
 def dec_le(x): return sum(b<<(8*i) for i,b in enumerate(x))
 def randombytes(n): return bytearray([randint(0,255) for _ in range(n)])
 
@@ -463,8 +463,8 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
                         if negative(sr) != toggle_r: sr = -sr
                         ret = self.gfToBytes(sr)
                         if self.elligator(ret) != self and self.elligator(ret) != -self:
-                            print "WRONG!",[toggle_rotation,toggle_altx,toggle_s]
-                        if self.elligator(ret) == -self and self != -self: print "Negated!",[toggle_rotation,toggle_altx,toggle_s]
+                            print("WRONG!",[toggle_rotation,toggle_altx,toggle_s])
+                        if self.elligator(ret) == -self and self != -self: print("Negated!",[toggle_rotation,toggle_altx,toggle_s])
                         rets.append(bytes(ret))
         return rets
 
@@ -590,7 +590,7 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
     def elligatorInverseBruteForce(self):
         """Invert Elligator using SAGE's polynomial solver"""
         a,d = self.a,self.d
-        R.<r0> = self.F[]
+        R = self.F["r0"]
         r = self.qnr * r0^2
         den = (d*r-(d-a))*((d-a)*r-d)
         n1 = (r+1)*(a-2*d)/den
@@ -602,7 +602,7 @@ class Decaf_1_1_Point(QuotientEdwardsPoint):
             y = (1-a*s2) / t
 
             selfT = self
-            for i in xrange(self.cofactor/2):
+            for i in range(self.cofactor/2):
                 xT,yT = selfT
                 polyX = xT^2-x2
                 polyY = yT-y
@@ -721,7 +721,7 @@ class IsoEd25519Point(Decaf_1_1_Point):
 class TestFailedException(Exception): pass
 
 def test(cls,n):
-    print "Testing curve %s" % cls.__name__
+    print("Testing curve %s" % cls.__name__)
     
     specials = [1]
     ii = cls.F(-1)
@@ -744,7 +744,7 @@ def test(cls,n):
     
     P = cls.base()
     Q = cls()
-    for i in xrange(n):
+    for i in range(n):
         #print binascii.hexlify(Q.encode())
         QE = Q.encode()
         QQ = cls.decode(QE)
@@ -766,7 +766,7 @@ def test(cls,n):
                     raise TestFailedException("s -> 1/s should work for cofactor 4")
         
         QT = Q
-        for h in xrange(cls.cofactor):
+        for h in range(cls.cofactor):
             QT = QT.torque()
             if QT.encode() != QE:
                 raise TestFailedException("Can't torque %s,%d" % (str(Q),h+1))
@@ -782,19 +782,19 @@ def test(cls,n):
         Q = Q1
         
 def testElligator(cls,n):
-    print "Testing elligator on %s" % cls.__name__
-    for i in xrange(n):
+    print("Testing elligator on %s" % cls.__name__)
+    for i in range(n):
         r = randombytes(cls.encLen)
         P = cls.elligator(r)
         if hasattr(P,"invertElligator"):
             iv = P.invertElligator()
             modr = bytes(cls.gfToBytes(cls.bytesToGf(r,mustBeProper=False,maskHiBits=True)))
             iv2 = P.torque().invertElligator()
-            if modr not in iv: print "Failed to invert Elligator!"
+            if modr not in iv: print("Failed to invert Elligator!")
             if len(iv) != len(set(iv)):
-                print "Elligator inverses not unique!", len(set(iv)), len(iv)
+                print("Elligator inverses not unique!", len(set(iv)), len(iv))
             if iv != iv2:
-                print "Elligator is untorqueable!"
+                print("Elligator is untorqueable!")
                 #print [binascii.hexlify(j) for j in iv]
                 #print [binascii.hexlify(j) for j in iv2]
                 #break
@@ -802,7 +802,7 @@ def testElligator(cls,n):
             pass # TODO
 
 def gangtest(classes,n):
-    print "Gang test",[cls.__name__ for cls in classes]
+    print("Gang test",[cls.__name__ for cls in classes])
     specials = [1]
     ii = classes[0].F(-1)
     while is_square(ii):
@@ -810,27 +810,27 @@ def gangtest(classes,n):
         ii = sqrt(ii)
     specials.append(ii)
     
-    for i in xrange(n):
+    for i in range(n):
         rets = [bytes((cls.base()*i).encode()) for cls in classes]
         if len(set(rets)) != 1:
-            print "Divergence in encode at %d" % i
+            print("Divergence in encode at %d" % i)
             for c,ret in zip(classes,rets):
-                print c,binascii.hexlify(ret)
-            print
+                print(c,binascii.hexlify(ret))
+            print()
         
         if i < len(specials): r0 = enc_le(specials[i],classes[0].encLen)
         else: r0 = randombytes(classes[0].encLen)
         
         rets = [bytes((cls.elligator(r0)*i).encode()) for cls in classes]
         if len(set(rets)) != 1:
-            print "Divergence in elligator at %d" % i
+            print("Divergence in elligator at %d" % i)
             for c,ret in zip(classes,rets):
-                print c,binascii.hexlify(ret)
-            print
+                print(c,binascii.hexlify(ret))
+            print()
 
 def testDoubleAndEncode(cls,n):
-    print "Testing doubleAndEncode on %s" % cls.__name__
-    for i in xrange(n):
+    print("Testing doubleAndEncode on %s" % cls.__name__)
+    for i in range(n):
         r1 = randombytes(cls.encLen)
         r2 = randombytes(cls.encLen)
         u = cls.elligator(r1) + cls.elligator(r2)

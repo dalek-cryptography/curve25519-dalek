@@ -841,8 +841,9 @@ impl Scalar {
         let mut scalar = self.unpack();
         scalar.conditional_add_l(is_odd);
 
-        // TODO(tarcieri): propagate carry
-        let _carry = scalar.shr1_assign();
+        let carry = scalar.shr1_assign();
+        debug_assert_eq!(carry, 0);
+        
         scalar.pack()
     }
 

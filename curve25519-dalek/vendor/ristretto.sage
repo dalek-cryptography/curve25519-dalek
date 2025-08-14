@@ -841,7 +841,12 @@ def testDoubleAndEncode(cls,n):
 # Ristretto point
 def testLizard():
     # 16-byte strings, in hex
-    inputs = ["00000000000000000000000000000000", "01010101010101010101010101010101"]
+    inputs = [
+        "00000000000000000000000000000000",
+        "01010101010101010101010101010101",
+        "000102030405060708090a0b0c0d0e0f",
+        "dddddddddddddddddddddddddddddddd",
+    ]
 
     for payload in map(binascii.unhexlify, inputs):
         # Do the lizard encoding of the field element

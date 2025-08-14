@@ -260,9 +260,7 @@ impl Scalar52 {
             sum.limbs[i] = carry & mask;
             assert(sum_loop_start.limbs@.subrange(0, i as int) == sum.limbs@.subrange(0, i as int));
             proof {
-                // For now, allow the loop invariant to be assumed - this can be proven later
-                assume(seq_u64_to_nat(a.limbs@.subrange(0, (i+1) as int)) + seq_u64_to_nat(b.limbs@.subrange(0, (i+1) as int)) ==
-                       seq_u64_to_nat(sum.limbs@.subrange(0, (i+1) as int)) + (carry >> 52) * pow2((52 * (i+1) as nat)));
+                lemma_add_loop_invariant(sum, carry, i, a, b, old_carry, mask, sum_loop_start);
             }
             proof {lemma_add_carry_and_sum_bounds(carry, mask);}
         }

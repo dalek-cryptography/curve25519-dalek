@@ -5,6 +5,10 @@ major series.
 
 ## 5.x series
 
+## Unreleased
+
+* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard`.
+
 ## 5.0.0-pre.0
 
 * Update edition to 2024

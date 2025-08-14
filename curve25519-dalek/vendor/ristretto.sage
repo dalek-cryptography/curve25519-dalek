@@ -22,17 +22,17 @@ def optimized_version_of(spec):
             try: opt_ans = f(self,*args,**kwargs),None
             except Exception as e: opt_ans = None,e
             if spec_ans[1] is None and opt_ans[1] is not None:
-                raise
+                raise opt_ans[1]
                 #raise SpecException("Mismatch in %s: spec returned %s but opt threw %s"
                 #    % (f.__name__,str(spec_ans[0]),str(opt_ans[1])))
             if spec_ans[1] is not None and opt_ans[1] is None:
-                raise
+                raise spec_ans[1]
                 #raise SpecException("Mismatch in %s: spec threw %s but opt returned %s"
                 #    % (f.__name__,str(spec_ans[1]),str(opt_ans[0])))
             if spec_ans[0] != opt_ans[0]:
                 raise SpecException("Mismatch in %s: %s != %s"
                     % (f.__name__,pr(spec_ans[0]),pr(opt_ans[0])))
-            if opt_ans[1] is not None: raise
+            if opt_ans[1] is not None: raise opt_ans[1]
             else: return opt_ans[0]
         wrapper.__name__ = f.__name__
         return wrapper
@@ -133,7 +133,7 @@ class QuotientEdwardsPoint(object):
         s = dec_le(bytes)
         if mustBeProper and s >= cls.F.order():
             raise InvalidEncodingException("%d out of range!" % s)
-        bitlen = int(ceil(log(cls.F.order())/log(2)))
+        bitlen = cls.F.order().bit_length()
         if maskHiBits: s &= 2^bitlen-1
         s = cls.F(s)
         if mustBePositive and negative(s):

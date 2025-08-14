@@ -1868,6 +1868,35 @@ mod test {
     }
 
     #[test]
+    #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
+    fn multiply_double_and_compress_1024_random_points() {
+        use ff::Field;
+        use group::Group;
+        let mut rng = OsRng;
+
+        let mut scalars: Vec<Scalar> = (0..1024)
+            .map(|_| Scalar::try_from_rng(&mut rng).unwrap())
+            .collect();
+        scalars[500] = Scalar::ZERO;
+
+        let mut points: Vec<RistrettoPoint> = (0..1024)
+            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
+            .collect();
+        points[500] = <RistrettoPoint as Group>::identity();
+
+        let multiplied_points: Vec<RistrettoPoint> = scalars
+            .iter()
+            .zip(&points)
+            .map(|(scalar, point)| scalar.div_by_2() * point)
+            .collect();
+        let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
+
+        for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {
+            assert_eq!(P2_compressed, (s * P).compress());
+        }
+    }
+
+    #[test]
     #[cfg(feature = "alloc")]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::rng();

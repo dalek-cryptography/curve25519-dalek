@@ -831,6 +831,22 @@ impl Scalar {
         ret
     }
 
+    /// Compute `b` such that `b + b = a mod modulus`.
+    pub fn div_by_2(&self) -> Self {
+        // We are looking for such `b` that `b + b = a mod modulus`.
+        // Two possibilities:
+        // - if `a` is even, we can just divide by 2;
+        // - if `a` is odd, we divide `(a + modulus)` by 2.
+        let is_odd = Choice::from(self.as_bytes()[0] & 1);
+        let mut scalar = self.unpack();
+        scalar.conditional_add_l(is_odd);
+
+        let carry = scalar.shr1_assign();
+        debug_assert_eq!(carry, 0);
+
+        scalar.pack()
+    }
+
     /// Get the bits of the scalar, in little-endian order
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
         (0..256).map(|i| {
@@ -1674,6 +1690,23 @@ pub(crate) mod test {
         let actual = X.unpack().square().pack();
         for i in 0..32 {
             assert!(expected[i] == actual[i]);
+        }
+    }
+
+    #[test]
+    fn div_by_2() {
+        // test a range of small scalars
+        for i in 0u64..32 {
+            let scalar = Scalar::from(i);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
+        }
+
+        // test a range of scalars near the modulus
+        for i in 0u64..32 {
+            let scalar = Scalar::ZERO - Scalar::from(i);
+            let dividend = scalar.div_by_2();
+            assert_eq!(scalar, dividend + dividend);
         }
     }
 

@@ -271,10 +271,7 @@ impl Scalar52 {
         
         // Prove bounds on the sum
         proof {
-            // For now, allow the sum bounds to be assumed - this can be proven later
-            // The bound follows from: each input < group_order(), so sum < 2 * group_order()
-            assume(to_nat(&sum.limbs) + (carry >> 52) * pow2(260) < 2 * group_order());
-            assume(to_nat(&sum.limbs) < 2 * group_order());
+            lemma_add_sum_bounds(a, b, &sum, carry);
         }
         
         // subtract l if the sum is >= l

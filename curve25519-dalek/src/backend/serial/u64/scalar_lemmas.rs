@@ -1095,4 +1095,56 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
     }
 }
 
+/// Proves that the sum after addition satisfies the necessary bounds
+pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, carry: u64)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+        to_nat(&a.limbs) < group_order(),
+        to_nat(&b.limbs) < group_order(),
+        forall|j: int| 0 <= j < 5 ==> sum.limbs[j] < (1u64 << 52),
+        (carry >> 52) < 2,
+        seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
+               seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) as nat * pow2((52 * (5) as nat))
+    ensures
+        to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order(),
+        to_nat(&sum.limbs) < 2 * group_order()
+{
+    // First establish the relationship between the different representations
+    assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs)) by {
+        assert(a.limbs@ == a.limbs@.subrange(0, 5 as int));
+        assert(seq_u64_to_nat(a.limbs@) == to_nat(&a.limbs));
+    }
+    assert(seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs)) by {
+        assert(b.limbs@ == b.limbs@.subrange(0, 5 as int));
+        assert(seq_u64_to_nat(b.limbs@) == to_nat(&b.limbs));
+    }
+    assert(seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) == to_nat(&sum.limbs)) by {
+        assert(sum.limbs@ == sum.limbs@.subrange(0, 5 as int));
+        assert(seq_u64_to_nat(sum.limbs@) == to_nat(&sum.limbs));
+    }
+    
+    // From the loop invariant, we have: a + b == sum + (carry >> 52) * 2^260
+    assert(52 * 5 == 260) by (compute);
+    assert(pow2((52 * 5) as nat) == pow2(260));
+    assert(to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260));
+    
+    // Since a < group_order() and b < group_order(), we have a + b < 2 * group_order()
+    // This is just basic arithmetic: if x < A and y < A, then x + y < A + A = 2*A  
+    assert(to_nat(&a.limbs) + to_nat(&b.limbs) < group_order() + group_order());
+    assert(group_order() + group_order() == 2 * group_order());
+    assert(to_nat(&a.limbs) + to_nat(&b.limbs) < 2 * group_order());
+    
+    // Therefore: sum + (carry >> 52) * 2^260 < 2 * group_order()
+    assert(to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order());
+    
+    // Since carry >> 52 >= 0 and pow2(260) > 0, we have (carry >> 52) * pow2(260) >= 0
+    // Therefore sum < sum + (carry >> 52) * pow2(260) < 2 * group_order()
+    lemma_pow2_pos(260);
+    assert(pow2(260) > 0);
+    assert((carry >> 52) as nat * pow2(260) >= 0);
+    assert(to_nat(&sum.limbs) <= to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260));
+    assert(to_nat(&sum.limbs) < 2 * group_order());
+}
+
 } // verus!

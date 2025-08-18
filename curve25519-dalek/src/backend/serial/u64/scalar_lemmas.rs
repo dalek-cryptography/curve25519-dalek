@@ -794,13 +794,10 @@ pub(crate) proof fn lemma_l_equals_group_order()
 pub proof fn lemma_pow252()
     ensures pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000
 {
-    assert(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000) by
-    {
-        assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
-        lemma_pow2_adds(63, 63);
-        assert(pow2(126) == 0x40000000000000000000000000000000);
-        lemma_pow2_adds(126, 126);
-    }
+    assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
+    lemma_pow2_adds(63, 63);
+    assert(pow2(126) == 0x40000000000000000000000000000000);
+    lemma_pow2_adds(126, 126);
 }
 
 pub proof fn lemma_pow2_260_greater_than_2_group_order()

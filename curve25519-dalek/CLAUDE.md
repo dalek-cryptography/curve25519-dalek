@@ -7,6 +7,13 @@ To test compilation with the fiat backend:
 RUSTFLAGS='--cfg curve25519_dalek_backend="fiat"' cargo check
 ```
 
+## Verus docs
+See https://verus-lang.github.io/verus/guide/ for tutorial
+
+See https://verus-lang.github.io/verus/verusdoc/vstd for vstd lemmas, 
+especially https://verus-lang.github.io/verus/verusdoc/vstd/arithmetic/index.html 
+for mul and div_mod lemmas
+
 ## Verus Verification
 
 Run Verus verification from the `curve25519-dalek` directory:

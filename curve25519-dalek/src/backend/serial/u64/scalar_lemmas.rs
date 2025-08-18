@@ -1185,29 +1185,11 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
 /// We just use lemma_mod_sub_multiples_vanish
 pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scalar52, result: &Scalar52)
     requires
-        limbs_bounded(a),
-        limbs_bounded(b),
-        to_nat(&a.limbs) < group_order(),
-        to_nat(&b.limbs) < group_order(),
-        to_nat(&sum.limbs) < 2 * group_order(),
         to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs),
-        // Range constraint: sum - L is in valid range for modular arithmetic
         to_nat(&result.limbs) == (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int)
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order()
 {
-    // We know that L = group_order()
-    lemma_l_equals_group_order();
-    assert(to_nat(&constants::L.limbs) == group_order());
-
-    // From the postcondition of sub, we have:
-    // result = (sum - L) % group_order (when treated as int)
-    assert(to_nat(&result.limbs) == (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int));
-
-    // Since sum = a + b (from the loop invariant)
-    assert(to_nat(&sum.limbs) == to_nat(&a.limbs) + to_nat(&b.limbs));
-
-    // Therefore: result = ((a + b) - L) % L = (a + b) % L
     calc! {
         (==)
         to_nat(&result.limbs) as int; {
@@ -1221,10 +1203,6 @@ pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scala
         }
         (to_nat(&a.limbs) as int + to_nat(&b.limbs) as int) % (group_order() as int);
     }
-
-    // Convert back to nat
-    assert((to_nat(&a.limbs) as int + to_nat(&b.limbs) as int) % (group_order() as int) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
-    assert(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
 }
 
 } // verus!

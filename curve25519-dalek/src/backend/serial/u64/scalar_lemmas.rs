@@ -786,6 +786,14 @@ pub(crate) proof fn lemma_l_equals_group_order()
     assert(pow2(104) == 0x100000000000000000000000000);
     lemma_pow2_adds(104, 104);
     assert(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
+    lemma_pow252();
+    lemma_five_limbs_equals_to_nat(&constants::L.limbs);
+    assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
+}
+
+pub proof fn lemma_pow252()
+    ensures pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000
+{
     assert(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000) by
     {
         assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
@@ -793,8 +801,6 @@ pub(crate) proof fn lemma_l_equals_group_order()
         assert(pow2(126) == 0x40000000000000000000000000000000);
         lemma_pow2_adds(126, 126);
     }
-    lemma_five_limbs_equals_to_nat(&constants::L.limbs);
-    assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 
 pub proof fn lemma_pow2_260_greater_than_2_group_order()
@@ -842,18 +848,7 @@ pub proof fn lemma_pow2_260_greater_than_2_group_order()
     
     // We can be very conservative and say group_order() < 2 * 2^252
     // This is clearly true since the small added value is much smaller than 2^252
-    assert(pow2(52) == 0x10000000000000) by {lemma2_to64_rest();};
-    lemma_pow2_adds(52, 52);
-    assert(pow2(104) == 0x100000000000000000000000000);
-    lemma_pow2_adds(104, 104);
-    assert(pow2(208) == 0x10000000000000000000000000000000000000000000000000000);
-    assert(pow2(252) == 0x1000000000000000000000000000000000000000000000000000000000000000) by
-    {
-        assert(pow2(63) == 0x8000000000000000) by {lemma2_to64_rest();}
-        lemma_pow2_adds(63, 63);
-        assert(pow2(126) == 0x40000000000000000000000000000000);
-        lemma_pow2_adds(126, 126);
-    }
+    lemma_pow252();
     assert(group_order() < 2 * pow2(252)) by {
         // This is mathematically obvious from the structure of L
         // The "small value" added to 2^252 is negligible compared to 2^252 itself

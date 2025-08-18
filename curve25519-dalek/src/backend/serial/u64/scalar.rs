@@ -265,14 +265,10 @@ impl Scalar52 {
             proof {lemma_add_carry_and_sum_bounds(carry, mask);}
         }
 
-        // After the loop, we have: a + b == sum + (carry >> 52) * 2^260
         assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2((52 * (5) as nat)));
 
-        // Prove bounds on the sum
-        proof {
-            lemma_add_sum_simplify(a, b, &sum, carry);
-        }
+        proof {lemma_add_sum_simplify(a, b, &sum, carry);}
 
         // subtract l if the sum is >= l
         proof { lemma_l_value_properties(&constants::L, &sum); }
@@ -280,10 +276,7 @@ impl Scalar52 {
         proof{lemma_l_equals_group_order();}
         let result = Scalar52::sub(&sum, &constants::L);
         
-        // Prove correctness of the final result
-        proof {
-            lemma_add_final_correctness(a, b, &sum, &result);
-        }
+        proof {lemma_add_final_correctness(a, b, &sum, &result);}
         result
 
     }

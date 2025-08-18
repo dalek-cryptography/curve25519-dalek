@@ -846,11 +846,10 @@ pub proof fn lemma_pow2_260_greater_than_2_group_order()
     // We can be very conservative and say group_order() < 2 * 2^252
     // This is clearly true since the small added value is much smaller than 2^252
     lemma_pow252();
-    assert(group_order() < 2 * pow2(252)) by {
         // This is mathematically obvious from the structure of L
         // The "small value" added to 2^252 is negligible compared to 2^252 itself
-    };
-    
+    assert(group_order() < 2 * pow2(252));
+
     // Therefore 2 * group_order() < 4 * 2^252
     assert(2 * group_order() < 2 * (2 * pow2(252)));
     assert(2 * (2 * pow2(252)) == 4 * pow2(252));

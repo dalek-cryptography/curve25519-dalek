@@ -1052,6 +1052,7 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
 
 /// Proves that the addition loop maintains its invariant:
 /// a[0..i+1] + b[0..i+1] == sum[0..i+1] + (carry >> 52) * 2^(52*(i+1))
+/// See lemma_sub_loop1_invariant for more comments
 pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &Scalar52, b: &Scalar52, old_carry: u64, mask: u64, sum_loop_start: Scalar52)
     requires
         limbs_bounded(a),
@@ -1113,7 +1114,9 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
     }
 }
 
-/// Proves that the sum after addition satisfies the necessary bounds
+/// Get rid of the subranges from the invariant statement.
+/// Since a and b are less than group order, we can show that carry >> 52
+/// has to be 0, else the RHS is too large
 pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, carry: u64)
     requires
         limbs_bounded(a),
@@ -1178,7 +1181,8 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
-/// Proves that the final result of add is correct modulo group_order()
+/// Proves that the final result of add is correct modulo group_order().
+/// We just use lemma_mod_sub_multiples_vanish
 pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scalar52, result: &Scalar52)
     requires
         limbs_bounded(a),

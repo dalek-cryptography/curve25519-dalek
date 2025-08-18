@@ -1077,7 +1077,7 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
         }
         seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i as int] as nat * pow2(52 * i as nat) +
         seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i as int] as nat * pow2(52 * i as nat); {
-            broadcast use lemma_mul_is_distributive_add_other_way;
+            lemma_mul_is_distributive_add_other_way(pow2(52 * i as nat) as int, a.limbs[i as int] as int, b.limbs[i as int] as int);
         }
         seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
         (a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {
@@ -1086,7 +1086,7 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
         }
         seq_u64_to_nat(sum.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
         (a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {
-            broadcast use lemma_mul_is_distributive_add_other_way;
+            lemma_mul_is_distributive_add_other_way(pow2(52 * i as nat) as int, (old_carry >> 52) as int, (a.limbs[i as int] as nat + b.limbs[i as int] as nat) as int);
         }
         seq_u64_to_nat(sum.limbs@.subrange(0, i as int)) +
         ((old_carry >> 52) as nat + a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {
@@ -1098,9 +1098,9 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
         }
         seq_u64_to_nat(sum.limbs@.subrange(0, i as int)) +
         ((carry >> 52) as nat * pow2(52) + sum.limbs[i as int] as nat) * pow2(52 * i as nat); {
-            assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {broadcast use lemma_pow2_adds;};
+            assert(pow2(52) * pow2(52 * i as nat) == pow2(52 + 52 * i as nat)) by {lemma_pow2_adds(52, 52 * i as nat);};
             assert(52 + 52 * i as nat == 52 * (i+1) as nat);
-            broadcast use lemma_mul_is_distributive_add_other_way;
+            lemma_mul_is_distributive_add_other_way(pow2(52 * i as nat) as int, (carry >> 52) as nat * pow2(52) as int, sum.limbs[i as int] as int);
             assert((carry >> 52) as nat * pow2(52) * pow2(52 * i as nat) == (carry >> 52) as nat * pow2(52 * (i+1) as nat)) by {
                     assert(pow2(52) * pow2(52 * i as nat) == pow2(52 * (i+1) as nat));
                     lemma_mul_is_associative((carry >> 52) as int, pow2(52) as int, pow2(52 * i as nat) as int);

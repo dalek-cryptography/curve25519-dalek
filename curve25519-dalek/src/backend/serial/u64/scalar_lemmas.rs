@@ -1168,7 +1168,7 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
 }
 
 /// Proves that the sum after addition satisfies the necessary bounds
-pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, carry: u64)
+pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, carry: u64)
     requires
         limbs_bounded(a),
         limbs_bounded(b),
@@ -1181,6 +1181,7 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
     ensures
         to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order(),
         (carry >> 52) == 0,
+        to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs),
         to_nat(&sum.limbs) < 2 * group_order()
 {
     // First establish the relationship between the different representations
@@ -1196,7 +1197,9 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
         assert(sum.limbs@ == sum.limbs@.subrange(0, 5 as int));
         assert(seq_u64_to_nat(sum.limbs@) == to_nat(&sum.limbs));
     }
-    
+
+    assert(to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs) + (carry >> 52) * pow2((52 * (5) as nat)));
+
     // From the loop invariant, we have: a + b == sum + (carry >> 52) * 2^260
     assert(52 * 5 == 260) by (compute);
     assert(pow2((52 * 5) as nat) == pow2(260));

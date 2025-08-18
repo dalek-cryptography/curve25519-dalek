@@ -268,26 +268,12 @@ impl Scalar52 {
         // After the loop, we have: a + b == sum + (carry >> 52) * 2^260
         assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2((52 * (5) as nat)));
-        proof {
-            assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs)) by {
-                assert(a.limbs@ == a.limbs@.subrange(0, 5 as int));
-            };
-            assert(seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs)) by {
-                assert(b.limbs@ == b.limbs@.subrange(0, 5 as int));
-            };
-            assert(seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) == to_nat(&sum.limbs)) by {
-                assert(sum.limbs@ == sum.limbs@.subrange(0, 5 as int));
-            };
-        }
-        assert(to_nat(&a.limbs) + to_nat(&b.limbs) ==
-               to_nat(&sum.limbs) + (carry >> 52) * pow2((52 * (5) as nat)));
-        
+
         // Prove bounds on the sum
         proof {
-            lemma_add_sum_bounds(a, b, &sum, carry);
+            lemma_add_sum_simplify(a, b, &sum, carry);
         }
-        assert(to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs));
-        
+
         // subtract l if the sum is >= l
         proof { lemma_l_value_properties(&constants::L, &sum); }
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());

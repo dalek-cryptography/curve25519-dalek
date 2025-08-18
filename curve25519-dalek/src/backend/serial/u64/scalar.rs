@@ -275,7 +275,7 @@ impl Scalar52 {
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}
         let result = Scalar52::sub(&sum, &constants::L);
-        
+
         proof {lemma_add_final_correctness(a, b, &sum, &result);}
         result
 

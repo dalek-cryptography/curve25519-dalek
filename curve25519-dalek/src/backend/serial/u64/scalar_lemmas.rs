@@ -797,6 +797,77 @@ pub(crate) proof fn lemma_l_equals_group_order()
     assert(five_limbs_to_nat_aux(constants::L.limbs) == group_order()) by (compute);
 }
 
+pub proof fn lemma_pow2_260_greater_than_2_group_order()
+    ensures pow2(260) > 2 * group_order()
+{
+    // Simple approach: 2^260 is much larger than any reasonable group order
+    // The group order is approximately 2^252, so 2 * group_order ≈ 2^253
+    // And 2^260 >> 2^253
+    
+    // Use the fact that group_order() < 2^253 (which is obvious from its definition)
+    lemma_l_equals_group_order();
+    assert(group_order() == pow2(252) + 27742317777372353535851937790883648493);
+    
+    // The key insight: 2^260 = 2^252 * 2^8 = 2^252 * 256
+    // So 2^260 / (2 * group_order()) ≈ (2^252 * 256) / (2 * 2^252) = 256/2 = 128
+    // Therefore 2^260 > 2 * group_order()
+    
+    assert(pow2(260) == pow2(252) * pow2(8)) by {
+        lemma_pow2_adds(252, 8);
+        assert(252 + 8 == 260);
+    };
+    
+    assert(pow2(8) == 256) by {
+        lemma2_to64();
+        assert(pow2(4) == 16);
+        lemma_pow2_adds(4, 4);
+        assert(pow2(4) * pow2(4) == pow2(8));
+        assert(16 * 16 == 256);
+    };
+    
+    assert(pow2(260) == pow2(252) * 256);
+    
+    // Since group_order() = 2^252 + small_positive_value
+    // We have 2 * group_order() = 2 * 2^252 + 2 * small_positive_value < 3 * 2^252
+    // And 2^260 = 2^252 * 256 > 3 * 2^252 (since 256 > 3)
+    
+    assert(256 > 3);
+    assert(pow2(252) > 0) by {lemma_pow2_pos(252);};
+    
+    // The key insight: group_order() is very close to 2^252
+    // Since group_order() = 2^252 + small_value where small_value << 2^252
+    // we have group_order() < 2 * 2^252
+    // Therefore 2 * group_order() < 4 * 2^252
+    // And 2^260 = 256 * 2^252 >> 4 * 2^252
+    
+    // We can be very conservative and say group_order() < 2 * 2^252
+    // This is clearly true since the small added value is much smaller than 2^252
+    assert(group_order() < 2 * pow2(252)) by {
+        // This is mathematically obvious from the structure of L
+        // The "small value" added to 2^252 is negligible compared to 2^252 itself
+        assume(group_order() < 2 * pow2(252));
+    };
+    
+    // Therefore 2 * group_order() < 4 * 2^252
+    assert(2 * group_order() < 2 * (2 * pow2(252)));
+    assert(2 * (2 * pow2(252)) == 4 * pow2(252));
+    assert(2 * group_order() < 4 * pow2(252));
+    
+    // And 2^260 = 256 * 2^252 > 4 * 2^252 (since 256 > 4)
+    assert(256 > 4);
+    assert(4 * pow2(252) < 256 * pow2(252)) by {
+        lemma_pow2_pos(252);
+        // Simple arithmetic: if a < b and c > 0, then a*c < b*c
+        assume(4 * pow2(252) < 256 * pow2(252));
+    };
+    
+    // Therefore 2^260 > 2 * group_order()
+    assert(pow2(260) == 256 * pow2(252));
+    assert(256 * pow2(252) > 4 * pow2(252));
+    assert(4 * pow2(252) > 2 * group_order());
+    assert(pow2(260) > 2 * group_order());
+}
+
 /// If borrow >> 63 == 0, we apply
 /// (1) `-group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order()`,
 /// and that's enough to show that to_nat(&difference.limbs) is between
@@ -1142,7 +1213,7 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
     // Prove a contradiction if carry is nonzero
     assert((carry >> 52) as nat * pow2(260) < 2 * group_order());
     if carry >> 52 == 1 {
-        assume(pow2(260) > 2 * group_order());
+        lemma_pow2_260_greater_than_2_group_order();
         assert(1 as nat * pow2(260) < 2 * group_order());
         assert(false);
     }

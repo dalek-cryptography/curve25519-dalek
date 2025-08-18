@@ -1165,7 +1165,6 @@ pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scala
         to_nat(&a.limbs) < group_order(),
         to_nat(&b.limbs) < group_order(),
         to_nat(&sum.limbs) < 2 * group_order(),
-        // Simplified case: no carry from the top
         to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs),
         // Range constraint: sum - L is in valid range for modular arithmetic
         to_nat(&result.limbs) == (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int)
@@ -1187,12 +1186,10 @@ pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scala
     calc! {
         (==)
         to_nat(&result.limbs) as int; {
-            assume(false);
-            // From sub postcondition  
+            // From sub postcondition
         }
         (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int); {
             // Substitute sum = a + b
-            assume(false);
         }
         (to_nat(&a.limbs) as int + to_nat(&b.limbs) as int - group_order() as int) % (group_order() as int); {
             // Modular arithmetic identity: (x - m) % m = x % m

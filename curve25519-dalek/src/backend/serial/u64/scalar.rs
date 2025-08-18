@@ -268,6 +268,9 @@ impl Scalar52 {
         // After the loop, we have: a + b == sum + (carry >> 52) * 2^260
         assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2((52 * (5) as nat)));
+        // CLAUDE
+        assert(to_nat(&a.limbs) + to_nat(&b.limbs) ==
+               to_nat(&sum.limbs) + (carry >> 52) * pow2((52 * (5) as nat)));
         
         // Prove bounds on the sum
         proof {

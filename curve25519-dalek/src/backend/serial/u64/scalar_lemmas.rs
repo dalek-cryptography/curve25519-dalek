@@ -1108,6 +1108,7 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) as nat * pow2((52 * (5) as nat))
     ensures
         to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order(),
+        (carry >> 52) == 0,
         to_nat(&sum.limbs) < 2 * group_order()
 {
     // First establish the relationship between the different representations
@@ -1137,7 +1138,16 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
     
     // Therefore: sum + (carry >> 52) * 2^260 < 2 * group_order()
     assert(to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order());
-    
+
+    // Prove a contradiction if carry is nonzero
+    assert((carry >> 52) as nat * pow2(260) < 2 * group_order());
+    if carry >> 52 == 1 {
+        assume(pow2(260) > 2 * group_order());
+        assert(1 as nat * pow2(260) < 2 * group_order());
+        assert(false);
+    }
+    assert(carry >> 52 == 0);
+
     // Since carry >> 52 >= 0 and pow2(260) > 0, we have (carry >> 52) * pow2(260) >= 0
     // Therefore sum < sum + (carry >> 52) * pow2(260) < 2 * group_order()
     lemma_pow2_pos(260);

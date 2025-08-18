@@ -26,6 +26,8 @@ use super::scalar_lemmas::*;
 use super::scalar_specs::*;
 use super::subtle_assumes::*;
 #[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
@@ -274,10 +276,8 @@ impl Scalar52 {
         proof { lemma_l_value_properties(&constants::L, &sum); }
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}
-        let result = Scalar52::sub(&sum, &constants::L);
-
-        proof {lemma_add_final_correctness(a, b, &sum, &result);}
-        result
+        broadcast use lemma_mod_sub_multiples_vanish;
+        Scalar52::sub(&sum, &constants::L)
 
     }
 

@@ -1181,28 +1181,4 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
-/// Proves that the final result of add is correct modulo group_order().
-/// We just use lemma_mod_sub_multiples_vanish
-pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scalar52, result: &Scalar52)
-    requires
-        to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs),
-        to_nat(&result.limbs) == (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int)
-    ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order()
-{
-    calc! {
-        (==)
-        to_nat(&result.limbs) as int; {
-            // From sub postcondition
-        }
-        (to_nat(&sum.limbs) as int - group_order() as int) % (group_order() as int); {
-            // Substitute sum = a + b
-        }
-        (to_nat(&a.limbs) as int + to_nat(&b.limbs) as int - group_order() as int) % (group_order() as int); {
-            broadcast use lemma_mod_sub_multiples_vanish;
-        }
-        (to_nat(&a.limbs) as int + to_nat(&b.limbs) as int) % (group_order() as int);
-    }
-}
-
 } // verus!

@@ -269,9 +269,6 @@ impl Scalar52 {
         assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2((52 * (5) as nat)));
         proof {
-            lemma_five_limbs_equals_to_nat(&a.limbs);
-            lemma_five_limbs_equals_to_nat(&b.limbs);
-            lemma_five_limbs_equals_to_nat(&sum.limbs);
             assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs)) by {
                 assert(a.limbs@ == a.limbs@.subrange(0, 5 as int));
             };

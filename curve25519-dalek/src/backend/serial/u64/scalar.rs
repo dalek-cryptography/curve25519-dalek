@@ -268,7 +268,20 @@ impl Scalar52 {
         // After the loop, we have: a + b == sum + (carry >> 52) * 2^260
         assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) * pow2((52 * (5) as nat)));
-        // CLAUDE
+        proof {
+            lemma_five_limbs_equals_to_nat(&a.limbs);
+            lemma_five_limbs_equals_to_nat(&b.limbs);
+            lemma_five_limbs_equals_to_nat(&sum.limbs);
+            assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs)) by {
+                assert(a.limbs@ == a.limbs@.subrange(0, 5 as int));
+            };
+            assert(seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) == to_nat(&b.limbs)) by {
+                assert(b.limbs@ == b.limbs@.subrange(0, 5 as int));
+            };
+            assert(seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) == to_nat(&sum.limbs)) by {
+                assert(sum.limbs@ == sum.limbs@.subrange(0, 5 as int));
+            };
+        }
         assert(to_nat(&a.limbs) + to_nat(&b.limbs) ==
                to_nat(&sum.limbs) + (carry >> 52) * pow2((52 * (5) as nat)));
         

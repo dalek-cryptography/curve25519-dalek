@@ -12,7 +12,9 @@ See https://verus-lang.github.io/verus/guide/ for tutorial
 
 See https://verus-lang.github.io/verus/verusdoc/vstd for vstd lemmas, 
 especially https://verus-lang.github.io/verus/verusdoc/vstd/arithmetic/index.html 
-for mul and div_mod lemmas
+for mul and div_mod lemmas. 
+You may need to click on the specific lemma link to see the statement of the lemma. 
+Feel free to click on many links to look for the best lemma.
 
 ## Verus Verification
 

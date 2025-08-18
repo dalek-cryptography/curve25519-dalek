@@ -289,6 +289,7 @@ impl Scalar52 {
         proof {
             lemma_add_sum_bounds(a, b, &sum, carry);
         }
+        assert(to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs));
         
         // subtract l if the sum is >= l
         proof { lemma_l_value_properties(&constants::L, &sum); }
@@ -298,7 +299,6 @@ impl Scalar52 {
         
         // Prove correctness of the final result
         proof {
-            assume(to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs));
             lemma_add_final_correctness(a, b, &sum, &result);
         }
         result

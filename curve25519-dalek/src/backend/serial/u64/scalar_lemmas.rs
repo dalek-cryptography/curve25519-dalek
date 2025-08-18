@@ -1158,7 +1158,6 @@ pub proof fn lemma_add_sum_bounds(a: &Scalar52, b: &Scalar52, sum: &Scalar52, ca
 }
 
 /// Proves that the final result of add is correct modulo group_order()
-/// For now, we assume the carry is 0 (no overflow from the top limb)
 pub proof fn lemma_add_final_correctness(a: &Scalar52, b: &Scalar52, sum: &Scalar52, result: &Scalar52)
     requires
         limbs_bounded(a),

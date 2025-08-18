@@ -1005,7 +1005,7 @@ pub(crate) proof fn lemma_sub_loop2_invariant(difference: Scalar52, i: usize, a:
             }
             seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, i as int)) + difference_after_loop1.limbs[i as int] as nat * pow2(52 * i as nat) +
             seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) + constants::L.limbs[i as int] as nat * pow2(52 * i as nat); {
-                broadcast use group_mul_is_distributive;
+                broadcast use lemma_mul_is_distributive_add_other_way;
             }
             seq_u64_to_nat(difference_after_loop1.limbs@.subrange(0, i as int)) + seq_u64_to_nat(constants::L.limbs@.subrange(0, i as int)) +
             (difference_after_loop1.limbs[i as int] as nat + constants::L.limbs[i as int] as nat) * pow2(52 * i as nat); {
@@ -1077,7 +1077,7 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
         }
         seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + a.limbs[i as int] as nat * pow2(52 * i as nat) +
         seq_u64_to_nat(b.limbs@.subrange(0, i as int)) + b.limbs[i as int] as nat * pow2(52 * i as nat); {
-            broadcast use group_mul_is_distributive;
+            broadcast use lemma_mul_is_distributive_add_other_way;
         }
         seq_u64_to_nat(a.limbs@.subrange(0, i as int)) + seq_u64_to_nat(b.limbs@.subrange(0, i as int)) +
         (a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {
@@ -1086,7 +1086,7 @@ pub proof fn lemma_add_loop_invariant(sum: Scalar52, carry: u64, i: usize, a: &S
         }
         seq_u64_to_nat(sum.limbs@.subrange(0, i as int)) + (old_carry >> 52) as nat * pow2(52 * i as nat) +
         (a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {
-            broadcast use group_mul_is_distributive;
+            broadcast use lemma_mul_is_distributive_add_other_way;
         }
         seq_u64_to_nat(sum.limbs@.subrange(0, i as int)) +
         ((old_carry >> 52) as nat + a.limbs[i as int] as nat + b.limbs[i as int] as nat) * pow2(52 * i as nat); {

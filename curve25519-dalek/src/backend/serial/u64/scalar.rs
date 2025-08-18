@@ -276,7 +276,7 @@ impl Scalar52 {
         proof { lemma_l_value_properties(&constants::L, &sum); }
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}
-        broadcast use lemma_mod_sub_multiples_vanish;
+        proof{lemma_mod_sub_multiples_vanish(to_nat(&sum.limbs) as int, group_order() as int);}
         Scalar52::sub(&sum, &constants::L)
 
     }

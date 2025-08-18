@@ -1128,10 +1128,7 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
         seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) + seq_u64_to_nat(b.limbs@.subrange(0, 5 as int)) ==
                seq_u64_to_nat(sum.limbs@.subrange(0, 5 as int)) + (carry >> 52) as nat * pow2((52 * (5) as nat))
     ensures
-        to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260) < 2 * group_order(),
-        (carry >> 52) == 0,
-        to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs),
-        to_nat(&sum.limbs) < 2 * group_order()
+        to_nat(&a.limbs) + to_nat(&b.limbs) == to_nat(&sum.limbs)
 {
     // First establish the relationship between the different representations
     assert(seq_u64_to_nat(a.limbs@.subrange(0, 5 as int)) == to_nat(&a.limbs)) by {

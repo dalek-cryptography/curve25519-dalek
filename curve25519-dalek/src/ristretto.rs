@@ -1321,6 +1321,8 @@ impl Zeroize for RistrettoPoint {
 mod test {
     use super::*;
     use crate::edwards::CompressedEdwardsY;
+    #[cfg(feature = "group")]
+    use proptest::prelude::*;
 
     use rand_core::{OsRng, TryRngCore};
 
@@ -1864,6 +1866,39 @@ mod test {
 
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
             assert_eq!(*P2_compressed, (P + P).compress());
+        }
+    }
+
+    #[cfg(feature = "group")]
+    proptest! {
+        #[test]
+        fn multiply_double_and_compress_random_points(
+            p1 in any::<[u8; 64]>(),
+            p2 in any::<[u8; 64]>(),
+            s1 in any::<[u8; 32]>(),
+            s2 in any::<[u8; 32]>(),
+        ) {
+            use group::Group;
+
+            let scalars = [
+                Scalar::from_bytes_mod_order(s1),
+                Scalar::ZERO,
+                Scalar::from_bytes_mod_order(s2),
+            ];
+
+            let points = [
+                RistrettoPoint::from_uniform_bytes(&p1),
+                <RistrettoPoint as Group>::identity(),
+                RistrettoPoint::from_uniform_bytes(&p2),
+            ];
+
+            let multiplied_points: [_; 3] =
+                core::array::from_fn(|i| scalars[i].div_by_2() * points[i]);
+            let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
+
+            for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {
+                prop_assert_eq!(P2_compressed, (s * P).compress());
+            }
         }
     }
 

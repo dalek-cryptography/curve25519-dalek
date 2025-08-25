@@ -679,7 +679,7 @@ impl EdwardsPoint {
     /// of the elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least
     /// one element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255
     /// bytes.
-    /// 
+    ///
     /// The specification names SHA-512 as an example of a secure hash to use with this function,
     /// but you may use any 512-bit hash within reason (see the
     /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).

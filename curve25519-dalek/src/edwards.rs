@@ -674,11 +674,15 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform encode to curve per RFC 9380, with explicit hash function and domain separator, `domain_sep`,
-    /// using the suite `edwards25519_XMD:SHA-512_ELL2_NU_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
-    /// 255 bytes.
+    /// Perform encode to curve per RFC 9380, with explicit hash function and domain separator
+    /// `domain_sep`, using the Twisted Edwards Elligator 2 method. The input is the concatenation
+    /// of the elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least
+    /// one element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed 255
+    /// bytes.
+    /// 
+    /// The specification names SHA-512 as an example of a secure hash to use with this function,
+    /// but you may use any 512-bit hash within reason (see the
+    /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).
     ///
     /// # Warning
     /// `encode_to_curve` is a nonuniform encoding from byte strings to points in `G`. That is,
@@ -705,11 +709,15 @@ impl EdwardsPoint {
     }
 
     #[cfg(feature = "digest")]
-    /// Perform a hash to curve per RFC 9380, with explicit hash function and domain separator, `domain_sep`,
-    /// using the suite `edwards25519_XMD:SHA-512_ELL2_RO_`. The input is the concatenation of the
-    /// elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least one
-    /// element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
+    /// Perform a hash to curve per RFC 9380, with explicit hash function and domain separator
+    /// `domain_sep`, using the Twisted Edwards Elligator 2 method. The input is the concatenation
+    /// of the elements of `bytes`. Likewise for the domain separator with `domain_sep`. At least
+    /// one element of `domain_sep`, MUST be nonempty, and the concatenation MUST NOT exceed
     /// 255 bytes.
+    ///
+    /// The specification names SHA-512 as an example of a secure hash to use with this function,
+    /// but you may use any 512-bit hash within reason (see the
+    /// [`spec`](https://www.rfc-editor.org/rfc/rfc9380.html#section-5.2) for details).
     ///
     /// # Panics
     /// Panics if `domain_sep.collect().len() == 0` or `> 255`

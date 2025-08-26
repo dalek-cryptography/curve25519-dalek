@@ -54,7 +54,9 @@ use core::{
     ops::{Mul, MulAssign},
 };
 
-use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
+use crate::constants::APLUS2_OVER_FOUR;
+#[cfg(feature = "digest")]
+use crate::constants::{MONTGOMERY_A, MONTGOMERY_A_NEG, SQRT_M1};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
 use crate::scalar::{Scalar, clamp_integer};
@@ -62,11 +64,25 @@ use crate::scalar::{Scalar, clamp_integer};
 use crate::traits::Identity;
 
 use subtle::Choice;
+use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
-use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
+
+// We need the const 2^((p+3)/8) for elligator_encode. These defs are checked in tests::consts()
+#[cfg(all(curve25519_dalek_bits = "32", feature = "digest"))]
+const FE_C2: FieldElement = FieldElement::from_limbs([
+    34513073, 25610706, 9377949, 3500415, 12389472, 33281959, 41962654, 31548777, 326685, 11406482,
+]);
+#[cfg(all(curve25519_dalek_bits = "64", feature = "digest"))]
+const FE_C2: FieldElement = FieldElement::from_limbs([
+    1718705420411057,
+    234908883556509,
+    2233514472574048,
+    2117202627021982,
+    765476049583133,
+]);
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -252,33 +268,98 @@ impl MontgomeryPoint {
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point. Returns a Montgomery point and a `Choice`
-/// determining whether eps is a square. This is required by the standard to determine the
-/// sign of the v coordinate.
+#[cfg(feature = "digest")]
+/// Perform the Elligator2 mapping to a tuple `(xn, xd, yn, yd)` such that
+/// `(xn / xd, yn / yd)` is a point on curve25519.
 ///
 /// See <https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method>
-//
-#[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) {
+pub(crate) fn elligator_encode(
+    u: &FieldElement,
+) -> (FieldElement, FieldElement, FieldElement, FieldElement) {
+    // We follow https://www.rfc-editor.org/rfc/rfc9380.html#appendix-G.2.1
+
+    use core::ops::Neg;
     let one = FieldElement::ONE;
-    let d_1 = &one + &r_0.square2(); /* 2r^2 */
+    let c2 = FE_C2;
 
-    let d = &MONTGOMERY_A_NEG * &(d_1.invert()); /* A/(1+2r^2) */
+    // 1.  tv1 = u^2
+    // 2.  tv1 = 2 * tv1
+    let tv1 = u.square2();
+    // 3.   xd = tv1 + 1
+    let xd = &one + &tv1;
+    // 4.  x1n = -J
+    let x1n = MONTGOMERY_A_NEG;
+    // 5.  tv2 = xd^2
+    let tv2 = xd.square();
+    // 6.  gxd = tv2 * xd
+    let gxd = &tv2 * &xd;
+    // 7.  gx1 = J * tv1
+    let gx1 = &MONTGOMERY_A * &tv1;
+    // 8.  gx1 = gx1 * x1n
+    let gx1 = &gx1 * &x1n;
+    // 9.  gx1 = gx1 + tv2
+    let gx1 = &gx1 + &tv2;
+    // 10. gx1 = gx1 * x1n
+    let gx1 = &gx1 * &x1n;
+    // 11. tv3 = gxd^2
+    let tv3 = gxd.square();
+    // 12. tv2 = tv3^2
+    let tv2 = tv3.square();
+    // 13. tv3 = tv3 * gxd
+    let tv3 = &tv3 * &gxd;
+    // 14. tv3 = tv3 * gx1
+    let tv3 = &tv3 * &gx1;
+    // 15. tv2 = tv2 * tv3
+    let tv2 = &tv2 * &tv3;
+    // 16. y11 = tv2^c4
+    let y11 = tv2.pow_p58();
+    // 17. y11 = y11 * tv3
+    let y11 = &y11 * &tv3;
+    // 18. y12 = y11 * c3
+    let y12 = &y11 * &SQRT_M1;
+    // 19. tv2 = y11^2
+    let tv2 = y11.square();
+    // 20. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 21.  e1 = tv2 == gx1
+    let e1 = tv2.ct_eq(&gx1);
+    // 22.  y1 = CMOV(y12, y11, e1)
+    let y1 = FieldElement::conditional_select(&y12, &y11, e1);
+    // 23. x2n = x1n * tv1
+    let x2n = &x1n * &tv1;
+    // 24. y21 = y11 * u
+    let y21 = &y11 * u;
+    // 25. y21 = y21 * c2
+    let y21 = &y21 * &c2;
+    // 26. y22 = y21 * c3
+    let y22 = &y21 * &SQRT_M1;
+    // 27. gx2 = gx1 * tv1
+    let gx2 = &gx1 * &tv1;
+    // 28. tv2 = y21^2
+    let tv2 = y21.square();
+    // 29. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 30.  e2 = tv2 == gx2
+    let e2 = tv2.ct_eq(&gx2);
+    // 31.  y2 = CMOV(y22, y21, e2)
+    let y2 = FieldElement::conditional_select(&y22, &y21, e2);
+    // 32. tv2 = y1^2
+    let tv2 = y1.square();
+    // 33. tv2 = tv2 * gxd
+    let tv2 = &tv2 * &gxd;
+    // 34.  e3 = tv2 == gx1
+    let e3 = tv2.ct_eq(&gx1);
+    // 35.  xn = CMOV(x2n, x1n, e3)
+    let xn = FieldElement::conditional_select(&x2n, &x1n, e3);
+    // 36.   y = CMOV(y2, y1, e3)
+    let y = FieldElement::conditional_select(&y2, &y1, e3);
+    // 37.  e4 = sgn0(y) == 1
+    let e4 = y.is_negative();
+    // 38.   y = CMOV(y, -y, e3 XOR e4)
+    let y = FieldElement::conditional_select(&y, &y.neg(), e3 ^ e4);
+    // 39. return (xn, xd, y, 1)
 
-    let d_sq = &d.square();
-    let au = &MONTGOMERY_A * &d;
-
-    let inner = &(d_sq + &au) + &one;
-    let eps = &d * &inner; /* eps = d^3 + Ad^2 + d */
-
-    let (eps_is_sq, _eps) = FieldElement::sqrt_ratio_i(&eps, &one);
-
-    let zero = FieldElement::ZERO;
-    let Atemp = FieldElement::conditional_select(&MONTGOMERY_A, &zero, eps_is_sq); /* 0, or A if nonsquare*/
-    let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
-    u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
-
-    (MontgomeryPoint(u.to_bytes()), eps_is_sq)
+    (xn, xd, y, one)
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -433,9 +514,6 @@ impl Mul<&MontgomeryPoint> for &Scalar {
 mod test {
     use super::*;
     use crate::constants;
-
-    #[cfg(feature = "alloc")]
-    use alloc::vec::Vec;
 
     use rand_core::{CryptoRng, RngCore, TryRngCore};
 
@@ -639,6 +717,7 @@ mod test {
     }
 
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "digest")]
     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
         0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
@@ -647,20 +726,37 @@ mod test {
 
     #[test]
     #[cfg(feature = "alloc")]
+    #[cfg(feature = "digest")]
     fn montgomery_elligator_correct() {
+        use alloc::vec::Vec;
         let bytes: Vec<u8> = (0u8..32u8).collect();
         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
         let fe = FieldElement::from_bytes(&bits_in);
-        let (eg, _) = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+        let (un, ud, ..) = elligator_encode(&fe);
+        let u = &un * &ud.invert();
+        assert_eq!(u.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
     }
 
     #[test]
+    #[cfg(feature = "digest")]
     fn montgomery_elligator_zero_zero() {
         let zero = [0u8; 32];
         let fe = FieldElement::from_bytes(&zero);
-        let (eg, _) = elligator_encode(&fe);
-        assert_eq!(eg.to_bytes(), zero);
+        let (un, ud, ..) = elligator_encode(&fe);
+        let u = &un * &ud.invert();
+        assert_eq!(u.to_bytes(), zero);
+    }
+
+    // Check that FE_C2 is correctly defined
+    #[test]
+    #[cfg(feature = "digest")]
+    fn c2() {
+        let one = FieldElement::ONE;
+        let two = &one + &one;
+        // c2 = 2^((p+3)/8) = 2^((p-5)/8 + 8/8) = 2*2^((p-5)/8)
+        let c2 = &two * &(two.pow_p58());
+
+        assert_eq!(c2, FE_C2);
     }
 }

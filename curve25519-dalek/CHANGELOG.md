@@ -5,6 +5,11 @@ major series.
 
 ## 5.x series
 
+## 5.0.0-pre.1
+
+* Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.
+* Add an allocating batch inversion called `Scalar::invert_batch_alloc`.
+
 ## 5.0.0-pre.0
 
 * Update edition to 2024

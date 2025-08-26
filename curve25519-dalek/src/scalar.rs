@@ -770,7 +770,7 @@ impl Scalar {
     ///     Scalar::from(11u64),
     /// ];
     ///
-    /// let allinv = Scalar::batch_invert(&mut scalars);
+    /// let allinv = Scalar::invert_batch(&mut scalars);
     ///
     /// assert_eq!(allinv, Scalar::from(3*5*7*11u64).invert());
     /// assert_eq!(scalars[0], Scalar::from(3u64).invert());
@@ -779,19 +779,45 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
+    pub fn invert_batch<const N: usize>(inputs: &mut [Scalar; N]) -> Scalar {
+        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
+
+        let mut scratch = [one; N];
+
+        Self::invert_batch_internal(inputs, &mut scratch)
+    }
+
+    /// Given a slice of nonzero (possibly secret) `Scalar`s, compute their inverses in a batch.
+    /// This the allocating form of [`Self::invert_batch`]. See those docs for examples.
+    ///
+    /// # Return
+    ///
+    /// Each element of `inputs` is replaced by its inverse.
+    ///
+    /// The product of all inverses is returned.
+    ///
+    /// # Warning
+    ///
+    /// All input `Scalars` **MUST** be nonzero.  If you cannot
+    /// *prove* that this is the case, you **SHOULD NOT USE THIS
+    /// FUNCTION**.
     #[cfg(feature = "alloc")]
-    pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
+    pub fn invert_batch_alloc(inputs: &mut [Scalar]) -> Scalar {
+        let n = inputs.len();
+        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
+
+        let mut scratch = vec![one; n];
+
+        Self::invert_batch_internal(inputs, &mut scratch)
+    }
+
+    fn invert_batch_internal(inputs: &mut [Scalar], scratch: &mut [UnpackedScalar]) -> Scalar {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
         // it's not easy to write it generically, since here we want
         // to use `UnpackedScalar`s internally, and `Scalar`s
         // externally, but there's no corresponding distinction for
         // field elements.
-
-        let n = inputs.len();
-        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
-
-        let mut scratch = vec![one; n];
 
         // Keep an accumulator of all of the previous products
         let mut acc = Scalar::ONE.unpack().as_montgomery();
@@ -826,7 +852,7 @@ impl Scalar {
         }
 
         #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        Zeroize::zeroize(&mut scratch.iter_mut());
 
         ret
     }
@@ -1845,25 +1871,44 @@ pub(crate) mod test {
         assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
     }
 
-    #[cfg(all(debug_assertions, feature = "alloc"))]
+    #[cfg(debug_assertions)]
     #[test]
     #[should_panic]
-    fn batch_invert_with_a_zero_input_panics() {
-        let mut xs = vec![Scalar::ONE; 16];
+    fn invert_batch_with_a_zero_input_panics() {
+        let mut xs = [Scalar::ONE; 16];
         xs[3] = Scalar::ZERO;
         // This should panic in debug mode.
-        Scalar::batch_invert(&mut xs);
+        Scalar::invert_batch(&mut xs);
+    }
+
+    #[test]
+    fn invert_batch_empty() {
+        assert_eq!(Scalar::ONE, Scalar::invert_batch(&mut []));
+    }
+
+    #[test]
+    fn invert_batch_consistency() {
+        let mut x = Scalar::from(1u64);
+        let mut v1: [Scalar; 16] = core::array::from_fn(|_| {
+            let tmp = x;
+            x = x + x;
+            tmp
+        });
+        let v2 = v1;
+
+        let expected: Scalar = v1.iter().product();
+        let expected = expected.invert();
+        let ret = Scalar::invert_batch(&mut v1);
+        assert_eq!(ret, expected);
+
+        for (a, b) in v1.iter().zip(v2.iter()) {
+            assert_eq!(a * b, Scalar::ONE);
+        }
     }
 
     #[test]
     #[cfg(feature = "alloc")]
-    fn batch_invert_empty() {
-        assert_eq!(Scalar::ONE, Scalar::batch_invert(&mut []));
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn batch_invert_consistency() {
+    fn batch_vec_invert_consistency() {
         let mut x = Scalar::from(1u64);
         let mut v1: Vec<_> = (0..16)
             .map(|_| {
@@ -1876,7 +1921,7 @@ pub(crate) mod test {
 
         let expected: Scalar = v1.iter().product();
         let expected = expected.invert();
-        let ret = Scalar::batch_invert(&mut v1);
+        let ret = Scalar::invert_batch_alloc(&mut v1);
         assert_eq!(ret, expected);
 
         for (a, b) in v1.iter().zip(v2.iter()) {

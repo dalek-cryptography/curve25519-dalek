@@ -18,6 +18,8 @@ use vstd::bits::*;
 use vstd::calc;
 use vstd::prelude::*;
 
+use super::common_verus::shift_lemmas::*;
+
 verus! {
 
 /// Verification: scalar * scalar.invert() ≡ 1 mod L

@@ -418,7 +418,7 @@ mod group {
         iter::{Product, Sum},
         ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     };
-    use ff::{Field, PrimeField};
+    use ff::{Field, FromUniformBytes, PrimeField};
     use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
     /// A `FieldElement` represents an element of the field
@@ -681,6 +681,11 @@ mod group {
                 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 127,
             ]
             .into()
+        }
+    }
+    impl FromUniformBytes<64> for FfFieldElement {
+        fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
+            Self(FieldElement::from_bytes_wide(bytes))
         }
     }
 }

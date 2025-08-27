@@ -47,15 +47,19 @@ required-features = ["alloc", "rand_core"]
 
 [dependencies]
 cfg-if = "1"
-arcium-ff = { version = "0.13.2", registry = "arcium", package = "ff" }
-ff = { version = "0.13", default-features = false, optional = true }
+ff = { version = "0.13", default-features = false }
 group = { version = "0.13", default-features = false, optional = true }
 rand_core = { version = "0.6.4", default-features = false, optional = true }
 digest = { version = "0.10", default-features = false, optional = true }
 subtle = { version = "2.6.0", default-features = false, features = ["const-generics"]}
 serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
-elliptic-curve = { version = "0.14.0-rc.1", features = ["serde", "arithmetic"] }
+elliptic-curve = { version = "=0.14.0-rc.1", features = ["serde", "arithmetic"] }
+block-buffer = "=0.11.0-rc.3"
+crypto-common = "=0.2.0-rc.1"
+sec1 = "=0.8.0-rc.3"
+der = "=0.8.0-rc.1"
+pkcs8 = "=0.11.0-rc.1"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.6"

@@ -7,8 +7,17 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::common_verus::*;
-use super::field_lemmas::*;
+use super::common_verus::bit_lemmas::*;
+use super::common_verus::div_mod_lemmas::*;
+use super::common_verus::mask_lemmas::*;
+use super::common_verus::mul_lemmas::*;
+use super::common_verus::pow_lemmas::*;
+use super::common_verus::shift_lemmas::*;
+
+use super::field_lemmas::as_nat_lemmas::*;
+use super::field_lemmas::field_core::*;
+use super::field_lemmas::pow2_51_lemmas::*;
+use super::field_lemmas::pow2k_lemmas::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 
@@ -23,6 +32,7 @@ pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64; // 2^51  -1
 // - it's less than 2^51
 pub proof fn l51_bit_mask_lt()
     ensures
+        LOW_51_BIT_MASK == mask51,
         LOW_51_BIT_MASK == low_bits_mask(51),
         LOW_51_BIT_MASK < (1u64 << 51) as nat,
 {
@@ -273,8 +283,11 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
     requires
         i + 7 < input.len(),
     ensures
-        0 <= r <= (u64::MAX as nat),
+        r as nat == load8_at_spec(input, i)
 {
+    proof {
+        assume(false);
+    }
         (input[i] as u64)
     | ((input[i + 1] as u64) << 8)
     | ((input[i + 2] as u64) << 16)

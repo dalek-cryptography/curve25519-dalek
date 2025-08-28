@@ -1,5 +1,6 @@
 #![allow(unused)]
 use vstd::arithmetic::power2::*;
+use vstd::bits::*;
 use vstd::prelude::*;
 
 verus! {
@@ -19,6 +20,18 @@ pub proof fn pow255_gt_19()
 }
 
 pub open spec const mask51: u64 = 2251799813685247u64;
+
+// Basic properties of mask51:
+// - It's the value of low_bits_mask (spec function defined in vstd and used in its lemmas)
+// - it's less than 2^51
+pub proof fn l51_bit_mask_lt()
+    ensures
+        mask51 == low_bits_mask(51),
+        mask51 < (1u64 << 51) as nat,
+{
+    lemma2_to64_rest();
+    assert(mask51 < (1u64 << 51) as nat) by (compute);
+}
 
 // Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
 pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
@@ -79,6 +92,43 @@ pub open spec fn load8_at_spec(input: &[u8], i: usize) -> nat
     pow2(6 * 8) * input[i + 6] +
     pow2(7 * 8) * input[i + 7]
     ) as nat
+}
+
+pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
+    let r = [
+        ((limbs[0] & mask51) + (limbs[4] >> 51) * 19) as u64,
+        ((limbs[1] & mask51) + (limbs[0] >> 51)) as u64,
+        ((limbs[2] & mask51) + (limbs[1] >> 51)) as u64,
+        ((limbs[3] & mask51) + (limbs[2] >> 51)) as u64,
+        ((limbs[4] & mask51) + (limbs[3] >> 51)) as u64,
+    ];
+    r
+}
+
+pub open spec const sixteen_p_vec: [u64;5] = [
+    36028797018963664u64, // 16 * (2^51 - 19)
+    36028797018963952u64, // 16 * (2^51 -  1)
+    36028797018963952u64, // 16 * (2^51 -  1)
+    36028797018963952u64, // 16 * (2^51 -  1)
+    36028797018963952u64  // 16 * (2^51 -  1)
+];
+
+pub open spec fn pre_reduce_limbs(limbs: [u64; 5]) -> [u64; 5]
+{
+    let r = [
+        (sixteen_p_vec[0] - limbs[0]) as u64,
+        (sixteen_p_vec[1] - limbs[1]) as u64,
+        (sixteen_p_vec[2] - limbs[2]) as u64,
+        (sixteen_p_vec[3] - limbs[3]) as u64,
+        (sixteen_p_vec[4] - limbs[4]) as u64,
+    ];
+    r
+}
+
+pub open spec fn spec_negate(limbs: [u64; 5]) -> [u64; 5]
+{
+    let r = spec_reduce(pre_reduce_limbs(limbs));
+    r
 }
 
 fn main() {}

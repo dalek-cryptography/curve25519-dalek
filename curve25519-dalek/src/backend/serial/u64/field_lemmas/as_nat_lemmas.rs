@@ -13,7 +13,7 @@ verus! {
 // Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)
 pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5])
     requires
-        forall |i:int| 0 <= i < 5 ==> b[i] < a[i]
+        forall |i:int| 0 <= i < 5 ==> b[i] <= a[i]
     ensures
         as_nat([
             (a[0] - b[0]) as u64,

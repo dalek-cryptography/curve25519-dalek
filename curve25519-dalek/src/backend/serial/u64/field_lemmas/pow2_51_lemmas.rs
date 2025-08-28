@@ -5,8 +5,12 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
+use super::super::common_verus::div_mod_lemmas::*;
+use super::super::common_verus::mask_lemmas::*;
 use super::super::common_verus::pow_lemmas::*;
 use super::super::common_verus::shift_lemmas::*;
+
+use super::field_core::*;
 
 verus! {
 
@@ -94,6 +98,37 @@ pub proof fn lemma_mul_sub(ci: int, cj: int, cj_0: int, k: nat)
     lemma_pow2_adds(k, 51);
     // 2^(k + 51) * (cj - cj_0) = 2^(k + 51) * cj - 2^(k + 51) * cj_0
     lemma_mul_is_distributive_sub(pow2(k + 51) as int, cj, cj_0);
+}
+
+// Masking with low_bits_mask(51) gives a value bounded by 2^51
+pub proof fn masked_lt_51(v: u64)
+    ensures
+        v & mask51 < (1u64 << 51),
+{
+    l51_bit_mask_lt(); // mask51 == low_bits_mask(51)
+    masked_lt(v, 51);
+}
+
+// lemma_div_and_mod specialization for k = 51, using mask51 == low_bits_mask(51)
+pub proof fn lemma_div_and_mod_51(ai:u64, bi: u64, v: u64)
+    requires
+        ai == v >> 51,
+        bi == v & mask51
+    ensures
+        ai == v / (pow2(51) as u64),
+        bi == v % (pow2(51) as u64),
+        v == ai * pow2(51) + bi
+{
+    l51_bit_mask_lt(); // mask51 == low_bits_mask(51)
+    lemma_div_and_mod(ai, bi, v, 51);
+}
+
+pub broadcast proof fn lemma_cast_then_mask_51(x: u128)
+    ensures
+        #![trigger (x as u64) & mask51]
+        (x as u64) & mask51 == x & (mask51 as u128)
+{
+    assert((x as u64) & 2251799813685247u64 == x & (2251799813685247u64 as u128)) by (bit_vector);
 }
 
 fn main() {}

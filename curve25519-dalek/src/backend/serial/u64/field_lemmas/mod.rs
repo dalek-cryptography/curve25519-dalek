@@ -7,9 +7,13 @@ pub mod as_nat_lemmas;
 
 pub mod field_core;
 
+pub mod negate_lemmas;
+
 pub mod pow2_51_lemmas;
 
 pub mod pow2k_lemmas;
+
+pub mod reduce_lemmas;
 
 // WIP
 // pub mod load8_lemmas;

@@ -94,7 +94,7 @@ pub mod encodable_curve;
 //------------------------------------------------------------------------
 
 // Finite field arithmetic mod p = 2^255 - 19
-pub(crate) mod field;
+pub mod field;
 
 // Arithmetic backends (using u32, u64, etc) live here
 #[cfg(docsrs)]

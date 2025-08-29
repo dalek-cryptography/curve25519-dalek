@@ -375,6 +375,33 @@ pub struct EdwardsPoint {
     pub(crate) T: FieldElement,
 }
 
+impl EdwardsPoint {
+    /// Create a new EdwardsPoint. We don't verify that the coordinates represent a valid point on the curve.
+    pub fn new_unchecked(X: FieldElement, Y: FieldElement, Z: FieldElement, T: FieldElement) -> EdwardsPoint {
+        EdwardsPoint {X, Y, Z, T}
+    }
+
+    /// Return the X-coordinate.
+    pub fn X(&self) -> FieldElement {
+        self.X
+    }
+
+    /// Return the Y-coordinate.
+    pub fn Y(&self) -> FieldElement {
+        self.Y
+    }
+
+    /// Return the Z-coordinate.
+    pub fn Z(&self) -> FieldElement {
+        self.Z
+    }
+
+    /// Return the T-coordinate.
+    pub fn T(&self) -> FieldElement {
+        self.T
+    }
+}
+
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------

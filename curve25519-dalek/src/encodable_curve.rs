@@ -37,6 +37,7 @@ use crate::EdwardsPoint;
 use crate::RistrettoPoint;
 use crate::Scalar;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 /// Empty struct for the curve
 pub struct Dalek {}

@@ -18,35 +18,45 @@ repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x
 homepage = "https://github.com/dalek-cryptography/curve25519-dalek"
 documentation = "https://docs.rs/x25519-dalek"
 categories = ["cryptography", "no-std"]
-keywords = ["cryptography", "curve25519", "key-exchange", "x25519", "diffie-hellman"]
-description = "X25519 elliptic curve Diffie-Hellman key exchange in pure-Rust, using curve25519-dalek."
-exclude = [
-    ".gitignore",
-    ".travis.yml",
-    "CONTRIBUTING.md",
+keywords = [
+    "cryptography",
+    "curve25519",
+    "key-exchange",
+    "x25519",
+    "diffie-hellman",
 ]
+description = "X25519 elliptic curve Diffie-Hellman key exchange in pure-Rust, using curve25519-dalek."
+exclude = [".gitignore", ".travis.yml", "CONTRIBUTING.md"]
 rust-version = "1.60"
 
 [badges]
-travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master"}
+travis-ci = { repository = "dalek-cryptography/x25519-dalek", branch = "master" }
 
 [package.metadata.docs.rs]
 rustdoc-args = [
-    "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
-    "--cfg", "docsrs",
+    "--html-in-header",
+    "docs/assets/rustdoc-include-katex-header.html",
+    "--cfg",
+    "docsrs",
 ]
 features = ["getrandom", "reusable_secrets", "serde", "static_secrets"]
 
 [dependencies]
-curve25519-dalek = { version = "4", path = "../curve25519-dalek", default-features = false }
+curve25519-dalek = { package = "curve25519-dalek-arcium-fork", version = "4", path = "../curve25519-dalek", default-features = false }
 rand_core = { version = "0.6", default-features = false }
-serde = { version = "1", default-features = false, optional = true, features = ["derive"] }
-zeroize = { version = "1", default-features = false, optional = true, features = ["zeroize_derive"] }
+serde = { version = "1", default-features = false, optional = true, features = [
+    "derive",
+] }
+zeroize = { version = "1", default-features = false, optional = true, features = [
+    "zeroize_derive",
+] }
 
 [dev-dependencies]
 bincode = "1"
 criterion = "0.5"
-rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+rand_core = { version = "0.6", default-features = false, features = [
+    "getrandom",
+] }
 
 [[bench]]
 name = "x25519"

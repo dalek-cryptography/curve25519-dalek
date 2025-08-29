@@ -4,7 +4,7 @@ name = "curve25519-dalek-arcium-fork"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "4.1.4"
+version = "4.1.5"
 edition = "2021"
 rust-version = "1.60.0"
 authors = [

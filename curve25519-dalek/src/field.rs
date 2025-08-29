@@ -62,7 +62,7 @@ cfg_if! {
         ///
         /// The `FieldElement` type is an alias for one of the platform-specific
         /// implementations.
-        pub(crate) type FieldElement = backend::serial::u64::field::FieldElement51;
+        pub type FieldElement = backend::serial::u64::field::FieldElement51;
     } else {
         /// A `FieldElement` represents an element of the field
         /// \\( \mathbb Z / (2\^{255} - 19)\\).

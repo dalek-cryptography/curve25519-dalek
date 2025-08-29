@@ -485,6 +485,15 @@ impl<'de> Deserialize<'de> for CompressedRistretto {
 pub struct RistrettoPoint(pub(crate) EdwardsPoint);
 
 impl RistrettoPoint {
+    /// Create a new RistrettoPoint. We don't verify that point is in [2]E.
+    pub fn new_unchecked(point: EdwardsPoint) -> RistrettoPoint {
+        RistrettoPoint(point)
+    }
+    /// Return a representative of the equivalence class.
+    pub fn inner(&self) -> EdwardsPoint {
+        self.0
+    }
+
     /// Compress this point using the Ristretto encoding.
     pub fn compress(&self) -> CompressedRistretto {
         let mut X = self.0.X;

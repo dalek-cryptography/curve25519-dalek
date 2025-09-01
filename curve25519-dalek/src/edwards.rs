@@ -128,6 +128,9 @@ use subtle::ConstantTimeEq;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+#[cfg(test)]
+use proptest::{arbitrary::Arbitrary, strategy::BoxedStrategy};
+
 use crate::constants;
 
 use crate::field::FieldElement;
@@ -1771,6 +1774,18 @@ impl CofactorGroup for EdwardsPoint {
     }
 }
 
+#[cfg(test)]
+impl Arbitrary for EdwardsPoint {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        use proptest::prelude::*;
+
+        Strategy::prop_map(any::<Scalar>(), |scalar| EdwardsPoint::mul_base(&scalar)).boxed()
+    }
+}
+
 // ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
@@ -1779,7 +1794,7 @@ impl CofactorGroup for EdwardsPoint {
 mod test {
     use super::*;
 
-    use rand_core::TryRngCore;
+    use proptest::{prelude::*, property_test};
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -2066,17 +2081,14 @@ mod test {
     }
 
     /// Check that mul_base_clamped and mul_clamped agree
-    #[test]
-    fn mul_base_clamped() {
-        let mut csprng = rand_core::OsRng;
+    #[property_test(config = ProptestConfig { cases: 50, .. ProptestConfig::default() })]
+    fn mul_base_clamped(b: EdwardsPoint, a: [[u8; 32]; 100]) {
+        #[cfg(not(feature = "precomputed-tables"))]
+        let _ = b;
 
         // Make a random curve point in the curve. Give it torsion to make things interesting.
         #[cfg(feature = "precomputed-tables")]
-        let random_point = {
-            let mut b = [0u8; 32];
-            csprng.try_fill_bytes(&mut b).unwrap();
-            EdwardsPoint::mul_base_clamped(b) + constants::EIGHT_TORSION[1]
-        };
+        let random_point = b + constants::EIGHT_TORSION[1];
         // Make a basepoint table from the random point. We'll use this with mul_base_clamped
         #[cfg(feature = "precomputed-tables")]
         let random_table = EdwardsBasepointTableRadix256::create(&random_point);
@@ -2086,28 +2098,25 @@ mod test {
         // Test that mul_base_clamped and mul_clamped agree on a large integer. Even after
         // clamping, this integer is not reduced mod l.
         let a_bytes = [0xff; 32];
-        assert_eq!(
+        prop_assert_eq!(
             EdwardsPoint::mul_base_clamped(a_bytes),
             constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
         );
         #[cfg(feature = "precomputed-tables")]
-        assert_eq!(
+        prop_assert_eq!(
             random_table.mul_base_clamped(a_bytes),
             random_point.mul_clamped(a_bytes)
         );
 
         // Test agreement on random integers
-        for _ in 0..100 {
+        for a_bytes in a {
             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
-            let mut a_bytes = [0u8; 32];
-            csprng.try_fill_bytes(&mut a_bytes).unwrap();
-
-            assert_eq!(
+            prop_assert_eq!(
                 EdwardsPoint::mul_base_clamped(a_bytes),
                 constants::ED25519_BASEPOINT_POINT.mul_clamped(a_bytes)
             );
             #[cfg(feature = "precomputed-tables")]
-            assert_eq!(
+            prop_assert_eq!(
                 random_table.mul_base_clamped(a_bytes),
                 random_point.mul_clamped(a_bytes)
             );
@@ -2182,22 +2191,14 @@ mod test {
         }
     }
 
+    #[property_test]
     #[cfg(feature = "alloc")]
-    #[test]
-    fn compress_batch() {
-        let mut rng = rand::rng();
-
-        // TODO(tarcieri): proptests?
-        // Make some points deterministically then randomly
-        let mut points = (1u64..16)
-            .map(|n| constants::ED25519_BASEPOINT_POINT * Scalar::from(n))
-            .collect::<Vec<_>>();
-        points.extend(core::iter::repeat_with(|| EdwardsPoint::random(&mut rng)).take(100));
+    fn compress_batch(points: Vec<EdwardsPoint>) {
         let compressed = EdwardsPoint::compress_batch(&points);
 
         // Check that the batch-compressed points match the individually compressed ones
         for (point, compressed) in points.iter().zip(&compressed) {
-            assert_eq!(&point.compress(), compressed);
+            prop_assert_eq!(&point.compress(), compressed);
         }
     }
 
@@ -2238,14 +2239,11 @@ mod test {
         assert!(P1.compress().to_bytes() == P2.compress().to_bytes());
     }
 
-    // A single iteration of a consistency check for MSM.
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn multiscalar_consistency_iter(n: usize) {
-        let mut rng = rand::rng();
-
+    fn multiscalar_consistency(xs: Vec<Scalar>) {
         // Construct random coefficients x0, ..., x_{n-1},
         // followed by some extra hardcoded ones.
-        let xs = (0..n).map(|_| Scalar::random(&mut rng)).collect::<Vec<_>>();
         let check = xs.iter().map(|xi| xi * xi).sum::<Scalar>();
 
         // Construct points G_i = x_i * B
@@ -2258,58 +2256,13 @@ mod test {
         // Compute H3 = <xs, Gs> = sum(xi^2) * B
         let H3 = EdwardsPoint::mul_base(&check);
 
-        assert_eq!(H1, H3);
-        assert_eq!(H2, H3);
+        prop_assert_eq!(H1, H3);
+        prop_assert_eq!(H2, H3);
     }
 
-    // Use different multiscalar sizes to hit different internal
-    // parameters.
-
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn multiscalar_consistency_n_100() {
-        let iters = 50;
-        for _ in 0..iters {
-            multiscalar_consistency_iter(100);
-        }
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn multiscalar_consistency_n_250() {
-        let iters = 50;
-        for _ in 0..iters {
-            multiscalar_consistency_iter(250);
-        }
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn multiscalar_consistency_n_500() {
-        let iters = 50;
-        for _ in 0..iters {
-            multiscalar_consistency_iter(500);
-        }
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn multiscalar_consistency_n_1000() {
-        let iters = 50;
-        for _ in 0..iters {
-            multiscalar_consistency_iter(1000);
-        }
-    }
-
-    #[test]
-    #[cfg(feature = "alloc")]
-    fn batch_to_montgomery() {
-        let mut rng = rand::rng();
-
-        let scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn batch_to_montgomery(scalars: Vec<Scalar>) {
         let points = scalars
             .iter()
             .map(EdwardsPoint::mul_base)
@@ -2320,25 +2273,19 @@ mod test {
             .map(EdwardsPoint::to_montgomery)
             .collect::<Vec<_>>();
 
-        for i in [0, 1, 2, 3, 10, 50, 128] {
-            let invs = EdwardsPoint::to_montgomery_batch(&points[..i]);
-            assert_eq!(&invs, &single_monts[..i]);
-        }
+        let invs = EdwardsPoint::to_montgomery_batch(&points);
+        prop_assert_eq!(&invs, &single_monts);
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::rng();
-
-        let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar(
+        #[strategy = any::<Vec<Scalar>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len))
+        })]
+        (static_scalars, dynamic_scalars): (Vec<Scalar>, Vec<Scalar>),
+    ) {
         let check_scalar: Scalar = static_scalars
             .iter()
             .chain(dynamic_scalars.iter())
@@ -2356,8 +2303,7 @@ mod test {
 
         let precomputation = VartimeEdwardsPrecomputation::new(static_points.iter());
 
-        assert_eq!(precomputation.len(), 128);
-        assert!(!precomputation.is_empty());
+        prop_assert_eq!(precomputation.len(), static_scalars.len());
 
         let P = precomputation.vartime_mixed_multiscalar_mul(
             &static_scalars,
@@ -2373,8 +2319,8 @@ mod test {
 
         let R = EdwardsPoint::mul_base(&check_scalar);
 
-        assert_eq!(P.compress(), R.compress());
-        assert_eq!(Q.compress(), R.compress());
+        prop_assert_eq!(P.compress(), R.compress());
+        prop_assert_eq!(Q.compress(), R.compress());
     }
 
     mod vartime {

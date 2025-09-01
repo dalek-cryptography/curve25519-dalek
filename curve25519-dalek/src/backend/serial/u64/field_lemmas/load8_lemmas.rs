@@ -162,6 +162,57 @@ pub proof fn load8_at_plus_version_rec_is_bounded(input: &[u8], i: usize, k: nat
     }
 }
 
+
+pub proof fn plus_version_is_spec_lemma(input: &[u8], i: usize, j: nat)
+    requires
+        1 <= j <= 7
+    ensures
+        (input[i + j] as u64) << 8 * j == pow2(j * 8) * input[i + j],
+        input[i + j] * pow2(j * 8) <= u64::MAX,
+        pow2(8 * (j + 1)) - 1 <= pow2(64) - 1,
+        pow2(8) * pow2(8 * j) == pow2(8 * (j + 1))
+{
+    assert(pow2(64) - 1 == u64::MAX) by {
+        lemma2_to64_rest();
+    }
+
+    assert(u8::MAX + 1 == pow2(8)) by {
+        lemma2_to64();
+    }
+
+    assert(pow2(8 * (j + 1)) - 1 <= pow2(64) - 1) by {
+        if (j < 7){
+            lemma_pow2_strictly_increases(8 * (j + 1), 64);
+        }
+    }
+
+    lemma_pow2_adds(8, j * 8);
+
+    lemma_mul_inequality(input[i + j] as int, u8::MAX as int, pow2(j * 8) as int);
+
+    assert((input[i + j] as u64) * pow2(j * 8) <= u64::MAX) by {
+        assert(u8::MAX * pow2(j * 8) <= pow2(64) - 1) by {
+            assert(
+                u8::MAX * pow2(j * 8)
+                ==
+                (pow2(8) - 1) * pow2(j * 8)
+                ==
+                pow2(8 * (j + 1)) - pow2(j * 8)
+            ) by {
+                assert(pow2(8) >= 1) by {
+                    lemma2_to64();
+                }
+                lemma_mul_is_distributive_sub(pow2(8) as int, 1, pow2(j * 8) as int);
+            }
+            assert(pow2(j * 8) > 1) by {
+                lemma2_to64(); // pow2(0)
+                lemma_pow2_strictly_increases(0, j * 8)
+            }
+        }
+    }
+    lemma_u64_shl_is_mul((input[i + j] as u64), (j * 8) as u64);
+}
+
 pub proof fn plus_version_is_spec(input: &[u8], i: usize)
     ensures
         load8_at_plus_version_rec(input, i, 7)
@@ -170,6 +221,26 @@ pub proof fn plus_version_is_spec(input: &[u8], i: usize)
 {
     assert(load8_at_plus_version_rec(input, i, 0) == input[i as int] as u64);
 
+    assert(pow2(64) - 1 == u64::MAX) by {
+        lemma2_to64_rest();
+    }
+
+    assert(u8::MAX + 1 == pow2(8)) by {
+        lemma2_to64();
+    }
+
+    assert((input[i as int] as u64) == pow2(0 * 8) * input[i + 0]) by {
+            lemma2_to64();
+        }
+    plus_version_is_spec_lemma(input, i, 1);
+    plus_version_is_spec_lemma(input, i, 2);
+    plus_version_is_spec_lemma(input, i, 3);
+    plus_version_is_spec_lemma(input, i, 4);
+    plus_version_is_spec_lemma(input, i, 5);
+    plus_version_is_spec_lemma(input, i, 6);
+    plus_version_is_spec_lemma(input, i, 7);
+
+    // suffices to prove this, the _lemma results then give the spec formulation for free
     assert(
         load8_at_plus_version_rec(input, i, 7)
         ==
@@ -189,22 +260,6 @@ pub proof fn plus_version_is_spec(input: &[u8], i: usize)
         by {
             reveal_with_fuel(load8_at_plus_version_rec, 1);
 
-            assert(pow2(8 * (j + 1)) - 1 <= pow2(64) - 1) by {
-                if (j < 7){
-                    lemma_pow2_strictly_increases(8 * (j + 1), 64);
-                }
-            }
-
-            assert(pow2(64) - 1 == u64::MAX) by {
-                lemma2_to64_rest();
-            }
-
-            assert(u8::MAX + 1 == pow2(8)) by {
-                lemma2_to64();
-            }
-
-            lemma_pow2_adds(8, j * 8);
-
             assert(load8_at_plus_version_rec(input, i, (j - 1) as nat) + ((input[i + j] as u64) << j * 8) <= u64::MAX) by {
                 assert(load8_at_plus_version_rec(input, i, (j - 1) as nat) <= pow2(8 * j) - 1 ) by {
                     load8_at_plus_version_rec_is_bounded(input, i, (j - 1) as nat);
@@ -213,23 +268,6 @@ pub proof fn plus_version_is_spec(input: &[u8], i: usize)
                 assert((input[i + j] as u64) << j * 8 <= u8::MAX * pow2(j * 8) ) by {
                     // input[k] < MAX8 => input[k] * 2^(8j) < MAX8 * 2^(8j)
                     lemma_mul_inequality(input[i + j] as int, u8::MAX as int, pow2(j * 8) as int);
-                    assert((input[i + j] as u64) * pow2(j * 8) <= u64::MAX) by {
-                        assert(u8::MAX * pow2(j * 8) <= pow2(64) - 1) by {
-                            assert(
-                                u8::MAX * pow2(j * 8)
-                                ==
-                                (pow2(8) - 1) * pow2(j * 8)
-                                ==
-                                pow2(8 * (j + 1)) - pow2(j * 8)
-                            );
-                            assert(pow2(j * 8) > 1) by {
-                                lemma2_to64(); // pow2(0)
-                                lemma_pow2_strictly_increases(0, j * 8)
-                            }
-                        }
-                    }
-                    lemma_u64_shl_is_mul((input[i + j] as u64), (j * 8) as u64);
-
                 }
 
                 assert(
@@ -243,9 +281,6 @@ pub proof fn plus_version_is_spec(input: &[u8], i: usize)
 
         }
     }
-
-    assume(false);
-
 }
 
 pub proof fn load8_at_versions_equivalent(input: &[u8], i: usize, k: nat)

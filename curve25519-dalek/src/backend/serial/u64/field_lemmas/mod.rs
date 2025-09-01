@@ -15,5 +15,4 @@ pub mod pow2k_lemmas;
 
 pub mod reduce_lemmas;
 
-// WIP
 pub mod load8_lemmas;

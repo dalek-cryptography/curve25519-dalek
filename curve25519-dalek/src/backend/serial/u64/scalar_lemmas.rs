@@ -19,15 +19,6 @@ use vstd::prelude::*;
 
 verus! {
 
-/// Verification: scalar * scalar.invert() ≡ 1 mod L
-proof fn verify_invert_correct(x: Scalar52)
-//     requires to_scalar(&x.limbs) != 0
-//    ensures (to_scalar(&x.limbs) * invert_spec(&x.limbs)) % group_order() == 1
-{
-    assume(false);
-
-}
-
 pub proof fn lemma_52_52(x: u64, y: u64)
 requires
     x < (1u64 << 52),

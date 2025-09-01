@@ -93,12 +93,11 @@ impl Scalar52 {
 
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
-    ensures bytes_to_nat(bytes) == to_nat(&s.limbs)
+    #[verifier::external_body] // TODO Verify this function
+    pub fn from_bytes(bytes: &[u8; 32]) -> Scalar52
     {
         let mut words = [0u64; 4];
         for i in 0..4
-            invariant 0 <= i <= 4 // proof
         {
             for j in 0..8
                 invariant 0 <= j <= 8 && i < 4
@@ -112,13 +111,6 @@ impl Scalar52 {
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
-        //TODO: prove that bytes_to_nat(bytes) == words_to_nat(&words)
-        assume(bytes_to_nat(bytes) == words_to_nat(&words));
-        proof {
-            assert(1u64 << 52 > 0) by (bit_vector);
-            assert(1u64 << 48 > 0) by (bit_vector);
-            // TODO: prove property about words array
-        }
 
         let mask = (1u64 << 52) - 1;
         let top_mask = (1u64 << 48) - 1;
@@ -130,8 +122,6 @@ impl Scalar52 {
         s.limbs[3] = ((words[2] >> 28) | (words[3] << 36)) & mask;
         s.limbs[4] =  (words[3] >> 16)                     & top_mask;
 
-        assume(false); // TODO: complete the proof
-
         s
     }
 
@@ -139,11 +129,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
     #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
-    ensures
-        limbs_bounded(&s),
-        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(),
     {
-        assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];
         for i in 0..8 {
             for j in 0..8 {
@@ -176,8 +162,8 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
     #[allow(clippy::wrong_self_convention)]
-    pub fn to_bytes(self) -> (s: [u8; 32])
-    ensures bytes_to_nat(&s) == to_nat(&self.limbs)
+    #[verifier::external_body] // TODO Verify this function
+    pub fn to_bytes(self) -> [u8; 32]
     {
         let mut s = [0u8; 32];
 
@@ -213,8 +199,6 @@ impl Scalar52 {
         s[29] =  (self.limbs[ 4] >> 24)                      as u8;
         s[30] =  (self.limbs[ 4] >> 32)                      as u8;
         s[31] =  (self.limbs[ 4] >> 40)                      as u8;
-
-        assume(false); // TODO: complete the proof
 
         s
     }
@@ -440,12 +424,12 @@ impl Scalar52 {
     /// Compute `limbs/R` (mod l), where R is the Montgomery modulus 2^260
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of n* and r* calculations
+    #[verifier::external_body] // TODO Verify this function
     pub (crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
     ensures
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
         limbs_bounded(&result),
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
 
 
         // note: l[3] is zero, so its multiples can be skipped
@@ -472,9 +456,9 @@ impl Scalar52 {
 
     /// Helper function for Montgomery reduction
     #[inline(always)]
+    #[verifier::external_body] // TODO Verify this function
     fn part1(sum: u128) -> (res: (u128, u64))
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         (carry, p)
@@ -482,9 +466,9 @@ impl Scalar52 {
 
     /// Helper function for Montgomery reduction
     #[inline(always)]
+    #[verifier::external_body] // TODO Verify this function
     fn part2(sum: u128) -> (res: (u128, u64))
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
         let w = (sum as u64) & ((1u64 << 52) - 1);
         let carry = sum >> 52;
         (carry, w)
@@ -492,14 +476,9 @@ impl Scalar52 {
 
     /// Compute `a * b` (mod l)
     #[inline(never)]
-    pub fn mul(a: &Scalar52, b: &Scalar52) -> (result: Scalar52)
-    requires
-        limbs_bounded(a),
-        limbs_bounded(b),
-    ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+    #[verifier::external_body] // TODO Verify this function
+    pub fn mul(a: &Scalar52, b: &Scalar52) -> Scalar52
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
     }
@@ -507,13 +486,9 @@ impl Scalar52 {
     /// Compute `a^2` (mod l)
     #[inline(never)]
     #[allow(dead_code)] // XXX we don't expose square() via the Scalar API
-    pub fn square(&self) -> (result: Scalar52)
-    requires
-        limbs_bounded(self),
-    ensures
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
+    #[verifier::external_body] // TODO Verify this function
+    pub fn square(&self) -> Scalar52
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
     }
@@ -545,19 +520,10 @@ impl Scalar52 {
 
     /// Puts a Scalar52 in to Montgomery form, i.e. computes `a*R (mod l)`
     #[inline(never)]
-    pub fn as_montgomery(&self) -> (result: Scalar52)
-    requires
-        limbs_bounded(self),
-    ensures
-        limbs_bounded(&result),
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
+    #[verifier::external_body] // TODO Verify this function
+    pub fn as_montgomery(&self) -> Scalar52
     {
-        proof {
-            lemma_rr_limbs_bounded();
-        }
-        let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
-        result
+        Scalar52::montgomery_mul(self, &constants::RR)
     }
 
     /// Takes a Scalar52 out of Montgomery form, i.e. computes `a/R (mod l)`

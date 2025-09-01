@@ -12,7 +12,7 @@ pub proof fn bit_or_is_plus(a: u64, b: u8, k: nat)
     ensures
         a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64))
 {
-    assume(false);
+    assert(a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64))) by (bit_vector);
 }
 
 

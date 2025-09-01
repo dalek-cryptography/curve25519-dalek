@@ -16,7 +16,6 @@ use vstd::bits::*;
 use vstd::calc;
 use vstd::prelude::*;
 
-
 verus! {
 
 pub proof fn lemma_52_52(x: u64, y: u64)

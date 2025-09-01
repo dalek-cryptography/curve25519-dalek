@@ -16,6 +16,7 @@ use super::common_verus::shift_lemmas::*;
 
 use super::field_lemmas::as_nat_lemmas::*;
 use super::field_lemmas::field_core::*;
+use super::field_lemmas::load8_lemmas::*;
 use super::field_lemmas::negate_lemmas::*;
 use super::field_lemmas::pow2_51_lemmas::*;
 use super::field_lemmas::pow2k_lemmas::*;
@@ -47,7 +48,9 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
         r as nat == load8_at_spec(input, i)
 {
     proof {
-        assume(false);
+        rec_version_is_exec(input, i);
+        load8_at_versions_equivalent(input, i, 7);
+        plus_version_is_spec(input, i);
     }
         (input[i] as u64)
     | ((input[i + 1] as u64) << 8)

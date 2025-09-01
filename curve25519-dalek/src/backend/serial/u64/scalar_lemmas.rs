@@ -18,7 +18,6 @@ use vstd::bits::*;
 use vstd::calc;
 use vstd::prelude::*;
 
-use super::common_verus::shift_lemmas::*;
 
 verus! {
 

@@ -15,8 +15,8 @@ use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use crate::constants;
 
@@ -47,12 +47,12 @@ impl Debug for Scalar52 {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for Scalar52 {
-//     fn zeroize(&mut self) {
-//         self.limbs.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.limbs.zeroize();
+    }
+}
 
 verus! {
 impl Index<usize> for Scalar52 {

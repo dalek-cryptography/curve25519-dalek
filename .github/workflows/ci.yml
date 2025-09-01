@@ -12,19 +12,31 @@ env:
 jobs:
   verus:
     name: Run `cargo verify verus`
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@1.88.0
-    - name: Install Verus
+    - name: Install Verus (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: |
         wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.08.01.33c6cec/verus-0.2025.08.01.33c6cec-x86-linux.zip
         unzip verus-0.2025.08.01.33c6cec-x86-linux.zip
         mv verus-x86-linux ~/.cargo/bin
         cd ~/.cargo/bin
         ln -s verus-x86-linux/cargo-verus
+    - name: Install Verus (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.08.01.33c6cec/verus-0.2025.08.01.33c6cec-x86-macos.zip
+        unzip verus-0.2025.08.01.33c6cec-x86-macos.zip
+        mv verus-x86-macos ~/.cargo/bin
+        cd ~/.cargo/bin
+        ln -s verus-x86-macos/cargo-verus
     - name: Run test
       run: |
         cargo verus verify -- --smt-option smt.random_seed=0

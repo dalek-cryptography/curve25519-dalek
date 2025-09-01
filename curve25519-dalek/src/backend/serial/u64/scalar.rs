@@ -94,8 +94,7 @@ impl Scalar52 {
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[verifier::external_body] // TODO Verify this function
-    pub fn from_bytes(bytes: &[u8; 32]) -> Scalar52
-    {
+    pub fn from_bytes(bytes: &[u8; 32]) -> Scalar52 {
         let mut words = [0u64; 4];
         for i in 0..4 {
             for j in 0..8 {

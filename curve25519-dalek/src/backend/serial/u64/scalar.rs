@@ -97,17 +97,8 @@ impl Scalar52 {
     pub fn from_bytes(bytes: &[u8; 32]) -> Scalar52
     {
         let mut words = [0u64; 4];
-        for i in 0..4
-        {
-            for j in 0..8
-                invariant 0 <= j <= 8 && i < 4
-            {
-                proof {
-                    assert(i < 4 && j < 8);
-                    assert((i as u64)*8u64 < 32u64);
-                    let idx = (i as u64) * 8 + (j as u64);
-                    assert(idx < 32);
-                }
+        for i in 0..4 {
+            for j in 0..8 {
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }

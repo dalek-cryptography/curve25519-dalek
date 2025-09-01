@@ -23,80 +23,10 @@ pub proof fn bit_or_is_plus(a: u64, b: u8, k: u64)
         a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64)),
         a + ((b as u64) << (k as u64)) <= u64::MAX
 {
-    assume(false);
-    // assert(a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64))) by (bit_vector);
-}
-
-pub proof fn bit_or_is_plus_alt(a: u8, b: u8, k: nat)
-    requires
-        k + 16 <= 64
-    ensures
-        ((a as u64) << (k as u64)) | ((b as u64)) << (k + 8) as u64
-        ==
-        (pow2(k) * a + pow2(k + 8) * b)
-{
-    let a64 = a as u64;
-    let b64 = b as u64;
-    let k64 = k as u64;
-    let k_8_64 = (k + 8) as u64;
-
-    let a_shl = a64 << k64;
-    let b_shl = b64 << k_8_64;
-
-    assert( a_shl == pow2(k) * a ) by {
-        assert(a64 as nat == a);
-        u8_times_pow2_fits_u64(a, k);
-        lemma_u64_shl_is_mul(a64, k64);
-    }
-
-    assert( b_shl == pow2(k + 8) * b ) by {
-        assert(b64 as nat == b);
-        u8_times_pow2_fits_u64(b, k + 8);
-        lemma_u64_shl_is_mul(b64, k_8_64);
-    }
-
-    if (a == 0 || b == 0) {
-        bitwise_or_r_zero_is_id((pow2(k) * a) as u64);
-        bitwise_or_l_zero_is_id((pow2(k + 8) * b) as u64);
-
-        assume(false);
-    }
-    else {
-        assert(a_shl <= pow2(k + 8) - pow2(k) < pow2(k + 8)) by {
-            pow2_mul_u8(a, k);
-            // 2^k > 0
-            lemma_pow2_pos(k);
-        }
-        assert(pow2(k + 8) <= b_shl <= pow2(k + 16) - pow2(k + 8)) by {
-            mul_le(1, b as nat, pow2(k + 8), pow2(k + 8));
-            pow2_mul_u8(b, k + 8);
-        }
-
-        assert(a_shl + b_shl <= u64::MAX) by {
-            // 2^(k + 8) > 0
-            assert(a_shl + b_shl <= (pow2(k + 16) - pow2(k)));
-            assert(a_shl + b_shl <= (pow2(64) - pow2(0))) by {
-                if (k + 16 < 64){
-                    lemma_pow2_strictly_increases(k + 16, 64);
-                }
-                if (0 < k){
-                    lemma_pow2_strictly_increases(0, k);
-                }
-                lemma_pow2_pos(0);
-            }
-            assert(pow2(64) - pow2(0) == u64::MAX) by {
-                lemma2_to64();
-                lemma2_to64_rest();
-            }
-        }
-
-        let sum = (a_shl + b_shl) as u64;
-
-        assert(a_shl | b_shl == sum) by {
-            assume(false);
-        }
-
-    }
+    assert(a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64))) by (bit_vector)
+        requires
+            k + 8 <= 64,
+            a < 1u64 << k;
 }
 
 pub open spec fn load8_at_or_version_rec(input: &[u8], i: usize, k: nat) -> u64

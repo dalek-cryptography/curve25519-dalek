@@ -1,6 +1,4 @@
 #[allow(unused_imports)]
-use super::common_verus::*;
-#[allow(unused_imports)]
 use super::constants;
 #[allow(unused_imports)]
 use super::scalar::Scalar52;
@@ -1178,5 +1176,27 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) <= to_nat(&sum.limbs) + (carry >> 52) as nat * pow2(260));
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
+
+
+// Specialization of lemma_u64_shl_is_mul for x = 1
+pub proof fn shift_is_pow2(k: nat)
+    requires
+        k < 64,
+    ensures
+        (1u64 << k) == pow2(k)
+{
+    pow2_le_max64(k);
+    lemma_u64_shl_is_mul(1u64, k as u64);
+}
+
+pub proof fn pow2_le_max64(k: nat)
+    requires
+        k < 64,
+    ensures
+        pow2(k) <= u64::MAX
+    {
+        lemma2_to64();
+        lemma2_to64_rest();
+    }
 
 } // verus!

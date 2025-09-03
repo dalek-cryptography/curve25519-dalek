@@ -94,12 +94,8 @@ pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
 };
 
-#[cfg(feature = "expose-field")]
-mod ff_field;
-#[cfg(feature = "expose-field")]
-pub(crate) use ff_field::UnderlyingCapacity;
-#[cfg(feature = "expose-field")]
-pub use ff_field::{FieldElement, lazy_field};
+#[cfg(feature = "hazmat")]
+pub mod hazmat;
 
 // Build time diagnostics for validation
 #[cfg(curve25519_dalek_diagnostics = "build")]

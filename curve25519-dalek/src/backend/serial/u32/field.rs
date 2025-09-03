@@ -66,11 +66,19 @@ impl Zeroize for FieldElement2625 {
     }
 }
 
+impl FieldElement2625 {
+    pub(crate) const fn const_add_assign(&mut self, _rhs: &FieldElement2625) -> FieldElement2625 {
+        let mut i = 0;
+        while i < 10 {
+            self.0[i] += _rhs.0[i];
+            i += 1;
+        }
+    }
+}
+
 impl<'b> AddAssign<&'b FieldElement2625> for FieldElement2625 {
     fn add_assign(&mut self, _rhs: &'b FieldElement2625) {
-        for i in 0..10 {
-            self.0[i] += _rhs.0[i];
-        }
+        self.const_add_assign(_rhs)
     }
 }
 
@@ -121,109 +129,115 @@ impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
     }
 }
 
+impl FieldElement2625 {
+    #[rustfmt::skip] // keep alignment of z* calculations
+    pub(crate) const fn const_mul(&self, _rhs: & FieldElement2625) -> FieldElement2625 {
+      /// Helper function to multiply two 32-bit integers with 64 bits
+      /// of output.
+      #[inline(always)]
+      const fn m(x: u32, y: u32) -> u64 {
+          (x as u64) * (y as u64)
+      }
+
+      // Alias self, _rhs for more readable formulas
+      let x: &[u32; 10] = &self.0;
+      let y: &[u32; 10] = &_rhs.0;
+
+      // We assume that the input limbs x[i], y[i] are bounded by:
+      //
+      // x[i], y[i] < 2^(26 + b) if i even
+      // x[i], y[i] < 2^(25 + b) if i odd
+      //
+      // where b is a (real) parameter representing the excess bits of
+      // the limbs.  We track the bitsizes of all variables through
+      // the computation and solve at the end for the allowable
+      // headroom bitsize b (which determines how many additions we
+      // can perform between reductions or multiplications).
+
+      let y1_19 = 19 * y[1]; // This fits in a u32
+      let y2_19 = 19 * y[2]; // iff 26 + b + lg(19) < 32
+      let y3_19 = 19 * y[3]; // if  b < 32 - 26 - 4.248 = 1.752
+      let y4_19 = 19 * y[4];
+      let y5_19 = 19 * y[5]; // below, b<2.5: this is a bottleneck,
+      let y6_19 = 19 * y[6]; // could be avoided by promoting to
+      let y7_19 = 19 * y[7]; // u64 here instead of in m()
+      let y8_19 = 19 * y[8];
+      let y9_19 = 19 * y[9];
+
+      // What happens when we multiply x[i] with y[j] and place the
+      // result into the (i+j)-th limb?
+      //
+      // x[i]      represents the value x[i]*2^ceil(i*51/2)
+      // y[j]      represents the value y[j]*2^ceil(j*51/2)
+      // z[i+j]    represents the value z[i+j]*2^ceil((i+j)*51/2)
+      // x[i]*y[j] represents the value x[i]*y[i]*2^(ceil(i*51/2)+ceil(j*51/2))
+      //
+      // Since the radix is already accounted for, the result placed
+      // into the (i+j)-th limb should be
+      //
+      // x[i]*y[i]*2^(ceil(i*51/2)+ceil(j*51/2) - ceil((i+j)*51/2)).
+      //
+      // The value of ceil(i*51/2)+ceil(j*51/2) - ceil((i+j)*51/2) is
+      // 1 when both i and j are odd, and 0 otherwise.  So we add
+      //
+      //   x[i]*y[j] if either i or j is even
+      // 2*x[i]*y[j] if i and j are both odd
+      //
+      // by using precomputed multiples of x[i] for odd i:
+
+      let x1_2 = 2 * x[1]; // This fits in a u32 iff 25 + b + 1 < 32
+      let x3_2 = 2 * x[3]; //                    iff b < 6
+      let x5_2 = 2 * x[5];
+      let x7_2 = 2 * x[7];
+      let x9_2 = 2 * x[9];
+
+      let z0 = m(x[0], y[0]) + m(x1_2, y9_19) + m(x[2], y8_19) + m(x3_2, y7_19) + m(x[4], y6_19) + m(x5_2, y5_19) + m(x[6], y4_19) + m(x7_2, y3_19) + m(x[8], y2_19) + m(x9_2, y1_19);
+      let z1 = m(x[0], y[1]) + m(x[1],  y[0]) + m(x[2], y9_19) + m(x[3], y8_19) + m(x[4], y7_19) + m(x[5], y6_19) + m(x[6], y5_19) + m(x[7], y4_19) + m(x[8], y3_19) + m(x[9], y2_19);
+      let z2 = m(x[0], y[2]) + m(x1_2,  y[1]) + m(x[2], y[0])  + m(x3_2, y9_19) + m(x[4], y8_19) + m(x5_2, y7_19) + m(x[6], y6_19) + m(x7_2, y5_19) + m(x[8], y4_19) + m(x9_2, y3_19);
+      let z3 = m(x[0], y[3]) + m(x[1],  y[2]) + m(x[2], y[1])  + m(x[3],  y[0]) + m(x[4], y9_19) + m(x[5], y8_19) + m(x[6], y7_19) + m(x[7], y6_19) + m(x[8], y5_19) + m(x[9], y4_19);
+      let z4 = m(x[0], y[4]) + m(x1_2,  y[3]) + m(x[2], y[2])  + m(x3_2,  y[1]) + m(x[4],  y[0]) + m(x5_2, y9_19) + m(x[6], y8_19) + m(x7_2, y7_19) + m(x[8], y6_19) + m(x9_2, y5_19);
+      let z5 = m(x[0], y[5]) + m(x[1],  y[4]) + m(x[2], y[3])  + m(x[3],  y[2]) + m(x[4],  y[1]) + m(x[5],  y[0]) + m(x[6], y9_19) + m(x[7], y8_19) + m(x[8], y7_19) + m(x[9], y6_19);
+      let z6 = m(x[0], y[6]) + m(x1_2,  y[5]) + m(x[2], y[4])  + m(x3_2,  y[3]) + m(x[4],  y[2]) + m(x5_2,  y[1]) + m(x[6],  y[0]) + m(x7_2, y9_19) + m(x[8], y8_19) + m(x9_2, y7_19);
+      let z7 = m(x[0], y[7]) + m(x[1],  y[6]) + m(x[2], y[5])  + m(x[3],  y[4]) + m(x[4],  y[3]) + m(x[5],  y[2]) + m(x[6],  y[1]) + m(x[7],  y[0]) + m(x[8], y9_19) + m(x[9], y8_19);
+      let z8 = m(x[0], y[8]) + m(x1_2,  y[7]) + m(x[2], y[6])  + m(x3_2,  y[5]) + m(x[4],  y[4]) + m(x5_2,  y[3]) + m(x[6],  y[2]) + m(x7_2,  y[1]) + m(x[8],  y[0]) + m(x9_2, y9_19);
+      let z9 = m(x[0], y[9]) + m(x[1],  y[8]) + m(x[2], y[7])  + m(x[3],  y[6]) + m(x[4],  y[5]) + m(x[5],  y[4]) + m(x[6],  y[3]) + m(x[7],  y[2]) + m(x[8],  y[1]) + m(x[9],  y[0]);
+
+      // How big is the contribution to z[i+j] from x[i], y[j]?
+      //
+      // Using the bounds above, we get:
+      //
+      // i even, j even:   x[i]*y[j] <   2^(26+b)*2^(26+b) = 2*2^(51+2*b)
+      // i  odd, j even:   x[i]*y[j] <   2^(25+b)*2^(26+b) = 1*2^(51+2*b)
+      // i even, j  odd:   x[i]*y[j] <   2^(26+b)*2^(25+b) = 1*2^(51+2*b)
+      // i  odd, j  odd: 2*x[i]*y[j] < 2*2^(25+b)*2^(25+b) = 1*2^(51+2*b)
+      //
+      // We perform inline reduction mod p by replacing 2^255 by 19
+      // (since 2^255 - 19 = 0 mod p).  This adds a factor of 19, so
+      // we get the bounds (z0 is the biggest one, but calculated for
+      // posterity here in case finer estimation is needed later):
+      //
+      //  z0 < ( 2 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 249*2^(51 + 2*b)
+      //  z1 < ( 1 +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 154*2^(51 + 2*b)
+      //  z2 < ( 2 +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 195*2^(51 + 2*b)
+      //  z3 < ( 1 +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 118*2^(51 + 2*b)
+      //  z4 < ( 2 +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 141*2^(51 + 2*b)
+      //  z5 < ( 1 +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) =  82*2^(51 + 2*b)
+      //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) =  87*2^(51 + 2*b)
+      //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 )*2^(51 + 2b) =  46*2^(51 + 2*b)
+      //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 )*2^(51 + 2b) =  33*2^(51 + 2*b)
+      //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   )*2^(51 + 2b) =  10*2^(51 + 2*b)
+      //
+      // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
+      //                         if b < 2.5.
+      FieldElement2625::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+  }
+}
+
 impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
     type Output = FieldElement2625;
 
-    #[rustfmt::skip] // keep alignment of z* calculations
     fn mul(self, _rhs: &'b FieldElement2625) -> FieldElement2625 {
-        /// Helper function to multiply two 32-bit integers with 64 bits
-        /// of output.
-        #[inline(always)]
-        fn m(x: u32, y: u32) -> u64 {
-            (x as u64) * (y as u64)
-        }
-
-        // Alias self, _rhs for more readable formulas
-        let x: &[u32; 10] = &self.0;
-        let y: &[u32; 10] = &_rhs.0;
-
-        // We assume that the input limbs x[i], y[i] are bounded by:
-        //
-        // x[i], y[i] < 2^(26 + b) if i even
-        // x[i], y[i] < 2^(25 + b) if i odd
-        //
-        // where b is a (real) parameter representing the excess bits of
-        // the limbs.  We track the bitsizes of all variables through
-        // the computation and solve at the end for the allowable
-        // headroom bitsize b (which determines how many additions we
-        // can perform between reductions or multiplications).
-
-        let y1_19 = 19 * y[1]; // This fits in a u32
-        let y2_19 = 19 * y[2]; // iff 26 + b + lg(19) < 32
-        let y3_19 = 19 * y[3]; // if  b < 32 - 26 - 4.248 = 1.752
-        let y4_19 = 19 * y[4];
-        let y5_19 = 19 * y[5]; // below, b<2.5: this is a bottleneck,
-        let y6_19 = 19 * y[6]; // could be avoided by promoting to
-        let y7_19 = 19 * y[7]; // u64 here instead of in m()
-        let y8_19 = 19 * y[8];
-        let y9_19 = 19 * y[9];
-
-        // What happens when we multiply x[i] with y[j] and place the
-        // result into the (i+j)-th limb?
-        //
-        // x[i]      represents the value x[i]*2^ceil(i*51/2)
-        // y[j]      represents the value y[j]*2^ceil(j*51/2)
-        // z[i+j]    represents the value z[i+j]*2^ceil((i+j)*51/2)
-        // x[i]*y[j] represents the value x[i]*y[i]*2^(ceil(i*51/2)+ceil(j*51/2))
-        //
-        // Since the radix is already accounted for, the result placed
-        // into the (i+j)-th limb should be
-        //
-        // x[i]*y[i]*2^(ceil(i*51/2)+ceil(j*51/2) - ceil((i+j)*51/2)).
-        //
-        // The value of ceil(i*51/2)+ceil(j*51/2) - ceil((i+j)*51/2) is
-        // 1 when both i and j are odd, and 0 otherwise.  So we add
-        //
-        //   x[i]*y[j] if either i or j is even
-        // 2*x[i]*y[j] if i and j are both odd
-        //
-        // by using precomputed multiples of x[i] for odd i:
-
-        let x1_2 = 2 * x[1]; // This fits in a u32 iff 25 + b + 1 < 32
-        let x3_2 = 2 * x[3]; //                    iff b < 6
-        let x5_2 = 2 * x[5];
-        let x7_2 = 2 * x[7];
-        let x9_2 = 2 * x[9];
-
-        let z0 = m(x[0], y[0]) + m(x1_2, y9_19) + m(x[2], y8_19) + m(x3_2, y7_19) + m(x[4], y6_19) + m(x5_2, y5_19) + m(x[6], y4_19) + m(x7_2, y3_19) + m(x[8], y2_19) + m(x9_2, y1_19);
-        let z1 = m(x[0], y[1]) + m(x[1],  y[0]) + m(x[2], y9_19) + m(x[3], y8_19) + m(x[4], y7_19) + m(x[5], y6_19) + m(x[6], y5_19) + m(x[7], y4_19) + m(x[8], y3_19) + m(x[9], y2_19);
-        let z2 = m(x[0], y[2]) + m(x1_2,  y[1]) + m(x[2], y[0])  + m(x3_2, y9_19) + m(x[4], y8_19) + m(x5_2, y7_19) + m(x[6], y6_19) + m(x7_2, y5_19) + m(x[8], y4_19) + m(x9_2, y3_19);
-        let z3 = m(x[0], y[3]) + m(x[1],  y[2]) + m(x[2], y[1])  + m(x[3],  y[0]) + m(x[4], y9_19) + m(x[5], y8_19) + m(x[6], y7_19) + m(x[7], y6_19) + m(x[8], y5_19) + m(x[9], y4_19);
-        let z4 = m(x[0], y[4]) + m(x1_2,  y[3]) + m(x[2], y[2])  + m(x3_2,  y[1]) + m(x[4],  y[0]) + m(x5_2, y9_19) + m(x[6], y8_19) + m(x7_2, y7_19) + m(x[8], y6_19) + m(x9_2, y5_19);
-        let z5 = m(x[0], y[5]) + m(x[1],  y[4]) + m(x[2], y[3])  + m(x[3],  y[2]) + m(x[4],  y[1]) + m(x[5],  y[0]) + m(x[6], y9_19) + m(x[7], y8_19) + m(x[8], y7_19) + m(x[9], y6_19);
-        let z6 = m(x[0], y[6]) + m(x1_2,  y[5]) + m(x[2], y[4])  + m(x3_2,  y[3]) + m(x[4],  y[2]) + m(x5_2,  y[1]) + m(x[6],  y[0]) + m(x7_2, y9_19) + m(x[8], y8_19) + m(x9_2, y7_19);
-        let z7 = m(x[0], y[7]) + m(x[1],  y[6]) + m(x[2], y[5])  + m(x[3],  y[4]) + m(x[4],  y[3]) + m(x[5],  y[2]) + m(x[6],  y[1]) + m(x[7],  y[0]) + m(x[8], y9_19) + m(x[9], y8_19);
-        let z8 = m(x[0], y[8]) + m(x1_2,  y[7]) + m(x[2], y[6])  + m(x3_2,  y[5]) + m(x[4],  y[4]) + m(x5_2,  y[3]) + m(x[6],  y[2]) + m(x7_2,  y[1]) + m(x[8],  y[0]) + m(x9_2, y9_19);
-        let z9 = m(x[0], y[9]) + m(x[1],  y[8]) + m(x[2], y[7])  + m(x[3],  y[6]) + m(x[4],  y[5]) + m(x[5],  y[4]) + m(x[6],  y[3]) + m(x[7],  y[2]) + m(x[8],  y[1]) + m(x[9],  y[0]);
-
-        // How big is the contribution to z[i+j] from x[i], y[j]?
-        //
-        // Using the bounds above, we get:
-        //
-        // i even, j even:   x[i]*y[j] <   2^(26+b)*2^(26+b) = 2*2^(51+2*b)
-        // i  odd, j even:   x[i]*y[j] <   2^(25+b)*2^(26+b) = 1*2^(51+2*b)
-        // i even, j  odd:   x[i]*y[j] <   2^(26+b)*2^(25+b) = 1*2^(51+2*b)
-        // i  odd, j  odd: 2*x[i]*y[j] < 2*2^(25+b)*2^(25+b) = 1*2^(51+2*b)
-        //
-        // We perform inline reduction mod p by replacing 2^255 by 19
-        // (since 2^255 - 19 = 0 mod p).  This adds a factor of 19, so
-        // we get the bounds (z0 is the biggest one, but calculated for
-        // posterity here in case finer estimation is needed later):
-        //
-        //  z0 < ( 2 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 249*2^(51 + 2*b)
-        //  z1 < ( 1 +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 154*2^(51 + 2*b)
-        //  z2 < ( 2 +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 195*2^(51 + 2*b)
-        //  z3 < ( 1 +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) = 118*2^(51 + 2*b)
-        //  z4 < ( 2 +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) = 141*2^(51 + 2*b)
-        //  z5 < ( 1 +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 + 1*19 + 1*19 )*2^(51 + 2b) =  82*2^(51 + 2*b)
-        //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 + 2*19 + 1*19 )*2^(51 + 2b) =  87*2^(51 + 2*b)
-        //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   + 1*19 + 1*19 )*2^(51 + 2b) =  46*2^(51 + 2*b)
-        //  z6 < ( 2 +  1   +  2   +  1   +  2   +  1   +  2   +  1   +  2   + 1*19 )*2^(51 + 2b) =  33*2^(51 + 2*b)
-        //  z7 < ( 1 +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   +  1   )*2^(51 + 2b) =  10*2^(51 + 2*b)
-        //
-        // So z[0] fits into a u64 if 51 + 2*b + lg(249) < 64
-        //                         if b < 2.5.
-        FieldElement2625::reduce([z0, z1, z2, z3, z4, z5, z6, z7, z8, z9])
+        self.const_mul(_rhs)
     }
 }
 

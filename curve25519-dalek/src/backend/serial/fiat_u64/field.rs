@@ -59,11 +59,17 @@ impl Zeroize for FieldElement51 {
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
-    fn add_assign(&mut self, rhs: &'b FieldElement51) {
+impl FieldElement51 {
+    pub(crate) const fn const_add_assign(&mut self, rhs: &FieldElement51) {
         let mut result_loose = fiat_25519_loose_field_element([0; 5]);
         fiat_25519_add(&mut result_loose, &self.0, &rhs.0);
         fiat_25519_carry(&mut self.0, &result_loose);
+    }
+}
+
+impl<'b> AddAssign<&'b FieldElement51> for FieldElement51 {
+    fn add_assign(&mut self, rhs: &'b FieldElement51) {
+        self.const_add_assign(rhs)
     }
 }
 
@@ -107,9 +113,8 @@ impl<'b> MulAssign<&'b FieldElement51> for FieldElement51 {
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
-    type Output = FieldElement51;
-    fn mul(self, rhs: &'b FieldElement51) -> FieldElement51 {
+impl FieldElement51 {
+    pub(crate) const fn const_mul(&self, rhs: &FieldElement51) -> FieldElement51 {
         let mut self_loose = fiat_25519_loose_field_element([0; 5]);
         fiat_25519_relax(&mut self_loose, &self.0);
         let mut rhs_loose = fiat_25519_loose_field_element([0; 5]);
@@ -117,6 +122,13 @@ impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
         let mut output = FieldElement51::ZERO;
         fiat_25519_carry_mul(&mut output.0, &self_loose, &rhs_loose);
         output
+    }
+}
+
+impl<'a, 'b> Mul<&'b FieldElement51> for &'a FieldElement51 {
+    type Output = FieldElement51;
+    fn mul(self, rhs: &'b FieldElement51) -> FieldElement51 {
+        self.const_mul(rhs)
     }
 }
 

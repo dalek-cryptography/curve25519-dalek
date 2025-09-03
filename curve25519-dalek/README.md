@@ -57,7 +57,7 @@ curve25519-dalek = ">= 5.0, < 5.2"
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
 | `hazmat`           |          | Enables `FieldElement` satisfying `ff` traits and bespoke traits for lazy reduction |
 | `group`            |          | Enables external `group` and `ff` crate traits. |
-| `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`, and `FieldElement` if `expose-field`.  |
+| `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`, and `FieldElement` if `hazmat`. |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To

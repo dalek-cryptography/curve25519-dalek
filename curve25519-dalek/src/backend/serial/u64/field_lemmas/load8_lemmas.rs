@@ -1,4 +1,5 @@
 #![allow(unused)]
+use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
@@ -322,15 +323,147 @@ pub proof fn load8_at_spec_fits_u64(input: &[u8], i: usize)
     }
 }
 
-
-pub proof fn load8_rshift3(input: &[u8], i: usize)
+pub proof fn load8_lemma_base(a: nat, b: u8, j: nat, k: nat)
     requires
-        i + 7 < input.len()
+        a < pow2(j),
+        j + 8 <= 64
     ensures
-        true
+        a + (b * pow2(j)) == pow2(k) * (a / pow2(k) + (b * pow2(j)) as nat / pow2(k)) + (a % pow2(k) + (b * pow2(j)) as nat % pow2(k)),
+        pow2(k) > 0,
 {
-  assert(true);
+    let cb = (b * pow2(j)) as nat;
+
+    // No div by 0
+    assert(pow2(k) > 0) by {
+        lemma_pow2_pos(k);
+    }
+
+    assert( a == pow2(k) * (a / pow2(k)) + a % pow2(k)) by {
+        lemma_fundamental_div_mod(a as int, pow2(k) as int);
+    }
+
+    assert( cb == pow2(k) * (cb / pow2(k)) + cb % pow2(k)) by {
+        lemma_fundamental_div_mod(cb as int, pow2(k) as int);
+    }
+
+    assert(a + cb == pow2(k) * (a / pow2(k) + cb / pow2(k)) + (a % pow2(k) + cb % pow2(k))) by {
+        lemma_mul_is_distributive_add( pow2(k) as int, (a / pow2(k)) as int, (cb / pow2(k)) as int);
+        lemma_mul_is_associative(
+            (pow2(k) * (a / pow2(k) + cb / pow2(k))) as int,
+            (a % pow2(k)) as int,
+            (cb % pow2(k)) as int
+        );
+    }
+
 }
+
+pub proof fn load8_lemma1(a: nat, b: u8, j: nat, k: nat)
+    requires
+        a < pow2(j),
+        j + 8 <= 64,
+        k <= j
+    ensures
+        (a + b * pow2(j)) as nat / pow2(k)
+        ==
+        a / pow2(k) + (b * pow2(j)) as nat / pow2(k)
+
+{
+    let cb = (b * pow2(j)) as nat;
+
+    load8_lemma_base(a, b, j, k);
+
+    assert(cb % pow2(k) == 0) by {
+            lemma_pow2_adds((j - k) as nat, k);
+            lemma_mul_is_associative(b as int, pow2((j - k) as nat) as int, pow2(k) as int);
+            lemma_mod_multiples_basic(b * pow2((j - k) as nat), pow2(k) as int);
+        }
+
+    assert((a % pow2(k) + cb % pow2(k)) < pow2(k)) by {
+        lemma_mod_division_less_than_divisor(a as int, pow2(k) as int);
+    }
+
+    lemma_div_multiples_vanish_fancy(
+        (a / pow2(k) + cb / pow2(k)) as int,
+        (a % pow2(k) + cb % pow2(k)) as int,
+        pow2(k) as int
+    );
+}
+
+pub proof fn load8_lemma2(a: nat, b: u8, j: nat, k: nat)
+    requires
+        a < pow2(j),
+        j + 8 <= 64,
+        j < k < 64
+    ensures
+        (a + b * pow2(j)) as nat / pow2(k)
+        ==
+        (b * pow2(j)) as nat / pow2(k)
+        ==
+        b as nat / pow2((k - j) as nat)
+
+{
+    let cb = (b * pow2(j)) as nat;
+
+    // a + cb == pow2(k) * (a / pow2(k) + cb / pow2(k)) + (a % pow2(k) + cb % pow2(k)),
+    load8_lemma_base(a, b, j, k);
+
+    let d = (k - j) as nat;
+
+    // 2^k = 2^j * 2^(k - j)
+    lemma_pow2_adds(j, d);
+    // 2^x > 0
+    lemma_pow2_pos(j);
+    lemma_pow2_pos(d);
+
+    assert(
+        (a + b * pow2(j)) as nat / pow2(k)
+        ==
+        ((a + b * pow2(j)) as nat / pow2(j)) / pow2(d)
+    ) by {
+        lemma_div_denominator((a + cb) as int, pow2(j) as int, pow2(d) as int );
+    }
+
+    assert((b * pow2(j)) as nat / pow2(j) == b) by {
+        lemma_div_multiples_vanish(b as int, pow2(j) as int);
+    }
+
+    assert((a + b * pow2(j)) as nat / pow2(j) == b) by {
+        // == a / pow2(j) + (b * pow2(j)) as nat / pow2(j)
+        load8_lemma1(a, b, j, j);
+        assert( a / pow2(j) == 0 ) by {
+            lemma_basic_div(a as int, pow2(j) as int);
+        }
+    }
+
+    assert(cb / pow2(k) == b as nat / pow2(d)) by {
+        lemma_div_denominator(cb as int, pow2(j) as int, pow2(d) as int )
+    }
+}
+
+pub proof fn load8_lemma(a: nat, b: u8, j: nat, k: nat)
+    requires
+        a < pow2(j),
+        j + 8 <= 64,
+        k < 64
+    ensures
+        (a + b * pow2(j)) as nat / pow2(k)
+        ==
+        a / pow2(k) + (b * pow2(j)) as nat / pow2(k)
+{
+    if ( k <= j) {
+        load8_lemma1(a, b, j, k);
+    }
+    else {
+        // j < k
+        load8_lemma2(a, b, j, k);
+
+        assert(a / pow2(k) == 0) by {
+            lemma_pow2_strictly_increases(j, k);
+            lemma_basic_div(a as int, pow2(k) as int);
+        }
+    }
+}
+
 
 fn main() {}
 

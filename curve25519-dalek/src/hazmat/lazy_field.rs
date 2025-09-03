@@ -2,10 +2,7 @@
 
 use core::{fmt::Debug, ops::Add};
 
-use typenum::{
-    B1, U1, Unsigned,
-    type_operators::{Cmp, IsLessOrEqual},
-};
+use typenum::{B1, U1, Unsigned, type_operators::IsLessOrEqual};
 
 use ff::Field;
 
@@ -43,6 +40,9 @@ pub trait LazyField<CapacityUsed: Unsigned>:
     /// The underlying type is allowed to have undefined semantics and MUST NOT be used directly.
     fn as_underlying(&self) -> &Self::Underlying;
 
+    // The type corresponding to a certain usage of capacity.
+    // type ForCapacityUsed<TheoreticalCapacityUsed: Unsigned>: LazyField<TheoreticalCapacityUsed, >
+
     /// Add two lazy elements where the result remains within the capacity.
     fn add<
         V: Unsigned + Add<CapacityUsed, Output: Unsigned + IsLessOrEqual<Self::Capacity, Output = B1>>,
@@ -50,11 +50,11 @@ pub trait LazyField<CapacityUsed: Unsigned>:
     >(
         self,
         other: &T,
-    ) -> impl Reducible<Output = <Self as Reducible>::Output>
-    + LazyField<
+    ) -> impl LazyField<
         <V as Add<CapacityUsed>>::Output,
         Capacity = Self::Capacity,
         Underlying = Self::Underlying,
+        Output = <Self as Reducible>::Output,
     >;
 
     /// Multiply two lazy elements.
@@ -73,5 +73,11 @@ pub trait LazyField<CapacityUsed: Unsigned>:
 ///
 /// `LazyFieldWithCapacity<U1>` is _recommended_ due to the widespread popularity of 255-bit
 /// fields.
-pub trait LazyFieldWithCapacity<U: Unsigned + Cmp<Self::Capacity>>: LazyField<U1> {}
-impl<U: Unsigned + Cmp<Self::Capacity>, F: LazyField<U1>> LazyFieldWithCapacity<U> for F {}
+pub trait LazyFieldWithCapacity<U: Unsigned + IsLessOrEqual<Self::Capacity, Output = B1>>:
+    LazyField<U1>
+{
+}
+impl<U: Unsigned + IsLessOrEqual<Self::Capacity, Output = B1>, F: LazyField<U1>>
+    LazyFieldWithCapacity<U> for F
+{
+}

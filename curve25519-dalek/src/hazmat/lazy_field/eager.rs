@@ -220,11 +220,11 @@ impl<CapacityUsed: Unsigned + IsLessOrEqual<U256, Output = B1>, F: Field> LazyFi
     >(
         self,
         other: &T,
-    ) -> impl Reducible<Output = <Self as Reducible>::Output>
-    + LazyField<
+    ) -> impl LazyField<
         <V as Add<CapacityUsed>>::Output,
         Capacity = Self::Capacity,
         Underlying = Self::Underlying,
+        Output = <Self as Reducible>::Output,
     > {
         EagerField::<<V as Add<CapacityUsed>>::Output, F>(
             self.0 + other.as_underlying(),

@@ -92,14 +92,14 @@ impl RistrettoPoint {
         let mut ret = [FieldElement::ONE; 8];
 
         for i in 0..4 {
-            let (ok, fe) = jcs[i].elligator_inv();
+            let (ok, fe) = jcs[i].e_inv();
             let mut tmp: u8 = 0;
             ret[2 * i] = fe;
             tmp.conditional_assign(&1, ok);
             mask |= tmp << (2 * i);
 
             let jc = jcs[i].dual();
-            let (ok, fe) = jc.elligator_inv();
+            let (ok, fe) = jc.e_inv();
             let mut tmp: u8 = 0;
             ret[2 * i + 1] = fe;
             tmp.conditional_assign(&1, ok);

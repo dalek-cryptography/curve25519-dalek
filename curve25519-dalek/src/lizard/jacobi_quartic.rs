@@ -22,12 +22,12 @@ pub struct JacobiPoint {
 }
 
 impl JacobiPoint {
-    /// Elligator2 is defined in two steps: first a field element is converted
+    /// Elligator2 is defined in two steps: first a function e maps a field element
     /// to a point (s,t) on the Jacobi quartic associated to the Edwards curve.
     /// Then this point is mapped to a point on the Edwards curve.
-    /// This function computes a field element that is mapped to a given (s,t)
-    /// with Elligator2 if it exists.
-    pub(crate) fn elligator_inv(&self) -> (Choice, FieldElement) {
+    /// This function computes a field element that is mapped by e to a given (s,t),
+    /// if it exists.
+    pub(crate) fn e_inv(&self) -> (Choice, FieldElement) {
         let mut out = FieldElement::ZERO;
 
         // Special case: s = 0.  If s is zero, either t = 1 or t = -1.
@@ -56,6 +56,7 @@ impl JacobiPoint {
         let mut pms2 = s2;
         pms2.conditional_negate(self.S.is_negative());
         let mut x = &(&a + &pms2) * &y;
+        // Always pick the positive solution
         let x_is_negative = x.is_negative();
         x.conditional_negate(x_is_negative);
         out.conditional_assign(&x, !done);

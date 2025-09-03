@@ -31,6 +31,20 @@ impl<U: Unsigned> FieldElement<U> {
     pub(crate) const fn from(underlying: Underlying) -> Self {
         Self(underlying, PhantomData)
     }
+
+    /// Create a `FieldElement` within a `const` context.
+    pub const fn from_bytes(bytes: &[u8; 32]) -> Option<Self> {
+        let underlying = Underlying::from_bytes(bytes);
+        let canonical_bytes: [u8; 32] = underlying.to_bytes();
+        let mut i = 0;
+        while i < 32 {
+            if canonical_bytes[i] != bytes[i] {
+                return None;
+            }
+            i += 1;
+        }
+        Some(Self::from(underlying))
+    }
 }
 
 impl<U: Unsigned> ConstantTimeEq for FieldElement<U> {

@@ -67,7 +67,7 @@ impl Zeroize for FieldElement2625 {
 }
 
 impl FieldElement2625 {
-    pub(crate) const fn const_add_assign(&mut self, _rhs: &FieldElement2625) -> FieldElement2625 {
+    pub(crate) const fn const_add_assign(&mut self, _rhs: &FieldElement2625) {
         let mut i = 0;
         while i < 10 {
             self.0[i] += _rhs.0[i];

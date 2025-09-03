@@ -71,7 +71,7 @@ impl Zeroize for FieldElement2625 {
 }
 
 impl FieldElement2625 {
-    pub(crate) const fn const_add_assign(&mut self, _rhs: &FieldElement2625) -> FieldElement2625 {
+    pub(crate) const fn const_add_assign(&mut self, _rhs: &FieldElement2625) {
         let mut result_loose = fiat_25519_loose_field_element([0; 10]);
         fiat_25519_add(&mut result_loose, &self.0, &rhs.0);
         fiat_25519_carry(&mut self.0, &result_loose);

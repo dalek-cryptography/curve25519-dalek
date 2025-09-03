@@ -1885,6 +1885,7 @@ mod test {
         assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT_POINT.T));
     }
 
+    #[cfg(feature = "hazmat")]
     #[test]
     fn from_affine_coordinates() {
         assert_eq!(constants::ED25519_BASEPOINT_POINT.Z, FieldElement::ONE);

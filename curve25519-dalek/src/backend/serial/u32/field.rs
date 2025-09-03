@@ -608,5 +608,5 @@ impl FieldElement2625 {
 
 #[cfg(feature = "hazmat")]
 impl crate::hazmat::UnderlyingCapacity for FieldElement2625 {
-    type Capacity = typenum::U3;
+    type Capacity = typenum::U2;
 }

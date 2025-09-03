@@ -65,25 +65,20 @@ impl<CapacityUsed: Unsigned> LazyField<CapacityUsed> for FieldElement<CapacityUs
 #[cfg(test)]
 mod tests {
     use crate::hazmat::lazy_field::{EagerField, LazyField, LazyFieldWithCapacity, Reducible};
-    use typenum::{B1, U2, U3, type_operators::IsLessOrEqual};
+    use typenum::{B1, U2, type_operators::IsLessOrEqual};
 
-    fn add_triple_then_mul<F: LazyFieldWithCapacity<U3>>(
+    fn add_pair_then_mul<F: LazyFieldWithCapacity<U2>>(
         a: F,
         b: F,
         c: F,
         d: F,
-        e: F,
-        f: F,
     ) -> <F as Reducible>::Output
     where
         U2: IsLessOrEqual<F::Capacity, Output = B1>,
-        U3: IsLessOrEqual<F::Capacity, Output = B1>,
     {
         let ab = a.add(&b);
-        let abc = ab.add(&c);
-        let de = d.add(&e);
-        let def = de.add(&f);
-        abc.mul(&def)
+        let cd = c.add(&d);
+        ab.mul(&cd)
     }
 
     #[test]
@@ -95,36 +90,26 @@ mod tests {
 
         let mut rng = OsRng.unwrap_err();
 
-        let a = FieldElement::random(&mut rng);
-        let b = FieldElement::random(&mut rng);
-        let c = FieldElement::random(&mut rng);
-        let d = FieldElement::random(&mut rng);
-        let e = FieldElement::random(&mut rng);
-        let f = FieldElement::random(&mut rng);
-        let expected = (a + b + c) * (d + e + f);
+        for _ in 0..10_000 {
+            let a = FieldElement::random(&mut rng);
+            let b = FieldElement::random(&mut rng);
+            let c = FieldElement::random(&mut rng);
+            let d = FieldElement::random(&mut rng);
+            let expected = (a + b) * (c + d);
 
-        assert_eq!(
-            LazyField::add(a, &b)
-                .add(&c)
-                .mul(&LazyField::add(d, &e).add(&f)),
-            expected
-        );
-        assert_eq!(add_triple_then_mul(a, b, c, d, e, f), expected);
+            assert_eq!(LazyField::add(a, &b).mul(&LazyField::add(c, &d)), expected);
+            assert_eq!(add_pair_then_mul(a, b, c, d), expected);
 
-        let a = EagerField(a, PhantomData::<typenum::U1>);
-        let b = EagerField(b, PhantomData::<typenum::U1>);
-        let c = EagerField(c, PhantomData::<typenum::U1>);
-        let d = EagerField(d, PhantomData::<typenum::U1>);
-        let e = EagerField(e, PhantomData::<typenum::U1>);
-        let f = EagerField(f, PhantomData::<typenum::U1>);
+            let a = EagerField(a, PhantomData::<typenum::U1>);
+            let b = EagerField(b, PhantomData::<typenum::U1>);
+            let c = EagerField(c, PhantomData::<typenum::U1>);
+            let d = EagerField(d, PhantomData::<typenum::U1>);
 
-        assert_eq!(
-            LazyField::add(a, &b)
-                .add(&c)
-                .mul(&LazyField::add(d, &e).add(&f))
-                .0,
-            expected
-        );
-        assert_eq!(add_triple_then_mul(a, b, c, d, e, f).0, expected);
+            assert_eq!(
+                LazyField::add(a, &b).mul(&LazyField::add(c, &d)).0,
+                expected
+            );
+            assert_eq!(add_pair_then_mul(a, b, c, d).0, expected);
+        }
     }
 }

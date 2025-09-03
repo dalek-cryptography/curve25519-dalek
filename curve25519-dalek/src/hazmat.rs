@@ -34,7 +34,7 @@ pub struct OpaqueFieldElement(Underlying);
 /// implementations. Its size and internals are not guaranteed to have
 /// any specific properties and are not covered by semver.
 ///
-/// Usage is recommended to be done via `LazyFieldWithCapacity<U2>` which is
+/// Usage is recommended to be done via `LazyFieldWithCapacity<U3>` which is
 /// comprehensive to all backends.
 #[derive(Copy)]
 pub struct FieldElement<U: Unsigned = U1>(pub(crate) OpaqueFieldElement, pub(crate) PhantomData<U>);
@@ -217,7 +217,7 @@ impl Field for FieldElement {
     fn try_from_rng<R: rand_core::TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut bytes = [0; 64];
         rng.try_fill_bytes(&mut bytes)?;
-        Ok(Self::from(Underlying::from_bytes_wide(&bytes)))
+        Ok(Self::from_uniform_bytes(&bytes))
     }
 
     fn square(&self) -> Self {
@@ -315,7 +315,9 @@ impl From<u64> for FieldElement {
 
 impl FromUniformBytes<64> for FieldElement {
     fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
-        Self::from(Underlying::from_bytes_wide(bytes))
+        Self::from(Underlying::from_bytes(
+            &Underlying::from_bytes_wide(bytes).to_bytes(),
+        ))
     }
 }
 

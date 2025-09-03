@@ -31,13 +31,13 @@ features = ["batch", "digest", "hazmat", "pem", "serde"]
 curve25519-dalek = { version = "=5.0.0-pre.0", default-features = false, features = [
     "digest",
 ] }
-ed25519 = { version = "=3.0.0-pre.0", default-features = false }
-signature = { version = "3.0.0-rc.2", optional = true, default-features = false }
-sha2 = { version = "0.11.0-rc.0", default-features = false }
+ed25519 = { version = "3.0.0-rc.0", default-features = false }
+signature = { version = "3.0.0-rc.3", optional = true, default-features = false }
+sha2 = { version = "0.11.0-rc.2", default-features = false }
 subtle = { version = "2.3.0", default-features = false }
 
 # optional features
-keccak = { version = "0.1", default-features = false, optional = true }
+keccak = { version = "0.2.0-pre.0", default-features = false, optional = true }
 rand_core = { version = "0.9", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 zeroize = { version = "1.5", default-features = false, optional = true }
@@ -50,8 +50,8 @@ curve25519-dalek = { version = "=5.0.0-pre.0", default-features = false, feature
 x25519-dalek = { version = "=3.0.0-pre.0", default-features = false, features = [
     "static_secrets",
 ] }
-blake2 = "0.11.0-rc.0"
-sha3 = "0.11.0-rc.0"
+blake2 = "0.11.0-rc.2"
+sha3 = "0.11.0-rc.2"
 hex = "0.4"
 bincode = "1.0"
 serde_json = "1.0"

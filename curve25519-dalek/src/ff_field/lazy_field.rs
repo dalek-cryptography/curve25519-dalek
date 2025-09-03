@@ -37,11 +37,10 @@ pub trait LazyField<CapacityUsed: Unsigned>:
 
     /// A reference to the underlying type.
     ///
-    /// The underlying type has undefined semantics and MUST NOT be used directly.
+    /// The underlying type is allowed to have undefined semantics and MUST NOT be used directly.
     fn as_underlying(&self) -> &Self::Underlying;
 
-    /// Add two lazy elements, which reduce to the same field, where the result remains within the
-    /// capacity.
+    /// Add two lazy elements where the result remains within the capacity.
     fn add<
         V: Unsigned + Add<CapacityUsed, Output: Unsigned + IsLessOrEqual<Self::Capacity, Output = B1>>,
         T: LazyField<V, Underlying = Self::Underlying>,

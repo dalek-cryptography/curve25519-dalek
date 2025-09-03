@@ -30,6 +30,9 @@ pub struct OpaqueFieldElement(Underlying);
 /// The `FieldElement` type is an alias for one of the platform-specific
 /// implementations. Its size and internals are not guaranteed to have
 /// any specific properties and are not covered by semver.
+///
+/// Usage is recommended to be done via `LazyFieldWithCapacity<U3>` which is
+/// comprehensive to all backends.
 #[derive(Copy)]
 pub struct FieldElement<U: Unsigned = U0>(pub(crate) OpaqueFieldElement, pub(crate) PhantomData<U>);
 unsafe impl<U: Unsigned> Send for FieldElement<U> {}

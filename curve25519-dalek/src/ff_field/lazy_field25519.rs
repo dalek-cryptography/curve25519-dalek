@@ -21,6 +21,7 @@ where
 }
 
 /// Sealed trait for the capacity of the `FieldElement` backend.
+// Rust believe this is in a public API, as it... technically is? so it must be `pub`.
 pub trait UnderlyingCapacity {
     type Capacity: Unsigned;
 }

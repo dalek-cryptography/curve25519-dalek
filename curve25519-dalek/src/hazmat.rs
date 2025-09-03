@@ -1,3 +1,5 @@
+//! Hazardous materials with no semver guarantees.
+
 use core::{
     fmt::Debug,
     iter::{Product, Sum},

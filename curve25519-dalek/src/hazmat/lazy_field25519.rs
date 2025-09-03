@@ -44,7 +44,12 @@ impl<CapacityUsed: Unsigned> LazyField<CapacityUsed> for FieldElement<CapacityUs
     >(
         self,
         other: &T,
-    ) -> impl LazyField<<V as Add<CapacityUsed>>::Output, Capacity = Self::Capacity> {
+    ) -> impl Reducible<Output = <Self as Reducible>::Output>
+    + LazyField<
+        <V as Add<CapacityUsed>>::Output,
+        Capacity = Self::Capacity,
+        Underlying = Self::Underlying,
+    > {
         FieldElement::<<V as Add<CapacityUsed>>::Output>::from(&self.0.0 + &other.as_underlying().0)
     }
 
@@ -54,5 +59,45 @@ impl<CapacityUsed: Unsigned> LazyField<CapacityUsed> for FieldElement<CapacityUs
     ) -> <Self as Reducible>::Output {
         let unreduced = &self.0.0 * &other.as_underlying().0;
         FieldElement::from(Underlying::from_bytes(&unreduced.to_bytes()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rand_core::{OsRng, TryRngCore};
+    use typenum::U3;
+
+    use crate::hazmat::lazy_field::{EagerField, LazyField, LazyFieldWithCapacity, Reducible};
+
+    #[test]
+    fn three_add_and_then_mul() {
+        use crate::hazmat::FieldElement;
+        use core::marker::PhantomData;
+        use ff::Field;
+
+        let mut rng = OsRng.unwrap_err();
+
+        let a = FieldElement::random(&mut rng);
+        let b = FieldElement::random(&mut rng);
+        let c = FieldElement::random(&mut rng);
+        let d = FieldElement::random(&mut rng);
+        let e = FieldElement::random(&mut rng);
+        let f = FieldElement::random(&mut rng);
+        let expected = (a + b + c) * (d + e + f);
+
+        assert_eq!(a.add(&b).add(&c).mul(&d.add(&e).add(&f)), expected);
+
+        assert_eq!(
+            EagerField(a, PhantomData::<typenum::U0>)
+                .add(&EagerField(b, PhantomData::<typenum::U0>))
+                .add(&EagerField(c, PhantomData::<typenum::U0>))
+                .mul(
+                    &EagerField(d, PhantomData::<typenum::U0>)
+                        .add(&EagerField(e, PhantomData::<typenum::U0>))
+                        .add(&EagerField(f, PhantomData::<typenum::U0>))
+                )
+                .0,
+            expected
+        );
     }
 }

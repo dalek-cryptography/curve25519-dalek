@@ -18,6 +18,7 @@ pub mod lazy_field;
 mod lazy_field25519;
 pub(crate) use lazy_field25519::UnderlyingCapacity;
 
+/// An opaque view of the field element backend.
 /*
   The `Underlying` struct is exposed via the `LazyField` trait. As the underlying field
   implementations don't have safe arithmetic, we don't want to expose their arithmetic, but we must

@@ -8,7 +8,7 @@ use core::{
 };
 
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
-use typenum::{B1, U0, U256, Unsigned, type_operators::IsLessOrEqual};
+use typenum::{B1, U1, U256, Unsigned, type_operators::IsLessOrEqual};
 
 use rand_core::{RngCore, TryRngCore};
 
@@ -36,13 +36,13 @@ impl<U: Unsigned, F: Field> Debug for EagerField<U, F> {
     }
 }
 
-impl<F: Field> EagerField<U0, F> {
+impl<F: Field> EagerField<U1, F> {
     const fn from(field: F) -> Self {
         Self(field, PhantomData)
     }
 }
 
-impl<F: Field> ConditionallySelectable for EagerField<U0, F> {
+impl<F: Field> ConditionallySelectable for EagerField<U1, F> {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         Self::from(<_>::conditional_select(&a.0, &b.0, choice))
     }
@@ -58,99 +58,99 @@ impl<U: Unsigned, F: Field> PartialEq for EagerField<U, F> {
     }
 }
 impl<U: Unsigned, F: Field> Eq for EagerField<U, F> {}
-impl<F: Field> Neg for EagerField<U0, F> {
+impl<F: Field> Neg for EagerField<U1, F> {
     type Output = Self;
     fn neg(self) -> Self {
         Self::from(self.0.neg())
     }
 }
-impl<F: Field> Add for EagerField<U0, F> {
+impl<F: Field> Add for EagerField<U1, F> {
     type Output = Self;
     fn add(self, other: Self) -> Self {
         Self::from(self.0.add(other.0))
     }
 }
-impl<F: Field> Sub for EagerField<U0, F> {
+impl<F: Field> Sub for EagerField<U1, F> {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         Self::from(self.0.sub(other.0))
     }
 }
-impl<F: Field> Mul for EagerField<U0, F> {
+impl<F: Field> Mul for EagerField<U1, F> {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
         Self::from(self.0.mul(other.0))
     }
 }
-impl<F: Field> Sum for EagerField<U0, F> {
+impl<F: Field> Sum for EagerField<U1, F> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         Self::from(F::sum(iter.map(|item| item.0)))
     }
 }
-impl<F: Field> Product for EagerField<U0, F> {
+impl<F: Field> Product for EagerField<U1, F> {
     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
         Self::from(F::product(iter.map(|item| item.0)))
     }
 }
-impl<'a, F: Field> Add<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> Add<&'a Self> for EagerField<U1, F> {
     type Output = Self;
     fn add(self, other: &'a Self) -> Self {
         Self::from(self.0.add(&other.0))
     }
 }
-impl<'a, F: Field> Sub<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> Sub<&'a Self> for EagerField<U1, F> {
     type Output = Self;
     fn sub(self, other: &'a Self) -> Self {
         Self::from(self.0.sub(&other.0))
     }
 }
-impl<'a, F: Field> Mul<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> Mul<&'a Self> for EagerField<U1, F> {
     type Output = Self;
     fn mul(self, other: &'a Self) -> Self {
         Self::from(self.0.mul(&other.0))
     }
 }
-impl<'a, F: Field> Sum<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> Sum<&'a Self> for EagerField<U1, F> {
     fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
         Self::from(F::sum(iter.map(|item| &item.0)))
     }
 }
-impl<'a, F: Field> Product<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> Product<&'a Self> for EagerField<U1, F> {
     fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
         Self::from(F::product(iter.map(|item| &item.0)))
     }
 }
-impl<F: Field> AddAssign for EagerField<U0, F> {
+impl<F: Field> AddAssign for EagerField<U1, F> {
     fn add_assign(&mut self, other: Self) {
         self.0.add_assign(other.0);
     }
 }
-impl<F: Field> SubAssign for EagerField<U0, F> {
+impl<F: Field> SubAssign for EagerField<U1, F> {
     fn sub_assign(&mut self, other: Self) {
         self.0.sub_assign(other.0);
     }
 }
-impl<F: Field> MulAssign for EagerField<U0, F> {
+impl<F: Field> MulAssign for EagerField<U1, F> {
     fn mul_assign(&mut self, other: Self) {
         self.0.mul_assign(other.0);
     }
 }
-impl<'a, F: Field> AddAssign<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> AddAssign<&'a Self> for EagerField<U1, F> {
     fn add_assign(&mut self, other: &'a Self) {
         self.0.add_assign(&other.0);
     }
 }
-impl<'a, F: Field> SubAssign<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> SubAssign<&'a Self> for EagerField<U1, F> {
     fn sub_assign(&mut self, other: &'a Self) {
         self.0.sub_assign(&other.0);
     }
 }
-impl<'a, F: Field> MulAssign<&'a Self> for EagerField<U0, F> {
+impl<'a, F: Field> MulAssign<&'a Self> for EagerField<U1, F> {
     fn mul_assign(&mut self, other: &'a Self) {
         self.0.mul_assign(&other.0);
     }
 }
-impl<F: Field> Field for EagerField<U0, F> {
+impl<F: Field> Field for EagerField<U1, F> {
     const ZERO: Self = Self::from(F::ZERO);
     const ONE: Self = Self::from(F::ONE);
     fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
@@ -197,7 +197,7 @@ impl<F: Field> Field for EagerField<U0, F> {
 }
 
 impl<U: Unsigned, F: Field> Reducible for EagerField<U, F> {
-    type Output = EagerField<U0, F>;
+    type Output = EagerField<U1, F>;
     fn reduce(&self) -> Self::Output {
         Self::Output::from(self.0)
     }

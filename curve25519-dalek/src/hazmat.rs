@@ -8,7 +8,7 @@ use core::{
 };
 
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
-use typenum::{U0, Unsigned};
+use typenum::{U1, Unsigned};
 
 use ff::{Field, FromUniformBytes, PrimeField};
 
@@ -37,7 +37,7 @@ pub struct OpaqueFieldElement(Underlying);
 /// Usage is recommended to be done via `LazyFieldWithCapacity<U3>` which is
 /// comprehensive to all backends.
 #[derive(Copy)]
-pub struct FieldElement<U: Unsigned = U0>(pub(crate) OpaqueFieldElement, pub(crate) PhantomData<U>);
+pub struct FieldElement<U: Unsigned = U1>(pub(crate) OpaqueFieldElement, pub(crate) PhantomData<U>);
 unsafe impl<U: Unsigned> Send for FieldElement<U> {}
 unsafe impl<U: Unsigned> Sync for FieldElement<U> {}
 

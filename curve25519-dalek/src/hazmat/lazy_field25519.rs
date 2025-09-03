@@ -1,11 +1,11 @@
 use core::ops::Add;
 
-use typenum::{U0, Unsigned, type_operators::IsLessOrEqual};
+use typenum::{U1, Unsigned, type_operators::IsLessOrEqual};
 
 use super::{FieldElement, OpaqueFieldElement, lazy_field::*};
 use crate::field::FieldElement as Underlying;
 
-type ReducibleOutput = FieldElement<U0>;
+type ReducibleOutput = FieldElement<U1>;
 impl<U: Unsigned> Reducible for FieldElement<U>
 where
     FieldElement<U>: LazyField<U>,
@@ -70,7 +70,7 @@ mod tests {
     use crate::hazmat::lazy_field::{EagerField, LazyField, LazyFieldWithCapacity, Reducible};
 
     #[test]
-    fn three_add_and_then_mul() {
+    fn lazy_add_then_mul() {
         use crate::hazmat::FieldElement;
         use core::marker::PhantomData;
         use ff::Field;
@@ -88,13 +88,13 @@ mod tests {
         assert_eq!(a.add(&b).add(&c).mul(&d.add(&e).add(&f)), expected);
 
         assert_eq!(
-            EagerField(a, PhantomData::<typenum::U0>)
-                .add(&EagerField(b, PhantomData::<typenum::U0>))
-                .add(&EagerField(c, PhantomData::<typenum::U0>))
+            EagerField(a, PhantomData::<typenum::U1>)
+                .add(&EagerField(b, PhantomData::<typenum::U1>))
+                .add(&EagerField(c, PhantomData::<typenum::U1>))
                 .mul(
-                    &EagerField(d, PhantomData::<typenum::U0>)
-                        .add(&EagerField(e, PhantomData::<typenum::U0>))
-                        .add(&EagerField(f, PhantomData::<typenum::U0>))
+                    &EagerField(d, PhantomData::<typenum::U1>)
+                        .add(&EagerField(e, PhantomData::<typenum::U1>))
+                        .add(&EagerField(f, PhantomData::<typenum::U1>))
                 )
                 .0,
             expected

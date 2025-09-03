@@ -3,7 +3,7 @@
 use core::{fmt::Debug, ops::Add};
 
 use typenum::{
-    B1, U0, Unsigned,
+    B1, U1, Unsigned,
     type_operators::{Cmp, IsLessOrEqual},
 };
 
@@ -15,7 +15,7 @@ pub use eager::*;
 /// An element which can be reduced.
 pub trait Reducible {
     /// The reduced element.
-    type Output: Field + LazyField<U0>;
+    type Output: Field + LazyField<U1>;
     /// Reduce to a reduced element.
     fn reduce(&self) -> Self::Output;
 }
@@ -73,5 +73,5 @@ pub trait LazyField<CapacityUsed: Unsigned>:
 ///
 /// `LazyFieldWithCapacity<U1>` is _recommended_ due to the widespread popularity of 255-bit
 /// fields.
-pub trait LazyFieldWithCapacity<U: Unsigned + Cmp<Self::Capacity>>: LazyField<U0> {}
-impl<U: Unsigned + Cmp<Self::Capacity>, F: LazyField<U0>> LazyFieldWithCapacity<U> for F {}
+pub trait LazyFieldWithCapacity<U: Unsigned + Cmp<Self::Capacity>>: LazyField<U1> {}
+impl<U: Unsigned + Cmp<Self::Capacity>, F: LazyField<U1>> LazyFieldWithCapacity<U> for F {}

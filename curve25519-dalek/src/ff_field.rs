@@ -16,6 +16,14 @@ pub mod lazy_field;
 mod lazy_field25519;
 pub(crate) use lazy_field25519::UnderlyingCapacity;
 
+/*
+  The `Underlying` struct is exposed via the `LazyField` trait. As the underlying field
+  implementations don't have safe arithmetic, we don't want to expose their arithmetic, but we must
+  expose _them_. We solve this by wrapping them into the following struct.
+*/
+#[derive(Clone, Copy)]
+pub struct OpaqueFieldElement(Underlying);
+
 /// A `FieldElement` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -23,13 +31,13 @@ pub(crate) use lazy_field25519::UnderlyingCapacity;
 /// implementations. Its size and internals are not guaranteed to have
 /// any specific properties and are not covered by semver.
 #[derive(Copy)]
-pub struct FieldElement<U: Unsigned = U0>(pub(crate) Underlying, pub(crate) PhantomData<U>);
+pub struct FieldElement<U: Unsigned = U0>(pub(crate) OpaqueFieldElement, pub(crate) PhantomData<U>);
 unsafe impl<U: Unsigned> Send for FieldElement<U> {}
 unsafe impl<U: Unsigned> Sync for FieldElement<U> {}
 
 impl<U: Unsigned> FieldElement<U> {
     pub(crate) const fn from(underlying: Underlying) -> Self {
-        Self(underlying, PhantomData)
+        Self(OpaqueFieldElement(underlying), PhantomData)
     }
 
     /// Create a `FieldElement` within a `const` context.
@@ -49,7 +57,7 @@ impl<U: Unsigned> FieldElement<U> {
 
 impl<U: Unsigned> ConstantTimeEq for FieldElement<U> {
     fn ct_eq(&self, other: &Self) -> Choice {
-        self.0.ct_eq(&other.0)
+        self.0.0.ct_eq(&other.0.0)
     }
 }
 impl<U: Unsigned> PartialEq for FieldElement<U> {
@@ -73,20 +81,20 @@ impl Default for FieldElement {
 
 impl<U: Unsigned> Debug for FieldElement<U> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        self.0.fmt(f)
+        self.0.0.fmt(f)
     }
 }
 
 impl<U: Unsigned> ConditionallySelectable for FieldElement<U> {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        Self::from(<_>::conditional_select(&a.0, &b.0, choice))
+        Self::from(<_>::conditional_select(&a.0.0, &b.0.0, choice))
     }
 }
 
 impl Add<&FieldElement> for FieldElement {
     type Output = Self;
     fn add(self, other: &Self) -> Self {
-        let unreduced = &self.0 + &other.0;
+        let unreduced = &self.0.0 + &other.0.0;
         // Force a reduction
         Self::from(Underlying::from_bytes(&unreduced.to_bytes()))
     }
@@ -112,7 +120,7 @@ impl AddAssign<&FieldElement> for FieldElement {
 impl Sub<&FieldElement> for FieldElement {
     type Output = Self;
     fn sub(self, other: &Self) -> Self {
-        let unreduced = &self.0 - &other.0;
+        let unreduced = &self.0.0 - &other.0.0;
         // Force a reduction
         Self::from(Underlying::from_bytes(&unreduced.to_bytes()))
     }
@@ -138,15 +146,15 @@ impl SubAssign<&FieldElement> for FieldElement {
 impl Neg for FieldElement {
     type Output = Self;
     fn neg(mut self) -> Self {
-        self.0.negate();
-        Self::from(Underlying::from_bytes(&self.0.to_bytes()))
+        self.0.0.negate();
+        Self::from(Underlying::from_bytes(&self.0.0.to_bytes()))
     }
 }
 
 impl Mul<&FieldElement> for FieldElement {
     type Output = Self;
     fn mul(self, other: &Self) -> Self {
-        let unreduced = &self.0 * &other.0;
+        let unreduced = &self.0.0 * &other.0.0;
         // Force a reduction
         Self::from(Underlying::from_bytes(&unreduced.to_bytes()))
     }
@@ -218,11 +226,11 @@ impl Field for FieldElement {
     }
 
     fn invert(&self) -> CtOption<Self> {
-        CtOption::new(Self::from(self.0.invert()), !self.is_zero())
+        CtOption::new(Self::from(self.0.0.invert()), !self.is_zero())
     }
 
     fn sqrt_ratio(num: &Self, div: &Self) -> (Choice, Self) {
-        let res = Underlying::sqrt_ratio_i(&num.0, &div.0);
+        let res = Underlying::sqrt_ratio_i(&num.0.0, &div.0.0);
         (res.0, Self::from(res.1))
     }
 }
@@ -232,7 +240,7 @@ impl PrimeField for FieldElement {
 
     fn from_repr(repr: Self::Repr) -> CtOption<Self> {
         let res = Self::from(Underlying::from_bytes(&repr));
-        CtOption::new(res, repr.ct_eq(&res.0.to_bytes()))
+        CtOption::new(res, repr.ct_eq(&res.0.0.to_bytes()))
     }
 
     fn from_repr_vartime(repr: Self::Repr) -> Option<Self> {
@@ -240,11 +248,11 @@ impl PrimeField for FieldElement {
     }
 
     fn to_repr(&self) -> Self::Repr {
-        self.0.to_bytes()
+        self.0.0.to_bytes()
     }
 
     fn is_odd(&self) -> Choice {
-        Choice::from(self.0.to_bytes()[0] & 1)
+        Choice::from(self.0.0.to_bytes()[0] & 1)
     }
 
     const MODULUS: &'static str =
@@ -311,6 +319,6 @@ impl FromUniformBytes<64> for FieldElement {
 #[cfg(feature = "zeroize")]
 impl<U: Unsigned> zeroize::Zeroize for FieldElement<U> {
     fn zeroize(&mut self) {
-        self.0.zeroize();
+        self.0.0.zeroize();
     }
 }

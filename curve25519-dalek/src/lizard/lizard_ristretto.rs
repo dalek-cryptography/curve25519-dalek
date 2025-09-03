@@ -29,8 +29,8 @@ impl RistrettoPoint {
         let digest = D::digest(data);
         fe_bytes[0..32].copy_from_slice(digest.as_slice());
         fe_bytes[8..24].copy_from_slice(data);
-        fe_bytes[0] &= 254;
-        fe_bytes[31] &= 63;
+        fe_bytes[0] &= 0b11111110;
+        fe_bytes[31] &= 0b00111111;
         let fe = FieldElement::from_bytes(&fe_bytes);
         RistrettoPoint::elligator_ristretto_flavor(&fe)
     }
@@ -50,8 +50,8 @@ impl RistrettoPoint {
             let buf2 = fe_j.to_bytes();
             h.copy_from_slice(&D::digest(&buf2[8..24]));
             h[8..24].copy_from_slice(&buf2[8..24]);
-            h[0] &= 254;
-            h[31] &= 63;
+            h[0] &= 0b11111110;
+            h[31] &= 0b00111111;
             ok &= h.ct_eq(&buf2);
             for i in 0..16 {
                 result[i] = u8::conditional_select(&result[i], &buf2[8 + i], ok);
@@ -66,7 +66,8 @@ impl RistrettoPoint {
     /// `self == RistrettoPoint::elligator_ristretto_flavor(f)`.
     /// Assumes self is even.
     ///
-    /// Returns a bitmask of which elements in fes are set.
+    /// First return value is a bitmask of which elements are valid inverses (lowest bit corresponds
+    /// to the 0-th element).
     fn elligator_ristretto_flavor_inverse(&self) -> (u8, [FieldElement; 8]) {
         // Elligator2 computes a Point from a FieldElement in two steps: first
         // it computes a (s,t) on the Jacobi quartic and then computes the
@@ -186,6 +187,39 @@ impl RistrettoPoint {
             JacobiPoint { S: s3, T: t3 },
         ]
     }
+
+    /// Interprets the given bytestring as a positive field element and computes the Ristretto
+    /// Elligator map. Note this clears the bottom bit and top two bits of `bytes`.
+    ///
+    /// # Warning
+    ///
+    /// This function does not produce cryptographically random-looking Ristretto points. Use
+    /// [`Self::hash_from_bytes`] for that. DO NOT USE THIS FUNCTION unless you really know what
+    /// you're doing.
+    pub fn map_to_curve(mut bytes: [u8; 32]) -> RistrettoPoint {
+        // We only have a meaningful inverse if we give Elligator a point in its domain, ie a
+        // positive (meaning low bit 0) field element. Mask off the top two bits to ensure it's less
+        // than the modulus, and the bottom bit for evenness.
+        bytes[0] &= 0b11111110;
+        bytes[31] &= 0b00111111;
+
+        let fe = FieldElement::from_bytes(&bytes);
+        RistrettoPoint::elligator_ristretto_flavor(&fe)
+    }
+
+    /// Computes the possible bytestrings that could have produced this point via
+    /// [`Self::map_to_curve`].
+    /// First return value is a bitmask of which elements are valid inverses (lowest bit corresponds
+    /// to the 0-th element).
+    pub fn map_to_curve_inverse(&self) -> (u8, [[u8; 32]; 8]) {
+        let mut ret = [[0u8; 32]; 8];
+        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
+
+        for j in 0..8 {
+            ret[j] = fes[j].to_bytes();
+        }
+        (mask, ret)
+    }
 }
 
 #[cfg(test)]
@@ -302,6 +336,38 @@ mod test {
                     }
                 }
                 assert!(found);
+            }
+        }
+    }
+
+    // Tests that map_to_curve_inverse ○ map_to_curve is the identity
+    #[test]
+    fn test_map_to_curve_inverse() {
+        let mut rng = rand::rng();
+
+        for _ in 0..100 {
+            let mut input = [0u8; 32];
+            rng.fill_bytes(&mut input);
+
+            // Map to Ristretto and invert it
+            let pt = RistrettoPoint::map_to_curve(input);
+            let (bitmask, inverses) = pt.map_to_curve_inverse();
+
+            // map_to_curve masks the bottom bit and top two bits of `input`
+            let mut expected_inverse = input;
+            expected_inverse[31] &= 0b00111111;
+            expected_inverse[0] &= 0b11111110;
+
+            // Check that one of the valid inverses matches the input
+            let mut found = false;
+            for (i, inv) in inverses.into_iter().enumerate() {
+                let is_valid = bitmask & (1 << i) != 0;
+                if is_valid && inv == expected_inverse {
+                    found = true;
+                }
+            }
+            if !found {
+                panic!("did not find inverse for input {:02x?}", input);
             }
         }
     }

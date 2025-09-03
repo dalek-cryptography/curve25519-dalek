@@ -656,9 +656,9 @@ impl RistrettoPoint {
         ]
     }
 
-    /// Computes the Ristretto Elligator map. This is the
-    /// [`MAP`](https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-ristretto255-decaf448-04#section-4.3.4)
-    /// function defined in the Ristretto spec.
+    /// Computes the Ristretto Elligator map for the given field element. This is the second half of
+    /// the [`MAP`](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function defined in
+    /// the Ristretto spec.
     ///
     /// # Note
     ///

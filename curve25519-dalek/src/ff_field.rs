@@ -123,9 +123,7 @@ impl AddAssign<&FieldElement> for FieldElement {
 impl Sub<&FieldElement> for FieldElement {
     type Output = Self;
     fn sub(self, other: &Self) -> Self {
-        let unreduced = &self.0.0 - &other.0.0;
-        // Force a reduction
-        Self::from(Underlying::from_bytes(&unreduced.to_bytes()))
+        Self::from(&self.0.0 - &other.0.0)
     }
 }
 #[allow(clippy::op_ref)]
@@ -149,17 +147,16 @@ impl SubAssign<&FieldElement> for FieldElement {
 impl Neg for FieldElement {
     type Output = Self;
     fn neg(mut self) -> Self {
-        self.0.0.negate();
-        Self::from(Underlying::from_bytes(&self.0.0.to_bytes()))
+        // `negate` modifies in-place
+        let () = self.0.0.negate();
+        Self::from(self.0.0)
     }
 }
 
 impl Mul<&FieldElement> for FieldElement {
     type Output = Self;
     fn mul(self, other: &Self) -> Self {
-        let unreduced = &self.0.0 * &other.0.0;
-        // Force a reduction
-        Self::from(Underlying::from_bytes(&unreduced.to_bytes()))
+        Self::from(&self.0.0 * &other.0.0)
     }
 }
 #[allow(clippy::op_ref)]

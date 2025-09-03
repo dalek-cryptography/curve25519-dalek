@@ -271,6 +271,6 @@ impl FieldElement2625 {
 }
 
 #[cfg(feature = "expose-field")]
-impl crate::UnderlyingCapacity for FieldElement51 {
+impl crate::UnderlyingCapacity for FieldElement2625 {
     type Capacity = typenum::U3;
 }

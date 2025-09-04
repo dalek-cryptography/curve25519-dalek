@@ -214,12 +214,12 @@ impl FieldElement51 {
     #[rustfmt::skip] // keep alignment of bit shifts
     pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
         ensures
-            true
-            // TODO:
-            // as_nat(r.limbs) =?= as_nat_32_u8(bytes)
+            // last bit is ignored
+            as_nat(r.limbs) == as_nat_32_u8(*bytes) % pow2(255)
     {
         proof {
-            l51_bit_mask_lt() // No over/underflow in the below let-def
+            l51_bit_mask_lt(); // No over/underflow in the below let-def
+            assume(false);
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
         // ADAPTED CODE LINE: limbs is now a named field
@@ -243,11 +243,8 @@ impl FieldElement51 {
     #[allow(clippy::wrong_self_convention)]
     pub fn to_bytes(self) -> (r: [u8; 32])
         ensures
-            true // No overflow
-            // TODO:
-            // as_nat(self.limbs) =?= as_nat_32_u8(r),
-            // canonical encoding
-            // forall|i: int| 0 <= i < 5 ==> r[i] < (1u64 << 51)
+            // canonical encoding, i.e. mod p value
+            as_nat_32_u8(r) == as_nat(self.limbs) % p()
     {
         proof {
             let l = spec_reduce(self.limbs);
@@ -288,6 +285,8 @@ impl FieldElement51 {
             shifted_lt(l3, 51);
 
             l51_bit_mask_lt();
+
+            assume(false);
 
             // TODO
             // let rr = [

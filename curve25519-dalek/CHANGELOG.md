@@ -9,6 +9,7 @@ major series.
 
 * Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.
 * Add an allocating batch inversion called `Scalar::invert_batch_alloc`.
+* Add `Scalar::div_by_2`
 
 ## 5.0.0-pre.0
 

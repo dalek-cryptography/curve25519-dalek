@@ -1,13 +1,15 @@
 //! Defines additional methods on RistrettoPoint for Lizard
 
-use digest::Digest;
-use digest::HashMarker;
-use digest::consts::U32;
+use digest::{
+    Digest, HashMarker,
+    array::Array,
+    consts::{U8, U32},
+};
+use subtle::CtOption;
 
 use crate::constants;
 use crate::field::FieldElement;
 
-use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
@@ -42,19 +44,24 @@ impl RistrettoPoint {
         D: Digest<OutputSize = U32> + HashMarker,
     {
         let mut result: [u8; 16] = Default::default();
-        let mut h: [u8; 32] = Default::default();
-        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
+        let fes = self.elligator_ristretto_flavor_inverse();
         let mut n_found = 0;
-        for (j, fe_j) in fes.iter().enumerate() {
-            let mut ok = Choice::from((mask >> j) & 1);
-            let buf2 = fe_j.to_bytes();
-            h.copy_from_slice(&D::digest(&buf2[8..24]));
-            h[8..24].copy_from_slice(&buf2[8..24]);
-            h[0] &= 0b11111110;
-            h[31] &= 0b00111111;
-            ok &= h.ct_eq(&buf2);
+        for fe in fes {
+            let mut ok = fe.is_some();
+            let fe = fe.unwrap_or(FieldElement::ZERO);
+            let bytes = fe.to_bytes();
+
+            let mut expected_bytes: [u8; 32] = Default::default();
+            expected_bytes.copy_from_slice(&D::digest(&bytes[8..24]));
+            expected_bytes[8..24].copy_from_slice(&bytes[8..24]);
+            expected_bytes[0] &= 0b11111110;
+            expected_bytes[31] &= 0b00111111;
+
+            // If we found our inverse (there's at most 1), write the value to our output buffer
+            ok &= expected_bytes.ct_eq(&bytes);
             for i in 0..16 {
-                result[i] = u8::conditional_select(&result[i], &buf2[8 + i], ok);
+                // Copy bytes 8-24, since that's the payload
+                result[i] = u8::conditional_select(&result[i], &bytes[8 + i], ok);
             }
             n_found += ok.unwrap_u8();
         }
@@ -62,13 +69,9 @@ impl RistrettoPoint {
         if n_found == 1 { Some(result) } else { None }
     }
 
-    /// Computes the at most 8 positive FieldElements f such that
-    /// `self == RistrettoPoint::elligator_ristretto_flavor(f)`.
-    /// Assumes self is even.
-    ///
-    /// First return value is a bitmask of which elements are valid inverses (lowest bit corresponds
-    /// to the 0-th element).
-    fn elligator_ristretto_flavor_inverse(&self) -> (u8, [FieldElement; 8]) {
+    /// Computes the at most 8 positive FieldElements f such that `self ==
+    /// RistrettoPoint::elligator_ristretto_flavor(f)`. Assumes self is even.
+    fn elligator_ristretto_flavor_inverse(&self) -> [CtOption<FieldElement>; 8] {
         // Elligator2 computes a Point from a FieldElement in two steps: first
         // it computes a (s,t) on the Jacobi quartic and then computes the
         // corresponding even point on the Edwards curve.
@@ -88,26 +91,13 @@ impl RistrettoPoint {
         // at the same time.  The four Jacobi quartic points are two of
         // such pairs.
 
-        let mut mask: u8 = 0;
         let jcs = self.to_jacobi_quartic_ristretto();
-        let mut ret = [FieldElement::ONE; 8];
 
-        for i in 0..4 {
-            let (ok, fe) = jcs[i].e_inv();
-            let mut tmp: u8 = 0;
-            ret[2 * i] = fe;
-            tmp.conditional_assign(&1, ok);
-            mask |= tmp << (2 * i);
-
-            let jc = jcs[i].dual();
-            let (ok, fe) = jc.e_inv();
-            let mut tmp: u8 = 0;
-            ret[2 * i + 1] = fe;
-            tmp.conditional_assign(&1, ok);
-            mask |= tmp << (2 * i + 1);
-        }
-
-        (mask, ret)
+        // Compute the inverse of the every point and its dual
+        let invs = jcs.iter().flat_map(|jc| [jc.e_inv(), jc.dual().e_inv()]);
+        // This cannot panic because jcs is guaranteed to be size 4, and the above iterator expands
+        // it to size 8
+        Array::<_, U8>::from_iter(invs).0
     }
 
     /// Find a point on the Jacobi quartic associated to each of the four
@@ -209,16 +199,12 @@ impl RistrettoPoint {
 
     /// Computes the possible bytestrings that could have produced this point via
     /// [`Self::map_to_curve`].
-    /// First return value is a bitmask of which elements are valid inverses (lowest bit corresponds
-    /// to the 0-th element).
-    pub fn map_to_curve_inverse(&self) -> (u8, [[u8; 32]; 8]) {
-        let mut ret = [[0u8; 32]; 8];
-        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
-
-        for j in 0..8 {
-            ret[j] = fes[j].to_bytes();
-        }
-        (mask, ret)
+    pub fn map_to_curve_inverse(&self) -> [CtOption<[u8; 32]>; 8] {
+        // Compute the inverses
+        let fes = self.elligator_ristretto_flavor_inverse();
+        // Serialize the field elements
+        let it = fes.map(|fe| fe.map(|f| f.to_bytes()));
+        Array::<_, U8>::from_iter(it).0
     }
 }
 
@@ -257,7 +243,7 @@ mod test {
     }
 
     #[test]
-    fn test_lizard_encode() {
+    fn lizard_encode() {
         // Test vectors are of the form (x, y) where y is the compressed encoding of the Ristretto
         // point given by lizard_encode(x).
         // These values come from the testLizard() function in vendor/ristretto.sage
@@ -286,7 +272,7 @@ mod test {
 
     // Tests that lizard_decode of a random point is None
     #[test]
-    fn test_lizard_invalid() {
+    fn lizard_invalid() {
         let mut rng = rand::rng();
         for _ in 0..100 {
             let pt = RistrettoPoint::random(&mut rng);
@@ -298,8 +284,11 @@ mod test {
         }
     }
 
+    // Test that
+    //   elligator_ristretto_flavor ○ elligator_ristretto_flavor_inverse ○ elligator_ristretto_flavor
+    // is the identity
     #[test]
-    fn test_elligator_inv() {
+    fn elligator_inv() {
         let mut rng = rand::rng();
 
         for i in 0..100 {
@@ -318,19 +307,21 @@ mod test {
                 // For the rest, just generate a random field element to test.
                 rng.fill_bytes(&mut fe_bytes);
             }
-            fe_bytes[0] &= 254; // positive
-            fe_bytes[31] &= 127; // < 2^255-19
+            // Make fe positive (even) and less than the modulus
+            fe_bytes[0] &= 254;
+            fe_bytes[31] &= 127;
             let fe = FieldElement::from_bytes(&fe_bytes);
 
             let pt = RistrettoPoint::elligator_ristretto_flavor(&fe);
             for pt2 in xcoset4(&pt) {
-                let (mask, fes) = RistrettoPoint(pt2).elligator_ristretto_flavor_inverse();
+                let fes = RistrettoPoint(pt2).elligator_ristretto_flavor_inverse();
 
                 let mut found = false;
-                for (j, fe_j) in fes.iter().enumerate() {
-                    if mask & (1 << j) != 0 {
-                        assert_eq!(RistrettoPoint::elligator_ristretto_flavor(fe_j), pt);
-                        if *fe_j == fe {
+                for fe_j in fes {
+                    if fe_j.is_some().into() {
+                        let fe_j = fe_j.unwrap();
+                        assert_eq!(RistrettoPoint::elligator_ristretto_flavor(&fe_j), pt);
+                        if fe_j == fe {
                             found = true;
                         }
                     }
@@ -342,7 +333,7 @@ mod test {
 
     // Tests that map_to_curve_inverse ○ map_to_curve is the identity
     #[test]
-    fn test_map_to_curve_inverse() {
+    fn map_to_curve_inverse() {
         let mut rng = rand::rng();
 
         for _ in 0..100 {
@@ -351,7 +342,7 @@ mod test {
 
             // Map to Ristretto and invert it
             let pt = RistrettoPoint::map_to_curve(input);
-            let (bitmask, inverses) = pt.map_to_curve_inverse();
+            let inverses = pt.map_to_curve_inverse();
 
             // map_to_curve masks the bottom bit and top two bits of `input`
             let mut expected_inverse = input;
@@ -360,9 +351,13 @@ mod test {
 
             // Check that one of the valid inverses matches the input
             let mut found = false;
-            for (i, inv) in inverses.into_iter().enumerate() {
-                let is_valid = bitmask & (1 << i) != 0;
-                if is_valid && inv == expected_inverse {
+            for inv in inverses.into_iter() {
+                if inv.is_some().into() && inv.unwrap() == expected_inverse {
+                    // Per the README, the probability of finding two inverses is ~2^-122
+                    if found == true {
+                        panic!("found two inverses for input {:02x?}", input);
+                    }
+
                     found = true;
                 }
             }

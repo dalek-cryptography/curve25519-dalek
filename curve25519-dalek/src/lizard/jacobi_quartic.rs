@@ -6,6 +6,7 @@ use subtle::Choice;
 use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
+use subtle::CtOption;
 
 use super::lizard_constants;
 use crate::constants;
@@ -27,7 +28,7 @@ impl JacobiPoint {
     /// Then this point is mapped to a point on the Edwards curve.
     /// This function computes a field element that is mapped by e to a given (s,t),
     /// if it exists.
-    pub(crate) fn e_inv(&self) -> (Choice, FieldElement) {
+    pub(crate) fn e_inv(&self) -> CtOption<FieldElement> {
         let mut out = FieldElement::ZERO;
 
         // Special case: s = 0.  If s is zero, either t = 1 or t = -1.
@@ -35,7 +36,7 @@ impl JacobiPoint {
         let s_is_zero = self.S.is_zero();
         let t_equals_one = self.T.ct_eq(&FieldElement::ONE);
         out.conditional_assign(&lizard_constants::SQRT_ID, t_equals_one);
-        let mut ret = s_is_zero;
+        let mut is_defined = s_is_zero;
         let mut done = s_is_zero;
 
         // a := (t+1) (d+1)/(d-1)
@@ -49,7 +50,7 @@ impl JacobiPoint {
 
         // There is no preimage if the square root of i*(s^4-a^2) does not exist.
         let (sq, y) = invSqY.invsqrt();
-        ret |= sq;
+        is_defined |= sq;
         done |= !sq;
 
         // x := (a + sign(s)*s^2) y
@@ -61,7 +62,7 @@ impl JacobiPoint {
         x.conditional_negate(x_is_negative);
         out.conditional_assign(&x, !done);
 
-        (ret, out)
+        CtOption::new(out, is_defined)
     }
 
     pub(crate) fn dual(&self) -> JacobiPoint {

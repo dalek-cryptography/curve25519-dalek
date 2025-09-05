@@ -88,6 +88,15 @@ const FE_C2: FieldElement = FieldElement::from_limbs([
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "zerocopy",
+    derive(
+        zerocopy::FromBytes,
+        zerocopy::IntoBytes,
+        zerocopy::Immutable,
+        zerocopy::KnownLayout
+    )
+)]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.

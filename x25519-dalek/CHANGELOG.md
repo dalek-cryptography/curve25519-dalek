@@ -4,6 +4,12 @@ Entries are listed in reverse chronological order.
 
 # 3.x Series
 
+## 3.0.0-pre.1
+
+* Add optional integration with [`zerocopy`][zerocopy], controlled by the `zerocopy` feature.
+
+[zerocopy]: https://docs.rs/zerocopy/latest/zerocopy/
+
 ## 3.0.0-pre.0
 
 * Update edition to 2024

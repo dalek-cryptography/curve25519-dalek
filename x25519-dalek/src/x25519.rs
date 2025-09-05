@@ -30,6 +30,15 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 /// (in this crate) does *not* automatically happen, but either must be derived
 /// for Drop or explicitly called.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "zerocopy",
+    derive(
+        zerocopy::FromBytes,
+        zerocopy::IntoBytes,
+        zerocopy::Immutable,
+        zerocopy::KnownLayout
+    )
+)]
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct PublicKey(pub(crate) MontgomeryPoint);
 
@@ -198,6 +207,15 @@ impl ZeroizeOnDrop for ReusableSecret {}
 /// implications for many protocols.
 #[cfg(feature = "static_secrets")]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "zerocopy",
+    derive(
+        zerocopy::FromBytes,
+        zerocopy::IntoBytes,
+        zerocopy::Immutable,
+        zerocopy::KnownLayout
+    )
+)]
 #[derive(Clone)]
 pub struct StaticSecret([u8; 32]);
 

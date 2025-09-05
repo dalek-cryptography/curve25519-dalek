@@ -57,6 +57,7 @@ curve25519-dalek = ">= 5.0, < 5.2"
 | `legacy_compatibility`|       | Enables `Scalar::from_bits`, which allows the user to build unreduced scalars whose arithmetic is broken. Do not use this unless you know what you're doing. |
 | `group`            |          | Enables external `group` and `ff` crate traits. |
 | `group-bits`       |          | Enables `group` and impls `ff::PrimeFieldBits` for `Scalar`.  |
+| `zerocopy`         |          | Derives [`zerocopy`][zerocopy] traits on `MontgomeryPoint`. |
 
 To disable the default features when using `curve25519-dalek` as a dependency,
 add `default-features = false` to the dependency in your `Cargo.toml`. To
@@ -313,4 +314,5 @@ contributions.
 [semver]: https://semver.org/spec/v2.0.0.html
 [rngcorestd]: https://github.com/rust-random/rand/tree/7aa25d577e2df84a5156f824077bb7f6bdf28d97/rand_core#crate-features
 [zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
+[zerocopy]: https://docs.rs/zerocopy/latest/zerocopy/
 [SIMD backend]: #simd-backend

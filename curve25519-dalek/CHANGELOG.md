@@ -5,6 +5,12 @@ major series.
 
 ## 5.x series
 
+## 5.0.0-pre.2
+
+* Add optional integration with [`zerocopy`][zerocopy], controlled by the `zerocopy` feature.
+
+[zerocopy]: https://docs.rs/zerocopy/latest/zerocopy/
+
 ## 5.0.0-pre.1
 
 * Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.

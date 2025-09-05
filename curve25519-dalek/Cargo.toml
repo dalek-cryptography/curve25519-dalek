@@ -68,6 +68,7 @@ serde = { version = "1.0", default-features = false, optional = true, features =
     "derive",
 ] }
 zeroize = { version = "1", default-features = false, optional = true }
+typenum = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.17"
@@ -80,6 +81,7 @@ default = ["alloc", "precomputed-tables", "zeroize"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
+hazmat = ["rand_core", "ff", "typenum"]
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]

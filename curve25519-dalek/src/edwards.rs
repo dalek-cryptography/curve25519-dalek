@@ -763,6 +763,19 @@ impl EdwardsPoint {
             }
         }
     }
+
+    /// Create an `EdwardsPoint` from its affine coordinates.
+    ///
+    /// Returns `None` if the point is off-curve.
+    ///
+    /// This function runs in variable time.
+    #[cfg(feature = "hazmat")]
+    pub const fn from_affine_coordinates(x: FieldElement, y: FieldElement) -> Option<Self> {
+        let Some(point) = AffinePoint::from_coordinates(x, y) else {
+            return None;
+        };
+        Some(point.to_edwards())
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1870,6 +1883,19 @@ mod test {
         assert_eq!(minus_basepoint.Y, constants::ED25519_BASEPOINT_POINT.Y);
         assert_eq!(minus_basepoint.Z, constants::ED25519_BASEPOINT_POINT.Z);
         assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT_POINT.T));
+    }
+
+    #[cfg(feature = "hazmat")]
+    #[test]
+    fn from_affine_coordinates() {
+        assert_eq!(constants::ED25519_BASEPOINT_POINT.Z, FieldElement::ONE);
+        assert_eq!(
+            EdwardsPoint::from_affine_coordinates(
+                constants::ED25519_BASEPOINT_POINT.X,
+                constants::ED25519_BASEPOINT_POINT.Y
+            ),
+            Some(constants::ED25519_BASEPOINT_POINT)
+        );
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.

@@ -218,7 +218,7 @@ impl FieldElement51 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(self) -> [u8; 32] {
+    pub const fn to_bytes(self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         fiat_25519_to_bytes(&mut bytes, &self.0);
         bytes
@@ -259,4 +259,9 @@ impl FieldElement51 {
         fiat_25519_carry(&mut output.0, &output_loose);
         output
     }
+}
+
+#[cfg(feature = "hazmat")]
+impl crate::hazmat::UnderlyingCapacity for FieldElement51 {
+    type Capacity = typenum::U8;
 }

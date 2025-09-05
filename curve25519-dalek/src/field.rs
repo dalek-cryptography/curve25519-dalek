@@ -98,6 +98,12 @@ impl ConstantTimeEq for FieldElement {
     }
 }
 
+impl Default for FieldElement {
+    fn default() -> Self {
+        FieldElement::ZERO
+    }
+}
+
 impl FieldElement {
     /// Load a `FieldElement` from 64 bytes, by reducing modulo q.
     #[cfg(feature = "digest")]

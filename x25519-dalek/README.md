@@ -120,6 +120,17 @@ Performance is a secondary goal behind correctness, safety, and clarity, but we 
 
 Further instructions and details regarding backends can be found in the [curve25519-dalek docs](https://github.com/dalek-cryptography/curve25519-dalek#backends).
 
+# Feature flags
+
+| Feature              | Default? | Description                                                                |
+|:---------------------|:--------:|:---------------------------------------------------------------------------|
+| `zeroize`            | ✓        | Enables the [`zeroize`][zeroize-trait] trait on key types, and implements `ZeroizeOnDrop` for secrets. |
+| `reusable_secrets`   |          | Enables `ReusableSecret`, a Diffie-Hellman secret key that can be used more than once, but is not serializable. |
+| `static_secrets`     |          | Enables `StaticSecret`, a Diffie-Hellman secret key that can be used more than once, and is serializable. |
+| `os_rng`             |          | Enables `EphemeralSecret::random`, `ReusableSecret::random` and `StaticSecret::random` helpers that implicitly use the OS RNG. `random_from_rng` with an explicitly provided RNG is available without this feature. |
+| `serde`              |          | Enables `serde` serialization/deserialization for `PublicKey` and `StaticSecret`. |
+| `zerocopy`           |          | Enables [`zerocopy`][zerocopy] serialization/deserialization for `PublicKey` and `StaticSecret`. |
+
 # Note
 
 This code matches the [RFC7748][rfc7748] test vectors.
@@ -140,3 +151,5 @@ copyright © Amy Wibowo ([@sailorhg](https://twitter.com/sailorhg))
 
 [fiat]: https://github.com/mit-plv/fiat-crypto
 [crypto_box]: https://github.com/RustCrypto/nacl-compat/tree/master/crypto_box
+[zeroize-trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
+[zerocopy]: https://docs.rs/zerocopy/latest/zerocopy/

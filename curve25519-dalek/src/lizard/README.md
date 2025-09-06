@@ -26,7 +26,7 @@ Instead we create an injective function from $E_2$ by "tagging" each input $x$ s
 
 The tag allows us to decode points $P \in \mathcal{R}$ as follows:
 1. Compute the set of preimages $E_2^{-1}(P)$ using the procedure described in the rest of this document. This gives us a set of up to 8 scalars that are candidates to be the correct inverse.
-2. For each candidate scalar, check whether it adheres to the above form. Namely check that it is positive and has byte representation `h[0:8] || b || h[24:32]`, where $h = \mathsf{H}(b)$, and the appopriate bits are cleared.
+2. For each candidate scalar, check whether it adheres to the above form. Namely check that it is positive and has byte representation `h[0:8] || b || h[24:32]`, where $h = \mathsf{H}(b)$, and the appropriate bits are cleared.
 3. If such a candidate is found, this is the decoded value.
 
 The above procedures are exactly what the `lizard_encode` and `lizard_decode` functions do in `src/lizard/lizard_ristretto.rs`.
@@ -57,7 +57,7 @@ $$
 
 ## Background and Notation
 
-The computations will involve a family of related curves all defined over the prime field of order $p = 2^{255} - 19$ which we denote by $\mathbb{F}$. We will adopt the definition of [Decaf][decaf] and define an element of $\mathbb{F}$ to be *positive* if the low bit of its least positive representitive is set. We denote the set of positive field elements by $\mathbb{F}_{>0}$.
+The computations will involve a family of related curves all defined over the prime field of order $p = 2^{255} - 19$ which we denote by $\mathbb{F}$. We will adopt the definition of [Decaf][decaf] and define an element of $\mathbb{F}$ to be *positive* if the low bit of its least positive representative is set. We denote the set of positive field elements by $\mathbb{F}_{>0}$.
 
 ### Fundamental Curves
 

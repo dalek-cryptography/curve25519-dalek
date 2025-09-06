@@ -2,11 +2,7 @@
 
 #![allow(non_snake_case)]
 
-use subtle::Choice;
-use subtle::ConditionallyNegatable;
-use subtle::ConditionallySelectable;
-use subtle::ConstantTimeEq;
-use subtle::CtOption;
+use subtle::{ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use super::lizard_constants;
 use crate::constants;

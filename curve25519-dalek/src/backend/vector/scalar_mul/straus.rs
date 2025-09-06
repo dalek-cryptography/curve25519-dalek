@@ -20,13 +20,11 @@
 )]
 pub mod spec {
 
+    #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
+    #[cfg(feature = "alloc")]
     use core::borrow::Borrow;
-    use core::cmp::Ordering;
-
-    #[cfg(feature = "zeroize")]
-    use zeroize::Zeroizing;
 
     #[for_target_feature("avx2")]
     use crate::backend::vector::avx2::{CachedPoint, ExtendedPoint};
@@ -36,8 +34,10 @@ pub mod spec {
 
     use crate::edwards::EdwardsPoint;
     use crate::scalar::Scalar;
-    use crate::traits::{Identity, MultiscalarMul, VartimeMultiscalarMul};
-    use crate::window::{LookupTable, NafLookupTable5};
+    #[cfg(feature = "alloc")]
+    use crate::traits::VartimeMultiscalarMul;
+    use crate::traits::{Identity, MultiscalarMul};
+    use crate::window::LookupTable;
 
     /// Multiscalar multiplication using interleaved window / Straus'
     /// method.  See the `Straus` struct in the serial backend for more
@@ -52,7 +52,22 @@ pub mod spec {
     impl MultiscalarMul for Straus {
         type Point = EdwardsPoint;
 
-        fn multiscalar_mul<I, J>(scalars: I, points: J) -> EdwardsPoint
+        fn multiscalar_mul<const N: usize>(
+            scalars: &[Scalar; N],
+            points: &[EdwardsPoint; N],
+        ) -> EdwardsPoint {
+            // Construct a lookup table of [P,2P,3P,4P,5P,6P,7P,8P]
+            // for each input point P
+            let lookup_tables: [_; N] =
+                core::array::from_fn(|index| LookupTable::<CachedPoint>::from(&points[index]));
+
+            let scalar_digits: [_; N] = core::array::from_fn(|index| scalars[index].as_radix_16());
+
+            multiscalar_mul(&scalar_digits, &lookup_tables)
+        }
+
+        #[cfg(feature = "alloc")]
+        fn multiscalar_mul_alloc<I, J>(scalars: I, points: J) -> EdwardsPoint
         where
             I: IntoIterator,
             I::Item: Borrow<Scalar>,
@@ -72,21 +87,29 @@ pub mod spec {
                 .collect();
             // Pass ownership to a `Zeroizing` wrapper
             #[cfg(feature = "zeroize")]
-            let scalar_digits_vec = Zeroizing::new(scalar_digits_vec);
+            let scalar_digits_vec = zeroize::Zeroizing::new(scalar_digits_vec);
 
-            let mut Q = ExtendedPoint::identity();
-            for j in (0..64).rev() {
-                Q = Q.mul_by_pow_2(4);
-                let it = scalar_digits_vec.iter().zip(lookup_tables.iter());
-                for (s_i, lookup_table_i) in it {
-                    // Q = Q + s_{i,j} * P_i
-                    Q = &Q + &lookup_table_i.select(s_i[j]);
-                }
-            }
-            Q.into()
+            multiscalar_mul(&scalar_digits_vec, &lookup_tables)
         }
     }
 
+    fn multiscalar_mul(
+        scalar_digits: &[[i8; 64]],
+        lookup_tables: &[LookupTable<CachedPoint>],
+    ) -> EdwardsPoint {
+        let mut Q = ExtendedPoint::identity();
+        for j in (0..64).rev() {
+            Q = Q.mul_by_pow_2(4);
+            let it = scalar_digits.iter().zip(lookup_tables.iter());
+            for (s_i, lookup_table_i) in it {
+                // Q = Q + s_{i,j} * P_i
+                Q = &Q + &lookup_table_i.select(s_i[j]);
+            }
+        }
+        Q.into()
+    }
+
+    #[cfg(feature = "alloc")]
     impl VartimeMultiscalarMul for Straus {
         type Point = EdwardsPoint;
 
@@ -96,6 +119,9 @@ pub mod spec {
             I::Item: Borrow<Scalar>,
             J: IntoIterator<Item = Option<EdwardsPoint>>,
         {
+            use crate::window::NafLookupTable5;
+            use core::cmp::Ordering;
+
             let nafs: Vec<_> = scalars
                 .into_iter()
                 .map(|c| c.borrow().non_adjacent_form(5))

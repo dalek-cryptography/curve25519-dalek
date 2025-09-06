@@ -88,6 +88,7 @@ const FE_C2: FieldElement = FieldElement::from_limbs([
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(test, derive(proptest_derive::Arbitrary))]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
 /// Equality of `MontgomeryPoint`s is defined mod p.
@@ -515,7 +516,7 @@ mod test {
     use super::*;
     use crate::constants;
 
-    use rand_core::{CryptoRng, RngCore, TryRngCore};
+    use proptest::{prelude::*, property_test};
 
     #[test]
     fn identity_in_different_coordinates() {
@@ -598,12 +599,6 @@ mod test {
         assert_eq!(u18, u18_unred);
     }
 
-    /// Returns a random point on the prime-order subgroup
-    fn rand_prime_order_point<R: CryptoRng + ?Sized>(rng: &mut R) -> EdwardsPoint {
-        let s: Scalar = Scalar::random(rng);
-        EdwardsPoint::mul_base(&s)
-    }
-
     /// Given a bytestring that's little-endian at the byte level, return an iterator over all the
     /// bits, in little-endian order.
     fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + Clone + '_ {
@@ -616,104 +611,71 @@ mod test {
         })
     }
 
-    #[test]
-    fn montgomery_ladder_matches_edwards_scalarmult() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+    #[property_test]
+    fn montgomery_ladder_matches_edwards_scalarmult(p_edwards: EdwardsPoint, s: Scalar) {
+        let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
-        for _ in 0..100 {
-            let p_edwards = rand_prime_order_point(&mut csprng);
-            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+        let expected = s * p_edwards;
+        let result = s * p_montgomery;
 
-            let s: Scalar = Scalar::random(&mut csprng);
-            let expected = s * p_edwards;
-            let result = s * p_montgomery;
-
-            assert_eq!(result, expected.to_montgomery())
-        }
+        prop_assert_eq!(result, expected.to_montgomery())
     }
 
     // Tests that, on the prime-order subgroup, MontgomeryPoint::mul_bits_be is the same as
     // multiplying by the Scalar representation of the same bits
-    #[test]
-    fn montgomery_mul_bits_be() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+    #[property_test]
+    fn montgomery_mul_bits_be(p_edwards: EdwardsPoint, bigint: [u8; 64]) {
+        let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+        let bigint_bits_be = bytestring_bits_le(&bigint).rev();
 
-        for _ in 0..100 {
-            // Make a random prime-order point P
-            let p_edwards = rand_prime_order_point(&mut csprng);
-            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
-
-            // Make a random integer b
-            let mut bigint = [0u8; 64];
-            csprng.fill_bytes(&mut bigint[..]);
-            let bigint_bits_be = bytestring_bits_le(&bigint).rev();
-
-            // Check that bP is the same whether calculated as scalar-times-edwards or
-            // integer-times-montgomery.
-            let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
-            let result = p_montgomery.mul_bits_be(bigint_bits_be);
-            assert_eq!(result, expected.to_montgomery())
-        }
+        // Check that bP is the same whether calculated as scalar-times-edwards or
+        // integer-times-montgomery.
+        let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
+        let result = p_montgomery.mul_bits_be(bigint_bits_be);
+        prop_assert_eq!(result, expected.to_montgomery())
     }
 
     // Tests that MontgomeryPoint::mul_bits_be is consistent on any point, even ones that might be
     // on the curve's twist. Specifically, this tests that b₁(b₂P) == b₂(b₁P) for random
     // integers b₁, b₂ and random (curve or twist) point P.
-    #[test]
-    fn montgomery_mul_bits_be_twist() {
-        let mut csprng = rand_core::OsRng.unwrap_err();
+    #[property_test]
+    fn montgomery_mul_bits_be_twist(
+        p_montgomery: MontgomeryPoint,
+        bigint1: [u8; 64],
+        bigint2: [u8; 64],
+    ) {
+        // Compute b₁P and b₂P
+        let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
+        let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
+        let prod1 = p_montgomery.mul_bits_be(bigint1_bits_be.clone());
+        let prod2 = p_montgomery.mul_bits_be(bigint2_bits_be.clone());
 
-        for _ in 0..100 {
-            // Make a random point P on the curve or its twist
-            let p_montgomery = {
-                let mut buf = [0u8; 32];
-                csprng.fill_bytes(&mut buf);
-                MontgomeryPoint(buf)
-            };
-
-            // Compute two big integers b₁ and b₂
-            let mut bigint1 = [0u8; 64];
-            let mut bigint2 = [0u8; 64];
-            csprng.fill_bytes(&mut bigint1[..]);
-            csprng.fill_bytes(&mut bigint2[..]);
-
-            // Compute b₁P and b₂P
-            let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
-            let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
-            let prod1 = p_montgomery.mul_bits_be(bigint1_bits_be.clone());
-            let prod2 = p_montgomery.mul_bits_be(bigint2_bits_be.clone());
-
-            // Check that b₁(b₂P) == b₂(b₁P)
-            assert_eq!(
-                prod1.mul_bits_be(bigint2_bits_be),
-                prod2.mul_bits_be(bigint1_bits_be)
-            );
-        }
+        // Check that b₁(b₂P) == b₂(b₁P)
+        prop_assert_eq!(
+            prod1.mul_bits_be(bigint2_bits_be),
+            prod2.mul_bits_be(bigint1_bits_be)
+        );
     }
 
     /// Check that mul_base_clamped and mul_clamped agree
-    #[test]
-    fn mul_base_clamped() {
-        let mut csprng = rand_core::OsRng;
 
+    #[test]
+    fn mul_base_clamped_max() {
         // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
         let a_bytes = [0xff; 32];
         assert_eq!(
             MontgomeryPoint::mul_base_clamped(a_bytes),
             constants::X25519_BASEPOINT.mul_clamped(a_bytes)
         );
+    }
 
-        // Test agreement on random integers
-        for _ in 0..100 {
-            // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
-            let mut a_bytes = [0u8; 32];
-            csprng.try_fill_bytes(&mut a_bytes).unwrap();
-
-            assert_eq!(
-                MontgomeryPoint::mul_base_clamped(a_bytes),
-                constants::X25519_BASEPOINT.mul_clamped(a_bytes)
-            );
-        }
+    #[property_test]
+    fn mul_base_clamped(a_bytes: [u8; 32]) {
+        // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
+        prop_assert_eq!(
+            MontgomeryPoint::mul_base_clamped(a_bytes),
+            constants::X25519_BASEPOINT.mul_clamped(a_bytes)
+        );
     }
 
     #[cfg(feature = "alloc")]

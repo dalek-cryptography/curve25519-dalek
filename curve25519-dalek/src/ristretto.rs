@@ -198,6 +198,9 @@ use subtle::ConstantTimeEq;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+#[cfg(test)]
+use proptest::{arbitrary::Arbitrary, strategy::BoxedStrategy};
+
 #[cfg(feature = "precomputed-tables")]
 use crate::edwards::EdwardsBasepointTable;
 use crate::edwards::EdwardsPoint;
@@ -1313,6 +1316,21 @@ impl Zeroize for RistrettoPoint {
     }
 }
 
+#[cfg(test)]
+impl Arbitrary for RistrettoPoint {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        use proptest::prelude::*;
+
+        Strategy::prop_map(any::<[u8; 64]>(), |bytes| {
+            RistrettoPoint::from_uniform_bytes(&bytes)
+        })
+        .boxed()
+    }
+}
+
 // ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
@@ -1320,11 +1338,10 @@ impl Zeroize for RistrettoPoint {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::edwards::CompressedEdwardsY;
-    #[cfg(feature = "group")]
-    use proptest::prelude::*;
 
-    use rand_core::{OsRng, TryRngCore};
+    use proptest::{prelude::*, property_test};
+
+    use crate::edwards::CompressedEdwardsY;
 
     #[test]
     #[cfg(feature = "serde")]
@@ -1515,13 +1532,11 @@ mod test {
         }
     }
 
-    #[test]
-    fn four_torsion_random() {
-        let mut rng = OsRng.unwrap_err();
-        let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
+    #[property_test]
+    fn four_torsion_random(P: RistrettoPoint) {
         let P_coset = P.coset4();
         for point in P_coset {
-            assert_eq!(P, RistrettoPoint(point));
+            prop_assert_eq!(P, RistrettoPoint(point));
         }
     }
 
@@ -1840,81 +1855,60 @@ mod test {
         }
     }
 
-    #[test]
-    fn random_roundtrip() {
-        let mut rng = OsRng.unwrap_err();
-        for _ in 0..100 {
-            let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
-            let compressed_P = P.compress();
-            let Q = compressed_P.decompress().unwrap();
-            assert_eq!(P, Q);
-        }
+    #[property_test]
+    fn random_roundtrip(P: RistrettoPoint) {
+        let compressed_P = P.compress();
+        let Q = compressed_P.decompress().unwrap();
+        prop_assert_eq!(P, Q);
     }
 
-    #[test]
+    #[property_test]
     #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
-    fn double_and_compress_1024_random_points() {
+    fn double_and_compress_1024_random_points(mut points: Vec<RistrettoPoint>) {
         use group::Group;
-        let mut rng = OsRng;
 
-        let mut points: Vec<RistrettoPoint> = (0..1024)
-            .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
-            .collect();
-        points[500] = <RistrettoPoint as Group>::identity();
+        if !points.is_empty() {
+            let pos = points.len() / 2;
+            points[pos] = <RistrettoPoint as Group>::identity();
+        }
 
         let compressed = RistrettoPoint::double_and_compress_batch(&points);
 
         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
-            assert_eq!(*P2_compressed, (P + P).compress());
+            prop_assert_eq!(*P2_compressed, (P + P).compress());
         }
     }
 
+    #[property_test]
     #[cfg(feature = "group")]
-    proptest! {
-        #[test]
-        fn multiply_double_and_compress_random_points(
-            p1 in any::<[u8; 64]>(),
-            p2 in any::<[u8; 64]>(),
-            s1 in any::<[u8; 32]>(),
-            s2 in any::<[u8; 32]>(),
-        ) {
-            use group::Group;
+    fn multiply_double_and_compress_random_points(
+        p1: RistrettoPoint,
+        p2: RistrettoPoint,
+        s1: Scalar,
+        s2: Scalar,
+    ) {
+        use group::Group;
 
-            let scalars = [
-                Scalar::from_bytes_mod_order(s1),
-                Scalar::ZERO,
-                Scalar::from_bytes_mod_order(s2),
-            ];
+        let scalars = [s1, Scalar::ZERO, s2];
+        let points = [p1, <RistrettoPoint as Group>::identity(), p2];
 
-            let points = [
-                RistrettoPoint::from_uniform_bytes(&p1),
-                <RistrettoPoint as Group>::identity(),
-                RistrettoPoint::from_uniform_bytes(&p2),
-            ];
+        let multiplied_points: [_; 3] = core::array::from_fn(|i| scalars[i].div_by_2() * points[i]);
+        let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
 
-            let multiplied_points: [_; 3] =
-                core::array::from_fn(|i| scalars[i].div_by_2() * points[i]);
-            let compressed = RistrettoPoint::double_and_compress_batch(&multiplied_points);
-
-            for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {
-                prop_assert_eq!(P2_compressed, (s * P).compress());
-            }
+        for ((s, P), P2_compressed) in scalars.iter().zip(points).zip(compressed) {
+            prop_assert_eq!(P2_compressed, (s * P).compress());
         }
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-        let mut rng = rand::rng();
-
-        let static_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_scalars = (0..128)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar(
+        #[strategy = any::<Vec<Scalar>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len))
+        })]
+        (static_scalars, dynamic_scalars): (Vec<Scalar>, Vec<Scalar>),
+    ) {
         let check_scalar: Scalar = static_scalars
             .iter()
             .chain(dynamic_scalars.iter())
@@ -1932,8 +1926,7 @@ mod test {
 
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
 
-        assert_eq!(precomputation.len(), 128);
-        assert!(!precomputation.is_empty());
+        prop_assert_eq!(precomputation.len(), static_scalars.len());
 
         let P = precomputation.vartime_mixed_multiscalar_mul(
             &static_scalars,
@@ -1949,32 +1942,22 @@ mod test {
 
         let R = RistrettoPoint::mul_base(&check_scalar);
 
-        assert_eq!(P.compress(), R.compress());
-        assert_eq!(Q.compress(), R.compress());
+        prop_assert_eq!(P.compress(), R.compress());
+        prop_assert_eq!(Q.compress(), R.compress());
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn partial_precomputed_mixed_multiscalar_empty() {
-        let mut rng = rand::rng();
-
-        let n_static = 16;
-        let n_dynamic = 8;
-
-        let static_points = (0..n_static)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn partial_precomputed_mixed_multiscalar_empty(
+        static_points: Vec<RistrettoPoint>,
+        #[strategy = any::<Vec<RistrettoPoint>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len))
+        })]
+        (dynamic_points, dynamic_scalars): (Vec<RistrettoPoint>, Vec<Scalar>),
+    ) {
         // Use zero scalars
         let static_scalars = Vec::new();
-
-        let dynamic_points = (0..n_dynamic)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_scalars = (0..n_dynamic)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
 
         // Compute the linear combination using precomputed multiscalar multiplication
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
@@ -1989,38 +1972,27 @@ mod test {
         for i in 0..static_scalars.len() {
             result_manual += static_points[i] * static_scalars[i];
         }
-        for i in 0..n_dynamic {
+        for i in 0..dynamic_scalars.len() {
             result_manual += dynamic_points[i] * dynamic_scalars[i];
         }
 
-        assert_eq!(result_multiscalar, result_manual);
+        prop_assert_eq!(result_multiscalar, result_manual);
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn partial_precomputed_mixed_multiscalar() {
-        let mut rng = rand::rng();
-
-        let n_static = 16;
-        let n_dynamic = 8;
-
-        let static_points = (0..n_static)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        // Use one fewer scalars
-        let static_scalars = (0..n_static - 1)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_points = (0..n_dynamic)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        let dynamic_scalars = (0..n_dynamic)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn partial_precomputed_mixed_multiscalar(
+        #[strategy = any::<Vec<RistrettoPoint>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len.saturating_sub(1)))
+        })]
+        (static_points, static_scalars): (Vec<RistrettoPoint>, Vec<Scalar>),
+        #[strategy = any::<Vec<RistrettoPoint>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len))
+        })]
+        (dynamic_points, dynamic_scalars): (Vec<RistrettoPoint>, Vec<Scalar>),
+    ) {
         // Compute the linear combination using precomputed multiscalar multiplication
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
         let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
@@ -2034,29 +2006,22 @@ mod test {
         for i in 0..static_scalars.len() {
             result_manual += static_points[i] * static_scalars[i];
         }
-        for i in 0..n_dynamic {
+        for i in 0..dynamic_scalars.len() {
             result_manual += dynamic_points[i] * dynamic_scalars[i];
         }
 
-        assert_eq!(result_multiscalar, result_manual);
+        prop_assert_eq!(result_multiscalar, result_manual);
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn partial_precomputed_multiscalar() {
-        let mut rng = rand::rng();
-
-        let n_static = 16;
-
-        let static_points = (0..n_static)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
-        // Use one fewer scalars
-        let static_scalars = (0..n_static - 1)
-            .map(|_| Scalar::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn partial_precomputed_multiscalar(
+        #[strategy = any::<Vec<RistrettoPoint>>().prop_flat_map(|v1| {
+            let len = v1.len();
+            (Just(v1), prop::collection::vec(any::<Scalar>(), len.saturating_sub(1)))
+        })]
+        (static_points, static_scalars): (Vec<RistrettoPoint>, Vec<Scalar>),
+    ) {
         // Compute the linear combination using precomputed multiscalar multiplication
         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
         let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
@@ -2067,20 +2032,12 @@ mod test {
             result_manual += static_points[i] * static_scalars[i];
         }
 
-        assert_eq!(result_multiscalar, result_manual);
+        prop_assert_eq!(result_multiscalar, result_manual);
     }
 
-    #[test]
+    #[property_test]
     #[cfg(feature = "alloc")]
-    fn partial_precomputed_multiscalar_empty() {
-        let mut rng = rand::rng();
-
-        let n_static = 16;
-
-        let static_points = (0..n_static)
-            .map(|_| RistrettoPoint::random(&mut rng))
-            .collect::<Vec<_>>();
-
+    fn partial_precomputed_multiscalar_empty(static_points: Vec<RistrettoPoint>) {
         // Use zero scalars
         let static_scalars = Vec::new();
 
@@ -2094,6 +2051,6 @@ mod test {
             result_manual += static_points[i] * static_scalars[i];
         }
 
-        assert_eq!(result_multiscalar, result_manual);
+        prop_assert_eq!(result_multiscalar, result_manual);
     }
 }

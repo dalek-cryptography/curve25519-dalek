@@ -197,15 +197,33 @@ impl Scalar29 {
         }
 
         // conditionally add l if the difference is negative
-        let mut carry: u32 = 0;
-        for i in 0..9 {
-            let underflow = Choice::from((borrow >> 31) as u8);
-            let addend = u32::conditional_select(&0, &constants::L[i], underflow);
-            carry = (carry >> 29) + difference[i] + addend;
-            difference[i] = carry & mask;
-        }
-
+        difference.conditional_add_l(Choice::from((borrow >> 31) as u8));
         difference
+    }
+
+    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> u32 {
+        let mut carry: u32 = 0;
+        let mask = (1u32 << 29) - 1;
+
+        for i in 0..9 {
+            let addend = u32::conditional_select(&0, &constants::L[i], condition);
+            carry = (carry >> 29) + self[i] + addend;
+            self[i] = carry & mask;
+        }
+        carry
+    }
+
+    /// Compute a raw in-place carrying right shift over the limbs.
+    #[inline(always)]
+    pub(crate) fn shr1_assign(&mut self) -> u32 {
+        let mut carry: u32 = 0;
+        for i in (0..9).rev() {
+            let limb = self[i];
+            let next_carry = limb & 1;
+            self[i] = (limb >> 1) | (carry << 28);
+            carry = next_carry;
+        }
+        carry
     }
 
     /// Compute `a * b`.

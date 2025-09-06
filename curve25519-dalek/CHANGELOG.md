@@ -7,7 +7,13 @@ major series.
 
 ## Unreleased
 
-* Add Lizard bytes-to-point injection for Ristretto. Gated under `lizard`.
+* Add Lizard encode/decode-to/from-Ristretto functions. Gated under the `lizard` feature.
+
+## 5.0.0-pre.1
+
+* Rename `Scalar::batch_invert` -> `Scalar::invert_batch` for consistency. Also make it no-alloc.
+* Add an allocating batch inversion called `Scalar::invert_batch_alloc`.
+* Add `Scalar::div_by_2`
 
 ## 5.0.0-pre.0
 

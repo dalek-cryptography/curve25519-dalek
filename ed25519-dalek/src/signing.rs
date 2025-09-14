@@ -34,6 +34,8 @@ use ed25519::signature::{KeypairRef, MultipartSigner, MultipartVerifier, Signer,
 #[cfg(feature = "digest")]
 use crate::context::Context;
 #[cfg(feature = "digest")]
+use curve25519_dalek::digest::Update;
+#[cfg(feature = "digest")]
 use signature::DigestSigner;
 
 #[cfg(feature = "zeroize")]
@@ -589,10 +591,15 @@ impl MultipartSigner<Signature> for SigningKey {
 #[cfg(feature = "digest")]
 impl<D> DigestSigner<D, Signature> for SigningKey
 where
-    D: Digest<OutputSize = U64>,
+    D: Digest<OutputSize = U64> + Update,
 {
-    fn try_sign_digest(&self, msg_digest: D) -> Result<Signature, SignatureError> {
-        self.sign_prehashed(msg_digest, None)
+    fn try_sign_digest<F: Fn(&mut D) -> Result<(), SignatureError>>(
+        &self,
+        f: F,
+    ) -> Result<Signature, SignatureError> {
+        let mut digest = D::new();
+        f(&mut digest)?;
+        self.sign_prehashed(digest, None)
     }
 }
 
@@ -607,10 +614,15 @@ where
 #[cfg(feature = "digest")]
 impl<D> DigestSigner<D, Signature> for Context<'_, '_, SigningKey>
 where
-    D: Digest<OutputSize = U64>,
+    D: Digest<OutputSize = U64> + Update,
 {
-    fn try_sign_digest(&self, msg_digest: D) -> Result<Signature, SignatureError> {
-        self.key().sign_prehashed(msg_digest, Some(self.value()))
+    fn try_sign_digest<F: Fn(&mut D) -> Result<(), SignatureError>>(
+        &self,
+        f: F,
+    ) -> Result<Signature, SignatureError> {
+        let mut digest = D::new();
+        f(&mut digest)?;
+        self.key().sign_prehashed(digest, Some(self.value()))
     }
 }
 

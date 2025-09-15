@@ -90,6 +90,9 @@ pub(crate) mod backend;
 // Generic code for window lookups
 pub(crate) mod window;
 
+#[cfg(feature = "lizard")]
+pub mod lizard;
+
 pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
 };

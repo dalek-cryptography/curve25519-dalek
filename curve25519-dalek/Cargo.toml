@@ -34,6 +34,7 @@ features = [
     "digest",
     "legacy_compatibility",
     "group-bits",
+    "zerocopy",
 ]
 
 [dev-dependencies]
@@ -68,6 +69,9 @@ serde = { version = "1.0", default-features = false, optional = true, features =
     "derive",
 ] }
 zeroize = { version = "1", default-features = false, optional = true }
+zerocopy = { version = "0.8", default-features = false, optional = true, features = [
+    "derive"
+] }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 cpufeatures = "0.2.17"
@@ -77,12 +81,13 @@ fiat-crypto = { version = "0.3.0", default-features = false }
 
 [features]
 default = ["alloc", "precomputed-tables", "zeroize"]
-alloc = ["zeroize?/alloc"]
+alloc = ["zerocopy?/alloc", "zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
 digest = ["dep:digest"]
+zerocopy = ["dep:zerocopy"]
 
 [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
 curve25519-dalek-derive = "0.1"

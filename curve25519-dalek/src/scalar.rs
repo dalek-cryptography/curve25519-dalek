@@ -146,6 +146,9 @@ use subtle::CtOption;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+#[cfg(test)]
+use proptest::{arbitrary::Arbitrary, strategy::BoxedStrategy};
+
 use crate::backend;
 use crate::constants;
 
@@ -1428,9 +1431,24 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 }
 
 #[cfg(test)]
+impl Arbitrary for Scalar {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        use proptest::prelude::*;
+
+        Strategy::prop_map(any::<[u8; 32]>(), |bytes| {
+            Scalar::from_bytes_mod_order(bytes)
+        })
+        .boxed()
+    }
+}
+
+#[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use rand_core::RngCore;
+    use proptest::{prelude::*, property_test};
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1588,14 +1606,10 @@ pub(crate) mod test {
         assert_eq!(*x, y);
     }
 
-    #[test]
-    fn non_adjacent_form_random() {
-        let mut rng = rand::rng();
-        for _ in 0..1_000 {
-            let x = Scalar::random(&mut rng);
-            for w in &[5, 6, 7, 8] {
-                non_adjacent_form_iter(*w, &x);
-            }
+    #[property_test]
+    fn non_adjacent_form_random(x: Scalar) {
+        for w in &[5, 6, 7, 8] {
+            non_adjacent_form_iter(*w, &x);
         }
     }
 
@@ -2118,38 +2132,24 @@ pub(crate) mod test {
     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
     // was reduced and b was clamped and unreduced. This checks that was always well-defined.
-    #[test]
-    fn test_mul_reduction_invariance() {
-        let mut rng = rand::rng();
+    #[property_test]
+    fn test_mul_reduction_invariance(a_bytes: [u8; 32], b_bytes: [u8; 32], c_bytes: [u8; 32]) {
+        // Also define c that's clamped. We'll make sure that clamping doesn't affect
+        // computation
+        let a = Scalar { bytes: a_bytes };
+        let b = Scalar { bytes: b_bytes };
+        let c = Scalar {
+            bytes: clamp_integer(c_bytes),
+        };
 
-        for _ in 0..10 {
-            // Also define c that's clamped. We'll make sure that clamping doesn't affect
-            // computation
-            let (a, b, c) = {
-                let mut a_bytes = [0u8; 32];
-                let mut b_bytes = [0u8; 32];
-                let mut c_bytes = [0u8; 32];
-                rng.fill_bytes(&mut a_bytes);
-                rng.fill_bytes(&mut b_bytes);
-                rng.fill_bytes(&mut c_bytes);
-                (
-                    Scalar { bytes: a_bytes },
-                    Scalar { bytes: b_bytes },
-                    Scalar {
-                        bytes: clamp_integer(c_bytes),
-                    },
-                )
-            };
-
-            // Make sure this is the same product no matter how you cut it
-            let reduced_mul_ab = a.reduce() * b.reduce();
-            let reduced_mul_ac = a.reduce() * c.reduce();
-            assert_eq!(a * b, reduced_mul_ab);
-            assert_eq!(a.reduce() * b, reduced_mul_ab);
-            assert_eq!(a * b.reduce(), reduced_mul_ab);
-            assert_eq!(a * c, reduced_mul_ac);
-            assert_eq!(a.reduce() * c, reduced_mul_ac);
-            assert_eq!(a * c.reduce(), reduced_mul_ac);
-        }
+        // Make sure this is the same product no matter how you cut it
+        let reduced_mul_ab = a.reduce() * b.reduce();
+        let reduced_mul_ac = a.reduce() * c.reduce();
+        prop_assert_eq!(a * b, reduced_mul_ab);
+        prop_assert_eq!(a.reduce() * b, reduced_mul_ab);
+        prop_assert_eq!(a * b.reduce(), reduced_mul_ab);
+        prop_assert_eq!(a * c, reduced_mul_ac);
+        prop_assert_eq!(a.reduce() * c, reduced_mul_ac);
+        prop_assert_eq!(a * c.reduce(), reduced_mul_ac);
     }
 }

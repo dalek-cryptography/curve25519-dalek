@@ -94,6 +94,9 @@ pub use crate::{
     edwards::EdwardsPoint, montgomery::MontgomeryPoint, ristretto::RistrettoPoint, scalar::Scalar,
 };
 
+#[cfg(feature = "hazmat")]
+pub mod hazmat;
+
 // Build time diagnostics for validation
 #[cfg(curve25519_dalek_diagnostics = "build")]
 mod diagnostics;

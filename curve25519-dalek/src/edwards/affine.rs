@@ -56,13 +56,42 @@ impl Eq for AffinePoint {}
 impl DefaultIsZeroes for AffinePoint {}
 
 impl AffinePoint {
+    /// Create an `AffinePoint` from its coordinates.
+    ///
+    /// Returns `None` if the point is off-curve.
+    ///
+    /// This function runs in variable time.
+    #[cfg(feature = "hazmat")]
+    pub const fn from_coordinates(x: FieldElement, y: FieldElement) -> Option<Self> {
+        let x_sq = x.const_mul(&x);
+        let y_sq = y.const_mul(&y);
+
+        let mut lhs = crate::constants::MINUS_ONE.const_mul(&x_sq);
+        lhs.const_add_assign(&y_sq);
+
+        let mut rhs = FieldElement::ONE;
+        rhs.const_add_assign(&crate::constants::EDWARDS_D.const_mul(&x_sq.const_mul(&y_sq)));
+
+        let lhs: [u8; 32] = lhs.to_bytes();
+        let rhs: [u8; 32] = rhs.to_bytes();
+
+        let mut i = 0;
+        while i < 32 {
+            if lhs[i] != rhs[i] {
+                return None;
+            }
+            i += 1;
+        }
+        Some(Self { x, y })
+    }
+
     /// Convert to extended coordinates.
-    pub fn to_edwards(self) -> EdwardsPoint {
+    pub const fn to_edwards(self) -> EdwardsPoint {
         EdwardsPoint {
             X: self.x,
             Y: self.y,
             Z: FieldElement::ONE,
-            T: &self.x * &self.y,
+            T: self.x.const_mul(&self.y),
         }
     }
 

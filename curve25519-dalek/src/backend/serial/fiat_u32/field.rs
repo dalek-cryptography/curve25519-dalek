@@ -70,11 +70,17 @@ impl Zeroize for FieldElement2625 {
     }
 }
 
-impl<'b> AddAssign<&'b FieldElement2625> for FieldElement2625 {
-    fn add_assign(&mut self, rhs: &'b FieldElement2625) {
+impl FieldElement2625 {
+    pub(crate) const fn const_add_assign(&mut self, rhs: &FieldElement2625) {
         let mut result_loose = fiat_25519_loose_field_element([0; 10]);
         fiat_25519_add(&mut result_loose, &self.0, &rhs.0);
         fiat_25519_carry(&mut self.0, &result_loose);
+    }
+}
+
+impl<'b> AddAssign<&'b FieldElement2625> for FieldElement2625 {
+    fn add_assign(&mut self, rhs: &'b FieldElement2625) {
+        self.const_add_assign(rhs)
     }
 }
 
@@ -118,9 +124,8 @@ impl<'b> MulAssign<&'b FieldElement2625> for FieldElement2625 {
     }
 }
 
-impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
-    type Output = FieldElement2625;
-    fn mul(self, rhs: &'b FieldElement2625) -> FieldElement2625 {
+impl FieldElement2625 {
+    pub(crate) const fn const_mul(&self, rhs: &FieldElement2625) -> FieldElement2625 {
         let mut self_loose = fiat_25519_loose_field_element([0; 10]);
         fiat_25519_relax(&mut self_loose, &self.0);
         let mut rhs_loose = fiat_25519_loose_field_element([0; 10]);
@@ -128,6 +133,13 @@ impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
         let mut output = FieldElement2625::ZERO;
         fiat_25519_carry_mul(&mut output.0, &self_loose, &rhs_loose);
         output
+    }
+}
+
+impl<'a, 'b> Mul<&'b FieldElement2625> for &'a FieldElement2625 {
+    type Output = FieldElement2625;
+    fn mul(self, rhs: &'b FieldElement2625) -> FieldElement2625 {
+        self.const_mul(rhs)
     }
 }
 
@@ -241,7 +253,7 @@ impl FieldElement2625 {
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
-    pub fn to_bytes(self) -> [u8; 32] {
+    pub const fn to_bytes(self) -> [u8; 32] {
         let mut bytes = [0u8; 32];
         fiat_25519_to_bytes(&mut bytes, &self.0);
         bytes
@@ -268,4 +280,9 @@ impl FieldElement2625 {
         fiat_25519_carry(&mut output.0, &output_loose);
         output
     }
+}
+
+#[cfg(feature = "hazmat")]
+impl crate::hazmat::UnderlyingCapacity for FieldElement2625 {
+    type Capacity = typenum::U3;
 }

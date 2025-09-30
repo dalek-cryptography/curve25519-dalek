@@ -206,9 +206,9 @@ use crate::scalar::Scalar;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::traits::BasepointTable;
-use crate::traits::Identity;
+use crate::traits::{Identity, MultiscalarMul};
 #[cfg(feature = "alloc")]
-use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
+use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 // ------------------------------------------------------------------------
 // Compressed points
@@ -1007,19 +1007,30 @@ define_mul_variants!(LHS = Scalar, RHS = RistrettoPoint, Output = RistrettoPoint
 // These use iterator combinators to unwrap the underlying points and
 // forward to the EdwardsPoint implementations.
 
-#[cfg(feature = "alloc")]
 impl MultiscalarMul for RistrettoPoint {
     type Point = RistrettoPoint;
 
-    fn multiscalar_mul<I, J>(scalars: I, points: J) -> RistrettoPoint
+    fn multiscalar_mul<const N: usize>(
+        points_and_scalars: &[(RistrettoPoint, Scalar); N],
+    ) -> RistrettoPoint {
+        let points_and_scalars: [_; N] = core::array::from_fn(|index| {
+            let (p, s) = points_and_scalars[index];
+            (p.0, s)
+        });
+        RistrettoPoint(EdwardsPoint::multiscalar_mul(&points_and_scalars))
+    }
+
+    #[cfg(feature = "alloc")]
+    fn multiscalar_mul_alloc<I, P, S>(points_and_scalars: I) -> RistrettoPoint
     where
-        I: IntoIterator,
-        I::Item: Borrow<Scalar>,
-        J: IntoIterator,
-        J::Item: Borrow<RistrettoPoint>,
+        I: IntoIterator<Item = (P, S)>,
+        P: Borrow<RistrettoPoint>,
+        S: Borrow<Scalar>,
     {
-        let extended_points = points.into_iter().map(|P| P.borrow().0);
-        RistrettoPoint(EdwardsPoint::multiscalar_mul(scalars, extended_points))
+        let points_and_scalars = points_and_scalars
+            .into_iter()
+            .map(|(p, s)| (p.borrow().0, s));
+        RistrettoPoint(EdwardsPoint::multiscalar_mul_alloc(points_and_scalars))
     }
 }
 

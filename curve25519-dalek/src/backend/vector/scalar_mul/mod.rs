@@ -18,7 +18,6 @@ pub mod variable_base;
 pub mod vartime_double_base;
 
 #[allow(missing_docs)]
-#[cfg(feature = "alloc")]
 pub mod straus;
 
 #[allow(missing_docs)]

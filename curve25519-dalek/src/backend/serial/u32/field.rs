@@ -434,7 +434,7 @@ impl FieldElement2625 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[allow(clippy::identity_op)]
-    pub fn to_bytes(self) -> [u8; 32] {
+    pub const fn to_bytes(self) -> [u8; 32] {
         let inp = &self.0;
         // Reduce the value represented by `in` to the range [0,2*p)
         let mut h: [u32; 10] = FieldElement2625::reduce([
@@ -604,4 +604,9 @@ impl FieldElement2625 {
         }
         FieldElement2625::reduce(coeffs)
     }
+}
+
+#[cfg(feature = "hazmat")]
+impl crate::hazmat::UnderlyingCapacity for FieldElement2625 {
+    type Capacity = typenum::U3;
 }

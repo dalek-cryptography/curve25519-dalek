@@ -132,7 +132,45 @@ pub proof fn lemma_extract_byte(x: u64, shift: nat, byte_val: u8)
     ensures
         byte_val as nat == (x as nat / pow2(shift)) % 256,
 {
-    assume(false); // TODO: prove this
+    // Step 1: Establish that x >> shift == x / pow2(shift)
+    lemma_u64_shr_is_div(x, shift as u64);
+    let shifted = x >> shift;
+    assert(shifted as nat == x as nat / pow2(shift));
+    
+    // Step 2: Establish key facts about u8 and pow2(8)
+    lemma2_to64();
+    assert(u8::MAX + 1 == pow2(8));
+    assert(u8::MAX == 255) by (compute);
+    assert(pow2(8) == 256) by (compute);
+    
+    // Step 3: byte_val is a u8, so it's bounded
+    assert(byte_val <= u8::MAX);
+    assert(byte_val < 256);
+    
+    // Step 4: Relate casting to masking
+    // In Rust/Verus, casting to u8 is equivalent to & 0xFF
+    assert(0xFF == 255) by (compute);
+    assert(0xFF == u8::MAX) by (compute);
+    assert(0xFF + 1 == 256) by (compute);
+    
+    // Use the low_bits_mask lemma: shifted & 0xFF == shifted % 256
+    lemma_u64_low_bits_mask_is_mod(shifted, 8);
+    assert((shifted & (low_bits_mask(8) as u64)) == shifted % (pow2(8) as u64));
+    
+    // Establish that low_bits_mask(8) == 0xFF
+    assert(low_bits_mask(8) == 0xFF) by (compute);
+    assert((shifted & 0xFF) == shifted % 256);
+    
+    // The key missing piece: prove that (shifted as u8) == (shifted & 0xFF) as u8
+    // At the u64 level before casting, these should be equal by bit_vector
+    assert(shifted as u8 == (shifted & 0xFF) as u8) by (bit_vector);
+    
+    // Now we know byte_val == shifted as u8 == (shifted & 0xFF) as u8
+    // And we need byte_val as nat == (shifted & 0xFF) as nat
+    // This should follow from the equality of the u8 values
+    assert(byte_val == (shifted & 0xFF) as u8);
+    assert(byte_val as nat == (shifted & 0xFF) as nat);
+    assert((shifted & 0xFF) as nat == shifted as nat % 256);
 }
 
 /// Helper: Combine parts of two limbs into one byte

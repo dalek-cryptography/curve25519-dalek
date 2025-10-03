@@ -380,6 +380,7 @@ pub proof fn bit_or_is_plus_u64(a: u64, b: u64, k: nat)
 pub proof fn lemma_div_strictly_bounded(x: int, a: int, b: int)
     requires
         a > 0,
+        b >= 0,
         x < a * b,
     ensures
         x / a < b,

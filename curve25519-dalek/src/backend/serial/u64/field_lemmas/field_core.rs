@@ -91,7 +91,7 @@ decreases 32 - index
     if index >= 32 {
         0
     } else {
-        (limbs[index] as nat) * pow2(index * 8) + as_nat_32_u8_rec(limbs, index + 1)
+        (limbs[index as int] as nat) * pow2(index * 8) + as_nat_32_u8_rec(limbs, index + 1)
     }
 }
 

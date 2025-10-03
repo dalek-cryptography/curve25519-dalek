@@ -315,7 +315,7 @@ impl FieldElement51 {
         
         proof {
             // Prove q <= 2 after first iteration
-            lemma_add_preserves_bound(limbs[0], 1u64 << 52, 19);
+            //lemma_add_preserves_bound(limbs[0], 1u64 << 52, 19);
             lemma_shr_mono_u64((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
             assert((((1u64 << 52) + 19) as u64) >> 51 == 2) by (compute);
             assert(q <= 2);
@@ -324,7 +324,7 @@ impl FieldElement51 {
         // Second iteration
         proof {
             assert((1u64 << 52) + 2 <= u64::MAX) by (compute);
-            lemma_add_preserves_bound(limbs[1], 1u64 << 52, q);
+            //lemma_add_preserves_bound(limbs[1], 1u64 << 52, q);
         }
         let ghost old_q = q;
         q = (limbs[1] + q) >> 51;
@@ -369,7 +369,7 @@ impl FieldElement51 {
             lemma_add_preserves_bound(limbs[4], 1u64 << 52, q);
         }
         q = (limbs[4] + q) >> 51;
-
+        let ghost reduced_limbs = limbs;
         proof {
             // Step 2: Prove that q is the correct quotient
             lemma_compute_q(reduced_limbs, q);

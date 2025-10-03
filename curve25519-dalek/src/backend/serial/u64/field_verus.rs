@@ -337,9 +337,9 @@ impl FieldElement51 {
         }
         
         // Third iteration
-        proof {
-            lemma_add_preserves_bound(limbs[2], 1u64 << 52, q);
-        }
+        //proof {
+        //    lemma_add_preserves_bound(limbs[2], 1u64 << 52, q);
+        //}
         let ghost old_q2 = q;
         q = (limbs[2] + q) >> 51;
         
@@ -351,9 +351,9 @@ impl FieldElement51 {
         }
         
         // Fourth iteration
-        proof {
-            lemma_add_preserves_bound(limbs[3], 1u64 << 52, q);
-        }
+        //proof {
+        //    lemma_add_preserves_bound(limbs[3], 1u64 << 52, q);
+        //}
         let ghost old_q3 = q;
         q = (limbs[3] + q) >> 51;
         
@@ -365,9 +365,9 @@ impl FieldElement51 {
         }
         
         // Fifth iteration
-        proof {
-            lemma_add_preserves_bound(limbs[4], 1u64 << 52, q);
-        }
+        //proof {
+        //    lemma_add_preserves_bound(limbs[4], 1u64 << 52, q);
+        //}
         q = (limbs[4] + q) >> 51;
         let ghost reduced_limbs = limbs;
         proof {

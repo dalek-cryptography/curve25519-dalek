@@ -305,7 +305,6 @@ impl FieldElement51 {
         let mut limbs = FieldElement51::reduce(self.limbs).limbs;
         
         // Track reduced limbs for proof
-        let ghost reduced_limbs = limbs;
 
         // Compute q with overflow proofs
         // After reduce, limbs[i] < 2^52, so limbs[0] + 19 < 2^52 + 19 < 2^64

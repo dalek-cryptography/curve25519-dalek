@@ -85,13 +85,13 @@ pub open spec fn as_nat_32_u8(limbs: &[u8; 32]) -> nat {
 }
 
 
-pub open spec fn as_nat_32_u8_rec(limbs: &[u8; 32], index: int) -> nat
+pub open spec fn as_nat_32_u8_rec(limbs: &[u8; 32], index: nat) -> nat
 decreases 32 - index
 {
     if index >= 32 {
         0
     } else {
-        (limbs[index] as nat) * pow2((index * 8) as nat) + as_nat_32_u8_rec(limbs, index + 1)
+        (limbs[index] as nat) * pow2(index * 8) + as_nat_32_u8_rec(limbs, index + 1)
     }
 }
 

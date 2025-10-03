@@ -384,63 +384,10 @@ pub proof fn lemma_div_strictly_bounded(x: int, a: int, b: int)
     ensures
         x / a < b,
 {
-    // Key insight: If x < a * b, then for integer division, x / a < b
-    // This is because:
-    // - x < a * b means x <= a * b - 1 (for integers)
-    // - So x / a <= (a * b - 1) / a
-    // - And (a * b - 1) / a < b
-    
-    // We can prove this by showing that if x / a >= b, then x >= a * b, contradicting x < a * b
-    // Proof by contradiction: assume x / a >= b
-    // Then x >= a * (x / a) >= a * b (using properties of integer division)
-    // But this contradicts x < a * b
-    
-    // Actually, vstd has lemmas about division and multiplication
-    // Let's use the fundamental property: x / a < b ⟺ x < a * b (for a > 0)
-    
-    // Use vstd's division lemmas
-    // The key is: for integer division, x < a * b implies x / a < b
-    
-    // We can prove this using:
-    // 1. x < a * b
-    // 2. x / a * a <= x (by division property)
-    // 3. If x / a >= b, then x >= a * b (by multiplication), contradiction
-    
-    // For now, let's try to use existing lemmas or assume if we can't find the right one
-    // Actually, this is a fundamental property that should follow from division properties
-    
-    // Proof by contradiction: assume x / a >= b
-    if x / a >= b {
-        // By definition of division: x = a * (x / a) + (x % a)
-        lemma_fundamental_div_mod(x, a);
-        assert(x == a * (x / a) + (x % a));
-        assert(x % a >= 0);
-        assert(x % a < a);
-        
-        // If x / a >= b and a > 0, then a * (x / a) >= a * b
-        // This follows from monotonicity of multiplication with positive numbers
-        let q = x / a;
-        assert(q >= b);
-        assert(a > 0);
-        
-        // Since a > 0 and q >= b, we have a * q >= a * b
-        // Use the built-in lemma_mul_inequality which states: x <= y && z > 0 ==> x*z <= y*z
-        lemma_mul_inequality(b, q, a);
-        assert(b * a <= q * a);
-        // Commutativity of multiplication (should be automatic)
-        assert(a * b <= a * q) by (nonlinear_arith)
-            requires b * a <= q * a;
-        assert(a * q == a * (x / a));
-        
-        // Since x = a * (x / a) + (x % a) and x % a >= 0:
-        assert(x >= a * (x / a));
-        assert(x >= a * b);
-        
-        // But we have x < a * b, contradiction!
-        assert(false);
-    }
-    
-    // Therefore x / a < b
+   // (b * a) / a == b
+   lemma_div_by_multiple(b, a);
+   // x < b * a && a > 0 => x / a < (b * a) / a
+   lemma_div_by_multiple_is_strongly_ordered(x, a * b, b, a);
 }
 
 /// Lemma: Right shifting a bounded value gives a smaller bound

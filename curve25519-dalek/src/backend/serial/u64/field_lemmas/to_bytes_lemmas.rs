@@ -452,18 +452,6 @@ pub proof fn lemma_shr_bound(x: u64, n: nat, k: nat)
 // OVERFLOW HELPER LEMMAS for to_bytes
 // ============================================================================
 
-/// Simple monotonicity of right shift for u64
-/// (This is just a wrapper around the existing lemma_shr_le_u64)
-pub proof fn lemma_shr_mono_u64(a: u64, b: u64, k: u64)
-    requires
-        a <= b,
-        k < 64,
-    ensures
-        a >> k <= b >> k,
-{
-    lemma_shr_le_u64(a, b, k as nat);
-}
-
 /// If a value is less than a bound, it stays less after adding a small constant
 pub proof fn lemma_add_preserves_bound(a: u64, bound: u64, add: u64)
     requires

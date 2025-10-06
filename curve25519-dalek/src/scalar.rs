@@ -170,6 +170,7 @@ verus! {
     #[verifier::external_body]
     #[verifier::reject_recursive_types(T)]
     #[allow(dead_code)]
+    /// External wrapper for `CtOption<T>` used in Verus verification.
     pub struct ExCtOption<T>(CtOption<T>);
 
     /*** <VERIFICATION-NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
@@ -663,11 +664,9 @@ impl Scalar {
     };
    
     /* <VERIFICATION NOTE> 
-     Disabled cfg because we want to run verification for random method (correct ?)
+     Verification of random method postponed - requires rand_core feature to be enabled.
     </VERIFICATION NOTE> */
-    /* <ORIGINAL CODE> 
-     #[cfg(any(test, feature = "rand_core"))]
-     </ORIGINAL CODE> */
+    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs

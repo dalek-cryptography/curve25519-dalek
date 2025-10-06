@@ -130,8 +130,10 @@ use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
 use rand_core::TryRngCore;
 
-#[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRng;
+use rand_core::{CryptoRng, RngCore};
+
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 // #[cfg(feature = "digest")]
 // use digest::Digest;
@@ -149,45 +151,34 @@ use subtle::CtOption;
 use crate::backend;
 use crate::constants;
 
-cfg_if! {
-    if #[cfg(curve25519_dalek_backend = "fiat")] {
-        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-        ///
-        /// This is a type alias for one of the scalar types in the `backend`
-        /// module.
-        #[cfg(curve25519_dalek_bits = "32")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "32")))
-        )]
-        type UnpackedScalar = backend::serial::fiat_u32::scalar::Scalar29;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::scalar_specs::*;
 
-        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-        ///
-        /// This is a type alias for one of the scalar types in the `backend`
-        /// module.
-        #[cfg(curve25519_dalek_bits = "64")]
-        #[cfg_attr(
-            docsrs,
-            doc(cfg(all(feature = "fiat_backend", curve25519_dalek_bits = "64")))
-        )]
-        type UnpackedScalar = backend::serial::fiat_u64::scalar::Scalar52;
-    } else if #[cfg(curve25519_dalek_bits = "64")] {
-        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-        ///
-        /// This is a type alias for one of the scalar types in the `backend`
-        /// module.
-        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
-        type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
-    } else {
-        /// An `UnpackedScalar` represents an element of the field GF(l), optimized for speed.
-        ///
-        /// This is a type alias for one of the scalar types in the `backend`
-        /// module.
-        #[cfg_attr(docsrs, doc(cfg(curve25519_dalek_bits = "64")))]
-        type UnpackedScalar = backend::serial::u32::scalar::Scalar29;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::subtle_assumes::*;
+
+#[allow(unused_imports)]
+use crate::scalar_specs::*;
+
+use vstd::prelude::*;
+
+verus! {
+    /*** <VERIFICATION-NOTE> External type specification for subtle::CtOption to make it compatible with Verus </VERIFICATION-NOTE> ***/
+    #[verifier::external_type_specification]
+    #[verifier::external_body]
+    #[verifier::reject_recursive_types(T)]
+    #[allow(dead_code)]
+    pub struct ExCtOption<T>(CtOption<T>);
+
+    /*** <VERIFICATION-NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
+    #[verifier::external_body]
+    fn ct_option_new<T>(value: T, choice: Choice) -> CtOption<T> {
+        CtOption::new(value, choice)
     }
-}
+
+  
+/*** <VERIFICATION-NOTE> Focus on u64; removed all other backend types </VERIFICATION-NOTE> ***/
+type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
@@ -228,8 +219,18 @@ pub struct Scalar {
     /// public non-legacy uses, invariant #2
     /// always holds.
     ///
+    /* <VERIFICATION NOTE> 
+    Changed from pub(crate) to pub 
+    </VERIFICATION NOTE> */
+    pub bytes: [u8; 32],
+    /* <ORIGINAL CODE> 
     pub(crate) bytes: [u8; 32],
+    </ORIGINAL CODE> */
 }
+
+} // verus!
+
+verus! {
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
@@ -240,6 +241,8 @@ impl Scalar {
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
+        /*** <VERIFICATION-NOTE> We can omit debug asserts from verification (true?) </VERIFICATION-NOTE> ***/
+        #[cfg(not(verus_keep_ghost))]
         debug_assert_eq!(0u8, s[31] >> 7);
 
         s
@@ -258,10 +261,25 @@ impl Scalar {
     /// - `Some(s)`, where `s` is the `Scalar` corresponding to `bytes`,
     ///   if `bytes` is a canonical byte representation modulo the group order \\( \ell \\);
     /// - `None` if `bytes` is not a canonical byte representation.
+    /*  
+    <VERIFICATION NOTE> 
+      Refactored to use wrapper functions instead of trait functions for ct_eq and ct_option_new 
+    </VERIFICATION NOTE> */
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
-        let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
+        /* <ORIGINAL CODE> 
+          let high_bit_unset = (bytes[31] >> 7).ct_eq(&0); 
+        </ORIGINAL CODE> */
+        let high_byte_shifted = bytes[31] >> 7;
+        let high_bit_unset = ct_eq_u8(&high_byte_shifted, &0);
+        
         let candidate = Scalar { bytes };
-        CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
+        let is_canonical = candidate.is_canonical();
+        
+        /* <ORIGINAL CODE> 
+          CtOption::new(candidate, high_bit_unset & candidate.is_canonical()) 
+          </ORIGINAL CODE> */
+        let condition = choice_and(high_bit_unset, is_canonical);
+        ct_option_new(candidate, condition)
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
@@ -280,37 +298,78 @@ impl Scalar {
     }
 }
 
+} // verus!
+
+impl Eq for Scalar {}
+
+verus! {
+
+impl PartialEq for Scalar {
+    fn eq(&self, other: &Self) -> bool {
+        /* <VERIFICATION NOTE> 
+         Use wrapper function for Choice::into
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE> 
+         let result = self.ct_eq(other).into();
+         </ORIGINAL CODE> */
+        let result = choice_into(self.ct_eq(other));
+        assume(false);      
+        result
+    }
+}
+
+impl ConstantTimeEq for Scalar {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        /* <VERIFICATION NOTE> 
+         Use wrapper function for Verus compatibility instead of direct subtle call
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE> 
+         self.bytes.ct_eq(&other.bytes)
+         </ORIGINAL CODE> */
+        ct_eq_bytes32(&self.bytes, &other.bytes)
+    }
+}
+
+} // verus!
+
+verus! {
+impl Index<usize> for Scalar {
+    type Output = u8;
+
+    /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
+    fn index(&self, _index: usize) -> (result: &u8)
+        requires _index < 32
+    {
+        &(self.bytes[_index])
+    }
+}
+} // verus!
+
+/* <VERIFICATION NOTE> 
+ Could be left outside verification scope (??)
+</VERIFICATION NOTE> */
 impl Debug for Scalar {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
 
-impl Eq for Scalar {}
-impl PartialEq for Scalar {
-    fn eq(&self, other: &Self) -> bool {
-        self.ct_eq(other).into()
-    }
-}
-
-impl ConstantTimeEq for Scalar {
-    fn ct_eq(&self, other: &Self) -> Choice {
-        self.bytes.ct_eq(&other.bytes)
-    }
-}
-
-impl Index<usize> for Scalar {
-    type Output = u8;
-
-    /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
-    fn index(&self, _index: usize) -> &u8 {
-        &(self.bytes[_index])
-    }
-}
-
+verus! {
 impl<'a> MulAssign<&'a Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'a Scalar) {
-        *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
+    fn mul_assign(&mut self, _rhs: &'a Scalar) 
+    
+    {
+        /* <VERIFICATION NOTE> 
+         Store unpacked values explicityly for limbs_bounded assumption
+        </VERIFICATION NOTE> */
+        let self_unpacked = self.unpack();
+        let rhs_unpacked = _rhs.unpack();
+        assume(limbs_bounded(&self_unpacked));
+        assume(limbs_bounded(&rhs_unpacked));
+        *self = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked).pack();
+        /* <ORIGINAL CODE> 
+         *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
+         </ORIGINAL CODE> */
     }
 }
 
@@ -318,12 +377,25 @@ define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a> Mul<&'a Scalar> for &Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'a Scalar) -> Scalar {
-        UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack()
+    fn mul(self, _rhs: &'a Scalar) -> (result: Scalar) {
+        /* <VERIFICATION NOTE> 
+         Store unpacked values explicityly for limbs_bounded assumption
+        </VERIFICATION NOTE> */
+        let self_unpacked = self.unpack();
+        let rhs_unpacked = _rhs.unpack();
+        assume(limbs_bounded(&self_unpacked));
+        assume(limbs_bounded(&rhs_unpacked));
+        let result = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked).pack();
+        /* <ORIGINAL CODE> 
+         let result = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
+         </ORIGINAL CODE> */
+        assume(false);      
+        result
     }
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
+}
 
 impl<'a> AddAssign<&'a Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'a Scalar) {
@@ -382,16 +454,20 @@ impl Neg for Scalar {
     }
 }
 
+verus! {
 impl ConditionallySelectable for Scalar {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
-            bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
+            // SB NOTE: Use wrapper function for Verus compatibility instead of direct subtle call
+            // ORIGINAL: bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
+            bytes[i] = select_u8(&a.bytes[i], &b.bytes[i], choice);
         }
         Scalar { bytes }
     }
 }
+} // verus!
 
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
@@ -555,9 +631,19 @@ impl From<u128> for Scalar {
 //     }
 // }
 
+verus! {
+
+    
 impl Scalar {
     /// The scalar \\( 0 \\).
+   // pub const ZERO: Self = Self { bytes: [0u8; 32] };
+   /* <VERIFICATION NOTE> 
+    Changed to explicit initialization
+    </VERIFICATION NOTE> */
+   /* <ORIGINAL CODE> 
     pub const ZERO: Self = Self { bytes: [0u8; 32] };
+    </ORIGINAL CODE> */
+   pub const ZERO: Scalar = Scalar { bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] };
 
     /// The scalar \\( 1 \\).
     pub const ONE: Self = Self {
@@ -566,8 +652,13 @@ impl Scalar {
             0, 0, 0,
         ],
     };
-
-    #[cfg(any(test, feature = "rand_core"))]
+   
+    /* <VERIFICATION NOTE> 
+     Disabled cfg because we want to run verification for random method (correct ?)
+    </VERIFICATION NOTE> */
+    /* <ORIGINAL CODE> 
+     #[cfg(any(test, feature = "rand_core"))]
+     </ORIGINAL CODE> */
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -589,7 +680,13 @@ impl Scalar {
     /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
+    /* <VERIFICATION NOTE> 
+     Added verifier::external_body annotation
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> (result: Self)
+        ensures is_random_scalar(&result)
+    {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
@@ -701,7 +798,11 @@ impl Scalar {
     pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.bytes
     }
+}
+} // verus!
 
+verus! {
+impl Scalar {
     /// Given a nonzero `Scalar`, compute its multiplicative inverse.
     ///
     /// # Warning
@@ -742,7 +843,12 @@ impl Scalar {
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
     }
+}
+} // verus!
 
+verus! {
+
+impl Scalar {
     /// Given a slice of nonzero (possibly secret) `Scalar`s,
     /// compute their inverses in a batch.
     ///
@@ -779,8 +885,18 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
+    /* <VERIFICATION NOTE> 
+     Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
+    </VERIFICATION NOTE> */
     #[cfg(feature = "alloc")]
-    pub fn batch_invert(inputs: &mut [Scalar]) -> Scalar {
+    pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
+    ensures
+        // Result is the modular inverse of the product of all original inputs
+        is_inverse_of_nat(&result, product_of_scalars(old(inputs)@)),
+        // Each input is replaced with its inverse
+        forall|i: int| 0 <= i < inputs.len() ==> 
+            #[trigger] is_inverse(&(#[trigger] old(inputs)[i]), &(#[trigger] inputs[i])),
+    {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
         // it's not easy to write it generically, since here we want
@@ -789,49 +905,230 @@ impl Scalar {
         // field elements.
 
         let n = inputs.len();
-        let one: UnpackedScalar = Scalar::ONE.unpack().as_montgomery();
+        let one_unpacked = Scalar::ONE.unpack();
+        
+        proof {
+            assume(limbs_bounded(&one_unpacked));
+        }
+        
+        let one: UnpackedScalar = one_unpacked.as_montgomery();
+        
+        proof {
+            assume(limbs_bounded(&one));
+        }
 
-        let mut scratch = vec![one; n];
-
+        /* <VERIFICATION NOTE> 
+         Build vec manually instead of vec![one; n] for Verus compatibility
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE> 
+         let mut scratch = vec![one; n];
+         </ORIGINAL CODE> */
+        let mut scratch = Vec::new();
+        for _ in 0..n {
+            scratch.push(one);
+        }
+        
+    
         // Keep an accumulator of all of the previous products
-        let mut acc = Scalar::ONE.unpack().as_montgomery();
+        let acc_unpacked = Scalar::ONE.unpack();
+        
+        proof {
+            assume(scratch.len() == n);
+            assume(limbs_bounded(&acc_unpacked));
+        }
+        
+        let mut acc = acc_unpacked.as_montgomery();
+        
+        proof {
+            assume(limbs_bounded(&acc));
+        }
 
         // Pass through the input vector, recording the previous
         // products in the scratch space
-        for (input, scratch) in inputs.iter_mut().zip(scratch.iter_mut()) {
-            *scratch = acc;
+        /* <VERIFICATION NOTE> 
+         Rewritten with index loop instead of .zip() for Verus compatibility
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE> 
+         for (input, scratch) in inputs.iter_mut().zip(scratch.iter_mut()) {
+             *scratch = acc;
+        //     // Avoid unnecessary Montgomery multiplication in second pass by
+        //     // keeping inputs in Montgomery form
+             let tmp = input.unpack().as_montgomery();
+             *input = tmp.pack();
+             acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
+         }
+        </ORIGINAL CODE> */
+        for i in 0..n
+             invariant scratch.len() == n, n == inputs.len(), limbs_bounded(&acc)
+        {
+            scratch[i] = acc;
 
             // Avoid unnecessary Montgomery multiplication in second pass by
             // keeping inputs in Montgomery form
-            let tmp = input.unpack().as_montgomery();
-            *input = tmp.pack();
+            let input_unpacked = inputs[i].unpack();
+            
+            proof {
+                assume(limbs_bounded(&input_unpacked));
+            }
+            
+            let tmp = input_unpacked.as_montgomery();
+            
+            proof {
+                assume(limbs_bounded(&tmp));
+            }
+            
+            inputs[i] = tmp.pack();
             acc = UnpackedScalar::montgomery_mul(&acc, &tmp);
+            
+            proof {
+                assume(limbs_bounded(&acc));
+            }
+        }
+        
+        proof {
+            // Assert that all scratch elements have bounded limbs
+            assume(forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]));
         }
 
         // acc is nonzero iff all inputs are nonzero
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(acc.pack() != Scalar::ZERO);
 
         // Compute the inverse of all products
-        acc = acc.montgomery_invert().from_montgomery();
+        // ORIGINAL CODE: acc = acc.montgomery_invert().from_montgomery();
+        acc = acc.montgomery_invert();
+        
+        proof {
+            assume(limbs_bounded(&acc));
+        }
+        
+        acc = acc.from_montgomery();
+        
+        proof {
+            assume(limbs_bounded(&acc));
+        }
 
         // We need to return the product of all inverses later
         let ret = acc.pack();
 
         // Pass through the vector backwards to compute the inverses
         // in place
+        /* <VERIFICATION NOTE> 
+         Manual reverse loop instead of .rev() for Verus compatibility
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE> 
         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.iter().rev()) {
-            let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
-            *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
+             let tmp = UnpackedScalar::montgomery_mul(&acc, &input.unpack());
+             *input = UnpackedScalar::montgomery_mul(&acc, scratch).pack();
+             acc = tmp;
+         }
+        </ORIGINAL CODE> */
+        let mut i: usize = n;
+        while i > 0
+            invariant 
+                scratch.len() == n, 
+                n == inputs.len(), 
+                i <= n,
+                limbs_bounded(&acc),
+                forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]),
+            decreases i
+        {
+            i = i - 1;
+            let input_unpacked = inputs[i].unpack();
+            
+            proof {
+                assume(limbs_bounded(&input_unpacked));
+            }
+            
+            let tmp = UnpackedScalar::montgomery_mul(&acc, &input_unpacked);
+            
+            proof {
+                assume(limbs_bounded(&tmp));
+            }
+            
+            inputs[i] = UnpackedScalar::montgomery_mul(&acc, &scratch[i]).pack();
             acc = tmp;
         }
 
         // #[cfg(feature = "zeroize")]
         // Zeroize::zeroize(&mut scratch);
 
+        proof {
+            // Assume the postconditions
+            assume(is_inverse_of_nat(&ret, product_of_scalars(old(inputs)@)));
+            assume(forall|i: int| 0 <= i < inputs.len() ==> 
+                #[trigger] is_inverse(&(#[trigger] old(inputs)[i]), &(#[trigger] inputs[i])));
+        }
+
         ret
     }
 
+    /// Get the bits of the scalar as an array, in little-endian order
+    /* <VERIFICATION NOTE> 
+     This is a Verus-compatible version of bits_le from below that returns an array instead of an iterator
+    </VERIFICATION NOTE> */
+    pub(crate) fn bits_le_v(&self) -> (result: [bool; 256])
+    ensures
+        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
+    {
+        let mut bits = [false; 256];
+        let mut i: usize = 0;
+        
+        while i < 256
+            invariant
+                i <= 256,
+                bits.len() == 256,
+                self.bytes.len() == 32,
+            decreases 256 - i,
+        {
+            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+            // the byte. Since self.bytes is little-endian at the byte level, this is
+            // little-endian on the bit level
+            let byte_idx = i >> 3;  // Divide by 8 to get byte index
+            let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
+            
+            // Prove bounds using shift and mask lemmas
+            proof {
+                use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+                use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+                use vstd::bits::*;
+                use vstd::arithmetic::power2::*;
+                
+                assert(i < 256);
+                
+                // Prove i >> 3 = i / 8 using shift lemma
+                lemma_u64_shr_is_div(i as u64, 3);
+                // pow2(3) = 8
+                lemma2_to64();
+                assert(byte_idx < 32);
+                
+                // Prove i & 7 = i % 8 using mask lemma
+                lemma_u64_low_bits_mask_is_mod(i as u64, 3);
+                // low_bits_mask(3) = 7 and pow2(3) = 8
+                lemma2_to64();
+                assert(bit_idx < 8);
+            }
+            
+            bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
+            i += 1;
+        }
+        
+        proof {
+            assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+        }
+        
+        bits
+    }
+
+}
+} // verus!
+
+impl Scalar {
     /// Get the bits of the scalar, in little-endian order
+    /* <VERIFICATION NOTE> 
+    - Opaque types like Iterator not supported in Verus yet
+    - This is used in only one place, in montgomery.rs - shall we rewrite it like bits_le_v above?
+    </VERIFICATION NOTE> */
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
         (0..256).map(|i| {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
@@ -841,6 +1138,7 @@ impl Scalar {
         })
     }
 
+    verus! {
     /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
     ///
     /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
@@ -913,16 +1211,52 @@ impl Scalar {
     /// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
     /// and reindex.  In fact, by setting all digits to \\(0\\)
     /// initially, we don't need to emit anything.
-    pub(crate) fn non_adjacent_form(&self, w: usize) -> [i8; 256] {
+    /* <VERIFICATION NOTE> 
+     assumed external spec
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
+    pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
+    requires
+        2 <= w <= 8,
+    ensures
+        true
+        // TODO
+    {
         // required by the NAF definition
+        // VERIFICATION NOTE: we tell verus not to verify debug assertions
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w >= 2);
         // required so that the NAF digits fit in i8
+        // VERIFICATION NOTE: we tell verus not to verify debug assertions
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w <= 8);
 
         let mut naf = [0i8; 256];
 
+        // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features - IN PROGRESS
+        /* <ORIGINAL CODE> 
         let mut x_u64 = [0u64; 5];
         read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
+         <ORIGINAL CODE> */
+        // Read 4 u64s from the 32-byte array (self.bytes)
+        let mut x_u64 = [0u64; 5];
+        x_u64[0] = u64::from_le_bytes([
+            self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3],
+            self.bytes[4], self.bytes[5], self.bytes[6], self.bytes[7],
+        ]);
+        x_u64[1] = u64::from_le_bytes([
+            self.bytes[8], self.bytes[9], self.bytes[10], self.bytes[11],
+            self.bytes[12], self.bytes[13], self.bytes[14], self.bytes[15],
+        ]);
+        x_u64[2] = u64::from_le_bytes([
+            self.bytes[16], self.bytes[17], self.bytes[18], self.bytes[19],
+            self.bytes[20], self.bytes[21], self.bytes[22], self.bytes[23],
+        ]);
+        x_u64[3] = u64::from_le_bytes([
+            self.bytes[24], self.bytes[25], self.bytes[26], self.bytes[27],
+            self.bytes[28], self.bytes[29], self.bytes[30], self.bytes[31],
+        ]);
+        // x_u64[4] remains 0
 
         let width = 1 << w;
         let window_mask = width - 1;
@@ -966,6 +1300,18 @@ impl Scalar {
 
         naf
     }
+    /* <VERIFICATION NOTE> 
+    Helper inline functions for as_radix_16, moved outside function body for Verus compatibility
+    </VERIFICATION NOTE> */
+    #[allow(clippy::identity_op)]
+    #[inline(always)]
+    fn bot_half(x: u8) -> u8 {
+        (x >> 0) & 15
+    }
+    #[inline(always)]
+    fn top_half(x: u8) -> u8 {
+        (x >> 4) & 15
+    }
 
     /// Write this scalar in radix 16, with coefficients in \\([-8,8)\\),
     /// i.e., compute \\(a\_i\\) such that
@@ -977,12 +1323,19 @@ impl Scalar {
     /// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
     /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
     /// \\(2^{255}\\).
+    
+    #[verifier::external_body]
     pub(crate) fn as_radix_16(&self) -> [i8; 64] {
+        // VERIFICATION NOTE: we tell verus not to verify debug assertions
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(self[31] <= 127);
         let mut output = [0i8; 64];
 
+
         // Step 1: change radix.
         // Convert from radix 256 (bytes) to radix 16 (nibbles)
+        // VERIFICATION NOTE: Moved helper functions outside for Verus compatibility
+        /* <ORIGINAL CODE> 
         #[allow(clippy::identity_op)]
         #[inline(always)]
         fn bot_half(x: u8) -> u8 {
@@ -997,19 +1350,30 @@ impl Scalar {
             output[2 * i] = bot_half(self[i]) as i8;
             output[2 * i + 1] = top_half(self[i]) as i8;
         }
+        </ORIGINAL CODE> */
+        for i in 0..32 {
+            output[2 * i] = Self::bot_half(self.bytes[i]) as i8;
+            output[2 * i + 1] = Self::top_half(self.bytes[i]) as i8;
+        }
         // Precondition note: since self[31] <= 127, output[63] <= 7
 
         // Step 2: recenter coefficients from [0,16) to [-8,8)
         for i in 0..63 {
             let carry = (output[i] + 8) >> 4;
             output[i] -= carry << 4;
+            /* <ORIGINAL CODE> : 
             output[i + 1] += carry;
+            </ORIGINAL CODE> */
+            // VERIFICATION NOTE: Changed += to + for Verus compatibility
+            output[i + 1] = output[i + 1] + carry;
         }
         // Precondition note: output[63] is not recentered.  It
         // increases by carry <= 1.  Thus output[63] <= 8.
 
         output
     }
+
+} // verus!
 
     /// Returns a size hint indicating how many entries of the return
     /// value of `to_radix_2w` are nonzero.
@@ -1110,6 +1474,7 @@ impl Scalar {
         digits
     }
 
+    verus! {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub(crate) fn unpack(&self) -> UnpackedScalar {
         UnpackedScalar::from_bytes(&self.bytes)
@@ -1119,52 +1484,82 @@ impl Scalar {
     #[allow(non_snake_case)]
     fn reduce(&self) -> Scalar {
         let x = self.unpack();
+        assume(limbs_bounded(&x));
+        assume(limbs_bounded(&constants::R));
         let xR = UnpackedScalar::mul_internal(&x, &constants::R);
         let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
         x_mod_l.pack()
     }
+    } // verus!
 
+    verus! {
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {
         self.ct_eq(&self.reduce())
     }
+    } // verus!
 }
 
+verus! {
+// Helper function for montgomery_invert
+// VERIFICATION NOTE: Moved inline function outside the body of montgomery_invert
+#[inline]
+fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
+    assume(limbs_bounded(y));
+    assume(limbs_bounded(x));
+    for _ in 0..squarings
+        invariant limbs_bounded(y), limbs_bounded(x)
+    {
+        *y = y.montgomery_square();
+    }
+    *y = UnpackedScalar::montgomery_mul(y, x);
+    assume(limbs_bounded(y));
+}
+} // verus!
+
 impl UnpackedScalar {
+    verus! {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> Scalar {
         Scalar {
             bytes: self.to_bytes(),
         }
     }
-
+   
     /// Inverts an UnpackedScalar in Montgomery form.
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
-    pub fn montgomery_invert(&self) -> UnpackedScalar {
+    pub fn montgomery_invert(&self) -> (result: UnpackedScalar)
+    ensures
+        limbs_bounded(&result),
+        // Postcondition: result * self ≡ 1 (mod group_order) in Montgomery form
+        to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
+    {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
         let    _1 = *self;
+        assume(limbs_bounded(&_1));
         let   _10 = _1.montgomery_square();
+        assume(limbs_bounded(&_10));
         let  _100 = _10.montgomery_square();
+        assume(limbs_bounded(&_100));
         let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
+        assume(limbs_bounded(&_11));
         let  _101 = UnpackedScalar::montgomery_mul(&_10,    &_11);
+        assume(limbs_bounded(&_101));
         let  _111 = UnpackedScalar::montgomery_mul(&_10,   &_101);
+        assume(limbs_bounded(&_111));
         let _1001 = UnpackedScalar::montgomery_mul(&_10,   &_111);
+        assume(limbs_bounded(&_1001));
         let _1011 = UnpackedScalar::montgomery_mul(&_10,  &_1001);
+        assume(limbs_bounded(&_1011));
         let _1111 = UnpackedScalar::montgomery_mul(&_100, &_1011);
+        assume(limbs_bounded(&_1111));
 
         // _10000
         let mut y = UnpackedScalar::montgomery_mul(&_1111, &_1);
-
-        #[inline]
-        fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
-            for _ in 0..squarings {
-                *y = y.montgomery_square();
-            }
-            *y = UnpackedScalar::montgomery_mul(y, x);
-        }
+        assume(limbs_bounded(&y));
 
         square_multiply(&mut y, 123 + 3, &_101);
         square_multiply(&mut y,   2 + 2, &_11);
@@ -1194,13 +1589,36 @@ impl UnpackedScalar {
         square_multiply(&mut y,       3, &_101);
         square_multiply(&mut y,   1 + 2, &_11);
 
+        proof {
+            assume(limbs_bounded(&y));
+            assume(to_nat(&y.limbs) * to_nat(&self.limbs) % group_order() == 1);
+        }
+        
         y
     }
 
     /// Inverts an UnpackedScalar not in Montgomery form.
-    pub fn invert(&self) -> UnpackedScalar {
-        self.as_montgomery().montgomery_invert().from_montgomery()
+    pub fn invert(&self) -> (result: UnpackedScalar)
+    ensures
+        limbs_bounded(&result),
+        // Postcondition: result * self ≡ 1 (mod group_order)
+        to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
+    {
+        assume(limbs_bounded(self));
+        let mont = self.as_montgomery();
+        assume(limbs_bounded(&mont));
+        let inv = mont.montgomery_invert();
+        assume(limbs_bounded(&inv));
+        let result = inv.from_montgomery();
+        
+        proof {
+            assume(limbs_bounded(&result));
+            assume(to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1);
+        }
+        
+        result
     }
+    } // verus!
 }
 
 #[cfg(feature = "group")]

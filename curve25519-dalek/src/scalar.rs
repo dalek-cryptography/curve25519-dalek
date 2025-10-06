@@ -130,6 +130,7 @@ use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
 use rand_core::TryRngCore;
 
+#[cfg(any(test, feature = "rand_core"))]
 use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "alloc")]
@@ -168,6 +169,7 @@ verus! {
     #[verifier::external_body]
     #[verifier::reject_recursive_types(T)]
     #[allow(dead_code)]
+    /// External wrapper for `CtOption<T>` used in Verus verification.
     pub struct ExCtOption<T>(CtOption<T>);
 
     /*** <VERIFICATION-NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
@@ -654,11 +656,9 @@ impl Scalar {
     };
    
     /* <VERIFICATION NOTE> 
-     Disabled cfg because we want to run verification for random method (correct ?)
+     Verification of random method postponed - requires rand_core feature to be enabled.
     </VERIFICATION NOTE> */
-    /* <ORIGINAL CODE> 
-     #[cfg(any(test, feature = "rand_core"))]
-     </ORIGINAL CODE> */
+    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -680,12 +680,8 @@ impl Scalar {
     /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    /* <VERIFICATION NOTE> 
-     Added verifier::external_body annotation
-    </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> (result: Self)
-        ensures is_random_scalar(&result)
+    /// ```
+    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self
     {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);

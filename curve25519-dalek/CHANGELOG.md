@@ -12,6 +12,7 @@ major series.
 * Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
 * Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
 * Undeprecate `Scalar::from_bits()`
+* Upgrade Verus version to 0.2025.10.05.bf8e97e
 
 ## 4.x series
 

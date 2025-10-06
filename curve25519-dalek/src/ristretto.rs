@@ -168,6 +168,7 @@ use core::iter::Sum;
 use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
+use core::hash::{Hash, Hasher};
 
 #[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
@@ -852,6 +853,16 @@ impl ConstantTimeEq for RistrettoPoint {
 }
 
 impl Eq for RistrettoPoint {}
+
+// ------------------------------------------------------------------------
+// Hash
+// ------------------------------------------------------------------------
+
+impl Hash for RistrettoPoint {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.compress().hash(state);
+    }
+}
 
 // ------------------------------------------------------------------------
 // Arithmetic

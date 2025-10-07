@@ -121,7 +121,6 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
-use cfg_if::cfg_if;
 
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
@@ -1028,7 +1027,7 @@ impl Scalar {
                 forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]),
             decreases i
         {
-            i = i - 1;
+            i -= 1;
             let input_unpacked = inputs[i].unpack();
 
             proof {
@@ -1062,6 +1061,7 @@ impl Scalar {
     /* <VERIFICATION NOTE>
      This is a Verus-compatible version of bits_le from below that returns an array instead of an iterator
     </VERIFICATION NOTE> */
+    #[allow(dead_code)]
     pub(crate) fn bits_le_v(&self) -> (result: [bool; 256])
     ensures
         bits_to_nat(&result) == bytes_to_nat(&self.bytes),
@@ -1360,7 +1360,7 @@ impl Scalar {
                 output[i + 1] += carry;
                 </ORIGINAL CODE> */
                 // VERIFICATION NOTE: Changed += to + for Verus compatibility
-                output[i + 1] = output[i + 1] + carry;
+                output[i + 1] += carry;
             }
             // Precondition note: output[63] is not recentered.  It
             // increases by carry <= 1.  Thus output[63] <= 8.

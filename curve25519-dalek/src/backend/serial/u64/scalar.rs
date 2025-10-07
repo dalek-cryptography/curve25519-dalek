@@ -324,9 +324,9 @@ impl Scalar52 {
         // The mathematical value modulo group_order doesn't change (since L = group_order)
         to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order(),
         // Meaning of conditional addition
-        super::subtle_assumes::choice_is_true(condition) ==> 
+        super::subtle_assumes::choice_is_true(condition) ==>
             to_nat(&self.limbs) == (to_nat(&old(self).limbs) + group_order()) % pow2(260),
-        !super::subtle_assumes::choice_is_true(condition) ==> 
+        !super::subtle_assumes::choice_is_true(condition) ==>
             to_nat(&self.limbs) == to_nat(&old(self).limbs),
     {
         let mut carry: u64 = 0;
@@ -367,9 +367,9 @@ impl Scalar52 {
         proof {
             // TODO: Prove these postconditions properly
             assume(to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order());
-            assume(super::subtle_assumes::choice_is_true(condition) ==> 
+            assume(super::subtle_assumes::choice_is_true(condition) ==>
                 to_nat(&self.limbs) == (to_nat(&old(self).limbs) + group_order()) % pow2(260));
-            assume(!super::subtle_assumes::choice_is_true(condition) ==> 
+            assume(!super::subtle_assumes::choice_is_true(condition) ==>
                 to_nat(&self.limbs) == to_nat(&old(self).limbs));
         }
 

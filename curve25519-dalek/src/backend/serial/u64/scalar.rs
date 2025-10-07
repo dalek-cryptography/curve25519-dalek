@@ -11,6 +11,7 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
+use crate::backend::serial::u64::subtle_assumes::select;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
@@ -24,7 +25,6 @@ use crate::constants;
 use super::scalar_lemmas::*;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
-use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
@@ -57,22 +57,27 @@ impl Zeroize for Scalar52 {
 verus! {
 impl Index<usize> for Scalar52 {
     type Output = u64;
-    // TODO Verify this
-    #[verifier::external_body]
-    fn index(&self, _index: usize) -> &u64 {
+    fn index(&self, _index: usize) -> (result: &u64)
+    requires
+        _index < 5, // VERIFICATION NOTE: we can't be sure this will hold in practice
+    ensures
+        result == &(self.limbs[_index as int]),
+    {
+        // VERIFICATION NOTE: is this safe without checks ??
         &(self.limbs[_index])
     }
 }
 } // verus!
 
+// VERIFICATION EXCLUDED: some mutables unsupporeted by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
+        // VERIFICATION NOTE: is this safe without checks ??
         &mut (self.limbs[_index])
     }
 }
 
 verus! {
-
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]
 fn m(x: u64, y: u64) -> (z: u128)
@@ -137,7 +142,6 @@ impl Scalar52 {
 
     /// Reduce a 64 byte / 512 bit scalar mod l
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
-    #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
         limbs_bounded(&s),
@@ -147,6 +151,7 @@ impl Scalar52 {
         let mut words = [0u64; 8];
         for i in 0..8 {
             for j in 0..8 {
+                assume(false);
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
@@ -219,6 +224,7 @@ impl Scalar52 {
         s
     }
 
+    // VERIFICATION NOTE: validation in progress git issue #74
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -226,6 +232,7 @@ impl Scalar52 {
         limbs_bounded(b),
         to_nat(&a.limbs) < group_order(),
         to_nat(&b.limbs) < group_order(),
+    // VERIFICATION NOTE: can we introduce a Valid or Canonical scalar predicate to cover such preconditions ?
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
@@ -281,6 +288,47 @@ impl Scalar52 {
 
     }
 
+    /*
+    pub fn sub_source(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+    ensures
+        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
+    {
+        assume(false); // TODO: complete the proof
+        let mut difference = Scalar52::ZERO;
+        let mask = (1u64 << 52) - 1;
+
+        // a - b
+        let mut borrow: u64 = 0;
+        for i in 0..5 {
+            borrow = a[i].wrapping_sub(b[i] + (borrow >> 63));
+            difference[i] = borrow & mask;
+        }
+
+        // conditionally add l if the difference is negative
+        difference.conditional_add_l(Choice::from((borrow >> 63) as u8));
+        difference
+    }
+    */
+    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> u64 {
+        assume(false); // TODO: complete the proof
+        let mut carry: u64 = 0;
+        let mask = (1u64 << 52) - 1;
+
+        for i in 0..5 {
+            let addend = select(&0, &constants::L.limbs[i], condition);
+            assume(false); // TODO: complete the proof
+            carry = (carry >> 52) + self.limbs[i] + addend;
+            self.limbs[i] = carry & mask;
+        }
+
+        carry
+    }
+
+
+    // VERIFICATION NOTE: validation in progress git issue #74
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -290,10 +338,12 @@ impl Scalar52 {
         // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
         // In the 2nd case, `sub` doesn't always do subtraction mod group_order
+
+        // VERIFICATION NOTE: isnt this always true? we should prove it then.
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
-        limbs_bounded(&s),
+        limbs_bounded(&s), // VERIFICATION NOTE: Valid Scalar ??
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}

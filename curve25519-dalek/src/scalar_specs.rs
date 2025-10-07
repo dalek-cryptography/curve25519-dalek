@@ -1,9 +1,9 @@
 //! Specification functions for high-level Scalar operations
 
-use crate::scalar::Scalar;
 use crate::backend::serial::u64::scalar_specs::*;
-use vstd::prelude::*;
+use crate::scalar::Scalar;
 use vstd::arithmetic::power2::*;
+use vstd::prelude::*;
 
 verus! {
 
@@ -57,4 +57,3 @@ pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
 pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;
 
 } // verus!
-

@@ -120,7 +120,6 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
-
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]

@@ -70,7 +70,7 @@ pub fn choice_into(c: Choice) -> (b: bool)
 // Helper for bitwise AND on Choice
 #[verifier::external_body]
 pub fn choice_and(a: Choice, b: Choice) -> (c: Choice)
-    ensures (reveal_choice(a) == RevealedChoice::Choice1 && reveal_choice(b) == RevealedChoice::Choice1) 
+    ensures (reveal_choice(a) == RevealedChoice::Choice1 && reveal_choice(b) == RevealedChoice::Choice1)
                 ==> reveal_choice(c) == RevealedChoice::Choice1,
             (reveal_choice(a) == RevealedChoice::Choice0 || reveal_choice(b) == RevealedChoice::Choice0)
                 ==> reveal_choice(c) == RevealedChoice::Choice0

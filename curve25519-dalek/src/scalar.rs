@@ -372,7 +372,7 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
     {
         /* <VERIFICATION NOTE>
-         Store unpacked values explicityly for limbs_bounded assumption
+         Store unpacked values explicitly for limbs_bounded assumption
         </VERIFICATION NOTE> */
         let self_unpacked = self.unpack();
         let rhs_unpacked = _rhs.unpack();
@@ -391,7 +391,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     fn mul(self, _rhs: &'a Scalar) -> (result: Scalar) {
         /* <VERIFICATION NOTE>
-         Store unpacked values explicityly for limbs_bounded assumption
+         Store unpacked values explicitly for limbs_bounded assumption
         </VERIFICATION NOTE> */
         let self_unpacked = self.unpack();
         let rhs_unpacked = _rhs.unpack();

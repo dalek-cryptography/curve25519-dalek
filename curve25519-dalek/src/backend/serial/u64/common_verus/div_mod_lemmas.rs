@@ -1,5 +1,6 @@
 #![allow(unused)]
 use vstd::arithmetic::div_mod::*;
+use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
@@ -65,6 +66,30 @@ pub proof fn lemma_mod_diff_factor(a: int, b: int, m: int)
     lemma_mod_multiples_basic(a, m);
     // b % m % m = b % m
     lemma_mod_twice(b, m);
+}
+
+pub proof fn lemma_div_of_sum(a: nat, b: nat, k: nat)
+    requires
+        (a % k) + (b % k) < k // also implies k != 0
+    ensures
+        (a + b) / k == a / k + b / k
+{
+    let a0 = a / k;
+    let b0 = b / k;
+
+    assert(a == k * a0 + (a % k)) by {
+        lemma_fundamental_div_mod(a as int, k as int);
+    }
+
+    assert(b == k * b0 + (b % k)) by {
+        lemma_fundamental_div_mod(b as int, k as int);
+    }
+
+    assert(a + b == k * (a0 + b0) + (a % k) + (b % k)) by {
+        lemma_mul_is_distributive_add(k as int, a0 as int, b0 as int);
+    }
+
+    lemma_div_multiples_vanish_fancy((a0 + b0) as int, ((a % k) + (b % k)) as int, k as int);
 }
 
 fn main() {}

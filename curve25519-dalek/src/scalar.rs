@@ -846,12 +846,6 @@ impl Scalar {
     pub fn invert(&self) -> Scalar {
         self.unpack().invert().pack()
     }
-}
-} // verus!
-
-verus! {
-
-impl Scalar {
     /// Given a slice of nonzero (possibly secret) `Scalar`s,
     /// compute their inverses in a batch.
     ///

@@ -238,7 +238,7 @@ impl Scalar {
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
-        /*** <VERIFICATION-NOTE> We can omit debug asserts from verification (true?) </VERIFICATION-NOTE> ***/
+        /*** <VERIFICATION-NOTE> We omit debug asserts from verification  </VERIFICATION-NOTE> ***/
         #[cfg(not(verus_keep_ghost))]
         debug_assert_eq!(0u8, s[31] >> 7);
 
@@ -1194,7 +1194,7 @@ impl Scalar {
         /* <VERIFICATION NOTE>
          assumed external spec
         </VERIFICATION NOTE> */
-        #[verifier::external_body]
+        //#[verifier::external_body]
         pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
         requires
             2 <= w <= 8,

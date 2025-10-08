@@ -1604,7 +1604,7 @@ impl UnpackedScalar {
         /* <ORIGINAL CODE>
                 self.as_montgomery().montgomery_invert().from_montgomery()
         </ORIGINAL CODE> */
-        
+
         assume(limbs_bounded(self));
         let mont = self.as_montgomery();
         assume(limbs_bounded(&mont));

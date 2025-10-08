@@ -230,9 +230,6 @@ pub struct Scalar {
     </ORIGINAL CODE> */
 }
 
-} // verus!
-
-verus! {
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer

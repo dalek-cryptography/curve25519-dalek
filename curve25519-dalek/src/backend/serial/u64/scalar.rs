@@ -59,20 +59,18 @@ impl Index<usize> for Scalar52 {
     type Output = u64;
     fn index(&self, _index: usize) -> (result: &u64)
     requires
-        _index < 5, // VERIFICATION NOTE: we can't be sure this will hold in practice
+        _index < 5, 
     ensures
         result == &(self.limbs[_index as int]),
     {
-        // VERIFICATION NOTE: is this safe without checks ??
         &(self.limbs[_index])
     }
 }
 } // verus!
 
-// VERIFICATION EXCLUDED: some mutables unsupported by Verus
+// VERIFICATION EXCLUDED: mutable returns unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
-        // VERIFICATION NOTE: is this safe without checks ??
         &mut (self.limbs[_index])
     }
 }
@@ -224,7 +222,6 @@ impl Scalar52 {
         s
     }
 
-    // VERIFICATION NOTE: validation in progress git issue #74
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -232,7 +229,6 @@ impl Scalar52 {
         limbs_bounded(b),
         to_nat(&a.limbs) < group_order(),
         to_nat(&b.limbs) < group_order(),
-    // VERIFICATION NOTE: can we introduce a Valid or Canonical scalar predicate to cover such preconditions ?
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
@@ -289,11 +285,13 @@ impl Scalar52 {
     }
 
 
+    // VERIFICATION NOTE: original sub function; we prove a refactored version below
     #[allow(dead_code)]
     pub fn sub_source(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
         limbs_bounded(a),
         limbs_bounded(b),
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
     {
@@ -315,17 +313,21 @@ impl Scalar52 {
     }
 
 
-
+    // VERIFICATION NOTE: conditional_add_l function only used in original sub function
     #[allow(dead_code)]
     pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> (carry: u64)
     requires
         limbs_bounded(&old(self)),
+        to_nat(&old(self).limbs) + group_order() < pow2(260) 
     ensures
         // The mathematical value modulo group_order doesn't change (since L = group_order)
         to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order(),
+        // VERIFICATION NOTE: expression below unsupported by Verus
+        //limbs_bounded(&self),
+
         // Meaning of conditional addition
         super::subtle_assumes::choice_is_true(condition) ==>
-            to_nat(&self.limbs) == (to_nat(&old(self).limbs) + group_order()) % pow2(260),
+            to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order(),
         !super::subtle_assumes::choice_is_true(condition) ==>
             to_nat(&self.limbs) == to_nat(&old(self).limbs),
     {
@@ -365,10 +367,11 @@ impl Scalar52 {
         }
 
         proof {
-            // TODO: Prove these postconditions properly
+            // TODO: Prove the postconditions
             assume(to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order());
+         //   assume(limbs_bounded(&self));
             assume(super::subtle_assumes::choice_is_true(condition) ==>
-                to_nat(&self.limbs) == (to_nat(&old(self).limbs) + group_order()) % pow2(260));
+                to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order());
             assume(!super::subtle_assumes::choice_is_true(condition) ==>
                 to_nat(&self.limbs) == to_nat(&old(self).limbs));
         }
@@ -378,8 +381,7 @@ impl Scalar52 {
 
 
     /*  <VERIFICATION NOTE>
-    - validation in progress git issue #74
-    - this is a refactored version of subwith some inlined functions for which we managed to finish proof.
+    - this is a refactored version of sub with some inlined functions for which we managed to finish proof.
     - see sub_source function above for the spec and code of the original sub function.
     <VERIFICATION NOTE> */
     /// Compute `a - b` (mod l)
@@ -391,8 +393,6 @@ impl Scalar52 {
         // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
         // In the 2nd case, `sub` doesn't always do subtraction mod group_order
-
-        // VERIFICATION NOTE: isnt this always true? we should prove it then.
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),

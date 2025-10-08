@@ -404,7 +404,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
-}
+} // verus!
 
 impl<'b> AddAssign<&'b Scalar> for Scalar {
     fn add_assign(&mut self, _rhs: &'b Scalar) {

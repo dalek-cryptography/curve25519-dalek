@@ -11,7 +11,7 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-use crate::backend::serial::u64::subtle_assumes::select;
+use super::subtle_assumes::select;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;

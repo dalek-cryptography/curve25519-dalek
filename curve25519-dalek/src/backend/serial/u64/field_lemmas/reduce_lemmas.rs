@@ -85,7 +85,8 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         // IOW, e(reduce(l)) = e(l) (mod p)
         // additionally, if all limbs are below 2^51, reduce(l) = l
         (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (spec_reduce(limbs) =~= limbs),
-        as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51)
+        as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51),
+        as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p()
 {
 
     // -----
@@ -209,6 +210,9 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
         pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
     }
+
+    pow255_gt_19();
+    lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
 }
 
 

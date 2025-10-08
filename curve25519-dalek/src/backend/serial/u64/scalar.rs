@@ -176,7 +176,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
     #[allow(clippy::wrong_self_convention)]
-    pub fn to_bytes(self) -> (s: [u8; 32])
+    pub fn as_bytes(self) -> (s: [u8; 32])
     ensures bytes_to_nat(&s) == to_nat(&self.limbs)
     {
         let mut s = [0u8; 32];

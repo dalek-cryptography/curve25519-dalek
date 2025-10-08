@@ -340,9 +340,6 @@ impl ConstantTimeEq for Scalar {
     }
 }
 
-} // verus!
-
-verus! {
 impl Index<usize> for Scalar {
     type Output = u8;
 

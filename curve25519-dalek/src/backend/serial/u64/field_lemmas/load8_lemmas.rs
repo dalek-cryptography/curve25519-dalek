@@ -7,6 +7,7 @@ use vstd::calc;
 use vstd::prelude::*;
 
 use super::super::common_verus::bit_lemmas::*;
+use super::super::common_verus::div_mod_lemmas::*;
 use super::super::common_verus::mul_lemmas::*;
 use super::super::common_verus::pow_lemmas::*;
 use super::super::common_verus::shift_lemmas::*;
@@ -16,14 +17,14 @@ use super::field_core::*;
 verus! {
 
 
-pub proof fn bit_or_is_plus(a: u64, b: u8, k: u64)
+pub proof fn bit_or_is_plus(a: u64, b: u64, k: u64)
     by (bit_vector)
     requires
-        k + 8 <= 64,
-        a < 1u64 << k
+        b <= (u64::MAX >> k),
+        a < 1u64 << k,
+
     ensures
-        a | ((b as u64) << (k as u64)) == a + ((b as u64) << (k as u64)),
-        a + ((b as u64) << (k as u64)) <= u64::MAX
+        a | (b << k) == a + (b << k)
 {
 }
 
@@ -298,7 +299,15 @@ pub proof fn load8_at_versions_equivalent(input: &[u8], i: usize, k: nat)
             load8_at_plus_version_rec_is_bounded(input, i, (k - 1) as nat);
             shift_is_pow2(8 * k);
         }
-        bit_or_is_plus(prev, input[i + k], (8 * k) as u64);
+        let v = input[i + k];
+        assert(v <= (u64::MAX >> ((k * 8) as u64))) by {
+            assert(v <= u8::MAX);
+            assert(u64::MAX >> ((k * 8) as u64) >= u64::MAX >> 56) by {
+                shr_nonincreasing(u64::MAX, k * 8, 56);
+            }
+            assert(u8::MAX <= u64::MAX >> 56) by (compute);
+        }
+        bit_or_is_plus(prev, input[i + k] as u64, (8 * k) as u64);
     }
 }
 
@@ -463,6 +472,272 @@ pub proof fn load8_lemma(a: nat, b: u8, j: nat, k: nat)
         }
     }
 }
+
+pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s64: u64)
+    requires
+        i + 7 < input.len(),
+        0 < k <= 7,
+        s64 < 64
+    ensures
+        load8_at_plus_version_rec(input, i, k) >> s64
+        ==
+        load8_at_plus_version_rec(input, i, (k - 1) as nat) / (pow2(s64 as nat) as u64) +
+        (pow2(k * 8) * input[i + k]) as u64 / (pow2(s64 as nat) as u64)
+    decreases k
+{
+
+    let s = s64 as nat;
+
+    assert(pow2(s) <= u64::MAX) by {
+        pow2_le_max64(s);
+    }
+
+    assert(pow2(s) > 0) by {
+        lemma_pow2_pos(s);
+    }
+
+    assert(pow2(k * 8) <= u64::MAX) by {
+        assert(pow2(k * 8) <= pow2(56)) by {
+            if (k < 7){
+                lemma_pow2_strictly_increases(k * 8, 56);
+            }
+        }
+        assert(pow2(56) <= u64::MAX) by {
+            lemma2_to64_rest();
+        }
+    }
+
+    let p64 = pow2(s) as u64;
+
+    let xk = load8_at_plus_version_rec(input, i, k);
+    let xk_1 = load8_at_plus_version_rec(input, i, (k-1) as nat);
+    let v = input[i + k];
+    let v_n = v as nat;
+
+    assert(
+        xk
+        ==
+        (xk_1 + ((v as u64) << k * 8)) as u64
+    ) by {
+        reveal_with_fuel(load8_at_plus_version_rec, 1);
+    }
+
+    assert(xk >> s64 == xk / p64) by {
+        assert( xk >> s64 == xk as nat / pow2(s) ) by {
+            lemma_u64_shr_is_div(xk, s64);
+        }
+        // the conversion follows from pow2(s) > 0
+    }
+
+    assert(v * pow2(k * 8) <= u64::MAX) by {
+            assert(v <= 0xFF);
+            assert(pow2(k * 8) <= 0x100000000000000) by {
+                lemma2_to64_rest(); // pow2(56)
+                if (k < 7){
+                    lemma_pow2_strictly_increases(8 * k, 56);
+                }
+            }
+            mul_le(v as nat, 0xFF, pow2(k * 8), 0x100000000000000);
+            assert(0xFF * 0x100000000000000 <= u64::MAX) by (compute);
+        }
+
+    assert(((v as u64) << k * 8) == pow2(k * 8) * v) by {
+        lemma_u64_shl_is_mul(v as u64, (k * 8) as u64);
+    }
+
+    assert(
+        xk >> s64
+        ==
+        (xk_1 + pow2(k * 8) * v) as u64 / p64
+    );
+
+    assert(xk_1 < pow2(8 * k)) by {
+        load8_at_plus_version_rec_is_bounded(input, i, (k-1) as nat);
+    }
+
+    assert(xk_1 % p64 + (((pow2(k * 8) * v) as u64) % p64) < p64) by {
+        if (s <= k * 8) {
+            if (s < k * 8){
+                assert(p64 < pow2(8 * k)) by {
+                    lemma_pow2_strictly_increases(s, k *8);
+                }
+            }
+            assert(((pow2(k * 8) * v_n)) % pow2(s) == 0) by {
+                let s0 = (k * 8 - s) as nat;
+                assert(pow2(k * 8) == pow2(s) * pow2(s0)) by {
+                    lemma_pow2_adds(s, s0);
+                }
+                assert((pow2(k * 8) * v_n) == (pow2(s0) * v_n) * pow2(s)) by {
+                    assert(pow2(k * 8) * v_n == pow2(s) * (pow2(s0) * v_n)) by {
+                        lemma_mul_is_associative(pow2(s) as int, pow2(s0) as int, v_n as int);
+                    }
+                    assert(pow2(s) * (pow2(s0) * v_n) == (pow2(s0) * v_n) * pow2(s)) by {
+                        // solver seems to need commutativity here explicitly for some reason
+                        lemma_mul_is_commutative(pow2(s) as int, (pow2(s0) * v_n) as int);
+                    }
+                }
+                assert(((pow2(s0) * v_n) * pow2(s)) % pow2(s) == 0) by {
+                    lemma_mod_multiples_basic((pow2(s0) * v_n) as int, pow2(s) as int);
+                }
+
+            }
+            lemma_mod_bound(xk_1 as int, p64 as int);
+        }
+        else {
+            // s > k * 8
+            // a + b = a | b
+            // (a | b) & c == (a & c) | (b & c)
+            // (a & c) | (b & c) = (a & c) + (b & c)
+            let d = (s - k * 8) as nat;
+            lemma_pow2_pos(d);
+            let a = xk_1;
+            let b = ((pow2(k * 8) * v) as u64);
+            assert(b == (v as u64) << k * 8) by {
+                    assert(pow2(k * 8) * v == v * pow2(k * 8)) by {
+                        lemma_mul_is_commutative(v as int, pow2(k * 8) as int)
+                    }
+                    assert((v as u64) * pow2(k * 8) == (v as u64) << k * 8) by {
+                        lemma_u64_shl_is_mul(v as u64, (k * 8) as u64);
+                    }
+                }
+
+            // a + b = a | b
+            assert(a + b == a | b) by {
+                assert(a < 1u64 << ((k * 8) as u64)) by {
+                    shift_is_pow2(k * 8);
+                }
+                assert(v <= (u64::MAX >> ((k * 8) as u64))) by {
+                    assert(v <= u8::MAX);
+                    assert(u64::MAX >> ((k * 8) as u64) >= u64::MAX >> 56) by {
+                        shr_nonincreasing(u64::MAX, k * 8, 56);
+                    }
+                    assert(u8::MAX <= u64::MAX >> 56) by (compute);
+                }
+                bit_or_is_plus(a, v as u64, (k * 8) as u64);
+            }
+
+            let lbm = low_bits_mask(s) as u64;
+
+            // (a | b) & c == (a & c) | (b & c)
+            assert((a | b) & lbm == (a & lbm) | (b & lbm)) by (bit_vector);
+
+            assert(b & lbm == (v_n % pow2(d)) * pow2(k * 8)) by {
+                assert(b & lbm == b % p64) by {
+                    lemma_u64_low_bits_mask_is_mod(b, s);
+                }
+                // Redundant, but useful to follow along
+                // ----
+                assert(b % p64 == (b as nat) % pow2(s));
+                assert(b as nat == v_n * pow2(k * 8));
+                // ----
+                assert((b as nat) % pow2(s) == (v_n % pow2(d)) * pow2(k * 8)) by {
+                    assert((v_n * pow2(k * 8)) % pow2(s) == (v_n % pow2(d)) * pow2(k * 8)) by {
+                        mask_pow2(v_n, k * 8, s);
+                    }
+                }
+            }
+
+            let w = v_n % pow2(d);
+
+            assert(w <= u64::MAX) by {
+                assert(v_n % pow2(d) < pow2(d)) by {
+                    lemma_mod_bound(v_n as int, pow2(d) as int);
+                }
+                assert(pow2(d) < pow2(63)) by {
+                    lemma_pow2_strictly_increases(d, 63);
+                }
+                assert(pow2(63) < u64::MAX) by {
+                    lemma2_to64_rest();
+                }
+            }
+            assert( b & lbm == ((w as u64) << (k * 8 as u64))) by {
+                lemma_u64_shl_is_mul(w as u64, (k * 8) as u64);
+            }
+
+            // (a & c) | (b & c) = (a & c) + (b & c)
+            assert( (a & lbm) | (b & lbm) == (a & lbm) + (b & lbm)) by {
+                assert( (a & lbm) < 1u64 << ((k * 8) as u64)) by {
+                    assert(1u64 << ((k * 8) as u64) == pow2(k * 8)) by {
+                        shift_is_pow2(k * 8);
+                    }
+                    assert(a & lbm <= a) by (bit_vector);
+                }
+                assert(
+                    (a & lbm) | ((w as u64) << (k * 8 as u64))
+                    ==
+                    (a & lbm) + ((w as u64) << (k * 8 as u64))
+                ) by {
+                    assert(w <= (u64::MAX >> ((k * 8) as nat))) by {
+                        assert(w < pow2(d)) by {
+                            lemma_mod_bound(w as int, pow2(d) as int);
+                        }
+                        // d = s - 8k
+                        assert(pow2(d) == pow2(s) / pow2(k * 8)) by {
+                            lemma_pow2_subtracts(k * 8, s);
+                        }
+                        assert((u64::MAX >> ((k * 8) as nat)) == u64::MAX / (pow2(k * 8) as u64)) by {
+                            lemma_u64_shr_is_div(u64::MAX, (k * 8) as u64);
+                        }
+                        assert(pow2(s) < u64::MAX) by {
+                            assert(pow2(s) <= pow2(63)) by {
+                                if (s < 63){
+                                    lemma_pow2_strictly_increases(s, 63);
+                                }
+                            }
+                            assert(pow2(63) < u64::MAX) by {
+                                lemma2_to64_rest();
+                            }
+                        }
+                        assert(pow2(s) / pow2(k * 8) <= u64::MAX / (pow2(k * 8) as u64)) by {
+                            lemma_div_is_ordered(pow2(s) as int, u64::MAX as int, pow2(k * 8) as int);
+                        }
+                    }
+                    bit_or_is_plus((a & lbm) as u64, w as u64, (k * 8) as u64);
+                }
+            }
+            assert( a & lbm == xk_1 % p64 ) by {
+                lemma_u64_low_bits_mask_is_mod(xk_1, s);
+            }
+
+            assert( b & lbm == ((pow2(k * 8) * v) as u64) % p64) by {
+                lemma_u64_low_bits_mask_is_mod(b, s);
+            }
+
+            assert((a | b) & lbm < p64) by {
+                lemma_u64_low_bits_mask_is_mod(a | b, s);
+            }
+        }
+    }
+
+
+    assert((xk_1 + pow2(k * 8) * v) as u64 / p64 == xk_1 / p64 + ((pow2(k * 8) * v) as u64) / p64) by {
+        assert(xk_1 + pow2(k * 8) * v <= u64::MAX) by {
+            assert(v <= u8::MAX); // known
+            assert(pow2(8 * k) <= 0x100000000000000) by {
+                if (k < 7){
+                    lemma_pow2_strictly_increases(k * 8 , 56);
+                }
+                lemma2_to64_rest();
+            }
+            assert(xk_1 < pow2(8 * k)); // known
+            assert(xk_1 <= 0x100000000000000 - 1);
+            assert(pow2(k *8) * v <= 0x100000000000000 * u8::MAX) by {
+                mul_le(pow2(k * 8), 0x100000000000000, v_n, u8::MAX as nat);
+            }
+            assert((0x100000000000000 - 1) + (0x100000000000000) * u8::MAX <= u64::MAX) by (compute);
+        }
+        lemma_div_of_sum(
+            xk_1 as nat,
+            (pow2(k * 8) * v) as nat,
+            p64 as nat
+        );
+    }
+
+
+
+}
+
+
 
 
 fn main() {}

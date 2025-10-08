@@ -121,8 +121,6 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
-use cfg_if::cfg_if;
-
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
@@ -131,8 +129,10 @@ use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(any(test, feature = "group"))]
 use rand_core::RngCore;
 
- #[cfg(any(test, feature = "rand_core"))]
+#[cfg(any(test, feature = "rand_core"))]
 use rand_core::CryptoRngCore;
+// From a conflict:
+//use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
@@ -183,7 +183,6 @@ verus! {
 /*** <VERIFICATION-NOTE> Focus on u64; removed all other backend types </VERIFICATION-NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
-verus!{
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Hash)]
@@ -247,7 +246,7 @@ impl Scalar {
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
-        /*** <VERIFICATION-NOTE> We can omit debug asserts from verification (true?) </VERIFICATION-NOTE> ***/
+        /*** <VERIFICATION-NOTE> We omit debug asserts from verification  </VERIFICATION-NOTE> ***/
         #[cfg(not(verus_keep_ghost))]
         debug_assert_eq!(0u8, s[31] >> 7);
 
@@ -467,8 +466,8 @@ impl ConditionallySelectable for Scalar {
         let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
-            // SB NOTE: Use wrapper function for Verus compatibility instead of direct subtle call
-            // ORIGINAL: bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
+            // VERIFICATION NOTE: Use wrapper function for Verus compatibility instead of direct subtle call
+            // ORIGINAL CODE: bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
             bytes[i] = select_u8(&a.bytes[i], &b.bytes[i], choice);
         }
         Scalar { bytes }
@@ -639,7 +638,6 @@ impl Zeroize for Scalar {
 }
 
 verus! {
-
 
 impl Scalar {
     /// The scalar \\( 0 \\).
@@ -1030,7 +1028,7 @@ impl Scalar {
                 forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]),
             decreases i
         {
-            i = i - 1;
+            i -= 1;
             let input_unpacked = inputs[i].unpack();
 
             proof {
@@ -1046,6 +1044,7 @@ impl Scalar {
             inputs[i] = UnpackedScalar::montgomery_mul(&acc, &scratch[i]).pack();
             acc = tmp;
         }
+
 
         #[cfg(feature = "zeroize")]
         Zeroize::zeroize(&mut scratch);
@@ -1064,6 +1063,7 @@ impl Scalar {
     /* <VERIFICATION NOTE>
      This is a Verus-compatible version of bits_le from below that returns an array instead of an iterator
     </VERIFICATION NOTE> */
+    #[allow(dead_code)]
     pub(crate) fn bits_le_v(&self) -> (result: [bool; 256])
     ensures
         bits_to_nat(&result) == bytes_to_nat(&self.bytes),
@@ -1124,7 +1124,7 @@ impl Scalar {
     /// Get the bits of the scalar, in little-endian order
     /* <VERIFICATION NOTE>
     - Opaque types like Iterator not supported in Verus yet
-    - This is used in only one place, in montgomery.rs - shall we rewrite it like bits_le_v above?
+    - see bits_le_v above for a Verus-compatible version
     </VERIFICATION NOTE> */
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
         (0..256).map(|i| {
@@ -1209,7 +1209,7 @@ impl Scalar {
         /// and reindex.  In fact, by setting all digits to \\(0\\)
         /// initially, we don't need to emit anything.
         /* <VERIFICATION NOTE>
-         assumed external spec
+         assumed as external spec; spec incomplete
         </VERIFICATION NOTE> */
         #[verifier::external_body]
         pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
@@ -1362,7 +1362,7 @@ impl Scalar {
                 output[i + 1] += carry;
                 </ORIGINAL CODE> */
                 // VERIFICATION NOTE: Changed += to + for Verus compatibility
-                output[i + 1] = output[i + 1] + carry;
+                output[i + 1] += carry;
             }
             // Precondition note: output[63] is not recentered.  It
             // increases by carry <= 1.  Thus output[63] <= 8.
@@ -1525,10 +1525,13 @@ impl UnpackedScalar {
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> (result: UnpackedScalar)
+    requires
+        limbs_bounded(&self),
     ensures
         limbs_bounded(&result),
-        // Postcondition: result * self ≡ 1 (mod group_order) in Montgomery form
-        to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
+        (to_nat(&result.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order(),
+        // Equivalent to: from_montgomery(result) * from_montgomery(self) ≡ 1 (mod L)
+        // Expressed in Montgomery form: (result/R) * (self/R) ≡ 1, i.e., result * self ≡ R² (mod L)
     {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
@@ -1585,7 +1588,7 @@ impl UnpackedScalar {
 
         proof {
             assume(limbs_bounded(&y));
-            assume(to_nat(&y.limbs) * to_nat(&self.limbs) % group_order() == 1);
+            assume((to_nat(&y.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order());
         }
 
         y
@@ -1598,6 +1601,10 @@ impl UnpackedScalar {
         // Postcondition: result * self ≡ 1 (mod group_order)
         to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
     {
+        /* <ORIGINAL CODE>
+                self.as_montgomery().montgomery_invert().from_montgomery()
+        </ORIGINAL CODE> */
+        
         assume(limbs_bounded(self));
         let mont = self.as_montgomery();
         assume(limbs_bounded(&mont));

@@ -11,7 +11,7 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
-use crate::backend::serial::u64::subtle_assumes::select;
+use super::subtle_assumes::select;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
@@ -59,17 +59,16 @@ impl Index<usize> for Scalar52 {
     type Output = u64;
     fn index(&self, _index: usize) -> (result: &u64)
     requires
-        _index < 5, // VERIFICATION NOTE: we can't be sure this will hold in practice
+        _index < 5, 
     ensures
         result == &(self.limbs[_index as int]),
     {
-        // VERIFICATION NOTE: is this safe without checks ??
         &(self.limbs[_index])
     }
 }
 } // verus!
 
-// VERIFICATION EXCLUDED: some mutables unsupported by Verus
+// VERIFICATION EXCLUDED: mutable returns unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
         // VERIFICATION NOTE: is this safe without checks ??
@@ -288,11 +287,14 @@ impl Scalar52 {
 
     }
 
-    /*
+
+    // VERIFICATION NOTE: original sub function; we prove a refactored version below
+    #[allow(dead_code)]
     pub fn sub_source(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
         limbs_bounded(a),
         limbs_bounded(b),
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
     {
@@ -303,7 +305,8 @@ impl Scalar52 {
         // a - b
         let mut borrow: u64 = 0;
         for i in 0..5 {
-            borrow = a[i].wrapping_sub(b[i] + (borrow >> 63));
+            assume(false);
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
             difference[i] = borrow & mask;
         }
 
@@ -311,24 +314,79 @@ impl Scalar52 {
         difference.conditional_add_l(Choice::from((borrow >> 63) as u8));
         difference
     }
-    */
-    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> u64 {
-        assume(false); // TODO: complete the proof
+
+
+    // VERIFICATION NOTE: conditional_add_l function only used in original sub function
+    #[allow(dead_code)]
+    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> (carry: u64)
+    requires
+        limbs_bounded(&old(self)),
+        to_nat(&old(self).limbs) + group_order() < pow2(260) 
+    ensures
+        // The mathematical value modulo group_order doesn't change (since L = group_order)
+        to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order(),
+        // VERIFICATION NOTE: expression below unsupported by Verus
+        //limbs_bounded(&self),
+
+        // Meaning of conditional addition
+        super::subtle_assumes::choice_is_true(condition) ==>
+            to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order(),
+        !super::subtle_assumes::choice_is_true(condition) ==>
+            to_nat(&self.limbs) == to_nat(&old(self).limbs),
+    {
         let mut carry: u64 = 0;
+
+        proof {
+            assert(1u64 << 52 > 0) by (bit_vector);
+        }
         let mask = (1u64 << 52) - 1;
 
-        for i in 0..5 {
+        for i in 0..5
+            invariant
+                mask == (1u64 << 52) - 1,
+                forall|j: int| 0 <= j < i ==> self.limbs[j] < (1u64 << 52),
+                forall|j: int| i <= j < 5 ==> self.limbs[j] == old(self).limbs[j],
+                forall|j: int| i <= j < 5 ==> self.limbs[j] < (1u64 << 52),
+                i == 0 ==> carry == 0,
+                i >= 1 ==> (carry >> 52) < 2,
+        {
+            /* <VERIFICATION NOTE> Using wrapper function for Verus compatibility instead of direct call to conditional_select */
             let addend = select(&0, &constants::L.limbs[i], condition);
-            assume(false); // TODO: complete the proof
+            /* <ORIGINAL CODE>
+             let addend = u64::conditional_select(&0, &constants::L[i], condition);
+             <ORIGINAL CODE>*/
+
+            // Prove no overflow using the same lemma as in sub()
+            proof {
+                lemma_scalar_subtract_no_overflow(carry, self.limbs[i as int], addend, i as u32, &constants::L);
+            }
+
             carry = (carry >> 52) + self.limbs[i] + addend;
             self.limbs[i] = carry & mask;
+
+            proof {
+                lemma_carry_bounded_after_mask(carry, mask);
+            }
+        }
+
+        proof {
+            // TODO: Prove the postconditions
+            assume(to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order());
+         //   assume(limbs_bounded(&self));
+            assume(super::subtle_assumes::choice_is_true(condition) ==>
+                to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order());
+            assume(!super::subtle_assumes::choice_is_true(condition) ==>
+                to_nat(&self.limbs) == to_nat(&old(self).limbs));
         }
 
         carry
     }
 
 
-    // VERIFICATION NOTE: validation in progress git issue #74
+    /*  <VERIFICATION NOTE>
+    - this is a refactored version of sub with some inlined functions for which we managed to finish proof.
+    - see sub_source function above for the spec and code of the original sub function.
+    <VERIFICATION NOTE> */
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires

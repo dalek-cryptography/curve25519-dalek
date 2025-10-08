@@ -805,9 +805,6 @@ impl Scalar {
         &self.bytes
     }
 }
-} // verus!
-
-verus! {
 impl Scalar {
     /// Given a nonzero `Scalar`, compute its multiplicative inverse.
     ///

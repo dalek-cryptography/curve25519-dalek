@@ -1208,7 +1208,7 @@ impl Scalar {
         /* <VERIFICATION NOTE>
          assumed external spec
         </VERIFICATION NOTE> */
-        //#[verifier::external_body]
+        #[verifier::external_body]
         pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
         requires
             2 <= w <= 8,

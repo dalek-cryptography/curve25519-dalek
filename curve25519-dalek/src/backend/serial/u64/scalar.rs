@@ -59,7 +59,7 @@ impl Index<usize> for Scalar52 {
     type Output = u64;
     fn index(&self, _index: usize) -> (result: &u64)
     requires
-        _index < 5, 
+        _index < 5,
     ensures
         result == &(self.limbs[_index as int]),
     {
@@ -321,7 +321,7 @@ impl Scalar52 {
     pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> (carry: u64)
     requires
         limbs_bounded(&old(self)),
-        to_nat(&old(self).limbs) + group_order() < pow2(260) 
+        to_nat(&old(self).limbs) + group_order() < pow2(260)
     ensures
         // The mathematical value modulo group_order doesn't change (since L = group_order)
         to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order(),

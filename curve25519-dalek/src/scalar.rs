@@ -129,7 +129,7 @@ use group::ff::{FieldBits, PrimeFieldBits};
 use rand_core::TryRngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::{CryptoRng, RngCore};
+use rand_core::CryptoRng;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
@@ -1587,7 +1587,7 @@ impl UnpackedScalar {
         /* <ORIGINAL CODE>
                 self.as_montgomery().montgomery_invert().from_montgomery()
         </ORIGINAL CODE> */
-        
+
         assume(limbs_bounded(self));
         let mont = self.as_montgomery();
         assume(limbs_bounded(&mont));

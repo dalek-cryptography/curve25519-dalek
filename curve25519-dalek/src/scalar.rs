@@ -183,7 +183,6 @@ verus! {
 /*** <VERIFICATION-NOTE> Focus on u64; removed all other backend types </VERIFICATION-NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
-verus!{
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Copy, Clone, Hash)]
@@ -640,7 +639,6 @@ impl Zeroize for Scalar {
 
 verus! {
 
-
 impl Scalar {
     /// The scalar \\( 0 \\).
    // pub const ZERO: Self = Self { bytes: [0u8; 32] };
@@ -686,8 +684,12 @@ impl Scalar {
     /// let mut csprng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    /// ```
-    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self
+    /* <VERIFICATION NOTE>
+     Added verifier::external_body annotation
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
+    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> (result: Self)
+        ensures is_random_scalar(&result)
     {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
@@ -1042,6 +1044,7 @@ impl Scalar {
             inputs[i] = UnpackedScalar::montgomery_mul(&acc, &scratch[i]).pack();
             acc = tmp;
         }
+
 
         #[cfg(feature = "zeroize")]
         Zeroize::zeroize(&mut scratch);

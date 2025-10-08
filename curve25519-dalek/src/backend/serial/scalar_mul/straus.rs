@@ -120,7 +120,7 @@ impl MultiscalarMul for Straus {
         // To ensure that these are erased, pass ownership of the Vec into a
         // Zeroizing wrapper.
         #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-        let scalar_digits: Vec<_> = scalars
+        let mut scalar_digits: Vec<_> = scalars
             .into_iter()
             .map(|s| s.borrow().as_radix_16())
             .collect();

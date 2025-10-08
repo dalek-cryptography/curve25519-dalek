@@ -355,7 +355,7 @@ impl Index<usize> for Scalar {
 } // verus!
 
 /* <VERIFICATION NOTE>
- Could be left outside verification scope (??)
+ Left outside verification scope
 </VERIFICATION NOTE> */
 impl Debug for Scalar {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {

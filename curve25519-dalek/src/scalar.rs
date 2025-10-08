@@ -134,9 +134,6 @@ use rand_core::{CryptoRng, RngCore};
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-#[cfg(feature = "alloc")]
-use alloc::vec::Vec;
-
 // #[cfg(feature = "digest")]
 // use digest::Digest;
 // #[cfg(feature = "digest")]

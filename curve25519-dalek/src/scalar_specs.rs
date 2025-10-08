@@ -44,8 +44,8 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
 }
 
 /// Returns true iff a scalar's byte representation equals the given natural number (mod group_order)
-pub open spec fn scalar_equals_nat(s: &Scalar, n: nat) -> bool {
-    bytes_to_nat(&s.bytes) == n % group_order()
+pub open spec fn scalar_congruent_nat(s: &Scalar, n: nat) -> bool {
+    bytes_to_nat(&s.bytes) % group_order() == n % group_order()
 }
 
 /// Returns true iff a scalar is the inverse of a natural number (mod group_order)

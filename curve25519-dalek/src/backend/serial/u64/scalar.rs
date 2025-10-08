@@ -69,7 +69,7 @@ impl Index<usize> for Scalar52 {
 }
 } // verus!
 
-// VERIFICATION EXCLUDED: some mutables unsupporeted by Verus
+// VERIFICATION EXCLUDED: some mutables unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
         // VERIFICATION NOTE: is this safe without checks ??

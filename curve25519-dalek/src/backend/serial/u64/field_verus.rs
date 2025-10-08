@@ -71,6 +71,7 @@ fn m(x: u64, y: u64) -> (r: u128)
 
 {
     proof {
+        // if a <= a' and b <= b' then ab <= a'b'
         mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
     }
     (x as u128) * (y as u128)
@@ -162,8 +163,6 @@ impl FieldElement51 {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
-            pow255_gt_19();
-            lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest
@@ -439,7 +438,7 @@ impl FieldElement51 {
 
         for i in 0..k
             invariant
-                forall |i: int| 0 <= i < 5 ==> a[i] < 1u64 << 54,
+                forall |j: int| 0 <= j < 5 ==> a[j] < 1u64 << 54,
                 as_nat(a) % p() == pow(as_nat(self.limbs) as int, pow2(i as nat)) as nat % p(),
         {
             proof {

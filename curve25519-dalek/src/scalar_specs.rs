@@ -56,4 +56,5 @@ pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
 /// Uninterpreted spec function to model randomness
 pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;
 
+
 } // verus!

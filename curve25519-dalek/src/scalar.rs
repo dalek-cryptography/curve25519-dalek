@@ -1477,9 +1477,6 @@ impl Scalar {
         let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
         x_mod_l.pack()
     }
-    } // verus!
-
-    verus! {
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
     fn is_canonical(&self) -> Choice {

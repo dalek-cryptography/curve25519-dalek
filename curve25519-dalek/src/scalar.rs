@@ -129,7 +129,10 @@ use group::ff::{FieldBits, PrimeFieldBits};
 use rand_core::TryRngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRng;
+use rand_core::{CryptoRng, RngCore};
+
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;

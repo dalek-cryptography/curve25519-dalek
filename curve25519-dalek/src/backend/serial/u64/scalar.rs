@@ -71,6 +71,7 @@ impl Index<usize> for Scalar52 {
 // VERIFICATION EXCLUDED: mutable returns unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
+        // VERIFICATION NOTE: is this safe without checks ??
         &mut (self.limbs[_index])
     }
 }
@@ -222,6 +223,7 @@ impl Scalar52 {
         s
     }
 
+    // VERIFICATION NOTE: validation in progress git issue #74
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -229,6 +231,7 @@ impl Scalar52 {
         limbs_bounded(b),
         to_nat(&a.limbs) < group_order(),
         to_nat(&b.limbs) < group_order(),
+    // VERIFICATION NOTE: can we introduce a Valid or Canonical scalar predicate to cover such preconditions ?
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
@@ -393,6 +396,8 @@ impl Scalar52 {
         // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
         // In the 2nd case, `sub` doesn't always do subtraction mod group_order
+
+        // VERIFICATION NOTE: isnt this always true? we should prove it then.
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),

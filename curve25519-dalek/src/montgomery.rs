@@ -57,7 +57,7 @@ use core::{
 use crate::constants::{APLUS2_OVER_FOUR, MONTGOMERY_A, MONTGOMERY_A_NEG};
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 use crate::field::FieldElement;
-use crate::scalar::{Scalar, clamp_integer};
+use crate::scalar::{clamp_integer, Scalar};
 
 use crate::traits::Identity;
 
@@ -65,8 +65,8 @@ use subtle::Choice;
 use subtle::ConstantTimeEq;
 use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -84,12 +84,6 @@ impl ConstantTimeEq for MontgomeryPoint {
     }
 }
 
-impl ConditionallySelectable for MontgomeryPoint {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        Self(<[u8; 32]>::conditional_select(&a.0, &b.0, choice))
-    }
-}
-
 impl PartialEq for MontgomeryPoint {
     fn eq(&self, other: &MontgomeryPoint) -> bool {
         self.ct_eq(other).into()
@@ -104,7 +98,7 @@ impl Hash for MontgomeryPoint {
     fn hash<H: Hasher>(&self, state: &mut H) {
         // Do a round trip through a `FieldElement`. `as_bytes` is guaranteed to give a canonical
         // 32-byte encoding
-        let canonical_bytes = FieldElement::from_bytes(&self.0).to_bytes();
+        let canonical_bytes = FieldElement::from_bytes(&self.0).as_bytes();
         canonical_bytes.hash(state);
     }
 }
@@ -116,12 +110,12 @@ impl Identity for MontgomeryPoint {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for MontgomeryPoint {
-//     fn zeroize(&mut self) {
-//         self.0.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for MontgomeryPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
@@ -188,8 +182,8 @@ impl MontgomeryPoint {
         // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
         ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
         // Don't leave the bit in the stack
-        // #[cfg(feature = "zeroize")]
-        // prev_bit.zeroize();
+        #[cfg(feature = "zeroize")]
+        prev_bit.zeroize();
 
         x0.as_affine()
     }
@@ -215,10 +209,10 @@ impl MontgomeryPoint {
     /// # Return
     ///
     /// * `Some(EdwardsPoint)` if `self` is the \\(u\\)-coordinate of a
-    ///   point on (the Montgomery form of) Curve25519;
+    /// point on (the Montgomery form of) Curve25519;
     ///
     /// * `None` if `self` is the \\(u\\)-coordinate of a point on the
-    ///   twist of (the Montgomery form of) Curve25519;
+    /// twist of (the Montgomery form of) Curve25519;
     ///
     pub fn to_edwards(&self, sign: u8) -> Option<EdwardsPoint> {
         // To decompress the Montgomery u coordinate to an
@@ -245,21 +239,21 @@ impl MontgomeryPoint {
 
         let y = &(&u - &one) * &(&u + &one).invert();
 
-        let mut y_bytes = y.to_bytes();
+        let mut y_bytes = y.as_bytes();
         y_bytes[31] ^= sign << 7;
 
         CompressedEdwardsY(y_bytes).decompress()
     }
 }
 
-/// Perform the Elligator2 mapping to a Montgomery point. Returns a Montgomery point and a `Choice`
-/// determining whether eps is a square. This is required by the standard to determine the
-/// sign of the v coordinate.
+/// Perform the Elligator2 mapping to a Montgomery point.
 ///
-/// See <https://www.rfc-editor.org/rfc/rfc9380.html#name-elligator-2-method>
+/// See <https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-10#section-6.7.1>
 //
+// TODO Determine how much of the hash-to-group API should be exposed after the CFRG
+//      draft gets into a more polished/accepted state.
 #[allow(unused)]
-pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) {
+pub(crate) fn elligator_encode(r_0: &FieldElement) -> MontgomeryPoint {
     let one = FieldElement::ONE;
     let d_1 = &one + &r_0.square2(); /* 2r^2 */
 
@@ -278,7 +272,7 @@ pub(crate) fn elligator_encode(r_0: &FieldElement) -> (MontgomeryPoint, Choice) 
     let mut u = &d + &Atemp; /* d, or d+A if nonsquare */
     u.conditional_negate(!eps_is_sq); /* d, or -d-A if nonsquare */
 
-    (MontgomeryPoint(u.to_bytes()), eps_is_sq)
+    MontgomeryPoint(u.as_bytes())
 }
 
 /// A `ProjectivePoint` holds a point on the projective line
@@ -327,7 +321,7 @@ impl ProjectivePoint {
     /// * \\( 0 \\) if \\( W \eq 0 \\);
     pub fn as_affine(&self) -> MontgomeryPoint {
         let u = &self.U * &self.W.invert();
-        MontgomeryPoint(u.to_bytes())
+        MontgomeryPoint(u.as_bytes())
     }
 }
 
@@ -429,238 +423,238 @@ impl Mul<&MontgomeryPoint> for &Scalar {
 // Tests
 // ------------------------------------------------------------------------
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//     use crate::constants;
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::constants;
 
-//     #[cfg(feature = "alloc")]
-//     use alloc::vec::Vec;
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
 
-//     use rand_core::{CryptoRng, RngCore, TryRngCore};
+    use rand_core::{CryptoRng, RngCore};
 
-//     #[test]
-//     fn identity_in_different_coordinates() {
-//         let id_projective = ProjectivePoint::identity();
-//         let id_montgomery = id_projective.as_affine();
+    #[test]
+    fn identity_in_different_coordinates() {
+        let id_projective = ProjectivePoint::identity();
+        let id_montgomery = id_projective.as_affine();
 
-//         assert!(id_montgomery == MontgomeryPoint::identity());
-//     }
+        assert!(id_montgomery == MontgomeryPoint::identity());
+    }
 
-//     #[test]
-//     fn identity_in_different_models() {
-//         assert!(EdwardsPoint::identity().to_montgomery() == MontgomeryPoint::identity());
-//     }
+    #[test]
+    fn identity_in_different_models() {
+        assert!(EdwardsPoint::identity().to_montgomery() == MontgomeryPoint::identity());
+    }
 
-//     #[test]
-//     #[cfg(feature = "serde")]
-//     fn serde_bincode_basepoint_roundtrip() {
-//         use bincode;
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_bincode_basepoint_roundtrip() {
+        use bincode;
 
-//         let encoded = bincode::serialize(&constants::X25519_BASEPOINT).unwrap();
-//         let decoded: MontgomeryPoint = bincode::deserialize(&encoded).unwrap();
+        let encoded = bincode::serialize(&constants::X25519_BASEPOINT).unwrap();
+        let decoded: MontgomeryPoint = bincode::deserialize(&encoded).unwrap();
 
-//         assert_eq!(encoded.len(), 32);
-//         assert_eq!(decoded, constants::X25519_BASEPOINT);
+        assert_eq!(encoded.len(), 32);
+        assert_eq!(decoded, constants::X25519_BASEPOINT);
 
-//         let raw_bytes = constants::X25519_BASEPOINT.as_bytes();
-//         let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).unwrap();
-//         assert_eq!(bp, constants::X25519_BASEPOINT);
-//     }
+        let raw_bytes = constants::X25519_BASEPOINT.as_bytes();
+        let bp: MontgomeryPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::X25519_BASEPOINT);
+    }
 
-//     /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
-//     #[test]
-//     fn basepoint_montgomery_to_edwards() {
-//         // sign bit = 0 => basepoint
-//         assert_eq!(
-//             constants::ED25519_BASEPOINT_POINT,
-//             constants::X25519_BASEPOINT.to_edwards(0).unwrap()
-//         );
-//         // sign bit = 1 => minus basepoint
-//         assert_eq!(
-//             -constants::ED25519_BASEPOINT_POINT,
-//             constants::X25519_BASEPOINT.to_edwards(1).unwrap()
-//         );
-//     }
+    /// Test Montgomery -> Edwards on the X/Ed25519 basepoint
+    #[test]
+    fn basepoint_montgomery_to_edwards() {
+        // sign bit = 0 => basepoint
+        assert_eq!(
+            constants::ED25519_BASEPOINT_POINT,
+            constants::X25519_BASEPOINT.to_edwards(0).unwrap()
+        );
+        // sign bit = 1 => minus basepoint
+        assert_eq!(
+            -constants::ED25519_BASEPOINT_POINT,
+            constants::X25519_BASEPOINT.to_edwards(1).unwrap()
+        );
+    }
 
-//     /// Test Edwards -> Montgomery on the X/Ed25519 basepoint
-//     #[test]
-//     fn basepoint_edwards_to_montgomery() {
-//         assert_eq!(
-//             constants::ED25519_BASEPOINT_POINT.to_montgomery(),
-//             constants::X25519_BASEPOINT
-//         );
-//     }
+    /// Test Edwards -> Montgomery on the X/Ed25519 basepoint
+    #[test]
+    fn basepoint_edwards_to_montgomery() {
+        assert_eq!(
+            constants::ED25519_BASEPOINT_POINT.to_montgomery(),
+            constants::X25519_BASEPOINT
+        );
+    }
 
-//     /// Check that Montgomery -> Edwards fails for points on the twist.
-//     #[test]
-//     fn montgomery_to_edwards_rejects_twist() {
-//         let one = FieldElement::ONE;
+    /// Check that Montgomery -> Edwards fails for points on the twist.
+    #[test]
+    fn montgomery_to_edwards_rejects_twist() {
+        let one = FieldElement::ONE;
 
-//         // u = 2 corresponds to a point on the twist.
-//         let two = MontgomeryPoint((&one + &one).to_bytes());
+        // u = 2 corresponds to a point on the twist.
+        let two = MontgomeryPoint((&one + &one).as_bytes());
 
-//         assert!(two.to_edwards(0).is_none());
+        assert!(two.to_edwards(0).is_none());
 
-//         // u = -1 corresponds to a point on the twist, but should be
-//         // checked explicitly because it's an exceptional point for the
-//         // birational map.  For instance, libsignal will accept it.
-//         let minus_one = MontgomeryPoint((-&one).to_bytes());
+        // u = -1 corresponds to a point on the twist, but should be
+        // checked explicitly because it's an exceptional point for the
+        // birational map.  For instance, libsignal will accept it.
+        let minus_one = MontgomeryPoint((-&one).as_bytes());
 
-//         assert!(minus_one.to_edwards(0).is_none());
-//     }
+        assert!(minus_one.to_edwards(0).is_none());
+    }
 
-//     #[test]
-//     fn eq_defined_mod_p() {
-//         let mut u18_bytes = [0u8; 32];
-//         u18_bytes[0] = 18;
-//         let u18 = MontgomeryPoint(u18_bytes);
-//         let u18_unred = MontgomeryPoint([255; 32]);
+    #[test]
+    fn eq_defined_mod_p() {
+        let mut u18_bytes = [0u8; 32];
+        u18_bytes[0] = 18;
+        let u18 = MontgomeryPoint(u18_bytes);
+        let u18_unred = MontgomeryPoint([255; 32]);
 
-//         assert_eq!(u18, u18_unred);
-//     }
+        assert_eq!(u18, u18_unred);
+    }
 
-//     /// Returns a random point on the prime-order subgroup
-//     fn rand_prime_order_point<R: CryptoRng + ?Sized>(rng: &mut R) -> EdwardsPoint {
-//         let s: Scalar = Scalar::random(rng);
-//         EdwardsPoint::mul_base(&s)
-//     }
+    /// Returns a random point on the prime-order subgroup
+    fn rand_prime_order_point(mut rng: impl RngCore + CryptoRng) -> EdwardsPoint {
+        let s: Scalar = Scalar::random(&mut rng);
+        EdwardsPoint::mul_base(&s)
+    }
 
-//     /// Given a bytestring that's little-endian at the byte level, return an iterator over all the
-//     /// bits, in little-endian order.
-//     fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + Clone + '_ {
-//         let bitlen = x.len() * 8;
-//         (0..bitlen).map(|i| {
-//             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-//             // the byte. Since self.bytes is little-endian at the byte level, this iterator is
-//             // little-endian on the bit level
-//             ((x[i >> 3] >> (i & 7)) & 1u8) == 1
-//         })
-//     }
+    /// Given a bytestring that's little-endian at the byte level, return an iterator over all the
+    /// bits, in little-endian order.
+    fn bytestring_bits_le(x: &[u8]) -> impl DoubleEndedIterator<Item = bool> + Clone + '_ {
+        let bitlen = x.len() * 8;
+        (0..bitlen).map(|i| {
+            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+            // the byte. Since self.bytes is little-endian at the byte level, this iterator is
+            // little-endian on the bit level
+            ((x[i >> 3] >> (i & 7)) & 1u8) == 1
+        })
+    }
 
-//     #[test]
-//     fn montgomery_ladder_matches_edwards_scalarmult() {
-//         let mut csprng = rand_core::OsRng.unwrap_err();
+    #[test]
+    fn montgomery_ladder_matches_edwards_scalarmult() {
+        let mut csprng = rand_core::OsRng;
 
-//         for _ in 0..100 {
-//             let p_edwards = rand_prime_order_point(&mut csprng);
-//             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+        for _ in 0..100 {
+            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
-//             let s: Scalar = Scalar::random(&mut csprng);
-//             let expected = s * p_edwards;
-//             let result = s * p_montgomery;
+            let s: Scalar = Scalar::random(&mut csprng);
+            let expected = s * p_edwards;
+            let result = s * p_montgomery;
 
-//             assert_eq!(result, expected.to_montgomery())
-//         }
-//     }
+            assert_eq!(result, expected.to_montgomery())
+        }
+    }
 
-//     // Tests that, on the prime-order subgroup, MontgomeryPoint::mul_bits_be is the same as
-//     // multiplying by the Scalar representation of the same bits
-//     #[test]
-//     fn montgomery_mul_bits_be() {
-//         let mut csprng = rand_core::OsRng.unwrap_err();
+    // Tests that, on the prime-order subgroup, MontgomeryPoint::mul_bits_be is the same as
+    // multiplying by the Scalar representation of the same bits
+    #[test]
+    fn montgomery_mul_bits_be() {
+        let mut csprng = rand_core::OsRng;
 
-//         for _ in 0..100 {
-//             // Make a random prime-order point P
-//             let p_edwards = rand_prime_order_point(&mut csprng);
-//             let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
+        for _ in 0..100 {
+            // Make a random prime-order point P
+            let p_edwards = rand_prime_order_point(&mut csprng);
+            let p_montgomery: MontgomeryPoint = p_edwards.to_montgomery();
 
-//             // Make a random integer b
-//             let mut bigint = [0u8; 64];
-//             csprng.fill_bytes(&mut bigint[..]);
-//             let bigint_bits_be = bytestring_bits_le(&bigint).rev();
+            // Make a random integer b
+            let mut bigint = [0u8; 64];
+            csprng.fill_bytes(&mut bigint[..]);
+            let bigint_bits_be = bytestring_bits_le(&bigint).rev();
 
-//             // Check that bP is the same whether calculated as scalar-times-edwards or
-//             // integer-times-montgomery.
-//             let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
-//             let result = p_montgomery.mul_bits_be(bigint_bits_be);
-//             assert_eq!(result, expected.to_montgomery())
-//         }
-//     }
+            // Check that bP is the same whether calculated as scalar-times-edwards or
+            // integer-times-montgomery.
+            let expected = Scalar::from_bytes_mod_order_wide(&bigint) * p_edwards;
+            let result = p_montgomery.mul_bits_be(bigint_bits_be);
+            assert_eq!(result, expected.to_montgomery())
+        }
+    }
 
-//     // Tests that MontgomeryPoint::mul_bits_be is consistent on any point, even ones that might be
-//     // on the curve's twist. Specifically, this tests that b₁(b₂P) == b₂(b₁P) for random
-//     // integers b₁, b₂ and random (curve or twist) point P.
-//     #[test]
-//     fn montgomery_mul_bits_be_twist() {
-//         let mut csprng = rand_core::OsRng.unwrap_err();
+    // Tests that MontgomeryPoint::mul_bits_be is consistent on any point, even ones that might be
+    // on the curve's twist. Specifically, this tests that b₁(b₂P) == b₂(b₁P) for random
+    // integers b₁, b₂ and random (curve or twist) point P.
+    #[test]
+    fn montgomery_mul_bits_be_twist() {
+        let mut csprng = rand_core::OsRng;
 
-//         for _ in 0..100 {
-//             // Make a random point P on the curve or its twist
-//             let p_montgomery = {
-//                 let mut buf = [0u8; 32];
-//                 csprng.fill_bytes(&mut buf);
-//                 MontgomeryPoint(buf)
-//             };
+        for _ in 0..100 {
+            // Make a random point P on the curve or its twist
+            let p_montgomery = {
+                let mut buf = [0u8; 32];
+                csprng.fill_bytes(&mut buf);
+                MontgomeryPoint(buf)
+            };
 
-//             // Compute two big integers b₁ and b₂
-//             let mut bigint1 = [0u8; 64];
-//             let mut bigint2 = [0u8; 64];
-//             csprng.fill_bytes(&mut bigint1[..]);
-//             csprng.fill_bytes(&mut bigint2[..]);
+            // Compute two big integers b₁ and b₂
+            let mut bigint1 = [0u8; 64];
+            let mut bigint2 = [0u8; 64];
+            csprng.fill_bytes(&mut bigint1[..]);
+            csprng.fill_bytes(&mut bigint2[..]);
 
-//             // Compute b₁P and b₂P
-//             let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
-//             let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
-//             let prod1 = p_montgomery.mul_bits_be(bigint1_bits_be.clone());
-//             let prod2 = p_montgomery.mul_bits_be(bigint2_bits_be.clone());
+            // Compute b₁P and b₂P
+            let bigint1_bits_be = bytestring_bits_le(&bigint1).rev();
+            let bigint2_bits_be = bytestring_bits_le(&bigint2).rev();
+            let prod1 = p_montgomery.mul_bits_be(bigint1_bits_be.clone());
+            let prod2 = p_montgomery.mul_bits_be(bigint2_bits_be.clone());
 
-//             // Check that b₁(b₂P) == b₂(b₁P)
-//             assert_eq!(
-//                 prod1.mul_bits_be(bigint2_bits_be),
-//                 prod2.mul_bits_be(bigint1_bits_be)
-//             );
-//         }
-//     }
+            // Check that b₁(b₂P) == b₂(b₁P)
+            assert_eq!(
+                prod1.mul_bits_be(bigint2_bits_be),
+                prod2.mul_bits_be(bigint1_bits_be)
+            );
+        }
+    }
 
-//     /// Check that mul_base_clamped and mul_clamped agree
-//     #[test]
-//     fn mul_base_clamped() {
-//         let mut csprng = rand_core::OsRng;
+    /// Check that mul_base_clamped and mul_clamped agree
+    #[test]
+    fn mul_base_clamped() {
+        let mut csprng = rand_core::OsRng;
 
-//         // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
-//         let a_bytes = [0xff; 32];
-//         assert_eq!(
-//             MontgomeryPoint::mul_base_clamped(a_bytes),
-//             constants::X25519_BASEPOINT.mul_clamped(a_bytes)
-//         );
+        // Test agreement on a large integer. Even after clamping, this is not reduced mod l.
+        let a_bytes = [0xff; 32];
+        assert_eq!(
+            MontgomeryPoint::mul_base_clamped(a_bytes),
+            constants::X25519_BASEPOINT.mul_clamped(a_bytes)
+        );
 
-//         // Test agreement on random integers
-//         for _ in 0..100 {
-//             // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
-//             let mut a_bytes = [0u8; 32];
-//             csprng.try_fill_bytes(&mut a_bytes).unwrap();
+        // Test agreement on random integers
+        for _ in 0..100 {
+            // This will be reduced mod l with probability l / 2^256 ≈ 6.25%
+            let mut a_bytes = [0u8; 32];
+            csprng.fill_bytes(&mut a_bytes);
 
-//             assert_eq!(
-//                 MontgomeryPoint::mul_base_clamped(a_bytes),
-//                 constants::X25519_BASEPOINT.mul_clamped(a_bytes)
-//             );
-//         }
-//     }
+            assert_eq!(
+                MontgomeryPoint::mul_base_clamped(a_bytes),
+                constants::X25519_BASEPOINT.mul_clamped(a_bytes)
+            );
+        }
+    }
 
-//     #[cfg(feature = "alloc")]
-//     const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
-//         0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
-//         0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
-//         0xf4, 0x6e,
-//     ];
+    #[cfg(feature = "alloc")]
+    const ELLIGATOR_CORRECT_OUTPUT: [u8; 32] = [
+        0x5f, 0x35, 0x20, 0x00, 0x1c, 0x6c, 0x99, 0x36, 0xa3, 0x12, 0x06, 0xaf, 0xe7, 0xc7, 0xac,
+        0x22, 0x4e, 0x88, 0x61, 0x61, 0x9b, 0xf9, 0x88, 0x72, 0x44, 0x49, 0x15, 0x89, 0x9d, 0x95,
+        0xf4, 0x6e,
+    ];
 
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn montgomery_elligator_correct() {
-//         let bytes: Vec<u8> = (0u8..32u8).collect();
-//         let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn montgomery_elligator_correct() {
+        let bytes: Vec<u8> = (0u8..32u8).collect();
+        let bits_in: [u8; 32] = (&bytes[..]).try_into().expect("Range invariant broken");
 
-//         let fe = FieldElement::from_bytes(&bits_in);
-//         let (eg, _) = elligator_encode(&fe);
-//         assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
-//     }
+        let fe = FieldElement::from_bytes(&bits_in);
+        let eg = elligator_encode(&fe);
+        assert_eq!(eg.to_bytes(), ELLIGATOR_CORRECT_OUTPUT);
+    }
 
-//     #[test]
-//     fn montgomery_elligator_zero_zero() {
-//         let zero = [0u8; 32];
-//         let fe = FieldElement::from_bytes(&zero);
-//         let (eg, _) = elligator_encode(&fe);
-//         assert_eq!(eg.to_bytes(), zero);
-//     }
-// }
+    #[test]
+    fn montgomery_elligator_zero_zero() {
+        let zero = [0u8; 32];
+        let fe = FieldElement::from_bytes(&zero);
+        let eg = elligator_encode(&fe);
+        assert_eq!(eg.to_bytes(), zero);
+    }
+}

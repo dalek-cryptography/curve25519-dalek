@@ -21,8 +21,8 @@ use core::ops::{Sub, SubAssign};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -48,12 +48,12 @@ impl Debug for FieldElement51 {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for FieldElement51 {
-//     fn zeroize(&mut self) {
-//         self.0.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for FieldElement51 {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     fn add_assign(&mut self, _rhs: &'a FieldElement51) {
@@ -365,7 +365,7 @@ impl FieldElement51 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip] // keep alignment of s[*] calculations
-    pub fn to_bytes(self) -> [u8; 32] {
+    pub fn as_bytes(self) -> [u8; 32] {
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
         // Write h = pq + r with 0 <= r < p.

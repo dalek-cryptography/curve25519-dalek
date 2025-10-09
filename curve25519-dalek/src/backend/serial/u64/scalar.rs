@@ -145,7 +145,7 @@ impl Scalar52 {
     ensures
         limbs_bounded(&s),
         to_nat(&s.limbs) % group_order() == bytes_wide_to_nat(bytes) % group_order(),
-        // VER NOTE: Result is canonical since we use add() which reduces mod L
+        // VER NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
     {
         assume(false); // TODO: complete the proof
@@ -234,7 +234,7 @@ impl Scalar52 {
         to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
-        // VER NOTE: Result is canonical and we reduce mod L
+        // VER NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
     {
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -398,7 +398,7 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
-        // VER NOTE: Result is in canonical form (since we conditionally add L when negative)
+        // VER NOTE: Result is in canonical form 
         to_nat(&s.limbs) < group_order(),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -483,10 +483,7 @@ impl Scalar52 {
         }
         proof { 
             lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);
-            // VER NOTE: TODO: Prove canonicality - result is < group_order() because:
-            // If a >= b: result = a - b < group_order() (since precondition ensures a - b < group_order())
-            // If a < b: result = (a - b) + L, and since -group_order() < a - b < 0, we have 0 < result < group_order()
-        }
+         }
         difference
     }
 

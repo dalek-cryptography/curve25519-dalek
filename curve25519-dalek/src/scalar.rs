@@ -233,7 +233,7 @@ impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
     /// modulo the group order \\( \ell \\).
     // VERIFICATION NOTE: verified
-    pub fn from_bytes_mod_order(bytes: [u8; 32]) -> (result: Scalar) 
+    pub fn from_bytes_mod_order(bytes: [u8; 32]) -> (result: Scalar)
     ensures
         // Result is equivalent to input modulo the group order
         bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
@@ -256,7 +256,7 @@ impl Scalar {
 
     /// Construct a `Scalar` by reducing a 512-bit little-endian integer
     /// modulo the group order \\( \ell \\).
-    pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar) 
+    pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
     ensures
         bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
         bytes_to_nat(&result.bytes) < group_order(),
@@ -1469,7 +1469,7 @@ impl Scalar {
     verus! {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     // VERIFICATION NOTE: verified
-    pub(crate) fn unpack(&self) -> (result: UnpackedScalar) 
+    pub(crate) fn unpack(&self) -> (result: UnpackedScalar)
     ensures
         limbs_bounded(&result),
         to_nat(&result.limbs) == bytes_to_nat(&self.bytes),

@@ -97,7 +97,7 @@ impl Scalar52 {
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
-    ensures bytes_to_nat(bytes) == to_nat(&s.limbs), 
+    ensures bytes_to_nat(bytes) == to_nat(&s.limbs),
             limbs_bounded(&s),
     {
         let mut words = [0u64; 4];
@@ -398,7 +398,7 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
-        // VER NOTE: Result is in canonical form 
+        // VER NOTE: Result is in canonical form
         to_nat(&s.limbs) < group_order(),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -481,9 +481,9 @@ impl Scalar52 {
                 lemma_sub_loop2_invariant(difference, i, a, b, mask, difference_after_loop1, difference_loop2_start, carry, old_carry, addend, borrow);
             }
         }
-        proof { 
+        proof {
             lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);
-         }
+        }
         difference
     }
 

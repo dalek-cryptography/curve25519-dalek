@@ -165,7 +165,7 @@ use crate::scalar_specs::*;
 use vstd::prelude::*;
 
 verus! {
-    /*** <VERIFICATION-NOTE> External type specification for subtle::CtOption to make it compatible with Verus </VERIFICATION-NOTE> ***/
+    /*** <VERIFICATION NOTE> External type specification for subtle::CtOption to make it compatible with Verus </VERIFICATION NOTE> ***/
     #[verifier::external_type_specification]
     #[verifier::external_body]
     #[verifier::reject_recursive_types(T)]
@@ -173,14 +173,14 @@ verus! {
     /// External wrapper for `CtOption<T>` used in Verus verification.
     pub struct ExCtOption<T>(CtOption<T>);
 
-    /*** <VERIFICATION-NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
+    /*** <VERIFICATION ^NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
     #[verifier::external_body]
     fn ct_option_new<T>(value: T, choice: Choice) -> CtOption<T> {
         CtOption::new(value, choice)
     }
 
 
-/*** <VERIFICATION-NOTE> Focus on u64; removed all other backend types </VERIFICATION-NOTE> ***/
+/*** <VERIFICATION NOTE> Focus on u64; removed all other backend types </VERIFICATION NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
 /// The `Scalar` struct holds an element of \\(\mathbb Z / \ell\mathbb Z \\).
@@ -246,7 +246,7 @@ impl Scalar {
 
         // Then reduce mod the group order and return the reduced representative.
         let s = s_unreduced.reduce();
-        /*** <VERIFICATION-NOTE> We omit debug asserts from verification  </VERIFICATION-NOTE> ***/
+        /*** <VERIFICATION NOTE> We omit debug asserts from verification  </VERIFICATION NOTE> ***/
         #[cfg(not(verus_keep_ghost))]
         debug_assert_eq!(0u8, s[31] >> 7);
 

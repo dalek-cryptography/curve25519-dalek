@@ -71,7 +71,6 @@ impl Index<usize> for Scalar52 {
 // VERIFICATION EXCLUDED: mutable returns unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
-        // VERIFICATION NOTE: is this safe without checks ??
         &mut (self.limbs[_index])
     }
 }
@@ -223,7 +222,6 @@ impl Scalar52 {
         s
     }
 
-    // VERIFICATION NOTE: validation in progress git issue #74
     /// Compute `a + b` (mod l)
     pub fn add(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -231,7 +229,6 @@ impl Scalar52 {
         limbs_bounded(b),
         to_nat(&a.limbs) < group_order(),
         to_nat(&b.limbs) < group_order(),
-    // VERIFICATION NOTE: can we introduce a Valid or Canonical scalar predicate to cover such preconditions ?
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
     {
@@ -288,9 +285,9 @@ impl Scalar52 {
     }
 
 
-    // VERIFICATION NOTE: original sub function; we prove a refactored version below
+    // VERIFICATION NOTE: refactored sub function from Dalek upstream
     #[allow(dead_code)]
-    pub fn sub_source(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
+    pub fn sub_new(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
         limbs_bounded(a),
         limbs_bounded(b),
@@ -316,7 +313,7 @@ impl Scalar52 {
     }
 
 
-    // VERIFICATION NOTE: conditional_add_l function only used in original sub function
+    // VERIFICATION NOTE: conditional_add_l function only used in sub_new function
     #[allow(dead_code)]
     pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> (carry: u64)
     requires
@@ -383,10 +380,6 @@ impl Scalar52 {
     }
 
 
-    /*  <VERIFICATION NOTE>
-    - this is a refactored version of sub with some inlined functions for which we managed to finish proof.
-    - see sub_source function above for the spec and code of the original sub function.
-    <VERIFICATION NOTE> */
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -396,12 +389,10 @@ impl Scalar52 {
         // to_nat(&a.limbs) >= to_nat(&b.limbs) ==> to_nat(&s.limbs) == to_nat(&a.limbs) - to_nat(&b.limbs),
         // to_nat(&a.limbs) < to_nat(&b.limbs) ==> to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs) + pow2(260) + group_order()) % (pow2(260) as int),
         // In the 2nd case, `sub` doesn't always do subtraction mod group_order
-
-        // VERIFICATION NOTE: isnt this always true? we should prove it then.
         -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
-        limbs_bounded(&s), // VERIFICATION NOTE: Valid Scalar ??
+        limbs_bounded(&s),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}

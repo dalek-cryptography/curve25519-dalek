@@ -507,8 +507,32 @@ impl Scalar52 {
         z
     }
 
+    /* <ORIGINAL CODE>
+    fn square_internal(a: &Scalar52) -> [u128; 9] {
+        let aa = [
+            a[0] * 2,
+            a[1] * 2,
+            a[2] * 2,
+            a[3] * 2,
+        ];
 
-    // TODO Make this function more like the original?
+        [
+            m( a[0], a[0]),
+            m(aa[0], a[1]),
+            m(aa[0], a[2]) + m( a[1], a[1]),
+            m(aa[0], a[3]) + m(aa[1], a[2]),
+            m(aa[0], a[4]) + m(aa[1], a[3]) + m( a[2], a[2]),
+                             m(aa[1], a[4]) + m(aa[2], a[3]),
+                                              m(aa[2], a[4]) + m( a[3], a[3]),
+                                                               m(aa[3], a[4]),
+                                                                                m(a[4], a[4])
+        ]
+    }
+    </ORIGINAL CODE> */
+    /* <VERIFICATION NOTE>
+    -  refactored verified version of square_internal
+    - slightly slower ? 
+    </VERIFICATION NOTE> */
     /// Compute `a^2`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of calculations
@@ -544,7 +568,7 @@ impl Scalar52 {
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
         limbs_bounded(&result),
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
 
 
         // note: l[3] is zero, so its multiples can be skipped
@@ -570,20 +594,38 @@ impl Scalar52 {
 
 
     /// Helper function for Montgomery reduction
+    /// VER NOTE: spec validation needed concurrent with proof for montgomery_reduce
     #[inline(always)]
     fn part1(sum: u128) -> (res: (u128, u64))
+    ensures
+        ({
+            let carry = res.0;
+            let p = res.1;
+            &&& p < (1u64 << 52)  // VER NOTE: p is bounded by 52 bits
+            // VER NOTE: The sum plus p*L[0] equals carry shifted left by 52 bits (i.e., divisible by 2^52)
+            &&& sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52
+        })
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         (carry, p)
     }
 
     /// Helper function for Montgomery reduction
+    /// VER NOTE: spec validation needed concurrent with proof for montgomery_reduce
     #[inline(always)]
     fn part2(sum: u128) -> (res: (u128, u64))
+    ensures
+        ({
+            let carry = res.0;
+            let w = res.1;
+            &&& w < (1u64 << 52)  // VER NOTE: w is bounded by 52 bits (lower limb)
+            // VER NOTE: The sum equals w plus carry shifted left by 52 bits
+            &&& sum == (w as u128) + (carry << 52)
+        })
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
         let w = (sum as u64) & ((1u64 << 52) - 1);
         let carry = sum >> 52;
         (carry, w)
@@ -598,7 +640,7 @@ impl Scalar52 {
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        assume(false); // TODO: Add proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
     }
@@ -612,7 +654,7 @@ impl Scalar52 {
     ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        assume(false); // TODO: Add proofs
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
     }
@@ -649,13 +691,13 @@ impl Scalar52 {
         limbs_bounded(self),
     ensures
         limbs_bounded(&result),
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
+        to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
     {
         proof {
             lemma_rr_limbs_bounded();
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
+        assume(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
         result
     }
 

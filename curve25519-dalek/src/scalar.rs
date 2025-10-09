@@ -1529,7 +1529,7 @@ fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar)
 impl UnpackedScalar {
     verus! {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
-    fn pack(&self) -> (result: Scalar) 
+    fn pack(&self) -> (result: Scalar)
     requires
         limbs_bounded(self),
     ensures

@@ -1,5 +1,21 @@
 # Development Notes
 
+## Fiat Backend Testing
+
+To test compilation with the fiat backend:
+```bash
+RUSTFLAGS='--cfg curve25519_dalek_backend="fiat"' cargo check
+```
+
+## Verus docs
+See https://verus-lang.github.io/verus/guide/ for tutorial
+
+See https://verus-lang.github.io/verus/verusdoc/vstd for vstd lemmas, 
+especially https://verus-lang.github.io/verus/verusdoc/vstd/arithmetic/index.html 
+for mul and div_mod lemmas. 
+You may need to click on the specific lemma link to see the statement of the lemma. 
+Feel free to click on many links to look for the best lemma.
+
 ## Verus Verification
 
 Run Verus verification from the `curve25519-dalek` directory:
@@ -135,3 +151,21 @@ scripts/verus_cleaner.py src/backend/serial/u64/scalar_verus.rs 200 210 'lemma'
 scripts/verus_cleaner.py src/backend/serial/u64/field_verus.rs 150 200 'assert'
 ```
 
+### 13. Moving Proof Blocks to Lemmas
+
+Executable code is easier to read if multiline proof blocks are replaced by lemmas:
+1. Replace the proof block with an assume statement that you think will show the same thing.
+2. Replace that with a lemma that shows the same thing. You can assume false for the lemma. 
+3. Put the contents of the proof block into the lemma to actually prove it. 
+
+Verify at each step
+
+### 14. Replacing broadcasts
+
+For certain lemmas, `broadcast use <lemma>` is a convenient way 
+to apply the lemma one or more times without specifying the arguments.
+But it can cause the proof to time out because the SMT solver has to do more work. 
+
+When asked to replace a broadcast, find the exact statement of the lemma
+(this typically means you should look in the vstd docs), and then think
+about what call (or calls) to the lemma the broadcast is implicitly doing.

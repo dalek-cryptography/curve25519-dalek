@@ -51,7 +51,7 @@ pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
 }
 
 // Modular reduction of to_nat mod L
-spec fn to_scalar(limbs: &[u64; 5]) -> nat {
+pub open spec fn to_scalar(limbs: &[u64; 5]) -> nat {
     to_nat(limbs) % group_order()
 }
 

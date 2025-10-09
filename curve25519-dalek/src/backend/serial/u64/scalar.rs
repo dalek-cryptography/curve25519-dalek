@@ -97,7 +97,8 @@ impl Scalar52 {
     /// Unpack a 32 byte / 256 bit scalar into 5 52-bit limbs.
     #[rustfmt::skip] // keep alignment of s[*] calculations
     pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
-    ensures bytes_to_nat(bytes) == to_nat(&s.limbs)
+    ensures bytes_to_nat(bytes) == to_nat(&s.limbs), 
+            limbs_bounded(&s),
     {
         let mut words = [0u64; 4];
         for i in 0..4
@@ -143,7 +144,9 @@ impl Scalar52 {
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
         limbs_bounded(&s),
-        to_nat(&s.limbs) == bytes_wide_to_nat(bytes) % group_order(),
+        to_nat(&s.limbs) % group_order() == bytes_wide_to_nat(bytes) % group_order(),
+        // VER NOTE: Result is canonical since we use add() which reduces mod L
+        to_nat(&s.limbs) < group_order(),
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];
@@ -231,6 +234,8 @@ impl Scalar52 {
         to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
+        // VER NOTE: Result is canonical and we reduce mod L
+        to_nat(&s.limbs) < group_order(),
     {
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector); }
@@ -393,6 +398,8 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
+        // VER NOTE: Result is in canonical form (since we conditionally add L when negative)
+        to_nat(&s.limbs) < group_order(),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector);}
@@ -474,7 +481,12 @@ impl Scalar52 {
                 lemma_sub_loop2_invariant(difference, i, a, b, mask, difference_after_loop1, difference_loop2_start, carry, old_carry, addend, borrow);
             }
         }
-        proof { lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);}
+        proof { 
+            lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);
+            // VER NOTE: TODO: Prove canonicality - result is < group_order() because:
+            // If a >= b: result = a - b < group_order() (since precondition ensures a - b < group_order())
+            // If a < b: result = (a - b) + L, and since -group_order() < a - b < 0, we have 0 < result < group_order()
+        }
         difference
     }
 
@@ -567,6 +579,7 @@ impl Scalar52 {
     ensures
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
         limbs_bounded(&result),
+        to_nat(&result.limbs) < group_order(),
     {
         assume(false); // TODO: Add proofs
 
@@ -639,6 +652,10 @@ impl Scalar52 {
         limbs_bounded(b),
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+        // VER NOTE: Result has bounded limbs from montgomery_reduce
+        limbs_bounded(&result),
+        // VER NOTE: Result is canonical from montgomery_reduce
+        to_nat(&result.limbs) < group_order(),
     {
         assume(false); // TODO: Add proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));

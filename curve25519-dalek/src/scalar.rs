@@ -164,7 +164,10 @@ use crate::scalar_specs::*;
 
 use vstd::prelude::*;
 
+
 verus! {
+
+
     /*** <VERIFICATION NOTE> External type specification for subtle::CtOption to make it compatible with Verus </VERIFICATION NOTE> ***/
     #[verifier::external_type_specification]
     #[verifier::external_body]
@@ -717,6 +720,7 @@ impl Scalar {
     /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
+    #[verifier::external_body]
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
     where
         D: Digest<OutputSize = U64> + Default,
@@ -763,6 +767,7 @@ impl Scalar {
     /// );
     /// # }
     /// ```
+    #[verifier::external_body]
     pub fn from_hash<D>(hash: D) -> Scalar
     where
         D: Digest<OutputSize = U64>,
@@ -883,6 +888,10 @@ impl Scalar {
      Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
     </VERIFICATION NOTE> */
     #[cfg(feature = "alloc")]
+    // Theo: Verus doesn't like the zeroize in this function. I think the long-term
+    // solution is to use assume_specification to tell Verus what zeroize does.
+    // In the short-term, I've just told verus to ignore the body.
+    #[verifier::external_body]
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
     ensures
         // Result is the modular inverse of the product of all original inputs

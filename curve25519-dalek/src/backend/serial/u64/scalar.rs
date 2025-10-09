@@ -531,7 +531,7 @@ impl Scalar52 {
     </ORIGINAL CODE> */
     /* <VERIFICATION NOTE>
     -  refactored verified version of square_internal
-    - slightly slower ? 
+    - slightly slower ?
     </VERIFICATION NOTE> */
     /// Compute `a^2`
     #[inline(always)]

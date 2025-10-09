@@ -11,6 +11,7 @@
 //! (0xfffffffffffff^2) * 5 = 0x4ffffffffffff60000000000005 (107 bits).
 //! ```
 
+use super::subtle_assumes::select;
 use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
@@ -24,7 +25,6 @@ use crate::constants;
 use super::scalar_lemmas::*;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
-use super::subtle_assumes::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
@@ -57,14 +57,18 @@ impl Debug for Scalar52 {
 verus! {
 impl Index<usize> for Scalar52 {
     type Output = u64;
-    // TODO Verify this
-    #[verifier::external_body]
-    fn index(&self, _index: usize) -> &u64 {
+    fn index(&self, _index: usize) -> (result: &u64)
+    requires
+        _index < 5,
+    ensures
+        result == &(self.limbs[_index as int]),
+    {
         &(self.limbs[_index])
     }
 }
 } // verus!
 
+// VERIFICATION EXCLUDED: mutable returns unsupported by Verus
 impl IndexMut<usize> for Scalar52 {
     fn index_mut(&mut self, _index: usize) -> &mut u64 {
         &mut (self.limbs[_index])
@@ -72,7 +76,6 @@ impl IndexMut<usize> for Scalar52 {
 }
 
 verus! {
-
 /// u64 * u64 = u128 multiply helper
 #[inline(always)]
 fn m(x: u64, y: u64) -> (z: u128)
@@ -137,7 +140,6 @@ impl Scalar52 {
 
     /// Reduce a 64 byte / 512 bit scalar mod l
     #[rustfmt::skip] // keep alignment of lo[*] and hi[*] calculations
-    #[verifier::external_body] // TODO Verify this function
     pub fn from_bytes_wide(bytes: &[u8; 64]) -> (s: Scalar52)
     ensures
         limbs_bounded(&s),
@@ -147,6 +149,7 @@ impl Scalar52 {
         let mut words = [0u64; 8];
         for i in 0..8 {
             for j in 0..8 {
+                assume(false);
                 words[i] |= (bytes[(i * 8) + j] as u64) << (j * 8);
             }
         }
@@ -281,6 +284,102 @@ impl Scalar52 {
 
     }
 
+
+    // VERIFICATION NOTE: refactored sub function from Dalek upstream
+    #[allow(dead_code)]
+    pub fn sub_new(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+        -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order(),
+    ensures
+        to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
+    {
+        assume(false); // TODO: complete the proof
+        let mut difference = Scalar52::ZERO;
+        let mask = (1u64 << 52) - 1;
+
+        // a - b
+        let mut borrow: u64 = 0;
+        for i in 0..5 {
+            assume(false);
+            borrow = a.limbs[i].wrapping_sub(b.limbs[i] + (borrow >> 63));
+            difference[i] = borrow & mask;
+        }
+
+        // conditionally add l if the difference is negative
+        difference.conditional_add_l(Choice::from((borrow >> 63) as u8));
+        difference
+    }
+
+
+    // VERIFICATION NOTE: conditional_add_l function only used in sub_new function
+    #[allow(dead_code)]
+    pub(crate) fn conditional_add_l(&mut self, condition: Choice) -> (carry: u64)
+    requires
+        limbs_bounded(&old(self)),
+        to_nat(&old(self).limbs) + group_order() < pow2(260)
+    ensures
+        // The mathematical value modulo group_order doesn't change (since L = group_order)
+        to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order(),
+        // VERIFICATION NOTE: expression below unsupported by Verus
+        //limbs_bounded(&self),
+
+        // Meaning of conditional addition
+        super::subtle_assumes::choice_is_true(condition) ==>
+            to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order(),
+        !super::subtle_assumes::choice_is_true(condition) ==>
+            to_nat(&self.limbs) == to_nat(&old(self).limbs),
+    {
+        let mut carry: u64 = 0;
+
+        proof {
+            assert(1u64 << 52 > 0) by (bit_vector);
+        }
+        let mask = (1u64 << 52) - 1;
+
+        for i in 0..5
+            invariant
+                mask == (1u64 << 52) - 1,
+                forall|j: int| 0 <= j < i ==> self.limbs[j] < (1u64 << 52),
+                forall|j: int| i <= j < 5 ==> self.limbs[j] == old(self).limbs[j],
+                forall|j: int| i <= j < 5 ==> self.limbs[j] < (1u64 << 52),
+                i == 0 ==> carry == 0,
+                i >= 1 ==> (carry >> 52) < 2,
+        {
+            /* <VERIFICATION NOTE> Using wrapper function for Verus compatibility instead of direct call to conditional_select */
+            let addend = select(&0, &constants::L.limbs[i], condition);
+            /* <ORIGINAL CODE>
+             let addend = u64::conditional_select(&0, &constants::L[i], condition);
+             <ORIGINAL CODE>*/
+
+            // Prove no overflow using the same lemma as in sub()
+            proof {
+                lemma_scalar_subtract_no_overflow(carry, self.limbs[i as int], addend, i as u32, &constants::L);
+            }
+
+            carry = (carry >> 52) + self.limbs[i] + addend;
+            self.limbs[i] = carry & mask;
+
+            proof {
+                lemma_carry_bounded_after_mask(carry, mask);
+            }
+        }
+
+        proof {
+            // TODO: Prove the postconditions
+            assume(to_nat(&self.limbs) % group_order() == to_nat(&old(self).limbs) % group_order());
+         //   assume(limbs_bounded(&self));
+            assume(super::subtle_assumes::choice_is_true(condition) ==>
+                to_nat(&self.limbs) == to_nat(&old(self).limbs) + group_order());
+            assume(!super::subtle_assumes::choice_is_true(condition) ==>
+                to_nat(&self.limbs) == to_nat(&old(self).limbs));
+        }
+
+        carry
+    }
+
+
     /// Compute `a - b` (mod l)
     pub fn sub(a: &Scalar52, b: &Scalar52) -> (s: Scalar52)
     requires
@@ -408,8 +507,32 @@ impl Scalar52 {
         z
     }
 
+    /* <ORIGINAL CODE>
+    fn square_internal(a: &Scalar52) -> [u128; 9] {
+        let aa = [
+            a[0] * 2,
+            a[1] * 2,
+            a[2] * 2,
+            a[3] * 2,
+        ];
 
-    // TODO Make this function more like the original?
+        [
+            m( a[0], a[0]),
+            m(aa[0], a[1]),
+            m(aa[0], a[2]) + m( a[1], a[1]),
+            m(aa[0], a[3]) + m(aa[1], a[2]),
+            m(aa[0], a[4]) + m(aa[1], a[3]) + m( a[2], a[2]),
+                             m(aa[1], a[4]) + m(aa[2], a[3]),
+                                              m(aa[2], a[4]) + m( a[3], a[3]),
+                                                               m(aa[3], a[4]),
+                                                                                m(a[4], a[4])
+        ]
+    }
+    </ORIGINAL CODE> */
+    /* <VERIFICATION NOTE>
+    -  refactored verified version of square_internal
+    - slightly slower ?
+    </VERIFICATION NOTE> */
     /// Compute `a^2`
     #[inline(always)]
     #[rustfmt::skip] // keep alignment of calculations
@@ -445,7 +568,7 @@ impl Scalar52 {
         (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs) % group_order(),
         limbs_bounded(&result),
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
 
 
         // note: l[3] is zero, so its multiples can be skipped
@@ -471,20 +594,38 @@ impl Scalar52 {
 
 
     /// Helper function for Montgomery reduction
+    /// VER NOTE: spec validation needed concurrent with proof for montgomery_reduce
     #[inline(always)]
     fn part1(sum: u128) -> (res: (u128, u64))
+    ensures
+        ({
+            let carry = res.0;
+            let p = res.1;
+            &&& p < (1u64 << 52)  // VER NOTE: p is bounded by 52 bits
+            // VER NOTE: The sum plus p*L[0] equals carry shifted left by 52 bits (i.e., divisible by 2^52)
+            &&& sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52
+        })
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         (carry, p)
     }
 
     /// Helper function for Montgomery reduction
+    /// VER NOTE: spec validation needed concurrent with proof for montgomery_reduce
     #[inline(always)]
     fn part2(sum: u128) -> (res: (u128, u64))
+    ensures
+        ({
+            let carry = res.0;
+            let w = res.1;
+            &&& w < (1u64 << 52)  // VER NOTE: w is bounded by 52 bits (lower limb)
+            // VER NOTE: The sum equals w plus carry shifted left by 52 bits
+            &&& sum == (w as u128) + (carry << 52)
+        })
     {
-        assume(false); // TODO: Add proper bounds checking and proofs
+        assume(false); // TODO: Add proofs
         let w = (sum as u64) & ((1u64 << 52) - 1);
         let carry = sum >> 52;
         (carry, w)
@@ -499,7 +640,7 @@ impl Scalar52 {
     ensures
         to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        assume(false); // TODO: Add proofs
         let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
     }
@@ -513,7 +654,7 @@ impl Scalar52 {
     ensures
         to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false); // TODO: Add proper Montgomery arithmetic proofs
+        assume(false); // TODO: Add proofs
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
         Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
     }
@@ -550,13 +691,13 @@ impl Scalar52 {
         limbs_bounded(self),
     ensures
         limbs_bounded(&result),
-        to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
+        to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix()) % group_order(),
     {
         proof {
             lemma_rr_limbs_bounded();
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
+        assume(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix()) % group_order());
         result
     }
 

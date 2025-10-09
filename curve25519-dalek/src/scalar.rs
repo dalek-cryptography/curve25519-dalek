@@ -235,7 +235,6 @@ pub struct Scalar {
 pub open spec fn is_a_scalar(s: Scalar) -> bool {
    true
 }
-}
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
@@ -383,7 +382,7 @@ define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'a Scalar) -> (result: Scalar) {
+    fn mul(self, _rhs: &'b Scalar) -> (result: Scalar) {
         /* <VERIFICATION NOTE>
          Store unpacked values explicitly for limbs_bounded assumption
         </VERIFICATION NOTE> */

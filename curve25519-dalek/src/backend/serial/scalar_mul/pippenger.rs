@@ -31,7 +31,7 @@ use crate::traits::VartimeMultiscalarMul;
 ///    Bucket 0 is not needed as it would contain points multiplied by 0.
 /// 2. Convert scalars to a radix-`2^w` representation with signed digits in `[-2^w/2, 2^w/2]`.
 ///    Note: only the last digit may equal `2^w/2`.
-/// 3. Starting with the last window, for each point `i=[0..n)` add it to a a bucket indexed by
+/// 3. Starting with the last window, for each point `i=[0..n)` add it to a bucket indexed by
 ///    the point's scalar's value in the window.
 /// 4. Once all points in a window are sorted into buckets, add buckets by multiplying each
 ///    by their index. Efficient way of doing it is to start with the last bucket and compute two sums:

@@ -147,8 +147,8 @@ use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+// #[cfg(feature = "zeroize")]
+// use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
@@ -668,12 +668,12 @@ impl From<u128> for Scalar {
     }
 }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for Scalar {
+//     fn zeroize(&mut self) {
+//         self.bytes.zeroize();
+//     }
+// }
 
 verus! {
 
@@ -1090,8 +1090,8 @@ impl Scalar {
         }
 
 
-        #[cfg(feature = "zeroize")]
-        Zeroize::zeroize(&mut scratch);
+        // #[cfg(feature = "zeroize")]
+        // Zeroize::zeroize(&mut scratch);
 
         proof {
             // Assume the postconditions

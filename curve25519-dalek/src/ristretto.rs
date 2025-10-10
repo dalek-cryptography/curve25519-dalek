@@ -192,8 +192,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-#[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+// #[cfg(feature = "zeroize")]
+// use zeroize::Zeroize;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::edwards::EdwardsBasepointTable;
@@ -1255,19 +1255,19 @@ impl CofactorGroup for RistrettoPoint {
 // Zeroize traits
 // ------------------------------------------------------------------------
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for CompressedRistretto {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for CompressedRistretto {
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//     }
+// }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for RistrettoPoint {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
-    }
-}
+// #[cfg(feature = "zeroize")]
+// impl Zeroize for RistrettoPoint {
+//     fn zeroize(&mut self) {
+//         self.0.zeroize();
+//     }
+// }
 
 // ------------------------------------------------------------------------
 // Tests

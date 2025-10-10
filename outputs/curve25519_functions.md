@@ -1,0 +1,130 @@
+# Curve25519 Functions
+
+| Function | Has Spec (Verus) | Has Proof (Verus) | Has Spec (Lean) | Has Proof (Lean) |
+|----------|:------------------:|:-------------------:|:----------------:|:-----------------:|
+| backend/cpuid_avx2/impl#[InitToken]get(). |  |  |  |  |
+| backend/cpuid_avx2/init(). |  |  |  |  |
+| [backend/get_selected_backend().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/mod.rs#L54) |  |  |  |  |
+| [backend/serial/curve_models/impl#[CompletedPoint]as_extended().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/curve_models/mod.rs#L364) |  |  |  |  |
+| [backend/serial/curve_models/impl#[CompletedPoint]as_projective().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/curve_models/mod.rs#L352) |  |  |  |  |
+| [backend/serial/curve_models/impl#[ProjectivePoint][Identity]identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/curve_models/mod.rs#L229) |  |  |  |  |
+| [backend/serial/curve_models/impl#[ProjectivePoint]as_extended().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/curve_models/mod.rs#L337) |  |  |  |  |
+| [backend/serial/curve_models/impl#[ProjectivePoint]double().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/curve_models/mod.rs#L380) |  |  |  |  |
+| [backend/serial/scalar_mul/straus/impl#[Straus][MultiscalarMul]multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/scalar_mul/straus.rs#L102) |  |  |  |  |
+| [backend/serial/scalar_mul/vartime_double_base/mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/scalar_mul/vartime_double_base.rs#L22) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51][ConditionallySelectable]conditional_assign().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L247) |  |  |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]as_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L367) |  |  |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]from_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L337) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]pow2k().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L453) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]reduce().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L289) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]square().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L561) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/field/impl#[FieldElement51]square2().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/field.rs#L566) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]add().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L159) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]as_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L119) |  |  |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]as_montgomery().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L317) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]from_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L64) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]from_bytes_wide().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L87) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]from_montgomery().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L324) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]montgomery_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L305) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]montgomery_reduce().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L253) | :heavy_check_mark: |  |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]montgomery_square().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L311) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]mul_internal().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L210) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]square_internal().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L229) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/impl#[Scalar52]sub().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L175) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/serial/u64/scalar/m().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/serial/u64/scalar.rs#L54) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [backend/straus_multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/mod.rs#L169) |  |  |  |  |
+| [backend/vartime_double_base_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/mod.rs#L240) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[CachedPoint][`From<ExtendedPoint>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L198) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[ExtendedPoint][Identity]identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L105) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[ExtendedPoint][`From<crate::EdwardsPoint>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L67) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[ExtendedPoint]double().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L113) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[ExtendedPoint]mul_by_pow_2().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L174) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[`LookupTable<CachedPoint>`][`From<&crate::EdwardsPoint>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L309) |  |  |  |  |
+| [backend/vector/avx2/edwards/impl#[`NafLookupTable5<CachedPoint>`][`From<&crate::EdwardsPoint>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/edwards.rs#L321) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]blend().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L260) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]diff_sum().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L396) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]negate_lazy().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L373) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]new().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L334) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]reduce().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L411) | :heavy_check_mark: |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]shuffle().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L220) |  |  |  |  |
+| [backend/vector/avx2/field/impl#[FieldElement2625x4]square_and_negate_D().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/avx2/field.rs#L596) |  |  |  |  |
+| [backend/vector/packed_simd/impl#[u32x8]new().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/packed_simd.rs#L307) |  |  |  |  |
+| [backend/vector/packed_simd/impl#[u32x8]splat().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/packed_simd.rs#L320) |  |  |  |  |
+| [backend/vector/packed_simd/impl#[u64x4]splat().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/packed_simd.rs#L268) |  |  |  |  |
+| [backend/vector/scalar_mul/straus/spec_avx2/impl#[Straus][MultiscalarMul]multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/scalar_mul/straus.rs#L51) |  |  |  |  |
+| [backend/vector/scalar_mul/vartime_double_base/spec_avx2/mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/vector/scalar_mul/vartime_double_base.rs#L41) | :heavy_check_mark: |  |  |  |
+| [edwards/decompress/step_1().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L208) |  |  |  |  |
+| [edwards/decompress/step_2().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L222) |  |  |  |  |
+| [edwards/impl#[CompressedEdwardsY]as_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L180) |  |  |  |  |
+| [edwards/impl#[CompressedEdwardsY]decompress().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L193) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint][Identity]identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L409) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint][MultiscalarMul]multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L799) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]as_projective().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L521) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]as_projective_niels().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L508) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]compress().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L565) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]double().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L615) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]is_small_order().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L1226) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]mul_by_cofactor().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L1186) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]mul_by_pow_2().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L1191) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]to_montgomery().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L552) |  |  |  |  |
+| [edwards/impl#[EdwardsPoint]vartime_double_scalar_mul_basepoint().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/edwards.rs#L901) |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`][ConstantTimeEq]ct_eq(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]invert(). | :heavy_check_mark: |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]invsqrt(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]is_negative(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]is_zero(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]pow22501(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]pow_p58(). |  |  |  |  |
+| field/impl#[`crate::lizard::lizard_constants::FieldElement51`]sqrt_ratio_i(). |  |  |  |  |
+| lizard/jacobi_quartic/impl#[JacobiPoint]dual(). |  |  |  |  |
+| lizard/jacobi_quartic/impl#[JacobiPoint]elligator_inv(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]decode_253_bits(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]elligator_ristretto_flavor_inverse(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]from_uniform_bytes_single_elligator(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]lizard_decode(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]lizard_encode(). |  |  |  |  |
+| lizard/lizard_ristretto/impl#[RistrettoPoint]to_jacobi_quartic_ristretto(). |  |  |  |  |
+| [montgomery/impl#[MontgomeryPoint]to_edwards().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/montgomery.rs#L216) |  |  |  |  |
+| [ristretto/decompress/step_1().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L274) |  |  |  |  |
+| [ristretto/decompress/step_2().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L294) |  |  |  |  |
+| [ristretto/impl#[CompressedRistretto]as_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L233) |  |  |  |  |
+| [ristretto/impl#[CompressedRistretto]decompress().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L254) |  |  |  |  |
+| [ristretto/impl#[CompressedRistretto]from_slice().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L243) |  |  |  |  |
+| [ristretto/impl#[CompressedRistretto]to_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L228) | :heavy_check_mark: |  |  |  |
+| [ristretto/impl#[RistrettoPoint][Default]default().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L812) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint][Identity]identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L806) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint][MultiscalarMul]multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L980) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint]compress().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L488) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint]double_and_compress_batch().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L552) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint]elligator_ristretto_flavor().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L655) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint]from_uniform_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L786) |  |  |  |  |
+| [ristretto/impl#[RistrettoPoint]mul_base().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/ristretto.rs#L951) |  |  |  |  |
+| [scalar/clamp_integer().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1385) |  |  |  |  |
+| [scalar/impl#[Scalar][ConstantTimeEq]ct_eq().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L300) |  |  |  |  |
+| [scalar/impl#[Scalar][`From<u32>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L507) |  |  |  |  |
+| [scalar/impl#[Scalar][`From<u64>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L537) |  |  |  |  |
+| [scalar/impl#[Scalar][`From<u8>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L490) |  |  |  |  |
+| [scalar/impl#[Scalar]as_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L705) |  |  |  |  |
+| [scalar/impl#[Scalar]from_bytes_mod_order().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L236) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [scalar/impl#[Scalar]from_bytes_mod_order_wide().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L249) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [scalar/impl#[Scalar]from_canonical_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L260) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[Scalar]from_hash().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L670) |  |  |  |  |
+| [scalar/impl#[Scalar]hash_from_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L624) |  |  |  |  |
+| [scalar/impl#[Scalar]invert().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L746) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[Scalar]is_canonical().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1133) |  |  |  |  |
+| [scalar/impl#[Scalar]non_adjacent_form().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L920) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [scalar/impl#[Scalar]reduce().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1124) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[Scalar]to_bytes().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L690) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[Scalar]unpack().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1118) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [scalar/impl#[`backend::serial::u64::scalar::Scalar52`]invert().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1205) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[`backend::serial::u64::scalar::Scalar52`]montgomery_invert().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1149) | :heavy_check_mark: |  |  |  |
+| [scalar/impl#[`backend::serial::u64::scalar::Scalar52`]pack().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1140) | :heavy_check_mark: |  |  |  |
+| [scalar/read_le_u64_into().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/scalar.rs#L1349) |  |  |  |  |
+| [traits/Identity#identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/traits.rs#L28) |  |  |  |  |
+| [traits/VartimeMultiscalarMul#optional_multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/traits.rs#L195) |  |  |  |  |
+| [traits/VartimeMultiscalarMul#vartime_multiscalar_mul().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/traits.rs#L248) |  |  |  |  |
+| [traits/impl#[T][IsIdentity]is_identity().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/traits.rs#L44) |  |  |  |  |
+| [window/impl#[`NafLookupTable5<ProjectiveNielsPoint>`][`From<&EdwardsPoint>`]from().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L201) |  |  |  |  |
+| [window/impl#[`NafLookupTable5<T>`]select().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L186) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| [window/impl#[`NafLookupTable8<T>`]select().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L232) | :heavy_check_mark: | :heavy_check_mark: |  |  |
+| arithm_overloaded_ops* (not found by rust-analyzer) |  |  |  |  |

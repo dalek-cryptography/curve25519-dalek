@@ -111,7 +111,6 @@
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
 //! has been enabled.
 
-use vstd::prelude::*;
 use core::borrow::Borrow;
 use core::fmt::Debug;
 use core::iter::{Product, Sum};
@@ -120,6 +119,7 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use vstd::prelude::*;
 
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
@@ -163,7 +163,6 @@ use crate::backend::serial::u64::subtle_assumes::*;
 use crate::scalar_specs::*;
 
 use vstd::prelude::*;
-
 
 verus! {
 

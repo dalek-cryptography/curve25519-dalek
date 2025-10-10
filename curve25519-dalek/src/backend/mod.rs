@@ -134,8 +134,6 @@ impl VartimePrecomputedStraus {
         }
     }
 
-
-
     pub fn optional_mixed_multiscalar_mul<I, J, K>(
         &self,
         static_scalars: I,

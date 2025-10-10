@@ -62,9 +62,6 @@ jobs:
     steps:
     - name: Checkout dalek-lite
       uses: actions/checkout@v4
-    - name: Show dalek-lite commit
-      run: |
-        echo "dalek-lite commit: $(git rev-parse HEAD)"
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@1.88.0
     - name: Install dependencies
@@ -78,6 +75,7 @@ jobs:
     - name: Patch libsignal's Cargo.toml with current dalek-lite commit
       run: |
         DALEK_COMMIT=$(git rev-parse HEAD)
+        echo "dalek-lite commit: $DALEK_COMMIT"
         cd ../libsignal
         if ! grep -q "14d41a27fc63" Cargo.toml; then
           echo "Error: Placeholder 14d41a27fc63 not found in Cargo.toml"
@@ -95,9 +93,6 @@ jobs:
     steps:
     - name: Checkout dalek-lite
       uses: actions/checkout@v4
-    - name: Show dalek-lite commit
-      run: |
-        echo "dalek-lite commit: $(git rev-parse HEAD)"
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@1.88.0
     - name: Install Verus
@@ -116,6 +111,7 @@ jobs:
     - name: Patch libsignal's Cargo.toml with current dalek-lite commit
       run: |
         DALEK_COMMIT=$(git rev-parse HEAD)
+        echo "dalek-lite commit: $DALEK_COMMIT"
         cd ../libsignal
         if ! grep -q "14d41a27fc63" Cargo.toml; then
           echo "Error: Placeholder 14d41a27fc63 not found in Cargo.toml"

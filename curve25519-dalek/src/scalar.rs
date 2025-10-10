@@ -262,7 +262,7 @@ impl Scalar {
     /*
     <VERIFICATION NOTE>
       - Refactored to use wrapper functions instead of trait functions for ct_eq and ct_option_new
-      - Has proof bypass  
+      - Has proof bypass
     </VERIFICATION NOTE> */
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> (result: CtOption<Scalar>)
     ensures
@@ -288,7 +288,7 @@ impl Scalar {
         let condition = choice_and(high_bit_unset, is_canonical);
         let result = ct_option_new(candidate, condition);
         /* </MODIFIED CODE> */
-        
+
         // VERIFICATION NOTE: PROOF BYPASS
         assume(bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result));
         assume(bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result));
@@ -304,8 +304,8 @@ impl Scalar {
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
-    /* <VERIFICATION NOTE> 
-        -This is not in default feautures and not in our current target list ==> spec ommited for now
+    /* <VERIFICATION NOTE>
+        -This is not in default features and not in our current target list ==> spec omitted for now
     </VERIFICATION NOTE> */
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
@@ -314,7 +314,7 @@ impl Scalar {
 
         s
     }
-} 
+}
 
 
 impl Eq for Scalar {}
@@ -369,9 +369,9 @@ impl Debug for Scalar {
 
 verus! {
 impl<'a> MulAssign<&'a Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'a Scalar) 
-    ensures bytes_to_nat(&self.bytes) % group_order() == 
-        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order()   
+    fn mul_assign(&mut self, _rhs: &'a Scalar)
+    ensures bytes_to_nat(&self.bytes) % group_order() ==
+        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order()
     {
         /* <ORIGINAL CODE>
          *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
@@ -387,20 +387,20 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
         assert(to_nat(&rhs_unpacked.limbs) == bytes_to_nat(&_rhs.bytes));
         assert(limbs_bounded(&self_unpacked));
         assert(limbs_bounded(&rhs_unpacked));
-        
+
         let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
         // From mul() postcondition:
         assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
         assert(limbs_bounded(&result_unpacked));
-        
+
         *self = result_unpacked.pack();
         // From pack() postcondition:
         assert(bytes_to_nat(&self.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
-        
+
         // Chain the equalities:
         assert(bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order());
         /* </MODIFIED CODE> */
-        
+
     }
 }
 

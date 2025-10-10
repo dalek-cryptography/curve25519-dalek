@@ -55,20 +55,33 @@ pub proof fn lemma_pow_nat_is_nat(v: nat, i: nat)
     }
 }
 
+pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
+    requires
+        a < pow2(s)
+    ensures
+        pow2(k) * a <= pow2(k + s) - pow2(k),
+        a * pow2(k) <= pow2(k + s) - pow2(k)
+{
+    assert(a <= pow2(s) - 1); // x < y <=> x <= y - 1
+
+    mul_le(a as nat, (pow2(s) - 1) as nat, pow2(k), pow2(k));
+    assert((pow2(s) - 1) * pow2(k) == pow2(k + s) - pow2(k)) by {
+        lemma_mul_is_distributive_sub(pow2(k) as int, pow2(s) as int, 1);
+        lemma_pow2_adds(k, s);
+    }
+
+    lemma_mul_is_commutative(a as int, pow2(k) as int);
+}
+
 pub proof fn pow2_mul_u8(a: u8, k: nat)
     ensures
         pow2(k) * a <= pow2(k + 8) - pow2(k)
 {
-    assert(a <= pow2(8) - 1) by {
+    assert(a < pow2(8)) by {
         lemma2_to64();
     }
 
-    mul_le(a as nat, (pow2(8) - 1) as nat, pow2(k), pow2(k));
-    assert((pow2(8) - 1) * pow2(k) == pow2(k + 8) - pow2(k)) by {
-        lemma_mul_is_distributive_sub(pow2(k) as int, pow2(8) as int, 1);
-        lemma_pow2_adds(k, 8);
-    }
-
+    pow2_mul_general(a as nat, 8, k);
 }
 
 pub proof fn u8_times_pow2_fits_u64(a: u8, k: nat)

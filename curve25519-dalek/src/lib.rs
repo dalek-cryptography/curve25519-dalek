@@ -83,6 +83,9 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+// All the lizard code is here, for now
+#[cfg(feature = "lizard")]
+pub mod lizard;
 
 //------------------------------------------------------------------------
 // curve25519-dalek internal modules

@@ -162,20 +162,6 @@ use crate::scalar_specs::*;
 use vstd::prelude::*;
 
 verus! {
-    /*** <VERIFICATION NOTE> External type specification for subtle::CtOption to make it compatible with Verus </VERIFICATION NOTE> ***/
-    #[verifier::external_type_specification]
-    #[verifier::external_body]
-    #[verifier::reject_recursive_types(T)]
-    #[allow(dead_code)]
-    /// External wrapper for `CtOption<T>` used in Verus verification.
-    pub struct ExCtOption<T>(CtOption<T>);
-
-    /*** <VERIFICATION NOTE> Wrapper function for CtOption::new </VERIFICATION-NOTE> ***/
-    #[verifier::external_body]
-    fn ct_option_new<T>(value: T, choice: Choice) -> CtOption<T> {
-        CtOption::new(value, choice)
-    }
-
 
 /*** <VERIFICATION NOTE> Focus on u64; removed all other backend types </VERIFICATION NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
@@ -232,7 +218,7 @@ pub struct Scalar {
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
     /// modulo the group order \\( \ell \\).
-    // VERIFICATION NOTE: verified
+    // VERIFICATION NOTE: VERIFIED
     pub fn from_bytes_mod_order(bytes: [u8; 32]) -> (result: Scalar)
     ensures
         // Result is equivalent to input modulo the group order
@@ -256,6 +242,7 @@ impl Scalar {
 
     /// Construct a `Scalar` by reducing a 512-bit little-endian integer
     /// modulo the group order \\( \ell \\).
+    // VERIFICATION NOTE: VERIFIED
     pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
     ensures
         bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
@@ -274,14 +261,22 @@ impl Scalar {
     /// - `None` if `bytes` is not a canonical byte representation.
     /*
     <VERIFICATION NOTE>
-      Refactored to use wrapper functions instead of trait functions for ct_eq and ct_option_new
+      - Refactored to use wrapper functions instead of trait functions for ct_eq and ct_option_new
+      - Has proof bypass  
     </VERIFICATION NOTE> */
-    pub fn from_canonical_bytes(bytes: [u8; 32]) -> CtOption<Scalar> {
+    pub fn from_canonical_bytes(bytes: [u8; 32]) -> (result: CtOption<Scalar>)
+    ensures
+        bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result),
+        bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result),
+        ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
+    {
         /* <ORIGINAL CODE>
           let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
         </ORIGINAL CODE> */
+        /* <MODIFIED CODE> */
         let high_byte_shifted = bytes[31] >> 7;
         let high_bit_unset = ct_eq_u8(&high_byte_shifted, &0);
+        /* </MODIFIED CODE> */
 
         let candidate = Scalar { bytes };
         let is_canonical = candidate.is_canonical();
@@ -289,8 +284,17 @@ impl Scalar {
         /* <ORIGINAL CODE>
           CtOption::new(candidate, high_bit_unset & candidate.is_canonical())
           </ORIGINAL CODE> */
+        /* <MODIFIED CODE> */
         let condition = choice_and(high_bit_unset, is_canonical);
-        ct_option_new(candidate, condition)
+        let result = ct_option_new(candidate, condition);
+        /* </MODIFIED CODE> */
+        
+        // VERIFICATION NOTE: PROOF BYPASS
+        assume(bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result));
+        assume(bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result));
+        assume(ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes) % group_order() == bytes_to_nat(&bytes) % group_order());
+
+        result
     }
 
     /// Construct a `Scalar` from the low 255 bits of a 256-bit integer. This breaks the invariant
@@ -300,6 +304,9 @@ impl Scalar {
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
     #[cfg(feature = "legacy_compatibility")]
+    /* <VERIFICATION NOTE> 
+        -This is not in default feautures and not in our current target list ==> spec ommited for now
+    </VERIFICATION NOTE> */
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.
@@ -307,7 +314,7 @@ impl Scalar {
 
         s
     }
-}
+} 
 
 
 impl Eq for Scalar {}
@@ -362,20 +369,38 @@ impl Debug for Scalar {
 
 verus! {
 impl<'a> MulAssign<&'a Scalar> for Scalar {
-    fn mul_assign(&mut self, _rhs: &'a Scalar)
-
+    fn mul_assign(&mut self, _rhs: &'a Scalar) 
+    ensures bytes_to_nat(&self.bytes) % group_order() == 
+        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order()   
     {
-        /* <VERIFICATION NOTE>
-         Store unpacked values explicitly for limbs_bounded assumption
-        </VERIFICATION NOTE> */
-        let self_unpacked = self.unpack();
-        let rhs_unpacked = _rhs.unpack();
-        assume(limbs_bounded(&self_unpacked));
-        assume(limbs_bounded(&rhs_unpacked));
-        *self = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked).pack();
         /* <ORIGINAL CODE>
          *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
          </ORIGINAL CODE> */
+        /* <VERIFICATION NOTE>
+         In the modified code, we store unpacked values explicitly for asserts
+        </VERIFICATION NOTE> */
+        /* <MODIFIED CODE> */
+        let self_unpacked = self.unpack();
+        let rhs_unpacked = _rhs.unpack();
+        // From unpack() postconditions:
+        assert(to_nat(&self_unpacked.limbs) == bytes_to_nat(&old(self).bytes));
+        assert(to_nat(&rhs_unpacked.limbs) == bytes_to_nat(&_rhs.bytes));
+        assert(limbs_bounded(&self_unpacked));
+        assert(limbs_bounded(&rhs_unpacked));
+        
+        let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
+        // From mul() postcondition:
+        assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
+        assert(limbs_bounded(&result_unpacked));
+        
+        *self = result_unpacked.pack();
+        // From pack() postcondition:
+        assert(bytes_to_nat(&self.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
+        
+        // Chain the equalities:
+        assert(bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order());
+        /* </MODIFIED CODE> */
+        
     }
 }
 
@@ -387,11 +412,13 @@ impl<'a> Mul<&'a Scalar> for &Scalar {
         /* <VERIFICATION NOTE>
          Store unpacked values explicitly for limbs_bounded assumption
         </VERIFICATION NOTE> */
+        /* <MODIFIED CODE> */
         let self_unpacked = self.unpack();
         let rhs_unpacked = _rhs.unpack();
         assume(limbs_bounded(&self_unpacked));
         assume(limbs_bounded(&rhs_unpacked));
         let result = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked).pack();
+        /* </MODIFIED CODE> */
         /* <ORIGINAL CODE>
          let result = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
          </ORIGINAL CODE> */
@@ -1468,7 +1495,7 @@ impl Scalar {
 
     verus! {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
-    // VERIFICATION NOTE: verified
+    // VERIFICATION NOTE: VERIFIED
     pub(crate) fn unpack(&self) -> (result: UnpackedScalar)
     ensures
         limbs_bounded(&result),
@@ -1534,15 +1561,15 @@ impl UnpackedScalar {
         limbs_bounded(self),
     ensures
         bytes_to_nat(&result.bytes) % group_order() == to_nat(&self.limbs) % group_order(),
-        // VER NOTE: If input is canonical, output is canonical
+        // VERIFICATION NOTE: If input is canonical, output is canonical
         to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order(),
-        // VER NOTE: Canonical scalars have high bit clear (since group_order < 2^255)
+        // VERIFICATION NOTE: Canonical scalars have high bit clear (since group_order < 2^255)
         to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127,
     {
         let result = Scalar {
             bytes: self.to_bytes(),
         };
-        // VER NOTE: TODO: Prove these follow from to_bytes() spec
+        // VERIFICATION NOTE: TODO: Prove these follow from to_bytes() spec
         assume(to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order());
         assume(to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127);
         result

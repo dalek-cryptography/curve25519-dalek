@@ -58,7 +58,7 @@ jobs:
 
 
   check-libsignal:
-    name: `cargo check` on libsignal with this dalek-lite commit
+    name: "`cargo check` on libsignal with this dalek-lite commit"
     runs-on: ubuntu-latest
     steps:
     - name: Install Rust toolchain

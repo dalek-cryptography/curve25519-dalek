@@ -70,4 +70,5 @@ jobs:
         git checkout frozen_for_ci
     - name: Run test
       run: |
+        cd libsignal
         cargo check

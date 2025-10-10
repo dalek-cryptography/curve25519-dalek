@@ -166,6 +166,9 @@ impl FieldElement51 {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
+            lemma_reduce_bound_2p(limbs);
+            pow255_gt_19();
+            lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest

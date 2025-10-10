@@ -55,3 +55,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: crate-ci/typos@v1.33.1
+
+
+  check-libsignal:
+    name: `cargo check` on libsignal with this dalek-lite commit
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.88.0
+    - name: Get libsignal
+      run: |
+        git clone https://github.com/Beneficial-AI-Foundation/libsignal
+        cd libsignal
+        git checkout frozen_for_ci
+    - name: Run test
+      run: |
+        cargo check

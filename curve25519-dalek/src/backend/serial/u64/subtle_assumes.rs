@@ -1,5 +1,5 @@
-//! Tell Verus what Choice does
-use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
+//! Tell Verus what Choice and CtOption do
+use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use vstd::prelude::*;
 
@@ -9,6 +9,13 @@ verus! {
 #[verifier::external_body]
 #[allow(dead_code)]
 pub struct ExChoice(Choice);
+
+/*** External type specification for subtle::CtOption ***/
+#[verifier::external_type_specification]
+#[verifier::external_body]
+#[verifier::reject_recursive_types(T)]
+#[allow(dead_code)]
+pub struct ExCtOption<T>(CtOption<T>);
 
 /// Spec-level view of Choice as a boolean
 /// true = Choice(1), false = Choice(0)
@@ -66,6 +73,45 @@ pub fn choice_and(a: Choice, b: Choice) -> (c: Choice)
 {
     use core::ops::BitAnd;
     a.bitand(b)
+}
+
+/*** CtOption specifications ***/
+
+/// Spec-level view of CtOption::is_some
+pub uninterp spec fn ct_option_has_value<T>(opt: CtOption<T>) -> bool;
+
+/// Spec-level view of CtOption::unwrap - what value it contains
+pub uninterp spec fn ct_option_value<T>(opt: CtOption<T>) -> T;
+
+/// Wrapper function for CtOption::new
+#[verifier::external_body]
+pub fn ct_option_new<T>(value: T, choice: Choice) -> CtOption<T> {
+    CtOption::new(value, choice)
+}
+
+/// Wrapper function for CtOption::is_some
+#[verifier::external_body]
+pub fn ct_option_is_some<T>(opt: &CtOption<T>) -> (c: Choice)
+    ensures choice_is_true(c) == ct_option_has_value(*opt),
+{
+    opt.is_some()
+}
+
+/// Wrapper function for CtOption::is_none
+#[verifier::external_body]
+pub fn ct_option_is_none<T>(opt: &CtOption<T>) -> (c: Choice)
+    ensures choice_is_true(c) == !ct_option_has_value(*opt),
+{
+    opt.is_none()
+}
+
+/// Wrapper function for CtOption::unwrap
+#[verifier::external_body]
+pub fn ct_option_unwrap<T>(opt: CtOption<T>) -> (val: T)
+    requires ct_option_has_value(opt),
+    ensures val == ct_option_value(opt),
+{
+    opt.unwrap()
 }
 
 } // verus!

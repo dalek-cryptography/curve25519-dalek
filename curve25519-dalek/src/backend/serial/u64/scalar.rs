@@ -648,7 +648,7 @@ impl Scalar52 {
         limbs_bounded(a),
         limbs_bounded(b),
     ensures
-        to_nat(&result.limbs) == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
+        to_nat(&result.limbs) % group_order() == (to_nat(&a.limbs) * to_nat(&b.limbs)) % group_order(),
         // VER NOTE: Result has bounded limbs from montgomery_reduce
         limbs_bounded(&result),
         // VER NOTE: Result is canonical from montgomery_reduce

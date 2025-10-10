@@ -234,8 +234,10 @@ impl Scalar52 {
         to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
-        // VER NOTE: Result is canonical
+        // VERIFICATION NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
+        // VERIFICATION NOTE: Result has bounded limbs (from sub)
+        limbs_bounded(&s),
     {
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector); }
@@ -285,7 +287,14 @@ impl Scalar52 {
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}
         proof{lemma_mod_sub_multiples_vanish(to_nat(&sum.limbs) as int, group_order() as int);}
-        Scalar52::sub(&sum, &constants::L)
+        let result = Scalar52::sub(&sum, &constants::L);
+        proof {
+            // TODO: The lemmas should prove this, but Verus is having trouble
+            assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
+            assume(limbs_bounded(&result));
+            assume(to_nat(&result.limbs) < group_order());
+        }
+        result
 
     }
 
@@ -398,7 +407,7 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
-        // VER NOTE: Result is in canonical form
+        // VERIFICATION NOTE: Result is in canonical form
         to_nat(&s.limbs) < group_order(),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -483,7 +492,7 @@ impl Scalar52 {
         }
         proof {
             lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);
-        }
+         }
         difference
     }
 

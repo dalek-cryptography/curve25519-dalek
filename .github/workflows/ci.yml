@@ -80,11 +80,11 @@ jobs:
       run: |
         DALEK_COMMIT=$(git rev-parse HEAD)
         cd ../libsignal
-        if ! grep -q "PLACEHOLDER" Cargo.toml; then
-          echo "Error: PLACEHOLDER not found in Cargo.toml"
+        if ! grep -q "14d41a27fc63" Cargo.toml; then
+          echo "Error: Placeholder 14d41a27fc63 not found in Cargo.toml"
           exit 1
         fi
-        sed -i "s/PLACEHOLDER/$DALEK_COMMIT/g" Cargo.toml
+        sed -i "s/14d41a27fc63/$DALEK_COMMIT/g" Cargo.toml
     - name: Run test
       run: |
         cd ../libsignal

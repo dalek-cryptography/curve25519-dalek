@@ -1,7 +1,7 @@
 # Curve25519 Functions
 
 | Function | Has Spec (Verus) | Has Proof (Verus) | Has Spec (Lean) | Has Proof (Lean) |
-|----------|------------------|-------------------|----------------|-----------------|
+|----------|:------------------:|:-------------------:|:----------------:|:-----------------:|
 | backend/cpuid_avx2/impl#[InitToken]get(). |  |  |  |  |
 | backend/cpuid_avx2/init(). |  |  |  |  |
 | [backend/get_selected_backend().](https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/backend/mod.rs#L54) |  |  |  |  |

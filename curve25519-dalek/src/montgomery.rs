@@ -65,8 +65,8 @@ use subtle::Choice;
 use subtle::ConstantTimeEq;
 use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
@@ -110,12 +110,12 @@ impl Identity for MontgomeryPoint {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for MontgomeryPoint {
-//     fn zeroize(&mut self) {
-//         self.0.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for MontgomeryPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 impl MontgomeryPoint {
     /// Fixed-base scalar multiplication (i.e. multiplication by the base point).
@@ -182,8 +182,8 @@ impl MontgomeryPoint {
         // The final value of prev_bit above is scalar.bits()[0], i.e., the LSB of scalar
         ProjectivePoint::conditional_swap(&mut x0, &mut x1, Choice::from(prev_bit as u8));
         // Don't leave the bit in the stack
-        // #[cfg(feature = "zeroize")]
-        // prev_bit.zeroize();
+        #[cfg(feature = "zeroize")]
+        prev_bit.zeroize();
 
         x0.as_affine()
     }

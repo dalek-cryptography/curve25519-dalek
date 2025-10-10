@@ -129,8 +129,8 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use crate::constants;
 
@@ -187,14 +187,14 @@ pub struct AffineNielsPoint {
     pub xy2d: FieldElement,
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for AffineNielsPoint {
-//     fn zeroize(&mut self) {
-//         self.y_plus_x.zeroize();
-//         self.y_minus_x.zeroize();
-//         self.xy2d.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for AffineNielsPoint {
+    fn zeroize(&mut self) {
+        self.y_plus_x.zeroize();
+        self.y_minus_x.zeroize();
+        self.xy2d.zeroize();
+    }
+}
 
 /// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
 /// curve, represented as \\((Y+X, Y-X, Z, 2dXY)\\) in "Niels coordinates".
@@ -210,15 +210,15 @@ pub struct ProjectiveNielsPoint {
     pub T2d: FieldElement,
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for ProjectiveNielsPoint {
-//     fn zeroize(&mut self) {
-//         self.Y_plus_X.zeroize();
-//         self.Y_minus_X.zeroize();
-//         self.Z.zeroize();
-//         self.T2d.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for ProjectiveNielsPoint {
+    fn zeroize(&mut self) {
+        self.Y_plus_X.zeroize();
+        self.Y_minus_X.zeroize();
+        self.Z.zeroize();
+        self.T2d.zeroize();
+    }
+}
 
 // ------------------------------------------------------------------------
 // Constructors

@@ -137,8 +137,8 @@ impl MultiscalarMul for Straus {
             }
         }
 
-        // #[cfg(feature = "zeroize")]
-        // zeroize::Zeroize::zeroize(&mut scalar_digits);
+        #[cfg(feature = "zeroize")]
+        zeroize::Zeroize::zeroize(&mut scalar_digits);
 
         Q
     }

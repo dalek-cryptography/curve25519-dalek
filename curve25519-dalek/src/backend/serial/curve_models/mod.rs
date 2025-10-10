@@ -69,7 +69,7 @@
 //! and passed to \\( \mathbb P\^2 \\) by setting \\( x = W\_1 / W\_3
 //! \\), \\(y = W\_2 / W\_3 \\).
 //! Up to variable naming, this is the projective representation
-//! introduced in [_Twisted Edwards
+//! introduced in in [_Twisted Edwards
 //! Curves_][bernstein-birkner-joye-lange-peters-2008] by Bernstein,
 //! Birkner, Joye, Lange, and Peters.  In `curve25519-dalek`, it is
 //! represented by the `ProjectivePoint` struct.
@@ -129,8 +129,8 @@ use core::ops::{Add, Neg, Sub};
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use crate::constants;
 
@@ -187,14 +187,14 @@ pub struct AffineNielsPoint {
     pub xy2d: FieldElement,
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for AffineNielsPoint {
-//     fn zeroize(&mut self) {
-//         self.y_plus_x.zeroize();
-//         self.y_minus_x.zeroize();
-//         self.xy2d.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for AffineNielsPoint {
+    fn zeroize(&mut self) {
+        self.y_plus_x.zeroize();
+        self.y_minus_x.zeroize();
+        self.xy2d.zeroize();
+    }
+}
 
 /// A pre-computed point on the \\( \mathbb P\^3 \\) model for the
 /// curve, represented as \\((Y+X, Y-X, Z, 2dXY)\\) in "Niels coordinates".
@@ -210,15 +210,15 @@ pub struct ProjectiveNielsPoint {
     pub T2d: FieldElement,
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for ProjectiveNielsPoint {
-//     fn zeroize(&mut self) {
-//         self.Y_plus_X.zeroize();
-//         self.Y_minus_X.zeroize();
-//         self.Z.zeroize();
-//         self.T2d.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for ProjectiveNielsPoint {
+    fn zeroize(&mut self) {
+        self.Y_plus_X.zeroize();
+        self.Y_minus_X.zeroize();
+        self.Z.zeroize();
+        self.T2d.zeroize();
+    }
+}
 
 // ------------------------------------------------------------------------
 // Constructors
@@ -408,10 +408,10 @@ impl ProjectivePoint {
 //
 // upstream rust issue: https://github.com/rust-lang/rust/issues/46380
 //#[doc(hidden)]
-impl<'a> Add<&'a ProjectiveNielsPoint> for &EdwardsPoint {
+impl<'a, 'b> Add<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.Y_plus_X;
@@ -430,10 +430,10 @@ impl<'a> Add<&'a ProjectiveNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a> Sub<&'a ProjectiveNielsPoint> for &EdwardsPoint {
+impl<'a, 'b> Sub<&'b ProjectiveNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'a ProjectiveNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'b ProjectiveNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.Y_minus_X;
@@ -452,10 +452,10 @@ impl<'a> Sub<&'a ProjectiveNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a> Add<&'a AffineNielsPoint> for &EdwardsPoint {
+impl<'a, 'b> Add<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn add(self, other: &'a AffineNielsPoint) -> CompletedPoint {
+    fn add(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PP = &Y_plus_X * &other.y_plus_x;
@@ -473,10 +473,10 @@ impl<'a> Add<&'a AffineNielsPoint> for &EdwardsPoint {
 }
 
 //#[doc(hidden)]
-impl<'a> Sub<&'a AffineNielsPoint> for &EdwardsPoint {
+impl<'a, 'b> Sub<&'b AffineNielsPoint> for &'a EdwardsPoint {
     type Output = CompletedPoint;
 
-    fn sub(self, other: &'a AffineNielsPoint) -> CompletedPoint {
+    fn sub(self, other: &'b AffineNielsPoint) -> CompletedPoint {
         let Y_plus_X = &self.Y + &self.X;
         let Y_minus_X = &self.Y - &self.X;
         let PM = &Y_plus_X * &other.y_minus_x;
@@ -497,7 +497,7 @@ impl<'a> Sub<&'a AffineNielsPoint> for &EdwardsPoint {
 // Negation
 // ------------------------------------------------------------------------
 
-impl Neg for &ProjectiveNielsPoint {
+impl<'a> Neg for &'a ProjectiveNielsPoint {
     type Output = ProjectiveNielsPoint;
 
     fn neg(self) -> ProjectiveNielsPoint {
@@ -510,7 +510,7 @@ impl Neg for &ProjectiveNielsPoint {
     }
 }
 
-impl Neg for &AffineNielsPoint {
+impl<'a> Neg for &'a AffineNielsPoint {
     type Output = AffineNielsPoint;
 
     fn neg(self) -> AffineNielsPoint {
@@ -558,10 +558,7 @@ impl Debug for AffineNielsPoint {
 
 impl Debug for ProjectiveNielsPoint {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(
-            f,
-            "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
-            &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d
-        )
+        write!(f, "ProjectiveNielsPoint{{\n\tY_plus_X: {:?},\n\tY_minus_X: {:?},\n\tZ: {:?},\n\tT2d: {:?}\n}}",
+               &self.Y_plus_X, &self.Y_minus_X, &self.Z, &self.T2d)
     }
 }

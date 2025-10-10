@@ -31,7 +31,7 @@ use crate::traits::VartimeMultiscalarMul;
 ///    Bucket 0 is not needed as it would contain points multiplied by 0.
 /// 2. Convert scalars to a radix-`2^w` representation with signed digits in `[-2^w/2, 2^w/2]`.
 ///    Note: only the last digit may equal `2^w/2`.
-/// 3. Starting with the last window, for each point `i=[0..n)` add it to a bucket indexed by
+/// 3. Starting with the last window, for each point `i=[0..n)` add it to a a bucket indexed by
 ///    the point's scalar's value in the window.
 /// 4. Once all points in a window are sorted into buckets, add buckets by multiplying each
 ///    by their index. Efficient way of doing it is to start with the last bucket and compute two sums:
@@ -160,40 +160,40 @@ impl VartimeMultiscalarMul for Pippenger {
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//     use crate::constants;
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::constants;
 
-//     #[test]
-//     fn test_vartime_pippenger() {
-//         // Reuse points across different tests
-//         let mut n = 512;
-//         let x = Scalar::from(2128506u64).invert();
-//         let y = Scalar::from(4443282u64).invert();
-//         let points: Vec<_> = (0..n)
-//             .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
-//             .collect();
-//         let scalars: Vec<_> = (0..n)
-//             .map(|i| x + (Scalar::from(i as u64) * y)) // fast way to make ~random but deterministic scalars
-//             .collect();
+    #[test]
+    fn test_vartime_pippenger() {
+        // Reuse points across different tests
+        let mut n = 512;
+        let x = Scalar::from(2128506u64).invert();
+        let y = Scalar::from(4443282u64).invert();
+        let points: Vec<_> = (0..n)
+            .map(|i| constants::ED25519_BASEPOINT_POINT * Scalar::from(1 + i as u64))
+            .collect();
+        let scalars: Vec<_> = (0..n)
+            .map(|i| x + (Scalar::from(i as u64) * y)) // fast way to make ~random but deterministic scalars
+            .collect();
 
-//         let premultiplied: Vec<EdwardsPoint> = scalars
-//             .iter()
-//             .zip(points.iter())
-//             .map(|(sc, pt)| sc * pt)
-//             .collect();
+        let premultiplied: Vec<EdwardsPoint> = scalars
+            .iter()
+            .zip(points.iter())
+            .map(|(sc, pt)| sc * pt)
+            .collect();
 
-//         while n > 0 {
-//             let scalars = &scalars[0..n].to_vec();
-//             let points = &points[0..n].to_vec();
-//             let control: EdwardsPoint = premultiplied[0..n].iter().sum();
+        while n > 0 {
+            let scalars = &scalars[0..n].to_vec();
+            let points = &points[0..n].to_vec();
+            let control: EdwardsPoint = premultiplied[0..n].iter().sum();
 
-//             let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
+            let subject = Pippenger::vartime_multiscalar_mul(scalars.clone(), points.clone());
 
-//             assert_eq!(subject.compress(), control.compress());
+            assert_eq!(subject.compress(), control.compress());
 
-//             n /= 2;
-//         }
-//     }
-// }
+            n /= 2;
+        }
+    }
+}

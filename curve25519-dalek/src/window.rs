@@ -28,8 +28,8 @@ use crate::backend::serial::curve_models::AffineNielsPoint;
 use crate::backend::serial::curve_models::ProjectiveNielsPoint;
 use crate::edwards::EdwardsPoint;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 macro_rules! impl_lookup_table {
     (Name = $name:ident, Size = $size:expr, SizeNeg = $neg:expr, SizeRange = $range:expr, ConversionRange = $conv_range:expr) => {
@@ -115,15 +115,15 @@ macro_rules! impl_lookup_table {
             }
         }
 
-        // #[cfg(feature = "zeroize")]
-        // impl<T> Zeroize for $name<T>
-        // where
-        //     T: Copy + Default + Zeroize,
-        // {
-        //     fn zeroize(&mut self) {
-        //         self.0.iter_mut().zeroize();
-        //     }
-        // }
+        #[cfg(feature = "zeroize")]
+        impl<T> Zeroize for $name<T>
+        where
+            T: Copy + Default + Zeroize,
+        {
+            fn zeroize(&mut self) {
+                self.0.iter_mut().zeroize();
+            }
+        }
     };
 } // End macro_rules! impl_lookup_table
 

@@ -69,7 +69,10 @@ pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BAS
 /// $$
 /// \ell = 2^\{252\} + 27742317777372353535851937790883648493.
 /// $$
-pub(crate) const BASEPOINT_ORDER: Scalar = Scalar {
+#[deprecated(since = "4.1.1", note = "Should not have been in public API")]
+pub const BASEPOINT_ORDER: Scalar = BASEPOINT_ORDER_PRIVATE;
+
+pub(crate) const BASEPOINT_ORDER_PRIVATE: Scalar = Scalar {
     bytes: [
         0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde,
         0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -88,98 +91,88 @@ pub static RISTRETTO_BASEPOINT_TABLE: &RistrettoBasepointTable = unsafe {
     &*(ED25519_BASEPOINT_TABLE as *const EdwardsBasepointTable as *const RistrettoBasepointTable)
 };
 
-// #[cfg(test)]
-// mod test {
-//     use crate::constants;
-//     use crate::field::FieldElement;
-//     use crate::traits::{IsIdentity, ValidityCheck};
+#[cfg(test)]
+mod test {
+    use crate::constants;
+    use crate::field::FieldElement;
+    use crate::traits::{IsIdentity, ValidityCheck};
 
-//     #[test]
-//     fn test_eight_torsion() {
-//         for i in 0..8 {
-//             let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(3);
-//             assert!(Q.is_valid());
-//             assert!(Q.is_identity());
-//         }
-//     }
+    #[test]
+    fn test_eight_torsion() {
+        for i in 0..8 {
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(3);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
 
-//     #[test]
-//     fn test_four_torsion() {
-//         for i in (0..8).filter(|i| i % 2 == 0) {
-//             let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(2);
-//             assert!(Q.is_valid());
-//             assert!(Q.is_identity());
-//         }
-//     }
+    #[test]
+    fn test_four_torsion() {
+        for i in (0..8).filter(|i| i % 2 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(2);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
 
-//     #[test]
-//     fn test_two_torsion() {
-//         for i in (0..8).filter(|i| i % 4 == 0) {
-//             let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(1);
-//             assert!(Q.is_valid());
-//             assert!(Q.is_identity());
-//         }
-//     }
+    #[test]
+    fn test_two_torsion() {
+        for i in (0..8).filter(|i| i % 4 == 0) {
+            let Q = constants::EIGHT_TORSION[i].mul_by_pow_2(1);
+            assert!(Q.is_valid());
+            assert!(Q.is_identity());
+        }
+    }
 
-//     /// Test that SQRT_M1 is the positive square root of -1
-//     #[test]
-//     fn test_sqrt_minus_one() {
-//         let minus_one = FieldElement::MINUS_ONE;
-//         let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
-//         assert_eq!(minus_one, sqrt_m1_sq);
-//         assert!(bool::from(!constants::SQRT_M1.is_negative()));
-//     }
+    /// Test that SQRT_M1 is the positive square root of -1
+    #[test]
+    fn test_sqrt_minus_one() {
+        let minus_one = FieldElement::MINUS_ONE;
+        let sqrt_m1_sq = &constants::SQRT_M1 * &constants::SQRT_M1;
+        assert_eq!(minus_one, sqrt_m1_sq);
+        assert!(bool::from(!constants::SQRT_M1.is_negative()));
+    }
 
-//     #[test]
-//     fn test_sqrt_constants_sign() {
-//         let minus_one = FieldElement::MINUS_ONE;
-//         let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
-//         assert!(bool::from(was_nonzero_square));
-//         let sign_test_sqrt = &invsqrt_m1 * &constants::SQRT_M1;
-//         assert_eq!(sign_test_sqrt, minus_one);
-//     }
+    #[test]
+    fn test_sqrt_constants_sign() {
+        let minus_one = FieldElement::MINUS_ONE;
+        let (was_nonzero_square, invsqrt_m1) = minus_one.invsqrt();
+        assert!(bool::from(was_nonzero_square));
+        let sign_test_sqrt = &invsqrt_m1 * &constants::SQRT_M1;
+        assert_eq!(sign_test_sqrt, minus_one);
+    }
 
-//     /// Test that d = -121665/121666
-//     #[test]
-//     #[cfg(all(curve25519_dalek_bits = "32", not(curve25519_dalek_backend = "fiat")))]
-//     fn test_d_vs_ratio() {
-//         use crate::backend::serial::u32::field::FieldElement2625;
-//         let a = -&FieldElement2625([121665, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-//         let b = FieldElement2625([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-//         let d = &a * &b.invert();
-//         let d2 = &d + &d;
-//         assert_eq!(d, constants::EDWARDS_D);
-//         assert_eq!(d2, constants::EDWARDS_D2);
-//     }
+    /// Test that d = -121665/121666
+    #[test]
+    #[cfg(all(curve25519_dalek_bits = "32", not(curve25519_dalek_backend = "fiat")))]
+    fn test_d_vs_ratio() {
+        use crate::backend::serial::u32::field::FieldElement2625;
+        let a = -&FieldElement2625([121665, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        let b = FieldElement2625([121666, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        let d = &a * &b.invert();
+        let d2 = &d + &d;
+        assert_eq!(d, constants::EDWARDS_D);
+        assert_eq!(d2, constants::EDWARDS_D2);
+    }
 
-//     /// Test that d = -121665/121666
-//     #[test]
-//     #[cfg(all(curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
-//     fn test_d_vs_ratio() {
-//         use crate::backend::serial::u64::field::FieldElement51;
-//         let a = -&FieldElement51([121665, 0, 0, 0, 0]);
-//         let b = FieldElement51([121666, 0, 0, 0, 0]);
-//         let d = &a * &b.invert();
-//         let d2 = &d + &d;
-//         assert_eq!(d, constants::EDWARDS_D);
-//         assert_eq!(d2, constants::EDWARDS_D2);
-//     }
+    /// Test that d = -121665/121666
+    #[test]
+    #[cfg(all(curve25519_dalek_bits = "64", not(curve25519_dalek_backend = "fiat")))]
+    fn test_d_vs_ratio() {
+        use crate::backend::serial::u64::field::FieldElement51;
+        let a = -&FieldElement51([121665, 0, 0, 0, 0]);
+        let b = FieldElement51([121666, 0, 0, 0, 0]);
+        let d = &a * &b.invert();
+        let d2 = &d + &d;
+        assert_eq!(d, constants::EDWARDS_D);
+        assert_eq!(d2, constants::EDWARDS_D2);
+    }
 
-//     #[test]
-//     fn test_sqrt_ad_minus_one() {
-//         let a = FieldElement::MINUS_ONE;
-//         let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
-//         let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
-//         assert_eq!(should_be_ad_minus_one, ad_minus_one);
-//     }
-
-//     /// Test that ED25519_SQRTAM2 squared is MONTGOMERY_A_NEG - 2
-//     #[test]
-//     #[cfg(feature = "digest")]
-//     fn test_sqrt_a_minus_2() {
-//         let one = FieldElement::ONE;
-//         let a_minus_two = &(&constants::MONTGOMERY_A_NEG - &one) - &one;
-
-//         assert_eq!(constants::ED25519_SQRTAM2.square(), a_minus_two)
-//     }
-// }
+    #[test]
+    fn test_sqrt_ad_minus_one() {
+        let a = FieldElement::MINUS_ONE;
+        let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
+        let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
+        assert_eq!(should_be_ad_minus_one, ad_minus_one);
+    }
+}

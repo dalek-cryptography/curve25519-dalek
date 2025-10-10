@@ -76,9 +76,9 @@
 //! coordinates without requiring an inversion, so it is much faster.
 //!
 //! The `RistrettoPoint` struct implements the
-//! [`subtle::ConstantTimeEq`] trait for constant-time equality
-//! checking, and also uses this to ensure `Eq` equality checking
-//! runs in constant time.
+//! `subtle::ConstantTimeEq` trait for constant-time equality
+//! checking, and the Rust `Eq` trait for variable-time equality
+//! checking.
 //!
 //! ## Scalars
 //!
@@ -93,19 +93,19 @@
 //! Scalar multiplication on Ristretto points is provided by:
 //!
 //! * the `*` operator between a `Scalar` and a `RistrettoPoint`, which
-//!   performs constant-time variable-base scalar multiplication;
+//! performs constant-time variable-base scalar multiplication;
 //!
 //! * the `*` operator between a `Scalar` and a
-//!   `RistrettoBasepointTable`, which performs constant-time fixed-base
-//!   scalar multiplication;
+//! `RistrettoBasepointTable`, which performs constant-time fixed-base
+//! scalar multiplication;
 //!
 //! * an implementation of the
-//!   [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
-//!   constant-time variable-base multiscalar multiplication;
+//! [`MultiscalarMul`](../traits/trait.MultiscalarMul.html) trait for
+//! constant-time variable-base multiscalar multiplication;
 //!
 //! * an implementation of the
-//!   [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
-//!   trait for variable-time variable-base multiscalar multiplication;
+//! [`VartimeMultiscalarMul`](../traits/trait.VartimeMultiscalarMul.html)
+//! trait for variable-time variable-base multiscalar multiplication;
 //!
 //! ## Random Points and Hashing to Ristretto
 //!
@@ -113,11 +113,11 @@
 //! used to implement
 //!
 //! * `RistrettoPoint::random()`, which generates random points from an
-//!   RNG - enabled by `rand_core` feature;
+//! RNG - enabled by `rand_core` feature;
 //!
 //! * `RistrettoPoint::from_hash()` and
-//!   `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
-//!   group.
+//! `RistrettoPoint::hash_from_bytes()`, which perform hashing to the
+//! group.
 //!
 //! The Elligator map itself is not currently exposed.
 //!
@@ -169,25 +169,22 @@ use core::ops::{Add, Neg, Sub};
 use core::ops::{AddAssign, SubAssign};
 use core::ops::{Mul, MulAssign};
 
-// #[cfg(feature = "digest")]
-// use digest::Digest;
-// #[cfg(feature = "digest")]
-// use digest::array::typenum::U64;
+#[cfg(any(test, feature = "rand_core"))]
+use rand_core::CryptoRngCore;
+
+#[cfg(feature = "digest")]
+use digest::generic_array::typenum::U64;
+#[cfg(feature = "digest")]
+use digest::Digest;
 
 use crate::constants;
 use crate::field::FieldElement;
 
 #[cfg(feature = "group")]
 use {
-    group::{GroupEncoding, cofactor::CofactorGroup, prime::PrimeGroup},
-    rand_core::TryRngCore,
+    group::{cofactor::CofactorGroup, prime::PrimeGroup, GroupEncoding},
+    rand_core::RngCore,
     subtle::CtOption,
-};
-
-#[cfg(any(test, feature = "rand_core"))]
-use {
-    core::convert::Infallible,
-    rand_core::{CryptoRng, TryCryptoRng},
 };
 
 use subtle::Choice;
@@ -195,8 +192,8 @@ use subtle::ConditionallyNegatable;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 #[cfg(feature = "precomputed-tables")]
 use crate::edwards::EdwardsBasepointTable;
@@ -218,16 +215,8 @@ use crate::traits::{MultiscalarMul, VartimeMultiscalarMul, VartimePrecomputedMul
 ///
 /// The Ristretto encoding is canonical, so two points are equal if and
 /// only if their encodings are equal.
-#[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Copy, Clone, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct CompressedRistretto(pub [u8; 32]);
-
-impl Eq for CompressedRistretto {}
-impl PartialEq for CompressedRistretto {
-    fn eq(&self, other: &Self) -> bool {
-        self.ct_eq(other).into()
-    }
-}
 
 impl ConstantTimeEq for CompressedRistretto {
     fn ct_eq(&self, other: &CompressedRistretto) -> Choice {
@@ -296,7 +285,7 @@ mod decompress {
         // original input, since our encoding routine is canonical.
 
         let s = FieldElement::from_bytes(repr.as_bytes());
-        let s_bytes_check = s.to_bytes();
+        let s_bytes_check = s.as_bytes();
         let s_encoding_is_canonical = s_bytes_check[..].ct_eq(repr.as_bytes());
         let s_is_negative = s.is_negative();
 
@@ -529,7 +518,7 @@ impl RistrettoPoint {
         let s_is_negative = s.is_negative();
         s.conditional_negate(s_is_negative);
 
-        CompressedRistretto(s.to_bytes())
+        CompressedRistretto(s.as_bytes())
     }
 
     /// Double-and-compress a batch of points.  The Ristretto encoding
@@ -543,12 +532,12 @@ impl RistrettoPoint {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use rand_core::{OsRng, TryRngCore};
+    /// use rand_core::OsRng;
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
     /// # fn main() {
-    /// let mut rng = OsRng.unwrap_err();
+    /// let mut rng = OsRng;
     ///
     /// let points: Vec<RistrettoPoint> =
     ///     (0..32).map(|_| RistrettoPoint::random(&mut rng)).collect();
@@ -641,7 +630,7 @@ impl RistrettoPoint {
                 let s_is_negative = s.is_negative();
                 s.conditional_negate(s_is_negative);
 
-                CompressedRistretto(s.to_bytes())
+                CompressedRistretto(s.as_bytes())
             })
             .collect()
     }
@@ -707,7 +696,8 @@ impl RistrettoPoint {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRng` interface.
+    /// * `rng`: any RNG which implements `CryptoRngCore`
+    ///   (i.e. `CryptoRng` + `RngCore`) interface.
     ///
     /// # Returns
     ///
@@ -719,92 +709,69 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
-    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
-        Self::try_from_rng(rng)
-            .map_err(|_: Infallible| {})
-            .expect("[bug] unfallible rng failed")
-    }
-
-    #[cfg(any(test, feature = "rand_core"))]
-    /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
-    ///
-    /// # Inputs
-    ///
-    /// * `rng`: any RNG which implements `TryCryptoRng` interface.
-    ///
-    /// # Returns
-    ///
-    /// A random element of the Ristretto group.
-    ///
-    /// # Implementation
-    ///
-    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
-    /// discrete log of the output point with respect to any other
-    /// point should be unknown.  The map is applied twice and the
-    /// results are added, to ensure a uniform distribution.
-    pub fn try_from_rng<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> Self {
         let mut uniform_bytes = [0u8; 64];
-        rng.try_fill_bytes(&mut uniform_bytes)?;
+        rng.fill_bytes(&mut uniform_bytes);
 
-        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
 
-    // #[cfg(feature = "digest")]
-    // /// Hash a slice of bytes into a `RistrettoPoint`.
-    // ///
-    // /// Takes a type parameter `D`, which is any `Digest` producing 64
-    // /// bytes of output.
-    // ///
-    // /// Convenience wrapper around `from_hash`.
-    // ///
-    // /// # Implementation
-    // ///
-    // /// Uses the Ristretto-flavoured Elligator 2 map, so that the
-    // /// discrete log of the output point with respect to any other
-    // /// point should be unknown.  The map is applied twice and the
-    // /// results are added, to ensure a uniform distribution.
-    // ///
-    // /// # Example
-    // ///
-    // #[cfg_attr(feature = "digest", doc = "```")]
-    // #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    // /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    // /// use sha2::Sha512;
-    // ///
-    // /// # // Need fn main() here in comment so the doctest compiles
-    // /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
-    // /// # fn main() {
-    // /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    // /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
-    // /// # }
-    // /// ```
-    // ///
-    // pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
-    // where
-    //     D: Digest<OutputSize = U64> + Default,
-    // {
-    //     let mut hash = D::default();
-    //     hash.update(input);
-    //     RistrettoPoint::from_hash(hash)
-    // }
+    #[cfg(feature = "digest")]
+    /// Hash a slice of bytes into a `RistrettoPoint`.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes of output.
+    ///
+    /// Convenience wrapper around `from_hash`.
+    ///
+    /// # Implementation
+    ///
+    /// Uses the Ristretto-flavoured Elligator 2 map, so that the
+    /// discrete log of the output point with respect to any other
+    /// point should be unknown.  The map is applied twice and the
+    /// results are added, to ensure a uniform distribution.
+    ///
+    /// # Example
+    ///
+    #[cfg_attr(feature = "digest", doc = "```")]
+    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
+    /// # use curve25519_dalek::ristretto::RistrettoPoint;
+    /// use sha2::Sha512;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let P = RistrettoPoint::hash_from_bytes::<Sha512>(msg.as_bytes());
+    /// # }
+    /// ```
+    ///
+    pub fn hash_from_bytes<D>(input: &[u8]) -> RistrettoPoint
+    where
+        D: Digest<OutputSize = U64> + Default,
+    {
+        let mut hash = D::default();
+        hash.update(input);
+        RistrettoPoint::from_hash(hash)
+    }
 
-    // #[cfg(feature = "digest")]
-    // /// Construct a `RistrettoPoint` from an existing `Digest` instance.
-    // ///
-    // /// Use this instead of `hash_from_bytes` if it is more convenient
-    // /// to stream data into the `Digest` than to pass a single byte
-    // /// slice.
-    // pub fn from_hash<D>(hash: D) -> RistrettoPoint
-    // where
-    //     D: Digest<OutputSize = U64> + Default,
-    // {
-    //     // dealing with generic arrays is clumsy, until const generics land
-    //     let output = hash.finalize();
-    //     let mut output_bytes = [0u8; 64];
-    //     output_bytes.copy_from_slice(output.as_slice());
+    #[cfg(feature = "digest")]
+    /// Construct a `RistrettoPoint` from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    pub fn from_hash<D>(hash: D) -> RistrettoPoint
+    where
+        D: Digest<OutputSize = U64> + Default,
+    {
+        // dealing with generic arrays is clumsy, until const generics land
+        let output = hash.finalize();
+        let mut output_bytes = [0u8; 64];
+        output_bytes.copy_from_slice(output.as_slice());
 
-    //     RistrettoPoint::from_uniform_bytes(&output_bytes)
-    // }
+        RistrettoPoint::from_uniform_bytes(&output_bytes)
+    }
 
     /// Construct a `RistrettoPoint` from 64 bytes of data.
     ///
@@ -881,10 +848,10 @@ impl Eq for RistrettoPoint {}
 // Arithmetic
 // ------------------------------------------------------------------------
 
-impl<'a> Add<&'a RistrettoPoint> for &RistrettoPoint {
+impl<'a, 'b> Add<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
-    fn add(self, other: &'a RistrettoPoint) -> RistrettoPoint {
+    fn add(self, other: &'b RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self.0 + other.0)
     }
 }
@@ -895,7 +862,7 @@ define_add_variants!(
     Output = RistrettoPoint
 );
 
-impl AddAssign<&RistrettoPoint> for RistrettoPoint {
+impl<'b> AddAssign<&'b RistrettoPoint> for RistrettoPoint {
     fn add_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) + _rhs;
     }
@@ -903,10 +870,10 @@ impl AddAssign<&RistrettoPoint> for RistrettoPoint {
 
 define_add_assign_variants!(LHS = RistrettoPoint, RHS = RistrettoPoint);
 
-impl<'a> Sub<&'a RistrettoPoint> for &RistrettoPoint {
+impl<'a, 'b> Sub<&'b RistrettoPoint> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
-    fn sub(self, other: &'a RistrettoPoint) -> RistrettoPoint {
+    fn sub(self, other: &'b RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self.0 - other.0)
     }
 }
@@ -917,7 +884,7 @@ define_sub_variants!(
     Output = RistrettoPoint
 );
 
-impl SubAssign<&RistrettoPoint> for RistrettoPoint {
+impl<'b> SubAssign<&'b RistrettoPoint> for RistrettoPoint {
     fn sub_assign(&mut self, _rhs: &RistrettoPoint) {
         *self = (self as &RistrettoPoint) - _rhs;
     }
@@ -937,7 +904,7 @@ where
     }
 }
 
-impl Neg for &RistrettoPoint {
+impl<'a> Neg for &'a RistrettoPoint {
     type Output = RistrettoPoint;
 
     fn neg(self) -> RistrettoPoint {
@@ -953,26 +920,26 @@ impl Neg for RistrettoPoint {
     }
 }
 
-impl<'a> MulAssign<&'a Scalar> for RistrettoPoint {
-    fn mul_assign(&mut self, scalar: &'a Scalar) {
+impl<'b> MulAssign<&'b Scalar> for RistrettoPoint {
+    fn mul_assign(&mut self, scalar: &'b Scalar) {
         let result = (self as &RistrettoPoint) * scalar;
         *self = result;
     }
 }
 
-impl<'a> Mul<&'a Scalar> for &RistrettoPoint {
+impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoPoint {
     type Output = RistrettoPoint;
     /// Scalar multiplication: compute `scalar * self`.
-    fn mul(self, scalar: &'a Scalar) -> RistrettoPoint {
+    fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
         RistrettoPoint(self.0 * scalar)
     }
 }
 
-impl<'a> Mul<&'a RistrettoPoint> for &Scalar {
+impl<'a, 'b> Mul<&'b RistrettoPoint> for &'a Scalar {
     type Output = RistrettoPoint;
 
     /// Scalar multiplication: compute `self * scalar`.
-    fn mul(self, point: &'a RistrettoPoint) -> RistrettoPoint {
+    fn mul(self, point: &'b RistrettoPoint) -> RistrettoPoint {
         RistrettoPoint(self * point.0)
     }
 }
@@ -1040,9 +1007,6 @@ impl VartimeMultiscalarMul for RistrettoPoint {
 }
 
 /// Precomputation for variable-time multiscalar multiplication with `RistrettoPoint`s.
-///
-/// Note that for large numbers of `RistrettoPoint`s, this functionality may be less
-/// efficient than the corresponding `VartimeMultiscalarMul` implementation.
 // This wraps the inner implementation in a facade type so that we can
 // decouple stability of the inner type from the stability of the
 // outer type.
@@ -1061,14 +1025,6 @@ impl VartimePrecomputedMultiscalarMul for VartimeRistrettoPrecomputation {
         Self(crate::backend::VartimePrecomputedStraus::new(
             static_points.into_iter().map(|P| P.borrow().0),
         ))
-    }
-
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 
     fn optional_mixed_multiscalar_mul<I, J, K>(
@@ -1126,7 +1082,7 @@ impl RistrettoPoint {
 pub struct RistrettoBasepointTable(pub(crate) EdwardsBasepointTable);
 
 #[cfg(feature = "precomputed-tables")]
-impl<'b> Mul<&'b Scalar> for &RistrettoBasepointTable {
+impl<'a, 'b> Mul<&'b Scalar> for &'a RistrettoBasepointTable {
     type Output = RistrettoPoint;
 
     fn mul(self, scalar: &'b Scalar) -> RistrettoPoint {
@@ -1135,7 +1091,7 @@ impl<'b> Mul<&'b Scalar> for &RistrettoBasepointTable {
 }
 
 #[cfg(feature = "precomputed-tables")]
-impl<'a> Mul<&'a RistrettoBasepointTable> for &Scalar {
+impl<'a, 'b> Mul<&'a RistrettoBasepointTable> for &'b Scalar {
     type Output = RistrettoPoint;
 
     fn mul(self, basepoint_table: &'a RistrettoBasepointTable) -> RistrettoPoint {
@@ -1225,11 +1181,11 @@ impl Debug for RistrettoPoint {
 impl group::Group for RistrettoPoint {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn random(mut rng: impl RngCore) -> Self {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut uniform_bytes = [0u8; 64];
-        rng.try_fill_bytes(&mut uniform_bytes)?;
-        Ok(RistrettoPoint::from_uniform_bytes(&uniform_bytes))
+        rng.fill_bytes(&mut uniform_bytes);
+        RistrettoPoint::from_uniform_bytes(&uniform_bytes)
     }
 
     fn identity() -> Self {
@@ -1299,766 +1255,618 @@ impl CofactorGroup for RistrettoPoint {
 // Zeroize traits
 // ------------------------------------------------------------------------
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for CompressedRistretto {
-//     fn zeroize(&mut self) {
-//         self.0.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for CompressedRistretto {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for RistrettoPoint {
-//     fn zeroize(&mut self) {
-//         self.0.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for RistrettoPoint {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 // ------------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------------
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//     use crate::edwards::CompressedEdwardsY;
-
-//     use rand_core::{OsRng, TryRngCore};
-
-//     #[test]
-//     #[cfg(feature = "serde")]
-//     fn serde_bincode_basepoint_roundtrip() {
-//         use bincode;
-
-//         let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
-//         let enc_compressed =
-//             bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
-//         assert_eq!(encoded, enc_compressed);
-
-//         // Check that the encoding is 32 bytes exactly
-//         assert_eq!(encoded.len(), 32);
-
-//         let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
-//         let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
-
-//         assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
-//         assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
-
-//         // Check that the encoding itself matches the usual one
-//         let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
-//         let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
-//         assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
-//     }
-
-//     #[test]
-//     fn scalarmult_ristrettopoint_works_both_ways() {
-//         let P = constants::RISTRETTO_BASEPOINT_POINT;
-//         let s = Scalar::from(999u64);
-
-//         let P1 = P * s;
-//         let P2 = s * P;
-
-//         assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn impl_sum() {
-//         // Test that sum works for non-empty iterators
-//         let BASE = constants::RISTRETTO_BASEPOINT_POINT;
-
-//         let s1 = Scalar::from(999u64);
-//         let P1 = BASE * s1;
-
-//         let s2 = Scalar::from(333u64);
-//         let P2 = BASE * s2;
-
-//         let vec = vec![P1, P2];
-//         let sum: RistrettoPoint = vec.iter().sum();
-
-//         assert_eq!(sum, P1 + P2);
-
-//         // Test that sum works for the empty iterator
-//         let empty_vector: Vec<RistrettoPoint> = vec![];
-//         let sum: RistrettoPoint = empty_vector.iter().sum();
-
-//         assert_eq!(sum, RistrettoPoint::identity());
-
-//         // Test that sum works on owning iterators
-//         let s = Scalar::from(2u64);
-//         let mapped = vec.iter().map(|x| x * s);
-//         let sum: RistrettoPoint = mapped.sum();
-
-//         assert_eq!(sum, P1 * s + P2 * s);
-//     }
-
-//     #[test]
-//     fn decompress_negative_s_fails() {
-//         // constants::d is neg, so decompression should fail as |d| != d.
-//         let bad_compressed = CompressedRistretto(constants::EDWARDS_D.to_bytes());
-//         assert!(bad_compressed.decompress().is_none());
-//     }
-
-//     #[test]
-//     fn decompress_id() {
-//         let compressed_id = CompressedRistretto::identity();
-//         let id = compressed_id.decompress().unwrap();
-//         let mut identity_in_coset = false;
-//         for P in &id.coset4() {
-//             if P.compress() == CompressedEdwardsY::identity() {
-//                 identity_in_coset = true;
-//             }
-//         }
-//         assert!(identity_in_coset);
-//     }
-
-//     #[test]
-//     fn compress_id() {
-//         let id = RistrettoPoint::identity();
-//         assert_eq!(id.compress(), CompressedRistretto::identity());
-//     }
-
-//     #[test]
-//     fn basepoint_roundtrip() {
-//         let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
-//         let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
-//         // Check that bp_recaf differs from bp by a point of order 4
-//         let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
-//         let diff4 = diff.mul_by_pow_2(2);
-//         assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
-//     }
-
-//     #[test]
-//     fn encodings_of_small_multiples_of_basepoint() {
-//         // Table of encodings of i*basepoint
-//         // Generated using ristretto.sage
-//         let compressed = [
-//             CompressedRistretto([
-//                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//                 0, 0, 0, 0,
-//             ]),
-//             CompressedRistretto([
-//                 226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227,
-//                 11, 106, 165, 130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118,
-//             ]),
-//             CompressedRistretto([
-//                 106, 73, 50, 16, 247, 73, 156, 209, 127, 236, 181, 16, 174, 12, 234, 35, 161, 16,
-//                 232, 213, 185, 1, 248, 172, 173, 211, 9, 92, 115, 163, 185, 25,
-//             ]),
-//             CompressedRistretto([
-//                 148, 116, 31, 93, 93, 82, 117, 94, 206, 79, 35, 240, 68, 238, 39, 213, 209, 234,
-//                 30, 43, 209, 150, 180, 98, 22, 107, 22, 21, 42, 157, 2, 89,
-//             ]),
-//             CompressedRistretto([
-//                 218, 128, 134, 39, 115, 53, 139, 70, 111, 250, 223, 224, 179, 41, 58, 179, 217,
-//                 253, 83, 197, 234, 108, 149, 83, 88, 245, 104, 50, 45, 175, 106, 87,
-//             ]),
-//             CompressedRistretto([
-//                 232, 130, 177, 49, 1, 107, 82, 193, 211, 51, 112, 128, 24, 124, 247, 104, 66, 62,
-//                 252, 203, 181, 23, 187, 73, 90, 184, 18, 196, 22, 15, 244, 78,
-//             ]),
-//             CompressedRistretto([
-//                 246, 71, 70, 211, 201, 43, 19, 5, 14, 216, 216, 2, 54, 167, 240, 0, 124, 59, 63,
-//                 150, 47, 91, 167, 147, 209, 154, 96, 30, 187, 29, 244, 3,
-//             ]),
-//             CompressedRistretto([
-//                 68, 245, 53, 32, 146, 110, 200, 31, 189, 90, 56, 120, 69, 190, 183, 223, 133, 169,
-//                 106, 36, 236, 225, 135, 56, 189, 207, 166, 167, 130, 42, 23, 109,
-//             ]),
-//             CompressedRistretto([
-//                 144, 50, 147, 216, 242, 40, 126, 190, 16, 226, 55, 77, 193, 165, 62, 11, 200, 135,
-//                 229, 146, 105, 159, 2, 208, 119, 213, 38, 60, 221, 85, 96, 28,
-//             ]),
-//             CompressedRistretto([
-//                 2, 98, 42, 206, 143, 115, 3, 163, 28, 175, 198, 63, 143, 196, 143, 220, 22, 225,
-//                 200, 200, 210, 52, 178, 240, 214, 104, 82, 130, 169, 7, 96, 49,
-//             ]),
-//             CompressedRistretto([
-//                 32, 112, 111, 215, 136, 178, 114, 10, 30, 210, 165, 218, 212, 149, 43, 1, 244, 19,
-//                 188, 240, 231, 86, 77, 232, 205, 200, 22, 104, 158, 45, 185, 95,
-//             ]),
-//             CompressedRistretto([
-//                 188, 232, 63, 139, 165, 221, 47, 165, 114, 134, 76, 36, 186, 24, 16, 249, 82, 43,
-//                 198, 0, 74, 254, 149, 135, 122, 199, 50, 65, 202, 253, 171, 66,
-//             ]),
-//             CompressedRistretto([
-//                 228, 84, 158, 225, 107, 154, 160, 48, 153, 202, 32, 140, 103, 173, 175, 202, 250,
-//                 76, 63, 62, 78, 83, 3, 222, 96, 38, 227, 202, 143, 248, 68, 96,
-//             ]),
-//             CompressedRistretto([
-//                 170, 82, 224, 0, 223, 46, 22, 245, 95, 177, 3, 47, 195, 59, 196, 39, 66, 218, 214,
-//                 189, 90, 143, 192, 190, 1, 103, 67, 108, 89, 72, 80, 31,
-//             ]),
-//             CompressedRistretto([
-//                 70, 55, 107, 128, 244, 9, 178, 157, 194, 181, 246, 240, 197, 37, 145, 153, 8, 150,
-//                 229, 113, 111, 65, 71, 124, 211, 0, 133, 171, 127, 16, 48, 30,
-//             ]),
-//             CompressedRistretto([
-//                 224, 196, 24, 247, 200, 217, 196, 205, 215, 57, 91, 147, 234, 18, 79, 58, 217, 144,
-//                 33, 187, 104, 29, 252, 51, 2, 169, 217, 154, 46, 83, 230, 78,
-//             ]),
-//         ];
-//         let mut bp = RistrettoPoint::identity();
-//         for point in compressed {
-//             assert_eq!(bp.compress(), point);
-//             bp += constants::RISTRETTO_BASEPOINT_POINT;
-//         }
-//     }
-
-//     #[test]
-//     fn four_torsion_basepoint() {
-//         let bp = constants::RISTRETTO_BASEPOINT_POINT;
-//         let bp_coset = bp.coset4();
-//         for point in bp_coset {
-//             assert_eq!(bp, RistrettoPoint(point));
-//         }
-//     }
-
-//     #[test]
-//     fn four_torsion_random() {
-//         let mut rng = OsRng.unwrap_err();
-//         let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
-//         let P_coset = P.coset4();
-//         for point in P_coset {
-//             assert_eq!(P, RistrettoPoint(point));
-//         }
-//     }
-
-//     #[test]
-//     fn elligator_vs_ristretto_sage() {
-//         // Test vectors extracted from ristretto.sage.
-//         //
-//         // Notice that all of the byte sequences have bit 255 set to 0; this is because
-//         // ristretto.sage does not mask the high bit of a field element.  When the high bit is set,
-//         // the ristretto.sage elligator implementation gives different results, since it takes a
-//         // different field element as input.
-//         let bytes: [[u8; 32]; 16] = [
-//             [
-//                 184, 249, 135, 49, 253, 123, 89, 113, 67, 160, 6, 239, 7, 105, 211, 41, 192, 249,
-//                 185, 57, 9, 102, 70, 198, 15, 127, 7, 26, 160, 102, 134, 71,
-//             ],
-//             [
-//                 229, 14, 241, 227, 75, 9, 118, 60, 128, 153, 226, 21, 183, 217, 91, 136, 98, 0,
-//                 231, 156, 124, 77, 82, 139, 142, 134, 164, 169, 169, 62, 250, 52,
-//             ],
-//             [
-//                 115, 109, 36, 220, 180, 223, 99, 6, 204, 169, 19, 29, 169, 68, 84, 23, 21, 109,
-//                 189, 149, 127, 205, 91, 102, 172, 35, 112, 35, 134, 69, 186, 34,
-//             ],
-//             [
-//                 16, 49, 96, 107, 171, 199, 164, 9, 129, 16, 64, 62, 241, 63, 132, 173, 209, 160,
-//                 112, 215, 105, 50, 157, 81, 253, 105, 1, 154, 229, 25, 120, 83,
-//             ],
-//             [
-//                 156, 131, 161, 162, 236, 251, 5, 187, 167, 171, 17, 178, 148, 210, 90, 207, 86, 21,
-//                 79, 161, 167, 215, 234, 1, 136, 242, 182, 248, 38, 85, 79, 86,
-//             ],
-//             [
-//                 251, 177, 124, 54, 18, 101, 75, 235, 245, 186, 19, 46, 133, 157, 229, 64, 10, 136,
-//                 181, 185, 78, 144, 254, 167, 137, 49, 107, 10, 61, 10, 21, 25,
-//             ],
-//             [
-//                 232, 193, 20, 68, 240, 77, 186, 77, 183, 40, 44, 86, 150, 31, 198, 212, 76, 81, 3,
-//                 217, 197, 8, 126, 128, 126, 152, 164, 208, 153, 44, 189, 77,
-//             ],
-//             [
-//                 173, 229, 149, 177, 37, 230, 30, 69, 61, 56, 172, 190, 219, 115, 167, 194, 71, 134,
-//                 59, 75, 28, 244, 118, 26, 162, 97, 64, 16, 15, 189, 30, 64,
-//             ],
-//             [
-//                 106, 71, 61, 107, 250, 117, 42, 151, 91, 202, 212, 100, 52, 188, 190, 21, 125, 218,
-//                 31, 18, 253, 241, 160, 133, 57, 242, 3, 164, 189, 68, 111, 75,
-//             ],
-//             [
-//                 112, 204, 182, 90, 220, 198, 120, 73, 173, 107, 193, 17, 227, 40, 162, 36, 150,
-//                 141, 235, 55, 172, 183, 12, 39, 194, 136, 43, 153, 244, 118, 91, 89,
-//             ],
-//             [
-//                 111, 24, 203, 123, 254, 189, 11, 162, 51, 196, 163, 136, 204, 143, 10, 222, 33,
-//                 112, 81, 205, 34, 35, 8, 66, 90, 6, 164, 58, 170, 177, 34, 25,
-//             ],
-//             [
-//                 225, 183, 30, 52, 236, 82, 6, 183, 109, 25, 227, 181, 25, 82, 41, 193, 80, 77, 161,
-//                 80, 242, 203, 79, 204, 136, 245, 131, 110, 237, 106, 3, 58,
-//             ],
-//             [
-//                 207, 246, 38, 56, 30, 86, 176, 90, 27, 200, 61, 42, 221, 27, 56, 210, 79, 178, 189,
-//                 120, 68, 193, 120, 167, 77, 185, 53, 197, 124, 128, 191, 126,
-//             ],
-//             [
-//                 1, 136, 215, 80, 240, 46, 63, 147, 16, 244, 230, 207, 82, 189, 74, 50, 106, 169,
-//                 138, 86, 30, 131, 214, 202, 166, 125, 251, 228, 98, 24, 36, 21,
-//             ],
-//             [
-//                 210, 207, 228, 56, 155, 116, 207, 54, 84, 195, 251, 215, 249, 199, 116, 75, 109,
-//                 239, 196, 251, 194, 246, 252, 228, 70, 146, 156, 35, 25, 39, 241, 4,
-//             ],
-//             [
-//                 34, 116, 123, 9, 8, 40, 93, 189, 9, 103, 57, 103, 66, 227, 3, 2, 157, 107, 134,
-//                 219, 202, 74, 230, 154, 78, 107, 219, 195, 214, 14, 84, 80,
-//             ],
-//         ];
-//         let encoded_images: [CompressedRistretto; 16] = [
-//             CompressedRistretto([
-//                 176, 157, 237, 97, 66, 29, 140, 166, 168, 94, 26, 157, 212, 216, 229, 160, 195,
-//                 246, 232, 239, 169, 112, 63, 193, 64, 32, 152, 69, 11, 190, 246, 86,
-//             ]),
-//             CompressedRistretto([
-//                 234, 141, 77, 203, 181, 225, 250, 74, 171, 62, 15, 118, 78, 212, 150, 19, 131, 14,
-//                 188, 238, 194, 244, 141, 138, 166, 162, 83, 122, 228, 201, 19, 26,
-//             ]),
-//             CompressedRistretto([
-//                 232, 231, 51, 92, 5, 168, 80, 36, 173, 179, 104, 68, 186, 149, 68, 40, 140, 170,
-//                 27, 103, 99, 140, 21, 242, 43, 62, 250, 134, 208, 255, 61, 89,
-//             ]),
-//             CompressedRistretto([
-//                 208, 120, 140, 129, 177, 179, 237, 159, 252, 160, 28, 13, 206, 5, 211, 241, 192,
-//                 218, 1, 97, 130, 241, 20, 169, 119, 46, 246, 29, 79, 80, 77, 84,
-//             ]),
-//             CompressedRistretto([
-//                 202, 11, 236, 145, 58, 12, 181, 157, 209, 6, 213, 88, 75, 147, 11, 119, 191, 139,
-//                 47, 142, 33, 36, 153, 193, 223, 183, 178, 8, 205, 120, 248, 110,
-//             ]),
-//             CompressedRistretto([
-//                 26, 66, 231, 67, 203, 175, 116, 130, 32, 136, 62, 253, 215, 46, 5, 214, 166, 248,
-//                 108, 237, 216, 71, 244, 173, 72, 133, 82, 6, 143, 240, 104, 41,
-//             ]),
-//             CompressedRistretto([
-//                 40, 157, 102, 96, 201, 223, 200, 197, 150, 181, 106, 83, 103, 126, 143, 33, 145,
-//                 230, 78, 6, 171, 146, 210, 143, 112, 5, 245, 23, 183, 138, 18, 120,
-//             ]),
-//             CompressedRistretto([
-//                 220, 37, 27, 203, 239, 196, 176, 131, 37, 66, 188, 243, 185, 250, 113, 23, 167,
-//                 211, 154, 243, 168, 215, 54, 171, 159, 36, 195, 81, 13, 150, 43, 43,
-//             ]),
-//             CompressedRistretto([
-//                 232, 121, 176, 222, 183, 196, 159, 90, 238, 193, 105, 52, 101, 167, 244, 170, 121,
-//                 114, 196, 6, 67, 152, 80, 185, 221, 7, 83, 105, 176, 208, 224, 121,
-//             ]),
-//             CompressedRistretto([
-//                 226, 181, 183, 52, 241, 163, 61, 179, 221, 207, 220, 73, 245, 242, 25, 236, 67, 84,
-//                 179, 222, 167, 62, 167, 182, 32, 9, 92, 30, 165, 127, 204, 68,
-//             ]),
-//             CompressedRistretto([
-//                 226, 119, 16, 242, 200, 139, 240, 87, 11, 222, 92, 146, 156, 243, 46, 119, 65, 59,
-//                 1, 248, 92, 183, 50, 175, 87, 40, 206, 53, 208, 220, 148, 13,
-//             ]),
-//             CompressedRistretto([
-//                 70, 240, 79, 112, 54, 157, 228, 146, 74, 122, 216, 88, 232, 62, 158, 13, 14, 146,
-//                 115, 117, 176, 222, 90, 225, 244, 23, 94, 190, 150, 7, 136, 96,
-//             ]),
-//             CompressedRistretto([
-//                 22, 71, 241, 103, 45, 193, 195, 144, 183, 101, 154, 50, 39, 68, 49, 110, 51, 44,
-//                 62, 0, 229, 113, 72, 81, 168, 29, 73, 106, 102, 40, 132, 24,
-//             ]),
-//             CompressedRistretto([
-//                 196, 133, 107, 11, 130, 105, 74, 33, 204, 171, 133, 221, 174, 193, 241, 36, 38,
-//                 179, 196, 107, 219, 185, 181, 253, 228, 47, 155, 42, 231, 73, 41, 78,
-//             ]),
-//             CompressedRistretto([
-//                 58, 255, 225, 197, 115, 208, 160, 143, 39, 197, 82, 69, 143, 235, 92, 170, 74, 40,
-//                 57, 11, 171, 227, 26, 185, 217, 207, 90, 185, 197, 190, 35, 60,
-//             ]),
-//             CompressedRistretto([
-//                 88, 43, 92, 118, 223, 136, 105, 145, 238, 186, 115, 8, 214, 112, 153, 253, 38, 108,
-//                 205, 230, 157, 130, 11, 66, 101, 85, 253, 110, 110, 14, 148, 112,
-//             ]),
-//         ];
-//         for i in 0..16 {
-//             let r_0 = FieldElement::from_bytes(&bytes[i]);
-//             let Q = RistrettoPoint::elligator_ristretto_flavor(&r_0);
-//             assert_eq!(Q.compress(), encoded_images[i]);
-//         }
-//     }
-
-//     // Known answer tests for the one-way mapping function in the Ristretto RFC
-//     #[test]
-//     fn one_way_map() {
-//         // These inputs are from
-//         // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-ristretto255-decaf448-04#appendix-A.3
-//         let test_vectors: &[([u8; 64], CompressedRistretto)] = &[
-//             (
-//                 [
-//                     0x5d, 0x1b, 0xe0, 0x9e, 0x3d, 0x0c, 0x82, 0xfc, 0x53, 0x81, 0x12, 0x49, 0x0e,
-//                     0x35, 0x70, 0x19, 0x79, 0xd9, 0x9e, 0x06, 0xca, 0x3e, 0x2b, 0x5b, 0x54, 0xbf,
-//                     0xfe, 0x8b, 0x4d, 0xc7, 0x72, 0xc1, 0x4d, 0x98, 0xb6, 0x96, 0xa1, 0xbb, 0xfb,
-//                     0x5c, 0xa3, 0x2c, 0x43, 0x6c, 0xc6, 0x1c, 0x16, 0x56, 0x37, 0x90, 0x30, 0x6c,
-//                     0x79, 0xea, 0xca, 0x77, 0x05, 0x66, 0x8b, 0x47, 0xdf, 0xfe, 0x5b, 0xb6,
-//                 ],
-//                 CompressedRistretto([
-//                     0x30, 0x66, 0xf8, 0x2a, 0x1a, 0x74, 0x7d, 0x45, 0x12, 0x0d, 0x17, 0x40, 0xf1,
-//                     0x43, 0x58, 0x53, 0x1a, 0x8f, 0x04, 0xbb, 0xff, 0xe6, 0xa8, 0x19, 0xf8, 0x6d,
-//                     0xfe, 0x50, 0xf4, 0x4a, 0x0a, 0x46,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0xf1, 0x16, 0xb3, 0x4b, 0x8f, 0x17, 0xce, 0xb5, 0x6e, 0x87, 0x32, 0xa6, 0x0d,
-//                     0x91, 0x3d, 0xd1, 0x0c, 0xce, 0x47, 0xa6, 0xd5, 0x3b, 0xee, 0x92, 0x04, 0xbe,
-//                     0x8b, 0x44, 0xf6, 0x67, 0x8b, 0x27, 0x01, 0x02, 0xa5, 0x69, 0x02, 0xe2, 0x48,
-//                     0x8c, 0x46, 0x12, 0x0e, 0x92, 0x76, 0xcf, 0xe5, 0x46, 0x38, 0x28, 0x6b, 0x9e,
-//                     0x4b, 0x3c, 0xdb, 0x47, 0x0b, 0x54, 0x2d, 0x46, 0xc2, 0x06, 0x8d, 0x38,
-//                 ],
-//                 CompressedRistretto([
-//                     0xf2, 0x6e, 0x5b, 0x6f, 0x7d, 0x36, 0x2d, 0x2d, 0x2a, 0x94, 0xc5, 0xd0, 0xe7,
-//                     0x60, 0x2c, 0xb4, 0x77, 0x3c, 0x95, 0xa2, 0xe5, 0xc3, 0x1a, 0x64, 0xf1, 0x33,
-//                     0x18, 0x9f, 0xa7, 0x6e, 0xd6, 0x1b,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0x84, 0x22, 0xe1, 0xbb, 0xda, 0xab, 0x52, 0x93, 0x8b, 0x81, 0xfd, 0x60, 0x2e,
-//                     0xff, 0xb6, 0xf8, 0x91, 0x10, 0xe1, 0xe5, 0x72, 0x08, 0xad, 0x12, 0xd9, 0xad,
-//                     0x76, 0x7e, 0x2e, 0x25, 0x51, 0x0c, 0x27, 0x14, 0x07, 0x75, 0xf9, 0x33, 0x70,
-//                     0x88, 0xb9, 0x82, 0xd8, 0x3d, 0x7f, 0xcf, 0x0b, 0x2f, 0xa1, 0xed, 0xff, 0xe5,
-//                     0x19, 0x52, 0xcb, 0xe7, 0x36, 0x5e, 0x95, 0xc8, 0x6e, 0xaf, 0x32, 0x5c,
-//                 ],
-//                 CompressedRistretto([
-//                     0x00, 0x6c, 0xcd, 0x2a, 0x9e, 0x68, 0x67, 0xe6, 0xa2, 0xc5, 0xce, 0xa8, 0x3d,
-//                     0x33, 0x02, 0xcc, 0x9d, 0xe1, 0x28, 0xdd, 0x2a, 0x9a, 0x57, 0xdd, 0x8e, 0xe7,
-//                     0xb9, 0xd7, 0xff, 0xe0, 0x28, 0x26,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0xac, 0x22, 0x41, 0x51, 0x29, 0xb6, 0x14, 0x27, 0xbf, 0x46, 0x4e, 0x17, 0xba,
-//                     0xee, 0x8d, 0xb6, 0x59, 0x40, 0xc2, 0x33, 0xb9, 0x8a, 0xfc, 0xe8, 0xd1, 0x7c,
-//                     0x57, 0xbe, 0xeb, 0x78, 0x76, 0xc2, 0x15, 0x0d, 0x15, 0xaf, 0x1c, 0xb1, 0xfb,
-//                     0x82, 0x4b, 0xbd, 0x14, 0x95, 0x5f, 0x2b, 0x57, 0xd0, 0x8d, 0x38, 0x8a, 0xab,
-//                     0x43, 0x1a, 0x39, 0x1c, 0xfc, 0x33, 0xd5, 0xba, 0xfb, 0x5d, 0xbb, 0xaf,
-//                 ],
-//                 CompressedRistretto([
-//                     0xf8, 0xf0, 0xc8, 0x7c, 0xf2, 0x37, 0x95, 0x3c, 0x58, 0x90, 0xae, 0xc3, 0x99,
-//                     0x81, 0x69, 0x00, 0x5d, 0xae, 0x3e, 0xca, 0x1f, 0xbb, 0x04, 0x54, 0x8c, 0x63,
-//                     0x59, 0x53, 0xc8, 0x17, 0xf9, 0x2a,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0x16, 0x5d, 0x69, 0x7a, 0x1e, 0xf3, 0xd5, 0xcf, 0x3c, 0x38, 0x56, 0x5b, 0xee,
-//                     0xfc, 0xf8, 0x8c, 0x0f, 0x28, 0x2b, 0x8e, 0x7d, 0xbd, 0x28, 0x54, 0x4c, 0x48,
-//                     0x34, 0x32, 0xf1, 0xce, 0xc7, 0x67, 0x5d, 0xeb, 0xea, 0x8e, 0xbb, 0x4e, 0x5f,
-//                     0xe7, 0xd6, 0xf6, 0xe5, 0xdb, 0x15, 0xf1, 0x55, 0x87, 0xac, 0x4d, 0x4d, 0x4a,
-//                     0x1d, 0xe7, 0x19, 0x1e, 0x0c, 0x1c, 0xa6, 0x66, 0x4a, 0xbc, 0xc4, 0x13,
-//                 ],
-//                 CompressedRistretto([
-//                     0xae, 0x81, 0xe7, 0xde, 0xdf, 0x20, 0xa4, 0x97, 0xe1, 0x0c, 0x30, 0x4a, 0x76,
-//                     0x5c, 0x17, 0x67, 0xa4, 0x2d, 0x6e, 0x06, 0x02, 0x97, 0x58, 0xd2, 0xd7, 0xe8,
-//                     0xef, 0x7c, 0xc4, 0xc4, 0x11, 0x79,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0xa8, 0x36, 0xe6, 0xc9, 0xa9, 0xca, 0x9f, 0x1e, 0x8d, 0x48, 0x62, 0x73, 0xad,
-//                     0x56, 0xa7, 0x8c, 0x70, 0xcf, 0x18, 0xf0, 0xce, 0x10, 0xab, 0xb1, 0xc7, 0x17,
-//                     0x2d, 0xdd, 0x60, 0x5d, 0x7f, 0xd2, 0x97, 0x98, 0x54, 0xf4, 0x7a, 0xe1, 0xcc,
-//                     0xf2, 0x04, 0xa3, 0x31, 0x02, 0x09, 0x5b, 0x42, 0x00, 0xe5, 0xbe, 0xfc, 0x04,
-//                     0x65, 0xac, 0xcc, 0x26, 0x31, 0x75, 0x48, 0x5f, 0x0e, 0x17, 0xea, 0x5c,
-//                 ],
-//                 CompressedRistretto([
-//                     0xe2, 0x70, 0x56, 0x52, 0xff, 0x9f, 0x5e, 0x44, 0xd3, 0xe8, 0x41, 0xbf, 0x1c,
-//                     0x25, 0x1c, 0xf7, 0xdd, 0xdb, 0x77, 0xd1, 0x40, 0x87, 0x0d, 0x1a, 0xb2, 0xed,
-//                     0x64, 0xf1, 0xa9, 0xce, 0x86, 0x28,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0x2c, 0xdc, 0x11, 0xea, 0xeb, 0x95, 0xda, 0xf0, 0x11, 0x89, 0x41, 0x7c, 0xdd,
-//                     0xdb, 0xf9, 0x59, 0x52, 0x99, 0x3a, 0xa9, 0xcb, 0x9c, 0x64, 0x0e, 0xb5, 0x05,
-//                     0x8d, 0x09, 0x70, 0x2c, 0x74, 0x62, 0x2c, 0x99, 0x65, 0xa6, 0x97, 0xa3, 0xb3,
-//                     0x45, 0xec, 0x24, 0xee, 0x56, 0x33, 0x5b, 0x55, 0x6e, 0x67, 0x7b, 0x30, 0xe6,
-//                     0xf9, 0x0a, 0xc7, 0x7d, 0x78, 0x10, 0x64, 0xf8, 0x66, 0xa3, 0xc9, 0x82,
-//                 ],
-//                 CompressedRistretto([
-//                     0x80, 0xbd, 0x07, 0x26, 0x25, 0x11, 0xcd, 0xde, 0x48, 0x63, 0xf8, 0xa7, 0x43,
-//                     0x4c, 0xef, 0x69, 0x67, 0x50, 0x68, 0x1c, 0xb9, 0x51, 0x0e, 0xea, 0x55, 0x70,
-//                     0x88, 0xf7, 0x6d, 0x9e, 0x50, 0x65,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                 ],
-//                 CompressedRistretto([
-//                     0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
-//                     0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
-//                     0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                 ],
-//                 CompressedRistretto([
-//                     0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
-//                     0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
-//                     0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-//                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
-//                 ],
-//                 CompressedRistretto([
-//                     0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
-//                     0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
-//                     0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
-//                 ]),
-//             ),
-//             (
-//                 [
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-//                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
-//                 ],
-//                 CompressedRistretto([
-//                     0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
-//                     0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
-//                     0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
-//                 ]),
-//             ),
-//         ];
-//         // Check that onewaymap(input) == output for all the above vectors
-//         for (input, output) in test_vectors {
-//             let Q = RistrettoPoint::from_uniform_bytes(input);
-//             assert_eq!(&Q.compress(), output);
-//         }
-//     }
-
-//     #[test]
-//     fn random_roundtrip() {
-//         let mut rng = OsRng.unwrap_err();
-//         for _ in 0..100 {
-//             let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
-//             let compressed_P = P.compress();
-//             let Q = compressed_P.decompress().unwrap();
-//             assert_eq!(P, Q);
-//         }
-//     }
-
-//     #[test]
-//     #[cfg(all(feature = "alloc", feature = "rand_core", feature = "group"))]
-//     fn double_and_compress_1024_random_points() {
-//         use group::Group;
-//         let mut rng = OsRng;
-
-//         let mut points: Vec<RistrettoPoint> = (0..1024)
-//             .map(|_| RistrettoPoint::try_from_rng(&mut rng).unwrap())
-//             .collect();
-//         points[500] = <RistrettoPoint as Group>::identity();
-
-//         let compressed = RistrettoPoint::double_and_compress_batch(&points);
-
-//         for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
-//             assert_eq!(*P2_compressed, (P + P).compress());
-//         }
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
-//         let mut rng = rand::rng();
-
-//         let static_scalars = (0..128)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         let dynamic_scalars = (0..128)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         let check_scalar: Scalar = static_scalars
-//             .iter()
-//             .chain(dynamic_scalars.iter())
-//             .map(|s| s * s)
-//             .sum();
-
-//         let static_points = static_scalars
-//             .iter()
-//             .map(RistrettoPoint::mul_base)
-//             .collect::<Vec<_>>();
-//         let dynamic_points = dynamic_scalars
-//             .iter()
-//             .map(RistrettoPoint::mul_base)
-//             .collect::<Vec<_>>();
-
-//         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
-
-//         assert_eq!(precomputation.len(), 128);
-//         assert!(!precomputation.is_empty());
-
-//         let P = precomputation.vartime_mixed_multiscalar_mul(
-//             &static_scalars,
-//             &dynamic_scalars,
-//             &dynamic_points,
-//         );
-
-//         use crate::traits::VartimeMultiscalarMul;
-//         let Q = RistrettoPoint::vartime_multiscalar_mul(
-//             static_scalars.iter().chain(dynamic_scalars.iter()),
-//             static_points.iter().chain(dynamic_points.iter()),
-//         );
-
-//         let R = RistrettoPoint::mul_base(&check_scalar);
-
-//         assert_eq!(P.compress(), R.compress());
-//         assert_eq!(Q.compress(), R.compress());
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn partial_precomputed_mixed_multiscalar_empty() {
-//         let mut rng = rand::rng();
-
-//         let n_static = 16;
-//         let n_dynamic = 8;
-
-//         let static_points = (0..n_static)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Use zero scalars
-//         let static_scalars = Vec::new();
-
-//         let dynamic_points = (0..n_dynamic)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         let dynamic_scalars = (0..n_dynamic)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Compute the linear combination using precomputed multiscalar multiplication
-//         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
-//         let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
-//             &static_scalars,
-//             &dynamic_scalars,
-//             &dynamic_points,
-//         );
-
-//         // Compute the linear combination manually
-//         let mut result_manual = RistrettoPoint::identity();
-//         for i in 0..static_scalars.len() {
-//             result_manual += static_points[i] * static_scalars[i];
-//         }
-//         for i in 0..n_dynamic {
-//             result_manual += dynamic_points[i] * dynamic_scalars[i];
-//         }
-
-//         assert_eq!(result_multiscalar, result_manual);
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn partial_precomputed_mixed_multiscalar() {
-//         let mut rng = rand::rng();
-
-//         let n_static = 16;
-//         let n_dynamic = 8;
-
-//         let static_points = (0..n_static)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Use one fewer scalars
-//         let static_scalars = (0..n_static - 1)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         let dynamic_points = (0..n_dynamic)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         let dynamic_scalars = (0..n_dynamic)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Compute the linear combination using precomputed multiscalar multiplication
-//         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
-//         let result_multiscalar = precomputation.vartime_mixed_multiscalar_mul(
-//             &static_scalars,
-//             &dynamic_scalars,
-//             &dynamic_points,
-//         );
-
-//         // Compute the linear combination manually
-//         let mut result_manual = RistrettoPoint::identity();
-//         for i in 0..static_scalars.len() {
-//             result_manual += static_points[i] * static_scalars[i];
-//         }
-//         for i in 0..n_dynamic {
-//             result_manual += dynamic_points[i] * dynamic_scalars[i];
-//         }
-
-//         assert_eq!(result_multiscalar, result_manual);
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn partial_precomputed_multiscalar() {
-//         let mut rng = rand::rng();
-
-//         let n_static = 16;
-
-//         let static_points = (0..n_static)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Use one fewer scalars
-//         let static_scalars = (0..n_static - 1)
-//             .map(|_| Scalar::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Compute the linear combination using precomputed multiscalar multiplication
-//         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
-//         let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
-
-//         // Compute the linear combination manually
-//         let mut result_manual = RistrettoPoint::identity();
-//         for i in 0..static_scalars.len() {
-//             result_manual += static_points[i] * static_scalars[i];
-//         }
-
-//         assert_eq!(result_multiscalar, result_manual);
-//     }
-
-//     #[test]
-//     #[cfg(feature = "alloc")]
-//     fn partial_precomputed_multiscalar_empty() {
-//         let mut rng = rand::rng();
-
-//         let n_static = 16;
-
-//         let static_points = (0..n_static)
-//             .map(|_| RistrettoPoint::random(&mut rng))
-//             .collect::<Vec<_>>();
-
-//         // Use zero scalars
-//         let static_scalars = Vec::new();
-
-//         // Compute the linear combination using precomputed multiscalar multiplication
-//         let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
-//         let result_multiscalar = precomputation.vartime_multiscalar_mul(&static_scalars);
-
-//         // Compute the linear combination manually
-//         let mut result_manual = RistrettoPoint::identity();
-//         for i in 0..static_scalars.len() {
-//             result_manual += static_points[i] * static_scalars[i];
-//         }
-
-//         assert_eq!(result_multiscalar, result_manual);
-//     }
-// }
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::edwards::CompressedEdwardsY;
+
+    use rand_core::OsRng;
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serde_bincode_basepoint_roundtrip() {
+        use bincode;
+
+        let encoded = bincode::serialize(&constants::RISTRETTO_BASEPOINT_POINT).unwrap();
+        let enc_compressed =
+            bincode::serialize(&constants::RISTRETTO_BASEPOINT_COMPRESSED).unwrap();
+        assert_eq!(encoded, enc_compressed);
+
+        // Check that the encoding is 32 bytes exactly
+        assert_eq!(encoded.len(), 32);
+
+        let dec_uncompressed: RistrettoPoint = bincode::deserialize(&encoded).unwrap();
+        let dec_compressed: CompressedRistretto = bincode::deserialize(&encoded).unwrap();
+
+        assert_eq!(dec_uncompressed, constants::RISTRETTO_BASEPOINT_POINT);
+        assert_eq!(dec_compressed, constants::RISTRETTO_BASEPOINT_COMPRESSED);
+
+        // Check that the encoding itself matches the usual one
+        let raw_bytes = constants::RISTRETTO_BASEPOINT_COMPRESSED.as_bytes();
+        let bp: RistrettoPoint = bincode::deserialize(raw_bytes).unwrap();
+        assert_eq!(bp, constants::RISTRETTO_BASEPOINT_POINT);
+    }
+
+    #[test]
+    fn scalarmult_ristrettopoint_works_both_ways() {
+        let P = constants::RISTRETTO_BASEPOINT_POINT;
+        let s = Scalar::from(999u64);
+
+        let P1 = P * s;
+        let P2 = s * P;
+
+        assert!(P1.compress().as_bytes() == P2.compress().as_bytes());
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn impl_sum() {
+        // Test that sum works for non-empty iterators
+        let BASE = constants::RISTRETTO_BASEPOINT_POINT;
+
+        let s1 = Scalar::from(999u64);
+        let P1 = BASE * s1;
+
+        let s2 = Scalar::from(333u64);
+        let P2 = BASE * s2;
+
+        let vec = vec![P1, P2];
+        let sum: RistrettoPoint = vec.iter().sum();
+
+        assert_eq!(sum, P1 + P2);
+
+        // Test that sum works for the empty iterator
+        let empty_vector: Vec<RistrettoPoint> = vec![];
+        let sum: RistrettoPoint = empty_vector.iter().sum();
+
+        assert_eq!(sum, RistrettoPoint::identity());
+
+        // Test that sum works on owning iterators
+        let s = Scalar::from(2u64);
+        let mapped = vec.iter().map(|x| x * s);
+        let sum: RistrettoPoint = mapped.sum();
+
+        assert_eq!(sum, P1 * s + P2 * s);
+    }
+
+    #[test]
+    fn decompress_negative_s_fails() {
+        // constants::d is neg, so decompression should fail as |d| != d.
+        let bad_compressed = CompressedRistretto(constants::EDWARDS_D.as_bytes());
+        assert!(bad_compressed.decompress().is_none());
+    }
+
+    #[test]
+    fn decompress_id() {
+        let compressed_id = CompressedRistretto::identity();
+        let id = compressed_id.decompress().unwrap();
+        let mut identity_in_coset = false;
+        for P in &id.coset4() {
+            if P.compress() == CompressedEdwardsY::identity() {
+                identity_in_coset = true;
+            }
+        }
+        assert!(identity_in_coset);
+    }
+
+    #[test]
+    fn compress_id() {
+        let id = RistrettoPoint::identity();
+        assert_eq!(id.compress(), CompressedRistretto::identity());
+    }
+
+    #[test]
+    fn basepoint_roundtrip() {
+        let bp_compressed_ristretto = constants::RISTRETTO_BASEPOINT_POINT.compress();
+        let bp_recaf = bp_compressed_ristretto.decompress().unwrap().0;
+        // Check that bp_recaf differs from bp by a point of order 4
+        let diff = constants::RISTRETTO_BASEPOINT_POINT.0 - bp_recaf;
+        let diff4 = diff.mul_by_pow_2(2);
+        assert_eq!(diff4.compress(), CompressedEdwardsY::identity());
+    }
+
+    #[test]
+    fn encodings_of_small_multiples_of_basepoint() {
+        // Table of encodings of i*basepoint
+        // Generated using ristretto.sage
+        let compressed = [
+            CompressedRistretto([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0,
+            ]),
+            CompressedRistretto([
+                226, 242, 174, 10, 106, 188, 78, 113, 168, 132, 169, 97, 197, 0, 81, 95, 88, 227,
+                11, 106, 165, 130, 221, 141, 182, 166, 89, 69, 224, 141, 45, 118,
+            ]),
+            CompressedRistretto([
+                106, 73, 50, 16, 247, 73, 156, 209, 127, 236, 181, 16, 174, 12, 234, 35, 161, 16,
+                232, 213, 185, 1, 248, 172, 173, 211, 9, 92, 115, 163, 185, 25,
+            ]),
+            CompressedRistretto([
+                148, 116, 31, 93, 93, 82, 117, 94, 206, 79, 35, 240, 68, 238, 39, 213, 209, 234,
+                30, 43, 209, 150, 180, 98, 22, 107, 22, 21, 42, 157, 2, 89,
+            ]),
+            CompressedRistretto([
+                218, 128, 134, 39, 115, 53, 139, 70, 111, 250, 223, 224, 179, 41, 58, 179, 217,
+                253, 83, 197, 234, 108, 149, 83, 88, 245, 104, 50, 45, 175, 106, 87,
+            ]),
+            CompressedRistretto([
+                232, 130, 177, 49, 1, 107, 82, 193, 211, 51, 112, 128, 24, 124, 247, 104, 66, 62,
+                252, 203, 181, 23, 187, 73, 90, 184, 18, 196, 22, 15, 244, 78,
+            ]),
+            CompressedRistretto([
+                246, 71, 70, 211, 201, 43, 19, 5, 14, 216, 216, 2, 54, 167, 240, 0, 124, 59, 63,
+                150, 47, 91, 167, 147, 209, 154, 96, 30, 187, 29, 244, 3,
+            ]),
+            CompressedRistretto([
+                68, 245, 53, 32, 146, 110, 200, 31, 189, 90, 56, 120, 69, 190, 183, 223, 133, 169,
+                106, 36, 236, 225, 135, 56, 189, 207, 166, 167, 130, 42, 23, 109,
+            ]),
+            CompressedRistretto([
+                144, 50, 147, 216, 242, 40, 126, 190, 16, 226, 55, 77, 193, 165, 62, 11, 200, 135,
+                229, 146, 105, 159, 2, 208, 119, 213, 38, 60, 221, 85, 96, 28,
+            ]),
+            CompressedRistretto([
+                2, 98, 42, 206, 143, 115, 3, 163, 28, 175, 198, 63, 143, 196, 143, 220, 22, 225,
+                200, 200, 210, 52, 178, 240, 214, 104, 82, 130, 169, 7, 96, 49,
+            ]),
+            CompressedRistretto([
+                32, 112, 111, 215, 136, 178, 114, 10, 30, 210, 165, 218, 212, 149, 43, 1, 244, 19,
+                188, 240, 231, 86, 77, 232, 205, 200, 22, 104, 158, 45, 185, 95,
+            ]),
+            CompressedRistretto([
+                188, 232, 63, 139, 165, 221, 47, 165, 114, 134, 76, 36, 186, 24, 16, 249, 82, 43,
+                198, 0, 74, 254, 149, 135, 122, 199, 50, 65, 202, 253, 171, 66,
+            ]),
+            CompressedRistretto([
+                228, 84, 158, 225, 107, 154, 160, 48, 153, 202, 32, 140, 103, 173, 175, 202, 250,
+                76, 63, 62, 78, 83, 3, 222, 96, 38, 227, 202, 143, 248, 68, 96,
+            ]),
+            CompressedRistretto([
+                170, 82, 224, 0, 223, 46, 22, 245, 95, 177, 3, 47, 195, 59, 196, 39, 66, 218, 214,
+                189, 90, 143, 192, 190, 1, 103, 67, 108, 89, 72, 80, 31,
+            ]),
+            CompressedRistretto([
+                70, 55, 107, 128, 244, 9, 178, 157, 194, 181, 246, 240, 197, 37, 145, 153, 8, 150,
+                229, 113, 111, 65, 71, 124, 211, 0, 133, 171, 127, 16, 48, 30,
+            ]),
+            CompressedRistretto([
+                224, 196, 24, 247, 200, 217, 196, 205, 215, 57, 91, 147, 234, 18, 79, 58, 217, 144,
+                33, 187, 104, 29, 252, 51, 2, 169, 217, 154, 46, 83, 230, 78,
+            ]),
+        ];
+        let mut bp = RistrettoPoint::identity();
+        for point in compressed {
+            assert_eq!(bp.compress(), point);
+            bp += constants::RISTRETTO_BASEPOINT_POINT;
+        }
+    }
+
+    #[test]
+    fn four_torsion_basepoint() {
+        let bp = constants::RISTRETTO_BASEPOINT_POINT;
+        let bp_coset = bp.coset4();
+        for point in bp_coset {
+            assert_eq!(bp, RistrettoPoint(point));
+        }
+    }
+
+    #[test]
+    fn four_torsion_random() {
+        let mut rng = OsRng;
+        let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
+        let P_coset = P.coset4();
+        for point in P_coset {
+            assert_eq!(P, RistrettoPoint(point));
+        }
+    }
+
+    #[test]
+    fn elligator_vs_ristretto_sage() {
+        // Test vectors extracted from ristretto.sage.
+        //
+        // Notice that all of the byte sequences have bit 255 set to 0; this is because
+        // ristretto.sage does not mask the high bit of a field element.  When the high bit is set,
+        // the ristretto.sage elligator implementation gives different results, since it takes a
+        // different field element as input.
+        let bytes: [[u8; 32]; 16] = [
+            [
+                184, 249, 135, 49, 253, 123, 89, 113, 67, 160, 6, 239, 7, 105, 211, 41, 192, 249,
+                185, 57, 9, 102, 70, 198, 15, 127, 7, 26, 160, 102, 134, 71,
+            ],
+            [
+                229, 14, 241, 227, 75, 9, 118, 60, 128, 153, 226, 21, 183, 217, 91, 136, 98, 0,
+                231, 156, 124, 77, 82, 139, 142, 134, 164, 169, 169, 62, 250, 52,
+            ],
+            [
+                115, 109, 36, 220, 180, 223, 99, 6, 204, 169, 19, 29, 169, 68, 84, 23, 21, 109,
+                189, 149, 127, 205, 91, 102, 172, 35, 112, 35, 134, 69, 186, 34,
+            ],
+            [
+                16, 49, 96, 107, 171, 199, 164, 9, 129, 16, 64, 62, 241, 63, 132, 173, 209, 160,
+                112, 215, 105, 50, 157, 81, 253, 105, 1, 154, 229, 25, 120, 83,
+            ],
+            [
+                156, 131, 161, 162, 236, 251, 5, 187, 167, 171, 17, 178, 148, 210, 90, 207, 86, 21,
+                79, 161, 167, 215, 234, 1, 136, 242, 182, 248, 38, 85, 79, 86,
+            ],
+            [
+                251, 177, 124, 54, 18, 101, 75, 235, 245, 186, 19, 46, 133, 157, 229, 64, 10, 136,
+                181, 185, 78, 144, 254, 167, 137, 49, 107, 10, 61, 10, 21, 25,
+            ],
+            [
+                232, 193, 20, 68, 240, 77, 186, 77, 183, 40, 44, 86, 150, 31, 198, 212, 76, 81, 3,
+                217, 197, 8, 126, 128, 126, 152, 164, 208, 153, 44, 189, 77,
+            ],
+            [
+                173, 229, 149, 177, 37, 230, 30, 69, 61, 56, 172, 190, 219, 115, 167, 194, 71, 134,
+                59, 75, 28, 244, 118, 26, 162, 97, 64, 16, 15, 189, 30, 64,
+            ],
+            [
+                106, 71, 61, 107, 250, 117, 42, 151, 91, 202, 212, 100, 52, 188, 190, 21, 125, 218,
+                31, 18, 253, 241, 160, 133, 57, 242, 3, 164, 189, 68, 111, 75,
+            ],
+            [
+                112, 204, 182, 90, 220, 198, 120, 73, 173, 107, 193, 17, 227, 40, 162, 36, 150,
+                141, 235, 55, 172, 183, 12, 39, 194, 136, 43, 153, 244, 118, 91, 89,
+            ],
+            [
+                111, 24, 203, 123, 254, 189, 11, 162, 51, 196, 163, 136, 204, 143, 10, 222, 33,
+                112, 81, 205, 34, 35, 8, 66, 90, 6, 164, 58, 170, 177, 34, 25,
+            ],
+            [
+                225, 183, 30, 52, 236, 82, 6, 183, 109, 25, 227, 181, 25, 82, 41, 193, 80, 77, 161,
+                80, 242, 203, 79, 204, 136, 245, 131, 110, 237, 106, 3, 58,
+            ],
+            [
+                207, 246, 38, 56, 30, 86, 176, 90, 27, 200, 61, 42, 221, 27, 56, 210, 79, 178, 189,
+                120, 68, 193, 120, 167, 77, 185, 53, 197, 124, 128, 191, 126,
+            ],
+            [
+                1, 136, 215, 80, 240, 46, 63, 147, 16, 244, 230, 207, 82, 189, 74, 50, 106, 169,
+                138, 86, 30, 131, 214, 202, 166, 125, 251, 228, 98, 24, 36, 21,
+            ],
+            [
+                210, 207, 228, 56, 155, 116, 207, 54, 84, 195, 251, 215, 249, 199, 116, 75, 109,
+                239, 196, 251, 194, 246, 252, 228, 70, 146, 156, 35, 25, 39, 241, 4,
+            ],
+            [
+                34, 116, 123, 9, 8, 40, 93, 189, 9, 103, 57, 103, 66, 227, 3, 2, 157, 107, 134,
+                219, 202, 74, 230, 154, 78, 107, 219, 195, 214, 14, 84, 80,
+            ],
+        ];
+        let encoded_images: [CompressedRistretto; 16] = [
+            CompressedRistretto([
+                176, 157, 237, 97, 66, 29, 140, 166, 168, 94, 26, 157, 212, 216, 229, 160, 195,
+                246, 232, 239, 169, 112, 63, 193, 64, 32, 152, 69, 11, 190, 246, 86,
+            ]),
+            CompressedRistretto([
+                234, 141, 77, 203, 181, 225, 250, 74, 171, 62, 15, 118, 78, 212, 150, 19, 131, 14,
+                188, 238, 194, 244, 141, 138, 166, 162, 83, 122, 228, 201, 19, 26,
+            ]),
+            CompressedRistretto([
+                232, 231, 51, 92, 5, 168, 80, 36, 173, 179, 104, 68, 186, 149, 68, 40, 140, 170,
+                27, 103, 99, 140, 21, 242, 43, 62, 250, 134, 208, 255, 61, 89,
+            ]),
+            CompressedRistretto([
+                208, 120, 140, 129, 177, 179, 237, 159, 252, 160, 28, 13, 206, 5, 211, 241, 192,
+                218, 1, 97, 130, 241, 20, 169, 119, 46, 246, 29, 79, 80, 77, 84,
+            ]),
+            CompressedRistretto([
+                202, 11, 236, 145, 58, 12, 181, 157, 209, 6, 213, 88, 75, 147, 11, 119, 191, 139,
+                47, 142, 33, 36, 153, 193, 223, 183, 178, 8, 205, 120, 248, 110,
+            ]),
+            CompressedRistretto([
+                26, 66, 231, 67, 203, 175, 116, 130, 32, 136, 62, 253, 215, 46, 5, 214, 166, 248,
+                108, 237, 216, 71, 244, 173, 72, 133, 82, 6, 143, 240, 104, 41,
+            ]),
+            CompressedRistretto([
+                40, 157, 102, 96, 201, 223, 200, 197, 150, 181, 106, 83, 103, 126, 143, 33, 145,
+                230, 78, 6, 171, 146, 210, 143, 112, 5, 245, 23, 183, 138, 18, 120,
+            ]),
+            CompressedRistretto([
+                220, 37, 27, 203, 239, 196, 176, 131, 37, 66, 188, 243, 185, 250, 113, 23, 167,
+                211, 154, 243, 168, 215, 54, 171, 159, 36, 195, 81, 13, 150, 43, 43,
+            ]),
+            CompressedRistretto([
+                232, 121, 176, 222, 183, 196, 159, 90, 238, 193, 105, 52, 101, 167, 244, 170, 121,
+                114, 196, 6, 67, 152, 80, 185, 221, 7, 83, 105, 176, 208, 224, 121,
+            ]),
+            CompressedRistretto([
+                226, 181, 183, 52, 241, 163, 61, 179, 221, 207, 220, 73, 245, 242, 25, 236, 67, 84,
+                179, 222, 167, 62, 167, 182, 32, 9, 92, 30, 165, 127, 204, 68,
+            ]),
+            CompressedRistretto([
+                226, 119, 16, 242, 200, 139, 240, 87, 11, 222, 92, 146, 156, 243, 46, 119, 65, 59,
+                1, 248, 92, 183, 50, 175, 87, 40, 206, 53, 208, 220, 148, 13,
+            ]),
+            CompressedRistretto([
+                70, 240, 79, 112, 54, 157, 228, 146, 74, 122, 216, 88, 232, 62, 158, 13, 14, 146,
+                115, 117, 176, 222, 90, 225, 244, 23, 94, 190, 150, 7, 136, 96,
+            ]),
+            CompressedRistretto([
+                22, 71, 241, 103, 45, 193, 195, 144, 183, 101, 154, 50, 39, 68, 49, 110, 51, 44,
+                62, 0, 229, 113, 72, 81, 168, 29, 73, 106, 102, 40, 132, 24,
+            ]),
+            CompressedRistretto([
+                196, 133, 107, 11, 130, 105, 74, 33, 204, 171, 133, 221, 174, 193, 241, 36, 38,
+                179, 196, 107, 219, 185, 181, 253, 228, 47, 155, 42, 231, 73, 41, 78,
+            ]),
+            CompressedRistretto([
+                58, 255, 225, 197, 115, 208, 160, 143, 39, 197, 82, 69, 143, 235, 92, 170, 74, 40,
+                57, 11, 171, 227, 26, 185, 217, 207, 90, 185, 197, 190, 35, 60,
+            ]),
+            CompressedRistretto([
+                88, 43, 92, 118, 223, 136, 105, 145, 238, 186, 115, 8, 214, 112, 153, 253, 38, 108,
+                205, 230, 157, 130, 11, 66, 101, 85, 253, 110, 110, 14, 148, 112,
+            ]),
+        ];
+        for i in 0..16 {
+            let r_0 = FieldElement::from_bytes(&bytes[i]);
+            let Q = RistrettoPoint::elligator_ristretto_flavor(&r_0);
+            assert_eq!(Q.compress(), encoded_images[i]);
+        }
+    }
+
+    // Known answer tests for the one-way mapping function in the Ristretto RFC
+    #[test]
+    fn one_way_map() {
+        // These inputs are from
+        // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-ristretto255-decaf448-04#appendix-A.3
+        let test_vectors: &[([u8; 64], CompressedRistretto)] = &[
+            (
+                [
+                    0x5d, 0x1b, 0xe0, 0x9e, 0x3d, 0x0c, 0x82, 0xfc, 0x53, 0x81, 0x12, 0x49, 0x0e,
+                    0x35, 0x70, 0x19, 0x79, 0xd9, 0x9e, 0x06, 0xca, 0x3e, 0x2b, 0x5b, 0x54, 0xbf,
+                    0xfe, 0x8b, 0x4d, 0xc7, 0x72, 0xc1, 0x4d, 0x98, 0xb6, 0x96, 0xa1, 0xbb, 0xfb,
+                    0x5c, 0xa3, 0x2c, 0x43, 0x6c, 0xc6, 0x1c, 0x16, 0x56, 0x37, 0x90, 0x30, 0x6c,
+                    0x79, 0xea, 0xca, 0x77, 0x05, 0x66, 0x8b, 0x47, 0xdf, 0xfe, 0x5b, 0xb6,
+                ],
+                CompressedRistretto([
+                    0x30, 0x66, 0xf8, 0x2a, 0x1a, 0x74, 0x7d, 0x45, 0x12, 0x0d, 0x17, 0x40, 0xf1,
+                    0x43, 0x58, 0x53, 0x1a, 0x8f, 0x04, 0xbb, 0xff, 0xe6, 0xa8, 0x19, 0xf8, 0x6d,
+                    0xfe, 0x50, 0xf4, 0x4a, 0x0a, 0x46,
+                ]),
+            ),
+            (
+                [
+                    0xf1, 0x16, 0xb3, 0x4b, 0x8f, 0x17, 0xce, 0xb5, 0x6e, 0x87, 0x32, 0xa6, 0x0d,
+                    0x91, 0x3d, 0xd1, 0x0c, 0xce, 0x47, 0xa6, 0xd5, 0x3b, 0xee, 0x92, 0x04, 0xbe,
+                    0x8b, 0x44, 0xf6, 0x67, 0x8b, 0x27, 0x01, 0x02, 0xa5, 0x69, 0x02, 0xe2, 0x48,
+                    0x8c, 0x46, 0x12, 0x0e, 0x92, 0x76, 0xcf, 0xe5, 0x46, 0x38, 0x28, 0x6b, 0x9e,
+                    0x4b, 0x3c, 0xdb, 0x47, 0x0b, 0x54, 0x2d, 0x46, 0xc2, 0x06, 0x8d, 0x38,
+                ],
+                CompressedRistretto([
+                    0xf2, 0x6e, 0x5b, 0x6f, 0x7d, 0x36, 0x2d, 0x2d, 0x2a, 0x94, 0xc5, 0xd0, 0xe7,
+                    0x60, 0x2c, 0xb4, 0x77, 0x3c, 0x95, 0xa2, 0xe5, 0xc3, 0x1a, 0x64, 0xf1, 0x33,
+                    0x18, 0x9f, 0xa7, 0x6e, 0xd6, 0x1b,
+                ]),
+            ),
+            (
+                [
+                    0x84, 0x22, 0xe1, 0xbb, 0xda, 0xab, 0x52, 0x93, 0x8b, 0x81, 0xfd, 0x60, 0x2e,
+                    0xff, 0xb6, 0xf8, 0x91, 0x10, 0xe1, 0xe5, 0x72, 0x08, 0xad, 0x12, 0xd9, 0xad,
+                    0x76, 0x7e, 0x2e, 0x25, 0x51, 0x0c, 0x27, 0x14, 0x07, 0x75, 0xf9, 0x33, 0x70,
+                    0x88, 0xb9, 0x82, 0xd8, 0x3d, 0x7f, 0xcf, 0x0b, 0x2f, 0xa1, 0xed, 0xff, 0xe5,
+                    0x19, 0x52, 0xcb, 0xe7, 0x36, 0x5e, 0x95, 0xc8, 0x6e, 0xaf, 0x32, 0x5c,
+                ],
+                CompressedRistretto([
+                    0x00, 0x6c, 0xcd, 0x2a, 0x9e, 0x68, 0x67, 0xe6, 0xa2, 0xc5, 0xce, 0xa8, 0x3d,
+                    0x33, 0x02, 0xcc, 0x9d, 0xe1, 0x28, 0xdd, 0x2a, 0x9a, 0x57, 0xdd, 0x8e, 0xe7,
+                    0xb9, 0xd7, 0xff, 0xe0, 0x28, 0x26,
+                ]),
+            ),
+            (
+                [
+                    0xac, 0x22, 0x41, 0x51, 0x29, 0xb6, 0x14, 0x27, 0xbf, 0x46, 0x4e, 0x17, 0xba,
+                    0xee, 0x8d, 0xb6, 0x59, 0x40, 0xc2, 0x33, 0xb9, 0x8a, 0xfc, 0xe8, 0xd1, 0x7c,
+                    0x57, 0xbe, 0xeb, 0x78, 0x76, 0xc2, 0x15, 0x0d, 0x15, 0xaf, 0x1c, 0xb1, 0xfb,
+                    0x82, 0x4b, 0xbd, 0x14, 0x95, 0x5f, 0x2b, 0x57, 0xd0, 0x8d, 0x38, 0x8a, 0xab,
+                    0x43, 0x1a, 0x39, 0x1c, 0xfc, 0x33, 0xd5, 0xba, 0xfb, 0x5d, 0xbb, 0xaf,
+                ],
+                CompressedRistretto([
+                    0xf8, 0xf0, 0xc8, 0x7c, 0xf2, 0x37, 0x95, 0x3c, 0x58, 0x90, 0xae, 0xc3, 0x99,
+                    0x81, 0x69, 0x00, 0x5d, 0xae, 0x3e, 0xca, 0x1f, 0xbb, 0x04, 0x54, 0x8c, 0x63,
+                    0x59, 0x53, 0xc8, 0x17, 0xf9, 0x2a,
+                ]),
+            ),
+            (
+                [
+                    0x16, 0x5d, 0x69, 0x7a, 0x1e, 0xf3, 0xd5, 0xcf, 0x3c, 0x38, 0x56, 0x5b, 0xee,
+                    0xfc, 0xf8, 0x8c, 0x0f, 0x28, 0x2b, 0x8e, 0x7d, 0xbd, 0x28, 0x54, 0x4c, 0x48,
+                    0x34, 0x32, 0xf1, 0xce, 0xc7, 0x67, 0x5d, 0xeb, 0xea, 0x8e, 0xbb, 0x4e, 0x5f,
+                    0xe7, 0xd6, 0xf6, 0xe5, 0xdb, 0x15, 0xf1, 0x55, 0x87, 0xac, 0x4d, 0x4d, 0x4a,
+                    0x1d, 0xe7, 0x19, 0x1e, 0x0c, 0x1c, 0xa6, 0x66, 0x4a, 0xbc, 0xc4, 0x13,
+                ],
+                CompressedRistretto([
+                    0xae, 0x81, 0xe7, 0xde, 0xdf, 0x20, 0xa4, 0x97, 0xe1, 0x0c, 0x30, 0x4a, 0x76,
+                    0x5c, 0x17, 0x67, 0xa4, 0x2d, 0x6e, 0x06, 0x02, 0x97, 0x58, 0xd2, 0xd7, 0xe8,
+                    0xef, 0x7c, 0xc4, 0xc4, 0x11, 0x79,
+                ]),
+            ),
+            (
+                [
+                    0xa8, 0x36, 0xe6, 0xc9, 0xa9, 0xca, 0x9f, 0x1e, 0x8d, 0x48, 0x62, 0x73, 0xad,
+                    0x56, 0xa7, 0x8c, 0x70, 0xcf, 0x18, 0xf0, 0xce, 0x10, 0xab, 0xb1, 0xc7, 0x17,
+                    0x2d, 0xdd, 0x60, 0x5d, 0x7f, 0xd2, 0x97, 0x98, 0x54, 0xf4, 0x7a, 0xe1, 0xcc,
+                    0xf2, 0x04, 0xa3, 0x31, 0x02, 0x09, 0x5b, 0x42, 0x00, 0xe5, 0xbe, 0xfc, 0x04,
+                    0x65, 0xac, 0xcc, 0x26, 0x31, 0x75, 0x48, 0x5f, 0x0e, 0x17, 0xea, 0x5c,
+                ],
+                CompressedRistretto([
+                    0xe2, 0x70, 0x56, 0x52, 0xff, 0x9f, 0x5e, 0x44, 0xd3, 0xe8, 0x41, 0xbf, 0x1c,
+                    0x25, 0x1c, 0xf7, 0xdd, 0xdb, 0x77, 0xd1, 0x40, 0x87, 0x0d, 0x1a, 0xb2, 0xed,
+                    0x64, 0xf1, 0xa9, 0xce, 0x86, 0x28,
+                ]),
+            ),
+            (
+                [
+                    0x2c, 0xdc, 0x11, 0xea, 0xeb, 0x95, 0xda, 0xf0, 0x11, 0x89, 0x41, 0x7c, 0xdd,
+                    0xdb, 0xf9, 0x59, 0x52, 0x99, 0x3a, 0xa9, 0xcb, 0x9c, 0x64, 0x0e, 0xb5, 0x05,
+                    0x8d, 0x09, 0x70, 0x2c, 0x74, 0x62, 0x2c, 0x99, 0x65, 0xa6, 0x97, 0xa3, 0xb3,
+                    0x45, 0xec, 0x24, 0xee, 0x56, 0x33, 0x5b, 0x55, 0x6e, 0x67, 0x7b, 0x30, 0xe6,
+                    0xf9, 0x0a, 0xc7, 0x7d, 0x78, 0x10, 0x64, 0xf8, 0x66, 0xa3, 0xc9, 0x82,
+                ],
+                CompressedRistretto([
+                    0x80, 0xbd, 0x07, 0x26, 0x25, 0x11, 0xcd, 0xde, 0x48, 0x63, 0xf8, 0xa7, 0x43,
+                    0x4c, 0xef, 0x69, 0x67, 0x50, 0x68, 0x1c, 0xb9, 0x51, 0x0e, 0xea, 0x55, 0x70,
+                    0x88, 0xf7, 0x6d, 0x9e, 0x50, 0x65,
+                ]),
+            ),
+            (
+                [
+                    0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                ],
+                CompressedRistretto([
+                    0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
+                    0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
+                    0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
+                ]),
+            ),
+            (
+                [
+                    0xed, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                ],
+                CompressedRistretto([
+                    0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
+                    0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
+                    0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
+                ]),
+            ),
+            (
+                [
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+                ],
+                CompressedRistretto([
+                    0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
+                    0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
+                    0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
+                ]),
+            ),
+            (
+                [
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80,
+                ],
+                CompressedRistretto([
+                    0x30, 0x42, 0x82, 0x79, 0x10, 0x23, 0xb7, 0x31, 0x28, 0xd2, 0x77, 0xbd, 0xcb,
+                    0x5c, 0x77, 0x46, 0xef, 0x2e, 0xac, 0x08, 0xdd, 0xe9, 0xf2, 0x98, 0x33, 0x79,
+                    0xcb, 0x8e, 0x5e, 0xf0, 0x51, 0x7f,
+                ]),
+            ),
+        ];
+        // Check that onewaymap(input) == output for all the above vectors
+        for (input, output) in test_vectors {
+            let Q = RistrettoPoint::from_uniform_bytes(input);
+            assert_eq!(&Q.compress(), output);
+        }
+    }
+
+    #[test]
+    fn random_roundtrip() {
+        let mut rng = OsRng;
+        for _ in 0..100 {
+            let P = RistrettoPoint::mul_base(&Scalar::random(&mut rng));
+            let compressed_P = P.compress();
+            let Q = compressed_P.decompress().unwrap();
+            assert_eq!(P, Q);
+        }
+    }
+
+    #[test]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
+    fn double_and_compress_1024_random_points() {
+        let mut rng = OsRng;
+
+        let mut points: Vec<RistrettoPoint> = (0..1024)
+            .map(|_| RistrettoPoint::random(&mut rng))
+            .collect();
+        points[500] = RistrettoPoint::identity();
+
+        let compressed = RistrettoPoint::double_and_compress_batch(&points);
+
+        for (P, P2_compressed) in points.iter().zip(compressed.iter()) {
+            assert_eq!(*P2_compressed, (P + P).compress());
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
+        let mut rng = rand::thread_rng();
+
+        let static_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let dynamic_scalars = (0..128)
+            .map(|_| Scalar::random(&mut rng))
+            .collect::<Vec<_>>();
+
+        let check_scalar: Scalar = static_scalars
+            .iter()
+            .chain(dynamic_scalars.iter())
+            .map(|s| s * s)
+            .sum();
+
+        let static_points = static_scalars
+            .iter()
+            .map(RistrettoPoint::mul_base)
+            .collect::<Vec<_>>();
+        let dynamic_points = dynamic_scalars
+            .iter()
+            .map(RistrettoPoint::mul_base)
+            .collect::<Vec<_>>();
+
+        let precomputation = VartimeRistrettoPrecomputation::new(static_points.iter());
+
+        let P = precomputation.vartime_mixed_multiscalar_mul(
+            &static_scalars,
+            &dynamic_scalars,
+            &dynamic_points,
+        );
+
+        use crate::traits::VartimeMultiscalarMul;
+        let Q = RistrettoPoint::vartime_multiscalar_mul(
+            static_scalars.iter().chain(dynamic_scalars.iter()),
+            static_points.iter().chain(dynamic_points.iter()),
+        );
+
+        let R = RistrettoPoint::mul_base(&check_scalar);
+
+        assert_eq!(P.compress(), R.compress());
+        assert_eq!(Q.compress(), R.compress());
+    }
+}

@@ -16,8 +16,8 @@ use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
 use subtle::Choice;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use crate::constants;
 
@@ -47,12 +47,12 @@ impl Debug for Scalar52 {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for Scalar52 {
-//     fn zeroize(&mut self) {
-//         self.limbs.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for Scalar52 {
+    fn zeroize(&mut self) {
+        self.limbs.zeroize();
+    }
+}
 
 verus! {
 impl Index<usize> for Scalar52 {
@@ -182,7 +182,7 @@ impl Scalar52 {
     #[rustfmt::skip] // keep alignment of s[*] calculations
     #[allow(clippy::identity_op)]
     #[allow(clippy::wrong_self_convention)]
-    pub fn to_bytes(self) -> (s: [u8; 32])
+    pub fn as_bytes(self) -> (s: [u8; 32])
     ensures bytes_to_nat(&s) == to_nat(&self.limbs)
     {
         let mut s = [0u8; 32];

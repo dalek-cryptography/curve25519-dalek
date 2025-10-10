@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "curve25519-dalek"
+    "curve25519-dalek",
 ]
 resolver = "2"
 

@@ -3,26 +3,7 @@
 Entries are listed in reverse chronological order per undeprecated
 major series.
 
-## 5.x series
-
-## 5.0.0-pre.0
-
-* Update edition to 2024
-* Update the MSRV from 1.60 to 1.85
-* Remove deprecated functions `FieldElement::as_bytes()` and `EdwardsPoint::nonspec_map_to_curve()`
-* Use constant-time equality testing for compressed Ristretto and Edwards points, rather than autoderived equality
-* Undeprecate `Scalar::from_bits()`
-
 ## 4.x series
-
-### 4.2.0
-
-* Move AVX-512 backend selection logic to a separate CFG flag that requires nightly
-* Add Elligator2 hashing methods `EdwardsPoint::hash_to_curve()` and `FieldElement::hash_to_field()`
-* Deprecate `FieldElement::as_bytes` in favor of `FieldElement::to_bytes`
-* Remove deprecated `FieldElement::as_bytes`
-* Add batch conversion function `EdwardsPoint::to_montgomery_batch()`
-* Make `VartimePrecomputedStraus::optional_mixed_multiscalar_mul()` and `VartimeRistrettoPrecomputation::vartime_mixed_multiscalar_mul()` accept more points than static scalars
 
 ### 4.1.3
 
@@ -231,7 +212,7 @@ besides the `rand_core` version bump, there are no other user-visible changes.
   for very large input sizes.
 * Add a more extensive randomized multiscalar multiplication consistency check
   to the test suite to prevent regressions.
-* Ensure that multiscalar and NAF computations work correctly on extremal
+* Ensure that that multiscalar and NAF computations work correctly on extremal
   `Scalar` values constructed via `from_bits`.
 
 ### 1.2.0
@@ -284,3 +265,4 @@ besides the `rand_core` version bump, there are no other user-visible changes.
 ### 1.0.0
 
 Initial stable release.  Yanked due to a dependency mistake (see above).
+

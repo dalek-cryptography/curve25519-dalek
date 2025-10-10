@@ -235,6 +235,9 @@ pub struct Scalar {
 }
 
 
+pub open spec fn is_a_scalar(s: Scalar) -> bool {
+   true
+}
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer

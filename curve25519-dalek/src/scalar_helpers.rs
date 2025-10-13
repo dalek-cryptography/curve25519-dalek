@@ -31,7 +31,7 @@ impl Scalar {
     /// let product = Scalar::product_of_slice(&scalars);
     /// assert_eq!(product, Scalar::from(30u64));
     /// ```
-    #[allow(clippy::needless_range_loop)]
+    #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn product_of_slice(scalars: &[Scalar]) -> (result: Scalar)
     ensures
         // Result is a valid scalar (bytes represent a value < group_order)
@@ -60,7 +60,7 @@ impl Scalar {
                 // Assume preconditions for multiplication are satisfied
                 assume(false);
             }
-            acc = acc * scalars[i];
+            acc = &acc * &scalars[i];
 
             proof {
                 // Assume the result maintains the invariant
@@ -99,7 +99,7 @@ impl Scalar {
     /* <VERIFICATION NOTE>
      Refactored for Verus: Use index-based loop over slice
     </VERIFICATION NOTE> */
-    #[allow(clippy::needless_range_loop)]
+    #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn sum_of_slice(scalars: &[Scalar]) -> (result: Scalar)
     ensures
         // Result is a valid scalar (bytes represent a value < group_order)
@@ -128,7 +128,7 @@ impl Scalar {
                 // Assume preconditions for addition are satisfied
                 assume(false);
             }
-            acc = acc + scalars[i];
+            acc = &acc + &scalars[i];
 
             proof {
                 // Assume the result maintains the invariant

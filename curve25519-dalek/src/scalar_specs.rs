@@ -2,7 +2,7 @@
 
 use crate::backend::serial::u64::scalar_specs::*;
 use crate::scalar::Scalar;
-use vstd::arithmetic::power2::pow2;
+use vstd::arithmetic::power2::*; // Import all power2 functions including pow2
 use vstd::prelude::*;
 
 verus! {

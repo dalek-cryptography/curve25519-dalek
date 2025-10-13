@@ -1111,7 +1111,7 @@ impl Scalar {
     {
         use crate::backend::serial::u64::std_assumes as assumes;
         let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
-        Scalar::from_hash(hash_bytes)
+        Scalar::from_hash_verus(hash_bytes)
     }
     /* </MODIFIED CODE> */
 
@@ -1150,22 +1150,33 @@ impl Scalar {
     /// # }
     /// ```
     /* <VERIFICATION NOTE>
-     Simplified to take pre-finalized hash bytes instead of Sha512 type.
-     This avoids Verus issues with complex Sha512 type aliases.
-     Now just delegates to from_bytes_mod_order_wide, which is already verified.
+     Marked as external_body to avoid Verus issues with complex Sha512 type aliases.
+     For Verus verification, use from_hash_verus instead.
     </VERIFICATION NOTE> */
-    /* <ORIGINAL CODE>
+    #[cfg(feature = "digest")]
+    #[verifier::external_body]
      pub fn from_hash<D>(hash: D) -> Scalar
      where
-         D: Digest<OutputSize = U64>,
+         D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
      {
          let mut output = [0u8; 64];
          output.copy_from_slice(hash.finalize().as_slice());
          Scalar::from_bytes_mod_order_wide(&output)
      }
-     </ORIGINAL CODE> */
-     /* <MODIFIED CODE> */
-     pub fn from_hash(hash_bytes: [u8; 64]) -> (result: Scalar)
+
+     /// Verus-compatible version of from_hash that takes pre-finalized hash bytes.
+     ///
+     /// This function is designed for Verus verification and takes a byte array directly
+     /// instead of a generic Digest type. For regular code, use `from_hash` instead.
+     ///
+     /// # Inputs
+     ///
+     /// * `hash_bytes`: a 64-byte array representing the output of a hash function
+     ///
+     /// # Returns
+     ///
+     /// A scalar reduced modulo the group order
+     pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
      ensures
         is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
      {
@@ -1173,7 +1184,6 @@ impl Scalar {
          assume(false);
          result
      }
-     /* </MODIFIED CODE> */
 
 
 

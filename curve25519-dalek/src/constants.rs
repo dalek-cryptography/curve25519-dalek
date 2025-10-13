@@ -69,7 +69,10 @@ pub const RISTRETTO_BASEPOINT_POINT: RistrettoPoint = RistrettoPoint(ED25519_BAS
 /// $$
 /// \ell = 2^\{252\} + 27742317777372353535851937790883648493.
 /// $$
-pub(crate) const BASEPOINT_ORDER: Scalar = Scalar {
+#[deprecated(since = "4.1.1", note = "Should not have been in public API")]
+pub const BASEPOINT_ORDER: Scalar = BASEPOINT_ORDER_PRIVATE;
+
+pub(crate) const BASEPOINT_ORDER_PRIVATE: Scalar = Scalar {
     bytes: [
         0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde,
         0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -171,15 +174,5 @@ pub static RISTRETTO_BASEPOINT_TABLE: &RistrettoBasepointTable = unsafe {
 //         let ad_minus_one = &(&a * &constants::EDWARDS_D) + &a;
 //         let should_be_ad_minus_one = constants::SQRT_AD_MINUS_ONE.square();
 //         assert_eq!(should_be_ad_minus_one, ad_minus_one);
-//     }
-
-//     /// Test that ED25519_SQRTAM2 squared is MONTGOMERY_A_NEG - 2
-//     #[test]
-//     #[cfg(feature = "digest")]
-//     fn test_sqrt_a_minus_2() {
-//         let one = FieldElement::ONE;
-//         let a_minus_two = &(&constants::MONTGOMERY_A_NEG - &one) - &one;
-
-//         assert_eq!(constants::ED25519_SQRTAM2.square(), a_minus_two)
 //     }
 // }

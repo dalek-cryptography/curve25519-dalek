@@ -88,24 +88,24 @@
 //! [`Scalar::hash_from_bytes`], which takes a buffer, or
 //! [`Scalar::from_hash`], which allows an IUF API.
 //!
-// #![cfg_attr(feature = "digest", doc = "```")]
-// #![cfg_attr(not(feature = "digest"), doc = "```ignore")]
-// //! # fn main() {
-// //! use sha2::{Digest, Sha512};
-// //! use curve25519_dalek::scalar::Scalar;
-// //!
-// //! // Hashing a single byte slice
-// //! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
-// //!
-// //! // Streaming data into a hash object
-// //! let mut hasher = Sha512::default();
-// //! hasher.update(b"Abolish ");
-// //! hasher.update(b"ICE");
-// //! let a2 = Scalar::from_hash(hasher);
-// //!
-// //! assert_eq!(a, a2);
-// //! # }
-// //! ```
+#![cfg_attr(feature = "digest", doc = "```")]
+#![cfg_attr(not(feature = "digest"), doc = "```ignore")]
+//! # fn main() {
+//! use sha2::{Digest, Sha512};
+//! use curve25519_dalek::scalar::Scalar;
+//!
+//! // Hashing a single byte slice
+//! let a = Scalar::hash_from_bytes::<Sha512>(b"Abolish ICE");
+//!
+//! // Streaming data into a hash object
+//! let mut hasher = Sha512::default();
+//! hasher.update(b"Abolish ");
+//! hasher.update(b"ICE");
+//! let a2 = Scalar::from_hash(hasher);
+//!
+//! assert_eq!(a, a2);
+//! # }
+//! ```
 //!
 //! See also `Scalar::hash_from_bytes` and `Scalar::from_hash` that
 //! reduces a \\(512\\)-bit integer, if the optional `digest` feature
@@ -119,33 +119,36 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use vstd::prelude::*;
 
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
 #[cfg(feature = "group-bits")]
 use group::ff::{FieldBits, PrimeFieldBits};
 
-#[cfg(feature = "group")]
-use rand_core::TryRngCore;
+#[cfg(any(test, feature = "group"))]
+use rand_core::RngCore;
 
 #[cfg(any(test, feature = "rand_core"))]
-use rand_core::CryptoRng;
+use rand_core::CryptoRngCore;
+// From a conflict:
+//use rand_core::{CryptoRng, RngCore};
 
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-// #[cfg(feature = "digest")]
-// use digest::Digest;
-// #[cfg(feature = "digest")]
-// use digest::array::typenum::U64;
+#[cfg(feature = "digest")]
+use digest::generic_array::typenum::U64;
+#[cfg(feature = "digest")]
+use digest::Digest;
 
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
 use subtle::CtOption;
 
-// #[cfg(feature = "zeroize")]
-// use zeroize::Zeroize;
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 use crate::backend;
 use crate::constants;
@@ -214,6 +217,13 @@ pub struct Scalar {
     </ORIGINAL CODE> */
 }
 
+
+// This is a dummy function that we call from signal
+// to test that verus functions in libsignal know
+// about verus functions in curve-dalek
+pub open spec fn is_a_scalar(s: Scalar) -> bool {
+   true
+}
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer
@@ -303,10 +313,14 @@ impl Scalar {
     /// the output of this function for `EdwardsPoint::mul`, `MontgomeryPoint::mul`, and
     /// `EdwardsPoint::vartime_double_scalar_mul_basepoint`. **Do not use this function** unless
     /// you absolutely have to.
-    #[cfg(feature = "legacy_compatibility")]
     /* <VERIFICATION NOTE>
         -This is not in default features and not in our current target list ==> spec omitted for now
     </VERIFICATION NOTE> */
+    #[cfg(feature = "legacy_compatibility")]
+    #[deprecated(
+        since = "4.0.0",
+        note = "This constructor outputs scalars with undefined scalar-scalar arithmetic. See docs."
+    )]
     pub const fn from_bits(bytes: [u8; 32]) -> Scalar {
         let mut s = Scalar { bytes };
         // Ensure invariant #1 holds. That is, make s < 2^255 by masking the high bit.
@@ -406,9 +420,9 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a> Mul<&'a Scalar> for &Scalar {
+impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
-    fn mul(self, _rhs: &'a Scalar) -> (result: Scalar) {
+    fn mul(self, _rhs: &'b Scalar) -> (result: Scalar) {
         /* <VERIFICATION NOTE>
          Store unpacked values explicitly for limbs_bounded assumption
         </VERIFICATION NOTE> */
@@ -430,18 +444,18 @@ impl<'a> Mul<&'a Scalar> for &Scalar {
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 } // verus!
 
-impl<'a> AddAssign<&'a Scalar> for Scalar {
-    fn add_assign(&mut self, _rhs: &'a Scalar) {
+impl<'b> AddAssign<&'b Scalar> for Scalar {
+    fn add_assign(&mut self, _rhs: &'b Scalar) {
         *self = *self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a> Add<&'a Scalar> for &Scalar {
+impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn add(self, _rhs: &'a Scalar) -> Scalar {
+    fn add(self, _rhs: &'b Scalar) -> Scalar {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::add(&self.unpack(), &_rhs.unpack()).pack()
@@ -450,18 +464,18 @@ impl<'a> Add<&'a Scalar> for &Scalar {
 
 define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl<'a> SubAssign<&'a Scalar> for Scalar {
-    fn sub_assign(&mut self, _rhs: &'a Scalar) {
+impl<'b> SubAssign<&'b Scalar> for Scalar {
+    fn sub_assign(&mut self, _rhs: &'b Scalar) {
         *self = *self - _rhs;
     }
 }
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a> Sub<&'a Scalar> for &Scalar {
+impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    fn sub(self, rhs: &'a Scalar) -> Scalar {
+    fn sub(self, rhs: &'b Scalar) -> Scalar {
         // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
         UnpackedScalar::sub(&self.unpack(), &rhs.unpack()).pack()
@@ -470,7 +484,7 @@ impl<'a> Sub<&'a Scalar> for &Scalar {
 
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
-impl Neg for &Scalar {
+impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     fn neg(self) -> Scalar {
@@ -657,15 +671,14 @@ impl From<u128> for Scalar {
     }
 }
 
-// #[cfg(feature = "zeroize")]
-// impl Zeroize for Scalar {
-//     fn zeroize(&mut self) {
-//         self.bytes.zeroize();
-//     }
-// }
+#[cfg(feature = "zeroize")]
+impl Zeroize for Scalar {
+    fn zeroize(&mut self) {
+        self.bytes.zeroize();
+    }
+}
 
 verus! {
-
 
 impl Scalar {
     /// The scalar \\( 0 \\).
@@ -694,7 +707,8 @@ impl Scalar {
     ///
     /// # Inputs
     ///
-    /// * `rng`: any RNG which implements `CryptoRng` interface.
+    /// * `rng`: any RNG which implements `CryptoRngCore`
+    ///   (i.e. `CryptoRng` + `RngCore`) interface.
     ///
     /// # Returns
     ///
@@ -706,95 +720,101 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::{OsRng, TryRngCore};
+    /// use rand_core::OsRng;
     ///
-    /// let mut csprng = OsRng.unwrap_err();
+    /// let mut csprng = OsRng;
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
-    /// ```
-    pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self
+    /* <VERIFICATION NOTE>
+     Added verifier::external_body annotation
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
+    pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> (result: Self)
+        ensures is_random_scalar(&result)
     {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
 
-    // #[cfg(feature = "digest")]
-    // /// Hash a slice of bytes into a scalar.
-    // ///
-    // /// Takes a type parameter `D`, which is any `Digest` producing 64
-    // /// bytes (512 bits) of output.
-    // ///
-    // /// Convenience wrapper around `from_hash`.
-    // ///
-    // /// # Example
-    // ///
-    // #[cfg_attr(feature = "digest", doc = "```")]
-    // #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
-    // /// # use curve25519_dalek::scalar::Scalar;
-    // /// use sha2::Sha512;
-    // ///
-    // /// # // Need fn main() here in comment so the doctest compiles
-    // /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
-    // /// # fn main() {
-    // /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    // /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
-    // /// # }
-    // /// ```
-    // pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
-    // where
-    //     D: Digest<OutputSize = U64> + Default,
-    // {
-    //     let mut hash = D::default();
-    //     hash.update(input);
-    //     Scalar::from_hash(hash)
-    // }
+    #[cfg(feature = "digest")]
+    /// Hash a slice of bytes into a scalar.
+    ///
+    /// Takes a type parameter `D`, which is any `Digest` producing 64
+    /// bytes (512 bits) of output.
+    ///
+    /// Convenience wrapper around `from_hash`.
+    ///
+    /// # Example
+    ///
+    #[cfg_attr(feature = "digest", doc = "```")]
+    #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// use sha2::Sha512;
+    ///
+    /// # // Need fn main() here in comment so the doctest compiles
+    /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
+    /// # fn main() {
+    /// let msg = "To really appreciate architecture, you may even need to commit a murder";
+    /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
+    /// # }
+    /// ```
+    #[verifier::external_body]
+    pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
+    where
+        D: Digest<OutputSize = U64> + Default,
+    {
+        let mut hash = D::default();
+        hash.update(input);
+        Scalar::from_hash(hash)
+    }
 
-    // #[cfg(feature = "digest")]
-    // /// Construct a scalar from an existing `Digest` instance.
-    // ///
-    // /// Use this instead of `hash_from_bytes` if it is more convenient
-    // /// to stream data into the `Digest` than to pass a single byte
-    // /// slice.
-    // ///
-    // /// # Example
-    // ///
-    // /// ```
-    // /// # use curve25519_dalek::scalar::Scalar;
-    // /// use curve25519_dalek::digest::Update;
-    // ///
-    // /// use sha2::Digest;
-    // /// use sha2::Sha512;
-    // ///
-    // /// # fn main() {
-    // /// let mut h = Sha512::new()
-    // ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
-    // ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
-    // ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
-    // ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
-    // ///     .chain("perhaps all architecture, rather than being about functional standards, is")
-    // ///     .chain("about love and death.");
-    // ///
-    // /// let s = Scalar::from_hash(h);
-    // ///
-    // /// println!("{:?}", s.to_bytes());
-    // /// assert_eq!(
-    // ///     s.to_bytes(),
-    // ///     [  21,  88, 208, 252,  63, 122, 210, 152,
-    // ///       154,  38,  15,  23,  16, 167,  80, 150,
-    // ///       192, 221,  77, 226,  62,  25, 224, 148,
-    // ///       239,  48, 176,  10, 185,  69, 168,  11, ],
-    // /// );
-    // /// # }
-    // /// ```
-    // pub fn from_hash<D>(hash: D) -> Scalar
-    // where
-    //     D: Digest<OutputSize = U64>,
-    // {
-    //     let mut output = [0u8; 64];
-    //     output.copy_from_slice(hash.finalize().as_slice());
-    //     Scalar::from_bytes_mod_order_wide(&output)
-    // }
+    #[cfg(feature = "digest")]
+    /// Construct a scalar from an existing `Digest` instance.
+    ///
+    /// Use this instead of `hash_from_bytes` if it is more convenient
+    /// to stream data into the `Digest` than to pass a single byte
+    /// slice.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use curve25519_dalek::scalar::Scalar;
+    /// use curve25519_dalek::digest::Update;
+    ///
+    /// use sha2::Digest;
+    /// use sha2::Sha512;
+    ///
+    /// # fn main() {
+    /// let mut h = Sha512::new()
+    ///     .chain("To really appreciate architecture, you may even need to commit a murder.")
+    ///     .chain("While the programs used for The Manhattan Transcripts are of the most extreme")
+    ///     .chain("nature, they also parallel the most common formula plot: the archetype of")
+    ///     .chain("murder. Other phantasms were occasionally used to underline the fact that")
+    ///     .chain("perhaps all architecture, rather than being about functional standards, is")
+    ///     .chain("about love and death.");
+    ///
+    /// let s = Scalar::from_hash(h);
+    ///
+    /// println!("{:?}", s.to_bytes());
+    /// assert_eq!(
+    ///     s.to_bytes(),
+    ///     [  21,  88, 208, 252,  63, 122, 210, 152,
+    ///       154,  38,  15,  23,  16, 167,  80, 150,
+    ///       192, 221,  77, 226,  62,  25, 224, 148,
+    ///       239,  48, 176,  10, 185,  69, 168,  11, ],
+    /// );
+    /// # }
+    /// ```
+    #[verifier::external_body]
+    pub fn from_hash<D>(hash: D) -> Scalar
+    where
+        D: Digest<OutputSize = U64>,
+    {
+        let mut output = [0u8; 64];
+        output.copy_from_slice(hash.finalize().as_slice());
+        Scalar::from_bytes_mod_order_wide(&output)
+    }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
     ///
@@ -907,6 +927,10 @@ impl Scalar {
      Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
     </VERIFICATION NOTE> */
     #[cfg(feature = "alloc")]
+    // Theo: Verus doesn't like the zeroize in this function. I think the long-term
+    // solution is to use assume_specification to tell Verus what zeroize does.
+    // In the short-term, I've just told verus to ignore the body.
+    #[verifier::external_body]
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
     ensures
         // Result is the modular inverse of the product of all original inputs
@@ -1068,8 +1092,9 @@ impl Scalar {
             acc = tmp;
         }
 
-        // #[cfg(feature = "zeroize")]
-        // Zeroize::zeroize(&mut scratch);
+
+        #[cfg(feature = "zeroize")]
+        Zeroize::zeroize(&mut scratch);
 
         proof {
             // Assume the postconditions
@@ -1402,9 +1427,9 @@ impl Scalar {
         debug_assert!(w <= 8);
 
         let digits_count = match w {
-            4..=7 => 256_usize.div_ceil(w),
+            4..=7 => (256 + w - 1) / w,
             // See comment in to_radix_2w on handling the terminal carry.
-            8 => 256_usize.div_ceil(w) + 1_usize,
+            8 => (256 + w - 1) / w + 1_usize,
             _ => panic!("invalid radix parameter"),
         };
 
@@ -1451,7 +1476,7 @@ impl Scalar {
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
-        let digits_count = 256_usize.div_ceil(w);
+        let digits_count = (256 + w - 1) / w;
         #[allow(clippy::needless_range_loop)]
         for i in 0..digits_count {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
@@ -1567,9 +1592,9 @@ impl UnpackedScalar {
         to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127,
     {
         let result = Scalar {
-            bytes: self.to_bytes(),
+            bytes: self.as_bytes(),
         };
-        // VERIFICATION NOTE: TODO: Prove these follow from to_bytes() spec
+        // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
         assume(to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order());
         assume(to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127);
         result
@@ -1681,11 +1706,11 @@ impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
     const ONE: Self = Self::ONE;
 
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn random(mut rng: impl RngCore) -> Self {
         // NOTE: this is duplicated due to different `rng` bounds
         let mut scalar_bytes = [0u8; 64];
-        rng.try_fill_bytes(&mut scalar_bytes)?;
-        Ok(Self::from_bytes_mod_order_wide(&scalar_bytes))
+        rng.fill_bytes(&mut scalar_bytes);
+        Self::from_bytes_mod_order_wide(&scalar_bytes)
     }
 
     fn square(&self) -> Self {
@@ -1800,7 +1825,7 @@ impl PrimeFieldBits for Scalar {
     }
 
     fn char_le_bits() -> FieldBits<Self::ReprBits> {
-        constants::BASEPOINT_ORDER.to_bytes().into()
+        constants::BASEPOINT_ORDER_PRIVATE.to_bytes().into()
     }
 }
 
@@ -1861,7 +1886,6 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 // #[cfg(test)]
 // pub(crate) mod test {
 //     use super::*;
-//     use rand_core::RngCore;
 
 //     #[cfg(feature = "alloc")]
 //     use alloc::vec::Vec;
@@ -2021,7 +2045,7 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 
 //     #[test]
 //     fn non_adjacent_form_random() {
-//         let mut rng = rand::rng();
+//         let mut rng = rand::thread_rng();
 //         for _ in 0..1_000 {
 //             let x = Scalar::random(&mut rng);
 //             for w in &[5, 6, 7, 8] {
@@ -2200,10 +2224,10 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 //     #[test]
 //     fn to_bytes_from_bytes_roundtrips() {
 //         let unpacked = X.unpack();
-//         let bytes = unpacked.to_bytes();
+//         let bytes = unpacked.as_bytes();
 //         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
 
-//         assert_eq!(should_be_unpacked.limbs, unpacked.limbs);
+//         assert_eq!(should_be_unpacked.0, unpacked.0);
 //     }
 
 //     #[test]
@@ -2235,8 +2259,8 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 //         let montgomery_reduced = UnpackedScalar::montgomery_reduce(&interim);
 
 //         // The Montgomery reduced scalar should match the reduced one, as well as the expected
-//         assert_eq!(montgomery_reduced.limbs, reduced.unpack().limbs);
-//         assert_eq!(montgomery_reduced.limbs, expected.unpack().limbs)
+//         assert_eq!(montgomery_reduced.0, reduced.unpack().0);
+//         assert_eq!(montgomery_reduced.0, expected.unpack().0)
 //     }
 
 //     #[test]
@@ -2512,10 +2536,10 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 
 //     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
 //     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
-//     // was reduced and b was clamped and unreduced. This checks that was always well-defined.
+//     // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
 //     #[test]
 //     fn test_mul_reduction_invariance() {
-//         let mut rng = rand::rng();
+//         let mut rng = rand::thread_rng();
 
 //         for _ in 0..10 {
 //             // Also define c that's clamped. We'll make sure that clamping doesn't affect

@@ -29,3 +29,11 @@ with the following additional clauses:
 * We respect the rights to privacy and anonymity for contributors and people in
   the community.  If someone wishes to contribute under a pseudonym different to
   their primary identity, that wish is to be respected by all contributors.
+
+# Beneficial AI Foundation note
+
+This repo is based on the `signal-curve25519-4.1.3` tag of https://github.com/signalapp/curve25519-dalek, with these changes:
+- removed all crates besides `curve25519-dalek`
+- removed all backends except for `serial/u64`
+- commented out unit tests
+- removed most CI workflows

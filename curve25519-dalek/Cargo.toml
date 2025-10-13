@@ -4,13 +4,11 @@ name = "curve25519-dalek"
 # - update CHANGELOG
 # - update README if required by semver
 # - if README was updated, also update module documentation in src/lib.rs
-version = "5.0.0-pre.0"
-edition = "2024"
-rust-version = "1.85.0"
-authors = [
-    "Isis Lovecruft <isis@patternsinthevoid.net>",
-    "Henry de Valence <hdevalence@hdevalence.ca>",
-]
+version = "4.1.3"
+edition = "2021"
+rust-version = "1.60.0"
+authors = ["Isis Lovecruft <isis@patternsinthevoid.net>",
+           "Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "BSD-3-Clause"
 repository = "https://github.com/dalek-cryptography/curve25519-dalek/tree/main/curve25519-dalek"
@@ -19,30 +17,25 @@ documentation = "https://docs.rs/curve25519-dalek"
 categories = ["cryptography", "no-std"]
 keywords = ["cryptography", "crypto", "ristretto", "curve25519", "ristretto255"]
 description = "A pure-Rust implementation of group operations on ristretto255 and Curve25519"
-exclude = ["**/.gitignore", ".gitignore"]
+exclude = [
+    "**/.gitignore",
+    ".gitignore",
+]
 
 [package.metadata.docs.rs]
 rustdoc-args = [
-    "--html-in-header",
-    "docs/assets/rustdoc-include-katex-header.html",
-    "--cfg",
-    "docsrs",
+    "--html-in-header", "docs/assets/rustdoc-include-katex-header.html",
+    "--cfg", "docsrs",
 ]
-features = [
-    "serde",
-    "rand_core",
-    "digest",
-    "legacy_compatibility",
-    "group-bits",
-]
+features = ["serde", "rand_core", "digest", "legacy_compatibility", "group-bits"]
 
 [dev-dependencies]
-sha2 = { version = "0.11.0-rc.0", default-features = false }
+sha2 = { version = "0.10", default-features = false }
 bincode = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
 hex = "0.4.2"
-rand = "0.9"
-rand_core = { version = "0.9", default-features = false, features = ["os_rng"] }
+rand = "0.8"
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
 
 [build-dependencies]
 rustc_version = "0.4.0"
@@ -57,47 +50,31 @@ vstd = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f27733
 verus_builtin = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f277333ecd7c6515d5c1adfbf0c"}
 verus_builtin_macros = { git = "https://github.com/verus-lang/verus", rev = "bf8e97e852e95f277333ecd7c6515d5c1adfbf0c"}
 cfg-if = "1"
-ff = { version = "=0.14.0-pre.0", default-features = false, optional = true }
-group = { version = "=0.14.0-pre.0", default-features = false, optional = true }
-rand_core = { version = "0.9", default-features = false, optional = true }
-digest = { version = "0.11.0-rc.0", default-features = false, optional = true, features = [
-    "block-api",
-] }
-subtle = { version = "2.6.0", default-features = false, features = [
-    "const-generics",
-] }
-serde = { version = "1.0", default-features = false, optional = true, features = [
-    "derive",
-] }
+ff = { version = "0.13", default-features = false, optional = true }
+group = { version = "0.13", default-features = false, optional = true }
+rand_core = { version = "0.6.4", default-features = false, optional = true }
+digest = { version = "0.10", default-features = false, optional = true }
+subtle = { version = "2.3.0", default-features = false }
+serde = { version = "1.0", default-features = false, optional = true, features = ["derive"] }
 zeroize = { version = "1", default-features = false, optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-cpufeatures = "0.2.17"
+cpufeatures = "0.2.6"
 
 [target.'cfg(curve25519_dalek_backend = "fiat")'.dependencies]
-fiat-crypto = { version = "0.3.0", default-features = false }
+fiat-crypto = { version = "0.2.1", default-features = false }
 
 [features]
-default = ["alloc", "precomputed-tables", "zeroize"]
+default = ["alloc", "precomputed-tables", "zeroize", "lizard"]
 alloc = ["zeroize?/alloc"]
 precomputed-tables = []
 legacy_compatibility = []
 group = ["dep:group", "rand_core"]
 group-bits = ["group", "ff/bits"]
-digest = ["dep:digest"]
+lizard = ["digest"]
 
-# [target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
-# curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
-
-[lints.rust.unexpected_cfgs]
-level = "warn"
-check-cfg = [
-    'cfg(allow_unused_unsafe)',
-    'cfg(curve25519_dalek_backend, values("fiat", "serial", "simd", "unstable_avx512"))',
-    'cfg(curve25519_dalek_diagnostics, values("build"))',
-    'cfg(curve25519_dalek_bits, values("32", "64"))',
-    'cfg(nightly)',
-]
+#[target.'cfg(all(not(curve25519_dalek_backend = "fiat"), not(curve25519_dalek_backend = "serial"), target_arch = "x86_64"))'.dependencies]
+#curve25519-dalek-derive = { version = "0.1", path = "../curve25519-dalek-derive" }
 
 [package.metadata.verus]
 verify = true

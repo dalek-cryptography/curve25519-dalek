@@ -55,3 +55,72 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: crate-ci/typos@v1.33.1
+
+  check-libsignal:
+    name: "`cargo check` on libsignal with this dalek-lite commit"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout dalek-lite
+      uses: actions/checkout@v4
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.88.0
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler cmake pkg-config clang
+    - name: Get libsignal
+      run: |
+        cd ..
+        git clone https://github.com/Beneficial-AI-Foundation/libsignal
+        cd libsignal
+        git checkout frozen_for_ci
+    - name: Patch libsignal's Cargo.toml with current dalek-lite commit
+      run: |
+        DALEK_COMMIT=$(git rev-parse HEAD)
+        echo "dalek-lite commit: $DALEK_COMMIT"
+        cd ../libsignal
+        if ! grep -q "14d41a27fc63" Cargo.toml; then
+          echo "Error: Placeholder 14d41a27fc63 not found in Cargo.toml"
+          exit 1
+        fi
+        sed -i "s/14d41a27fc63/$DALEK_COMMIT/g" Cargo.toml
+    - name: Run test
+      run: |
+        cd ../libsignal
+        cargo check
+
+  verify-libsignal-usernames:
+    name: "Verus on libsignal/rust/usernames with this dalek-lite commit"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout dalek-lite
+      uses: actions/checkout@v4
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@1.88.0
+    - name: Install Verus
+      run: |
+        wget https://github.com/verus-lang/verus/releases/download/release%2F0.2025.10.05.bf8e97e/verus-0.2025.10.05.bf8e97e-x86-linux.zip
+        unzip verus-0.2025.10.05.bf8e97e-x86-linux.zip
+        mv verus-x86-linux ~/.cargo/bin
+        cd ~/.cargo/bin
+        ln -s verus-x86-linux/cargo-verus
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler cmake pkg-config clang
+    - name: Get libsignal
+      run: |
+        cd ..
+        git clone https://github.com/Beneficial-AI-Foundation/libsignal
+        cd libsignal
+        git checkout frozen_for_ci
+    - name: Patch libsignal's Cargo.toml with current dalek-lite commit
+      run: |
+        DALEK_COMMIT=$(git rev-parse HEAD)
+        echo "dalek-lite commit: $DALEK_COMMIT"
+        cd ../libsignal
+        if ! grep -q "14d41a27fc63" Cargo.toml; then
+          echo "Error: Placeholder 14d41a27fc63 not found in Cargo.toml"
+          exit 1
+        fi
+        sed -i "s/14d41a27fc63/$DALEK_COMMIT/g" Cargo.toml
+    - name: Run test
+      run: |
+        cd ../libsignal/rust/usernames
+        cargo verus verify

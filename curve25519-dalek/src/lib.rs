@@ -68,6 +68,9 @@ pub mod scalar;
 // Specification functions for Scalar
 pub(crate) mod scalar_specs;
 
+// Helper functions for scalar operations on slices
+pub(crate) mod scalar_helpers;
+
 // Point operations on the Montgomery form of Curve25519
 pub mod montgomery;
 

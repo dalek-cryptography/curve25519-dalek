@@ -1,8 +1,6 @@
 //! Specification functions for high-level Scalar operations
 
 use crate::backend::serial::u64::scalar_specs::*;
-use crate::scalar::Scalar;
-use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {

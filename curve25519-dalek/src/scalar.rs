@@ -137,13 +137,6 @@ use rand_core::CryptoRngCore;
 #[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 
-#[cfg(feature = "digest")]
-use digest::generic_array::typenum::U64;
-#[cfg(feature = "digest")]
-use digest::Digest;
-#[cfg(feature = "digest")]
-use sha2::Sha512;
-
 use subtle::Choice;
 use subtle::ConditionallySelectable;
 use subtle::ConstantTimeEq;
@@ -161,14 +154,11 @@ use crate::backend::serial::u64::scalar_specs::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
 
-
 #[allow(unused_imports)]
 use crate::backend::serial::u64::std_assumes::*;
 
 #[allow(unused_imports)]
 use crate::scalar_specs::*;
-
-use vstd::prelude::*;
 
 verus! {
 
@@ -355,13 +345,13 @@ impl PartialEq for Scalar {
         let result = choice_into(choice);
         assert(result == choice_is_true(choice));
         assert(result == (self.bytes == other.bytes));
-        
+
         // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
         // vstd expects obeys_eq_spec() and eq_spec() from PartialEqSpecImpl trait,
         // but that trait is not publicly exported, so we bypass with assume(false)
         // while maintaining our own custom ensures clause above
         assume(false);
-        
+
         result
     }
 }
@@ -448,8 +438,8 @@ define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
     // VERIFICATION NOTE: PROOF BYPASS JUST BEFORE RETURN (problem with traits)
-    fn mul(self, _rhs: &'b Scalar) -> (result: Scalar) 
-        ensures 
+    fn mul(self, _rhs: &'b Scalar) -> (result: Scalar)
+        ensures
         bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) * bytes_to_nat(&_rhs.bytes)) % group_order(),
     {
         /* <VERIFICATION NOTE>
@@ -463,7 +453,7 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
             assert(to_nat(&rhs_unpacked.limbs) == bytes_to_nat(&_rhs.bytes));
             assert(limbs_bounded(&self_unpacked));
             assert(limbs_bounded(&rhs_unpacked));
-        }    
+        }
         let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
         proof {
             assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
@@ -479,13 +469,13 @@ impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
         /* <ORIGINAL CODE>
          let result = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
          </ORIGINAL CODE> */
-        
+
         // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
         // vstd expects obeys_mul_spec() and mul_spec() from MulSpecImpl trait,
         // but that trait is not publicly exported, so we bypass with assume(false)
         // while maintaining our own custom ensures clause above
         assume(false);
-        
+
         result
     }
 }
@@ -494,8 +484,8 @@ define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
-    
-    /* <VERIFICATION NOTE> 
+
+    /* <VERIFICATION NOTE>
     TWO PROOF BYPASSES  because of trait issues
     </VERIFICATION NOTE> */
     #[allow(non_snake_case)]
@@ -520,7 +510,7 @@ impl<'a> Add<&'a Scalar> for &Scalar {
             assert(limbs_bounded(&self_unpacked));
             assert(limbs_bounded(&rhs_unpacked));
         }
-    
+
         // UnpackedScalar::add requires inputs < group_order()
         // By Scalar invariant #2, scalars should be canonical
         // However, we cannot add requires clauses to trait implementations,
@@ -529,26 +519,26 @@ impl<'a> Add<&'a Scalar> for &Scalar {
             assume(to_nat(&self_unpacked.limbs) < group_order());
             assume(to_nat(&rhs_unpacked.limbs) < group_order());
         }
-        
+
         let result_unpacked = UnpackedScalar::add(&self_unpacked, &rhs_unpacked);
         proof {
             assert(to_nat(&result_unpacked.limbs) == (to_nat(&self_unpacked.limbs) + to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
         }
-        
+
         let result = result_unpacked.pack();
         proof {
-            assert(bytes_to_nat(&result.bytes)  == to_nat(&result_unpacked.limbs));  
+            assert(bytes_to_nat(&result.bytes)  == to_nat(&result_unpacked.limbs));
             assert(bytes_to_nat(&result.bytes)  == (bytes_to_nat(&self.bytes) + bytes_to_nat(&_rhs.bytes)) % group_order());
         }
         /* </MODIFIED CODE> */
-        
+
         // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
         // vstd expects obeys_add_spec() and add_spec() from AddSpecImpl trait,
         // but that trait is not publicly exported, so we bypass with assume(false)
         // while maintaining our own custom ensures clause above
         assume(false);
-        
+
         result
     }
 }
@@ -558,8 +548,9 @@ define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 impl<'a> AddAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: delegates to verified Add operator
     // PROOF BYPASS because Add has vstd trait spec issues
+    #[allow(clippy::op_ref)]
     fn add_assign(&mut self, _rhs: &'a Scalar)
-    ensures 
+    ensures
         bytes_to_nat(&self.bytes) == (bytes_to_nat(&old(self).bytes) + bytes_to_nat(&_rhs.bytes)) % group_order(),
     {
         proof { assume(false); }
@@ -571,7 +562,7 @@ define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
-    
+
     // VERIFICATION NOTE: PROOF BYPASS (problems with traits and preconditions)
     #[allow(non_snake_case)]
     fn sub(self, _rhs: &'b Scalar) -> (result: Scalar)
@@ -592,30 +583,30 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
             assert(limbs_bounded(&self_unpacked));
             assert(limbs_bounded(&rhs_unpacked));
         }
-        
+
         // UnpackedScalar::sub requires: -group_order() <= to_nat(&a.limbs) - to_nat(&b.limbs) < group_order()
         proof {
             assume(-group_order() <= to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs));
             assume(to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs) < group_order());
         }
-        
+
         let result_unpacked = UnpackedScalar::sub(&self_unpacked, &rhs_unpacked);
         proof {
             // Postconditions from sub - need to strengthen, review connections
             assume(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs)) % (group_order() as int));
             assume(limbs_bounded(&result_unpacked));
         }
-        
+
         let result = result_unpacked.pack();
         proof {
             assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
             assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int));
         }
         /* </MODIFIED CODE> */
-        
+
         // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
         assume(false);
-        
+
         result
     }
 }
@@ -625,6 +616,7 @@ define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 impl<'a> SubAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: Delegates to verified Sub operator
     // PROOF BYPASS because Sub has vstd trait spec issues
+    #[allow(clippy::op_ref)]
     fn sub_assign(&mut self, _rhs: &'a Scalar)
     ensures
         bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
@@ -639,12 +631,12 @@ define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 impl<'a> Neg for &'a Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
-    // VERIFICATION NOTE: PROOF BYPASS 
-    fn neg(self) -> (result: Scalar) 
+    // VERIFICATION NOTE: PROOF BYPASS
+    fn neg(self) -> (result: Scalar)
     ensures
     (scalar_to_nat(self) + scalar_to_nat(&result)) % group_order() == 0,
     {
-        /* <ORIGINAL CODE> 
+        /* <ORIGINAL CODE>
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
         UnpackedScalar::sub(&UnpackedScalar::ZERO, &self_mod_l).pack()
@@ -658,7 +650,7 @@ impl<'a> Neg for &'a Scalar {
 
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
         let self_mod_l = UnpackedScalar::montgomery_reduce(&self_R);
-        
+
         proof {
             assume(limbs_bounded(&self_mod_l));
             // sub requires: -group_order() <= 0 - to_nat(&self_mod_l.limbs) < group_order()
@@ -671,10 +663,10 @@ impl<'a> Neg for &'a Scalar {
             // TODO: Prove that -self + self == 0 (mod group_order)
             assume((scalar_to_nat(self) + scalar_to_nat(&result)) % group_order() == 0);
         }
-        
+
         // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
         assume(false);
-        
+
         /* </MODIFIED CODE> */
         result
     }
@@ -682,7 +674,7 @@ impl<'a> Neg for &'a Scalar {
 
 impl Neg for Scalar {
     type Output = Scalar;
-    /* <VERIFICATION NOTE>  
+    /* <VERIFICATION NOTE>
          PROOF BYPASS - vstd's Neg trait spec precondition check
     </VERIFICATION NOTE> */
     fn neg(self) -> (result: Scalar)
@@ -690,10 +682,9 @@ impl Neg for Scalar {
         (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
         proof { assume(false); }
-        let result = (&self).neg();
-        result
+        (&self).neg()
     }
-    /* <ORIGINAL CODE> 
+    /* <ORIGINAL CODE>
     fn neg(self) -> Scalar {
         -&self
     }
@@ -707,10 +698,10 @@ impl ConditionallySelectable for Scalar {
         let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
-            /* <VERIFICATION NOTE> 
+            /* <VERIFICATION NOTE>
             Use wrapper function for Verus compatibility instead of direct subtle call
             </VERIFICATION NOTE> */
-            /* <ORIGINAL CODE> 
+            /* <ORIGINAL CODE>
             bytes[i] = u8::conditional_select(&a.bytes[i], &b.bytes[i], choice);
             </ORIGINAL CODE> */
             /* <MODIFIED CODE> */
@@ -723,7 +714,7 @@ impl ConditionallySelectable for Scalar {
 } // verus!
 
 verus! {
-/* <VERIFICATION NOTE> 
+/* <VERIFICATION NOTE>
 - Serialization and deserialization functions in this Verus block
 - They are currently outside default features but we should consider verifying them
 </VERIFICATION NOTE> */
@@ -788,7 +779,7 @@ impl<'de> Deserialize<'de> for Scalar {
 }
 
 /* <VERIFICATION NOTE>
- Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus. 
+ Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus.
 </VERIFICATION NOTE> */
 
 impl<T> Product<T> for Scalar
@@ -815,10 +806,10 @@ where
     {
         // Collect iterator into a Vec, then convert via Borrow to get &[Scalar]
         let items: Vec<T> = iter.collect();
-        
+
         // Convert to Vec<Scalar> via borrow
         let scalars: Vec<Scalar> = items.iter().map(|item| *item.borrow()).collect();
-        
+
         // Use the verified product_of_slice function
         Scalar::product_of_slice(&scalars)
     }
@@ -848,10 +839,10 @@ where
     {
         // Collect iterator into a Vec, then convert via Borrow to get &[Scalar]
         let items: Vec<T> = iter.collect();
-        
+
         // Convert to Vec<Scalar> via borrow
         let scalars: Vec<Scalar> = items.iter().map(|item| *item.borrow()).collect();
-        
+
         // Use the verified sum_of_slice function
         Scalar::sum_of_slice(&scalars)
     }
@@ -860,7 +851,7 @@ where
 
 impl Default for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
-    fn default() -> (result: Scalar) 
+    fn default() -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == 0 as nat,
     {
@@ -872,7 +863,7 @@ impl Default for Scalar {
 
 impl From<u8> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
-    fn from(x: u8) -> (result: Scalar) 
+    fn from(x: u8) -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == x as nat,
     {
@@ -889,7 +880,8 @@ impl From<u8> for Scalar {
 
 impl From<u16> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
-    fn from(x: u16) -> (result: Scalar) 
+    #[allow(clippy::manual_memcpy)]
+    fn from(x: u16) -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == x as nat,
     {
@@ -914,7 +906,8 @@ impl From<u16> for Scalar {
 
 impl From<u32> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
-    fn from(x: u32) -> (result: Scalar) 
+    #[allow(clippy::manual_memcpy)]
+    fn from(x: u32) -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == x as nat,
     {
@@ -934,7 +927,7 @@ impl From<u32> for Scalar {
             assume(scalar_to_nat(&result) == x as nat);
         }
         result
-        
+
     }
 }
 
@@ -961,7 +954,8 @@ impl From<u64> for Scalar {
     /// assert!(fourtytwo == six * seven);
     /// ```
     // VERIFICATION NOTE: PROOF BYPASS
-    fn from(x: u64) -> (result: Scalar) 
+    #[allow(clippy::manual_memcpy)]
+    fn from(x: u64) -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == x as nat,
     {
@@ -986,7 +980,8 @@ impl From<u64> for Scalar {
 
 impl From<u128> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
-    fn from(x: u128) -> (result: Scalar) 
+    #[allow(clippy::manual_memcpy)]
+    fn from(x: u128) -> (result: Scalar)
     ensures
         scalar_to_nat(&result) == x as nat,
     {
@@ -1007,7 +1002,7 @@ impl From<u128> for Scalar {
         }
         result
     }
-} 
+}
 
  #[cfg(feature = "zeroize")]
  impl Zeroize for Scalar {
@@ -1030,7 +1025,6 @@ impl Scalar {
    /* <ORIGINAL CODE>
     pub const ZERO: Self = Self { bytes: [0u8; 32] };
     </ORIGINAL CODE> */
-    
    pub const ZERO: Scalar = Scalar { bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] };
 
     /// The scalar \\( 1 \\).
@@ -1096,7 +1090,6 @@ impl Scalar {
     /// let s = Scalar::hash_from_bytes(msg.as_bytes());
     /// # }
     /// ```
-    
     // VERIFICATION NOTE: PROBLEMS WITH GENERIC DIGESTS (temporary workaround below)
     /* <ORIGINAL CODE>
     pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
@@ -1112,7 +1105,7 @@ impl Scalar {
     /* <VERIFICATION NOTE>
      Compute hash directly, avoiding the digest object
       </VERIFICATION NOTE> */
-    pub fn hash_from_bytes(input: &[u8]) -> (result: Scalar) 
+    pub fn hash_from_bytes(input: &[u8]) -> (result: Scalar)
     ensures
         is_random_bytes(input) ==> is_random_scalar(&result),
     {
@@ -1172,7 +1165,7 @@ impl Scalar {
      }
      </ORIGINAL CODE> */
      /* <MODIFIED CODE> */
-     pub fn from_hash(hash_bytes: [u8; 64]) -> (result: Scalar) 
+     pub fn from_hash(hash_bytes: [u8; 64]) -> (result: Scalar)
      ensures
         is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
      {
@@ -1182,7 +1175,7 @@ impl Scalar {
      }
      /* </MODIFIED CODE> */
 
-    
+
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
     ///

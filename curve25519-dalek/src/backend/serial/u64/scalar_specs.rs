@@ -87,6 +87,17 @@ decreases 64 - index
     }
 }
 
+/// Little-endian natural value of an arbitrary-length byte sequence
+pub open spec fn bytes_seq_to_nat(bytes: Seq<u8>) -> nat
+decreases bytes.len()
+{
+    if bytes.len() == 0 {
+        0
+    } else {
+        (bytes[0] as nat) + pow2(8) * bytes_seq_to_nat(bytes.subrange(1, bytes.len() as int))
+    }
+}
+
 // Generic function to convert array of words to natural number
 // Takes: array of words, number of words, bits per word
 // Note: This is a specification function that works with concrete types

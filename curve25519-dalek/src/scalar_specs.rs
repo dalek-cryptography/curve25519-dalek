@@ -23,6 +23,11 @@ decreases 256 - index
     }
 }
 
+pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
+    bytes_to_nat(&s.bytes)
+}
+
+
 /// Returns true iff a and b are multiplicative inverses modulo group_order
 /// i.e., a * b ≡ 1 (mod group_order)
 pub open spec fn is_inverse(a: &Scalar, b: &Scalar) -> bool {
@@ -43,6 +48,20 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
     }
 }
 
+/// Spec function to compute sum of all scalars in a sequence (mod group_order)
+/// Returns the natural number representation
+pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
+    decreases scalars.len()
+{
+    if scalars.len() == 0 {
+        0
+    } else {
+        let last_scalar = scalars[scalars.len() - 1];
+        let rest = scalars.subrange(0, scalars.len() - 1);
+        (sum_of_scalars(rest) + bytes_to_nat(&last_scalar.bytes)) % group_order()
+    }
+}
+
 /// Returns true iff a scalar's byte representation equals the given natural number (mod group_order)
 pub open spec fn scalar_congruent_nat(s: &Scalar, n: nat) -> bool {
     bytes_to_nat(&s.bytes) % group_order() == n % group_order()
@@ -52,6 +71,8 @@ pub open spec fn scalar_congruent_nat(s: &Scalar, n: nat) -> bool {
 pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
     (bytes_to_nat(&s.bytes) * n) % group_order() == 1
 }
+
+
 
 /// Uninterpreted spec function to model randomness
 pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;

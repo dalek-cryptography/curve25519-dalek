@@ -195,25 +195,6 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
                 # Function not found or doesn't have Verus specs
                 results[func_path] = (False, False)
                 print("  Not found or no Verus spec")
-        else:
-            # Fallback: search for the function in all Rust files (old behavior)
-            print("  No specific file link, searching all files...")
-            found = False
-            for rust_file in rust_files:
-                result = parse_function_in_file(rust_file, func_name)
-                if result is not None:
-                    has_spec, has_proof = result
-                    results[func_path] = (has_spec, has_proof)
-                    print(
-                        f"  Found in {rust_file.name}: spec={has_spec}, proof={has_proof}"
-                    )
-                    found = True
-                    break
-
-            if not found:
-                # Function not found or doesn't have Verus specs
-                results[func_path] = (False, False)
-                print("  Not found or no Verus spec")
 
     return results
 

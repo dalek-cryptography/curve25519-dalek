@@ -71,8 +71,7 @@ def parse_function_in_file(
     # Find all occurrences of the function
     matches = list(re.finditer(fn_pattern, content))
 
-    if not matches:
-        return None
+    assert matches
 
     # For each match, check if it has specs
     for match in matches:

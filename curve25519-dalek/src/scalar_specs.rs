@@ -72,8 +72,19 @@ pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
     (bytes_to_nat(&s.bytes) * n) % group_order() == 1
 }
 
-
-
-
+/// Returns true iff a byte array represents a clamped integer for X25519.
+/// A clamped integer has:
+/// - The 3 least significant bits cleared (divisible by 8)
+/// - Bit 255 (MSB) cleared (< 2^255)
+/// - Bit 254 set (>= 2^254)
+/// This creates values in range: 2^254 + 8*{0, 1, 2, ..., 2^251 - 1}
+pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
+    // The 3 least significant bits are cleared (divisible by 8)
+    bytes[0] & 0b0000_0111 == 0
+    // Bit 255 (MSB) is cleared, making it < 2^255
+    && bytes[31] & 0b1000_0000 == 0
+    // Bit 254 is set, so result >= 2^254
+    && bytes[31] & 0b0100_0000 == 0b0100_0000
+}
 
 } // verus!

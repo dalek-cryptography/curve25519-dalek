@@ -162,30 +162,29 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
     Analyze all functions in the CSV and check their Verus status.
 
     Returns:
-        Dict mapping function_path to (has_spec_verus, has_proof_verus)
+        Dict mapping link to (has_spec_verus, has_proof_verus)
     """
     # Read the CSV to get function names
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
-        functions = [(row["function_name"], row) for row in reader]
+        rows = [row for row in reader]
 
     results = {}
 
-    for func_path, row in functions:
-        assert func_path
+    for row in rows:
 
-        func_name = extract_function_name(func_path)
-        print(f"Analyzing: {func_path} -> {func_name}")
+        func_name = row["function_name"]
 
         # Try to get the specific file from the GitHub link first
         github_link = row["link"]
         target_file = extract_file_path_from_link(github_link, src_dir)
+        print(f"Analyzing: {target_file} -> {func_name}")
 
         # Search only in the specific file mentioned in the CSV
         print(f"  Checking specific file: {target_file.name}")
         result = parse_function_in_file(target_file, func_name)
         has_spec, has_proof = result
-        results[func_path] = (has_spec, has_proof)
+        results[row["link"]] = (has_spec, has_proof)
         print(
             f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
         )
@@ -206,9 +205,9 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
 
     # Update rows with results
     for row in rows:
-        func_path = row["function_name"]
-        if func_path in results:
-            has_spec, has_proof = results[func_path]
+        link = row["link"]
+        if link in results:
+            has_spec, has_proof = results[link]
             row["has_spec_verus"] = "yes" if has_spec else ""
             row["has_proof_verus"] = "yes" if has_proof else ""
 

@@ -130,7 +130,7 @@ def parse_function_in_file(
     return None
 
 
-def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
+def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
     """
     Extract the file path from a GitHub link.
 
@@ -181,20 +181,19 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         github_link = row["link"]
         target_file = extract_file_path_from_link(github_link, src_dir)
 
-        if target_file:
-            # Search only in the specific file mentioned in the CSV
-            print(f"  Checking specific file: {target_file.name}")
-            result = parse_function_in_file(target_file, func_name)
-            if result is not None:
-                has_spec, has_proof = result
-                results[func_path] = (has_spec, has_proof)
-                print(
-                    f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
-                )
-            else:
-                # Function not found or doesn't have Verus specs
-                results[func_path] = (False, False)
-                print("  Not found or no Verus spec")
+        # Search only in the specific file mentioned in the CSV
+        print(f"  Checking specific file: {target_file.name}")
+        result = parse_function_in_file(target_file, func_name)
+        if result is not None:
+            has_spec, has_proof = result
+            results[func_path] = (has_spec, has_proof)
+            print(
+                f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
+            )
+        else:
+            # Function not found or doesn't have Verus specs
+            results[func_path] = (False, False)
+            print("  Not found or no Verus spec")
 
     return results
 

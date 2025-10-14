@@ -1077,10 +1077,10 @@ impl Scalar {
     }
 
     #[cfg(feature = "digest")]
-    /// Hash a slice of bytes into a scalar using SHA-512.
+    /// Hash a slice of bytes into a scalar using a specified hash function.
     ///
-    /// This function uses SHA-512 to hash the input and then reduces the result
-    /// modulo the group order to produce a scalar.
+    /// This function hashes the input using the specified `Digest` type and then reduces
+    /// the result modulo the group order to produce a scalar.
     ///
     /// Convenience wrapper around `from_hash`.
     ///
@@ -1089,35 +1089,51 @@ impl Scalar {
     #[cfg_attr(feature = "digest", doc = "```")]
     #[cfg_attr(not(feature = "digest"), doc = "```ignore")]
     /// # use curve25519_dalek::scalar::Scalar;
+    /// use sha2::Sha512;
     /// # fn main() {
     /// let msg = "To really appreciate architecture, you may even need to commit a murder";
-    /// let s = Scalar::hash_from_bytes(msg.as_bytes());
+    /// let s = Scalar::hash_from_bytes::<Sha512>(msg.as_bytes());
     /// # }
     /// ```
-    // VERIFICATION NOTE: PROBLEMS WITH GENERIC DIGESTS (temporary workaround below)
-    /* <ORIGINAL CODE>
-    pub fn hash_from_bytes<D>(input: &[u8]) -> Scalar
+    /* <VERIFICATION NOTE>
+     Marked as external_body to avoid Verus issues with generic Digest types.
+     For Verus verification, use hash_from_bytes_verus instead.
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
+    pub fn hash_from_bytes<D>(input: &[u8]) -> (result: Scalar)
     where
-        D: Digest<OutputSize = U64> + Default,
+        D: digest::Digest<OutputSize = digest::generic_array::typenum::U64> + Default,
+    ensures
+        bytes_to_nat(&result.bytes) < group_order(),
+        result.bytes[31] <= 127,
     {
         let mut hash = D::default();
         hash.update(input);
         Scalar::from_hash(hash)
     }
-    </ORIGINAL CODE> */
-    /* <MODIFIED CODE> */
-    /* <VERIFICATION NOTE>
-     Compute hash directly, avoiding the digest object
-      </VERIFICATION NOTE> */
-    pub fn hash_from_bytes(input: &[u8]) -> (result: Scalar)
+
+    /// Verus-compatible version of hash_from_bytes that uses SHA-512.
+    ///
+    /// This function is designed for Verus verification and directly computes
+    /// a SHA-512 hash. For regular code with generic hash functions, use `hash_from_bytes` instead.
+    ///
+    /// # Inputs
+    ///
+    /// * `input`: a byte slice to hash
+    ///
+    /// # Returns
+    ///
+    /// A scalar reduced modulo the group order
+    pub fn hash_from_bytes_verus(input: &[u8]) -> (result: Scalar)
     ensures
         is_random_bytes(input) ==> is_random_scalar(&result),
+        bytes_to_nat(&result.bytes) < group_order(),
+        result.bytes[31] <= 127,
     {
         use crate::backend::serial::u64::std_assumes as assumes;
         let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
         Scalar::from_hash_verus(hash_bytes)
     }
-    /* </MODIFIED CODE> */
 
     #[cfg(feature = "digest")]
     /// Construct a scalar from a 64-byte (512-bit) hash output.

@@ -681,8 +681,12 @@ impl Neg for Scalar {
     ensures
         (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
-        proof { assume(false); }
-        (&self).neg()
+        assume(false); // PROOF BYPASS because of trait issues 
+        let result = (&self).neg();
+        proof {
+            assume((scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0);
+        }
+        result
     }
     /* <ORIGINAL CODE>
     fn neg(self) -> Scalar {
@@ -2250,10 +2254,12 @@ impl FromUniformBytes<64> for Scalar {
     }
 }
 
+verus ! {
 /// Read one or more u64s stored as little endian bytes.
 ///
 /// ## Panics
 /// Panics if `src.len() != 8 * dst.len()`.
+#[verifier(external_body)]
 fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
     assert!(
         src.len() == 8 * dst.len(),
@@ -2290,12 +2296,14 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
 /// See [here](https://neilmadden.blog/2020/05/28/whats-the-curve25519-clamping-all-about/) for
 /// more details.
 #[must_use]
+#[verifier(external_body)]
 pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
     bytes[0] &= 0b1111_1000;
     bytes[31] &= 0b0111_1111;
     bytes[31] |= 0b0100_0000;
     bytes
 }
+} // verus!
 
 // #[cfg(test)]
 // pub(crate) mod test {

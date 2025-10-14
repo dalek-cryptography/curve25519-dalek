@@ -44,33 +44,33 @@ impl RistrettoPoint {
     }
 
     /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method
-    pub fn lizard_decode<D: Digest>(&self) -> Option<[u8; 16]>
-    where
-        D: Digest<OutputSize = U32>,
-    {
-        let mut result: [u8; 16] = Default::default();
-        let mut h: [u8; 32] = Default::default();
-        let (mask, fes) = self.elligator_ristretto_flavor_inverse();
-        let mut n_found = 0;
-        for (j, fe_j) in fes.iter().enumerate() {
-            let mut ok = Choice::from((mask >> j) & 1);
-            let buf2 = fe_j.as_bytes(); // array
-            h.copy_from_slice(&D::digest(&buf2[8..24])); // array
-            h[8..24].copy_from_slice(&buf2[8..24]);
-            h[0] &= 254;
-            h[31] &= 63;
-            ok &= h.ct_eq(&buf2);
-            for i in 0..16 {
-                result[i] = u8::conditional_select(&result[i], &buf2[8 + i], ok);
-            }
-            n_found += ok.unwrap_u8();
-        }
-        if n_found == 1 {
-            Some(result)
-        } else {
-            None
-        }
-    }
+    // pub fn lizard_decode<D: Digest>(&self) -> Option<[u8; 16]>
+    // where
+    //     D: Digest<OutputSize = U32>,
+    // {
+    //     let mut result: [u8; 16] = Default::default();
+    //     let mut h: [u8; 32] = Default::default();
+    //     let (mask, fes) = self.elligator_ristretto_flavor_inverse();
+    //     let mut n_found = 0;
+    //     for (j, fe_j) in fes.iter().enumerate() {
+    //         let mut ok = Choice::from((mask >> j) & 1);
+    //         let buf2 = fe_j.as_bytes(); // array
+    //         h.copy_from_slice(&D::digest(&buf2[8..24])); // array
+    //         h[8..24].copy_from_slice(&buf2[8..24]);
+    //         h[0] &= 254;
+    //         h[31] &= 63;
+    //         ok &= h.ct_eq(&buf2);
+    //         for i in 0..16 {
+    //             result[i] = u8::conditional_select(&result[i], &buf2[8 + i], ok);
+    //         }
+    //         n_found += ok.unwrap_u8();
+    //     }
+    //     if n_found == 1 {
+    //         Some(result)
+    //     } else {
+    //         None
+    //     }
+    // }
 
     /// Directly encode 253 bits as a RistrettoPoint, using Elligator
     pub fn encode_253_bits(data: &[u8; 32]) -> Option<RistrettoPoint> {

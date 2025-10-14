@@ -1646,8 +1646,16 @@ impl Scalar {
         requires
             2 <= w <= 8,
         ensures
-            true
-            // TODO
+            // Each nonzero NAF digit is odd and bounded by |digit| < 2^(w-1)
+            forall|i: int| 0 <= i < 256 ==> {
+                let digit = #[trigger] result[i];
+                let bound = (1i8 << ((w as i8) - 1));
+                (digit == 0 || (digit % 2 != 0 && -bound <= digit && digit < bound))
+            },
+            // The NAF representation has at most 256 digits (top bit of scalar is 0)
+            self.bytes[31] <= 127,
+            // TODO: Add property that at most one of any w consecutive coefficients is nonzero
+            // TODO: Add property that reconstructing from NAF equals the original scalar
         {
             // required by the NAF definition
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
@@ -1938,8 +1946,15 @@ impl Scalar {
     }
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
-    fn is_canonical(&self) -> Choice {
-        self.ct_eq(&self.reduce())
+    fn is_canonical(&self) -> (result: Choice)
+        ensures
+            // Result is true iff the scalar is in canonical form (< group_order and high bit clear)
+            choice_is_true(result) == (bytes_to_nat(&self.bytes) < group_order() && self.bytes[31] <= 127),
+    {
+        let result = self.ct_eq(&self.reduce());
+        // TODO: Prove the postcondition from ct_eq and reduce specs
+        assume(choice_is_true(result) == (bytes_to_nat(&self.bytes) < group_order() && self.bytes[31] <= 127));
+        result
     }
     } // verus!
 }

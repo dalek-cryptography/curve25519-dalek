@@ -129,6 +129,28 @@ def parse_function_in_file(
     return None
 
 
+def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
+    """
+    Extract the file path from a GitHub link.
+    
+    Example:
+      https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L232
+      -> src_dir/window.rs
+    """
+    if not link:
+        return None
+    
+    # Extract path after /src/
+    match = re.search(r'/src/([^#]+)', link)
+    if match:
+        relative_path = match.group(1)
+        file_path = src_dir / relative_path
+        if file_path.exists():
+            return file_path
+    
+    return None
+
+
 def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
     """
     Analyze all functions in the CSV and check their Verus status.
@@ -141,7 +163,7 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         reader = csv.DictReader(f)
         functions = [(row["function_name"], row) for row in reader]
 
-    # Find all Rust files
+    # Find all Rust files (as fallback)
     rust_files = find_rust_files(src_dir)
     print(f"Found {len(rust_files)} Rust source files")
 
@@ -154,23 +176,41 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         func_name = extract_function_name(func_path)
         print(f"Analyzing: {func_path} -> {func_name}")
 
-        # Search for the function in all Rust files
-        found = False
-        for rust_file in rust_files:
-            result = parse_function_in_file(rust_file, func_name)
+        # Try to get the specific file from the GitHub link first
+        github_link = row.get("link", "")
+        target_file = extract_file_path_from_link(github_link, src_dir)
+        
+        if target_file:
+            # Search only in the specific file mentioned in the CSV
+            print(f"  Checking specific file: {target_file.name}")
+            result = parse_function_in_file(target_file, func_name)
             if result is not None:
                 has_spec, has_proof = result
                 results[func_path] = (has_spec, has_proof)
-                print(
-                    f"  Found in {rust_file.name}: spec={has_spec}, proof={has_proof}"
-                )
-                found = True
-                break
+                print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}")
+            else:
+                # Function not found or doesn't have Verus specs
+                results[func_path] = (False, False)
+                print("  Not found or no Verus spec")
+        else:
+            # Fallback: search for the function in all Rust files (old behavior)
+            print("  No specific file link, searching all files...")
+            found = False
+            for rust_file in rust_files:
+                result = parse_function_in_file(rust_file, func_name)
+                if result is not None:
+                    has_spec, has_proof = result
+                    results[func_path] = (has_spec, has_proof)
+                    print(
+                        f"  Found in {rust_file.name}: spec={has_spec}, proof={has_proof}"
+                    )
+                    found = True
+                    break
 
-        if not found:
-            # Function not found or doesn't have Verus specs
-            results[func_path] = (False, False)
-            print("  Not found or no Verus spec")
+            if not found:
+                # Function not found or doesn't have Verus specs
+                results[func_path] = (False, False)
+                print("  Not found or no Verus spec")
 
     return results
 

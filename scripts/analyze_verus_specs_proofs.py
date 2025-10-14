@@ -142,15 +142,15 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
     assert link
 
     # Extract path after /src/
-    match = re.search(r"/src/([^#]+)", link)
-    if match:
-        relative_path = match.group(1)
+    match = re.search(r"/blob/([^/]+)/([^#]+)", link)
 
-        file_path = src_dir / relative_path
-        if file_path.exists():
-            return file_path
+    assert match, link
+    relative_path = match.group(2)
 
-    return None
+    file_path = src_dir / relative_path
+    assert file_path.exists()
+    return file_path
+
 
 
 def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
@@ -281,7 +281,7 @@ def main():
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent  # Go up one level from scripts/ to repo root
     outputs_dir = repo_root / "outputs"
-    src_dir = repo_root / "curve25519-dalek" / "src"
+    src_dir = repo_root
 
     # Determine CSV path
     if args.csv_path:

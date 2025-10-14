@@ -1267,8 +1267,23 @@ impl Scalar {
     /// let should_be_one: Scalar = &inv_X * &X;
     /// assert!(should_be_one == Scalar::ONE);
     /// ```
-    pub fn invert(&self) -> Scalar {
-        self.unpack().invert().pack()
+    // VERIFICATION NOTE: VERIFIED
+    pub fn invert(&self) -> (result: Scalar)
+        ensures
+            // Result is the multiplicative inverse: result * self ≡ 1 (mod group_order)
+            (scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1,
+            // VERIFICATION NOTE: is this true and/or necessary?
+            // Result is canonical
+            // scalar_to_nat(&result) < group_order(),
+            // result.bytes[31] <= 127,
+    {
+        let unpacked = self.unpack();
+        let inv_unpacked = unpacked.invert();
+        let result = inv_unpacked.pack();
+        assert((scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1);
+       // assume(scalar_to_nat(&result) < group_order());
+       // assume(result.bytes[31] <= 127);
+        result
     }
     /// Given a slice of nonzero (possibly secret) `Scalar`s,
     /// compute their inverses in a batch.
@@ -1922,7 +1937,7 @@ impl Scalar {
 
     /// Reduce this `Scalar` modulo \\(\ell\\).
     #[allow(non_snake_case)]
-    // VERIFICATION NOTE: has assumes
+    // VERIFICATION NOTE: PROOF BYPASS
     fn reduce(&self) -> (result: Scalar)
     ensures
         // Result is equivalent to input modulo the group order
@@ -1946,6 +1961,7 @@ impl Scalar {
     }
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
     /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
+    // VERIFICATION NOTE: PROOF BYPASS
     fn is_canonical(&self) -> (result: Choice)
         ensures
             // Result is true iff the scalar is in canonical form (< group_order and high bit clear)

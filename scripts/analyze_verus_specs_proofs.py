@@ -132,22 +132,22 @@ def parse_function_in_file(
 def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
     """
     Extract the file path from a GitHub link.
-    
+
     Example:
       https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L232
       -> src_dir/window.rs
     """
     if not link:
         return None
-    
+
     # Extract path after /src/
-    match = re.search(r'/src/([^#]+)', link)
+    match = re.search(r"/src/([^#]+)", link)
     if match:
         relative_path = match.group(1)
         file_path = src_dir / relative_path
         if file_path.exists():
             return file_path
-    
+
     return None
 
 
@@ -179,7 +179,7 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         # Try to get the specific file from the GitHub link first
         github_link = row.get("link", "")
         target_file = extract_file_path_from_link(github_link, src_dir)
-        
+
         if target_file:
             # Search only in the specific file mentioned in the CSV
             print(f"  Checking specific file: {target_file.name}")
@@ -187,7 +187,9 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
             if result is not None:
                 has_spec, has_proof = result
                 results[func_path] = (has_spec, has_proof)
-                print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}")
+                print(
+                    f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
+                )
             else:
                 # Function not found or doesn't have Verus specs
                 results[func_path] = (False, False)

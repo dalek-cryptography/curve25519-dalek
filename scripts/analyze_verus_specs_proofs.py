@@ -4,6 +4,7 @@ Analyze Verus specs and proofs in curve25519-dalek source code.
 Updates the CSV to mark which functions have Verus specs and/or proofs.
 """
 
+import argparse
 import csv
 import re
 from pathlib import Path
@@ -266,28 +267,41 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
 
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Analyze Verus specs and proofs in curve25519-dalek functions"
+    )
+    parser.add_argument(
+        "--csv",
+        type=str,
+        default="curve25519_functions.csv",
+        help="CSV file name (default: curve25519_functions.csv)",
+    )
+    parser.add_argument(
+        "--csv-path",
+        type=str,
+        help="Full path to CSV file (overrides --csv)",
+    )
+    args = parser.parse_args()
+
     # Set up paths
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent  # Go up one level from scripts/ to repo root
     outputs_dir = repo_root / "outputs"
     src_dir = repo_root / "curve25519-dalek" / "src"
 
-    if not outputs_dir.exists():
-        print(f"Error: Outputs directory not found at {outputs_dir}")
-        return
-
-    # Find CSV file in outputs directory
-    csv_files = list(outputs_dir.glob("*.csv"))
-    if not csv_files:
-        print(f"Error: No CSV file found in {outputs_dir}")
-        return
-
-    if len(csv_files) > 1:
-        print(
-            f"Warning: Multiple CSV files found, using the first one: {csv_files[0].name}"
-        )
-
-    csv_path = csv_files[0]
+    # Determine CSV path
+    if args.csv_path:
+        csv_path = Path(args.csv_path)
+        if not csv_path.exists():
+            print(f"Error: CSV file not found at {csv_path}")
+            return
+    else:
+        csv_path = outputs_dir / args.csv
+        if not csv_path.exists():
+            print(f"Error: CSV file not found at {csv_path}")
+            print(f"Looked for: {args.csv} in {outputs_dir}")
+            return
 
     if not src_dir.exists():
         print(f"Error: Source directory not found at {src_dir}")

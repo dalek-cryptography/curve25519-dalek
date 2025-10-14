@@ -58,12 +58,8 @@ def parse_function_in_file(
         - has_spec: True if function has requires or ensures clauses
         - has_proof: True if has_spec and no assume in body
     """
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception as e:
-        print(f"Error reading {file_path}: {e}")
-        return None
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = f.read()
 
     # Pattern to match function definitions
     # Matches: fn function_name, pub fn function_name, pub const fn function_name, etc.

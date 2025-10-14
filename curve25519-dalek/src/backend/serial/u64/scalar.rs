@@ -287,14 +287,7 @@ impl Scalar52 {
         assert(group_order() > to_nat(&sum.limbs) - group_order() >= -group_order());
         proof{lemma_l_equals_group_order();}
         proof{lemma_mod_sub_multiples_vanish(to_nat(&sum.limbs) as int, group_order() as int);}
-        let result = Scalar52::sub(&sum, &constants::L);
-        proof {
-            // TODO: The lemmas should prove this, but Verus is having trouble
-            assume(to_nat(&result.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order());
-            assume(limbs_bounded(&result));
-            assume(to_nat(&result.limbs) < group_order());
-        }
-        result
+        Scalar52::sub(&sum, &constants::L)
 
     }
 

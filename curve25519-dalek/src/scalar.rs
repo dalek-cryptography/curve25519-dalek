@@ -2325,26 +2325,26 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
         result[31] & 0b0011_1111 == bytes[31] & 0b0011_1111,
 {
     let mut result = bytes;
-    
+
     // Clear low 3 bits: result[0] = bytes[0] & 0b1111_1000
     result[0] &= 0b1111_1000;
-    
+
     // Clear bit 7 (MSB): result[31] = result[31] & 0b0111_1111
     let old_byte_31 = result[31];
     result[31] &= 0b0111_1111;
-    
+
     // Set bit 6: result[31] = result[31] | 0b0100_0000
     result[31] |= 0b0100_0000;
-    
+
     proof {
         // The bitwise operations above produce a clamped integer
         assume(is_clamped_integer(&result));
         // Bits 3-7 of byte 0 are preserved
         assume(result[0] & 0b1111_1000 == bytes[0] & 0b1111_1000);
-        // Bits 0-5 of byte 31 are preserved  
+        // Bits 0-5 of byte 31 are preserved
         assume(result[31] & 0b0011_1111 == bytes[31] & 0b0011_1111);
     }
-    
+
     result
 }
 } // verus!

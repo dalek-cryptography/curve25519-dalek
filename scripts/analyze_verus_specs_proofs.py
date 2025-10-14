@@ -55,7 +55,7 @@ def find_rust_files(src_dir: Path) -> List[Path]:
 
 def parse_function_in_file(
     file_path: Path, function_name: str
-) -> Optional[Tuple[bool, bool]]:
+) -> Tuple[bool, bool]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
@@ -128,7 +128,9 @@ def parse_function_in_file(
 
         return (has_spec, has_proof)
 
-    return None
+    # Probably what's happened is that we saw the function, but
+    # it doesn't have a spec yet
+    return (False, False)
 
 
 def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
@@ -185,16 +187,11 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         # Search only in the specific file mentioned in the CSV
         print(f"  Checking specific file: {target_file.name}")
         result = parse_function_in_file(target_file, func_name)
-        if result is not None:
-            has_spec, has_proof = result
-            results[func_path] = (has_spec, has_proof)
-            print(
-                f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
-            )
-        else:
-            # Function not found or doesn't have Verus specs
-            results[func_path] = (False, False)
-            print("  Not found or no Verus spec")
+        has_spec, has_proof = result
+        results[func_path] = (has_spec, has_proof)
+        print(
+            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
+        )
 
     return results
 

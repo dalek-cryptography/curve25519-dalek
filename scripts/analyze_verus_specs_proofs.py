@@ -136,6 +136,8 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
     Example:
       https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L232
       -> src_dir/window.rs
+
+    Special case: field.rs -> field_verus.rs (Verus work done separately)
     """
     if not link:
         return None
@@ -144,6 +146,11 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
     match = re.search(r"/src/([^#]+)", link)
     if match:
         relative_path = match.group(1)
+
+        # Special case: look in field_verus.rs instead of backend/serial/u64/field.rs
+        if "backend/serial/u64/field.rs" in relative_path:
+            relative_path = relative_path.replace("field.rs", "field_verus.rs")
+
         file_path = src_dir / relative_path
         if file_path.exists():
             return file_path

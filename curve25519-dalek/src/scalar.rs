@@ -221,9 +221,9 @@ pub struct Scalar {
 // This is a dummy function that we call from signal
 // to test that verus functions in libsignal know
 // about verus functions in curve-dalek
-pub open spec fn is_a_scalar(s: Scalar) -> bool {
-   true
-}
+// pub open spec fn is_a_scalar(s: Scalar) -> bool {
+//    true
+// }
 
 impl Scalar {
     /// Construct a `Scalar` by reducing a 256-bit little-endian integer

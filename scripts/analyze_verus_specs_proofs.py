@@ -50,11 +50,6 @@ def extract_function_name(function_path: str) -> str:
     return name_part.strip()
 
 
-@beartype
-def find_rust_files(src_dir: Path) -> List[Path]:
-    """Find all Rust source files in the directory."""
-    return list(src_dir.rglob("*.rs"))
-
 
 @beartype
 def parse_function_in_file(
@@ -173,10 +168,6 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
         functions = [(row["function_name"], row) for row in reader]
-
-    # Find all Rust files (as fallback)
-    rust_files = find_rust_files(src_dir)
-    print(f"Found {len(rust_files)} Rust source files")
 
     results = {}
 

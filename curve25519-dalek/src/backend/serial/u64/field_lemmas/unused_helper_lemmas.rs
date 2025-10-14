@@ -238,6 +238,21 @@ pub proof fn lemma_as_nat_bound_from_limbs(limbs: [u64; 5])
     // limb bounds alone and must come from the calling context.
 }
 
+pub open spec fn as_nat_32_u8_rec(limbs: [u8; 32]) -> nat {
+    as_nat_32_u8_rec_aux(&limbs, 0)
+}
+
+
+pub open spec fn as_nat_32_u8_rec_aux(limbs: &[u8; 32], index: nat) -> nat
+decreases 32 - index
+{
+    if index >= 32 {
+        0
+    } else {
+        (limbs[index as int] as nat) * pow2(index * 8) + as_nat_32_u8_rec_aux(limbs, index + 1)
+    }
+}
+
 /// Proves that the recursive and non-recursive definitions are equivalent
 ///
 /// Status: UNUSED - Contains assume(false) and is never called.
@@ -245,7 +260,7 @@ pub proof fn lemma_as_nat_bound_from_limbs(limbs: [u64; 5])
 /// but was never completed or needed in the actual proofs.
 pub proof fn lemma_as_nat_32_u8_equivalence(limbs: [u8; 32])
     ensures
-        as_nat_32_u8(limbs) == as_nat_32_u8_nonrec(limbs)
+        as_nat_32_u8(limbs) == as_nat_32_u8_rec(limbs)
 {
     assume(false); // TODO: prove this by induction
 }

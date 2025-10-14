@@ -237,6 +237,41 @@ pub proof fn lemma_mod_of_less_than_divisor(x: int, d: int)
     assert(x == x % d);
 }
 
+
+/// Helper lemma: Division with strict upper bound
+/// If x < a * b and a > 0, then x / a < b
+pub proof fn lemma_div_strictly_bounded(x: int, a: int, b: int)
+    requires
+        a > 0,
+        b >= 0,
+        x < a * b,
+    ensures
+        x / a < b,
+{
+   // (b * a) / a == b
+   lemma_div_by_multiple(b, a);
+   // x < b * a && a > 0 => x / a < (b * a) / a
+   lemma_div_by_multiple_is_strongly_ordered(x, a * b, b, a);
+}
+
+/// Helper: Division bounds - if x < 2^b then x/2^a < 2^(b-a)
+pub proof fn lemma_div_bound(x: nat, a: nat, b: nat)
+    requires
+        a <= b,
+        x < pow2(b),
+    ensures
+        x / pow2(a) < pow2((b - a) as nat),
+{
+    // Key insight: 2^b / 2^a = 2^(b-a)
+    // Since x < 2^b, we have x / 2^a < 2^b / 2^a = 2^(b-a)
+    
+    lemma_pow2_adds(a, (b - a) as nat);
+    assert(pow2(b) == pow2(a) * pow2((b - a) as nat));
+    
+    // Use division properties
+    lemma_div_strictly_bounded(x as int, pow2(a) as int, pow2((b - a) as nat) as int);
+    assert(x / pow2(a) < pow2((b - a) as nat));
+}
 fn main() {}
 
 }

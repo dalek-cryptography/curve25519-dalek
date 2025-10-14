@@ -11,10 +11,10 @@ use digest::Digest;
 verus! {
 
 // Build a Seq<u8> from fixed arrays (for specs)
-pub open spec fn seq_from2(b: &[u8; 2]) -> Seq<u8> { seq![b[0], b[1]] }
-pub open spec fn seq_from4(b: &[u8; 4]) -> Seq<u8> { seq![b[0], b[1], b[2], b[3]] }
-pub open spec fn seq_from8(b: &[u8; 8]) -> Seq<u8> { seq![b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]] }
-pub open spec fn seq_from16(b: &[u8; 16]) -> Seq<u8> { seq![b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]] }
+pub open spec fn seq_from2(b: &[u8; 2]) -> Seq<u8> { Seq::new(2, |i: int| b[i]) }
+pub open spec fn seq_from4(b: &[u8; 4]) -> Seq<u8> { Seq::new(4, |i: int| b[i]) }
+pub open spec fn seq_from8(b: &[u8; 8]) -> Seq<u8> { Seq::new(8, |i: int| b[i]) }
+pub open spec fn seq_from16(b: &[u8; 16]) -> Seq<u8> { Seq::new(16, |i: int| b[i]) }
 
 #[verifier::external_body]
 pub fn u16_to_le_bytes(x: u16) -> (bytes: [u8; 2])

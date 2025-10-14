@@ -30,6 +30,9 @@ def parse_function_in_file(
         Tuple[bool, bool]: (has_spec, has_proof) or None if function not found
         - has_spec: True if function has requires or ensures clauses
         - has_proof: True if has_spec and no assume in body
+
+    TODO: Uncertain if this does the right thing if there are two functions with
+    the same name in the same file
     """
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()

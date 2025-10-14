@@ -15,8 +15,10 @@ import csv
 import re
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
+from beartype import beartype
 
 
+@beartype
 def extract_function_name(function_path: str) -> str:
     """
     Extract the actual function name from the CSV function_path format.
@@ -48,11 +50,13 @@ def extract_function_name(function_path: str) -> str:
     return name_part.strip()
 
 
+@beartype
 def find_rust_files(src_dir: Path) -> List[Path]:
     """Find all Rust source files in the directory."""
     return list(src_dir.rglob("*.rs"))
 
 
+@beartype
 def parse_function_in_file(
     file_path: Path, function_name: str
 ) -> Tuple[bool, bool]:
@@ -133,6 +137,7 @@ def parse_function_in_file(
     return (False, False)
 
 
+@beartype
 def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
     """
     Extract the file path from a GitHub link.
@@ -156,6 +161,7 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 
 
 
+@beartype
 def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
     """
     Analyze all functions in the CSV and check their Verus status.
@@ -196,6 +202,7 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
     return results
 
 
+@beartype
 def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
     """Update the CSV file with Verus analysis results."""
     # Read the CSV
@@ -237,6 +244,7 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
     )
 
 
+@beartype
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(

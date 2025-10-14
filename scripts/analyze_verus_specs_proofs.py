@@ -4,6 +4,7 @@ Analyze Verus specs and proofs in curve25519-dalek source code.
 Updates the CSV to mark which functions have Verus specs and/or proofs.
 """
 
+import argparse
 import csv
 import re
 from pathlib import Path
@@ -129,6 +130,35 @@ def parse_function_in_file(
     return None
 
 
+def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
+    """
+    Extract the file path from a GitHub link.
+
+    Example:
+      https://github.com/dalek-cryptography/curve25519-dalek/tree/curve25519-4.1.3/curve25519-dalek/src/window.rs#L232
+      -> src_dir/window.rs
+
+    Special case: field.rs -> field_verus.rs (Verus work done separately)
+    """
+    if not link:
+        return None
+
+    # Extract path after /src/
+    match = re.search(r"/src/([^#]+)", link)
+    if match:
+        relative_path = match.group(1)
+
+        # Special case: look in field_verus.rs instead of backend/serial/u64/field.rs
+        if "backend/serial/u64/field.rs" in relative_path:
+            relative_path = relative_path.replace("field.rs", "field_verus.rs")
+
+        file_path = src_dir / relative_path
+        if file_path.exists():
+            return file_path
+
+    return None
+
+
 def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
     """
     Analyze all functions in the CSV and check their Verus status.
@@ -141,7 +171,7 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         reader = csv.DictReader(f)
         functions = [(row["function_name"], row) for row in reader]
 
-    # Find all Rust files
+    # Find all Rust files (as fallback)
     rust_files = find_rust_files(src_dir)
     print(f"Found {len(rust_files)} Rust source files")
 
@@ -154,23 +184,43 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         func_name = extract_function_name(func_path)
         print(f"Analyzing: {func_path} -> {func_name}")
 
-        # Search for the function in all Rust files
-        found = False
-        for rust_file in rust_files:
-            result = parse_function_in_file(rust_file, func_name)
+        # Try to get the specific file from the GitHub link first
+        github_link = row.get("link", "")
+        target_file = extract_file_path_from_link(github_link, src_dir)
+
+        if target_file:
+            # Search only in the specific file mentioned in the CSV
+            print(f"  Checking specific file: {target_file.name}")
+            result = parse_function_in_file(target_file, func_name)
             if result is not None:
                 has_spec, has_proof = result
                 results[func_path] = (has_spec, has_proof)
                 print(
-                    f"  Found in {rust_file.name}: spec={has_spec}, proof={has_proof}"
+                    f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
                 )
-                found = True
-                break
+            else:
+                # Function not found or doesn't have Verus specs
+                results[func_path] = (False, False)
+                print("  Not found or no Verus spec")
+        else:
+            # Fallback: search for the function in all Rust files (old behavior)
+            print("  No specific file link, searching all files...")
+            found = False
+            for rust_file in rust_files:
+                result = parse_function_in_file(rust_file, func_name)
+                if result is not None:
+                    has_spec, has_proof = result
+                    results[func_path] = (has_spec, has_proof)
+                    print(
+                        f"  Found in {rust_file.name}: spec={has_spec}, proof={has_proof}"
+                    )
+                    found = True
+                    break
 
-        if not found:
-            # Function not found or doesn't have Verus specs
-            results[func_path] = (False, False)
-            print("  Not found or no Verus spec")
+            if not found:
+                # Function not found or doesn't have Verus specs
+                results[func_path] = (False, False)
+                print("  Not found or no Verus spec")
 
     return results
 
@@ -217,28 +267,41 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
 
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Analyze Verus specs and proofs in curve25519-dalek functions"
+    )
+    parser.add_argument(
+        "--csv",
+        type=str,
+        default="curve25519_functions.csv",
+        help="CSV file name (default: curve25519_functions.csv)",
+    )
+    parser.add_argument(
+        "--csv-path",
+        type=str,
+        help="Full path to CSV file (overrides --csv)",
+    )
+    args = parser.parse_args()
+
     # Set up paths
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent  # Go up one level from scripts/ to repo root
     outputs_dir = repo_root / "outputs"
     src_dir = repo_root / "curve25519-dalek" / "src"
 
-    if not outputs_dir.exists():
-        print(f"Error: Outputs directory not found at {outputs_dir}")
-        return
-
-    # Find CSV file in outputs directory
-    csv_files = list(outputs_dir.glob("*.csv"))
-    if not csv_files:
-        print(f"Error: No CSV file found in {outputs_dir}")
-        return
-
-    if len(csv_files) > 1:
-        print(
-            f"Warning: Multiple CSV files found, using the first one: {csv_files[0].name}"
-        )
-
-    csv_path = csv_files[0]
+    # Determine CSV path
+    if args.csv_path:
+        csv_path = Path(args.csv_path)
+        if not csv_path.exists():
+            print(f"Error: CSV file not found at {csv_path}")
+            return
+    else:
+        csv_path = outputs_dir / args.csv
+        if not csv_path.exists():
+            print(f"Error: CSV file not found at {csv_path}")
+            print(f"Looked for: {args.csv} in {outputs_dir}")
+            return
 
     if not src_dir.exists():
         print(f"Error: Source directory not found at {src_dir}")

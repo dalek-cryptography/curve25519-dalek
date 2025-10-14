@@ -16,18 +16,6 @@ use super::field_core::*;
 
 verus! {
 
-
-pub proof fn bit_or_is_plus(a: u64, b: u64, k: u64)
-    by (bit_vector)
-    requires
-        b <= (u64::MAX >> k),
-        a < 1u64 << k,
-
-    ensures
-        a | (b << k) == a + (b << k)
-{
-}
-
 pub open spec fn load8_at_or_version_rec(input: &[u8], i: usize, k: nat) -> u64
     decreases k
 {
@@ -473,21 +461,17 @@ pub proof fn load8_lemma(a: nat, b: u8, j: nat, k: nat)
     }
 }
 
-pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s64: u64)
+pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s: nat)
     requires
         i + 7 < input.len(),
         0 < k <= 7,
-        s64 < 64
+        s < 64
     ensures
-        load8_at_plus_version_rec(input, i, k) >> s64
+        load8_at_plus_version_rec(input, i, k) / (pow2(s) as u64)
         ==
-        load8_at_plus_version_rec(input, i, (k - 1) as nat) / (pow2(s64 as nat) as u64) +
-        (pow2(k * 8) * input[i + k]) as u64 / (pow2(s64 as nat) as u64)
-    decreases k
+        load8_at_plus_version_rec(input, i, (k - 1) as nat) / (pow2(s) as u64) +
+        (pow2(k * 8) * input[i + k]) as u64 / (pow2(s) as u64)
 {
-
-    let s = s64 as nat;
-
     assert(pow2(s) <= u64::MAX) by {
         pow2_le_max64(s);
     }
@@ -497,14 +481,7 @@ pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s64: u64)
     }
 
     assert(pow2(k * 8) <= u64::MAX) by {
-        assert(pow2(k * 8) <= pow2(56)) by {
-            if (k < 7){
-                lemma_pow2_strictly_increases(k * 8, 56);
-            }
-        }
-        assert(pow2(56) <= u64::MAX) by {
-            lemma2_to64_rest();
-        }
+        pow2_le_max64(k * 8);
     }
 
     let p64 = pow2(s) as u64;
@@ -522,31 +499,15 @@ pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s64: u64)
         reveal_with_fuel(load8_at_plus_version_rec, 1);
     }
 
-    assert(xk >> s64 == xk / p64) by {
-        assert( xk >> s64 == xk as nat / pow2(s) ) by {
-            lemma_u64_shr_is_div(xk, s64);
-        }
-        // the conversion follows from pow2(s) > 0
-    }
-
     assert(v * pow2(k * 8) <= u64::MAX) by {
-            assert(v <= 0xFF);
-            assert(pow2(k * 8) <= 0x100000000000000) by {
-                lemma2_to64_rest(); // pow2(56)
-                if (k < 7){
-                    lemma_pow2_strictly_increases(8 * k, 56);
-                }
-            }
-            mul_le(v as nat, 0xFF, pow2(k * 8), 0x100000000000000);
-            assert(0xFF * 0x100000000000000 <= u64::MAX) by (compute);
-        }
+        u8_times_pow2_fits_u64(v, k * 8);
+    }
 
     assert(((v as u64) << k * 8) == pow2(k * 8) * v) by {
         lemma_u64_shl_is_mul(v as u64, (k * 8) as u64);
     }
-
     assert(
-        xk >> s64
+        xk / p64
         ==
         (xk_1 + pow2(k * 8) * v) as u64 / p64
     );
@@ -732,13 +693,102 @@ pub proof fn load8_plus_ver_shifted(input: &[u8], i: usize, k: nat, s64: u64)
             p64 as nat
         );
     }
-
-
-
 }
 
+pub proof fn load8_shifted(input: &[u8], i: usize, k: nat, s64: u64)
+    requires
+        i + 7 < input.len(),
+        s64 < 64
+    ensures
+        load8_at_spec(input,  i) as u64 >> s64
+        ==
+        (pow2(0 * 8) * input[i + 0]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(1 * 8) * input[i + 1]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(2 * 8) * input[i + 2]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(3 * 8) * input[i + 3]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(4 * 8) * input[i + 4]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(5 * 8) * input[i + 5]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(6 * 8) * input[i + 6]) as u64 / (pow2(s64 as nat) as u64) +
+        (pow2(7 * 8) * input[i + 7]) as u64 / (pow2(s64 as nat) as u64)
 
+{
+    let x = load8_at_spec(input,  i) as u64;
+    let y = load8_at_plus_version_rec(input, i, 7);
+    let s = s64 as nat;
+    let p64 = pow2(s) as u64;
 
+    assert(pow2(s) <= u64::MAX) by {
+        pow2_le_max64(s);
+    }
+
+    assert(x >> s64 == x / p64) by {
+        assert( x >> s64 == x as nat / pow2(s) ) by {
+            lemma_u64_shr_is_div(x, s64);
+        }
+        lemma_pow2_pos(s);
+    }
+
+    assert( x == y ) by {
+        plus_version_is_spec(input, i);
+    }
+
+    assert forall |j: nat| j <= 7 implies
+        #[trigger]
+        pow2(j * 8) * input[i + j] <= u64::MAX
+        by {
+            assert(pow2(j * 8) * input[i + j] == input[i + j] * pow2(j * 8));
+            u8_times_pow2_fits_u64(input[i + j], j * 8);
+    }
+
+    assert(
+        y / p64
+        ==
+        (pow2(0 * 8) * input[i + 0]) as u64 / p64 +
+        (pow2(1 * 8) * input[i + 1]) as u64 / p64 +
+        (pow2(2 * 8) * input[i + 2]) as u64 / p64 +
+        (pow2(3 * 8) * input[i + 3]) as u64 / p64 +
+        (pow2(4 * 8) * input[i + 4]) as u64 / p64 +
+        (pow2(5 * 8) * input[i + 5]) as u64 / p64 +
+        (pow2(6 * 8) * input[i + 6]) as u64 / p64 +
+        (pow2(7 * 8) * input[i + 7]) as u64 / p64
+    ) by {
+        load8_plus_ver_shifted(input, i, 7, s);
+        load8_plus_ver_shifted(input, i, 6, s);
+        load8_plus_ver_shifted(input, i, 5, s);
+        load8_plus_ver_shifted(input, i, 4, s);
+        load8_plus_ver_shifted(input, i, 3, s);
+        load8_plus_ver_shifted(input, i, 2, s);
+        load8_plus_ver_shifted(input, i, 1, s);
+
+        assert(load8_at_plus_version_rec(input, i, 0) == (pow2(0 * 8) * input[i + 0]) as u64) by {
+            assert(load8_at_plus_version_rec(input, i, 0) == (input[i as int] as u64));
+            assert(pow2(0 * 8) == 1) by {
+                lemma2_to64();
+            }
+            assert((pow2(0 * 8) * input[i + 0]) as u64 == (input[i as int] as u64)) by {
+                lemma_mul_basics_4(input[i as int] as int); // 1 * x = x
+            }
+        }
+
+    }
+}
+
+// pub proof fn load8_limb0(input: &[u8], i: usize, k: nat, s64: u64)
+//     requires
+//         i + 7 < input.len(),
+//         s64 < 64
+//     ensures
+//         (load8_at_spec(input,  0) as u64) & mask51
+//         ==
+//         (pow2(0 * 8) * input[0]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(1 * 8) * input[1]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(2 * 8) * input[2]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(3 * 8) * input[3]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(4 * 8) * input[4]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(5 * 8) * input[5]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(6 * 8) * input[6]) as u64 / (pow2(s64 as nat) as u64) +
+//         (pow2(7 * 8) * input[7]) as u64 / (pow2(s64 as nat) as u64)
+// {}
 
 fn main() {}
 

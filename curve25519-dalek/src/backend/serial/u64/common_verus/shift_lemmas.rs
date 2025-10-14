@@ -266,6 +266,46 @@ pub proof fn lemma_u64_max_shifting(k:nat)
     }
 }
 
+pub proof fn left_right_shift(v: u64, sl: u64, sr: u64)
+    requires
+        sr <= sl < 64,
+        v * pow2(sl as nat) <= u64::MAX
+    ensures
+        (v << sl) >> sr == v << (sl - sr)
+{
+    let d = (sl - sr) as nat;
+
+    assert(v << sl == v * pow2(sl as nat)) by {
+        lemma_u64_shl_is_mul(v, sl);
+    }
+
+    assert(pow2(sl as nat) == pow2(d) * pow2(sr as nat)) by {
+        lemma_pow2_adds(d, sr as nat);
+    }
+
+    let w = (v * pow2(sl as nat)) as nat;
+
+    assert(w as u64 >> sr == w / pow2(sr as nat)) by {
+        lemma_u64_shr_is_div(w as u64, sr);
+    }
+
+    assert(w ==  pow2(sr as nat) * (v * pow2(d))) by {
+        lemma_mul_is_associative(v as int, pow2(d) as int, pow2(sr as nat) as int);
+    }
+
+    assert(pow2(sr as nat) > 0) by {
+        lemma_pow2_pos(sr as nat);
+    }
+
+    assert( w / pow2(sr as nat) == v * pow2(d) ) by {
+        lemma_div_multiples_vanish((v * pow2(d)) as int, pow2(sr as nat) as int);
+    }
+
+    assert(v * pow2(d) == v << (d as u64)) by {
+        lemma_u64_shl_is_mul(v, d as u64);
+    }
+}
+
 // Corollary of lemma_u64_max_shifting, since for any
 // v: u64 it holds that v <= u64::MAX and >> preserves [<=]
 pub proof fn shifted_lt(v: u64, k: nat)

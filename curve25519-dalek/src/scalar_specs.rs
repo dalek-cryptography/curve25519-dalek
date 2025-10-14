@@ -42,9 +42,7 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
     if scalars.len() == 0 {
         1
     } else {
-        let last_scalar = scalars[scalars.len() - 1];
-        let rest = scalars.subrange(0, scalars.len() - 1);
-        (product_of_scalars(rest) * bytes_to_nat(&last_scalar.bytes)) % group_order()
+        (product_of_scalars(scalars.skip(1)) * bytes_to_nat(&scalars[0].bytes)) % group_order()
     }
 }
 
@@ -56,9 +54,7 @@ pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
     if scalars.len() == 0 {
         0
     } else {
-        let last_scalar = scalars[scalars.len() - 1];
-        let rest = scalars.subrange(0, scalars.len() - 1);
-        (sum_of_scalars(rest) + bytes_to_nat(&last_scalar.bytes)) % group_order()
+        (sum_of_scalars(scalars.skip(1)) + bytes_to_nat(&scalars[0].bytes)) % group_order()
     }
 }
 

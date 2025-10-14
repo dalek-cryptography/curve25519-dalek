@@ -64,7 +64,7 @@ pub fn fill_bytes<R: RngCore>(rng: &mut R, bytes: &mut [u8; 64])
 }
 
 
-#[cfg(all(not(verus), feature = "digest"))]
+#[cfg(feature = "digest")]
 #[verifier::external_body]
 pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
     ensures

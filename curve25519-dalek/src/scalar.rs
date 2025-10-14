@@ -1151,13 +1151,17 @@ impl Scalar {
     /// ```
     /* <VERIFICATION NOTE>
      Marked as external_body to avoid Verus issues with complex Sha512 type aliases.
-     For Verus verification, use from_hash_verus instead.
+     For Verus verification, see from_hash_verus below.
     </VERIFICATION NOTE> */
     #[cfg(feature = "digest")]
     #[verifier::external_body]
-     pub fn from_hash<D>(hash: D) -> Scalar
+     pub fn from_hash<D>(hash: D) -> (result: Scalar)
      where
          D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
+     ensures
+         //is_random_digest(&hash) ==> is_random_scalar(&result),
+         bytes_to_nat(&result.bytes) < group_order(),
+         result.bytes[31] <= 127,
      {
          let mut output = [0u8; 64];
          output.copy_from_slice(hash.finalize().as_slice());
@@ -1179,6 +1183,8 @@ impl Scalar {
      pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
      ensures
         is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
+        bytes_to_nat(&result.bytes) < group_order(),
+        result.bytes[31] <= 127,
      {
          let result = Scalar::from_bytes_mod_order_wide(&hash_bytes);
          assume(false);
@@ -1198,7 +1204,10 @@ impl Scalar {
     ///
     /// assert!(s.to_bytes() == [0u8; 32]);
     /// ```
-    pub const fn to_bytes(&self) -> [u8; 32] {
+    pub const fn to_bytes(&self) -> (result: [u8; 32])
+        ensures result == self.bytes,
+        scalar_to_nat(self) == bytes_to_nat(&result),
+    {
         self.bytes
     }
 
@@ -1213,7 +1222,10 @@ impl Scalar {
     ///
     /// assert!(s.as_bytes() == &[0u8; 32]);
     /// ```
-    pub const fn as_bytes(&self) -> &[u8; 32] {
+    pub const fn as_bytes(&self) -> (result: &[u8; 32])
+        ensures result == &self.bytes,
+        scalar_to_nat(self) == bytes_to_nat(&result),
+    {
         &self.bytes
     }
 }

@@ -94,7 +94,7 @@ decreases bytes.len()
     if bytes.len() == 0 {
         0
     } else {
-        (bytes[0] as nat) + pow2(8) * bytes_seq_to_nat(bytes.subrange(1, bytes.len() as int))
+        (bytes[0] as nat) + pow2(8) * bytes_seq_to_nat(bytes.skip(1))
     }
 }
 

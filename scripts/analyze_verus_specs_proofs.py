@@ -18,38 +18,6 @@ from typing import Dict, List, Tuple, Optional
 from beartype import beartype
 
 
-@beartype
-def extract_function_name(function_path: str) -> str:
-    """
-    Extract the actual function name from the CSV function_path format.
-
-    Examples:
-      - "backend/serial/u64/field/impl#[FieldElement51]as_bytes()." -> "as_bytes"
-      - "scalar/read_le_u64_into()." -> "read_le_u64_into"
-      - "backend/serial/u64/scalar/m()." -> "m"
-    """
-    # Remove trailing dot
-    function_path = function_path.rstrip(".")
-
-    # Extract the last part after / or ]
-    if "]" in function_path:
-        # Handle impl#[Type]function_name format
-        parts = function_path.split("]")
-        if len(parts) > 1:
-            name_part = parts[-1]
-        else:
-            name_part = function_path
-    else:
-        # Handle simple path/function_name format
-        name_part = function_path.split("/")[-1]
-
-    # Remove parentheses and everything after them
-    if "(" in name_part:
-        name_part = name_part.split("(")[0]
-
-    return name_part.strip()
-
-
 
 @beartype
 def parse_function_in_file(

@@ -54,8 +54,23 @@ def parse_function_in_file(
         fn_start = match.start()
 
         # Find the function body by looking for the opening brace
+        # Need to be careful about braces inside ensures/requires clauses
+        # Track parenthesis depth to skip braces that are inside parens
         fn_def_start = fn_start
-        brace_pos = content.find("{", fn_def_start)
+        pos = fn_def_start
+        paren_depth = 0
+        brace_pos = -1
+
+        while pos < len(content):
+            char = content[pos]
+            if char == '(':
+                paren_depth += 1
+            elif char == ')':
+                paren_depth -= 1
+            elif char == '{' and paren_depth == 0:
+                brace_pos = pos
+                break
+            pos += 1
 
         if brace_pos == -1:
             # Might be a trait definition without body

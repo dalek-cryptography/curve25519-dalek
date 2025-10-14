@@ -681,7 +681,7 @@ impl Neg for Scalar {
     ensures
         (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
-        assume(false); // PROOF BYPASS because of trait issues 
+        assume(false); // PROOF BYPASS because of trait issues
         let result = (&self).neg();
         proof {
             assume((scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0);
@@ -2254,7 +2254,7 @@ impl FromUniformBytes<64> for Scalar {
     }
 }
 
-verus ! {
+verus! {
 /// Read one or more u64s stored as little endian bytes.
 ///
 /// ## Panics

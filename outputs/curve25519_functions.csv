@@ -1,4 +1,4 @@
-function_name,github_link,has_spec_verus,has_proof_verus,has_spec_lean,has_proof_lean
+function_name,link,has_spec_verus,has_proof_verus,has_spec_lean,has_proof_lean
 fmt,https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/build.rs#L15,,,,
 is_capable_simd,https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/build.rs#L77,,,,
 determine_curve25519_dalek_bits_warning,https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/build.rs#L94,,,,

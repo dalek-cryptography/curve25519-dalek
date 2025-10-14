@@ -139,8 +139,7 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Optional[Path]:
       -> src_dir/window.rs
 
     """
-    if not link:
-        return None
+    assert link
 
     # Extract path after /src/
     match = re.search(r"/src/([^#]+)", link)
@@ -173,14 +172,13 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
     results = {}
 
     for func_path, row in functions:
-        if not func_path:
-            continue
+        assert func_path
 
         func_name = extract_function_name(func_path)
         print(f"Analyzing: {func_path} -> {func_name}")
 
         # Try to get the specific file from the GitHub link first
-        github_link = row.get("link", "")
+        github_link = row["link"]
         target_file = extract_file_path_from_link(github_link, src_dir)
 
         if target_file:

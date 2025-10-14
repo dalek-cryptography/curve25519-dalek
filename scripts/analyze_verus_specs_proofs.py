@@ -1,4 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "beartype",
+# ]
+# ///
 """
 Analyze Verus specs and proofs in curve25519-dalek source code.
 Updates the CSV to mark which functions have Verus specs and/or proofs.

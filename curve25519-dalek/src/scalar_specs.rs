@@ -2,7 +2,7 @@
 
 use crate::backend::serial::u64::scalar_specs::*;
 use crate::scalar::Scalar;
-use vstd::arithmetic::power2::*;
+use vstd::arithmetic::power2::*; // Import all power2 functions including pow2
 use vstd::prelude::*;
 
 verus! {
@@ -23,6 +23,11 @@ decreases 256 - index
     }
 }
 
+pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
+    bytes_to_nat(&s.bytes)
+}
+
+
 /// Returns true iff a and b are multiplicative inverses modulo group_order
 /// i.e., a * b ≡ 1 (mod group_order)
 pub open spec fn is_inverse(a: &Scalar, b: &Scalar) -> bool {
@@ -37,9 +42,19 @@ pub open spec fn product_of_scalars(scalars: Seq<Scalar>) -> nat
     if scalars.len() == 0 {
         1
     } else {
-        let last_scalar = scalars[scalars.len() - 1];
-        let rest = scalars.subrange(0, scalars.len() - 1);
-        (product_of_scalars(rest) * bytes_to_nat(&last_scalar.bytes)) % group_order()
+        (product_of_scalars(scalars.skip(1)) * bytes_to_nat(&scalars[0].bytes)) % group_order()
+    }
+}
+
+/// Spec function to compute sum of all scalars in a sequence (mod group_order)
+/// Returns the natural number representation
+pub open spec fn sum_of_scalars(scalars: Seq<Scalar>) -> nat
+    decreases scalars.len()
+{
+    if scalars.len() == 0 {
+        0
+    } else {
+        (sum_of_scalars(scalars.skip(1)) + bytes_to_nat(&scalars[0].bytes)) % group_order()
     }
 }
 
@@ -53,8 +68,19 @@ pub open spec fn is_inverse_of_nat(s: &Scalar, n: nat) -> bool {
     (bytes_to_nat(&s.bytes) * n) % group_order() == 1
 }
 
-/// Uninterpreted spec function to model randomness
-pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;
-
+/// Returns true iff a byte array represents a clamped integer for X25519.
+/// A clamped integer has:
+/// - The 3 least significant bits cleared (divisible by 8)
+/// - Bit 255 (MSB) cleared (< 2^255)
+/// - Bit 254 set (>= 2^254)
+/// This creates values in range: 2^254 + 8*{0, 1, 2, ..., 2^251 - 1}
+pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
+    // The 3 least significant bits are cleared (divisible by 8)
+    bytes[0] & 0b0000_0111 == 0
+    // Bit 255 (MSB) is cleared, making it < 2^255
+    && bytes[31] & 0b1000_0000 == 0
+    // Bit 254 is set, so result >= 2^254
+    && bytes[31] & 0b0100_0000 == 0b0100_0000
+}
 
 } // verus!

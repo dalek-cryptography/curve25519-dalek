@@ -234,8 +234,10 @@ impl Scalar52 {
         to_nat(&b.limbs) < group_order(),
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) + to_nat(&b.limbs)) % group_order(),
-        // VER NOTE: Result is canonical
+        // VERIFICATION NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
+        // VERIFICATION NOTE: Result has bounded limbs (from sub)
+        limbs_bounded(&s),
     {
         let mut sum = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
         proof { assert(1u64 << 52 > 0) by (bit_vector); }
@@ -398,7 +400,7 @@ impl Scalar52 {
     ensures
         to_nat(&s.limbs) == (to_nat(&a.limbs) - to_nat(&b.limbs)) % (group_order() as int),
         limbs_bounded(&s),
-        // VER NOTE: Result is in canonical form
+        // VERIFICATION NOTE: Result is in canonical form
         to_nat(&s.limbs) < group_order(),
     {
         let mut difference = Scalar52 { limbs: [0u64, 0u64, 0u64, 0u64, 0u64] };
@@ -483,7 +485,7 @@ impl Scalar52 {
         }
         proof {
             lemma_sub_correct_after_loops(difference, carry, a, b, difference_after_loop1, borrow);
-        }
+         }
         difference
     }
 

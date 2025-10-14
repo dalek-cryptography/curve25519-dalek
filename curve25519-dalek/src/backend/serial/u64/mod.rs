@@ -37,3 +37,5 @@ pub mod subtle_assumes;
 pub mod scalar_lemmas;
 
 pub mod scalar_specs;
+
+pub mod std_assumes;

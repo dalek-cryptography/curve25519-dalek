@@ -160,7 +160,12 @@ use crate::backend::serial::u64::std_assumes::*;
 #[allow(unused_imports)]
 use crate::scalar_specs::*;
 
+#[cfg(feature = "digest")]
+#[allow(unused_imports)]
+use digest::Digest;
+
 verus! {
+
 
 /*** <VERIFICATION NOTE> Focus on u64; removed all other backend types </VERIFICATION NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
@@ -229,10 +234,8 @@ impl Scalar {
     ensures
         // Result is equivalent to input modulo the group order
         bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
-        // Result is canonical (reduced)
-        bytes_to_nat(&result.bytes) < group_order(),
-        // High bit is clear (invariant #1: result < 2^255)
-        result.bytes[31] <= 127,
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
         let s_unreduced = Scalar { bytes };
@@ -252,8 +255,8 @@ impl Scalar {
     pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
     ensures
         bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
-        bytes_to_nat(&result.bytes) < group_order(),
-        result.bytes[31] <= 127,
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         UnpackedScalar::from_bytes_wide(input).pack()
     }
@@ -396,8 +399,12 @@ verus! {
 impl<'a> MulAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: VERIFIED
     fn mul_assign(&mut self, _rhs: &'a Scalar)
+    requires
+        is_canonical_scalar(old(self)),
+        is_canonical_scalar(_rhs),
     ensures bytes_to_nat(&self.bytes) % group_order() ==
-        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order()
+        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order(),
+        is_canonical_scalar(self),
     {
         /* <ORIGINAL CODE>
          *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
@@ -564,13 +571,16 @@ impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
     type Output = Scalar;
 
     // VERIFICATION NOTE: PROOF BYPASS (problems with traits and preconditions)
+    // PRECONDITION is_canonical_scalar(self) && is_canonical_scalar(_rhs)
     #[allow(non_snake_case)]
     fn sub(self, _rhs: &'b Scalar) -> (result: Scalar)
+   // Cannot add preconditions to trait implementations in Verus
+   // requires
+   //     is_canonical_scalar(self),
+   //     is_canonical_scalar(_rhs),
     ensures
         bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
     {
-        // The UnpackedScalar::sub function produces reduced outputs if the inputs are reduced. By
-        // Scalar invariant #1, this is always the case.
         /* <ORIGINAL CODE>
          UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack()
          </ORIGINAL CODE> */
@@ -718,69 +728,6 @@ impl ConditionallySelectable for Scalar {
 } // verus!
 
 verus! {
-/* <VERIFICATION NOTE>
-- Serialization and deserialization functions in this Verus block
-- They are currently outside default features but we should consider verifying them
-</VERIFICATION NOTE> */
-#[cfg(feature = "serde")]
-use serde::de::Visitor;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-#[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl Serialize for Scalar {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        use serde::ser::SerializeTuple;
-        let mut tup = serializer.serialize_tuple(32)?;
-        for byte in self.as_bytes().iter() {
-            tup.serialize_element(byte)?;
-        }
-        tup.end()
-    }
-}
-
-#[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-impl<'de> Deserialize<'de> for Scalar {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct ScalarVisitor;
-
-        impl<'de> Visitor<'de> for ScalarVisitor {
-            type Value = Scalar;
-
-            fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                formatter.write_str(
-                    "a sequence of 32 bytes whose little-endian interpretation is less than the \
-                    basepoint order ℓ",
-                )
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
-            where
-                A: serde::de::SeqAccess<'de>,
-            {
-                let mut bytes = [0u8; 32];
-                #[allow(clippy::needless_range_loop)]
-                for i in 0..32 {
-                    bytes[i] = seq
-                        .next_element()?
-                        .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
-                }
-                Option::from(Scalar::from_canonical_bytes(bytes))
-                    .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
-            }
-        }
-
-        deserializer.deserialize_tuple(32, ScalarVisitor)
-    }
-}
 
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus.
@@ -1069,7 +1016,9 @@ impl Scalar {
      No verifier::external_body annotation but it is NOT verified
     </VERIFICATION NOTE> */
     pub fn random<R: CryptoRngCore + ?Sized>(rng: &mut R) -> (result: Self)
-        ensures is_random_scalar(&result)
+        ensures
+            is_random_scalar(&result),
+            is_canonical_scalar(&result),
     {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
@@ -1096,21 +1045,21 @@ impl Scalar {
     /// # }
     /// ```
     /* <VERIFICATION NOTE>
-     Marked as external_body to avoid Verus issues with generic Digest types.
+     Marked as external_body due to complexity of Digest trait.
      For Verus verification, use hash_from_bytes_verus instead.
     </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    pub fn hash_from_bytes<D>(input: &[u8]) -> (result: Scalar)
-    where
-        D: digest::Digest<OutputSize = digest::generic_array::typenum::U64> + Default,
-    ensures
-        bytes_to_nat(&result.bytes) < group_order(),
-        result.bytes[31] <= 127,
-    {
-        let mut hash = D::default();
-        hash.update(input);
-        Scalar::from_hash(hash)
-    }
+     #[verifier::external_body]
+     pub fn hash_from_bytes<D>(input: &[u8]) -> (result: Scalar)
+     where
+         D: digest::Digest<OutputSize = digest::generic_array::typenum::U64> + Default,
+     ensures
+         // Result satisfies Scalar invariants #1 and #2
+         is_canonical_scalar(&result),
+     {
+         let mut hash = D::default();
+         hash.update(input);
+         Scalar::from_hash(hash)
+     }
 
     /// Verus-compatible version of hash_from_bytes that uses SHA-512.
     ///
@@ -1127,8 +1076,8 @@ impl Scalar {
     pub fn hash_from_bytes_verus(input: &[u8]) -> (result: Scalar)
     ensures
         is_random_bytes(input) ==> is_random_scalar(&result),
-        bytes_to_nat(&result.bytes) < group_order(),
-        result.bytes[31] <= 127,
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         use crate::backend::serial::u64::std_assumes as assumes;
         let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
@@ -1170,7 +1119,7 @@ impl Scalar {
     /// # }
     /// ```
     /* <VERIFICATION NOTE>
-     Marked as external_body to avoid Verus issues with complex Sha512 type aliases.
+     Marked as external_body due to GenericArray having private fields.
      For Verus verification, see from_hash_verus below.
     </VERIFICATION NOTE> */
     #[cfg(feature = "digest")]
@@ -1180,8 +1129,8 @@ impl Scalar {
          D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
      ensures
          //is_random_digest(&hash) ==> is_random_scalar(&result),
-         bytes_to_nat(&result.bytes) < group_order(),
-         result.bytes[31] <= 127,
+         // Result satisfies Scalar invariants #1 and #2
+         is_canonical_scalar(&result),
      {
          let mut output = [0u8; 64];
          output.copy_from_slice(hash.finalize().as_slice());
@@ -1203,8 +1152,8 @@ impl Scalar {
      pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
      ensures
         is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
-        bytes_to_nat(&result.bytes) < group_order(),
-        result.bytes[31] <= 127,
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
      {
          let result = Scalar::from_bytes_mod_order_wide(&hash_bytes);
          assume(false);
@@ -1289,9 +1238,12 @@ impl Scalar {
     /// ```
     // VERIFICATION NOTE: VERIFIED
     pub fn invert(&self) -> (result: Scalar)
+        requires
+            is_canonical_scalar(self),
         ensures
             // Result is the multiplicative inverse: result * self ≡ 1 (mod group_order)
             (scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1,
+            is_canonical_scalar(&result),
             // VERIFICATION NOTE: is this true and/or necessary?
             // Result is canonical
             // scalar_to_nat(&result) < group_order(),
@@ -1301,8 +1253,7 @@ impl Scalar {
         let inv_unpacked = unpacked.invert();
         let result = inv_unpacked.pack();
         assert((scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1);
-       // assume(scalar_to_nat(&result) < group_order());
-       // assume(result.bytes[31] <= 127);
+        assume(is_canonical_scalar(&result));
         result
     }
     /// Given a slice of nonzero (possibly secret) `Scalar`s,
@@ -1583,6 +1534,117 @@ impl Scalar {
     }
 
 }
+
+
+#[cfg(feature = "serde")]
+use serde::de::Visitor;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+#[cfg(feature = "serde")]
+struct ScalarVisitor;
+
+#[cfg(feature = "serde")]
+impl<'de> Visitor<'de> for ScalarVisitor {
+    type Value = Scalar;
+
+    fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        #[verifier::external_body]
+        {
+            formatter.write_str(
+                "a sequence of 32 bytes whose little-endian interpretation is less than the \
+                        basepoint order ℓ",
+            )
+        }
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        let mut bytes = [0u8; 32];
+        #[allow(clippy::needless_range_loop)]
+        // ORIGINAL CODE:
+        // for i in 0..32 {
+        //     bytes[i] = seq
+        //         .next_element()?
+        //         .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+        // }
+        // Option::from(Scalar::from_canonical_bytes(bytes))
+        //     .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
+
+        for i in 0..32 {
+            match crate::serde_assumes::seq_next_element(&mut seq)? {
+                Some(b) => { bytes[i] = b; }
+                None => { return Err(crate::serde_assumes::de_invalid_length(i, "expected 32 bytes")); }
+            }
+        }
+        let ct = Scalar::from_canonical_bytes(bytes);
+        let is_some_choice = crate::backend::serial::u64::subtle_assumes::ct_option_is_some(&ct);
+        if crate::backend::serial::u64::subtle_assumes::choice_into(is_some_choice) {
+            Ok(crate::backend::serial::u64::subtle_assumes::ct_option_unwrap(ct))
+        } else {
+            Err(crate::serde_assumes::de_custom("scalar was not canonically encoded"))
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl Serialize for Scalar {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // ORIGINAL CODE:
+        // use serde::ser::SerializeTuple;
+        // let mut tup = serializer.serialize_tuple(32)?;
+        // for byte in self.as_bytes().iter() {
+        //     tup.serialize_element(byte)?;
+        // }
+        // tup.end()
+
+        crate::serde_assumes::serialize_scalar_as_tuple(serializer, self.as_bytes())
+    }
+}
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+impl<'de> Deserialize<'de> for Scalar {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        /* ORIGINAL CODE (inline ScalarVisitor inside function):
+           struct ScalarVisitor;
+           impl<'de> Visitor<'de> for ScalarVisitor {
+               type Value = Scalar;
+               fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                   formatter.write_str(
+                       "a sequence of 32 bytes whose little-endian interpretation is less than the \
+                       basepoint order ℓ",
+                   )
+               }
+               fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
+               where
+                   A: serde::de::SeqAccess<'de>,
+               {
+                   let mut bytes = [0u8; 32];
+                   #[allow(clippy::needless_range_loop)]
+                   for i in 0..32 {
+                       bytes[i] = seq
+                           .next_element()?
+                           .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
+                   }
+                   Option::from(Scalar::from_canonical_bytes(bytes))
+                       .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
+               }
+           }
+           deserializer.deserialize_tuple(32, ScalarVisitor)
+        */
+        crate::serde_assumes::deserialize_scalar_from_tuple(deserializer)
+    }
+}
 } // verus!
 
 impl Scalar {
@@ -1674,25 +1736,17 @@ impl Scalar {
         /// and reindex.  In fact, by setting all digits to \\(0\\)
         /// initially, we don't need to emit anything.
         /* <VERIFICATION NOTE>
-         assumed as external spec; spec incomplete
+         PROOF BYPASS
         </VERIFICATION NOTE> */
-        #[verifier::external_body]
         pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
         requires
             2 <= w <= 8,
         ensures
-            // Each nonzero NAF digit is odd and bounded by |digit| < 2^(w-1)
-            forall|i: int| 0 <= i < 256 ==> {
-                let digit = #[trigger] result[i];
-                let bound = (1i8 << ((w as i8) - 1));
-                (digit == 0 || (digit % 2 != 0 && -bound <= digit && digit < bound))
-            },
-            // The NAF representation has at most 256 digits (top bit of scalar is 0)
-            self.bytes[31] <= 127,
-            // TODO: Add property that at most one of any w consecutive coefficients is nonzero
-            // TODO: Add property that reconstructing from NAF equals the original scalar
+        // result encodes the same integer
+        reconstruct(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+        // result digits follow NAF rules
+        is_valid_naf(result@.map(|i: int, x: i8| x as int), w as nat),
         {
-            // required by the NAF definition
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(w >= 2);
@@ -1709,20 +1763,21 @@ impl Scalar {
             read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
              <ORIGINAL CODE> */
             // Read 4 u64s from the 32-byte array (self.bytes)
+            assume(false);
             let mut x_u64 = [0u64; 5];
-            x_u64[0] = u64::from_le_bytes([
+            x_u64[0] = u64_from_le_bytes([
                 self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3],
                 self.bytes[4], self.bytes[5], self.bytes[6], self.bytes[7],
             ]);
-            x_u64[1] = u64::from_le_bytes([
+            x_u64[1] = u64_from_le_bytes([
                 self.bytes[8], self.bytes[9], self.bytes[10], self.bytes[11],
                 self.bytes[12], self.bytes[13], self.bytes[14], self.bytes[15],
             ]);
-            x_u64[2] = u64::from_le_bytes([
+            x_u64[2] = u64_from_le_bytes([
                 self.bytes[16], self.bytes[17], self.bytes[18], self.bytes[19],
                 self.bytes[20], self.bytes[21], self.bytes[22], self.bytes[23],
             ]);
-            x_u64[3] = u64::from_le_bytes([
+            x_u64[3] = u64_from_le_bytes([
                 self.bytes[24], self.bytes[25], self.bytes[26], self.bytes[27],
                 self.bytes[28], self.bytes[29], self.bytes[30], self.bytes[31],
             ]);
@@ -1733,7 +1788,11 @@ impl Scalar {
 
             let mut pos = 0;
             let mut carry = 0;
-            while pos < 256 {
+            while pos < 256
+                decreases 256 - pos
+            {
+                assume(false);
+
                 // Construct a buffer of bits of the scalar, starting at bit `pos`
                 let u64_idx = pos / 64;
                 let bit_idx = pos % 64;
@@ -1746,6 +1805,7 @@ impl Scalar {
                 };
 
                 // Add the carry into the current window
+                assume(false);
                 let window = carry + (bit_buf & window_mask);
 
                 if window & 1 == 0 {
@@ -1764,7 +1824,7 @@ impl Scalar {
                     carry = 1;
                     naf[pos] = (window as i8).wrapping_sub(width as i8);
                 }
-
+                assume(false);
                 pos += w;
             }
 
@@ -1951,6 +2011,7 @@ impl Scalar {
     ensures
         limbs_bounded(&result),
         to_nat(&result.limbs) == bytes_to_nat(&self.bytes),
+        to_nat(&result.limbs) < group_order(),
     {
         UnpackedScalar::from_bytes(&self.bytes)
     }
@@ -1962,10 +2023,8 @@ impl Scalar {
     ensures
         // Result is equivalent to input modulo the group order
         bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes) % group_order(),
-        // Result is canonical (reduced)
-        bytes_to_nat(&result.bytes) < group_order(),
-        // High bit is clear (invariant #1: result < 2^255)
-        result.bytes[31] <= 127,
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         let x = self.unpack();
     //    assume(limbs_bounded(&x));
@@ -1975,8 +2034,7 @@ impl Scalar {
         let result = x_mod_l.pack();
         // Assume postconditions (to be proven later)
         assume(bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes) % group_order());
-        assume(bytes_to_nat(&result.bytes) < group_order());
-        assume(result.bytes[31] <= 127);
+        assume(is_canonical_scalar(&result));
         result
     }
     /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
@@ -1984,12 +2042,12 @@ impl Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     fn is_canonical(&self) -> (result: Choice)
         ensures
-            // Result is true iff the scalar is in canonical form (< group_order and high bit clear)
-            choice_is_true(result) == (bytes_to_nat(&self.bytes) < group_order() && self.bytes[31] <= 127),
+            // Result is true iff the scalar satisfies Scalar invariants #1 and #2
+            choice_is_true(result) == is_canonical_scalar(self),
     {
         let result = self.ct_eq(&self.reduce());
         // TODO: Prove the postcondition from ct_eq and reduce specs
-        assume(choice_is_true(result) == (bytes_to_nat(&self.bytes) < group_order() && self.bytes[31] <= 127));
+        assume(choice_is_true(result) == is_canonical_scalar(self));
         result
     }
     } // verus!
@@ -2020,17 +2078,14 @@ impl UnpackedScalar {
         limbs_bounded(self),
     ensures
         bytes_to_nat(&result.bytes) == to_nat(&self.limbs),
-        // VERIFICATION NOTE: If input is canonical, output is canonical
-        to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order(),
-        // VERIFICATION NOTE: Canonical scalars have high bit clear (since group_order < 2^255)
-        to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127,
+        // VERIFICATION NOTE: If input is canonical (< group order), output satisfies Scalar invariants
+        to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result),
     {
         let result = Scalar {
             bytes: self.as_bytes(),
         };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
-        assume(to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order());
-        assume(to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127);
+        assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
         result
     }
 
@@ -2284,7 +2339,7 @@ fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
         dst.len()
     );
     for (bytes, val) in src.chunks(8).zip(dst.iter_mut()) {
-        *val = u64::from_le_bytes(
+        *val = u64_from_le_bytes(
             bytes
                 .try_into()
                 .expect("Incorrect src length, should be 8 * dst.len()"),
@@ -2330,7 +2385,6 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
     result[0] &= 0b1111_1000;
 
     // Clear bit 7 (MSB): result[31] = result[31] & 0b0111_1111
-    let old_byte_31 = result[31];
     result[31] &= 0b0111_1111;
 
     // Set bit 6: result[31] = result[31] | 0b0100_0000

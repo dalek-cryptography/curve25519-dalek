@@ -105,11 +105,12 @@ def parse_function_in_file(
         # Extract the function body
         body = content[brace_pos : body_end + 1]
 
-        # Check if body contains 'assume'
-        # Look for 'assume(' or 'assume ' patterns
+        # Check if body contains 'assume' or 'admit'
+        # Look for 'assume(' or 'assume ' patterns, and similarly for 'admit'
         has_assume = bool(re.search(r"\bassume\s*\(", body))
+        has_admit = bool(re.search(r"\badmit\s*\(", body))
 
-        has_proof = has_spec and not has_assume
+        has_proof = has_spec and not has_assume and not has_admit
 
         return (has_spec, has_proof)
 

@@ -14,15 +14,12 @@ import argparse
 import csv
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, Tuple
 from beartype import beartype
 
 
-
 @beartype
-def parse_function_in_file(
-    file_path: Path, function_name: str
-) -> Tuple[bool, bool]:
+def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, bool]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
@@ -63,11 +60,11 @@ def parse_function_in_file(
 
         while pos < len(content):
             char = content[pos]
-            if char == '(':
+            if char == "(":
                 paren_depth += 1
-            elif char == ')':
+            elif char == ")":
                 paren_depth -= 1
-            elif char == '{' and paren_depth == 0:
+            elif char == "{" and paren_depth == 0:
                 brace_pos = pos
                 break
             pos += 1
@@ -79,21 +76,25 @@ def parse_function_in_file(
         # Look backwards from fn_start to find any attributes
         # Attributes appear before the function definition
         # Search backwards for the start of attributes (look for lines starting with #[)
-        lines_before = content[:fn_start].split('\n')
+        lines_before = content[:fn_start].split("\n")
         attr_lines = []
 
         # Skip the last line if it's not empty (it contains the beginning of the fn line)
-        lines_to_check = lines_before[:-1] if lines_before and lines_before[-1].strip() else lines_before
+        lines_to_check = (
+            lines_before[:-1]
+            if lines_before and lines_before[-1].strip()
+            else lines_before
+        )
 
         for line in reversed(lines_to_check):
             stripped = line.strip()
-            if stripped.startswith('#['):
+            if stripped.startswith("#["):
                 attr_lines.insert(0, line)
-            elif stripped and not stripped.startswith('//'):
+            elif stripped and not stripped.startswith("//"):
                 # Stop at first non-attribute, non-comment line (including closing braces)
                 break
 
-        attributes = '\n'.join(attr_lines)
+        attributes = "\n".join(attr_lines)
 
         # Extract the signature (between fn keyword and opening brace)
         signature = content[fn_start:brace_pos]
@@ -131,9 +132,17 @@ def parse_function_in_file(
 
         # In attributes or signature: verifier::external*, exec_allows_no_decreases_clause
         has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
-        has_no_decreases = bool(re.search(r"#\[verifier::exec_allows_no_decreases_clause\]", attributes))
+        has_no_decreases = bool(
+            re.search(r"#\[verifier::exec_allows_no_decreases_clause\]", attributes)
+        )
 
-        has_proof = has_spec and not has_assume and not has_admit and not has_verifier_external and not has_no_decreases
+        has_proof = (
+            has_spec
+            and not has_assume
+            and not has_admit
+            and not has_verifier_external
+            and not has_no_decreases
+        )
 
         return (has_spec, has_proof)
 
@@ -165,7 +174,6 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
     return file_path
 
 
-
 @beartype
 def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
     """
@@ -182,7 +190,6 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
     results = {}
 
     for row in rows:
-
         func_name = row["function_name"]
 
         # Try to get the specific file from the GitHub link first
@@ -195,9 +202,7 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         result = parse_function_in_file(target_file, func_name)
         has_spec, has_proof = result
         results[row["link"]] = (has_spec, has_proof)
-        print(
-            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}"
-        )
+        print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}")
 
     return results
 

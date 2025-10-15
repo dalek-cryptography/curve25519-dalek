@@ -1548,8 +1548,8 @@ struct ScalarVisitor;
 impl<'de> Visitor<'de> for ScalarVisitor {
     type Value = Scalar;
 
+    #[verifier::external_body] 
     fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        #[verifier::external_body]
         {
             formatter.write_str(
                 "a sequence of 32 bytes whose little-endian interpretation is less than the \

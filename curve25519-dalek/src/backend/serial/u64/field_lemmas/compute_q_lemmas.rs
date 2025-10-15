@@ -787,5 +787,4 @@ pub proof fn lemma_compute_q(limbs: [u64; 5], q: u64)
     lemma_q_biconditional(limbs, q);
 }
 
-}  // verus!
-
+} // verus!

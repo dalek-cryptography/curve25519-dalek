@@ -15,16 +15,16 @@ use super::common_verus::pow_lemmas::*;
 use super::common_verus::shift_lemmas::*;
 
 use super::field_lemmas::as_nat_lemmas::*;
+use super::field_lemmas::compute_q_lemmas::*;
 use super::field_lemmas::field_core::*;
 use super::field_lemmas::from_bytes_lemmas::*;
+use super::field_lemmas::limbs_to_bytes_lemmas::*;
 use super::field_lemmas::load8_lemmas::*;
 use super::field_lemmas::negate_lemmas::*;
 use super::field_lemmas::pow2_51_lemmas::*;
 use super::field_lemmas::pow2k_lemmas::*;
 use super::field_lemmas::reduce_lemmas::*;
-use super::field_lemmas::compute_q_lemmas::*;
 use super::field_lemmas::to_bytes_reduction_lemmas::*;
-use super::field_lemmas::limbs_to_bytes_lemmas::*;
 
 // ADAPTED CODE LINES: X.0 globally replaced with X.limbs
 

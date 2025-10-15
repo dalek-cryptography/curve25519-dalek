@@ -264,10 +264,10 @@ pub proof fn lemma_div_bound(x: nat, a: nat, b: nat)
 {
     // Key insight: 2^b / 2^a = 2^(b-a)
     // Since x < 2^b, we have x / 2^a < 2^b / 2^a = 2^(b-a)
-    
+
     lemma_pow2_adds(a, (b - a) as nat);
     assert(pow2(b) == pow2(a) * pow2((b - a) as nat));
-    
+
     // Use division properties
     lemma_div_strictly_bounded(x as int, pow2(a) as int, pow2((b - a) as nat) as int);
     assert(x / pow2(a) < pow2((b - a) as nat));

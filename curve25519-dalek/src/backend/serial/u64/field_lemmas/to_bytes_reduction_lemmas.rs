@@ -811,5 +811,4 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
     }
 }
 
-}  // verus!
-
+} // verus!

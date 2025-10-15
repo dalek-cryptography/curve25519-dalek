@@ -81,7 +81,11 @@ def parse_function_in_file(
         # Search backwards for the start of attributes (look for lines starting with #[)
         lines_before = content[:fn_start].split('\n')
         attr_lines = []
-        for line in reversed(lines_before):
+
+        # Skip the last line if it's not empty (it contains the beginning of the fn line)
+        lines_to_check = lines_before[:-1] if lines_before and lines_before[-1].strip() else lines_before
+
+        for line in reversed(lines_to_check):
             stripped = line.strip()
             if stripped.startswith('#['):
                 attr_lines.insert(0, line)

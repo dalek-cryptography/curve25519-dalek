@@ -4,6 +4,33 @@ This directory contains Python scripts that support the automated generation of 
 
 ## Scripts Overview
 
+
+### analyze_verus_specs_proofs.py
+
+Usage:
+
+``` bash
+./scripts/analyze_verus_specs_proofs.py
+```
+
+This script looks at outputs/curve25519_functions.csv. 
+For each row in the CSV, it finds the corresponding function in the codebase
+(maybe not accurately if a file has two functions with the same name).
+It finds out whether the function is specified (heuristic: does it have the string "ensures" or "requires"?),
+and whether it has a proof (heuristic: is it specified and does not have the string "assume")?
+It updates the `has_spec_verus` and `has_proof_verus` columns in the CSV.
+Note this script does not know if a function calls a lemma that uses assume.
+
+### csv_to_markdown.py 
+Usage:
+
+``` bash
+./scripts/csv_to_markdown.py 
+```
+
+
+Reads `outputs/curve25519_functions.csv`, converts to a markdown table, and overwrites `outputs/curve25519_functions.md`.
+
 ### 🔍 `find_new_verus_functions.py`
 **Purpose**: Detects newly added Verus functions from git diffs
 

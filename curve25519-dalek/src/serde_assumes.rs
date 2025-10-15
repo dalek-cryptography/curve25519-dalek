@@ -8,9 +8,9 @@
 use vstd::prelude::*;
 
 #[cfg(feature = "serde")]
-use serde::de::Visitor;
+use serde::de::{SeqAccess, Visitor};
 #[cfg(feature = "serde")]
-use serde::{Deserializer, Serializer};
+use serde::{Deserialize, Deserializer, Serializer};
 
 #[cfg(feature = "serde")]
 use crate::Scalar;
@@ -27,6 +27,16 @@ pub fn de_invalid_length<E: serde::de::Error>(len: usize, expected: &'static str
 #[verifier::external_body]
 pub fn de_custom<E: serde::de::Error>(msg: &'static str) -> E {
     E::custom(msg)
+}
+
+#[cfg(feature = "serde")]
+#[verifier::external_body]
+pub fn seq_next_element<'de, A, T>(seq: &mut A) -> Result<Option<T>, A::Error>
+where
+    A: serde::de::SeqAccess<'de>,
+    T: serde::Deserialize<'de>,
+{
+    seq.next_element()
 }
 
 #[cfg(feature = "serde")]

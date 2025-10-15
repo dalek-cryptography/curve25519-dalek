@@ -1548,7 +1548,7 @@ struct ScalarVisitor;
 impl<'de> Visitor<'de> for ScalarVisitor {
     type Value = Scalar;
 
-    #[verifier::external_body] 
+    #[verifier::external_body]
     fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         {
             formatter.write_str(

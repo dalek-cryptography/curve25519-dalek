@@ -7,10 +7,6 @@
 
 use vstd::prelude::*;
 
-verus! {
-    // Intentionally empty for now
-}
-
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
@@ -19,7 +15,7 @@ use serde::{Deserializer, Serializer};
 #[cfg(feature = "serde")]
 use crate::Scalar;
 
-// (removed modular helpers to avoid trait associated-type projections during verification)
+verus! {
 
 #[cfg(feature = "serde")]
 #[verifier::external_body]
@@ -76,3 +72,5 @@ where
 
     deserializer.deserialize_bytes(BytesVisitor)
 }
+
+} // verus!

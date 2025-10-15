@@ -1542,6 +1542,11 @@ use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "serde")]
+/// Visitor for deserializing a Scalar from a sequence of 32 bytes.
+///
+/// Note: This struct is defined at module level rather than inside the
+/// `Deserialize::deserialize` implementation to anticipate issues with Verus
+/// verification, which currently has limited support for nested types
 struct ScalarVisitor;
 
 #[cfg(feature = "serde")]
@@ -1564,28 +1569,13 @@ impl<'de> Visitor<'de> for ScalarVisitor {
     {
         let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
-        // ORIGINAL CODE:
-        // for i in 0..32 {
-        //     bytes[i] = seq
-        //         .next_element()?
-        //         .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
-        // }
-        // Option::from(Scalar::from_canonical_bytes(bytes))
-        //     .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
-
         for i in 0..32 {
-            match crate::serde_assumes::seq_next_element(&mut seq)? {
-                Some(b) => { bytes[i] = b; }
-                None => { return Err(crate::serde_assumes::de_invalid_length(i, "expected 32 bytes")); }
-            }
+            bytes[i] = seq
+                .next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
         }
-        let ct = Scalar::from_canonical_bytes(bytes);
-        let is_some_choice = crate::backend::serial::u64::subtle_assumes::ct_option_is_some(&ct);
-        if crate::backend::serial::u64::subtle_assumes::choice_into(is_some_choice) {
-            Ok(crate::backend::serial::u64::subtle_assumes::ct_option_unwrap(ct))
-        } else {
-            Err(crate::serde_assumes::de_custom("scalar was not canonically encoded"))
-        }
+        Option::from(Scalar::from_canonical_bytes(bytes))
+            .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
     }
 }
 
@@ -1596,15 +1586,12 @@ impl Serialize for Scalar {
     where
         S: Serializer,
     {
-        // ORIGINAL CODE:
-        // use serde::ser::SerializeTuple;
-        // let mut tup = serializer.serialize_tuple(32)?;
-        // for byte in self.as_bytes().iter() {
-        //     tup.serialize_element(byte)?;
-        // }
-        // tup.end()
-
-        crate::serde_assumes::serialize_scalar_as_tuple(serializer, self.as_bytes())
+        use serde::ser::SerializeTuple;
+        let mut tup = serializer.serialize_tuple(32)?;
+        for byte in self.as_bytes().iter() {
+            tup.serialize_element(byte)?;
+        }
+        tup.end()
     }
 }
 
@@ -1615,34 +1602,10 @@ impl<'de> Deserialize<'de> for Scalar {
     where
         D: Deserializer<'de>,
     {
-        /* ORIGINAL CODE (inline ScalarVisitor inside function):
-           struct ScalarVisitor;
-           impl<'de> Visitor<'de> for ScalarVisitor {
-               type Value = Scalar;
-               fn expecting(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-                   formatter.write_str(
-                       "a sequence of 32 bytes whose little-endian interpretation is less than the \
-                       basepoint order ℓ",
-                   )
-               }
-               fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
-               where
-                   A: serde::de::SeqAccess<'de>,
-               {
-                   let mut bytes = [0u8; 32];
-                   #[allow(clippy::needless_range_loop)]
-                   for i in 0..32 {
-                       bytes[i] = seq
-                           .next_element()?
-                           .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
-                   }
-                   Option::from(Scalar::from_canonical_bytes(bytes))
-                       .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
-               }
-           }
-           deserializer.deserialize_tuple(32, ScalarVisitor)
-        */
-        crate::serde_assumes::deserialize_scalar_from_tuple(deserializer)
+        /* VERIFICATION NOTE:
+        Originally struct ScalarVisitor defined here, but moved up to the top of the file
+        </VERIFICATION NOTE> */
+        deserializer.deserialize_tuple(32, ScalarVisitor)
     }
 }
 } // verus!

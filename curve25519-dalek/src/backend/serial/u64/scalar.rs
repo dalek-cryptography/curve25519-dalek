@@ -148,7 +148,6 @@ impl Scalar52 {
         to_nat(&s.limbs) % group_order() == bytes_wide_to_nat(bytes) % group_order(),
         // VERIFICATION NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
-
     {
         assume(false); // TODO: complete the proof
         let mut words = [0u64; 8];

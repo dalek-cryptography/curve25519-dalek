@@ -115,4 +115,24 @@ pub open spec fn is_valid_naf(naf: Seq<int>, w: nat) -> bool {
             !((#[trigger] naf[i]) != 0 && (#[trigger] naf[i + j]) != 0)
 }
 
+// Spec functions for radix-16 representation
+
+/// Reconstructs the integer value from a radix-16 representation
+pub open spec fn reconstruct_radix_16(digits: Seq<int>) -> int
+    decreases digits.len()
+{
+    if digits.len() == 0 { 0 }
+    else { digits[0] + 16 * reconstruct_radix_16(digits.skip(1)) }
+}
+
+/// Predicate describing a valid radix-16 representation with signed digits
+/// Coefficients are in [-8, 8) for indices 0..62, and [-8, 8] for index 63
+pub open spec fn is_valid_radix_16(digits: &[i8; 64]) -> bool {
+    forall |i: int| 0 <= i < 64 ==> 
+    if i < 63 { -8 <= digits[i] && digits[i] < 8 }
+    else { -8 <= digits[i] && digits[i] <= 8 }
+}
+
+
+
 } // verus!

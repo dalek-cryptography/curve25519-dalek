@@ -1475,64 +1475,6 @@ impl Scalar {
         ret
     }
 
-    /// Get the bits of the scalar as an array, in little-endian order
-    /* <VERIFICATION NOTE>
-     This is a Verus-compatible version of bits_le from below that returns an array instead of an iterator
-    </VERIFICATION NOTE> */
-    #[allow(dead_code)]
-    pub(crate) fn bits_le_v(&self) -> (result: [bool; 256])
-    ensures
-        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
-    {
-        let mut bits = [false; 256];
-        let mut i: usize = 0;
-
-        while i < 256
-            invariant
-                i <= 256,
-                bits.len() == 256,
-                self.bytes.len() == 32,
-            decreases 256 - i,
-        {
-            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-            // the byte. Since self.bytes is little-endian at the byte level, this is
-            // little-endian on the bit level
-            let byte_idx = i >> 3;  // Divide by 8 to get byte index
-            let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
-
-            // Prove bounds using shift and mask lemmas
-            proof {
-                use crate::backend::serial::u64::common_verus::shift_lemmas::*;
-                use crate::backend::serial::u64::common_verus::mask_lemmas::*;
-                use vstd::bits::*;
-                use vstd::arithmetic::power2::*;
-
-                assert(i < 256);
-
-                // Prove i >> 3 = i / 8 using shift lemma
-                lemma_u64_shr_is_div(i as u64, 3);
-                // pow2(3) = 8
-                lemma2_to64();
-                assert(byte_idx < 32);
-
-                // Prove i & 7 = i % 8 using mask lemma
-                lemma_u64_low_bits_mask_is_mod(i as u64, 3);
-                // low_bits_mask(3) = 7 and pow2(3) = 8
-                lemma2_to64();
-                assert(bit_idx < 8);
-            }
-
-            bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
-            i += 1;
-        }
-
-        proof {
-            assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
-        }
-
-        bits
-    }
-
 }
 
 
@@ -1610,13 +1552,61 @@ impl<'de> Deserialize<'de> for Scalar {
 }
 } // verus!
 
+verus! {
+/* <VERIFICATION NOTE>
+Helper inline functions for as_radix_16, moved outside impl Scalar for Verus compatibility
+</VERIFICATION NOTE> */
+#[allow(clippy::identity_op)]
+#[inline(always)]
+fn bot_half(x: u8) -> (result: u8)
+/* <VERIFICATION NOTE>
+- PROOF BYPASS 
+- Adjust the spec as needed for the proof of as_radix_16
+</VERIFICATION NOTE> */
+ensures
+    // Result is the lower 4 bits (lower nibble) of x
+    result == x % 16,
+    // Result is in range [0, 15]
+    result <= 15,
+{
+    let result = (x >> 0) & 15;
+    proof {
+        // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
+        assume(result == x % 16);
+        assume(result <= 15);
+    }
+    result
+}
+
+#[inline(always)]
+fn top_half(x: u8) -> (result: u8)
+/* <VERIFICATION NOTE>
+- PROOF BYPASS 
+- Adjust the spec as needed for the proof of as_radix_16
+</VERIFICATION NOTE> */
+ensures
+    // Result is the upper 4 bits (upper nibble) of x
+    result == x / 16,
+    // Result is in range [0, 15]
+    result <= 15,
+{
+    let result = (x >> 4) & 15;
+    proof {
+        // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
+        assume(result == x / 16);
+        assume(result <= 15);
+    }
+    result
+}
+} // verus!
+
 impl Scalar {
     /// Get the bits of the scalar, in little-endian order
+    pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
     /* <VERIFICATION NOTE>
     - Opaque types like Iterator not supported in Verus yet
-    - see bits_le_v above for a Verus-compatible version
+    - see bits_le_verus below for a Verus-compatible version
     </VERIFICATION NOTE> */
-    pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
         (0..256).map(|i| {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
             // the byte. Since self.bytes is little-endian at the byte level, this iterator is
@@ -1626,6 +1616,63 @@ impl Scalar {
     }
 
     verus! {
+        /// Get the bits of the scalar as an array, in little-endian order
+    /* <VERIFICATION NOTE>
+     This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
+    </VERIFICATION NOTE> */
+    #[allow(dead_code)]
+    pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
+    ensures
+        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
+    {
+        let mut bits = [false; 256];
+        let mut i: usize = 0;
+
+        while i < 256
+            invariant
+                i <= 256,
+                bits.len() == 256,
+                self.bytes.len() == 32,
+            decreases 256 - i,
+        {
+            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+            // the byte. Since self.bytes is little-endian at the byte level, this is
+            // little-endian on the bit level
+            let byte_idx = i >> 3;  // Divide by 8 to get byte index
+            let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
+
+            // Prove bounds using shift and mask lemmas
+            proof {
+                use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+                use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+                use vstd::bits::*;
+                use vstd::arithmetic::power2::*;
+
+                assert(i < 256);
+
+                // Prove i >> 3 = i / 8 using shift lemma
+                lemma_u64_shr_is_div(i as u64, 3);
+                // pow2(3) = 8
+                lemma2_to64();
+                assert(byte_idx < 32);
+
+                // Prove i & 7 = i % 8 using mask lemma
+                lemma_u64_low_bits_mask_is_mod(i as u64, 3);
+                // low_bits_mask(3) = 7 and pow2(3) = 8
+                lemma2_to64();
+                assert(bit_idx < 8);
+            }
+
+            bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
+            i += 1;
+        }
+
+        proof {
+            assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+        }
+
+        bits
+    }
         /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
         ///
         /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
@@ -1698,10 +1745,8 @@ impl Scalar {
         /// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
         /// and reindex.  In fact, by setting all digits to \\(0\\)
         /// initially, we don't need to emit anything.
-        /* <VERIFICATION NOTE>
-         PROOF BYPASS
-        </VERIFICATION NOTE> */
         pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
+        // VERIFICATION NOTE: PROOF BYPASS
         requires
             2 <= w <= 8,
         ensures
@@ -1793,18 +1838,6 @@ impl Scalar {
 
             naf
         }
-        /* <VERIFICATION NOTE>
-        Helper inline functions for as_radix_16, moved outside function body for Verus compatibility
-        </VERIFICATION NOTE> */
-        #[allow(clippy::identity_op)]
-        #[inline(always)]
-        fn bot_half(x: u8) -> u8 {
-            (x >> 0) & 15
-        }
-        #[inline(always)]
-        fn top_half(x: u8) -> u8 {
-            (x >> 4) & 15
-        }
 
         /// Write this scalar in radix 16, with coefficients in \\([-8,8)\\),
         /// i.e., compute \\(a\_i\\) such that
@@ -1816,9 +1849,17 @@ impl Scalar {
         /// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
         /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
         /// \\(2^{255}\\).
-
-        #[verifier::external_body]
-        pub(crate) fn as_radix_16(&self) -> [i8; 64] {
+        pub(crate) fn as_radix_16(&self) -> (result: [i8; 64])
+        // VERIFICATION NOTE: PROOF BYPASS        
+        requires
+            // Top bit must be clear (scalar < 2^255)
+            self.bytes[31] <= 127,
+        ensures
+            // Result digits are in valid range
+            is_valid_radix_16(&result),
+            // Reconstruction property: digits reconstruct the scalar value
+            reconstruct_radix_16(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+        {
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(self[31] <= 127);
@@ -1845,23 +1886,32 @@ impl Scalar {
             }
             </ORIGINAL CODE> */
             for i in 0..32 {
-                output[2 * i] = Self::bot_half(self.bytes[i]) as i8;
-                output[2 * i + 1] = Self::top_half(self.bytes[i]) as i8;
+                output[2 * i] = bot_half(self.bytes[i]) as i8;
+                output[2 * i + 1] = top_half(self.bytes[i]) as i8;
             }
             // Precondition note: since self[31] <= 127, output[63] <= 7
 
             // Step 2: recenter coefficients from [0,16) to [-8,8)
             for i in 0..63 {
+                assume(false);
                 let carry = (output[i] + 8) >> 4;
                 output[i] -= carry << 4;
                 /* <ORIGINAL CODE> :
                 output[i + 1] += carry;
                 </ORIGINAL CODE> */
-                // VERIFICATION NOTE: Changed += to + for Verus compatibility
-                output[i + 1] += carry;
+                // VERIFICATION NOTE: Changed += to explicit assignment for Verus compatibility
+                // Verus doesn't support += on indexed arrays with computed indices
+                let next_idx = i + 1;
+                output[next_idx] = output[next_idx] + carry;
             }
             // Precondition note: output[63] is not recentered.  It
             // increases by carry <= 1.  Thus output[63] <= 8.
+
+            // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
+            proof {
+                assume(is_valid_radix_16(&output));
+                assume(reconstruct_radix_16(output@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int);
+            }
 
             output
         }

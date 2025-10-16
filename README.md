@@ -49,3 +49,12 @@ ln -s /path/to/cargo-verus
 ln -s /path/to/verus
 ```
 4. If you're on a Mac, the first time you run `cargo verus verify` inside dalek-lite, the OS will block it because it's unknown software. Once that happens, go into your security settings and approve it. You will be prompted to do this 3 times: for `cargo-verus`, `verus`, and `z3`.
+5. Success looks like:
+```
+cd dalek-lite
+cargo verus verify
+... (many warnings)
+verification results:: 313 verified, 0 errors
+warning: `curve25519-dalek` (lib) generated 43 warnings (19 duplicates)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 8.99s
+```

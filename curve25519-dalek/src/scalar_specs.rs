@@ -104,17 +104,15 @@ pub open spec fn reconstruct(naf: Seq<int>) -> int
 }
 
 /// Predicate describing a valid width-w Non-Adjacent Form.
-pub open spec fn is_valid_naf(naf: Seq<int>, w: nat) -> bool
-    recommends 2 <= w <= 8
-    decreases naf.len()
-{
+pub open spec fn is_valid_naf(naf: Seq<int>, w: nat) -> bool {
     forall |i: int| 0 <= i < naf.len() ==>
-        // each digit is odd or zero
-        ((#[trigger] naf[i]) == 0 || (#[trigger] naf[i]) % 2 != 0) &&
-        // bounded magnitude
-        -pow2((w - 1) as nat) < (#[trigger] naf[i]) && (#[trigger] naf[i]) < pow2((w - 1) as nat) &&
-        // no adjacent nonzero digits
-        !((#[trigger] naf[i]) != 0 && i + 1 < naf.len() && naf[i + 1] != 0)
+        // Each nonzero digit is odd and within bound
+        ((#[trigger] naf[i]) == 0 ||
+         ((#[trigger] naf[i]) % 2 != 0 &&
+          -pow2((w - 1) as nat) < (#[trigger] naf[i]) && (#[trigger] naf[i]) < pow2((w - 1) as nat))) &&
+        // At most one nonzero in any w consecutive digits
+        forall |j: int| 1 <= j < w && i + j < naf.len() ==>
+            !((#[trigger] naf[i]) != 0 && (#[trigger] naf[i + j]) != 0)
 }
 
 } // verus!

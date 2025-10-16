@@ -1560,7 +1560,7 @@ Helper inline functions for as_radix_16, moved outside impl Scalar for Verus com
 #[inline(always)]
 fn bot_half(x: u8) -> (result: u8)
 /* <VERIFICATION NOTE>
-- PROOF BYPASS 
+- PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
 ensures
@@ -1581,7 +1581,7 @@ ensures
 #[inline(always)]
 fn top_half(x: u8) -> (result: u8)
 /* <VERIFICATION NOTE>
-- PROOF BYPASS 
+- PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
 ensures
@@ -1603,10 +1603,10 @@ ensures
 impl Scalar {
     /// Get the bits of the scalar, in little-endian order
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
-    /* <VERIFICATION NOTE>
-    - Opaque types like Iterator not supported in Verus yet
-    - see bits_le_verus below for a Verus-compatible version
-    </VERIFICATION NOTE> */
+        /* <VERIFICATION NOTE>
+        - Opaque types like Iterator not supported in Verus yet
+        - see bits_le_verus below for a Verus-compatible version
+        </VERIFICATION NOTE> */
         (0..256).map(|i| {
             // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
             // the byte. Since self.bytes is little-endian at the byte level, this iterator is
@@ -1850,7 +1850,7 @@ impl Scalar {
         /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
         /// \\(2^{255}\\).
         pub(crate) fn as_radix_16(&self) -> (result: [i8; 64])
-        // VERIFICATION NOTE: PROOF BYPASS        
+        // VERIFICATION NOTE: PROOF BYPASS
         requires
             // Top bit must be clear (scalar < 2^255)
             self.bytes[31] <= 127,

@@ -95,7 +95,7 @@ pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
 }
 
 // spec functions for NAF
-// integer value of a NAF
+// integer value of a NAF, little-endian
 pub open spec fn reconstruct(naf: Seq<int>) -> int
     decreases naf.len()
 {

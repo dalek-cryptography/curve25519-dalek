@@ -1,7 +1,9 @@
 //! Specification functions for high-level Scalar operations
 
 use crate::backend::serial::u64::scalar_specs::*;
+#[allow(unused_imports)]
 use crate::scalar::Scalar;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*; // Import all power2 functions including pow2
 use vstd::prelude::*;
 
@@ -27,6 +29,15 @@ pub open spec fn scalar_to_nat(s: &Scalar) -> nat {
     bytes_to_nat(&s.bytes)
 }
 
+/// Checks if a Scalar satisfies the canonical representation invariants:
+/// - Invariant #1: High bit (bit 255) is clear, ensuring s < 2^255
+/// - Invariant #2: Scalar is reduced modulo group order, i.e., s < ℓ
+pub open spec fn is_canonical_scalar(s: &Scalar) -> bool {
+    // Invariant #2: Scalar is reduced (< group order)
+    bytes_to_nat(&s.bytes) < group_order()
+    // Invariant #1: High bit is clear (< 2^255)
+    && s.bytes[31] <= 127
+}
 
 /// Returns true iff a and b are multiplicative inverses modulo group_order
 /// i.e., a * b ≡ 1 (mod group_order)
@@ -82,5 +93,46 @@ pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
     // Bit 254 is set, so result >= 2^254
     && bytes[31] & 0b0100_0000 == 0b0100_0000
 }
+
+// spec functions for NAF
+// integer value of a NAF, little-endian
+pub open spec fn reconstruct(naf: Seq<int>) -> int
+    decreases naf.len()
+{
+    if naf.len() == 0 { 0 }
+    else { naf[0] + 2 * reconstruct(naf.skip(1)) }
+}
+
+/// Predicate describing a valid width-w Non-Adjacent Form.
+pub open spec fn is_valid_naf(naf: Seq<int>, w: nat) -> bool {
+    forall |i: int| 0 <= i < naf.len() ==>
+        // Each nonzero digit is odd and within bound
+        ((#[trigger] naf[i]) == 0 ||
+         ((#[trigger] naf[i]) % 2 != 0 &&
+          -pow2((w - 1) as nat) < (#[trigger] naf[i]) && (#[trigger] naf[i]) < pow2((w - 1) as nat))) &&
+        // At most one nonzero in any w consecutive digits
+        forall |j: int| 1 <= j < w && i + j < naf.len() ==>
+            !((#[trigger] naf[i]) != 0 && (#[trigger] naf[i + j]) != 0)
+}
+
+// Spec functions for radix-16 representation
+
+/// Reconstructs the integer value from a radix-16 representation
+pub open spec fn reconstruct_radix_16(digits: Seq<int>) -> int
+    decreases digits.len()
+{
+    if digits.len() == 0 { 0 }
+    else { digits[0] + 16 * reconstruct_radix_16(digits.skip(1)) }
+}
+
+/// Predicate describing a valid radix-16 representation with signed digits
+/// Coefficients are in [-8, 8) for indices 0..62, and [-8, 8] for index 63
+pub open spec fn is_valid_radix_16(digits: &[i8; 64]) -> bool {
+    forall |i: int| 0 <= i < 64 ==>
+    if i < 63 { -8 <= digits[i] && digits[i] < 8 }
+    else { -8 <= digits[i] && digits[i] <= 8 }
+}
+
+
 
 } // verus!

@@ -1,14 +1,26 @@
 //! External specifications for selected std/core functions used in verification
 use crate::backend::serial::u64::scalar_specs::*;
+#[allow(unused_imports)]
 use crate::Scalar;
 use vstd::prelude::*;
 
 #[cfg(feature = "rand_core")]
 use rand_core::RngCore;
 
-use digest::Digest;
-
 verus! {
+
+#[verifier::external_type_specification]
+#[verifier::external_body]
+pub struct ExFormatter<'a>(core::fmt::Formatter<'a>);
+
+#[verifier::external_type_specification]
+#[verifier::external_body]
+pub struct ExFmtError(core::fmt::Error);
+
+// Assume specification for core::fmt::Formatter::write_str used e.g. by serde Visitors
+pub assume_specification<'a> [core::fmt::Formatter::<'a>::write_str]
+    (_0: &mut core::fmt::Formatter<'a>, _1: &str) -> core::result::Result<(), core::fmt::Error>;
+
 
 // Build a Seq<u8> from fixed arrays (for specs)
 pub open spec fn seq_from2(b: &[u8; 2]) -> Seq<u8> { Seq::new(2, |i: int| b[i]) }
@@ -46,6 +58,38 @@ pub fn u128_to_le_bytes(x: u128) -> (bytes: [u8; 16])
         bytes_seq_to_nat(seq_from16(&bytes)) == x as nat
 {
     x.to_le_bytes()
+}
+
+#[verifier::external_body]
+pub fn u16_from_le_bytes(bytes: [u8; 2]) -> (x: u16)
+    ensures
+        x as nat == bytes_seq_to_nat(seq_from2(&bytes))
+{
+    u16::from_le_bytes(bytes)
+}
+
+#[verifier::external_body]
+pub fn u32_from_le_bytes(bytes: [u8; 4]) -> (x: u32)
+    ensures
+        x as nat == bytes_seq_to_nat(seq_from4(&bytes))
+{
+    u32::from_le_bytes(bytes)
+}
+
+#[verifier::external_body]
+pub fn u64_from_le_bytes(bytes: [u8; 8]) -> (x: u64)
+    ensures
+        x as nat == bytes_seq_to_nat(seq_from8(&bytes))
+{
+    u64::from_le_bytes(bytes)
+}
+
+#[verifier::external_body]
+pub fn u128_from_le_bytes(bytes: [u8; 16]) -> (x: u128)
+    ensures
+        x as nat == bytes_seq_to_nat(seq_from16(&bytes))
+{
+    u128::from_le_bytes(bytes)
 }
 
 // annotations for random values

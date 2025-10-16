@@ -86,6 +86,9 @@ pub mod constants;
 // External (and internal) traits.
 pub mod traits;
 
+// #[cfg(feature = "serde")]
+// pub mod serde_assumes;
+
 // All the lizard code is here, for now
 #[cfg(feature = "lizard")]
 pub mod lizard;

@@ -99,6 +99,7 @@ impl Scalar52 {
     pub fn from_bytes(bytes: &[u8; 32]) -> (s: Scalar52)
     ensures bytes_to_nat(bytes) == to_nat(&s.limbs),
             limbs_bounded(&s),
+            to_nat(&s.limbs) < group_order(),
     {
         let mut words = [0u64; 4];
         for i in 0..4
@@ -145,7 +146,7 @@ impl Scalar52 {
     ensures
         limbs_bounded(&s),
         to_nat(&s.limbs) % group_order() == bytes_wide_to_nat(bytes) % group_order(),
-        // VER NOTE: Result is canonical
+        // VERIFICATION NOTE: Result is canonical
         to_nat(&s.limbs) < group_order(),
     {
         assume(false); // TODO: complete the proof

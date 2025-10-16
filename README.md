@@ -48,7 +48,7 @@ cd ~/.cargo/bin
 ln -s /path/to/cargo-verus
 ln -s /path/to/verus
 ```
-4. If you're on a Mac, the first time you run `cargo verus verify` inside dalek-lite, the OS will block it because it's unknown software. Once that happens, go into your security settings and approve it. See https://support.apple.com/en-gb/guide/mac-help/mh40616/mac. You will have to try to run `cargo verus verify` 3 times and approve each of `cargo-verus`, `verus`, and `z3`.
+4. If you're on a Mac, the first time you run `cargo verus verify` inside dalek-lite, you may be prompted to approve the unknown applications: `cargo-verus`, `verus`, and `z3`. See https://support.apple.com/en-gb/guide/mac-help/mh40616/mac.
 5. Success looks like:
 ```
 cd dalek-lite

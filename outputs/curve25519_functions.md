@@ -226,9 +226,9 @@
 | [invert](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L887) | :heavy_check_mark: |  |  |  |
 | [bits_le](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1176) |  |  |  |  |
 | [non_adjacent_form](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1262) | :heavy_check_mark: |  |  |  |
-| [bot_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1352) |  |  |  |  |
-| [top_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1356) |  |  |  |  |
-| [as_radix_16](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1372) |  |  |  |  |
+| [bot_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1352) | :heavy_check_mark: |  |  |  |
+| [top_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1356) | :heavy_check_mark: |  |  |  |
+| [as_radix_16](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1372) | :heavy_check_mark: |  |  |  |
 | [to_radix_2w_size_hint](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1425) |  |  |  |  |
 | [as_radix_2w](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1462) |  |  |  |  |
 | [unpack](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/scalar.rs#L1524) | :heavy_check_mark: | :heavy_check_mark: |  |  |

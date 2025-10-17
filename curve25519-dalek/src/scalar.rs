@@ -1297,7 +1297,7 @@ impl Scalar {
     #[cfg(feature = "alloc")]
     // Theo: Verus doesn't like the zeroize in this function. I think the long-term
     // solution is to use assume_specification to tell Verus what zeroize does.
-    // In the short-term, I've just told verus to ignore the body. 
+    // In the short-term, I've just told verus to ignore the body.
     // (SB update: alternative is to exclude just the zeroize call, as below)
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
     /* <VERIFICATION NOTE>

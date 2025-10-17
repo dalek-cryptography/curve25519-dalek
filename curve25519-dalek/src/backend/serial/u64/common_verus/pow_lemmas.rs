@@ -4,8 +4,10 @@ use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
+use vstd::seq::*;
 
 use super::mul_lemmas::*;
+use super::sum_lemmas::*;
 
 verus! {
 
@@ -125,8 +127,99 @@ pub proof fn mask_pow2(x: nat, k: nat, s: nat)
     assert((pow2(k) * x) % (pow2(k) * pow2(d)) == pow2(k) * (x % pow2(d))) by {
         lemma_truncate_middle(x as int, pow2(k) as int, pow2(d) as int);
     }
-
 }
+
+pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
+    requires
+        a < pow2(s),
+        a + b * pow2(s) <= u64::MAX,
+        k <= s < 64
+    ensures
+        (a as nat) / pow2(k) < pow2((s - k) as nat),
+        (b * pow2(s)) as nat / pow2(k) == b * pow2((s - k) as nat),
+        (a as nat) / pow2(k) + b * pow2((s - k) as nat) <= u64::MAX
+{
+    let d = (s - k) as nat;
+
+    assert(pow2(k) > 0) by {
+        lemma_pow2_pos(k);
+    }
+
+    assert(pow2(s) == pow2(d) * pow2(k)) by {
+        lemma_pow2_adds(d, k);
+    }
+
+    assert( a as nat / pow2(k) < pow2(d) ) by {
+        assert( a as nat / pow2(k) < pow2(s) / pow2(k) ) by {
+            lemma_div_by_multiple_is_strongly_ordered( a as int, pow2(s) as int, pow2(d) as int, pow2(k) as int);
+        }
+        assert( pow2(s) / pow2(k) == pow2(d) ) by {
+            lemma_div_by_multiple(pow2(d) as int, pow2(k) as int);
+        }
+    }
+
+    assert((b * pow2(s)) as nat / pow2(k) == b * pow2(d)) by {
+        assert(b * pow2(s) == (b * pow2(d)) * pow2(k)) by {
+            lemma_mul_is_associative(b as int, pow2(d) as int, pow2(k) as int);
+        }
+        assert( ((b * pow2(d)) * pow2(k)) as nat / pow2(k) == b * pow2(d) ) by {
+            lemma_div_by_multiple(b * pow2(d), pow2(k) as int);
+        }
+    }
+}
+
+pub open spec fn pow2_sum(coefs: Seq<nat>, offset: nat, step: nat, k: nat) -> nat
+    decreases k
+{
+    if (k == 0) {
+        coefs[offset as int] * pow2(0)
+    }
+    else {
+        // k > 0
+        pow2_sum(coefs, offset, step, (k - 1) as nat) + coefs[(offset + k) as int] * pow2(k * step)
+    }
+}
+
+pub proof fn pow2_sum_bounds(coefs: Seq<nat>, offset: nat, step: nat, k: nat)
+    requires
+        offset + k <= coefs.len(),
+        forall |i: nat| 0 <= i <= k ==> #[trigger] coefs[(offset + i) as int] < pow2(step)
+    ensures
+        pow2_sum(coefs, offset, step, k) < pow2((k + 1) * step)
+    decreases k
+{
+    if (k == 0){
+        assert(pow2(0) == 1) by {
+            lemma2_to64();
+        }
+        assert(coefs[offset as int] * pow2(0) == coefs[offset as int]) by {
+            lemma_mul_basics_3(coefs[offset as int] as int);
+        }
+    }
+    else {
+        assert(
+            pow2_sum(coefs, offset, step, k)
+            ==
+            pow2_sum(coefs, offset, step, (k - 1) as nat) + coefs[(offset + k) as int] * pow2(k * step)
+        ) by {
+            reveal_with_fuel(pow2_sum, 1);
+        }
+
+        assert(pow2_sum(coefs, offset, step, (k - 1) as nat) < pow2(k * step)) by {
+            pow2_sum_bounds(coefs, offset, step, (k-1) as nat);
+        }
+
+        assert(coefs[(offset + k) as int] * pow2(k * step) <= pow2((k + 1) * step) - pow2(k * step)) by {
+            assert((k + 1) * step == k * step + step) by {
+                lemma_mul_is_distributive_add_other_way(step as int, k as int, 1);
+            }
+            assert(coefs[(offset + k) as int] * pow2(k * step) <= pow2(k * step + step) - pow2(k * step)) by {
+                pow2_mul_general(coefs[(offset + k) as int], step, k * step);
+            }
+        }
+    }
+}
+
 
 fn main() {}
 

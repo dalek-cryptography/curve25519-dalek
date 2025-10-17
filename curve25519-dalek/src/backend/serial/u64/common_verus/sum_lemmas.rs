@@ -36,8 +36,9 @@ pub proof fn sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
     decreases k
 {
     if (k == 0){
-        // trivial
-        assume(false);
+        assert(pow2(0) ==1) by {
+            lemma2_to64();
+        }
     }
     else {
         assert(

@@ -2236,6 +2236,9 @@ ensures
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> (result: Scalar)
+    /* VERIFICATION NOTE:
+    PROOF BYPASS
+    */
     requires
         limbs_bounded(self),
     ensures
@@ -2255,6 +2258,9 @@ impl UnpackedScalar {
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> (result: UnpackedScalar)
+    /* VERIFICATION NOTE:
+    PROOF BYPASS
+    */
     requires
         limbs_bounded(&self),
     ensures

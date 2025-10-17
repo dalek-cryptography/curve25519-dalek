@@ -120,6 +120,9 @@ use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 use vstd::prelude::*;
+use vstd::arithmetic::power2::*;
+use vstd::arithmetic::power::*;
+
 
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
@@ -2167,23 +2170,44 @@ impl Scalar {
 
 verus! {
 // Helper function for montgomery_invert
-// VERIFICATION NOTE: Moved inline function outside the body of montgomery_invert
 #[inline]
-fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
-    assume(limbs_bounded(y));
-    assume(limbs_bounded(x));
+fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) 
+/*  VERIFICATION NOTE: 
+- PROOF BYPASS
+- This function was initially inside the body of montgomery_invert, but was moved outside for Verus
+*/
+requires
+    limbs_bounded(old(y)),  // Use old() for &mut parameters in requires
+    limbs_bounded(x),        // No old() needed for & parameters
+ensures
+    limbs_bounded(y),
+    limbs_bounded(x),
+    (to_nat(&y.limbs) * montgomery_radix()) % group_order() == 
+    (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int)
+{
+    assume(false);
+    let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof 
     for _ in 0..squarings
-        invariant limbs_bounded(y), limbs_bounded(x)
+        invariant 
+        limbs_bounded(y), limbs_bounded(x), i <= squarings,
+        pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
     {
+        proof { 
+            i = i + 1; 
+            assume(i <= squarings);
+            assume(pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int);
+        }  
         *y = y.montgomery_square();
     }
     *y = UnpackedScalar::montgomery_mul(y, x);
-    assume(limbs_bounded(y));
+    proof {
+        assume(limbs_bounded(y));
+        assume(limbs_bounded(x));
+        assume((to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int));
+    }
 }
-} // verus!
 
 impl UnpackedScalar {
-    verus! {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> (result: Scalar)
     requires
@@ -2299,8 +2323,9 @@ impl UnpackedScalar {
 
         result
     }
-    } // verus!
 }
+
+} // verus!
 
 #[cfg(feature = "group")]
 impl Field for Scalar {

@@ -1751,9 +1751,9 @@ impl Scalar {
             2 <= w <= 8,
         ensures
         // result encodes the same integer
-        reconstruct(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+        reconstruct(result@) == scalar_to_nat(self) as int,
         // result digits follow NAF rules
-        is_valid_naf(result@.map(|i: int, x: i8| x as int), w as nat),
+        is_valid_naf(result@, w as nat),
         {
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
@@ -1858,13 +1858,12 @@ impl Scalar {
             // Result digits are in valid range
             is_valid_radix_16(&result),
             // Reconstruction property: digits reconstruct the scalar value
-            reconstruct_radix_16(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+            reconstruct_radix_16(result@) == scalar_to_nat(self) as int,
         {
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(self[31] <= 127);
             let mut output = [0i8; 64];
-
 
             // Step 1: change radix.
             // Convert from radix 256 (bytes) to radix 16 (nibbles)
@@ -1910,7 +1909,7 @@ impl Scalar {
             // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
             proof {
                 assume(is_valid_radix_16(&output));
-                assume(reconstruct_radix_16(output@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int);
+                assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
             }
 
             output
@@ -1936,6 +1935,7 @@ impl Scalar {
         digits_count
     }
 
+    verus! {
     /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
     /// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.
     /// Radix 256 is near-optimal even for very large inputs.
@@ -1957,9 +1957,27 @@ impl Scalar {
     /// $$
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
+    // VERIFICATION NOTE: PROOF BYPASS
     #[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
-    pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
+    #[verifier::external_body]
+    pub(crate) fn as_radix_2w(&self, w: usize) -> (result: [i8; 64])
+        requires
+            4 <= w <= 8,
+            // For w=4 (radix 16), top bit must be clear
+            w == 4 ==> self.bytes[31] <= 127,
+        ensures
+            ({
+                let digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+                // Result digits are in valid range for the given window size
+                is_valid_radix_2w(&result, w as nat, digits_count as nat) &&
+                // Reconstruction property: digits reconstruct the scalar value
+                reconstruct_radix_2w(result@.take(digits_count), w as nat)
+                    == scalar_to_nat(self) as int
+            }),
+    {
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w >= 4);
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w <= 8);
 
         if w == 4 {
@@ -2014,8 +2032,17 @@ impl Scalar {
             _ => digits[digits_count - 1] += (carry << w) as i8,
         }
 
+        // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
+        proof {
+            let final_digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+            assume(is_valid_radix_2w(&digits, w as nat, final_digits_count as nat));
+            assume(reconstruct_radix_2w(digits@.take(final_digits_count), w as nat)
+                == scalar_to_nat(self) as int);
+        }
+
         digits
     }
+    } // verus!
 
     verus! {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.

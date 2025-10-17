@@ -1294,15 +1294,16 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
-    /* <VERIFICATION NOTE>
-     Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
-    </VERIFICATION NOTE> */
     #[cfg(feature = "alloc")]
     // Theo: Verus doesn't like the zeroize in this function. I think the long-term
     // solution is to use assume_specification to tell Verus what zeroize does.
-    // In the short-term, I've just told verus to ignore the body.
-    #[verifier::external_body]
+    // In the short-term, I've just told verus to ignore the body. 
+    // (SB update: alternative is to exclude just the zeroize call, as below)
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
+    /* <VERIFICATION NOTE>
+     Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
+    </VERIFICATION NOTE> */
+
     ensures
         // Result is the modular inverse of the product of all original inputs
         is_inverse_of_nat(&result, product_of_scalars(old(inputs)@)),
@@ -1465,6 +1466,7 @@ impl Scalar {
 
 
         #[cfg(feature = "zeroize")]
+        #[cfg(not(verus_keep_ghost))]
         Zeroize::zeroize(&mut scratch);
 
         proof {

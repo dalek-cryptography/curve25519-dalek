@@ -119,10 +119,9 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
-use vstd::prelude::*;
-use vstd::arithmetic::power2::*;
 use vstd::arithmetic::power::*;
-
+use vstd::arithmetic::power2::*;
+use vstd::prelude::*;
 
 #[cfg(feature = "group")]
 use group::ff::{Field, FromUniformBytes, PrimeField};
@@ -1602,7 +1601,7 @@ ensures
     result
 }
 
-/* 
+/*
 /// Returns a size hint indicating how many entries of the return
 /// value of `to_radix_2w` are nonzero.
 pub fn to_radix_2w_size_hint(w: usize) -> (result: usize)
@@ -1639,67 +1638,67 @@ impl Scalar {
         })
     }
 
-verus! {
-        /// Get the bits of the scalar as an array, in little-endian order
-    /* <VERIFICATION NOTE>
-     This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
-    </VERIFICATION NOTE> */
-    #[allow(dead_code)]
-    pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
-    ensures
-        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
-    {
-        let mut bits = [false; 256];
-        let mut i: usize = 0;
-
-        while i < 256
-            invariant
-                i <= 256,
-                bits.len() == 256,
-                self.bytes.len() == 32,
-            decreases 256 - i,
+    verus! {
+            /// Get the bits of the scalar as an array, in little-endian order
+        /* <VERIFICATION NOTE>
+         This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
+        </VERIFICATION NOTE> */
+        #[allow(dead_code)]
+        pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
+        ensures
+            bits_to_nat(&result) == bytes_to_nat(&self.bytes),
         {
-            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-            // the byte. Since self.bytes is little-endian at the byte level, this is
-            // little-endian on the bit level
-            let byte_idx = i >> 3;  // Divide by 8 to get byte index
-            let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
+            let mut bits = [false; 256];
+            let mut i: usize = 0;
 
-            // Prove bounds using shift and mask lemmas
-            proof {
-                use crate::backend::serial::u64::common_verus::shift_lemmas::*;
-                use crate::backend::serial::u64::common_verus::mask_lemmas::*;
-                use vstd::bits::*;
-                use vstd::arithmetic::power2::*;
+            while i < 256
+                invariant
+                    i <= 256,
+                    bits.len() == 256,
+                    self.bytes.len() == 32,
+                decreases 256 - i,
+            {
+                // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+                // the byte. Since self.bytes is little-endian at the byte level, this is
+                // little-endian on the bit level
+                let byte_idx = i >> 3;  // Divide by 8 to get byte index
+                let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
 
-                assert(i < 256);
+                // Prove bounds using shift and mask lemmas
+                proof {
+                    use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+                    use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+                    use vstd::bits::*;
+                    use vstd::arithmetic::power2::*;
 
-                // Prove i >> 3 = i / 8 using shift lemma
-                lemma_u64_shr_is_div(i as u64, 3);
-                // pow2(3) = 8
-                lemma2_to64();
-                assert(byte_idx < 32);
+                    assert(i < 256);
 
-                // Prove i & 7 = i % 8 using mask lemma
-                lemma_u64_low_bits_mask_is_mod(i as u64, 3);
-                // low_bits_mask(3) = 7 and pow2(3) = 8
-                lemma2_to64();
-                assert(bit_idx < 8);
+                    // Prove i >> 3 = i / 8 using shift lemma
+                    lemma_u64_shr_is_div(i as u64, 3);
+                    // pow2(3) = 8
+                    lemma2_to64();
+                    assert(byte_idx < 32);
+
+                    // Prove i & 7 = i % 8 using mask lemma
+                    lemma_u64_low_bits_mask_is_mod(i as u64, 3);
+                    // low_bits_mask(3) = 7 and pow2(3) = 8
+                    lemma2_to64();
+                    assert(bit_idx < 8);
+                }
+
+                bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
+                i += 1;
             }
 
-            bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
-            i += 1;
+            proof {
+                assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+            }
+
+            bits
         }
+    } // verus!
 
-        proof {
-            assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
-        }
-
-        bits
-    }
-} // verus!
-
-verus! {
+    verus! {
         /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
         ///
         /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
@@ -1946,7 +1945,7 @@ verus! {
         /// value of `to_radix_2w` are nonzero.
         #[verifier::external_body]
         pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result: usize)
-        /* VERIFICATION NOTE: 
+        /* VERIFICATION NOTE:
         We could not get this function in Verus, potentially a bug in Verus.
         */
         {
@@ -1993,7 +1992,7 @@ verus! {
     #[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
     pub(crate) fn as_radix_2w(&self, w: usize) -> (result: [i8; 64])
     // VERIFICATION NOTE: PROOF BYPASS
-        requires 
+        requires
             4 <= w <= 8,
             // For w=4 (radix 16), top bit must be clear
             w == 4 ==> self.bytes[31] <= 127,
@@ -2146,7 +2145,7 @@ verus! {
 
         digits
     }
-   
+
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
     pub fn unpack(&self) -> (result: UnpackedScalar)
     // VERIFICATION NOTE: VERIFIED (changed pub(crate) to pub)
@@ -2198,8 +2197,8 @@ verus! {
 verus! {
 // Helper function for montgomery_invert
 #[inline]
-fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) 
-/*  VERIFICATION NOTE: 
+fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar)
+/*  VERIFICATION NOTE:
 - PROOF BYPASS
 - This function was initially inside the body of montgomery_invert, but was moved outside for Verus
 */
@@ -2209,21 +2208,21 @@ requires
 ensures
     limbs_bounded(y),
     limbs_bounded(x),
-    (to_nat(&y.limbs) * montgomery_radix()) % group_order() == 
+    (to_nat(&y.limbs) * montgomery_radix()) % group_order() ==
     (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int)
 {
     assume(false);
-    let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof 
+    let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof
     for _ in 0..squarings
-        invariant 
+        invariant
         limbs_bounded(y), limbs_bounded(x), i <= squarings,
         pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
     {
-        proof { 
-            i = i + 1; 
+        proof {
+            i = i + 1;
             assume(i <= squarings);
             assume(pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int);
-        }  
+        }
         *y = y.montgomery_square();
     }
     *y = UnpackedScalar::montgomery_mul(y, x);
@@ -2496,7 +2495,7 @@ verus! {
 /// Panics if `src.len() != 8 * dst.len()`.
 fn read_le_u64_into(src: &[u8], dst: &mut [u64])
 /* VERIFICATION NOTE:
-PROOF BYPASS 
+PROOF BYPASS
 */
     requires
         src.len() == 8 * old(dst).len(),
@@ -2514,7 +2513,7 @@ PROOF BYPASS
         src.len(),
         dst.len()
     );
-    
+
     /* <ORIGINAL CODE>
     for (bytes, val) in src.chunks(8).zip(dst.iter_mut()) {
         *val = u64_from_le_bytes(
@@ -2524,7 +2523,7 @@ PROOF BYPASS
         );
     }
     </ORIGINAL CODE> */
-    
+
     /* <MODIFIED CODE> Verus doesn't support chunks/zip/try_into, use explicit loops */
     let dst_len = dst.len();
     for i in 0..dst_len
@@ -2544,7 +2543,7 @@ PROOF BYPASS
         {
             byte_array[j] = src[byte_start + j];
         }
-        dst[i] = u64_from_le_bytes(byte_array);    
+        dst[i] = u64_from_le_bytes(byte_array);
     }
     /* </MODIFIED CODE> */
     proof {

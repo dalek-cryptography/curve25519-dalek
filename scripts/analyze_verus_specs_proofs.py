@@ -51,23 +51,51 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
         fn_start = match.start()
 
         # Find the function body by looking for the opening brace
-        # Need to be careful about braces inside ensures/requires clauses
-        # Track parenthesis depth to skip braces that are inside parens
-        fn_def_start = fn_start
-        pos = fn_def_start
+        # For Verus functions with complex specs, we need a more robust approach
+        # Look for the pattern that indicates the start of the function body
+        
+        # First, extract the entire function signature including specs
+        signature_end = fn_start
+        pos = fn_start
         paren_depth = 0
-        brace_pos = -1
-
+        brace_depth = 0
+        found_opening_paren = False
+        
+        # Find the end of the function signature (including specs)
         while pos < len(content):
             char = content[pos]
+            
             if char == "(":
                 paren_depth += 1
+                found_opening_paren = True
             elif char == ")":
                 paren_depth -= 1
-            elif char == "{" and paren_depth == 0:
-                brace_pos = pos
-                break
+            elif char == "{":
+                if found_opening_paren and paren_depth == 0:
+                    # We've found a brace at the top level after seeing the parameter list
+                    # Check if this looks like the start of a function body
+                    # by looking at what comes before it
+                    
+                    # Look backwards to see if we just finished specs
+                    look_back = max(0, pos - 50)
+                    preceding_text = content[look_back:pos].strip()
+                    
+                    # If the preceding text ends with a comma or closing brace/paren,
+                    # this is likely the function body
+                    if (preceding_text.endswith(',') or 
+                        preceding_text.endswith('}') or 
+                        preceding_text.endswith(')') or
+                        'ensures' in preceding_text[-30:] or
+                        'requires' in preceding_text[-30:]):
+                        signature_end = pos
+                        break
+                brace_depth += 1
+            elif char == "}":
+                brace_depth -= 1
+            
             pos += 1
+        
+        brace_pos = signature_end if signature_end > fn_start else -1
 
         if brace_pos == -1:
             # Might be a trait definition without body

@@ -2459,16 +2459,10 @@ proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     let b_quot = b / pow2(n_minus_k);
     let b_rem = b % pow2(n_minus_k);
     
-    // Z3 LIMITATION: Should follow from lemma_fundamental_div_mod but solver can't connect nat/int types
-    //assume(b == b_quot * pow2(n_minus_k) + b_rem);
-    
-    // ===== STEP 4: Multiply both sides by pow2(k) =====
-    // b * pow2(k) = b_quot * pow2(n-k) * pow2(k) + b_rem * pow2(k)
-    //             = b_quot * pow2(n) + b_rem * pow2(k)
-    
-    lemma_mul_is_distributive_add(pow2(k) as int, (b_quot * pow2(n_minus_k)) as int, b_rem as int);
+    assert(b == pow2(n_minus_k) * b_quot + b_rem);
+    lemma_mul_is_distributive_add_other_way(pow2(k) as int, (b_quot * pow2(n_minus_k)) as int, b_rem as int);
     // Z3 LIMITATION: Should follow from distributivity but solver can't apply it to nat types
-    assume(b * pow2(k) == b_quot * pow2(n_minus_k) * pow2(k) + b_rem * pow2(k));
+    assert(b * pow2(k) == b_quot * pow2(n_minus_k) * pow2(k) + b_rem * pow2(k));
     
     lemma_mul_is_associative(b_quot as int, pow2(n_minus_k) as int, pow2(k) as int);
     assert(b_quot * pow2(n_minus_k) * pow2(k) == b_quot * (pow2(n_minus_k) * pow2(k)));
@@ -2489,9 +2483,13 @@ proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     
     // Step 6b: The multiple of pow2(n) vanishes in the modulo
     // (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) = (a + b_rem * pow2(k)) % pow2(n)
-    // This is the standard property: (x + factor * m) % m == x % m
-    // Z3 LIMITATION: lemma_mod_multiples_vanish exists but has precondition issues
-    assume((a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n));
+    // This is the standard property: (m * a + b) % m == b % m
+    // lemma_mod_multiples_vanish(a, b, m) proves: (m * a + b) % m == b % m
+    lemma_mod_multiples_vanish(b_quot as int, (a + b_rem * pow2(k)) as int, pow2(n) as int);
+    // This gives us: (pow2(n) * b_quot + (a + b_rem * pow2(k))) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
+    // Which is equivalent to: (b_quot * pow2(n) + a + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
+    // And by commutativity: (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
+    assert((a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n));
     
     // ===== STEP 7: The sum < pow2(n), so mod is trivial =====
     // (a + b_rem * pow2(k)) % pow2(n) = a + b_rem * pow2(k)
@@ -2729,7 +2727,9 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // This is the definition of how (x as u8) works in Rust for any integer type x.
     // Verus doesn't automatically establish this property, so we assume it.
     // See similar assumes in to_bytes_lemmas_inductive.rs:1796 and to_bytes_lemmas_8_oct.rs:2615
-    assume(byte as nat == (combined as nat) % 256);    
+    assert(byte as nat == combined as u8);
+    assume(combined as u8 == (combined as nat) % 256);
+    assert(byte as nat == (combined as nat) % 256);    
     // We know: combined as nat == a + b * pow2(k)
     assert((combined as nat) % 256 == (a + b * pow2(k)) % 256);
     

@@ -282,7 +282,7 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
         a <= c / b,
 {
     use vstd::arithmetic::mul::*;
-    
+
     // Proof by contradiction: assume a > c / b
     if a > c / b {
         // From fundamental div/mod: c = b * (c / b) + (c % b)
@@ -290,11 +290,11 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
         let q = c / b;
         let r = c % b;
         assert(c == b * q + r);
-        
+
         // We know: 0 <= r < b
         lemma_mod_bound(c as int, b as int);
         assert(0 <= r < b);
-        
+
         // From a > q, we have a >= q + 1 (since both are natural numbers)
         // Therefore: a * b >= (q + 1) * b = q * b + b
         assert(a >= q + 1);
@@ -302,7 +302,7 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
             requires a >= q + 1, b > 0;
         assert((q + 1) * b == q * b + b) by (nonlinear_arith);
         assert(a * b >= q * b + b);
-        
+
         // We have: c = b * q + r with r < b
         // Therefore: c < b * q + b = (q + 1) * b
         assert(c == b * q + r);
@@ -310,7 +310,7 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
         assert(c < b * q + b);
         assert(b * q == q * b) by (nonlinear_arith);
         assert(c < q * b + b);
-        
+
         // So: a * b >= q * b + b > c
         // This contradicts our assumption that a * b <= c
         assert(a * b > c);

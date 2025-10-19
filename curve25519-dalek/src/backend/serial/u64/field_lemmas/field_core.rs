@@ -46,7 +46,10 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
 pub open spec fn as_nat_32_u8_nonrec(limbs: &[u8; 32]) -> nat {
     // Verus error: `core::iter::range::impl&%15::fold` is not supported
     // we write them out manually
-    (limbs[ 0] as nat)                +
+    //
+    // Note: We use byte-first order (limbs[i] * pow2(i*8)) to match
+    // the natural structure of limb contribution functions in limbs_to_bytes_lemmas.rs
+    (limbs[0] as nat) +
     (limbs[ 1] as nat) * pow2( 1 * 8) +
     (limbs[ 2] as nat) * pow2( 2 * 8) +
     (limbs[ 3] as nat) * pow2( 3 * 8) +

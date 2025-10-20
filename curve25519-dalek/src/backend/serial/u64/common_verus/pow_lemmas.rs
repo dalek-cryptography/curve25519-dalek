@@ -62,7 +62,9 @@ pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
         a < pow2(s)
     ensures
         pow2(k) * a <= pow2(k + s) - pow2(k),
-        a * pow2(k) <= pow2(k + s) - pow2(k)
+        a * pow2(k) <= pow2(k + s) - pow2(k),
+        pow2(k + s) - pow2(k) < pow2(k + s)
+
 {
     assert(a <= pow2(s) - 1); // x < y <=> x <= y - 1
 
@@ -73,17 +75,47 @@ pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
     }
 
     lemma_mul_is_commutative(a as int, pow2(k) as int);
+
+    assert(pow2(k) > 0) by {
+        lemma_pow2_pos(k);
+    }
 }
 
 pub proof fn pow2_mul_u8(a: u8, k: nat)
     ensures
-        pow2(k) * a <= pow2(k + 8) - pow2(k)
+        pow2(k) * a <= pow2(k + 8) - pow2(k),
+        a * pow2(k) <= pow2(k + 8) - pow2(k),
+        pow2(k + 8) - pow2(k) < pow2(k + 8)
 {
     assert(a < pow2(8)) by {
         lemma2_to64();
     }
 
     pow2_mul_general(a as nat, 8, k);
+}
+
+pub proof fn u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
+    requires
+        k + 8 <= s
+    ensures
+        (pow2(k) * a) as nat % pow2(s) == pow2(k) * a
+{
+    assert(pow2(k) * a < pow2(k + 8)) by {
+        pow2_mul_u8(a, k);
+    }
+    if (k + 8 < s){
+        assert( pow2(k + 8) < pow2(s)) by {
+            lemma_pow2_strictly_increases(k + 8, s);
+        }
+    }
+
+    assert(pow2(s) > 0) by {
+        lemma_pow2_pos(s);
+    }
+
+    assert( (pow2(k) * a) as nat % pow2(s) == pow2(k) * a ) by {
+        lemma_small_mod((pow2(k) * a) as nat, pow2(s));
+    }
 }
 
 pub proof fn u8_times_pow2_fits_u64(a: u8, k: nat)
@@ -110,7 +142,7 @@ pub proof fn u8_times_pow2_fits_u64(a: u8, k: nat)
 
 pub proof fn mask_pow2(x: nat, k: nat, s: nat)
     requires
-        k < s < 64
+        k <= s
     ensures
         (x * pow2(k)) % pow2(s) == (x % pow2((s - k) as nat)) * pow2(k)
 {
@@ -127,6 +159,230 @@ pub proof fn mask_pow2(x: nat, k: nat, s: nat)
     assert((pow2(k) * x) % (pow2(k) * pow2(d)) == pow2(k) * (x % pow2(d))) by {
         lemma_truncate_middle(x as int, pow2(k) as int, pow2(d) as int);
     }
+}
+
+pub proof fn pow2_MUL_div(x: nat, k: nat, s: nat)
+    requires
+        k >= s
+    ensures
+        (x * pow2(k)) / pow2(s) == x * pow2((k - s) as nat)
+{
+    assert(pow2(s) > 0) by {
+        lemma_pow2_pos(s);
+    }
+
+    let d = (k - s) as nat;
+    assert(pow2(k) == pow2(d) * pow2(s)) by {
+        lemma_pow2_adds(d, s);
+    }
+    assert(x * pow2(k) == (x * pow2(d)) * pow2(s)) by {
+        lemma_mul_is_associative(x as int, pow2(d) as int, pow2(s) as int);
+    }
+    assert(((x * pow2(d)) * pow2(s)) / pow2(s) == x * pow2(d)) by {
+        lemma_div_by_multiple((x * pow2(d)) as int, pow2(s) as int);
+    }
+}
+
+pub proof fn pow2_mul_DIV(x: nat, k: nat, s: nat)
+    requires
+        k <= s
+    ensures
+        (x * pow2(k)) / pow2(s) == x / pow2((s - k) as nat)
+{
+    assert(pow2(k) > 0) by {
+        lemma_pow2_pos(k);
+    }
+
+    let d = (s - k) as nat;
+
+    assert(pow2(d) > 0) by {
+        lemma_pow2_pos(d);
+    }
+    assert(pow2(s) == pow2(k) * pow2(d)) by {
+        lemma_pow2_adds(k, d);
+    }
+    assert((x * pow2(k)) / pow2(s) == ((x * pow2(k)) / pow2(k) / pow2(d))) by {
+        lemma_div_denominator((x * pow2(k)) as int, pow2(k) as int, pow2(d) as int)
+    }
+    assert((x * pow2(k)) / pow2(k) == x) by {
+        lemma_div_by_multiple(x as int, pow2(k) as int);
+    }
+}
+
+pub proof fn pow2_MUL_div_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
+    requires
+        x < pow2(px),
+        s <= k,
+        px + k - s <= t
+    ensures
+        ((x * pow2(k)) / pow2(s)) % pow2(t) == x * pow2((k - s) as nat)
+{
+    let d = (k - s) as nat;
+
+    assert((x * pow2(k)) / pow2(s) == x * pow2(d)) by {
+        pow2_MUL_div(x, k, s);
+    }
+
+    let dd = (t - d) as nat;
+
+    assert((x * pow2(d)) % pow2(t) == (x % pow2(dd)) * pow2(d)) by {
+        mask_pow2(x, d, t);
+    }
+
+    assert(x % pow2(dd) == x) by {
+        assert(x < pow2(px) <= pow2(dd)) by {
+            if (px < dd) {
+                lemma_pow2_strictly_increases(px, dd);
+            }
+        }
+        assert(x % pow2(dd) == x) by {
+            lemma_small_mod(x, pow2(dd));
+        }
+    }
+}
+
+pub proof fn pow2_MUL_div_MOD_u8(x: u8, k: nat, s: nat, t: nat)
+    requires
+        s <= k,
+        8 + k - s <= t
+    ensures
+        ((x as nat * pow2(k)) / pow2(s)) % pow2(t) == x as nat * pow2((k - s) as nat)
+{
+    assert(x < pow2(8)) by {
+        lemma2_to64(); // pow2(8)
+    }
+    pow2_MUL_div_MOD(x as nat, 8, k, s, t);
+}
+
+pub proof fn pow2_mul_DIV_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
+    requires
+        x < pow2(px),
+        k <= s,
+        px <= t + s - k
+    ensures
+        ((x * pow2(k)) / pow2(s)) % pow2(t) == x / pow2((s - k) as nat)
+{
+    let d = (s - k) as nat;
+
+    assert((x * pow2(k)) / pow2(s) == x / pow2(d)) by {
+        pow2_mul_DIV(x, k, s);
+    }
+
+    assert(pow2(d) > 0) by {
+        lemma_pow2_pos(d);
+    }
+
+    assert(x / pow2(d) < pow2(t)) by {
+        assert(x < pow2(d) * pow2(t)) by {
+            assert(pow2(d) * pow2(t) == pow2(d + t)) by {
+                lemma_pow2_adds(d, t);
+            }
+            assert(pow2(px) <= pow2(t + d)) by {
+                if (px < t + d){
+                    lemma_pow2_strictly_increases(px, t + d);
+                }
+            }
+        }
+        assert(x / pow2(d) < pow2(t)) by {
+            lemma_multiply_divide_lt(x as int, pow2(d) as int, pow2(t) as int);
+        }
+    }
+
+    assert((x / pow2(d)) % pow2(t) == x / pow2(d)) by {
+        lemma_small_mod(x / pow2(d), pow2(t));
+    }
+}
+
+pub proof fn pow2_mul_DIV_MOD_u8(x: u8, k: nat, s: nat, t: nat)
+    requires
+        k <= s,
+        8 <= t + s - k
+    ensures
+        ((x as nat * pow2(k)) / pow2(s)) % pow2(t) == x as nat / pow2((s - k) as nat)
+{
+    assert(x < pow2(8)) by {
+        lemma2_to64(); // pow2(8)
+    }
+    pow2_mul_DIV_MOD(x as nat, 8, k, s, t);
+}
+
+pub proof fn pow2_MUL_div_Mod(x: nat, px: nat, k: nat, s: nat, t: nat)
+    requires
+        x < pow2(px),
+        s <= k,
+        k - s <= t
+    ensures
+        ((x * pow2(k)) / pow2(s)) % pow2(t) == (x % pow2((t - (k - s)) as nat) * pow2((k - s) as nat))
+
+{
+    let d = (k - s) as nat;
+
+    assert((x * pow2(k)) / pow2(s) == x * pow2(d)) by {
+        pow2_MUL_div(x, k, s);
+    }
+
+    let dd = (t - d) as nat;
+
+    assert((x * pow2(d)) % pow2(t) == (x % pow2(dd)) * pow2(d)) by {
+        mask_pow2(x, d, t);
+    }
+}
+
+pub proof fn pow2_MUL_div_Mod_u8(x: u8, k: nat, s: nat, t: nat)
+    requires
+        s <= k,
+        k - s <= t
+    ensures
+        ((x as nat * pow2(k)) / pow2(s)) % pow2(t) == (x as nat % pow2((t - (k - s)) as nat) * pow2((k - s) as nat))
+
+{
+    assert(x < pow2(8)) by {
+        lemma2_to64(); // pow2(8)
+    }
+    pow2_MUL_div_Mod(x as nat, 8, k, s, t);
+}
+
+pub proof fn pow2_MUL_div_mod(x: nat, px: nat, k: nat, s: nat, t: nat)
+    requires
+        x < pow2(px),
+        s <= k,
+        t <= k - s
+    ensures
+        ((x * pow2(k)) / pow2(s)) % pow2(t) == 0
+{
+    let d = (k - s) as nat;
+
+    assert((x * pow2(k)) / pow2(s) == x * pow2(d)) by {
+        pow2_MUL_div(x, k, s);
+    }
+
+    let dd = (d - t) as nat;
+
+    assert(x * pow2(d) == (x * pow2(dd)) * pow2(t)) by {
+        lemma_pow2_adds(dd, t);
+        lemma_mul_is_associative(x as int, pow2(dd) as int, pow2(t) as int);
+    }
+
+    assert(pow2(t) > 0) by {
+        lemma_pow2_pos(t);
+    }
+
+    assert(((x * pow2(dd)) * pow2(t)) % pow2(t) == 0) by {
+        lemma_mod_multiples_basic((x * pow2(dd)) as int, pow2(t) as int);
+    }
+}
+
+pub proof fn pow2_MUL_div_mod_u8(x: u8, k: nat, s: nat, t: nat)
+    requires
+        s <= k,
+        t <= k - s
+    ensures
+        ((x as nat * pow2(k)) / pow2(s)) % pow2(t) == 0
+{
+    assert(x < pow2(8)) by {
+        lemma2_to64(); // pow2(8)
+    }
+    pow2_MUL_div_mod(x as nat, 8, k, s, t);
 }
 
 pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
@@ -159,12 +415,7 @@ pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
     }
 
     assert((b * pow2(s)) as nat / pow2(k) == b * pow2(d)) by {
-        assert(b * pow2(s) == (b * pow2(d)) * pow2(k)) by {
-            lemma_mul_is_associative(b as int, pow2(d) as int, pow2(k) as int);
-        }
-        assert( ((b * pow2(d)) * pow2(k)) as nat / pow2(k) == b * pow2(d) ) by {
-            lemma_div_by_multiple(b * pow2(d), pow2(k) as int);
-        }
+        pow2_MUL_div(b as nat, s, k);
     }
 }
 

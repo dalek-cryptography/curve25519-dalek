@@ -472,12 +472,14 @@ pub proof fn load8_shift_mod_lemma(s_jplus1: u64, s_j: u64, a_jplus1: u64, x: u8
                 lemma_basic_div(s_j as int, ps64 as int);
             }
 
-            assert((s_j / ps64) % pt64 == 0);
+            assert(0u64 % pt64 == 0) by {
+                lemma_small_mod(0, pow2(t));
+            }
         }
     }
 }
 
-pub proof fn load8_shift_mod(input: &[u8], i: usize, k: nat, s64: u64, t: nat)
+pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     requires
         i + 7 < input.len(),
         s64 < 64,
@@ -718,82 +720,271 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, k: nat, s64: u64, t: nat)
     }
 }
 
+pub proof fn load8_limb_base(input: &[u8], i: usize, k: u64)
+    requires
+        i + 7 < input.len(),
+        k < 64
+    ensures
+        0 < pow2(51) <= u64::MAX,
+        load8_at_spec(input, i) <= u64::MAX,
+        ((load8_at_spec(input, i) as u64) >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+{
+    assert(0 < pow2(51) <= u64::MAX) by {
+        lemma_pow2_pos(51);
+        pow2_le_max64(51);
+    }
+
+    assert(0 < pow2(k as nat) <= u64::MAX) by {
+        lemma_pow2_pos(k as nat);
+        pow2_le_max64(k as nat);
+    }
+
+    let p51 = pow2(51) as u64;
+    let pk = pow2(k as nat) as u64;
+
+    assert(mask51 == low_bits_mask(51)) by {
+        l51_bit_mask_lt();
+    }
+
+    assert(load8_at_spec(input, i) <= u64::MAX) by {
+        load8_at_spec_fits_u64(input, i);
+    }
+
+    assert(
+        (load8_at_spec(input, i) as u64 >> k) & (low_bits_mask(51) as u64)
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / pk) % p51 +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / pk) % p51 +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / pk) % p51 +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / pk) % p51 +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / pk) % p51 +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / pk) % p51 +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / pk) % p51 +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / pk) % p51
+    ) by {
+        load8_shift_mod(input, i, k, 51);
+    }
+
+}
+
+pub open spec fn pow2_mul_DIV_MOD_u8_t51_cond(k: nat, j: nat) -> bool
+{
+    (j * 8 <= k) && (8 <= 51 + k - 8 * j)
+}
+
+pub open spec fn pow2_MUL_div_MOD_u8_t51_cond(k: nat, j: nat) -> bool
+{
+    (k <= j * 8) && (8 + j * 8 - k <= 51)
+}
+
+pub open spec fn pow2_MUL_div_Mod_u8_t51_cond(k: nat, j: nat) -> bool
+{
+    (k <= j * 8) && (j * 8 - k <= 51)
+}
+
+pub open spec fn pow2_MUL_div_mod_u8_t51_cond(k: nat, j: nat) -> bool
+{
+    (k <= j * 8) && (51 <= j * 8 - k)
+}
+
+// Generalized load8_limb theorem. Asserts that
+// - the first few summands are shifted by more than their power exponent and reduce to division
+// - the next few summands are shifted by less than their exponents and are unaffected by masking, due to being small
+// - the next few summands may, depending on the value of the u8 coefficient be either smaller than the mod,
+//   or larger, so in general, the best we can assert is that they reduce to coefficient masking
+// - the last few summands have large enough exponents that masking zeroes them
+// The particular indices where these happen depend on the limb (i.e. the shift value k)
+pub proof fn load8_limb_X(
+        input: &[u8], i: usize, k: nat,
+        j_div: nat, j_id: nat, j_shift: nat
+    )
+    requires
+        i + 7 < input.len(),
+        k <= 12,
+        forall |j: nat| 0 <= j < j_div ==> pow2_mul_DIV_MOD_u8_t51_cond(k, j),
+        forall |j: nat| j_div <= j < j_id ==> pow2_MUL_div_MOD_u8_t51_cond(k, j),
+        forall |j: nat| j_id <= j < j_shift ==> pow2_MUL_div_Mod_u8_t51_cond(k, j),
+        forall |j: nat| j_shift <= j < 8 ==> pow2_MUL_div_mod_u8_t51_cond(k, j)
+    ensures
+        forall |j: nat| 0 <= j < j_div ==>
+            #[trigger]
+            ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(k) as u64)) % (pow2(51) as u64)
+            ==
+            (input[(i + j) as int]) as nat / pow2((k - j * 8) as nat),
+        forall |j: nat| j_div <= j < j_id ==>
+            #[trigger]
+            ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(k) as u64)) % (pow2(51) as u64)
+            ==
+            (input[(i + j) as int]) * pow2((j * 8 - k) as nat),
+        forall |j: nat| j_id <= j < j_shift ==>
+            #[trigger]
+            ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(k) as u64)) % (pow2(51) as u64)
+            ==
+            (input[(i + j) as int] as nat % pow2((51 - (j * 8 - k)) as nat)) * pow2((j * 8 - k) as nat),
+        forall |j: nat| j_shift <= j < 8 ==>
+            #[trigger]
+            ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(k) as u64)) % (pow2(51) as u64)
+            ==
+            0,
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+{
+    let p51 = pow2(51) as u64;
+
+    assert(0 < pow2(k) <= u64::MAX) by {
+        lemma_pow2_pos(k);
+        pow2_le_max64(k);
+    }
+
+    let pk = pow2(k) as u64;
+
+    load8_limb_base(input, i, k as u64);
+
+    // first: all div, no mul
+    assert forall |j: nat| 0 <= j < j_div implies
+        #[trigger]
+        ((input[(i + j) as int] * pow2(j * 8)) as u64 / pk) % p51 == (input[(i + j) as int]) as nat / pow2((k - j * 8) as nat)
+    by {
+        assert(pow2_mul_DIV_MOD_u8_t51_cond(k, j)); // trigger forall
+        pow2_mul_DIV_MOD_u8(input[(i + j) as int], j * 8, k, 51);
+    }
+
+    // (product >> k) < 2^51
+    assert forall |j: nat| j_div <= j < j_id implies
+        #[trigger]
+        ((input[(i + j) as int] * pow2(j * 8)) as u64 / pk) % p51 == (input[(i + j) as int]) * pow2((j * 8 - k) as nat)
+    by {
+        assert(pow2_MUL_div_MOD_u8_t51_cond(k, j)); // trigger forall
+        pow2_MUL_div_MOD_u8(input[(i + j) as int], j * 8, k, 51);
+    }
+
+    // partial shift
+    assert forall |j: nat| j_id <= j < j_shift implies
+        #[trigger]
+        ((input[(i + j) as int] * pow2(j * 8)) as u64 / pk) % p51 == (input[(i + j) as int] as nat % pow2((51 - (j * 8 - k)) as nat)) * pow2((j * 8 - k) as nat)
+    by {
+        assert(pow2_MUL_div_Mod_u8_t51_cond(k, j)); // trigger forall
+        pow2_MUL_div_Mod_u8(input[(i + j) as int], j * 8, k, 51);
+    }
+
+    // zero
+    assert forall |j: nat| j_shift <= j < 8 implies
+        #[trigger]
+        ((input[(i + j) as int] * pow2(j * 8)) as u64 / pk) % p51 == 0
+    by {
+        assert(pow2_MUL_div_mod_u8_t51_cond(k, j));  // trigger forall
+        pow2_MUL_div_mod_u8(input[(i + j) as int], j * 8, k, 51);
+    }
+}
+
+
 pub proof fn load8_limb0(input: &[u8])
     requires
-        7 < input.len()
+        0 + 7 < input.len()
     ensures
         (load8_at_spec(input,  0) as u64) & mask51
         ==
-        (pow2(0 * 8) * input[0]) as u64 % (pow2(51) as u64) +
-        (pow2(1 * 8) * input[1]) as u64 % (pow2(51) as u64) +
-        (pow2(2 * 8) * input[2]) as u64 % (pow2(51) as u64) +
-        (pow2(3 * 8) * input[3]) as u64 % (pow2(51) as u64) +
-        (pow2(4 * 8) * input[4]) as u64 % (pow2(51) as u64) +
-        (pow2(5 * 8) * input[5]) as u64 % (pow2(51) as u64) +
-        (pow2(6 * 8) * input[6]) as u64 % (pow2(51) as u64) +
-        (pow2(7 * 8) * input[7]) as u64 % (pow2(51) as u64)
-        ==
-        (pow2(0 * 8) * input[0]) +
-        (pow2(1 * 8) * input[1]) +
-        (pow2(2 * 8) * input[2]) +
-        (pow2(3 * 8) * input[3]) +
-        (pow2(4 * 8) * input[4]) +
-        (pow2(5 * 8) * input[5]) +
-        (pow2(6 * 8) * (input[6] as nat % pow2(3)))
+        (input[0] * pow2(0 * 8)) +
+        (input[1] * pow2(1 * 8)) +
+        (input[2] * pow2(2 * 8)) +
+        (input[3] * pow2(3 * 8)) +
+        (input[4] * pow2(4 * 8)) +
+        (input[5] * pow2(5 * 8)) +
+        ((input[6] as nat % pow2(3)) * pow2(6 * 8))
 {
-    assume(false); // TODO
 
-    // let a0 = input[0];
-    // let a1 = input[1];
-    // let a2 = input[2];
-    // let a3 = input[3];
-    // let a4 = input[4];
-    // let a5 = input[5];
-    // let a6 = input[6];
-    // let a7 = input[7];
+    let i = 0;
+    let k = 0;
 
-    // let p0 = pow2(0 * 8);
-    // let p1 = pow2(1 * 8);
-    // let p2 = pow2(2 * 8);
-    // let p3 = pow2(3 * 8);
-    // let p4 = pow2(4 * 8);
-    // let p5 = pow2(5 * 8);
-    // let p6 = pow2(6 * 8);
-    // let p7 = pow2(7 * 8);
+    let j_div = 0;
+    let j_id = 6;
+    let j_shift = 7;
 
-    // assert(0 < pow2(51) <= u64::MAX) by {
-    //     lemma_pow2_pos(51);
-    //     pow2_le_max64(51);
-    // }
+    assert(
+        load8_at_spec(input,  0) as u64
+        ==
+        (load8_at_spec(input,  0) as u64 >> 0)
+    ) by {
+        shr_zero_is_id(load8_at_spec(input,  0) as u64);
+    }
 
-    // l51_bit_mask_lt();
+    load8_limb_X(input, i, k, j_div, j_id, j_shift);
 
-    // assert(load8_at_spec(input,  0) <= u64::MAX) by {
-    //     load8_at_spec_fits_u64(input, 0);
-    // }
+    // Sanity check
+    assert(
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+    );
 
-    // assert(
-    //     (load8_at_spec(input,  0) as u64) & mask51
-    //     ==
-    //     (load8_at_spec(input,  0) as u64) % (pow2(51) as u64)
-    // ) by {
-    //     lemma_u64_low_bits_mask_is_mod((load8_at_spec(input,  0) as u64), 51);
-    // }
+    assert(pow2(0) == 1) by {
+        lemma2_to64();
+    }
 
-    // assert(
-    //     (load8_at_spec(input,  0) as u64) % (pow2(51) as u64)
-    //     ==
-    //         (pow2(0 * 8) * input[0]) as u64 % (pow2(51) as u64) +
-    //         (pow2(1 * 8) * input[1]) as u64 % (pow2(51) as u64) +
-    //         (pow2(2 * 8) * input[2]) as u64 % (pow2(51) as u64) +
-    //         (pow2(3 * 8) * input[3]) as u64 % (pow2(51) as u64) +
-    //         (pow2(4 * 8) * input[4]) as u64 % (pow2(51) as u64) +
-    //         (pow2(5 * 8) * input[5]) as u64 % (pow2(51) as u64) +
-    //         (pow2(6 * 8) * input[6]) as u64 % (pow2(51) as u64) +
-    //         (pow2(7 * 8) * input[7]) as u64 % (pow2(51) as u64)
-    // ) by {
-    //     ...
-    // }
+    broadcast use lemma_div_basics_2; // x / 1 = x
+}
+
+pub proof fn load8_limb1(input: &[u8])
+    requires
+        6 + 7 < input.len()
+    ensures
+        ((load8_at_spec(input,  6) as u64) >> 3) & mask51
+        ==
+        (input[ 6] as nat / pow2(3)) +
+        (input[ 7] * pow2((1 * 8 - 3) as nat)) +
+        (input[ 8] * pow2((2 * 8 - 3) as nat)) +
+        (input[ 9] * pow2((3 * 8 - 3) as nat)) +
+        (input[10] * pow2((4 * 8 - 3) as nat)) +
+        (input[11] * pow2((5 * 8 - 3) as nat)) +
+        ((input[12] as nat % pow2(6)) * pow2((6 * 8 - 3) as nat))
+{
+
+    let i = 6;
+    let k = 3;
+
+    let j_div = 1;
+    let j_id = 6;
+    let j_shift = 7;
+
+    load8_limb_X(input, i, k, j_div, j_id, j_shift);
+
+    // Sanity check
+    assert(
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+    );
 }
 
 fn main() {}

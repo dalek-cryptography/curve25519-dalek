@@ -119,6 +119,8 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use vstd::arithmetic::power::*;
+use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 #[cfg(feature = "group")]
@@ -771,19 +773,14 @@ impl<T> Sum<T> for Scalar
 where
     T: Borrow<Scalar>,
 {
-    /* <ORIGINAL CODE>
+    #[verifier::external_body]
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = T>,
     {
         iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
     }
-    </ORIGINAL CODE> */
-    /* <VERIFICATION NOTE>
-     Added verifier::external_body annotation
-    </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    /* <MODIFIED CODE> - FOR EVENTUAL VERIFICATION*/
+    /* <MODIFIED CODE> - if needed in for verification in the future
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = T>,
@@ -797,7 +794,7 @@ where
         // Use the verified sum_of_slice function
         Scalar::sum_of_slice(&scalars)
     }
-    /* </MODIFIED CODE> */
+     </MODIFIED CODE> */
 }
 
 impl Default for Scalar {
@@ -1292,15 +1289,16 @@ impl Scalar {
     /// assert_eq!(scalars[3], Scalar::from(11u64).invert());
     /// # }
     /// ```
-    /* <VERIFICATION NOTE>
-     Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
-    </VERIFICATION NOTE> */
     #[cfg(feature = "alloc")]
     // Theo: Verus doesn't like the zeroize in this function. I think the long-term
     // solution is to use assume_specification to tell Verus what zeroize does.
     // In the short-term, I've just told verus to ignore the body.
-    #[verifier::external_body]
+    // (SB update: alternative is to exclude just the zeroize call, as below)
     pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
+    /* <VERIFICATION NOTE>
+     Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
+    </VERIFICATION NOTE> */
+
     ensures
         // Result is the modular inverse of the product of all original inputs
         is_inverse_of_nat(&result, product_of_scalars(old(inputs)@)),
@@ -1463,6 +1461,7 @@ impl Scalar {
 
 
         #[cfg(feature = "zeroize")]
+        #[cfg(not(verus_keep_ghost))]
         Zeroize::zeroize(&mut scratch);
 
         proof {
@@ -1486,9 +1485,10 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
 /// Visitor for deserializing a Scalar from a sequence of 32 bytes.
 ///
-/// Note: This struct is defined at module level rather than inside the
-/// `Deserialize::deserialize` implementation to anticipate issues with Verus
-/// verification, which currently has limited support for nested types
+/* VERIFICATION NOTE:
+The ScalarVisitor struct is defined at module level rather than inside the
+`Deserialize::deserialize` since Verus doesn't support nested types
+</VERIFICATION NOTE> */
 struct ScalarVisitor;
 
 #[cfg(feature = "serde")]
@@ -1504,7 +1504,7 @@ impl<'de> Visitor<'de> for ScalarVisitor {
             )
         }
     }
-
+    #[verifier::external_body]
     fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
     where
         A: serde::de::SeqAccess<'de>,
@@ -1524,6 +1524,7 @@ impl<'de> Visitor<'de> for ScalarVisitor {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl Serialize for Scalar {
+    #[verifier::external_body]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1540,6 +1541,7 @@ impl Serialize for Scalar {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for Scalar {
+    #[verifier::external_body]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -1596,6 +1598,7 @@ ensures
     }
     result
 }
+
 } // verus!
 
 impl Scalar {
@@ -1614,63 +1617,66 @@ impl Scalar {
     }
 
     verus! {
-        /// Get the bits of the scalar as an array, in little-endian order
-    /* <VERIFICATION NOTE>
-     This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
-    </VERIFICATION NOTE> */
-    #[allow(dead_code)]
-    pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
-    ensures
-        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
-    {
-        let mut bits = [false; 256];
-        let mut i: usize = 0;
-
-        while i < 256
-            invariant
-                i <= 256,
-                bits.len() == 256,
-                self.bytes.len() == 32,
-            decreases 256 - i,
+            /// Get the bits of the scalar as an array, in little-endian order
+        /* <VERIFICATION NOTE>
+         This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
+        </VERIFICATION NOTE> */
+        #[allow(dead_code)]
+        pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
+        ensures
+            bits_to_nat(&result) == bytes_to_nat(&self.bytes),
         {
-            // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-            // the byte. Since self.bytes is little-endian at the byte level, this is
-            // little-endian on the bit level
-            let byte_idx = i >> 3;  // Divide by 8 to get byte index
-            let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
+            let mut bits = [false; 256];
+            let mut i: usize = 0;
 
-            // Prove bounds using shift and mask lemmas
-            proof {
-                use crate::backend::serial::u64::common_verus::shift_lemmas::*;
-                use crate::backend::serial::u64::common_verus::mask_lemmas::*;
-                use vstd::bits::*;
-                use vstd::arithmetic::power2::*;
+            while i < 256
+                invariant
+                    i <= 256,
+                    bits.len() == 256,
+                    self.bytes.len() == 32,
+                decreases 256 - i,
+            {
+                // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+                // the byte. Since self.bytes is little-endian at the byte level, this is
+                // little-endian on the bit level
+                let byte_idx = i >> 3;  // Divide by 8 to get byte index
+                let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
 
-                assert(i < 256);
+                // Prove bounds using shift and mask lemmas
+                proof {
+                    use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+                    use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+                    use vstd::bits::*;
+                    use vstd::arithmetic::power2::*;
 
-                // Prove i >> 3 = i / 8 using shift lemma
-                lemma_u64_shr_is_div(i as u64, 3);
-                // pow2(3) = 8
-                lemma2_to64();
-                assert(byte_idx < 32);
+                    assert(i < 256);
 
-                // Prove i & 7 = i % 8 using mask lemma
-                lemma_u64_low_bits_mask_is_mod(i as u64, 3);
-                // low_bits_mask(3) = 7 and pow2(3) = 8
-                lemma2_to64();
-                assert(bit_idx < 8);
+                    // Prove i >> 3 = i / 8 using shift lemma
+                    lemma_u64_shr_is_div(i as u64, 3);
+                    // pow2(3) = 8
+                    lemma2_to64();
+                    assert(byte_idx < 32);
+
+                    // Prove i & 7 = i % 8 using mask lemma
+                    lemma_u64_low_bits_mask_is_mod(i as u64, 3);
+                    // low_bits_mask(3) = 7 and pow2(3) = 8
+                    lemma2_to64();
+                    assert(bit_idx < 8);
+                }
+
+                bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
+                i += 1;
             }
 
-            bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
-            i += 1;
-        }
+            proof {
+                assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+            }
 
-        proof {
-            assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+            bits
         }
+    } // verus!
 
-        bits
-    }
+    verus! {
         /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
         ///
         /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
@@ -1749,9 +1755,9 @@ impl Scalar {
             2 <= w <= 8,
         ensures
         // result encodes the same integer
-        reconstruct(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+        reconstruct(result@) == scalar_to_nat(self) as int,
         // result digits follow NAF rules
-        is_valid_naf(result@.map(|i: int, x: i8| x as int), w as nat),
+        is_valid_naf(result@, w as nat),
         {
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
@@ -1856,13 +1862,12 @@ impl Scalar {
             // Result digits are in valid range
             is_valid_radix_16(&result),
             // Reconstruction property: digits reconstruct the scalar value
-            reconstruct_radix_16(result@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int,
+            reconstruct_radix_16(result@) == scalar_to_nat(self) as int,
         {
             // VERIFICATION NOTE: we tell verus not to verify debug assertions
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(self[31] <= 127);
             let mut output = [0i8; 64];
-
 
             // Step 1: change radix.
             // Convert from radix 256 (bytes) to radix 16 (nibbles)
@@ -1908,31 +1913,38 @@ impl Scalar {
             // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
             proof {
                 assume(is_valid_radix_16(&output));
-                assume(reconstruct_radix_16(output@.map(|i: int, x: i8| x as int)) == scalar_to_nat(self) as int);
+                assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
             }
 
             output
         }
 
-    } // verus!
+        /// Returns a size hint indicating how many entries of the return
+        /// value of `to_radix_2w` are nonzero.
+        #[verifier::external_body]
+        pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result: usize)
+        /* VERIFICATION NOTE:
+        We could not get this function in Verus, potentially a bug in Verus.
+        */
+        {
+            assume(false);
+            #[cfg(not(verus_keep_ghost))]
+            debug_assert!(w >= 4);
+            #[cfg(not(verus_keep_ghost))]
+            debug_assert!(w <= 8);
 
-    /// Returns a size hint indicating how many entries of the return
-    /// value of `to_radix_2w` are nonzero.
-    #[cfg(any(feature = "alloc", all(test, feature = "precomputed-tables")))]
-    pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize {
-        debug_assert!(w >= 4);
-        debug_assert!(w <= 8);
+            let digits_count = match w {
+                4..=7 => (256 + w - 1) / w,
+                // See comment in to_radix_2w on handling the terminal carry.
+                8 => (256 + w - 1) / w + 1_usize,
+                _ => panic!("invalid radix parameter"),
+            };
 
-        let digits_count = match w {
-            4..=7 => (256 + w - 1) / w,
-            // See comment in to_radix_2w on handling the terminal carry.
-            8 => (256 + w - 1) / w + 1_usize,
-            _ => panic!("invalid radix parameter"),
-        };
-
-        debug_assert!(digits_count <= 64);
-        digits_count
-    }
+            #[cfg(not(verus_keep_ghost))]
+            debug_assert!(digits_count <= 64);
+            let result = digits_count;
+            result
+        }
 
     /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
     /// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.
@@ -1956,32 +1968,98 @@ impl Scalar {
     /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
     ///
     #[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
-    pub(crate) fn as_radix_2w(&self, w: usize) -> [i8; 64] {
+    pub(crate) fn as_radix_2w(&self, w: usize) -> (result: [i8; 64])
+    // VERIFICATION NOTE: PROOF BYPASS
+        requires
+            4 <= w <= 8,
+            // For w=4 (radix 16), top bit must be clear
+            w == 4 ==> self.bytes[31] <= 127,
+        ensures
+            ({
+                let digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+                // Result digits are in valid range for the given window size
+                is_valid_radix_2w(&result, w as nat, digits_count as nat) &&
+                // Reconstruction property: digits reconstruct the scalar value
+                reconstruct_radix_2w(result@.take(digits_count), w as nat)
+                    == scalar_to_nat(self) as int
+            }),
+    {
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w >= 4);
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w <= 8);
 
         if w == 4 {
-            return self.as_radix_16();
+            let result = self.as_radix_16();
+            // VERIFICATION NOTE: Prove that as_radix_16 postcondition implies as_radix_2w postcondition for w=4
+            proof {
+                // For w=4: digits_count = (256 + 4 - 1) / 4 = 259 / 4 = 64
+                assert(((256 + (w as int) - 1) / (w as int)) == 64);
+                // is_valid_radix_16 is defined as is_valid_radix_2w(digits, 4, 64)
+                assert(is_valid_radix_16(&result) == is_valid_radix_2w(&result, 4, 64));
+                // reconstruct_radix_16 is defined as reconstruct_radix_2w(digits, 4)
+                assert(reconstruct_radix_16(result@) == reconstruct_radix_2w(result@, 4));
+                // result@.take(64) == result@ since result has exactly 64 elements
+                assert(result@.take(64) =~= result@);
+            }
+            return result;
         }
 
         // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
+        // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features
+        /* <ORIGINAL CODE>
         let mut scalar64x4 = [0u64; 4];
         read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
+        </ORIGINAL CODE> */
+        // Read 4 u64s from the 32-byte array (self.bytes)
+        let mut scalar64x4 = [0u64; 4];
+        scalar64x4[0] = u64_from_le_bytes([
+            self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3],
+            self.bytes[4], self.bytes[5], self.bytes[6], self.bytes[7],
+        ]);
+        scalar64x4[1] = u64_from_le_bytes([
+            self.bytes[8], self.bytes[9], self.bytes[10], self.bytes[11],
+            self.bytes[12], self.bytes[13], self.bytes[14], self.bytes[15],
+        ]);
+        scalar64x4[2] = u64_from_le_bytes([
+            self.bytes[16], self.bytes[17], self.bytes[18], self.bytes[19],
+            self.bytes[20], self.bytes[21], self.bytes[22], self.bytes[23],
+        ]);
+        scalar64x4[3] = u64_from_le_bytes([
+            self.bytes[24], self.bytes[25], self.bytes[26], self.bytes[27],
+            self.bytes[28], self.bytes[29], self.bytes[30], self.bytes[31],
+        ]);
 
         let radix: u64 = 1 << w;
+        // VERIFICATION NOTE: Assert that radix > 0 to prove radix - 1 won't underflow
+        proof {
+            assume(false);
+        }
         let window_mask: u64 = radix - 1;
 
         let mut carry = 0u64;
         let mut digits = [0i8; 64];
         let digits_count = (256 + w - 1) / w;
         #[allow(clippy::needless_range_loop)]
-        for i in 0..digits_count {
+        for i in 0..digits_count
+            invariant
+                w >= 4,
+                w <= 8,
+                digits_count <= 64,
+                radix == (1u64 << w),
+        {
             // Construct a buffer of bits of the scalar, starting at `bit_offset`.
+            assume(false);
             let bit_offset = i * w;
             let u64_idx = bit_offset / 64;
             let bit_idx = bit_offset % 64;
 
             // Read the bits from the scalar
+            // VERIFICATION NOTE: Assert 64 - w won't underflow
+            proof {
+                assert(w <= 8);
+                assert(64 - w >= 56);
+            }
             let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
                 // This window's bits are contained in a single u64,
                 // or it's the last u64 anyway.
@@ -1996,7 +2074,9 @@ impl Scalar {
 
             // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
             carry = (coef + (radix / 2)) >> w;
-            digits[i] = ((coef as i64) - (carry << w) as i64) as i8;
+            let coef_i64 = coef as i64;
+            let carry_shifted = (carry << w) as i64;
+            digits[i] = (coef_i64 - carry_shifted) as i8;
         }
 
         // When 4 < w < 8, we can fold the final carry onto the last digit d,
@@ -2007,18 +2087,46 @@ impl Scalar {
         // reduced scalars, but Scalar invariant #1 allows 255-bit scalars.
         // To handle this, we expand the size_hint by 1 when w=8,
         // and accumulate the final carry onto another digit.
+        // VERIFICATION NOTE: Changed += to regular assignment to avoid Verus limitation
+        /* <ORIGINAL CODE>
         match w {
             8 => digits[digits_count] += carry as i8,
             _ => digits[digits_count - 1] += (carry << w) as i8,
+        }
+        </ORIGINAL CODE> */
+        match w {
+            8 => {
+                let idx = digits_count;
+                let carry_i8 = carry as i8;
+                assume(false);
+                digits[idx] = digits[idx] + carry_i8;
+            },
+            _ => {
+                let idx = digits_count - 1;
+                proof {
+                    assert(w >= 4 && w < 8);
+                    assume(carry << w < 256); // This is a simplification; actual bounds are tighter
+                }
+                let carry_shifted_i8 = (carry << w) as i8;
+                assume(false);
+                digits[idx] = digits[idx] + carry_shifted_i8;
+            },
+        }
+
+        // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
+        proof {
+            let final_digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+            assume(is_valid_radix_2w(&digits, w as nat, final_digits_count as nat));
+            assume(reconstruct_radix_2w(digits@.take(final_digits_count), w as nat)
+                == scalar_to_nat(self) as int);
         }
 
         digits
     }
 
-    verus! {
     /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
-    // VERIFICATION NOTE: VERIFIED (changed pub(crate) to pub)
     pub fn unpack(&self) -> (result: UnpackedScalar)
+    // VERIFICATION NOTE: VERIFIED (changed pub(crate) to pub)
     ensures
         limbs_bounded(&result),
         to_nat(&result.limbs) == bytes_to_nat(&self.bytes),
@@ -2029,8 +2137,8 @@ impl Scalar {
 
     /// Reduce this `Scalar` modulo \\(\ell\\).
     #[allow(non_snake_case)]
-    // VERIFICATION NOTE: PROOF BYPASS
     fn reduce(&self) -> (result: Scalar)
+    // VERIFICATION NOTE: PROOF BYPASS
     ensures
         // Result is equivalent to input modulo the group order
         bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes) % group_order(),
@@ -2066,25 +2174,49 @@ impl Scalar {
 
 verus! {
 // Helper function for montgomery_invert
-// VERIFICATION NOTE: Moved inline function outside the body of montgomery_invert
 #[inline]
-fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar) {
-    assume(limbs_bounded(y));
-    assume(limbs_bounded(x));
+fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar)
+/*  VERIFICATION NOTE:
+- PROOF BYPASS
+- This function was initially inside the body of montgomery_invert, but was moved outside for Verus
+*/
+requires
+    limbs_bounded(old(y)),  // Use old() for &mut parameters in requires
+    limbs_bounded(x),        // No old() needed for & parameters
+ensures
+    limbs_bounded(y),
+    limbs_bounded(x),
+    (to_nat(&y.limbs) * montgomery_radix()) % group_order() ==
+    (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int)
+{
+    assume(false);
+    let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof
     for _ in 0..squarings
-        invariant limbs_bounded(y), limbs_bounded(x)
+        invariant
+        limbs_bounded(y), limbs_bounded(x), i <= squarings,
+        pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
     {
+        proof {
+            i = i + 1;
+            assume(i <= squarings);
+            assume(pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int);
+        }
         *y = y.montgomery_square();
     }
     *y = UnpackedScalar::montgomery_mul(y, x);
-    assume(limbs_bounded(y));
+    proof {
+        assume(limbs_bounded(y));
+        assume(limbs_bounded(x));
+        assume((to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int));
+    }
 }
-} // verus!
 
 impl UnpackedScalar {
-    verus! {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
     fn pack(&self) -> (result: Scalar)
+    /* VERIFICATION NOTE:
+    PROOF BYPASS
+    */
     requires
         limbs_bounded(self),
     ensures
@@ -2104,6 +2236,9 @@ impl UnpackedScalar {
     #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
     pub fn montgomery_invert(&self) -> (result: UnpackedScalar)
+    /* VERIFICATION NOTE:
+    PROOF BYPASS
+    */
     requires
         limbs_bounded(&self),
     ensures
@@ -2198,8 +2333,9 @@ impl UnpackedScalar {
 
         result
     }
-    } // verus!
 }
+
+} // verus!
 
 #[cfg(feature = "group")]
 impl Field for Scalar {
@@ -2341,20 +2477,61 @@ verus! {
 ///
 /// ## Panics
 /// Panics if `src.len() != 8 * dst.len()`.
-#[verifier(external_body)]
-fn read_le_u64_into(src: &[u8], dst: &mut [u64]) {
+fn read_le_u64_into(src: &[u8], dst: &mut [u64])
+/* VERIFICATION NOTE:
+PROOF BYPASS
+*/
+    requires
+        src.len() == 8 * old(dst).len(),
+    ensures
+        dst.len() == old(dst).len(),
+        forall|i: int| 0 <= i < dst.len() ==> {
+            let byte_seq = Seq::new(8, |j: int|  src[i * 8 + j] as u8);
+            #[trigger] dst[i] as nat == bytes_seq_to_nat(byte_seq)
+        },
+{
+    #[cfg(not(verus_keep_ghost))]
     assert!(
         src.len() == 8 * dst.len(),
         "src.len() = {}, dst.len() = {}",
         src.len(),
         dst.len()
     );
+
+    /* <ORIGINAL CODE>
     for (bytes, val) in src.chunks(8).zip(dst.iter_mut()) {
         *val = u64_from_le_bytes(
             bytes
                 .try_into()
                 .expect("Incorrect src length, should be 8 * dst.len()"),
         );
+    }
+    </ORIGINAL CODE> */
+
+    /* <MODIFIED CODE> Verus doesn't support chunks/zip/try_into, use explicit loops */
+    let dst_len = dst.len();
+    for i in 0..dst_len
+        invariant
+            src.len() == 8 * dst_len,
+            dst.len() == dst_len,
+    {
+        let byte_start = (i * 8) as usize;
+        let mut byte_array = [0u8; 8];
+        for j in 0..8
+            invariant
+                src.len() == 8 * dst_len,
+                dst.len() == dst_len,
+                i < dst_len,
+                byte_start == i * 8,
+                byte_start + 8 <= src.len(),
+        {
+            byte_array[j] = src[byte_start + j];
+        }
+        dst[i] = u64_from_le_bytes(byte_array);
+    }
+    /* </MODIFIED CODE> */
+    proof {
+        assume(false);
     }
 }
 

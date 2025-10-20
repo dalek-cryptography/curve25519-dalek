@@ -96,43 +96,66 @@ pub open spec fn is_clamped_integer(bytes: &[u8; 32]) -> bool {
 
 // spec functions for NAF
 // integer value of a NAF, little-endian
-pub open spec fn reconstruct(naf: Seq<int>) -> int
+pub open spec fn reconstruct(naf: Seq<i8>) -> int
     decreases naf.len()
 {
     if naf.len() == 0 { 0 }
-    else { naf[0] + 2 * reconstruct(naf.skip(1)) }
+    else { (naf[0] as int) + 2 * reconstruct(naf.skip(1)) }
 }
 
 /// Predicate describing a valid width-w Non-Adjacent Form.
-pub open spec fn is_valid_naf(naf: Seq<int>, w: nat) -> bool {
-    forall |i: int| 0 <= i < naf.len() ==>
+pub open spec fn is_valid_naf(naf: Seq<i8>, w: nat) -> bool {
+    forall |i: int| 0 <= i < naf.len() ==> {
+        let digit = (#[trigger] naf[i]) as int;
         // Each nonzero digit is odd and within bound
-        ((#[trigger] naf[i]) == 0 ||
-         ((#[trigger] naf[i]) % 2 != 0 &&
-          -pow2((w - 1) as nat) < (#[trigger] naf[i]) && (#[trigger] naf[i]) < pow2((w - 1) as nat))) &&
+        (digit == 0 ||
+         (digit % 2 != 0 &&
+          -pow2((w - 1) as nat) < digit && digit < pow2((w - 1) as nat))) &&
         // At most one nonzero in any w consecutive digits
-        forall |j: int| 1 <= j < w && i + j < naf.len() ==>
-            !((#[trigger] naf[i]) != 0 && (#[trigger] naf[i + j]) != 0)
+        forall |j: int| 1 <= j < w && #[trigger] (i + j) < naf.len() ==>
+            !(digit != 0 && (naf[#[trigger] (i + j)] as int) != 0)
+    }
 }
 
-// Spec functions for radix-16 representation
+// Spec functions for radix-2^w representation (generic)
 
-/// Reconstructs the integer value from a radix-16 representation
-pub open spec fn reconstruct_radix_16(digits: Seq<int>) -> int
+/// Reconstructs an integer from a radix-2^w digit representation
+/// The scalar is represented as: a_0 + a_1*2^w + a_2*2^(2w) + ...
+pub open spec fn reconstruct_radix_2w(digits: Seq<i8>, w: nat) -> int
     decreases digits.len()
 {
     if digits.len() == 0 { 0 }
-    else { digits[0] + 16 * reconstruct_radix_16(digits.skip(1)) }
+    else { (digits[0] as int) + pow2(w) * reconstruct_radix_2w(digits.skip(1), w) }
+}
+
+/// Predicate describing a valid radix-2^w representation with signed digits
+/// For window size w, coefficients are in [-2^(w-1), 2^(w-1)) for most indices,
+/// and [-2^(w-1), 2^(w-1)] for the last non-zero index
+pub open spec fn is_valid_radix_2w(digits: &[i8; 64], w: nat, digits_count: nat) -> bool {
+    4 <= w <= 8 &&
+    digits_count <= 64 &&
+    forall |i: int| 0 <= i < digits_count ==> {
+        let bound = pow2((w - 1) as nat) as int;
+        if i < digits_count - 1 {
+            -bound <= (#[trigger] digits[i]) && (#[trigger] digits[i]) < bound
+        } else {
+            -bound <= (#[trigger] digits[i]) && (#[trigger] digits[i]) <= bound
+        }
+    }
+}
+
+// Spec functions for radix-16 representation (w=4 specialization)
+
+/// Reconstructs the integer value from a radix-16 representation
+/// This is just radix-2^w with w=4
+pub open spec fn reconstruct_radix_16(digits: Seq<i8>) -> int {
+    reconstruct_radix_2w(digits, 4)
 }
 
 /// Predicate describing a valid radix-16 representation with signed digits
-/// Coefficients are in [-8, 8) for indices 0..62, and [-8, 8] for index 63
+/// This is just radix-2^w with w=4
 pub open spec fn is_valid_radix_16(digits: &[i8; 64]) -> bool {
-    forall |i: int| 0 <= i < 64 ==>
-    if i < 63 { -8 <= digits[i] && digits[i] < 8 }
-    else { -8 <= digits[i] && digits[i] <= 8 }
+    is_valid_radix_2w(digits, 4, 64)
 }
-
-
 
 } // verus!

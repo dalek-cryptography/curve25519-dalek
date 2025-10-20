@@ -38,12 +38,14 @@ def main():
             else:
                 function_cell = function_name
 
-            # Convert has_* fields to checkboxes
+            # Convert has_* fields to checkboxes or markers
             def to_checkbox(value):
                 # Debug: print the value to see what we're getting
                 # print(f"Debug: checkbox value = '{value}', type = {type(value)}")
                 if value and value.lower() in ["true", "yes", "x", "1"]:
                     return ":heavy_check_mark:"
+                elif value and value.lower() == "ext":
+                    return ":x:"  # X mark for external_body
                 else:
                     return ""
 

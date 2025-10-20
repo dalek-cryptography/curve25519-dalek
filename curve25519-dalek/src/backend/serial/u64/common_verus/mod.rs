@@ -9,3 +9,5 @@ pub mod mul_lemmas;
 pub mod pow_lemmas;
 
 pub mod shift_lemmas;
+
+pub mod sum_lemmas;

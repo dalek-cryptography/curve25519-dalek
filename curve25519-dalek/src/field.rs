@@ -8,7 +8,6 @@
 // Authors:
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! Field arithmetic modulo \\(p = 2\^{255} - 19\\).
 //!
 //! The `curve25519_dalek::field` module provides a type alias
@@ -22,7 +21,6 @@
 //!
 //! Field operations defined in terms of other field operations, such as
 //! field inversion or square roots, are defined here.
-
 #![allow(unused_qualifications)]
 
 use cfg_if::cfg_if;

@@ -8,7 +8,6 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! Serial implementations of field, scalar, point arithmetic.
 //!
 //! When the vector backend is disabled, the crate uses the mixed-model strategy
@@ -17,33 +16,24 @@
 //!
 //! When the vector backend is enabled, the field and scalar
 //! implementations are still used for non-vectorized operations.
-
 // use cfg_if::cfg_if;
-
 // cfg_if! {
 //     if #[cfg(curve25519_dalek_backend = "fiat")] {
-
 //         #[cfg(curve25519_dalek_bits = "32")]
 //         #[doc(hidden)]
 //         pub mod fiat_u32;
-
 //         #[cfg(curve25519_dalek_bits = "64")]
 //         #[doc(hidden)]
 //         pub mod fiat_u64;
-
 //     } else {
-
 //         #[cfg(curve25519_dalek_bits = "32")]
 //         #[doc(hidden)]
 //         pub mod u32;
-
 //         #[cfg(curve25519_dalek_bits = "64")]
 //         #[doc(hidden)]
 //         pub mod u64;
-
 //     }
 // }
-
 pub mod u64;
 
 pub mod curve_models;

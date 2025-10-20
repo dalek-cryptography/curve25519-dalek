@@ -6,9 +6,7 @@
 //
 // Authors:
 // - Oleg Andreev <oleganza@gmail.com>
-
 //! Implementation of a variant of Pippenger's algorithm.
-
 #![allow(non_snake_case)]
 
 use alloc::vec::Vec;

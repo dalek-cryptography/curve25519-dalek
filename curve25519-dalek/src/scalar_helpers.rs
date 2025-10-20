@@ -1,5 +1,4 @@
 //! Helper functions for scalar operations in MODIFIED CODE
-
 use crate::scalar::Scalar;
 use vstd::prelude::*;
 
@@ -33,11 +32,12 @@ impl Scalar {
     /// ```
     #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn product_of_slice(scalars: &[Scalar]) -> (result: Scalar)
-    ensures
-        // Result is a valid scalar (bytes represent a value < group_order)
-        scalar_to_nat(&result) < group_order(),
-        // Result represents the product of all scalars in the slice (mod group_order)
-        scalar_congruent_nat(&result, product_of_scalars(scalars@)),
+        ensures
+    // Result is a valid scalar (bytes represent a value < group_order)
+
+            scalar_to_nat(&result) < group_order(),
+            // Result represents the product of all scalars in the slice (mod group_order)
+            scalar_congruent_nat(&result, product_of_scalars(scalars@)),
     {
         let n = scalars.len();
         let mut acc = Scalar::ONE;
@@ -65,7 +65,10 @@ impl Scalar {
             proof {
                 // Assume the result maintains the invariant
                 assume(scalar_to_nat(&acc) < group_order());
-                assume(scalar_congruent_nat(&acc, product_of_scalars(scalars@.subrange(0, (i + 1) as int))));
+                assume(scalar_congruent_nat(
+                    &acc,
+                    product_of_scalars(scalars@.subrange(0, (i + 1) as int)),
+                ));
             }
         }
 
@@ -101,11 +104,12 @@ impl Scalar {
     </VERIFICATION NOTE> */
     #[allow(clippy::needless_range_loop, clippy::op_ref)]
     pub fn sum_of_slice(scalars: &[Scalar]) -> (result: Scalar)
-    ensures
-        // Result is a valid scalar (bytes represent a value < group_order)
-        scalar_to_nat(&result) < group_order(),
-        // Result represents the sum of all scalars in the slice (mod group_order)
-        scalar_congruent_nat(&result, sum_of_scalars(scalars@)),
+        ensures
+    // Result is a valid scalar (bytes represent a value < group_order)
+
+            scalar_to_nat(&result) < group_order(),
+            // Result represents the sum of all scalars in the slice (mod group_order)
+            scalar_congruent_nat(&result, sum_of_scalars(scalars@)),
     {
         let n = scalars.len();
         let mut acc = Scalar::ZERO;
@@ -133,7 +137,10 @@ impl Scalar {
             proof {
                 // Assume the result maintains the invariant
                 assume(scalar_to_nat(&acc) < group_order());
-                assume(scalar_congruent_nat(&acc, sum_of_scalars(scalars@.subrange(0, (i + 1) as int))));
+                assume(scalar_congruent_nat(
+                    &acc,
+                    sum_of_scalars(scalars@.subrange(0, (i + 1) as int)),
+                ));
             }
         }
 

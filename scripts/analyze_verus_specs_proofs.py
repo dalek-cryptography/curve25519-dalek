@@ -19,14 +19,15 @@ from beartype import beartype
 
 
 @beartype
-def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, bool]:
+def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, bool, bool]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
     Returns:
-        Tuple[bool, bool]: (has_spec, has_proof) or None if function not found
+        Tuple[bool, bool, bool]: (has_spec, has_proof, is_external_body)
         - has_spec: True if function has requires or ensures clauses
         - has_proof: True if has_spec and no assume in body
+        - is_external_body: True if function has #[verifier::external_body]
 
     TODO: Uncertain if this does the right thing if there are two functions with
     the same name in the same file
@@ -133,9 +134,13 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
         has_requires = "requires" in signature
         has_ensures = "ensures" in signature
         has_spec = has_requires or has_ensures
-
-        if not has_spec:
-            continue  # This isn't a Verus function
+        
+        # Check for verifier::external attributes early (before checking has_spec)
+        has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
+        
+        # If neither specs nor external_body, skip this function
+        if not has_spec and not has_verifier_external:
+            continue  # This isn't a Verus-related function
 
         # Find the matching closing brace for the function body
         brace_count = 1
@@ -160,8 +165,7 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
         has_assume = bool(re.search(r"\bassume\s*\(", body))
         has_admit = bool(re.search(r"\badmit\b", body))
 
-        # In attributes or signature: verifier::external*, exec_allows_no_decreases_clause
-        has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
+        # In attributes: exec_allows_no_decreases_clause (external already checked above)
         has_no_decreases = bool(
             re.search(r"#\[verifier::exec_allows_no_decreases_clause\]", attributes)
         )
@@ -173,12 +177,15 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
             and not has_verifier_external
             and not has_no_decreases
         )
+        
+        # If function has external_body, treat it as having a spec (even if no requires/ensures)
+        has_spec_or_external = has_spec or has_verifier_external
 
-        return (has_spec, has_proof)
+        return (has_spec_or_external, has_proof, has_verifier_external)
 
     # Probably what's happened is that we saw the function, but
     # it doesn't have a spec yet
-    return (False, False)
+    return (False, False, False)
 
 
 @beartype
@@ -205,12 +212,12 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 
 
 @beartype
-def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool]]:
+def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool, bool]]:
     """
     Analyze all functions in the CSV and check their Verus status.
 
     Returns:
-        Dict mapping link to (has_spec_verus, has_proof_verus)
+        Dict mapping link to (has_spec_verus, has_proof_verus, is_external_body)
     """
     # Read the CSV to get function names
     with open(csv_path, "r") as f:
@@ -230,15 +237,16 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         # Search only in the specific file mentioned in the CSV
         print(f"  Checking specific file: {target_file.name}")
         result = parse_function_in_file(target_file, func_name)
-        has_spec, has_proof = result
-        results[row["link"]] = (has_spec, has_proof)
-        print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}")
+        has_spec, has_proof, is_external_body = result
+        results[row["link"]] = (has_spec, has_proof, is_external_body)
+        ext_marker = " [external_body]" if is_external_body else ""
+        print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}")
 
     return results
 
 
 @beartype
-def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
+def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool]]):
     """Update the CSV file with Verus analysis results."""
     # Read the CSV
     rows = []
@@ -252,8 +260,12 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
     for row in rows:
         link = row["link"]
         if link in results:
-            has_spec, has_proof = results[link]
-            row["has_spec_verus"] = "yes" if has_spec else ""
+            has_spec, has_proof, is_external_body = results[link]
+            # Use "ext" for functions with external_body, "yes" for regular specs
+            if has_spec:
+                row["has_spec_verus"] = "ext" if is_external_body else "yes"
+            else:
+                row["has_spec_verus"] = ""
             row["has_proof_verus"] = "yes" if has_proof else ""
 
     # Write the updated CSV back to the same file
@@ -265,8 +277,10 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
     print(f"\nCSV file updated: {csv_path}")
 
     # Print summary
-    spec_count = sum(1 for _, (has_spec, _) in results.items() if has_spec)
-    proof_count = sum(1 for _, (_, has_proof) in results.items() if has_proof)
+    spec_count = sum(1 for _, (has_spec, _, _) in results.items() if has_spec)
+    proof_count = sum(1 for _, (_, has_proof, _) in results.items() if has_proof)
+    external_count = sum(1 for _, (has_spec, _, is_ext) in results.items() if has_spec and is_ext)
+    full_spec_count = spec_count - external_count
     total = len(results)
 
     print("\nSummary:")
@@ -274,6 +288,8 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool]]):
     print(
         f"  With Verus specs: {spec_count} ({round(spec_count * 100 / total) if total > 0 else 0}%)"
     )
+    print(f"    - Full specs: {full_spec_count}")
+    print(f"    - External body: {external_count}")
     print(
         f"  With complete proofs: {proof_count} ({round(proof_count * 100 / total) if total > 0 else 0}%)"
     )

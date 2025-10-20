@@ -773,19 +773,14 @@ impl<T> Sum<T> for Scalar
 where
     T: Borrow<Scalar>,
 {
-    /* <ORIGINAL CODE>
+    #[verifier::external_body]
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = T>,
     {
         iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
     }
-    </ORIGINAL CODE> */
-    /* <VERIFICATION NOTE>
-     Added verifier::external_body annotation
-    </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    /* <MODIFIED CODE> - FOR EVENTUAL VERIFICATION*/
+    /* <MODIFIED CODE> - if needed in for verification in the future
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = T>,
@@ -799,7 +794,7 @@ where
         // Use the verified sum_of_slice function
         Scalar::sum_of_slice(&scalars)
     }
-    /* </MODIFIED CODE> */
+     </MODIFIED CODE> */
 }
 
 impl Default for Scalar {
@@ -1490,9 +1485,10 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "serde")]
 /// Visitor for deserializing a Scalar from a sequence of 32 bytes.
 ///
-/// Note: This struct is defined at module level rather than inside the
-/// `Deserialize::deserialize` implementation to anticipate issues with Verus
-/// verification, which currently has limited support for nested types
+/* VERIFICATION NOTE:
+The ScalarVisitor struct is defined at module level rather than inside the
+`Deserialize::deserialize` since Verus doesn't support nested types
+</VERIFICATION NOTE> */
 struct ScalarVisitor;
 
 #[cfg(feature = "serde")]
@@ -1508,7 +1504,7 @@ impl<'de> Visitor<'de> for ScalarVisitor {
             )
         }
     }
-
+    #[verifier::external_body]
     fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
     where
         A: serde::de::SeqAccess<'de>,
@@ -1528,6 +1524,7 @@ impl<'de> Visitor<'de> for ScalarVisitor {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl Serialize for Scalar {
+    #[verifier::external_body]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -1544,6 +1541,7 @@ impl Serialize for Scalar {
 #[cfg(feature = "serde")]
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for Scalar {
+    #[verifier::external_body]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -1603,26 +1601,6 @@ ensures
     result
 }
 
-/*
-/// Returns a size hint indicating how many entries of the return
-/// value of `to_radix_2w` are nonzero.
-pub fn to_radix_2w_size_hint(w: usize) -> (result: usize)
-requires
-    4 <= w <= 8,
-ensures
-    result <= 64,
-{
-    assume(false);
-    let digits_count = match w {
-        4..=7 => (256 + w - 1) / w,
-        // See comment in to_radix_2w on handling the terminal carry.
-        8 => (256 + w - 1) / w + 1_usize,
-        _ => panic!("invalid radix parameter"),
-    };
-    let result = digits_count;
-    result
-}
-*/
 } // verus!
 
 impl Scalar {

@@ -1571,9 +1571,8 @@ ensures
 {
     let result = (x >> 0) & 15;
     proof {
-        
+        // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
         assert((x >> 0) & 15 == x % 16) by (bit_vector);
-
     }
     result
 }
@@ -1593,9 +1592,7 @@ ensures
     let result = (x >> 4) & 15;
     proof {
         // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
-        
         assert((x >> 4) & 15 == x / 16) by (bit_vector);
-
     }
     result
 }

@@ -81,20 +81,4 @@ pub proof fn sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
     }
 }
 
-pub open spec fn fold_sum(coefs: Seq<nat>, k: nat) -> nat
-{
-    let add_local = (|i: nat, j: nat| add(i,j));
-    coefs.take(k as int).fold_left(0nat, add_local)
-}
-
-pub proof fn fold_sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
-    requires
-        k <= coefs.len(),
-        forall |i: nat| 0 <= i <= k ==> #[trigger] coefs[i as int] <= pow2((i + 1) * s) - pow2(i * s)
-    ensures
-        fold_sum(coefs, k) <= pow2((k + 1) * s) - 1
-{
-    assume(false);
-}
-
 }

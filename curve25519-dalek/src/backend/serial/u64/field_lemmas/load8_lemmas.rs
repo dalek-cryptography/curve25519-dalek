@@ -404,7 +404,11 @@ pub proof fn load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat)
     }
 }
 
-
+// For each 0 <= j <= 7 this lemma helps us show
+// ((s_j + a_{j + 1}) / 2^s) % 2^t == (s_j / 2^s) % 2^t + (a_{j + 1} / 2^s) % 2^t
+// where s_j = s[j]_0 and a_{j+1} = a[j] in the load8_shift_mod body.
+// s_j represents the j-th partial sum (of load8 summands)
+// The myriad of `requires` conditions captures the local scope in load8_shift_mod
 pub proof fn load8_shift_mod_lemma(s_jplus1: u64, s_j: u64, a_jplus1: u64, x: u8, j: nat, s: nat, t: nat)
     requires
         s_j < pow2(j * 8),

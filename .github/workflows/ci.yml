@@ -55,6 +55,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: crate-ci/typos@v1.33.1
 
+  verusfmt:
+    name: Check verusfmt formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    - name: Install verusfmt
+      run: |
+        cd /tmp
+        git clone https://github.com/Beneficial-AI-Foundation/verusfmt
+        cd verusfmt
+        git checkout 025d10eeb5a98052dcb7f262e5d0102d23996809
+        cargo install --path .
+    - name: Run verusfmt check
+      run: |
+        find . -name "*.rs" -type f -exec verusfmt --check {} \;
+
   check-libsignal:
     name: "`cargo check` on libsignal with this dalek-lite commit"
     runs-on: ubuntu-latest

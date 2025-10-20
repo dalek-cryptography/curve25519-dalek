@@ -987,6 +987,138 @@ pub proof fn load8_limb1(input: &[u8])
     );
 }
 
+pub proof fn load8_limb2(input: &[u8])
+    requires
+        12 + 7 < input.len()
+    ensures
+        ((load8_at_spec(input,  12) as u64) >> 6) & mask51
+        ==
+        (input[12] as nat / pow2(6)) +
+        (input[13] * pow2((1 * 8 - 6) as nat)) +
+        (input[14] * pow2((2 * 8 - 6) as nat)) +
+        (input[15] * pow2((3 * 8 - 6) as nat)) +
+        (input[16] * pow2((4 * 8 - 6) as nat)) +
+        (input[17] * pow2((5 * 8 - 6) as nat)) +
+        (input[18] * pow2((6 * 8 - 6) as nat)) +
+        ((input[19] as nat % pow2(1)) * pow2((7 * 8 - 6) as nat))
+{
+
+    let i = 12;
+    let k = 6;
+
+    let j_div = 1;
+    let j_id = 7;
+    let j_shift = 8;
+
+    load8_limb_X(input, i, k, j_div, j_id, j_shift);
+
+    // Sanity check
+    assert(
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+    );
+}
+
+pub proof fn load8_limb3(input: &[u8])
+    requires
+        19 + 7 < input.len()
+    ensures
+        ((load8_at_spec(input,  19) as u64) >> 1) & mask51
+        ==
+        (input[19] as nat / pow2(1)) +
+        (input[20] * pow2((1 * 8 - 1) as nat)) +
+        (input[21] * pow2((2 * 8 - 1) as nat)) +
+        (input[22] * pow2((3 * 8 - 1) as nat)) +
+        (input[23] * pow2((4 * 8 - 1) as nat)) +
+        (input[24] * pow2((5 * 8 - 1) as nat)) +
+        ((input[25] as nat % pow2(4)) * pow2((6 * 8 - 1) as nat))
+{
+
+    let i = 19;
+    let k = 1;
+
+    let j_div = 1;
+    let j_id = 6;
+    let j_shift = 7;
+
+    load8_limb_X(input, i, k, j_div, j_id, j_shift);
+
+    // Sanity check
+    assert(
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+    );
+}
+
+pub proof fn load8_limb4(input: &[u8])
+    requires
+        24 + 7 < input.len()
+    ensures
+        ((load8_at_spec(input,  24) as u64) >> 12) & mask51
+        ==
+        (input[25] as nat / pow2(4)) +
+        (input[26] * pow2((2 * 8 - 12) as nat)) +
+        (input[27] * pow2((3 * 8 - 12) as nat)) +
+        (input[28] * pow2((4 * 8 - 12) as nat)) +
+        (input[29] * pow2((5 * 8 - 12) as nat)) +
+        (input[30] * pow2((6 * 8 - 12) as nat)) +
+        ((input[31] as nat % pow2(7)) * pow2((7 * 8 - 12) as nat))
+{
+
+    let i = 24;
+    let k = 12;
+
+    let j_div = 2;
+    let j_id = 7;
+    let j_shift = 8;
+
+    load8_limb_X(input, i, k, j_div, j_id, j_shift);
+
+    // Sanity check
+    assert(
+        (load8_at_spec(input,  i) as u64 >> k) & mask51
+        ==
+        (((input[i + 0] * pow2(0 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 1] * pow2(1 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 2] * pow2(2 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 3] * pow2(3 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 4] * pow2(4 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 5] * pow2(5 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 6] * pow2(6 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64) +
+        (((input[i + 7] * pow2(7 * 8)) as u64) / (pow2(k as nat) as u64)) % (pow2(51) as u64)
+    );
+
+    // First term too small, swallowed by div
+    assert(input[24] as nat / pow2(12) == 0) by {
+        assert(input[24] < pow2(8) < pow2(12)) by {
+            assert(input[24] < pow2(8)) by {
+                u8_lt_pow2_8(input[24]);
+            }
+            assert(pow2(8) < pow2(12)) by {
+                lemma_pow2_strictly_increases(8, 12);
+            }
+        }
+
+        lemma_basic_div(input[24] as int, pow2(12) as int);
+    }
+}
+
 fn main() {}
 
 }

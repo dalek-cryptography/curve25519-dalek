@@ -11,6 +11,15 @@ use super::sum_lemmas::*;
 
 verus! {
 
+pub proof fn u8_lt_pow2_8(a: u8)
+    ensures
+        a < pow2(8)
+{
+    assert(u8::MAX < pow2(8)) by {
+        lemma2_to64();
+    }
+}
+
 // Auxiliary lemma for exponentiation
 pub proof fn pow2_le_max64(k: nat)
     requires

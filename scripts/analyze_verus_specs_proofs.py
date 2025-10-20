@@ -53,6 +53,26 @@ def parse_function_in_file(
     for match in matches:
         fn_start = match.start()
 
+        # Check if this function is inside a comment block
+        # Look backwards for /* or // to see if we're in a comment
+        look_back_start = max(0, fn_start - 1000)
+        preceding_text = content[look_back_start:fn_start]
+
+        # Check for /* ... */ block comments
+        last_block_open = preceding_text.rfind("/*")
+        last_block_close = preceding_text.rfind("*/")
+        if last_block_open > last_block_close:
+            # We're inside a block comment, skip this match
+            continue
+
+        # Check for line comments - see if the function is on the same line as //
+        last_newline = preceding_text.rfind("\n")
+        if last_newline != -1:
+            line_start = preceding_text[last_newline:]
+            if "//" in line_start:
+                # We're on a line with a // comment, skip this match
+                continue
+
         # Find the function body by looking for the opening brace
         # For Verus functions with complex specs, we need a more robust approach
         # Look for the pattern that indicates the start of the function body

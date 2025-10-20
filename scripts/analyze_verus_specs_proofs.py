@@ -19,7 +19,9 @@ from beartype import beartype
 
 
 @beartype
-def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, bool, bool]:
+def parse_function_in_file(
+    file_path: Path, function_name: str
+) -> Tuple[bool, bool, bool]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
@@ -134,10 +136,10 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
         has_requires = "requires" in signature
         has_ensures = "ensures" in signature
         has_spec = has_requires or has_ensures
-        
+
         # Check for verifier::external attributes early (before checking has_spec)
         has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
-        
+
         # If neither specs nor external_body, skip this function
         if not has_spec and not has_verifier_external:
             continue  # This isn't a Verus-related function
@@ -177,7 +179,7 @@ def parse_function_in_file(file_path: Path, function_name: str) -> Tuple[bool, b
             and not has_verifier_external
             and not has_no_decreases
         )
-        
+
         # If function has external_body, treat it as having a spec (even if no requires/ensures)
         has_spec_or_external = has_spec or has_verifier_external
 
@@ -212,7 +214,9 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 
 
 @beartype
-def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bool, bool]]:
+def analyze_functions(
+    csv_path: Path, src_dir: Path
+) -> Dict[str, Tuple[bool, bool, bool]]:
     """
     Analyze all functions in the CSV and check their Verus status.
 
@@ -240,7 +244,9 @@ def analyze_functions(csv_path: Path, src_dir: Path) -> Dict[str, Tuple[bool, bo
         has_spec, has_proof, is_external_body = result
         results[row["link"]] = (has_spec, has_proof, is_external_body)
         ext_marker = " [external_body]" if is_external_body else ""
-        print(f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}")
+        print(
+            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}"
+        )
 
     return results
 
@@ -279,7 +285,9 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool]]):
     # Print summary
     spec_count = sum(1 for _, (has_spec, _, _) in results.items() if has_spec)
     proof_count = sum(1 for _, (_, has_proof, _) in results.items() if has_proof)
-    external_count = sum(1 for _, (has_spec, _, is_ext) in results.items() if has_spec and is_ext)
+    external_count = sum(
+        1 for _, (has_spec, _, is_ext) in results.items() if has_spec and is_ext
+    )
     full_spec_count = spec_count - external_count
     total = len(results)
 

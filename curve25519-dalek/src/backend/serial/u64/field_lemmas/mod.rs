@@ -7,6 +7,8 @@ pub mod as_nat_lemmas;
 
 pub mod field_core;
 
+pub mod from_bytes_lemmas;
+
 pub mod negate_lemmas;
 
 pub mod pow2_51_lemmas;

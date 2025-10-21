@@ -310,12 +310,6 @@ impl FieldElement51 {
         // First, reduce the limbs to ensure h < 2*p.
         let mut limbs = FieldElement51::reduce(self.limbs).limbs;
 
-        // Track reduced limbs for proof
-        proof {
-            // After reduce, we have as_nat(limbs) < 2*p() from reduce's postcondition
-            assert(as_nat(limbs) < 2 * p());
-        }
-
         // Compute q with overflow proofs
         // After reduce, limbs[i] < 2^52, so limbs[0] + 19 < 2^52 + 19 < 2^64
         proof {
@@ -328,118 +322,68 @@ impl FieldElement51 {
             //lemma_add_preserves_bound(limbs[0], 1u64 << 52, 19);
             lemma_shr_le_u64((limbs[0] + 19) as u64, ((1u64 << 52) + 19) as u64, 51);
             assert((((1u64 << 52) + 19) as u64) >> 51 == 2) by (compute);
-            assert(q <= 2);
         }
 
-        // Second iteration
-        //proof {
-        //    assert((1u64 << 52) + 2 <= u64::MAX) by (compute);
-            //lemma_add_preserves_bound(limbs[1], 1u64 << 52, q);
-        //}
         let ghost old_q = q;
         q = (limbs[1] + q) >> 51;
 
         proof {
             lemma_shr_le_u64((limbs[1] + old_q) as u64, ((1u64 << 52) + 2) as u64, 51);
-            assert(((limbs[1] + old_q) as u64) >> 51 == q);
             assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
-            assert(q <= 2);
         }
 
-        // Third iteration
-        //proof {
-        //    lemma_add_preserves_bound(limbs[2], 1u64 << 52, q);
-        //}
         let ghost old_q2 = q;
         q = (limbs[2] + q) >> 51;
 
         proof {
             lemma_shr_le_u64((limbs[2] + old_q2) as u64, ((1u64 << 52) + 2) as u64, 51);
-            assert(((limbs[2] + old_q2) as u64) >> 51 == q);
-            assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
-            assert(q <= 2);
         }
 
-        // Fourth iteration
-        //proof {
-        //    lemma_add_preserves_bound(limbs[3], 1u64 << 52, q);
-        //}
         let ghost old_q3 = q;
         q = (limbs[3] + q) >> 51;
 
         proof {
             lemma_shr_le_u64((limbs[3] + old_q3) as u64, ((1u64 << 52) + 2) as u64, 51);
-            assert(((limbs[3] + old_q3) as u64) >> 51 == q);
-            assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
-            assert(q <= 2);
         }
 
-        // Fifth iteration
-        //proof {
-        //    lemma_add_preserves_bound(limbs[4], 1u64 << 52, q);
-        //}
         q = (limbs[4] + q) >> 51;
         let ghost reduced_limbs = limbs;
+        
         proof {
             // Step 2: Prove that q is the correct quotient
             lemma_compute_q(reduced_limbs, q);
-            // Note: as_nat(reduced_limbs) < 2*p() from reduce's postcondition (line 278)
-            assert(as_nat(reduced_limbs) < 2 * p());
         }
 
         // Now we can compute r as r = h - pq = r - (2^255-19)q = r + 19q - 2^255q
 
-        proof {
-            // q is at most 1, so 19*q is at most 19
-            assert(q <= 1);
-            assert((1u64 << 52) + 19 <= u64::MAX) by (compute);
-        }
         limbs[0] += 19 * q;
 
         // Now carry the result to compute r + 19q ...
         // Use LOW_51_BIT_MASK constant directly for proof purposes
 
-        // Track intermediate values for proof
-        let ghost l0 = limbs[0];
-
         proof {
-            // Establish that LOW_51_BIT_MASK == mask51
-            masks_are_equal();
-
             // limbs[0] < 2^52 + 19, so limbs[0] >> 51 <= 2
             lemma_shr_le_u64(limbs[0], ((1u64 << 52) + 19) as u64, 51);
-            assert((((1u64 << 52) + 19) as u64) >> 51 == 2) by (compute);
-            assert(limbs[0] >> 51 <= 2);
-            assert((1u64 << 52) + 2 <= u64::MAX) by (compute);
         }
         limbs[1] += limbs[0] >> 51;
-        let ghost l1 = limbs[1];
         limbs[0] &= LOW_51_BIT_MASK;
 
         proof {
             lemma_shr_le_u64(limbs[1], ((1u64 << 52) + 2) as u64, 51);
-            assert((((1u64 << 52) + 2) as u64) >> 51 == 2) by (compute);
-            assert(limbs[1] >> 51 <= 2);
-            assert((1u64 << 52) + 2 <= u64::MAX) by (compute);
         }
         limbs[2] += limbs[1] >> 51;
-        let ghost l2 = limbs[2];
         limbs[1] &= LOW_51_BIT_MASK;
 
         proof {
             lemma_shr_le_u64(limbs[2], ((1u64 << 52) + 2) as u64, 51);
-            assert(limbs[2] >> 51 <= 2);
         }
         limbs[3] += limbs[2] >> 51;
-        let ghost l3 = limbs[3];
         limbs[2] &= LOW_51_BIT_MASK;
 
         proof {
             lemma_shr_le_u64(limbs[3], ((1u64 << 52) + 2) as u64, 51);
-            assert(limbs[3] >> 51 <= 2);
         }
         limbs[4] += limbs[3] >> 51;
-        let ghost l4 = limbs[4];
         limbs[3] &= LOW_51_BIT_MASK;
         // ... but instead of carrying (limbs[4] >> 51) = 2^255q
         // into another limb, discard it, subtracting the value
@@ -450,69 +394,10 @@ impl FieldElement51 {
 
         proof {
             // Step 3: Prove that the reduction preserves the value mod p
-            // Establish preconditions:
-            assert(q == 0 || q == 1); // from lemma_compute_q postcondition
-            // The relationship as_nat(reduced_limbs) >= p() <==> q == 1 comes from lemma_compute_q
-
-            // Prove that final_limbs == reduce_with_q_spec(reduced_limbs, q)
-            // This requires showing the executable code matches the spec
-
-            // LOW_51_BIT_MASK == mask51 was already established earlier
-            // Now show that each intermediate value matches the spec
-            // l0 = reduced_limbs[0] + 19 * q
-            assert(l0 == (reduced_limbs[0] + 19 * q) as u64);
-
-            // l1 = reduced_limbs[1] + (l0 >> 51)
-            assert(l1 == (reduced_limbs[1] + (l0 >> 51)) as u64);
-
-            // limbs[0] after masking = l0 & mask51
-            assert(final_limbs[0] == (l0 & LOW_51_BIT_MASK) as u64);
-            assert(final_limbs[0] == (l0 & mask51) as u64);
-
-            // l2 = reduced_limbs[2] + (l1 >> 51)
-            assert(l2 == (reduced_limbs[2] + (l1 >> 51)) as u64);
-
-            // limbs[1] after masking = l1 & mask51
-            assert(final_limbs[1] == (l1 & LOW_51_BIT_MASK) as u64);
-            assert(final_limbs[1] == (l1 & mask51) as u64);
-
-            // l3 = reduced_limbs[3] + (l2 >> 51)
-            assert(l3 == (reduced_limbs[3] + (l2 >> 51)) as u64);
-
-            // limbs[2] after masking = l2 & mask51
-            assert(final_limbs[2] == (l2 & LOW_51_BIT_MASK) as u64);
-            assert(final_limbs[2] == (l2 & mask51) as u64);
-
-            // l4 = reduced_limbs[4] + (l3 >> 51)
-            assert(l4 == (reduced_limbs[4] + (l3 >> 51)) as u64);
-
-            // limbs[3] after masking = l3 & mask51
-            assert(final_limbs[3] == (l3 & LOW_51_BIT_MASK) as u64);
-            assert(final_limbs[3] == (l3 & mask51) as u64);
-
-            // limbs[4] after masking = l4 & mask51
-            assert(final_limbs[4] == (l4 & LOW_51_BIT_MASK) as u64);
-            assert(final_limbs[4] == (l4 & mask51) as u64);
-
-            // Now construct the spec result and show it equals final_limbs
             let spec_result = reduce_with_q_spec(reduced_limbs, q);
-            assert(spec_result[0] == (l0 & mask51) as u64);
-            assert(spec_result[1] == (l1 & mask51) as u64);
-            assert(spec_result[2] == (l2 & mask51) as u64);
-            assert(spec_result[3] == (l3 & mask51) as u64);
-            assert(spec_result[4] == (l4 & mask51) as u64);
-
-            // Therefore final_limbs == spec_result
-            assert(final_limbs[0] == spec_result[0]);
-            assert(final_limbs[1] == spec_result[1]);
-            assert(final_limbs[2] == spec_result[2]);
-            assert(final_limbs[3] == spec_result[3]);
             assert(final_limbs[4] == spec_result[4]);
             assert(final_limbs == spec_result);
-            assert(final_limbs == reduce_with_q_spec(reduced_limbs, q));
-
             lemma_to_bytes_reduction(reduced_limbs, final_limbs, q);
-            // Now we know: as_nat(final_limbs) == as_nat(self.limbs) % p()
         }
 
         // Now arrange the bits of the limbs.
@@ -561,7 +446,6 @@ impl FieldElement51 {
         // High bit should be zero.
         // DISABLED DUE TO NO VERUS SUPPORT FOR PANICS
         // debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
-
         s
     }
 

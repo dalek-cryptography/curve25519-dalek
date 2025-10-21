@@ -599,16 +599,16 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
     // Establish basic facts
     lemma2_to64();
     pow255_gt_19();
-    lemma_pow2_adds(255, 1);  // Establish pow2(256) == pow2(255) * pow2(1) once
+    lemma_pow2_adds(255, 1);  // Establish pow2(256) == pow2(255) * 2
 
-    // Use the bound from precondition: as_nat(limbs) < 2*p() = 2^256 - 38
-    assert(2 * p() == pow2(256) - 38) by {
+    // Simplified reasoning:
+    // Since p() = 2^255 - 19 < 2^255, we have:
+    // as_nat(limbs) < 2*p() < 2*2^255
+    // Therefore: as_nat(limbs) + 19 < 2*2^255
+    assert(p() < pow2(255)) by {
+        pow255_gt_19();
     }
-
-    // Therefore: as_nat(limbs) + 19 < 2^256 - 38 + 19 = 2^256 - 19 < 2^256
-
-    // We have: as_nat(limbs) + 19 < 2 * 2^255 = 2^256
-
+    
     // By integer division: if x < 2 * d, then x / d < 2
     lemma_pow2_pos(255);
     lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 2);
@@ -633,15 +633,9 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
 {
     pow255_gt_19();
     lemma2_to64();
-
-    // Establish key facts
-    assert(2 * p() == 2 * pow2(255) - 38) by {
-        lemma_pow2_adds(255, 1);
-    }
-
     lemma_pow2_pos(255);
 
-    // The key insight: with as_nat(limbs) < 2*p(), we have two cases:
+    // The key insight: with as_nat(limbs) < 2*p() and p() < 2^255, we have two cases:
     // Case 1: as_nat(limbs) < p() ⟺ as_nat(limbs) + 19 < 2^255 ⟺ q = 0
     // Case 2: p() ≤ as_nat(limbs) < 2*p() ⟺ 2^255 ≤ as_nat(limbs) + 19 < 2*2^255 ⟺ q = 1
 

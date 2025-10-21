@@ -449,44 +449,43 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
         lemma_div_strictly_bounded(as_nat(input_limbs) as int, pow2(255) as int, 1);
     } else {
         // q == 1
-        // When q == 1, we have as_nat(input_limbs) >= p() = 2^255 - 19
-        // And as_nat(input_limbs) < 2*p() = 2^256 - 38
-        // So: 2^255 - 19 <= as_nat(input_limbs) + 19 < 2^256 - 38 + 19 = 2^256 - 19
-        // Therefore: 2^255 <= as_nat(input_limbs) + 19 < 2^256
-        // So: (as_nat(input_limbs) + 19) / 2^255 == 1
+        // Simplified reasoning: c4 = q by computing the division
+        //
+        // From lemma_reduction_carry_propagation_is_division:
+        //   c4 = ⌊(as_nat(input_limbs) + 19*q) / 2^255⌋
+        //
+        // Substituting q = 1:
+        //   c4 = ⌊(as_nat(input_limbs) + 19) / 2^255⌋
+        //
+        // We prove this equals 1 using the bounds:
+        //   Since q == 1, we have as_nat(input_limbs) >= p() = 2^255 - 19
+        //   So: as_nat(input_limbs) + 19 >= 2^255
+        //   Also: as_nat(input_limbs) < 2*p() < 2*2^255
+        //   So: as_nat(input_limbs) + 19 < 2*2^255
+        //   Therefore: 2^255 ≤ as_nat(input_limbs) + 19 < 2*2^255
+        //   Which gives: ⌊(as_nat(input_limbs) + 19) / 2^255⌋ = 1
+        //
+        // Therefore: c4 = 1 = q
 
-        assert(2 * p() == 2 * pow2(255) - 38) by {
-            lemma_pow2_adds(255, 1);
-        }
-
-        // Establish the tight bounds: pow2(255) <= as_nat(input_limbs) + 19 < 2*pow2(255)
-        let val = as_nat(input_limbs) as int + 19;
-
-        // Invoke the division computation
+        // Invoke the division computation to establish c4 = (as_nat + 19*q) / 2^255
         lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
-
-        // Since pow2(255) <= val < 2*pow2(255), we have val / pow2(255) == 1
-        // We prove this by establishing: 1 <= val / pow2(255) < 2
-
+        
+        // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
+        let val = as_nat(input_limbs) as int + 19;
         let divisor = pow2(255) as int;
-
-        // First, prove val / divisor < 2 using lemma_div_strictly_bounded
-        // We have: val < 2 * divisor, so val / divisor < 2
+        
+        // From q == 1, we have as_nat(input_limbs) >= p()
+        // So val >= 2^255
+        
+        // From as_nat(input_limbs) < 2*p() < 2*2^255
+        // We have val < 2*2^255, so val / divisor < 2
         lemma_div_strictly_bounded(val, divisor, 2);
-
-        // Second, prove val / divisor >= 1
-        // From val >= divisor and divisor > 0
+        
+        // From val >= divisor, we have val / divisor >= 1
         lemma_fundamental_div_mod(val, divisor);
-        lemma_pow2_pos(255);
-
-        // Since val >= divisor, we have val = q * divisor + r where q = val / divisor
-        // and 0 <= r < divisor
-        // If q = 0, then val = 0 + r < divisor, contradicting val >= divisor
-        // Therefore q >= 1
-        if val / divisor == 0 {
-        }
-
-        // Therefore: 1 <= val / divisor < 2, so val / divisor == 1
+        
+        // Therefore: 1 ≤ val / divisor < 2, so val / divisor == 1
+        // Since c4 = val / divisor (with q=1), we have c4 = 1 = q
     }
 }
 

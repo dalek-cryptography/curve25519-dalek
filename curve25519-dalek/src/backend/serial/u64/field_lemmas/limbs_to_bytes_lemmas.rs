@@ -2576,150 +2576,8 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     // From bytes_match_limbs_packing, we know how bytes relate to limbs
     // For each boundary byte, we need to prove it reconstructs correctly
 
-    // Prove all 4 boundary bytes at once using the unified helper
-    lemma_all_boundary_bytes_reconstruct(limbs, bytes);
-
-    // Key insight: For each boundary byte at position i:
-    //   as_nat_32_u8 contributes: bytes[i] * 2^(i*8)
-    //   Sum of contributions: (low_part + high_part) * 2^(i*8)
-    //   We proved: bytes[i] = low_part + high_part
-    //   By distributivity: bytes[i] * 2^(i*8) = (low_part + high_part) * 2^(i*8)
-    //                                         = low_part * 2^(i*8) + high_part * 2^(i*8)
-
-    // Apply distributivity to split each boundary byte contribution
-    // This allows the byte contributions to match the limb contributions exactly
-
-    // Byte 6: Split into limb0 contribution + limb1 contribution
-    assert(bytes[6] as nat * pow2(6 * 8) ==
-        (((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8) +
-         ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8))) by {
-        lemma_mul_is_distributive_add(pow2(6 * 8) as int,
-            ((limbs[0] as nat / pow2(48)) % 8) as int,
-            ((limbs[1] as nat % pow2(5)) * 8) as int);
-    }
-
-    // Byte 12: Split into limb1 contribution + limb2 contribution
-    assert(bytes[12] as nat * pow2(12 * 8) ==
-        (((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8) +
-         ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8))) by {
-        lemma_mul_is_distributive_add(pow2(12 * 8) as int,
-            ((limbs[1] as nat / pow2(45)) % pow2(6)) as int,
-            ((limbs[2] as nat % pow2(2)) * pow2(6)) as int);
-    }
-
-    // Byte 19: Split into limb2 contribution + limb3 contribution
-    assert(bytes[19] as nat * pow2(19 * 8) ==
-        (((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8) +
-         ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8))) by {
-        lemma_mul_is_distributive_add(pow2(19 * 8) as int,
-            ((limbs[2] as nat / pow2(50)) % 2) as int,
-            ((limbs[3] as nat % pow2(7)) * 2) as int);
-    }
-
-    // Byte 25: Split into limb3 contribution + limb4 contribution
-    assert(bytes[25] as nat * pow2(25 * 8) ==
-        (((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8) +
-         ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8))) by {
-        lemma_mul_is_distributive_add(pow2(25 * 8) as int,
-            ((limbs[3] as nat / pow2(47)) % pow2(4)) as int,
-            ((limbs[4] as nat % pow2(4)) * pow2(4)) as int);
-    }
-
-    // Now the equality should follow from the definitions and the boundary byte substitutions
-    // as_nat_32_u8(bytes) is the explicit sum of all 32 byte terms
-    // The sum of limb contributions is the exact same terms, just grouped by limb
-    // The boundary bytes have been shown to split correctly between adjacent limbs
-
-    // Explicitly show the equality by expanding both sides
-    // Note: as_nat_32_u8 and each limbN_byte_contribution are open spec functions with explicit definitions
-    // so the solver can see their expansions
-
-    // Group the LHS (as_nat_32_u8) into 5 limb-aligned chunks
-    // These chunks match the limb contribution functions (byte-first order)
-    // Chunk 0: bytes 0-5 + low part of byte 6
-    let chunk0 =
-        bytes[0] as nat * pow2(0 * 8) +
-        bytes[1] as nat * pow2(1 * 8) +
-        bytes[2] as nat * pow2(2 * 8) +
-        bytes[3] as nat * pow2(3 * 8) +
-        bytes[4] as nat * pow2(4 * 8) +
-        bytes[5] as nat * pow2(5 * 8) +
-        ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8);
-
-    // Chunk 1: high part of byte 6 + bytes 7-11 + low part of byte 12
-    let chunk1 =
-        ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8) +
-        bytes[7] as nat * pow2(7 * 8) +
-        bytes[8] as nat * pow2(8 * 8) +
-        bytes[9] as nat * pow2(9 * 8) +
-        bytes[10] as nat * pow2(10 * 8) +
-        bytes[11] as nat * pow2(11 * 8) +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8);
-
-    // Chunk 2: high part of byte 12 + bytes 13-18 + low part of byte 19
-    let chunk2 =
-        ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8) +
-        bytes[13] as nat * pow2(13 * 8) +
-        bytes[14] as nat * pow2(14 * 8) +
-        bytes[15] as nat * pow2(15 * 8) +
-        bytes[16] as nat * pow2(16 * 8) +
-        bytes[17] as nat * pow2(17 * 8) +
-        bytes[18] as nat * pow2(18 * 8) +
-        ((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8);
-
-    // Chunk 3: high part of byte 19 + bytes 20-24 + low part of byte 25
-    let chunk3 =
-        ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8) +
-        bytes[20] as nat * pow2(20 * 8) +
-        bytes[21] as nat * pow2(21 * 8) +
-        bytes[22] as nat * pow2(22 * 8) +
-        bytes[23] as nat * pow2(23 * 8) +
-        bytes[24] as nat * pow2(24 * 8) +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8);
-
-    // Chunk 4: high part of byte 25 + bytes 26-31
-    let chunk4 =
-        ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8) +
-        bytes[26] as nat * pow2(26 * 8) +
-        bytes[27] as nat * pow2(27 * 8) +
-        bytes[28] as nat * pow2(28 * 8) +
-        bytes[29] as nat * pow2(29 * 8) +
-        bytes[30] as nat * pow2(30 * 8) +
-        bytes[31] as nat * pow2(31 * 8);
-
-    // Each chunk exactly equals the corresponding limb contribution (by definition)
-
-    // Sum of chunks equals sum of limb contributions
-    assert(chunk0 + chunk1 + chunk2 + chunk3 + chunk4 ==
-        limb0_byte_contribution(limbs, bytes) +
-        limb1_byte_contribution(limbs, bytes) +
-        limb2_byte_contribution(limbs, bytes) +
-        limb3_byte_contribution(limbs, bytes) +
-        limb4_byte_contribution(limbs, bytes));
-
-    // Now show that as_nat_32_u8(bytes) equals the sum of chunks
-    // as_nat_32_u8(bytes) expands to 32 byte terms
-    // We've shown that the 4 boundary bytes split correctly
-    // So as_nat_32_u8(bytes) = chunk0 + chunk1 + chunk2 + chunk3 + chunk4
-
-    // This follows from the boundary byte decompositions we proved above combined with
-    // the definition of as_nat_32_u8
-    //
-    // as_nat_32_u8(bytes) = sum of all 32 bytes
-    // = (bytes 0-5) + bytes[6]*2^48 + (bytes 7-11) + bytes[12]*2^96 + ... + bytes[31]*2^248
-    //
-    // We've shown: bytes[6]*2^48 = (low_part + high_part)*2^48 = chunk0_part6 + chunk1_part6
-    // Similarly for bytes 12, 19, 25
-    //
-    // So: as_nat_32_u8(bytes) = chunk0 + chunk1 + chunk2 + chunk3 + chunk4
-
-    // The final equality: substitute boundary bytes with their split forms
-    // This is pure arithmetic rewriting using the boundary byte equalities
-    //
-    // Strategy: as_nat_32_u8 is an open spec, so we can directly see its expansion.
-    // We'll match the format exactly and use associativity/commutativity of addition.
-
-    // The boundary byte facts we've proven:
+    // Define the boundary byte splits (bytes that span two limbs)
+    // Each boundary byte is split into a low part (from lower limb) and high part (from higher limb)
     let byte6_low = ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8);
     let byte6_high = ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8);
 
@@ -2732,10 +2590,81 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     let byte25_low = ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8);
     let byte25_high = ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8);
 
-    // These equalities follow directly from the distributivity lemmas proved above (lines 3007-3040)
+    // Prove each boundary byte reconstruction using lemma_boundary_byte_combines
+    // Then multiply both sides by pow2(byte_position * 8) and apply distributivity
+    // Byte 6: lemma_boundary_byte_combines proves bytes[6] == (limbs[0]/2^48)%8 + (limbs[1]%2^5)*8
+    // Multiply both sides by pow2(6*8): (a+b)*c = a*c + b*c by distributivity
+    //lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
+    assert(bytes[6] as nat ==
+        (limbs[0] as nat / pow2(48)) % 8 +
+        (limbs[1] as nat % pow2(5)) * 8) by {
+            lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
+        }
+    // Distributivity gives us: (a+b)*c == a*c + b*c
+    assert(bytes[6] as nat * pow2(6 * 8) ==
+        ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8) +
+        ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8)) by {
+            lemma_mul_is_distributive_add_other_way(pow2(6 * 8) as int,
+                ((limbs[0] as nat / pow2(48)) % 8) as int,
+                ((limbs[1] as nat % pow2(5)) * 8) as int);
+        }
+    // Which exactly matches byte6_low + byte6_high by definition
+    assert(bytes[6] as nat * pow2(6 * 8) == byte6_low + byte6_high);
 
-    // Define after_split_25 in BYTE-FIRST order (same as as_nat_32_u8 natural order)
-    // This makes it syntactically identical to as_nat_with_splits!
+    // Byte 12: lemma_boundary_byte_combines proves bytes[12] == (limbs[1]/2^45)%2^6 + (limbs[2]%2^2)*2^6
+    // Multiply both sides by pow2(12*8): (a+b)*c = a*c + b*c by distributivity
+    assert(bytes[12] as nat ==
+        (limbs[1] as nat / pow2(45)) % pow2(6) +
+        (limbs[2] as nat % pow2(2)) * pow2(6)) by {
+            lemma_boundary_byte_combines(limbs[1], limbs[2], bytes[12], 45, 6);
+        }
+    // Distributivity gives us: (a+b)*c == a*c + b*c
+    assert(bytes[12] as nat * pow2(12 * 8) ==
+        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8) +
+        ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8)) by {
+            lemma_mul_is_distributive_add_other_way(pow2(12 * 8) as int,
+                ((limbs[1] as nat / pow2(45)) % pow2(6)) as int,
+                ((limbs[2] as nat % pow2(2)) * pow2(6)) as int);
+        }
+    // Which exactly matches byte12_low + byte12_high by definition
+    assert(bytes[12] as nat * pow2(12 * 8) == byte12_low + byte12_high);
+
+    // Byte 19: lemma_boundary_byte_combines proves bytes[19] == (limbs[2]/2^50)%2 + (limbs[3]%2^7)*2
+    // Multiply both sides by pow2(19*8): (a+b)*c = a*c + b*c by distributivity
+    assert(bytes[19] as nat ==
+        (limbs[2] as nat / pow2(50)) % 2 +
+        (limbs[3] as nat % pow2(7)) * 2) by {
+            lemma_boundary_byte_combines(limbs[2], limbs[3], bytes[19], 50, 1);
+        }
+    // Distributivity gives us: (a+b)*c == a*c + b*c
+    assert(bytes[19] as nat * pow2(19 * 8) ==
+        ((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8) +
+        ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8)) by {
+            lemma_mul_is_distributive_add_other_way(pow2(19 * 8) as int,
+                ((limbs[2] as nat / pow2(50)) % 2) as int,
+                ((limbs[3] as nat % pow2(7)) * 2) as int);
+        }
+    // Which exactly matches byte19_low + byte19_high by definition
+    assert(bytes[19] as nat * pow2(19 * 8) == byte19_low + byte19_high);
+
+    // Byte 25: lemma_boundary_byte_combines proves bytes[25] == (limbs[3]/2^47)%2^4 + (limbs[4]%2^4)*2^4
+    // Multiply both sides by pow2(25*8): (a+b)*c = a*c + b*c by distributivity
+    assert(bytes[25] as nat ==
+        (limbs[3] as nat / pow2(47)) % pow2(4) +
+        (limbs[4] as nat % pow2(4)) * pow2(4)) by {
+            lemma_boundary_byte_combines(limbs[3], limbs[4], bytes[25], 47, 4);
+        }
+    // Distributivity gives us: (a+b)*c == a*c + b*c
+    assert(bytes[25] as nat * pow2(25 * 8) ==
+        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8) +
+        ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8)) by {
+            lemma_mul_is_distributive_add_other_way(pow2(25 * 8) as int,
+                ((limbs[3] as nat / pow2(47)) % pow2(4)) as int,
+                ((limbs[4] as nat % pow2(4)) * pow2(4)) as int);
+        }
+    // Which exactly matches byte25_low + byte25_high by definition
+    assert(bytes[25] as nat * pow2(25 * 8) == byte25_low + byte25_high);
+
     let after_split_25_pow2_first =
         (bytes[0] as nat) +
         (bytes[ 1] as nat) * pow2( 1 * 8) +
@@ -2770,110 +2699,17 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
         (bytes[30] as nat) * pow2(30 * 8) +
         (bytes[31] as nat) * pow2(31 * 8);
 
-    // Now we need to show that as_nat_32_u8(bytes) == chunk0 + chunk1 + chunk2 + chunk3 + chunk4
-    //
-    // Strategy: Use byte-first order throughout (matching as_nat_32_u8's new definition)
-    // 1. as_nat_with_splits == after_split_25_pow2_first (TRIVIAL - syntactically identical)
-    // 2. after_split_25_pow2_first == chunk0 + chunk1 + chunk2 + chunk3 + chunk4 (syntactically identical!)
-    // as_nat_32_u8(bytes) by definition is:
-    let as_nat_expanded =
-        (bytes[0] as nat) +
-        (bytes[ 1] as nat) * pow2( 1 * 8) +
-        (bytes[ 2] as nat) * pow2( 2 * 8) +
-        (bytes[ 3] as nat) * pow2( 3 * 8) +
-        (bytes[ 4] as nat) * pow2( 4 * 8) +
-        (bytes[ 5] as nat) * pow2( 5 * 8) +
-        (bytes[ 6] as nat) * pow2( 6 * 8) +
-        (bytes[ 7] as nat) * pow2( 7 * 8) +
-        (bytes[ 8] as nat) * pow2( 8 * 8) +
-        (bytes[ 9] as nat) * pow2( 9 * 8) +
-        (bytes[10] as nat) * pow2(10 * 8) +
-        (bytes[11] as nat) * pow2(11 * 8) +
-        (bytes[12] as nat) * pow2(12 * 8) +
-        (bytes[13] as nat) * pow2(13 * 8) +
-        (bytes[14] as nat) * pow2(14 * 8) +
-        (bytes[15] as nat) * pow2(15 * 8) +
-        (bytes[16] as nat) * pow2(16 * 8) +
-        (bytes[17] as nat) * pow2(17 * 8) +
-        (bytes[18] as nat) * pow2(18 * 8) +
-        (bytes[19] as nat) * pow2(19 * 8) +
-        (bytes[20] as nat) * pow2(20 * 8) +
-        (bytes[21] as nat) * pow2(21 * 8) +
-        (bytes[22] as nat) * pow2(22 * 8) +
-        (bytes[23] as nat) * pow2(23 * 8) +
-        (bytes[24] as nat) * pow2(24 * 8) +
-        (bytes[25] as nat) * pow2(25 * 8) +
-        (bytes[26] as nat) * pow2(26 * 8) +
-        (bytes[27] as nat) * pow2(27 * 8) +
-        (bytes[28] as nat) * pow2(28 * 8) +
-        (bytes[29] as nat) * pow2(29 * 8) +
-        (bytes[30] as nat) * pow2(30 * 8) +
-        (bytes[31] as nat) * pow2(31 * 8);
 
-    // Now substitute the boundary bytes using our proven equalities:
-    // pow2(6*8) * bytes[6] = byte6_low + byte6_high (proven at line 2811)
-    // pow2(12*8) * bytes[12] = byte12_low + byte12_high (proven at line 2812)
-    // pow2(19*8) * bytes[19] = byte19_low + byte19_high (proven at line 2813)
-    // pow2(25*8) * bytes[25] = byte25_low + byte25_high (proven at line 2814)
+    assert(after_split_25_pow2_first == as_nat_32_u8(bytes));
 
-    let as_nat_with_splits =
-        (bytes[0] as nat) +
-        (bytes[ 1] as nat) * pow2( 1 * 8) +
-        (bytes[ 2] as nat) * pow2( 2 * 8) +
-        (bytes[ 3] as nat) * pow2( 3 * 8) +
-        (bytes[ 4] as nat) * pow2( 4 * 8) +
-        (bytes[ 5] as nat) * pow2( 5 * 8) +
-        byte6_low + byte6_high +  // Substituted pow2(6*8) * bytes[6]
-        (bytes[ 7] as nat) * pow2( 7 * 8) +
-        (bytes[ 8] as nat) * pow2( 8 * 8) +
-        (bytes[ 9] as nat) * pow2( 9 * 8) +
-        (bytes[10] as nat) * pow2(10 * 8) +
-        (bytes[11] as nat) * pow2(11 * 8) +
-        byte12_low + byte12_high +  // Substituted pow2(12*8) * bytes[12]
-        (bytes[13] as nat) * pow2(13 * 8) +
-        (bytes[14] as nat) * pow2(14 * 8) +
-        (bytes[15] as nat) * pow2(15 * 8) +
-        (bytes[16] as nat) * pow2(16 * 8) +
-        (bytes[17] as nat) * pow2(17 * 8) +
-        (bytes[18] as nat) * pow2(18 * 8) +
-        byte19_low + byte19_high +  // Substituted pow2(19*8) * bytes[19]
-        (bytes[20] as nat) * pow2(20 * 8) +
-        (bytes[21] as nat) * pow2(21 * 8) +
-        (bytes[22] as nat) * pow2(22 * 8) +
-        (bytes[23] as nat) * pow2(23 * 8) +
-        (bytes[24] as nat) * pow2(24 * 8) +
-        byte25_low + byte25_high +  // Substituted pow2(25*8) * bytes[25]
-        (bytes[26] as nat) * pow2(26 * 8) +
-        (bytes[27] as nat) * pow2(27 * 8) +
-        (bytes[28] as nat) * pow2(28 * 8) +
-        (bytes[29] as nat) * pow2(29 * 8) +
-        (bytes[30] as nat) * pow2(30 * 8) +
-        (bytes[31] as nat) * pow2(31 * 8);
-
-
-    // Step 1: Prove as_nat_with_splits == after_split_25_pow2_first
-    // These are SYNTACTICALLY IDENTICAL! Z3 should see this immediately.
-
-    // Step 2: Prove after_split_25_pow2_first == chunk0 + chunk1 + chunk2 + chunk3 + chunk4
-    // Break it down: prove each part of the sum separately
-
-    // COMPLETED PROOF STRUCTURE:
-    // After changing as_nat_32_u8 to byte-first order (limbs[i] * pow2(i*8)):
-    // 1. as_nat_with_splits == after_split_25_pow2_first TRIVIAL (syntactically identical) ✓
-    // 2. after_split_25_pow2_first == chunks TRIVIAL (syntactically identical) ✓
-    //
-    // Both after_split_25_pow2_first and chunk0 + ... + chunk4 contain the EXACT same 36 terms
-    // in the SAME ORDER with the SAME multiplication structure:
-    // - Both use: bytes[i] as nat * pow2(i*8)
-    //
-    // No commutativity or term reordering needed - Z3 sees immediate equality!
-
-    // The boundary byte variables are defined exactly as used in chunks
-
-    // The mathematical fact is clear: both sides are the same sum
-    // However, Z3's term matching for large sums with variable substitutions is limited
-    // This is structurally identical but Z3 needs explicit guidance for 36 terms
-    assume(after_split_25_pow2_first == chunk0 + chunk1 + chunk2 + chunk3 + chunk4);
+    assert(bytes[0] as nat * pow2(0 * 8) == bytes[0] as nat * 1);
+    // The mathematical fact: after splitting boundary bytes, this equals the sum of limb contributions
+    assert(after_split_25_pow2_first ==
+        limb0_byte_contribution(limbs, bytes) +
+        limb1_byte_contribution(limbs, bytes) +
+        limb2_byte_contribution(limbs, bytes) +
+        limb3_byte_contribution(limbs, bytes) +
+        limb4_byte_contribution(limbs, bytes));
 
     // Conclusion: Chain the equalities
 }

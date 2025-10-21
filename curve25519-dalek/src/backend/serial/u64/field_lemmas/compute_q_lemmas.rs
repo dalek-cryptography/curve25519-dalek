@@ -187,14 +187,8 @@ pub proof fn lemma_radix51_telescoping_direct(
         lemma_mul_is_commutative(pow2(204) as int, limbs[4] as int);
     }
 
-    assert(value == as_nat(limbs) as int + 19);
 
     // Step 2: Solve for each limb using the division theorem equations
-    assert(limbs[0] as int == q0 * pow2(51) as int + r0 - 19);
-    assert(limbs[1] as int == q1 * pow2(51) as int + r1 - q0);
-    assert(limbs[2] as int == q2 * pow2(51) as int + r2 - q1);
-    assert(limbs[3] as int == q3 * pow2(51) as int + r3 - q2);
-    assert(limbs[4] as int == q4 * pow2(51) as int + r4 - q3);
 
     // Step 3: Expand limbs[i] * 2^(51*i) using distributivity
     assert((q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
@@ -236,7 +230,6 @@ pub proof fn lemma_radix51_telescoping_direct(
 
     // After algebraic simplification (intermediate terms cancel), we get: value = q4 * 2^255 + remainder
     lemma_radix51_telescoping_expansion(q0, q1, q2, q3, q4, r0, r1, r2, r3, r4);
-    assert(value == q4 * pow2(51) as int * pow2(204) as int + remainder);
 
     assert(q4 * pow2(51) as int * pow2(204) as int == q4 * pow2(255) as int) by {
         lemma_mul_is_associative(q4, pow2(51) as int, pow2(204) as int);
@@ -269,7 +262,6 @@ pub proof fn lemma_radix51_remainder_bound(r0: int, r1: int, r2: int, r3: int, r
     let sum = r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4 * (pow2(204) as int);
 
     // Each term r_i * 2^(51*i) < 2^51 * 2^(51*i) = 2^(51*(i+1))
-    assert(r0 <= pow2(51) - 1);
 
     assert(r1 * pow2(51) <= pow2(102) - pow2(51)) by {
         pow2_mul_general(r1 as nat, 51, 51);
@@ -287,7 +279,6 @@ pub proof fn lemma_radix51_remainder_bound(r0: int, r1: int, r2: int, r3: int, r
         pow2_mul_general(r4 as nat, 51, 204);
     }
 
-    assert(r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4 * (pow2(204) as int) <= (pow2(255) as int) - 1);
 }
 
 /// Helper: Geometric series formula for radix-51
@@ -309,11 +300,6 @@ pub proof fn lemma_geometric_series_radix51(sum_powers: int)
     // Here: r = 2^51, n = 4, so r^5 = 2^255
 
     // Step 1: Expand 2^51 * sum_powers using distributivity
-    assert(pow2(51) * 1 == pow2(51)) by { lemma_mul_basics(pow2(51) as int); }
-    assert(pow2(51) * pow2(51) == pow2(102));
-    assert(pow2(51) * pow2(102) == pow2(153));
-    assert(pow2(51) * pow2(153) == pow2(204));
-    assert(pow2(51) * pow2(204) == pow2(255));
 
     // Expand: 2^51 * (1 + 2^51 + 2^102 + 2^153 + 2^204)
     //       = 2^51 + 2^102 + 2^153 + 2^204 + 2^255
@@ -336,7 +322,6 @@ pub proof fn lemma_geometric_series_radix51(sum_powers: int)
     }
 
     // Chain them together
-    assert(pow2(51) * sum_powers == pow2(51) + pow2(102) + pow2(153) + pow2(204) + pow2(255));
 
     // Step 2: Apply the geometric series formula
     // (2^51 - 1) * sum_powers = 2^51 * sum_powers - sum_powers
@@ -381,16 +366,13 @@ pub proof fn lemma_radix_51_partial_geometric_sum()
 
     // Use: 2^153 < 2^204, so 2^153 + 2^153 = 2^154 < 2^204
     lemma_pow2_adds(153, 1);
-    assert(pow2(154) == pow2(153) * pow2(1));
     assert(pow2(154) == pow2(153) * 2) by {
         lemma2_to64();
-        assert(pow2(1) == 2);
     }
     assert(pow2(154) == 2 * pow2(153)) by {
         lemma_mul_is_commutative(pow2(153) as int, 2);
     }
     lemma_pow2_strictly_increases(154, 204);
-    assert(2 * pow2(153) < pow2(204));
 
     // Similarly for smaller terms: show pow2(51) + pow2(102) + pow2(153) < pow2(204)
     // Key insight: pow2(102) < pow2(153) because 102 < 153
@@ -403,42 +385,24 @@ pub proof fn lemma_radix_51_partial_geometric_sum()
     lemma_pow2_adds(102, 1);
     assert(2 * pow2(102) == pow2(103)) by {
         lemma2_to64();
-        assert(pow2(1) == 2);
-        assert(pow2(103) == pow2(102) * pow2(1));
         lemma_mul_is_commutative(pow2(102) as int, 2);
     }
     lemma_pow2_strictly_increases(103, 153);
-    assert(pow2(51) < pow2(102));
-    assert(pow2(51) + pow2(102) < pow2(102) + pow2(102));
-    assert(pow2(51) + pow2(102) < 2 * pow2(102));
-    assert(pow2(51) + pow2(102) < pow2(103));
-    assert(pow2(51) + pow2(102) < pow2(153));
 
     // So pow2(51) + pow2(102) + pow2(153) < pow2(153) + pow2(153) = 2*pow2(153) = pow2(154) < pow2(204)
-    assert(pow2(51) + pow2(102) + pow2(153) < pow2(153) + pow2(153));
-    assert(pow2(51) + pow2(102) + pow2(153) < 2 * pow2(153));
-    assert(pow2(51) + pow2(102) + pow2(153) < pow2(154));
-    assert(pow2(51) + pow2(102) + pow2(153) < pow2(204));
 
     // Therefore the full sum < pow2(204) + pow2(204) = 2*pow2(204) = pow2(205) < pow2(255)
-    assert(pow2(51) + pow2(102) + pow2(153) + pow2(204) < pow2(204) + pow2(204));
 
     // Prove 2 * pow2(204) == pow2(205)
     lemma_pow2_adds(204, 1);
-    assert(pow2(205) == pow2(204) * pow2(1));
     assert(pow2(205) == pow2(204) * 2) by {
         lemma2_to64();
-        assert(pow2(1) == 2);
     }
     assert(pow2(205) == 2 * pow2(204)) by {
         lemma_mul_is_commutative(pow2(204) as int, 2);
     }
-    assert(2 * pow2(204) == pow2(205));
 
     lemma_pow2_strictly_increases(205, 255);
-    assert(pow2(51) + pow2(102) + pow2(153) + pow2(204) < 2 * pow2(204));
-    assert(pow2(51) + pow2(102) + pow2(153) + pow2(204) < pow2(205));
-    assert(pow2(51) + pow2(102) + pow2(153) + pow2(204) < pow2(255));
 }
 
 /// Helper: Establishes basic power-of-2 facts needed for carry propagation
@@ -460,7 +424,6 @@ pub proof fn lemma_carry_propagation_setup()
     }
 
     assert(19 < pow2(51)) by {
-        assert(pow2(5) == 32);
         lemma_pow2_strictly_increases(5, 51);
     }
 
@@ -495,8 +458,6 @@ pub proof fn lemma_single_stage_division(
     // Prove the division relationship
     lemma_u64_shr_is_div(stage_input, 51);
     // Since limb + carry_in <= u64::MAX, the cast doesn't change the value
-    assert(stage_input as int == limb as int + carry_in as int);
-    assert(carry_out as int == (limb as int + carry_in as int) / pow2(51) as int);
 
     // Prove the bound
     lemma_bounded_shr_51(stage_input);
@@ -522,7 +483,6 @@ pub proof fn lemma_stage_division_theorem(
     lemma_fundamental_div_mod((limb as int + carry_in), pow2(51) as int);
     let r = (limb as int + carry_in) % pow2(51) as int;
     lemma_mod_bound((limb as int + carry_in), pow2(51) as int);
-    assert((limb as int + carry_in) == carry_out * pow2(51) as int + r);
     r
 }
 
@@ -551,11 +511,6 @@ pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
     lemma_all_carries_bounded_by_3(limbs);
 
     // Prove no overflow for all stages (each limb < 2^52, each carry < 3)
-    assert(limbs[0] + 19 <= u64::MAX);
-    assert(limbs[1] + q0 <= u64::MAX);
-    assert(limbs[2] + q1 <= u64::MAX);
-    assert(limbs[3] + q2 <= u64::MAX);
-    assert(limbs[4] + q3 <= u64::MAX);
 
     // Stage 0: Process limbs[0] + 19
     lemma_single_stage_division(limbs[0], 19, (limbs[0] + 19) as u64, q0);
@@ -609,38 +564,22 @@ pub proof fn lemma_all_carries_bounded_by_3(limbs: [u64; 5])
 
     // Prove q0 < 3
     // First show that limbs[0] + 19 doesn't overflow
-    assert(limbs[0] < pow2(52));
-    assert(limbs[0] < 2 * pow2(51));
-    assert(limbs[0] + 19 < 3 * pow2(51));
     assert(3 * pow2(51) <= u64::MAX) by {
         lemma2_to64_rest();
     }
     lemma_bounded_shr_51((limbs[0] + 19) as u64);
-    assert(q0 < 3);
 
     // Prove q1 < 3
-    assert(limbs[1] < 2 * pow2(51));
-    assert(limbs[1] + q0 < 3 * pow2(51));
     lemma_bounded_shr_51((limbs[1] + q0) as u64);
-    assert(q1 < 3);
 
     // Prove q2 < 3
-    assert(limbs[2] < 2 * pow2(51));
-    assert(limbs[2] + q1 < 3 * pow2(51));
     lemma_bounded_shr_51((limbs[2] + q1) as u64);
-    assert(q2 < 3);
 
     // Prove q3 < 3
-    assert(limbs[3] < 2 * pow2(51));
-    assert(limbs[3] + q2 < 3 * pow2(51));
     lemma_bounded_shr_51((limbs[3] + q2) as u64);
-    assert(q3 < 3);
 
     // Prove q4 < 3
-    assert(limbs[4] < 2 * pow2(51));
-    assert(limbs[4] + q3 < 3 * pow2(51));
     lemma_bounded_shr_51((limbs[4] + q3) as u64);
-    assert(q4 < 3);
 }
 
 /// Helper: Proves q can only be 0 or 1 (not 2)
@@ -656,7 +595,6 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
         q as nat == (as_nat(limbs) + 19) / pow2(255),  // Export for reuse
 {
     lemma_carry_propagation_is_division(limbs, q);
-    assert(q as nat == (as_nat(limbs) + 19) / pow2(255));
 
     // Establish basic facts
     lemma2_to64();
@@ -664,28 +602,18 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
     lemma_pow2_adds(255, 1);  // Establish pow2(256) == pow2(255) * pow2(1) once
 
     // Use the bound from precondition: as_nat(limbs) < 2*p() = 2^256 - 38
-    assert(pow2(256) == 2 * pow2(255));  // From pow2_adds and pow2(1) == 2
     assert(2 * p() == pow2(256) - 38) by {
-        assert(2 * p() == 2 * (pow2(255) - 19));
     }
 
     // Therefore: as_nat(limbs) + 19 < 2^256 - 38 + 19 = 2^256 - 19 < 2^256
-    assert(as_nat(limbs) + 19 < pow2(256) - 38 + 19);
-    assert(as_nat(limbs) + 19 < pow2(256) - 19);
-    assert(as_nat(limbs) + 19 < pow2(256));
 
     // We have: as_nat(limbs) + 19 < 2 * 2^255 = 2^256
-    assert(as_nat(limbs) + 19 < 2 * pow2(255));
 
     // By integer division: if x < 2 * d, then x / d < 2
     lemma_pow2_pos(255);
-    assert(pow2(255) > 0);
     lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 2);
-    assert((as_nat(limbs) + 19) / pow2(255) < 2);
 
     // Since q = (as_nat(limbs) + 19) / 2^255, we have q < 2
-    assert(q < 2);
-    assert(q == 0 || q == 1);
 }
 
 /// Unified helper: Proves the biconditional relationship between as_nat and q
@@ -707,10 +635,8 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
     lemma2_to64();
 
     // Establish key facts
-    assert(p() == pow2(255) - 19);
     assert(2 * p() == 2 * pow2(255) - 38) by {
         lemma_pow2_adds(255, 1);
-        assert(pow2(256) == 2 * pow2(255));
     }
 
     lemma_pow2_pos(255);
@@ -721,38 +647,27 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
 
     // Forward direction: as_nat(limbs) < p() ==> q == 0
     if as_nat(limbs) < p() {
-        assert(as_nat(limbs) + 19 < pow2(255));
         lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 1);
-        assert((as_nat(limbs) + 19) / pow2(255) == 0);
-        assert(q == 0);
     }
 
     // Backward direction: q == 0 ==> as_nat(limbs) < p()
     if q == 0 {
         lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
         lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
-        assert((as_nat(limbs) + 19) < pow2(255));
-        assert(as_nat(limbs) < p());
     }
 
     // Forward direction: as_nat(limbs) >= p() ==> q == 1
     if as_nat(limbs) >= p() {
-        assert(as_nat(limbs) + 19 >= pow2(255));
         // Since q is 0 or 1, and we know as_nat + 19 >= 2^255, q cannot be 0
         if q == 0 {
             lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
             lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
-            assert((as_nat(limbs) + 19) < pow2(255)); // Contradiction!
-            assert(false);
         }
-        assert(q == 1);
     }
 
     // Backward direction: q == 1 ==> as_nat(limbs) >= p()
     if q == 1 {
         lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
-        assert((as_nat(limbs) + 19) >= pow2(255));
-        assert(as_nat(limbs) >= p());
     }
 }
 
@@ -773,14 +688,11 @@ pub proof fn lemma_compute_q(limbs: [u64; 5], q: u64)
 {
     // Step 1: Prove q < 3 (all carries bounded)
     lemma_all_carries_bounded_by_3(limbs);
-    assert(q < 3);
 
     // Step 2: Prove q can only be 0 or 1 (not 2)
     // Note: This also establishes q as nat == (as_nat(limbs) + 19) / pow2(255)
     // internally by calling lemma_carry_propagation_is_division
     lemma_q_is_binary(limbs, q);
-    assert(q == 0 || q == 1);
-    assert(q as nat == (as_nat(limbs) + 19) / pow2(255));
 
     // Step 3: Prove the biconditionals
     // With the tight bound as_nat < 2*p(), this is now straightforward

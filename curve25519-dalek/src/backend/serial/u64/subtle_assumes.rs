@@ -116,8 +116,7 @@ pub fn ct_option_unwrap<T>(opt: CtOption<T>) -> (val: T)
 
 /*** ConditionallySelectable wrappers for u64 arrays ***/
 
-/// Helper for conditional_select on u64 - already exists as `select` above
-/// (keeping this for clarity)
+/// Wrapper for conditional_select on u64 - already exists as `select` above
 pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
     ensures !choice_is_true(choice) ==> res == *a,
             choice_is_true(choice) ==> res == *b
@@ -125,7 +124,7 @@ pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
     select(a, b, choice)
 }
 
-/// Helper for conditional_swap on u64
+/// Wrapper for conditional_swap on u64
 #[verifier::external_body]
 pub fn conditional_swap_u64(a: &mut u64, b: &mut u64, choice: Choice)
     ensures
@@ -135,7 +134,7 @@ pub fn conditional_swap_u64(a: &mut u64, b: &mut u64, choice: Choice)
     u64::conditional_swap(a, b, choice)
 }
 
-/// Helper for conditional_assign on u64
+/// Wrapper for conditional_assign on u64
 #[verifier::external_body]
 pub fn conditional_assign_u64(a: &mut u64, b: &u64, choice: Choice)
     ensures

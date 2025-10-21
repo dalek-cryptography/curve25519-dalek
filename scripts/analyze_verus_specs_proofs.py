@@ -185,7 +185,19 @@ def parse_function_in_file(
         has_admit = bool(re.search(r"\badmit\b", body))
 
         # Additional check: assume anywhere in the fn region (between this fn and next fn)
-        has_assume_in_region = bool(re.search(r"\bassume\b", fn_region))
+        # Check each line to exclude comments
+        has_assume_in_region = False
+        for line in fn_region.split('\n'):
+            # Skip lines that are comments (starting with //)
+            stripped = line.lstrip()
+            if stripped.startswith('//'):
+                continue
+            # Check if line contains assume (outside of comments)
+            # Remove inline comments first
+            code_part = line.split('//')[0]
+            if re.search(r'\bassume\b', code_part):
+                has_assume_in_region = True
+                break
 
         # In attributes: exec_allows_no_decreases_clause (external already checked above)
         has_no_decreases = bool(

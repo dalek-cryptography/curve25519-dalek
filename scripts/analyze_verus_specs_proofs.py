@@ -94,26 +94,11 @@ def parse_function_in_file(
             elif char == ")":
                 paren_depth -= 1
             elif char == "{":
-                if found_opening_paren and paren_depth == 0:
-                    # We've found a brace at the top level after seeing the parameter list
-                    # Check if this looks like the start of a function body
-                    # by looking at what comes before it
-
-                    # Look backwards to see if we just finished specs
-                    look_back = max(0, pos - 50)
-                    preceding_text = content[look_back:pos].strip()
-
-                    # If the preceding text ends with a comma or closing brace/paren,
-                    # this is likely the function body
-                    if (
-                        preceding_text.endswith(",")
-                        or preceding_text.endswith("}")
-                        or preceding_text.endswith(")")
-                        or "ensures" in preceding_text[-30:]
-                        or "requires" in preceding_text[-30:]
-                    ):
-                        signature_end = pos
-                        break
+                if found_opening_paren and paren_depth == 0 and brace_depth == 0:
+                    # We've found the first brace at the top level after seeing the parameter list
+                    # This should be the function body opening brace
+                    signature_end = pos
+                    break
                 brace_depth += 1
             elif char == "}":
                 brace_depth -= 1

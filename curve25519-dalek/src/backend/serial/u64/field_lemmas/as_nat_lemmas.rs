@@ -122,7 +122,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
         (s4 * v4) * as_nat(v)
     ) by {
         // (x1 + x2 + x3 + x4 + x5) * n == x1 * n + x2 * n + x3 * n + x4 * n + x5 * n
-        mul_5_terms_other_way(
+        mul_5_terms(
             as_nat(v) as int,
             v0 as int,
             s1 * v1,

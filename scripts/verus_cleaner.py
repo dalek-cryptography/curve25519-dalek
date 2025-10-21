@@ -59,8 +59,8 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
 
     Args:
         file_path: Path to the file to process
-        start_line: Starting line number (1-indexed)
-        end_line: Ending line number (1-indexed, inclusive)
+        start_line: Starting line number (1-indexed), None for beginning of file
+        end_line: Ending line number (1-indexed, inclusive), None for end of file
         regex_pattern: Regex pattern to match statements
         timeout: Timeout in seconds for Verus verification (default: 60)
     """
@@ -76,6 +76,15 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
     except Exception as e:
         print(f"Error reading file: {e}", file=sys.stderr)
         return False
+
+    # Track initial line count
+    initial_line_count = len(original_lines)
+
+    # Default to entire file if not specified
+    if start_line is None:
+        start_line = 1
+    if end_line is None:
+        end_line = len(original_lines)
 
     # Create backup before any modifications
     unique_id = str(uuid.uuid4())
@@ -107,6 +116,10 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
     if start_line > end_line:
         print("Error: Start line must be <= end line", file=sys.stderr)
         return False
+
+    print(
+        f"Processing lines {start_line}-{end_line} (total: {len(original_lines)} lines)"
+    )
 
     # Find all statements in range
     matching_lines = find_matching_lines(
@@ -172,6 +185,15 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
 
         print()
 
+    # Calculate final line count
+    final_line_count = len(original_lines)
+    lines_removed = initial_line_count - final_line_count
+
+    if initial_line_count > 0:
+        reduction_percentage = (lines_removed / initial_line_count) * 100
+    else:
+        reduction_percentage = 0
+
     # Summary
     print("=" * 60)
     print("CLEANING SUMMARY")
@@ -179,6 +201,11 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
     print(f"Total statements tested: {len(matching_lines)}")
     print(f"Redundant statements removed: {len(removed_statements)}")
     print(f"Necessary statements kept: {len(kept_statements)}")
+    print()
+    print("File line count:")
+    print(f"  Initial:  {initial_line_count} lines")
+    print(f"  Final:    {final_line_count} lines")
+    print(f"  Removed:  {lines_removed} lines ({reduction_percentage:.1f}%)")
 
     if removed_statements:
         print("\nRemoved (redundant) statements:")
@@ -190,8 +217,9 @@ def clean_statements(file_path, start_line, end_line, regex_pattern, timeout):
         for line_num, line_content in kept_statements:
             print(f"  Line {line_num}: {line_content.strip()}")
 
+    print()
     print(
-        "Warning: This script works line by line and won't remove multi-line statements."
+        "Note: This script works line by line and won't remove multi-line statements."
     )
 
     return True
@@ -203,11 +231,15 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage:
-  scripts/verus_cleaner.py <file> <start_line> <end_line> <regex_pattern> [--timeout SECONDS]
+  scripts/verus_cleaner.py <file> <regex_pattern> [<start_line> <end_line>] [--timeout SECONDS]
 
 Examples:
-  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/field_verus.rs 100 200 '^[^/]*lemma'
-  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/scalar_verus.rs 50 150 "assert" --timeout 120
+  # Process entire file
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/field_verus.rs '^[^/]*lemma'
+  
+  # Process specific line range
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/field_verus.rs '^[^/]*lemma' 100 200
+  scripts/verus_cleaner.py curve25519-dalek/src/backend/serial/u64/scalar_verus.rs "assert" 50 150 --timeout 120
   
 - For each matching statement in the range:
   1. Remove the statement from the file
@@ -218,11 +250,21 @@ Examples:
     )
 
     parser.add_argument("file", help="File to process (relative to project root)")
-    parser.add_argument("start_line", type=int, help="Starting line number (1-indexed)")
-    parser.add_argument(
-        "end_line", type=int, help="Ending line number (1-indexed, inclusive)"
-    )
     parser.add_argument("regex", help="Regex pattern to match statements")
+    parser.add_argument(
+        "start_line",
+        type=int,
+        nargs="?",
+        default=None,
+        help="Starting line number (1-indexed). Defaults to first line if not provided.",
+    )
+    parser.add_argument(
+        "end_line",
+        type=int,
+        nargs="?",
+        default=None,
+        help="Ending line number (1-indexed, inclusive). Defaults to last line if not provided.",
+    )
     parser.add_argument(
         "--timeout",
         type=int,

@@ -1942,7 +1942,7 @@ impl Scalar {
 
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(digits_count <= 64);
-            
+
             digits_count
         }
 

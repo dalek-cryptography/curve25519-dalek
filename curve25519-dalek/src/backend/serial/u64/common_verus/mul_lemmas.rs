@@ -50,32 +50,118 @@ pub proof fn lemma_m(x: u64, y: u64, bx: u64, by: u64)
     mul_lt(x as nat, bx as nat, y as nat, by as nat);
 }
 
-pub proof fn mul_5_terms(n: int, x1: int, x2: int, x3: int, x4: int, x5: int)
+pub proof fn mul_3_terms(n: int, x1: int, x2: int, x3: int)
     ensures
-        n * (x1 + x2 + x3 + x4 + x5) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5
+        n * (x1 + x2 + x3) ==
+        (x1 + x2 + x3) * n ==
+        n * x1 + n * x2 + n * x3
 {
-    // N * ((((x0 + x1) + x2) + x3) + x4) = N * (((x0 + x1) + x2) + x3) + N * x4
-    lemma_mul_is_distributive_add(n, x1 + x2 + x3 + x4, x5);
-    // N * (((x0 + x1) + x2) + x3) = N * ((x0 + x1) + x2) + N * x3
-    lemma_mul_is_distributive_add(n, x1 + x2 + x3, x4);
-    // N * ((x0 + x1) + x2) = N * (x0 + x1) + N * x2
-    lemma_mul_is_distributive_add(n, x1 + x2, x3);
-    // N * (x0 + x1) = N * x0 + N * x1
-    lemma_mul_is_distributive_add(n, x1, x2);
+    assert(n * (x1 + x2 + x3) == (x1 + x2 + x3) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3);
+    }
+
+    assert(n * (x1 + x2 + x3) == n * (x1 + x2) + n * x3) by {
+        lemma_mul_is_distributive_add(n, x1 + x2, x3);
+    }
+
+    assert(n * (x1 + x2) == n * x1 + n * x2) by {
+        lemma_mul_is_distributive_add(n, x1, x2);
+    }
 }
 
-pub proof fn mul_5_terms_other_way(n: int, x1: int, x2: int, x3: int, x4: int, x5: int)
+pub proof fn mul_4_terms(n: int, x1: int, x2: int, x3: int, x4: int)
     ensures
-        (x1 + x2 + x3 + x4 + x5) * n == x1 * n + x2 * n + x3 * n + x4 * n + x5 * n
+        n * (x1 + x2 + x3 + x4) ==
+        (x1 + x2 + x3 + x4) * n ==
+        n * x1 + n * x2 + n * x3 + n * x4
 {
-    // N * ((((x0 + x1) + x2) + x3) + x4) = N * (((x0 + x1) + x2) + x3) + N * x4
-    lemma_mul_is_distributive_add_other_way(n, x1 + x2 + x3 + x4, x5);
-    // N * (((x0 + x1) + x2) + x3) = N * ((x0 + x1) + x2) + N * x3
-    lemma_mul_is_distributive_add_other_way(n, x1 + x2 + x3, x4);
-    // N * ((x0 + x1) + x2) = N * (x0 + x1) + N * x2
-    lemma_mul_is_distributive_add_other_way(n, x1 + x2, x3);
-    // N * (x0 + x1) = N * x0 + N * x1
-    lemma_mul_is_distributive_add_other_way(n, x1, x2);
+    assert(n * (x1 + x2 + x3 + x4) == (x1 + x2 + x3 + x4) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3 + x4);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4) == n * (x1 + x2 + x3) + n * x4) by {
+        lemma_mul_is_distributive_add(n, x1 + x2 + x3, x4);
+    }
+
+    assert(n * (x1 + x2 + x3) == n * x1 + n * x2 + n * x3) by {
+        mul_3_terms(n, x1, x2, x3);
+    }
+}
+
+pub proof fn mul_5_terms(n: int, x1: int, x2: int, x3: int, x4: int, x5: int)
+    ensures
+        n * (x1 + x2 + x3 + x4 + x5) ==
+        (x1 + x2 + x3 + x4 + x5) * n ==
+        n * x1 + n * x2 + n * x3 + n * x4 + n * x5
+{
+    assert(n * (x1 + x2 + x3 + x4 + x5) == (x1 + x2 + x3 + x4 + x5) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3 + x4 + x5);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5) == n * (x1 + x2 + x3 + x4) + n * x5) by {
+        lemma_mul_is_distributive_add(n, x1 + x2 + x3 + x4, x5);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4) == n * x1 + n * x2 + n * x3 + n * x4) by {
+        mul_4_terms(n, x1, x2, x3, x4);
+    }
+}
+
+pub proof fn mul_6_terms(n: int, x1: int, x2: int, x3: int, x4: int, x5: int, x6: int)
+    ensures
+        n * (x1 + x2 + x3 + x4 + x5 + x6) ==
+        (x1 + x2 + x3 + x4 + x5 + x6) * n ==
+        n * x1 + n * x2 + n * x3 + n * x4 + n * x5 + n * x6
+{
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6) == (x1 + x2 + x3 + x4 + x5 + x6) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3 + x4 + x5 + x6);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6) == n * (x1 + x2 + x3 + x4 + x5) + n * x6) by {
+        lemma_mul_is_distributive_add(n, x1 + x2 + x3 + x4 + x5, x6);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5) by {
+        mul_5_terms(n, x1, x2, x3, x4, x5);
+    }
+}
+
+pub proof fn mul_7_terms(n: int, x1: int, x2: int, x3: int, x4: int, x5: int, x6: int, x7: int)
+    ensures
+        n * (x1 + x2 + x3 + x4 + x5 + x6 + x7) ==
+        (x1 + x2 + x3 + x4 + x5 + x6 + x7) * n ==
+        n * x1 + n * x2 + n * x3 + n * x4 + n * x5 + n * x6 + n * x7
+{
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6 + x7) == (x1 + x2 + x3 + x4 + x5 + x6 + x7) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3 + x4 + x5 + x6 + x7);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6 + x7) == n * (x1 + x2 + x3 + x4 + x5 + x6) + n * x7) by {
+        lemma_mul_is_distributive_add(n, x1 + x2 + x3 + x4 + x5 + x6, x7);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5 + n * x6) by {
+        mul_6_terms(n, x1, x2, x3, x4, x5, x6);
+    }
+}
+
+pub proof fn mul_8_terms(n: int, x1: int, x2: int, x3: int, x4: int, x5: int, x6: int, x7: int, x8: int)
+    ensures
+        n * (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) ==
+        (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) * n ==
+        n * x1 + n * x2 + n * x3 + n * x4 + n * x5 + n * x6 + n * x7 + n * x8
+{
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) == (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) * n) by {
+        lemma_mul_is_commutative(n, x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) == n * (x1 + x2 + x3 + x4 + x5 + x6 + x7) + n * x8) by {
+        lemma_mul_is_distributive_add(n, x1 + x2 + x3 + x4 + x5 + x6 + x7, x8);
+    }
+
+    assert(n * (x1 + x2 + x3 + x4 + x5 + x6 + x7) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5 + n * x6 + n * x7) by {
+        mul_7_terms(n, x1, x2, x3, x4, x5, x6, x7);
+    }
 }
 
 pub proof fn mul_v0_and_reorder(

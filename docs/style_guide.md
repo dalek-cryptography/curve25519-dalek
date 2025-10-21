@@ -78,6 +78,7 @@ fn foo(...) -> (r: T)
 
 Sometimes, mostly in the presence of loops and loop invariants, such straightforward decomposition may not be possible. 
 In those cases, use your judgement to determine what "minimal modifications" mean for the purposes of your particular function.
+For instance, changing a tuple struct to a struct is OK (Verus doesn't support tuple structs). Changing `x >> 2` to `x / 4` is too big of a change (even though `rustc` likely compiles them to the same assembly). Instead prove a lemma that `x>>2 == x/4`.
 
 Given a module `foo.rs`, we generally recommend creating a directory `foo_lemmas` populated with various lemmas about the functions defined in `foo.rs` (or `foo_lemmas.rs` if additional granularity is unnecessary).
 
@@ -108,7 +109,7 @@ proof {
     assert(...); // <- critically requires R
 }
 ```
-If `R` is a nontrivial consequence of `P` and `Q` the above proof may be unstable under the addition or removal of other code, since the implicit derivation of `R` may depend on solver nondeterminsim.
+If `R` is a nontrivial consequence of `P` and `Q` the above proof may be unstable under the addition or removal of other code, since the implicit derivation of `R` may depend on solver nondeterminism.
 Instead, use
 ```rust
 proof {

@@ -26,6 +26,18 @@ use zeroize::Zeroize;
 
 use vstd::prelude::*;
 
+#[allow(unused_imports)]
+use crate::backend::serial::u64::subtle_assumes::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::field_core::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
+
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
+
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -328,13 +340,6 @@ verus! {
 /* <VERIFICATION NOTE>
 External assumptions for ConditionallySelectable trait methods
 </VERIFICATION NOTE> */
-
-use crate::backend::serial::u64::subtle_assumes::{conditional_select_u64, choice_is_true};
-
-// Import lemmas and spec functions for from_bytes and load8_at
-use crate::backend::serial::u64::field_lemmas::field_core::{as_nat, as_nat_32_u8, load8_at_spec, l51_bit_mask_lt};
-use crate::backend::serial::u64::field_lemmas::load8_lemmas::{rec_version_is_exec, load8_at_versions_equivalent, plus_version_is_spec};
-use vstd::arithmetic::power2::pow2;
 
 impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(

@@ -1,0 +1,41 @@
+name: Proof Counter CI
+
+on:
+  pull_request:
+
+jobs:
+  update-csv:
+    name: Update CSV with Verus specs analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Run analyze and csv scripts
+        run: |
+          scripts/analyze_verus_specs_proofs.py
+          scripts/csv_to_markdown.py
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add -N outputs/
+          if git diff --quiet outputs/; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+      - name: Commit and push if changed
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add outputs/
+          git commit -m "Bot: Update count of Verus proofs/specs"
+          git push

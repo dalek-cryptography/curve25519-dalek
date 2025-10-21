@@ -153,8 +153,9 @@ def parse_function_in_file(
         signature = content[fn_start:brace_pos]
 
         # Check for requires or ensures in the signature
-        has_requires = "requires" in signature
-        has_ensures = "ensures" in signature
+        # They must be the first non-whitespace on a line to avoid matching comments
+        has_requires = bool(re.search(r"^\s*requires\b", signature, re.MULTILINE))
+        has_ensures = bool(re.search(r"^\s*ensures\b", signature, re.MULTILINE))
         has_spec = has_requires or has_ensures
 
         # Check for verifier::external attributes early (before checking has_spec)

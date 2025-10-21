@@ -94,26 +94,11 @@ def parse_function_in_file(
             elif char == ")":
                 paren_depth -= 1
             elif char == "{":
-                if found_opening_paren and paren_depth == 0:
-                    # We've found a brace at the top level after seeing the parameter list
-                    # Check if this looks like the start of a function body
-                    # by looking at what comes before it
-
-                    # Look backwards to see if we just finished specs
-                    look_back = max(0, pos - 50)
-                    preceding_text = content[look_back:pos].strip()
-
-                    # If the preceding text ends with a comma or closing brace/paren,
-                    # this is likely the function body
-                    if (
-                        preceding_text.endswith(",")
-                        or preceding_text.endswith("}")
-                        or preceding_text.endswith(")")
-                        or "ensures" in preceding_text[-30:]
-                        or "requires" in preceding_text[-30:]
-                    ):
-                        signature_end = pos
-                        break
+                if found_opening_paren and paren_depth == 0 and brace_depth == 0:
+                    # We've found the first brace at the top level after seeing the parameter list
+                    # This should be the function body opening brace
+                    signature_end = pos
+                    break
                 brace_depth += 1
             elif char == "}":
                 brace_depth -= 1
@@ -153,8 +138,9 @@ def parse_function_in_file(
         signature = content[fn_start:brace_pos]
 
         # Check for requires or ensures in the signature
-        has_requires = "requires" in signature
-        has_ensures = "ensures" in signature
+        # They must be the first non-whitespace on a line to avoid matching comments
+        has_requires = bool(re.search(r"^\s*requires\b", signature, re.MULTILINE))
+        has_ensures = bool(re.search(r"^\s*ensures\b", signature, re.MULTILINE))
         has_spec = has_requires or has_ensures
 
         # Check for verifier::external attributes early (before checking has_spec)
@@ -179,13 +165,31 @@ def parse_function_in_file(
                     break
             pos += 1
 
-        # Extract the function body
-        body = content[brace_pos : body_end + 1]
+        # Find the next function to determine the region boundary
+        next_fn_pos = len(content)
+        next_fn_match = re.search(
+            r"(?:pub\s+)?(?:const\s+)?fn\s+", content[body_end + 1 :]
+        )
+        if next_fn_match:
+            next_fn_pos = body_end + 1 + next_fn_match.start()
 
-        # Check for verification bypass patterns
-        # In body: assume, admit
-        has_assume = bool(re.search(r"\bassume\s*\(", body))
-        has_admit = bool(re.search(r"\badmit\b", body))
+        # Extract the region from this fn to the next fn
+        fn_region = content[fn_start:next_fn_pos]
+
+        # Additional check: assume anywhere in the fn region (between this fn and next fn)
+        # Check each line to exclude comments
+        has_assume_in_region = False
+        for line in fn_region.split("\n"):
+            # Skip lines that are comments (starting with //)
+            stripped = line.lstrip()
+            if stripped.startswith("//"):
+                continue
+            # Check if line contains assume (outside of comments)
+            # Remove inline comments first
+            code_part = line.split("//")[0]
+            if re.search(r"\bassume\b", code_part):
+                has_assume_in_region = True
+                break
 
         # In attributes: exec_allows_no_decreases_clause (external already checked above)
         has_no_decreases = bool(
@@ -194,8 +198,7 @@ def parse_function_in_file(
 
         has_proof = (
             has_spec
-            and not has_assume
-            and not has_admit
+            and not has_assume_in_region
             and not has_verifier_external
             and not has_no_decreases
         )

@@ -2496,59 +2496,6 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
                           (high_limb as nat % pow2((8 - low_bits) as nat)) * pow2(low_bits));
 }
 
-/// Unified helper: Proves all 4 boundary bytes reconstruct correctly
-/// Replaces the 4 separate boundary_byte_N_reconstructs lemmas
-proof fn lemma_all_boundary_bytes_reconstruct(limbs: [u64; 5], bytes: [u8; 32])
-    requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
-        bytes_match_limbs_packing(limbs, bytes),
-    ensures
-        // Byte 6: low 3 bits from limb0 (>> 48) + high 5 bits from limb1 (<< 3)
-        bytes[6] as nat ==
-            (limbs[0] as nat / pow2(48)) % 8 +
-            (limbs[1] as nat % pow2(5)) * 8,
-
-        // Byte 12: low 6 bits from limb1 (>> 45) + high 2 bits from limb2 (<< 6)
-        bytes[12] as nat ==
-            (limbs[1] as nat / pow2(45)) % pow2(6) +
-            (limbs[2] as nat % pow2(2)) * pow2(6),
-
-        // Byte 19: low 1 bit from limb2 (>> 50) + high 7 bits from limb3 (<< 1)
-        bytes[19] as nat ==
-            (limbs[2] as nat / pow2(50)) % 2 +
-            (limbs[3] as nat % pow2(7)) * 2,
-
-        // Byte 25: low 4 bits from limb3 (>> 47) + high 4 bits from limb4 (<< 4)
-        bytes[25] as nat ==
-            (limbs[3] as nat / pow2(47)) % pow2(4) +
-            (limbs[4] as nat % pow2(4)) * pow2(4),
-{
-    // From bytes_match_limbs_packing, we know the bitwise representation of each boundary byte.
-    // We use lemma_boundary_byte_combines to prove the arithmetic interpretation.
-
-    lemma2_to64();  // Establishes basic power-of-2 facts
-
-    // Byte 6: bytes[6] == ((limbs[0] >> 48) | (limbs[1] << 3)) as u8
-    // Low 3 bits from limb0, high 5 bits from limb1
-    // lemma_boundary_byte_combines gives: bytes[6] == (limbs[0] / 2^48) % 2^3 + (limbs[1] % 2^(8-3)) * 2^3
-    lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
-
-    // Byte 12: bytes[12] == ((limbs[1] >> 45) | (limbs[2] << 6)) as u8
-    // Low 6 bits from limb1, high 2 bits from limb2
-    // lemma_boundary_byte_combines gives: bytes[12] == (limbs[1] / 2^45) % 2^6 + (limbs[2] % 2^(8-6)) * 2^6
-    lemma_boundary_byte_combines(limbs[1], limbs[2], bytes[12], 45, 6);
-
-    // Byte 19: bytes[19] == ((limbs[2] >> 50) | (limbs[3] << 1)) as u8
-    // Low 1 bit from limb2, high 7 bits from limb3
-    // lemma_boundary_byte_combines gives: bytes[19] == (limbs[2] / 2^50) % 2^1 + (limbs[3] % 2^(8-1)) * 2^1
-    lemma_boundary_byte_combines(limbs[2], limbs[3], bytes[19], 50, 1);
-
-    // Byte 25: bytes[25] == ((limbs[3] >> 47) | (limbs[4] << 4)) as u8
-    // Low 4 bits from limb3, high 4 bits from limb4
-    // lemma_boundary_byte_combines gives: bytes[25] == (limbs[3] / 2^47) % 2^4 + (limbs[4] % 2^(8-4)) * 2^4
-    lemma_boundary_byte_combines(limbs[3], limbs[4], bytes[25], 47, 4);
-}
-
 /// Proves that the sum of all limb contributions equals as_nat_32_u8(bytes)
 proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     requires
@@ -2710,36 +2657,7 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
         limb2_byte_contribution(limbs, bytes) +
         limb3_byte_contribution(limbs, bytes) +
         limb4_byte_contribution(limbs, bytes));
-
-    // Conclusion: Chain the equalities
 }
-
-// ============================================================================
-// PROOF STATUS SUMMARY
-// ============================================================================
-//
-// The proof of `lemma_limbs_to_bytes` is structurally complete!
-//
-// Proof structure:
-// 1. Define byte contribution functions for each limb (spec functions)
-// 2. Prove each contribution equals limbs[i] * pow2(i*51)
-// 3. Prove sum of contributions equals as_nat_32_u8(bytes)
-// 4. Conclude: as_nat_32_u8(bytes) == as_nat(limbs)
-//
-// Remaining assumes (1 total):
-// 1. lemma_boundary_byte_combines (line ~2878) - UNAVOIDABLE AXIOM: u8 cast definition
-//    - This is the fundamental Rust/Verus property: (x as u8) as nat == (x as nat) % 256
-//    - Same axiom used in other verified files (to_bytes_lemmas_inductive.rs, to_bytes_lemmas_8_oct.rs)
-//
-// Previously eliminated assume:
-// - lemma_sum_equals_byte_nat (line ~3608): ELIMINATED by changing as_nat_32_u8 to byte-first order
-//   - Changed as_nat_32_u8 from pow2(i*8) * (limbs[i] as nat) to (limbs[i] as nat) * pow2(i*8)
-//   - This made the expanded form match chunk definitions exactly
-//   - No commutativity proofs needed - Z3 sees immediate syntactic equality!
-//
-// All mathematical reasoning is complete. Remaining assume is:
-// - 1 unavoidable Rust/Verus axiom (u8 cast behavior)
-// ============================================================================
 
 
 } // verus!

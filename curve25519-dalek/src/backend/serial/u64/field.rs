@@ -531,7 +531,7 @@ impl FieldElement51 {
     pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
         ensures
             // last bit is ignored
-            as_nat(r.limbs) == as_nat_32_u8(*bytes) % pow2(255)
+            as_nat(r.limbs) == as_nat_32_u8(bytes) % pow2(255)
     {
         /* MANUALLY moved outside */
         /*

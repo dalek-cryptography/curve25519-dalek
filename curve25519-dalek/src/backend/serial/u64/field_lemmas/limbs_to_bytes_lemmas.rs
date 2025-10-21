@@ -68,46 +68,9 @@ pub proof fn lemma_limbs_to_bytes(limbs: [u64; 5], bytes: [u8; 32])
     ensures
         as_nat_32_u8(bytes) == as_nat(limbs),
 {
-    // Strategy: Direct algebraic expansion and simplification
-    //
-    // We'll substitute each byte's definition from bytes_match_limbs_packing into as_nat_32_u8(bytes),
-    // then group terms by limb and simplify to show it equals as_nat(limbs).
-    //
-    // Key relationships:
-    // - 2^51 = 2^48 * 2^3 = 2^48 * 8
-    // - 2^102 = 2^48 * 2^54 = 2^48 * 2^3 * 2^51 = 2^48 * 8 * 2^51
-    // - And so on for higher limbs
-
-    // First, establish power-of-2 facts we'll need
-    lemma2_to64();
-
-    // Establish pow2 values we'll use
-
     // Connect the bit shift in the requires clause to pow2
     shift_is_pow2(51);
-
-    // Key power identities for our proof
-    lemma_pow2_adds(48, 3);
-
-    // Establish that each limb is bounded (needed for division properties)
-    // From requires: limbs[i] < (1u64 << 51)
-    // We've shown: (1u64 << 51) as nat == pow2(51)
-    // Therefore: limbs[i] < pow2(51)
-
-    // Now we'll prove the main equality by expansion:
-    // as_nat_32_u8(bytes) = as_nat(limbs)
-    //
-    // Strategy: We'll expand both sides and show they're equal term by term.
-    // The key insight is that each limb contributes to specific byte positions,
-    // and when we sum all byte contributions, we get exactly the limb representation.
-
-    // Expand and group the byte sum by limb
-    // We'll show that as_nat_32_u8(bytes) can be regrouped as as_nat(limbs)
-    // Each lemma_limb<i>_contribution_correctness is self-contained and establishes
-    // the arithmetic interpretation of its bytes directly.
     lemma_byte_sum_equals_limb_sum(limbs, bytes);
-
-    // The equality follows from the lemma above
 }
 
 // ============================================================================
@@ -209,28 +172,6 @@ proof fn lemma_byte_from_limb_shift(limb: u64, shift: u64, byte: u8)
     assert(shifted as u8 == (shifted & 0xFF) as u8) by (bit_vector);
     // Therefore: (shifted as u8) as nat == shifted % 256
     assert((limb >> shift) as u8 as nat == ((limb >> shift) as nat) % 256);
-}
-
-// ============================================================================
-// Helper Lemma: Splitting a Term in a Sum
-// ============================================================================
-
-/// Helper lemma: If a term equals two parts, then splitting it in a sum preserves equality
-/// This is a trivial arithmetic fact: a + b + c = a + (b1 + b2) + c when b = b1 + b2
-proof fn lemma_split_term_preserves_sum(
-    prefix: nat,
-    term: nat,
-    suffix: nat,
-    part1: nat,
-    part2: nat,
-)
-    requires
-        term == part1 + part2,
-    ensures
-        prefix + term + suffix == prefix + part1 + part2 + suffix,
-{
-    // This is purely arithmetic and should be automatic
-    // The solver can see: prefix + term + suffix = prefix + (part1 + part2) + suffix
 }
 
 // ============================================================================

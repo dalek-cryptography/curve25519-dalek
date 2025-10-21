@@ -118,7 +118,6 @@ pub fn ct_option_unwrap<T>(opt: CtOption<T>) -> (val: T)
 
 /// Helper for conditional_select on u64 - already exists as `select` above
 /// (keeping this for clarity)
-#[verifier::external_body]
 pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
     ensures !choice_is_true(choice) ==> res == *a,
             choice_is_true(choice) ==> res == *b

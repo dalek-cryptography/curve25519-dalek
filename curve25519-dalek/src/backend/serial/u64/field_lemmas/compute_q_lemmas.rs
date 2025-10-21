@@ -608,7 +608,7 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
     assert(p() < pow2(255)) by {
         pow255_gt_19();
     }
-    
+
     // By integer division: if x < 2 * d, then x / d < 2
     lemma_pow2_pos(255);
     lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 2);

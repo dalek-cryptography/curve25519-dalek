@@ -469,21 +469,21 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
 
         // Invoke the division computation to establish c4 = (as_nat + 19*q) / 2^255
         lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
-        
+
         // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
         let val = as_nat(input_limbs) as int + 19;
         let divisor = pow2(255) as int;
-        
+
         // From q == 1, we have as_nat(input_limbs) >= p()
         // So val >= 2^255
-        
+
         // From as_nat(input_limbs) < 2*p() < 2*2^255
         // We have val < 2*2^255, so val / divisor < 2
         lemma_div_strictly_bounded(val, divisor, 2);
-        
+
         // From val >= divisor, we have val / divisor >= 1
         lemma_fundamental_div_mod(val, divisor);
-        
+
         // Therefore: 1 ≤ val / divisor < 2, so val / divisor == 1
         // Since c4 = val / divisor (with q=1), we have c4 = 1 = q
     }

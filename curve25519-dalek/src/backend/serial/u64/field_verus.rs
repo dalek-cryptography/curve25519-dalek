@@ -348,7 +348,7 @@ impl FieldElement51 {
 
         q = (limbs[4] + q) >> 51;
         let ghost reduced_limbs = limbs;
-        
+
         proof {
             // Step 2: Prove that q is the correct quotient
             lemma_compute_q(reduced_limbs, q);

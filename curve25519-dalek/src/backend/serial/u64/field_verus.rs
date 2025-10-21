@@ -16,6 +16,7 @@ use super::common_verus::shift_lemmas::*;
 
 use super::field_lemmas::as_nat_lemmas::*;
 use super::field_lemmas::field_core::*;
+use super::field_lemmas::from_bytes_lemmas::*;
 use super::field_lemmas::load8_lemmas::*;
 use super::field_lemmas::negate_lemmas::*;
 use super::field_lemmas::pow2_51_lemmas::*;
@@ -214,11 +215,45 @@ impl FieldElement51 {
     pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
         ensures
             // last bit is ignored
-            as_nat(r.limbs) == as_nat_32_u8(*bytes) % pow2(255)
+            as_nat(r.limbs) == as_nat_32_u8(bytes) % pow2(255)
     {
         proof {
-            l51_bit_mask_lt(); // No over/underflow in the below let-def
-            assume(false);
+            assert(mask51 == (1u64 << 51) - 1) by (compute);
+
+            let l0 = load8_at_spec(bytes,  0);
+            let l1 = load8_at_spec(bytes,  6);
+            let l2 = load8_at_spec(bytes,  12);
+            let l3 = load8_at_spec(bytes,  19);
+            let l4 = load8_at_spec(bytes,  24);
+
+            assert(
+                l0 <= u64::MAX &&
+                l1 <= u64::MAX &&
+                l2 <= u64::MAX &&
+                l3 <= u64::MAX &&
+                l4 <= u64::MAX
+            ) by {
+                load8_at_spec_fits_u64(bytes, 0);
+                load8_at_spec_fits_u64(bytes, 6);
+                load8_at_spec_fits_u64(bytes, 12);
+                load8_at_spec_fits_u64(bytes, 19);
+                load8_at_spec_fits_u64(bytes, 24);
+            }
+
+            let rr =
+            [  l0 as u64        & mask51
+            , (l1 as u64 >>  3) & mask51
+            , (l2 as u64 >>  6) & mask51
+            , (l3 as u64 >>  1) & mask51
+            , (l4 as u64 >> 12) & mask51
+            ];
+
+            assert(
+                as_nat(rr) == as_nat_32_u8(bytes) % pow2(255)
+            ) by {
+                from_bytes_as_nat(bytes);
+                as_nat_32_mod_255(bytes);
+            }
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
         // ADAPTED CODE LINE: limbs is now a named field
@@ -243,7 +278,7 @@ impl FieldElement51 {
     pub fn to_bytes(self) -> (r: [u8; 32])
         ensures
             // canonical encoding, i.e. mod p value
-            as_nat_32_u8(r) == as_nat(self.limbs) % p()
+            as_nat_32_u8(&r) == as_nat(self.limbs) % p()
     {
         proof {
             let l = spec_reduce(self.limbs);

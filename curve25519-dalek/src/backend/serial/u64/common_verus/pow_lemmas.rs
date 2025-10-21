@@ -103,6 +103,79 @@ pub proof fn pow2_mul_u8(a: u8, k: nat)
     pow2_mul_general(a as nat, 8, k);
 }
 
+pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
+    requires
+        a < pow2(s)
+    ensures
+        (a + b * pow2(s)) % pow2(k) == a % pow2(k) + (b * pow2(s)) % pow2(k)
+{
+    let ps = pow2(s);
+    let pk = pow2(k);
+    let x = a;
+    let y = b * ps;
+
+    assert(pk > 0) by {
+        lemma_pow2_pos(k);
+    }
+
+    assert((x + y) % pk == ((x % pk) + (y % pk)) % pk) by {
+        lemma_add_mod_noop(x as int, y as int, pk as int);
+    }
+
+    if (s >= k ){
+        let d = (s - k) as nat;
+        assert(y % pk == 0) by {
+            assert(y == (b * pow2(d)) * pk) by {
+                lemma_pow2_adds(d, k);
+                lemma_mul_is_associative(b as int, pow2(d) as int, pk as int);
+            }
+            assert(y % pk == 0) by {
+                lemma_mod_multiples_basic((b * pow2(d)) as int, pk as int);
+            }
+        }
+
+        assert( (x % pk) % pk == x % pk ) by {
+            lemma_mod_twice(x as int, pk as int);
+        }
+
+    }
+
+    else {
+        // s < k
+        let d = (k - s) as nat;
+
+        assert(pow2(d) > 0) by {
+            lemma_pow2_pos(d);
+        }
+
+        let z = b % pow2(d);
+
+        assert(y % pk == z * ps) by {
+            mask_pow2(b, s, k);
+        }
+
+        assert(x % pk == x) by {
+            assert(ps < pk) by {
+                lemma_pow2_strictly_increases(s, k);
+            }
+            lemma_small_mod(x, pk);
+        }
+
+        assert((x + z * ps) % pk == x + z * ps) by {
+            assert(x + z * ps < pk ) by {
+                assert( z * ps <= pk - ps ) by {
+                    assert(z < pow2(d)) by {
+                        lemma_small_mod(z, pow2(d));
+                    }
+                    pow2_mul_general(z, d, s);
+                }
+            }
+
+            lemma_small_mod(x + z * ps, pk);
+        }
+    }
+}
+
 pub proof fn u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
     requires
         k + 8 <= s
@@ -428,19 +501,19 @@ pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
     }
 }
 
-pub open spec fn pow2_sum(coefs: Seq<nat>, offset: nat, step: nat, k: nat) -> nat
+pub open spec fn pow2_sum(coefs: &[u8], offset: nat, step: nat, k: nat) -> nat
     decreases k
 {
     if (k == 0) {
-        coefs[offset as int] * pow2(0)
+        coefs[offset as int] as nat * pow2(0)
     }
     else {
         // k > 0
-        pow2_sum(coefs, offset, step, (k - 1) as nat) + coefs[(offset + k) as int] * pow2(k * step)
+        pow2_sum(coefs, offset, step, (k - 1) as nat) + coefs[(offset + k) as int] as nat * pow2(k * step)
     }
 }
 
-pub proof fn pow2_sum_bounds(coefs: Seq<nat>, offset: nat, step: nat, k: nat)
+pub proof fn pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
     requires
         offset + k <= coefs.len(),
         forall |i: nat| 0 <= i <= k ==> #[trigger] coefs[(offset + i) as int] < pow2(step)
@@ -474,7 +547,7 @@ pub proof fn pow2_sum_bounds(coefs: Seq<nat>, offset: nat, step: nat, k: nat)
                 lemma_mul_is_distributive_add_other_way(step as int, k as int, 1);
             }
             assert(coefs[(offset + k) as int] * pow2(k * step) <= pow2(k * step + step) - pow2(k * step)) by {
-                pow2_mul_general(coefs[(offset + k) as int], step, k * step);
+                pow2_mul_general(coefs[(offset + k) as int] as nat, step, k * step);
             }
         }
     }

@@ -171,7 +171,7 @@ def parse_function_in_file(
         # Find the next function to determine the region boundary
         next_fn_pos = len(content)
         next_fn_match = re.search(
-            r"(?:pub\s+)?(?:const\s+)?fn\s+", content[body_end + 1:]
+            r"(?:pub\s+)?(?:const\s+)?fn\s+", content[body_end + 1 :]
         )
         if next_fn_match:
             next_fn_pos = body_end + 1 + next_fn_match.start()
@@ -187,15 +187,15 @@ def parse_function_in_file(
         # Additional check: assume anywhere in the fn region (between this fn and next fn)
         # Check each line to exclude comments
         has_assume_in_region = False
-        for line in fn_region.split('\n'):
+        for line in fn_region.split("\n"):
             # Skip lines that are comments (starting with //)
             stripped = line.lstrip()
-            if stripped.startswith('//'):
+            if stripped.startswith("//"):
                 continue
             # Check if line contains assume (outside of comments)
             # Remove inline comments first
-            code_part = line.split('//')[0]
-            if re.search(r'\bassume\b', code_part):
+            code_part = line.split("//")[0]
+            if re.search(r"\bassume\b", code_part):
                 has_assume_in_region = True
                 break
 

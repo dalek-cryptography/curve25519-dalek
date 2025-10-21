@@ -168,10 +168,24 @@ def parse_function_in_file(
         # Extract the function body
         body = content[brace_pos : body_end + 1]
 
+        # Find the next function to determine the region boundary
+        next_fn_pos = len(content)
+        next_fn_match = re.search(
+            r"(?:pub\s+)?(?:const\s+)?fn\s+", content[body_end + 1:]
+        )
+        if next_fn_match:
+            next_fn_pos = body_end + 1 + next_fn_match.start()
+
+        # Extract the region from this fn to the next fn
+        fn_region = content[fn_start:next_fn_pos]
+
         # Check for verification bypass patterns
         # In body: assume, admit
         has_assume = bool(re.search(r"\bassume\s*\(", body))
         has_admit = bool(re.search(r"\badmit\b", body))
+
+        # Additional check: assume anywhere in the fn region (between this fn and next fn)
+        has_assume_in_region = bool(re.search(r"\bassume\b", fn_region))
 
         # In attributes: exec_allows_no_decreases_clause (external already checked above)
         has_no_decreases = bool(
@@ -182,6 +196,7 @@ def parse_function_in_file(
             has_spec
             and not has_assume
             and not has_admit
+            and not has_assume_in_region
             and not has_verifier_external
             and not has_no_decreases
         )

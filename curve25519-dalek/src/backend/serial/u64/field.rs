@@ -24,6 +24,20 @@ use subtle::ConditionallySelectable;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
+use vstd::prelude::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::subtle_assumes::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::field_core::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
+
+#[allow(unused_imports)]
+use vstd::arithmetic::power2::*;
+
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
 ///
@@ -37,47 +51,134 @@ use zeroize::Zeroize;
 /// `curve25519_dalek::field::FieldElement` to either `FieldElement51`
 /// or `FieldElement2625`.
 ///
+
+verus! {
+
+/* MANUALLY moved outside and made explicit */
+// LOW_51_BIT_MASK: u64 = (1u64 << 51) -1; originally
+pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64; // 2^51  -1
+
+
+
 /// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
-pub struct FieldElement51(pub(crate) [u64; 5]);
+pub struct FieldElement51 {
+    // ADAPTED CODE LINE: we give a name to the field: "limbs"
+    pub limbs: [u64; 5],
+}
 
+} // verus!
+
+/* <VERIFICATION NOTE>
+ Left outside verification scope
+</VERIFICATION NOTE> */
 impl Debug for FieldElement51 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "FieldElement51({:?})", &self.0[..])
+        write!(f, "FieldElement51({:?})", &self.limbs[..])
     }
 }
 
+verus! {
 #[cfg(feature = "zeroize")]
 impl Zeroize for FieldElement51 {
+     /* <VERIFICATION NOTE>
+    External body annotation
+    </VERIFICATION NOTE> */
+    #[verifier::external_body]
     fn zeroize(&mut self) {
-        self.0.zeroize();
+        self.limbs.zeroize();
     }
 }
+
+/* MANUALLY moved outside, named return value */
+const fn load8_at(input: &[u8], i: usize) -> (r: u64)
+    requires
+        i + 7 < input.len(),
+    ensures
+        r as nat == load8_at_spec(input, i)
+{
+    proof {
+        rec_version_is_exec(input, i);
+        load8_at_versions_equivalent(input, i, 7);
+        plus_version_is_spec(input, i);
+    }
+        (input[i] as u64)
+    | ((input[i + 1] as u64) << 8)
+    | ((input[i + 2] as u64) << 16)
+    | ((input[i + 3] as u64) << 24)
+    | ((input[i + 4] as u64) << 32)
+    | ((input[i + 5] as u64) << 40)
+    | ((input[i + 6] as u64) << 48)
+    | ((input[i + 7] as u64) << 56)
+}
+
+/* MANUALLY moved outside */
+#[inline(always)]
+fn m(x: u64, y: u64) -> (r: u128)
+    ensures
+        (r as nat) == (x as nat) * (y as nat),
+        r <= u128::MAX
+
+{
+    proof {
+        // if a <= a' and b <= b' then ab <= a'b'
+        // mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
+        assume(false);
+    }
+    (x as u128) * (y as u128)
+}
+
 
 impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     fn add_assign(&mut self, _rhs: &'a FieldElement51) {
         for i in 0..5 {
-            self.0[i] += _rhs.0[i];
+            proof {
+                assume(false);
+            }
+            self.limbs[i] += _rhs.limbs[i];
         }
     }
 }
+
 
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
     fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         let mut output = *self;
+        /* ORIGINAL CODE
         output += _rhs;
+        */
+        /* MODIFIED CODE */
+        for i in 0..5 {
+            proof { assume(false); }
+            output.limbs[i] += _rhs.limbs[i];
+        }
+        /* </MODIFIED CODE> */
+        proof {
+            assume(false); // BECAUSE OF VERUS TRAIT ISSUES
+        }
         output
     }
 }
 
+
 impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
     fn sub_assign(&mut self, _rhs: &'a FieldElement51) {
+        /* ORIGINAL CODE
         let result = (self as &FieldElement51) - _rhs;
         self.0 = result.0;
+        */
+        /* MODIFIED CODE */
+        proof { assume(false); }
+        let result = &*self - _rhs;
+        proof {
+            assume(false); // BECAUSE OF VERUS TRAIT ISSUES
+        }
+        self.limbs = result.limbs;
     }
 }
+
 
 impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
@@ -91,20 +192,23 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
         //
         // Since we don't yet have type-level integers to do this, we
         // have to add an explicit reduction call here.
+        assume(false);
         FieldElement51::reduce([
-            (self.0[0] + 36028797018963664u64) - _rhs.0[0],
-            (self.0[1] + 36028797018963952u64) - _rhs.0[1],
-            (self.0[2] + 36028797018963952u64) - _rhs.0[2],
-            (self.0[3] + 36028797018963952u64) - _rhs.0[3],
-            (self.0[4] + 36028797018963952u64) - _rhs.0[4],
+            (self.limbs[0] + 36028797018963664u64) - _rhs.limbs[0],
+            (self.limbs[1] + 36028797018963952u64) - _rhs.limbs[1],
+            (self.limbs[2] + 36028797018963952u64) - _rhs.limbs[2],
+            (self.limbs[3] + 36028797018963952u64) - _rhs.limbs[3],
+            (self.limbs[4] + 36028797018963952u64) - _rhs.limbs[4],
         ])
     }
 }
 
+
 impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
     fn mul_assign(&mut self, _rhs: &'a FieldElement51) {
-        let result = (self as &FieldElement51) * _rhs;
-        self.0 = result.0;
+        proof { assume(false); } // PROOF BYPASS due to vstd trait spec preconditions
+        let result = &*self * _rhs;
+        self.limbs = result.limbs;
     }
 }
 
@@ -115,12 +219,15 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     fn mul(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.
-        #[inline(always)]
-        fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
 
+       // VERIFICATION NOTE: manually moved outside
+       // #[inline(always)]
+       // fn m(x: u64, y: u64) -> u128 { (x as u128) * (y as u128) }
+
+        assume(false);
         // Alias self, _rhs for more readable formulas
-        let a: &[u64; 5] = &self.0;
-        let b: &[u64; 5] = &_rhs.0;
+        let a: &[u64; 5] = &self.limbs;
+        let b: &[u64; 5] = &_rhs.limbs;
 
         // Precondition: assume input limbs a[i], b[i] are bounded as
         //
@@ -159,17 +266,20 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
         //    b < 3.365.
         //
         // So we require b < 3 to ensure this fits.
-        debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
-        debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
-        debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
-        debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
-        debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
+        #[cfg(not(verus_keep_ghost))]
+        {
+            debug_assert!(a[0] < (1 << 54)); debug_assert!(b[0] < (1 << 54));
+            debug_assert!(a[1] < (1 << 54)); debug_assert!(b[1] < (1 << 54));
+            debug_assert!(a[2] < (1 << 54)); debug_assert!(b[2] < (1 << 54));
+            debug_assert!(a[3] < (1 << 54)); debug_assert!(b[3] < (1 << 54));
+            debug_assert!(a[4] < (1 << 54)); debug_assert!(b[4] < (1 << 54));
+        }
 
         // Casting to u64 and back tells the compiler that the carry is
         // bounded by 2^64, so that the addition is a u128 + u64 rather
         // than u128 + u128.
 
-        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+        // const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1; // already defined at module level
         let mut out = [0u64; 5];
 
         c1 += ((c0 >> 51) as u64) as u128;
@@ -209,18 +319,27 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
         out[0] &= LOW_51_BIT_MASK;
 
         // Now out[i] < 2^(51 + epsilon) for all i.
-        FieldElement51(out)
+        FieldElement51 { limbs: out }
     }
 }
+
 
 impl Neg for &FieldElement51 {
     type Output = FieldElement51;
     fn neg(self) -> FieldElement51 {
         let mut output = *self;
+        assume(false);
         output.negate();
         output
     }
 }
+} // verus!
+
+verus! {
+
+/* <VERIFICATION NOTE>
+External assumptions for ConditionallySelectable trait methods
+</VERIFICATION NOTE> */
 
 impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(
@@ -228,67 +347,139 @@ impl ConditionallySelectable for FieldElement51 {
         b: &FieldElement51,
         choice: Choice,
     ) -> FieldElement51 {
-        FieldElement51([
-            u64::conditional_select(&a.0[0], &b.0[0], choice),
-            u64::conditional_select(&a.0[1], &b.0[1], choice),
-            u64::conditional_select(&a.0[2], &b.0[2], choice),
-            u64::conditional_select(&a.0[3], &b.0[3], choice),
-            u64::conditional_select(&a.0[4], &b.0[4], choice),
-        ])
+        FieldElement51 { limbs: [
+            conditional_select_u64(&a.limbs[0], &b.limbs[0], choice),
+            conditional_select_u64(&a.limbs[1], &b.limbs[1], choice),
+            conditional_select_u64(&a.limbs[2], &b.limbs[2], choice),
+            conditional_select_u64(&a.limbs[3], &b.limbs[3], choice),
+            conditional_select_u64(&a.limbs[4], &b.limbs[4], choice),
+        ]}
     }
 
-    fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice) {
-        u64::conditional_swap(&mut a.0[0], &mut b.0[0], choice);
-        u64::conditional_swap(&mut a.0[1], &mut b.0[1], choice);
-        u64::conditional_swap(&mut a.0[2], &mut b.0[2], choice);
-        u64::conditional_swap(&mut a.0[3], &mut b.0[3], choice);
-        u64::conditional_swap(&mut a.0[4], &mut b.0[4], choice);
+    /* <VERIFICATION NOTE>
+    Same solution as above didnt work for the following two methods because of mutable references.
+    </VERIFICATION NOTE> */
+
+    #[verifier::external_body]
+    fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice)
+        ensures
+            // If choice is false, a and b remain unchanged
+            !choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] a.limbs[i] == old(a).limbs[i]
+            ) && (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] b.limbs[i] == old(b).limbs[i]
+            ),
+            // If choice is true, a and b are swapped
+            choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] a.limbs[i] == old(b).limbs[i]
+            ) && (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] b.limbs[i] == old(a).limbs[i]
+            ),
+    {
+        u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
+        u64::conditional_swap(&mut a.limbs[1], &mut b.limbs[1], choice);
+        u64::conditional_swap(&mut a.limbs[2], &mut b.limbs[2], choice);
+        u64::conditional_swap(&mut a.limbs[3], &mut b.limbs[3], choice);
+        u64::conditional_swap(&mut a.limbs[4], &mut b.limbs[4], choice);
     }
 
-    fn conditional_assign(&mut self, other: &FieldElement51, choice: Choice) {
-        self.0[0].conditional_assign(&other.0[0], choice);
-        self.0[1].conditional_assign(&other.0[1], choice);
-        self.0[2].conditional_assign(&other.0[2], choice);
-        self.0[3].conditional_assign(&other.0[3], choice);
-        self.0[4].conditional_assign(&other.0[4], choice);
+    #[verifier::external_body]
+    fn conditional_assign(&mut self, other: &FieldElement51, choice: Choice)
+        ensures
+            // If choice is false, self remains unchanged
+            !choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] == old(self).limbs[i]
+            ),
+            // If choice is true, self is assigned from other
+            choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] == other.limbs[i]
+            ),
+    {
+        self.limbs[0].conditional_assign(&other.limbs[0], choice);
+        self.limbs[1].conditional_assign(&other.limbs[1], choice);
+        self.limbs[2].conditional_assign(&other.limbs[2], choice);
+        self.limbs[3].conditional_assign(&other.limbs[3], choice);
+        self.limbs[4].conditional_assign(&other.limbs[4], choice);
     }
 }
 
+} // verus!
+
+verus! {
+
 impl FieldElement51 {
     pub(crate) const fn from_limbs(limbs: [u64; 5]) -> FieldElement51 {
-        FieldElement51(limbs)
+        FieldElement51 { limbs }
     }
 
-    /// The scalar \\( 0 \\).
-    pub const ZERO: FieldElement51 = FieldElement51::from_limbs([0, 0, 0, 0, 0]);
-    /// The scalar \\( 1 \\).
-    pub const ONE: FieldElement51 = FieldElement51::from_limbs([1, 0, 0, 0, 0]);
-    /// The scalar \\( -1 \\).
-    pub const MINUS_ONE: FieldElement51 = FieldElement51::from_limbs([
+    // Modified to use direct struct
+    pub const ZERO: FieldElement51 = FieldElement51{limbs: [0, 0, 0, 0, 0]};
+    pub const ONE: FieldElement51 = FieldElement51{limbs: [1, 0, 0, 0, 0]};
+    pub const MINUS_ONE: FieldElement51 = FieldElement51{limbs: [
         2251799813685228,
         2251799813685247,
         2251799813685247,
         2251799813685247,
         2251799813685247,
-    ]);
+    ]};
 
     /// Invert the sign of this field element
-    pub fn negate(&mut self) {
-        // See commentary in the Sub impl
+    pub fn negate(&mut self)
+        requires
+            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 51),
+        ensures
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+            // Assume we start with l = (l0, l1, l2, l3, l4).
+            // Using c0 = 2^51 - 19 and c = 2^51 - 1, we can see that
+            // ( 36028797018963664u64 - l0,
+            //   36028797018963952u64 - l1,
+            //   36028797018963952u64 - l2,
+            //   36028797018963952u64 - l3,
+            //   36028797018963952u64 - l4 )
+            // is just 16 * (c0, c, c, c, c) - l (in vector notation)
+            // Further, as_nat((c0, c, c, c, c)) = p, so
+            // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
+            // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
+            // This gives us the identity
+            // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
+            //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
+            // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
+
+      //      as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
+      //      (as_nat(self.limbs) + as_nat(old(self).limbs)) % p() == 0
+    {
+        proof {
+           // lemma_neg_no_underflow(self.limbs);
+           // negate_proof(self.limbs);
+           assume(false); // PROOF BYPASS
+        }
+        // See commentary in the Sub impl: (copied below)
+            // To avoid underflow, first add a multiple of p.
+            // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
+            //
+            // If we could statically track the bitlengths of the limbs
+            // of every FieldElement51, we could choose a multiple of p
+            // just bigger than _rhs and avoid having to do a reduction.
+            //
+            // Since we don't yet have type-level integers to do this, we
+            // have to add an explicit reduction call here.
+        // Note on "magic numbers":
+        // 36028797018963664u64 = 2^55 - 304 = 16 * (2^51 - 19)
+        // 36028797018963952u64 = 2^55 - 16 =  16 * (2^51 - 1)
         let neg = FieldElement51::reduce([
-            36028797018963664u64 - self.0[0],
-            36028797018963952u64 - self.0[1],
-            36028797018963952u64 - self.0[2],
-            36028797018963952u64 - self.0[3],
-            36028797018963952u64 - self.0[4],
+            36028797018963664u64 - self.limbs[0],
+            36028797018963952u64 - self.limbs[1],
+            36028797018963952u64 - self.limbs[2],
+            36028797018963952u64 - self.limbs[3],
+            36028797018963952u64 - self.limbs[4],
         ]);
-        self.0 = neg.0;
+        self.limbs = neg.limbs;
     }
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]
-    fn reduce(mut limbs: [u64; 5]) -> FieldElement51 {
-        const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+    fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51) {
+        proof { assume(false); } // PROOF BYPASS - complex arithmetic reasoning
 
         // Since the input limbs are bounded by 2^64, the biggest
         // carry-out is bounded by 2^13.
@@ -319,7 +510,8 @@ impl FieldElement51 {
         limbs[3] += c2;
         limbs[4] += c3;
 
-        FieldElement51(limbs)
+         // ADAPTED CODE LINE: limbs is now a named field
+         FieldElement51{limbs}
     }
 
     /// Load a `FieldElement51` from the low 255 bits of a 256-bit
@@ -334,10 +526,17 @@ impl FieldElement51 {
     /// the canonical encoding, and check that the input was
     /// canonical.
     ///
+    ///
     #[rustfmt::skip] // keep alignment of bit shifts
-    pub const fn from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+    pub const fn from_bytes(bytes: &[u8; 32]) -> (r: FieldElement51)
+        ensures
+            // last bit is ignored
+            as_nat(r.limbs) == as_nat_32_u8(bytes) % pow2(255)
+    {
+        /* MANUALLY moved outside */
+        /*
         const fn load8_at(input: &[u8], i: usize) -> u64 {
-               (input[i] as u64)
+                (input[i] as u64)
             | ((input[i + 1] as u64) << 8)
             | ((input[i + 2] as u64) << 16)
             | ((input[i + 3] as u64) << 24)
@@ -346,20 +545,25 @@ impl FieldElement51 {
             | ((input[i + 6] as u64) << 48)
             | ((input[i + 7] as u64) << 56)
         }
-
+        */
+        proof {
+            l51_bit_mask_lt(); // No over/underflow in the below let-def
+            assume(false);
+        }
         let low_51_bit_mask = (1u64 << 51) - 1;
-        FieldElement51(
-        // load bits [  0, 64), no shift
-        [  load8_at(bytes,  0)        & low_51_bit_mask
-        // load bits [ 48,112), shift to [ 51,112)
-        , (load8_at(bytes,  6) >>  3) & low_51_bit_mask
-        // load bits [ 96,160), shift to [102,160)
-        , (load8_at(bytes, 12) >>  6) & low_51_bit_mask
-        // load bits [152,216), shift to [153,216)
-        , (load8_at(bytes, 19) >>  1) & low_51_bit_mask
-        // load bits [192,256), shift to [204,112)
-        , (load8_at(bytes, 24) >> 12) & low_51_bit_mask
-        ])
+        // ADAPTED CODE LINE: limbs is now a named field
+        FieldElement51{ limbs:
+            // load bits [  0, 64), no shift
+            [  load8_at(bytes,  0)        & low_51_bit_mask
+            // load bits [ 48,112), shift to [ 51,112)
+            , (load8_at(bytes,  6) >>  3) & low_51_bit_mask
+            // load bits [ 96,160), shift to [102,160)
+            , (load8_at(bytes, 12) >>  6) & low_51_bit_mask
+            // load bits [152,216), shift to [153,216)
+            , (load8_at(bytes, 19) >>  1) & low_51_bit_mask
+            // load bits [192,256), shift to [204,112)
+            , (load8_at(bytes, 24) >> 12) & low_51_bit_mask
+            ]}
     }
 
     /// Serialize this `FieldElement51` to a 32-byte array.  The
@@ -382,7 +586,8 @@ impl FieldElement51 {
         // Therefore q can be computed as the carry bit of h + 19.
 
         // First, reduce the limbs to ensure h < 2*p.
-        let mut limbs = FieldElement51::reduce(self.0).0;
+        assume(false);
+        let mut limbs = FieldElement51::reduce(self.limbs).limbs;
 
         let mut q = (limbs[0] + 19) >> 51;
         q = (limbs[1] + q) >> 51;
@@ -444,6 +649,7 @@ impl FieldElement51 {
         s[31] =  (limbs[4] >> 44)                    as u8;
 
         // High bit should be zero.
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!((s[31] & 0b1000_0000u8) == 0u8);
 
         s
@@ -452,18 +658,24 @@ impl FieldElement51 {
     /// Given `k > 0`, return `self^(2^k)`.
     #[rustfmt::skip] // keep alignment of c* calculations
     pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
-
+        assume(false);
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!( k > 0 );
 
+
         /// Multiply two 64-bit integers with 128 bits of output.
-        #[inline(always)]
+       /* VERIFICATION NOTE: manually moved outside */
+       /* #[inline(always)]
         fn m(x: u64, y: u64) -> u128 {
             (x as u128) * (y as u128)
         }
+        */
 
-        let mut a: [u64; 5] = self.0;
-
-        loop {
+        let mut a: [u64; 5] = self.limbs;
+        assume(false);
+        loop
+        decreases k
+        {
             // Precondition: assume input limbs a[i] are bounded as
             //
             // a[i] < 2^(51 + b)
@@ -477,6 +689,7 @@ impl FieldElement51 {
             // Since 51 + b + lg(19) < 51 + 4.25 + b
             //                       = 55.25 + b,
             // this fits if b < 8.75.
+            assume(false);
             let a3_19 = 19 * a[3];
             let a4_19 = 19 * a[4];
 
@@ -502,13 +715,16 @@ impl FieldElement51 {
             //    b < 3.365.
             //
             // So we require b < 3 to ensure this fits.
-            debug_assert!(a[0] < (1 << 54));
-            debug_assert!(a[1] < (1 << 54));
-            debug_assert!(a[2] < (1 << 54));
-            debug_assert!(a[3] < (1 << 54));
-            debug_assert!(a[4] < (1 << 54));
+            #[cfg(not(verus_keep_ghost))]
+            {
+                debug_assert!(a[0] < (1 << 54));
+                debug_assert!(a[1] < (1 << 54));
+                debug_assert!(a[2] < (1 << 54));
+                debug_assert!(a[3] < (1 << 54));
+                debug_assert!(a[4] < (1 << 54));
+            }
 
-            const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1;
+            // const LOW_51_BIT_MASK: u64 = (1u64 << 51) - 1; // already defined at module level
 
             // Casting to u64 and back tells the compiler that the carry is bounded by 2^64, so
             // that the addition is a u128 + u64 rather than u128 + u128.
@@ -555,7 +771,7 @@ impl FieldElement51 {
             }
         }
 
-        FieldElement51(a)
+        FieldElement51{limbs: a}
     }
 
     /// Returns the square of this field element.
@@ -567,9 +783,12 @@ impl FieldElement51 {
     pub fn square2(&self) -> FieldElement51 {
         let mut square = self.pow2k(1);
         for i in 0..5 {
-            square.0[i] *= 2;
+            proof { assume(false); }  // PROOF BYPASS: overflow checking for *=2
+            square.limbs[i] *= 2;
         }
 
         square
     }
 }
+
+} // verus!

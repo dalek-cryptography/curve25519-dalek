@@ -444,7 +444,7 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Mul<&'b Scalar> for &'a Scalar {
+impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
     // VERIFICATION NOTE: PROOF BYPASS JUST BEFORE RETURN (problem with traits)
     fn mul(self, _rhs: &'b Scalar) -> (result: Scalar)
@@ -569,7 +569,7 @@ impl<'a> AddAssign<&'a Scalar> for Scalar {
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a, 'b> Sub<&'b Scalar> for &'a Scalar {
+impl<'b> Sub<&'b Scalar> for &Scalar {
     type Output = Scalar;
 
     // VERIFICATION NOTE: PROOF BYPASS (problems with traits and preconditions)
@@ -640,7 +640,7 @@ impl<'a> SubAssign<&'a Scalar> for Scalar {
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
-impl<'a> Neg for &'a Scalar {
+impl Neg for &Scalar {
     type Output = Scalar;
     #[allow(non_snake_case)]
     // VERIFICATION NOTE: PROOF BYPASS
@@ -1905,7 +1905,7 @@ impl Scalar {
                 // VERIFICATION NOTE: Changed += to explicit assignment for Verus compatibility
                 // Verus doesn't support += on indexed arrays with computed indices
                 let next_idx = i + 1;
-                output[next_idx] = output[next_idx] + carry;
+                output[next_idx] += carry;
             }
             // Precondition note: output[63] is not recentered.  It
             // increases by carry <= 1.  Thus output[63] <= 8.
@@ -1942,8 +1942,8 @@ impl Scalar {
 
             #[cfg(not(verus_keep_ghost))]
             debug_assert!(digits_count <= 64);
-            let result = digits_count;
-            result
+
+            digits_count
         }
 
     /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
@@ -2099,7 +2099,7 @@ impl Scalar {
                 let idx = digits_count;
                 let carry_i8 = carry as i8;
                 assume(false);
-                digits[idx] = digits[idx] + carry_i8;
+                digits[idx] += carry_i8;
             },
             _ => {
                 let idx = digits_count - 1;
@@ -2109,7 +2109,7 @@ impl Scalar {
                 }
                 let carry_shifted_i8 = (carry << w) as i8;
                 assume(false);
-                digits[idx] = digits[idx] + carry_shifted_i8;
+                digits[idx] += carry_shifted_i8;
             },
         }
 
@@ -2515,7 +2515,7 @@ PROOF BYPASS
             src.len() == 8 * dst_len,
             dst.len() == dst_len,
     {
-        let byte_start = (i * 8) as usize;
+        let byte_start = (i * 8);
         let mut byte_array = [0u8; 8];
         for j in 0..8
             invariant

@@ -122,7 +122,7 @@ pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
     ensures !choice_is_true(choice) ==> res == *a,
             choice_is_true(choice) ==> res == *b
 {
-    u64::conditional_select(a, b, choice)
+    select(a, b, choice)
 }
 
 /// Helper for conditional_swap on u64

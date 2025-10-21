@@ -21,7 +21,7 @@ jobs:
       - name: Run analyze and csv scripts
         run: |
           scripts/analyze_verus_specs_proofs.py
-          scripts/csv_verus_functions.py
+          scripts/csv_to_markdown.py
       - name: Check for changes
         id: check_changes
         run: |

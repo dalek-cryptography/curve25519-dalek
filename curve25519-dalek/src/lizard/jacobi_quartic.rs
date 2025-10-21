@@ -19,12 +19,13 @@ pub struct JacobiPoint {
 }
 
 impl JacobiPoint {
-    /// Elligator2 is defined in two steps: first a function e maps a field element
-    /// to a point (s,t) on the Jacobi quartic associated to the Edwards curve.
+    /// Elligator2 is defined in two steps: first a function `e` maps a field element `x`
+    /// to a point on the Jacobi quartic associated to the Edwards curve.
     /// Then this point is mapped to a point on the Edwards curve.
-    /// This function computes a field element that is mapped by e to a given (s,t),
-    /// if it exists.
-    pub(crate) fn e_inv(&self) -> CtOption<FieldElement> {
+    /// Note `e` maps `x` and `-x` to the same point.
+    /// This function computes a positive field element that is mapped by `e` to a given point,
+    /// if it exists. The other inverse is the negative of the return value.
+    pub(crate) fn e_inv_positive(&self) -> CtOption<FieldElement> {
         let mut out = FieldElement::ZERO;
 
         // Special case: s = 0.  If s is zero, either t = 1 or t = -1.

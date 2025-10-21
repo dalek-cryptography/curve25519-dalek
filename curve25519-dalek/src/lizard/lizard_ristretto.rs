@@ -3,7 +3,7 @@
 use digest::{
     Digest, HashMarker,
     array::Array,
-    consts::{U8, U32},
+    consts::{U16, U32},
 };
 use subtle::CtOption;
 
@@ -31,10 +31,8 @@ impl RistrettoPoint {
         let digest = D::digest(data);
         fe_bytes[0..32].copy_from_slice(digest.as_slice());
         fe_bytes[8..24].copy_from_slice(data);
-        fe_bytes[0] &= 0b11111110;
-        fe_bytes[31] &= 0b00111111;
-        let fe = FieldElement::from_bytes(&fe_bytes);
-        RistrettoPoint::elligator_ristretto_flavor(&fe)
+        // Clear the appropriate bits to make this a reduced positive field elem, and map to curve
+        RistrettoPoint::map_pos_felem_to_curve(fe_bytes)
     }
 
     /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method. Returns `None` if
@@ -70,8 +68,8 @@ impl RistrettoPoint {
     }
 
     /// Computes the at most 8 positive FieldElements f such that `self ==
-    /// RistrettoPoint::elligator_ristretto_flavor(f)`. Assumes self is even.
-    fn elligator_ristretto_flavor_inverse(&self) -> [CtOption<FieldElement>; 8] {
+    /// RistrettoPoint::elligator_ristretto_flavor(f)`.
+    fn elligator_ristretto_flavor_inverse(&self) -> [CtOption<FieldElement>; 16] {
         // Elligator2 computes a Point from a FieldElement in two steps: first
         // it computes a (s,t) on the Jacobi quartic and then computes the
         // corresponding even point on the Edwards curve.
@@ -93,11 +91,15 @@ impl RistrettoPoint {
 
         let jcs = self.to_jacobi_quartic_ristretto();
 
-        // Compute the inverse of the every point and its dual
-        let invs = jcs.iter().flat_map(|jc| [jc.e_inv(), jc.dual().e_inv()]);
+        // Compute the positive solution to e⁻¹ on every point and its dual
+        let pos_invs = jcs
+            .iter()
+            .flat_map(|jc| [jc.e_inv_positive(), jc.dual().e_inv_positive()]);
+        // Compute the other solutions to e⁻¹, ie the negatives of the above solutions
+        let neg_invs = pos_invs.clone().map(|mx| mx.map(|x| -&x));
         // This cannot panic because jcs is guaranteed to be size 4, and the above iterator expands
         // it to size 8
-        Array::<_, U8>::from_iter(invs).0
+        Array::<_, U16>::from_iter(pos_invs.chain(neg_invs)).0
     }
 
     /// Find a point on the Jacobi quartic associated to each of the four
@@ -178,8 +180,22 @@ impl RistrettoPoint {
         ]
     }
 
-    /// Interprets the given bytestring as a positive field element and computes the Ristretto
-    /// Elligator map. Note this clears the bottom bit and top two bits of `bytes`.
+    /// Clears bits in `bytes` to make it a positive, reduced field element, then performs
+    /// [`RistrettoPoint::map_to_curve`]). Specifically, clears the the bottom bit (bottom bit of
+    /// `bytes[0]`) and second-to-top bit (second-to-top bit of `bytes[31]`). The first is to ensure
+    /// we have a positive field element and the second is to ensure we are below the modulus
+    /// (map-to-curve clears the topmost bit for us).
+    pub fn map_pos_felem_to_curve(mut bytes: [u8; 32]) -> RistrettoPoint {
+        bytes[0] &= 0b11111110;
+        bytes[31] &= 0b10111111;
+
+        RistrettoPoint::map_to_curve(bytes)
+    }
+
+    /// Interprets the given bytestring as a field element and computes the Ristretto Elligator map.
+    /// This is the MAP function in
+    ///     [RFC 9496](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4).
+    /// Note this clears the top bit (`bytes[31] & 0x80`).
     ///
     /// # Warning
     ///
@@ -187,11 +203,7 @@ impl RistrettoPoint {
     /// [`Self::hash_from_bytes`] for that. DO NOT USE THIS FUNCTION unless you really know what
     /// you're doing.
     pub fn map_to_curve(mut bytes: [u8; 32]) -> RistrettoPoint {
-        // We only have a meaningful inverse if we give Elligator a point in its domain, ie a
-        // positive (meaning low bit 0) field element. Mask off the top two bits to ensure it's less
-        // than the modulus, and the bottom bit for evenness.
-        bytes[0] &= 0b11111110;
-        bytes[31] &= 0b00111111;
+        bytes[31] &= 0b01111111;
 
         let fe = FieldElement::from_bytes(&bytes);
         RistrettoPoint::elligator_ristretto_flavor(&fe)
@@ -199,12 +211,12 @@ impl RistrettoPoint {
 
     /// Computes the possible bytestrings that could have produced this point via
     /// [`Self::map_to_curve`].
-    pub fn map_to_curve_inverse(&self) -> [CtOption<[u8; 32]>; 8] {
+    pub fn map_to_curve_inverse(&self) -> [CtOption<[u8; 32]>; 16] {
         // Compute the inverses
         let fes = self.elligator_ristretto_flavor_inverse();
         // Serialize the field elements
         let it = fes.map(|fe| fe.map(|f| f.to_bytes()));
-        Array::<_, U8>::from_iter(it).0
+        Array::<_, U16>::from_iter(it).0
     }
 }
 
@@ -331,7 +343,7 @@ mod test {
         }
     }
 
-    // Tests that map_to_curve_inverse ○ map_to_curve is the identity
+    // Tests that map_to_curve ○ map_to_curve_inverse is the identity
     #[test]
     fn map_to_curve_inverse() {
         let mut rng = rand::rng();
@@ -342,9 +354,31 @@ mod test {
 
             // Map to Ristretto and invert it
             let pt = RistrettoPoint::map_to_curve(input);
+
             let inverses = pt.map_to_curve_inverse();
 
-            // map_to_curve masks the bottom bit and top two bits of `input`
+            // Assert at least one inverse exists, and all the inverses map to pt
+            assert!(inverses.iter().any(|i| bool::from(i.is_some())));
+            for inv in inverses.into_iter().filter_map(CtOption::into_option) {
+                assert_eq!(pt, RistrettoPoint::map_to_curve(inv));
+            }
+        }
+    }
+
+    // Tests that map_to_curve_inverse ○ map_pos_felem_to_curve is the identity
+    #[test]
+    fn map_pos_felem_to_curve_inverse() {
+        let mut rng = rand::rng();
+
+        for _ in 0..100 {
+            let mut input = [0u8; 32];
+            rng.fill_bytes(&mut input);
+
+            // Map to Ristretto and invert it
+            let pt = RistrettoPoint::map_pos_felem_to_curve(input);
+            let inverses = pt.map_to_curve_inverse();
+
+            // map_pos_felem_to_curve masks the bottom bit and top two bits of `input`
             let mut expected_inverse = input;
             expected_inverse[31] &= 0b00111111;
             expected_inverse[0] &= 0b11111110;

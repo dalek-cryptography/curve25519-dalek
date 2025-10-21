@@ -356,6 +356,10 @@ impl ConditionallySelectable for FieldElement51 {
         ]}
     }
 
+    /* <VERIFICATION NOTE>
+    Same solution as above didnt work for the following two methods because of mutable references.
+    </VERIFICATION NOTE> */
+    
     #[verifier::external_body]
     fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice)
         ensures

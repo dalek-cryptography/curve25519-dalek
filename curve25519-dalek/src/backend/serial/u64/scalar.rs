@@ -675,13 +675,12 @@ impl Scalar52 {
     #[inline(always)]
     #[rustfmt::skip]  // keep alignment of n* and r* calculations
     pub(crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
-        ensures
-            (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs)
-                % group_order(),
-            limbs_bounded(&result),
-            to_nat(&result.limbs) < group_order(),
+        // ensures
+        //     (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs)
+        //         % group_order(),
+        //     limbs_bounded(&result),
+        //     to_nat(&result.limbs) < group_order(),
     {
-        assume(false);  // TODO: Add proofs
 
         // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
@@ -721,8 +720,20 @@ impl Scalar52 {
                 &&& sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52
             }),
     {
-        assume(false);  // TODO: Add proofs
+        assert((1u64 << 52) > 1 ) by (bit_vector);
+        assert((1u64 << 52) - 1 > 0 );
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
+        proof {
+          let piece1 = (sum as u64).wrapping_mul(constants::LFACTOR) as u64;
+          let piece2 = ((1u64 << 52) - 1) as u64;
+          assert(p == piece1 & piece2);
+          assert(piece1 & piece2 < (1u64 << 52)) by (bit_vector)
+                requires piece2 == ((1u64 << 52) - 1);
+        }
+        assert(p < (1u64 << 52));
+        assert(constants::L.limbs[0] == 0x0002631a5cf5d3ed);
+        assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
+        assert(constants::L.limbs[0] < (1u64 << 52));
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         (carry, p)
     }

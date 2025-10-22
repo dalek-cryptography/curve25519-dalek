@@ -389,171 +389,19 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
 /// Helper: Byte extraction commutes with modulo for low-order bytes
 /// If we extract a byte at position k*8 where k*8+8 <= m, then:
 /// (x / 2^(k*8)) % 256 == ((x % 2^m) / 2^(k*8)) % 256
+///
+/// This is a specialized version of lemma_chunk_extraction_commutes_with_mod for bytes (b=8).
 proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
     requires
         k * 8 + 8 <= m,  // The byte we're extracting is entirely below the modulo boundary
     ensures
         (x / pow2(k * 8)) % 256 == ((x % pow2(m)) / pow2(k * 8)) % 256,
 {
-    lemma2_to64();  // Establishes pow2(8) == 256
-
-    // Proof strategy:
-    // 1. Decompose: x = (x / 2^m) * 2^m + (x % 2^m)
-    // 2. Show: ((x / 2^m) * 2^m) / 2^(k*8) is a multiple of 256
-    // 3. Use that multiples of 256 vanish in % 256
-
-    let k8 = k * 8;
-    let x_mod_m = x % pow2(m);
-
-    // Step 1: Decompose x using the division theorem
-    lemma_pow2_pos(m);
-    lemma_fundamental_div_mod(x as int, pow2(m) as int);
-    // lemma_fundamental_div_mod gives: x == pow2(m) * (x / pow2(m)) + (x % pow2(m))
-    assert(x == pow2(m) * (x / pow2(m)) + x_mod_m);
-    lemma_mul_is_commutative(pow2(m) as int, (x / pow2(m)) as int);
-    assert(x == (x / pow2(m)) * pow2(m) + x_mod_m);
-
-    // Step 2: Divide both sides by pow2(k*8)
-    // x / pow2(k*8) = ((x / pow2(m)) * pow2(m)) / pow2(k*8) + (x % pow2(m)) / pow2(k*8)
-
-    // Key fact: Since k*8 + 8 <= m, we have m = k*8 + (m - k*8) where (m - k*8) >= 8
-    let m_minus_k8 = (m - k8) as nat;
-    assert(m_minus_k8 >= 8);
-
-    // Therefore: pow2(m) = pow2(k*8) * pow2(m - k*8)
-    lemma_pow2_adds(k8, m_minus_k8);
-    assert(pow2(m) == pow2(k8) * pow2(m_minus_k8));
-
-    // Step 3: Show that pow2(m - k*8) is a multiple of 256 (since m - k*8 >= 8)
-    // pow2(m - k*8) = pow2(8) * pow2(m - k*8 - 8) = 256 * pow2(m - k*8 - 8)
-    assert(m_minus_k8 >= 8);
-    let m_minus_k8_minus_8 = (m_minus_k8 - 8) as nat;
-    assert(m_minus_k8 == 8 + m_minus_k8_minus_8);
-    lemma_pow2_adds(8, m_minus_k8_minus_8);
-    assert(pow2(m_minus_k8) == pow2(8) * pow2(m_minus_k8_minus_8));
-    assert(pow2(m_minus_k8) == 256 * pow2(m_minus_k8_minus_8));
-
-    // Step 4: Calculate ((x / pow2(m)) * pow2(m)) / pow2(k*8)
-    // = (x / pow2(m)) * (pow2(k*8) * pow2(m - k*8)) / pow2(k*8)
-    // = (x / pow2(m)) * pow2(m - k*8)
-    // = (x / pow2(m)) * 256 * pow2(m - k*8 - 8)
-
-    let high_part = (x / pow2(m)) * pow2(m);
-    let low_part = x_mod_m;
-
-    assert(x == high_part + low_part);
-
-    // Divide the sum by pow2(k*8)
-    lemma_pow2_pos(k8);
-
-    // We need to show: (high_part / pow2(k*8)) % 256 == 0
-    // high_part / pow2(k*8) = (x / pow2(m)) * pow2(m) / pow2(k*8)
-    //                       = (x / pow2(m)) * (pow2(k*8) * pow2(m_minus_k8)) / pow2(k*8)
-    //                       = (x / pow2(m)) * pow2(m_minus_k8)
-
-    // Prove high_part in factored form: high_part = pow2(k8) * ((x / pow2(m)) * pow2(m_minus_k8))
-    lemma_mul_is_associative((x / pow2(m)) as int, pow2(k8) as int, pow2(m_minus_k8) as int);
-    assert(high_part == ((x / pow2(m)) * pow2(k8)) * pow2(m_minus_k8));
-    lemma_mul_is_commutative((x / pow2(m)) as int, pow2(k8) as int);
-    lemma_mul_is_associative(pow2(k8) as int, (x / pow2(m)) as int, pow2(m_minus_k8) as int);
-    let q = (x / pow2(m)) * pow2(m_minus_k8);
-    assert(high_part == pow2(k8) * q);
-
-    // high_part / pow2(k*8) = (x / pow2(m)) * pow2(m_minus_k8) = q
-    assert(high_part / pow2(k8) == q) by {
-        // Use: (d * q) / d == q when d > 0
-        assert((pow2(k8) * q) / pow2(k8) == q) by (nonlinear_arith)
-            requires pow2(k8) > 0;
-        assert(high_part / pow2(k8) == q);
-    }
-    assert(high_part / pow2(k8) == (x / pow2(m)) * pow2(m_minus_k8));
-
-    // Now: (x / pow2(m)) * pow2(m_minus_k8) = (x / pow2(m)) * 256 * pow2(m_minus_k8_minus_8)
-    lemma_mul_is_associative((x / pow2(m)) as int, 256, pow2(m_minus_k8_minus_8) as int);
-    // We have: q = (x / pow2(m)) * pow2(m_minus_k8) = (x / pow2(m)) * (256 * pow2(m_minus_k8_minus_8))
-    //           = ((x / pow2(m)) * 256) * pow2(m_minus_k8_minus_8)
-    assert(q == ((x / pow2(m)) * 256) * pow2(m_minus_k8_minus_8)) by {
-        assert(pow2(m_minus_k8) == 256 * pow2(m_minus_k8_minus_8));
-        assert(q == (x / pow2(m)) * pow2(m_minus_k8));
-        assert((x / pow2(m)) * pow2(m_minus_k8) == (x / pow2(m)) * (256 * pow2(m_minus_k8_minus_8)));
-    }
-    lemma_mul_is_associative((x / pow2(m)) as int, 256, pow2(m_minus_k8_minus_8) as int);
-    lemma_mul_is_commutative((x / pow2(m)) as int, 256);
-    lemma_mul_is_associative(256, (x / pow2(m)) as int, pow2(m_minus_k8_minus_8) as int);
-    assert(q == 256 * ((x / pow2(m)) * pow2(m_minus_k8_minus_8)));
-
-    // So: (high_part / pow2(k*8)) % 256 == 0
-    let high_part_shifted = high_part / pow2(k8);
-    assert(high_part_shifted == q);
-    assert(high_part_shifted == 256 * ((x / pow2(m)) * pow2(m_minus_k8_minus_8)));
-
-    // This is 256 * something, so its mod 256 is 0
-    lemma_mod_multiples_vanish((x / pow2(m)) * pow2(m_minus_k8_minus_8) as int, 0, 256);
-    assert(high_part_shifted % 256 == 0);
-
-    // Step 5: Show that high_part is exactly divisible by pow2(k*8)
-    // We have: high_part = (x / pow2(m)) * pow2(m) = (x / pow2(m)) * pow2(k8) * pow2(m_minus_k8)
-    // So: high_part % pow2(k8) == 0
-    assert(high_part % pow2(k8) == 0) by {
-        // We proved above that: high_part == pow2(k8) * ((x / pow2(m)) * pow2(m_minus_k8))
-        assert(high_part == pow2(k8) * ((x / pow2(m)) * pow2(m_minus_k8)));
-
-        // This is pow2(k8) * something, so mod pow2(k8) is 0
-        lemma_mod_multiples_vanish((x / pow2(m)) * pow2(m_minus_k8) as int, 0, pow2(k8) as int);
-        assert((pow2(k8) * ((x / pow2(m)) * pow2(m_minus_k8))) % pow2(k8) == 0);
-        assert(high_part % pow2(k8) == 0);
-    }
-
-    // Step 6: Show that when high_part is divisible by pow2(k8), we can split the division
-    // We need: (high_part + low_part) / pow2(k8) = high_part / pow2(k8) + low_part / pow2(k8) (when low_part < pow2(k8) or with proper handling of remainder)
-
-    // Actually, the key is to use lemma_hoist_over_denominator
-    // lemma_hoist_over_denominator says: x / d + j == (x + j * d) / d
-    // Rearranging: (x + j * d) / d == x / d + j
-    // But we have: (high_part + low_part) / pow2(k8) where high_part = j * pow2(k8) for some j
-
-    // Since high_part / pow2(k8) = j, we can write:
-    // x / pow2(k8) = (j * pow2(k8) + low_part) / pow2(k8)
-
-    let j = high_part / pow2(k8);
-    assert(high_part == j * pow2(k8)) by {
-        lemma_fundamental_div_mod(high_part as int, pow2(k8) as int);
-        assert(high_part == pow2(k8) * j + (high_part % pow2(k8)));
-        assert(high_part % pow2(k8) == 0);
-        assert(high_part == pow2(k8) * j);
-        lemma_mul_is_commutative(pow2(k8) as int, j as int);
-    }
-
-    // Now use lemma_hoist_over_denominator: low_part / pow2(k8) + j == (low_part + j * pow2(k8)) / pow2(k8)
-    lemma_hoist_over_denominator(low_part as int, j as int, pow2(k8));
-    assert((low_part + j * pow2(k8)) / pow2(k8) == low_part / pow2(k8) + j);
-
-    // We have: x = high_part + low_part = j * pow2(k8) + low_part = low_part + j * pow2(k8)
-    assert(x == low_part + j * pow2(k8));
-    assert(x / pow2(k8) == low_part / pow2(k8) + j);
-
-    // Step 7: Take mod 256 of both sides
-    // (x / pow2(k8)) % 256 = (low_part / pow2(k8) + j) % 256
-    assert((x / pow2(k8)) % 256 == (low_part / pow2(k8) + j) % 256);
-
-    // We know j is a multiple of 256
-    assert(j == (x / pow2(m)) * 256 * pow2(m_minus_k8_minus_8));
-    assert(j % 256 == 0) by {
-        lemma_mod_multiples_vanish((x / pow2(m)) * pow2(m_minus_k8_minus_8) as int, 0, 256);
-    }
-
-    // Use lemma_mod_sum_factor: (a + b) % m = (a % m + b % m) % m
-    lemma_mod_sum_factor((low_part / pow2(k8)) as int, j as int, 256);
-    assert((low_part / pow2(k8) + j) % 256 == ((low_part / pow2(k8)) % 256 + j % 256) % 256);
-    assert((low_part / pow2(k8) + j) % 256 == ((low_part / pow2(k8)) % 256 + 0) % 256);
-    assert((low_part / pow2(k8) + j) % 256 == (low_part / pow2(k8)) % 256);
-
-    // Step 8: Conclude
-    // (x / pow2(k8)) % 256 = (low_part / pow2(k8)) % 256
-    // And low_part = x % pow2(m)
-    assert((x / pow2(k8)) % 256 == (low_part / pow2(k8)) % 256);
-    assert(low_part == x % pow2(m));
-    assert((x / pow2(k * 8)) % 256 == ((x % pow2(m)) / pow2(k * 8)) % 256);
+    // Call the generalized version with b=8 (byte size)
+    lemma_chunk_extraction_commutes_with_mod(x, k, 8, m);
+    
+    // Establish that pow2(8) == 256
+    lemma2_to64();
 }
 
 // ============================================================================
@@ -2209,87 +2057,6 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
 // Key insight: Boundary bytes are formed by OR'ing bits from two adjacent limbs.
 // The proof uses the Modular Bit Partitioning Theorem to show that the bitwise
 // operations correspond exactly to the arithmetic formula.
-
-/// Modular Bit Partitioning Theorem
-///
-/// This is the key mathematical insight for boundary byte reconstruction.
-///
-/// Theorem: If we add a value 'a' (fitting in k bits) to 'b' shifted left by k positions,
-/// and take the result mod 2^n, we can partition the contributions:
-/// - The low k bits come from 'a' (masked to k bits)
-/// - The high (n-k) bits come from 'b' (masked to n-k bits, then shifted)
-///
-/// This works because:
-/// 1. When a < 2^k, 'a' only affects bits [0, k-1]
-/// 2. When we shift 'b' left by k, it only affects bits [k, n-1]
-/// 3. No carry occurs between the two regions
-/// 4. The sum fits within n bits
-proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
-    requires
-        k < n,
-        a < pow2(k),
-        (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)) < pow2(n),
-    ensures
-        (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
-{
-    // Following the proof on paper step by step.
-    // Reference: docs_16_oct/LEMMA_BOUNDARY_BYTE_COMBINES_PROOF_ON_PAPER.md
-
-    let n_minus_k = (n - k) as nat;
-
-    // ===== STEP 1: Since a < pow2(k), we have a % pow2(k) = a =====
-    lemma_small_mod(a, pow2(k));
-
-    // ===== STEP 2: pow2(k) * pow2(n-k) = pow2(n) =====
-    lemma_pow2_adds(k, n_minus_k);
-    assert(k + n_minus_k == n);
-
-    // ===== STEP 3: Division theorem - decompose b =====
-    // b = (b / pow2(n-k)) * pow2(n-k) + (b % pow2(n-k))
-    lemma_pow2_pos(n_minus_k);
-    lemma_fundamental_div_mod(b as int, pow2(n_minus_k) as int);
-
-    let b_quot = b / pow2(n_minus_k);
-    let b_rem = b % pow2(n_minus_k);
-
-    assert(b == pow2(n_minus_k) * b_quot + b_rem);
-    lemma_mul_is_distributive_add_other_way(pow2(k) as int, (b_quot * pow2(n_minus_k)) as int, b_rem as int);
-    // Z3 LIMITATION: Should follow from distributivity but solver can't apply it to nat types
-
-    lemma_mul_is_associative(b_quot as int, pow2(n_minus_k) as int, pow2(k) as int);
-
-
-    // ===== STEP 5: Add a to both sides =====
-    // a + b * pow2(k) = a + b_quot * pow2(n) + b_rem * pow2(k)
-
-    // ===== STEP 6: Take mod pow2(n) - the multiple of pow2(n) vanishes =====
-
-    // Step 6a: From equality x == y, we get x % z == y % z
-    // We proved: a + b * pow2(k) == a + b_quot * pow2(n) + b_rem * pow2(k)
-    // Therefore: (a + b * pow2(k)) % pow2(n) == (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n)
-
-    // Step 6b: The multiple of pow2(n) vanishes in the modulo
-    // (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) = (a + b_rem * pow2(k)) % pow2(n)
-    // This is the standard property: (m * a + b) % m == b % m
-    // lemma_mod_multiples_vanish(a, b, m) proves: (m * a + b) % m == b % m
-    lemma_mod_multiples_vanish(b_quot as int, (a + b_rem * pow2(k)) as int, pow2(n) as int);
-    // This gives us: (pow2(n) * b_quot + (a + b_rem * pow2(k))) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    // Which is equivalent to: (b_quot * pow2(n) + a + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    // And by commutativity: (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    assert((a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n));
-
-    // ===== STEP 7: The sum < pow2(n), so mod is trivial =====
-    // (a + b_rem * pow2(k)) % pow2(n) = a + b_rem * pow2(k)
-    // We know from precondition 3 that: a + b_rem * pow2(k) < pow2(n)
-    lemma_small_mod(a + b_rem * pow2(k), pow2(n));
-
-    // ===== STEP 8: Substitute back - a % pow2(k) = a =====
-    // a + b_rem * pow2(k) = (a % pow2(k)) + ((b % pow2(n-k)) * pow2(k))
-
-    // ===== CONCLUSION: By transitivity =====
-}
-
-/// Helper: Proves the arithmetic interpretation of bitwise OR for boundary bytes
 proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, low_shift: nat, low_bits: nat)
     requires
         low_limb < pow2(51),
@@ -2466,7 +2233,6 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
                 (pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == 255;
     }
 
-    // Apply the theorem!
     lemma_modular_bit_partitioning(a, b, k, 8);
 
     assert(a % pow2(k) == a) by {

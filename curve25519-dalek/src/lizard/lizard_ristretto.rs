@@ -31,8 +31,11 @@ impl RistrettoPoint {
         let digest = D::digest(data);
         fe_bytes[0..32].copy_from_slice(digest.as_slice());
         fe_bytes[8..24].copy_from_slice(data);
-        // Clear the appropriate bits to make this a reduced positive field elem, and map to curve
-        RistrettoPoint::map_pos_felem_to_curve(fe_bytes)
+        // Clear the appropriate bits to be able to call map_to_curve_restricted
+        fe_bytes[31] &= 0b00111111;
+        fe_bytes[0] &= 0b11111110;
+
+        RistrettoPoint::map_to_curve_restricted(fe_bytes)
     }
 
     /// Decode 16 bytes of data from a RistrettoPoint, using the Lizard method. Returns `None` if
@@ -180,37 +183,45 @@ impl RistrettoPoint {
         ]
     }
 
-    /// Clears bits in `bytes` to make it a positive, reduced field element, then performs
-    /// [`RistrettoPoint::map_to_curve`]). Specifically, clears the the bottom bit (bottom bit of
-    /// `bytes[0]`) and second-to-top bit (second-to-top bit of `bytes[31]`). The first is to ensure
-    /// we have a positive field element and the second is to ensure we are below the modulus
-    /// (map-to-curve clears the topmost bit for us).
-    pub fn map_pos_felem_to_curve(mut bytes: [u8; 32]) -> RistrettoPoint {
-        bytes[0] &= 0b11111110;
-        bytes[31] &= 0b10111111;
+    /// Does the same as [`RistrettoPoint::map_to_curve`], but only operates on a restricted domain,
+    /// namely `bytes` with the bottom bit and the top two bits unset. It is guaranteed that
+    /// `map_to_curve_inverse(map_to_curve_restricted(bytes))` contains `bytes` in one of its first
+    /// 8 return values (i.e., the positive ones).
+    ///
+    /// # Panics
+    /// Panics if the bottom bit (bottom bit of `bytes[0]`) or either of the top two bits (top two
+    /// bits of `bytes[31]`) are set.
+    pub fn map_to_curve_restricted(bytes: [u8; 32]) -> RistrettoPoint {
+        // Ensure it's a positive field element
+        assert_eq!(bytes[0] & 0b00000001, 0);
+        // Ensure it's less than below 2^254 (which is less than p)
+        assert_eq!(bytes[31] & 0b11000000, 0);
 
         RistrettoPoint::map_to_curve(bytes)
     }
 
     /// Interprets the given bytestring as a field element and computes the Ristretto Elligator map.
-    /// This is the MAP function in
-    ///     [RFC 9496](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4).
-    /// Note this clears the top bit (`bytes[31] & 0x80`).
+    /// This is the [MAP](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function in
+    /// RFC 9496.
     ///
     /// # Warning
     ///
     /// This function does not produce cryptographically random-looking Ristretto points. Use
     /// [`Self::hash_from_bytes`] for that. DO NOT USE THIS FUNCTION unless you really know what
     /// you're doing.
-    pub fn map_to_curve(mut bytes: [u8; 32]) -> RistrettoPoint {
-        bytes[31] &= 0b01111111;
-
+    pub fn map_to_curve(bytes: [u8; 32]) -> RistrettoPoint {
+        // MAP must clear the top bit. This is done in `from_bytes` for every field backend, so we
+        // don't have to do it ourselves here
         let fe = FieldElement::from_bytes(&bytes);
         RistrettoPoint::elligator_ristretto_flavor(&fe)
     }
 
     /// Computes the possible bytestrings that could have produced this point via
     /// [`Self::map_to_curve`].
+    ///
+    /// The first 8 return values are positive field elements (i.e., have the LSB (`bytes[0] & 1`)
+    /// unset), if defined. The last 8 return values are negative field elements (i.e., have the LSB
+    /// set), if defined.
     pub fn map_to_curve_inverse(&self) -> [CtOption<[u8; 32]>; 16] {
         // Compute the inverses
         let fes = self.elligator_ristretto_flavor_inverse();
@@ -365,7 +376,8 @@ mod test {
         }
     }
 
-    // Tests that map_to_curve_inverse ○ map_pos_felem_to_curve is the identity
+    // Tests that map_to_curve_inverse ○ map_to_curve_restricted is the identity and has a non-None
+    // return value in the first 8 elements
     #[test]
     fn map_pos_felem_to_curve_inverse() {
         let mut rng = rand::rng();
@@ -374,22 +386,25 @@ mod test {
             let mut input = [0u8; 32];
             rng.fill_bytes(&mut input);
 
-            // Map to Ristretto and invert it
-            let pt = RistrettoPoint::map_pos_felem_to_curve(input);
-            let inverses = pt.map_to_curve_inverse();
+            // Clear bits so we can call map_to_curve_restricted
+            input[31] &= 0b00111111;
+            input[0] &= 0b11111110;
 
-            // map_pos_felem_to_curve masks the bottom bit and top two bits of `input`
-            let mut expected_inverse = input;
-            expected_inverse[31] &= 0b00111111;
-            expected_inverse[0] &= 0b11111110;
+            let pt = RistrettoPoint::map_to_curve_restricted(input);
+            let inverses = pt.map_to_curve_inverse();
 
             // Check that one of the valid inverses matches the input
             let mut found = false;
-            for inv in inverses.into_iter() {
-                if inv.is_some().into() && inv.unwrap() == expected_inverse {
+            for (i, inv) in inverses.into_iter().enumerate() {
+                if inv.is_some().into() && inv.unwrap() == input {
+                    // map_to_curve_inverse returns all the positive solutions in the first 8
+                    // values, and all the negative solution in the second 8 values
+                    if i >= 8 {
+                        panic!("input is in the latter 8 inverses ({input:02x?})");
+                    }
                     // Per the README, the probability of finding two inverses is ~2^-122
                     if found == true {
-                        panic!("found two inverses for input {:02x?}", input);
+                        panic!("found two inverses ({input:02x?})");
                     }
 
                     found = true;

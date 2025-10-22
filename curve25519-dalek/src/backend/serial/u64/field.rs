@@ -377,6 +377,10 @@ impl ConditionallySelectable for FieldElement51 {
                 forall|i: int| 0 <= i < 5 ==> #[trigger] b.limbs[i] == old(a).limbs[i]
             ),
     {
+        // Originally this was
+        // u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
+        // But Verus doesn't support index for &mut
+        // Hence first do the indexing, then pass mut ref, then substitute back in
         let mut a0 = a.limbs[0];
         let mut b0 = b.limbs[0];
         conditional_swap_u64(&mut a0, &mut b0, choice);

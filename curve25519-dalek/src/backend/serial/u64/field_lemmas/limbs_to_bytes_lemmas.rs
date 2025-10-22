@@ -2469,14 +2469,18 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // Apply the theorem!
     lemma_modular_bit_partitioning(a, b, k, 8);
 
+    assert(a % pow2(k) == a) by {
+        lemma_small_mod(a, pow2(k));
+    }
 
     // Connect to byte casting
     // byte == combined as u8 means byte as nat == (combined as nat) % 256
     // FUNDAMENTAL RUST/VERUS AXIOM: Integer casts truncate via modulo
     // This is the definition of how (x as u8) works in Rust for any integer type x.
     // Verus doesn't automatically establish this property, so we assume it.
-    // See similar assumes in to_bytes_lemmas_inductive.rs:1796 and to_bytes_lemmas_8_oct.rs:2615
-    assume(combined as u8 == (combined as nat) % 256);
+    assert((combined as nat) % pow2(8) == (combined as u8)) by {
+        lemma_u8_cast_is_mod_256(combined as u64);
+    }
     // We know: combined as nat == a + b * pow2(k)
 
     // Therefore: byte as nat == (a + b * pow2(k)) % 256
@@ -2485,10 +2489,7 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // Therefore by transitivity:
 
     // Show a % pow2(k) == a
-    assert(a % pow2(k) == a) by {
-        lemma_small_mod(a, pow2(k));
-    }
-
+    
     // Substitute a % pow2(k) with a:
 
     // Final result: substitute back the definitions of a, b, k

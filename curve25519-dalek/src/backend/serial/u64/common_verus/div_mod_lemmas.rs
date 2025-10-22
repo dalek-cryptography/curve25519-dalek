@@ -238,6 +238,14 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
     }
 }
 
+pub proof fn lemma_u8_cast_is_mod_256(x: u64)
+    ensures
+        (x as u8) == (x as nat) % 256
+{
+    assert(x as nat % 256 == x % 256);
+    assert((x as u8) == x % 256) by (bit_vector);
+}
+
 fn main() {}
 
 }

@@ -445,7 +445,7 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // From bytes_match_limbs_packing, we know each byte is exactly (limbs[0] >> (i*8)) as u8
 
     // Use lemma_byte_from_limb_shift to establish arithmetic value of each byte
-    broadcast use shr_zero_is_id;
+    shr_zero_is_id(limbs[0]);  // Explicit call instead of broadcast for better Z3 performance
     assert(bytes[0] == (limbs[0] >> 0) as u8);
     lemma_byte_from_limb_shift(limbs[0], 0, bytes[0]);
     assert(bytes[0] as nat == (limbs[0] as nat / pow2(0)) % 256);

@@ -388,22 +388,32 @@ impl ConditionallySelectable for FieldElement51 {
         let mut a0 = a.limbs[0];
         let mut b0 = b.limbs[0];
         conditional_swap_u64(&mut a0, &mut b0, choice);
+        a.limbs[0] = a0;
+        b.limbs[0] = b0;
 
         let mut a1 = a.limbs[1];
         let mut b1 = b.limbs[1];
         conditional_swap_u64(&mut a1, &mut b1, choice);
+        a.limbs[1] = a1;
+        b.limbs[1] = b1;
 
         let mut a2 = a.limbs[2];
         let mut b2 = b.limbs[2];
         conditional_swap_u64(&mut a2, &mut b2, choice);
+        a.limbs[2] = a2;
+        b.limbs[2] = b2;
 
         let mut a3 = a.limbs[3];
         let mut b3 = b.limbs[3];
         conditional_swap_u64(&mut a3, &mut b3, choice);
+        a.limbs[3] = a3;
+        b.limbs[3] = b3;
 
         let mut a4 = a.limbs[4];
         let mut b4 = b.limbs[4];
         conditional_swap_u64(&mut a4, &mut b4, choice);
+        a.limbs[4] = a4;
+        b.limbs[4] = b4;
     }
 
     #[verifier::external_body]

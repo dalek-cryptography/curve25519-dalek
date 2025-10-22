@@ -337,16 +337,22 @@ impl Neg for &FieldElement51 {
 
 verus! {
 
-/* <VERIFICATION NOTE>
-External assumptions for ConditionallySelectable trait methods
-</VERIFICATION NOTE> */
-
 impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(
         a: &FieldElement51,
         b: &FieldElement51,
         choice: Choice,
-    ) -> FieldElement51 {
+    ) -> (result: FieldElement51)
+        ensures
+            // If choice is false, return a
+            !choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] == a.limbs[i]
+            ),
+            // If choice is true, return b
+            choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] == b.limbs[i]
+            ),
+    {
         FieldElement51 { limbs: [
             conditional_select_u64(&a.limbs[0], &b.limbs[0], choice),
             conditional_select_u64(&a.limbs[1], &b.limbs[1], choice),
@@ -356,11 +362,6 @@ impl ConditionallySelectable for FieldElement51 {
         ]}
     }
 
-    /* <VERIFICATION NOTE>
-    Same solution as above didnt work for the following two methods because of mutable references.
-    </VERIFICATION NOTE> */
-
-    #[verifier::external_body]
     fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice)
         ensures
             // If choice is false, a and b remain unchanged
@@ -376,14 +377,41 @@ impl ConditionallySelectable for FieldElement51 {
                 forall|i: int| 0 <= i < 5 ==> #[trigger] b.limbs[i] == old(a).limbs[i]
             ),
     {
-        u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
-        u64::conditional_swap(&mut a.limbs[1], &mut b.limbs[1], choice);
-        u64::conditional_swap(&mut a.limbs[2], &mut b.limbs[2], choice);
-        u64::conditional_swap(&mut a.limbs[3], &mut b.limbs[3], choice);
-        u64::conditional_swap(&mut a.limbs[4], &mut b.limbs[4], choice);
+        // Originally this was
+        // u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
+        // But Verus doesn't support index for &mut
+        // Hence first do the indexing, then pass mut ref, then substitute back in
+        let mut a0 = a.limbs[0];
+        let mut b0 = b.limbs[0];
+        conditional_swap_u64(&mut a0, &mut b0, choice);
+        a.limbs[0] = a0;
+        b.limbs[0] = b0;
+
+        let mut a1 = a.limbs[1];
+        let mut b1 = b.limbs[1];
+        conditional_swap_u64(&mut a1, &mut b1, choice);
+        a.limbs[1] = a1;
+        b.limbs[1] = b1;
+
+        let mut a2 = a.limbs[2];
+        let mut b2 = b.limbs[2];
+        conditional_swap_u64(&mut a2, &mut b2, choice);
+        a.limbs[2] = a2;
+        b.limbs[2] = b2;
+
+        let mut a3 = a.limbs[3];
+        let mut b3 = b.limbs[3];
+        conditional_swap_u64(&mut a3, &mut b3, choice);
+        a.limbs[3] = a3;
+        b.limbs[3] = b3;
+
+        let mut a4 = a.limbs[4];
+        let mut b4 = b.limbs[4];
+        conditional_swap_u64(&mut a4, &mut b4, choice);
+        a.limbs[4] = a4;
+        b.limbs[4] = b4;
     }
 
-    #[verifier::external_body]
     fn conditional_assign(&mut self, other: &FieldElement51, choice: Choice)
         ensures
             // If choice is false, self remains unchanged
@@ -395,11 +423,25 @@ impl ConditionallySelectable for FieldElement51 {
                 forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] == other.limbs[i]
             ),
     {
-        self.limbs[0].conditional_assign(&other.limbs[0], choice);
-        self.limbs[1].conditional_assign(&other.limbs[1], choice);
-        self.limbs[2].conditional_assign(&other.limbs[2], choice);
-        self.limbs[3].conditional_assign(&other.limbs[3], choice);
-        self.limbs[4].conditional_assign(&other.limbs[4], choice);
+        let mut self0 = self.limbs[0];
+        conditional_assign_u64(&mut self0, &other.limbs[0], choice);
+        self.limbs[0] = self0;
+
+        let mut self1 = self.limbs[1];
+        conditional_assign_u64(&mut self1, &other.limbs[1], choice);
+        self.limbs[1] = self1;
+
+        let mut self2 = self.limbs[2];
+        conditional_assign_u64(&mut self2, &other.limbs[2], choice);
+        self.limbs[2] = self2;
+
+        let mut self3 = self.limbs[3];
+        conditional_assign_u64(&mut self3, &other.limbs[3], choice);
+        self.limbs[3] = self3;
+
+        let mut self4 = self.limbs[4];
+        conditional_assign_u64(&mut self4, &other.limbs[4], choice);
+        self.limbs[4] = self4;
     }
 }
 

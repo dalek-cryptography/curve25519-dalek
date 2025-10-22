@@ -58,3 +58,10 @@ verification results:: 313 verified, 0 errors
 warning: `curve25519-dalek` (lib) generated 43 warnings (19 duplicates)
     Finished `dev` profile [optimized + debuginfo] target(s) in 8.99s
 ```
+
+## How to install verusfmt
+
+``` sh
+cargo install --git https://github.com/Beneficial-AI-Foundation/verusfmt --rev 025d10eeb5a98052dcb7f262e5d0102d23996809
+```
+This is a version of verusfmt patched to support more Rust syntax.

@@ -8,7 +8,6 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! Scalar multiplication on the Montgomery form of Curve25519.
 //!
 //! To avoid notational confusion with the Edwards code, we use
@@ -42,7 +41,6 @@
 //! on the twist.
 //!
 //! [costello-smith]: https://eprint.iacr.org/2017/212.pdf
-
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
 // counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my

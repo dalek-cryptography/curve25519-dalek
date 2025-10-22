@@ -114,4 +114,34 @@ pub fn ct_option_unwrap<T>(opt: CtOption<T>) -> (val: T)
     opt.unwrap()
 }
 
+/*** ConditionallySelectable wrappers for u64 arrays ***/
+
+/// Wrapper for conditional_select on u64 - already exists as `select` above
+pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
+    ensures !choice_is_true(choice) ==> res == *a,
+            choice_is_true(choice) ==> res == *b
+{
+    select(a, b, choice)
+}
+
+/// Wrapper for conditional_swap on u64
+#[verifier::external_body]
+pub fn conditional_swap_u64(a: &mut u64, b: &mut u64, choice: Choice)
+    ensures
+        !choice_is_true(choice) ==> (*a == *old(a) && *b == *old(b)),
+        choice_is_true(choice) ==> (*a == *old(b) && *b == *old(a))
+{
+    u64::conditional_swap(a, b, choice)
+}
+
+/// Wrapper for conditional_assign on u64
+#[verifier::external_body]
+pub fn conditional_assign_u64(a: &mut u64, b: &u64, choice: Choice)
+    ensures
+        !choice_is_true(choice) ==> *a == *old(a),
+        choice_is_true(choice) ==> *a == *b
+{
+    a.conditional_assign(b, choice)
+}
+
 } // verus!

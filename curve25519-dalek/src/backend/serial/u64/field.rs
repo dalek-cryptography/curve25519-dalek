@@ -337,10 +337,6 @@ impl Neg for &FieldElement51 {
 
 verus! {
 
-/* <VERIFICATION NOTE>
-External assumptions for ConditionallySelectable trait methods
-</VERIFICATION NOTE> */
-
 impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(
         a: &FieldElement51,

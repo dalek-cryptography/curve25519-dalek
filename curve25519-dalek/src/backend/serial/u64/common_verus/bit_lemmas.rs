@@ -259,7 +259,7 @@ pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
 
     let n_minus_k = (n - k) as nat;
 
-    // Since a < pow2(k), we have a % pow2(k) = a 
+    // Since a < pow2(k), we have a % pow2(k) = a
     lemma_small_mod(a, pow2(k));
 
     // pow2(k) * pow2(n-k) = pow2(n)
@@ -283,7 +283,7 @@ pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     // And by commutativity: (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
     assert((a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n));
 
-    // The sum < pow2(n), so mod is trivial 
+    // The sum < pow2(n), so mod is trivial
     // (a + b_rem * pow2(k)) % pow2(n) = a + b_rem * pow2(k)
     // We know from precondition 3 that: a + b_rem * pow2(k) < pow2(n)
     lemma_small_mod(a + b_rem * pow2(k), pow2(n));

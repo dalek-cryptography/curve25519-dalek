@@ -402,7 +402,7 @@ pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m:
     lemma_add_mod_noop((low_part / pow2(kb)) as int, j as int, pow2(b) as int);
     assert((low_part / pow2(kb) + j) % pow2(b) == ((low_part / pow2(kb)) % pow2(b) + j % pow2(b)) % pow2(b));
     assert((low_part / pow2(kb) + j) % pow2(b) == ((low_part / pow2(kb)) % pow2(b) + 0) % pow2(b));
-    
+
     // (a % m + 0) % m = a % m
     lemma_mod_twice((low_part / pow2(kb)) as int, pow2(b) as int);
     assert((low_part / pow2(kb) + j) % pow2(b) == (low_part / pow2(kb)) % pow2(b));

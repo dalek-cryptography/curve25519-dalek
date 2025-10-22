@@ -399,7 +399,7 @@ proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
 {
     // Call the generalized version with b=8 (byte size)
     lemma_chunk_extraction_commutes_with_mod(x, k, 8, m);
-    
+
     // Establish that pow2(8) == 256
     lemma2_to64();
 }
@@ -2255,7 +2255,7 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // Therefore by transitivity:
 
     // Show a % pow2(k) == a
-    
+
     // Substitute a % pow2(k) with a:
 
     // Final result: substitute back the definitions of a, b, k

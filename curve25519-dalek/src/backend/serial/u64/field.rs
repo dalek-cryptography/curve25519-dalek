@@ -346,7 +346,17 @@ impl ConditionallySelectable for FieldElement51 {
         a: &FieldElement51,
         b: &FieldElement51,
         choice: Choice,
-    ) -> FieldElement51 {
+    ) -> (result: FieldElement51)
+        ensures
+            // If choice is false, return a
+            !choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] == a.limbs[i]
+            ),
+            // If choice is true, return b
+            choice_is_true(choice) ==> (
+                forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] == b.limbs[i]
+            ),
+    {
         FieldElement51 { limbs: [
             conditional_select_u64(&a.limbs[0], &b.limbs[0], choice),
             conditional_select_u64(&a.limbs[1], &b.limbs[1], choice),

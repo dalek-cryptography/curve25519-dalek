@@ -18,33 +18,20 @@ pub struct ExFormatter<'a>(core::fmt::Formatter<'a>);
 pub struct ExFmtError(core::fmt::Error);
 
 // Assume specification for core::fmt::Formatter::write_str used e.g. by serde Visitors
-pub assume_specification<'a>[ core::fmt::Formatter::<'a>::write_str ](
-    _0: &mut core::fmt::Formatter<'a>,
-    _1: &str,
-) -> core::result::Result<(), core::fmt::Error>
-;
+pub assume_specification<'a> [core::fmt::Formatter::<'a>::write_str]
+    (_0: &mut core::fmt::Formatter<'a>, _1: &str) -> core::result::Result<(), core::fmt::Error>;
+
 
 // Build a Seq<u8> from fixed arrays (for specs)
-pub open spec fn seq_from2(b: &[u8; 2]) -> Seq<u8> {
-    Seq::new(2, |i: int| b[i])
-}
-
-pub open spec fn seq_from4(b: &[u8; 4]) -> Seq<u8> {
-    Seq::new(4, |i: int| b[i])
-}
-
-pub open spec fn seq_from8(b: &[u8; 8]) -> Seq<u8> {
-    Seq::new(8, |i: int| b[i])
-}
-
-pub open spec fn seq_from16(b: &[u8; 16]) -> Seq<u8> {
-    Seq::new(16, |i: int| b[i])
-}
+pub open spec fn seq_from2(b: &[u8; 2]) -> Seq<u8> { Seq::new(2, |i: int| b[i]) }
+pub open spec fn seq_from4(b: &[u8; 4]) -> Seq<u8> { Seq::new(4, |i: int| b[i]) }
+pub open spec fn seq_from8(b: &[u8; 8]) -> Seq<u8> { Seq::new(8, |i: int| b[i]) }
+pub open spec fn seq_from16(b: &[u8; 16]) -> Seq<u8> { Seq::new(16, |i: int| b[i]) }
 
 #[verifier::external_body]
 pub fn u16_to_le_bytes(x: u16) -> (bytes: [u8; 2])
     ensures
-        bytes_seq_to_nat(seq_from2(&bytes)) == x as nat,
+        bytes_seq_to_nat(seq_from2(&bytes)) == x as nat
 {
     x.to_le_bytes()
 }
@@ -52,7 +39,7 @@ pub fn u16_to_le_bytes(x: u16) -> (bytes: [u8; 2])
 #[verifier::external_body]
 pub fn u32_to_le_bytes(x: u32) -> (bytes: [u8; 4])
     ensures
-        bytes_seq_to_nat(seq_from4(&bytes)) == x as nat,
+        bytes_seq_to_nat(seq_from4(&bytes)) == x as nat
 {
     x.to_le_bytes()
 }
@@ -60,7 +47,7 @@ pub fn u32_to_le_bytes(x: u32) -> (bytes: [u8; 4])
 #[verifier::external_body]
 pub fn u64_to_le_bytes(x: u64) -> (bytes: [u8; 8])
     ensures
-        bytes_seq_to_nat(seq_from8(&bytes)) == x as nat,
+        bytes_seq_to_nat(seq_from8(&bytes)) == x as nat
 {
     x.to_le_bytes()
 }
@@ -68,7 +55,7 @@ pub fn u64_to_le_bytes(x: u64) -> (bytes: [u8; 8])
 #[verifier::external_body]
 pub fn u128_to_le_bytes(x: u128) -> (bytes: [u8; 16])
     ensures
-        bytes_seq_to_nat(seq_from16(&bytes)) == x as nat,
+        bytes_seq_to_nat(seq_from16(&bytes)) == x as nat
 {
     x.to_le_bytes()
 }
@@ -76,7 +63,7 @@ pub fn u128_to_le_bytes(x: u128) -> (bytes: [u8; 16])
 #[verifier::external_body]
 pub fn u16_from_le_bytes(bytes: [u8; 2]) -> (x: u16)
     ensures
-        x as nat == bytes_seq_to_nat(seq_from2(&bytes)),
+        x as nat == bytes_seq_to_nat(seq_from2(&bytes))
 {
     u16::from_le_bytes(bytes)
 }
@@ -84,7 +71,7 @@ pub fn u16_from_le_bytes(bytes: [u8; 2]) -> (x: u16)
 #[verifier::external_body]
 pub fn u32_from_le_bytes(bytes: [u8; 4]) -> (x: u32)
     ensures
-        x as nat == bytes_seq_to_nat(seq_from4(&bytes)),
+        x as nat == bytes_seq_to_nat(seq_from4(&bytes))
 {
     u32::from_le_bytes(bytes)
 }
@@ -92,7 +79,7 @@ pub fn u32_from_le_bytes(bytes: [u8; 4]) -> (x: u32)
 #[verifier::external_body]
 pub fn u64_from_le_bytes(bytes: [u8; 8]) -> (x: u64)
     ensures
-        x as nat == bytes_seq_to_nat(seq_from8(&bytes)),
+        x as nat == bytes_seq_to_nat(seq_from8(&bytes))
 {
     u64::from_le_bytes(bytes)
 }
@@ -100,26 +87,26 @@ pub fn u64_from_le_bytes(bytes: [u8; 8]) -> (x: u64)
 #[verifier::external_body]
 pub fn u128_from_le_bytes(bytes: [u8; 16]) -> (x: u128)
     ensures
-        x as nat == bytes_seq_to_nat(seq_from16(&bytes)),
+        x as nat == bytes_seq_to_nat(seq_from16(&bytes))
 {
     u128::from_le_bytes(bytes)
 }
 
 // annotations for random values
 pub uninterp spec fn is_random(x: u8) -> bool;
-
 pub uninterp spec fn is_random_bytes(bytes: &[u8]) -> bool;
-
 pub uninterp spec fn is_random_scalar(scalar: &Scalar) -> bool;
+
+
 
 #[cfg(feature = "rand_core")]
 #[verifier::external_body]
 pub fn fill_bytes<R: RngCore>(rng: &mut R, bytes: &mut [u8; 64])
-    ensures
-        is_random_bytes(bytes),
+    ensures is_random_bytes(bytes)
 {
-    rng.fill_bytes(bytes)
+        rng.fill_bytes(bytes)
 }
+
 
 #[cfg(feature = "digest")]
 #[verifier::external_body]

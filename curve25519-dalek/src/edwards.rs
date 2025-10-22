@@ -8,6 +8,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! Group operations for Curve25519, in Edwards form.
 //!
 //! ## Encoding and Decoding
@@ -85,6 +86,7 @@
 //! operations on other (valid) `EdwardsPoint`s.
 //!
 //! [curve_models]: https://docs.rs/curve25519-dalek/latest/curve25519-dalek/backend/serial/curve_models/index.html
+
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
 // counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my

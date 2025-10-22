@@ -6,7 +6,9 @@
 //
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! Precomputation for Straus's method.
+
 #![allow(non_snake_case)]
 
 use alloc::vec::Vec;

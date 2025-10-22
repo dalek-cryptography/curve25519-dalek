@@ -8,6 +8,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! The `u64` backend uses `u64`s and a `(u64, u64) -> u128` multiplier.
 //!
 //! On x86_64, the idiom `(x as u128) * (y as u128)` lowers to `MUL`
@@ -18,6 +19,7 @@
 //! Broadwell and newer, the ADX extension provides `ADCX` and `ADOX`
 //! (allowing the CPU to compute two carry chains in parallel).  These
 //! will be used if available.
+
 pub mod field;
 
 pub mod scalar;

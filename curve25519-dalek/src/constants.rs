@@ -9,6 +9,7 @@
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 //! Various constants, such as the Ristretto and Ed25519 basepoints.
+
 #![allow(non_snake_case)]
 
 use cfg_if::cfg_if;

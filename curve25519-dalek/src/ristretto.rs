@@ -8,6 +8,7 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 // We allow non snake_case names because coordinates in projective space are
 // traditionally denoted by the capitalisation of their respective
 // counterparts in affine space.  Yeah, you heard me, rustc, I'm gonna have my

@@ -1,4 +1,5 @@
 //! Defines additional methods on RistrettoPoint for Lizard
+
 #![allow(non_snake_case)]
 
 use digest::generic_array::typenum::U32;

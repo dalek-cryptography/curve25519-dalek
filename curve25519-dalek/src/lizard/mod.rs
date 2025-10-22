@@ -1,4 +1,5 @@
 //! The Lizard method for encoding/decoding 16 bytes into Ristretto points.
+
 #![allow(non_snake_case)]
 
 #[cfg(curve25519_dalek_bits = "32")]

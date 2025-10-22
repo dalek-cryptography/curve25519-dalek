@@ -1,4 +1,5 @@
 //! Build time diagnostics
+
 // auto is assumed or selected
 #[cfg(curve25519_dalek_backend = "auto")]
 compile_error!("curve25519_dalek_backend is 'auto'");

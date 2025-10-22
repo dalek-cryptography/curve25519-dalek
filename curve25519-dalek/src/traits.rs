@@ -8,7 +8,9 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! Module for common traits.
+
 #![allow(non_snake_case)]
 
 use core::borrow::Borrow;

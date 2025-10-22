@@ -12,9 +12,9 @@ verus! {
 // v & (low_bits_mask(k) as u64) = v % pow2(k) < pow2(k)
 pub proof fn masked_lt(v: u64, k: nat)
     requires
-        0 <= k < 64,
+        0 <= k < 64
     ensures
-        v & (low_bits_mask(k) as u64) < (1u64 << k),
+        v & (low_bits_mask(k) as u64) < (1u64 << k)
 {
     // v & (low_bits_mask(k) as u64) = v % pow2(k)
     lemma_u64_low_bits_mask_is_mod(v, k);
@@ -29,17 +29,18 @@ pub proof fn masked_lt(v: u64, k: nat)
 // a < b => (2^a - 1) < (2^b - 1)
 pub proof fn low_bits_mask_increases(a: nat, b: nat)
     requires
-        a < b,
+        a < b
     ensures
-        low_bits_mask(a) < low_bits_mask(b),
-    decreases a + b,
+        low_bits_mask(a) < low_bits_mask(b)
+    decreases a + b
 {
-    if (a == 0) {
-        // lbm(0) = 0
+    if (a == 0){
+         // lbm(0) = 0
         lemma_low_bits_mask_values();
         // lbm(b) = 2 * lbm(b - 1) + 1, in particular, > 0
         lemma_low_bits_mask_unfold(b);
-    } else {
+    }
+    else {
         // lbm(b) / 2 = lbm(b - 1)
         lemma_low_bits_mask_div2(b);
         // lbm(a) / 2 = lbm(a - 1)
@@ -53,18 +54,17 @@ pub proof fn low_bits_mask_increases(a: nat, b: nat)
 // k <= 64 => 2^k - 1 <= u64::MAX = 2^64 - 1
 pub proof fn low_bits_masks_fit_u64(k: nat)
     requires
-        k <= 64,
+        k <= 64
     ensures
-        low_bits_mask(k) <= u64::MAX,
+        low_bits_mask(k) <= u64::MAX
 {
-    lemma_low_bits_mask_values();  // lbm(0) = 0, lbm(64) = 2^64
+    lemma_low_bits_mask_values(); // lbm(0) = 0, lbm(64) = 2^64
     assert(low_bits_mask(64) <= u64::MAX) by (compute);
-    if (k < 64) {
+    if (k < 64){
         low_bits_mask_increases(k, 64);
     }
 }
 
-fn main() {
-}
+fn main() {}
 
-} // verus!
+}

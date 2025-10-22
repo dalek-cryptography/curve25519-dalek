@@ -8,7 +8,9 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! This module contains backend-specific constant values, such as the 64-bit limbs of curve constants.
+
 use super::field::FieldElement51;
 use super::scalar::Scalar52;
 use crate::edwards::EdwardsPoint;
@@ -124,7 +126,6 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([
 ]);
 
 verus! {
-
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52 {
     limbs: [
@@ -160,8 +161,8 @@ pub(crate) const RR: Scalar52 = Scalar52 {
         0x000009411b7c309a,
     ],
 };
+}
 
-} // verus!
 /// The Ed25519 basepoint, as an `EdwardsPoint`.
 ///
 /// This is called `_POINT` to distinguish it from

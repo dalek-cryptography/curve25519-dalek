@@ -8,7 +8,9 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! Code for fixed- and sliding-window functionality
+
 #![allow(non_snake_case)]
 
 use core::fmt::Debug;

@@ -10,6 +10,7 @@
 // - Isis Agora Lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
 // - Brian Smith <brian@briansmith.org>
+
 //! Arithmetic on scalars (integers mod the group order).
 //!
 //! Both the Ristretto group and the Ed25519 basepoint have prime order
@@ -167,6 +168,7 @@ use digest::Digest;
 
 verus! {
 
+
 /*** <VERIFICATION NOTE> Focus on u64; removed all other backend types </VERIFICATION NOTE> ***/
 type UnpackedScalar = backend::serial::u64::scalar::Scalar52;
 
@@ -212,16 +214,18 @@ pub struct Scalar {
     /* <VERIFICATION NOTE>
     Changed from pub(crate) to pub
     </VERIFICATION NOTE> */
-    pub bytes: [u8; 32],/* <ORIGINAL CODE>
+    pub bytes: [u8; 32],
+    /* <ORIGINAL CODE>
     pub(crate) bytes: [u8; 32],
     </ORIGINAL CODE> */
 }
+
 
 // This is a dummy function that we call from signal
 // to test that verus functions in libsignal know
 // about verus functions in curve-dalek
 pub open spec fn is_a_scalar(s: Scalar) -> bool {
-    true
+   true
 }
 
 impl Scalar {
@@ -229,12 +233,11 @@ impl Scalar {
     /// modulo the group order \\( \ell \\).
     // VERIFICATION NOTE: VERIFIED
     pub fn from_bytes_mod_order(bytes: [u8; 32]) -> (result: Scalar)
-        ensures
-    // Result is equivalent to input modulo the group order
-
-            bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
-            // Result satisfies Scalar invariants #1 and #2
-            is_canonical_scalar(&result),
+    ensures
+        // Result is equivalent to input modulo the group order
+        bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         // Temporarily allow s_unreduced.bytes > 2^255 ...
         let s_unreduced = Scalar { bytes };
@@ -252,10 +255,10 @@ impl Scalar {
     /// modulo the group order \\( \ell \\).
     // VERIFICATION NOTE: VERIFIED
     pub fn from_bytes_mod_order_wide(input: &[u8; 64]) -> (result: Scalar)
-        ensures
-            bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
-            // Result satisfies Scalar invariants #1 and #2
-            is_canonical_scalar(&result),
+    ensures
+        bytes_to_nat(&result.bytes) % group_order() == bytes_wide_to_nat(input) % group_order(),
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         UnpackedScalar::from_bytes_wide(input).pack()
     }
@@ -273,11 +276,10 @@ impl Scalar {
       - Has proof bypass
     </VERIFICATION NOTE> */
     pub fn from_canonical_bytes(bytes: [u8; 32]) -> (result: CtOption<Scalar>)
-        ensures
-            bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result),
-            bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result),
-            ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes)
-                % group_order() == bytes_to_nat(&bytes) % group_order(),
+    ensures
+        bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result),
+        bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result),
+        ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes) % group_order() == bytes_to_nat(&bytes) % group_order(),
     {
         /* <ORIGINAL CODE>
           let high_bit_unset = (bytes[31] >> 7).ct_eq(&0);
@@ -301,8 +303,7 @@ impl Scalar {
         // VERIFICATION NOTE: PROOF BYPASS
         assume(bytes_to_nat(&bytes) < group_order() ==> ct_option_has_value(result));
         assume(bytes_to_nat(&bytes) >= group_order() ==> !ct_option_has_value(result));
-        assume(ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes)
-            % group_order() == bytes_to_nat(&bytes) % group_order());
+        assume(ct_option_has_value(result) ==> bytes_to_nat(&ct_option_value(result).bytes) % group_order() == bytes_to_nat(&bytes) % group_order());
 
         result
     }
@@ -330,15 +331,13 @@ impl Scalar {
     }
 }
 
-impl Eq for Scalar {
 
-}
+impl Eq for Scalar {}
 
 impl PartialEq for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS (problem with traits)
     fn eq(&self, other: &Self) -> (result: bool)
-        ensures
-            result == (&self.bytes == &other.bytes),
+    ensures result == (&self.bytes == &other.bytes),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -364,8 +363,7 @@ impl PartialEq for Scalar {
 
 impl ConstantTimeEq for Scalar {
     fn ct_eq(&self, other: &Self) -> (result: Choice)
-        ensures
-            choice_is_true(result) == (self.bytes == other.bytes),
+    ensures choice_is_true(result) == (self.bytes == other.bytes)
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Verus compatibility instead of direct subtle call
@@ -382,16 +380,14 @@ impl Index<usize> for Scalar {
 
     /// Index the bytes of the representative for this `Scalar`.  Mutation is not permitted.
     fn index(&self, _index: usize) -> (result: &u8)
-        requires
-            _index < 32,
-        ensures
-            result == &self.bytes[_index as int],
+        requires _index < 32
+        ensures result == &self.bytes[_index as int],
     {
         &(self.bytes[_index])
     }
 }
-
 } // verus!
+
 /* <VERIFICATION NOTE>
  Left outside verification scope
 </VERIFICATION NOTE> */
@@ -402,17 +398,15 @@ impl Debug for Scalar {
 }
 
 verus! {
-
 impl<'a> MulAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: VERIFIED
     fn mul_assign(&mut self, _rhs: &'a Scalar)
-        requires
-            is_canonical_scalar(old(self)),
-            is_canonical_scalar(_rhs),
-        ensures
-            bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
-                * bytes_to_nat(&_rhs.bytes)) % group_order(),
-            is_canonical_scalar(self),
+    requires
+        is_canonical_scalar(old(self)),
+        is_canonical_scalar(_rhs),
+    ensures bytes_to_nat(&self.bytes) % group_order() ==
+        (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order(),
+        is_canonical_scalar(self),
     {
         /* <ORIGINAL CODE>
          *self = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
@@ -432,20 +426,16 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
         let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
         proof {
-            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
-                * to_nat(&rhs_unpacked.limbs)) % group_order());
+            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
-            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
-                * to_nat(&rhs_unpacked.limbs)) % group_order());
+            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
         }
 
         *self = result_unpacked.pack();
         proof {
-            assert(bytes_to_nat(&self.bytes) % group_order() == to_nat(&result_unpacked.limbs)
-                % group_order());
-            assert(bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
-                * bytes_to_nat(&_rhs.bytes)) % group_order());
+            assert(bytes_to_nat(&self.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
+            assert(bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes) * bytes_to_nat(&_rhs.bytes)) % group_order());
         }
         /* </MODIFIED CODE> */
 
@@ -456,12 +446,10 @@ define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
-
     // VERIFICATION NOTE: PROOF BYPASS JUST BEFORE RETURN (problem with traits)
     fn mul(self, _rhs: &'b Scalar) -> (result: Scalar)
         ensures
-            bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
-                * bytes_to_nat(&_rhs.bytes)) % group_order(),
+        bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) * bytes_to_nat(&_rhs.bytes)) % group_order(),
     {
         /* <VERIFICATION NOTE>
          Store unpacked values explicitly for asserts
@@ -477,19 +465,15 @@ impl<'b> Mul<&'b Scalar> for &Scalar {
         }
         let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
         proof {
-            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
-                * to_nat(&rhs_unpacked.limbs)) % group_order());
+            assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) * to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
         }
         let result = result_unpacked.pack();
         proof {
-            assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs)
-                % group_order());
-            assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
-                * bytes_to_nat(&_rhs.bytes)) % group_order());
+            assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
+            assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) * bytes_to_nat(&_rhs.bytes)) % group_order());
         }
-        assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
-            * bytes_to_nat(&_rhs.bytes)) % group_order());
+        assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) * bytes_to_nat(&_rhs.bytes)) % group_order());
         /* </MODIFIED CODE> */
         /* <ORIGINAL CODE>
          let result = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
@@ -515,9 +499,8 @@ impl<'a> Add<&'a Scalar> for &Scalar {
     </VERIFICATION NOTE> */
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'a Scalar) -> (result: Scalar)
-        ensures
-            bytes_to_nat(&result.bytes) == (bytes_to_nat(&self.bytes) + bytes_to_nat(&_rhs.bytes))
-                % group_order(),
+    ensures
+        bytes_to_nat(&result.bytes)  == (bytes_to_nat(&self.bytes) + bytes_to_nat(&_rhs.bytes)) % group_order(),
     {
         // The UnpackedScalar::add function produces reduced outputs if the inputs are reduced. By
         // Scalar invariant #1, this is always the case.
@@ -541,25 +524,21 @@ impl<'a> Add<&'a Scalar> for &Scalar {
         // By Scalar invariant #2, scalars should be canonical
         // However, we cannot add requires clauses to trait implementations,
         // so we assume this property holds
-        proof {
+       proof {
             assume(to_nat(&self_unpacked.limbs) < group_order());
             assume(to_nat(&rhs_unpacked.limbs) < group_order());
         }
 
         let result_unpacked = UnpackedScalar::add(&self_unpacked, &rhs_unpacked);
         proof {
-            assert(to_nat(&result_unpacked.limbs) == (to_nat(&self_unpacked.limbs) + to_nat(
-                &rhs_unpacked.limbs,
-            )) % group_order());
+            assert(to_nat(&result_unpacked.limbs) == (to_nat(&self_unpacked.limbs) + to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
         }
 
         let result = result_unpacked.pack();
         proof {
-            assert(bytes_to_nat(&result.bytes) == to_nat(&result_unpacked.limbs));
-            assert(bytes_to_nat(&result.bytes) == (bytes_to_nat(&self.bytes) + bytes_to_nat(
-                &_rhs.bytes,
-            )) % group_order());
+            assert(bytes_to_nat(&result.bytes)  == to_nat(&result_unpacked.limbs));
+            assert(bytes_to_nat(&result.bytes)  == (bytes_to_nat(&self.bytes) + bytes_to_nat(&_rhs.bytes)) % group_order());
         }
         /* </MODIFIED CODE> */
 
@@ -580,14 +559,10 @@ impl<'a> AddAssign<&'a Scalar> for Scalar {
     // PROOF BYPASS because Add has vstd trait spec issues
     #[allow(clippy::op_ref)]
     fn add_assign(&mut self, _rhs: &'a Scalar)
-        ensures
-            bytes_to_nat(&self.bytes) == (bytes_to_nat(&old(self).bytes) + bytes_to_nat(
-                &_rhs.bytes,
-            )) % group_order(),
+    ensures
+        bytes_to_nat(&self.bytes) == (bytes_to_nat(&old(self).bytes) + bytes_to_nat(&_rhs.bytes)) % group_order(),
     {
-        proof {
-            assume(false);
-        }
+        proof { assume(false); }
         *self = &*self + _rhs;
     }
 }
@@ -600,16 +575,13 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
     // VERIFICATION NOTE: PROOF BYPASS (problems with traits and preconditions)
     // PRECONDITION is_canonical_scalar(self) && is_canonical_scalar(_rhs)
     #[allow(non_snake_case)]
-    fn sub(self, _rhs: &'b Scalar) -> (result:
-        Scalar)
-    // Cannot add preconditions to trait implementations in Verus
-    // requires
-    //     is_canonical_scalar(self),
-    //     is_canonical_scalar(_rhs),
-
-        ensures
-            bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
-                - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
+    fn sub(self, _rhs: &'b Scalar) -> (result: Scalar)
+   // Cannot add preconditions to trait implementations in Verus
+   // requires
+   //     is_canonical_scalar(self),
+   //     is_canonical_scalar(_rhs),
+    ensures
+        bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
     {
         /* <ORIGINAL CODE>
          UnpackedScalar::sub(&self.unpack(), &_rhs.unpack()).pack()
@@ -633,17 +605,14 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
         let result_unpacked = UnpackedScalar::sub(&self_unpacked, &rhs_unpacked);
         proof {
             // Postconditions from sub - need to strengthen, review connections
-            assume(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
-                - to_nat(&rhs_unpacked.limbs)) % (group_order() as int));
+            assume(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs) - to_nat(&rhs_unpacked.limbs)) % (group_order() as int));
             assume(limbs_bounded(&result_unpacked));
         }
 
         let result = result_unpacked.pack();
         proof {
-            assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs)
-                % group_order());
-            assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
-                - bytes_to_nat(&_rhs.bytes)) % (group_order() as int));
+            assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs) % group_order());
+            assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int));
         }
         /* </MODIFIED CODE> */
 
@@ -661,13 +630,10 @@ impl<'a> SubAssign<&'a Scalar> for Scalar {
     // PROOF BYPASS because Sub has vstd trait spec issues
     #[allow(clippy::op_ref)]
     fn sub_assign(&mut self, _rhs: &'a Scalar)
-        ensures
-            bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
-                - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
+    ensures
+        bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes) - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
     {
-        proof {
-            assume(false);
-        }
+        proof { assume(false); }
         *self = &*self - _rhs;
     }
 }
@@ -676,12 +642,11 @@ define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 
 impl Neg for &Scalar {
     type Output = Scalar;
-
     #[allow(non_snake_case)]
     // VERIFICATION NOTE: PROOF BYPASS
     fn neg(self) -> (result: Scalar)
-        ensures
-            (scalar_to_nat(self) + scalar_to_nat(&result)) % group_order() == 0,
+    ensures
+    (scalar_to_nat(self) + scalar_to_nat(&result)) % group_order() == 0,
     {
         /* <ORIGINAL CODE>
         let self_R = UnpackedScalar::mul_internal(&self.unpack(), &constants::R);
@@ -701,9 +666,7 @@ impl Neg for &Scalar {
         proof {
             assume(limbs_bounded(&self_mod_l));
             // sub requires: -group_order() <= 0 - to_nat(&self_mod_l.limbs) < group_order()
-            assume(-group_order() <= to_nat(&UnpackedScalar::ZERO.limbs) - to_nat(
-                &self_mod_l.limbs,
-            ));
+            assume(-group_order() <= to_nat(&UnpackedScalar::ZERO.limbs) - to_nat(&self_mod_l.limbs));
             assume(to_nat(&UnpackedScalar::ZERO.limbs) - to_nat(&self_mod_l.limbs) < group_order());
         }
 
@@ -723,33 +686,32 @@ impl Neg for &Scalar {
 
 impl Neg for Scalar {
     type Output = Scalar;
-
     /* <VERIFICATION NOTE>
          PROOF BYPASS - vstd's Neg trait spec precondition check
     </VERIFICATION NOTE> */
     fn neg(self) -> (result: Scalar)
-        ensures
-            (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
+    ensures
+        (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
-        assume(false);  // PROOF BYPASS because of trait issues
+        assume(false); // PROOF BYPASS because of trait issues
         let result = (&self).neg();
         proof {
             assume((scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0);
         }
         result
-    }/* <ORIGINAL CODE>
+    }
+    /* <ORIGINAL CODE>
     fn neg(self) -> Scalar {
         -&self
     }
     </ORIGINAL CODE> */
-
 }
 
 impl ConditionallySelectable for Scalar {
     /* <VERIFICATION NOTE>  VERIFIED
     */
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        let mut bytes = [0u8;32];
+        let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
             /* <VERIFICATION NOTE>
@@ -765,14 +727,18 @@ impl ConditionallySelectable for Scalar {
         Scalar { bytes }
     }
 }
-
 } // verus!
+
 verus! {
 
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus.
 </VERIFICATION NOTE> */
-impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
+
+impl<T> Product<T> for Scalar
+where
+    T: Borrow<Scalar>,
+{
     /* <ORIGINAL CODE>
     fn product<I>(iter: I) -> Self
     where
@@ -781,12 +747,16 @@ impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
         iter.fold(Scalar::ONE, |acc, item| acc * item.borrow())
     }
     </ORIGINAL CODE> */
+
     /* <VERIFICATION NOTE>
      Added verifier::external_body annotation
     </VERIFICATION NOTE> */
     #[verifier::external_body]
     /* <MODIFIED CODE> - FOR EVENTUAL VERIFICATION*/
-    fn product<I>(iter: I) -> Self where I: Iterator<Item = T> {
+    fn product<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>,
+    {
         // Collect iterator into a Vec, then convert via Borrow to get &[Scalar]
         let items: Vec<T> = iter.collect();
 
@@ -795,15 +765,22 @@ impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
 
         // Use the verified product_of_slice function
         Scalar::product_of_slice(&scalars)
-    }  /* </MODIFIED CODE> */
-
+    }
+    /* </MODIFIED CODE> */
 }
 
-impl<T> Sum<T> for Scalar where T: Borrow<Scalar> {
+impl<T> Sum<T> for Scalar
+where
+    T: Borrow<Scalar>,
+{
     #[verifier::external_body]
-    fn sum<I>(iter: I) -> Self where I: Iterator<Item = T> {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = T>,
+    {
         iter.fold(Scalar::ZERO, |acc, item| acc + item.borrow())
-    }/* <MODIFIED CODE> - if needed in for verification in the future
+    }
+    /* <MODIFIED CODE> - if needed in for verification in the future
     fn sum<I>(iter: I) -> Self
     where
         I: Iterator<Item = T>,
@@ -818,14 +795,13 @@ impl<T> Sum<T> for Scalar where T: Borrow<Scalar> {
         Scalar::sum_of_slice(&scalars)
     }
      </MODIFIED CODE> */
-
 }
 
 impl Default for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     fn default() -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == 0 as nat,
+    ensures
+        scalar_to_nat(&result) == 0 as nat,
     {
         let result = Scalar::ZERO;
         assume(scalar_to_nat(&result) == 0 as nat);
@@ -836,10 +812,10 @@ impl Default for Scalar {
 impl From<u8> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     fn from(x: u8) -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == x as nat,
+    ensures
+        scalar_to_nat(&result) == x as nat,
     {
-        let mut s_bytes = [0u8;32];
+        let mut s_bytes = [0u8; 32];
         s_bytes[0] = x;
 
         let result = Scalar { bytes: s_bytes };
@@ -854,15 +830,15 @@ impl From<u16> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u16) -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == x as nat,
+    ensures
+        scalar_to_nat(&result) == x as nat,
     {
         /* <ORIGINAL CODE>
         let x_bytes = x.to_le_bytes();
         s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
-        let mut s_bytes = [0u8;32];
+        let mut s_bytes = [0u8; 32];
         let x_bytes = crate::backend::serial::u64::std_assumes::u16_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
@@ -880,15 +856,15 @@ impl From<u32> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u32) -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == x as nat,
+    ensures
+        scalar_to_nat(&result) == x as nat,
     {
         /* <ORIGINAL CODE>
         let x_bytes = x.to_le_bytes();
         s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
-        let mut s_bytes = [0u8;32];
+        let mut s_bytes = [0u8; 32];
         let x_bytes = crate::backend::serial::u64::std_assumes::u32_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
@@ -899,6 +875,7 @@ impl From<u32> for Scalar {
             assume(scalar_to_nat(&result) == x as nat);
         }
         result
+
     }
 }
 
@@ -927,15 +904,15 @@ impl From<u64> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u64) -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == x as nat,
+    ensures
+        scalar_to_nat(&result) == x as nat,
     {
         /* <ORIGINAL CODE>
         let x_bytes = x.to_le_bytes();
         s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
-        let mut s_bytes = [0u8;32];
+        let mut s_bytes = [0u8; 32];
         let x_bytes = crate::backend::serial::u64::std_assumes::u64_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
@@ -953,15 +930,15 @@ impl From<u128> for Scalar {
     // VERIFICATION NOTE: PROOF BYPASS
     #[allow(clippy::manual_memcpy)]
     fn from(x: u128) -> (result: Scalar)
-        ensures
-            scalar_to_nat(&result) == x as nat,
+    ensures
+        scalar_to_nat(&result) == x as nat,
     {
         /* <ORIGINAL CODE>
         let x_bytes = x.to_le_bytes();
         s_bytes[0..x_bytes.len()].copy_from_slice(&x_bytes);
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
-        let mut s_bytes = [0u8;32];
+        let mut s_bytes = [0u8; 32];
         let x_bytes = crate::backend::serial::u64::std_assumes::u128_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
@@ -975,8 +952,8 @@ impl From<u128> for Scalar {
     }
 }
 
-#[cfg(feature = "zeroize")]
-impl Zeroize for Scalar {
+ #[cfg(feature = "zeroize")]
+ impl Zeroize for Scalar {
     /* <VERIFICATION NOTE>
     External body annotation
     </VERIFICATION NOTE> */
@@ -986,87 +963,23 @@ impl Zeroize for Scalar {
     }
 }
 
+
 impl Scalar {
     /// The scalar \\( 0 \\).
-    // pub const ZERO: Self = Self { bytes: [0u8; 32] };
-    /* <VERIFICATION NOTE>
+   // pub const ZERO: Self = Self { bytes: [0u8; 32] };
+   /* <VERIFICATION NOTE>
     Changed to explicit initialization
     </VERIFICATION NOTE> */
-    /* <ORIGINAL CODE>
+   /* <ORIGINAL CODE>
     pub const ZERO: Self = Self { bytes: [0u8; 32] };
     </ORIGINAL CODE> */
-    pub const ZERO: Scalar = Scalar {
-        bytes: [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        ],
-    };
+   pub const ZERO: Scalar = Scalar { bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] };
 
     /// The scalar \\( 1 \\).
     pub const ONE: Self = Self {
         bytes: [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
         ],
     };
 
@@ -1104,7 +1017,7 @@ impl Scalar {
             is_random_scalar(&result),
             is_canonical_scalar(&result),
     {
-        let mut scalar_bytes = [0u8;64];
+        let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
         Scalar::from_bytes_mod_order_wide(&scalar_bytes)
     }
@@ -1132,19 +1045,18 @@ impl Scalar {
      Marked as external_body due to complexity of Digest trait.
      For Verus verification, use hash_from_bytes_verus instead.
     </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    pub fn hash_from_bytes<D>(input: &[u8]) -> (result: Scalar) where
-        D: digest::Digest<OutputSize = digest::generic_array::typenum::U64> + Default,
-
-        ensures
-    // Result satisfies Scalar invariants #1 and #2
-
-            is_canonical_scalar(&result),
-    {
-        let mut hash = D::default();
-        hash.update(input);
-        Scalar::from_hash(hash)
-    }
+     #[verifier::external_body]
+     pub fn hash_from_bytes<D>(input: &[u8]) -> (result: Scalar)
+     where
+         D: digest::Digest<OutputSize = digest::generic_array::typenum::U64> + Default,
+     ensures
+         // Result satisfies Scalar invariants #1 and #2
+         is_canonical_scalar(&result),
+     {
+         let mut hash = D::default();
+         hash.update(input);
+         Scalar::from_hash(hash)
+     }
 
     /// Verus-compatible version of hash_from_bytes that uses SHA-512.
     ///
@@ -1159,10 +1071,10 @@ impl Scalar {
     ///
     /// A scalar reduced modulo the group order
     pub fn hash_from_bytes_verus(input: &[u8]) -> (result: Scalar)
-        ensures
-            is_random_bytes(input) ==> is_random_scalar(&result),
-            // Result satisfies Scalar invariants #1 and #2
-            is_canonical_scalar(&result),
+    ensures
+        is_random_bytes(input) ==> is_random_scalar(&result),
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
     {
         use crate::backend::serial::u64::std_assumes as assumes;
         let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
@@ -1209,42 +1121,43 @@ impl Scalar {
     </VERIFICATION NOTE> */
     #[cfg(feature = "digest")]
     #[verifier::external_body]
-    pub fn from_hash<D>(hash: D) -> (result: Scalar) where
-        D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
+     pub fn from_hash<D>(hash: D) -> (result: Scalar)
+     where
+         D: digest::Digest<OutputSize = digest::generic_array::typenum::U64>,
+     ensures
+         //is_random_digest(&hash) ==> is_random_scalar(&result),
+         // Result satisfies Scalar invariants #1 and #2
+         is_canonical_scalar(&result),
+     {
+         let mut output = [0u8; 64];
+         output.copy_from_slice(hash.finalize().as_slice());
+         Scalar::from_bytes_mod_order_wide(&output)
+     }
 
-        ensures
-    //is_random_digest(&hash) ==> is_random_scalar(&result),
-    // Result satisfies Scalar invariants #1 and #2
+     /// Verus-compatible version of from_hash that takes pre-finalized hash bytes.
+     ///
+     /// This function is designed for Verus verification and takes a byte array directly
+     /// instead of a generic Digest type. For regular code, use `from_hash` instead.
+     ///
+     /// # Inputs
+     ///
+     /// * `hash_bytes`: a 64-byte array representing the output of a hash function
+     ///
+     /// # Returns
+     ///
+     /// A scalar reduced modulo the group order
+     pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
+     ensures
+        is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
+        // Result satisfies Scalar invariants #1 and #2
+        is_canonical_scalar(&result),
+     {
+         let result = Scalar::from_bytes_mod_order_wide(&hash_bytes);
+         assume(false);
+         result
+     }
 
-            is_canonical_scalar(&result),
-    {
-        let mut output = [0u8;64];
-        output.copy_from_slice(hash.finalize().as_slice());
-        Scalar::from_bytes_mod_order_wide(&output)
-    }
 
-    /// Verus-compatible version of from_hash that takes pre-finalized hash bytes.
-    ///
-    /// This function is designed for Verus verification and takes a byte array directly
-    /// instead of a generic Digest type. For regular code, use `from_hash` instead.
-    ///
-    /// # Inputs
-    ///
-    /// * `hash_bytes`: a 64-byte array representing the output of a hash function
-    ///
-    /// # Returns
-    ///
-    /// A scalar reduced modulo the group order
-    pub fn from_hash_verus(hash_bytes: [u8; 64]) -> (result: Scalar)
-        ensures
-            is_random_bytes(&hash_bytes) ==> is_random_scalar(&result),
-            // Result satisfies Scalar invariants #1 and #2
-            is_canonical_scalar(&result),
-    {
-        let result = Scalar::from_bytes_mod_order_wide(&hash_bytes);
-        assume(false);
-        result
-    }
 
     /// Convert this `Scalar` to its underlying sequence of bytes.
     ///
@@ -1258,9 +1171,8 @@ impl Scalar {
     /// assert!(s.to_bytes() == [0u8; 32]);
     /// ```
     pub const fn to_bytes(&self) -> (result: [u8; 32])
-        ensures
-            result == self.bytes,
-            scalar_to_nat(self) == bytes_to_nat(&result),
+        ensures result == self.bytes,
+        scalar_to_nat(self) == bytes_to_nat(&result),
     {
         self.bytes
     }
@@ -1277,14 +1189,12 @@ impl Scalar {
     /// assert!(s.as_bytes() == &[0u8; 32]);
     /// ```
     pub const fn as_bytes(&self) -> (result: &[u8; 32])
-        ensures
-            result == &self.bytes,
-            scalar_to_nat(self) == bytes_to_nat(&result),
+        ensures result == &self.bytes,
+        scalar_to_nat(self) == bytes_to_nat(&result),
     {
         &self.bytes
     }
 }
-
 impl Scalar {
     /// Given a nonzero `Scalar`, compute its multiplicative inverse.
     ///
@@ -1328,17 +1238,13 @@ impl Scalar {
         requires
             is_canonical_scalar(self),
         ensures
-    // Result is the multiplicative inverse: result * self ≡ 1 (mod group_order)
-
+            // Result is the multiplicative inverse: result * self ≡ 1 (mod group_order)
             (scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1,
-            is_canonical_scalar(
-                &result,
-            ),
-    // VERIFICATION NOTE: is this true and/or necessary?
-    // Result is canonical
-    // scalar_to_nat(&result) < group_order(),
-    // result.bytes[31] <= 127,
-
+            is_canonical_scalar(&result),
+            // VERIFICATION NOTE: is this true and/or necessary?
+            // Result is canonical
+            // scalar_to_nat(&result) < group_order(),
+            // result.bytes[31] <= 127,
     {
         let unpacked = self.unpack();
         let inv_unpacked = unpacked.invert();
@@ -1347,7 +1253,6 @@ impl Scalar {
         assume(is_canonical_scalar(&result));
         result
     }
-
     /// Given a slice of nonzero (possibly secret) `Scalar`s,
     /// compute their inverses in a batch.
     ///
@@ -1389,21 +1294,17 @@ impl Scalar {
     // solution is to use assume_specification to tell Verus what zeroize does.
     // In the short-term, I've just told verus to ignore the body.
     // (SB update: alternative is to exclude just the zeroize call, as below)
-    pub fn batch_invert(inputs: &mut [Scalar]) -> (result:
-        Scalar)/* <VERIFICATION NOTE>
+    pub fn batch_invert(inputs: &mut [Scalar]) -> (result: Scalar)
+    /* <VERIFICATION NOTE>
      Refactored for Verus: Index loops instead of iterators, manual Vec construction, ..
     </VERIFICATION NOTE> */
 
-        ensures
-    // Result is the modular inverse of the product of all original inputs
-
-            is_inverse_of_nat(&result, product_of_scalars(old(inputs)@)),
-            // Each input is replaced with its inverse
-            forall|i: int|
-                0 <= i < inputs.len() ==> #[trigger] is_inverse(
-                    &(#[trigger] old(inputs)[i]),
-                    &(#[trigger] inputs[i]),
-                ),
+    ensures
+        // Result is the modular inverse of the product of all original inputs
+        is_inverse_of_nat(&result, product_of_scalars(old(inputs)@)),
+        // Each input is replaced with its inverse
+        forall|i: int| 0 <= i < inputs.len() ==>
+            #[trigger] is_inverse(&(#[trigger] old(inputs)[i]), &(#[trigger] inputs[i])),
     {
         // This code is essentially identical to the FieldElement
         // implementation, and is documented there.  Unfortunately,
@@ -1411,6 +1312,7 @@ impl Scalar {
         // to use `UnpackedScalar`s internally, and `Scalar`s
         // externally, but there's no corresponding distinction for
         // field elements.
+
         let n = inputs.len();
         let one_unpacked = Scalar::ONE.unpack();
 
@@ -1434,6 +1336,7 @@ impl Scalar {
         for _ in 0..n {
             scratch.push(one);
         }
+
 
         // Keep an accumulator of all of the previous products
         let acc_unpacked = Scalar::ONE.unpack();
@@ -1465,10 +1368,7 @@ impl Scalar {
          }
         </ORIGINAL CODE> */
         for i in 0..n
-            invariant
-                scratch.len() == n,
-                n == inputs.len(),
-                limbs_bounded(&acc),
+             invariant scratch.len() == n, n == inputs.len(), limbs_bounded(&acc)
         {
             scratch[i] = acc;
 
@@ -1540,7 +1440,7 @@ impl Scalar {
                 i <= n,
                 limbs_bounded(&acc),
                 forall|j: int| 0 <= j < scratch.len() ==> #[trigger] limbs_bounded(&scratch[j]),
-            decreases i,
+            decreases i
         {
             i -= 1;
             let input_unpacked = inputs[i].unpack();
@@ -1559,6 +1459,7 @@ impl Scalar {
             acc = tmp;
         }
 
+
         #[cfg(feature = "zeroize")]
         #[cfg(not(verus_keep_ghost))]
         Zeroize::zeroize(&mut scratch);
@@ -1566,16 +1467,15 @@ impl Scalar {
         proof {
             // Assume the postconditions
             assume(is_inverse_of_nat(&ret, product_of_scalars(old(inputs)@)));
-            assume(forall|i: int|
-                0 <= i < inputs.len() ==> #[trigger] is_inverse(
-                    &(#[trigger] old(inputs)[i]),
-                    &(#[trigger] inputs[i]),
-                ));
+            assume(forall|i: int| 0 <= i < inputs.len() ==>
+                #[trigger] is_inverse(&(#[trigger] old(inputs)[i]), &(#[trigger] inputs[i])));
         }
 
         ret
     }
+
 }
+
 
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
@@ -1604,21 +1504,20 @@ impl<'de> Visitor<'de> for ScalarVisitor {
             )
         }
     }
-
     #[verifier::external_body]
-    fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error> where
+    fn visit_seq<A>(self, mut seq: A) -> Result<Scalar, A::Error>
+    where
         A: serde::de::SeqAccess<'de>,
-     {
-        let mut bytes = [0u8;32];
+    {
+        let mut bytes = [0u8; 32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
-            bytes[i] = seq.next_element()?.ok_or_else(
-                || serde::de::Error::invalid_length(i, &"expected 32 bytes"),
-            )?;
+            bytes[i] = seq
+                .next_element()?
+                .ok_or_else(|| serde::de::Error::invalid_length(i, &"expected 32 bytes"))?;
         }
-        Option::from(Scalar::from_canonical_bytes(bytes)).ok_or_else(
-            || serde::de::Error::custom("scalar was not canonically encoded"),
-        )
+        Option::from(Scalar::from_canonical_bytes(bytes))
+            .ok_or_else(|| serde::de::Error::custom("scalar was not canonically encoded"))
     }
 }
 
@@ -1626,7 +1525,10 @@ impl<'de> Visitor<'de> for ScalarVisitor {
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl Serialize for Scalar {
     #[verifier::external_body]
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         use serde::ser::SerializeTuple;
         let mut tup = serializer.serialize_tuple(32)?;
         for byte in self.as_bytes().iter() {
@@ -1640,34 +1542,34 @@ impl Serialize for Scalar {
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 impl<'de> Deserialize<'de> for Scalar {
     #[verifier::external_body]
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
         /* VERIFICATION NOTE:
         Originally struct ScalarVisitor defined here, but moved up to the top of the file
         </VERIFICATION NOTE> */
         deserializer.deserialize_tuple(32, ScalarVisitor)
     }
 }
-
 } // verus!
-verus! {
 
+verus! {
 /* <VERIFICATION NOTE>
 Helper inline functions for as_radix_16, moved outside impl Scalar for Verus compatibility
 </VERIFICATION NOTE> */
 #[allow(clippy::identity_op)]
 #[inline(always)]
-fn bot_half(x: u8) -> (result:
-    u8)/* <VERIFICATION NOTE>
+fn bot_half(x: u8) -> (result: u8)
+/* <VERIFICATION NOTE>
 - PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
-
-    ensures
-// Result is the lower 4 bits (lower nibble) of x
-
-        result == x % 16,
-        // Result is in range [0, 15]
-        result <= 15,
+ensures
+    // Result is the lower 4 bits (lower nibble) of x
+    result == x % 16,
+    // Result is in range [0, 15]
+    result <= 15,
 {
     let result = (x >> 0) & 15;
     proof {
@@ -1678,18 +1580,16 @@ fn bot_half(x: u8) -> (result:
 }
 
 #[inline(always)]
-fn top_half(x: u8) -> (result:
-    u8)/* <VERIFICATION NOTE>
+fn top_half(x: u8) -> (result: u8)
+/* <VERIFICATION NOTE>
 - PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
-
-    ensures
-// Result is the upper 4 bits (upper nibble) of x
-
-        result == x / 16,
-        // Result is in range [0, 15]
-        result <= 15,
+ensures
+    // Result is the upper 4 bits (upper nibble) of x
+    result == x / 16,
+    // Result is in range [0, 15]
+    result <= 15,
 {
     let result = (x >> 4) & 15;
     proof {
@@ -1700,6 +1600,7 @@ fn top_half(x: u8) -> (result:
 }
 
 } // verus!
+
 impl Scalar {
     /// Get the bits of the scalar, in little-endian order
     pub(crate) fn bits_le(&self) -> impl DoubleEndedIterator<Item = bool> + '_ {
@@ -1716,302 +1617,262 @@ impl Scalar {
     }
 
     verus! {
-
-/// Get the bits of the scalar as an array, in little-endian order
-/* <VERIFICATION NOTE>
+            /// Get the bits of the scalar as an array, in little-endian order
+        /* <VERIFICATION NOTE>
          This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
         </VERIFICATION NOTE> */
-#[allow(dead_code)]
-pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
-    ensures
-        bits_to_nat(&result) == bytes_to_nat(&self.bytes),
-{
-    let mut bits = [false;256];
-    let mut i: usize = 0;
+        #[allow(dead_code)]
+        pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
+        ensures
+            bits_to_nat(&result) == bytes_to_nat(&self.bytes),
+        {
+            let mut bits = [false; 256];
+            let mut i: usize = 0;
 
-    while i < 256
-        invariant
-            i <= 256,
-            bits.len() == 256,
-            self.bytes.len() == 32,
-        decreases 256 - i,
-    {
-        // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
-        // the byte. Since self.bytes is little-endian at the byte level, this is
-        // little-endian on the bit level
-        let byte_idx = i >> 3;  // Divide by 8 to get byte index
-        let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
+            while i < 256
+                invariant
+                    i <= 256,
+                    bits.len() == 256,
+                    self.bytes.len() == 32,
+                decreases 256 - i,
+            {
+                // As i runs from 0..256, the bottom 3 bits index the bit, while the upper bits index
+                // the byte. Since self.bytes is little-endian at the byte level, this is
+                // little-endian on the bit level
+                let byte_idx = i >> 3;  // Divide by 8 to get byte index
+                let bit_idx = (i & 7) as u8;  // Modulo 8 to get bit position within byte
 
-        // Prove bounds using shift and mask lemmas
-        proof {
-            use crate::backend::serial::u64::common_verus::shift_lemmas::*;
-            use crate::backend::serial::u64::common_verus::mask_lemmas::*;
-            use vstd::bits::*;
-            use vstd::arithmetic::power2::*;
+                // Prove bounds using shift and mask lemmas
+                proof {
+                    use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+                    use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+                    use vstd::bits::*;
+                    use vstd::arithmetic::power2::*;
 
-            assert(i < 256);
+                    assert(i < 256);
 
-            // Prove i >> 3 = i / 8 using shift lemma
-            lemma_u64_shr_is_div(i as u64, 3);
-            // pow2(3) = 8
-            lemma2_to64();
-            assert(byte_idx < 32);
+                    // Prove i >> 3 = i / 8 using shift lemma
+                    lemma_u64_shr_is_div(i as u64, 3);
+                    // pow2(3) = 8
+                    lemma2_to64();
+                    assert(byte_idx < 32);
 
-            // Prove i & 7 = i % 8 using mask lemma
-            lemma_u64_low_bits_mask_is_mod(i as u64, 3);
-            // low_bits_mask(3) = 7 and pow2(3) = 8
-            lemma2_to64();
-            assert(bit_idx < 8);
+                    // Prove i & 7 = i % 8 using mask lemma
+                    lemma_u64_low_bits_mask_is_mod(i as u64, 3);
+                    // low_bits_mask(3) = 7 and pow2(3) = 8
+                    lemma2_to64();
+                    assert(bit_idx < 8);
+                }
+
+                bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
+                i += 1;
+            }
+
+            proof {
+                assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
+            }
+
+            bits
         }
+    } // verus!
 
-        bits[i] = ((self.bytes[byte_idx] >> bit_idx) & 1u8) == 1;
-        i += 1;
-    }
-
-    proof {
-        assume(bits_to_nat(&bits) == bytes_to_nat(&self.bytes));
-    }
-
-    bits
-}
-
-} // verus!
     verus! {
-
-/// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
-///
-/// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
-/// $$
-/// k = \sum_{i=0}\^m n\_i 2\^i,
-/// $$
-/// where each nonzero
-/// coefficient \\(n\_i\\) is odd and bounded by \\(|n\_i| < 2\^{w-1}\\),
-/// \\(n\_{m-1}\\) is nonzero, and at most one of any \\(w\\) consecutive
-/// coefficients is nonzero.  (Hankerson, Menezes, Vanstone; def 3.32).
-///
-/// The length of the NAF is at most one more than the length of
-/// the binary representation of \\(k\\).  This is why the
-/// `Scalar` type maintains an invariant (invariant #1) that the top bit is
-/// \\(0\\), so that the NAF of a scalar has at most 256 digits.
-///
-/// Intuitively, this is like a binary expansion, except that we
-/// allow some coefficients to grow in magnitude up to
-/// \\(2\^{w-1}\\) so that the nonzero coefficients are as sparse
-/// as possible.
-///
-/// When doing scalar multiplication, we can then use a lookup
-/// table of precomputed multiples of a point to add the nonzero
-/// terms \\( k_i P \\).  Using signed digits cuts the table size
-/// in half, and using odd digits cuts the table size in half
-/// again.
-///
-/// To compute a \\(w\\)-NAF, we use a modification of Algorithm 3.35 of HMV:
-///
-/// 1. \\( i \gets 0 \\)
-/// 2. While \\( k \ge 1 \\):
-///     1. If \\(k\\) is odd, \\( n_i \gets k \operatorname{mods} 2^w \\), \\( k \gets k - n_i \\).
-///     2. If \\(k\\) is even, \\( n_i \gets 0 \\).
-///     3. \\( k \gets k / 2 \\), \\( i \gets i + 1 \\).
-/// 3. Return \\( n_0, n_1, ... , \\)
-///
-/// Here \\( \bar x = x \operatorname{mods} 2^w \\) means the
-/// \\( \bar x \\) with \\( \bar x \equiv x \pmod{2^w} \\) and
-/// \\( -2^{w-1} \leq \bar x < 2^{w-1} \\).
-///
-/// We implement this by scanning across the bits of \\(k\\) from
-/// least-significant bit to most-significant-bit.
-/// Write the bits of \\(k\\) as
-/// $$
-/// k = \sum\_{i=0}\^m k\_i 2^i,
-/// $$
-/// and split the sum as
-/// $$
-/// k = \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
-/// $$
-/// where the first part is \\( k \mod 2^w \\).
-///
-/// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w < 2^{w-1} \\), then we emit
-/// \\( n_0 = k \mod 2^w \\).  Instead of computing
-/// \\( k - n_0 \\), we just advance \\(w\\) bits and reindex.
-///
-/// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w \ge 2^{w-1} \\), then
-/// \\( n_0 = k \operatorname{mods} 2^w = k \mod 2^w - 2^w \\).
-/// The quantity \\( k - n_0 \\) is
-/// $$
-/// \begin{aligned}
-/// k - n_0 &= \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
-///          - \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \\\\
-/// &= 2^w + 2^w \sum\_{i=0} k\_{i+w} 2^i
-/// \end{aligned}
-/// $$
-/// so instead of computing the subtraction, we can set a carry
-/// bit, advance \\(w\\) bits, and reindex.
-///
-/// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
-/// and reindex.  In fact, by setting all digits to \\(0\\)
-/// initially, we don't need to emit anything.
-pub(crate) fn non_adjacent_form(&self, w: usize) -> (result:
-    [i8; 256])
-// VERIFICATION NOTE: PROOF BYPASS
-
-    requires
-        2 <= w <= 8,
-    ensures
-// result encodes the same integer
-
+        /// Compute a width-\\(w\\) "Non-Adjacent Form" of this scalar.
+        ///
+        /// A width-\\(w\\) NAF of a positive integer \\(k\\) is an expression
+        /// $$
+        /// k = \sum_{i=0}\^m n\_i 2\^i,
+        /// $$
+        /// where each nonzero
+        /// coefficient \\(n\_i\\) is odd and bounded by \\(|n\_i| < 2\^{w-1}\\),
+        /// \\(n\_{m-1}\\) is nonzero, and at most one of any \\(w\\) consecutive
+        /// coefficients is nonzero.  (Hankerson, Menezes, Vanstone; def 3.32).
+        ///
+        /// The length of the NAF is at most one more than the length of
+        /// the binary representation of \\(k\\).  This is why the
+        /// `Scalar` type maintains an invariant (invariant #1) that the top bit is
+        /// \\(0\\), so that the NAF of a scalar has at most 256 digits.
+        ///
+        /// Intuitively, this is like a binary expansion, except that we
+        /// allow some coefficients to grow in magnitude up to
+        /// \\(2\^{w-1}\\) so that the nonzero coefficients are as sparse
+        /// as possible.
+        ///
+        /// When doing scalar multiplication, we can then use a lookup
+        /// table of precomputed multiples of a point to add the nonzero
+        /// terms \\( k_i P \\).  Using signed digits cuts the table size
+        /// in half, and using odd digits cuts the table size in half
+        /// again.
+        ///
+        /// To compute a \\(w\\)-NAF, we use a modification of Algorithm 3.35 of HMV:
+        ///
+        /// 1. \\( i \gets 0 \\)
+        /// 2. While \\( k \ge 1 \\):
+        ///     1. If \\(k\\) is odd, \\( n_i \gets k \operatorname{mods} 2^w \\), \\( k \gets k - n_i \\).
+        ///     2. If \\(k\\) is even, \\( n_i \gets 0 \\).
+        ///     3. \\( k \gets k / 2 \\), \\( i \gets i + 1 \\).
+        /// 3. Return \\( n_0, n_1, ... , \\)
+        ///
+        /// Here \\( \bar x = x \operatorname{mods} 2^w \\) means the
+        /// \\( \bar x \\) with \\( \bar x \equiv x \pmod{2^w} \\) and
+        /// \\( -2^{w-1} \leq \bar x < 2^{w-1} \\).
+        ///
+        /// We implement this by scanning across the bits of \\(k\\) from
+        /// least-significant bit to most-significant-bit.
+        /// Write the bits of \\(k\\) as
+        /// $$
+        /// k = \sum\_{i=0}\^m k\_i 2^i,
+        /// $$
+        /// and split the sum as
+        /// $$
+        /// k = \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
+        /// $$
+        /// where the first part is \\( k \mod 2^w \\).
+        ///
+        /// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w < 2^{w-1} \\), then we emit
+        /// \\( n_0 = k \mod 2^w \\).  Instead of computing
+        /// \\( k - n_0 \\), we just advance \\(w\\) bits and reindex.
+        ///
+        /// If \\( k \mod 2^w\\) is odd, and \\( k \mod 2^w \ge 2^{w-1} \\), then
+        /// \\( n_0 = k \operatorname{mods} 2^w = k \mod 2^w - 2^w \\).
+        /// The quantity \\( k - n_0 \\) is
+        /// $$
+        /// \begin{aligned}
+        /// k - n_0 &= \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \sum\_{i=0} k\_{i+w} 2^i
+        ///          - \sum\_{i=0}^{w-1} k\_i 2^i + 2^w \\\\
+        /// &= 2^w + 2^w \sum\_{i=0} k\_{i+w} 2^i
+        /// \end{aligned}
+        /// $$
+        /// so instead of computing the subtraction, we can set a carry
+        /// bit, advance \\(w\\) bits, and reindex.
+        ///
+        /// If \\( k \mod 2^w\\) is even, we emit \\(0\\), advance 1 bit
+        /// and reindex.  In fact, by setting all digits to \\(0\\)
+        /// initially, we don't need to emit anything.
+        pub(crate) fn non_adjacent_form(&self, w: usize) -> (result: [i8; 256])
+        // VERIFICATION NOTE: PROOF BYPASS
+        requires
+            2 <= w <= 8,
+        ensures
+        // result encodes the same integer
         reconstruct(result@) == scalar_to_nat(self) as int,
         // result digits follow NAF rules
         is_valid_naf(result@, w as nat),
-{
-    // VERIFICATION NOTE: we tell verus not to verify debug assertions
-    #[cfg(not(verus_keep_ghost))]
-    debug_assert!(w >= 2);
-    // required so that the NAF digits fit in i8
-    // VERIFICATION NOTE: we tell verus not to verify debug assertions
-    #[cfg(not(verus_keep_ghost))]
+        {
+            // VERIFICATION NOTE: we tell verus not to verify debug assertions
+            #[cfg(not(verus_keep_ghost))]
+            debug_assert!(w >= 2);
+            // required so that the NAF digits fit in i8
+            // VERIFICATION NOTE: we tell verus not to verify debug assertions
+            #[cfg(not(verus_keep_ghost))]
             debug_assert!(w <= 8);
 
-    let mut naf = [0i8;256];
+            let mut naf = [0i8; 256];
 
-    // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features - IN PROGRESS
-    /* <ORIGINAL CODE>
+            // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features - IN PROGRESS
+            /* <ORIGINAL CODE>
             let mut x_u64 = [0u64; 5];
             read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
              <ORIGINAL CODE> */
-    // Read 4 u64s from the 32-byte array (self.bytes)
-    assume(false);
-    let mut x_u64 = [0u64;5];
-    x_u64[0] = u64_from_le_bytes(
-        [
-            self.bytes[0],
-            self.bytes[1],
-            self.bytes[2],
-            self.bytes[3],
-            self.bytes[4],
-            self.bytes[5],
-            self.bytes[6],
-            self.bytes[7],
-        ],
-    );
-    x_u64[1] = u64_from_le_bytes(
-        [
-            self.bytes[8],
-            self.bytes[9],
-            self.bytes[10],
-            self.bytes[11],
-            self.bytes[12],
-            self.bytes[13],
-            self.bytes[14],
-            self.bytes[15],
-        ],
-    );
-    x_u64[2] = u64_from_le_bytes(
-        [
-            self.bytes[16],
-            self.bytes[17],
-            self.bytes[18],
-            self.bytes[19],
-            self.bytes[20],
-            self.bytes[21],
-            self.bytes[22],
-            self.bytes[23],
-        ],
-    );
-    x_u64[3] = u64_from_le_bytes(
-        [
-            self.bytes[24],
-            self.bytes[25],
-            self.bytes[26],
-            self.bytes[27],
-            self.bytes[28],
-            self.bytes[29],
-            self.bytes[30],
-            self.bytes[31],
-        ],
-    );
-    // x_u64[4] remains 0
+            // Read 4 u64s from the 32-byte array (self.bytes)
+            assume(false);
+            let mut x_u64 = [0u64; 5];
+            x_u64[0] = u64_from_le_bytes([
+                self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3],
+                self.bytes[4], self.bytes[5], self.bytes[6], self.bytes[7],
+            ]);
+            x_u64[1] = u64_from_le_bytes([
+                self.bytes[8], self.bytes[9], self.bytes[10], self.bytes[11],
+                self.bytes[12], self.bytes[13], self.bytes[14], self.bytes[15],
+            ]);
+            x_u64[2] = u64_from_le_bytes([
+                self.bytes[16], self.bytes[17], self.bytes[18], self.bytes[19],
+                self.bytes[20], self.bytes[21], self.bytes[22], self.bytes[23],
+            ]);
+            x_u64[3] = u64_from_le_bytes([
+                self.bytes[24], self.bytes[25], self.bytes[26], self.bytes[27],
+                self.bytes[28], self.bytes[29], self.bytes[30], self.bytes[31],
+            ]);
+            // x_u64[4] remains 0
 
-    let width = 1 << w;
-    let window_mask = width - 1;
+            let width = 1 << w;
+            let window_mask = width - 1;
 
-    let mut pos = 0;
-    let mut carry = 0;
-    while pos < 256
-        decreases 256 - pos,
-    {
-        assume(false);
+            let mut pos = 0;
+            let mut carry = 0;
+            while pos < 256
+                decreases 256 - pos
+            {
+                assume(false);
 
-        // Construct a buffer of bits of the scalar, starting at bit `pos`
-        let u64_idx = pos / 64;
-        let bit_idx = pos % 64;
-        let bit_buf: u64 = if bit_idx < 64 - w {
-            // This window's bits are contained in a single u64
-            x_u64[u64_idx] >> bit_idx
-        } else {
-            // Combine the current u64's bits with the bits from the next u64
-            (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx))
-        };
+                // Construct a buffer of bits of the scalar, starting at bit `pos`
+                let u64_idx = pos / 64;
+                let bit_idx = pos % 64;
+                let bit_buf: u64 = if bit_idx < 64 - w {
+                    // This window's bits are contained in a single u64
+                    x_u64[u64_idx] >> bit_idx
+                } else {
+                    // Combine the current u64's bits with the bits from the next u64
+                    (x_u64[u64_idx] >> bit_idx) | (x_u64[1 + u64_idx] << (64 - bit_idx))
+                };
 
-        // Add the carry into the current window
-        assume(false);
-        let window = carry + (bit_buf & window_mask);
+                // Add the carry into the current window
+                assume(false);
+                let window = carry + (bit_buf & window_mask);
 
-        if window & 1 == 0 {
-            // If the window value is even, preserve the carry and continue.
-            // Why is the carry preserved?
-            // If carry == 0 and window & 1 == 0, then the next carry should be 0
-            // If carry == 1 and window & 1 == 0, then bit_buf & 1 == 1 so the next carry should be 1
-            pos += 1;
-            continue ;
+                if window & 1 == 0 {
+                    // If the window value is even, preserve the carry and continue.
+                    // Why is the carry preserved?
+                    // If carry == 0 and window & 1 == 0, then the next carry should be 0
+                    // If carry == 1 and window & 1 == 0, then bit_buf & 1 == 1 so the next carry should be 1
+                    pos += 1;
+                    continue;
+                }
+
+                if window < width / 2 {
+                    carry = 0;
+                    naf[pos] = window as i8;
+                } else {
+                    carry = 1;
+                    naf[pos] = (window as i8).wrapping_sub(width as i8);
+                }
+                assume(false);
+                pos += w;
+            }
+
+            naf
         }
-        if window < width / 2 {
-            carry = 0;
-            naf[pos] = window as i8;
-        } else {
-            carry = 1;
-            naf[pos] = (window as i8).wrapping_sub(width as i8);
-        }
-        assume(false);
-        pos += w;
-    }
 
-    naf
-}
+        /// Write this scalar in radix 16, with coefficients in \\([-8,8)\\),
+        /// i.e., compute \\(a\_i\\) such that
+        /// $$
+        ///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
+        /// $$
+        /// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
+        ///
+        /// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
+        /// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
+        /// \\(2^{255}\\).
+        pub(crate) fn as_radix_16(&self) -> (result: [i8; 64])
+        // VERIFICATION NOTE: PROOF BYPASS
+        requires
+            // Top bit must be clear (scalar < 2^255)
+            self.bytes[31] <= 127,
+        ensures
+            // Result digits are in valid range
+            is_valid_radix_16(&result),
+            // Reconstruction property: digits reconstruct the scalar value
+            reconstruct_radix_16(result@) == scalar_to_nat(self) as int,
+        {
+            // VERIFICATION NOTE: we tell verus not to verify debug assertions
+            #[cfg(not(verus_keep_ghost))]
+            debug_assert!(self[31] <= 127);
+            let mut output = [0i8; 64];
 
-/// Write this scalar in radix 16, with coefficients in \\([-8,8)\\),
-/// i.e., compute \\(a\_i\\) such that
-/// $$
-///    a = a\_0 + a\_1 16\^1 + \cdots + a_{63} 16\^{63},
-/// $$
-/// with \\(-8 \leq a_i < 8\\) for \\(0 \leq i < 63\\) and \\(-8 \leq a_{63} \leq 8\\).
-///
-/// The largest value that can be decomposed like this is just over \\(2^{255}\\). Thus, in
-/// order to not error, the top bit MUST NOT be set, i.e., `Self` MUST be less than
-/// \\(2^{255}\\).
-pub(crate) fn as_radix_16(&self) -> (result:
-    [i8; 64])
-// VERIFICATION NOTE: PROOF BYPASS
-
-    requires
-// Top bit must be clear (scalar < 2^255)
-
-        self.bytes[31] <= 127,
-    ensures
-// Result digits are in valid range
-
-        is_valid_radix_16(&result),
-        // Reconstruction property: digits reconstruct the scalar value
-        reconstruct_radix_16(result@) == scalar_to_nat(self) as int,
-{
-    // VERIFICATION NOTE: we tell verus not to verify debug assertions
-    #[cfg(not(verus_keep_ghost))]
-    debug_assert!(self[31] <= 127);
-    let mut output = [0i8;64];
-
-    // Step 1: change radix.
-    // Convert from radix 256 (bytes) to radix 16 (nibbles)
-    // VERIFICATION NOTE: Moved helper functions outside for Verus compatibility
-    /* <ORIGINAL CODE>
+            // Step 1: change radix.
+            // Convert from radix 256 (bytes) to radix 16 (nibbles)
+            // VERIFICATION NOTE: Moved helper functions outside for Verus compatibility
+            /* <ORIGINAL CODE>
             #[allow(clippy::identity_op)]
             #[inline(always)]
             fn bot_half(x: u8) -> u8 {
@@ -2027,374 +1888,313 @@ pub(crate) fn as_radix_16(&self) -> (result:
                 output[2 * i + 1] = top_half(self[i]) as i8;
             }
             </ORIGINAL CODE> */
-    for i in 0..32 {
-        output[2 * i] = bot_half(self.bytes[i]) as i8;
-        output[2 * i + 1] = top_half(self.bytes[i]) as i8;
-    }
-    // Precondition note: since self[31] <= 127, output[63] <= 7
+            for i in 0..32 {
+                output[2 * i] = bot_half(self.bytes[i]) as i8;
+                output[2 * i + 1] = top_half(self.bytes[i]) as i8;
+            }
+            // Precondition note: since self[31] <= 127, output[63] <= 7
 
-    // Step 2: recenter coefficients from [0,16) to [-8,8)
-    for i in 0..63 {
-        assume(false);
-        let carry = (output[i] + 8) >> 4;
-        output[i] -= carry << 4;
-        /* <ORIGINAL CODE> :
+            // Step 2: recenter coefficients from [0,16) to [-8,8)
+            for i in 0..63 {
+                assume(false);
+                let carry = (output[i] + 8) >> 4;
+                output[i] -= carry << 4;
+                /* <ORIGINAL CODE> :
                 output[i + 1] += carry;
                 </ORIGINAL CODE> */
-        // VERIFICATION NOTE: Changed += to explicit assignment for Verus compatibility
-        // Verus doesn't support += on indexed arrays with computed indices
-        let next_idx = i + 1;
-        output[next_idx] += carry;
-    }
-    // Precondition note: output[63] is not recentered.  It
-    // increases by carry <= 1.  Thus output[63] <= 8.
+                // VERIFICATION NOTE: Changed += to explicit assignment for Verus compatibility
+                // Verus doesn't support += on indexed arrays with computed indices
+                let next_idx = i + 1;
+                output[next_idx] += carry;
+            }
+            // Precondition note: output[63] is not recentered.  It
+            // increases by carry <= 1.  Thus output[63] <= 8.
 
-    // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
-    proof {
-        assume(is_valid_radix_16(&output));
-        assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
-    }
+            // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
+            proof {
+                assume(is_valid_radix_16(&output));
+                assume(reconstruct_radix_16(output@) == scalar_to_nat(self) as int);
+            }
 
-    output
-}
+            output
+        }
 
-/// Returns a size hint indicating how many entries of the return
-/// value of `to_radix_2w` are nonzero.
-#[verifier::external_body]
-pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result:
-    usize)/* VERIFICATION NOTE:
+        /// Returns a size hint indicating how many entries of the return
+        /// value of `to_radix_2w` are nonzero.
+        #[verifier::external_body]
+        pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result: usize)
+        /* VERIFICATION NOTE:
         We could not get this function in Verus, potentially a bug in Verus.
         */
-{
-    assume(false);
-    #[cfg(not(verus_keep_ghost))]
+        {
+            assume(false);
+            #[cfg(not(verus_keep_ghost))]
             debug_assert!(w >= 4);
-    #[cfg(not(verus_keep_ghost))]
+            #[cfg(not(verus_keep_ghost))]
             debug_assert!(w <= 8);
 
-    let digits_count = match w {
-        4..=7 => (256 + w - 1) / w,
-        // See comment in to_radix_2w on handling the terminal carry.
-        8 => (256 + w - 1) / w + 1_usize,
-        _ => panic!("invalid radix parameter"),
-    };
+            let digits_count = match w {
+                4..=7 => (256 + w - 1) / w,
+                // See comment in to_radix_2w on handling the terminal carry.
+                8 => (256 + w - 1) / w + 1_usize,
+                _ => panic!("invalid radix parameter"),
+            };
 
-    #[cfg(not(verus_keep_ghost))]
+            #[cfg(not(verus_keep_ghost))]
             debug_assert!(digits_count <= 64);
 
-    digits_count
-}
+            digits_count
+        }
 
-/// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
-/// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.
-/// Radix 256 is near-optimal even for very large inputs.
-///
-/// Radix below 16 or above 256 is prohibited.
-/// This method returns digits in a fixed-sized array, excess digits are zeroes.
-///
-/// For radix 16, `Self` must be less than \\(2^{255}\\). This is because most integers larger
-/// than \\(2^{255}\\) are unrepresentable in the form described below for \\(w = 4\\). This
-/// would be true for \\(w = 8\\) as well, but it is compensated for by increasing the size
-/// hint by 1.
-///
-/// ## Scalar representation
-///
-/// Radix \\(2\^w\\), with \\(n = ceil(256/w)\\) coefficients in \\([-(2\^w)/2,(2\^w)/2)\\),
-/// i.e., scalar is represented using digits \\(a\_i\\) such that
-/// $$
-///    a = a\_0 + a\_1 2\^1w + \cdots + a_{n-1} 2\^{w*(n-1)},
-/// $$
-/// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
-///
-#[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
-pub(crate) fn as_radix_2w(&self, w: usize) -> (result:
-    [i8; 64])
-// VERIFICATION NOTE: PROOF BYPASS
-
-    requires
-        4 <= w <= 8,
-        // For w=4 (radix 16), top bit must be clear
-        w == 4 ==> self.bytes[31] <= 127,
-    ensures
-        ({
-            let digits_count = if w < 8 {
-                (256 + (w as int) - 1) / (w as int)
-            } else {
-                (256 + (w as int) - 1) / (w as int) + 1
-            };
-            // Result digits are in valid range for the given window size
-            is_valid_radix_2w(&result, w as nat, digits_count as nat)
-                &&
-            // Reconstruction property: digits reconstruct the scalar value
-            reconstruct_radix_2w(result@.take(digits_count), w as nat) == scalar_to_nat(self) as int
-        }),
-{
-    #[cfg(not(verus_keep_ghost))]
-    debug_assert!(w >= 4);
-    #[cfg(not(verus_keep_ghost))]
+    /// Creates a representation of a Scalar in radix \\( 2^w \\) with \\(w = 4, 5, 6, 7, 8\\) for
+    /// use with the Pippenger algorithm. Higher radixes are not supported to save cache space.
+    /// Radix 256 is near-optimal even for very large inputs.
+    ///
+    /// Radix below 16 or above 256 is prohibited.
+    /// This method returns digits in a fixed-sized array, excess digits are zeroes.
+    ///
+    /// For radix 16, `Self` must be less than \\(2^{255}\\). This is because most integers larger
+    /// than \\(2^{255}\\) are unrepresentable in the form described below for \\(w = 4\\). This
+    /// would be true for \\(w = 8\\) as well, but it is compensated for by increasing the size
+    /// hint by 1.
+    ///
+    /// ## Scalar representation
+    ///
+    /// Radix \\(2\^w\\), with \\(n = ceil(256/w)\\) coefficients in \\([-(2\^w)/2,(2\^w)/2)\\),
+    /// i.e., scalar is represented using digits \\(a\_i\\) such that
+    /// $$
+    ///    a = a\_0 + a\_1 2\^1w + \cdots + a_{n-1} 2\^{w*(n-1)},
+    /// $$
+    /// with \\(-2\^w/2 \leq a_i < 2\^w/2\\) for \\(0 \leq i < (n-1)\\) and \\(-2\^w/2 \leq a_{n-1} \leq 2\^w/2\\).
+    ///
+    #[cfg(any(feature = "alloc", feature = "precomputed-tables"))]
+    pub(crate) fn as_radix_2w(&self, w: usize) -> (result: [i8; 64])
+    // VERIFICATION NOTE: PROOF BYPASS
+        requires
+            4 <= w <= 8,
+            // For w=4 (radix 16), top bit must be clear
+            w == 4 ==> self.bytes[31] <= 127,
+        ensures
+            ({
+                let digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+                // Result digits are in valid range for the given window size
+                is_valid_radix_2w(&result, w as nat, digits_count as nat) &&
+                // Reconstruction property: digits reconstruct the scalar value
+                reconstruct_radix_2w(result@.take(digits_count), w as nat)
+                    == scalar_to_nat(self) as int
+            }),
+    {
+        #[cfg(not(verus_keep_ghost))]
+        debug_assert!(w >= 4);
+        #[cfg(not(verus_keep_ghost))]
         debug_assert!(w <= 8);
 
-    if w == 4 {
-        let result = self.as_radix_16();
-        // VERIFICATION NOTE: Prove that as_radix_16 postcondition implies as_radix_2w postcondition for w=4
-        proof {
-            // For w=4: digits_count = (256 + 4 - 1) / 4 = 259 / 4 = 64
-            assert(((256 + (w as int) - 1) / (w as int)) == 64);
-            // is_valid_radix_16 is defined as is_valid_radix_2w(digits, 4, 64)
-            assert(is_valid_radix_16(&result) == is_valid_radix_2w(&result, 4, 64));
-            // reconstruct_radix_16 is defined as reconstruct_radix_2w(digits, 4)
-            assert(reconstruct_radix_16(result@) == reconstruct_radix_2w(result@, 4));
-            // result@.take(64) == result@ since result has exactly 64 elements
-            assert(result@.take(64) =~= result@);
+        if w == 4 {
+            let result = self.as_radix_16();
+            // VERIFICATION NOTE: Prove that as_radix_16 postcondition implies as_radix_2w postcondition for w=4
+            proof {
+                // For w=4: digits_count = (256 + 4 - 1) / 4 = 259 / 4 = 64
+                assert(((256 + (w as int) - 1) / (w as int)) == 64);
+                // is_valid_radix_16 is defined as is_valid_radix_2w(digits, 4, 64)
+                assert(is_valid_radix_16(&result) == is_valid_radix_2w(&result, 4, 64));
+                // reconstruct_radix_16 is defined as reconstruct_radix_2w(digits, 4)
+                assert(reconstruct_radix_16(result@) == reconstruct_radix_2w(result@, 4));
+                // result@.take(64) == result@ since result has exactly 64 elements
+                assert(result@.take(64) =~= result@);
+            }
+            return result;
         }
-        return result;
-    }
-    // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
-    // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features
-    /* <ORIGINAL CODE>
+
+        // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
+        // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features
+        /* <ORIGINAL CODE>
         let mut scalar64x4 = [0u64; 4];
         read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
         </ORIGINAL CODE> */
-    // Read 4 u64s from the 32-byte array (self.bytes)
+        // Read 4 u64s from the 32-byte array (self.bytes)
+        let mut scalar64x4 = [0u64; 4];
+        scalar64x4[0] = u64_from_le_bytes([
+            self.bytes[0], self.bytes[1], self.bytes[2], self.bytes[3],
+            self.bytes[4], self.bytes[5], self.bytes[6], self.bytes[7],
+        ]);
+        scalar64x4[1] = u64_from_le_bytes([
+            self.bytes[8], self.bytes[9], self.bytes[10], self.bytes[11],
+            self.bytes[12], self.bytes[13], self.bytes[14], self.bytes[15],
+        ]);
+        scalar64x4[2] = u64_from_le_bytes([
+            self.bytes[16], self.bytes[17], self.bytes[18], self.bytes[19],
+            self.bytes[20], self.bytes[21], self.bytes[22], self.bytes[23],
+        ]);
+        scalar64x4[3] = u64_from_le_bytes([
+            self.bytes[24], self.bytes[25], self.bytes[26], self.bytes[27],
+            self.bytes[28], self.bytes[29], self.bytes[30], self.bytes[31],
+        ]);
 
-    let mut scalar64x4 = [0u64;4];
-    scalar64x4[0] = u64_from_le_bytes(
-        [
-            self.bytes[0],
-            self.bytes[1],
-            self.bytes[2],
-            self.bytes[3],
-            self.bytes[4],
-            self.bytes[5],
-            self.bytes[6],
-            self.bytes[7],
-        ],
-    );
-    scalar64x4[1] = u64_from_le_bytes(
-        [
-            self.bytes[8],
-            self.bytes[9],
-            self.bytes[10],
-            self.bytes[11],
-            self.bytes[12],
-            self.bytes[13],
-            self.bytes[14],
-            self.bytes[15],
-        ],
-    );
-    scalar64x4[2] = u64_from_le_bytes(
-        [
-            self.bytes[16],
-            self.bytes[17],
-            self.bytes[18],
-            self.bytes[19],
-            self.bytes[20],
-            self.bytes[21],
-            self.bytes[22],
-            self.bytes[23],
-        ],
-    );
-    scalar64x4[3] = u64_from_le_bytes(
-        [
-            self.bytes[24],
-            self.bytes[25],
-            self.bytes[26],
-            self.bytes[27],
-            self.bytes[28],
-            self.bytes[29],
-            self.bytes[30],
-            self.bytes[31],
-        ],
-    );
-
-    let radix: u64 = 1 << w;
-    // VERIFICATION NOTE: Assert that radix > 0 to prove radix - 1 won't underflow
-    proof {
-        assume(false);
-    }
-    let window_mask: u64 = radix - 1;
-
-    let mut carry = 0u64;
-    let mut digits = [0i8;64];
-    let digits_count = (256 + w - 1) / w;
-    #[allow(clippy::needless_range_loop)]
-    for i in 0..digits_count
-        invariant
-            w >= 4,
-            w <= 8,
-            digits_count <= 64,
-            radix == (1u64 << w),
-    {
-        // Construct a buffer of bits of the scalar, starting at `bit_offset`.
-        assume(false);
-        let bit_offset = i * w;
-        let u64_idx = bit_offset / 64;
-        let bit_idx = bit_offset % 64;
-
-        // Read the bits from the scalar
-        // VERIFICATION NOTE: Assert 64 - w won't underflow
+        let radix: u64 = 1 << w;
+        // VERIFICATION NOTE: Assert that radix > 0 to prove radix - 1 won't underflow
         proof {
-            assert(w <= 8);
-            assert(64 - w >= 56);
+            assume(false);
         }
-        let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
-            // This window's bits are contained in a single u64,
-            // or it's the last u64 anyway.
-            scalar64x4[u64_idx] >> bit_idx
-        } else {
-            // Combine the current u64's bits with the bits from the next u64
-            (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx))
-        };
+        let window_mask: u64 = radix - 1;
 
-        // Read the actual coefficient value from the window
-        let coef = carry + (bit_buf & window_mask);  // coef = [0, 2^r)
+        let mut carry = 0u64;
+        let mut digits = [0i8; 64];
+        let digits_count = (256 + w - 1) / w;
+        #[allow(clippy::needless_range_loop)]
+        for i in 0..digits_count
+            invariant
+                w >= 4,
+                w <= 8,
+                digits_count <= 64,
+                radix == (1u64 << w),
+        {
+            // Construct a buffer of bits of the scalar, starting at `bit_offset`.
+            assume(false);
+            let bit_offset = i * w;
+            let u64_idx = bit_offset / 64;
+            let bit_idx = bit_offset % 64;
 
-        // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
-        carry = (coef + (radix / 2)) >> w;
-        let coef_i64 = coef as i64;
-        let carry_shifted = (carry << w) as i64;
-        digits[i] = (coef_i64 - carry_shifted) as i8;
-    }
+            // Read the bits from the scalar
+            // VERIFICATION NOTE: Assert 64 - w won't underflow
+            proof {
+                assert(w <= 8);
+                assert(64 - w >= 56);
+            }
+            let bit_buf: u64 = if bit_idx < 64 - w || u64_idx == 3 {
+                // This window's bits are contained in a single u64,
+                // or it's the last u64 anyway.
+                scalar64x4[u64_idx] >> bit_idx
+            } else {
+                // Combine the current u64's bits with the bits from the next u64
+                (scalar64x4[u64_idx] >> bit_idx) | (scalar64x4[1 + u64_idx] << (64 - bit_idx))
+            };
 
-    // When 4 < w < 8, we can fold the final carry onto the last digit d,
-    // because d < 2^w/2 so d + carry*2^w = d + 1*2^w < 2^(w+1) < 2^8.
-    //
-    // When w = 8, we can't fit carry*2^w into an i8.  This should
-    // not happen anyways, because the final carry will be 0 for
-    // reduced scalars, but Scalar invariant #1 allows 255-bit scalars.
-    // To handle this, we expand the size_hint by 1 when w=8,
-    // and accumulate the final carry onto another digit.
-    // VERIFICATION NOTE: Changed += to regular assignment to avoid Verus limitation
-    /* <ORIGINAL CODE>
+            // Read the actual coefficient value from the window
+            let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
+
+            // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
+            carry = (coef + (radix / 2)) >> w;
+            let coef_i64 = coef as i64;
+            let carry_shifted = (carry << w) as i64;
+            digits[i] = (coef_i64 - carry_shifted) as i8;
+        }
+
+        // When 4 < w < 8, we can fold the final carry onto the last digit d,
+        // because d < 2^w/2 so d + carry*2^w = d + 1*2^w < 2^(w+1) < 2^8.
+        //
+        // When w = 8, we can't fit carry*2^w into an i8.  This should
+        // not happen anyways, because the final carry will be 0 for
+        // reduced scalars, but Scalar invariant #1 allows 255-bit scalars.
+        // To handle this, we expand the size_hint by 1 when w=8,
+        // and accumulate the final carry onto another digit.
+        // VERIFICATION NOTE: Changed += to regular assignment to avoid Verus limitation
+        /* <ORIGINAL CODE>
         match w {
             8 => digits[digits_count] += carry as i8,
             _ => digits[digits_count - 1] += (carry << w) as i8,
         }
         </ORIGINAL CODE> */
-    match w {
-        8 => {
-            let idx = digits_count;
-            let carry_i8 = carry as i8;
-            assume(false);
-            digits[idx] += carry_i8;
-        },
-        _ => {
-            let idx = digits_count - 1;
-            proof {
-                assert(w >= 4 && w < 8);
-                assume(carry << w < 256);  // This is a simplification; actual bounds are tighter
-            }
-            let carry_shifted_i8 = (carry << w) as i8;
-            assume(false);
-            digits[idx] += carry_shifted_i8;
-        },
+        match w {
+            8 => {
+                let idx = digits_count;
+                let carry_i8 = carry as i8;
+                assume(false);
+                digits[idx] += carry_i8;
+            },
+            _ => {
+                let idx = digits_count - 1;
+                proof {
+                    assert(w >= 4 && w < 8);
+                    assume(carry << w < 256); // This is a simplification; actual bounds are tighter
+                }
+                let carry_shifted_i8 = (carry << w) as i8;
+                assume(false);
+                digits[idx] += carry_shifted_i8;
+            },
+        }
+
+        // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
+        proof {
+            let final_digits_count = if w < 8 { (256 + (w as int) - 1) / (w as int) } else { (256 + (w as int) - 1) / (w as int) + 1 };
+            assume(is_valid_radix_2w(&digits, w as nat, final_digits_count as nat));
+            assume(reconstruct_radix_2w(digits@.take(final_digits_count), w as nat)
+                == scalar_to_nat(self) as int);
+        }
+
+        digits
     }
 
-    // VERIFICATION NOTE: PROOF BYPASS - assume postconditions
-    proof {
-        let final_digits_count = if w < 8 {
-            (256 + (w as int) - 1) / (w as int)
-        } else {
-            (256 + (w as int) - 1) / (w as int) + 1
-        };
-        assume(is_valid_radix_2w(&digits, w as nat, final_digits_count as nat));
-        assume(reconstruct_radix_2w(digits@.take(final_digits_count), w as nat) == scalar_to_nat(
-            self,
-        ) as int);
-    }
-
-    digits
-}
-
-/// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
-pub fn unpack(&self) -> (result:
-    UnpackedScalar)
-// VERIFICATION NOTE: VERIFIED (changed pub(crate) to pub)
-
+    /// Unpack this `Scalar` to an `UnpackedScalar` for faster arithmetic.
+    pub fn unpack(&self) -> (result: UnpackedScalar)
+    // VERIFICATION NOTE: VERIFIED (changed pub(crate) to pub)
     ensures
         limbs_bounded(&result),
         to_nat(&result.limbs) == bytes_to_nat(&self.bytes),
         to_nat(&result.limbs) < group_order(),
-{
-    UnpackedScalar::from_bytes(&self.bytes)
-}
+    {
+        UnpackedScalar::from_bytes(&self.bytes)
+    }
 
-/// Reduce this `Scalar` modulo \\(\ell\\).
-#[allow(non_snake_case)]
-fn reduce(&self) -> (result: Scalar)
-// VERIFICATION NOTE: PROOF BYPASS
-
+    /// Reduce this `Scalar` modulo \\(\ell\\).
+    #[allow(non_snake_case)]
+    fn reduce(&self) -> (result: Scalar)
+    // VERIFICATION NOTE: PROOF BYPASS
     ensures
-// Result is equivalent to input modulo the group order
-
+        // Result is equivalent to input modulo the group order
         bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes) % group_order(),
         // Result satisfies Scalar invariants #1 and #2
         is_canonical_scalar(&result),
-{
-    let x = self.unpack();
+    {
+        let x = self.unpack();
     //    assume(limbs_bounded(&x));
-    assume(limbs_bounded(&constants::R));
-    let xR = UnpackedScalar::mul_internal(&x, &constants::R);
-    let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
-    let result = x_mod_l.pack();
-    // Assume postconditions (to be proven later)
-    assume(bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes)
-        % group_order());
-    assume(is_canonical_scalar(&result));
-    result
-}
-
-/// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
-/// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
-// VERIFICATION NOTE: PROOF BYPASS
-fn is_canonical(&self) -> (result: Choice)
-    ensures
-// Result is true iff the scalar satisfies Scalar invariants #1 and #2
-
-        choice_is_true(result) == is_canonical_scalar(self),
-{
-    let result = self.ct_eq(&self.reduce());
-    // TODO: Prove the postcondition from ct_eq and reduce specs
-    assume(choice_is_true(result) == is_canonical_scalar(self));
-    result
-}
-
-} // verus!
+        assume(limbs_bounded(&constants::R));
+        let xR = UnpackedScalar::mul_internal(&x, &constants::R);
+        let x_mod_l = UnpackedScalar::montgomery_reduce(&xR);
+        let result = x_mod_l.pack();
+        // Assume postconditions (to be proven later)
+        assume(bytes_to_nat(&result.bytes) % group_order() == bytes_to_nat(&self.bytes) % group_order());
+        assume(is_canonical_scalar(&result));
+        result
+    }
+    /// Check whether this `Scalar` is the canonical representative mod \\(\ell\\). This is not
+    /// public because any `Scalar` that is publicly observed is reduced, by scalar invariant #2.
+    // VERIFICATION NOTE: PROOF BYPASS
+    fn is_canonical(&self) -> (result: Choice)
+        ensures
+            // Result is true iff the scalar satisfies Scalar invariants #1 and #2
+            choice_is_true(result) == is_canonical_scalar(self),
+    {
+        let result = self.ct_eq(&self.reduce());
+        // TODO: Prove the postcondition from ct_eq and reduce specs
+        assume(choice_is_true(result) == is_canonical_scalar(self));
+        result
+    }
+    } // verus!
 }
 
 verus! {
-
 // Helper function for montgomery_invert
 #[inline]
-fn square_multiply(
-    y: &mut UnpackedScalar,
-    squarings: usize,
-    x: &UnpackedScalar,
-)/*  VERIFICATION NOTE:
+fn square_multiply(y: &mut UnpackedScalar, squarings: usize, x: &UnpackedScalar)
+/*  VERIFICATION NOTE:
 - PROOF BYPASS
 - This function was initially inside the body of montgomery_invert, but was moved outside for Verus
 */
-
-    requires
-        limbs_bounded(old(y)),  // Use old() for &mut parameters in requires
-        limbs_bounded(x),  // No old() needed for & parameters
-
-    ensures
-        limbs_bounded(y),
-        limbs_bounded(x),
-        (to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(
-            to_nat(&old(y).limbs) as int,
-            pow2(squarings as nat),
-        ) * to_nat(&x.limbs)) % (group_order() as int),
+requires
+    limbs_bounded(old(y)),  // Use old() for &mut parameters in requires
+    limbs_bounded(x),        // No old() needed for & parameters
+ensures
+    limbs_bounded(y),
+    limbs_bounded(x),
+    (to_nat(&y.limbs) * montgomery_radix()) % group_order() ==
+    (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int)
 {
     assume(false);
     let ghost mut i: int = 0;  // Ghost variable: tracks iterations for proof
     for _ in 0..squarings
         invariant
-            limbs_bounded(y),
-            limbs_bounded(x),
-            i <= squarings,
-            pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
+        limbs_bounded(y), limbs_bounded(x), i <= squarings,
+        pow(to_nat(&old(y).limbs) as int, pow2(i as nat)) < group_order() as int,
     {
         proof {
             i = i + 1;
@@ -2407,68 +2207,63 @@ fn square_multiply(
     proof {
         assume(limbs_bounded(y));
         assume(limbs_bounded(x));
-        assume((to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(
-            to_nat(&old(y).limbs) as int,
-            pow2(squarings as nat),
-        ) * to_nat(&x.limbs)) % (group_order() as int));
+        assume((to_nat(&y.limbs) * montgomery_radix()) % group_order() == (pow(to_nat(&old(y).limbs) as int, pow2(squarings as nat)) * to_nat(&x.limbs)) % (group_order() as int));
     }
 }
 
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
-    fn pack(&self) -> (result: Scalar)/* VERIFICATION NOTE:
+    fn pack(&self) -> (result: Scalar)
+    /* VERIFICATION NOTE:
     PROOF BYPASS
     */
-
-        requires
-            limbs_bounded(self),
-        ensures
-            bytes_to_nat(&result.bytes) == to_nat(&self.limbs),
-            // VERIFICATION NOTE: If input is canonical (< group order), output satisfies Scalar invariants
-            to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result),
+    requires
+        limbs_bounded(self),
+    ensures
+        bytes_to_nat(&result.bytes) == to_nat(&self.limbs),
+        // VERIFICATION NOTE: If input is canonical (< group order), output satisfies Scalar invariants
+        to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result),
     {
-        let result = Scalar { bytes: self.as_bytes() };
+        let result = Scalar {
+            bytes: self.as_bytes(),
+        };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
         assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
         result
     }
 
     /// Inverts an UnpackedScalar in Montgomery form.
-    #[rustfmt::skip]  // keep alignment of addition chain and squarings
+    #[rustfmt::skip] // keep alignment of addition chain and squarings
     #[allow(clippy::just_underscores_and_digits)]
-    pub fn montgomery_invert(&self) -> (result:
-        UnpackedScalar)/* VERIFICATION NOTE:
+    pub fn montgomery_invert(&self) -> (result: UnpackedScalar)
+    /* VERIFICATION NOTE:
     PROOF BYPASS
     */
-
-        requires
-            limbs_bounded(&self),
-        ensures
-            limbs_bounded(&result),
-            (to_nat(&result.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix()
-                * montgomery_radix())
-                % group_order(),
-    // Equivalent to: from_montgomery(result) * from_montgomery(self) ≡ 1 (mod L)
-    // Expressed in Montgomery form: (result/R) * (self/R) ≡ 1, i.e., result * self ≡ R² (mod L)
-
+    requires
+        limbs_bounded(&self),
+    ensures
+        limbs_bounded(&result),
+        (to_nat(&result.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order(),
+        // Equivalent to: from_montgomery(result) * from_montgomery(self) ≡ 1 (mod L)
+        // Expressed in Montgomery form: (result/R) * (self/R) ≡ 1, i.e., result * self ≡ R² (mod L)
     {
         // Uses the addition chain from
         // https://briansmith.org/ecc-inversion-addition-chains-01#curve25519_scalar_inversion
-        let _1 = *self;
+        let    _1 = *self;
         assume(limbs_bounded(&_1));
-        let _10 = _1.montgomery_square();
+        let   _10 = _1.montgomery_square();
         assume(limbs_bounded(&_10));
-        let _100 = _10.montgomery_square();
+        let  _100 = _10.montgomery_square();
         assume(limbs_bounded(&_100));
-        let _11 = UnpackedScalar::montgomery_mul(&_10, &_1);
+        let   _11 = UnpackedScalar::montgomery_mul(&_10,     &_1);
         assume(limbs_bounded(&_11));
-        let _101 = UnpackedScalar::montgomery_mul(&_10, &_11);
+        let  _101 = UnpackedScalar::montgomery_mul(&_10,    &_11);
         assume(limbs_bounded(&_101));
-        let _111 = UnpackedScalar::montgomery_mul(&_10, &_101);
+        let  _111 = UnpackedScalar::montgomery_mul(&_10,   &_101);
         assume(limbs_bounded(&_111));
-        let _1001 = UnpackedScalar::montgomery_mul(&_10, &_111);
+        let _1001 = UnpackedScalar::montgomery_mul(&_10,   &_111);
         assume(limbs_bounded(&_1001));
-        let _1011 = UnpackedScalar::montgomery_mul(&_10, &_1001);
+        let _1011 = UnpackedScalar::montgomery_mul(&_10,  &_1001);
         assume(limbs_bounded(&_1011));
         let _1111 = UnpackedScalar::montgomery_mul(&_100, &_1011);
         assume(limbs_bounded(&_1111));
@@ -2478,37 +2273,36 @@ impl UnpackedScalar {
         assume(limbs_bounded(&y));
 
         square_multiply(&mut y, 123 + 3, &_101);
-        square_multiply(&mut y, 2 + 2, &_11);
-        square_multiply(&mut y, 1 + 4, &_1111);
-        square_multiply(&mut y, 1 + 4, &_1111);
-        square_multiply(&mut y, 4, &_1001);
-        square_multiply(&mut y, 2, &_11);
-        square_multiply(&mut y, 1 + 4, &_1111);
-        square_multiply(&mut y, 1 + 3, &_101);
-        square_multiply(&mut y, 3 + 3, &_101);
-        square_multiply(&mut y, 3, &_111);
-        square_multiply(&mut y, 1 + 4, &_1111);
-        square_multiply(&mut y, 2 + 3, &_111);
-        square_multiply(&mut y, 2 + 2, &_11);
-        square_multiply(&mut y, 1 + 4, &_1011);
-        square_multiply(&mut y, 2 + 4, &_1011);
-        square_multiply(&mut y, 6 + 4, &_1001);
-        square_multiply(&mut y, 2 + 2, &_11);
-        square_multiply(&mut y, 3 + 2, &_11);
-        square_multiply(&mut y, 3 + 2, &_11);
-        square_multiply(&mut y, 1 + 4, &_1001);
-        square_multiply(&mut y, 1 + 3, &_111);
-        square_multiply(&mut y, 2 + 4, &_1111);
-        square_multiply(&mut y, 1 + 4, &_1011);
-        square_multiply(&mut y, 3, &_101);
-        square_multiply(&mut y, 2 + 4, &_1111);
-        square_multiply(&mut y, 3, &_101);
-        square_multiply(&mut y, 1 + 2, &_11);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,       4, &_1001);
+        square_multiply(&mut y,       2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   1 + 3, &_101);
+        square_multiply(&mut y,   3 + 3, &_101);
+        square_multiply(&mut y,       3, &_111);
+        square_multiply(&mut y,   1 + 4, &_1111);
+        square_multiply(&mut y,   2 + 3, &_111);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,   2 + 4, &_1011);
+        square_multiply(&mut y,   6 + 4, &_1001);
+        square_multiply(&mut y,   2 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   3 + 2, &_11);
+        square_multiply(&mut y,   1 + 4, &_1001);
+        square_multiply(&mut y,   1 + 3, &_111);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,   1 + 4, &_1011);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   2 + 4, &_1111);
+        square_multiply(&mut y,       3, &_101);
+        square_multiply(&mut y,   1 + 2, &_11);
 
         proof {
             assume(limbs_bounded(&y));
-            assume((to_nat(&y.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix()
-                * montgomery_radix()) % group_order());
+            assume((to_nat(&y.limbs) * to_nat(&self.limbs)) % group_order() == (montgomery_radix() * montgomery_radix()) % group_order());
         }
 
         y
@@ -2516,14 +2310,15 @@ impl UnpackedScalar {
 
     /// Inverts an UnpackedScalar not in Montgomery form.
     pub fn invert(&self) -> (result: UnpackedScalar)
-        ensures
-            limbs_bounded(&result),
-            // Postcondition: result * self ≡ 1 (mod group_order)
-            to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
+    ensures
+        limbs_bounded(&result),
+        // Postcondition: result * self ≡ 1 (mod group_order)
+        to_nat(&result.limbs) * to_nat(&self.limbs) % group_order() == 1,
     {
         /* <ORIGINAL CODE>
                 self.as_montgomery().montgomery_invert().from_montgomery()
         </ORIGINAL CODE> */
+
         assume(limbs_bounded(self));
         let mont = self.as_montgomery();
         assume(limbs_bounded(&mont));
@@ -2541,6 +2336,7 @@ impl UnpackedScalar {
 }
 
 } // verus!
+
 #[cfg(feature = "group")]
 impl Field for Scalar {
     const ZERO: Self = Self::ZERO;
@@ -2677,24 +2473,22 @@ impl FromUniformBytes<64> for Scalar {
 }
 
 verus! {
-
 /// Read one or more u64s stored as little endian bytes.
 ///
 /// ## Panics
 /// Panics if `src.len() != 8 * dst.len()`.
-fn read_le_u64_into(src: &[u8], dst: &mut [u64])/* VERIFICATION NOTE:
+fn read_le_u64_into(src: &[u8], dst: &mut [u64])
+/* VERIFICATION NOTE:
 PROOF BYPASS
 */
-
     requires
         src.len() == 8 * old(dst).len(),
     ensures
         dst.len() == old(dst).len(),
-        forall|i: int|
-            0 <= i < dst.len() ==> {
-                let byte_seq = Seq::new(8, |j: int| src[i * 8 + j] as u8);
-                #[trigger] dst[i] as nat == bytes_seq_to_nat(byte_seq)
-            },
+        forall|i: int| 0 <= i < dst.len() ==> {
+            let byte_seq = Seq::new(8, |j: int|  src[i * 8 + j] as u8);
+            #[trigger] dst[i] as nat == bytes_seq_to_nat(byte_seq)
+        },
 {
     #[cfg(not(verus_keep_ghost))]
     assert!(
@@ -2722,7 +2516,7 @@ PROOF BYPASS
             dst.len() == dst_len,
     {
         let byte_start = (i * 8);
-        let mut byte_array = [0u8;8];
+        let mut byte_array = [0u8; 8];
         for j in 0..8
             invariant
                 src.len() == 8 * dst_len,
@@ -2764,8 +2558,7 @@ PROOF BYPASS
 // VERIFICATION NOTE: PROOF BYPASS
 pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
     ensures
-// Result is a valid clamped integer for X25519
-
+        // Result is a valid clamped integer for X25519
         is_clamped_integer(&result),
         // All bytes except 0 and 31 remain unchanged
         forall|i: int| 1 <= i < 31 ==> #[trigger] result[i] == bytes[i],
@@ -2796,13 +2589,15 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 
     result
 }
-
 } // verus!
+
 // #[cfg(test)]
 // pub(crate) mod test {
 //     use super::*;
+
 //     #[cfg(feature = "alloc")]
 //     use alloc::vec::Vec;
+
 //     /// x = 2238329342913194256032495932344128051776374960164957527413114840482143558222
 //     pub static X: Scalar = Scalar {
 //         bytes: [
@@ -2827,6 +2622,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             0x1f, 0x35, 0xbb, 0x05,
 //         ],
 //     };
+
 //     /// The largest scalar that satisfies invariant #1, i.e., the largest scalar with the top bit
 //     /// set to 0. Since this scalar violates invariant #2, i.e., it's greater than the modulus `l`,
 //     /// addition and subtraction are broken. The only thing you can do with this is scalar-point
@@ -2839,6 +2635,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             0xff, 0xff, 0xff, 0x7f,
 //         ],
 //     };
+
 //     /// x*y = 5690045403673944803228348699031245560686958845067437804563560795922180092780
 //     static X_TIMES_Y: Scalar = Scalar {
 //         bytes: [
@@ -2847,6 +2644,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             0x9a, 0x73, 0x94, 0x0c,
 //         ],
 //     };
+
 //     /// sage: l = 2^252 + 27742317777372353535851937790883648493
 //     /// sage: big = 2^256 - 1
 //     /// sage: repr((big % l).digits(256))
@@ -2856,6 +2654,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 15,
 //         ],
 //     };
+
 //     static A_SCALAR: Scalar = Scalar {
 //         bytes: [
 //             0x1a, 0x0e, 0x97, 0x8a, 0x90, 0xf6, 0x62, 0x2d, 0x37, 0x47, 0x02, 0x3f, 0x8a, 0xd8,
@@ -2863,6 +2662,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             0x23, 0x76, 0xef, 0x09,
 //         ],
 //     };
+
 //     static A_NAF: [i8; 256] = [
 //         0, 13, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, -9, 0, 0, 0, 0, -11, 0, 0, 0, 0, 3, 0, 0,
 //         0, 0, 1, 0, 0, 0, 0, 9, 0, 0, 0, 0, -5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 11, 0, 0, 0, 0,
@@ -2874,6 +2674,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         0, 0, 0, 0, 0, -9, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, -15, 0,
 //         0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
 //     ];
+
 //     const BASEPOINT_ORDER_MINUS_ONE: Scalar = Scalar {
 //         bytes: [
 //             0xec, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9,
@@ -2881,8 +2682,10 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             0x00, 0x00, 0x00, 0x10,
 //         ],
 //     };
+
 //     /// The largest clamped integer
 //     static LARGEST_CLAMPED_INTEGER: [u8; 32] = clamp_integer(LARGEST_UNREDUCED_SCALAR.bytes);
+
 //     #[test]
 //     fn fuzzer_testcase_reduction() {
 //         // LE bytes of 24519928653854221733733552434404946937899825954937634815
@@ -2900,21 +2703,28 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             134, 171, 119, 216, 180, 128, 178, 62, 171, 132, 32, 62, 34, 119, 104, 193, 47, 215,
 //             181, 250, 14, 207, 172, 93, 75, 207, 211, 103, 144, 204, 56, 14,
 //         ];
+
 //         let a = Scalar::from_bytes_mod_order(a_bytes);
 //         let b = Scalar::from_bytes_mod_order(b_bytes);
 //         let c = Scalar::from_bytes_mod_order(c_bytes);
+
 //         let mut tmp = [0u8; 64];
+
 //         // also_a = (a mod l)
 //         tmp[0..32].copy_from_slice(&a_bytes[..]);
 //         let also_a = Scalar::from_bytes_mod_order_wide(&tmp);
+
 //         // also_b = (b mod l)
 //         tmp[0..32].copy_from_slice(&b_bytes[..]);
 //         let also_b = Scalar::from_bytes_mod_order_wide(&tmp);
+
 //         let expected_c = a * b;
 //         let also_expected_c = also_a * also_b;
+
 //         assert_eq!(c, expected_c);
 //         assert_eq!(c, also_expected_c);
 //     }
+
 //     #[test]
 //     fn non_adjacent_form_test_vector() {
 //         let naf = A_SCALAR.non_adjacent_form(5);
@@ -2922,8 +2732,10 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             assert_eq!(naf[i], A_NAF[i]);
 //         }
 //     }
+
 //     fn non_adjacent_form_iter(w: usize, x: &Scalar) {
 //         let naf = x.non_adjacent_form(w);
+
 //         // Reconstruct the scalar from the computed NAF
 //         let mut y = Scalar::ZERO;
 //         for i in (0..256).rev() {
@@ -2935,8 +2747,10 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             };
 //             y += digit;
 //         }
+
 //         assert_eq!(*x, y);
 //     }
+
 //     #[test]
 //     fn non_adjacent_form_random() {
 //         let mut rng = rand::thread_rng();
@@ -2947,6 +2761,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             }
 //         }
 //     }
+
 //     #[test]
 //     fn from_u64() {
 //         let val: u64 = 0xdeadbeefdeadbeef;
@@ -2960,6 +2775,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         assert_eq!(s[1], 0xbe);
 //         assert_eq!(s[0], 0xef);
 //     }
+
 //     #[test]
 //     fn scalar_mul_by_one() {
 //         let test_scalar = X * Scalar::ONE;
@@ -2967,16 +2783,19 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             assert!(test_scalar[i] == X[i]);
 //         }
 //     }
+
 //     #[test]
 //     fn add_reduces() {
 //         // Check that addition wraps around the modulus
 //         assert_eq!(BASEPOINT_ORDER_MINUS_ONE + Scalar::ONE, Scalar::ZERO);
 //     }
+
 //     #[test]
 //     fn sub_reduces() {
 //         // Check that subtraction wraps around the modulus
 //         assert_eq!(Scalar::ZERO - Scalar::ONE, BASEPOINT_ORDER_MINUS_ONE);
 //     }
+
 //     #[test]
 //     fn impl_add() {
 //         let two = Scalar::from(2u64);
@@ -2984,12 +2803,14 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         let should_be_two = one + one;
 //         assert_eq!(should_be_two, two);
 //     }
+
 //     #[allow(non_snake_case)]
 //     #[test]
 //     fn impl_mul() {
 //         let should_be_X_times_Y = X * Y;
 //         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
 //     }
+
 //     #[allow(non_snake_case)]
 //     #[test]
 //     #[cfg(feature = "alloc")]
@@ -2998,24 +2819,29 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         let X_Y_vector = [X, Y];
 //         let should_be_X_times_Y: Scalar = X_Y_vector.iter().product();
 //         assert_eq!(should_be_X_times_Y, X_TIMES_Y);
+
 //         // Test that product works for the empty iterator
 //         let one = Scalar::ONE;
 //         let empty_vector = [];
 //         let should_be_one: Scalar = empty_vector.iter().product();
 //         assert_eq!(should_be_one, one);
+
 //         // Test that product works for iterators where Item = Scalar
 //         let xs = [Scalar::from(2u64); 10];
 //         let ys = [Scalar::from(3u64); 10];
 //         // now zs is an iterator with Item = Scalar
 //         let zs = xs.iter().zip(ys.iter()).map(|(x, y)| x * y);
+
 //         let x_prod: Scalar = xs.iter().product();
 //         let y_prod: Scalar = ys.iter().product();
 //         let z_prod: Scalar = zs.product();
+
 //         assert_eq!(x_prod, Scalar::from(1024u64));
 //         assert_eq!(y_prod, Scalar::from(59049u64));
 //         assert_eq!(z_prod, Scalar::from(60466176u64));
 //         assert_eq!(x_prod * y_prod, z_prod);
 //     }
+
 //     #[test]
 //     #[cfg(feature = "alloc")]
 //     fn impl_sum() {
@@ -3024,24 +2850,29 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         let one_vector = [Scalar::ONE, Scalar::ONE];
 //         let should_be_two: Scalar = one_vector.iter().sum();
 //         assert_eq!(should_be_two, two);
+
 //         // Test that sum works for the empty iterator
 //         let zero = Scalar::ZERO;
 //         let empty_vector = [];
 //         let should_be_zero: Scalar = empty_vector.iter().sum();
 //         assert_eq!(should_be_zero, zero);
+
 //         // Test that sum works for owned types
 //         let xs = [Scalar::from(1u64); 10];
 //         let ys = [Scalar::from(2u64); 10];
 //         // now zs is an iterator with Item = Scalar
 //         let zs = xs.iter().zip(ys.iter()).map(|(x, y)| x + y);
+
 //         let x_sum: Scalar = xs.iter().sum();
 //         let y_sum: Scalar = ys.iter().sum();
 //         let z_sum: Scalar = zs.sum();
+
 //         assert_eq!(x_sum, Scalar::from(10u64));
 //         assert_eq!(y_sum, Scalar::from(20u64));
 //         assert_eq!(z_sum, Scalar::from(30u64));
 //         assert_eq!(x_sum + y_sum, z_sum);
 //     }
+
 //     #[test]
 //     fn square() {
 //         let expected = X * X;
@@ -3050,11 +2881,13 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             assert!(expected[i] == actual[i]);
 //         }
 //     }
+
 //     #[test]
 //     fn reduce() {
 //         let biggest = Scalar::from_bytes_mod_order([0xff; 32]);
 //         assert_eq!(biggest, CANONICAL_2_256_MINUS_1);
 //     }
+
 //     #[test]
 //     fn from_bytes_mod_order_wide() {
 //         let mut bignum = [0u8; 64];
@@ -3076,6 +2909,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             assert!(test_red[i] == reduced[i]);
 //         }
 //     }
+
 //     #[allow(non_snake_case)]
 //     #[test]
 //     fn invert() {
@@ -3084,24 +2918,30 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         let should_be_one = inv_X * X;
 //         assert_eq!(should_be_one, Scalar::ONE);
 //     }
+
 //     // Negating a scalar twice should result in the original scalar.
 //     #[allow(non_snake_case)]
 //     #[test]
 //     fn neg_twice_is_identity() {
 //         let negative_X = -&X;
 //         let should_be_X = -&negative_X;
+
 //         assert_eq!(should_be_X, X);
 //     }
+
 //     #[test]
 //     fn to_bytes_from_bytes_roundtrips() {
 //         let unpacked = X.unpack();
 //         let bytes = unpacked.as_bytes();
 //         let should_be_unpacked = UnpackedScalar::from_bytes(&bytes);
+
 //         assert_eq!(should_be_unpacked.0, unpacked.0);
 //     }
+
 //     #[test]
 //     fn montgomery_reduce_matches_from_bytes_mod_order_wide() {
 //         let mut bignum = [0u8; 64];
+
 //         // set bignum = x + 2^256x
 //         for i in 0..32 {
 //             bignum[i] = X[i];
@@ -3116,17 +2956,21 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             ],
 //         };
 //         let reduced = Scalar::from_bytes_mod_order_wide(&bignum);
+
 //         // The reduced scalar should match the expected
 //         assert_eq!(reduced.bytes, expected.bytes);
+
 //         //  (x + 2^256x) * R
 //         let interim =
 //             UnpackedScalar::mul_internal(&UnpackedScalar::from_bytes_wide(&bignum), &constants::R);
 //         // ((x + 2^256x) * R) / R  (mod l)
 //         let montgomery_reduced = UnpackedScalar::montgomery_reduce(&interim);
+
 //         // The Montgomery reduced scalar should match the reduced one, as well as the expected
 //         assert_eq!(montgomery_reduced.0, reduced.unpack().0);
 //         assert_eq!(montgomery_reduced.0, expected.unpack().0)
 //     }
+
 //     #[test]
 //     fn canonical_decoding() {
 //         // canonical encoding of 1667457891
@@ -3134,16 +2978,19 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             99, 99, 99, 99, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //             0, 0, 0, 0,
 //         ];
+
 //         // encoding of
 //         //   7265385991361016183439748078976496179028704920197054998554201349516117938192
 //         // = 28380414028753969466561515933501938171588560817147392552250411230663687203 (mod l)
 //         // non_canonical because unreduced mod l
 //         let non_canonical_bytes_because_unreduced = [16; 32];
+
 //         // encoding with high bit set, to check that the parser isn't pre-masking the high bit
 //         let non_canonical_bytes_because_highbit = [
 //             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //             0, 0, 128,
 //         ];
+
 //         assert!(bool::from(
 //             Scalar::from_canonical_bytes(canonical_bytes).is_some()
 //         ));
@@ -3154,6 +3001,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             Scalar::from_canonical_bytes(non_canonical_bytes_because_highbit).is_none()
 //         ));
 //     }
+
 //     #[test]
 //     #[cfg(feature = "serde")]
 //     fn serde_bincode_scalar_roundtrip() {
@@ -3161,11 +3009,14 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         let encoded = bincode::serialize(&X).unwrap();
 //         let parsed: Scalar = bincode::deserialize(&encoded).unwrap();
 //         assert_eq!(parsed, X);
+
 //         // Check that the encoding is 32 bytes exactly
 //         assert_eq!(encoded.len(), 32);
+
 //         // Check that the encoding itself matches the usual one
 //         assert_eq!(X, bincode::deserialize(X.as_bytes()).unwrap(),);
 //     }
+
 //     #[cfg(all(debug_assertions, feature = "alloc"))]
 //     #[test]
 //     #[should_panic]
@@ -3175,11 +3026,13 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         // This should panic in debug mode.
 //         Scalar::batch_invert(&mut xs);
 //     }
+
 //     #[test]
 //     #[cfg(feature = "alloc")]
 //     fn batch_invert_empty() {
 //         assert_eq!(Scalar::ONE, Scalar::batch_invert(&mut []));
 //     }
+
 //     #[test]
 //     #[cfg(feature = "alloc")]
 //     fn batch_invert_consistency() {
@@ -3192,18 +3045,22 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             })
 //             .collect();
 //         let v2 = v1.clone();
+
 //         let expected: Scalar = v1.iter().product();
 //         let expected = expected.invert();
 //         let ret = Scalar::batch_invert(&mut v1);
 //         assert_eq!(ret, expected);
+
 //         for (a, b) in v1.iter().zip(v2.iter()) {
 //             assert_eq!(a * b, Scalar::ONE);
 //         }
 //     }
+
 //     #[cfg(feature = "precomputed-tables")]
 //     fn test_pippenger_radix_iter(scalar: Scalar, w: usize) {
 //         let digits_count = Scalar::to_radix_2w_size_hint(w);
 //         let digits = scalar.as_radix_2w(w);
+
 //         let radix = Scalar::from((1 << w) as u64);
 //         let mut term = Scalar::ONE;
 //         let mut recovered_scalar = Scalar::ZERO;
@@ -3222,6 +3079,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         // When the input is unreduced, we may only recover the scalar mod l.
 //         assert_eq!(recovered_scalar, scalar.reduce());
 //     }
+
 //     #[test]
 //     #[cfg(feature = "precomputed-tables")]
 //     fn test_pippenger_radix() {
@@ -3233,12 +3091,14 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             // The largest unreduced scalar, s = 2^255-1. This is not reduced mod l. Scalar mult
 //             // still works though.
 //             .chain(iter::once(LARGEST_UNREDUCED_SCALAR));
+
 //         for scalar in cases {
 //             test_pippenger_radix_iter(scalar, 6);
 //             test_pippenger_radix_iter(scalar, 7);
 //             test_pippenger_radix_iter(scalar, 8);
 //         }
 //     }
+
 //     #[test]
 //     #[cfg(feature = "alloc")]
 //     fn test_read_le_u64_into() {
@@ -3255,47 +3115,60 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //                 &[0xF00F_F11F_0110_EFFE, 0xF0DE_BC9A_7856_3412],
 //             ),
 //         ];
+
 //         for (src, expected) in cases {
 //             let mut dst = vec![0; expected.len()];
 //             read_le_u64_into(src, &mut dst);
+
 //             assert_eq!(&dst, expected, "Expected {:x?} got {:x?}", expected, dst);
 //         }
 //     }
+
 //     // Tests consistency of From<{integer}> impls for Scalar
 //     #[test]
 //     fn test_scalar_from_int() {
 //         let s1 = Scalar::ONE;
+
 //         // For `x` in `u8`, `u16`, `u32`, `u64`, and `u128`, check that
 //         // `Scalar::from(x + 1) == Scalar::from(x) + Scalar::from(1)`
+
 //         let x = 0x23u8;
 //         let sx = Scalar::from(x);
 //         assert_eq!(sx + s1, Scalar::from(x + 1));
+
 //         let x = 0x2323u16;
 //         let sx = Scalar::from(x);
 //         assert_eq!(sx + s1, Scalar::from(x + 1));
+
 //         let x = 0x2323_2323u32;
 //         let sx = Scalar::from(x);
 //         assert_eq!(sx + s1, Scalar::from(x + 1));
+
 //         let x = 0x2323_2323_2323_2323u64;
 //         let sx = Scalar::from(x);
 //         assert_eq!(sx + s1, Scalar::from(x + 1));
+
 //         let x = 0x2323_2323_2323_2323_2323_2323_2323_2323u128;
 //         let sx = Scalar::from(x);
 //         assert_eq!(sx + s1, Scalar::from(x + 1));
 //     }
+
 //     #[cfg(feature = "group")]
 //     #[test]
 //     fn ff_constants() {
 //         assert_eq!(Scalar::from(2u64) * Scalar::TWO_INV, Scalar::ONE);
+
 //         assert_eq!(
 //             Scalar::ROOT_OF_UNITY * Scalar::ROOT_OF_UNITY_INV,
 //             Scalar::ONE,
 //         );
+
 //         // ROOT_OF_UNITY^{2^s} mod m == 1
 //         assert_eq!(
 //             Scalar::ROOT_OF_UNITY.pow(&[1u64 << Scalar::S, 0, 0, 0]),
 //             Scalar::ONE,
 //         );
+
 //         // DELTA^{t} mod m == 1
 //         assert_eq!(
 //             Scalar::DELTA.pow(&[
@@ -3307,6 +3180,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //             Scalar::ONE,
 //         );
 //     }
+
 //     #[cfg(feature = "group")]
 //     #[test]
 //     fn ff_impls() {
@@ -3314,16 +3188,21 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         assert!(bool::from(Scalar::ONE.is_odd()));
 //         assert!(bool::from(Scalar::from(2u64).is_even()));
 //         assert!(bool::from(Scalar::DELTA.is_even()));
+
 //         assert!(bool::from(Field::invert(&Scalar::ZERO).is_none()));
 //         assert_eq!(Field::invert(&X).unwrap(), XINV);
+
 //         let x_sq = X.square();
 //         // We should get back either the positive or negative root.
 //         assert!([X, -X].contains(&x_sq.sqrt().unwrap()));
+
 //         assert_eq!(Scalar::from_repr_vartime(X.to_repr()), Some(X));
 //         assert_eq!(Scalar::from_repr_vartime([0xff; 32]), None);
+
 //         assert_eq!(Scalar::from_repr(X.to_repr()).unwrap(), X);
 //         assert!(bool::from(Scalar::from_repr([0xff; 32]).is_none()));
 //     }
+
 //     #[test]
 //     #[should_panic]
 //     fn test_read_le_u64_into_should_panic_on_bad_input() {
@@ -3331,6 +3210,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         // One byte short
 //         read_le_u64_into(&[0xFE, 0xEF, 0x10, 0x01, 0x1F, 0xF1, 0x0F], &mut dst);
 //     }
+
 //     #[test]
 //     fn test_scalar_clamp() {
 //         let input = A_SCALAR.bytes;
@@ -3341,6 +3221,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         ];
 //         let actual = clamp_integer(input);
 //         assert_eq!(actual, expected);
+
 //         let expected = [
 //             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 //             0, 0, 0x40,
@@ -3354,17 +3235,20 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //         ];
 //         let actual = clamp_integer([0xff; 32]);
 //         assert_eq!(actual, expected);
+
 //         assert_eq!(
 //             LARGEST_CLAMPED_INTEGER,
 //             clamp_integer(LARGEST_CLAMPED_INTEGER)
 //         );
 //     }
+
 //     // Check that a * b == a.reduce() * a.reduce() for ANY scalars a,b, even ones that violate
 //     // invariant #1, i.e., a,b > 2^255. Old versions of ed25519-dalek did multiplication where a
 //     // was reduced and b was clamped and unreduced. This checks that that was always well-defined.
 //     #[test]
 //     fn test_mul_reduction_invariance() {
 //         let mut rng = rand::thread_rng();
+
 //         for _ in 0..10 {
 //             // Also define c that's clamped. We'll make sure that clamping doesn't affect
 //             // computation
@@ -3383,6 +3267,7 @@ pub const fn clamp_integer(bytes: [u8; 32]) -> (result: [u8; 32])
 //                     },
 //                 )
 //             };
+
 //             // Make sure this is the same product no matter how you cut it
 //             let reduced_mul_ab = a.reduce() * b.reduce();
 //             let reduced_mul_ac = a.reduce() * c.reduce();

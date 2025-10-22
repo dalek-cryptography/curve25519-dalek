@@ -1,6 +1,7 @@
 //! Constants for use in Lizard
 //!
 //! Could be moved into backend/serial/u??/constants.rs
+
 #[cfg(curve25519_dalek_bits = "64")]
 pub(crate) use super::u64_constants::*;
 

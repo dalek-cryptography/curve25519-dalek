@@ -8,7 +8,9 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
+
 //! Implementation of the interleaved window method, also known as Straus' method.
+
 #![allow(non_snake_case)]
 
 use alloc::vec::Vec;

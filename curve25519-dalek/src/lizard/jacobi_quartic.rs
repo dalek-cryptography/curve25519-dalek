@@ -1,4 +1,5 @@
 //! Helper functions for use with Lizard
+
 #![allow(non_snake_case)]
 
 use subtle::Choice;

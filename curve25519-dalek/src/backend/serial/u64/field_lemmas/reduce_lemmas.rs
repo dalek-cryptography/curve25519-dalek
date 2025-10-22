@@ -26,7 +26,8 @@ pub proof fn lemma_boundaries(limbs: [u64; 5])
         ((limbs[1] & mask51) + (limbs[0] >> 51)) < (1u64 << 52),
         ((limbs[2] & mask51) + (limbs[1] >> 51)) < (1u64 << 52),
         ((limbs[3] & mask51) + (limbs[2] >> 51)) < (1u64 << 52),
-        ((limbs[4] & mask51) + (limbs[3] >> 51)) < (1u64 << 52),
+        ((limbs[4] & mask51) + (limbs[3] >> 51)) < (1u64 << 52)
+
 {
     // \A i. limbs[i] < 2^13
     shifted_lt(limbs[0], 51);
@@ -85,24 +86,25 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         // additionally, if all limbs are below 2^51, reduce(l) = l
         (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (spec_reduce(limbs) =~= limbs),
         as_nat(spec_reduce(limbs)) == as_nat(limbs) - p() * (limbs[4] >> 51),
-        as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p(),
+        as_nat(spec_reduce(limbs)) % p() == as_nat(limbs) % p()
 {
+
     // -----
     // reduce identity for small limbs
+
     // Can't seem to reference r within this proof block, we reconstruct it here
     let rr: [u64; 5] = spec_reduce(limbs);
 
-    assert((forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) ==> (rr =~= limbs))
-        by {
+    assert((forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) ==> (rr =~= limbs)) by {
         if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
             assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & mask51 == limbs[i] by {
-                l51_bit_mask_lt();  // mask51 = low_bits_mask(51)
+                l51_bit_mask_lt(); // mask51 = low_bits_mask(51)
                 shift_is_pow2(51);
                 lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
                 lemma_small_mod(limbs[i] as nat, pow2(51));
             }
             assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
-                l51_bit_mask_lt();  // mask51 = low_bits_mask(51)
+                l51_bit_mask_lt(); // mask51 = low_bits_mask(51)
                 shift_is_pow2(51);
                 lemma_u64_shr_is_div(limbs[i], 51);
                 lemma_basic_div(limbs[i] as int, pow2(51) as int);
@@ -129,34 +131,53 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
     lemma_boundaries(limbs);
 
     // distribute
-    assert(as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(102) * a1 + pow2(102)
-        * b2 + pow2(153) * a2 + pow2(153) * b3 + pow2(204) * a3 + pow2(204) * b4) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, a0 as int, b1 as int);
+    assert(as_nat(rr) ==
+        19 *  a4 + b0 +
+        pow2(51) * a0 + pow2(51) * b1 +
+        pow2(102) * a1 + pow2(102) * b2 +
+        pow2(153) * a2 + pow2(153) * b3 +
+        pow2(204) * a3 + pow2(204) * b4
+    ) by {
+        lemma_mul_is_distributive_add(pow2( 51) as int, a0 as int, b1 as int);
         lemma_mul_is_distributive_add(pow2(102) as int, a1 as int, b2 as int);
         lemma_mul_is_distributive_add(pow2(153) as int, a2 as int, b3 as int);
         lemma_mul_is_distributive_add(pow2(204) as int, a3 as int, b4 as int);
     }
 
     // factor out
-    assert(as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(51) * (pow2(51) * a1)
-        + pow2(102) * b2 + pow2(102) * (pow2(51) * a2) + pow2(153) * b3 + pow2(153) * (pow2(51)
-        * a3) + pow2(204) * b4) by {
+    assert(as_nat(rr) ==
+        19 *  a4 + b0 +
+        pow2(51) * a0 + pow2(51) * b1 +
+        pow2(51) * (pow2(51) * a1) + pow2(102) * b2 +
+        pow2(102) * (pow2(51) * a2) + pow2(153) * b3 +
+        pow2(153) * (pow2(51) * a3) + pow2(204) * b4
+    ) by {
         lemma_two_factoring_51(51, a1);
         lemma_two_factoring_51(102, a2);
         lemma_two_factoring_51(153, a3);
     }
 
     // change groupings
-    assert(as_nat(rr) == (b0 + pow2(51) * a0) + pow2(51) * (b1 + pow2(51) * a1) + pow2(102) * (b2
-        + pow2(51) * a2) + pow2(153) * (b3 + pow2(51) * a3) + pow2(204) * b4 + 19 * a4) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, b1 as int, pow2(51) * a1);
+    assert(as_nat(rr) ==
+        (b0 + pow2(51) * a0) +
+        pow2(51) * (b1 + pow2(51) * a1) +
+        pow2(102) * (b2 + pow2(51) * a2) +
+        pow2(153) * (b3 + pow2(51) * a3) +
+        pow2(204) * b4 + 19 * a4
+    ) by {
+        lemma_mul_is_distributive_add(pow2( 51) as int, b1 as int, pow2(51) * a1);
         lemma_mul_is_distributive_add(pow2(102) as int, b2 as int, pow2(51) * a2);
         lemma_mul_is_distributive_add(pow2(153) as int, b3 as int, pow2(51) * a3);
     }
 
     // invoke div/mod identity
-    assert(as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
-        * limbs[3] + pow2(204) * b4 + 19 * a4) by {
+    assert(as_nat(rr) ==
+        limbs[0] +
+        pow2(51) * limbs[1] +
+        pow2(102) * limbs[2] +
+        pow2(153) * limbs[3] +
+        pow2(204) * b4 + 19 * a4
+    ) by {
         lemma_div_and_mod_51(a0, b0, limbs[0]);
         lemma_div_and_mod_51(a1, b1, limbs[1]);
         lemma_div_and_mod_51(a2, b2, limbs[2]);
@@ -164,10 +185,15 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
     }
 
     // Add missing limbs[4] parts
-    assert(as_nat(rr) == limbs[0] + pow2(51) * limbs[1] + pow2(102) * limbs[2] + pow2(153)
-        * limbs[3] + pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4) + 19 * a4) by {
+    assert(as_nat(rr) ==
+        limbs[0] +
+        pow2(51) * limbs[1] +
+        pow2(102) * limbs[2] +
+        pow2(153) * limbs[3] +
+        pow2(204) * limbs[4] - pow2(204) * (pow2(51) * a4 ) + 19 * a4
+    ) by {
         lemma_div_and_mod_51(a4, b4, limbs[4]);
-        assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204) * (pow2(51) * a4)) by {
+        assert(pow2(204) * limbs[4] == pow2(204) * b4 + pow2(204)* (pow2(51) * a4)) by {
             lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) * a4 as int, b4 as int);
         }
     }
@@ -181,19 +207,15 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
     assert(pow2(204) * (pow2(51) * a4) - 19 * a4 == p() * a4) by {
         lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, a4 as int);
         lemma_pow2_adds(204, 51);
-        lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19);
-        pow255_gt_19();  // we need to prove 2^255 - 19 doesn't underflow
+        lemma_mul_is_distributive_sub_other_way(a4 as int, pow2(255) as int, 19 );
+        pow255_gt_19(); // we need to prove 2^255 - 19 doesn't underflow
     }
 
     pow255_gt_19();
-    lemma_mod_multiples_vanish(
-        (limbs[4] >> 51) as int,
-        as_nat(spec_reduce(limbs)) as int,
-        p() as int,
-    );
+    lemma_mod_multiples_vanish((limbs[4] >> 51) as int, as_nat(spec_reduce(limbs)) as int, p() as int);
 }
 
-fn main() {
-}
 
-} // verus!
+fn main() {}
+
+}

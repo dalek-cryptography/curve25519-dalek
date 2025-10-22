@@ -22,7 +22,3 @@ pub mod load8_lemmas;
 pub mod compute_q_lemmas;
 pub mod limbs_to_bytes_lemmas;
 pub mod to_bytes_reduction_lemmas;
-
-// Unused helper lemmas - kept for reference and potential future use
-#[allow(unused)]
-pub mod unused_helper_lemmas;

@@ -438,9 +438,9 @@ impl FieldElement51 {
         proof {
             // Step 4: Prove that packing limbs into bytes preserves the value
             lemma_limbs_to_bytes(final_limbs, s);
-            // Now we know: as_nat_32_u8(s) == as_nat(final_limbs)
+            // Now we know: as_nat_32_u8(&s) == as_nat(final_limbs)
             // Combined with step 3: as_nat(final_limbs) == as_nat(self.limbs) % p()
-            // We get: as_nat_32_u8(s) == as_nat(self.limbs) % p()
+            // We get: as_nat_32_u8(&s) == as_nat(self.limbs) % p()
         }
 
         // High bit should be zero.

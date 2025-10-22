@@ -43,7 +43,7 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
 }
 
 // Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat_32_u8_nonrec(limbs: &[u8; 32]) -> nat {
+pub open spec fn as_nat_32_u8(limbs: &[u8; 32]) -> nat {
     // Verus error: `core::iter::range::impl&%15::fold` is not supported
     // we write them out manually
     //
@@ -81,10 +81,6 @@ pub open spec fn as_nat_32_u8_nonrec(limbs: &[u8; 32]) -> nat {
     (limbs[29] as nat) * pow2(29 * 8) +
     (limbs[30] as nat) * pow2(30 * 8) +
     (limbs[31] as nat) * pow2(31 * 8)
-}
-
-pub open spec fn as_nat_32_u8(limbs: &[u8; 32]) -> nat {
-    as_nat_32_u8_rec(limbs, 0)
 }
 
 

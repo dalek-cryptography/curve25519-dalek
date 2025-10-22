@@ -370,7 +370,6 @@ impl ConditionallySelectable for FieldElement51 {
     Same solution as above didnt work for the following two methods because of mutable references.
     </VERIFICATION NOTE> */
 
-    #[verifier::external_body]
     fn conditional_swap(a: &mut FieldElement51, b: &mut FieldElement51, choice: Choice)
         ensures
             // If choice is false, a and b remain unchanged
@@ -386,11 +385,25 @@ impl ConditionallySelectable for FieldElement51 {
                 forall|i: int| 0 <= i < 5 ==> #[trigger] b.limbs[i] == old(a).limbs[i]
             ),
     {
-        u64::conditional_swap(&mut a.limbs[0], &mut b.limbs[0], choice);
-        u64::conditional_swap(&mut a.limbs[1], &mut b.limbs[1], choice);
-        u64::conditional_swap(&mut a.limbs[2], &mut b.limbs[2], choice);
-        u64::conditional_swap(&mut a.limbs[3], &mut b.limbs[3], choice);
-        u64::conditional_swap(&mut a.limbs[4], &mut b.limbs[4], choice);
+        let mut a0 = a.limbs[0];
+        let mut b0 = b.limbs[0];
+        conditional_swap_u64(&mut a0, &mut b0, choice);
+
+        let mut a1 = a.limbs[1];
+        let mut b1 = b.limbs[1];
+        conditional_swap_u64(&mut a1, &mut b1, choice);
+
+        let mut a2 = a.limbs[2];
+        let mut b2 = b.limbs[2];
+        conditional_swap_u64(&mut a2, &mut b2, choice);
+
+        let mut a3 = a.limbs[3];
+        let mut b3 = b.limbs[3];
+        conditional_swap_u64(&mut a3, &mut b3, choice);
+
+        let mut a4 = a.limbs[4];
+        let mut b4 = b.limbs[4];
+        conditional_swap_u64(&mut a4, &mut b4, choice);
     }
 
     #[verifier::external_body]

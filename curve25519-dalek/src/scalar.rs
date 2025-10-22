@@ -2541,6 +2541,19 @@ impl UnpackedScalar {
         }
         let result = Scalar { bytes: bytes };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
+        // result.bytes is [u8; 32]
+        // group order is pow2(252) + 27742317777372353535851937790883648493nat
+        // if result.bytes[31] > 127, then when we apply bytes_to_nat, we'll end up with
+        // something large than group_order, contradiction
+        // bytes[31] * 2^(31*8) + ...
+        // 127 * 2^(31*8) == 57443731770074831323412168344153766786583156455220123566449660816425654157312
+        // group order is     7237005577332262213973186563042994240857116359379907606001950938285454250989
+        // which is smaller
+        // unfold with fuel 32
+        // Another approach is like lemma_nine_limbs_equals_slice128_to_nat,
+        // which shows that a recursive defn equals a large polynomial
+        assert (to_nat(&self.limbs) < group_order() ==>   bytes_to_nat(&result.bytes) < group_order());
+        assert( to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127 );
         assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
         result
     }

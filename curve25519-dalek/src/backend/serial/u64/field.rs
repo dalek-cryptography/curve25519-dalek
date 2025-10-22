@@ -412,7 +412,6 @@ impl ConditionallySelectable for FieldElement51 {
         b.limbs[4] = b4;
     }
 
-    #[verifier::external_body]
     fn conditional_assign(&mut self, other: &FieldElement51, choice: Choice)
         ensures
             // If choice is false, self remains unchanged
@@ -424,11 +423,25 @@ impl ConditionallySelectable for FieldElement51 {
                 forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] == other.limbs[i]
             ),
     {
-        self.limbs[0].conditional_assign(&other.limbs[0], choice);
-        self.limbs[1].conditional_assign(&other.limbs[1], choice);
-        self.limbs[2].conditional_assign(&other.limbs[2], choice);
-        self.limbs[3].conditional_assign(&other.limbs[3], choice);
-        self.limbs[4].conditional_assign(&other.limbs[4], choice);
+        let mut self0 = self.limbs[0];
+        conditional_assign_u64(&mut self0, &other.limbs[0], choice);
+        self.limbs[0] = self0;
+
+        let mut self1 = self.limbs[1];
+        conditional_assign_u64(&mut self1, &other.limbs[1], choice);
+        self.limbs[1] = self1;
+
+        let mut self2 = self.limbs[2];
+        conditional_assign_u64(&mut self2, &other.limbs[2], choice);
+        self.limbs[2] = self2;
+
+        let mut self3 = self.limbs[3];
+        conditional_assign_u64(&mut self3, &other.limbs[3], choice);
+        self.limbs[3] = self3;
+
+        let mut self4 = self.limbs[4];
+        conditional_assign_u64(&mut self4, &other.limbs[4], choice);
+        self.limbs[4] = self4;
     }
 }
 

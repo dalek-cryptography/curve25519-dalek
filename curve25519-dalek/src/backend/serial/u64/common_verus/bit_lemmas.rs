@@ -250,7 +250,6 @@ pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     requires
         k <= n,
         a < pow2(k),
-        // (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)) < pow2(n),
     ensures
         (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
 {

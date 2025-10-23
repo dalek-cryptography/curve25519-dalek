@@ -682,6 +682,7 @@ impl Scalar52 {
             to_nat(&result.limbs) < group_order(),
     {
         assume(false);  // TODO: Add proofs
+
         // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
 

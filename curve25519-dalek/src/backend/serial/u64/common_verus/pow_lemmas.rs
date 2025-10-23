@@ -101,6 +101,47 @@ pub proof fn pow2_mul_u8(a: u8, k: nat)
     pow2_mul_general(a as nat, 8, k);
 }
 
+pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
+    requires
+        a < pow2(s)
+    ensures
+        (a + b * pow2(s)) / pow2(k) == a / pow2(k) + (b * pow2(s)) / pow2(k)
+{
+    let ps = pow2(s);
+    let pk = pow2(k);
+    let x = a;
+    let y = b * ps;
+    let z = x + y;
+
+    assert(pk > 0) by {
+        lemma_pow2_pos(k);
+    }
+
+    assert(x == pk * (x / pk) + x % pk) by {
+        lemma_fundamental_div_mod(x as int, pk as int);
+    }
+
+    assert(y == pk * (y / pk) + y % pk) by {
+        lemma_fundamental_div_mod(y as int, pk as int);
+    }
+
+    assert(z % pk == x % pk + y % pk) by {
+        sum_mod_decomposition(a, b, s, k);
+    }
+
+    assert(z == x + y == pk * (x / pk + y / pk) + z % pk) by {
+        lemma_mul_is_distributive_add(pk as int, (x / pk) as int, (y / pk) as int);
+    }
+
+    assert(z == pk * (z / pk) + z % pk) by {
+        lemma_fundamental_div_mod(z as int, pk as int);
+    }
+
+    assert( z / pk == x / pk + y / pk) by {
+        lemma_mul_equality_converse(pk as int, (z/pk) as int, (x/pk + y/pk) as int);
+    }
+}
+
 pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
     requires
         a < pow2(s),

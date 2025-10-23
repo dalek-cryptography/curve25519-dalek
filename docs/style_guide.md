@@ -166,6 +166,31 @@ proof {
 ```
 
 
+## Formatting
+
+Prefer
+```rust
+verus!{
+impl Foo{
+  ...
+}
+}
+```
+
+instead of 
+```rust
+impl Foo{
+verus!{
+  ...
+}
+}
+```
+
+Otherwise `verusfmt` sometimes unindents functions and causes a larger diff.
+
+
+
+
 
 
 

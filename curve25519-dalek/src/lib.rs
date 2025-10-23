@@ -99,6 +99,9 @@ pub mod lizard;
 // Finite field arithmetic mod p = 2^255 - 19
 pub mod field;
 
+// Specification functions for FieldElement
+pub(crate) mod field_specs;
+
 // Arithmetic backends (using u32, u64, etc) live here
 #[cfg(docsrs)]
 pub mod backend;

@@ -33,49 +33,64 @@ use subtle::ConstantTimeEq;
 use crate::backend;
 use crate::constants;
 
-cfg_if! {
-    if #[cfg(curve25519_dalek_backend = "fiat")] {
-        /// A `FieldElement` represents an element of the field
-        /// \\( \mathbb Z / (2\^{255} - 19)\\).
-        ///
-        /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        ///
-        /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(curve25519_dalek_bits = "32")]
-        pub(crate) type FieldElement = backend::serial::fiat_u32::field::FieldElement2625;
+use vstd::prelude::*;
 
-        /// A `FieldElement` represents an element of the field
-        /// \\( \mathbb Z / (2\^{255} - 19)\\).
-        ///
-        /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        ///
-        /// Using formally-verified field arithmetic from fiat-crypto.
-        #[cfg(curve25519_dalek_bits = "64")]
-        pub(crate) type FieldElement = backend::serial::fiat_u64::field::FieldElement51;
-    } else if #[cfg(curve25519_dalek_bits = "64")] {
-        /// A `FieldElement` represents an element of the field
-        /// \\( \mathbb Z / (2\^{255} - 19)\\).
-        ///
-        /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        pub(crate) type FieldElement = backend::serial::u64::field::FieldElement51;
-    } else {
-        /// A `FieldElement` represents an element of the field
-        /// \\( \mathbb Z / (2\^{255} - 19)\\).
-        ///
-        /// The `FieldElement` type is an alias for one of the platform-specific
-        /// implementations.
-        pub(crate) type FieldElement = backend::serial::u32::field::FieldElement2625;
-    }
+use vstd::arithmetic::power::*;
+use vstd::arithmetic::power2::*;
+
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::subtle_assumes::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::field_core::*;
+
+#[allow(unused_imports)]
+use crate::field_specs::*;
+
+verus! {
+
+/* VERIFICATION NOTE: specializing to u64 backend for now */
+/// A `FieldElement` represents an element of the field
+/// \\( \mathbb Z / (2\^{255} - 19)\\).
+///
+/// The `FieldElement` type is an alias for one of the platform-specific
+/// implementations.
+pub(crate) type FieldElement = backend::serial::u64::field::FieldElement51;
+
+impl Eq for FieldElement {
+
 }
 
-impl Eq for FieldElement {}
-
 impl PartialEq for FieldElement {
-    fn eq(&self, other: &FieldElement) -> bool {
-        self.ct_eq(other).into()
+    fn eq(&self, other: &FieldElement) -> (result:
+        bool)
+    // VERIFICATION NOTE: PROOF BYPASS AND SPEC BYPASS
+
+        ensures
+            result == (field_element_as_bytes(self) == field_element_as_bytes(
+                other,
+            )),
+    // SPEC BYPASS through placeholder field_element_as_bytes
+
+    {
+        /* <VERIFICATION NOTE>
+         Use wrapper function for Choice::into
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+         self.ct_eq(other).into()
+         </ORIGINAL CODE> */
+        let choice = self.ct_eq(other);
+        let result = choice_into(choice);
+
+        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
+        // vstd expects obeys_eq_spec() and eq_spec() from PartialEqSpecImpl trait,
+        // but that trait is not publicly exported, so we bypass with assume(false)
+        assume(false);
+
+        result
     }
 }
 
@@ -83,107 +98,227 @@ impl ConstantTimeEq for FieldElement {
     /// Test equality between two `FieldElement`s.  Since the
     /// internal representation is not canonical, the field elements
     /// are normalized to wire format before comparison.
-    fn ct_eq(&self, other: &FieldElement) -> Choice {
-        self.as_bytes().ct_eq(&other.as_bytes())
+    fn ct_eq(&self, other: &FieldElement) -> (result:
+        Choice)/* <VERIFICATION NOTE>
+     - PROOF BYPASS AND SPEC BYPASS
+     - Use wrapper functions for ConstantTimeEq and CtOption
+    </VERIFICATION NOTE> */
+
+        ensures
+            choice_is_true(result) == (field_element_as_bytes(self) == field_element_as_bytes(
+                other,
+            )),
+    // SPEC BYPASS through placeholder field_element_as_bytes
+
+    {
+        /* <VERIFICATION NOTE>
+         Use wrapper function for Verus compatibility instead of direct subtle call
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+         self.as_bytes().ct_eq(&other.as_bytes())
+         </ORIGINAL CODE> */
+        let result = ct_eq_bytes32(&self.as_bytes(), &other.as_bytes());
+        assume(choice_is_true(result) == (field_element_as_bytes(self) == field_element_as_bytes(
+            other,
+        )));
+        result
     }
 }
 
+} // verus!
 impl FieldElement {
-    /// Determine if this `FieldElement` is negative, in the sense
-    /// used in the ed25519 paper: `x` is negative if the low bit is
-    /// set.
-    ///
-    /// # Return
-    ///
-    /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
-    pub(crate) fn is_negative(&self) -> Choice {
-        let bytes = self.as_bytes();
-        (bytes[0] & 1).into()
+    verus! {
+
+/// Determine if this `FieldElement` is negative, in the sense
+/// used in the ed25519 paper: `x` is negative if the low bit is
+/// set.
+///
+/// # Return
+///
+/// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+pub(crate) fn is_negative(&self) -> (result:
+    Choice)/* VERIFICATION NOTE:
+    - PROOF BYPASS AND SPEC BYPASS
+    - we cannot write this directly; need to find a spec function for FieldElement51::as_bytes
+    ensures choice_is_true(result) == (self.as_bytes()[0] & 1 == 1)
+    - (note after slack call: maybe the first bit of as_bytes() is sufficient as a spec)
+    </VERIFICATION NOTE> */
+
+    ensures
+        choice_is_true(result) == (field_element_as_bytes(self)[0] & 1
+            == 1),
+// SPEC BYPASS throuh placeholder field_element_as_bytes
+
+{
+    let bytes = self.as_bytes();
+    let result = Choice::from(bytes[0] & 1);
+    assume(choice_is_true(result) == (field_element_as_bytes(self)[0] & 1 == 1));
+    result
+}
+
+/// Determine if this `FieldElement` is zero.
+///
+/// # Return
+///
+/// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+pub(crate) fn is_zero(&self) -> (result:
+    Choice)/* VERIFICATION NOTE:
+    - PROOF BYPASS AND SPEC BYPASS
+    - we cannot write this directly; need to find a spec function for FieldElement51::as_bytes
+    ensures choice_is_true(result) == (self.as_bytes() == [0u8; 32])
+    - (note: maybe an all_zeroes(as_bytes(...)) is sufficient as a spec)
+    </VERIFICATION NOTE> */
+
+    ensures
+        choice_is_true(result) == (field_element_as_bytes(self)
+            == seq![0u8; 32]),
+// SPEC BYPASS through placeholder field_element_as_bytes
+
+{
+    let zero = [0u8;32];
+    let bytes = self.as_bytes();
+
+    let result = ct_eq_bytes32(&bytes, &zero);
+    assume(choice_is_true(result) == (field_element_as_bytes(self) == seq![0u8; 32]));
+    result
+}
+
+/// Compute (self^(2^250-1), self^11), used as a helper function
+/// within invert() and pow22523().
+#[rustfmt::skip]  // keep alignment of explanatory comments
+fn pow22501(&self) -> (result: (FieldElement, FieldElement))
+    ensures
+        field_element_as_nat(&result.0) == pow(
+            field_element_as_nat(self) as int,
+            (pow2(250) - 1) as nat,
+        ) % (p() as int),
+        field_element_as_nat(&result.1) == pow(field_element_as_nat(self) as int, 11) % (
+        p() as int),
+{
+    // Instead of managing which temporary variables are used
+    // for what, we define as many as we need and leave stack
+    // allocation to the compiler
+    //
+    // Each temporary variable t_i is of the form (self)^e_i.
+    // Squaring t_i corresponds to multiplying e_i by 2,
+    // so the pow2k function shifts e_i left by k places.
+    // Multiplying t_i and t_j corresponds to adding e_i + e_j.
+    //
+    // Temporary t_i                      Nonzero bits of e_i
+    //
+    assume(false);
+    let t0 = self.square();  // 1         e_0 = 2^1
+    let t1 = t0.square().square();  // 3         e_1 = 2^3
+    let t2 = self * &t1;  // 3,0       e_2 = 2^3 + 2^0
+    let t3 = &t0 * &t2;  // 3,1,0
+    let t4 = t3.square();  // 4,2,1
+    let t5 = &t2 * &t4;  // 4,3,2,1,0
+    let t6 = t5.pow2k(5);  // 9,8,7,6,5
+    let t7 = &t6 * &t5;  // 9,8,7,6,5,4,3,2,1,0
+    let t8 = t7.pow2k(10);  // 19..10
+    let t9 = &t8 * &t7;  // 19..0
+    let t10 = t9.pow2k(20);  // 39..20
+    let t11 = &t10 * &t9;  // 39..0
+    let t12 = t11.pow2k(10);  // 49..10
+    let t13 = &t12 * &t7;  // 49..0
+    let t14 = t13.pow2k(50);  // 99..50
+    let t15 = &t14 * &t13;  // 99..0
+    let t16 = t15.pow2k(100);  // 199..100
+    let t17 = &t16 * &t15;  // 199..0
+    let t18 = t17.pow2k(50);  // 249..50
+    let t19 = &t18 * &t13;  // 249..0
+
+    (t19, t3)
+}
+
+/// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse.
+///
+/// When an input `FieldElement` is zero, its value is unchanged.
+#[cfg(feature = "alloc")]
+pub(crate) fn batch_invert(
+    inputs: &mut [FieldElement],
+)/* <VERIFICATION NOTE>
+     - Refactored for Verus: Index loops instead of iterators, manual Vec construction
+     - Choice type operations handled by wrappers in subtle_assumes.rs
+     - PROOF BYPASSES because of trait issues and proof obligations.
+    </VERIFICATION NOTE> */
+
+    ensures
+// Each element is replaced appropriately:
+
+        forall|i: int|
+            #![auto]
+            0 <= i < inputs.len() ==> {
+                // If input was non-zero, it's replaced with its inverse
+                (field_element_as_nat(&old(inputs)[i]) != 0) ==> is_inverse_field(
+                    &old(inputs)[i],
+                    &inputs[i],
+                ) &&
+                // If input was zero, it remains zero
+                (field_element_as_nat(&old(inputs)[i]) == 0) ==> field_element_as_nat(&inputs[i])
+                    == 0
+            },
+{
+    // Montgomery's Trick and Fast Implementation of Masked AES
+    // Genelle, Prouff and Quisquater
+    // Section 3.2
+    let n = inputs.len();
+
+    // Extract ONE constant before loops (similar to scalar.rs pattern)
+    let one = FieldElement::ONE;
+
+    /* <VERIFICATION NOTE>
+         Build vec manually instead of vec![one; n] for Verus compatibility
+        </VERIFICATION NOTE> */
+    /* <ORIGINAL CODE>
+         let mut scratch = vec![FieldElement::ONE; n];
+        </ORIGINAL CODE> */
+    let mut scratch = Vec::new();
+    for _ in 0..n {
+        scratch.push(one);
     }
 
-    /// Determine if this `FieldElement` is zero.
-    ///
-    /// # Return
-    ///
-    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
-    pub(crate) fn is_zero(&self) -> Choice {
-        let zero = [0u8; 32];
-        let bytes = self.as_bytes();
+    // Keep an accumulator of all of the previous products
+    let mut acc = one;
 
-        bytes.ct_eq(&zero)
-    }
-
-    /// Compute (self^(2^250-1), self^11), used as a helper function
-    /// within invert() and pow22523().
-    #[rustfmt::skip] // keep alignment of explanatory comments
-    fn pow22501(&self) -> (FieldElement, FieldElement) {
-        // Instead of managing which temporary variables are used
-        // for what, we define as many as we need and leave stack
-        // allocation to the compiler
-        //
-        // Each temporary variable t_i is of the form (self)^e_i.
-        // Squaring t_i corresponds to multiplying e_i by 2,
-        // so the pow2k function shifts e_i left by k places.
-        // Multiplying t_i and t_j corresponds to adding e_i + e_j.
-        //
-        // Temporary t_i                      Nonzero bits of e_i
-        //
-        let t0  = self.square();           // 1         e_0 = 2^1
-        let t1  = t0.square().square();    // 3         e_1 = 2^3
-        let t2  = self * &t1;              // 3,0       e_2 = 2^3 + 2^0
-        let t3  = &t0 * &t2;               // 3,1,0
-        let t4  = t3.square();             // 4,2,1
-        let t5  = &t2 * &t4;               // 4,3,2,1,0
-        let t6  = t5.pow2k(5);             // 9,8,7,6,5
-        let t7  = &t6 * &t5;               // 9,8,7,6,5,4,3,2,1,0
-        let t8  = t7.pow2k(10);            // 19..10
-        let t9  = &t8 * &t7;               // 19..0
-        let t10 = t9.pow2k(20);            // 39..20
-        let t11 = &t10 * &t9;              // 39..0
-        let t12 = t11.pow2k(10);           // 49..10
-        let t13 = &t12 * &t7;              // 49..0
-        let t14 = t13.pow2k(50);           // 99..50
-        let t15 = &t14 * &t13;             // 99..0
-        let t16 = t15.pow2k(100);          // 199..100
-        let t17 = &t16 * &t15;             // 199..0
-        let t18 = t17.pow2k(50);           // 249..50
-        let t19 = &t18 * &t13;             // 249..0
-
-        (t19, t3)
-    }
-
-    /// Given a slice of pub(crate)lic `FieldElements`, replace each with its inverse.
-    ///
-    /// When an input `FieldElement` is zero, its value is unchanged.
-    #[cfg(feature = "alloc")]
-    pub(crate) fn batch_invert(inputs: &mut [FieldElement]) {
-        // Montgomery’s Trick and Fast Implementation of Masked AES
-        // Genelle, Prouff and Quisquater
-        // Section 3.2
-
-        let n = inputs.len();
-        let mut scratch = vec![FieldElement::ONE; n];
-
-        // Keep an accumulator of all of the previous products
-        let mut acc = FieldElement::ONE;
-
-        // Pass through the input vector, recording the previous
-        // products in the scratch space
-        for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
+    // Pass through the input vector, recording the previous
+    // products in the scratch space
+    /* <VERIFICATION NOTE>
+         Rewritten with index loop instead of .zip() for Verus compatibility
+         Using choice_not() wrapper instead of ! operator
+        </VERIFICATION NOTE> */
+    /* <ORIGINAL CODE>
+         for (input, scratch) in inputs.iter().zip(scratch.iter_mut()) {
             *scratch = acc;
             // acc <- acc * input, but skipping zeros (constant-time)
             acc.conditional_assign(&(&acc * input), !input.is_zero());
         }
+        </ORIGINAL CODE> */
+    for i in 0..n {
+        assume(false);
+        scratch[i] = acc;
+        assume(false);
+        // acc <- acc * input, but skipping zeros (constant-time)
+        acc.conditional_assign(&(&acc * &inputs[i]), choice_not(inputs[i].is_zero()));
+    }
 
-        // acc is nonzero because we skipped zeros in inputs
-        assert!(bool::from(!acc.is_zero()));
+    // acc is nonzero because we skipped zeros in inputs
+    // ORIGINAL: assert!(bool::from(!acc.is_zero()));
+    #[cfg(not(verus_keep_ghost))]
+        assert!(bool::from(choice_not(acc.is_zero())));
 
-        // Compute the inverse of all products
-        acc = acc.invert();
+    // Compute the inverse of all products
+    acc = acc.invert();
 
-        // Pass through the vector backwards to compute the inverses
-        // in place
-        for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
+    // Pass through the vector backwards to compute the inverses
+    // in place
+    /* <VERIFICATION NOTE>
+         Manual reverse loop instead of .rev().zip() for Verus compatibility
+         Using choice_not() wrapper instead of ! operator
+         Extract-modify-reassign pattern for mutable indexing
+        </VERIFICATION NOTE> */
+    /* <ORIGINAL CODE>
+         for (input, scratch) in inputs.iter_mut().rev().zip(scratch.into_iter().rev()) {
             let tmp = &acc * input;
             // input <- acc * scratch, then acc <- tmp
             // Again, we skip zeros in a constant-time way
@@ -191,116 +326,221 @@ impl FieldElement {
             input.conditional_assign(&(&acc * &scratch), nz);
             acc.conditional_assign(&tmp, nz);
         }
+        </ORIGINAL CODE> */
+
+    proof {
+        assume(scratch.len() == n);
     }
 
-    /// Given a nonzero field element, compute its inverse.
-    ///
-    /// The inverse is computed as self^(p-2), since
-    /// x^(p-2)x = x^(p-1) = 1 (mod p).
-    ///
-    /// This function returns zero on input zero.
-    #[rustfmt::skip] // keep alignment of explanatory comments
-    #[allow(clippy::let_and_return)]
-    pub(crate) fn invert(&self) -> FieldElement {
-        // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
-        //
-        //                                 nonzero bits of exponent
-        let (t19, t3) = self.pow22501();   // t19: 249..0 ; t3: 3,1,0
-        let t20 = t19.pow2k(5);            // 254..5
-        let t21 = &t20 * &t3;              // 254..5,3,1,0
-
-        t21
+    let mut i: usize = n;
+    while i > 0
+        invariant
+            n == inputs.len(),
+            n == scratch.len(),
+        decreases i,
+    {
+        i -= 1;
+        proof {
+            assume(i < inputs.len());
+            assume(i < scratch.len());
+            assume(0 <= i);
+            assume(false);
+        }
+        let tmp = &acc * &inputs[i];
+        // input <- acc * scratch, then acc <- tmp
+        // Again, we skip zeros in a constant-time way
+        let nz = choice_not(inputs[i].is_zero());
+        // Verus doesn't support index for &mut, so we extract-modify-reassign
+        let mut input_i = inputs[i];
+        input_i.conditional_assign(&(&acc * &scratch[i]), nz);
+        inputs[i] = input_i;
+        acc.conditional_assign(&tmp, nz);
     }
 
-    /// Raise this field element to the power (p-5)/8 = 2^252 -3.
-    #[rustfmt::skip] // keep alignment of explanatory comments
-    #[allow(clippy::let_and_return)]
-    fn pow_p58(&self) -> FieldElement {
-        // The bits of (p-5)/8 are 101111.....11.
-        //
-        //                                 nonzero bits of exponent
-        let (t19, _) = self.pow22501();    // 249..0
-        let t20 = t19.pow2k(2);            // 251..2
-        let t21 = self * &t20;             // 251..2,0
-
-        t21
+    proof {
+        // Assume the postconditions hold
+        assume(forall|i: int|
+            #![auto]
+            0 <= i < inputs.len() ==> {
+                (field_element_as_nat(&old(inputs)[i]) != 0) ==> is_inverse_field(
+                    &old(inputs)[i],
+                    &inputs[i],
+                ) && (field_element_as_nat(&old(inputs)[i]) == 0) ==> field_element_as_nat(
+                    &inputs[i],
+                ) == 0
+            });
     }
+}
 
-    /// Given `FieldElements` `u` and `v`, compute either `sqrt(u/v)`
-    /// or `sqrt(i*u/v)` in constant time.
-    ///
-    /// This function always returns the nonnegative square root.
-    ///
-    /// # Return
-    ///
-    /// - `(Choice(1), +sqrt(u/v))  ` if `v` is nonzero and `u/v` is square;
-    /// - `(Choice(1), zero)        ` if `u` is zero;
-    /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
-    /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
-    ///
-    pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (Choice, FieldElement) {
-        // Using the same trick as in ed25519 decoding, we merge the
-        // inversion, the square root, and the square test as follows.
-        //
-        // To compute sqrt(α), we can compute β = α^((p+3)/8).
-        // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
-        // gives sqrt(α).
-        //
-        // To compute 1/sqrt(α), we observe that
-        //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
-        //                            = α^3 * (α^7)^((p-5)/8).
-        //
-        // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
-        // by first computing
-        //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
-        //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
-        //      = (uv^3) (uv^7)^((p-5)/8).
-        //
-        // If v is nonzero and u/v is square, then r^2 = ±u/v,
-        //                                     so vr^2 = ±u.
-        // If vr^2 =  u, then sqrt(u/v) = r.
-        // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
-        //
-        // If v is zero, r is also zero.
+/// Given a nonzero field element, compute its inverse.
+///
+/// The inverse is computed as self^(p-2), since
+/// x^(p-2)x = x^(p-1) = 1 (mod p).
+///
+/// This function returns zero on input zero.
+#[rustfmt::skip]  // keep alignment of explanatory comments
+#[allow(clippy::let_and_return)]
+pub(crate) fn invert(&self) -> (result:
+    FieldElement)
+// VERIFICATION NOTE: PROOF BYPASS
 
-        let v3 = &v.square() * v;
-        let v7 = &v3.square() * v;
-        let mut r = &(u * &v3) * &(u * &v7).pow_p58();
-        let check = v * &r.square();
+    ensures
+// If self is non-zero, result is the multiplicative inverse: result * self ≡ 1 (mod p)
 
-        let i = &constants::SQRT_M1;
+        field_element_as_nat(self) != 0 ==> (field_element_as_nat(&result) * field_element_as_nat(
+            self,
+        )) % p() == 1,
+        // If self is zero, result is zero
+        field_element_as_nat(self) == 0 ==> field_element_as_nat(&result) == 0,
+{
+    // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
+    //
+    //                                 nonzero bits of exponent
+    assume(false);
+    let (t19, t3) = self.pow22501();  // t19: 249..0 ; t3: 3,1,0
+    let t20 = t19.pow2k(5);  // 254..5
+    let t21 = &t20 * &t3;  // 254..5,3,1,0
 
-        let correct_sign_sqrt = check.ct_eq(u);
-        let flipped_sign_sqrt = check.ct_eq(&(-u));
-        let flipped_sign_sqrt_i = check.ct_eq(&(&(-u) * i));
+    t21
+}
 
-        let r_prime = &constants::SQRT_M1 * &r;
-        r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
+/// Raise this field element to the power (p-5)/8 = 2^252 -3.
+#[rustfmt::skip]  // keep alignment of explanatory comments
+#[allow(clippy::let_and_return)]
+fn pow_p58(&self) -> (result: FieldElement)
+    ensures
+        field_element_as_nat(&result) == pow(
+            field_element_as_nat(self) as int,
+            (pow2(252) - 3) as nat,
+        ) % (p() as int),
+{
+    // The bits of (p-5)/8 are 101111.....11.
+    //
+    //                                 nonzero bits of exponent
+    let (t19, _) = self.pow22501();  // 249..0
+    let t20 = t19.pow2k(2);  // 251..2
+    assume(false);
+    let t21 = self * &t20;  // 251..2,0
 
-        // Choose the nonnegative square root.
-        let r_is_negative = r.is_negative();
-        r.conditional_negate(r_is_negative);
+    t21
+}
 
-        let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
-
-        (was_nonzero_square, r)
+/// Given `FieldElements` `u` and `v`, compute either `sqrt(u/v)`
+/// or `sqrt(i*u/v)` in constant time.
+///
+/// This function always returns the nonnegative square root.
+///
+/// # Return
+///
+/// - `(Choice(1), +sqrt(u/v))  ` if `v` is nonzero and `u/v` is square;
+/// - `(Choice(1), zero)        ` if `u` is zero;
+/// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
+/// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
+///
+pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (result: (
+    Choice,
+    FieldElement,
+))
+// VERIFICATION NOTE: any ensures clause causes Verus parsing error
+//     ensures sqrt_ratio_i_post(u, v, result.0, &result.1),
+/*   (field_element_as_nat(u) == 0) ==> (choice_is_true(result.0) && field_element_as_nat(&result.1) == 0),
+   (field_element_as_nat(v) == 0 && field_element_as_nat(u) != 0) ==> (!choice_is_true(result.0) && field_element_as_nat(&result.1) == 0),
+   (choice_is_true(result.0) && field_element_as_nat(v) != 0) ==> is_sqrt_ratio(u, v, &result.1),
+   */
+{
+    // Using the same trick as in ed25519 decoding, we merge the
+    // inversion, the square root, and the square test as follows.
+    //
+    // To compute sqrt(α), we can compute β = α^((p+3)/8).
+    // Then β^2 = ±α, so multiplying β by sqrt(-1) if necessary
+    // gives sqrt(α).
+    //
+    // To compute 1/sqrt(α), we observe that
+    //    1/β = α^(p-1 - (p+3)/8) = α^((7p-11)/8)
+    //                            = α^3 * (α^7)^((p-5)/8).
+    //
+    // We can therefore compute sqrt(u/v) = sqrt(u)/sqrt(v)
+    // by first computing
+    //    r = u^((p+3)/8) v^(p-1-(p+3)/8)
+    //      = u u^((p-5)/8) v^3 (v^7)^((p-5)/8)
+    //      = (uv^3) (uv^7)^((p-5)/8).
+    //
+    // If v is nonzero and u/v is square, then r^2 = ±u/v,
+    //                                     so vr^2 = ±u.
+    // If vr^2 =  u, then sqrt(u/v) = r.
+    // If vr^2 = -u, then sqrt(u/v) = r*sqrt(-1).
+    //
+    // If v is zero, r is also zero.
+    proof {
+        assume(false);  // PROOF BYPASS: arithmetic trait operations
     }
+    let v3 = &v.square() * v;
+    let v7 = &v3.square() * v;
+    let mut r = &(u * &v3) * &(u * &v7).pow_p58();
+    let check = v * &r.square();
 
-    /// Attempt to compute `sqrt(1/self)` in constant time.
-    ///
-    /// Convenience wrapper around `sqrt_ratio_i`.
-    ///
-    /// This function always returns the nonnegative square root.
-    ///
-    /// # Return
-    ///
-    /// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
-    /// - `(Choice(0), zero)           ` if `self` is zero;
-    /// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
-    ///
-    pub(crate) fn invsqrt(&self) -> (Choice, FieldElement) {
-        FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
-    }
+    let i = &constants::SQRT_M1;
+
+    let correct_sign_sqrt = check.ct_eq(u);
+
+    // ORIGINAL CODE:
+    // let flipped_sign_sqrt = check.ct_eq(&(-u));
+    // let flipped_sign_sqrt_i = check.ct_eq(&(&(-u) * i));
+    // REFACTORED: Use wrapper to avoid Verus internal error with negation
+    let u_neg = negate_field(u);
+    let flipped_sign_sqrt = check.ct_eq(&u_neg);
+    let flipped_sign_sqrt_i = check.ct_eq(&(&u_neg * i));
+
+    let r_prime = &constants::SQRT_M1 * &r;
+    // ORIGINAL CODE:
+    // r.conditional_assign(&r_prime, flipped_sign_sqrt | flipped_sign_sqrt_i);
+    // REFACTORED: Use wrapper for Choice bitwise OR
+    r.conditional_assign(&r_prime, choice_or(flipped_sign_sqrt, flipped_sign_sqrt_i));
+
+    // Choose the nonnegative square root.
+    let r_is_negative = r.is_negative();
+    // ORIGINAL CODE:
+    // r.conditional_negate(r_is_negative);
+    // REFACTORED: Use wrapper for conditional_negate
+    conditional_negate_field(&mut r, r_is_negative);
+
+    // ORIGINAL CODE:
+    // let was_nonzero_square = correct_sign_sqrt | flipped_sign_sqrt;
+    // REFACTORED: Use wrapper for Choice bitwise OR
+    let was_nonzero_square = choice_or(correct_sign_sqrt, flipped_sign_sqrt);
+
+    (was_nonzero_square, r)
+}
+
+/// Attempt to compute `sqrt(1/self)` in constant time.
+///
+/// Convenience wrapper around `sqrt_ratio_i`.
+///
+/// This function always returns the nonnegative square root.
+///
+/// # Return
+///
+/// - `(Choice(1), +sqrt(1/self))  ` if `self` is a nonzero square;
+/// - `(Choice(0), zero)           ` if `self` is zero;
+/// - `(Choice(0), +sqrt(i/self))  ` if `self` is a nonzero nonsquare;
+///
+pub(crate) fn invsqrt(&self) -> (result: (
+    Choice,
+    FieldElement,
+))
+// VERIFICATION NOTE: PROOF BYPASS
+
+    ensures
+        (field_element_as_nat(self) == 0) ==> (!choice_is_true(result.0) && field_element_as_nat(
+            &result.1,
+        ) == 0),
+        (choice_is_true(result.0)) ==> is_sqrt_ratio(&FieldElement::ONE, self, &result.1),
+{
+    assume(false);
+    FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)
+}
+
+} // verus!
 }
 
 // #[cfg(test)]

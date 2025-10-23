@@ -56,6 +56,15 @@ pub fn ct_eq_bytes32(a: &[u8; 32], b: &[u8; 32]) -> (c: Choice)
     a.ct_eq(b)
 }
 
+// Assume specification for ct_eq on limb arrays (5 u64s for FieldElement51)
+#[verifier::external_body]
+pub fn ct_eq_limbs5(a: &[u64; 5], b: &[u64; 5]) -> (c: Choice)
+    ensures
+        choice_is_true(c) == (a == b),
+{
+    a.ct_eq(b)
+}
+
 // Helper for ct_eq on u8
 #[verifier::external_body]
 pub fn ct_eq_u8(a: &u8, b: &u8) -> (c: Choice)
@@ -82,6 +91,26 @@ pub fn choice_and(a: Choice, b: Choice) -> (c: Choice)
 {
     use core::ops::BitAnd;
     a.bitand(b)
+}
+
+// Wrapper for bitwise NOT on Choice
+#[verifier::external_body]
+pub fn choice_not(a: Choice) -> (c: Choice)
+    ensures
+        choice_is_true(c) == !choice_is_true(a),
+{
+    use core::ops::Not;
+    a.not()
+}
+
+// Wrapper for bitwise OR on Choice
+#[verifier::external_body]
+pub fn choice_or(a: Choice, b: Choice) -> (c: Choice)
+    ensures
+        choice_is_true(c) == (choice_is_true(a) || choice_is_true(b)),
+{
+    use core::ops::BitOr;
+    a.bitor(b)
 }
 
 /*** CtOption specifications ***/
@@ -156,6 +185,20 @@ pub fn conditional_assign_u64(a: &mut u64, b: &u64, choice: Choice)
         choice_is_true(choice) ==> *a == *b,
 {
     a.conditional_assign(b, choice)
+}
+
+/// Wrapper for conditional_negate on FieldElement
+#[verifier::external_body]
+pub fn conditional_negate_field<T>(a: &mut T, choice: Choice) where
+    T: subtle::ConditionallyNegatable,
+ {
+    a.conditional_negate(choice);
+}
+
+/// Wrapper for FieldElement negation to avoid Verus internal error
+#[verifier::external_body]
+pub fn negate_field<T>(a: &T) -> (result: T) where for <'a>&'a T: core::ops::Neg<Output = T> {
+    -a
 }
 
 } // verus!

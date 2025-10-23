@@ -22,19 +22,31 @@ use subtle::ConditionallySelectable;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
 
-use vstd::prelude::*;
-
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
 
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::field_core::*;
-
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
-
-#[allow(unused_imports)]
+use vstd::arithmetic::div_mod::*;
+use vstd::arithmetic::mul::*;
+use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
+use vstd::bits::*;
+use vstd::prelude::*;
+
+use super::common_verus::bit_lemmas::*;
+use super::common_verus::div_mod_lemmas::*;
+use super::common_verus::mask_lemmas::*;
+use super::common_verus::mul_lemmas::*;
+use super::common_verus::pow_lemmas::*;
+use super::common_verus::shift_lemmas::*;
+
+use super::field_lemmas::as_nat_lemmas::*;
+use super::field_lemmas::field_core::*;
+use super::field_lemmas::from_bytes_lemmas::*;
+use super::field_lemmas::load8_lemmas::*;
+use super::field_lemmas::negate_lemmas::*;
+use super::field_lemmas::pow2_51_lemmas::*;
+use super::field_lemmas::pow2k_lemmas::*;
+use super::field_lemmas::reduce_lemmas::*;
 
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -116,8 +128,7 @@ fn m(x: u64, y: u64) -> (r: u128)
 {
     proof {
         // if a <= a' and b <= b' then ab <= a'b'
-        // mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
-        assume(false);
+        mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
     }
     (x as u128) * (y as u128)
 }
@@ -483,32 +494,29 @@ impl FieldElement51 {
         requires
             forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 51),
         ensures
-            forall|i: int|
-                0 <= i < 5 ==> self.limbs[i] < (1u64
-                    << 52),
-    // Assume we start with l = (l0, l1, l2, l3, l4).
-    // Using c0 = 2^51 - 19 and c = 2^51 - 1, we can see that
-    // ( 36028797018963664u64 - l0,
-    //   36028797018963952u64 - l1,
-    //   36028797018963952u64 - l2,
-    //   36028797018963952u64 - l3,
-    //   36028797018963952u64 - l4 )
-    // is just 16 * (c0, c, c, c, c) - l (in vector notation)
-    // Further, as_nat((c0, c, c, c, c)) = p, so
-    // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
-    // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
-    // This gives us the identity
-    // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
-    //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
-    // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
-    //      as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64 - old(self).limbs[4]) as u64 >> 51),
-    //      (as_nat(self.limbs) + as_nat(old(self).limbs)) % p() == 0
-
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+            // Assume we start with l = (l0, l1, l2, l3, l4).
+            // Using c0 = 2^51 - 19 and c = 2^51 - 1, we can see that
+            // ( 36028797018963664u64 - l0,
+            //   36028797018963952u64 - l1,
+            //   36028797018963952u64 - l2,
+            //   36028797018963952u64 - l3,
+            //   36028797018963952u64 - l4 )
+            // is just 16 * (c0, c, c, c, c) - l (in vector notation)
+            // Further, as_nat((c0, c, c, c, c)) = p, so
+            // as_nat(16 * (c0, c, c, c, c) - l) is 16p - as_nat(l)
+            // We know as_nat(reduce(v)) = as_nat(v) - p * (v4 >> 51) for any v.
+            // This gives us the identity
+            // as_nat(negate(l)) = as_nat(reduce(16 * (c0, c, c, c, c) - l))
+            //                   = 16p - as_nat(l) - p * ((16c - l4) >> 51)
+            // Note that (16c - l4) >> 51 is either 14 or 15, in either case < 16.
+            as_nat(self.limbs) == 16 * p() - as_nat(old(self).limbs) - p() * ((36028797018963952u64
+                - old(self).limbs[4]) as u64 >> 51),
+            (as_nat(self.limbs) + as_nat(old(self).limbs)) % p() == 0,
     {
         proof {
-            // lemma_neg_no_underflow(self.limbs);
-            // negate_proof(self.limbs);
-            assume(false);  // PROOF BYPASS
+            lemma_neg_no_underflow(self.limbs);
+            negate_proof(self.limbs);
         }
         // See commentary in the Sub impl: (copied below)
         // To avoid underflow, first add a multiple of p.
@@ -537,10 +545,18 @@ impl FieldElement51 {
 
     /// Given 64-bit input limbs, reduce to enforce the bound 2^(51 + epsilon).
     #[inline(always)]
-    fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51) {
+    fn reduce(mut limbs: [u64; 5]) -> (r: FieldElement51)
+        ensures
+            r.limbs == spec_reduce(limbs),
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < (1u64 << 52),
+            (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
+            as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
+            as_nat(r.limbs) % p() == as_nat(limbs) % p(),
+    {
         proof {
-            assume(false);
-        }  // PROOF BYPASS - complex arithmetic reasoning
+            lemma_boundaries(limbs);
+            lemma_reduce(limbs);
+        }
 
         // Since the input limbs are bounded by 2^64, the biggest
         // carry-out is bounded by 2^13.
@@ -609,8 +625,35 @@ impl FieldElement51 {
         }
         */
         proof {
-            l51_bit_mask_lt();  // No over/underflow in the below let-def
-            assume(false);
+            assert(mask51 == (1u64 << 51) - 1) by (compute);
+
+            let l0 = load8_at_spec(bytes, 0);
+            let l1 = load8_at_spec(bytes, 6);
+            let l2 = load8_at_spec(bytes, 12);
+            let l3 = load8_at_spec(bytes, 19);
+            let l4 = load8_at_spec(bytes, 24);
+
+            assert(l0 <= u64::MAX && l1 <= u64::MAX && l2 <= u64::MAX && l3 <= u64::MAX && l4
+                <= u64::MAX) by {
+                load8_at_spec_fits_u64(bytes, 0);
+                load8_at_spec_fits_u64(bytes, 6);
+                load8_at_spec_fits_u64(bytes, 12);
+                load8_at_spec_fits_u64(bytes, 19);
+                load8_at_spec_fits_u64(bytes, 24);
+            }
+
+            let rr = [
+                l0 as u64 & mask51,
+                (l1 as u64 >> 3) & mask51,
+                (l2 as u64 >> 6) & mask51,
+                (l3 as u64 >> 1) & mask51,
+                (l4 as u64 >> 12) & mask51,
+            ];
+
+            assert(as_nat(rr) == as_nat_32_u8(bytes) % pow2(255)) by {
+                from_bytes_as_nat(bytes);
+                as_nat_32_mod_255(bytes);
+            }
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
         // ADAPTED CODE LINE: limbs is now a named field
@@ -642,7 +685,16 @@ impl FieldElement51 {
     /// Serialize this `FieldElement51` to a 32-byte array.  The
     /// encoding is canonical.
     #[rustfmt::skip]  // keep alignment of s[*] calculations
-    pub fn as_bytes(self) -> [u8; 32] {
+    pub fn as_bytes(self) -> (r: [u8; 32])
+        ensures
+            // TODO: Update after https://github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
+            true
+    {
+        proof {
+            // PROOF SKIP
+            assume(false);
+        }
+
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
         // Write h = pq + r with 0 <= r < p.
@@ -658,7 +710,6 @@ impl FieldElement51 {
         // Notice that h >= p <==> h + 19 >= p + 19 <==> h + 19 >= 2^255.
         // Therefore q can be computed as the carry bit of h + 19.
         // First, reduce the limbs to ensure h < 2*p.
-        assume(false);
         let mut limbs = FieldElement51::reduce(self.limbs).limbs;
 
         let mut q = (limbs[0] + 19) >> 51;
@@ -729,8 +780,21 @@ impl FieldElement51 {
 
     /// Given `k > 0`, return `self^(2^k)`.
     #[rustfmt::skip]  // keep alignment of c* calculations
-    pub fn pow2k(&self, mut k: u32) -> FieldElement51 {
-        assume(false);
+    pub fn pow2k(&self, mut k: u32) -> (r: FieldElement51)
+        requires
+            k > 0,  // debug_assert!( k > 0 );
+            forall|i: int|
+                0 <= i < 5 ==> self.limbs[i] < 1u64 << 54  // 51 + b for b = 3
+            ,
+        ensures
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
+            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(k as nat)) as nat % p(),
+    {
+        proof {
+            // SKIP
+            assume(false);
+        }
+
         #[cfg(not(verus_keep_ghost))]
         debug_assert!( k > 0 );
 
@@ -844,17 +908,90 @@ impl FieldElement51 {
     }
 
     /// Returns the square of this field element.
-    pub fn square(&self) -> FieldElement51 {
+    pub fn square(&self) -> (r: FieldElement51) 
+        requires
+            // The precondition in pow2k loop propagates to here
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
+        ensures
+            as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p(),
+    {
+        proof {
+            // pow2(1) == 2
+            lemma2_to64();
+        }
         self.pow2k(1)
     }
 
     /// Returns 2 times the square of this field element.
-    pub fn square2(&self) -> FieldElement51 {
+    pub fn square2(&self) -> (r: FieldElement51)
+        requires
+            // The precondition in pow2k loop propagates to here
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
+        ensures
+            as_nat(r.limbs) % p() == (2 * pow(as_nat(self.limbs) as int, 2)) as nat % p(),
+    {
         let mut square = self.pow2k(1);
-        for i in 0..5 {
+
+        // Since square is mut, we save the initial value
+        let ghost old_limbs = square.limbs;
+
+        proof {
+            // forall |i: int| 0 <= i < 5 ==> 2 * old_limbs[i] <= u64::MAX
+            assert forall|i: int| 0 <= i < 5 implies 2 * square.limbs[i] <= u64::MAX by {
+                // if LHS < RHS, then 2 * LHS < 2 * RHS
+                lemma_mul_left_inequality(2, square.limbs[i] as int, (1u64 << 54) as int);
+                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
+            }
+
+            let ka = [
+                (2 * square.limbs[0]) as u64,
+                (2 * square.limbs[1]) as u64,
+                (2 * square.limbs[2]) as u64,
+                (2 * square.limbs[3]) as u64,
+                (2 * square.limbs[4]) as u64,
+            ];
+
+            // as_nat(ka) == 2 * as_nat(square.limbs)
+            // and
+            // as_nat(ka) % p() == (2 * as_nat(square.limbs)) % p()
+            as_nat_k(square.limbs, 2);
+
+            // By pow2k ensures:
+            // as_nat(square.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(1)) as nat % p()
+            // We just need pow2(1) == 2
+            lemma2_to64();
+
+            // p > 0
+            pow255_gt_19();
+
+            assert(as_nat(ka) % p() == ((2nat % p()) * (as_nat(square.limbs) % p())) % p() == ((2nat
+                % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p()) by {
+                lemma_mul_mod_noop(2, as_nat(square.limbs) as int, p() as int);
+            }
+
+            // as_nat(self.limbs)^2 >= 0
+            assert(pow(as_nat(self.limbs) as int, 2) >= 0) by {
+                lemma_pow_nat_is_nat(as_nat(self.limbs), 1);
+            }
+
+            assert(((2nat % p()) * (pow(as_nat(self.limbs) as int, 2) as nat % p())) % p() == (2 * (
+            pow(as_nat(self.limbs) as int, 2))) as nat % p()) by {
+                lemma_mul_mod_noop(2, pow(as_nat(self.limbs) as int, 2) as int, p() as int);
+            }
+
+            assert(as_nat(ka) % p() == (2 * (pow(as_nat(self.limbs) as int, 2))) as nat % p());
+        }
+
+        for i in 0..5 
+            invariant
+                forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 54),
+                forall|j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],
+                forall|j: int| i <= j < 5 ==> #[trigger] square.limbs[j] == old_limbs[j],
+        {
             proof {
-                assume(false);
-            }  // PROOF BYPASS: overflow checking for *=2
+                assert(2 * (1u64 << 54) <= u64::MAX) by (compute);
+                lemma_mul_strict_inequality(square.limbs[i as int] as int, (1u64 << 54) as int, 2);
+            }
             square.limbs[i] *= 2;
         }
 

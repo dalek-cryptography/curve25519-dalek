@@ -23,30 +23,56 @@ use subtle::ConditionallySelectable;
 use zeroize::Zeroize;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::subtle_assumes::*;
-
 use vstd::arithmetic::div_mod::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::mul::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power::*;
+#[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
 use vstd::bits::*;
+#[allow(unused_imports)]
 use vstd::prelude::*;
 
-use super::common_verus::bit_lemmas::*;
-use super::common_verus::div_mod_lemmas::*;
-use super::common_verus::mask_lemmas::*;
-use super::common_verus::mul_lemmas::*;
-use super::common_verus::pow_lemmas::*;
-use super::common_verus::shift_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::bit_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::div_mod_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::mul_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::pow_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::common_verus::shift_lemmas::*;
 
-use super::field_lemmas::as_nat_lemmas::*;
-use super::field_lemmas::field_core::*;
-use super::field_lemmas::from_bytes_lemmas::*;
-use super::field_lemmas::load8_lemmas::*;
-use super::field_lemmas::negate_lemmas::*;
-use super::field_lemmas::pow2_51_lemmas::*;
-use super::field_lemmas::pow2k_lemmas::*;
-use super::field_lemmas::reduce_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::as_nat_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::field_core::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::from_bytes_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::negate_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::pow2_51_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::pow2k_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::reduce_lemmas::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::subtle_assumes::*;
+
+verus! {
+
+/* MANUALLY moved outside and made explicit */
+// LOW_51_BIT_MASK: u64 = (1u64 << 51) -1; originally
+pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64;
 
 /// A `FieldElement51` represents an element of the field
 /// \\( \mathbb Z / (2\^{255} - 19)\\).
@@ -61,14 +87,6 @@ use super::field_lemmas::reduce_lemmas::*;
 /// `curve25519_dalek::field::FieldElement` to either `FieldElement51`
 /// or `FieldElement2625`.
 ///
-
-verus! {
-
-/* MANUALLY moved outside and made explicit */
-// LOW_51_BIT_MASK: u64 = (1u64 << 51) -1; originally
-pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64;
-
-// 2^51  -1
 /// The backend-specific type `FieldElement51` should not be used
 /// outside of the `curve25519_dalek::field` module.
 #[derive(Copy, Clone)]
@@ -686,9 +704,10 @@ impl FieldElement51 {
     /// encoding is canonical.
     #[rustfmt::skip]  // keep alignment of s[*] calculations
     pub fn as_bytes(self) -> (r: [u8; 32])
-        ensures
-            // TODO: Update after https://github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
-            true
+        ensures  // TODO: Update after https:
+    //github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
+
+            true,
     {
         proof {
             // PROOF SKIP
@@ -908,9 +927,10 @@ impl FieldElement51 {
     }
 
     /// Returns the square of this field element.
-    pub fn square(&self) -> (r: FieldElement51) 
+    pub fn square(&self) -> (r: FieldElement51)
         requires
-            // The precondition in pow2k loop propagates to here
+    // The precondition in pow2k loop propagates to here
+
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
             as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p(),
@@ -925,7 +945,8 @@ impl FieldElement51 {
     /// Returns 2 times the square of this field element.
     pub fn square2(&self) -> (r: FieldElement51)
         requires
-            // The precondition in pow2k loop propagates to here
+    // The precondition in pow2k loop propagates to here
+
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
             as_nat(r.limbs) % p() == (2 * pow(as_nat(self.limbs) as int, 2)) as nat % p(),
@@ -982,7 +1003,7 @@ impl FieldElement51 {
             assert(as_nat(ka) % p() == (2 * (pow(as_nat(self.limbs) as int, 2))) as nat % p());
         }
 
-        for i in 0..5 
+        for i in 0..5
             invariant
                 forall|j: int| 0 <= j < 5 ==> old_limbs[j] < (1u64 << 54),
                 forall|j: int| 0 <= j < i ==> #[trigger] square.limbs[j] == 2 * old_limbs[j],

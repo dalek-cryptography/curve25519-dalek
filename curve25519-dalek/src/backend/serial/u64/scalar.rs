@@ -681,7 +681,7 @@ impl Scalar52 {
             limbs_bounded(&result),
             to_nat(&result.limbs) < group_order(),
     {
-        assume(false);
+        assume(false);  // TODO: Add proofs
         // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
 

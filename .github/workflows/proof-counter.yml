@@ -14,15 +14,27 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.THEO_WRITE_TOKEN }}
+      - name: Check if previous commit is from bot
+        id: check_bot
+        run: |
+          LAST_COMMIT_MSG=$(git log -1 --format='%s')
+          if [[ "$LAST_COMMIT_MSG" == "Bot: Update count of Verus proofs/specs" ]]; then
+            echo "previous_was_bot=true" >> $GITHUB_OUTPUT
+          else
+            echo "previous_was_bot=false" >> $GITHUB_OUTPUT
+          fi
       - name: Install uv
+        if: steps.check_bot.outputs.previous_was_bot == 'false'
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Run analyze and csv scripts
+        if: steps.check_bot.outputs.previous_was_bot == 'false'
         run: |
           scripts/analyze_verus_specs_proofs.py
           scripts/csv_to_markdown.py
       - name: Check for changes
+        if: steps.check_bot.outputs.previous_was_bot == 'false'
         id: check_changes
         run: |
           git add -N outputs/
@@ -32,7 +44,7 @@ jobs:
             echo "changed=true" >> $GITHUB_OUTPUT
           fi
       - name: Commit and push if changed
-        if: steps.check_changes.outputs.changed == 'true'
+        if: steps.check_bot.outputs.previous_was_bot == 'false' && steps.check_changes.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

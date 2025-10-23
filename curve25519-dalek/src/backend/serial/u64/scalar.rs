@@ -675,13 +675,13 @@ impl Scalar52 {
     #[inline(always)]
     #[rustfmt::skip]  // keep alignment of n* and r* calculations
     pub(crate) fn montgomery_reduce(limbs: &[u128; 9]) -> (result: Scalar52)
-        // ensures
-        //     (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs)
-        //         % group_order(),
-        //     limbs_bounded(&result),
-        //     to_nat(&result.limbs) < group_order(),
+        ensures
+            (to_nat(&result.limbs) * montgomery_radix()) % group_order() == slice128_to_nat(limbs)
+                % group_order(),
+            limbs_bounded(&result),
+            to_nat(&result.limbs) < group_order(),
     {
-
+        assume(false);
         // note: l[3] is zero, so its multiples can be skipped
         let l = &constants::L;
 
@@ -734,7 +734,11 @@ impl Scalar52 {
         assert(constants::L.limbs[0] == 0x0002631a5cf5d3ed);
         assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
         assert(constants::L.limbs[0] < (1u64 << 52));
+        // Going to need a precondition on sum to ensure it's small enough
+        assume(sum + p * constants::L.limbs[0] < 10);
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
+        // Is this actually true? Not sure that the right shift and left shift cancel.
+        assume(sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52);
         (carry, p)
     }
 

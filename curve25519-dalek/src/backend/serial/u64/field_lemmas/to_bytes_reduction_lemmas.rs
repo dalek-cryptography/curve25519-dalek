@@ -394,7 +394,7 @@ pub proof fn lemma_reduction_carry_propagation_is_division(input_limbs: [u64; 5]
 
     let remainder = as_nat(final_limbs) as int;
 
-    lemma_div_quotient_unique(dividend, divisor, c4 as int, as_nat(final_limbs) as int);
+    lemma_div_multiples_vanish_fancy(c4 as int, as_nat(final_limbs) as int, divisor);
 }
 
 /// Helper lemma: Show that the carry out of l4 equals q
@@ -604,7 +604,7 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
         // For values < p, x % p = x
         // Since as_nat(input_limbs) < p(), we have as_nat(input_limbs) % p() = as_nat(input_limbs)
         lemma_pow2_pos(255);
-        lemma_mod_of_less_than_divisor(as_nat(input_limbs) as int, p() as int);
+        lemma_small_mod(as_nat(input_limbs), p());
 
     } else {
         // q == 1

@@ -248,45 +248,29 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
 /// 4. The sum fits within n bits
 pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     requires
-        k < n,
+        k <= n,
         a < pow2(k),
-        (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)) < pow2(n),
+        // (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)) < pow2(n),
     ensures
         (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
 {
-    // Following the proof on paper step by step.
-    // Reference: docs_16_oct/LEMMA_BOUNDARY_BYTE_COMBINES_PROOF_ON_PAPER.md
+    assert((a + b * pow2(k)) % pow2(n) == a % pow2(n) + (b * pow2(k)) % pow2(n)) by {
+        sum_mod_decomposition(a, b, k, n);
+    }
 
-    let n_minus_k = (n - k) as nat;
+    assert((b * pow2(k)) % pow2(n) == (b % pow2((n - k) as nat)) * pow2(k)) by {
+        mask_pow2(b, k, n);
+    }
 
-    // Since a < pow2(k), we have a % pow2(k) = a
-    lemma_small_mod(a, pow2(k));
-
-    // pow2(k) * pow2(n-k) = pow2(n)
-    lemma_pow2_adds(k, n_minus_k);
-    assert(k + n_minus_k == n);
-
-    // Division theorem - decompose b
-    // b = (b / pow2(n-k)) * pow2(n-k) + (b % pow2(n-k))
-    lemma_pow2_pos(n_minus_k);
-    lemma_fundamental_div_mod(b as int, pow2(n_minus_k) as int);
-
-    let b_quot = b / pow2(n_minus_k);
-    let b_rem = b % pow2(n_minus_k);
-
-    assert(b == pow2(n_minus_k) * b_quot + b_rem);
-    lemma_mul_is_distributive_add_other_way(pow2(k) as int, (b_quot * pow2(n_minus_k)) as int, b_rem as int);
-    lemma_mul_is_associative(b_quot as int, pow2(n_minus_k) as int, pow2(k) as int);
-    lemma_mod_multiples_vanish(b_quot as int, (a + b_rem * pow2(k)) as int, pow2(n) as int);
-    // This gives us: (pow2(n) * b_quot + (a + b_rem * pow2(k))) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    // Which is equivalent to: (b_quot * pow2(n) + a + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    // And by commutativity: (a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n)
-    assert((a + b_quot * pow2(n) + b_rem * pow2(k)) % pow2(n) == (a + b_rem * pow2(k)) % pow2(n));
-
-    // The sum < pow2(n), so mod is trivial
-    // (a + b_rem * pow2(k)) % pow2(n) = a + b_rem * pow2(k)
-    // We know from precondition 3 that: a + b_rem * pow2(k) < pow2(n)
-    lemma_small_mod(a + b_rem * pow2(k), pow2(n));
+    assert( a % pow2(k) == a == a % pow2(n) ) by {
+        assert(pow2(k) <= pow2(n)) by {
+            if (k < n){
+                lemma_pow2_strictly_increases(k, n);
+            }
+        }
+        lemma_small_mod(a, pow2(k));
+        lemma_small_mod(a, pow2(n));
+    }
 }
 
 fn main() {}

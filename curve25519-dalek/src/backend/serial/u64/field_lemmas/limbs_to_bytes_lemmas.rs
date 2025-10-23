@@ -1031,7 +1031,7 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Handle the % 2^6 on the high bits
     // Since limbs[1] < 2^51, we have limbs[1] / 2^45 < 2^6
     lemma_div_bound(limbs[1] as nat, 45, 51);
-    lemma_mod_of_less_than_divisor((limbs[1] as nat / pow2(45)) as int, pow2(6) as int);
+    lemma_small_mod(limbs[1] as nat / pow2(45), pow2(6));
 
     // Therefore:
     assert(limbs[1] as nat ==
@@ -1391,7 +1391,7 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Since limbs[2] < 2^51, we have limbs[2] / 2^50 < 2^1 = 2
     lemma_div_bound(limbs[2] as nat, 50, 51);
     assert(limbs[2] as nat / pow2(50) < pow2(1));
-    lemma_mod_of_less_than_divisor((limbs[2] as nat / pow2(50)) as int, 2);
+    lemma_small_mod(limbs[2] as nat / pow2(50), 2);
 
     // Therefore:
     assert(limbs[2] as nat ==
@@ -1721,7 +1721,7 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Handle the % 2^4 on the high bits
     // Since limbs[3] < 2^51, we have limbs[3] / 2^47 < 2^4
     lemma_div_bound(limbs[3] as nat, 47, 51);
-    lemma_mod_of_less_than_divisor((limbs[3] as nat / pow2(47)) as int, pow2(4) as int);
+    lemma_small_mod(limbs[3] as nat / pow2(47), pow2(4));
 
     // Therefore:
     assert(limbs[3] as nat ==

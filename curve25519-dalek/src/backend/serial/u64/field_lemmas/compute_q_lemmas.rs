@@ -239,7 +239,7 @@ pub proof fn lemma_radix51_telescoping_direct(
     lemma_radix51_remainder_bound(r0, r1, r2, r3, r4);
     lemma_pow2_pos(255);
     lemma_fundamental_div_mod(value, pow2(255) as int);
-    lemma_div_quotient_unique(value, pow2(255) as int, q4, remainder);
+    lemma_div_multiples_vanish_fancy(q4, remainder, pow2(255) as int);
 }
 
 /// Helper: Proves the remainder from radix-51 representation is bounded by 2^255

@@ -738,7 +738,8 @@ impl Scalar52 {
         assert(0x0002631a5cf5d3ed < (1u64 << 52)) by (bit_vector);
         assert(constants::L.limbs[0] < (1u64 << 52));
         // Going to need a precondition on sum to ensure it's small enough
-        assume(sum + p * constants::L.limbs[0] < 10);
+        // This bound may not be the right bound
+        assume(sum + p * constants::L.limbs[0] < ((2 as u64) << 63));
         let carry = (sum + m(p, constants::L.limbs[0])) >> 52;
         // Is this actually true? Not sure that the right shift and left shift cancel.
         assume(sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52);

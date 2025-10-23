@@ -147,7 +147,7 @@ pub(crate) fn is_negative(&self) -> (result:
     ensures
         choice_is_true(result) == (field_element_as_bytes(self)[0] & 1
             == 1),
-// SPEC BYPASS throuh placeholder field_element_as_bytes
+// SPEC BYPASS through placeholder field_element_as_bytes
 
 {
     let bytes = self.as_bytes();

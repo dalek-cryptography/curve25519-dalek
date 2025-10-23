@@ -100,8 +100,8 @@ pub(crate) open spec fn sqrt_ratio_i_post(
                     subtle_assumes::choice_is_true(choice) && ((r_nat * r_nat) % p() == uv)
                 } else {
                     // nonsquare branch: choice = 0 and r^2 == i*u/v
-                    !subtle_assumes::choice_is_true(choice)
-                        && ((r_nat * r_nat) % p() == (i_nat * uv) % p())
+                    !subtle_assumes::choice_is_true(choice) && ((r_nat * r_nat) % p() == (i_nat
+                        * uv) % p())
                 }
             }
     }

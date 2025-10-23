@@ -126,8 +126,8 @@ impl ConstantTimeEq for FieldElement {
 }
 
 } // verus!
-impl FieldElement {
     verus! {
+impl FieldElement {
 
 /// Determine if this `FieldElement` is negative, in the sense
 /// used in the ed25519 paper: `x` is negative if the low bit is

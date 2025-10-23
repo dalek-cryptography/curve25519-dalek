@@ -720,15 +720,17 @@ impl Scalar52 {
                 &&& sum + (p as u128) * (constants::L.limbs[0] as u128) == carry << 52
             }),
     {
-        assert((1u64 << 52) > 1 ) by (bit_vector);
-        assert((1u64 << 52) - 1 > 0 );
+        assert((1u64 << 52) > 1) by (bit_vector);
+        assert((1u64 << 52) - 1 > 0);
         let p = (sum as u64).wrapping_mul(constants::LFACTOR) & ((1u64 << 52) - 1);
         proof {
-          let piece1 = (sum as u64).wrapping_mul(constants::LFACTOR) as u64;
-          let piece2 = ((1u64 << 52) - 1) as u64;
-          assert(p == piece1 & piece2);
-          assert(piece1 & piece2 < (1u64 << 52)) by (bit_vector)
-                requires piece2 == ((1u64 << 52) - 1);
+            let piece1 = (sum as u64).wrapping_mul(constants::LFACTOR) as u64;
+            let piece2 = ((1u64 << 52) - 1) as u64;
+            assert(p == piece1 & piece2);
+            assert(piece1 & piece2 < (1u64 << 52)) by (bit_vector)
+                requires
+                    piece2 == ((1u64 << 52) - 1),
+            ;
         }
         assert(p < (1u64 << 52));
         assert(constants::L.limbs[0] == 0x0002631a5cf5d3ed);

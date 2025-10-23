@@ -710,7 +710,7 @@ pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m:
         }
     }
 
-    // Now whe know x / pow2(kb) = a + w * pow2(d), where a < pow2(d)
+    // Now we know x / pow2(kb) = a + w * pow2(d), where a < pow2(d)
     let a = x_mod_m / pow2(kb);
     assert((a + w * pow2(d)) % pow2(b) == a % pow2(b) + (w * pow2(d)) % pow2(b)) by {
         sum_mod_decomposition(a, w, d, b);

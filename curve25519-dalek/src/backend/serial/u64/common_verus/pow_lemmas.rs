@@ -103,9 +103,9 @@ pub proof fn pow2_mul_u8(a: u8, k: nat)
 
 pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
     requires
-        a < pow2(s)
+        a < pow2(s),
     ensures
-        (a + b * pow2(s)) / pow2(k) == a / pow2(k) + (b * pow2(s)) / pow2(k)
+        (a + b * pow2(s)) / pow2(k) == a / pow2(k) + (b * pow2(s)) / pow2(k),
 {
     let ps = pow2(s);
     let pk = pow2(k);
@@ -137,8 +137,8 @@ pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
         lemma_fundamental_div_mod(z as int, pk as int);
     }
 
-    assert( z / pk == x / pk + y / pk) by {
-        lemma_mul_equality_converse(pk as int, (z/pk) as int, (x/pk + y/pk) as int);
+    assert(z / pk == x / pk + y / pk) by {
+        lemma_mul_equality_converse(pk as int, (z / pk) as int, (x / pk + y / pk) as int);
     }
 }
 

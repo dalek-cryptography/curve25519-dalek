@@ -3,7 +3,7 @@
 use digest::{
     Digest, HashMarker,
     array::Array,
-    consts::{U16, U32},
+    consts::{U8, U16, U32},
 };
 use subtle::CtOption;
 
@@ -95,14 +95,15 @@ impl RistrettoPoint {
         let jcs = self.to_jacobi_quartic_ristretto();
 
         // Compute the positive solution to e⁻¹ on every point and its dual
-        let pos_invs = jcs
-            .iter()
-            .flat_map(|jc| [jc.e_inv_positive(), jc.dual().e_inv_positive()]);
+        let pos_invs = Array::<_, U8>::from_iter(
+            jcs.iter()
+                .flat_map(|jc| [jc.e_inv_positive(), jc.dual().e_inv_positive()]),
+        );
         // Compute the other solutions to e⁻¹, ie the negatives of the above solutions
-        let neg_invs = pos_invs.clone().map(|mx| mx.map(|x| -&x));
+        let neg_invs = pos_invs.iter().map(|mx| mx.map(|x| -&x));
         // This cannot panic because jcs is guaranteed to be size 4, and the above iterator expands
         // it to size 8
-        Array::<_, U16>::from_iter(pos_invs.chain(neg_invs)).0
+        Array::<_, U16>::from_iter(pos_invs.into_iter().chain(neg_invs)).0
     }
 
     /// Find a point on the Jacobi quartic associated to each of the four

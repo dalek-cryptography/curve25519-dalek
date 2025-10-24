@@ -3,6 +3,8 @@ use super::common_verus::*;
 #[allow(unused_imports)]
 use super::constants;
 #[allow(unused_imports)]
+use super::field_lemmas::field_core::as_nat_32_u8;
+#[allow(unused_imports)]
 use super::scalar::Scalar52;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
@@ -218,23 +220,23 @@ pub proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
     }
 }
 
-pub proof fn lemma_bytes_equals_bytes_aux(bytes: &[u8; 32])
+pub proof fn lemma_bytes_to_nat_rec_equals_bytes_to_nat(bytes: &[u8; 32])
 ensures
-    bytes_to_nat(bytes) == bytes_to_nat_aux(bytes)
+    bytes_to_nat(bytes) == as_nat_32_u8(bytes)
 {
     // Strategy: Unfold the recursive definition and show it matches the explicit sum
     // The recursive definition bytes_to_nat_rec(bytes, 0) computes:
     // bytes[0] * 2^0 + bytes[1] * 2^8 + ... + bytes[31] * 2^248
-    
+
     // First, reveal the recursive structure by showing a few key steps
     reveal_with_fuel(bytes_to_nat_rec, 33);
-    
+
     // Now we need to show that the recursive unfolding equals the explicit sum
     // The key is that pow2(0) == 1, so bytes[0] * pow2(0) == bytes[0]
     assert(pow2(0) == 1) by {
         lemma2_to64();
     };
-    
+
     // Use calc block to show the transformation step by step
     calc! {
         (==)
@@ -312,7 +314,7 @@ ensures
         (bytes[29] as nat) * pow2(232) +
         (bytes[30] as nat) * pow2(240) +
         (bytes[31] as nat) * pow2(248); {}
-        bytes_to_nat_aux(bytes);
+        as_nat_32_u8(bytes);
     }
 }
 

@@ -21,6 +21,8 @@ use zeroize::Zeroize;
 use crate::constants;
 
 #[allow(unused_imports)]
+use super::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
+#[allow(unused_imports)]
 use super::scalar_lemmas::*;
 #[allow(unused_imports)]
 use super::scalar_specs::*;
@@ -235,7 +237,7 @@ impl Scalar52 {
             // The main lemma proves the property using the non-recursive (_aux) versions
             lemma_as_bytes_52(self.limbs, s);
             // Use equivalence lemmas to connect to the recursive versions in the ensures clause
-            lemma_bytes_equals_bytes_aux(&s);
+            lemma_bytes_to_nat_rec_equals_bytes_to_nat(&s);
             lemma_five_limbs_equals_to_nat(&self.limbs);
         }
 

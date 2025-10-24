@@ -33,7 +33,8 @@ verus! {
 /* MANUALLY moved outside and made explicit */
 // LOW_51_BIT_MASK: u64 = (1u64 << 51) -1; originally
 pub const LOW_51_BIT_MASK: u64 = 2251799813685247u64;
-  // 2^51  -1
+
+// 2^51  -1
 // Establishes LOW_51_BIT_MASK == mask51 and lifts properties of the RHS to the LHS
 pub proof fn masks_are_equal()
     ensures

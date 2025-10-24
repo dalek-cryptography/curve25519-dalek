@@ -795,7 +795,7 @@ impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
 
         // Use the verified product_of_slice function
         Scalar::product_of_slice(&scalars)
-    }/* </MODIFIED CODE> */
+    }  /* </MODIFIED CODE> */
 
 }
 

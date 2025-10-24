@@ -13,3 +13,4 @@ build*.txt
 *.s
 .aider*
 .verus-solver-log
+.verus-log

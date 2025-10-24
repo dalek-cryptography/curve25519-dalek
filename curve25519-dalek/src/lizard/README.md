@@ -162,7 +162,7 @@ is an isomorphism.
 
 The full map is $E_2 = q_\mathcal{E} \circ \hat{\theta} \circ q_\mathcal{J} \circ e$. Our goal is to compute the preimage set $E_2^{-1}(P)$ for a given Ristretto point $P \in \mathcal{R}$.
 
-Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to two field elements, one postive and one negative, via the inverse of $e$ (thus there is a unique corresponding positive field element via $e^{-1}$). This section explains how to find these 8 field elements.
+Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to two field elements, one positive and one negative, via the inverse of $e$ (thus there is a unique corresponding positive field element via $e^{-1}$). This section explains how to find these 8 field elements.
 
 We now describe how to invert each of these components before presenting an efficient algorithm to compute the full inverse of $E_2$.
 

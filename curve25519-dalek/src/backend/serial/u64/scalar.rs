@@ -29,6 +29,7 @@ use super::scalar_specs::*;
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+use vstd::bits::*;
 use vstd::prelude::*;
 
 verus! {
@@ -220,8 +221,28 @@ impl Scalar52 {
         s[30] =  (self.limbs[ 4] >> 32)                      as u8;
         s[31] =  (self.limbs[ 4] >> 40)                      as u8;
 
-        assume(false); // TODO: complete the proof
+        proof {
+            let ghost N: nat = to_nat(&self.limbs);
 
+            assert forall |j: int|
+                0 <= j && j < 32 ==> s[j] as nat == ((N / pow2(8 * j as nat)) % pow2(8))
+            by {
+                assume(s[j] as nat == ((N / pow2(8 * j as nat)) % pow2(8)));
+                
+                // if j == 0 {
+                //     lemma_u64_pow2_no_overflow(0);
+                //     assert(self.limbs[0] >> 0 == self.limbs[0] / (pow2(0) as u64)) by { lemma_u64_shr_is_div(self.limbs[0], 0u64) };
+                //     assert((self.limbs[0] >> 0) as u8 == (self.limbs[0] >> 0) % pow2(8)) by {lemma_u8_is_mod256((self.limbs[0] >> 0) as nat)};
+                //     assert(s[0] as nat == (self.limbs[0] / (pow2(0) as u64) % (pow2(8) as u64)));
+                // } else {
+                //     assume(true);
+                // }
+            };
+
+            assume(N < pow2(8 * 32));
+            lemma_bytes_recompose(N, &s);
+            
+        }
         s
     }
 

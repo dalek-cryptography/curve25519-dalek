@@ -1181,4 +1181,141 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
+proof fn lemma_bytes_recompose_prefix(N: nat, s: &[u8; 32], n: nat)
+    requires
+        N < pow2(8 * 32),
+        n <= 32,
+        forall |j: int| n <= j && j < 32 as int ==>
+            s[j] as nat == (N / pow2(8 * j as nat)) % pow2(8)
+    ensures
+        bytes_to_nat_rec(s, n as int) == N - (N % pow2(8nat * n))
+    decreases 32 - n
+{
+    if (n == 32) {
+        assert(bytes_to_nat_rec(s, 32) == 0);
+        assert(N % pow2(8 * 32) == N) by { mod_small_is_self(N, pow2(8 * 32)) };
+        assert((N - (N % pow2(8nat * n))) == 0);
+    } else {
+        assert(bytes_to_nat_rec(s, n as int) == (s[n as int] as nat) * pow2(8nat * (n as nat))
+            + bytes_to_nat_rec(s, (n + 1) as int));
+
+        assert(bytes_to_nat_rec(s, (n + 1) as int)
+               == N - (N % pow2(8nat * (n + 1)))) by { lemma_bytes_recompose_prefix(N, s, (n + 1) as nat) };
+
+
+        let q: nat = N / pow2(8 * n);
+        let r: nat = N % pow2(8 * n);
+        assert(s[n as int] as nat == q % pow2(8));
+
+        // Show the key slice identity:
+        // (q % 256)*2^k == (N % 2^(k+8)) - (N % 2^k)
+        // First, reduce q*2^k modulo 2^(k+8)
+        // N = q*2^k + r, so:
+        //   (N % 2^(k+8)) = (q*2^k + r) % (2^k * 256)
+        //                 = (q*2^k) % (2^k*256) + r      (since r < 2^k)
+        lemma_pow2_pos(8 * n);
+        lemma_mod_decreases(r, pow2(8 * n));
+        lemma_pow2_strictly_increases(8 * n, 8 * n + 8);
+        mod_small_is_self(r, pow2(8nat * n + 8));
+        assert(N == q * pow2(8 * n) + r) by {lemma_fundamental_div_mod(N as int, pow2(8 * n) as int)};
+
+        // Drop the shared factor 2^k:
+        lemma_pow2_pos(8);
+        assert((q * pow2(8 * n)) % (pow2(8) * pow2(8 * n)) == (q % pow2(8)) * pow2(8 * n)) by { mod_drop_shared_factor(q, pow2(8 * n), pow2(8)) };
+
+        // // Thus:
+        assert(N % pow2(8 * n + 8) == (q * pow2(8 * n) + r) % pow2(8 * n + 8));
+        assume(N % pow2(8 * n + 8) == (q * pow2(8 * n)) % pow2(8 * n + 8) + r % pow2(8 * n + 8));
+
+        assert(r == r % pow2(8 * n + 8)) by {mod_small_is_self(r, pow2(8nat * n + 8))};
+
+        assert(pow2(8 * n + 8) == pow2(8 * n) * pow2(8)) by { lemma_pow2_adds(8 * n, 8)};
+        assert(N % pow2(8 * n + 8) ==  (q * pow2(8 * n)) % (pow2(8) * pow2(8 * n)) + r);
+
+        assert(N % pow2(8 * n + 8) - r == (q * pow2(8 * n)) % (pow2(8) * pow2(8 * n)));
+
+        assert(N % pow2(8 * n + 8) - r == (q % pow2(8)) * pow2(8 * n));
+
+        // // Rearrange to get the slice difference:
+        // assert((N % pow2(k + 8nat)) - (N % pow2(k))
+        //        == (q % 256nat) * pow2(k));
+
+        // // Put the head and tail together:
+        assert((s[n as int] as nat) * pow2(8 * n) + (N - (N % pow2(8 * n + 8)))
+            == (q % pow2(8)) * pow2(8 * n) + (N - (N % pow2(8 * n + 8))));
+
+
+
+        // // Replace (q % 256)*2^k by the slice difference:
+        assert((q % pow2(8)) * pow2(8 * n)
+               == (N % pow2(8 * n + 8)) - (N % pow2(8 * n)));
+
+        // // Finish: head+tail equals N - low k bits
+        assert(bytes_to_nat_rec(s, n as int)
+               == N - (N % pow2(8 * n)));
+    }
+}
+
+pub proof fn mod_drop_shared_factor(a: nat, b: nat, c: nat)
+    requires b > 0, c > 0
+    ensures  (a * b) % (c * b) == (a % c) * b
+{
+    let q: nat = a / c;
+    let r: nat = a % c;
+    assert(a == q * c + r) by {lemma_fundamental_div_mod(a as int, c as int)};
+    assert(a * b == (q * c + r) * b);
+    assert(a * b == q * c * b + r * b) by { lemma_mul_is_distributive_add(b as int, q * c as int, r as int) };
+    assert(a * b == q * c * b + (a % c) * b);
+
+    assert((b * c) > 0) by { lemma_mul_strictly_positive(c as int, b as int) };
+    assume((q * (c * b)) == q * c * b);
+    assert((q * (c * b)) % (c * b) == 0) by {lemma_mod_multiples_basic(q as int, (c * b) as int)};
+    
+    assert((a * b) % (b * c) == (q * c * b + (a % c) * b) % (b * c));
+    assume((a * b) % (b * c) == (q * c * b) % (b * c) + ((a % c) * b) % (b * c));
+
+    assert((a * b) % (b * c) == ((a % c) * b) % (b * c));
+
+    assert(r < c) by { lemma_remainder(a as int, c as int)};
+    assert((a % c) < c);
+    assume((a % c) * b < c * b);
+
+    assert(((a % c) * b) % (c * b) == ((a % c) * b)) by {mod_small_is_self(((a % c) * b), c * b)};
+
+    assert((a * b) % (b * c) == ((a % c) * b));
+}
+
+
+proof fn mod_small_is_self(x: nat, m: nat)
+    requires x < m
+    ensures  x % m == x
+{ 
+    let q: nat = x / m;
+    let r: nat = x % m;
+    assert(x == q * m + r) by {lemma_fundamental_div_mod(x as int, m as int)};
+    assert(q == 0) by { lemma_basic_div(x as int, m as int) };
+    assert(x == 0 * m + r);
+    assert(x == r);
+}
+
+pub proof fn lemma_bytes_recompose(N: nat, s: &[u8; 32])
+    requires
+        N < pow2(8 * 32),
+        forall |j: int| 0 <= j && j < 32 ==> s[j] as nat == (N / pow2(8 * j as nat)) % pow2(8)
+    ensures
+        bytes_to_nat(s) == N
+{
+    assert(N % pow2(8 * 32) == N) by { mod_small_is_self(N, pow2(8 * 32)) };
+    assert(bytes_to_nat(s) == bytes_to_nat_rec(s, 0));
+    assert(bytes_to_nat_rec(s, 0) == N - (N % pow2(0))) by { lemma_bytes_recompose_prefix(N, s, 0) };
+    assert(pow2(0) == 1) by {lemma2_to64();}
+    assert(bytes_to_nat(s) == N);
+}
+
+pub proof fn lemma_u8_is_mod256(N: nat)
+    ensures 
+        (N as u8) as nat == N % pow2(8)
+{
+    assume(false);
+}
 } // verus!

@@ -418,6 +418,7 @@ impl FieldElement {
         //
         //                                 nonzero bits of exponent
         let (t19, _) = self.pow22501();  // 249..0
+        assume(false);
         let t20 = t19.pow2k(2);  // 251..2
         assume(false);
         let t21 = self * &t20;  // 251..2,0

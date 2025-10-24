@@ -17,7 +17,7 @@ impl std::fmt::Display for DalekBits {
             DalekBits::Dalek32 => "32",
             DalekBits::Dalek64 => "64",
         };
-        write!(f, "{}", w_bits)
+        write!(f, "{w_bits}")
     }
 }
 

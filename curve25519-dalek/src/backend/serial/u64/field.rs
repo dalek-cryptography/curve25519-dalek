@@ -67,6 +67,8 @@ use crate::backend::serial::u64::field_lemmas::reduce_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
+#[allow(unused_imports)]
+use crate::field_specs::*;
 
 verus! {
 
@@ -707,6 +709,8 @@ impl FieldElement51 {
     //github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
 
             true,
+            // VERIFICATION NOTE: tentative spec function addition
+            r@ == field_element_as_bytes(&self),
     {
         proof {
             // PROOF SKIP

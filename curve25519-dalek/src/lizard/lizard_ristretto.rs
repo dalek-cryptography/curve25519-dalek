@@ -201,22 +201,6 @@ impl RistrettoPoint {
         RistrettoPoint::map_to_curve(bytes)
     }
 
-    /// Interprets the given bytestring as a field element and computes the Ristretto Elligator map.
-    /// This is the [MAP](https://www.rfc-editor.org/rfc/rfc9496.html#section-4.3.4-4) function in
-    /// RFC 9496.
-    ///
-    /// # Warning
-    ///
-    /// This function does not produce cryptographically random-looking Ristretto points. Use
-    /// [`Self::hash_from_bytes`] for that. DO NOT USE THIS FUNCTION unless you really know what
-    /// you're doing.
-    pub fn map_to_curve(bytes: [u8; 32]) -> RistrettoPoint {
-        // MAP must clear the top bit. This is done in `from_bytes` for every field backend, so we
-        // don't have to do it ourselves here
-        let fe = FieldElement::from_bytes(&bytes);
-        RistrettoPoint::elligator_ristretto_flavor(&fe)
-    }
-
     /// Computes the possible bytestrings that could have produced this point via
     /// [`Self::map_to_curve`].
     ///

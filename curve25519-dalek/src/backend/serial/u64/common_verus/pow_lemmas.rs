@@ -279,6 +279,92 @@ pub proof fn mask_pow2(x: nat, k: nat, s: nat)
     }
 }
 
+pub proof fn mask_div2(x: nat, k: nat, s: nat)
+    ensures
+        (x / pow2(k)) % pow2(s) == (x % pow2(s + k)) / pow2(k),
+{
+    let d = s + k;
+    let ps = pow2(s);
+    let pk = pow2(k);
+    let pd = pow2(d);
+
+    assert(pd > 0) by {
+        lemma_pow2_pos(d);
+    }
+
+    assert(pd == ps * pk == pk * ps) by {
+        lemma_pow2_adds(s, k);
+        lemma_mul_is_commutative(ps as int, pk as int);
+    }
+
+    assert(x == pd * (x / pd) + x % pd) by {
+        lemma_fundamental_div_mod(x as int, pd as int);
+    }
+
+    let x_div_pd = x / pd;
+    let x_mod_pd = x % pd;
+
+    assert(x_mod_pd < pd) by {
+        lemma_mod_bound(x as int, pd as int);
+    }
+
+    // x / pk = (pd * (x / pd) + x % pd) / pk
+    // ==
+    // (pd * (x / pd)) / pk + (x % pd) / pk
+    // ==
+    // (ps * (x / pd)) + (x % pd) / pk
+    assert(x / pk == ps * x_div_pd + x_mod_pd / pk) by {
+        assert((pd * x_div_pd + x_mod_pd) / pk == (pd * x_div_pd) / pk + x_mod_pd / pk) by {
+            lemma_mul_is_commutative(pd as int, x_div_pd as int);
+            sum_div_decomposition(x_mod_pd, x_div_pd, d, k);
+        }
+        assert((pd * x_div_pd) / pk == ps * x_div_pd) by {
+            assert(pd * x_div_pd == pk * (ps * x_div_pd)) by {
+                lemma_mul_is_associative(pk as int, ps as int, x_div_pd as int);
+            }
+            assert((pk * (ps * x_div_pd)) / pk == ps * x_div_pd) by {
+                lemma_div_multiples_vanish((ps * x_div_pd) as int, pk as int);
+            }
+        }
+    }
+
+    // (x / pk) % ps = ((ps * (x / pd)) + (x % pd) / pk ) % ps
+    // == <- (x % pd) < pd => (x % pd) / pk < pd / pk = ps
+    // ((ps * (x / pd)) % ps + (x % pd) / pk ) % ps
+    // ==
+    // (x % pd) / pk
+    assert((x / pk) % ps == x_mod_pd / pk) by {
+        assert(pk > 0) by {
+            lemma_pow2_pos(k);
+        }
+        // x_mod_pd < pd is known
+        assert(x_mod_pd / pk < ps) by {
+            assert(ps == pd / pk) by {
+                lemma_div_by_multiple(ps as int, pk as int);
+            }
+            lemma_div_by_multiple_is_strongly_ordered(
+                x_mod_pd as int,
+                pd as int,
+                ps as int,
+                pk as int,
+            );
+        }
+        // satisfies conditions for sum_mod_decomposition
+        assert((ps * x_div_pd + x_mod_pd / pk) % ps == (ps * x_div_pd) % ps + (x_mod_pd / pk) % ps)
+            by {
+            sum_mod_decomposition(x_mod_pd / pk, x_div_pd, s, s);
+        }
+        assert((ps * x_div_pd) % ps == 0) by {
+            lemma_mul_is_commutative(ps as int, x_div_pd as int);
+            lemma_mod_multiples_basic(x_div_pd as int, ps as int);
+        }
+        assert((x_mod_pd / pk) % ps == x_mod_pd / pk) by {
+            // x_mod_pd / pk < ps is known
+            lemma_small_mod(x_mod_pd / pk, ps);
+        }
+    }
+}
+
 pub proof fn pow2_MUL_div(x: nat, k: nat, s: nat)
     requires
         k >= s,

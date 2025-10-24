@@ -8,7 +8,6 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! **INTERNALS:** Pluggable implementations for different architectures.
 //!
 //! The backend code is split into two parts: a serial backend,
@@ -33,7 +32,6 @@
 //!
 //! The [`vector`] backend is selected by the `simd_backend` cargo
 //! feature; it uses the [`serial`] backend for non-vectorized operations.
-
 use crate::EdwardsPoint;
 use crate::Scalar;
 

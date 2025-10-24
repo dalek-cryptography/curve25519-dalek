@@ -7,18 +7,18 @@ use vstd::prelude::*;
 
 verus! {
 
-pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64, k: nat)
+pub proof fn lemma_div_and_mod(ai: u64, bi: u64, v: u64, k: nat)
     requires
         k < 64,
         ai == v >> k,
-        bi == v & (low_bits_mask(k) as u64)
+        bi == v & (low_bits_mask(k) as u64),
     ensures
         ai == v / (pow2(k) as u64),
         bi == v % (pow2(k) as u64),
-        v == ai * pow2(k) + bi
+        v == ai * pow2(k) + bi,
 {
     lemma2_to64();
-    lemma2_to64_rest(); // pow2(63) = 0x8000000000000000
+    lemma2_to64_rest();  // pow2(63) = 0x8000000000000000
 
     // v >> k = v / pow2(k);
     lemma_u64_shr_is_div(v, k as u64);
@@ -41,9 +41,9 @@ pub proof fn lemma_div_and_mod(ai:u64, bi: u64, v: u64, k: nat)
 // Combination of mod lemmas, (b +- a * m) % m = b % m
 pub proof fn lemma_mod_sum_factor(a: int, b: int, m: int)
     requires
-        m > 0
+        m > 0,
     ensures
-        (a * m + b) % m == b % m
+        (a * m + b) % m == b % m,
 {
     // (a * m + b) % m == ((a * m) % m + b % m) % m
     lemma_add_mod_noop(a * m, b, m);
@@ -57,7 +57,7 @@ pub proof fn lemma_mod_diff_factor(a: int, b: int, m: int)
     requires
         m > 0,
     ensures
-        (b - a * m) % m == b % m
+        (b - a * m) % m == b % m,
 {
     // (b - a * m) % m == (b % m - (a * m) % m) % m
     lemma_sub_mod_noop(b, a * m, m);
@@ -69,9 +69,10 @@ pub proof fn lemma_mod_diff_factor(a: int, b: int, m: int)
 
 pub proof fn lemma_div_of_sum(a: nat, b: nat, k: nat)
     requires
-        (a % k) + (b % k) < k // also implies k != 0
+        (a % k) + (b % k) < k  // also implies k != 0
+        ,
     ensures
-        (a + b) / k == a / k + b / k
+        (a + b) / k == a / k + b / k,
 {
     let a0 = a / k;
     let b0 = b / k;
@@ -101,10 +102,10 @@ pub proof fn lemma_div_strictly_bounded(x: int, a: int, b: int)
     ensures
         x / a < b,
 {
-   // (b * a) / a == b
-   lemma_div_by_multiple(b, a);
-   // x < b * a && a > 0 => x / a < (b * a) / a
-   lemma_div_by_multiple_is_strongly_ordered(x, a * b, b, a);
+    // (b * a) / a == b
+    lemma_div_by_multiple(b, a);
+    // x < b * a && a > 0 => x / a < (b * a) / a
+    lemma_div_by_multiple_is_strongly_ordered(x, a * b, b, a);
 }
 
 /// Helper lemma: if a * b <= c and b > 0, then a <= c / b
@@ -121,12 +122,13 @@ pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
 
 pub proof fn lemma_u8_cast_is_mod_256(x: u64)
     ensures
-        (x as u8) == (x as nat) % 256
+        (x as u8) == (x as nat) % 256,
 {
     assert(x as nat % 256 == x % 256);
     assert((x as u8) == x % 256) by (bit_vector);
 }
 
-fn main() {}
-
+fn main() {
 }
+
+} // verus!

@@ -19,42 +19,24 @@ verus! {
 // ============================================================================
 // LEMMA 3: Packing 51-bit limbs into 8-bit bytes
 // ============================================================================
-
 /// Predicate: bytes are packed from limbs according to the to_bytes algorithm
 /// This captures the byte-packing relationship used in FieldElement51::to_bytes (lines 380-410)
 pub open spec fn bytes_match_limbs_packing(limbs: [u64; 5], bytes: [u8; 32]) -> bool {
-    bytes[ 0] ==   limbs[0]                           as u8 &&
-    bytes[ 1] ==  (limbs[0] >>  8)                    as u8 &&
-    bytes[ 2] ==  (limbs[0] >> 16)                    as u8 &&
-    bytes[ 3] ==  (limbs[0] >> 24)                    as u8 &&
-    bytes[ 4] ==  (limbs[0] >> 32)                    as u8 &&
-    bytes[ 5] ==  (limbs[0] >> 40)                    as u8 &&
-    bytes[ 6] == ((limbs[0] >> 48) | (limbs[1] << 3)) as u8 &&
-    bytes[ 7] ==  (limbs[1] >>  5)                    as u8 &&
-    bytes[ 8] ==  (limbs[1] >> 13)                    as u8 &&
-    bytes[ 9] ==  (limbs[1] >> 21)                    as u8 &&
-    bytes[10] ==  (limbs[1] >> 29)                    as u8 &&
-    bytes[11] ==  (limbs[1] >> 37)                    as u8 &&
-    bytes[12] == ((limbs[1] >> 45) | (limbs[2] << 6)) as u8 &&
-    bytes[13] ==  (limbs[2] >>  2)                    as u8 &&
-    bytes[14] ==  (limbs[2] >> 10)                    as u8 &&
-    bytes[15] ==  (limbs[2] >> 18)                    as u8 &&
-    bytes[16] ==  (limbs[2] >> 26)                    as u8 &&
-    bytes[17] ==  (limbs[2] >> 34)                    as u8 &&
-    bytes[18] ==  (limbs[2] >> 42)                    as u8 &&
-    bytes[19] == ((limbs[2] >> 50) | (limbs[3] << 1)) as u8 &&
-    bytes[20] ==  (limbs[3] >>  7)                    as u8 &&
-    bytes[21] ==  (limbs[3] >> 15)                    as u8 &&
-    bytes[22] ==  (limbs[3] >> 23)                    as u8 &&
-    bytes[23] ==  (limbs[3] >> 31)                    as u8 &&
-    bytes[24] ==  (limbs[3] >> 39)                    as u8 &&
-    bytes[25] == ((limbs[3] >> 47) | (limbs[4] << 4)) as u8 &&
-    bytes[26] ==  (limbs[4] >>  4)                    as u8 &&
-    bytes[27] ==  (limbs[4] >> 12)                    as u8 &&
-    bytes[28] ==  (limbs[4] >> 20)                    as u8 &&
-    bytes[29] ==  (limbs[4] >> 28)                    as u8 &&
-    bytes[30] ==  (limbs[4] >> 36)                    as u8 &&
-    bytes[31] ==  (limbs[4] >> 44)                    as u8
+    bytes[0] == limbs[0] as u8 && bytes[1] == (limbs[0] >> 8) as u8 && bytes[2] == (limbs[0]
+        >> 16) as u8 && bytes[3] == (limbs[0] >> 24) as u8 && bytes[4] == (limbs[0] >> 32) as u8
+        && bytes[5] == (limbs[0] >> 40) as u8 && bytes[6] == ((limbs[0] >> 48) | (limbs[1]
+        << 3)) as u8 && bytes[7] == (limbs[1] >> 5) as u8 && bytes[8] == (limbs[1] >> 13) as u8
+        && bytes[9] == (limbs[1] >> 21) as u8 && bytes[10] == (limbs[1] >> 29) as u8 && bytes[11]
+        == (limbs[1] >> 37) as u8 && bytes[12] == ((limbs[1] >> 45) | (limbs[2] << 6)) as u8
+        && bytes[13] == (limbs[2] >> 2) as u8 && bytes[14] == (limbs[2] >> 10) as u8 && bytes[15]
+        == (limbs[2] >> 18) as u8 && bytes[16] == (limbs[2] >> 26) as u8 && bytes[17] == (limbs[2]
+        >> 34) as u8 && bytes[18] == (limbs[2] >> 42) as u8 && bytes[19] == ((limbs[2] >> 50) | (
+    limbs[3] << 1)) as u8 && bytes[20] == (limbs[3] >> 7) as u8 && bytes[21] == (limbs[3]
+        >> 15) as u8 && bytes[22] == (limbs[3] >> 23) as u8 && bytes[23] == (limbs[3] >> 31) as u8
+        && bytes[24] == (limbs[3] >> 39) as u8 && bytes[25] == ((limbs[3] >> 47) | (limbs[4]
+        << 4)) as u8 && bytes[26] == (limbs[4] >> 4) as u8 && bytes[27] == (limbs[4] >> 12) as u8
+        && bytes[28] == (limbs[4] >> 20) as u8 && bytes[29] == (limbs[4] >> 28) as u8 && bytes[30]
+        == (limbs[4] >> 36) as u8 && bytes[31] == (limbs[4] >> 44) as u8
 }
 
 /// Core lemma: proves that packing 51-bit limbs into bytes preserves the value
@@ -63,7 +45,7 @@ pub open spec fn bytes_match_limbs_packing(limbs: [u64; 5], bytes: [u8; 32]) -> 
 /// It connects the byte representation with the limb representation.
 pub proof fn lemma_limbs_to_bytes(limbs: [u64; 5], bytes: [u8; 32])
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
         as_nat_32_u8(&bytes) == as_nat(limbs),
@@ -76,12 +58,11 @@ pub proof fn lemma_limbs_to_bytes(limbs: [u64; 5], bytes: [u8; 32])
 // ============================================================================
 // Phase 3: Algebraic Expansion Helper Lemmas
 // ============================================================================
-
 /// Core algebraic lemma: The sum of bytes equals the sum of limbs
 /// This is where we do the heavy algebraic lifting to show the equivalence
 proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
         as_nat_32_u8(&bytes) == as_nat(limbs),
@@ -115,7 +96,6 @@ proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
     // 4. Therefore as_nat_32_u8(bytes) == as_nat(limbs)
     //
     // Key insight: pow2(48) * 8 = pow2(51) (the radix change point)
-
     lemma2_to64();
     lemma_pow2_adds(48, 3);  // Establishes pow2(51) = pow2(48) * 8
 
@@ -140,9 +120,8 @@ proof fn lemma_byte_sum_equals_limb_sum(limbs: [u64; 5], bytes: [u8; 32])
 
     // Prove the sum of contributions equals as_nat_32_u8(&bytes)
     lemma_sum_equals_byte_nat(limbs, bytes);
-    assert(as_nat_32_u8(&bytes) ==
-           limb0_contribution + limb1_contribution + limb2_contribution +
-           limb3_contribution + limb4_contribution);
+    assert(as_nat_32_u8(&bytes) == limb0_contribution + limb1_contribution + limb2_contribution
+        + limb3_contribution + limb4_contribution);
 
     // Therefore, the sum equals as_nat(limbs)
 }
@@ -159,7 +138,6 @@ proof fn lemma_byte_from_limb_shift(limb: u64, shift: u64, byte: u8)
     // Bitwise shift to arithmetic conversion
     // When we shift right by `shift` bits and cast to u8, we extract 8 bits starting at position `shift`
     // In arithmetic terms: (limb / 2^shift) % 256
-
     lemma2_to64();
     lemma_u64_shr_is_div(limb, shift);
     assert((limb >> shift) as nat == limb as nat / pow2(shift as nat));
@@ -177,16 +155,14 @@ proof fn lemma_byte_from_limb_shift(limb: u64, shift: u64, byte: u8)
 // ============================================================================
 // Phase 3: Per-Limb Byte Contribution Functions
 // ============================================================================
-
 /// Compute limb 0's contribution to the byte sum
 /// Limb 0 contributes to bytes 0-6 (fully to 0-5, partially to 6)
 spec fn limb0_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[0] as nat * pow2(0 * 8) +
-    bytes[1] as nat * pow2(1 * 8) +
-    bytes[2] as nat * pow2(2 * 8) +
-    bytes[3] as nat * pow2(3 * 8) +
-    bytes[4] as nat * pow2(4 * 8) +
-    bytes[5] as nat * pow2(5 * 8) +
+    bytes[0] as nat * pow2(0 * 8) + bytes[1] as nat * pow2(1 * 8) + bytes[2] as nat * pow2(2 * 8)
+        + bytes[3] as nat * pow2(3 * 8) + bytes[4] as nat * pow2(4 * 8) + bytes[5] as nat * pow2(
+        5 * 8,
+    )
+        +
     // Byte 6 is a boundary byte - limb 0 contributes only the low 3 bits
     // These 3 bits represent limbs[0]'s bits 48-50
     ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8)
@@ -196,12 +172,11 @@ spec fn limb0_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 /// Limb 1 contributes to bytes 6-12 (partially to 6, fully to 7-11, partially to 12)
 spec fn limb1_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 6 high 5 bits (limbs[1]'s bits 0-4)
-    ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8) +
-    bytes[7] as nat * pow2(7 * 8) +
-    bytes[8] as nat * pow2(8 * 8) +
-    bytes[9] as nat * pow2(9 * 8) +
-    bytes[10] as nat * pow2(10 * 8) +
-    bytes[11] as nat * pow2(11 * 8) +
+    ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8) + bytes[7] as nat * pow2(7 * 8)
+        + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(9 * 8) + bytes[10] as nat * pow2(
+        10 * 8,
+    ) + bytes[11] as nat * pow2(11 * 8)
+        +
     // Byte 12 low 6 bits (limbs[1]'s bits 45-50)
     ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8)
 }
@@ -210,13 +185,10 @@ spec fn limb1_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 /// Limb 2 contributes to bytes 12-19
 spec fn limb2_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 12 high 2 bits (limbs[2]'s bits 0-1)
-    ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8) +
-    bytes[13] as nat * pow2(13 * 8) +
-    bytes[14] as nat * pow2(14 * 8) +
-    bytes[15] as nat * pow2(15 * 8) +
-    bytes[16] as nat * pow2(16 * 8) +
-    bytes[17] as nat * pow2(17 * 8) +
-    bytes[18] as nat * pow2(18 * 8) +
+    ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8) + bytes[13] as nat * pow2(13 * 8)
+        + bytes[14] as nat * pow2(14 * 8) + bytes[15] as nat * pow2(15 * 8) + bytes[16] as nat
+        * pow2(16 * 8) + bytes[17] as nat * pow2(17 * 8) + bytes[18] as nat * pow2(18 * 8)
+        +
     // Byte 19 low 1 bit (limbs[2]'s bit 50)
     ((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8)
 }
@@ -225,12 +197,10 @@ spec fn limb2_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 /// Limb 3 contributes to bytes 19-25
 spec fn limb3_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 19 high 7 bits (limbs[3]'s bits 0-6)
-    ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8) +
-    bytes[20] as nat * pow2(20 * 8) +
-    bytes[21] as nat * pow2(21 * 8) +
-    bytes[22] as nat * pow2(22 * 8) +
-    bytes[23] as nat * pow2(23 * 8) +
-    bytes[24] as nat * pow2(24 * 8) +
+    ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8) + bytes[20] as nat * pow2(20 * 8)
+        + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat * pow2(22 * 8) + bytes[23] as nat
+        * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8)
+        +
     // Byte 25 low 4 bits (limbs[3]'s bits 47-50)
     ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8)
 }
@@ -239,24 +209,24 @@ spec fn limb3_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 /// Limb 4 contributes to bytes 25-31
 spec fn limb4_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 25 high 4 bits (limbs[4]'s bits 0-3)
-    ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8) +
-    bytes[26] as nat * pow2(26 * 8) +
-    bytes[27] as nat * pow2(27 * 8) +
-    bytes[28] as nat * pow2(28 * 8) +
-    bytes[29] as nat * pow2(29 * 8) +
-    bytes[30] as nat * pow2(30 * 8) +
-    bytes[31] as nat * pow2(31 * 8)
+    ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8) + bytes[26] as nat * pow2(26 * 8)
+        + bytes[27] as nat * pow2(27 * 8) + bytes[28] as nat * pow2(28 * 8) + bytes[29] as nat
+        * pow2(29 * 8) + bytes[30] as nat * pow2(30 * 8) + bytes[31] as nat * pow2(31 * 8)
 }
 
 // ============================================================================
 // Phase 3: Helper Lemmas for Limb Contribution Proofs
 // ============================================================================
-
 /// Helper: Shows that summing extracted bytes reconstructs value % 2^(num_bytes*8)
 /// This is the key algebraic property connecting byte extraction to value reconstruction
 proof fn lemma_sum_extracted_bytes_reconstructs_value(
     value: u64,
-    byte0: u8, byte1: u8, byte2: u8, byte3: u8, byte4: u8, byte5: u8,
+    byte0: u8,
+    byte1: u8,
+    byte2: u8,
+    byte3: u8,
+    byte4: u8,
+    byte5: u8,
     num_bytes: nat,
 )
     requires
@@ -268,13 +238,10 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
         byte4 as nat == (value as nat / pow2(32)) % 256,
         byte5 as nat == (value as nat / pow2(40)) % 256,
         value < pow2(num_bytes * 8),  // value < 2^48
+
     ensures
-        byte0 as nat * pow2(0) +
-        byte1 as nat * pow2(8) +
-        byte2 as nat * pow2(16) +
-        byte3 as nat * pow2(24) +
-        byte4 as nat * pow2(32) +
-        byte5 as nat * pow2(40) == value as nat,
+        byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+            * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40) == value as nat,
 {
     lemma2_to64();
 
@@ -330,7 +297,8 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
     lemma_div_denominator(value as int, pow2(16) as int, 256);
     assert(rest3 == value as nat / pow2(24));
 
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + rest3 * pow2(24));
+    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + rest3
+        * pow2(24));
 
     // Step 3: rest3 = byte3 + (rest3 / 256) * 256
     lemma_fundamental_div_mod(rest3 as int, 256);
@@ -343,8 +311,8 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
     lemma_div_denominator(value as int, pow2(24) as int, 256);
     assert(rest4 == value as nat / pow2(32));
 
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                          byte3 as nat * pow2(24) + rest4 * pow2(32));
+    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
+        + byte3 as nat * pow2(24) + rest4 * pow2(32));
 
     // Step 4: rest4 = byte4 + (rest4 / 256) * 256
     lemma_fundamental_div_mod(rest4 as int, 256);
@@ -357,8 +325,8 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
     lemma_div_denominator(value as int, pow2(32) as int, 256);
     assert(rest5 == value as nat / pow2(40));
 
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                          byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
+    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
+        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
 
     // Step 5: rest5 = byte5 (since value < 2^48, rest5 < 256)
     // Since value < 2^48, we have rest5 = value / 2^40 < 2^8 = 256
@@ -380,10 +348,10 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
     assert(byte5 as nat == rest5);  // since rest5 < 256
 
     // Final result: value equals the sum of all bytes
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                          byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                          byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40));
+    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
+        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
+    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
+        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40));
 }
 
 /// Helper: Byte extraction commutes with modulo for low-order bytes
@@ -393,7 +361,9 @@ proof fn lemma_sum_extracted_bytes_reconstructs_value(
 /// This is a specialized version of lemma_chunk_extraction_commutes_with_mod for bytes (b=8).
 proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
     requires
-        k * 8 + 8 <= m,  // The byte we're extracting is entirely below the modulo boundary
+        k * 8 + 8
+            <= m,  // The byte we're extracting is entirely below the modulo boundary
+
     ensures
         (x / pow2(k * 8)) % 256 == ((x % pow2(m)) / pow2(k * 8)) % 256,
 {
@@ -407,7 +377,6 @@ proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
 // ============================================================================
 // Phase 3: Per-Limb Contribution Correctness Proofs
 // ============================================================================
-
 /// Proves that limb 0's byte contribution equals limbs[0] * pow2(0) = limbs[0]
 proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     requires
@@ -423,7 +392,6 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     //
     // Strategy: Apply div-mod theorem at the 48-bit boundary
     // limbs[0] = (limbs[0] % 2^48) + (limbs[0] / 2^48) * 2^48
-
     lemma2_to64();
     assert(pow2(8) == 256);
 
@@ -434,12 +402,10 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // ... and so on
 
     // These bytes, when summed with their position weights, reconstruct limbs[0] % 2^48
-    let low_48_bits = bytes[0] as nat * pow2(0 * 8) +
-                      bytes[1] as nat * pow2(1 * 8) +
-                      bytes[2] as nat * pow2(2 * 8) +
-                      bytes[3] as nat * pow2(3 * 8) +
-                      bytes[4] as nat * pow2(4 * 8) +
-                      bytes[5] as nat * pow2(5 * 8);
+    let low_48_bits = bytes[0] as nat * pow2(0 * 8) + bytes[1] as nat * pow2(1 * 8)
+        + bytes[2] as nat * pow2(2 * 8) + bytes[3] as nat * pow2(3 * 8) + bytes[4] as nat * pow2(
+        4 * 8,
+    ) + bytes[5] as nat * pow2(5 * 8);
 
     // Prove this equals limbs[0] % 2^48
     // From bytes_match_limbs_packing, we know each byte is exactly (limbs[0] >> (i*8)) as u8
@@ -525,8 +491,13 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Now apply our reconstruction lemma
     lemma_sum_extracted_bytes_reconstructs_value(
         limb0_low48,
-        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5],
-        6
+        bytes[0],
+        bytes[1],
+        bytes[2],
+        bytes[3],
+        bytes[4],
+        bytes[5],
+        6,
     );
 
     // The reconstruction lemma tells us: low_48_bits == limbs[0] % 2^48
@@ -558,16 +529,14 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_pos(48);  // Establishes pow2(48) > 0
     assert(pow2(48) > 0);
     lemma_fundamental_div_mod(limbs[0] as int, pow2(48) as int);
-    assert(limbs[0] as nat ==
-           (limbs[0] as nat % pow2(48)) +
-           (limbs[0] as nat / pow2(48)) * pow2(48));
+    assert(limbs[0] as nat == (limbs[0] as nat % pow2(48)) + (limbs[0] as nat / pow2(48)) * pow2(
+        48,
+    ));
 
     // Step 4: Show this equals limb0_byte_contribution
-    assert(limb0_byte_contribution(limbs, bytes) ==
-           low_48_bits + high_3_bits_contribution);
-    assert(limb0_byte_contribution(limbs, bytes) ==
-           (limbs[0] as nat % pow2(48)) +
-           (limbs[0] as nat / pow2(48)) * pow2(48));
+    assert(limb0_byte_contribution(limbs, bytes) == low_48_bits + high_3_bits_contribution);
+    assert(limb0_byte_contribution(limbs, bytes) == (limbs[0] as nat % pow2(48)) + (limbs[0] as nat
+        / pow2(48)) * pow2(48));
     assert(limb0_byte_contribution(limbs, bytes) == limbs[0] as nat);
 }
 
@@ -575,7 +544,11 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
 /// Proves that 5 consecutive bytes reconstruct a 40-bit value
 proof fn lemma_5_bytes_reconstruct(
     value: nat,
-    byte0: u8, byte1: u8, byte2: u8, byte3: u8, byte4: u8,
+    byte0: u8,
+    byte1: u8,
+    byte2: u8,
+    byte3: u8,
+    byte4: u8,
 )
     requires
         byte0 as nat == (value / pow2(0)) % 256,
@@ -584,12 +557,10 @@ proof fn lemma_5_bytes_reconstruct(
         byte3 as nat == (value / pow2(24)) % 256,
         byte4 as nat == (value / pow2(32)) % 256,
         value < pow2(40),  // 5 bytes = 40 bits
+
     ensures
-        byte0 as nat * pow2(0) +
-        byte1 as nat * pow2(8) +
-        byte2 as nat * pow2(16) +
-        byte3 as nat * pow2(24) +
-        byte4 as nat * pow2(32) == value,
+        byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+            * pow2(24) + byte4 as nat * pow2(32) == value,
 {
     lemma2_to64();
 
@@ -626,8 +597,8 @@ proof fn lemma_5_bytes_reconstruct(
     let rest4 = rest3 / 256;
     lemma_pow2_adds(24, 8);
     lemma_div_denominator(value as int, pow2(24) as int, 256);
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                    byte3 as nat * pow2(24) + rest4 * pow2(32));
+    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+        * pow2(24) + rest4 * pow2(32));
 
     // Step 4: rest4 = byte4 (since value < 2^40, rest4 < 2^8 = 256)
     lemma_div_bound(value, 32, 40);
@@ -635,15 +606,20 @@ proof fn lemma_5_bytes_reconstruct(
     lemma_mod_bound(rest4 as int, 256);
 
     // Final result
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                    byte3 as nat * pow2(24) + byte4 as nat * pow2(32));
+    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+        * pow2(24) + byte4 as nat * pow2(32));
 }
 
 /// Helper: 6-byte reconstruction lemma
 /// Proves that 6 consecutive bytes reconstruct a 48-bit value
 proof fn lemma_6_bytes_reconstruct(
     value: nat,
-    byte0: u8, byte1: u8, byte2: u8, byte3: u8, byte4: u8, byte5: u8,
+    byte0: u8,
+    byte1: u8,
+    byte2: u8,
+    byte3: u8,
+    byte4: u8,
+    byte5: u8,
 )
     requires
         byte0 as nat == (value / pow2(0)) % 256,
@@ -653,13 +629,10 @@ proof fn lemma_6_bytes_reconstruct(
         byte4 as nat == (value / pow2(32)) % 256,
         byte5 as nat == (value / pow2(40)) % 256,
         value < pow2(48),  // 6 bytes = 48 bits
+
     ensures
-        byte0 as nat * pow2(0) +
-        byte1 as nat * pow2(8) +
-        byte2 as nat * pow2(16) +
-        byte3 as nat * pow2(24) +
-        byte4 as nat * pow2(32) +
-        byte5 as nat * pow2(40) == value,
+        byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+            * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40) == value,
 {
     lemma2_to64();
 
@@ -694,8 +667,8 @@ proof fn lemma_6_bytes_reconstruct(
     let rest4 = rest3 / 256;
     lemma_pow2_adds(24, 8);
     lemma_div_denominator(value as int, pow2(24) as int, 256);
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                    byte3 as nat * pow2(24) + rest4 * pow2(32));
+    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+        * pow2(24) + rest4 * pow2(32));
 
     // Step 4: rest4 = byte4 + (rest4 / 256) * 256
     lemma_fundamental_div_mod(rest4 as int, 256);
@@ -703,8 +676,8 @@ proof fn lemma_6_bytes_reconstruct(
     let rest5 = rest4 / 256;
     lemma_pow2_adds(32, 8);
     lemma_div_denominator(value as int, pow2(32) as int, 256);
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                    byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
+    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+        * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
 
     // Step 5: rest5 = byte5 (since value < 2^48, rest5 < 2^8 = 256)
     lemma_div_bound(value, 40, 48);
@@ -713,8 +686,8 @@ proof fn lemma_6_bytes_reconstruct(
     lemma_mod_bound(rest5 as int, 256);
 
     // Final result
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) +
-                    byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40));
+    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
+        * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40));
 }
 
 /// Proves that limb 1's byte contribution equals limbs[1] * pow2(51)
@@ -731,7 +704,6 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // - Bytes 7-11: limbs[1]'s bits 5-44 (40 bits)
     // - Byte 12 (low 6 bits): limbs[1]'s bits 45-50
     // Total: 5 + 40 + 6 = 51 bits
-
     lemma2_to64();
     lemma_pow2_adds(48, 3);
 
@@ -860,27 +832,31 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_5_bytes_reconstruct(middle_value, bytes[7], bytes[8], bytes[9], bytes[10], bytes[11]);
 
     // This gives us:
-    assert(bytes[7] as nat * pow2(0) +
-           bytes[8] as nat * pow2(8) +
-           bytes[9] as nat * pow2(16) +
-           bytes[10] as nat * pow2(24) +
-           bytes[11] as nat * pow2(32) == middle_value);
+    assert(bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) + bytes[9] as nat * pow2(16)
+        + bytes[10] as nat * pow2(24) + bytes[11] as nat * pow2(32) == middle_value);
 
     // Now multiply both sides by 2^56 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(pow2(56) as int,
-                                   (bytes[7] as nat * pow2(0)) as int,
-                                   (bytes[8] as nat * pow2(8)) as int);
-    lemma_mul_is_distributive_add(pow2(56) as int,
-                                   (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8)) as int,
-                                   (bytes[9] as nat * pow2(16)) as int);
-    lemma_mul_is_distributive_add(pow2(56) as int,
-                                   (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) +
-                                    bytes[9] as nat * pow2(16)) as int,
-                                   (bytes[10] as nat * pow2(24)) as int);
-    lemma_mul_is_distributive_add(pow2(56) as int,
-                                   (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) +
-                                    bytes[9] as nat * pow2(16) + bytes[10] as nat * pow2(24)) as int,
-                                   (bytes[11] as nat * pow2(32)) as int);
+    lemma_mul_is_distributive_add(
+        pow2(56) as int,
+        (bytes[7] as nat * pow2(0)) as int,
+        (bytes[8] as nat * pow2(8)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(56) as int,
+        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8)) as int,
+        (bytes[9] as nat * pow2(16)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(56) as int,
+        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) + bytes[9] as nat * pow2(16)) as int,
+        (bytes[10] as nat * pow2(24)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(56) as int,
+        (bytes[7] as nat * pow2(0) + bytes[8] as nat * pow2(8) + bytes[9] as nat * pow2(16)
+            + bytes[10] as nat * pow2(24)) as int,
+        (bytes[11] as nat * pow2(32)) as int,
+    );
 
     // Distribute the multiplication into each term
     lemma_mul_is_associative(bytes[7] as int, pow2(0) as int, pow2(56) as int);
@@ -902,13 +878,11 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     assert(pow2(88) == pow2(11 * 8));
 
     // Final result
-    assert(bytes[7] as nat * pow2(7 * 8) +
-           bytes[8] as nat * pow2(8 * 8) +
-           bytes[9] as nat * pow2(9 * 8) +
-           bytes[10] as nat * pow2(10 * 8) +
-           bytes[11] as nat * pow2(11 * 8) ==
-           middle_value * pow2(56));
-
+    assert(bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(
+        9 * 8,
+    ) + bytes[10] as nat * pow2(10 * 8) + bytes[11] as nat * pow2(11 * 8) == middle_value * pow2(
+        56,
+    ));
 
     // Step 3: Handle boundary bytes
     // Low 5 bits (byte 6 high part): (limbs[1] % 2^5) * 8 * 2^48 = (limbs[1] % 2^5) * 2^51
@@ -923,36 +897,28 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
 
     // First, expand limb1_byte_contribution using its definition
     let contribution = limb1_byte_contribution(limbs, bytes);
-    assert(contribution ==
-        ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8) +
-        bytes[7] as nat * pow2(7 * 8) +
-        bytes[8] as nat * pow2(8 * 8) +
-        bytes[9] as nat * pow2(9 * 8) +
-        bytes[10] as nat * pow2(10 * 8) +
-        bytes[11] as nat * pow2(11 * 8) +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8));
+    assert(contribution == ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8) + bytes[7] as nat * pow2(
+        7 * 8,
+    ) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(9 * 8) + bytes[10] as nat * pow2(
+        10 * 8,
+    ) + bytes[11] as nat * pow2(11 * 8) + ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8));
 
     // Create a variable for the middle bytes sum
-    let middle_bytes_sum = bytes[7] as nat * pow2(7 * 8) +
-                           bytes[8] as nat * pow2(8 * 8) +
-                           bytes[9] as nat * pow2(9 * 8) +
-                           bytes[10] as nat * pow2(10 * 8) +
-                           bytes[11] as nat * pow2(11 * 8);
+    let middle_bytes_sum = bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8)
+        + bytes[9] as nat * pow2(9 * 8) + bytes[10] as nat * pow2(10 * 8) + bytes[11] as nat * pow2(
+        11 * 8,
+    );
 
     // From the proof above, we have:
     // middle_bytes_sum == ((limbs[1] / pow2(5)) % pow2(40)) * pow2(56)
     let middle_value_at_position = ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(56);
 
     // Substitute into contribution
-    assert(contribution ==
-        ((limbs[1] as nat % pow2(5)) * 8) * pow2(48) +
-        middle_bytes_sum +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
+    assert(contribution == ((limbs[1] as nat % pow2(5)) * 8) * pow2(48) + middle_bytes_sum + ((
+    limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
 
-    assert(contribution ==
-        ((limbs[1] as nat % pow2(5)) * 8) * pow2(48) +
-        middle_value_at_position +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
+    assert(contribution == ((limbs[1] as nat % pow2(5)) * 8) * pow2(48) + middle_value_at_position
+        + ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
 
     // Now complete the algebraic proof using division-modulo reconstruction
     // Goal: Show contribution = limbs[1] * 2^51
@@ -966,9 +932,8 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     let middle_term = ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(56);
     let high_term = ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96);
 
-
     // Step 2: Establish power relationships needed for factoring
-    lemma_pow2_adds(51, 5);   // 2^56 = 2^51 * 2^5
+    lemma_pow2_adds(51, 5);  // 2^56 = 2^51 * 2^5
 
     lemma_pow2_adds(51, 45);  // 2^96 = 2^51 * 2^45
 
@@ -990,9 +955,7 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(5, 40);
 
     // So: limbs[1] / 2^5 = ((limbs[1] / 2^5) % 2^40) + (limbs[1] / 2^45) * 2^40
-    assert(shifted_value ==
-        (shifted_value % pow2(40)) +
-        (limbs[1] as nat / pow2(45)) * pow2(40));
+    assert(shifted_value == (shifted_value % pow2(40)) + (limbs[1] as nat / pow2(45)) * pow2(40));
 
     // Next, reconstruct limbs[1] from its low 5 bits and (limbs[1] / 2^5)
     lemma_pow2_pos(5);
@@ -1003,30 +966,33 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Substitute the reconstruction of shifted_value (limbs[1] / 2^5)
-    assert(limbs[1] as nat ==
-        (limbs[1] as nat % pow2(5)) +
-        ((shifted_value % pow2(40)) + (limbs[1] as nat / pow2(45)) * pow2(40)) * pow2(5));
+    assert(limbs[1] as nat == (limbs[1] as nat % pow2(5)) + ((shifted_value % pow2(40)) + (
+    limbs[1] as nat / pow2(45)) * pow2(40)) * pow2(5));
 
     // Distribute the * 2^5
-    assert(limbs[1] as nat ==
-        (limbs[1] as nat % pow2(5)) +
-        (shifted_value % pow2(40)) * pow2(5) +
-        (limbs[1] as nat / pow2(45)) * pow2(40) * pow2(5)) by {
-        lemma_mul_is_distributive_add(pow2(5) as int,
+    assert(limbs[1] as nat == (limbs[1] as nat % pow2(5)) + (shifted_value % pow2(40)) * pow2(5) + (
+    limbs[1] as nat / pow2(45)) * pow2(40) * pow2(5)) by {
+        lemma_mul_is_distributive_add(
+            pow2(5) as int,
             (shifted_value % pow2(40)) as int,
-            (limbs[1] as nat / pow2(45) * pow2(40)) as int);
+            (limbs[1] as nat / pow2(45) * pow2(40)) as int,
+        );
     }
 
     // Use 2^40 * 2^5 = 2^45
     lemma_pow2_adds(40, 5);
-    assert((limbs[1] as nat / pow2(45)) * pow2(40) * pow2(5) == (limbs[1] as nat / pow2(45)) * pow2(45)) by {
-        lemma_mul_is_associative((limbs[1] as nat / pow2(45)) as int, pow2(40) as int, pow2(5) as int);
+    assert((limbs[1] as nat / pow2(45)) * pow2(40) * pow2(5) == (limbs[1] as nat / pow2(45)) * pow2(
+        45,
+    )) by {
+        lemma_mul_is_associative(
+            (limbs[1] as nat / pow2(45)) as int,
+            pow2(40) as int,
+            pow2(5) as int,
+        );
     }
 
-    assert(limbs[1] as nat ==
-        (limbs[1] as nat % pow2(5)) +
-        ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(5) +
-        (limbs[1] as nat / pow2(45)) * pow2(45));
+    assert(limbs[1] as nat == (limbs[1] as nat % pow2(5)) + ((limbs[1] as nat / pow2(5)) % pow2(40))
+        * pow2(5) + (limbs[1] as nat / pow2(45)) * pow2(45));
 
     // Handle the % 2^6 on the high bits
     // Since limbs[1] < 2^51, we have limbs[1] / 2^45 < 2^6
@@ -1034,10 +1000,8 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_small_mod(limbs[1] as nat / pow2(45), pow2(6));
 
     // Therefore:
-    assert(limbs[1] as nat ==
-        (limbs[1] as nat % pow2(5)) +
-        ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(5) +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(45));
+    assert(limbs[1] as nat == (limbs[1] as nat % pow2(5)) + ((limbs[1] as nat / pow2(5)) % pow2(40))
+        * pow2(5) + ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(45));
 
     // Step 4: Now connect the contribution to limbs[1] * 2^51
     // We have: contribution = ((limbs[1] % 2^5) * 8) * 2^48 + middle_value_at_position + ((limbs[1] / 2^45) % 2^6) * 2^96
@@ -1051,16 +1015,13 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // So contribution = (limbs[1] % 2^5) * 2^51 + ((limbs[1] / 2^5) % 2^40) * 2^56 + ((limbs[1] / 2^45) % 2^6) * 2^96
-    assert(contribution ==
-        low_part * pow2(51) +
-        ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(56) +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
+    assert(contribution == low_part * pow2(51) + ((limbs[1] as nat / pow2(5)) % pow2(40)) * pow2(56)
+        + ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(96));
 
     // Rewrite using 2^56 = 2^51 * 2^5 and 2^96 = 2^51 * 2^45
-    assert(contribution ==
-        low_part * pow2(51) +
-        ((limbs[1] as nat / pow2(5)) % pow2(40)) * (pow2(51) * pow2(5)) +
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * (pow2(51) * pow2(45)));
+    assert(contribution == low_part * pow2(51) + ((limbs[1] as nat / pow2(5)) % pow2(40)) * (pow2(
+        51,
+    ) * pow2(5)) + ((limbs[1] as nat / pow2(45)) % pow2(6)) * (pow2(51) * pow2(45)));
 
     // Apply associativity to move pow2(51) to the left
     let middle_part = (limbs[1] as nat / pow2(5)) % pow2(40);
@@ -1087,15 +1048,22 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Now factor out pow2(51)
-    assert(contribution ==
-        low_part * pow2(51) +
-        pow2(51) * (middle_part * pow2(5)) +
-        pow2(51) * (high_part * pow2(45)));
+    assert(contribution == low_part * pow2(51) + pow2(51) * (middle_part * pow2(5)) + pow2(51) * (
+    high_part * pow2(45)));
 
     // Use distributivity to factor out pow2(51)
-    assert(contribution == pow2(51) * (low_part + middle_part * pow2(5) + high_part * pow2(45))) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, low_part as int, (middle_part * pow2(5)) as int);
-        lemma_mul_is_distributive_add(pow2(51) as int, (low_part + middle_part * pow2(5)) as int, (high_part * pow2(45)) as int);
+    assert(contribution == pow2(51) * (low_part + middle_part * pow2(5) + high_part * pow2(45)))
+        by {
+        lemma_mul_is_distributive_add(
+            pow2(51) as int,
+            low_part as int,
+            (middle_part * pow2(5)) as int,
+        );
+        lemma_mul_is_distributive_add(
+            pow2(51) as int,
+            (low_part + middle_part * pow2(5)) as int,
+            (high_part * pow2(45)) as int,
+        );
     }
 
     // The part in parentheses equals limbs[1] by our reconstruction identity!
@@ -1119,7 +1087,6 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // - Bytes 13-18: limbs[2]'s bits 2-49 (48 bits)
     // - Byte 19 (low 1 bit): limbs[2]'s bit 50
     // Total: 2 + 48 + 1 = 51 bits
-
     lemma2_to64();
     lemma_pow2_adds(96, 6);  // 2^102 = 2^96 * 2^6
     assert(pow2(102) == pow2(96) * 64);
@@ -1224,36 +1191,51 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     assert(bytes[18] as nat == (middle_value / pow2(40)) % 256);
 
     // Now apply lemma_6_bytes_reconstruct
-    lemma_6_bytes_reconstruct(middle_value, bytes[13], bytes[14], bytes[15], bytes[16], bytes[17], bytes[18]);
+    lemma_6_bytes_reconstruct(
+        middle_value,
+        bytes[13],
+        bytes[14],
+        bytes[15],
+        bytes[16],
+        bytes[17],
+        bytes[18],
+    );
 
     // This gives us:
-    assert(bytes[13] as nat * pow2(0) +
-           bytes[14] as nat * pow2(8) +
-           bytes[15] as nat * pow2(16) +
-           bytes[16] as nat * pow2(24) +
-           bytes[17] as nat * pow2(32) +
-           bytes[18] as nat * pow2(40) == middle_value);
+    assert(bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) + bytes[15] as nat * pow2(16)
+        + bytes[16] as nat * pow2(24) + bytes[17] as nat * pow2(32) + bytes[18] as nat * pow2(40)
+        == middle_value);
 
     // Now multiply both sides by 2^104 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(pow2(104) as int,
-                                   (bytes[13] as nat * pow2(0)) as int,
-                                   (bytes[14] as nat * pow2(8)) as int);
-    lemma_mul_is_distributive_add(pow2(104) as int,
-                                   (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8)) as int,
-                                   (bytes[15] as nat * pow2(16)) as int);
-    lemma_mul_is_distributive_add(pow2(104) as int,
-                                   (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) +
-                                    bytes[15] as nat * pow2(16)) as int,
-                                   (bytes[16] as nat * pow2(24)) as int);
-    lemma_mul_is_distributive_add(pow2(104) as int,
-                                   (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) +
-                                    bytes[15] as nat * pow2(16) + bytes[16] as nat * pow2(24)) as int,
-                                   (bytes[17] as nat * pow2(32)) as int);
-    lemma_mul_is_distributive_add(pow2(104) as int,
-                                   (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) +
-                                    bytes[15] as nat * pow2(16) + bytes[16] as nat * pow2(24) +
-                                    bytes[17] as nat * pow2(32)) as int,
-                                   (bytes[18] as nat * pow2(40)) as int);
+    lemma_mul_is_distributive_add(
+        pow2(104) as int,
+        (bytes[13] as nat * pow2(0)) as int,
+        (bytes[14] as nat * pow2(8)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(104) as int,
+        (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8)) as int,
+        (bytes[15] as nat * pow2(16)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(104) as int,
+        (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) + bytes[15] as nat * pow2(
+            16,
+        )) as int,
+        (bytes[16] as nat * pow2(24)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(104) as int,
+        (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) + bytes[15] as nat * pow2(16)
+            + bytes[16] as nat * pow2(24)) as int,
+        (bytes[17] as nat * pow2(32)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(104) as int,
+        (bytes[13] as nat * pow2(0) + bytes[14] as nat * pow2(8) + bytes[15] as nat * pow2(16)
+            + bytes[16] as nat * pow2(24) + bytes[17] as nat * pow2(32)) as int,
+        (bytes[18] as nat * pow2(40)) as int,
+    );
 
     // Distribute the multiplication into each term
     lemma_mul_is_associative(bytes[13] as int, pow2(0) as int, pow2(104) as int);
@@ -1292,14 +1274,9 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // This should equal middle_value * pow2(104) by the distributivity we applied
 
     // Final result
-    assert(bytes[13] as nat * pow2(13 * 8) +
-           bytes[14] as nat * pow2(14 * 8) +
-           bytes[15] as nat * pow2(15 * 8) +
-           bytes[16] as nat * pow2(16 * 8) +
-           bytes[17] as nat * pow2(17 * 8) +
-           bytes[18] as nat * pow2(18 * 8) ==
-           middle_value * pow2(104));
-
+    assert(bytes[13] as nat * pow2(13 * 8) + bytes[14] as nat * pow2(14 * 8) + bytes[15] as nat
+        * pow2(15 * 8) + bytes[16] as nat * pow2(16 * 8) + bytes[17] as nat * pow2(17 * 8)
+        + bytes[18] as nat * pow2(18 * 8) == middle_value * pow2(104));
 
     // Step 3: Handle boundary bytes
     // Low 2 bits (byte 12 high part): (limbs[2] % 2^2) * 64 * 2^96 = (limbs[2] % 2^2) * 2^102
@@ -1310,21 +1287,16 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // From the proof above, we have:
-    let middle_bytes_sum = bytes[13] as nat * pow2(13 * 8) +
-                           bytes[14] as nat * pow2(14 * 8) +
-                           bytes[15] as nat * pow2(15 * 8) +
-                           bytes[16] as nat * pow2(16 * 8) +
-                           bytes[17] as nat * pow2(17 * 8) +
-                           bytes[18] as nat * pow2(18 * 8);
+    let middle_bytes_sum = bytes[13] as nat * pow2(13 * 8) + bytes[14] as nat * pow2(14 * 8)
+        + bytes[15] as nat * pow2(15 * 8) + bytes[16] as nat * pow2(16 * 8) + bytes[17] as nat
+        * pow2(17 * 8) + bytes[18] as nat * pow2(18 * 8);
 
     let middle_value_at_position = ((limbs[2] as nat / pow2(2)) % pow2(48)) * pow2(104);
 
     // Substitute into contribution
     let contribution = limb2_byte_contribution(limbs, bytes);
-    assert(contribution ==
-        ((limbs[2] as nat % pow2(2)) * 64) * pow2(96) +
-        middle_bytes_sum +
-        ((limbs[2] as nat / pow2(50)) % 2) * pow2(152));
+    assert(contribution == ((limbs[2] as nat % pow2(2)) * 64) * pow2(96) + middle_bytes_sum + ((
+    limbs[2] as nat / pow2(50)) % 2) * pow2(152));
 
     // Step 3: Prove the reconstruction identity for limbs[2]
     // limbs[2] = (limbs[2] % 2^2) + ((limbs[2] / 2^2) % 2^48) * 2^2 + ((limbs[2] / 2^50) % 2^1) * 2^50
@@ -1349,9 +1321,7 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(2, 48);
 
     // So: limbs[2] / 2^2 = ((limbs[2] / 2^2) % 2^48) + (limbs[2] / 2^50) * 2^48
-    assert(shifted_value ==
-        (shifted_value % pow2(48)) +
-        (limbs[2] as nat / pow2(50)) * pow2(48));
+    assert(shifted_value == (shifted_value % pow2(48)) + (limbs[2] as nat / pow2(50)) * pow2(48));
 
     // Next, reconstruct limbs[2] from its low 2 bits and (limbs[2] / 2^2)
     lemma_pow2_pos(2);
@@ -1362,30 +1332,33 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Substitute the reconstruction of shifted_value (limbs[2] / 2^2)
-    assert(limbs[2] as nat ==
-        (limbs[2] as nat % pow2(2)) +
-        ((shifted_value % pow2(48)) + (limbs[2] as nat / pow2(50)) * pow2(48)) * pow2(2));
+    assert(limbs[2] as nat == (limbs[2] as nat % pow2(2)) + ((shifted_value % pow2(48)) + (
+    limbs[2] as nat / pow2(50)) * pow2(48)) * pow2(2));
 
     // Distribute the * 2^2
-    assert(limbs[2] as nat ==
-        (limbs[2] as nat % pow2(2)) +
-        (shifted_value % pow2(48)) * pow2(2) +
-        (limbs[2] as nat / pow2(50)) * pow2(48) * pow2(2)) by {
-        lemma_mul_is_distributive_add(pow2(2) as int,
+    assert(limbs[2] as nat == (limbs[2] as nat % pow2(2)) + (shifted_value % pow2(48)) * pow2(2) + (
+    limbs[2] as nat / pow2(50)) * pow2(48) * pow2(2)) by {
+        lemma_mul_is_distributive_add(
+            pow2(2) as int,
             (shifted_value % pow2(48)) as int,
-            (limbs[2] as nat / pow2(50) * pow2(48)) as int);
+            (limbs[2] as nat / pow2(50) * pow2(48)) as int,
+        );
     }
 
     // Use 2^48 * 2^2 = 2^50
     lemma_pow2_adds(48, 2);
-    assert((limbs[2] as nat / pow2(50)) * pow2(48) * pow2(2) == (limbs[2] as nat / pow2(50)) * pow2(50)) by {
-        lemma_mul_is_associative((limbs[2] as nat / pow2(50)) as int, pow2(48) as int, pow2(2) as int);
+    assert((limbs[2] as nat / pow2(50)) * pow2(48) * pow2(2) == (limbs[2] as nat / pow2(50)) * pow2(
+        50,
+    )) by {
+        lemma_mul_is_associative(
+            (limbs[2] as nat / pow2(50)) as int,
+            pow2(48) as int,
+            pow2(2) as int,
+        );
     }
 
-    assert(limbs[2] as nat ==
-        (limbs[2] as nat % pow2(2)) +
-        ((limbs[2] as nat / pow2(2)) % pow2(48)) * pow2(2) +
-        (limbs[2] as nat / pow2(50)) * pow2(50));
+    assert(limbs[2] as nat == (limbs[2] as nat % pow2(2)) + ((limbs[2] as nat / pow2(2)) % pow2(48))
+        * pow2(2) + (limbs[2] as nat / pow2(50)) * pow2(50));
 
     // Handle the % 2 on the high bit
     // Since limbs[2] < 2^51, we have limbs[2] / 2^50 < 2^1 = 2
@@ -1394,10 +1367,8 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_small_mod(limbs[2] as nat / pow2(50), 2);
 
     // Therefore:
-    assert(limbs[2] as nat ==
-        (limbs[2] as nat % pow2(2)) +
-        ((limbs[2] as nat / pow2(2)) % pow2(48)) * pow2(2) +
-        ((limbs[2] as nat / pow2(50)) % 2) * pow2(50));
+    assert(limbs[2] as nat == (limbs[2] as nat % pow2(2)) + ((limbs[2] as nat / pow2(2)) % pow2(48))
+        * pow2(2) + ((limbs[2] as nat / pow2(50)) % 2) * pow2(50));
 
     // Step 4: Now connect the contribution to limbs[2] * 2^102
     // We have: contribution = ((limbs[2] % 2^2) * 64) * 2^96 + middle_bytes_sum + ((limbs[2] / 2^50) % 2) * 2^152
@@ -1411,19 +1382,17 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // So contribution = (limbs[2] % 2^2) * 2^102 + ((limbs[2] / 2^2) % 2^48) * 2^104 + ((limbs[2] / 2^50) % 2) * 2^152
-    assert(contribution ==
-        low_part * pow2(102) +
-        ((limbs[2] as nat / pow2(2)) % pow2(48)) * pow2(104) +
-        ((limbs[2] as nat / pow2(50)) % 2) * pow2(152));
+    assert(contribution == low_part * pow2(102) + ((limbs[2] as nat / pow2(2)) % pow2(48)) * pow2(
+        104,
+    ) + ((limbs[2] as nat / pow2(50)) % 2) * pow2(152));
 
     // Rewrite using 2^104 = 2^102 * 2^2 and 2^152 = 2^102 * 2^50
     lemma_pow2_adds(102, 2);
     lemma_pow2_adds(102, 50);
 
-    assert(contribution ==
-        low_part * pow2(102) +
-        ((limbs[2] as nat / pow2(2)) % pow2(48)) * (pow2(102) * pow2(2)) +
-        ((limbs[2] as nat / pow2(50)) % 2) * (pow2(102) * pow2(50)));
+    assert(contribution == low_part * pow2(102) + ((limbs[2] as nat / pow2(2)) % pow2(48)) * (pow2(
+        102,
+    ) * pow2(2)) + ((limbs[2] as nat / pow2(50)) % 2) * (pow2(102) * pow2(50)));
 
     // Apply associativity to move pow2(102) to the left
     let middle_part = (limbs[2] as nat / pow2(2)) % pow2(48);
@@ -1450,15 +1419,22 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Now factor out pow2(102)
-    assert(contribution ==
-        low_part * pow2(102) +
-        pow2(102) * (middle_part * pow2(2)) +
-        pow2(102) * (high_part * pow2(50)));
+    assert(contribution == low_part * pow2(102) + pow2(102) * (middle_part * pow2(2)) + pow2(102)
+        * (high_part * pow2(50)));
 
     // Use distributivity to factor out pow2(102)
-    assert(contribution == pow2(102) * (low_part + middle_part * pow2(2) + high_part * pow2(50))) by {
-        lemma_mul_is_distributive_add(pow2(102) as int, low_part as int, (middle_part * pow2(2)) as int);
-        lemma_mul_is_distributive_add(pow2(102) as int, (low_part + middle_part * pow2(2)) as int, (high_part * pow2(50)) as int);
+    assert(contribution == pow2(102) * (low_part + middle_part * pow2(2) + high_part * pow2(50)))
+        by {
+        lemma_mul_is_distributive_add(
+            pow2(102) as int,
+            low_part as int,
+            (middle_part * pow2(2)) as int,
+        );
+        lemma_mul_is_distributive_add(
+            pow2(102) as int,
+            (low_part + middle_part * pow2(2)) as int,
+            (high_part * pow2(50)) as int,
+        );
     }
 
     // The part in parentheses equals limbs[2] by our reconstruction identity!
@@ -1482,7 +1458,6 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // - Bytes 20-24: limbs[3]'s bits 7-46 (40 bits)
     // - Byte 25 (low 4 bits): limbs[3]'s bits 47-50
     // Total: 7 + 40 + 4 = 51 bits
-
     lemma2_to64();
     lemma_pow2_adds(152, 1);  // 2^153 = 2^152 * 2
 
@@ -1586,27 +1561,33 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_5_bytes_reconstruct(middle_value, bytes[20], bytes[21], bytes[22], bytes[23], bytes[24]);
 
     // This gives us:
-    assert(bytes[20] as nat * pow2(0) +
-           bytes[21] as nat * pow2(8) +
-           bytes[22] as nat * pow2(16) +
-           bytes[23] as nat * pow2(24) +
-           bytes[24] as nat * pow2(32) == middle_value);
+    assert(bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(16)
+        + bytes[23] as nat * pow2(24) + bytes[24] as nat * pow2(32) == middle_value);
 
     // Now multiply both sides by 2^160 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(pow2(160) as int,
-                                   (bytes[20] as nat * pow2(0)) as int,
-                                   (bytes[21] as nat * pow2(8)) as int);
-    lemma_mul_is_distributive_add(pow2(160) as int,
-                                   (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8)) as int,
-                                   (bytes[22] as nat * pow2(16)) as int);
-    lemma_mul_is_distributive_add(pow2(160) as int,
-                                   (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) +
-                                    bytes[22] as nat * pow2(16)) as int,
-                                   (bytes[23] as nat * pow2(24)) as int);
-    lemma_mul_is_distributive_add(pow2(160) as int,
-                                   (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) +
-                                    bytes[22] as nat * pow2(16) + bytes[23] as nat * pow2(24)) as int,
-                                   (bytes[24] as nat * pow2(32)) as int);
+    lemma_mul_is_distributive_add(
+        pow2(160) as int,
+        (bytes[20] as nat * pow2(0)) as int,
+        (bytes[21] as nat * pow2(8)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(160) as int,
+        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8)) as int,
+        (bytes[22] as nat * pow2(16)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(160) as int,
+        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(
+            16,
+        )) as int,
+        (bytes[23] as nat * pow2(24)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(160) as int,
+        (bytes[20] as nat * pow2(0) + bytes[21] as nat * pow2(8) + bytes[22] as nat * pow2(16)
+            + bytes[23] as nat * pow2(24)) as int,
+        (bytes[24] as nat * pow2(32)) as int,
+    );
 
     // Distribute the multiplication into each term
     lemma_mul_is_associative(bytes[20] as int, pow2(0) as int, pow2(160) as int);
@@ -1628,13 +1609,9 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(160, 32);
 
     // Final result
-    assert(bytes[20] as nat * pow2(20 * 8) +
-           bytes[21] as nat * pow2(21 * 8) +
-           bytes[22] as nat * pow2(22 * 8) +
-           bytes[23] as nat * pow2(23 * 8) +
-           bytes[24] as nat * pow2(24 * 8) ==
-           middle_value * pow2(160));
-
+    assert(bytes[20] as nat * pow2(20 * 8) + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat
+        * pow2(22 * 8) + bytes[23] as nat * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8)
+        == middle_value * pow2(160));
 
     // Step 3: Handle boundary bytes
     // Low 7 bits (byte 19 high part): (limbs[3] % 2^7) * 2 * 2^152 = (limbs[3] % 2^7) * 2^153
@@ -1645,25 +1622,19 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // From the proof above, we have:
-    let middle_bytes_sum = bytes[20] as nat * pow2(20 * 8) +
-                           bytes[21] as nat * pow2(21 * 8) +
-                           bytes[22] as nat * pow2(22 * 8) +
-                           bytes[23] as nat * pow2(23 * 8) +
-                           bytes[24] as nat * pow2(24 * 8);
+    let middle_bytes_sum = bytes[20] as nat * pow2(20 * 8) + bytes[21] as nat * pow2(21 * 8)
+        + bytes[22] as nat * pow2(22 * 8) + bytes[23] as nat * pow2(23 * 8) + bytes[24] as nat
+        * pow2(24 * 8);
 
     let middle_value_at_position = ((limbs[3] as nat / pow2(7)) % pow2(40)) * pow2(160);
 
     // Substitute into contribution
     let contribution = limb3_byte_contribution(limbs, bytes);
-    assert(contribution ==
-        ((limbs[3] as nat % pow2(7)) * 2) * pow2(152) +
-        middle_bytes_sum +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
+    assert(contribution == ((limbs[3] as nat % pow2(7)) * 2) * pow2(152) + middle_bytes_sum + ((
+    limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
 
-    assert(contribution ==
-        ((limbs[3] as nat % pow2(7)) * 2) * pow2(152) +
-        middle_value_at_position +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
+    assert(contribution == ((limbs[3] as nat % pow2(7)) * 2) * pow2(152) + middle_value_at_position
+        + ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
 
     // Step 3: Prove the reconstruction identity for limbs[3]
     // limbs[3] = (limbs[3] % 2^7) + ((limbs[3] / 2^7) % 2^40) * 2^7 + ((limbs[3] / 2^47) % 2^4) * 2^47
@@ -1681,9 +1652,7 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(7, 40);
 
     // So: limbs[3] / 2^7 = ((limbs[3] / 2^7) % 2^40) + (limbs[3] / 2^47) * 2^40
-    assert(shifted_value ==
-        (shifted_value % pow2(40)) +
-        (limbs[3] as nat / pow2(47)) * pow2(40));
+    assert(shifted_value == (shifted_value % pow2(40)) + (limbs[3] as nat / pow2(47)) * pow2(40));
 
     // Next, reconstruct limbs[3] from its low 7 bits and (limbs[3] / 2^7)
     lemma_pow2_pos(7);
@@ -1693,30 +1662,33 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Substitute the reconstruction of shifted_value (limbs[3] / 2^7)
-    assert(limbs[3] as nat ==
-        (limbs[3] as nat % pow2(7)) +
-        ((shifted_value % pow2(40)) + (limbs[3] as nat / pow2(47)) * pow2(40)) * pow2(7));
+    assert(limbs[3] as nat == (limbs[3] as nat % pow2(7)) + ((shifted_value % pow2(40)) + (
+    limbs[3] as nat / pow2(47)) * pow2(40)) * pow2(7));
 
     // Distribute the * 2^7
-    assert(limbs[3] as nat ==
-        (limbs[3] as nat % pow2(7)) +
-        (shifted_value % pow2(40)) * pow2(7) +
-        (limbs[3] as nat / pow2(47)) * pow2(40) * pow2(7)) by {
-        lemma_mul_is_distributive_add(pow2(7) as int,
+    assert(limbs[3] as nat == (limbs[3] as nat % pow2(7)) + (shifted_value % pow2(40)) * pow2(7) + (
+    limbs[3] as nat / pow2(47)) * pow2(40) * pow2(7)) by {
+        lemma_mul_is_distributive_add(
+            pow2(7) as int,
             (shifted_value % pow2(40)) as int,
-            (limbs[3] as nat / pow2(47) * pow2(40)) as int);
+            (limbs[3] as nat / pow2(47) * pow2(40)) as int,
+        );
     }
 
     // Use 2^40 * 2^7 = 2^47
     lemma_pow2_adds(40, 7);
-    assert((limbs[3] as nat / pow2(47)) * pow2(40) * pow2(7) == (limbs[3] as nat / pow2(47)) * pow2(47)) by {
-        lemma_mul_is_associative((limbs[3] as nat / pow2(47)) as int, pow2(40) as int, pow2(7) as int);
+    assert((limbs[3] as nat / pow2(47)) * pow2(40) * pow2(7) == (limbs[3] as nat / pow2(47)) * pow2(
+        47,
+    )) by {
+        lemma_mul_is_associative(
+            (limbs[3] as nat / pow2(47)) as int,
+            pow2(40) as int,
+            pow2(7) as int,
+        );
     }
 
-    assert(limbs[3] as nat ==
-        (limbs[3] as nat % pow2(7)) +
-        ((limbs[3] as nat / pow2(7)) % pow2(40)) * pow2(7) +
-        (limbs[3] as nat / pow2(47)) * pow2(47));
+    assert(limbs[3] as nat == (limbs[3] as nat % pow2(7)) + ((limbs[3] as nat / pow2(7)) % pow2(40))
+        * pow2(7) + (limbs[3] as nat / pow2(47)) * pow2(47));
 
     // Handle the % 2^4 on the high bits
     // Since limbs[3] < 2^51, we have limbs[3] / 2^47 < 2^4
@@ -1724,10 +1696,8 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_small_mod(limbs[3] as nat / pow2(47), pow2(4));
 
     // Therefore:
-    assert(limbs[3] as nat ==
-        (limbs[3] as nat % pow2(7)) +
-        ((limbs[3] as nat / pow2(7)) % pow2(40)) * pow2(7) +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(47));
+    assert(limbs[3] as nat == (limbs[3] as nat % pow2(7)) + ((limbs[3] as nat / pow2(7)) % pow2(40))
+        * pow2(7) + ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(47));
 
     // Step 4: Now connect the contribution to limbs[3] * 2^153
     // We have: contribution = ((limbs[3] % 2^7) * 2) * 2^152 + middle_value_at_position + ((limbs[3] / 2^47) % 2^4) * 2^200
@@ -1741,19 +1711,17 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // So contribution = (limbs[3] % 2^7) * 2^153 + ((limbs[3] / 2^7) % 2^40) * 2^160 + ((limbs[3] / 2^47) % 2^4) * 2^200
-    assert(contribution ==
-        low_part * pow2(153) +
-        ((limbs[3] as nat / pow2(7)) % pow2(40)) * pow2(160) +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
+    assert(contribution == low_part * pow2(153) + ((limbs[3] as nat / pow2(7)) % pow2(40)) * pow2(
+        160,
+    ) + ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(200));
 
     // Rewrite using 2^160 = 2^153 * 2^7 and 2^200 = 2^153 * 2^47
     lemma_pow2_adds(153, 7);
     lemma_pow2_adds(153, 47);
 
-    assert(contribution ==
-        low_part * pow2(153) +
-        ((limbs[3] as nat / pow2(7)) % pow2(40)) * (pow2(153) * pow2(7)) +
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * (pow2(153) * pow2(47)));
+    assert(contribution == low_part * pow2(153) + ((limbs[3] as nat / pow2(7)) % pow2(40)) * (pow2(
+        153,
+    ) * pow2(7)) + ((limbs[3] as nat / pow2(47)) % pow2(4)) * (pow2(153) * pow2(47)));
 
     // Apply associativity to move pow2(153) to the left
     let middle_part = (limbs[3] as nat / pow2(7)) % pow2(40);
@@ -1780,15 +1748,22 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Now factor out pow2(153)
-    assert(contribution ==
-        low_part * pow2(153) +
-        pow2(153) * (middle_part * pow2(7)) +
-        pow2(153) * (high_part * pow2(47)));
+    assert(contribution == low_part * pow2(153) + pow2(153) * (middle_part * pow2(7)) + pow2(153)
+        * (high_part * pow2(47)));
 
     // Use distributivity to factor out pow2(153)
-    assert(contribution == pow2(153) * (low_part + middle_part * pow2(7) + high_part * pow2(47))) by {
-        lemma_mul_is_distributive_add(pow2(153) as int, low_part as int, (middle_part * pow2(7)) as int);
-        lemma_mul_is_distributive_add(pow2(153) as int, (low_part + middle_part * pow2(7)) as int, (high_part * pow2(47)) as int);
+    assert(contribution == pow2(153) * (low_part + middle_part * pow2(7) + high_part * pow2(47)))
+        by {
+        lemma_mul_is_distributive_add(
+            pow2(153) as int,
+            low_part as int,
+            (middle_part * pow2(7)) as int,
+        );
+        lemma_mul_is_distributive_add(
+            pow2(153) as int,
+            (low_part + middle_part * pow2(7)) as int,
+            (high_part * pow2(47)) as int,
+        );
     }
 
     // The part in parentheses equals limbs[3] by our reconstruction identity!
@@ -1812,7 +1787,6 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // - Byte 25 (high 4 bits): limbs[4]'s bits 0-3
     // - Bytes 26-31: limbs[4]'s bits 4-51 (48 bits, but only 47 used)
     // Total: 4 + 47 = 51 bits (limbs[4] < 2^51)
-
     lemma2_to64();
     lemma_pow2_adds(200, 4);  // 2^204 = 2^200 * 2^4
 
@@ -1897,36 +1871,51 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Now apply lemma_6_bytes_reconstruct
-    lemma_6_bytes_reconstruct(high_value, bytes[26], bytes[27], bytes[28], bytes[29], bytes[30], bytes[31]);
+    lemma_6_bytes_reconstruct(
+        high_value,
+        bytes[26],
+        bytes[27],
+        bytes[28],
+        bytes[29],
+        bytes[30],
+        bytes[31],
+    );
 
     // This gives us:
-    assert(bytes[26] as nat * pow2(0) +
-           bytes[27] as nat * pow2(8) +
-           bytes[28] as nat * pow2(16) +
-           bytes[29] as nat * pow2(24) +
-           bytes[30] as nat * pow2(32) +
-           bytes[31] as nat * pow2(40) == high_value);
+    assert(bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(16)
+        + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32) + bytes[31] as nat * pow2(40)
+        == high_value);
 
     // Now multiply both sides by 2^208 to get the bytes at their actual positions
-    lemma_mul_is_distributive_add(pow2(208) as int,
-                                   (bytes[26] as nat * pow2(0)) as int,
-                                   (bytes[27] as nat * pow2(8)) as int);
-    lemma_mul_is_distributive_add(pow2(208) as int,
-                                   (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8)) as int,
-                                   (bytes[28] as nat * pow2(16)) as int);
-    lemma_mul_is_distributive_add(pow2(208) as int,
-                                   (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) +
-                                    bytes[28] as nat * pow2(16)) as int,
-                                   (bytes[29] as nat * pow2(24)) as int);
-    lemma_mul_is_distributive_add(pow2(208) as int,
-                                   (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) +
-                                    bytes[28] as nat * pow2(16) + bytes[29] as nat * pow2(24)) as int,
-                                   (bytes[30] as nat * pow2(32)) as int);
-    lemma_mul_is_distributive_add(pow2(208) as int,
-                                   (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) +
-                                    bytes[28] as nat * pow2(16) + bytes[29] as nat * pow2(24) +
-                                    bytes[30] as nat * pow2(32)) as int,
-                                   (bytes[31] as nat * pow2(40)) as int);
+    lemma_mul_is_distributive_add(
+        pow2(208) as int,
+        (bytes[26] as nat * pow2(0)) as int,
+        (bytes[27] as nat * pow2(8)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(208) as int,
+        (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8)) as int,
+        (bytes[28] as nat * pow2(16)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(208) as int,
+        (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(
+            16,
+        )) as int,
+        (bytes[29] as nat * pow2(24)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(208) as int,
+        (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(16)
+            + bytes[29] as nat * pow2(24)) as int,
+        (bytes[30] as nat * pow2(32)) as int,
+    );
+    lemma_mul_is_distributive_add(
+        pow2(208) as int,
+        (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat * pow2(16)
+            + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32)) as int,
+        (bytes[31] as nat * pow2(40)) as int,
+    );
 
     // Distribute the multiplication into each term
     lemma_mul_is_associative(bytes[26] as int, pow2(0) as int, pow2(208) as int);
@@ -1950,14 +1939,9 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(208, 40);
 
     // Final result
-    assert(bytes[26] as nat * pow2(26 * 8) +
-           bytes[27] as nat * pow2(27 * 8) +
-           bytes[28] as nat * pow2(28 * 8) +
-           bytes[29] as nat * pow2(29 * 8) +
-           bytes[30] as nat * pow2(30 * 8) +
-           bytes[31] as nat * pow2(31 * 8) ==
-           high_value * pow2(208));
-
+    assert(bytes[26] as nat * pow2(26 * 8) + bytes[27] as nat * pow2(27 * 8) + bytes[28] as nat
+        * pow2(28 * 8) + bytes[29] as nat * pow2(29 * 8) + bytes[30] as nat * pow2(30 * 8)
+        + bytes[31] as nat * pow2(31 * 8) == high_value * pow2(208));
 
     // Step 3: Handle boundary byte
     // Low 4 bits (byte 25 high part): (limbs[4] % 2^4) * 16 * 2^200 = (limbs[4] % 2^4) * 2^204
@@ -1967,24 +1951,17 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // From the proof above, we have:
-    let high_bytes_sum = bytes[26] as nat * pow2(26 * 8) +
-                         bytes[27] as nat * pow2(27 * 8) +
-                         bytes[28] as nat * pow2(28 * 8) +
-                         bytes[29] as nat * pow2(29 * 8) +
-                         bytes[30] as nat * pow2(30 * 8) +
-                         bytes[31] as nat * pow2(31 * 8);
+    let high_bytes_sum = bytes[26] as nat * pow2(26 * 8) + bytes[27] as nat * pow2(27 * 8)
+        + bytes[28] as nat * pow2(28 * 8) + bytes[29] as nat * pow2(29 * 8) + bytes[30] as nat
+        * pow2(30 * 8) + bytes[31] as nat * pow2(31 * 8);
 
     let high_value_at_position = (limbs[4] as nat / pow2(4)) * pow2(208);
 
     // Substitute into contribution
     let contribution = limb4_byte_contribution(limbs, bytes);
-    assert(contribution ==
-        ((limbs[4] as nat % pow2(4)) * 16) * pow2(200) +
-        high_bytes_sum);
+    assert(contribution == ((limbs[4] as nat % pow2(4)) * 16) * pow2(200) + high_bytes_sum);
 
-    assert(contribution ==
-        ((limbs[4] as nat % pow2(4)) * 16) * pow2(200) +
-        high_value_at_position);
+    assert(contribution == ((limbs[4] as nat % pow2(4)) * 16) * pow2(200) + high_value_at_position);
 
     // Step 3: Prove the reconstruction identity for limbs[4]
     // limbs[4] = (limbs[4] % 2^4) + (limbs[4] / 2^4) * 2^4
@@ -2007,16 +1984,14 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // So contribution = (limbs[4] % 2^4) * 2^204 + (limbs[4] / 2^4) * 2^208
-    assert(contribution ==
-        low_part * pow2(204) +
-        (limbs[4] as nat / pow2(4)) * pow2(208));
+    assert(contribution == low_part * pow2(204) + (limbs[4] as nat / pow2(4)) * pow2(208));
 
     // Rewrite using 2^208 = 2^204 * 2^4
     lemma_pow2_adds(204, 4);
 
-    assert(contribution ==
-        low_part * pow2(204) +
-        (limbs[4] as nat / pow2(4)) * (pow2(204) * pow2(4)));
+    assert(contribution == low_part * pow2(204) + (limbs[4] as nat / pow2(4)) * (pow2(204) * pow2(
+        4,
+    )));
 
     // Apply associativity to move pow2(204) to the left
     let high_part = limbs[4] as nat / pow2(4);
@@ -2032,13 +2007,15 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     }
 
     // Now factor out pow2(204)
-    assert(contribution ==
-        low_part * pow2(204) +
-        pow2(204) * (high_part * pow2(4)));
+    assert(contribution == low_part * pow2(204) + pow2(204) * (high_part * pow2(4)));
 
     // Use distributivity to factor out pow2(204)
     assert(contribution == pow2(204) * (low_part + high_part * pow2(4))) by {
-        lemma_mul_is_distributive_add(pow2(204) as int, low_part as int, (high_part * pow2(4)) as int);
+        lemma_mul_is_distributive_add(
+            pow2(204) as int,
+            low_part as int,
+            (high_part * pow2(4)) as int,
+        );
     }
 
     // The part in parentheses equals limbs[4] by our reconstruction identity!
@@ -2057,7 +2034,13 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
 // Key insight: Boundary bytes are formed by OR'ing bits from two adjacent limbs.
 // The proof uses the Modular Bit Partitioning Theorem to show that the bitwise
 // operations correspond exactly to the arithmetic formula.
-proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, low_shift: nat, low_bits: nat)
+proof fn lemma_boundary_byte_combines(
+    low_limb: u64,
+    high_limb: u64,
+    byte: u8,
+    low_shift: nat,
+    low_bits: nat,
+)
     requires
         low_limb < pow2(51),
         high_limb < pow2(51),
@@ -2065,9 +2048,8 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
         low_shift + low_bits == 51,  // Strengthened from <= to == (all call sites use equality)
         byte == ((low_limb >> low_shift) | (high_limb << low_bits)) as u8,
     ensures
-        byte as nat ==
-            (low_limb as nat / pow2(low_shift)) % pow2(low_bits) +
-            (high_limb as nat % pow2((8 - low_bits) as nat)) * pow2(low_bits),
+        byte as nat == (low_limb as nat / pow2(low_shift)) % pow2(low_bits) + (high_limb as nat
+            % pow2((8 - low_bits) as nat)) * pow2(low_bits),
 {
     lemma2_to64();
 
@@ -2118,7 +2100,11 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
         // x = low_limb, a = pow2(low_shift), b = pow2(51 - low_shift)
         // We have: low_limb < pow2(51) = a * b, so low_limb / a < b
         lemma_pow2_pos(low_shift);
-        lemma_div_strictly_bounded(low_limb as int, pow2(low_shift) as int, pow2((51 - low_shift) as nat) as int);
+        lemma_div_strictly_bounded(
+            low_limb as int,
+            pow2(low_shift) as int,
+            pow2((51 - low_shift) as nat) as int,
+        );
 
         // Step 3: Since low_shift + low_bits == 51, we have 51 - low_shift == low_bits
     }
@@ -2148,6 +2134,7 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
                 lemma_pow2_strictly_increases(low_bits, 7);
             }
             // Use mul_le to conclude: high_limb * pow2(low_bits) <= (pow2(51)-1) * pow2(7) <= pow2(64)-1
+
             mul_le(high_limb as nat, (pow2(51) - 1) as nat, pow2(low_bits), pow2(7));
         }
 
@@ -2179,7 +2166,6 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // Prove combined as nat == a + b * pow2(k)
     assert(combined as nat == a + b * pow2(k)) by {
         // We have: combined = low_part + high_part
-
         // We proved: low_part as nat == a (recall from lemma_u64_shr_is_div above)
         lemma_u64_shr_is_div(low_limb, low_shift as u64);
 
@@ -2224,13 +2210,16 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
         // So: a + (b % pow2(8-k)) * pow2(k) <= (pow2(k) - 1) + (pow2(8-k) - 1) * pow2(k)
 
         // Use nonlinear_arith to compute: (pow2(k) - 1) + (pow2(8-k) - 1) * pow2(k) = pow2(8-k) * pow2(k) - 1 = 255
-        assert((pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == pow2((8 - k) as nat) * pow2(k) - 1) by (nonlinear_arith);
+        assert((pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == pow2((8 - k) as nat) * pow2(
+            k,
+        ) - 1) by (nonlinear_arith);
 
         assert(a + (b % pow2((8 - k) as nat)) * pow2(k) < 256) by (nonlinear_arith)
             requires
                 a <= pow2(k) - 1,
                 (b % pow2((8 - k) as nat)) <= pow2((8 - k) as nat) - 1,
-                (pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == 255;
+                (pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == 255,
+        ;
     }
 
     lemma_modular_bit_partitioning(a, b, k, 8);
@@ -2259,22 +2248,21 @@ proof fn lemma_boundary_byte_combines(low_limb: u64, high_limb: u64, byte: u8, l
     // Substitute a % pow2(k) with a:
 
     // Final result: substitute back the definitions of a, b, k
-    assert(byte as nat == (low_limb as nat / pow2(low_shift)) % pow2(low_bits) +
-                          (high_limb as nat % pow2((8 - low_bits) as nat)) * pow2(low_bits));
+    assert(byte as nat == (low_limb as nat / pow2(low_shift)) % pow2(low_bits) + (high_limb as nat
+        % pow2((8 - low_bits) as nat)) * pow2(low_bits));
 }
 
 /// Proves that the sum of all limb contributions equals as_nat_32_u8(&bytes)
 proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < pow2(51),
         bytes_match_limbs_packing(limbs, bytes),
     ensures
-        as_nat_32_u8(&bytes) ==
-            limb0_byte_contribution(limbs, bytes) +
-            limb1_byte_contribution(limbs, bytes) +
-            limb2_byte_contribution(limbs, bytes) +
-            limb3_byte_contribution(limbs, bytes) +
-            limb4_byte_contribution(limbs, bytes),
+        as_nat_32_u8(&bytes) == limb0_byte_contribution(limbs, bytes) + limb1_byte_contribution(
+            limbs,
+            bytes,
+        ) + limb2_byte_contribution(limbs, bytes) + limb3_byte_contribution(limbs, bytes)
+            + limb4_byte_contribution(limbs, bytes),
 {
     lemma2_to64();
 
@@ -2309,122 +2297,100 @@ proof fn lemma_sum_equals_byte_nat(limbs: [u64; 5], bytes: [u8; 32])
     // Byte 6: lemma_boundary_byte_combines proves bytes[6] == (limbs[0]/2^48)%8 + (limbs[1]%2^5)*8
     // Multiply both sides by pow2(6*8): (a+b)*c = a*c + b*c by distributivity
     //lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
-    assert(bytes[6] as nat ==
-        (limbs[0] as nat / pow2(48)) % 8 +
-        (limbs[1] as nat % pow2(5)) * 8) by {
-            lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
-        }
+    assert(bytes[6] as nat == (limbs[0] as nat / pow2(48)) % 8 + (limbs[1] as nat % pow2(5)) * 8)
+        by {
+        lemma_boundary_byte_combines(limbs[0], limbs[1], bytes[6], 48, 3);
+    }
     // Distributivity gives us: (a+b)*c == a*c + b*c
-    assert(bytes[6] as nat * pow2(6 * 8) ==
-        ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8) +
-        ((limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8)) by {
-            lemma_mul_is_distributive_add_other_way(pow2(6 * 8) as int,
-                ((limbs[0] as nat / pow2(48)) % 8) as int,
-                ((limbs[1] as nat % pow2(5)) * 8) as int);
-        }
+    assert(bytes[6] as nat * pow2(6 * 8) == ((limbs[0] as nat / pow2(48)) % 8) * pow2(6 * 8) + ((
+    limbs[1] as nat % pow2(5)) * 8) * pow2(6 * 8)) by {
+        lemma_mul_is_distributive_add_other_way(
+            pow2(6 * 8) as int,
+            ((limbs[0] as nat / pow2(48)) % 8) as int,
+            ((limbs[1] as nat % pow2(5)) * 8) as int,
+        );
+    }
     // Which exactly matches byte6_low + byte6_high by definition
     assert(bytes[6] as nat * pow2(6 * 8) == byte6_low + byte6_high);
 
     // Byte 12: lemma_boundary_byte_combines proves bytes[12] == (limbs[1]/2^45)%2^6 + (limbs[2]%2^2)*2^6
     // Multiply both sides by pow2(12*8): (a+b)*c = a*c + b*c by distributivity
-    assert(bytes[12] as nat ==
-        (limbs[1] as nat / pow2(45)) % pow2(6) +
-        (limbs[2] as nat % pow2(2)) * pow2(6)) by {
-            lemma_boundary_byte_combines(limbs[1], limbs[2], bytes[12], 45, 6);
-        }
+    assert(bytes[12] as nat == (limbs[1] as nat / pow2(45)) % pow2(6) + (limbs[2] as nat % pow2(2))
+        * pow2(6)) by {
+        lemma_boundary_byte_combines(limbs[1], limbs[2], bytes[12], 45, 6);
+    }
     // Distributivity gives us: (a+b)*c == a*c + b*c
-    assert(bytes[12] as nat * pow2(12 * 8) ==
-        ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(12 * 8) +
-        ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8)) by {
-            lemma_mul_is_distributive_add_other_way(pow2(12 * 8) as int,
-                ((limbs[1] as nat / pow2(45)) % pow2(6)) as int,
-                ((limbs[2] as nat % pow2(2)) * pow2(6)) as int);
-        }
+    assert(bytes[12] as nat * pow2(12 * 8) == ((limbs[1] as nat / pow2(45)) % pow2(6)) * pow2(
+        12 * 8,
+    ) + ((limbs[2] as nat % pow2(2)) * pow2(6)) * pow2(12 * 8)) by {
+        lemma_mul_is_distributive_add_other_way(
+            pow2(12 * 8) as int,
+            ((limbs[1] as nat / pow2(45)) % pow2(6)) as int,
+            ((limbs[2] as nat % pow2(2)) * pow2(6)) as int,
+        );
+    }
     // Which exactly matches byte12_low + byte12_high by definition
     assert(bytes[12] as nat * pow2(12 * 8) == byte12_low + byte12_high);
 
     // Byte 19: lemma_boundary_byte_combines proves bytes[19] == (limbs[2]/2^50)%2 + (limbs[3]%2^7)*2
     // Multiply both sides by pow2(19*8): (a+b)*c = a*c + b*c by distributivity
-    assert(bytes[19] as nat ==
-        (limbs[2] as nat / pow2(50)) % 2 +
-        (limbs[3] as nat % pow2(7)) * 2) by {
-            lemma_boundary_byte_combines(limbs[2], limbs[3], bytes[19], 50, 1);
-        }
+    assert(bytes[19] as nat == (limbs[2] as nat / pow2(50)) % 2 + (limbs[3] as nat % pow2(7)) * 2)
+        by {
+        lemma_boundary_byte_combines(limbs[2], limbs[3], bytes[19], 50, 1);
+    }
     // Distributivity gives us: (a+b)*c == a*c + b*c
-    assert(bytes[19] as nat * pow2(19 * 8) ==
-        ((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8) +
-        ((limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8)) by {
-            lemma_mul_is_distributive_add_other_way(pow2(19 * 8) as int,
-                ((limbs[2] as nat / pow2(50)) % 2) as int,
-                ((limbs[3] as nat % pow2(7)) * 2) as int);
-        }
+    assert(bytes[19] as nat * pow2(19 * 8) == ((limbs[2] as nat / pow2(50)) % 2) * pow2(19 * 8) + ((
+    limbs[3] as nat % pow2(7)) * 2) * pow2(19 * 8)) by {
+        lemma_mul_is_distributive_add_other_way(
+            pow2(19 * 8) as int,
+            ((limbs[2] as nat / pow2(50)) % 2) as int,
+            ((limbs[3] as nat % pow2(7)) * 2) as int,
+        );
+    }
     // Which exactly matches byte19_low + byte19_high by definition
     assert(bytes[19] as nat * pow2(19 * 8) == byte19_low + byte19_high);
 
     // Byte 25: lemma_boundary_byte_combines proves bytes[25] == (limbs[3]/2^47)%2^4 + (limbs[4]%2^4)*2^4
     // Multiply both sides by pow2(25*8): (a+b)*c = a*c + b*c by distributivity
-    assert(bytes[25] as nat ==
-        (limbs[3] as nat / pow2(47)) % pow2(4) +
-        (limbs[4] as nat % pow2(4)) * pow2(4)) by {
-            lemma_boundary_byte_combines(limbs[3], limbs[4], bytes[25], 47, 4);
-        }
+    assert(bytes[25] as nat == (limbs[3] as nat / pow2(47)) % pow2(4) + (limbs[4] as nat % pow2(4))
+        * pow2(4)) by {
+        lemma_boundary_byte_combines(limbs[3], limbs[4], bytes[25], 47, 4);
+    }
     // Distributivity gives us: (a+b)*c == a*c + b*c
-    assert(bytes[25] as nat * pow2(25 * 8) ==
-        ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(25 * 8) +
-        ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8)) by {
-            lemma_mul_is_distributive_add_other_way(pow2(25 * 8) as int,
-                ((limbs[3] as nat / pow2(47)) % pow2(4)) as int,
-                ((limbs[4] as nat % pow2(4)) * pow2(4)) as int);
-        }
+    assert(bytes[25] as nat * pow2(25 * 8) == ((limbs[3] as nat / pow2(47)) % pow2(4)) * pow2(
+        25 * 8,
+    ) + ((limbs[4] as nat % pow2(4)) * pow2(4)) * pow2(25 * 8)) by {
+        lemma_mul_is_distributive_add_other_way(
+            pow2(25 * 8) as int,
+            ((limbs[3] as nat / pow2(47)) % pow2(4)) as int,
+            ((limbs[4] as nat % pow2(4)) * pow2(4)) as int,
+        );
+    }
     // Which exactly matches byte25_low + byte25_high by definition
     assert(bytes[25] as nat * pow2(25 * 8) == byte25_low + byte25_high);
 
-    let after_split_25_pow2_first =
-        (bytes[0] as nat) +
-        (bytes[ 1] as nat) * pow2( 1 * 8) +
-        (bytes[ 2] as nat) * pow2( 2 * 8) +
-        (bytes[ 3] as nat) * pow2( 3 * 8) +
-        (bytes[ 4] as nat) * pow2( 4 * 8) +
-        (bytes[ 5] as nat) * pow2( 5 * 8) +
-        byte6_low + byte6_high +
-        (bytes[ 7] as nat) * pow2( 7 * 8) +
-        (bytes[ 8] as nat) * pow2( 8 * 8) +
-        (bytes[ 9] as nat) * pow2( 9 * 8) +
-        (bytes[10] as nat) * pow2(10 * 8) +
-        (bytes[11] as nat) * pow2(11 * 8) +
-        byte12_low + byte12_high +
-        (bytes[13] as nat) * pow2(13 * 8) +
-        (bytes[14] as nat) * pow2(14 * 8) +
-        (bytes[15] as nat) * pow2(15 * 8) +
-        (bytes[16] as nat) * pow2(16 * 8) +
-        (bytes[17] as nat) * pow2(17 * 8) +
-        (bytes[18] as nat) * pow2(18 * 8) +
-        byte19_low + byte19_high +
-        (bytes[20] as nat) * pow2(20 * 8) +
-        (bytes[21] as nat) * pow2(21 * 8) +
-        (bytes[22] as nat) * pow2(22 * 8) +
-        (bytes[23] as nat) * pow2(23 * 8) +
-        (bytes[24] as nat) * pow2(24 * 8) +
-        byte25_low + byte25_high +
-        (bytes[26] as nat) * pow2(26 * 8) +
-        (bytes[27] as nat) * pow2(27 * 8) +
-        (bytes[28] as nat) * pow2(28 * 8) +
-        (bytes[29] as nat) * pow2(29 * 8) +
-        (bytes[30] as nat) * pow2(30 * 8) +
-        (bytes[31] as nat) * pow2(31 * 8);
-
+    let after_split_25_pow2_first = (bytes[0] as nat) + (bytes[1] as nat) * pow2(1 * 8) + (
+    bytes[2] as nat) * pow2(2 * 8) + (bytes[3] as nat) * pow2(3 * 8) + (bytes[4] as nat) * pow2(
+        4 * 8,
+    ) + (bytes[5] as nat) * pow2(5 * 8) + byte6_low + byte6_high + (bytes[7] as nat) * pow2(7 * 8)
+        + (bytes[8] as nat) * pow2(8 * 8) + (bytes[9] as nat) * pow2(9 * 8) + (bytes[10] as nat)
+        * pow2(10 * 8) + (bytes[11] as nat) * pow2(11 * 8) + byte12_low + byte12_high + (
+    bytes[13] as nat) * pow2(13 * 8) + (bytes[14] as nat) * pow2(14 * 8) + (bytes[15] as nat)
+        * pow2(15 * 8) + (bytes[16] as nat) * pow2(16 * 8) + (bytes[17] as nat) * pow2(17 * 8) + (
+    bytes[18] as nat) * pow2(18 * 8) + byte19_low + byte19_high + (bytes[20] as nat) * pow2(20 * 8)
+        + (bytes[21] as nat) * pow2(21 * 8) + (bytes[22] as nat) * pow2(22 * 8) + (bytes[23] as nat)
+        * pow2(23 * 8) + (bytes[24] as nat) * pow2(24 * 8) + byte25_low + byte25_high + (
+    bytes[26] as nat) * pow2(26 * 8) + (bytes[27] as nat) * pow2(27 * 8) + (bytes[28] as nat)
+        * pow2(28 * 8) + (bytes[29] as nat) * pow2(29 * 8) + (bytes[30] as nat) * pow2(30 * 8) + (
+    bytes[31] as nat) * pow2(31 * 8);
 
     assert(after_split_25_pow2_first == as_nat_32_u8(&bytes));
 
     assert(bytes[0] as nat * pow2(0 * 8) == bytes[0] as nat * 1);
     // The mathematical fact: after splitting boundary bytes, this equals the sum of limb contributions
-    assert(after_split_25_pow2_first ==
-        limb0_byte_contribution(limbs, bytes) +
-        limb1_byte_contribution(limbs, bytes) +
-        limb2_byte_contribution(limbs, bytes) +
-        limb3_byte_contribution(limbs, bytes) +
-        limb4_byte_contribution(limbs, bytes));
+    assert(after_split_25_pow2_first == limb0_byte_contribution(limbs, bytes)
+        + limb1_byte_contribution(limbs, bytes) + limb2_byte_contribution(limbs, bytes)
+        + limb3_byte_contribution(limbs, bytes) + limb4_byte_contribution(limbs, bytes));
 }
-
 
 } // verus!

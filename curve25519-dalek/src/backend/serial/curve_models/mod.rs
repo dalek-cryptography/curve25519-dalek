@@ -8,7 +8,6 @@
 // Authors:
 // - isis agora lovecruft <isis@patternsinthevoid.net>
 // - Henry de Valence <hdevalence@hdevalence.ca>
-
 //! Internal curve representations which are not part of the public API.
 //!
 //! # Curve representations
@@ -120,7 +119,6 @@
 //! [cohen-miyaji-ono-1998]: https://link.springer.com/content/pdf/10.1007%2F3-540-49649-1_6.pdf
 //! [ed25519]: https://eprint.iacr.org/2011/368
 //! [agl-ed25519]: https://github.com/agl/ed25519
-
 #![allow(non_snake_case)]
 
 use core::fmt::Debug;

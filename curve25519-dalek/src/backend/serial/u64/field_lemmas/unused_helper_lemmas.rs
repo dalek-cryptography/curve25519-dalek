@@ -18,7 +18,6 @@ verus! {
 // used in the main verification. They are kept here for potential future use
 // or as reference implementations.
 // ============================================================================
-
 ///this is https://leanprover-community.github.io/mathlib4_docs/Init/Data/Nat/Div/Lemmas.html#Nat.div_eq_zero_iff_lt
 /// Status: UNUSED - Only called by `lemma_div_converse` which is also unused.
 pub proof fn lemma_small_div(x: int, d: int)
@@ -42,11 +41,13 @@ pub proof fn lemma_small_div(x: int, d: int)
         assert(false);
     }
     // If q <= -1, then q * d <= -d < 0, which would make x < 0 (contradiction)
+
     if q <= -1 {
         lemma_mul_inequality(q, -1, d);
         assert(false);
     }
     // Therefore q must be 0
+
 }
 
 /// Helper lemma: proves the converse of the fundamental div/mod theorem
@@ -62,7 +63,11 @@ pub proof fn lemma_div_converse(u: int, d: int, r: int)
     ensures
         u == (u * d + r) / d,
     decreases
-        if u >= 0 { u } else { -u },
+            if u >= 0 {
+                u
+            } else {
+                -u
+            },
 {
     if u < 0 {
         // By induction: u + 1 == ((u+1)*d + r) / d
@@ -136,7 +141,11 @@ pub proof fn lemma_div_plus_one(x: int, d: int)
     ensures
         (x + d) / d == x / d + 1,
     decreases
-        if (x / d) + 1 >= 0 { (x / d) + 1 } else { -((x / d) + 1) },
+            if (x / d) + 1 >= 0 {
+                (x / d) + 1
+            } else {
+                -((x / d) + 1)
+            },
 {
     lemma_fundamental_div_mod(x, d);
     let q = x / d;
@@ -167,7 +176,6 @@ pub proof fn lemma_radix_51_geometric_sum()
 {
     // The sum: 1 + 2^51 + 2^102 + 2^153 + 2^204
     // is dominated by its largest term 2^204
-
     // Since each term is strictly less than the next:
     lemma_pow2_strictly_increases(0, 51);
     lemma_pow2_strictly_increases(51, 102);
@@ -227,7 +235,7 @@ pub proof fn lemma_radix_51_geometric_sum()
 /// from `reduce()`'s postcondition), not from the limb bounds alone.
 pub proof fn lemma_as_nat_bound_from_limbs(limbs: [u64; 5])
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         // The key precondition that makes this provable:
         as_nat(limbs) < 2 * p(),
     ensures
@@ -242,9 +250,8 @@ pub open spec fn as_nat_32_u8_rec(limbs: [u8; 32]) -> nat {
     as_nat_32_u8_rec_aux(&limbs, 0)
 }
 
-
 pub open spec fn as_nat_32_u8_rec_aux(limbs: &[u8; 32], index: nat) -> nat
-decreases 32 - index
+    decreases 32 - index,
 {
     if index >= 32 {
         0
@@ -260,9 +267,9 @@ decreases 32 - index
 /// but was never completed or needed in the actual proofs.
 pub proof fn lemma_as_nat_32_u8_equivalence(limbs: [u8; 32])
     ensures
-        as_nat_32_u8(limbs) == as_nat_32_u8_rec(limbs)
+        as_nat_32_u8(limbs) == as_nat_32_u8_rec(limbs),
 {
-    assume(false); // TODO: prove this by induction
+    assume(false);  // TODO: prove this by induction
 }
 
-}
+} // verus!

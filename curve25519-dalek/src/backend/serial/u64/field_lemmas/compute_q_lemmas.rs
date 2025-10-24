@@ -18,7 +18,6 @@ verus! {
 // ============================================================================
 // LEMMA 1: Computing q (the quotient when dividing by p)
 // ============================================================================
-
 /// Spec function to compute q value from limbs
 pub open spec fn compute_q_spec(limbs: [u64; 5]) -> u64 {
     let q0 = ((limbs[0] + 19) as u64 >> 51) as u64;
@@ -46,21 +45,25 @@ pub proof fn lemma_bounded_shr_51(x: u64)
 /// Helper lemma: Proves the algebraic expansion and cancellation of intermediate terms
 /// Shows that when expanding the substituted limbs, q0, q1, q2, q3 all cancel out
 proof fn lemma_radix51_telescoping_expansion(
-    q0: int, q1: int, q2: int, q3: int, q4: int,
-    r0: int, r1: int, r2: int, r3: int, r4: int
+    q0: int,
+    q1: int,
+    q2: int,
+    q3: int,
+    q4: int,
+    r0: int,
+    r1: int,
+    r2: int,
+    r3: int,
+    r4: int,
 )
     requires
-        true
+        true,
     ensures
-        (q0 * pow2(51) as int + r0 - 19)
-        + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
-        + (q2 * pow2(51) as int + r2 - q1) * pow2(102) as int
-        + (q3 * pow2(51) as int + r3 - q2) * pow2(153) as int
-        + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int
-        + 19
-        ==
-        q4 * pow2(51) as int * pow2(204) as int
-        + r0 + r1 * pow2(51) as int + r2 * pow2(102) as int + r3 * pow2(153) as int + r4 * pow2(204) as int
+        (q0 * pow2(51) as int + r0 - 19) + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int + (q2
+            * pow2(51) as int + r2 - q1) * pow2(102) as int + (q3 * pow2(51) as int + r3 - q2)
+            * pow2(153) as int + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int + 19 == q4
+            * pow2(51) as int * pow2(204) as int + r0 + r1 * pow2(51) as int + r2 * pow2(102) as int
+            + r3 * pow2(153) as int + r4 * pow2(204) as int,
 {
     // Establish power relationships: 2^51 * 2^k = 2^(51+k)
     lemma_pow2_adds(51, 51);
@@ -69,34 +72,35 @@ proof fn lemma_radix51_telescoping_expansion(
     lemma_pow2_adds(51, 204);
 
     // Manually expand each multiplication and show the cancellations explicitly
-    let lhs = (q0 * pow2(51) as int + r0 - 19)
-        + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
-        + (q2 * pow2(51) as int + r2 - q1) * pow2(102) as int
-        + (q3 * pow2(51) as int + r3 - q2) * pow2(153) as int
-        + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int
-        + 19;
+    let lhs = (q0 * pow2(51) as int + r0 - 19) + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
+        + (q2 * pow2(51) as int + r2 - q1) * pow2(102) as int + (q3 * pow2(51) as int + r3 - q2)
+        * pow2(153) as int + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int + 19;
 
     // Expand the multiplications using distributivity
-    assert((q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
-           == q1 * pow2(51) as int * pow2(51) as int + r1 * pow2(51) as int - q0 * pow2(51) as int) by {
+    assert((q1 * pow2(51) as int + r1 - q0) * pow2(51) as int == q1 * pow2(51) as int * pow2(
+        51,
+    ) as int + r1 * pow2(51) as int - q0 * pow2(51) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(51) as int, q1 * pow2(51) as int + r1, q0);
         lemma_mul_is_distributive_add_other_way(pow2(51) as int, q1 * pow2(51) as int, r1);
     }
 
-    assert((q2 * pow2(51) as int + r2 - q1) * pow2(102) as int
-           == q2 * pow2(51) as int * pow2(102) as int + r2 * pow2(102) as int - q1 * pow2(102) as int) by {
+    assert((q2 * pow2(51) as int + r2 - q1) * pow2(102) as int == q2 * pow2(51) as int * pow2(
+        102,
+    ) as int + r2 * pow2(102) as int - q1 * pow2(102) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(102) as int, q2 * pow2(51) as int + r2, q1);
         lemma_mul_is_distributive_add_other_way(pow2(102) as int, q2 * pow2(51) as int, r2);
     }
 
-    assert((q3 * pow2(51) as int + r3 - q2) * pow2(153) as int
-           == q3 * pow2(51) as int * pow2(153) as int + r3 * pow2(153) as int - q2 * pow2(153) as int) by {
+    assert((q3 * pow2(51) as int + r3 - q2) * pow2(153) as int == q3 * pow2(51) as int * pow2(
+        153,
+    ) as int + r3 * pow2(153) as int - q2 * pow2(153) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(153) as int, q3 * pow2(51) as int + r3, q2);
         lemma_mul_is_distributive_add_other_way(pow2(153) as int, q3 * pow2(51) as int, r3);
     }
 
-    assert((q4 * pow2(51) as int + r4 - q3) * pow2(204) as int
-           == q4 * pow2(51) as int * pow2(204) as int + r4 * pow2(204) as int - q3 * pow2(204) as int) by {
+    assert((q4 * pow2(51) as int + r4 - q3) * pow2(204) as int == q4 * pow2(51) as int * pow2(
+        204,
+    ) as int + r4 * pow2(204) as int - q3 * pow2(204) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(204) as int, q4 * pow2(51) as int + r4, q3);
         lemma_mul_is_distributive_add_other_way(pow2(204) as int, q4 * pow2(51) as int, r4);
     }
@@ -141,8 +145,16 @@ proof fn lemma_radix51_telescoping_expansion(
 /// 5. By uniqueness of division, q4 = value / 2^255
 pub proof fn lemma_radix51_telescoping_direct(
     limbs: [u64; 5],
-    q0: int, q1: int, q2: int, q3: int, q4: int,
-    r0: int, r1: int, r2: int, r3: int, r4: int
+    q0: int,
+    q1: int,
+    q2: int,
+    q3: int,
+    q4: int,
+    r0: int,
+    r1: int,
+    r2: int,
+    r3: int,
+    r4: int,
 )
     requires
         limbs[0] as int + 19 == q0 * pow2(51) as int + r0,
@@ -166,67 +178,66 @@ pub proof fn lemma_radix51_telescoping_direct(
     lemma_pow2_adds(51, 204);
 
     // Step 1: Express value = as_nat(limbs) + 19 in radix-51 form
-    let value =
-        limbs[0] as int
-        + limbs[1] as int * pow2(51) as int
-        + limbs[2] as int * pow2(102) as int
-        + limbs[3] as int * pow2(153) as int
-        + limbs[4] as int * pow2(204) as int
-        + 19;
+    let value = limbs[0] as int + limbs[1] as int * pow2(51) as int + limbs[2] as int * pow2(
+        102,
+    ) as int + limbs[3] as int * pow2(153) as int + limbs[4] as int * pow2(204) as int + 19;
 
-    assert(as_nat(limbs) == (limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (limbs[2] as nat)
-                            + pow2(153) * (limbs[3] as nat) + pow2(204) * (limbs[4] as nat));
+    assert(as_nat(limbs) == (limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (
+    limbs[2] as nat) + pow2(153) * (limbs[3] as nat) + pow2(204) * (limbs[4] as nat));
 
-    assert((limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (limbs[2] as nat)
-           + pow2(153) * (limbs[3] as nat) + pow2(204) * (limbs[4] as nat)
-           == limbs[0] as nat + (limbs[1] as nat) * pow2(51) + (limbs[2] as nat) * pow2(102)
-           + (limbs[3] as nat) * pow2(153) + (limbs[4] as nat) * pow2(204)) by {
+    assert((limbs[0] as nat) + pow2(51) * (limbs[1] as nat) + pow2(102) * (limbs[2] as nat) + pow2(
+        153,
+    ) * (limbs[3] as nat) + pow2(204) * (limbs[4] as nat) == limbs[0] as nat + (limbs[1] as nat)
+        * pow2(51) + (limbs[2] as nat) * pow2(102) + (limbs[3] as nat) * pow2(153) + (
+    limbs[4] as nat) * pow2(204)) by {
         lemma_mul_is_commutative(pow2(51) as int, limbs[1] as int);
         lemma_mul_is_commutative(pow2(102) as int, limbs[2] as int);
         lemma_mul_is_commutative(pow2(153) as int, limbs[3] as int);
         lemma_mul_is_commutative(pow2(204) as int, limbs[4] as int);
     }
 
-
     // Step 2: Solve for each limb using the division theorem equations
 
     // Step 3: Expand limbs[i] * 2^(51*i) using distributivity
-    assert((q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
-           == q1 * pow2(51) as int * pow2(51) as int + r1 * pow2(51) as int - q0 * pow2(51) as int) by {
+    assert((q1 * pow2(51) as int + r1 - q0) * pow2(51) as int == q1 * pow2(51) as int * pow2(
+        51,
+    ) as int + r1 * pow2(51) as int - q0 * pow2(51) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(51) as int, q1 * pow2(51) as int + r1, q0);
         lemma_mul_is_distributive_add_other_way(pow2(51) as int, q1 * pow2(51) as int, r1);
     }
 
-    assert((q2 * pow2(51) as int + r2 - q1) * pow2(102) as int
-           == q2 * pow2(51) as int * pow2(102) as int + r2 * pow2(102) as int - q1 * pow2(102) as int) by {
+    assert((q2 * pow2(51) as int + r2 - q1) * pow2(102) as int == q2 * pow2(51) as int * pow2(
+        102,
+    ) as int + r2 * pow2(102) as int - q1 * pow2(102) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(102) as int, q2 * pow2(51) as int + r2, q1);
         lemma_mul_is_distributive_add_other_way(pow2(102) as int, q2 * pow2(51) as int, r2);
     }
 
-    assert((q3 * pow2(51) as int + r3 - q2) * pow2(153) as int
-           == q3 * pow2(51) as int * pow2(153) as int + r3 * pow2(153) as int - q2 * pow2(153) as int) by {
+    assert((q3 * pow2(51) as int + r3 - q2) * pow2(153) as int == q3 * pow2(51) as int * pow2(
+        153,
+    ) as int + r3 * pow2(153) as int - q2 * pow2(153) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(153) as int, q3 * pow2(51) as int + r3, q2);
         lemma_mul_is_distributive_add_other_way(pow2(153) as int, q3 * pow2(51) as int, r3);
     }
 
-    assert((q4 * pow2(51) as int + r4 - q3) * pow2(204) as int
-           == q4 * pow2(51) as int * pow2(204) as int + r4 * pow2(204) as int - q3 * pow2(204) as int) by {
+    assert((q4 * pow2(51) as int + r4 - q3) * pow2(204) as int == q4 * pow2(51) as int * pow2(
+        204,
+    ) as int + r4 * pow2(204) as int - q3 * pow2(204) as int) by {
         lemma_mul_is_distributive_sub_other_way(pow2(204) as int, q4 * pow2(51) as int + r4, q3);
         lemma_mul_is_distributive_add_other_way(pow2(204) as int, q4 * pow2(51) as int, r4);
     }
 
     // Step 4: Define remainder and observe telescoping
     // When we substitute and expand, intermediate q_i terms cancel, leaving only q4 and remainders
-    let remainder = r0 + r1 * pow2(51) as int + r2 * pow2(102) as int + r3 * pow2(153) as int + r4 * pow2(204) as int;
+    let remainder = r0 + r1 * pow2(51) as int + r2 * pow2(102) as int + r3 * pow2(153) as int + r4
+        * pow2(204) as int;
 
     assert(limbs[0] as int + limbs[1] as int * pow2(51) as int + limbs[2] as int * pow2(102) as int
-           + limbs[3] as int * pow2(153) as int + limbs[4] as int * pow2(204) as int + 19
-           == (q0 * pow2(51) as int + r0 - 19)
-           + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int
-           + (q2 * pow2(51) as int + r2 - q1) * pow2(102) as int
-           + (q3 * pow2(51) as int + r3 - q2) * pow2(153) as int
-           + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int
-           + 19);
+        + limbs[3] as int * pow2(153) as int + limbs[4] as int * pow2(204) as int + 19 == (q0
+        * pow2(51) as int + r0 - 19) + (q1 * pow2(51) as int + r1 - q0) * pow2(51) as int + (q2
+        * pow2(51) as int + r2 - q1) * pow2(102) as int + (q3 * pow2(51) as int + r3 - q2) * pow2(
+        153,
+    ) as int + (q4 * pow2(51) as int + r4 - q3) * pow2(204) as int + 19);
 
     // After algebraic simplification (intermediate terms cancel), we get: value = q4 * 2^255 + remainder
     lemma_radix51_telescoping_expansion(q0, q1, q2, q3, q4, r0, r1, r2, r3, r4);
@@ -251,7 +262,8 @@ pub proof fn lemma_radix51_remainder_bound(r0: int, r1: int, r2: int, r3: int, r
         0 <= r3 < (pow2(51) as int),
         0 <= r4 < (pow2(51) as int),
     ensures
-        r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4 * (pow2(204) as int) < (pow2(255) as int),
+        r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4 * (
+        pow2(204) as int) < (pow2(255) as int),
 {
     lemma_pow2_pos(51);
     lemma_pow2_adds(51, 51);
@@ -259,7 +271,8 @@ pub proof fn lemma_radix51_remainder_bound(r0: int, r1: int, r2: int, r3: int, r
     lemma_pow2_adds(51, 153);
     lemma_pow2_adds(51, 204);
 
-    let sum = r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4 * (pow2(204) as int);
+    let sum = r0 + r1 * (pow2(51) as int) + r2 * (pow2(102) as int) + r3 * (pow2(153) as int) + r4
+        * (pow2(204) as int);
 
     // Each term r_i * 2^(51*i) < 2^51 * 2^(51*i) = 2^(51*(i+1))
 
@@ -303,18 +316,32 @@ pub proof fn lemma_geometric_series_radix51(sum_powers: int)
 
     // Expand: 2^51 * (1 + 2^51 + 2^102 + 2^153 + 2^204)
     //       = 2^51 + 2^102 + 2^153 + 2^204 + 2^255
-    assert(pow2(51) * sum_powers == pow2(51) * 1 + pow2(51) * (pow2(51) + pow2(102) + pow2(153) + pow2(204))) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, 1, (pow2(51) + pow2(102) + pow2(153) + pow2(204)) as int);
+    assert(pow2(51) * sum_powers == pow2(51) * 1 + pow2(51) * (pow2(51) + pow2(102) + pow2(153)
+        + pow2(204))) by {
+        lemma_mul_is_distributive_add(
+            pow2(51) as int,
+            1,
+            (pow2(51) + pow2(102) + pow2(153) + pow2(204)) as int,
+        );
     }
 
-    assert(pow2(51) * (pow2(51) + pow2(102) + pow2(153) + pow2(204))
-           == pow2(51) * pow2(51) + pow2(51) * (pow2(102) + pow2(153) + pow2(204))) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) as int, (pow2(102) + pow2(153) + pow2(204)) as int);
+    assert(pow2(51) * (pow2(51) + pow2(102) + pow2(153) + pow2(204)) == pow2(51) * pow2(51) + pow2(
+        51,
+    ) * (pow2(102) + pow2(153) + pow2(204))) by {
+        lemma_mul_is_distributive_add(
+            pow2(51) as int,
+            pow2(51) as int,
+            (pow2(102) + pow2(153) + pow2(204)) as int,
+        );
     }
 
-    assert(pow2(51) * (pow2(102) + pow2(153) + pow2(204))
-           == pow2(51) * pow2(102) + pow2(51) * (pow2(153) + pow2(204))) by {
-        lemma_mul_is_distributive_add(pow2(51) as int, pow2(102) as int, (pow2(153) + pow2(204)) as int);
+    assert(pow2(51) * (pow2(102) + pow2(153) + pow2(204)) == pow2(51) * pow2(102) + pow2(51) * (
+    pow2(153) + pow2(204))) by {
+        lemma_mul_is_distributive_add(
+            pow2(51) as int,
+            pow2(102) as int,
+            (pow2(153) + pow2(204)) as int,
+        );
     }
 
     assert(pow2(51) * (pow2(153) + pow2(204)) == pow2(51) * pow2(153) + pow2(51) * pow2(204)) by {
@@ -334,15 +361,13 @@ pub proof fn lemma_geometric_series_radix51(sum_powers: int)
 
     // Substitute the expansion
     // = (2^51 + 2^102 + 2^153 + 2^204 + 2^255) - (1 + 2^51 + 2^102 + 2^153 + 2^204)
-    assert(pow2(51) * sum_powers - sum_powers
-           == (pow2(51) + pow2(102) + pow2(153) + pow2(204) + pow2(255))
-            - (1 + pow2(51) + pow2(102) + pow2(153) + pow2(204)));
+    assert(pow2(51) * sum_powers - sum_powers == (pow2(51) + pow2(102) + pow2(153) + pow2(204)
+        + pow2(255)) - (1 + pow2(51) + pow2(102) + pow2(153) + pow2(204)));
 
     // Step 3: Simplify by cancellation
     // The terms 2^51, 2^102, 2^153, 2^204 cancel, leaving: 2^255 - 1
-    assert((pow2(51) + pow2(102) + pow2(153) + pow2(204) + pow2(255))
-         - (1 + pow2(51) + pow2(102) + pow2(153) + pow2(204))
-         == pow2(255) - 1);
+    assert((pow2(51) + pow2(102) + pow2(153) + pow2(204) + pow2(255)) - (1 + pow2(51) + pow2(102)
+        + pow2(153) + pow2(204)) == pow2(255) - 1);
 }
 
 /// Helper: geometric series for radix-51 partial sum
@@ -437,12 +462,7 @@ pub proof fn lemma_carry_propagation_setup()
 /// and establishes the division theorem relationship
 ///
 /// Note: carry_in is typically < 3 for stages 1-4, but equals 19 for stage 0
-pub proof fn lemma_single_stage_division(
-    limb: u64,
-    carry_in: u64,
-    stage_input: u64,
-    carry_out: u64,
-)
+pub proof fn lemma_single_stage_division(limb: u64, carry_in: u64, stage_input: u64, carry_out: u64)
     requires
         limb < (1u64 << 52),
         limb + carry_in <= u64::MAX,  // No overflow
@@ -467,11 +487,7 @@ pub proof fn lemma_single_stage_division(
 /// Given the inputs and outputs of a stage, proves the division/modulo relationship
 ///
 /// Note: carry_in is typically < 3 for stages 1-4, but equals 19 for stage 0
-pub proof fn lemma_stage_division_theorem(
-    limb: u64,
-    carry_in: int,
-    carry_out: int,
-) -> (r: int)
+pub proof fn lemma_stage_division_theorem(limb: u64, carry_in: int, carry_out: int) -> (r: int)
     requires
         limb < (1u64 << 52),
         carry_out == (limb as int + carry_in) / pow2(51) as int,
@@ -492,7 +508,7 @@ pub proof fn lemma_stage_division_theorem(
 /// Refactored into smaller pieces for better readability and maintainability.
 pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         q == compute_q_spec(limbs),
     ensures
         q as nat == (as_nat(limbs) + 19) / pow2(255),
@@ -534,15 +550,26 @@ pub proof fn lemma_carry_propagation_is_division(limbs: [u64; 5], q: u64)
 
     // Telescoping property: show that q4 = (as_nat(limbs) + 19) / 2^255
     // Use the remainders we just computed to directly prove the telescoping division
-    lemma_radix51_telescoping_direct(limbs, q0 as int, q1 as int, q2 as int, q3 as int, q4 as int, r0, r1, r2, r3, r4);
+    lemma_radix51_telescoping_direct(
+        limbs,
+        q0 as int,
+        q1 as int,
+        q2 as int,
+        q3 as int,
+        q4 as int,
+        r0,
+        r1,
+        r2,
+        r3,
+        r4,
+    );
 }
 
 // lemma_radix_51_geometric_sum: MOVED to unused_helper_lemmas.rs (superseded by lemma_radix_51_partial_geometric_sum)
-
 /// Helper: Proves all intermediate carries are bounded by 3
 pub proof fn lemma_all_carries_bounded_by_3(limbs: [u64; 5])
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
     ensures
         ({
             let q0 = ((limbs[0] + 19) as u64 >> 51) as u64;
@@ -586,7 +613,7 @@ pub proof fn lemma_all_carries_bounded_by_3(limbs: [u64; 5])
 /// Also establishes the division relationship for reuse
 pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
         q == compute_q_spec(limbs),
         q < 3,
@@ -622,7 +649,7 @@ pub proof fn lemma_q_is_binary(limbs: [u64; 5], q: u64)
 /// which maps directly to q=0 or q=1. This makes the biconditional proofs straightforward.
 pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         as_nat(limbs) < 2 * p(),  // Tight bound from reduce()
         q == compute_q_spec(limbs),
         q as nat == (as_nat(limbs) + 19) / pow2(255),
@@ -643,14 +670,14 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
     if as_nat(limbs) < p() {
         lemma_div_strictly_bounded((as_nat(limbs) + 19) as int, pow2(255) as int, 1);
     }
-
     // Backward direction: q == 0 ==> as_nat(limbs) < p()
+
     if q == 0 {
         lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
         lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
     }
-
     // Forward direction: as_nat(limbs) >= p() ==> q == 1
+
     if as_nat(limbs) >= p() {
         // Since q is 0 or 1, and we know as_nat + 19 >= 2^255, q cannot be 0
         if q == 0 {
@@ -658,8 +685,8 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
             lemma_mod_bound((as_nat(limbs) + 19) as int, pow2(255) as int);
         }
     }
-
     // Backward direction: q == 1 ==> as_nat(limbs) >= p()
+
     if q == 1 {
         lemma_fundamental_div_mod((as_nat(limbs) + 19) as int, pow2(255) as int);
     }
@@ -672,7 +699,7 @@ pub proof fn lemma_q_biconditional(limbs: [u64; 5], q: u64)
 /// `reduce()` output, which now ensures this property in its postcondition.
 pub proof fn lemma_compute_q(limbs: [u64; 5], q: u64)
     requires
-        forall |i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         as_nat(limbs) < 2 * p(),  // From reduce()'s postcondition
         q == compute_q_spec(limbs),
     ensures

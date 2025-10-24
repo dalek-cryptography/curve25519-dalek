@@ -1,5 +1,4 @@
 //! This selects the curve25519_dalek_bits either by default from target_pointer_width or explicitly set
-
 #![deny(clippy::unwrap_used, dead_code)]
 
 #[allow(non_camel_case_types)]

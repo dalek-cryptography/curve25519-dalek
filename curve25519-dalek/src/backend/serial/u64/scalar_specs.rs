@@ -5,8 +5,9 @@ use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
 verus! {
+
 pub open spec fn seq_to_nat(limbs: Seq<nat>) -> nat
-decreases limbs.len()
+    decreases limbs.len(),
 {
     if limbs.len() == 0 {
         0
@@ -15,39 +16,27 @@ decreases limbs.len()
     }
 }
 
-pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat
-{
+pub open spec fn slice128_to_nat(limbs: &[u128]) -> nat {
     seq_to_nat(limbs@.map(|i, x| x as nat))
 }
 
-pub open spec fn seq_u64_to_nat(limbs: Seq<u64>) -> nat
-{
+pub open spec fn seq_u64_to_nat(limbs: Seq<u64>) -> nat {
     seq_to_nat(limbs.map(|i, x| x as nat))
 }
 
-pub open spec fn to_nat(limbs: &[u64]) -> nat
-{
+pub open spec fn to_nat(limbs: &[u64]) -> nat {
     seq_to_nat(limbs@.map(|i, x| x as nat))
 }
 
 pub open spec fn nine_limbs_to_nat_aux(limbs: &[u128; 9]) -> nat {
-    (limbs[0] as nat) +
-    (limbs[1] as nat) * pow2(52) +
-    (limbs[2] as nat) * pow2(104) +
-    (limbs[3] as nat) * pow2(156) +
-    (limbs[4] as nat) * pow2(208) +
-    (limbs[5] as nat) * pow2(260) +
-    (limbs[6] as nat) * pow2(312) +
-    (limbs[7] as nat) * pow2(364) +
-    (limbs[8] as nat) * pow2(416)
+    (limbs[0] as nat) + (limbs[1] as nat) * pow2(52) + (limbs[2] as nat) * pow2(104) + (
+    limbs[3] as nat) * pow2(156) + (limbs[4] as nat) * pow2(208) + (limbs[5] as nat) * pow2(260) + (
+    limbs[6] as nat) * pow2(312) + (limbs[7] as nat) * pow2(364) + (limbs[8] as nat) * pow2(416)
 }
 
 pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
-    (limbs[0] as nat) +
-    pow2(52) * (limbs[1] as nat) +
-    pow2(104) * (limbs[2] as nat) +
-    pow2(156) * (limbs[3] as nat) +
-    pow2(208) * (limbs[4] as nat)
+    (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(156) * (
+    limbs[3] as nat) + pow2(208) * (limbs[4] as nat)
 }
 
 // Modular reduction of to_nat mod L
@@ -62,7 +51,7 @@ pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {
 }
 
 pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat
-decreases 32 - index
+    decreases 32 - index,
 {
     if index >= 32 {
         0
@@ -78,7 +67,7 @@ pub open spec fn bytes_wide_to_nat(bytes: &[u8; 64]) -> nat {
 }
 
 pub open spec fn bytes_wide_to_nat_rec(bytes: &[u8; 64], index: int) -> nat
-decreases 64 - index
+    decreases 64 - index,
 {
     if index >= 64 {
         0
@@ -89,7 +78,7 @@ decreases 64 - index
 
 /// Little-endian natural value of an arbitrary-length byte sequence
 pub open spec fn bytes_seq_to_nat(bytes: Seq<u8>) -> nat
-decreases bytes.len()
+    decreases bytes.len(),
 {
     if bytes.len() == 0 {
         0
@@ -102,23 +91,27 @@ decreases bytes.len()
 // Takes: array of words, number of words, bits per word
 // Note: This is a specification function that works with concrete types
 pub open spec fn words_to_nat_gen_u64(words: &[u64], num_words: int, bits_per_word: int) -> nat
-decreases num_words
+    decreases num_words,
 {
     if num_words <= 0 {
         0
     } else {
-        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+        let word_value = (words[num_words - 1] as nat) * pow2(
+            ((num_words - 1) * bits_per_word) as nat,
+        );
         word_value + words_to_nat_gen_u64(words, num_words - 1, bits_per_word)
     }
 }
 
 pub open spec fn words_to_nat_gen_u32(words: &[u32], num_words: int, bits_per_word: int) -> nat
-decreases num_words
+    decreases num_words,
 {
     if num_words <= 0 {
         0
     } else {
-        let word_value = (words[num_words - 1] as nat) * pow2(((num_words - 1) * bits_per_word) as nat);
+        let word_value = (words[num_words - 1] as nat) * pow2(
+            ((num_words - 1) * bits_per_word) as nat,
+        );
         word_value + words_to_nat_gen_u32(words, num_words - 1, bits_per_word)
     }
 }

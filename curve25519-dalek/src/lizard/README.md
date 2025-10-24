@@ -15,7 +15,7 @@ The Lizard encoding is an injective map into the Ristretto255 group $\mathcal{R}
 
 As mentioned above, $E_2$ is not injective and thus cannot work directly as an encoding function.
 
-Instead we create an injective function from $E_2$ by "tagging" each input $x$ so it is distinguished among the other inverses of $E_2(x)$. This requires restricting the map's domain: rather than mapping $\mathbb{F}_{>0} \to \mathcal{R}$, we define a map $\lbrace 0,1 \rbrace^{128} \to \mathcal{R}$ (i.e., half the input length), as follows:
+Instead we create an injective function from $E_2$ by "tagging" each input $x$ so it is distinguished among the other inverses of $E_2(x)$. This requires restricting the map's domain: rather than mapping $\mathbb{F} \to \mathcal{R}$, we define a map $\lbrace 0,1 \rbrace^{128} \to \mathcal{R}$ (i.e., half the input length), as follows:
 1. Given bitstring $b \in \lbrace 0,1 \rbrace^{128}$, compute its hash $h = \mathsf{H}(b)$ where $\mathsf{H}$ is a hash function with a 32-byte digest.
 2. Let `s` be the 32-byte value `h[0:8] || b || h[24:32]`.
 3. Clear the least significant bit: `s[0] &= 254`. This is done so that the field element represented by `s` is "positive" (defined in next section).
@@ -57,7 +57,7 @@ $$
 
 ## Background and Notation
 
-The computations will involve a family of related curves all defined over the prime field of order $p = 2^{255} - 19$ which we denote by $\mathbb{F}$. We will adopt the definition of [Decaf][decaf] and define an element of $\mathbb{F}$ to be *positive* if the low bit of its least positive representative is set. We denote the set of positive field elements by $\mathbb{F}_{>0}$.
+The computations will involve a family of related curves all defined over the prime field of order $p = 2^{255} - 19$ which we denote by $\mathbb{F}$. We will adopt the definition of [Decaf][decaf] and define an element of $\mathbb{F}$ to be *positive* if the low bit of its least positive representative is set.
 
 ### Fundamental Curves
 
@@ -144,7 +144,7 @@ where $\mathrm{i} = \sqrt{-1}$ is the imaginary unit in $\mathbb{F}$.
 
 $E_2$ is built from four functions:
 
-1. A map from positive field elements to a Jacobi quartic: $e: \mathbb{F}_{>0} \rightarrow \mathcal{J}$.
+1. A map from positive field elements to a Jacobi quartic: $e: \mathbb{F} \rightarrow \mathcal{J}$.
 1. The quotient map: $q_\mathcal{J}: \mathcal{J} \rightarrow \mathcal{J}/\mathcal{J}[2]$
 1. A 2-isogeny from the Jacobi quartic to the even points on the Edwards curve: $\theta: \mathcal{J} \rightarrow [2]\mathcal{E}$. Note that we only know that the image of $\theta$ consists of even points because the torsion group $\mathcal{E}[8]$ is cyclic. See discussion below.
 1. The quotient map into the Ristretto group: $q_\mathcal{E}: [2]\mathcal{E}/\mathcal{E}[2] \rightarrow \mathcal{R}$, where $P \mapsto P + \mathcal{E}[4]/\mathcal{E}[2]$.
@@ -162,7 +162,7 @@ is an isomorphism.
 
 The full map is $E_2 = q_\mathcal{E} \circ \hat{\theta} \circ q_\mathcal{J} \circ e$. Our goal is to compute the preimage set $E_2^{-1}(P)$ for a given Ristretto point $P \in \mathcal{R}$.
 
-Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to a unique field element via the inverse of $e$. This section explains how to find these 8 field elements.
+Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to two field elements, one postive and one negative, via the inverse of $e$ (thus there is a unique corresponding positive field element via $e^{-1}$). This section explains how to find these 8 field elements.
 
 We now describe how to invert each of these components before presenting an efficient algorithm to compute the full inverse of $E_2$.
 
@@ -263,7 +263,7 @@ So
 <div id="subsec-e-and-inverse"></div>
 
 
-The Elligator2 map from $\mathbb{F}$ to $\mathcal{J}$ is computed as follows. On input $r_0$, let $r = \mathrm{i}r_0^2$ - either $0$ or a non-residue. Then compute
+The Elligator2 map from $\mathbb{F}$ to $\mathcal{J}$ is computed as follows. On input $r_0$, let $r = \mathrm{i}r_0^2$—either $0$ or a non-residue. Then compute
 
 $$
 \begin{align}
@@ -306,7 +306,7 @@ $$
 Thus our inverse will be
 
 $$
-r_0 = \sqrt{-\mathrm{i}\frac{s^2 + \alpha}{s^2 - \alpha}}
+r_0 = \pm\sqrt{-\mathrm{i}\frac{s^2 + \alpha}{s^2 - \alpha}}
 $$
 
 <div id="eq-r0case1" align="right">(3)</div>
@@ -328,12 +328,12 @@ $$
 Thus our inverse will be
 
 $$
-r_0 = \sqrt{-\mathrm{i}\frac{s^2 - \alpha}{s^2 + \alpha}}
+r_0 = \pm\sqrt{-\mathrm{i}\frac{s^2 - \alpha}{s^2 + \alpha}}
 $$
 
 <div id="eq-r0case2" align="right">(4)</div>
 
-# Algorithm for Computing All 8 Preimages of a Point
+# Algorithm for Computing All 16 Preimages of a Point
 
 We can combine these computations to invert $E_2$.
 
@@ -405,7 +405,7 @@ $$
 \end{align}
 $$
 
-Where the equality in the second line comes from using the curve equation for $\mathcal{E}$: $Y^2Z^2 - X^2Z^2 = Z^4 + dX^2Y^2$. The quantity $1/\sqrt{d+1}$ is a constant that can be precomputed, so $\sqrt{-1/(Y^2(X^2 + Z^2))}$ - and hence $(s_2,t_2)$ and $(s_3,t_3)$ - can be computed from $\gamma$ without computing an additional square root.
+Where the equality in the second line comes from using the curve equation for $\mathcal{E}$: $Y^2Z^2 - X^2Z^2 = Z^4 + dX^2Y^2$. The quantity $1/\sqrt{d+1}$ is a constant that can be precomputed, so $\sqrt{-1/(Y^2(X^2 + Z^2))}$ —and hence $(s_2,t_2)$ and $(s_3,t_3)$—can be computed from $\gamma$ without computing an additional square root.
 
 ### Step by Step Through the Rust Implementation
 
@@ -457,7 +457,7 @@ If the input point is the identity element, its representatives are $(0,1)$, $(0
 
 
 
-## Step 3: Compute the 8 Field Element Preimages
+## Step 3: Compute the 16 Field Element Preimages
 
 The computation of $e^{-1}$ [described above](#subsec-e-and-inverse) required breaking the computation into two cases. To facilitate performing these computations efficiently in constant time, we perform both computations at once. This code can be found in `src/lizard/jacobi_quartic.rs` in `JacbobiPoint::e_inv()`.
 
@@ -478,12 +478,12 @@ Hence we see that $(s,t)$ has a preimage if and only if $y$, as defined above, e
 With $y$ computed we can now compute the final preimage. Let $\mathsf{sgn}(s)$ denote the sign function. Then we can consolidate Equations [3](#eq-r0case1) and [4](#eq-r0case2) into
 
 $$
-r_0 =  (\alpha + \mathsf{sgn}(s)s^2) y
+r_0 =  \pm(\alpha + \mathsf{sgn}(s)s^2) y
 $$
 
 ### Relation to the Formulas in Decaf
 
-These computations can also be seen in [Decaf][decaf], which also defines the map $e: \mathbb{F}_{>0} \rightarrow \mathcal{J}$, but we need to clarify an important difference in notation. In that work, they use variables $a$ and $d$ as parameters for a different, but isogenous, twisted Edwards curve. If we let $\hat{a}$ and $\hat{d}$ denote the Edwards curve parameters from Decaf we have the relations
+These computations can also be seen in [Decaf][decaf], which also defines the map $e: \mathbb{F} \rightarrow \mathcal{J}$, but we need to clarify an important difference in notation. In that work, they use variables $a$ and $d$ as parameters for a different, but isogenous, twisted Edwards curve. If we let $\hat{a}$ and $\hat{d}$ denote the Edwards curve parameters from Decaf we have the relations
 
 $$
 \hat{a} = -a, \quad \hat{d} = \frac{ad}{a-d}

@@ -144,7 +144,7 @@ where $\mathrm{i} = \sqrt{-1}$ is the imaginary unit in $\mathbb{F}$.
 
 $E_2$ is built from four functions:
 
-1. A map from positive field elements to a Jacobi quartic: $e: \mathbb{F} \rightarrow \mathcal{J}$.
+1. A map from field elements to a Jacobi quartic: $e: \mathbb{F} \rightarrow \mathcal{J}$.
 1. The quotient map: $q_\mathcal{J}: \mathcal{J} \rightarrow \mathcal{J}/\mathcal{J}[2]$
 1. A 2-isogeny from the Jacobi quartic to the even points on the Edwards curve: $\theta: \mathcal{J} \rightarrow [2]\mathcal{E}$. Note that we only know that the image of $\theta$ consists of even points because the torsion group $\mathcal{E}[8]$ is cyclic. See discussion below.
 1. The quotient map into the Ristretto group: $q_\mathcal{E}: [2]\mathcal{E}/\mathcal{E}[2] \rightarrow \mathcal{R}$, where $P \mapsto P + \mathcal{E}[4]/\mathcal{E}[2]$.
@@ -162,7 +162,7 @@ is an isomorphism.
 
 The full map is $E_2 = q_\mathcal{E} \circ \hat{\theta} \circ q_\mathcal{J} \circ e$. Our goal is to compute the preimage set $E_2^{-1}(P)$ for a given Ristretto point $P \in \mathcal{R}$.
 
-Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to two field elements, one positive and one negative, via the inverse of $e$ (thus there is a unique corresponding positive field element via $e^{-1}$). This section explains how to find these 8 field elements.
+Since $q_\mathcal{E}$ is 2-to-1, $\hat{\theta}$ is 1-to-1, and $q_\mathcal{J}$ is 4-to-1, we expect to find $4 \times 2 = 8$ preimages on the Jacobi quartic $\mathcal{J}$. Each of these 8 points on $\mathcal{J}$ will then correspond to two field elements, one positive and one negative, via the inverse of $e$ (thus there is a unique corresponding positive field element via $e^{-1}$). This section explains how to find these 16 field elements.
 
 We now describe how to invert each of these components before presenting an efficient algorithm to compute the full inverse of $E_2$.
 

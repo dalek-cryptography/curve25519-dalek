@@ -391,17 +391,13 @@ impl Index<usize> for Scalar {
     }
 }
 
-} // verus!
-/* <VERIFICATION NOTE>
- Left outside verification scope
-</VERIFICATION NOTE> */
 impl Debug for Scalar {
+    /* VERIFICATION NOTE: we don't cover debugging */
+    #[verifier::external_body]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
-
-verus! {
 
 impl<'a> MulAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: VERIFIED

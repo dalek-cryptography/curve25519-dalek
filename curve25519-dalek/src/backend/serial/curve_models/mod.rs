@@ -136,9 +136,13 @@ use crate::edwards::EdwardsPoint;
 use crate::field::FieldElement;
 use crate::traits::ValidityCheck;
 
+use vstd::prelude::*;
+
 // ------------------------------------------------------------------------
 // Internal point representations
 // ------------------------------------------------------------------------
+
+verus! {
 
 /// A `ProjectivePoint` is a point \\((X:Y:Z)\\) on the \\(\mathbb
 /// P\^2\\) model of the curve.
@@ -218,22 +222,23 @@ impl Zeroize for ProjectiveNielsPoint {
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------
-
 use crate::traits::Identity;
 
+verus! {
+
 impl Identity for ProjectivePoint {
-    fn identity() -> ProjectivePoint {
-        ProjectivePoint {
-            X: FieldElement::ZERO,
-            Y: FieldElement::ONE,
-            Z: FieldElement::ONE,
-        }
+    fn identity() -> (result: ProjectivePoint)
+        ensures
+    {
+        ProjectivePoint { X: FieldElement::ZERO, Y: FieldElement::ONE, Z: FieldElement::ONE }
     }
 }
 
+} // verus!
 impl Identity for ProjectiveNielsPoint {
     fn identity() -> ProjectiveNielsPoint {
         ProjectiveNielsPoint {

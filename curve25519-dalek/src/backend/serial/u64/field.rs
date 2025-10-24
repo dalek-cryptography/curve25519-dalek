@@ -95,17 +95,13 @@ pub struct FieldElement51 {
     pub limbs: [u64; 5],
 }
 
-} // verus!
-/* <VERIFICATION NOTE>
- Left outside verification scope
-</VERIFICATION NOTE> */
 impl Debug for FieldElement51 {
+    /* VERIFICATION NOTE: we don't cover debugging */
+    #[verifier::external_body]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "FieldElement51({:?})", &self.limbs[..])
     }
 }
-
-verus! {
 
 #[cfg(feature = "zeroize")]
 impl Zeroize for FieldElement51 {
@@ -113,7 +109,10 @@ impl Zeroize for FieldElement51 {
     External body annotation
     </VERIFICATION NOTE> */
     #[verifier::external_body]
-    fn zeroize(&mut self) {
+    fn zeroize(&mut self)
+        ensures
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] == 0,
+    {
         self.limbs.zeroize();
     }
 }

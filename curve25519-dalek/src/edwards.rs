@@ -150,9 +150,14 @@ use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
+use crate::backend::serial::u64::subtle_assumes::*;
+use vstd::prelude::*;
+
 // ------------------------------------------------------------------------
 // Compressed points
 // ------------------------------------------------------------------------
+
+verus! {
 
 /// In "Edwards y" / "Ed25519" format, the curve point \\((x,y)\\) is
 /// determined by the \\(y\\)-coordinate and the sign of \\(x\\).
@@ -163,17 +168,29 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 pub struct CompressedEdwardsY(pub [u8; 32]);
 
 impl ConstantTimeEq for CompressedEdwardsY {
-    fn ct_eq(&self, other: &CompressedEdwardsY) -> Choice {
-        self.as_bytes().ct_eq(other.as_bytes())
+    fn ct_eq(&self, other: &CompressedEdwardsY) -> (result: Choice)
+        ensures
+            choice_is_true(result) == (self.0 == other.0),
+    {
+        /* <VERIFICATION NOTE>
+         Use wrapper function for Verus compatibility instead of direct subtle call
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+         self.as_bytes().ct_eq(other.as_bytes())
+         </ORIGINAL CODE> */
+        ct_eq_bytes32(&self.0, &other.0)
     }
 }
 
 impl Debug for CompressedEdwardsY {
+    /* VERIFICATION NOTE: we don't cover debugging */
+    #[verifier::external_body]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "CompressedEdwardsY: {:?}", self.as_bytes())
     }
 }
 
+} // verus!
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub const fn as_bytes(&self) -> &[u8; 32] {

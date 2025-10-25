@@ -375,59 +375,19 @@ pub proof fn lemma_radix_51_partial_geometric_sum()
     ensures
         pow2(51) + pow2(102) + pow2(153) + pow2(204) < pow2(255),
 {
-    lemma_pow2_adds(51, 51);
-    lemma_pow2_adds(51, 102);
-    lemma_pow2_adds(51, 153);
-    lemma_pow2_adds(51, 204);
-    lemma_pow2_strictly_increases(204, 255);
-
-    // The sum is dominated by the largest term 2^204
-    // Show: 2^51 + 2^102 + 2^153 < 2^204
-    // Then: sum < 2^204 + 2^204 = 2 * 2^204 = 2^205 < 2^255
-
+    // Each of the first three terms is < pow2(204)
     lemma_pow2_strictly_increases(51, 204);
     lemma_pow2_strictly_increases(102, 204);
     lemma_pow2_strictly_increases(153, 204);
-
-    // Use: 2^153 < 2^204, so 2^153 + 2^153 = 2^154 < 2^204
-    lemma_pow2_adds(153, 1);
-    assert(pow2(154) == pow2(153) * 2) by {
-        lemma2_to64();
+    
+    // Therefore the sum < 4 * pow2(204) = pow2(206) < pow2(255)
+    assert(4 * pow2(204) < pow2(255)) by {
+        assert(4 == pow2(2)) by {
+            lemma2_to64();
+        }
+        lemma_pow2_adds(2, 204);
+        lemma_pow2_strictly_increases(206, 255);
     }
-    assert(pow2(154) == 2 * pow2(153)) by {
-        lemma_mul_is_commutative(pow2(153) as int, 2);
-    }
-    lemma_pow2_strictly_increases(154, 204);
-
-    // Similarly for smaller terms: show pow2(51) + pow2(102) + pow2(153) < pow2(204)
-    // Key insight: pow2(102) < pow2(153) because 102 < 153
-    // And pow2(51) + pow2(102) < pow2(102) + pow2(102) = 2*pow2(102) = pow2(103) << pow2(153)
-    lemma_pow2_strictly_increases(51, 102);
-    lemma_pow2_strictly_increases(102, 153);
-    lemma_pow2_strictly_increases(153, 204);
-
-    // Use pow2(102) + pow2(102) = 2 * pow2(102) = pow2(103)
-    lemma_pow2_adds(102, 1);
-    assert(2 * pow2(102) == pow2(103)) by {
-        lemma2_to64();
-        lemma_mul_is_commutative(pow2(102) as int, 2);
-    }
-    lemma_pow2_strictly_increases(103, 153);
-
-    // So pow2(51) + pow2(102) + pow2(153) < pow2(153) + pow2(153) = 2*pow2(153) = pow2(154) < pow2(204)
-
-    // Therefore the full sum < pow2(204) + pow2(204) = 2*pow2(204) = pow2(205) < pow2(255)
-
-    // Prove 2 * pow2(204) == pow2(205)
-    lemma_pow2_adds(204, 1);
-    assert(pow2(205) == pow2(204) * 2) by {
-        lemma2_to64();
-    }
-    assert(pow2(205) == 2 * pow2(204)) by {
-        lemma_mul_is_commutative(pow2(204) as int, 2);
-    }
-
-    lemma_pow2_strictly_increases(205, 255);
 }
 
 /// Helper: Establishes basic power-of-2 facts needed for carry propagation

@@ -451,11 +451,13 @@ pub proof fn lemma_stage_division_theorem(limb: u64, carry_in: int, carry_out: i
     requires
         limb < (1u64 << 52),
         carry_out == (limb as int + carry_in) / pow2(51) as int,
-        pow2(51) > 0,
     ensures
         (limb as int + carry_in) == carry_out * pow2(51) as int + r,
         0 <= r < pow2(51) as int,
 {
+    assert(pow2(51) > 0) by {
+      lemma_pow2_pos(51);
+    }
     lemma_fundamental_div_mod((limb as int + carry_in), pow2(51) as int);
     let r = (limb as int + carry_in) % pow2(51) as int;
     lemma_mod_bound((limb as int + carry_in), pow2(51) as int);

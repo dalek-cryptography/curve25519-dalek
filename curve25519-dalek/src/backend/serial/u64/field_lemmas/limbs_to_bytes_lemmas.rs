@@ -217,142 +217,6 @@ spec fn limb4_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 // ============================================================================
 // Phase 3: Helper Lemmas for Limb Contribution Proofs
 // ============================================================================
-/// Helper: Shows that summing extracted bytes reconstructs value % 2^(num_bytes*8)
-/// This is the key algebraic property connecting byte extraction to value reconstruction
-proof fn lemma_sum_extracted_bytes_reconstructs_value(
-    value: u64,
-    byte0: u8,
-    byte1: u8,
-    byte2: u8,
-    byte3: u8,
-    byte4: u8,
-    byte5: u8,
-    num_bytes: nat,
-)
-    requires
-        num_bytes == 6,
-        byte0 as nat == (value as nat / pow2(0)) % 256,
-        byte1 as nat == (value as nat / pow2(8)) % 256,
-        byte2 as nat == (value as nat / pow2(16)) % 256,
-        byte3 as nat == (value as nat / pow2(24)) % 256,
-        byte4 as nat == (value as nat / pow2(32)) % 256,
-        byte5 as nat == (value as nat / pow2(40)) % 256,
-        value < pow2(num_bytes * 8),  // value < 2^48
-
-    ensures
-        byte0 as nat * pow2(0) + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
-            * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40) == value as nat,
-{
-    lemma2_to64();
-
-    // Key insight: This is byte-wise base-256 reconstruction
-    // Each byte extracts 8 bits: byte_i = (value / 2^(i*8)) % 256
-    // Summing them: Σ byte_i * 2^(i*8) reconstructs value
-
-    // We'll prove this by algebraic expansion using div-mod properties
-    // For a value < 2^48, we can write:
-    // value = b0 + b1*256 + b2*256^2 + ... + b5*256^5
-    // where bi = (value / 256^i) % 256
-
-    // Use fundamental property: a = (a % d) + (a / d) * d
-    // Apply this repeatedly at each byte boundary
-
-    // Step 0: value = byte0 + (value / 256) * 256
-    lemma_fundamental_div_mod(value as int, 256);
-    assert(value as nat == (value as nat % 256) + (value as nat / 256) * 256);
-    assert(byte0 as nat == value as nat % 256);  // by pow2(0) = 1
-
-    let rest1 = value as nat / pow2(8);  // value / 256
-    assert(value as nat == byte0 as nat + rest1 * pow2(8));
-
-    // Step 1: rest1 = byte1 + (rest1 / 256) * 256
-    lemma_pow2_pos(8);
-    assert(pow2(8) > 0);
-    lemma_fundamental_div_mod(rest1 as int, 256);
-    assert(rest1 == (rest1 % 256) + (rest1 / 256) * 256);
-
-    // Show that rest1 % 256 equals byte1
-    // We have: rest1 = value / pow2(8) and byte1 = (value / pow2(8)) % 256
-    assert(byte1 as nat == (value as nat / pow2(8)) % 256);
-    assert(rest1 % 256 == byte1 as nat);
-
-    let rest2 = rest1 / 256;
-    // rest2 = (value / 256) / 256 = value / (256 * 256) = value / 2^16
-    lemma_pow2_adds(8, 8);
-    assert(pow2(8) == 256);
-    // Use lemma_div_denominator: (x / c) / d == x / (c * d)
-    lemma_div_denominator(value as int, 256, 256);
-    assert(rest2 == value as nat / pow2(16));
-
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + rest2 * pow2(16));
-
-    // Step 2: rest2 = byte2 + (rest2 / 256) * 256
-    lemma_fundamental_div_mod(rest2 as int, 256);
-    assert(byte2 as nat == (value as nat / pow2(16)) % 256);
-    assert(rest2 % 256 == byte2 as nat);
-
-    let rest3 = rest2 / 256;
-    lemma_pow2_adds(16, 8);
-    // Use lemma_div_denominator: (x / c) / d == x / (c * d)
-    lemma_div_denominator(value as int, pow2(16) as int, 256);
-    assert(rest3 == value as nat / pow2(24));
-
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + rest3
-        * pow2(24));
-
-    // Step 3: rest3 = byte3 + (rest3 / 256) * 256
-    lemma_fundamental_div_mod(rest3 as int, 256);
-    assert(byte3 as nat == (value as nat / pow2(24)) % 256);
-    assert(rest3 % 256 == byte3 as nat);
-
-    let rest4 = rest3 / 256;
-    lemma_pow2_adds(24, 8);
-    // Use lemma_div_denominator: (x / c) / d == x / (c * d)
-    lemma_div_denominator(value as int, pow2(24) as int, 256);
-    assert(rest4 == value as nat / pow2(32));
-
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
-        + byte3 as nat * pow2(24) + rest4 * pow2(32));
-
-    // Step 4: rest4 = byte4 + (rest4 / 256) * 256
-    lemma_fundamental_div_mod(rest4 as int, 256);
-    assert(byte4 as nat == (value as nat / pow2(32)) % 256);
-    assert(rest4 % 256 == byte4 as nat);
-
-    let rest5 = rest4 / 256;
-    lemma_pow2_adds(32, 8);
-    // Use lemma_div_denominator: (x / c) / d == x / (c * d)
-    lemma_div_denominator(value as int, pow2(32) as int, 256);
-    assert(rest5 == value as nat / pow2(40));
-
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
-        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
-
-    // Step 5: rest5 = byte5 (since value < 2^48, rest5 < 256)
-    // Since value < 2^48, we have rest5 = value / 2^40 < 2^8 = 256
-    // Therefore rest5 % 256 = rest5, and rest5 / 256 = 0
-    lemma_div_bound(value as nat, 40, 48);
-    assert(rest5 < pow2(8));
-    assert(pow2(8) == 256);
-    assert(rest5 < 256);
-
-    // For any x < 256: x % 256 = x and x / 256 = 0
-    lemma_mod_bound(rest5 as int, 256);
-    assert(rest5 % 256 == rest5);
-    assert(rest5 / 256 == 0);
-
-    // Now we can show byte5 == rest5
-    assert(byte5 as nat == (value as nat / pow2(40)) % 256);
-    assert(rest5 == value as nat / pow2(40));  // from above
-    assert(byte5 as nat == rest5 % 256);
-    assert(byte5 as nat == rest5);  // since rest5 < 256
-
-    // Final result: value equals the sum of all bytes
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
-        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + rest5 * pow2(40));
-    assert(value as nat == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16)
-        + byte3 as nat * pow2(24) + byte4 as nat * pow2(32) + byte5 as nat * pow2(40));
-}
 
 /// Helper: Byte extraction commutes with modulo for low-order bytes
 /// If we extract a byte at position k*8 where k*8+8 <= m, then:
@@ -489,15 +353,14 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     assert(bytes[5] as nat == (limb0_low48 as nat / pow2(40)) % 256);
 
     // Now apply our reconstruction lemma
-    lemma_sum_extracted_bytes_reconstructs_value(
-        limb0_low48,
+    lemma_6_bytes_reconstruct(
+        limb0_low48 as nat,
         bytes[0],
         bytes[1],
         bytes[2],
         bytes[3],
         bytes[4],
         bytes[5],
-        6,
     );
 
     // The reconstruction lemma tells us: low_48_bits == limbs[0] % 2^48

@@ -1,4 +1,10 @@
-//! External specifications for selected std/core functions used in verification
+//! External type specifications for core Rust types
+//! This module provides Verus-compatible wrappers for core types that are used
+//! in the codebase but not directly supported by Verus.
+
+use core::array::TryFromSliceError;
+use core::convert::TryInto;
+
 use crate::backend::serial::u64::scalar_specs::*;
 #[allow(unused_imports)]
 use crate::Scalar;
@@ -9,6 +15,33 @@ use rand_core::RngCore;
 
 verus! {
 
+/// External type specification for TryFromSliceError
+/// This error type is returned when trying to convert a slice to an array fails
+#[verifier::external_type_specification]
+#[verifier::external_body]
+#[allow(dead_code)]
+pub struct ExTryFromSliceError(TryFromSliceError);
+
+/// Wrapper for slice to array conversion (try_into)
+/// Converts a slice &[u8] to a fixed-size array [u8; 32]
+/// Succeeds if and only if the slice has exactly 32 bytes.
+#[verifier::external_body]
+pub fn try_into_32_bytes_array(bytes: &[u8]) -> (result: Result<[u8; 32], TryFromSliceError>)
+    ensures
+        // Success when length matches the target array size (32)
+        bytes@.len() == 32 ==> matches!(result, Ok(_)),
+        // Failure when length doesn't match
+        bytes@.len() != 32 ==> matches!(result, Err(_)),
+        // When successful, the array contains the same bytes as the input slice
+        match result {
+            Ok(arr) => arr@ == bytes@,
+            Err(_) => true,
+        },
+{
+    bytes.try_into()
+}
+
+// External type specifications for formatters
 #[verifier::external_type_specification]
 #[verifier::external_body]
 pub struct ExFormatter<'a>(core::fmt::Formatter<'a>);
@@ -134,3 +167,4 @@ pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
 }
 
 } // verus!
+

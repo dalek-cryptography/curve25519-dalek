@@ -1,7 +1,6 @@
 //! External type specifications for core Rust types
 //! This module provides Verus-compatible wrappers for core types that are used
 //! in the codebase but not directly supported by Verus.
-
 use core::array::TryFromSliceError;
 use core::convert::TryInto;
 
@@ -28,7 +27,8 @@ pub struct ExTryFromSliceError(TryFromSliceError);
 #[verifier::external_body]
 pub fn try_into_32_bytes_array(bytes: &[u8]) -> (result: Result<[u8; 32], TryFromSliceError>)
     ensures
-        // Success when length matches the target array size (32)
+// Success when length matches the target array size (32)
+
         bytes@.len() == 32 ==> matches!(result, Ok(_)),
         // Failure when length doesn't match
         bytes@.len() != 32 ==> matches!(result, Err(_)),
@@ -167,4 +167,3 @@ pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
 }
 
 } // verus!
-

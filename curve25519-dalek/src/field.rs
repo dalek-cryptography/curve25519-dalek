@@ -438,20 +438,28 @@ impl FieldElement {
     /// - `(Choice(0), zero)        ` if `v` is zero and `u` is nonzero;
     /// - `(Choice(0), +sqrt(i*u/v))` if `u/v` is nonsquare (so `i*u/v` is square).
     ///
-    pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (result: (Choice, FieldElement))
-    ensures
-        // When u = 0: always return (true, 0)
-        (field_element_as_nat(u) == 0) ==> 
-            (choice_is_true(result.0) && field_element_as_nat(&result.1) == 0),
-        
-        // When v = 0 but u ≠ 0: return (false, 0) [division by zero case]
-        (field_element_as_nat(v) == 0 && field_element_as_nat(u) != 0) ==> 
-            (!choice_is_true(result.0) && field_element_as_nat(&result.1) == 0),
-        
-        // When successful and v ≠ 0: r² * v ≡ u (mod p)
-        (choice_is_true(result.0) && field_element_as_nat(v) != 0) ==> 
-            is_sqrt_ratio(u, v, &result.1),
+    pub(crate) fn sqrt_ratio_i(u: &FieldElement, v: &FieldElement) -> (result: (
+        Choice,
+        FieldElement,
+    ))
+        ensures
+    // When u = 0: always return (true, 0)
+
+            (field_element_as_nat(u) == 0) ==> (choice_is_true(result.0) && field_element_as_nat(
+                &result.1,
+            ) == 0),
+            // When v = 0 but u ≠ 0: return (false, 0) [division by zero case]
+            (field_element_as_nat(v) == 0 && field_element_as_nat(u) != 0) ==> (!choice_is_true(
+                result.0,
+            ) && field_element_as_nat(&result.1) == 0),
+            // When successful and v ≠ 0: r² * v ≡ u (mod p)
+            (choice_is_true(result.0) && field_element_as_nat(v) != 0) ==> is_sqrt_ratio(
+                u,
+                v,
+                &result.1,
+            ),
     // VERIFICATION NOTE: PROOF BYPASS
+
     {
         // Using the same trick as in ed25519 decoding, we merge the
         // inversion, the square root, and the square test as follows.

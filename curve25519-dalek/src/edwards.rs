@@ -194,17 +194,17 @@ impl Debug for CompressedEdwardsY {
 impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub const fn as_bytes(&self) -> (result: &[u8; 32])
-    ensures
-        result@ == self.0@,
+        ensures
+            result@ == self.0@,
     {
         &self.0
     }
 
     /// Copy this `CompressedEdwardsY` to an array of bytes.
-    pub const fn to_bytes(&self) -> (result: [u8; 32]) 
-    ensures
-        result@ == self.0@,
-    {   
+    pub const fn to_bytes(&self) -> (result: [u8; 32])
+        ensures
+            result@ == self.0@,
+    {
         self.0
     }
 
@@ -213,11 +213,11 @@ impl CompressedEdwardsY {
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
     pub fn decompress(&self) -> (result: Option<EdwardsPoint>)
-    ensures
-        match result {
-            Some(point) => true, // TODO point.compress().0@ == self.0@,
-            None => true,
-        },
+        ensures
+            match result {
+                Some(point) => true,  // TODO point.compress().0@ == self.0@,
+                None => true,
+            },
     {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
@@ -227,21 +227,24 @@ impl CompressedEdwardsY {
             None
         }
     }
-
 }
 
 mod decompress {
     use super::*;
-    #[rustfmt::skip] // keep alignment of explanatory comments
-    pub(super) fn step_1(
-        repr: &CompressedEdwardsY,
-    ) -> (Choice, FieldElement, FieldElement, FieldElement) {
+
+    #[rustfmt::skip]  // keep alignment of explanatory comments
+    pub(super) fn step_1(repr: &CompressedEdwardsY) -> (
+        Choice,
+        FieldElement,
+        FieldElement,
+        FieldElement,
+    ) {
         let Y = FieldElement::from_bytes(repr.as_bytes());
         let Z = FieldElement::ONE;
-        assume(false);                         
+        assume(false);
         let YY = Y.square();
-        let u = &YY - &Z;   // u =  y²-1
-        let v = &(&YY * &constants::EDWARDS_D) + &Z; // v = dy²+1
+        let u = &YY - &Z;  // u =  y²-1
+        let v = &(&YY * &constants::EDWARDS_D) + &Z;  // v = dy²+1
         let (is_valid_y_coord, X) = FieldElement::sqrt_ratio_i(&u, &v);
 
         (is_valid_y_coord, X, Y, Z)
@@ -254,39 +257,33 @@ mod decompress {
         Y: FieldElement,
         Z: FieldElement,
     ) -> EdwardsPoint {
-         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
-         // so we negate according to the supplied sign bit.
+        // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
+        // so we negate according to the supplied sign bit.
         let compressed_sign_bit = Choice::from(repr.as_bytes()[31] >> 7);
         conditional_negate_field(&mut X, compressed_sign_bit);
         assume(false);
 
-        EdwardsPoint {
-            X,
-            Y,
-            Z,
-            T: &X * &Y,
-        }
+        EdwardsPoint { X, Y, Z, T: &X * &Y }
     }
+
 }
 
 impl TryFrom<&[u8]> for CompressedEdwardsY {
     type Error = TryFromSliceError;
 
     fn try_from(slice: &[u8]) -> (result: Result<CompressedEdwardsY, TryFromSliceError>)
-    ensures
-        match result {
-            Ok(point) => point.0@ == slice@,
-            Err(_) => true,
-        },
+        ensures
+            match result {
+                Ok(point) => point.0@ == slice@,
+                Err(_) => true,
+            },
     {
         Self::from_slice(slice)
     }
 }
 
 } // verus!
-
 /* VERIFICATION NOTE: we don't cover serde feature yet */
-
 // ------------------------------------------------------------------------
 // Serde support
 // ------------------------------------------------------------------------
@@ -294,7 +291,6 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 // and decompression internally.  This means that users can create
 // structs containing `EdwardsPoint`s and use Serde's derived
 // serializers to serialize those structures.
-
 #[cfg(feature = "serde")]
 use serde::de::Visitor;
 #[cfg(feature = "serde")]
@@ -405,6 +401,7 @@ impl<'de> Deserialize<'de> for CompressedEdwardsY {
 // ------------------------------------------------------------------------
 
 verus! {
+
 /// An `EdwardsPoint` represents a point on the Edwards form of Curve25519.
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
@@ -418,14 +415,45 @@ pub struct EdwardsPoint {
 // ------------------------------------------------------------------------
 // Constructors
 // ------------------------------------------------------------------------
-
 impl Identity for CompressedEdwardsY {
     // TODO: add spec
     fn identity() -> CompressedEdwardsY {
-        CompressedEdwardsY([
-            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0,
-        ])
+        CompressedEdwardsY(
+            [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ],
+        )
     }
 }
 
@@ -436,8 +464,6 @@ impl Default for CompressedEdwardsY {
     }
 }
 
-
-
 impl CompressedEdwardsY {
     /// Construct a `CompressedEdwardsY` from a slice of bytes.
     ///
@@ -446,13 +472,13 @@ impl CompressedEdwardsY {
     /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
     /// a length of 32.
     pub fn from_slice(bytes: &[u8]) -> (result: Result<CompressedEdwardsY, TryFromSliceError>)
-    ensures
-        bytes@.len() == 32 ==> matches!(result, Ok(_)),
-        bytes@.len() != 32 ==> matches!(result, Err(_)),
-        match result {
-            Ok(point) => point.0@ == bytes@,
-            Err(_) => true,
-        },
+        ensures
+            bytes@.len() == 32 ==> matches!(result, Ok(_)),
+            bytes@.len() != 32 ==> matches!(result, Err(_)),
+            match result {
+                Ok(point) => point.0@ == bytes@,
+                Err(_) => true,
+            },
     {
         // ORIGINAL CODE: bytes.try_into().map(CompressedEdwardsY)
         // REFACTORED for Verus compatibility:
@@ -460,7 +486,7 @@ impl CompressedEdwardsY {
         // 2. datatype constructors like CompressedEdwardsY are not allowed as function values in map()
         let arr_result = try_into_32_bytes_array(bytes);
         let result = arr_result.map(|arr| CompressedEdwardsY(arr));
-        
+
         // PROOF BYPASS: we need to prove property preservation through map
         assume(match result {
             Ok(point) => point.0@ == bytes@,
@@ -469,9 +495,8 @@ impl CompressedEdwardsY {
         result
     }
 }
+
 } // verus!
-
-
 impl Identity for EdwardsPoint {
     fn identity() -> EdwardsPoint {
         EdwardsPoint {

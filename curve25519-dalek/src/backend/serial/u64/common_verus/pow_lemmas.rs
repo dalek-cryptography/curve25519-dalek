@@ -669,13 +669,13 @@ pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m:
         (x / pow2(k * b)) % pow2(b) == ((x % pow2(m)) / pow2(k * b)) % pow2(b),
 {
     assert((x / pow2(k * b)) % pow2(b) == (x % pow2(k * b + b)) / pow2(k * b)) by {
-        mask_div2(x, k * b, b); 
+        mask_div2(x, k * b, b);
     }
 
     let y = x % pow2(m);
 
     assert((y / pow2(k * b)) % pow2(b) == (y % pow2(k * b + b)) / pow2(k * b)) by {
-        mask_div2(x, k * b, b);
+        mask_div2(y, k * b, b);
     }
 
     let s = k * b + b;

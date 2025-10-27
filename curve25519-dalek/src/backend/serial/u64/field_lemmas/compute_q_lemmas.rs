@@ -379,7 +379,7 @@ pub proof fn lemma_radix_51_partial_geometric_sum()
     lemma_pow2_strictly_increases(51, 204);
     lemma_pow2_strictly_increases(102, 204);
     lemma_pow2_strictly_increases(153, 204);
-    
+
     // Therefore the sum < 4 * pow2(204) = pow2(206) < pow2(255)
     assert(4 * pow2(204) < pow2(255)) by {
         assert(4 == pow2(2)) by {
@@ -456,7 +456,7 @@ pub proof fn lemma_stage_division_theorem(limb: u64, carry_in: int, carry_out: i
         0 <= r < pow2(51) as int,
 {
     assert(pow2(51) > 0) by {
-      lemma_pow2_pos(51);
+        lemma_pow2_pos(51);
     }
     lemma_fundamental_div_mod((limb as int + carry_in), pow2(51) as int);
     let r = (limb as int + carry_in) % pow2(51) as int;

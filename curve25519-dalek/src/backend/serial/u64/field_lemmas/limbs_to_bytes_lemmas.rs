@@ -213,7 +213,6 @@ spec fn limb4_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 // ============================================================================
 // Phase 3: Helper Lemmas for Limb Contribution Proofs
 // ============================================================================
-
 /// Helper: Byte extraction commutes with modulo for low-order bytes
 /// If we extract a byte at position k*8 where k*8+8 <= m, then:
 /// (x / 2^(k*8)) % 256 == ((x % 2^m) / 2^(k*8)) % 256
@@ -423,13 +422,9 @@ proof fn lemma_5_bytes_reconstruct(
 {
     lemma2_to64();
 
-    assert(
-        byte0 == (value % pow2(1 * 8    ))               &&
-        byte1 == (value % pow2(1 * 8 + 8)) / pow2(1 * 8) &&
-        byte2 == (value % pow2(2 * 8 + 8)) / pow2(2 * 8) &&
-        byte3 == (value % pow2(3 * 8 + 8)) / pow2(3 * 8) &&
-        byte4 == (value % pow2(4 * 8 + 8)) / pow2(4 * 8)
-    ) by {
+    assert(byte0 == (value % pow2(1 * 8)) && byte1 == (value % pow2(1 * 8 + 8)) / pow2(1 * 8)
+        && byte2 == (value % pow2(2 * 8 + 8)) / pow2(2 * 8) && byte3 == (value % pow2(3 * 8 + 8))
+        / pow2(3 * 8) && byte4 == (value % pow2(4 * 8 + 8)) / pow2(4 * 8)) by {
         mask_div2(value, 0, 8);
         mask_div2(value, 8, 8);
         mask_div2(value, 16, 8);
@@ -437,33 +432,31 @@ proof fn lemma_5_bytes_reconstruct(
         mask_div2(value, 32, 8);
 
         assert(byte0 == value % pow2(1 * 8)) by {
-           lemma_div_basics_2((value % pow2(1 * 8)) as int);
+            lemma_div_basics_2((value % pow2(1 * 8)) as int);
         }
     }
 
-    assert forall |i : nat| 1 <= i <= 4 implies 
-        #[trigger] 
-        (value % pow2(i * 8)) + ((value % pow2(i * 8 + 8)) / pow2(i * 8)) * pow2(i * 8)
-        ==
-        value % pow2(i * 8 + 8) by {
-            let v = value % pow2(i * 8 + 8);
-            let d = pow2(i * 8);
+    assert forall|i: nat| 1 <= i <= 4 implies #[trigger] (value % pow2(i * 8)) + ((value % pow2(
+        i * 8 + 8,
+    )) / pow2(i * 8)) * pow2(i * 8) == value % pow2(i * 8 + 8) by {
+        let v = value % pow2(i * 8 + 8);
+        let d = pow2(i * 8);
 
-            assert(v == (v / d) * d + v % d) by {
-                lemma_fundamental_div_mod(v as int, d as int);
-            }
-            
-            assert(pow2(i * 8 + 8) == pow2(i * 8) * pow2(8)) by {
-                lemma_pow2_adds(i * 8, 8);
-            }
+        assert(v == (v / d) * d + v % d) by {
+            lemma_fundamental_div_mod(v as int, d as int);
+        }
 
-            assert(v % d == value % d) by {
-                lemma_pow2_pos(i * 8);
-                lemma_pow2_pos(8);
-                assert((value % (d * pow2(8))) % d == value % d) by {
-                    lemma_mod_mod(value as int, d as int, pow2(8) as int);
-                }
+        assert(pow2(i * 8 + 8) == pow2(i * 8) * pow2(8)) by {
+            lemma_pow2_adds(i * 8, 8);
+        }
+
+        assert(v % d == value % d) by {
+            lemma_pow2_pos(i * 8);
+            lemma_pow2_pos(8);
+            assert((value % (d * pow2(8))) % d == value % d) by {
+                lemma_mod_mod(value as int, d as int, pow2(8) as int);
             }
+        }
     }
 
     assert(value % pow2(4 * 8 + 8) == value) by {

@@ -668,81 +668,32 @@ pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m:
     ensures
         (x / pow2(k * b)) % pow2(b) == ((x % pow2(m)) / pow2(k * b)) % pow2(b),
 {
-    // Proof strategy:
-    // 1. Decompose: x = (x / 2^m) * 2^m + (x % 2^m)
-    // 2. Show: ((x / 2^m) * 2^m) / 2^(k*b) is a multiple of 2^b
-    // 3. Use that multiples of 2^b vanish in % 2^b
-    let kb = k * b;
-    let x_mod_m = x % pow2(m);
-
-    // Step 1: Decompose x using the division theorem
-    lemma_pow2_pos(b);
-    lemma_pow2_pos(m);
-    lemma_fundamental_div_mod(x as int, pow2(m) as int);
-    // lemma_fundamental_div_mod gives: x == pow2(m) * (x / pow2(m)) + (x % pow2(m))
-    assert(x == pow2(m) * (x / pow2(m)) + x_mod_m);
-    lemma_mul_is_commutative(pow2(m) as int, (x / pow2(m)) as int);
-    assert(x == (x / pow2(m)) * pow2(m) + x_mod_m);
-
-    assert(x_mod_m < pow2(m)) by {
-        lemma_mod_bound(x as int, pow2(m) as int);
+    assert((x / pow2(k * b)) % pow2(b) == (x % pow2(k * b + b)) / pow2(k * b)) by {
+        mask_div2(x, k * b, b); 
     }
 
-    // x = x_mod_m + w * pow2(m)
-    let w = x / pow2(m);
+    let y = x % pow2(m);
 
-    assert((x_mod_m + w * pow2(m)) / pow2(kb) == x_mod_m / pow2(kb) + (w * pow2(m)) / pow2(kb)) by {
-        sum_div_decomposition(x_mod_m, w, m, kb);
+    assert((y / pow2(k * b)) % pow2(b) == (y % pow2(k * b + b)) / pow2(k * b)) by {
+        mask_div2(x, k * b, b);
     }
 
-    let d = (m - kb) as nat;
-    assert(w * pow2(m) / pow2(kb) == w * pow2(d)) by {
-        pow2_MUL_div(w, m, kb);
-    }
+    let s = k * b + b;
+    let ps = pow2(s);
 
-    assert(x_mod_m / pow2(kb) < pow2(d)) by {
-        assert(pow2(m) == pow2(kb) * pow2(d)) by {
-            lemma_pow2_adds(kb, d);
-        }
-        assert(x_mod_m / pow2(kb) < pow2(m) / pow2(kb)) by {
-            lemma_div_by_multiple_is_strongly_ordered(
-                x_mod_m as int,
-                pow2(m) as int,
-                pow2(d) as int,
-                pow2(kb) as int,
-            );
-        }
-        assert(pow2(m) / pow2(kb) == pow2(d)) by {
-            lemma_div_by_multiple(pow2(d) as int, pow2(kb) as int);
-        }
-    }
-
-    // Now we know x / pow2(kb) = a + w * pow2(d), where a < pow2(d)
-    let a = x_mod_m / pow2(kb);
-    assert((a + w * pow2(d)) % pow2(b) == a % pow2(b) + (w * pow2(d)) % pow2(b)) by {
-        sum_mod_decomposition(a, w, d, b);
-    }
-
-    // m >= kb + b => (m - kb) = d >= b;
-    let dd = (d - b) as nat;
-    assert((w * pow2(d)) % pow2(b) == 0) by {
-        assert(pow2(d) == pow2(dd) * pow2(b)) by {
-            lemma_pow2_adds(dd, b);
-        }
-        assert(w * pow2(d) == (w * pow2(dd)) * pow2(b)) by {
-            lemma_mul_is_associative(w as int, pow2(dd) as int, pow2(b) as int);
+    assert(x % ps == y % ps) by {
+        let d = (m - s) as nat;
+        let pd = pow2(d);
+        assert(pow2(m) == ps * pd) by {
+            lemma_pow2_adds(s, d);
         }
 
-        assert(((w * pow2(dd)) * pow2(b)) % pow2(b) == 0) by {
-            lemma_mod_multiples_basic((w * pow2(dd)) as int, pow2(b) as int);
+        assert((x % (ps * pd)) % ps == x % ps) by {
+            lemma_pow2_pos(d);
+            lemma_pow2_pos(s);
+            lemma_mod_mod(x as int, ps as int, pd as int);
         }
     }
-    // Then
-    // (x / pow2(k * b)) % pow2(b) ==
-    // (a + w * pow2(d)) % pow2(b) ==
-    // a % pow2(b) + (w * pow2(d)) % pow2(b) ==
-    // a % pow2(b) + 0 ==
-    // (x_mod_m / pow2(kb)) % pow2(b)
 }
 
 pub open spec fn pow2_sum(coefs: &[u8], offset: nat, step: nat, k: nat) -> nat

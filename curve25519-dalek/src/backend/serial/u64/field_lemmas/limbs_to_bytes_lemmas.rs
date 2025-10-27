@@ -143,13 +143,9 @@ proof fn lemma_byte_from_limb_shift(limb: u64, shift: u64, byte: u8)
     assert((limb >> shift) as nat == limb as nat / pow2(shift as nat));
 
     // The u8 cast takes the low 8 bits, which is % 256
-    // Proof: use vstd lemma that & 0xFF = % 256, then bit_vector to show casting = masking
-    let shifted = limb >> shift;
-    lemma_u64_low_bits_mask_is_mod(shifted, 8);
-    assert(shifted & 0xFF == shifted % 256);
-    assert(shifted as u8 == (shifted & 0xFF) as u8) by (bit_vector);
-    // Therefore: (shifted as u8) as nat == shifted % 256
-    assert((limb >> shift) as u8 as nat == ((limb >> shift) as nat) % 256);
+    assert((limb >> shift) as u8 == (limb >> shift) as nat % 256) by {
+        lemma_u8_cast_is_mod_256(limb >> shift);
+    }
 }
 
 // ============================================================================

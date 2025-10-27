@@ -231,9 +231,7 @@ use crate::traits::Identity;
 verus! {
 
 impl Identity for ProjectivePoint {
-    fn identity() -> (result: ProjectivePoint)
-        ensures
-    {
+    fn identity() -> (result: ProjectivePoint) {
         ProjectivePoint { X: FieldElement::ZERO, Y: FieldElement::ONE, Z: FieldElement::ONE }
     }
 }

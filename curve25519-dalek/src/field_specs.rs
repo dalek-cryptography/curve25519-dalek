@@ -1,8 +1,6 @@
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::serial::u64::field_lemmas::field_core::*;
-use crate::backend::serial::u64::subtle_assumes;
 use crate::constants;
-use subtle::Choice;
 
 use vstd::prelude::*;
 
@@ -10,6 +8,57 @@ verus! {
 
 pub open spec fn field_element_as_nat(fe: &FieldElement51) -> nat {
     as_nat(fe.limbs)
+}
+
+/// Returns the canonical mathematical value of a field element in [0, p)
+/// where p = 2^255 - 19
+pub open spec fn field_element_abs(fe: &FieldElement51) -> nat {
+    field_element_as_nat(fe) % p()
+}
+
+// Spec-level field operations on natural numbers (mod p)
+
+/// Spec-level field addition
+pub open spec fn field_add_abs(a: nat, b: nat) -> nat {
+    (a + b) % p()
+}
+
+/// Spec-level field subtraction
+pub open spec fn field_sub_abs(a: nat, b: nat) -> nat {
+    (((a % p()) + p()) - (b % p())) as nat % p()
+}
+
+/// Spec-level field multiplication
+pub open spec fn field_mul_abs(a: nat, b: nat) -> nat {
+    (a * b) % p()
+}
+
+/// Spec-level field negation
+pub open spec fn field_neg_abs(a: nat) -> nat {
+    (p() - (a % p())) as nat % p()
+}
+
+/// Spec-level field squaring
+pub open spec fn field_square_abs(a: nat) -> nat {
+    (a * a) % p()
+}
+
+/// Spec-level field inversion: returns w such that (a * w) % p == 1
+/// We use `choose` to pick the unique inverse that exists for non-zero field elements
+pub open spec fn field_inv_abs(a: nat) -> nat
+    recommends a % p() != 0
+{
+    choose|w: nat| w < p() && #[trigger] ((a % p()) * w) % p() == 1
+}
+
+/// Axiom: For non-zero field elements, the inverse exists and satisfies the inverse property
+pub proof fn field_inv_axiom(a: nat)
+    requires a % p() != 0
+    ensures 
+        field_inv_abs(a) < p(),
+        ((a % p()) * field_inv_abs(a)) % p() == 1
+{
+    admit();  // This would be proven from field theory or assumed as axiom
 }
 
 pub open spec fn field_element_as_bytes(fe: &FieldElement51) -> Seq<u8> {
@@ -42,76 +91,40 @@ pub open spec fn field_element_as_bytes(fe: &FieldElement51) -> Seq<u8> {
     let limbs4_canon = (limbs4_adj & mask51) as u64;
 
     // Step 5: Pack canonical limbs into 32 bytes (little-endian)
-    Seq::new(
-        32,
-        |i: int|
-            if i == 0 {
-                limbs0_canon as u8
-            } else if i == 1 {
-                (limbs0_canon >> 8) as u8
-            } else if i == 2 {
-                (limbs0_canon >> 16) as u8
-            } else if i == 3 {
-                (limbs0_canon >> 24) as u8
-            } else if i == 4 {
-                (limbs0_canon >> 32) as u8
-            } else if i == 5 {
-                (limbs0_canon >> 40) as u8
-            } else if i == 6 {
-                ((limbs0_canon >> 48) | (limbs1_canon << 3)) as u8
-            } else if i == 7 {
-                (limbs1_canon >> 5) as u8
-            } else if i == 8 {
-                (limbs1_canon >> 13) as u8
-            } else if i == 9 {
-                (limbs1_canon >> 21) as u8
-            } else if i == 10 {
-                (limbs1_canon >> 29) as u8
-            } else if i == 11 {
-                (limbs1_canon >> 37) as u8
-            } else if i == 12 {
-                ((limbs1_canon >> 45) | (limbs2_canon << 6)) as u8
-            } else if i == 13 {
-                (limbs2_canon >> 2) as u8
-            } else if i == 14 {
-                (limbs2_canon >> 10) as u8
-            } else if i == 15 {
-                (limbs2_canon >> 18) as u8
-            } else if i == 16 {
-                (limbs2_canon >> 26) as u8
-            } else if i == 17 {
-                (limbs2_canon >> 34) as u8
-            } else if i == 18 {
-                (limbs2_canon >> 42) as u8
-            } else if i == 19 {
-                ((limbs2_canon >> 50) | (limbs3_canon << 1)) as u8
-            } else if i == 20 {
-                (limbs3_canon >> 7) as u8
-            } else if i == 21 {
-                (limbs3_canon >> 15) as u8
-            } else if i == 22 {
-                (limbs3_canon >> 23) as u8
-            } else if i == 23 {
-                (limbs3_canon >> 31) as u8
-            } else if i == 24 {
-                (limbs3_canon >> 39) as u8
-            } else if i == 25 {
-                ((limbs3_canon >> 47) | (limbs4_canon << 4)) as u8
-            } else if i == 26 {
-                (limbs4_canon >> 4) as u8
-            } else if i == 27 {
-                (limbs4_canon >> 12) as u8
-            } else if i == 28 {
-                (limbs4_canon >> 20) as u8
-            } else if i == 29 {
-                (limbs4_canon >> 28) as u8
-            } else if i == 30 {
-                (limbs4_canon >> 36) as u8
-            } else   /* i == 31 */
-            {
-                (limbs4_canon >> 44) as u8
-            },
-    )
+    seq![
+        limbs0_canon as u8,
+        (limbs0_canon >> 8) as u8,
+        (limbs0_canon >> 16) as u8,
+        (limbs0_canon >> 24) as u8,
+        (limbs0_canon >> 32) as u8,
+        (limbs0_canon >> 40) as u8,
+        ((limbs0_canon >> 48) | (limbs1_canon << 3)) as u8,
+        (limbs1_canon >> 5) as u8,
+        (limbs1_canon >> 13) as u8,
+        (limbs1_canon >> 21) as u8,
+        (limbs1_canon >> 29) as u8,
+        (limbs1_canon >> 37) as u8,
+        ((limbs1_canon >> 45) | (limbs2_canon << 6)) as u8,
+        (limbs2_canon >> 2) as u8,
+        (limbs2_canon >> 10) as u8,
+        (limbs2_canon >> 18) as u8,
+        (limbs2_canon >> 26) as u8,
+        (limbs2_canon >> 34) as u8,
+        (limbs2_canon >> 42) as u8,
+        ((limbs2_canon >> 50) | (limbs3_canon << 1)) as u8,
+        (limbs3_canon >> 7) as u8,
+        (limbs3_canon >> 15) as u8,
+        (limbs3_canon >> 23) as u8,
+        (limbs3_canon >> 31) as u8,
+        (limbs3_canon >> 39) as u8,
+        ((limbs3_canon >> 47) | (limbs4_canon << 4)) as u8,
+        (limbs4_canon >> 4) as u8,
+        (limbs4_canon >> 12) as u8,
+        (limbs4_canon >> 20) as u8,
+        (limbs4_canon >> 28) as u8,
+        (limbs4_canon >> 36) as u8,
+        (limbs4_canon >> 44) as u8,
+    ]
 }
 
 /// Spec function: two field elements are inverses if their product is 1 (mod p)
@@ -147,6 +160,13 @@ pub open spec fn is_sqrt_ratio(u: &FieldElement51, v: &FieldElement51, r: &Field
         == field_element_as_nat(u) % p()
 }
 
+/// Spec function: r^2 * v = i*u (mod p), where i = sqrt(-1)
+/// Used for the nonsquare case in sqrt_ratio_i
+pub open spec fn is_sqrt_ratio_times_i(u: &FieldElement51, v: &FieldElement51, r: &FieldElement51) -> bool {
+    (field_element_as_nat(r) * field_element_as_nat(r) * field_element_as_nat(v)) % p()
+        == (field_element_as_nat(&constants::SQRT_M1) * field_element_as_nat(u)) % p()
+}
+
 // Square-ness mod p (spec-only).
 pub open spec fn is_square_mod_p(a: nat) -> bool {
     exists|y: nat| (#[trigger] (y * y) % p()) == (a % p())
@@ -154,52 +174,12 @@ pub open spec fn is_square_mod_p(a: nat) -> bool {
 
 // Spec: there exists a modular inverse of v (when v != 0).
 pub open spec fn has_inv_mod_p(v: nat) -> bool {
-    v % p() != 0 ==> exists|w: nat| (#[trigger] (v * w) % p()) == 1
+    v % p() != 0 && exists|w: nat| (#[trigger] (v * w) % p()) == 1
 }
 
 // Spec: witness-based inverse predicate (lets callers quantify the inverse).
 pub open spec fn is_inv_witness(v: nat, w: nat) -> bool {
     ((v % p()) * (w % p())) % p() == 1
-}
-
-// Postcondition for FieldElement::sqrt_ratio_i(u, v).
-pub(crate) open spec fn sqrt_ratio_i_post(
-    u: &FieldElement51,
-    v: &FieldElement51,
-    choice: Choice,
-    r: &FieldElement51,
-) -> bool {
-    let u_nat = field_element_as_nat(u) % p();
-    let v_nat = field_element_as_nat(v) % p();
-    let r_nat = field_element_as_nat(r) % p();
-    let i_nat = field_element_as_nat(&constants::SQRT_M1) % p();
-
-    // Case analysis exactly as in the docstring:
-    // - (1, +sqrt(u/v)) if v != 0 and u/v is square
-    // - (1, 0)          if u == 0
-    // - (0, 0)          if v == 0 && u != 0
-    // - (0, +sqrt(i*u/v)) otherwise
-    if u_nat == 0 {
-        // When u == 0, we return (1, 0)
-        subtle_assumes::choice_is_true(choice) && r_nat == 0
-    } else if v_nat == 0 {
-        // When v == 0 and u != 0, we return (0, 0)
-        !subtle_assumes::choice_is_true(choice) && r_nat == 0
-    } else {
-        // v != 0: reason via an inverse witness w with v*w == 1 (mod p)
-        exists|w: nat|
-            is_inv_witness(v_nat, w) && {
-                let uv = (u_nat * w) % p();
-                if is_square_mod_p(uv) {
-                    // square branch: choice = 1 and r^2 == u/v
-                    subtle_assumes::choice_is_true(choice) && ((r_nat * r_nat) % p() == uv)
-                } else {
-                    // nonsquare branch: choice = 0 and r^2 == i*u/v
-                    !subtle_assumes::choice_is_true(choice) && ((r_nat * r_nat) % p() == (i_nat
-                        * uv) % p())
-                }
-            }
-    }
 }
 
 } // verus!

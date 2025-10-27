@@ -108,7 +108,7 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([
 verus! {
 
 /// Precomputed value of one of the square roots of -1 (mod p)
-pub(crate) const SQRT_M1: FieldElement51 = FieldElement51 {
+pub const SQRT_M1: FieldElement51 = FieldElement51 {
     limbs: [1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133],
 };
 

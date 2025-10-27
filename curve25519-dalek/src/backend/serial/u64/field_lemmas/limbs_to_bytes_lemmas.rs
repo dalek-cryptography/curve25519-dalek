@@ -731,7 +731,7 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(56, 32);
     assert(pow2(88) == pow2(11 * 8));
 
-    // Final result
+    // Final result§
     assert(bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(
         9 * 8,
     ) + bytes[10] as nat * pow2(10 * 8) + bytes[11] as nat * pow2(11 * 8) == middle_value * pow2(
@@ -1907,203 +1907,112 @@ proof fn lemma_boundary_byte_combines(
 {
     lemma2_to64();
 
-    // Establish that pow2 values fit in u64
-    assert(pow2(low_shift) <= u64::MAX as nat) by {
-        lemma_pow2_strictly_increases(low_shift, 64);
+    assert(low_limb >> low_shift == low_limb as nat / pow2(low_shift)) by {
+        lemma_u64_shr_is_div(low_limb, low_shift as u64);
     }
 
-    assert(pow2(low_bits) <= u64::MAX as nat) by {
-        lemma_pow2_strictly_increases(low_bits, 64);
+    assert(pow2(51) == pow2(low_shift) * pow2(low_bits) == pow2(low_bits) * pow2(low_shift)) by {
+        lemma_pow2_adds(low_shift, low_bits);
+        lemma_mul_is_commutative(pow2(low_bits) as int, pow2(low_shift) as int);
     }
 
-    // Step 1: Convert shifts to arithmetic operations
-    let low_part = low_limb >> low_shift;
-    let high_part = high_limb << low_bits;
-
-    // Prove high_part doesn't overflow
-    assert(high_limb as nat * pow2(low_bits) <= u64::MAX as nat) by {
-        assert(pow2(51) * pow2(7) <= pow2(64) - 1) by {
-            lemma_pow2_adds(51, 7);
-            lemma_pow2_strictly_increases(58, 64);
+    assert(low_limb as nat / pow2(low_shift) < pow2(low_bits)) by {
+        assert(pow2(51) / pow2(low_shift) == pow2(low_bits)) by {
+            lemma_div_by_multiple(pow2(low_bits) as int, pow2(low_shift) as int);
         }
-        if low_bits < 7 {
-            lemma_pow2_strictly_increases(low_bits, 7);
+        assert(pow2(low_shift) > 0) by {
+            lemma_pow2_pos(low_shift);
         }
-        mul_le(high_limb as nat, (pow2(51) - 1) as nat, pow2(low_bits), pow2(7));
+        lemma_div_by_multiple_is_strongly_ordered(
+            low_limb as int,
+            pow2(51) as int,
+            pow2(low_bits) as int,
+            pow2(low_shift) as int,
+        );
     }
 
-    assert(high_part == high_limb * (pow2(low_bits) as u64)) by {
+    let a = low_limb >> low_shift;
+    let b = high_limb;
+
+    assert(b << low_bits == high_limb * pow2(low_bits)) by {
+        assert(b * pow2(low_bits) < u64::MAX) by {
+            assert(b * pow2(low_bits) < pow2(51 + 8)) by {
+                lemma_pow2_strictly_increases(low_bits, 8);
+                mul_lt(b as nat, pow2(51), pow2(low_bits), pow2(8));
+                lemma_pow2_adds(51, 8);
+            }
+            assert(pow2(59) <= u64::MAX) by {
+                pow2_le_max64(59);
+            }
+        }
         lemma_u64_shl_is_mul(high_limb, low_bits as u64);
     }
 
-    // Step 2: Prove preconditions for bit_or_is_plus
-    // Need: low_part < 1u64 << low_bits AND high_limb <= (u64::MAX >> low_bits)
+    assert((a | b << low_bits) == a + (b << low_bits)) by {
+        assert(b <= (u64::MAX >> low_bits)) by {
+            assert(u64::MAX >> low_bits == u64::MAX as nat / pow2(low_bits)) by {
+                lemma_u64_shr_is_div(u64::MAX, low_bits as u64);
+            }
+            assert(u64::MAX as nat / pow2(low_bits) >= u64::MAX as nat / pow2(8)) by {
+                lemma_pow2_pos(low_bits);
+                lemma_pow2_strictly_increases(low_bits, 8);
+                lemma_div_is_ordered_by_denominator(
+                    u64::MAX as int,
+                    pow2(low_bits) as int,
+                    pow2(8) as int,
+                );
+            }
+            assert(u64::MAX / 256 >= pow2(51)) by {
+                lemma2_to64_rest();
+            }
+        }
 
-    // Prove low_part < 1u64 << low_bits
-    // First, prove low_part as nat < pow2(low_bits)
-    assert((low_part as nat) < pow2(low_bits)) by {
-        // Step 1: low_part == (low_limb >> low_shift) == low_limb / pow2(low_shift)
-        lemma_u64_shr_is_div(low_limb, low_shift as u64);
-
-        // Step 2: low_limb / pow2(low_shift) < pow2(51 - low_shift)
-        // We'll use lemma_div_strictly_bounded: if x < a * b then x / a < b
-        // First, show that pow2(51) = pow2(low_shift) * pow2(51 - low_shift)
-        lemma_pow2_adds(low_shift, (51 - low_shift) as nat);
-
-        // Now apply lemma_div_strictly_bounded with:
-        // x = low_limb, a = pow2(low_shift), b = pow2(51 - low_shift)
-        // We have: low_limb < pow2(51) = a * b, so low_limb / a < b
-        lemma_pow2_pos(low_shift);
-        lemma_div_strictly_bounded(
-            low_limb as int,
-            pow2(low_shift) as int,
-            pow2((51 - low_shift) as nat) as int,
-        );
-
-        // Step 3: Since low_shift + low_bits == 51, we have 51 - low_shift == low_bits
-    }
-    // Now use that to prove low_part < 1u64 << low_bits
-    assert(low_part < 1u64 << low_bits) by {
-        assert(1u64 << low_bits == (pow2(low_bits) as u64)) by {
+        assert(pow2(low_bits) == 1u64 << low_bits) by {
             shift_is_pow2(low_bits);
         }
-    }
 
-    // Prove high_limb <= (u64::MAX >> low_bits)
-    // Strategy: Show high_limb * pow2(low_bits) <= u64::MAX, then conclude high_limb <= u64::MAX >> low_bits
-    assert(high_limb <= (u64::MAX >> low_bits)) by {
-        // Step 1: Show high_limb * pow2(low_bits) <= u64::MAX
-        assert(high_limb * (pow2(low_bits) as u64) <= u64::MAX) by {
-            // We have: high_limb < pow2(51) and low_bits < 8
-            // The maximum value is when high_limb = pow2(51) - 1 and low_bits = 7
-            // So we need: pow2(51) * pow2(7) <= pow2(64)
-            assert(pow2(51) * pow2(7) <= pow2(64) - 1) by {
-                lemma_pow2_adds(51, 7);
-                assert(pow2(58) <= pow2(64) - 1) by {
-                    lemma_pow2_strictly_increases(58, 64);
-                }
-            }
-            // Since low_bits < 8, we have low_bits <= 7, so pow2(low_bits) <= pow2(7)
-            if low_bits < 7 {
-                lemma_pow2_strictly_increases(low_bits, 7);
-            }
-            // Use mul_le to conclude: high_limb * pow2(low_bits) <= (pow2(51)-1) * pow2(7) <= pow2(64)-1
-
-            mul_le(high_limb as nat, (pow2(51) - 1) as nat, pow2(low_bits), pow2(7));
+        assert((a | b << low_bits) == a + (b << low_bits)) by {
+            bit_or_is_plus(a, b, low_bits as u64);
         }
-
-        // Step 2: From high_limb * pow2(low_bits) <= u64::MAX, conclude high_limb <= u64::MAX / pow2(low_bits)
-        // Use lemma_mul_le_implies_div_le: if a * b <= c and b > 0, then a <= c / b
-        lemma_pow2_pos(low_bits);
-        lemma_mul_le_implies_div_le(high_limb as nat, pow2(low_bits), u64::MAX as nat);
-
-        // Since >> is division: u64::MAX / pow2(low_bits) == u64::MAX >> low_bits
-        lemma_u64_shr_is_div(u64::MAX, low_bits as u64);
-    }
-    // Step 3: Apply bit_or_is_plus to show OR equals addition
-    assert(low_part | high_part == low_part + high_part) by {
-        bit_or_is_plus(low_part, high_limb, low_bits as u64);
     }
 
-    // Step 4: Connect byte to the sum
-    let combined = low_part + high_part;
-
-    // byte is defined as ((low_limb >> low_shift) | (high_limb << low_bits)) as u8
-    // which is ((low_part) | (high_part)) as u8
-    // We proved low_part | high_part == low_part + high_part == combined
-    // Therefore byte == (combined as u8)
-
-    let a = (low_limb as nat) / pow2(low_shift);
-    let b = high_limb as nat;
-    let k = low_bits;
-
-    // Prove combined as nat == a + b * pow2(k)
-    assert(combined as nat == a + b * pow2(k)) by {
-        // We have: combined = low_part + high_part
-        // We proved: low_part as nat == a (recall from lemma_u64_shr_is_div above)
-        lemma_u64_shr_is_div(low_limb, low_shift as u64);
-
-        // We proved: high_part == high_limb * pow2(low_bits) as u64 (recall from lemma_u64_shl_is_mul above)
-        lemma_u64_shl_is_mul(high_limb, low_bits as u64);
-
-        // Therefore: combined as nat = low_part as nat + high_part as nat = a + b * pow2(k)
+    assert((a | (b << low_bits)) as u8 == (a + (b * pow2(low_bits))) as nat % pow2(8)) by {
+        lemma_u8_cast_is_mod_256(a | (b << low_bits));
     }
 
-    // Main modular arithmetic result - Apply the Modular Bit Partitioning Theorem
-
-    // We want to show: (a + b * pow2(k)) % 256 == (a % pow2(k)) + ((b % pow2(8-k)) * pow2(k))
-    // where a = low_limb / 2^low_shift, b = high_limb, k = low_bits, n = 8
-
-    // Verify preconditions for lemma_modular_bit_partitioning:
-
-    // Precondition 3: (a % 2^k) + ((b % 2^(n-k)) * 2^k) < 2^n
-    assert((a % pow2(k)) + ((b % pow2((8 - k) as nat)) * pow2(k)) < 256) by {
-        // Since a < pow2(k): a % pow2(k) = a < pow2(k)
-        assert(a % pow2(k) == a) by {
-            lemma_small_mod(a, pow2(k));
-        }
-
-        // Key fact: pow2(k) * pow2(8 - k) = 256
-        assert(pow2(k) * pow2((8 - k) as nat) == 256) by {
-            lemma_pow2_adds(k, (8 - k) as nat);
-        }
-
-        // Prove: a + (b % pow2(8-k)) * pow2(k) < 256
-        // Since a < pow2(k): a <= pow2(k) - 1
-        // Since b % pow2(8-k) < pow2(8-k): b % pow2(8-k) <= pow2(8-k) - 1
-        // Therefore: a + (b % pow2(8-k)) * pow2(k) <= (pow2(k) - 1) + (pow2(8-k) - 1) * pow2(k)
-        //                                             = pow2(k) - 1 + pow2(8-k) * pow2(k) - pow2(k)
-        //                                             = pow2(8-k) * pow2(k) - 1
-        //                                             = 256 - 1 = 255 < 256
-
-        // Get upper bound on b % pow2(8-k)
-        assert((b % pow2((8 - k) as nat)) < pow2((8 - k) as nat)) by {
-            lemma_mod_bound(b as int, pow2((8 - k) as nat) as int);
-        }
-
-        // So: a + (b % pow2(8-k)) * pow2(k) <= (pow2(k) - 1) + (pow2(8-k) - 1) * pow2(k)
-
-        // Use nonlinear_arith to compute: (pow2(k) - 1) + (pow2(8-k) - 1) * pow2(k) = pow2(8-k) * pow2(k) - 1 = 255
-        assert((pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == pow2((8 - k) as nat) * pow2(
-            k,
-        ) - 1) by (nonlinear_arith);
-
-        assert(a + (b % pow2((8 - k) as nat)) * pow2(k) < 256) by (nonlinear_arith)
-            requires
-                a <= pow2(k) - 1,
-                (b % pow2((8 - k) as nat)) <= pow2((8 - k) as nat) - 1,
-                (pow2(k) - 1) + (pow2((8 - k) as nat) - 1) * pow2(k) == 255,
-        ;
+    assert((a + (b * pow2(low_bits))) as nat % pow2(8) == a as nat % pow2(8) + (b as nat * pow2(
+        low_bits,
+    )) % pow2(8)) by {
+        sum_mod_decomposition(a as nat, b as nat, low_bits, 8);
     }
 
-    lemma_modular_bit_partitioning(a, b, k, 8);
-
-    assert(a % pow2(k) == a) by {
-        lemma_small_mod(a, pow2(k));
+    assert((low_limb as nat / pow2(low_shift)) % pow2(8) == ((low_limb as nat) % pow2(
+        low_shift + 8,
+    )) / pow2(low_shift)) by {
+        mask_div2(low_limb as nat, low_shift, 8);
     }
 
-    // Connect to byte casting
-    // byte == combined as u8 means byte as nat == (combined as nat) % 256
-    // FUNDAMENTAL RUST/VERUS AXIOM: Integer casts truncate via modulo
-    // This is the definition of how (x as u8) works in Rust for any integer type x.
-    // Verus doesn't automatically establish this property, so we assume it.
-    assert((combined as nat) % pow2(8) == (combined as u8)) by {
-        lemma_u8_cast_is_mod_256(combined as u64);
+    assert(((low_limb as nat) % pow2(low_shift + 8)) == low_limb as nat) by {
+        lemma_pow2_strictly_increases(
+            low_shift + low_bits  /* = 51 */
+            ,
+            low_shift + 8,
+        );
+        lemma_small_mod(low_limb as nat, pow2(low_shift + 8));
     }
-    // We know: combined as nat == a + b * pow2(k)
 
-    // Therefore: byte as nat == (a + b * pow2(k)) % 256
+    assert(low_limb as nat / pow2(low_shift) == (low_limb as nat / pow2(low_shift)) % pow2(
+        low_bits,
+    )) by {
+        lemma_small_mod(low_limb as nat / pow2(low_shift), pow2(low_bits));
+    }
 
-    // We've proved (line 2617): (a + b * pow2(k)) % 256 == (a % pow2(k)) + ((b % pow2((8 - k) as nat)) * pow2(k))
-    // Therefore by transitivity:
+    assert((b as nat * pow2(low_bits)) % pow2(8) == (b as nat % pow2((8 - low_bits) as nat)) * pow2(
+        low_bits,
+    )) by {
+        mask_pow2(b as nat, low_bits, 8);
+    }
 
-    // Show a % pow2(k) == a
-
-    // Substitute a % pow2(k) with a:
-
-    // Final result: substitute back the definitions of a, b, k
-    assert(byte as nat == (low_limb as nat / pow2(low_shift)) % pow2(low_bits) + (high_limb as nat
-        % pow2((8 - low_bits) as nat)) * pow2(low_bits));
 }
 
 /// Proves that the sum of all limb contributions equals as_nat_32_u8(&bytes)

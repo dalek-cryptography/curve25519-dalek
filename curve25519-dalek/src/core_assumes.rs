@@ -138,6 +138,12 @@ pub fn u128_from_le_bytes(bytes: [u8; 16]) -> (x: u128)
     u128::from_le_bytes(bytes)
 }
 
+/// Wrapper for FieldElement negation to avoid Verus internal error
+#[verifier::external_body]
+pub fn negate_field<T>(a: &T) -> (result: T) where for <'a>&'a T: core::ops::Neg<Output = T> {
+    -a
+}
+
 // annotations for random values
 pub uninterp spec fn is_random(x: u8) -> bool;
 

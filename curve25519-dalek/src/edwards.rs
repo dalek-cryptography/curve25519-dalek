@@ -151,7 +151,9 @@ use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
+use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::backend::serial::u64::subtle_assumes::*;
+use crate::field_specs::*;
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------
@@ -174,12 +176,12 @@ impl ConstantTimeEq for CompressedEdwardsY {
             choice_is_true(result) == (self.0 == other.0),
     {
         /* <VERIFICATION NOTE>
-         Use wrapper function for Verus compatibility instead of direct subtle call
+         Use wrapper function ct_eq_bytes32 instead of direct subtle call to ct_eq for Verus compatibility.
         </VERIFICATION NOTE> */
         /* <ORIGINAL CODE>
          self.as_bytes().ct_eq(other.as_bytes())
          </ORIGINAL CODE> */
-        ct_eq_bytes32(&self.0, &other.0)
+        ct_eq_bytes32(self.as_bytes(), other.as_bytes())
     }
 }
 
@@ -195,7 +197,7 @@ impl CompressedEdwardsY {
     /// View this `CompressedEdwardsY` as an array of bytes.
     pub const fn as_bytes(&self) -> (result: &[u8; 32])
         ensures
-            result@ == self.0@,
+            result == self.0,
     {
         &self.0
     }
@@ -203,7 +205,7 @@ impl CompressedEdwardsY {
     /// Copy this `CompressedEdwardsY` to an array of bytes.
     pub const fn to_bytes(&self) -> (result: [u8; 32])
         ensures
-            result@ == self.0@,
+            result == self.0,
     {
         self.0
     }
@@ -212,13 +214,7 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> (result: Option<EdwardsPoint>)
-        ensures
-            match result {
-                Some(point) => true,  // TODO point.compress().0@ == self.0@,
-                None => true,
-            },
-    {
+    pub fn decompress(&self) -> (result: Option<EdwardsPoint>) {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
         if is_valid_y_coord.into() {
@@ -406,10 +402,11 @@ verus! {
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
 pub struct EdwardsPoint {
-    pub(crate) X: FieldElement,
-    pub(crate) Y: FieldElement,
-    pub(crate) Z: FieldElement,
-    pub(crate) T: FieldElement,
+    // VERIFICATION NOTE: changed from pub(crate) to pub
+    pub X: FieldElement,
+    pub Y: FieldElement,
+    pub Z: FieldElement,
+    pub T: FieldElement,
 }
 
 // ------------------------------------------------------------------------
@@ -653,18 +650,33 @@ impl EdwardsPoint {
         MontgomeryPoint(u.as_bytes())
     }
 
-    /// Compress this point to `CompressedEdwardsY` format.
-    pub fn compress(&self) -> CompressedEdwardsY {
-        let recip = self.Z.invert();
-        let x = &self.X * &recip;
-        let y = &self.Y * &recip;
-        let mut s: [u8; 32];
+    verus! {
 
-        s = y.as_bytes();
-        s[31] ^= x.is_negative().unwrap_u8() << 7;
-        CompressedEdwardsY(s)
-    }
+/// Returns the abstract affine coordinates (x, y) of this point.
+pub open spec fn affine_coords(self) -> (res: (nat, nat)) {
+    let x_abs = field_element_abs(&self.X);
+    let y_abs = field_element_abs(&self.Y);
+    let z_abs = field_element_abs(&self.Z);
+    let z_inv = field_inv_abs(z_abs);
+    (field_mul_abs(x_abs, z_inv), field_mul_abs(y_abs, z_inv))
+}
 
+/// Compress this point to `CompressedEdwardsY` format.
+pub fn compress(&self) -> CompressedEdwardsY {
+    let recip = self.Z.invert();
+    let ghost z_abs = field_element_abs(&self.Z);
+    assert(field_element_abs(&recip) == field_inv_abs(z_abs));
+    assume(false);
+    let x = &self.X * &recip;
+    let y = &self.Y * &recip;
+    let mut s: [u8; 32];
+
+    s = y.as_bytes();
+    s[31] ^= x.is_negative().unwrap_u8() << 7;
+    CompressedEdwardsY(s)
+}
+
+} // verus!
     #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that

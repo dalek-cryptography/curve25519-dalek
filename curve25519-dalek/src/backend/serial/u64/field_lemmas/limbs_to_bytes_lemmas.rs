@@ -423,50 +423,52 @@ proof fn lemma_5_bytes_reconstruct(
 {
     lemma2_to64();
 
-    // Same pattern as lemma_sum_extracted_bytes_reconstructs_value, but for 5 bytes
-    // Use fundamental property: a = (a % d) + (a / d) * d
+    assert(
+        byte0 == (value % pow2(1 * 8    ))               &&
+        byte1 == (value % pow2(1 * 8 + 8)) / pow2(1 * 8) &&
+        byte2 == (value % pow2(2 * 8 + 8)) / pow2(2 * 8) &&
+        byte3 == (value % pow2(3 * 8 + 8)) / pow2(3 * 8) &&
+        byte4 == (value % pow2(4 * 8 + 8)) / pow2(4 * 8)
+    ) by {
+        mask_div2(value, 0, 8);
+        mask_div2(value, 8, 8);
+        mask_div2(value, 16, 8);
+        mask_div2(value, 24, 8);
+        mask_div2(value, 32, 8);
 
-    // Step 0: value = byte0 + (value / 256) * 256
-    lemma_fundamental_div_mod(value as int, 256);
-    assert(byte0 as nat == value % 256);
+        assert(byte0 == value % pow2(1 * 8)) by {
+           lemma_div_basics_2((value % pow2(1 * 8)) as int);
+        }
+    }
 
-    let rest1 = value / pow2(8);
-    assert(value == byte0 as nat + rest1 * pow2(8));
+    assert forall |i : nat| 1 <= i <= 4 implies 
+        #[trigger] 
+        (value % pow2(i * 8)) + ((value % pow2(i * 8 + 8)) / pow2(i * 8)) * pow2(i * 8)
+        ==
+        value % pow2(i * 8 + 8) by {
+            let v = value % pow2(i * 8 + 8);
+            let d = pow2(i * 8);
 
-    // Step 1: rest1 = byte1 + (rest1 / 256) * 256
-    lemma_pow2_pos(8);
-    lemma_fundamental_div_mod(rest1 as int, 256);
+            assert(v == (v / d) * d + v % d) by {
+                lemma_fundamental_div_mod(v as int, d as int);
+            }
+            
+            assert(pow2(i * 8 + 8) == pow2(i * 8) * pow2(8)) by {
+                lemma_pow2_adds(i * 8, 8);
+            }
 
-    let rest2 = rest1 / 256;
-    lemma_pow2_adds(8, 8);
-    lemma_div_denominator(value as int, 256, 256);
+            assert(v % d == value % d) by {
+                lemma_pow2_pos(i * 8);
+                lemma_pow2_pos(8);
+                assert((value % (d * pow2(8))) % d == value % d) by {
+                    lemma_mod_mod(value as int, d as int, pow2(8) as int);
+                }
+            }
+    }
 
-    // Step 2: rest2 = byte2 + (rest2 / 256) * 256
-    lemma_fundamental_div_mod(rest2 as int, 256);
-
-    let rest3 = rest2 / 256;
-    lemma_pow2_adds(16, 8);
-    lemma_div_denominator(value as int, pow2(16) as int, 256);
-    assert(rest3 == value / pow2(24));
-
-    // Step 3: rest3 = byte3 + (rest3 / 256) * 256
-    lemma_fundamental_div_mod(rest3 as int, 256);
-    assert(rest3 % 256 == byte3 as nat);
-
-    let rest4 = rest3 / 256;
-    lemma_pow2_adds(24, 8);
-    lemma_div_denominator(value as int, pow2(24) as int, 256);
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
-        * pow2(24) + rest4 * pow2(32));
-
-    // Step 4: rest4 = byte4 (since value < 2^40, rest4 < 2^8 = 256)
-    lemma_div_bound(value, 32, 40);
-
-    lemma_mod_bound(rest4 as int, 256);
-
-    // Final result
-    assert(value == byte0 as nat + byte1 as nat * pow2(8) + byte2 as nat * pow2(16) + byte3 as nat
-        * pow2(24) + byte4 as nat * pow2(32));
+    assert(value % pow2(4 * 8 + 8) == value) by {
+        lemma_small_mod(value, pow2(40));
+    }
 }
 
 /// Helper: 6-byte reconstruction lemma

@@ -128,7 +128,6 @@ impl ConstantTimeEq for FieldElement {
     }
 }
 
-
 impl FieldElement {
     /// Determine if this `FieldElement` is negative, in the sense
     /// used in the ed25519 paper: `x` is negative if the low bit is

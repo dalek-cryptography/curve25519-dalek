@@ -461,7 +461,8 @@ impl FieldElement {
                 &result.1,
             ),
             // When unsuccessful and v ≠ 0: r² * v ≡ i*u (mod p) [nonsquare case]
-            (!choice_is_true(result.0) && field_element_as_nat(v) != 0 && field_element_as_nat(u) != 0) ==> is_sqrt_ratio_times_i(
+            (!choice_is_true(result.0) && field_element_as_nat(v) != 0 && field_element_as_nat(u)
+                != 0) ==> is_sqrt_ratio_times_i(
                 u,
                 v,
                 &result.1,
@@ -552,13 +553,15 @@ impl FieldElement {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            // When self = 0: return (false, 0)
+    // When self = 0: return (false, 0)
+
             (field_element_as_nat(self) == 0) ==> (!choice_is_true(result.0)
                 && field_element_as_nat(&result.1) == 0),
             // When successful and self ≠ 0: r² * self ≡ 1 (mod p)
             (choice_is_true(result.0)) ==> is_sqrt_ratio(&FieldElement::ONE, self, &result.1),
             // When unsuccessful and self ≠ 0: r² * self ≡ i (mod p) [nonsquare case]
-            (!choice_is_true(result.0) && field_element_as_nat(self) != 0) ==> is_sqrt_ratio_times_i(&FieldElement::ONE, self, &result.1),
+            (!choice_is_true(result.0) && field_element_as_nat(self) != 0)
+                ==> is_sqrt_ratio_times_i(&FieldElement::ONE, self, &result.1),
     {
         assume(false);
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)

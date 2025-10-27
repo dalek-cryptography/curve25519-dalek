@@ -17,7 +17,6 @@ pub open spec fn field_element_abs(fe: &FieldElement51) -> nat {
 }
 
 // Spec-level field operations on natural numbers (mod p)
-
 /// Spec-level field addition
 pub open spec fn field_add_abs(a: nat, b: nat) -> nat {
     (a + b) % p()
@@ -46,17 +45,19 @@ pub open spec fn field_square_abs(a: nat) -> nat {
 /// Spec-level field inversion: returns w such that (a * w) % p == 1
 /// We use `choose` to pick the unique inverse that exists for non-zero field elements
 pub open spec fn field_inv_abs(a: nat) -> nat
-    recommends a % p() != 0
+    recommends
+        a % p() != 0,
 {
     choose|w: nat| w < p() && #[trigger] ((a % p()) * w) % p() == 1
 }
 
 /// Axiom: For non-zero field elements, the inverse exists and satisfies the inverse property
 pub proof fn field_inv_axiom(a: nat)
-    requires a % p() != 0
-    ensures 
+    requires
+        a % p() != 0,
+    ensures
         field_inv_abs(a) < p(),
-        ((a % p()) * field_inv_abs(a)) % p() == 1
+        ((a % p()) * field_inv_abs(a)) % p() == 1,
 {
     admit();  // This would be proven from field theory or assumed as axiom
 }
@@ -162,9 +163,13 @@ pub open spec fn is_sqrt_ratio(u: &FieldElement51, v: &FieldElement51, r: &Field
 
 /// Spec function: r^2 * v = i*u (mod p), where i = sqrt(-1)
 /// Used for the nonsquare case in sqrt_ratio_i
-pub open spec fn is_sqrt_ratio_times_i(u: &FieldElement51, v: &FieldElement51, r: &FieldElement51) -> bool {
-    (field_element_as_nat(r) * field_element_as_nat(r) * field_element_as_nat(v)) % p()
-        == (field_element_as_nat(&constants::SQRT_M1) * field_element_as_nat(u)) % p()
+pub open spec fn is_sqrt_ratio_times_i(
+    u: &FieldElement51,
+    v: &FieldElement51,
+    r: &FieldElement51,
+) -> bool {
+    (field_element_as_nat(r) * field_element_as_nat(r) * field_element_as_nat(v)) % p() == (
+    field_element_as_nat(&constants::SQRT_M1) * field_element_as_nat(u)) % p()
 }
 
 // Square-ness mod p (spec-only).

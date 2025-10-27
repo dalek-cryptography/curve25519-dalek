@@ -125,8 +125,6 @@ impl ConstantTimeEq for FieldElement {
     }
 }
 
-} // verus!
-verus! {
 
 impl FieldElement {
     /// Determine if this `FieldElement` is negative, in the sense

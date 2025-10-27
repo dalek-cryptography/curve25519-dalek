@@ -27,45 +27,63 @@ pub assume_specification[ Choice::from ](u: u8) -> (c: Choice)
         (u == 1) == choice_is_true(c),
 ;
 
+pub assume_specification[ Choice::unwrap_u8 ](c: &Choice) -> (u: u8)
+    ensures
+        choice_is_true(*c) ==> u == 1u8,
+        !choice_is_true(*c) ==> u == 0u8,
+;
+
+// VERIFICATION NOTE: For other external functions, we use wrapper functions because:
+// - Generic functions don't work well with assume_specification
+// - Trait implementations on arrays have issues with assume_specification
+/// Wrapper for conditional_select on u64
 #[verifier::external_body]
-/// See https://docs.rs/subtle/latest/subtle/trait.ConditionallySelectable.html#tymethod.conditional_select
 pub fn select(a: &u64, b: &u64, c: Choice) -> (res: u64)
     ensures
-        !choice_is_true(c) ==> res == a,
-        choice_is_true(c) ==> res == b,
+        !choice_is_true(c) ==> res == *a,
+        choice_is_true(c) ==> res == *b,
 {
     u64::conditional_select(a, b, c)
 }
 
-// Helper for conditional_select on u8
+/// Wrapper for conditional_select on u8
 #[verifier::external_body]
 pub fn select_u8(a: &u8, b: &u8, c: Choice) -> (res: u8)
     ensures
-        !choice_is_true(c) ==> res == a,
-        choice_is_true(c) ==> res == b,
+        !choice_is_true(c) ==> res == *a,
+        choice_is_true(c) ==> res == *b,
 {
     u8::conditional_select(a, b, c)
 }
 
-// Assume specification for ct_eq on byte arrays
+/// Wrapper for ct_eq on byte arrays
 #[verifier::external_body]
 pub fn ct_eq_bytes32(a: &[u8; 32], b: &[u8; 32]) -> (c: Choice)
     ensures
-        choice_is_true(c) == (a == b),
+        choice_is_true(c) == (*a == *b),
 {
     a.ct_eq(b)
 }
 
-// Helper for ct_eq on u8
+/// Wrapper for ct_eq on limb arrays (5 u64s for FieldElement51)
+#[verifier::external_body]
+pub fn ct_eq_limbs5(a: &[u64; 5], b: &[u64; 5]) -> (c: Choice)
+    ensures
+        choice_is_true(c) == (*a == *b),
+{
+    a.ct_eq(b)
+}
+
+/// Wrapper for ct_eq on u8
 #[verifier::external_body]
 pub fn ct_eq_u8(a: &u8, b: &u8) -> (c: Choice)
     ensures
-        choice_is_true(c) == (a == b),
+        choice_is_true(c) == (*a == *b),
 {
     a.ct_eq(b)
 }
 
-// Helper for Choice::into (converts Choice to bool)
+/// Wrapper for Choice::into (converts Choice to bool)
 #[verifier::external_body]
 pub fn choice_into(c: Choice) -> (b: bool)
     ensures
@@ -74,7 +92,7 @@ pub fn choice_into(c: Choice) -> (b: bool)
     c.into()
 }
 
-// Helper for bitwise AND on Choice
+/// Wrapper for bitwise AND on Choice
 #[verifier::external_body]
 pub fn choice_and(a: Choice, b: Choice) -> (c: Choice)
     ensures
@@ -82,6 +100,26 @@ pub fn choice_and(a: Choice, b: Choice) -> (c: Choice)
 {
     use core::ops::BitAnd;
     a.bitand(b)
+}
+
+/// Wrapper for bitwise NOT on Choice
+#[verifier::external_body]
+pub fn choice_not(a: Choice) -> (c: Choice)
+    ensures
+        choice_is_true(c) == !choice_is_true(a),
+{
+    use core::ops::Not;
+    a.not()
+}
+
+/// Wrapper for bitwise OR on Choice
+#[verifier::external_body]
+pub fn choice_or(a: Choice, b: Choice) -> (c: Choice)
+    ensures
+        choice_is_true(c) == (choice_is_true(a) || choice_is_true(b)),
+{
+    use core::ops::BitOr;
+    a.bitor(b)
 }
 
 /*** CtOption specifications ***/
@@ -127,9 +165,32 @@ pub fn ct_option_unwrap<T>(opt: CtOption<T>) -> (val: T)
     opt.unwrap()
 }
 
-/*** ConditionallySelectable wrappers for u64 arrays ***/
+/*** ConditionallySelectable specifications for u64 ***/
 
-/// Wrapper for conditional_select on u64 - already exists as `select` above
+// Specification for u64::conditional_swap
+pub assume_specification[ <u64 as ConditionallySelectable>::conditional_swap ](
+    a: &mut u64,
+    b: &mut u64,
+    choice: Choice,
+)
+    ensures
+        !choice_is_true(choice) ==> (*a == *old(a) && *b == *old(b)),
+        choice_is_true(choice) ==> (*a == *old(b) && *b == *old(a)),
+;
+
+// Specification for u64::conditional_assign
+pub assume_specification[ <u64 as ConditionallySelectable>::conditional_assign ](
+    a: &mut u64,
+    b: &u64,
+    choice: Choice,
+)
+    ensures
+        !choice_is_true(choice) ==> *a == *old(a),
+        choice_is_true(choice) ==> *a == *b,
+;
+
+/// Wrapper for conditional_select on u64
+#[verifier::external_body]
 pub fn conditional_select_u64(a: &u64, b: &u64, choice: Choice) -> (res: u64)
     ensures
         !choice_is_true(choice) ==> res == *a,
@@ -156,6 +217,14 @@ pub fn conditional_assign_u64(a: &mut u64, b: &u64, choice: Choice)
         choice_is_true(choice) ==> *a == *b,
 {
     a.conditional_assign(b, choice)
+}
+
+/// Wrapper for conditional_negate on FieldElement
+#[verifier::external_body]
+pub fn conditional_negate_field<T>(a: &mut T, choice: Choice) where
+    T: subtle::ConditionallyNegatable,
+ {
+    a.conditional_negate(choice);
 }
 
 } // verus!

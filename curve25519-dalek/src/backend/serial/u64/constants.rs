@@ -41,15 +41,6 @@ pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51::from_limbs([
 //     266558006233600,
 // ]);
 
-/// Edwards `d` value, equal to `-121665/121666 mod p`.
-pub(crate) const EDWARDS_D: FieldElement51 = FieldElement51::from_limbs([
-    929955233495203,
-    466365720129213,
-    1662059464998953,
-    2033849074728123,
-    1442794654840575,
-]);
-
 /// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
 pub(crate) const EDWARDS_D2: FieldElement51 = FieldElement51::from_limbs([
     1859910466990425,
@@ -95,15 +86,6 @@ pub(crate) const INVSQRT_A_MINUS_D: FieldElement51 = FieldElement51::from_limbs(
     2118520810568447,
 ]);
 
-/// Precomputed value of one of the square roots of -1 (mod p)
-pub(crate) const SQRT_M1: FieldElement51 = FieldElement51::from_limbs([
-    1718705420411056,
-    234908883556509,
-    2233514472574048,
-    2117202627021982,
-    765476049583133,
-]);
-
 /// `APLUS2_OVER_FOUR` is (A+2)/4. (This is used internally within the Montgomery ladder.)
 pub(crate) const APLUS2_OVER_FOUR: FieldElement51 =
     FieldElement51::from_limbs([121666, 0, 0, 0, 0]);
@@ -124,6 +106,16 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51::from_limbs([
 ]);
 
 verus! {
+
+/// Precomputed value of one of the square roots of -1 (mod p)
+pub const SQRT_M1: FieldElement51 = FieldElement51 {
+    limbs: [1718705420411056, 234908883556509, 2233514472574048, 2117202627021982, 765476049583133],
+};
+
+/// Edwards `d` value, equal to `-121665/121666 mod p`.
+pub(crate) const EDWARDS_D: FieldElement51 = FieldElement51 {
+    limbs: [929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575],
+};
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
 pub(crate) const L: Scalar52 = Scalar52 {

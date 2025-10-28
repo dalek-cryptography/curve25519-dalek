@@ -19,54 +19,60 @@ def main():
     outputs_dir = repo_root / "outputs"
     docs_dir = repo_root / "docs"
     docs_outputs = docs_dir / "outputs"
-    
+
     print("=" * 70)
     print("UPDATING WEBSITE")
     print("=" * 70)
-    
+
     # Step 1: Run the analysis script to update CSV
     print("\n1. Analyzing Verus specs and proofs...")
     result = subprocess.run(
         [str(script_dir / "analyze_verus_specs_proofs.py")],
         cwd=repo_root,
         capture_output=True,
-        text=True
+        text=True,
     )
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
         return 1
     print("✓ Analysis complete")
-    
+
     # Step 2: Generate static snapshot plots
     print("\n2. Generating snapshot plots...")
     result = subprocess.run(
         [str(script_dir / "plot_progress.py")],
         cwd=repo_root,
         capture_output=True,
-        text=True
+        text=True,
     )
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
         return 1
     print("✓ Snapshot plots generated")
-    
+
     # Step 3: Generate temporal plots
     print("\n3. Generating temporal plots...")
     result = subprocess.run(
-        [str(script_dir / "plot_progress_over_time.py"), "--max-commits", "200", "--sample", "3"],
+        [
+            str(script_dir / "plot_progress_over_time.py"),
+            "--max-commits",
+            "200",
+            "--sample",
+            "3",
+        ],
         cwd=repo_root,
         capture_output=True,
-        text=True
+        text=True,
     )
     if result.returncode != 0:
         print(f"Error: {result.stderr}")
         return 1
     print("✓ Temporal plots generated")
-    
+
     # Step 4: Copy plots to docs directory
     print("\n4. Copying plots to docs directory...")
     docs_outputs.mkdir(parents=True, exist_ok=True)
-    
+
     plot_files = [
         "overall_progress.png",
         "verus_breakdown.png",
@@ -77,7 +83,7 @@ def main():
         "absolute_counts_over_time.png",
         "verification_velocity.png",
     ]
-    
+
     for plot_file in plot_files:
         src = outputs_dir / plot_file
         dst = docs_outputs / plot_file
@@ -86,7 +92,7 @@ def main():
             print(f"  ✓ Copied {plot_file}")
         else:
             print(f"  ✗ Missing {plot_file}")
-    
+
     print("\n" + "=" * 70)
     print("WEBSITE UPDATE COMPLETE")
     print("=" * 70)
@@ -104,4 +110,3 @@ def main():
 
 if __name__ == "__main__":
     exit(main() or 0)
-

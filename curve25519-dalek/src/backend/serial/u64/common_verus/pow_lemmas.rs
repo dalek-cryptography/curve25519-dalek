@@ -32,6 +32,22 @@ pub proof fn pow2_le_max64(k: nat)
     lemma2_to64_rest();
 }
 
+pub proof fn lemma_pow2_plus_one(n: nat)
+    ensures
+        pow2(n + 1) == pow2(n) + pow2(n),
+{
+    assert(pow2(n + 1) == pow2(n) * pow2(1)) by {
+        lemma_pow2_adds(n, 1);
+    }
+    assert(pow2(1) == 1 + 1) by {
+        lemma2_to64();
+    }
+    assert(pow2(n) * (1 + 1) == pow2(n) + pow2(n)) by {
+        lemma_mul_is_distributive_add(pow2(n) as int, 1, 1);
+        lemma_mul_basics_3(pow2(n) as int);
+    }
+}
+
 /// Helper: Division bounds - if x < 2^b then x/2^a < 2^(b-a)
 pub proof fn lemma_div_bound(x: nat, a: nat, b: nat)
     requires

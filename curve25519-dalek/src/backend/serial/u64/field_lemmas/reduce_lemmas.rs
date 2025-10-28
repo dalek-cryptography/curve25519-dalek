@@ -210,278 +210,117 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
 
     let r = spec_reduce(limbs);
 
-    // Establish the relationship: 2*p() = 2^256 - 38
-    assert(pow2(256) == 2 * pow2(255)) by {
-        lemma_pow2_adds(255, 1);
-    }
-    assert(2 * p() == 2 * (pow2(255) - 19));
-    assert(2 * p() == 2 * pow2(255) - 38);
-    assert(2 * p() == pow2(256) - 38);
+    lemma_reduce(limbs);
 
-    // Now we need to establish tighter bounds on each r[i].
-    // From the definition of spec_reduce:
-    // r[0] = (limbs[0] & mask51) + (limbs[4] >> 51) * 19
-    // r[i] = (limbs[i] & mask51) + (limbs[i-1] >> 51) for i > 0
-
-    // We know from lemma_boundaries that these expressions are < 2^52.
-    // But we need tighter bounds. Let's derive them:
-
-    // For r[0]: We need to show (limbs[0] & mask51) + (limbs[4] >> 51) * 19 < 2^51 + 2^18
-    // - (limbs[0] & mask51) < 2^51 (from masking)
-    // - (limbs[4] >> 51) < 2^13 (shifting a u64 right by 51 gives at most 13 bits)
-    // - (limbs[4] >> 51) * 19 < 2^13 * 2^5 = 2^18 (since 19 < 2^5)
-
-    masked_lt_51(limbs[0]);
-    assert((1u64 << 51) == pow2(51)) by {
+    assert(1u64 << 51 == pow2(51)) by {
         shift_is_pow2(51);
     }
-    assert((limbs[0] & mask51) < pow2(51));
-
-    shifted_lt(limbs[4], 51);
-    assert((1u64 << 13) == pow2(13)) by {
-        shift_is_pow2(13);
-    }
-    assert((limbs[4] >> 51) < pow2(13));
-
-    assert(19 < pow2(5)) by {
-        assert(pow2(5) == 32) by {
-            lemma2_to64();
-        }
-    }
-    lemma_pow2_adds(13, 5);
-    assert(pow2(13) * pow2(5) == pow2(18));
-    // Use mul_lt: if a1 < b1 and a2 < b2, then a1 * a2 < b1 * b2
-    mul_lt((limbs[4] >> 51) as nat, pow2(13), 19, pow2(5));
-    assert((limbs[4] >> 51) * 19 < pow2(13) * pow2(5));
-    assert((limbs[4] >> 51) * 19 < pow2(18));
-
-    // Therefore: r[0] < 2^51 + 2^18
-    assert(r[0] == ((limbs[0] & mask51) + (limbs[4] >> 51) * 19) as u64);
-    assert(r[0] < pow2(51) + pow2(18));
 
     // For r[i] where i > 0: (limbs[i] & mask51) + (limbs[i-1] >> 51) < 2^51 + 2^13
-    masked_lt_51(limbs[1]);
-    shifted_lt(limbs[0], 51);
-    assert(r[1] == ((limbs[1] & mask51) + (limbs[0] >> 51)) as u64);
-    assert(r[1] < pow2(51) + pow2(13));
-
-    masked_lt_51(limbs[2]);
-    shifted_lt(limbs[1], 51);
-    assert(r[2] == ((limbs[2] & mask51) + (limbs[1] >> 51)) as u64);
-    assert(r[2] < pow2(51) + pow2(13));
-
-    masked_lt_51(limbs[3]);
-    shifted_lt(limbs[2], 51);
-    assert(r[3] == ((limbs[3] & mask51) + (limbs[2] >> 51)) as u64);
-    assert(r[3] < pow2(51) + pow2(13));
-
-    masked_lt_51(limbs[4]);
-    shifted_lt(limbs[3], 51);
-    assert(r[4] == ((limbs[4] & mask51) + (limbs[3] >> 51)) as u64);
-    assert(r[4] < pow2(51) + pow2(13));
-
-    // Note: The bounds on r[1..4] follow from the same reasoning as r[0],
-    // but we already established the shift_is_pow2 conversions above
-
-    // Expand the weighted sum with distributivity:
-    // as_nat(r) < (2^51 + 2^18) + 2^51*(2^51 + 2^13) + 2^102*(2^51 + 2^13)
-    //                           + 2^153*(2^51 + 2^13) + 2^204*(2^51 + 2^13)
-    //           = 2^51 + 2^18 + 2^102 + 2^64 + 2^153 + 2^115
-    //                         + 2^204 + 2^166 + 2^255 + 2^217
-
-    // Prove the power additions for the products
-    lemma_pow2_adds(51, 51);  // 2^51 * 2^51 = 2^102
-    lemma_pow2_adds(51, 13);  // 2^51 * 2^13 = 2^64
-    lemma_pow2_adds(102, 51);  // 2^102 * 2^51 = 2^153
-    lemma_pow2_adds(102, 13);  // 2^102 * 2^13 = 2^115
-    lemma_pow2_adds(153, 51);  // 2^153 * 2^51 = 2^204
-    lemma_pow2_adds(153, 13);  // 2^153 * 2^13 = 2^166
-    lemma_pow2_adds(204, 51);  // 2^204 * 2^51 = 2^255
-    lemma_pow2_adds(204, 13);  // 2^204 * 2^13 = 2^217
-
-    // Compute upper bound on each weighted term:
-    // Using distributivity: a * (b + c) = a*b + a*c
-    lemma_mul_is_distributive_add(pow2(51) as int, pow2(51) as int, pow2(13) as int);
-    assert(pow2(51) * (pow2(51) + pow2(13)) == pow2(51) * pow2(51) + pow2(51) * pow2(13));
-    assert(pow2(51) * (pow2(51) + pow2(13)) == pow2(102) + pow2(64));
-
-    lemma_mul_is_distributive_add(pow2(102) as int, pow2(51) as int, pow2(13) as int);
-    assert(pow2(102) * (pow2(51) + pow2(13)) == pow2(102) * pow2(51) + pow2(102) * pow2(13));
-    assert(pow2(102) * (pow2(51) + pow2(13)) == pow2(153) + pow2(115));
-
-    lemma_mul_is_distributive_add(pow2(153) as int, pow2(51) as int, pow2(13) as int);
-    assert(pow2(153) * (pow2(51) + pow2(13)) == pow2(153) * pow2(51) + pow2(153) * pow2(13));
-    assert(pow2(153) * (pow2(51) + pow2(13)) == pow2(204) + pow2(166));
-
-    lemma_mul_is_distributive_add(pow2(204) as int, pow2(51) as int, pow2(13) as int);
-    assert(pow2(204) * (pow2(51) + pow2(13)) == pow2(204) * pow2(51) + pow2(204) * pow2(13));
-    assert(pow2(204) * (pow2(51) + pow2(13)) == pow2(255) + pow2(217));
-
-    // Now bound as_nat(r) using the definition and the individual limb bounds
-    // as_nat(r) = r[0] + pow2(51)*r[1] + pow2(102)*r[2] + pow2(153)*r[3] + pow2(204)*r[4]
-    //           < (pow2(51) + pow2(18))
-    //             + pow2(51)*(pow2(51) + pow2(13))
-    //             + pow2(102)*(pow2(51) + pow2(13))
-    //             + pow2(153)*(pow2(51) + pow2(13))
-    //             + pow2(204)*(pow2(51) + pow2(13))
-    //
-    // Expanding the products:
-    //           = pow2(51) + pow2(18)
-    //             + pow2(102) + pow2(64)
-    //             + pow2(153) + pow2(115)
-    //             + pow2(204) + pow2(166)
-    //             + pow2(255) + pow2(217)
-
-    // Define the upper bound explicitly
-    let upper_bound = pow2(51) + pow2(18) + pow2(102) + pow2(64) + pow2(153) + pow2(115) + pow2(204)
-        + pow2(166) + pow2(255) + pow2(217);
-
-    // Assert that as_nat(r) is bounded by this sum
-    // This follows from the definition of as_nat and the bounds on each limb
-    // We need to guide the solver by expanding the terms
-    assert(as_nat(r) == r[0] + pow2(51) * r[1] + pow2(102) * r[2] + pow2(153) * r[3] + pow2(204)
-        * r[4]);
-
-    // Use monotonicity: if a < b and c > 0, then c * a < c * b
-    assert(r[0] < pow2(51) + pow2(18));
-
-    assert(r[1] < pow2(51) + pow2(13));
-    lemma_mul_strict_inequality(r[1] as int, (pow2(51) + pow2(13)) as int, pow2(51) as int);
-    assert(pow2(51) * r[1] < pow2(51) * (pow2(51) + pow2(13)));
-
-    assert(r[2] < pow2(51) + pow2(13));
-    lemma_mul_strict_inequality(r[2] as int, (pow2(51) + pow2(13)) as int, pow2(102) as int);
-    assert(pow2(102) * r[2] < pow2(102) * (pow2(51) + pow2(13)));
-
-    assert(r[3] < pow2(51) + pow2(13));
-    lemma_mul_strict_inequality(r[3] as int, (pow2(51) + pow2(13)) as int, pow2(153) as int);
-    assert(pow2(153) * r[3] < pow2(153) * (pow2(51) + pow2(13)));
-
-    assert(r[4] < pow2(51) + pow2(13));
-    lemma_mul_strict_inequality(r[4] as int, (pow2(51) + pow2(13)) as int, pow2(204) as int);
-    assert(pow2(204) * r[4] < pow2(204) * (pow2(51) + pow2(13)));
-
-    // Therefore the sum is bounded
-    assert(as_nat(r) < upper_bound);
-
-    // Now we need to show: upper_bound < 2*p() = 2^256 - 38
-    // Equivalently: 2^255 + (2^217 + 2^204 + 2^166 + 2^153 + 2^115 + 2^102 + 2^64 + 2^51 + 2^18) < 2^256 - 38
-    //
-    // Rearranging: 2^255 + tail < 2^256 - 38
-    // where tail = 2^217 + 2^204 + 2^166 + 2^153 + 2^115 + 2^102 + 2^64 + 2^51 + 2^18
-    //
-    // We need: tail < 2^255 - 38
-
-    // The key is to bound the tail. We'll show tail < 2^218.
-    // Since each term in the tail is strictly less than 2^217 * 2 = 2^218:
-
-    // First, group the smaller terms
-    // Tail = 2^217 + (2^204 + 2^166 + 2^153 + 2^115 + 2^102 + 2^64 + 2^51 + 2^18)
-
-    // Define the tail for clarity
-    let tail = pow2(217) + pow2(204) + pow2(166) + pow2(153) + pow2(115) + pow2(102) + pow2(64)
-        + pow2(51) + pow2(18);
-    assert(upper_bound == pow2(255) + tail);
-
-    // Prove ordering: each term < 2^217
-    lemma_pow2_strictly_increases(18, 217);
-    lemma_pow2_strictly_increases(51, 217);
-    lemma_pow2_strictly_increases(64, 217);
-    lemma_pow2_strictly_increases(102, 217);
-    lemma_pow2_strictly_increases(115, 217);
-    lemma_pow2_strictly_increases(153, 217);
-    lemma_pow2_strictly_increases(166, 217);
-    lemma_pow2_strictly_increases(204, 217);
-
-    // So all terms except 2^217 itself are < 2^217
-    // The sum of terms < 2^217 is dominated by 2^204, which is the largest
-
-    // Using geometric series logic similar to lemma_radix_51_geometric_sum:
-    // 2^204 + smaller_terms < 2^205
-    lemma_pow2_strictly_increases(18, 204);
-    lemma_pow2_strictly_increases(51, 204);
-    lemma_pow2_strictly_increases(64, 204);
-    lemma_pow2_strictly_increases(102, 204);
-    lemma_pow2_strictly_increases(115, 204);
-    lemma_pow2_strictly_increases(153, 204);
-    lemma_pow2_strictly_increases(166, 204);
-
-    // Actually, 2^166 is the second largest term. Let's bound more carefully.
-    // 2^166 + (2^153 + 2^115 + 2^102 + 2^64 + 2^51 + 2^18) < 2^167
-    lemma_pow2_adds(166, 1);
-    assert(2 * pow2(166) == pow2(167));
-
-    // All terms from 2^18 to 2^153 sum to less than 2^154
-    lemma_pow2_strictly_increases(153, 154);
-    lemma_pow2_strictly_increases(115, 154);
-    lemma_pow2_strictly_increases(102, 154);
-    lemma_pow2_strictly_increases(64, 154);
-    lemma_pow2_strictly_increases(51, 154);
-    lemma_pow2_strictly_increases(18, 154);
-
-    // So: 2^153 + 2^115 + 2^102 + 2^64 + 2^51 + 2^18 < 6*2^153 < 2^156
-    // (since 2^3 = 8 > 6, we have 6*2^153 < 2^3 * 2^153 = 2^156)
-    lemma_pow2_strictly_increases(154, 166);
-    assert(pow2(154) < pow2(166));
-
-    // So: 2^166 + (smaller terms < 2^154) < 2^166 + 2^166 = 2^167
-    lemma_pow2_strictly_increases(167, 204);
-
-    // Similarly: 2^204 + (terms < 2^167) < 2^204 + 2^204 = 2^205
-    lemma_pow2_adds(204, 1);
-    assert(2 * pow2(204) == pow2(205));
-    lemma_pow2_strictly_increases(205, 217);
-
-    // So: tail = 2^217 + (terms < 2^205) < 2^217 + 2^217 = 2^218
-    lemma_pow2_adds(217, 1);
-    assert(2 * pow2(217) == pow2(218));
-    assert(tail < pow2(218));
-
-    // Now we have: upper_bound = 2^255 + tail < 2^255 + 2^218
-    // We need: 2^255 + 2^218 < 2^256 - 38
-
-    // Since 2^218 << 2^255, we have 2^255 + 2^218 < 2 * 2^255 = 2^256
-    lemma_pow2_strictly_increases(218, 255);
-    assert(pow2(218) < pow2(255));
-
-    // More precisely: 2^255 + 2^218 < 2^256 - 38 because:
-    // 2^256 - (2^255 + 2^218) = 2*2^255 - 2^255 - 2^218 = 2^255 - 2^218
-    // and we need 2^255 - 2^218 > 38, which is clearly true since 2^255 >> 2^218
-
-    // Let's prove the final inequality explicitly
-    // We need: pow2(218) + 38 < pow2(255)
-    // Equivalently: 38 < pow2(255) - pow2(218)
-    lemma_pow2_strictly_increases(218, 255);
-    assert(pow2(218) < pow2(255));
-
-    // Since 38 << pow2(218) << pow2(255), we have plenty of room
-    // Specifically: pow2(218) + 38 < 2 * pow2(218) <= pow2(219) << pow2(255)
-    assert(38 < pow2(6)) by {
-        assert(pow2(6) == 64) by {
-            lemma2_to64();
+    assert forall|i: int| 0 <= i <= 4 implies #[trigger] (limbs[i] & mask51) < pow2(51) by {
+        masked_lt_51(limbs[i]);
+    }
+    // separate foralls, because they trigger on i and i-1
+    assert forall|i: int| 0 <= i <= 4 implies #[trigger] limbs[i] >> 51 < pow2(13) by {
+        assert(limbs[i] >> 51 <= u64::MAX >> 51) by {
+            lemma_shr_le_u64(limbs[i], u64::MAX, 51);
+        }
+        assert(u64::MAX >> 51 < pow2(13)) by {
+            assert(1u64 << 13 == pow2(13)) by {
+                shift_is_pow2(13);
+            }
+            lemma_u64_max_shifting(51);
         }
     }
-    lemma_pow2_strictly_increases(6, 218);
-    assert(38 < pow2(218));
 
-    // So: pow2(218) + 38 < pow2(218) + pow2(218) = 2 * pow2(218) = pow2(219)
-    lemma_pow2_adds(218, 1);
-    assert(2 * pow2(218) == pow2(219));
-    assert(pow2(218) + 38 < 2 * pow2(218));
-    assert(pow2(218) + 38 < pow2(219));
+    // For r[0] we have the extra factor of 19:
+    // r[0] = (limbs[0] & mask51) + (limbs[4] >> 51) * 19
+    assert((limbs[4] >> 51) * 19 < pow2(18)) by {
+        assert(19 < pow2(5)) by {
+            lemma2_to64();
+        }
+        assert(pow2(18) == pow2(13) * pow2(5)) by {
+            lemma_pow2_adds(13, 5);
+        }
+        mul_lt((limbs[4] >> 51) as nat, pow2(13), 19, pow2(5));
+    }
 
-    // And: pow2(219) << pow2(255)
-    lemma_pow2_strictly_increases(219, 255);
-    assert(pow2(218) + 38 < pow2(255));
+    assert forall|i: nat| 1 <= i <= 4 implies #[trigger] pow2(i * 51) * r[i as int] < pow2(i * 51)
+        * pow2(13) + pow2((i + 1) * 51) by {
+        assert(pow2(i * 51) * r[i as int] < pow2(i * 51) * (pow2(51) + pow2(13))) by {
+            lemma_pow2_pos(i * 51);
+            lemma_mul_strict_inequality(
+                r[i as int] as int,
+                (pow2(51) + pow2(13)) as int,
+                pow2(i * 51) as int,
+            );
+            lemma_mul_is_commutative(pow2(i * 51) as int, r[i as int] as int);
+            lemma_mul_is_commutative(pow2(i * 51) as int, (pow2(51) + pow2(13)) as int);
+        }
 
-    // Combine: upper_bound < 2^255 + 2^218 < 2^256 - 38 = 2*p()
-    assert(upper_bound < pow2(255) + pow2(218));
-    assert(pow2(255) + pow2(218) < pow2(256) - 38);
-    assert(upper_bound < pow2(256) - 38);
-    assert(upper_bound < 2 * p());
+        assert(pow2(i * 51) * (pow2(51) + pow2(13)) == pow2((i + 1) * 51) + pow2(i * 51) * pow2(13))
+            by {
+            assert(pow2(i * 51) * (pow2(51) + pow2(13)) == pow2(i * 51) * pow2(51) + pow2(i * 51)
+                * pow2(13)) by {
+                lemma_mul_is_distributive_add(
+                    pow2(i * 51) as int,
+                    pow2(51) as int,
+                    pow2(13) as int,
+                );
+            }
+            assert(pow2(i * 51) * pow2(51) == pow2((i + 1) * 51)) by {
+                assert(i * 51 + 51 == (i + 1) * 51) by {
+                    lemma_mul_is_distributive_add_other_way(51, i as int, 1);
+                }
+                lemma_pow2_adds(i * 51, 51);
+            }
+        }
+    }
 
-    // Therefore: as_nat(r) < upper_bound < 2*p()
-    assert(as_nat(r) < 2 * p());
+    // write out i * 51s explicitly to trigger forall match
+    let tail = (pow2(18) + pow2(51) + pow2(64) + pow2(102) + pow2(115) + pow2(153) + pow2(166)
+        + pow2(204) + pow2(217));
+    assert(as_nat(r) == r[0] + pow2(1 * 51) * r[1] + pow2(2 * 51) * r[2] + pow2(3 * 51) * r[3]
+        + pow2(4 * 51) * r[4] < tail + pow2(255)) by {
+        lemma_pow2_adds(51, 13);
+        lemma_pow2_adds(102, 13);
+        lemma_pow2_adds(153, 13);
+        lemma_pow2_adds(204, 13);
+    }
+
+    assert(2 * p() == pow2(255) + pow2(255) - 38) by {
+        lemma_pow2_adds(255, 1);
+        lemma_pow2_plus_one(255);
+    }
+
+    // we'll prove the tail is small
+    assert(tail < pow2(255) - 38) by {
+        assert forall|i: nat| i <= 204 implies #[trigger] pow2(i) < pow2(217) by {
+            lemma_pow2_strictly_increases(i, 217);
+        }
+        assert(tail < 9 * pow2(217) < pow2(221)) by {
+            assert(9 < pow2(4));  // known
+            assert(pow2(217) > 0) by {
+                lemma_pow2_pos(217);
+            }
+            lemma_mul_strict_inequality(9, pow2(4) as int, pow2(217) as int);
+            lemma_pow2_adds(217, 4);
+        }
+
+        assert(pow2(254) < pow2(255) - 38) by {
+            assert(38 < pow2(6));  // known
+            assert(pow2(255) - 38 > pow2(255) - pow2(6) == pow2(254) + pow2(254) - pow2(6)) by {
+                lemma_pow2_plus_one(254);
+            }
+            assert(pow2(254) - pow2(6) > 0) by {
+                lemma_pow2_strictly_increases(6, 254);
+            }
+        }
+
+        assert(pow2(221) < pow2(254)) by {
+            lemma_pow2_strictly_increases(221, 254);
+        }
+    }
 }
 
 fn main() {

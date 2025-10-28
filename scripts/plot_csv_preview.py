@@ -127,7 +127,7 @@ def create_csv_preview() -> None:
         f"Total Functions: {total}  |  "
         f"Verified: {verified_count}  |  "
         f"With Specs: {spec_count}  |  "
-        f"Completion Rate: {verified_count/spec_count*100:.1f}%"
+        f"Completion Rate: {verified_count / spec_count * 100:.1f}%"
     )
 
     fig.text(
@@ -150,4 +150,3 @@ def create_csv_preview() -> None:
 
 if __name__ == "__main__":
     create_csv_preview()
-

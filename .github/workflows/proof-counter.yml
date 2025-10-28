@@ -40,11 +40,12 @@ jobs:
           scripts/plot_progress.py
           scripts/plot_progress_over_time.py --max-commits 200 --sample 3
           
-          # Copy only the 3 charts used on the website to docs directory
+          # Copy the 3 charts and CSV to docs directory for the website
           mkdir -p docs/outputs
           cp outputs/verification_funnel.png docs/outputs/
           cp outputs/absolute_counts_over_time.png docs/outputs/
           cp outputs/module_breakdown.png docs/outputs/
+          cp outputs/curve25519_functions.csv docs/outputs/
       - name: Check for changes
         if: steps.check_bot.outputs.previous_was_bot == 'false'
         id: check_changes

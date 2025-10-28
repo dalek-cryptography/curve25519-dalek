@@ -69,24 +69,25 @@ def main():
         return 1
     print("✓ Temporal plots generated")
 
-    # Step 4: Copy plots to docs directory (only the 3 used on website)
-    print("\n4. Copying plots to docs directory...")
+    # Step 4: Copy plots and CSV to docs directory
+    print("\n4. Copying plots and CSV to docs directory...")
     docs_outputs.mkdir(parents=True, exist_ok=True)
 
-    plot_files = [
+    files_to_copy = [
         "verification_funnel.png",
         "absolute_counts_over_time.png",
         "module_breakdown.png",
+        "curve25519_functions.csv",
     ]
 
-    for plot_file in plot_files:
-        src = outputs_dir / plot_file
-        dst = docs_outputs / plot_file
+    for file_name in files_to_copy:
+        src = outputs_dir / file_name
+        dst = docs_outputs / file_name
         if src.exists():
             shutil.copy2(src, dst)
-            print(f"  ✓ Copied {plot_file}")
+            print(f"  ✓ Copied {file_name}")
         else:
-            print(f"  ✗ Missing {plot_file}")
+            print(f"  ✗ Missing {file_name}")
 
     print("\n" + "=" * 70)
     print("WEBSITE UPDATE COMPLETE")

@@ -103,6 +103,42 @@
                     </div>
                 </div>
             </div>
+
+            <div class="function-browser">
+                <h3>Function Verification Status</h3>
+                <p class="section-subtitle" style="margin-top: 0.5rem;">Browse the 257 functions being tracked</p>
+                
+                <div class="browser-controls">
+                    <input type="text" id="functionSearch" placeholder="Search functions..." class="search-box">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">All (257)</button>
+                        <button class="filter-btn" data-filter="verified">Verified (38)</button>
+                        <button class="filter-btn" data-filter="spec">With Specs (91)</button>
+                        <button class="filter-btn" data-filter="none">No Specs (166)</button>
+                    </div>
+                    <a href="../outputs/curve25519_functions.csv" download class="btn btn-secondary btn-small">
+                        📥 Download Full CSV
+                    </a>
+                </div>
+
+                <div class="function-table-container">
+                    <table class="function-table" id="functionTable">
+                        <thead>
+                            <tr>
+                                <th>Function Name</th>
+                                <th>Module</th>
+                                <th>Status</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="functionTableBody">
+                            <tr>
+                                <td colspan="4" class="loading">Loading functions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </section>
 

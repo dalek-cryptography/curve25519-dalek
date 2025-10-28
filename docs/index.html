@@ -84,19 +84,34 @@
                     <div class="metric-item">
                         <span class="metric-label">Average Velocity</span>
                         <span class="metric-value">7.6 specs/day</span>
+                        <span class="metric-description">Rate of adding specifications</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Proof Completion Rate</span>
                         <span class="metric-value">42%</span>
+                        <span class="metric-description">38 of 91 specs are fully proven</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Functions Remaining</span>
                         <span class="metric-value">166</span>
+                        <span class="metric-description">Functions without any specs yet</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Time Period</span>
                         <span class="metric-value">12 days</span>
+                        <span class="metric-description">Duration of tracking data</span>
                     </div>
+                </div>
+                
+                <div class="info-box" style="margin-top: 2rem;">
+                    <h4>📊 Understanding the Metrics</h4>
+                    <p><strong>Proof Completion Rate</strong> measures what percentage of specified functions have complete, verified proofs. This is calculated as: <code>verified functions / functions with specs</code>.</p>
+                    <p>In our case: <strong>38 verified</strong> out of <strong>91 with specs</strong> = 42% completion rate.</p>
+                    <ul style="margin-top: 1rem;">
+                        <li><strong>Spec</strong> = Function has <code>requires</code>/<code>ensures</code> clauses defining behavior</li>
+                        <li><strong>Verified</strong> = Verus proved the implementation matches the spec (no assumptions)</li>
+                        <li><strong>Remaining 53 specs</strong> need more proof work to eliminate assumptions or external bodies</li>
+                    </ul>
                 </div>
             </div>
         </div>

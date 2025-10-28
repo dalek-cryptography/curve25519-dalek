@@ -15,15 +15,12 @@ Tracks how specs and proofs have evolved across commits on main branch.
 """
 
 import argparse
-import subprocess
-import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from beartype import beartype
 from git import Repo
 
@@ -43,7 +40,7 @@ def get_commit_history(
     # Get commits from specified branch
     try:
         commits = list(repo.iter_commits(branch, max_count=max_commits))
-    except Exception as e:
+    except Exception:
         print(f"Warning: Could not access branch '{branch}', trying current branch")
         commits = list(repo.iter_commits(max_count=max_commits))
     
@@ -201,7 +198,7 @@ def collect_historical_data(
         stats = analyze_csv_at_commit(repo_path, commit_hash, csv_relative_path)
         
         if stats is None:
-            print(f"  -> CSV not found or invalid at this commit, skipping")
+            print("  -> CSV not found or invalid at this commit, skipping")
             continue
         
         print(f"  -> Total: {stats['total']}, Verus specs: {stats['verus_specs']}, Verus proofs: {stats['verus_proofs']}")
@@ -306,8 +303,7 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
     # Rotate date labels
     plt.xticks(rotation=45, ha="right")
     
-    # Add annotations for first and last points
-    first_row = df.iloc[0]
+    # Add annotations for last point
     last_row = df.iloc[-1]
     
     ax.annotate(
@@ -406,7 +402,7 @@ def plot_velocity(df: pd.DataFrame, output_dir: Path):
     x = range(len(df_velocity))
     width = 0.35
     
-    bars1 = ax.bar(
+    ax.bar(
         [i - width/2 for i in x],
         df_velocity["specs_delta"],
         width,
@@ -415,7 +411,7 @@ def plot_velocity(df: pd.DataFrame, output_dir: Path):
         alpha=0.8,
     )
     
-    bars2 = ax.bar(
+    ax.bar(
         [i + width/2 for i in x],
         df_velocity["proofs_delta"],
         width,

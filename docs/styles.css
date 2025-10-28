@@ -357,6 +357,13 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.metric-description {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-style: italic;
 }
 
 /* Content Grid */

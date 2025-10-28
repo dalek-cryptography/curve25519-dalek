@@ -14,13 +14,11 @@ Visualizes specification and proof completion status from CSV tracking data.
 """
 
 import argparse
-import csv
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from beartype import beartype
 
 
@@ -285,7 +283,7 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
         pct = round(width * 100 / total, 1) if total > 0 else 0
         
         # Draw bar
-        bar = ax.barh(
+        ax.barh(
             y_positions[i],
             width,
             height=0.6,
@@ -393,8 +391,8 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     proofs = [m["verus_proofs"] for m in top_modules]
     labels = [m["module"] for m in top_modules]
     
-    bars1 = ax.bar([i - width/2 for i in x], specs, width, label="Specs", color="#3498db", alpha=0.8)
-    bars2 = ax.bar([i + width/2 for i in x], proofs, width, label="Proofs", color="#2ecc71", alpha=0.8)
+    ax.bar([i - width/2 for i in x], specs, width, label="Specs", color="#3498db", alpha=0.8)
+    ax.bar([i + width/2 for i in x], proofs, width, label="Proofs", color="#2ecc71", alpha=0.8)
     
     ax.set_xlabel("Module/File", fontsize=12, fontweight="bold")
     ax.set_ylabel("Number of Functions", fontsize=12, fontweight="bold")
@@ -473,7 +471,7 @@ def main():
     print(f"Loading data from: {csv_path}")
     df = load_data(csv_path)
     
-    print(f"Calculating statistics...")
+    print("Calculating statistics...")
     stats = calculate_stats(df)
     
     # Print summary

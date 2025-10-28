@@ -115,21 +115,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('scroll', highlightNavigation);
 
-    // Function browser functionality
-    let functionsData = [];
-    let currentFilter = 'all';
+    // CSV Modal functionality
+    let csvFunctionsData = [];
+    let currentCsvFilter = 'all';
+    const csvModal = document.getElementById('csvModal');
+    const csvPreviewTrigger = document.querySelector('.csv-preview-trigger');
+
+    // Open CSV modal when clicking the preview image
+    if (csvPreviewTrigger) {
+        csvPreviewTrigger.addEventListener('click', () => {
+            csvModal.style.display = 'block';
+            if (csvFunctionsData.length === 0) {
+                loadCsvData();
+            }
+        });
+    }
+
+    // Close CSV modal
+    const csvModalClose = document.querySelector('.csv-modal-close');
+    if (csvModalClose) {
+        csvModalClose.addEventListener('click', () => {
+            csvModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === csvModal) {
+            csvModal.style.display = 'none';
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && csvModal.style.display === 'block') {
+            csvModal.style.display = 'none';
+        }
+    });
 
     // Load and parse CSV
-    async function loadFunctions() {
+    async function loadCsvData() {
         try {
-            const response = await fetch('../outputs/curve25519_functions.csv');
+            const response = await fetch('outputs/curve25519_functions.csv');
             const csvText = await response.text();
             
             // Parse CSV
             const lines = csvText.trim().split('\n');
             const headers = lines[0].split(',');
             
-            functionsData = lines.slice(1).map(line => {
+            csvFunctionsData = lines.slice(1).map(line => {
                 const values = line.split(',');
                 const func = {};
                 headers.forEach((header, i) => {
@@ -138,37 +172,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 return func;
             });
             
-            renderFunctions();
+            renderCsvTable();
         } catch (error) {
-            console.error('Error loading functions:', error);
-            document.getElementById('functionTableBody').innerHTML = 
-                '<tr><td colspan="4" class="loading">Error loading functions data</td></tr>';
+            console.error('Error loading CSV:', error);
+            document.getElementById('csvTableBody').innerHTML = 
+                '<tr><td colspan="4" class="loading">Error loading data</td></tr>';
         }
     }
 
     function extractModule(link) {
         if (!link) return 'unknown';
-        const match = link.match(/\/([^\/]+\.rs)#/);
-        return match ? match[1] : 'unknown';
+        if (link.includes('.rs#')) {
+            const match = link.split('.rs#')[0];
+            if (match.includes('/')) {
+                return match.split('/').pop() + '.rs';
+            }
+        }
+        return 'unknown';
     }
 
     function getStatus(func) {
         if (func.has_proof_verus === 'yes') {
-            return { class: 'verified', text: 'Verified' };
+            return { class: 'verified', text: '✓ Verified' };
         } else if (func.has_spec_verus === 'ext') {
-            return { class: 'external', text: 'External' };
+            return { class: 'external', text: '⊕ External' };
         } else if (func.has_spec_verus === 'yes') {
-            return { class: 'spec', text: 'Spec Only' };
+            return { class: 'spec', text: '○ Spec Only' };
         } else {
-            return { class: 'none', text: 'No Spec' };
+            return { class: 'none', text: '· No Spec' };
         }
     }
 
-    function renderFunctions() {
-        const tbody = document.getElementById('functionTableBody');
-        const searchTerm = document.getElementById('functionSearch').value.toLowerCase();
+    function renderCsvTable() {
+        const tbody = document.getElementById('csvTableBody');
+        const searchBox = document.getElementById('csvSearch');
+        const searchTerm = searchBox ? searchBox.value.toLowerCase() : '';
         
-        let filteredFunctions = functionsData.filter(func => {
+        let filteredFunctions = csvFunctionsData.filter(func => {
             // Apply search filter
             const matchesSearch = !searchTerm || 
                 func.function_name.toLowerCase().includes(searchTerm) ||
@@ -177,10 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!matchesSearch) return false;
             
             // Apply status filter
-            if (currentFilter === 'all') return true;
-            if (currentFilter === 'verified') return func.has_proof_verus === 'yes';
-            if (currentFilter === 'spec') return func.has_spec_verus === 'yes' || func.has_spec_verus === 'ext';
-            if (currentFilter === 'none') return !func.has_spec_verus && !func.has_proof_verus;
+            if (currentCsvFilter === 'all') return true;
+            if (currentCsvFilter === 'verified') return func.has_proof_verus === 'yes';
+            if (currentCsvFilter === 'spec') return func.has_spec_verus === 'yes' || func.has_spec_verus === 'ext';
+            if (currentCsvFilter === 'none') return !func.has_spec_verus && !func.has_proof_verus;
             
             return true;
         });
@@ -205,26 +245,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // Search functionality
-    const searchBox = document.getElementById('functionSearch');
-    if (searchBox) {
-        searchBox.addEventListener('input', renderFunctions);
+    // Search functionality for CSV modal
+    const csvSearchBox = document.getElementById('csvSearch');
+    if (csvSearchBox) {
+        csvSearchBox.addEventListener('input', renderCsvTable);
     }
 
-    // Filter functionality
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    filterButtons.forEach(btn => {
+    // Filter functionality for CSV modal
+    const csvFilterButtons = document.querySelectorAll('#csvModal .filter-btn');
+    csvFilterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            filterButtons.forEach(b => b.classList.remove('active'));
+            csvFilterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentFilter = btn.getAttribute('data-filter');
-            renderFunctions();
+            currentCsvFilter = btn.getAttribute('data-filter');
+            renderCsvTable();
         });
     });
-
-    // Load functions on page load
-    if (document.getElementById('functionTable')) {
-        loadFunctions();
-    }
 });
 

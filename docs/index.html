@@ -104,40 +104,15 @@
                 </div>
             </div>
 
-            <div class="function-browser">
-                <h3>Function Verification Status</h3>
-                <p class="section-subtitle" style="margin-top: 0.5rem;">Browse the 257 functions being tracked</p>
-                
-                <div class="browser-controls">
-                    <input type="text" id="functionSearch" placeholder="Search functions..." class="search-box">
-                    <div class="filter-buttons">
-                        <button class="filter-btn active" data-filter="all">All (257)</button>
-                        <button class="filter-btn" data-filter="verified">Verified (38)</button>
-                        <button class="filter-btn" data-filter="spec">With Specs (91)</button>
-                        <button class="filter-btn" data-filter="none">No Specs (166)</button>
-                    </div>
-                    <a href="../outputs/curve25519_functions.csv" download class="btn btn-secondary btn-small">
-                        📥 Download Full CSV
-                    </a>
+            <div class="chart-card">
+                <h3>📋 Function Status Data</h3>
+                <div class="chart-container">
+                    <img src="outputs/csv_preview.png" alt="CSV Preview" class="chart-img csv-preview-trigger" data-title="Function Status Data">
                 </div>
-
-                <div class="function-table-container">
-                    <table class="function-table" id="functionTable">
-                        <thead>
-                            <tr>
-                                <th>Function Name</th>
-                                <th>Module</th>
-                                <th>Status</th>
-                                <th>Link</th>
-                            </tr>
-                        </thead>
-                        <tbody id="functionTableBody">
-                            <tr>
-                                <td colspan="4" class="loading">Loading functions...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <p class="chart-description">
+                    Sample preview of tracked functions. <strong>Click image to browse all 257 functions.</strong>
+                    <a href="https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/chart-progress-tracking/outputs/curve25519_functions.csv" target="_blank" class="csv-link">View full CSV on GitHub →</a>
+                </p>
             </div>
         </div>
     </section>
@@ -306,6 +281,40 @@ cargo verus verify</code></pre>
             </div>
         </div>
     </footer>
+
+    <!-- Modal for CSV data browser -->
+    <div id="csvModal" class="modal">
+        <span class="modal-close csv-modal-close">&times;</span>
+        <div class="csv-modal-content">
+            <h2>Function Verification Status - All 257 Functions</h2>
+            <div class="csv-browser-controls">
+                <input type="text" id="csvSearch" placeholder="Search functions or modules..." class="search-box">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="verified">Verified</button>
+                    <button class="filter-btn" data-filter="spec">With Specs</button>
+                    <button class="filter-btn" data-filter="none">No Specs</button>
+                </div>
+            </div>
+            <div class="csv-table-container">
+                <table class="csv-table" id="csvTable">
+                    <thead>
+                        <tr>
+                            <th>Function Name</th>
+                            <th>Module</th>
+                            <th>Status</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="csvTableBody">
+                        <tr>
+                            <td colspan="4" class="loading">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

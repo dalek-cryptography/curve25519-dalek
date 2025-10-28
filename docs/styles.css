@@ -221,6 +221,195 @@ body {
     max-width: 100%;
 }
 
+.csv-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.csv-link:hover {
+    text-decoration: underline;
+}
+
+.csv-preview-trigger {
+    cursor: pointer;
+}
+
+.csv-preview-trigger:hover {
+    opacity: 0.8;
+}
+
+/* CSV Modal */
+.csv-modal-content {
+    background: white;
+    margin: 2% auto;
+    padding: 2rem;
+    width: 90%;
+    max-width: 1200px;
+    border-radius: 12px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.csv-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--dark-bg);
+}
+
+.csv-browser-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 250px;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.3s;
+}
+
+.search-box:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.csv-browser-controls .search-box {
+    min-width: 300px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.filter-btn:hover {
+    border-color: var(--primary-color);
+    background: var(--light-bg);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.csv-table-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.csv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.csv-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--dark-bg);
+    color: white;
+    z-index: 10;
+}
+
+.csv-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.csv-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.csv-table tbody tr:hover {
+    background: var(--light-bg);
+}
+
+.csv-table tbody tr.hidden {
+    display: none;
+}
+
+.function-name {
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-weight: 500;
+    color: var(--dark-bg);
+}
+
+.function-module {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-spec {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.status-external {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-none {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.function-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.function-link:hover {
+    text-decoration: underline;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem !important;
+    color: var(--text-secondary);
+}
+
 .chart-card {
     background: var(--card-bg);
     padding: 2rem;
@@ -364,174 +553,6 @@ body {
     font-size: 0.75rem;
     color: var(--text-secondary);
     font-style: italic;
-}
-
-/* Function Browser */
-.function-browser {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-top: 3rem;
-}
-
-.function-browser h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.browser-controls {
-    display: flex;
-    gap: 1rem;
-    margin: 1.5rem 0;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.search-box {
-    flex: 1;
-    min-width: 250px;
-    padding: 0.75rem 1rem;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: border-color 0.3s;
-}
-
-.search-box:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.filter-buttons {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.filter-btn {
-    padding: 0.5rem 1rem;
-    border: 2px solid var(--border-color);
-    background: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.3s;
-}
-
-.filter-btn:hover {
-    border-color: var(--primary-color);
-    background: var(--light-bg);
-}
-
-.filter-btn.active {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: white;
-}
-
-.btn-small {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-}
-
-.function-table-container {
-    max-height: 600px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-}
-
-.function-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-}
-
-.function-table thead {
-    position: sticky;
-    top: 0;
-    background: var(--dark-bg);
-    color: white;
-    z-index: 10;
-}
-
-.function-table th {
-    padding: 0.75rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.function-table td {
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.function-table tbody tr:hover {
-    background: var(--light-bg);
-}
-
-.function-table tbody tr.hidden {
-    display: none;
-}
-
-.function-name {
-    font-family: 'Monaco', 'Courier New', monospace;
-    font-weight: 500;
-}
-
-.function-module {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 0.25rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.status-verified {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.status-spec {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.status-external {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.status-none {
-    background: #f3f4f6;
-    color: #6b7280;
-}
-
-.function-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-size: 0.85rem;
-}
-
-.function-link:hover {
-    text-decoration: underline;
-}
-
-.loading {
-    text-align: center;
-    padding: 2rem !important;
-    color: var(--text-secondary);
 }
 
 /* Content Grid */

@@ -69,6 +69,19 @@ def main():
         return 1
     print("✓ Temporal plots generated")
 
+    # Step 3.5: Generate CSV preview
+    print("\n3.5. Generating CSV preview...")
+    result = subprocess.run(
+        [str(script_dir / "plot_csv_preview.py")],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"Error: {result.stderr}")
+        return 1
+    print("✓ CSV preview generated")
+
     # Step 4: Copy plots and CSV to docs directory
     print("\n4. Copying plots and CSV to docs directory...")
     docs_outputs.mkdir(parents=True, exist_ok=True)
@@ -77,6 +90,7 @@ def main():
         "verification_funnel.png",
         "absolute_counts_over_time.png",
         "module_breakdown.png",
+        "csv_preview.png",
         "curve25519_functions.csv",
     ]
 

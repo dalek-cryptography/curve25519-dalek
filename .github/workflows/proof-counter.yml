@@ -29,6 +29,10 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies for plotting
+        if: steps.check_bot.outputs.previous_was_bot == 'false'
+        run: |
+          pip install matplotlib pandas gitpython beartype
       - name: Run analyze and csv scripts
         if: steps.check_bot.outputs.previous_was_bot == 'false'
         run: |

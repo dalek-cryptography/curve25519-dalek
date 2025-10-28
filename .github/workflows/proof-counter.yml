@@ -40,16 +40,11 @@ jobs:
           scripts/plot_progress.py
           scripts/plot_progress_over_time.py --max-commits 200 --sample 3
           
-          # Copy to docs directory
+          # Copy only the 3 charts used on the website to docs directory
           mkdir -p docs/outputs
           cp outputs/verification_funnel.png docs/outputs/
           cp outputs/absolute_counts_over_time.png docs/outputs/
           cp outputs/module_breakdown.png docs/outputs/
-          cp outputs/progress_over_time.png docs/outputs/
-          cp outputs/verus_breakdown.png docs/outputs/
-          cp outputs/overall_progress.png docs/outputs/
-          cp outputs/comparison_pie.png docs/outputs/
-          cp outputs/verification_velocity.png docs/outputs/
       - name: Check for changes
         if: steps.check_bot.outputs.previous_was_bot == 'false'
         id: check_changes

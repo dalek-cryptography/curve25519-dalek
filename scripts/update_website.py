@@ -69,19 +69,14 @@ def main():
         return 1
     print("✓ Temporal plots generated")
 
-    # Step 4: Copy plots to docs directory
+    # Step 4: Copy plots to docs directory (only the 3 used on website)
     print("\n4. Copying plots to docs directory...")
     docs_outputs.mkdir(parents=True, exist_ok=True)
 
     plot_files = [
-        "overall_progress.png",
-        "verus_breakdown.png",
-        "comparison_pie.png",
         "verification_funnel.png",
-        "module_breakdown.png",
-        "progress_over_time.png",
         "absolute_counts_over_time.png",
-        "verification_velocity.png",
+        "module_breakdown.png",
     ]
 
     for plot_file in plot_files:

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dalek-Lite Verification | Formally Verifying Curve25519-Dalek with Verus</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="https://cdn.jsdelivr.net/gh/dalek-cryptography/curve25519-dalek/docs/assets/dalek-logo-clear.png" alt="Dalek Logo" class="logo">
+                <span>Dalek-Lite Verification</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#progress">Progress</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#trust">Trust Model</a></li>
+                <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>Formally Verifying<br><span class="highlight">Dalek Elliptic Curve Cryptography</span></h1>
+            <p class="subtitle">Project to formally verify the Rust code of curve25519-dalek using Verus</p>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-number">257</div>
+                    <div class="stat-label">Total Functions</div>
+                </div>
+                <div class="stat-card highlight-card">
+                    <div class="stat-number">91</div>
+                    <div class="stat-label">Functions with Specs</div>
+                    <div class="stat-percent">35.4%</div>
+                </div>
+                <div class="stat-card success-card">
+                    <div class="stat-number">38</div>
+                    <div class="stat-label">Fully Verified</div>
+                    <div class="stat-percent">14.8%</div>
+                </div>
+            </div>
+            <div class="cta-buttons">
+                <a href="#progress" class="btn btn-primary">View Progress</a>
+                <a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="progress" class="section">
+        <div class="container">
+            <h2 class="section-title">Verification Progress</h2>
+            <p class="section-subtitle">Track our progress as we formally verify the curve25519-dalek codebase</p>
+            
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>Verus Verification Funnel</h3>
+                    <img src="outputs/verification_funnel.png" alt="Verification Funnel" class="zoomable" data-title="Verus Verification Funnel">
+                    <p class="chart-caption">How functions progress through the verification pipeline<br><small>(Click to enlarge)</small></p>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Absolute Counts Over Time</h3>
+                    <img src="outputs/absolute_counts_over_time.png" alt="Absolute Counts" class="zoomable" data-title="Absolute Counts Over Time">
+                    <p class="chart-caption">Growth of verified functions over time<br><small>(Click to enlarge)</small></p>
+                </div>
+
+                <div class="chart-card">
+                    <h3>Module Breakdown</h3>
+                    <img src="outputs/module_breakdown.png" alt="Module Breakdown" class="zoomable" data-title="Module Breakdown">
+                    <p class="chart-caption">Top modules by function count with verification status<br><small>(Click to enlarge)</small></p>
+                </div>
+            </div>
+
+            <div class="metrics-summary">
+                <h3>Recent Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">Average Velocity</span>
+                        <span class="metric-value">7.6 specs/day</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Proof Completion Rate</span>
+                        <span class="metric-value">42%</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Functions Remaining</span>
+                        <span class="metric-value">166</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Time Period</span>
+                        <span class="metric-value">12 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="section alt-bg">
+        <div class="container">
+            <h2 class="section-title">About the Project</h2>
+            <div class="content-grid">
+                <div class="content-card">
+                    <h3>🎯 Project Goals</h3>
+                    <p>Formally verify the Rust implementation of curve25519-dalek, a critical cryptographic library used in secure communications worldwide. Our verification uses Verus, a modern verification system designed for Rust.</p>
+                </div>
+
+                <div class="content-card">
+                    <h3>🔧 What is Verus?</h3>
+                    <p>Verus is a tool for verifying the correctness of code written in Rust. It extends Rust with specification constructs and uses automated theorem proving to verify that implementations match their specifications.</p>
+                </div>
+
+                <div class="content-card">
+                    <h3>🚀 Why This Matters</h3>
+                    <p>Curve25519-dalek is used by Signal, Tor, and many other security-critical applications. Formal verification provides mathematical proof that the cryptographic operations are implemented correctly, eliminating entire classes of bugs.</p>
+                </div>
+
+                <div class="content-card">
+                    <h3>📚 Key Features</h3>
+                    <ul>
+                        <li>Formal specifications for cryptographic operations</li>
+                        <li>Machine-checked proofs of correctness</li>
+                        <li>Continuous integration with verification checks</li>
+                        <li>Transparent progress tracking</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Getting Started</h3>
+                <p>To run verification locally:</p>
+                <pre><code>git clone https://github.com/Beneficial-AI-Foundation/dalek-lite.git
+cd dalek-lite
+cargo verus verify</code></pre>
+                <p>See the <a href="https://github.com/Beneficial-AI-Foundation/dalek-lite#setup" target="_blank">setup instructions</a> for detailed installation steps.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="trust" class="section">
+        <div class="container">
+            <h2 class="section-title">Trust Model</h2>
+            <p class="section-subtitle">What we need to trust in order to trust these proofs</p>
+            
+            <div class="trust-grid">
+                <div class="trust-item">
+                    <div class="trust-icon">🛡️</div>
+                    <h3>Verus Verifier</h3>
+                    <p>We trust that the Verus verification system correctly implements its verification logic and sound reasoning principles.</p>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">🔍</div>
+                    <h3>Z3 SMT Solver</h3>
+                    <p>Verus relies on the Z3 automated theorem prover for checking logical conditions. We trust Z3's implementation of SMT solving algorithms.</p>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">🦀</div>
+                    <h3>Rust Compiler</h3>
+                    <p>We trust that the Rust compiler correctly translates our verified code into machine instructions, and that it respects the semantics Verus reasons about.</p>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">📝</div>
+                    <h3>Specifications</h3>
+                    <p>We trust that our formal specifications accurately capture the intended behavior of the cryptographic operations.</p>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">💻</div>
+                    <h3>Hardware</h3>
+                    <p>Like all software, we ultimately trust that the hardware correctly executes the compiled machine code.</p>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon">🔐</div>
+                    <h3>Cryptographic Assumptions</h3>
+                    <p>We trust the mathematical foundations of elliptic curve cryptography, including the hardness of the discrete logarithm problem on Curve25519.</p>
+                </div>
+            </div>
+
+            <div class="info-box warning">
+                <h3>⚠️ What Verification Does NOT Cover</h3>
+                <ul>
+                    <li>Side-channel attacks (timing, power analysis, etc.)</li>
+                    <li>Hardware faults or random bit flips</li>
+                    <li>Cryptographic assumptions (e.g., DLP hardness)</li>
+                    <li>Bugs in unverified dependencies or system libraries</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="section alt-bg">
+        <div class="container">
+            <h2 class="section-title">Contributing</h2>
+            <p class="section-subtitle">Help us verify critical cryptographic code</p>
+            
+            <div class="content-grid">
+                <div class="content-card">
+                    <h3>🤝 How to Contribute</h3>
+                    <p>We welcome contributions! Whether you're experienced with formal verification or just learning, there are ways to help:</p>
+                    <ul>
+                        <li>Add specifications to unverified functions</li>
+                        <li>Complete proofs for existing specifications</li>
+                        <li>Improve documentation</li>
+                        <li>Report issues or suggest improvements</li>
+                    </ul>
+                    <a href="https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/CONTRIBUTING.md" class="btn btn-primary" target="_blank">View Contribution Guide</a>
+                </div>
+
+                <div class="content-card">
+                    <h3>📖 Resources</h3>
+                    <ul>
+                        <li><a href="https://github.com/verus-lang/verus" target="_blank">Verus Documentation</a></li>
+                        <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">Project Repository</a></li>
+                        <li><a href="https://github.com/dalek-cryptography/curve25519-dalek" target="_blank">Original curve25519-dalek</a></li>
+                        <li><a href="https://cr.yp.to/ecdh.html" target="_blank">Curve25519 Paper</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal for full-size images -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div class="modal-caption" id="modalCaption"></div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Dalek-Lite Verification</h4>
+                    <p>Formally verifying curve25519-dalek with Verus</p>
+                    <p>Part of the Beneficial AI Foundation</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/Beneficial-AI-Foundation/dalek-lite" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/verus-lang/verus" target="_blank">Verus Project</a></li>
+                        <li><a href="https://www.beneficiaai.org/" target="_blank">Beneficial AI Foundation</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Related Projects</h4>
+                    <ul>
+                        <li><a href="https://beneficial-ai-foundation.github.io/curve25519-dalek-lean-verify/" target="_blank">Lean Verification Project</a></li>
+                        <li><a href="https://github.com/dalek-cryptography" target="_blank">Dalek Cryptography</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Last updated: <span id="last-updated"></span></p>
+                <p>Verification progress tracked automatically from git commits</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

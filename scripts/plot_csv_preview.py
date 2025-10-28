@@ -71,7 +71,7 @@ def create_csv_preview() -> None:
     fig.text(
         0.5,
         0.93,
-        f"Sample of 25 functions from 257 total • Full data: outputs/curve25519_functions.csv",
+        "Sample of 25 functions from 257 total • Full data: outputs/curve25519_functions.csv",
         ha="center",
         fontsize=10,
         color="#666",

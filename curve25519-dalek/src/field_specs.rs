@@ -1,6 +1,7 @@
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::constants;
+use vstd::arithmetic::power2::*;
 
 use vstd::prelude::*;
 
@@ -12,39 +13,52 @@ pub open spec fn field_element_as_nat(fe: &FieldElement51) -> nat {
 
 /// Returns the canonical mathematical value of a field element in [0, p)
 /// where p = 2^255 - 19
-pub open spec fn field_element_abs(fe: &FieldElement51) -> nat {
+pub open spec fn field_element(fe: &FieldElement51) -> nat {
     field_element_as_nat(fe) % p()
+}
+
+/// Returns the canonical mathematical value when creating a field element from bytes.
+/// The bytes are interpreted as a little-endian integer with the high bit of byte[31] ignored.
+/// The result is the canonical value in [0, p) where p = 2^255 - 19.
+pub open spec fn field_element_from_bytes(bytes: &[u8; 32]) -> nat {
+    (as_nat_32_u8(bytes) % pow2(255)) % p()
+}
+
+/// Spec function: Get the sign bit of a field element
+/// In Curve25519, the sign bit is the least significant bit of the canonical representation
+pub open spec fn field_element_sign_bit(fe: &FieldElement51) -> u8 {
+    ((field_element(fe) % p()) % 2) as u8
 }
 
 // Spec-level field operations on natural numbers (mod p)
 /// Spec-level field addition
-pub open spec fn field_add_abs(a: nat, b: nat) -> nat {
+pub open spec fn field_add(a: nat, b: nat) -> nat {
     (a + b) % p()
 }
 
 /// Spec-level field subtraction
-pub open spec fn field_sub_abs(a: nat, b: nat) -> nat {
+pub open spec fn field_sub(a: nat, b: nat) -> nat {
     (((a % p()) + p()) - (b % p())) as nat % p()
 }
 
 /// Spec-level field multiplication
-pub open spec fn field_mul_abs(a: nat, b: nat) -> nat {
+pub open spec fn field_mul(a: nat, b: nat) -> nat {
     (a * b) % p()
 }
 
 /// Spec-level field negation
-pub open spec fn field_neg_abs(a: nat) -> nat {
+pub open spec fn field_neg(a: nat) -> nat {
     (p() - (a % p())) as nat % p()
 }
 
 /// Spec-level field squaring
-pub open spec fn field_square_abs(a: nat) -> nat {
+pub open spec fn field_square(a: nat) -> nat {
     (a * a) % p()
 }
 
 /// Spec-level field inversion: returns w such that (a * w) % p == 1
 /// We use `choose` to pick the unique inverse that exists for non-zero field elements
-pub open spec fn field_inv_abs(a: nat) -> nat
+pub open spec fn field_inv(a: nat) -> nat
     recommends
         a % p() != 0,
 {
@@ -56,8 +70,8 @@ pub proof fn field_inv_axiom(a: nat)
     requires
         a % p() != 0,
     ensures
-        field_inv_abs(a) < p(),
-        ((a % p()) * field_inv_abs(a)) % p() == 1,
+        field_inv(a) < p(),
+        ((a % p()) * field_inv(a)) % p() == 1,
 {
     admit();  // This would be proven from field theory or assumed as axiom
 }

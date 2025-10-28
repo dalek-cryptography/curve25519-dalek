@@ -102,6 +102,9 @@ pub mod field;
 // Specification functions for FieldElement
 pub(crate) mod field_specs;
 
+// Specification functions for Edwards curve operations
+pub(crate) mod curve_specs;
+
 // External type specifications for core Rust types
 pub(crate) mod core_assumes;
 

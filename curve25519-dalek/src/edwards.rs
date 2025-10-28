@@ -153,6 +153,7 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::backend::serial::u64::subtle_assumes::*;
+use crate::curve_specs::*;
 use crate::field_specs::*;
 use vstd::prelude::*;
 
@@ -214,13 +215,49 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> (result: Option<EdwardsPoint>) {
+    pub fn decompress(&self) -> (result: Option<
+        EdwardsPoint,
+    >)
+    // VERIFICATION NOTE: PROOF BYPASS
+
+        ensures
+            is_valid_y_coordinate(field_element_from_bytes(&self.0))
+                ==> result.is_some()
+            // The Y coordinate matches the one from the compressed representation
+             && field_element(&result.unwrap().Y) == field_element_from_bytes(
+                &self.0,
+            )
+            // The point is valid
+             && is_valid_edwards_point(
+                result.unwrap(),
+            )
+            // The X coordinate sign bit matches the sign bit from the compressed representation
+             && field_element_sign_bit(&result.unwrap().X) == (self.0[31] >> 7),
+            !is_valid_y_coordinate(field_element_from_bytes(&self.0)) <==> result.is_none(),
+    {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
-        if is_valid_y_coord.into() {
-            Some(decompress::step_2(self, X, Y, Z))
+        proof {
+            assert(choice_is_true(is_valid_y_coord) ==> is_valid_y_coordinate(
+                field_element_from_bytes(&self.0),
+            ));
+            assert(choice_is_true(is_valid_y_coord) ==> on_edwards_curve(
+                field_element(&X),
+                field_element(&Y),
+            ));
+        }
+        if choice_into(is_valid_y_coord) {
+            assert(choice_is_true(is_valid_y_coord));
+            assert(field_element(&Y) == field_element_from_bytes(&self.0));
+            let point = decompress::step_2(self, X, Y, Z);
+            let result = Some(point);
+            assume(false);
+            result
         } else {
-            None
+            assert(!choice_is_true(is_valid_y_coord));
+            assert(!is_valid_y_coordinate(field_element_from_bytes(&self.0)));
+            let result = None;
+            result
         }
     }
 }
@@ -229,18 +266,45 @@ mod decompress {
     use super::*;
 
     #[rustfmt::skip]  // keep alignment of explanatory comments
-    pub(super) fn step_1(repr: &CompressedEdwardsY) -> (
+    pub(super) fn step_1(repr: &CompressedEdwardsY) -> (result: (
         Choice,
         FieldElement,
         FieldElement,
         FieldElement,
-    ) {
+    ))  // Result components: (is_valid, X, Y, Z)// VERIFICATION NOTE: PROOF BYPASSFORMATTER_NOT_INLINE_MARKER// The X coordinate sign bit matches the sign bit from the compressed representationFORMATTER_NOT_INLINE_MARKER
+    // The X coordinate sign bit matches the sign bit from the compressed representation
+
+        ensures
+    // The returned Y field element matches the one extracted from the compressed representation
+
+            field_element(&result.2) == field_element_from_bytes(&repr.0),
+            // The returned Z field element is 1
+            field_element(&result.3) == 1,
+            // The choice is true iff the Y is valid and (X, Y) is on the curve
+            choice_is_true(result.0) <==> is_valid_y_coordinate(field_element(&result.2)),
+            choice_is_true(result.0) ==> on_edwards_curve(
+                field_element(&result.1),
+                field_element(&result.2),
+            ),
+    {
         let Y = FieldElement::from_bytes(repr.as_bytes());
+        assert(field_element_from_bytes(&repr.0) == field_element(&Y));
         let Z = FieldElement::ONE;
-        assume(false);
+        proof {
+            assume(forall|i: int| 0 <= i < 5 ==> Y.limbs[i] < 1u64 << 54);
+        }
         let YY = Y.square();
+
+        /* <VERIFICATION NOTE>
+        vstd's external trait specs add preconditions (sub_req, mul_req) we cannot satisfy
+        since FieldElement51 doesn't implement the corresponding spec traits (SubSpec, MulSpec).
+        </VERIFICATION NOTE> */
+        proof {
+            assume(false);
+        }
         let u = &YY - &Z;  // u =  y²-1
         let v = &(&YY * &constants::EDWARDS_D) + &Z;  // v = dy²+1
+
         let (is_valid_y_coord, X) = FieldElement::sqrt_ratio_i(&u, &v);
 
         (is_valid_y_coord, X, Y, Z)
@@ -252,12 +316,43 @@ mod decompress {
         mut X: FieldElement,
         Y: FieldElement,
         Z: FieldElement,
-    ) -> EdwardsPoint {
+    ) -> (result: EdwardsPoint)
+    // VERIFICATION NOTE: PROOF BYPASS
+
+        ensures
+            field_element(&result.X)
+                ==
+            // If the sign bit is 1, negate the X field element
+            if (repr.0[31] >> 7) == 1 {
+                field_neg(field_element(&X))
+            } else {
+                field_element(&X)
+            },
+            // Y and Z are unchanged
+            field_element(&result.Y) == field_element(&Y),
+            field_element(&result.Z) == field_element(&Z),
+            // X is conditionally negated based on the sign bit
+            // T = X * Y (after conditional negation)
+            field_element(&result.T) == field_mul(
+                field_element(&result.X),
+                field_element(&result.Y),
+            ),
+    {
         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
         // so we negate according to the supplied sign bit.
         let compressed_sign_bit = Choice::from(repr.as_bytes()[31] >> 7);
+
+        /* <VERIFICATION NOTE>
+         Using conditional_negate_field wrapper and assume(false) for trait preconditions.
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+        X.conditional_negate(compressed_sign_bit);
+        </ORIGINAL CODE> */
         conditional_negate_field(&mut X, compressed_sign_bit);
-        assume(false);
+
+        proof {
+            assume(false);
+        }
 
         EdwardsPoint { X, Y, Z, T: &X * &Y }
     }
@@ -654,18 +749,18 @@ impl EdwardsPoint {
 
 /// Returns the abstract affine coordinates (x, y) of this point.
 pub open spec fn affine_coords(self) -> (res: (nat, nat)) {
-    let x_abs = field_element_abs(&self.X);
-    let y_abs = field_element_abs(&self.Y);
-    let z_abs = field_element_abs(&self.Z);
-    let z_inv = field_inv_abs(z_abs);
-    (field_mul_abs(x_abs, z_inv), field_mul_abs(y_abs, z_inv))
+    let x_abs = field_element(&self.X);
+    let y_abs = field_element(&self.Y);
+    let z_abs = field_element(&self.Z);
+    let z_inv = field_inv(z_abs);
+    (field_mul(x_abs, z_inv), field_mul(y_abs, z_inv))
 }
 
 /// Compress this point to `CompressedEdwardsY` format.
 pub fn compress(&self) -> CompressedEdwardsY {
     let recip = self.Z.invert();
-    let ghost z_abs = field_element_abs(&self.Z);
-    assert(field_element_abs(&recip) == field_inv_abs(z_abs));
+    let ghost z_abs = field_element(&self.Z);
+    assert(field_element(&recip) == field_inv(z_abs));
     assume(false);
     let x = &self.X * &recip;
     let y = &self.Y * &recip;

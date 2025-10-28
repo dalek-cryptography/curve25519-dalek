@@ -34,7 +34,5 @@ pub mod scalar_lemmas;
 
 pub mod scalar_specs;
 
-pub mod std_assumes;
-
 // #[cfg(feature = "serde")]
 // pub use crate::serde_assumes;

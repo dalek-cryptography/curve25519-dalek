@@ -156,7 +156,7 @@ use crate::backend::serial::u64::scalar_specs::*;
 use crate::backend::serial::u64::subtle_assumes::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::std_assumes::*;
+use crate::core_assumes::*;
 
 #[allow(unused_imports)]
 use crate::scalar_specs::*;
@@ -391,17 +391,13 @@ impl Index<usize> for Scalar {
     }
 }
 
-} // verus!
-/* <VERIFICATION NOTE>
- Left outside verification scope
-</VERIFICATION NOTE> */
 impl Debug for Scalar {
+    /* VERIFICATION NOTE: we don't cover debugging */
+    #[verifier::external_body]
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "Scalar{{\n\tbytes: {:?},\n}}", &self.bytes)
     }
 }
-
-verus! {
 
 impl<'a> MulAssign<&'a Scalar> for Scalar {
     // VERIFICATION NOTE: VERIFIED
@@ -863,7 +859,7 @@ impl From<u16> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::backend::serial::u64::std_assumes::u16_to_le_bytes(x);
+        let x_bytes = crate::core_assumes::u16_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
         }
@@ -889,7 +885,7 @@ impl From<u32> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::backend::serial::u64::std_assumes::u32_to_le_bytes(x);
+        let x_bytes = crate::core_assumes::u32_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
         }
@@ -936,7 +932,7 @@ impl From<u64> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::backend::serial::u64::std_assumes::u64_to_le_bytes(x);
+        let x_bytes = crate::core_assumes::u64_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
         }
@@ -962,7 +958,7 @@ impl From<u128> for Scalar {
         </ORIGINAL CODE> */
         /* <MODIFIED CODE> Verus doesn't support copy_from_slice and to_le_bytes */
         let mut s_bytes = [0u8;32];
-        let x_bytes = crate::backend::serial::u64::std_assumes::u128_to_le_bytes(x);
+        let x_bytes = crate::core_assumes::u128_to_le_bytes(x);
         for i in 0..x_bytes.len() {
             s_bytes[i] = x_bytes[i];
         }
@@ -1164,7 +1160,7 @@ impl Scalar {
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
     {
-        use crate::backend::serial::u64::std_assumes as assumes;
+        use crate::core_assumes as assumes;
         let hash_bytes: [u8; 64] = assumes::sha512_hash_bytes(input);
         Scalar::from_hash_verus(hash_bytes)
     }
@@ -1586,7 +1582,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 /// Visitor for deserializing a Scalar from a sequence of 32 bytes.
 ///
 /* VERIFICATION NOTE:
-The ScalarVisitor struct is defined at module level rather than inside the
+- We don't cover serde feature yet
+- The ScalarVisitor struct is defined at module level rather than inside the
 `Deserialize::deserialize` since Verus doesn't support nested types
 </VERIFICATION NOTE> */
 struct ScalarVisitor;

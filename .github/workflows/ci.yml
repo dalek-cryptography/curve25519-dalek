@@ -131,3 +131,70 @@ jobs:
       run: |
         cd ../libsignal/rust/usernames
         cargo verus verify
+
+  update-verification-charts:
+    name: Update verification analysis and charts
+    runs-on: ubuntu-latest
+    # Only run on push to main, not on PRs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for temporal charts
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install uv
+      run: pip install uv
+    
+    - name: Analyze Verus specs and proofs
+      run: ./scripts/analyze_verus_specs_proofs.py
+    
+    - name: Check if CSV changed
+      id: csv-check
+      run: |
+        if git diff --exit-code outputs/curve25519_functions.csv; then
+          echo "changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Generate charts
+      if: steps.csv-check.outputs.changed == 'true'
+      run: |
+        echo "CSV changed, regenerating charts..."
+        ./scripts/plot_progress.py
+        ./scripts/plot_progress_over_time.py --max-commits 200 --sample 3
+        
+        # Copy to docs directory
+        mkdir -p docs/outputs
+        cp outputs/verification_funnel.png docs/outputs/
+        cp outputs/absolute_counts_over_time.png docs/outputs/
+        cp outputs/module_breakdown.png docs/outputs/
+        cp outputs/progress_over_time.png docs/outputs/
+        cp outputs/verus_breakdown.png docs/outputs/
+        cp outputs/overall_progress.png docs/outputs/
+        cp outputs/comparison_pie.png docs/outputs/
+        cp outputs/verification_velocity.png docs/outputs/
+    
+    - name: Commit and push changes
+      if: steps.csv-check.outputs.changed == 'true'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add outputs/curve25519_functions.csv outputs/*.png docs/outputs/*.png
+        git commit -m "Auto-update verification analysis and charts [skip ci]"
+        git push
+    
+    - name: Summary
+      run: |
+        if [ "${{ steps.csv-check.outputs.changed }}" == "true" ]; then
+          echo "✅ Verification data updated and charts regenerated"
+        else
+          echo "ℹ️ No changes detected in verification status"
+        fi

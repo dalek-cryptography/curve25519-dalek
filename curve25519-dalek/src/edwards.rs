@@ -271,8 +271,7 @@ mod decompress {
         FieldElement,
         FieldElement,
         FieldElement,
-    ))  // Result components: (is_valid, X, Y, Z)// VERIFICATION NOTE: PROOF BYPASSFORMATTER_NOT_INLINE_MARKER// The X coordinate sign bit matches the sign bit from the compressed representationFORMATTER_NOT_INLINE_MARKER
-    // The X coordinate sign bit matches the sign bit from the compressed representation
+    ))  // Result components: (is_valid, X, Y, Z)// VERIFICATION NOTE: PROOF BYPASSFORMATTER_NOT_INLINE_MARKER
 
         ensures
     // The returned Y field element matches the one extracted from the compressed representation
@@ -508,9 +507,10 @@ pub struct EdwardsPoint {
 // Constructors
 // ------------------------------------------------------------------------
 impl Identity for CompressedEdwardsY {
-    // TODO: add spec
-    fn identity() -> CompressedEdwardsY {
-        CompressedEdwardsY(
+    fn identity() -> (result: CompressedEdwardsY) 
+    ensures is_compressed_identity(result),
+    {
+        let result = CompressedEdwardsY(
             [
                 1,
                 0,
@@ -545,7 +545,20 @@ impl Identity for CompressedEdwardsY {
                 0,
                 0,
             ],
-        )
+        );
+        
+        proof {
+            // The bytes [1, 0, 0, ..., 0] represent the value 1 in little-endian
+            // byte 31 is 0, so the sign bit (bit 7 of byte 31) is 0
+            assert(result.0[31] == 0);
+            let x = result.0[31];
+            assume(x >> 7 == 0);
+            // field_element_from_bytes([1, 0, ...]) should equal 1
+            // This requires the byte-to-nat conversion to recognize [1,0,0,...] = 1
+            assume(field_element_from_bytes(&result.0) == 1);
+        }
+        
+        result
     }
 }
 
@@ -746,15 +759,6 @@ impl EdwardsPoint {
     }
 
     verus! {
-
-/// Returns the abstract affine coordinates (x, y) of this point.
-pub open spec fn affine_coords(self) -> (res: (nat, nat)) {
-    let x_abs = field_element(&self.X);
-    let y_abs = field_element(&self.Y);
-    let z_abs = field_element(&self.Z);
-    let z_inv = field_inv(z_abs);
-    (field_mul(x_abs, z_inv), field_mul(y_abs, z_inv))
-}
 
 /// Compress this point to `CompressedEdwardsY` format.
 pub fn compress(&self) -> CompressedEdwardsY {

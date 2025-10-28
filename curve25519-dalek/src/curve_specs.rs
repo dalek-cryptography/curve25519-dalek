@@ -91,5 +91,24 @@ pub open spec fn is_valid_edwards_point(point: crate::edwards::EdwardsPoint) -> 
     t == field_mul(field_mul(x, y), field_inv(z))
 }
 
+/// Returns the abstract affine coordinates (x, y) of this point.
+pub open spec fn affine_coords(point: crate::edwards::EdwardsPoint) -> (nat, nat) {
+    let x_abs = field_element(&point.X);
+    let y_abs = field_element(&point.Y);
+    let z_abs = field_element(&point.Z);
+    let z_inv = field_inv(z_abs);
+    (field_mul(x_abs, z_inv), field_mul(y_abs, z_inv))
+}
+
+/// Spec: Check if a CompressedEdwardsY represents the identity point
+/// The identity point is (0, 1) in affine coordinates
+/// When compressed, this is represented as y=1 with sign bit 0
+pub open spec fn is_compressed_identity(compressed: crate::edwards::CompressedEdwardsY) -> bool {
+    // Extract the y-coordinate (identity has y = 1)
+    field_element_from_bytes(&compressed.0) == 1 &&
+    // Sign bit should be 0 (since x = 0)
+    (compressed.0[31] >> 7) == 0
+}
+
 } // verus!
 

@@ -220,15 +220,6 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
             (original_limbs[3] + _rhs.limbs[3]) as u64,
             (original_limbs[4] + _rhs.limbs[4]) as u64,
         ]);
-        assert(output == FieldElement51 {
-            limbs: [
-                (original_limbs[0] + _rhs.limbs[0]) as u64,
-                (original_limbs[1] + _rhs.limbs[1]) as u64,
-                (original_limbs[2] + _rhs.limbs[2]) as u64,
-                (original_limbs[3] + _rhs.limbs[3]) as u64,
-                (original_limbs[4] + _rhs.limbs[4]) as u64,
-            ],
-        });
         output
     }
 }

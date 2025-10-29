@@ -200,33 +200,33 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
         output += _rhs;
         */
         /* MODIFIED CODE */
-        let ghost v = self.limbs;
+        let ghost original_limbs = self.limbs;
         for i in 0..5
             invariant
-                forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == v[j] + _rhs.limbs[j],
-                forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == v[j],
-                forall|j: int| 0 <= j < 5 ==> 0 <= #[trigger] v[j] + _rhs.limbs[j] <= 10,
+                forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == original_limbs[j] + _rhs.limbs[j],
+                forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == original_limbs[j],
+                forall|j: int| 0 <= j < 5 ==> 0 <= #[trigger] original_limbs[j] + _rhs.limbs[j] <= 10,
         {
-            assert(output.limbs[i as int] == v[i as int]);
-            assert(0 <= v[i as int] + _rhs.limbs[i as int] <= 10);
+            assert(output.limbs[i as int] == original_limbs[i as int]);
+            assert(0 <= original_limbs[i as int] + _rhs.limbs[i as int] <= 10);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */
         proof {}
         assert(output.limbs == [
-            (v[0] + _rhs.limbs[0]) as u64,
-            (v[1] + _rhs.limbs[1]) as u64,
-            (v[2] + _rhs.limbs[2]) as u64,
-            (v[3] + _rhs.limbs[3]) as u64,
-            (v[4] + _rhs.limbs[4]) as u64,
+            (original_limbs[0] + _rhs.limbs[0]) as u64,
+            (original_limbs[1] + _rhs.limbs[1]) as u64,
+            (original_limbs[2] + _rhs.limbs[2]) as u64,
+            (original_limbs[3] + _rhs.limbs[3]) as u64,
+            (original_limbs[4] + _rhs.limbs[4]) as u64,
         ]);
         assert(output == FieldElement51 {
             limbs: [
-                (v[0] + _rhs.limbs[0]) as u64,
-                (v[1] + _rhs.limbs[1]) as u64,
-                (v[2] + _rhs.limbs[2]) as u64,
-                (v[3] + _rhs.limbs[3]) as u64,
-                (v[4] + _rhs.limbs[4]) as u64,
+                (original_limbs[0] + _rhs.limbs[0]) as u64,
+                (original_limbs[1] + _rhs.limbs[1]) as u64,
+                (original_limbs[2] + _rhs.limbs[2]) as u64,
+                (original_limbs[3] + _rhs.limbs[3]) as u64,
+                (original_limbs[4] + _rhs.limbs[4]) as u64,
             ],
         });
         output

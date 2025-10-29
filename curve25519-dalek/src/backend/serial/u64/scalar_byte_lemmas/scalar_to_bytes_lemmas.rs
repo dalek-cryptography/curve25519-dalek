@@ -824,7 +824,7 @@ pub proof fn lemma_limb2_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     // === STEP 2: Bound the High Part ===
     lemma_div_bound(limbs[2] as nat, 48, 52);
     assert(l2_high < pow2(4));
-    lemma_mod_of_less_than_divisor(l2_high as int, 16);
+    lemma_small_mod(l2_high, 16);
     assert(l2_high % 16 == l2_high);
 
     // === STEP 3: Reconstruction Identity ===

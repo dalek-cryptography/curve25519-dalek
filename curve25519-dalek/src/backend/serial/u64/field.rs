@@ -210,9 +210,10 @@ self.limbs[4], ];
             invariant
                 forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == v[j] + _rhs.limbs[j],
                 forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == v[j],
+                forall|j: int| 0 <= j < 5 ==> 0 <= #[trigger] v[j] + _rhs.limbs[j] <= 10,
         {
-            assume(v[i as int] + _rhs.limbs[i as int] <= 10);
-            assume(output.limbs[i as int] + _rhs.limbs[i as int] < u64::MAX);
+            assert(output.limbs[i as int] == v[i as int]);
+            assert(0 <= v[i as int] + _rhs.limbs[i as int] <= 10);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */

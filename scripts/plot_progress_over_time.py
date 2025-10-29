@@ -378,7 +378,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     )
     ax.grid(True, alpha=0.3, linestyle="--", axis="y")
     ax.legend(loc="upper left", fontsize=11, framealpha=0.9)
-    
+
     # Set x-axis limits to actual data range
     ax.set_xlim(df["date"].min(), df["date"].max())
 
@@ -507,13 +507,13 @@ def print_summary(df: pd.DataFrame) -> dict:
         print(f"  Proofs/day:       {proofs_per_day:+.2f}")
 
     print("=" * 70 + "\n")
-    
+
     # Return metadata for JSON export
     return {
-        "first_date": first["date"].strftime('%Y-%m-%d'),
-        "last_date": last["date"].strftime('%Y-%m-%d'),
+        "first_date": first["date"].strftime("%Y-%m-%d"),
+        "last_date": last["date"].strftime("%Y-%m-%d"),
         "total_days": total_days,
-        "commits_analyzed": len(df)
+        "commits_analyzed": len(df),
     }
 
 
@@ -578,9 +578,10 @@ def main():
 
     # Print summary and get metadata
     metadata = print_summary(df)
-    
+
     # Write metadata to JSON for website
     import json
+
     metadata_path = output_dir / "metadata.json"
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)

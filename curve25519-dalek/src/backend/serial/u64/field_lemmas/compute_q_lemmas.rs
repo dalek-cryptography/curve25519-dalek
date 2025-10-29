@@ -18,16 +18,6 @@ verus! {
 // ============================================================================
 // LEMMA 1: Computing q (the quotient when dividing by p)
 // ============================================================================
-/// Spec function to compute q value from limbs
-pub open spec fn compute_q_spec(limbs: [u64; 5]) -> u64 {
-    let q0 = ((limbs[0] + 19) as u64 >> 51) as u64;
-    let q1 = ((limbs[1] + q0) as u64 >> 51) as u64;
-    let q2 = ((limbs[2] + q1) as u64 >> 51) as u64;
-    let q3 = ((limbs[3] + q2) as u64 >> 51) as u64;
-    let q4 = ((limbs[4] + q3) as u64 >> 51) as u64;
-    q4
-}
-
 pub proof fn lemma_bounded_shr_51(x: u64)
     requires
         x < 3 * pow2(51),

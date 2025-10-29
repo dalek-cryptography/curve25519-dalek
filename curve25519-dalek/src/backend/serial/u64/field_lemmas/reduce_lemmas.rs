@@ -205,12 +205,7 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
     lemma2_to64();
     pow255_gt_19();
 
-    // From lemma_boundaries, we know the tight bounds on each expression in spec_reduce
-    lemma_boundaries(limbs);
-
     let r = spec_reduce(limbs);
-
-    lemma_reduce(limbs);
 
     assert(1u64 << 51 == pow2(51)) by {
         shift_is_pow2(51);

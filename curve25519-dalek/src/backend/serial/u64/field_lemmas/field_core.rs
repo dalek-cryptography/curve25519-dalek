@@ -115,7 +115,88 @@ pub open spec fn spec_negate(limbs: [u64; 5]) -> [u64; 5] {
     r
 }
 
-fn main() {
+pub open spec fn compute_q_arr(limbs: [u64; 5]) -> [u64; 5] {
+    let q0 = ((limbs[0] + 19) as u64 >> 51) as u64;
+    let q1 = ((limbs[1] + q0) as u64 >> 51) as u64;
+    let q2 = ((limbs[2] + q1) as u64 >> 51) as u64;
+    let q3 = ((limbs[3] + q2) as u64 >> 51) as u64;
+    let q4 = ((limbs[4] + q3) as u64 >> 51) as u64;
+    [q0, q1, q2, q3, q4]
+}
+
+/// Spec function to compute q value from limbs
+pub open spec fn compute_q_spec(limbs: [u64; 5]) -> u64 {
+    compute_q_arr(limbs)[4]
+}
+
+pub open spec fn compute_unmasked_limbs(input_limbs: [u64; 5], q: u64) -> [u64; 5] {
+    let l0 = (input_limbs[0] + 19 * q) as u64;
+    let l1 = (input_limbs[1] + (l0 >> 51)) as u64;
+    let l2 = (input_limbs[2] + (l1 >> 51)) as u64;
+    let l3 = (input_limbs[3] + (l2 >> 51)) as u64;
+    let l4 = (input_limbs[4] + (l3 >> 51)) as u64;
+    [l0, l1, l2, l3, l4]
+}
+
+/// Spec function to compute the reduction result
+pub open spec fn reduce_with_q_spec(input_limbs: [u64; 5], q: u64) -> [u64; 5] {
+    let l = compute_unmasked_limbs(input_limbs, q);
+    let l0 = l[0];
+    let l1 = l[1];
+    let l2 = l[2];
+    let l3 = l[3];
+    let l4 = l[4];
+    let l0_masked = (l0 & mask51) as u64;
+    let l1_masked = (l1 & mask51) as u64;
+    let l2_masked = (l2 & mask51) as u64;
+    let l3_masked = (l3 & mask51) as u64;
+    let l4_masked = (l4 & mask51) as u64;
+    [l0_masked, l1_masked, l2_masked, l3_masked, l4_masked]
+}
+
+pub open spec fn bit_arrange(limbs: [u64; 5]) -> [u8; 32] {
+    let s = [
+        limbs[0] as u8,
+        (limbs[0] >> 8) as u8,
+        (limbs[0] >> 16) as u8,
+        (limbs[0] >> 24) as u8,
+        (limbs[0] >> 32) as u8,
+        (limbs[0] >> 40) as u8,
+        ((limbs[0] >> 48) | (limbs[1] << 3)) as u8,
+        (limbs[1] >> 5) as u8,
+        (limbs[1] >> 13) as u8,
+        (limbs[1] >> 21) as u8,
+        (limbs[1] >> 29) as u8,
+        (limbs[1] >> 37) as u8,
+        ((limbs[1] >> 45) | (limbs[2] << 6)) as u8,
+        (limbs[2] >> 2) as u8,
+        (limbs[2] >> 10) as u8,
+        (limbs[2] >> 18) as u8,
+        (limbs[2] >> 26) as u8,
+        (limbs[2] >> 34) as u8,
+        (limbs[2] >> 42) as u8,
+        ((limbs[2] >> 50) | (limbs[3] << 1)) as u8,
+        (limbs[3] >> 7) as u8,
+        (limbs[3] >> 15) as u8,
+        (limbs[3] >> 23) as u8,
+        (limbs[3] >> 31) as u8,
+        (limbs[3] >> 39) as u8,
+        ((limbs[3] >> 47) | (limbs[4] << 4)) as u8,
+        (limbs[4] >> 4) as u8,
+        (limbs[4] >> 12) as u8,
+        (limbs[4] >> 20) as u8,
+        (limbs[4] >> 28) as u8,
+        (limbs[4] >> 36) as u8,
+        (limbs[4] >> 44) as u8,
+    ];
+
+    s
+}
+
+pub open spec fn spec_as_bytes(limbs: [u64; 5]) -> [u8; 32] {
+    let reduced_limbs = spec_reduce(limbs);
+    let q = compute_q_spec(reduced_limbs);
+    bit_arrange(reduce_with_q_spec(reduced_limbs, q))
 }
 
 } // verus!

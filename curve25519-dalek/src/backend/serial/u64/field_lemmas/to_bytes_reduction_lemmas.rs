@@ -536,21 +536,6 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
     }
 }
 
-/// Spec function to compute the reduction result
-pub open spec fn reduce_with_q_spec(input_limbs: [u64; 5], q: u64) -> [u64; 5] {
-    let l0 = (input_limbs[0] + 19 * q) as u64;
-    let l1 = (input_limbs[1] + (l0 >> 51)) as u64;
-    let l0_masked = (l0 & mask51) as u64;
-    let l2 = (input_limbs[2] + (l1 >> 51)) as u64;
-    let l1_masked = (l1 & mask51) as u64;
-    let l3 = (input_limbs[3] + (l2 >> 51)) as u64;
-    let l2_masked = (l2 & mask51) as u64;
-    let l4 = (input_limbs[4] + (l3 >> 51)) as u64;
-    let l3_masked = (l3 & mask51) as u64;
-    let l4_masked = (l4 & mask51) as u64;
-    [l0_masked, l1_masked, l2_masked, l3_masked, l4_masked]
-}
-
 /// Proves that after adding 19*q and propagating carries while masking to 51 bits,
 /// the result equals as_nat(input_limbs) mod p
 pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 5], q: u64)

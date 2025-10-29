@@ -507,7 +507,8 @@ pub struct EdwardsPoint {
 // Constructors
 // ------------------------------------------------------------------------
 impl Identity for CompressedEdwardsY {
-    fn identity() -> (result: CompressedEdwardsY) 
+    fn identity() -> (result: CompressedEdwardsY)
+    // VERIFICATION NOTE: PROOF BYPASS
     ensures is_compressed_identity(result),
     {
         let result = CompressedEdwardsY(
@@ -563,9 +564,11 @@ impl Identity for CompressedEdwardsY {
 }
 
 impl Default for CompressedEdwardsY {
-    // TODO: add spec
-    fn default() -> CompressedEdwardsY {
-        CompressedEdwardsY::identity()
+    fn default() -> (result: CompressedEdwardsY)
+    ensures is_compressed_identity(result),
+    {
+        let result = CompressedEdwardsY::identity();
+        result
     }
 }
 
@@ -577,6 +580,7 @@ impl CompressedEdwardsY {
     /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
     /// a length of 32.
     pub fn from_slice(bytes: &[u8]) -> (result: Result<CompressedEdwardsY, TryFromSliceError>)
+    // VERIFICATION NOTE: PROOF BYPASS
         ensures
             bytes@.len() == 32 ==> matches!(result, Ok(_)),
             bytes@.len() != 32 ==> matches!(result, Err(_)),
@@ -601,23 +605,34 @@ impl CompressedEdwardsY {
     }
 }
 
-} // verus!
 impl Identity for EdwardsPoint {
-    fn identity() -> EdwardsPoint {
-        EdwardsPoint {
+    fn identity() -> (result: EdwardsPoint)
+    /* VERIFICATION NOTE: 
+    - PROOF BYPASS 
+    - is_identity ensures affine point is (0, 1) - more general than the FieldElement defined below
+    */
+    ensures is_identity(result),
+    {
+        assume(field_element(&FieldElement::ZERO) == 0);
+        assume(field_element(&FieldElement::ONE) == 1);
+        let result = EdwardsPoint {
             X: FieldElement::ZERO,
             Y: FieldElement::ONE,
             Z: FieldElement::ONE,
             T: FieldElement::ZERO,
-        }
+        };
+        result
     }
 }
 
 impl Default for EdwardsPoint {
-    fn default() -> EdwardsPoint {
+    fn default() -> (result: EdwardsPoint)
+    ensures is_identity(result),
+    {
         EdwardsPoint::identity()
     }
 }
+
 
 // ------------------------------------------------------------------------
 // Zeroize implementations for wiping points from memory
@@ -626,6 +641,7 @@ impl Default for EdwardsPoint {
 #[cfg(feature = "zeroize")]
 impl Zeroize for CompressedEdwardsY {
     /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
+    #[verifier::external_body]
     fn zeroize(&mut self) {
         self.0.zeroize();
         self.0[0] = 1;
@@ -635,6 +651,7 @@ impl Zeroize for CompressedEdwardsY {
 #[cfg(feature = "zeroize")]
 impl Zeroize for EdwardsPoint {
     /// Reset this `CompressedEdwardsPoint` to the identity element.
+    #[verifier::external_body]
     fn zeroize(&mut self) {
         self.X.zeroize();
         self.Y = FieldElement::ONE;
@@ -655,6 +672,9 @@ impl ValidityCheck for EdwardsPoint {
         point_on_curve && on_segre_image
     }
 }
+
+} // verus!
+
 
 // ------------------------------------------------------------------------
 // Constant-time assignment
@@ -700,6 +720,7 @@ impl Eq for EdwardsPoint {}
 // Point conversions
 // ------------------------------------------------------------------------
 
+verus! {
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
@@ -758,8 +779,6 @@ impl EdwardsPoint {
         MontgomeryPoint(u.as_bytes())
     }
 
-    verus! {
-
 /// Compress this point to `CompressedEdwardsY` format.
 pub fn compress(&self) -> CompressedEdwardsY {
     let recip = self.Z.invert();
@@ -775,7 +794,6 @@ pub fn compress(&self) -> CompressedEdwardsY {
     CompressedEdwardsY(s)
 }
 
-} // verus!
     #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that
@@ -786,6 +804,7 @@ pub fn compress(&self) -> CompressedEdwardsY {
         since = "4.0.0",
         note = "previously named `hash_from_bytes`, this is not a secure hash function"
     )]
+    #[verifier::external_body]
     pub fn nonspec_map_to_curve<D>(bytes: &[u8]) -> EdwardsPoint
     where
         D: Digest<OutputSize = U64> + Default,
@@ -808,6 +827,8 @@ pub fn compress(&self) -> CompressedEdwardsY {
             .mul_by_cofactor()
     }
 }
+} // verus!
+
 
 // ------------------------------------------------------------------------
 // Doubling

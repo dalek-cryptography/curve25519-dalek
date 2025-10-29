@@ -69,6 +69,20 @@ pub open spec fn is_edwards_identity(x: nat, y: nat) -> bool {
     x % p() == 0 && y % p() == 1
 }
 
+/// Spec: Check if an EdwardsPoint represents the identity point
+/// The identity point is (0, 1) in affine coordinates
+/// In projective coordinates (X:Y:Z:T), this means X/Z = 0 and Y/Z = 1
+/// Which is equivalent to X ≡ 0 (mod p) and Y ≡ Z (mod p) with Z ≠ 0
+pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
+    let x = field_element(&point.X);
+    let y = field_element(&point.Y);
+    let z = field_element(&point.Z);
+    
+    z != 0 &&
+    x == 0 &&
+    y == z
+}
+
 /// Spec: Check if an EdwardsPoint in projective coordinates is valid
 /// An EdwardsPoint (X:Y:Z:T) is valid if:
 /// 1. The affine point (X/Z, Y/Z) lies on the Edwards curve

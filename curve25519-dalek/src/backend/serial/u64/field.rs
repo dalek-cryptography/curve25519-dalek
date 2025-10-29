@@ -172,9 +172,9 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        0 <= self.limbs[0] + rhs.limbs[0] <= 10 && 0 <= self.limbs[1] + rhs.limbs[1] <= 10 && 0
-            <= self.limbs[2] + rhs.limbs[2] <= 10 && 0 <= self.limbs[3] + rhs.limbs[3] <= 10 && 0
-            <= self.limbs[4] + rhs.limbs[4] <= 10
+        0 <= self.limbs[0] + rhs.limbs[0] <= u64::MAX && 0 <= self.limbs[1] + rhs.limbs[1] <= u64::MAX && 0
+            <= self.limbs[2] + rhs.limbs[2] <= u64::MAX && 0 <= self.limbs[3] + rhs.limbs[3] <= u64::MAX && 0
+            <= self.limbs[4] + rhs.limbs[4] <= u64::MAX
     }
 
     // Postcondition of add
@@ -205,10 +205,10 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
             invariant
                 forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == original_limbs[j] + _rhs.limbs[j],
                 forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == original_limbs[j],
-                forall|j: int| 0 <= j < 5 ==> 0 <= #[trigger] original_limbs[j] + _rhs.limbs[j] <= 10,
+                forall|j: int| 0 <= j < 5 ==> 0 <= #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
         {
             assert(output.limbs[i as int] == original_limbs[i as int]);
-            assert(0 <= original_limbs[i as int] + _rhs.limbs[i as int] <= 10);
+            assert(0 <= original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */

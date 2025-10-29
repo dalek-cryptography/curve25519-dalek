@@ -192,7 +192,12 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
+    fn add(self, _rhs: &'a FieldElement51) -> (result: FieldElement51)
+        ensures
+            forall|i: int|
+                0 <= i < 5 ==> #[trigger] result.limbs[i] == self.limbs[i] + _rhs.limbs[i],
+            forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] <= u64::MAX,
+    {
         let mut output = *self;
         /* ORIGINAL CODE
         output += _rhs;

@@ -39,8 +39,6 @@ pub open spec fn five_limbs_to_nat_aux(limbs: [u64; 5]) -> nat {
     limbs[3] as nat) + pow2(208) * (limbs[4] as nat)
 }
 
-// Note: as_nat_32_u8 is defined in field_core.rs (field_lemmas module)
-// Import it directly from there instead of duplicating here
 // Modular reduction of to_nat mod L
 pub open spec fn to_scalar(limbs: &[u64; 5]) -> nat {
     to_nat(limbs) % group_order()

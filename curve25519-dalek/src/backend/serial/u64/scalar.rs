@@ -194,9 +194,10 @@ impl Scalar52 {
     #[allow(clippy::identity_op)]
     #[allow(clippy::wrong_self_convention)]
     pub fn as_bytes(self) -> (s: [u8; 32])
-    requires
-        limbs_bounded(&self),
-    ensures bytes_to_nat(&s) == to_nat(&self.limbs)
+        requires
+            limbs_bounded(&self),
+        ensures
+            bytes_to_nat(&s) == to_nat(&self.limbs),
     {
         let mut s = [0u8;32];
 

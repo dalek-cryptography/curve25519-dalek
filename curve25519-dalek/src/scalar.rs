@@ -2446,9 +2446,7 @@ impl UnpackedScalar {
             lemma_bytes_to_nat_rec_equals_bytes_to_nat(&bytes);
             lemma_five_limbs_equals_to_nat(&self.limbs);
         }
-        let result = Scalar {
-            bytes: bytes,
-        };
+        let result = Scalar { bytes: bytes };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
         assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
         result

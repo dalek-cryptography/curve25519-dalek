@@ -221,13 +221,12 @@ pub proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
 }
 
 pub proof fn lemma_bytes_to_nat_rec_equals_bytes_to_nat(bytes: &[u8; 32])
-ensures
-    bytes_to_nat(bytes) == as_nat_32_u8(bytes)
+    ensures
+        bytes_to_nat(bytes) == as_nat_32_u8(bytes),
 {
     // Strategy: Unfold the recursive definition and show it matches the explicit sum
     // The recursive definition bytes_to_nat_rec(bytes, 0) computes:
     // bytes[0] * 2^0 + bytes[1] * 2^8 + ... + bytes[31] * 2^248
-
     // First, reveal the recursive structure by showing a few key steps
     reveal_with_fuel(bytes_to_nat_rec, 33);
 
@@ -244,82 +243,53 @@ ensures
         bytes_to_nat_rec(bytes, 0); {
             // Unfold recursively - Verus should be able to see this with fuel
         }
-        (bytes[0] as nat) * pow2(0) +
-        (bytes[1] as nat) * pow2(8) +
-        (bytes[2] as nat) * pow2(16) +
-        (bytes[3] as nat) * pow2(24) +
-        (bytes[4] as nat) * pow2(32) +
-        (bytes[5] as nat) * pow2(40) +
-        (bytes[6] as nat) * pow2(48) +
-        (bytes[7] as nat) * pow2(56) +
-        (bytes[8] as nat) * pow2(64) +
-        (bytes[9] as nat) * pow2(72) +
-        (bytes[10] as nat) * pow2(80) +
-        (bytes[11] as nat) * pow2(88) +
-        (bytes[12] as nat) * pow2(96) +
-        (bytes[13] as nat) * pow2(104) +
-        (bytes[14] as nat) * pow2(112) +
-        (bytes[15] as nat) * pow2(120) +
-        (bytes[16] as nat) * pow2(128) +
-        (bytes[17] as nat) * pow2(136) +
-        (bytes[18] as nat) * pow2(144) +
-        (bytes[19] as nat) * pow2(152) +
-        (bytes[20] as nat) * pow2(160) +
-        (bytes[21] as nat) * pow2(168) +
-        (bytes[22] as nat) * pow2(176) +
-        (bytes[23] as nat) * pow2(184) +
-        (bytes[24] as nat) * pow2(192) +
-        (bytes[25] as nat) * pow2(200) +
-        (bytes[26] as nat) * pow2(208) +
-        (bytes[27] as nat) * pow2(216) +
-        (bytes[28] as nat) * pow2(224) +
-        (bytes[29] as nat) * pow2(232) +
-        (bytes[30] as nat) * pow2(240) +
-        (bytes[31] as nat) * pow2(248); {
+        (bytes[0] as nat) * pow2(0) + (bytes[1] as nat) * pow2(8) + (bytes[2] as nat) * pow2(16) + (
+        bytes[3] as nat) * pow2(24) + (bytes[4] as nat) * pow2(32) + (bytes[5] as nat) * pow2(40)
+            + (bytes[6] as nat) * pow2(48) + (bytes[7] as nat) * pow2(56) + (bytes[8] as nat)
+            * pow2(64) + (bytes[9] as nat) * pow2(72) + (bytes[10] as nat) * pow2(80) + (
+        bytes[11] as nat) * pow2(88) + (bytes[12] as nat) * pow2(96) + (bytes[13] as nat) * pow2(
+            104,
+        ) + (bytes[14] as nat) * pow2(112) + (bytes[15] as nat) * pow2(120) + (bytes[16] as nat)
+            * pow2(128) + (bytes[17] as nat) * pow2(136) + (bytes[18] as nat) * pow2(144) + (
+        bytes[19] as nat) * pow2(152) + (bytes[20] as nat) * pow2(160) + (bytes[21] as nat) * pow2(
+            168,
+        ) + (bytes[22] as nat) * pow2(176) + (bytes[23] as nat) * pow2(184) + (bytes[24] as nat)
+            * pow2(192) + (bytes[25] as nat) * pow2(200) + (bytes[26] as nat) * pow2(208) + (
+        bytes[27] as nat) * pow2(216) + (bytes[28] as nat) * pow2(224) + (bytes[29] as nat) * pow2(
+            232,
+        ) + (bytes[30] as nat) * pow2(240) + (bytes[31] as nat) * pow2(248); {
             // Simplify bytes[0] * pow2(0) to bytes[0]
             // Since pow2(0) == 1, we have x * 1 == x
             assert((bytes[0] as nat) * pow2(0) == (bytes[0] as nat)) by {
                 assert(pow2(0) == 1);
             };
         }
-        (bytes[0] as nat) +
-        (bytes[1] as nat) * pow2(8) +
-        (bytes[2] as nat) * pow2(16) +
-        (bytes[3] as nat) * pow2(24) +
-        (bytes[4] as nat) * pow2(32) +
-        (bytes[5] as nat) * pow2(40) +
-        (bytes[6] as nat) * pow2(48) +
-        (bytes[7] as nat) * pow2(56) +
-        (bytes[8] as nat) * pow2(64) +
-        (bytes[9] as nat) * pow2(72) +
-        (bytes[10] as nat) * pow2(80) +
-        (bytes[11] as nat) * pow2(88) +
-        (bytes[12] as nat) * pow2(96) +
-        (bytes[13] as nat) * pow2(104) +
-        (bytes[14] as nat) * pow2(112) +
-        (bytes[15] as nat) * pow2(120) +
-        (bytes[16] as nat) * pow2(128) +
-        (bytes[17] as nat) * pow2(136) +
-        (bytes[18] as nat) * pow2(144) +
-        (bytes[19] as nat) * pow2(152) +
-        (bytes[20] as nat) * pow2(160) +
-        (bytes[21] as nat) * pow2(168) +
-        (bytes[22] as nat) * pow2(176) +
-        (bytes[23] as nat) * pow2(184) +
-        (bytes[24] as nat) * pow2(192) +
-        (bytes[25] as nat) * pow2(200) +
-        (bytes[26] as nat) * pow2(208) +
-        (bytes[27] as nat) * pow2(216) +
-        (bytes[28] as nat) * pow2(224) +
-        (bytes[29] as nat) * pow2(232) +
-        (bytes[30] as nat) * pow2(240) +
-        (bytes[31] as nat) * pow2(248); {}
+        (bytes[0] as nat) + (bytes[1] as nat) * pow2(8) + (bytes[2] as nat) * pow2(16) + (
+        bytes[3] as nat) * pow2(24) + (bytes[4] as nat) * pow2(32) + (bytes[5] as nat) * pow2(40)
+            + (bytes[6] as nat) * pow2(48) + (bytes[7] as nat) * pow2(56) + (bytes[8] as nat)
+            * pow2(64) + (bytes[9] as nat) * pow2(72) + (bytes[10] as nat) * pow2(80) + (
+        bytes[11] as nat) * pow2(88) + (bytes[12] as nat) * pow2(96) + (bytes[13] as nat) * pow2(
+            104,
+        ) + (bytes[14] as nat) * pow2(112) + (bytes[15] as nat) * pow2(120) + (bytes[16] as nat)
+            * pow2(128) + (bytes[17] as nat) * pow2(136) + (bytes[18] as nat) * pow2(144) + (
+        bytes[19] as nat) * pow2(152) + (bytes[20] as nat) * pow2(160) + (bytes[21] as nat) * pow2(
+            168,
+        ) + (bytes[22] as nat) * pow2(176) + (bytes[23] as nat) * pow2(184) + (bytes[24] as nat)
+            * pow2(192) + (bytes[25] as nat) * pow2(200) + (bytes[26] as nat) * pow2(208) + (
+        bytes[27] as nat) * pow2(216) + (bytes[28] as nat) * pow2(224) + (bytes[29] as nat) * pow2(
+            232,
+        ) + (bytes[30] as nat) * pow2(240) + (bytes[31] as nat) * pow2(248); {}
         as_nat_32_u8(bytes);
     }
 }
 
-
-pub proof fn lemma_scalar_subtract_no_overflow(carry: u64, difference_limb: u64, addend: u64, i: u32, l_value: &Scalar52)
+pub proof fn lemma_scalar_subtract_no_overflow(
+    carry: u64,
+    difference_limb: u64,
+    addend: u64,
+    i: u32,
+    l_value: &Scalar52,
+)
     requires
         i < 5,
         difference_limb < (1u64 << 52),

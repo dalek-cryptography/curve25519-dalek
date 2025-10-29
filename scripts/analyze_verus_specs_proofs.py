@@ -208,7 +208,7 @@ def parse_function_in_file(
         has_spec_or_external = has_spec or has_verifier_external
 
         # Calculate line number (1-indexed)
-        line_number = content[:fn_start].count('\n') + 1
+        line_number = content[:fn_start].count("\n") + 1
 
         return (has_spec_or_external, has_proof, has_verifier_external, line_number)
 
@@ -270,12 +270,22 @@ def analyze_functions(
         print(f"  Checking specific file: {target_file.name}")
         result = parse_function_in_file(target_file, func_name)
         has_spec, has_proof, is_external_body, line_number = result
-        
+
         # Update the link with the correct line number
         # Replace the line number in the link: #L123 -> #L{line_number}
-        new_link = re.sub(r'#L\d+', f'#L{line_number}', github_link) if line_number > 0 else github_link
-        
-        results[github_link] = (has_spec, has_proof, is_external_body, line_number, new_link)
+        new_link = (
+            re.sub(r"#L\d+", f"#L{line_number}", github_link)
+            if line_number > 0
+            else github_link
+        )
+
+        results[github_link] = (
+            has_spec,
+            has_proof,
+            is_external_body,
+            line_number,
+            new_link,
+        )
         ext_marker = " [external_body]" if is_external_body else ""
         print(
             f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}"
@@ -289,7 +299,7 @@ def update_links_to_main_branch(csv_path: Path):
     """Update all GitHub links in CSV to use 'main' branch instead of specific commit hash."""
     try:
         print("Updating links to use 'main' branch...")
-        
+
         # Read the CSV
         rows = []
         with open(csv_path, "r") as f:
@@ -301,20 +311,16 @@ def update_links_to_main_branch(csv_path: Path):
                 if old_link:
                     # Replace the commit hash with 'main'
                     # Pattern: /blob/{HASH}/ -> /blob/main/
-                    new_link = re.sub(
-                        r'/blob/[a-f0-9]+/',
-                        '/blob/main/',
-                        old_link
-                    )
+                    new_link = re.sub(r"/blob/[a-f0-9]+/", "/blob/main/", old_link)
                     row["link"] = new_link
                 rows.append(row)
-        
+
         # Write back to CSV
         with open(csv_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
-        
+
         print("✓ Updated all links to use 'main' branch")
     except Exception as e:
         print(f"Warning: Could not update links: {e}")
@@ -336,7 +342,9 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, s
     for row in rows:
         old_link = row["link"]
         if old_link in results:
-            has_spec, has_proof, is_external_body, line_number, new_link = results[old_link]
+            has_spec, has_proof, is_external_body, line_number, new_link = results[
+                old_link
+            ]
             # Update link to include correct line number
             row["link"] = new_link
             # Use "ext" for functions with external_body, "yes" for regular specs

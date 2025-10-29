@@ -163,19 +163,59 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     }
 }
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
+    // Does the implementation of this trait obey basic addition principles
+    open spec fn obeys_add_spec() -> bool {
+        true
+    }
+    // Pre-condition of add
+    open spec fn add_req(self, rhs: &FieldElement51) -> bool {
+        0 <= self.limbs[0] + rhs.limbs[0] <= 10 &&
+        0 <= self.limbs[1] + rhs.limbs[1] <= 10 &&
+        0 <= self.limbs[2] + rhs.limbs[2] <= 10 &&
+        0 <= self.limbs[3] + rhs.limbs[3] <= 10 &&
+        0 <= self.limbs[4] + rhs.limbs[4] <= 10
+    }
+    // Postcondition of add
+    open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
+        FieldElement51 {
+            limbs: [
+                (self.limbs[0] + rhs.limbs[0]) as u64,
+                (self.limbs[1] + rhs.limbs[1]) as u64,
+                (self.limbs[2] + rhs.limbs[2]) as u64,
+                (self.limbs[3] + rhs.limbs[3]) as u64,
+                (self.limbs[4] + rhs.limbs[4]) as u64,
+            ]
+        }
+    }
+}
+
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
+        assert(0 <= self.limbs[1] + _rhs.limbs[1] <= 10 );
         let mut output = *self;
         /* ORIGINAL CODE
         output += _rhs;
         */
         /* MODIFIED CODE */
-        for i in 0..5 {
-            proof {
-                assume(false);
-            }
+        let ghost v = [self.limbs[0],
+self.limbs[1],
+self.limbs[2],
+self.limbs[3],
+self.limbs[4], ];
+        for i in 0..5
+            invariant
+                // 0 <= g_output.limbs[0] + _rhs.limbs[0] <= 10,
+                // 0 <= g_output.limbs[1] + _rhs.limbs[1] <= 10,
+                // 0 <= g_output.limbs[2] + _rhs.limbs[2] <= 10,
+                // 0 <= g_output.limbs[3] + _rhs.limbs[3] <= 10,
+                // 0 <= g_output.limbs[4] + _rhs.limbs[4] <= 10,
+                0 <= v[i as int] + _rhs.limbs[i as int] <= 10,
+        {
+            assume(output.limbs[i as int] + _rhs.limbs[i as int] < 10);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */

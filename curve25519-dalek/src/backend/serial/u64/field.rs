@@ -179,11 +179,11 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
     open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
         FieldElement51 {
             limbs: [
-                ((self).limbs[0] + rhs.limbs[0]) as u64,
-                ((self).limbs[1] + rhs.limbs[1]) as u64,
-                ((self).limbs[2] + rhs.limbs[2]) as u64,
-                ((self).limbs[3] + rhs.limbs[3]) as u64,
-                ((self).limbs[4] + rhs.limbs[4]) as u64,
+                (self.limbs[0] + rhs.limbs[0]) as u64,
+                (self.limbs[1] + rhs.limbs[1]) as u64,
+                (self.limbs[2] + rhs.limbs[2]) as u64,
+                (self.limbs[3] + rhs.limbs[3]) as u64,
+                (self.limbs[4] + rhs.limbs[4]) as u64,
             ],
         }
     }

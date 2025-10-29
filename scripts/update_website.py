@@ -92,6 +92,8 @@ def main():
         "module_breakdown.png",
         "csv_preview.png",
         "curve25519_functions.csv",
+        "metadata.json",
+        "stats.json",
     ]
 
     for file_name in files_to_copy:

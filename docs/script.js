@@ -261,5 +261,60 @@ document.addEventListener('DOMContentLoaded', function() {
             renderCsvTable();
         });
     });
+
+    // Load and display time period metadata
+    async function loadTimePeriod() {
+        try {
+            const response = await fetch('outputs/metadata.json');
+            const metadata = await response.json();
+            
+            // Format dates as "Oct 21 - Oct 28"
+            const firstDate = new Date(metadata.first_date);
+            const lastDate = new Date(metadata.last_date);
+            
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            };
+            
+            const timePeriodText = `${formatDate(firstDate)} - ${formatDate(lastDate)}`;
+            const daysText = `${metadata.total_days} days of tracking data`;
+            
+            document.getElementById('timePeriod').textContent = timePeriodText;
+            document.getElementById('timePeriodDays').textContent = daysText;
+        } catch (error) {
+            console.error('Error loading time period:', error);
+            // Fallback text
+            document.getElementById('timePeriod').textContent = 'Recent data';
+            document.getElementById('timePeriodDays').textContent = 'Tracking period';
+        }
+    }
+    
+    // Load stats from JSON
+    async function loadStats() {
+        try {
+            const response = await fetch('outputs/stats.json');
+            const stats = await response.json();
+            
+            // Update hero stats
+            document.getElementById('totalFunctions').textContent = stats.total_functions;
+            document.getElementById('withSpecs').textContent = stats.with_specs;
+            document.getElementById('withSpecsPct').textContent = `${stats.with_specs_pct}%`;
+            document.getElementById('fullyVerified').textContent = stats.fully_verified;
+            document.getElementById('fullyVerifiedPct').textContent = `${stats.fully_verified_pct}%`;
+            
+            // Update metrics section
+            document.getElementById('proofCompletionRate').textContent = `${stats.proof_completion_rate}%`;
+            document.getElementById('proofCompletionDesc').textContent = 
+                `${stats.fully_verified} of ${stats.with_specs} specs are fully proven`;
+            document.getElementById('functionsRemaining').textContent = stats.no_specs;
+        } catch (error) {
+            console.error('Error loading stats:', error);
+            // Keep fallback values that are hardcoded in HTML
+        }
+    }
+    
+    // Load time period on page load
+    loadTimePeriod();
+    loadStats();
 });
 

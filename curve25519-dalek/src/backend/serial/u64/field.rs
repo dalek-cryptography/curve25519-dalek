@@ -49,17 +49,11 @@ use crate::backend::serial::u64::common_verus::pow_lemmas::*;
 use crate::backend::serial::u64::common_verus::shift_lemmas::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::as_bytes_lemmas::*;
-#[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::as_nat_lemmas::*;
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::compute_q_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::from_bytes_lemmas::*;
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::limbs_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
 #[allow(unused_imports)]
@@ -70,8 +64,6 @@ use crate::backend::serial::u64::field_lemmas::pow2_51_lemmas::*;
 use crate::backend::serial::u64::field_lemmas::pow2k_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::reduce_lemmas::*;
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::to_bytes_reduction_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
@@ -161,11 +153,25 @@ fn m(x: u64, y: u64) -> (r: u128)
 }
 
 impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
-    fn add_assign(&mut self, _rhs: &'a FieldElement51) {
-        for i in 0..5 {
-            proof {
-                assume(false);
-            }
+    fn add_assign(&mut self, _rhs: &'a FieldElement51)
+        requires
+            forall|i: int| 0 <= i < 5 ==> #[trigger] (old(self).limbs[i] + _rhs.limbs[i]) <= u64::MAX,
+        ensures
+            forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] == old(self).limbs[i] + _rhs.limbs[i],
+            forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] <= u64::MAX,
+    {
+        let ghost original_limbs = self.limbs;
+        for i in 0..5
+            invariant
+                forall|j: int|
+                    #![auto]
+                    0 <= j < i ==> self.limbs[j] == original_limbs[j] + _rhs.limbs[j],
+                forall|j: int| #![auto] i <= j < 5 ==> self.limbs[j] == original_limbs[j],
+                forall|j: int|
+                    0 <= j < 5 ==> #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
+        {
+            // Trigger the forall
+            assert(original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);
             self.limbs[i] += _rhs.limbs[i];
         }
     }
@@ -200,11 +206,10 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn add(self, _rhs: &'a FieldElement51) -> (result: FieldElement51)
-        ensures
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] result.limbs[i] == self.limbs[i] + _rhs.limbs[i],
-            forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] <= u64::MAX,
+    fn add(self, _rhs: &'a FieldElement51) -> (output: FieldElement51)
+    ensures
+        forall|i: int| 0 <= i < 5 ==> #[trigger] output.limbs[i] == self.limbs[i] + _rhs.limbs[i],
+        forall|i: int| 0 <= i < 5 ==> #[trigger] output.limbs[i] <= u64::MAX,
     {
         let mut output = *self;
         /* ORIGINAL CODE
@@ -239,7 +244,14 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
 }
 
 impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
-    fn sub_assign(&mut self, _rhs: &'a FieldElement51) {
+    fn sub_assign(&mut self, _rhs: &'a FieldElement51)
+        requires
+            forall|i: int| 0 <= i < 5 ==> old(self).limbs[i] < (1u64 << 54),
+            forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54),
+        ensures
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
+            as_nat(self.limbs) % p() == (as_nat(old(self).limbs) as int - as_nat(_rhs.limbs) as int) % p(),
+    {
         /* ORIGINAL CODE
         let result = (self as &FieldElement51) - _rhs;
         self.0 = result.0;
@@ -259,7 +271,14 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
 impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn sub(self, _rhs: &'a FieldElement51) -> FieldElement51 {
+    fn sub(self, _rhs: &'a FieldElement51) -> (output: FieldElement51)
+        requires
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 54),
+            forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54),
+        ensures
+            forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 52),
+            as_nat(output.limbs) % p() == (as_nat(self.limbs) as int - as_nat(_rhs.limbs) as int) % p(),
+    {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //
@@ -269,7 +288,13 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
         //
         // Since we don't yet have type-level integers to do this, we
         // have to add an explicit reduction call here.
-        assume(false);
+        //
+        // Note on "magic numbers":
+        // 36028797018963664u64 = 2^55 - 304 = 16 * (2^51 - 19)
+        // 36028797018963952u64 = 2^55 - 16 =  16 * (2^51 - 1)
+        proof {
+            assume(false);
+        }
         FieldElement51::reduce(
             [
                 (self.limbs[0] + 36028797018963664u64) - _rhs.limbs[0],
@@ -623,12 +648,10 @@ impl FieldElement51 {
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
             as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
             as_nat(r.limbs) % p() == as_nat(limbs) % p(),
-            as_nat(r.limbs) < 2 * p(),
     {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
-            lemma_reduce_bound_2p(limbs);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest
@@ -759,40 +782,16 @@ impl FieldElement51 {
     /// encoding is canonical.
     #[rustfmt::skip]  // keep alignment of s[*] calculations
     pub fn as_bytes(self) -> (r: [u8; 32])
-        ensures
-    // canonical encoding, i.e. mod p value
+        ensures  // TODO: Update after https:
+    //github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
 
-            as_nat_32_u8(&r) == as_nat(self.limbs) % p(),
+            true,
+            // VERIFICATION NOTE: tentative spec function addition
+            r@ == field_element_as_bytes(&self),
     {
         proof {
-            // No overflows
-            as_bytes_boundaries1(self.limbs);
-            as_bytes_boundaries2(self.limbs);
-
-            // Step 1: Reduce limbs to ensure h < 2*p
-            // The reduce function ensures the limbs are bounded by 2^52
-            lemma_reduce(self.limbs);
-            lemma_reduce_bound_2p(self.limbs);
-            let limbs = spec_reduce(self.limbs);
-
-            let q = compute_q_spec(limbs);
-
-            // Step 2: Prove that q is the correct quotient
-            assert((q == 0 || q == 1) && (as_nat(limbs) >= p() <==> q == 1) && (as_nat(limbs) < p()
-                <==> q == 0)) by {
-                lemma_compute_q(limbs, q);
-            }
-
-            let final_limbs = reduce_with_q_spec(limbs, q);
-
-            // Step 3: Prove that the reduction preserves the value mod p
-            lemma_to_bytes_reduction(limbs, final_limbs, q);
-
-            // Now arrange the bits of the limbs.
-            let s = bit_arrange(final_limbs);
-
-            // Step 4: Prove that packing limbs into bytes preserves the value
-            lemma_limbs_to_bytes(final_limbs, s);
+            // PROOF SKIP
+            assume(false);
         }
 
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.

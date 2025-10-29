@@ -494,7 +494,7 @@ def save_stats_json(stats: Dict[str, int], output_dir: Path):
     verus_specs = int(stats["verus_specs"])
     verus_proofs = int(stats["verus_proofs"])
     no_specs = int(stats["no_specs"])
-    
+
     website_stats = {
         "total_functions": total,
         "with_specs": verus_specs,
@@ -503,13 +503,15 @@ def save_stats_json(stats: Dict[str, int], output_dir: Path):
         "fully_verified_pct": round(verus_proofs * 100 / total, 1),
         "no_specs": no_specs,
         "no_specs_pct": round(no_specs * 100 / total, 1),
-        "proof_completion_rate": round(verus_proofs * 100 / verus_specs, 1) if verus_specs > 0 else 0,
+        "proof_completion_rate": round(verus_proofs * 100 / verus_specs, 1)
+        if verus_specs > 0
+        else 0,
     }
-    
+
     output_path = output_dir / "stats.json"
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         json.dump(website_stats, f, indent=2)
-    
+
     print(f"Saved: {output_path}")
 
 

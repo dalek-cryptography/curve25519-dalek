@@ -303,6 +303,8 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
         pad=20,
     )
     ax.set_ylim(0, max(100, df["verus_specs_pct"].max() * 1.1))
+    # Set x-axis limits to actual data range
+    ax.set_xlim(df["date"].min(), df["date"].max())
     ax.grid(True, alpha=0.3, linestyle="--")
     ax.legend(loc="upper left", fontsize=11, framealpha=0.9)
 
@@ -376,6 +378,9 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     )
     ax.grid(True, alpha=0.3, linestyle="--", axis="y")
     ax.legend(loc="upper left", fontsize=11, framealpha=0.9)
+    
+    # Set x-axis limits to actual data range
+    ax.set_xlim(df["date"].min(), df["date"].max())
 
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
@@ -450,8 +455,8 @@ def plot_velocity(df: pd.DataFrame, output_dir: Path):
 
 
 @beartype
-def print_summary(df: pd.DataFrame):
-    """Print summary statistics."""
+def print_summary(df: pd.DataFrame) -> dict:
+    """Print summary statistics and return metadata."""
     print("\n" + "=" * 70)
     print("HISTORICAL PROGRESS SUMMARY")
     print("=" * 70)
@@ -502,6 +507,14 @@ def print_summary(df: pd.DataFrame):
         print(f"  Proofs/day:       {proofs_per_day:+.2f}")
 
     print("=" * 70 + "\n")
+    
+    # Return metadata for JSON export
+    return {
+        "first_date": first["date"].strftime('%Y-%m-%d'),
+        "last_date": last["date"].strftime('%Y-%m-%d'),
+        "total_days": total_days,
+        "commits_analyzed": len(df)
+    }
 
 
 @beartype
@@ -563,8 +576,15 @@ def main():
         sample_interval=args.sample,
     )
 
-    # Print summary
-    print_summary(df)
+    # Print summary and get metadata
+    metadata = print_summary(df)
+    
+    # Write metadata to JSON for website
+    import json
+    metadata_path = output_dir / "metadata.json"
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+    print(f"\nMetadata saved to: {metadata_path}")
 
     # Generate plots
     print(f"Generating temporal plots to: {output_dir}")

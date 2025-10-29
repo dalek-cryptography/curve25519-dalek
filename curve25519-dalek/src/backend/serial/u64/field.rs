@@ -194,9 +194,9 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
 
     fn add(self, _rhs: &'a FieldElement51) -> (result: FieldElement51)
         ensures
-            true,
-    // Empty spec to trigger proof-counter script, real spec in add_spec
-
+            forall|i: int|
+                0 <= i < 5 ==> #[trigger] result.limbs[i] == self.limbs[i] + _rhs.limbs[i],
+            forall|i: int| 0 <= i < 5 ==> #[trigger] result.limbs[i] <= u64::MAX,
     {
         let mut output = *self;
         /* ORIGINAL CODE

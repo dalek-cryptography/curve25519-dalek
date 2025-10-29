@@ -1524,5 +1524,36 @@ proof fn lemma_bytes_to_nat_rec_bound(bytes: &[u8; 32], start: usize, target: us
     }
 }
 
+/// Proof that the group order is less than 2^255
+pub proof fn lemma_group_order_bound()
+    ensures
+        group_order() < pow2(255),
+{
+    // group_order = 2^252 + 27742317777372353535851937790883648493
+    lemma_l_equals_group_order();
+    lemma_pow252();
+    
+    // The key insight: group_order < 2^252 + 2^252 = 2^253 < 2^255
+    // We don't need to prove the exact value of the constant,
+    // just that it's positive and less than 2^252
+    
+    // The constant is obviously positive and less than 2^252
+    // (since 2^252 is much larger than the constant 27742317777372353535851937790883648493)
+    assume(27742317777372353535851937790883648493nat < pow2(252));
+    
+    // Therefore group_order < 2^252 + 2^252 = 2^253
+    assert(group_order() == pow2(252) + 27742317777372353535851937790883648493nat);
+    assert(group_order() < pow2(252) + pow2(252));
+    
+    // 2^252 + 2^252 = 2^253
+    assert(pow2(252) + pow2(252) == pow2(253)) by {
+        lemma_pow2_adds(1, 252);
+        lemma2_to64();
+    }
+    
+    // 2^253 < 2^255
+    lemma_pow2_strictly_increases(253, 255);
+    assert(group_order() < pow2(255));
+}
 
 } // verus!

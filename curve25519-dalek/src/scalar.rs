@@ -2564,7 +2564,9 @@ impl UnpackedScalar {
                 assert(v == bytes_to_nat(&result.bytes));
                 assert(v < group_order());
                 {
-                    assume(group_order() < pow2(255));   // use your crate’s known bound on ℓ, or inline arithmetic if ℓ is defined arithmetically
+                    use crate::backend::serial::u64::scalar_lemmas::lemma_group_order_bound;
+                    lemma_group_order_bound();
+                    assert(group_order() < pow2(255));   // use your crate’s known bound on ℓ, or inline arithmetic if ℓ is defined arithmetically
 
                     assert(v < pow2(255));               // by transitivity
 

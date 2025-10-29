@@ -43,16 +43,6 @@ pub(crate) const MINUS_ONE: FieldElement51 = FieldElement51 {
 //     266558006233600,
 // ]);
 
-/// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
-pub(crate) const EDWARDS_D2: FieldElement51 = FieldElement51 {
-    limbs: [
-        1859910466990425,
-        932731440258426,
-        1072319116312658,
-        1815898335770999,
-        633789495995903,
-    ],
-};
 
 /// One minus edwards `d` value squared, equal to `(1 - (-121665/121666) mod p) pow 2`
 pub(crate) const ONE_MINUS_EDWARDS_D_SQUARED: FieldElement51 = FieldElement51 {
@@ -122,6 +112,7 @@ pub(crate) const MONTGOMERY_A_NEG: FieldElement51 = FieldElement51 {
     ],
 };
 
+verus! {
 
 /// Precomputed value of one of the square roots of -1 (mod p)
 pub const SQRT_M1: FieldElement51 = FieldElement51 {
@@ -131,6 +122,17 @@ pub const SQRT_M1: FieldElement51 = FieldElement51 {
 /// Edwards `d` value, equal to `-121665/121666 mod p`.
 pub const EDWARDS_D: FieldElement51 = FieldElement51 {
     limbs: [929955233495203, 466365720129213, 1662059464998953, 2033849074728123, 1442794654840575],
+};
+
+/// Edwards `2*d` value, equal to `2*(-121665/121666) mod p`.
+pub(crate) const EDWARDS_D2: FieldElement51 = FieldElement51 {
+    limbs: [
+        1859910466990425,
+        932731440258426,
+        1072319116312658,
+        1815898335770999,
+        633789495995903,
+    ],
 };
 
 /// `L` is the order of base point, i.e. 2^252 + 27742317777372353535851937790883648493
@@ -170,6 +172,7 @@ pub(crate) const RR: Scalar52 = Scalar52 {
 };
 
 } // verus!
+
 /// The Ed25519 basepoint, as an `EdwardsPoint`.
 ///
 /// This is called `_POINT` to distinguish it from

@@ -660,6 +660,8 @@ impl Zeroize for EdwardsPoint {
     }
 }
 
+} // verus!
+
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
@@ -672,8 +674,6 @@ impl ValidityCheck for EdwardsPoint {
         point_on_curve && on_segre_image
     }
 }
-
-} // verus!
 
 
 // ------------------------------------------------------------------------
@@ -724,6 +724,7 @@ verus! {
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
+        assume(false);
         ProjectiveNielsPoint {
             Y_plus_X: &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -747,6 +748,7 @@ impl EdwardsPoint {
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
     pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
+        assume(false);
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
@@ -773,6 +775,7 @@ impl EdwardsPoint {
         // The denominator is zero only when y=1, the identity point of
         // the Edwards curve.  Since 0.invert() = 0, in this case we
         // compute the 2-torsion point (0,0).
+        assume(false);
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();

@@ -208,7 +208,7 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
                 forall|j: int|
                     0 <= j < 5 ==> #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
         {
-            assert(output.limbs[i as int] == original_limbs[i as int]);
+            // Trigger the forall
             assert(original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);
             output.limbs[i] += _rhs.limbs[i];
         }

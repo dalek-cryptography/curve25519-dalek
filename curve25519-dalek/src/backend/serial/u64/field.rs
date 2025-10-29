@@ -195,7 +195,6 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
     fn add(self, _rhs: &'a FieldElement51) -> FieldElement51 {
-        assert(0 <= self.limbs[1] + _rhs.limbs[1] <= 10);
         let mut output = *self;
         /* ORIGINAL CODE
         output += _rhs;

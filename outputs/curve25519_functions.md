@@ -57,7 +57,7 @@
 | [negate](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L103) | :heavy_check_mark: | :heavy_check_mark: |  |  |
 | [reduce](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L155) | :heavy_check_mark: | :heavy_check_mark: |  |  |
 | [from_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L214) | :heavy_check_mark: | :heavy_check_mark: |  |  |
-| [to_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L243) | :heavy_check_mark: |  |  |  |
+| [to_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L243) | :heavy_check_mark: | :heavy_check_mark: |  |  |
 | [pow2k](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L421) | :heavy_check_mark: | :heavy_check_mark: |  |  |
 | [square](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L979) | :heavy_check_mark: | :heavy_check_mark: |  |  |
 | [square2](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/5a57bad082ab43848deef98bbded087d54fbd560/curve25519-dalek/src/backend/serial/u64/field_verus.rs#L995) | :heavy_check_mark: | :heavy_check_mark: |  |  |

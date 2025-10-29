@@ -29,7 +29,6 @@ pub proof fn lemma_div_and_mod(ai: u64, bi: u64, v: u64, k: nat)
     // 0 < pow2(k) <= u64::MAX
     lemma_pow2_pos(k);
     assert(pow2(k) <= u64::MAX) by {
-        assert(0x8000000000000000 <= u64::MAX) by (compute);
         if (k < 63) {
             lemma_pow2_strictly_increases(k, 63);
         }
@@ -91,6 +90,42 @@ pub proof fn lemma_div_of_sum(a: nat, b: nat, k: nat)
     }
 
     lemma_div_multiples_vanish_fancy((a0 + b0) as int, ((a % k) + (b % k)) as int, k as int);
+}
+
+/// Helper lemma: Division with strict upper bound
+/// If x < a * b and a > 0, then x / a < b
+pub proof fn lemma_div_strictly_bounded(x: int, a: int, b: int)
+    requires
+        a > 0,
+        b >= 0,
+        x < a * b,
+    ensures
+        x / a < b,
+{
+    // (b * a) / a == b
+    lemma_div_by_multiple(b, a);
+    // x < b * a && a > 0 => x / a < (b * a) / a
+    lemma_div_by_multiple_is_strongly_ordered(x, a * b, b, a);
+}
+
+/// Helper lemma: if a * b <= c and b > 0, then a <= c / b
+pub proof fn lemma_mul_le_implies_div_le(a: nat, b: nat, c: nat)
+    requires
+        b > 0,
+        a * b <= c,
+    ensures
+        a <= c / b,
+{
+    lemma_div_is_ordered((a * b) as int, c as int, b as int);
+    lemma_div_by_multiple(a as int, b as int);
+}
+
+pub proof fn lemma_u8_cast_is_mod_256(x: u64)
+    ensures
+        (x as u8) == (x as nat) % 256,
+{
+    assert(x as nat % 256 == x % 256);
+    assert((x as u8) == x % 256) by (bit_vector);
 }
 
 fn main() {

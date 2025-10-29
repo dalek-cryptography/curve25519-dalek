@@ -6,6 +6,7 @@ use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 use vstd::seq::*;
 
+use super::div_mod_lemmas::*;
 use super::mul_lemmas::*;
 use super::sum_lemmas::*;
 
@@ -29,6 +30,38 @@ pub proof fn pow2_le_max64(k: nat)
 {
     lemma2_to64();
     lemma2_to64_rest();
+}
+
+pub proof fn lemma_pow2_plus_one(n: nat)
+    ensures
+        pow2(n + 1) == pow2(n) + pow2(n),
+{
+    assert(pow2(n + 1) == pow2(n) * pow2(1)) by {
+        lemma_pow2_adds(n, 1);
+    }
+    assert(pow2(1) == 1 + 1) by {
+        lemma2_to64();
+    }
+    assert(pow2(n) * (1 + 1) == pow2(n) + pow2(n)) by {
+        lemma_mul_is_distributive_add(pow2(n) as int, 1, 1);
+        lemma_mul_basics_3(pow2(n) as int);
+    }
+}
+
+/// Helper: Division bounds - if x < 2^b then x/2^a < 2^(b-a)
+pub proof fn lemma_div_bound(x: nat, a: nat, b: nat)
+    requires
+        a <= b,
+        x < pow2(b),
+    ensures
+        x / pow2(a) < pow2((b - a) as nat),
+{
+    // Key insight: 2^b / 2^a = 2^(b-a)
+    // Since x < 2^b, we have x / 2^a < 2^b / 2^a = 2^(b-a)
+    lemma_pow2_adds(a, (b - a) as nat);
+
+    // Use division properties
+    lemma_div_strictly_bounded(x as int, pow2(a) as int, pow2((b - a) as nat) as int);
 }
 
 // Rewriting lemma; 2^(a + b) * x = 2^a * (2^b * x)
@@ -627,6 +660,55 @@ pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
 
     assert((b * pow2(s)) as nat / pow2(k) == b * pow2(d)) by {
         pow2_MUL_div(b as nat, s, k);
+    }
+}
+
+/// Generalized: Chunk extraction commutes with modulo
+/// If we extract a b-bit chunk at position k*b where k*b+b <= m, then:
+/// (x / 2^(k*b)) % 2^b == ((x % 2^m) / 2^(k*b)) % 2^b
+///
+/// This is a fundamental property that allows us to extract fixed-size chunks
+/// from a number before or after taking modulo, as long as the chunk lies
+/// entirely below the modulo boundary.
+///
+/// Common uses:
+/// - b=8 for byte extraction (256 = 2^8)
+/// - b=16 for 16-bit word extraction
+/// - b=32 for 32-bit word extraction
+pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m: nat)
+    requires
+        b > 0,
+        k * b + b
+            <= m,  // The chunk we're extracting is entirely below the modulo boundary
+
+    ensures
+        (x / pow2(k * b)) % pow2(b) == ((x % pow2(m)) / pow2(k * b)) % pow2(b),
+{
+    assert((x / pow2(k * b)) % pow2(b) == (x % pow2(k * b + b)) / pow2(k * b)) by {
+        mask_div2(x, k * b, b);
+    }
+
+    let y = x % pow2(m);
+
+    assert((y / pow2(k * b)) % pow2(b) == (y % pow2(k * b + b)) / pow2(k * b)) by {
+        mask_div2(y, k * b, b);
+    }
+
+    let s = k * b + b;
+    let ps = pow2(s);
+
+    assert(x % ps == y % ps) by {
+        let d = (m - s) as nat;
+        let pd = pow2(d);
+        assert(pow2(m) == ps * pd) by {
+            lemma_pow2_adds(s, d);
+        }
+
+        assert((x % (ps * pd)) % ps == x % ps) by {
+            lemma_pow2_pos(d);
+            lemma_pow2_pos(s);
+            lemma_mod_mod(x as int, ps as int, pd as int);
+        }
     }
 }
 

@@ -228,6 +228,43 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
     }
 }
 
+/// Modular Bit Partitioning Theorem
+/// If we add a value 'a' (fitting in k bits) to 'b' shifted left by k positions,
+/// and take the result mod 2^n, we can partition the contributions:
+/// - The low k bits come from 'a' (masked to k bits)
+/// - The high (n-k) bits come from 'b' (masked to n-k bits, then shifted)
+///
+/// This works because:
+/// 1. When a < 2^k, 'a' only affects bits [0, k-1]
+/// 2. When we shift 'b' left by k, it only affects bits [k, n-1]
+/// 3. No carry occurs between the two regions
+/// 4. The sum fits within n bits
+pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
+    requires
+        k <= n,
+        a < pow2(k),
+    ensures
+        (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
+{
+    assert((a + b * pow2(k)) % pow2(n) == a % pow2(n) + (b * pow2(k)) % pow2(n)) by {
+        sum_mod_decomposition(a, b, k, n);
+    }
+
+    assert((b * pow2(k)) % pow2(n) == (b % pow2((n - k) as nat)) * pow2(k)) by {
+        mask_pow2(b, k, n);
+    }
+
+    assert(a % pow2(k) == a == a % pow2(n)) by {
+        assert(pow2(k) <= pow2(n)) by {
+            if (k < n) {
+                lemma_pow2_strictly_increases(k, n);
+            }
+        }
+        lemma_small_mod(a, pow2(k));
+        lemma_small_mod(a, pow2(n));
+    }
+}
+
 fn main() {
 }
 

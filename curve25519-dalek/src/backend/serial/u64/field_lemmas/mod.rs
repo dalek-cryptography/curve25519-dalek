@@ -17,3 +17,7 @@ pub mod pow2k_lemmas;
 pub mod reduce_lemmas;
 
 pub mod load8_lemmas;
+
+pub mod compute_q_lemmas;
+pub mod limbs_to_bytes_lemmas;
+pub mod to_bytes_reduction_lemmas;

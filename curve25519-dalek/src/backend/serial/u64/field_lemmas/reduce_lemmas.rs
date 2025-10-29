@@ -193,6 +193,136 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
     );
 }
 
+/// Proves that reduce() ensures as_nat < 2*p()
+///
+/// This is the key property needed for to_bytes(): after reduce(),
+/// the value is bounded by 2*p = 2^256 - 38, not just by the loose
+/// bound from individual limb sizes.
+pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
+    ensures
+        as_nat(spec_reduce(limbs)) < 2 * p(),
+{
+    lemma2_to64();
+    pow255_gt_19();
+
+    // From lemma_boundaries, we know the tight bounds on each expression in spec_reduce
+    lemma_boundaries(limbs);
+
+    let r = spec_reduce(limbs);
+
+    lemma_reduce(limbs);
+
+    assert(1u64 << 51 == pow2(51)) by {
+        shift_is_pow2(51);
+    }
+
+    // For r[i] where i > 0: (limbs[i] & mask51) + (limbs[i-1] >> 51) < 2^51 + 2^13
+    assert forall|i: int| 0 <= i <= 4 implies #[trigger] (limbs[i] & mask51) < pow2(51) by {
+        masked_lt_51(limbs[i]);
+    }
+    // separate foralls, because they trigger on i and i-1
+    assert forall|i: int| 0 <= i <= 4 implies #[trigger] limbs[i] >> 51 < pow2(13) by {
+        assert(limbs[i] >> 51 <= u64::MAX >> 51) by {
+            lemma_shr_le_u64(limbs[i], u64::MAX, 51);
+        }
+        assert(u64::MAX >> 51 < pow2(13)) by {
+            assert(1u64 << 13 == pow2(13)) by {
+                shift_is_pow2(13);
+            }
+            lemma_u64_max_shifting(51);
+        }
+    }
+
+    // For r[0] we have the extra factor of 19:
+    // r[0] = (limbs[0] & mask51) + (limbs[4] >> 51) * 19
+    assert((limbs[4] >> 51) * 19 < pow2(18)) by {
+        assert(19 < pow2(5)) by {
+            lemma2_to64();
+        }
+        assert(pow2(18) == pow2(13) * pow2(5)) by {
+            lemma_pow2_adds(13, 5);
+        }
+        mul_lt((limbs[4] >> 51) as nat, pow2(13), 19, pow2(5));
+    }
+
+    assert forall|i: nat| 1 <= i <= 4 implies #[trigger] pow2(i * 51) * r[i as int] < pow2(i * 51)
+        * pow2(13) + pow2((i + 1) * 51) by {
+        assert(pow2(i * 51) * r[i as int] < pow2(i * 51) * (pow2(51) + pow2(13))) by {
+            lemma_pow2_pos(i * 51);
+            lemma_mul_strict_inequality(
+                r[i as int] as int,
+                (pow2(51) + pow2(13)) as int,
+                pow2(i * 51) as int,
+            );
+            lemma_mul_is_commutative(pow2(i * 51) as int, r[i as int] as int);
+            lemma_mul_is_commutative(pow2(i * 51) as int, (pow2(51) + pow2(13)) as int);
+        }
+
+        assert(pow2(i * 51) * (pow2(51) + pow2(13)) == pow2((i + 1) * 51) + pow2(i * 51) * pow2(13))
+            by {
+            assert(pow2(i * 51) * (pow2(51) + pow2(13)) == pow2(i * 51) * pow2(51) + pow2(i * 51)
+                * pow2(13)) by {
+                lemma_mul_is_distributive_add(
+                    pow2(i * 51) as int,
+                    pow2(51) as int,
+                    pow2(13) as int,
+                );
+            }
+            assert(pow2(i * 51) * pow2(51) == pow2((i + 1) * 51)) by {
+                assert(i * 51 + 51 == (i + 1) * 51) by {
+                    lemma_mul_is_distributive_add_other_way(51, i as int, 1);
+                }
+                lemma_pow2_adds(i * 51, 51);
+            }
+        }
+    }
+
+    // write out i * 51s explicitly to trigger forall match
+    let tail = (pow2(18) + pow2(51) + pow2(64) + pow2(102) + pow2(115) + pow2(153) + pow2(166)
+        + pow2(204) + pow2(217));
+    assert(as_nat(r) == r[0] + pow2(1 * 51) * r[1] + pow2(2 * 51) * r[2] + pow2(3 * 51) * r[3]
+        + pow2(4 * 51) * r[4] < tail + pow2(255)) by {
+        lemma_pow2_adds(51, 13);
+        lemma_pow2_adds(102, 13);
+        lemma_pow2_adds(153, 13);
+        lemma_pow2_adds(204, 13);
+    }
+
+    assert(2 * p() == pow2(255) + pow2(255) - 38) by {
+        lemma_pow2_adds(255, 1);
+        lemma_pow2_plus_one(255);
+    }
+
+    // we'll prove the tail is small
+    assert(tail < pow2(255) - 38) by {
+        assert forall|i: nat| i <= 204 implies #[trigger] pow2(i) < pow2(217) by {
+            lemma_pow2_strictly_increases(i, 217);
+        }
+        assert(tail < 9 * pow2(217) < pow2(221)) by {
+            assert(9 < pow2(4));  // known
+            assert(pow2(217) > 0) by {
+                lemma_pow2_pos(217);
+            }
+            lemma_mul_strict_inequality(9, pow2(4) as int, pow2(217) as int);
+            lemma_pow2_adds(217, 4);
+        }
+
+        assert(pow2(254) < pow2(255) - 38) by {
+            assert(38 < pow2(6));  // known
+            assert(pow2(255) - 38 > pow2(255) - pow2(6) == pow2(254) + pow2(254) - pow2(6)) by {
+                lemma_pow2_plus_one(254);
+            }
+            assert(pow2(254) - pow2(6) > 0) by {
+                lemma_pow2_strictly_increases(6, 254);
+            }
+        }
+
+        assert(pow2(221) < pow2(254)) by {
+            lemma_pow2_strictly_increases(221, 254);
+        }
+    }
+}
+
 fn main() {
 }
 

@@ -181,11 +181,11 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
     open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
         FieldElement51 {
             limbs: [
-                (self.limbs[0] + rhs.limbs[0]) as u64,
-                (self.limbs[1] + rhs.limbs[1]) as u64,
-                (self.limbs[2] + rhs.limbs[2]) as u64,
-                (self.limbs[3] + rhs.limbs[3]) as u64,
-                (self.limbs[4] + rhs.limbs[4]) as u64,
+                ((self).limbs[0] + rhs.limbs[0]) as u64,
+                ((self).limbs[1] + rhs.limbs[1]) as u64,
+                ((self).limbs[2] + rhs.limbs[2]) as u64,
+                ((self).limbs[3] + rhs.limbs[3]) as u64,
+                ((self).limbs[4] + rhs.limbs[4]) as u64,
             ]
         }
     }
@@ -218,8 +218,24 @@ self.limbs[4], ];
         }
         /* </MODIFIED CODE> */
         proof {
-            assume(false);  // BECAUSE OF VERUS TRAIT ISSUES
         }
+        assert(output.limbs == [
+                (v[0] + _rhs.limbs[0]) as u64,
+                (v[1] + _rhs.limbs[1]) as u64,
+                (v[2] + _rhs.limbs[2]) as u64,
+                (v[3] + _rhs.limbs[3]) as u64,
+                (v[4] + _rhs.limbs[4]) as u64,
+            ]);
+        assert(output ==
+        FieldElement51 {
+            limbs: [
+                (v[0] + _rhs.limbs[0]) as u64,
+                (v[1] + _rhs.limbs[1]) as u64,
+                (v[2] + _rhs.limbs[2]) as u64,
+                (v[3] + _rhs.limbs[3]) as u64,
+                (v[4] + _rhs.limbs[4]) as u64,
+            ]
+        });
         output
     }
 }

@@ -201,9 +201,12 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
         let ghost original_limbs = self.limbs;
         for i in 0..5
             invariant
-                forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == original_limbs[j] + _rhs.limbs[j],
+                forall|j: int|
+                    #![auto]
+                    0 <= j < i ==> output.limbs[j] == original_limbs[j] + _rhs.limbs[j],
                 forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == original_limbs[j],
-                forall|j: int| 0 <= j < 5 ==> #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
+                forall|j: int|
+                    0 <= j < 5 ==> #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
         {
             assert(output.limbs[i as int] == original_limbs[i as int]);
             assert(original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);

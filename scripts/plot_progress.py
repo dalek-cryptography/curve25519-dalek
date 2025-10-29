@@ -486,6 +486,34 @@ def print_summary(stats: Dict[str, int]):
 
 
 @beartype
+def save_stats_json(stats: Dict[str, int], output_dir: Path):
+    """Save stats to JSON for website consumption."""
+    import json
+
+    total = int(stats["total"])  # Convert from numpy.int64 to Python int
+    verus_specs = int(stats["verus_specs"])
+    verus_proofs = int(stats["verus_proofs"])
+    no_specs = int(stats["no_specs"])
+    
+    website_stats = {
+        "total_functions": total,
+        "with_specs": verus_specs,
+        "with_specs_pct": round(verus_specs * 100 / total, 1),
+        "fully_verified": verus_proofs,
+        "fully_verified_pct": round(verus_proofs * 100 / total, 1),
+        "no_specs": no_specs,
+        "no_specs_pct": round(no_specs * 100 / total, 1),
+        "proof_completion_rate": round(verus_proofs * 100 / verus_specs, 1) if verus_specs > 0 else 0,
+    }
+    
+    output_path = output_dir / "stats.json"
+    with open(output_path, 'w') as f:
+        json.dump(website_stats, f, indent=2)
+    
+    print(f"Saved: {output_path}")
+
+
+@beartype
 def main():
     parser = argparse.ArgumentParser(
         description="Plot verification progress for curve25519-dalek"
@@ -535,6 +563,7 @@ def main():
     plot_comparison_pie(stats, output_dir)
     plot_funnel(stats, output_dir)
     plot_file_breakdown(df, output_dir)
+    save_stats_json(stats, output_dir)
 
     print("-" * 60)
     print(f"\nAll plots saved to: {output_dir}")
@@ -544,6 +573,7 @@ def main():
     print("  - comparison_pie.png")
     print("  - verification_funnel.png")
     print("  - module_breakdown.png")
+    print("  - stats.json")
 
 
 if __name__ == "__main__":

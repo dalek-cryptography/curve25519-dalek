@@ -32,18 +32,18 @@
             <p class="subtitle">Project to formally verify the Rust code of curve25519-dalek using Verus</p>
             <div class="hero-stats">
                 <div class="stat-card">
-                    <div class="stat-number">257</div>
+                    <div class="stat-number" id="totalFunctions">257</div>
                     <div class="stat-label">Total Functions</div>
                 </div>
                 <div class="stat-card highlight-card">
-                    <div class="stat-number">91</div>
+                    <div class="stat-number" id="withSpecs">91</div>
                     <div class="stat-label">Functions with Specs</div>
-                    <div class="stat-percent">35.4%</div>
+                    <div class="stat-percent" id="withSpecsPct">35.4%</div>
                 </div>
                 <div class="stat-card success-card">
-                    <div class="stat-number">38</div>
+                    <div class="stat-number" id="fullyVerified">38</div>
                     <div class="stat-label">Fully Verified</div>
-                    <div class="stat-percent">14.8%</div>
+                    <div class="stat-percent" id="fullyVerifiedPct">14.8%</div>
                 </div>
             </div>
             <div class="cta-buttons">
@@ -88,12 +88,12 @@
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Proof Completion Rate</span>
-                        <span class="metric-value">42%</span>
-                        <span class="metric-description">38 of 91 specs are fully proven</span>
+                        <span class="metric-value" id="proofCompletionRate">42%</span>
+                        <span class="metric-description" id="proofCompletionDesc">38 of 91 specs are fully proven</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Functions Remaining</span>
-                        <span class="metric-value">166</span>
+                        <span class="metric-value" id="functionsRemaining">166</span>
                         <span class="metric-description">Functions without any specs yet</span>
                     </div>
                     <div class="metric-item">

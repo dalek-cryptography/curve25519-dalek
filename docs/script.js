@@ -289,7 +289,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Load stats from JSON
+    async function loadStats() {
+        try {
+            const response = await fetch('outputs/stats.json');
+            const stats = await response.json();
+            
+            // Update hero stats
+            document.getElementById('totalFunctions').textContent = stats.total_functions;
+            document.getElementById('withSpecs').textContent = stats.with_specs;
+            document.getElementById('withSpecsPct').textContent = `${stats.with_specs_pct}%`;
+            document.getElementById('fullyVerified').textContent = stats.fully_verified;
+            document.getElementById('fullyVerifiedPct').textContent = `${stats.fully_verified_pct}%`;
+            
+            // Update metrics section
+            document.getElementById('proofCompletionRate').textContent = `${stats.proof_completion_rate}%`;
+            document.getElementById('proofCompletionDesc').textContent = 
+                `${stats.fully_verified} of ${stats.with_specs} specs are fully proven`;
+            document.getElementById('functionsRemaining').textContent = stats.no_specs;
+        } catch (error) {
+            console.error('Error loading stats:', error);
+            // Keep fallback values that are hardcoded in HTML
+        }
+    }
+    
     // Load time period on page load
     loadTimePeriod();
+    loadStats();
 });
 

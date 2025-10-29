@@ -55,6 +55,7 @@ jobs:
           cp outputs/csv_preview.png docs/outputs/
           cp outputs/curve25519_functions.csv docs/outputs/
           cp outputs/metadata.json docs/outputs/
+          cp outputs/stats.json docs/outputs/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

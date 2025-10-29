@@ -250,7 +250,13 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
             forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54),
         ensures
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52),
-            as_nat(self.limbs) % p() == (as_nat(old(self).limbs) as int - as_nat(_rhs.limbs) as int) % p(),
+            self.limbs == spec_reduce([
+                ((old(self).limbs[0] + 36028797018963664u64) - _rhs.limbs[0]) as u64,
+                ((old(self).limbs[1] + 36028797018963952u64) - _rhs.limbs[1]) as u64,
+                ((old(self).limbs[2] + 36028797018963952u64) - _rhs.limbs[2]) as u64,
+                ((old(self).limbs[3] + 36028797018963952u64) - _rhs.limbs[3]) as u64,
+                ((old(self).limbs[4] + 36028797018963952u64) - _rhs.limbs[4]) as u64,
+            ]),
     {
         /* ORIGINAL CODE
         let result = (self as &FieldElement51) - _rhs;
@@ -268,17 +274,39 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
     }
 }
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
+    // Does the implementation of this trait obey basic subtraction principles
+    open spec fn obeys_sub_spec() -> bool {
+        true
+    }
+
+    // Pre-condition of sub
+    open spec fn sub_req(self, rhs: &FieldElement51) -> bool {
+        forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 54) &&
+        forall|i: int| 0 <= i < 5 ==> rhs.limbs[i] < (1u64 << 54)
+    }
+
+    // Postcondition of sub
+    open spec fn sub_spec(self, rhs: &FieldElement51) -> FieldElement51 {
+        // The result is computed by adding 16*p to self, subtracting rhs, and then reducing
+        // We specify this in terms of the spec_reduce function
+        FieldElement51 {
+            limbs: spec_reduce([
+                ((self.limbs[0] + 36028797018963664u64) - rhs.limbs[0]) as u64,
+                ((self.limbs[1] + 36028797018963952u64) - rhs.limbs[1]) as u64,
+                ((self.limbs[2] + 36028797018963952u64) - rhs.limbs[2]) as u64,
+                ((self.limbs[3] + 36028797018963952u64) - rhs.limbs[3]) as u64,
+                ((self.limbs[4] + 36028797018963952u64) - rhs.limbs[4]) as u64,
+            ])
+        }
+    }
+}
+
 impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn sub(self, _rhs: &'a FieldElement51) -> (output: FieldElement51)
-        requires
-            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 54),
-            forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54),
-        ensures
-            forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 52),
-            as_nat(output.limbs) % p() == (as_nat(self.limbs) as int - as_nat(_rhs.limbs) as int) % p(),
-    {
+    fn sub(self, _rhs: &'a FieldElement51) -> FieldElement51 {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
         //

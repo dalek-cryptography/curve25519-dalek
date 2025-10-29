@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - fix-temporal-chart-axis  # Temporary for testing
     paths:
       - 'docs/**'
       - 'outputs/curve25519_functions.csv'

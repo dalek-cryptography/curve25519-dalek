@@ -14,11 +14,12 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.DALEK_LITE_WRITE_TOKEN }}
+          fetch-depth: 0  # Full history for temporal charts
       - name: Check if previous commit is from bot
         id: check_bot
         run: |
           LAST_COMMIT_MSG=$(git log -1 --format='%s')
-          if [[ "$LAST_COMMIT_MSG" == "Bot: Update count of Verus proofs/specs" ]]; then
+          if [[ "$LAST_COMMIT_MSG" == "Bot: Update count of Verus proofs/specs"* ]]; then
             echo "previous_was_bot=true" >> $GITHUB_OUTPUT
           else
             echo "previous_was_bot=false" >> $GITHUB_OUTPUT

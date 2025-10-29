@@ -147,9 +147,13 @@ def parse_function_in_file(
         # Check for verifier::external attributes early (before checking has_spec)
         has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
 
-        # If neither specs nor external_body, skip this function
+        # Calculate line number for ALL functions (even those without specs)
+        # This ensures CSV links are always up-to-date
+        line_number = content[:fn_start].count("\n") + 1
+
+        # If neither specs nor external_body, return early with just the line number
         if not has_spec and not has_verifier_external:
-            continue  # This isn't a Verus-related function
+            return (False, False, False, line_number)
 
         # Find the matching closing brace for the function body
         brace_count = 1
@@ -207,9 +211,7 @@ def parse_function_in_file(
         # If function has external_body, treat it as having a spec (even if no requires/ensures)
         has_spec_or_external = has_spec or has_verifier_external
 
-        # Calculate line number (1-indexed)
-        line_number = content[:fn_start].count("\n") + 1
-
+        # Line number was already calculated earlier
         return (has_spec_or_external, has_proof, has_verifier_external, line_number)
 
     # Probably what's happened is that we saw the function, but
@@ -273,11 +275,12 @@ def analyze_functions(
 
         # Update the link with the correct line number
         # Replace the line number in the link: #L123 -> #L{line_number}
-        new_link = (
-            re.sub(r"#L\d+", f"#L{line_number}", github_link)
-            if line_number > 0
-            else github_link
-        )
+        # Only update if we found the function (line_number > 0)
+        if line_number > 0:
+            new_link = re.sub(r"#L\d+", f"#L{line_number}", github_link)
+        else:
+            # Function not found, keep old link
+            new_link = github_link
 
         results[github_link] = (
             has_spec,

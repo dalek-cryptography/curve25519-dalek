@@ -2553,8 +2553,54 @@ impl UnpackedScalar {
         // Another approach is like lemma_nine_limbs_equals_slice128_to_nat,
         // which shows that a recursive defn equals a large polynomial
         assert (to_nat(&self.limbs) < group_order() ==>   bytes_to_nat(&result.bytes) < group_order());
-        assert( to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127 );
-        assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
+        proof {
+            if (bytes_to_nat(&result.bytes) < group_order()) {
+                let v = bytes_to_nat(&result.bytes);
+
+                assert(bytes_to_nat(&result.bytes) == bytes_to_nat_rec(&result.bytes, 0));
+                // assert((bytes[index] as nat) * pow2((index * 8) as nat) > 0);
+
+
+                assert(v == bytes_to_nat(&result.bytes));
+                assert(v < group_order());
+                {
+                    assume(group_order() < pow2(255));   // use your crate’s known bound on ℓ, or inline arithmetic if ℓ is defined arithmetically
+
+                    assert(v < pow2(255));               // by transitivity
+
+                    let b31: nat = result.bytes[31] as nat;
+                    if b31 >= 128 {
+                        // v ≥ b31*2^248 ≥ 128*2^248 = 2^255 (the last step discharged by compute). :contentReference[oaicite:1]{index=1}
+                        use vstd::arithmetic::power2::{pow2, lemma_pow2_adds, lemma2_to64};
+                        use vstd::arithmetic::mul::lemma_mul_inequality;
+
+                        // Use the lemma
+                        use crate::backend::serial::u64::scalar_lemmas::lemma_bytes_to_nat_lower_bound;
+                        lemma_bytes_to_nat_lower_bound(&result.bytes, 31);
+            
+                        lemma_pow2_adds(7, 248);
+
+                        lemma2_to64();
+
+                        // Keep types consistent; either do it in `int`:
+                        assert( (pow2(255) as nat) == 128 * (pow2(248) as nat) );
+                        assert(v >= b31 * pow2(248));
+                        lemma_mul_inequality(128, b31 as int,  pow2(248) as int);
+
+                        assert(b31 >= 128);
+                        assert(v >= pow2(255));
+                        assert(false); // contradicts v < 2^255
+                    }
+                    assert(result.bytes[31] <= 127);
+
+                    assert(is_canonical_scalar(&result));
+                }
+            }
+        }
+
+        // assume( to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127 );
+        // assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
+
         result
     }
 

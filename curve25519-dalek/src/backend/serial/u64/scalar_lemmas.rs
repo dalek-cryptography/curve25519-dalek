@@ -1493,4 +1493,36 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
+
+/// Proves that bytes_to_nat is at least as large as any individual term in its sum
+pub proof fn lemma_bytes_to_nat_lower_bound(bytes: &[u8; 32], index: usize)
+    requires
+        index < 32,
+    ensures
+        bytes_to_nat(bytes) >= (bytes[index as int] as nat) * pow2((index * 8) as nat),
+{
+    // bytes_to_nat is defined recursively as a sum of non-negative terms
+    // Therefore the sum is >= any individual term
+    assert(bytes_to_nat(bytes) == bytes_to_nat_rec(bytes, 0));
+    lemma_bytes_to_nat_rec_bound(bytes, 0, index);
+}
+
+/// Helper lemma showing that bytes_to_nat_rec is >= a specific term
+proof fn lemma_bytes_to_nat_rec_bound(bytes: &[u8; 32], start: usize, target: usize)
+    requires
+        start <= target < 32,
+    ensures
+        bytes_to_nat_rec(bytes, start as int) >= (bytes[target as int] as nat) * pow2((target * 8) as nat),
+    decreases 32 - start,
+{
+    if start == target {
+        // Base case: the current term is exactly what we're looking for
+        // bytes_to_nat_rec(bytes, target) = bytes[target] * pow2(target*8) + (rest >= 0)
+    } else {
+        // Inductive case: recurse to the next position
+        lemma_bytes_to_nat_rec_bound(bytes, (start + 1) as usize, target);
+    }
+}
+
+
 } // verus!

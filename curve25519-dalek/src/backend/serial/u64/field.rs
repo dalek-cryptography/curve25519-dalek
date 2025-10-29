@@ -172,9 +172,7 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        0 <= self.limbs[0] + rhs.limbs[0] <= u64::MAX && 0 <= self.limbs[1] + rhs.limbs[1] <= u64::MAX && 0
-            <= self.limbs[2] + rhs.limbs[2] <= u64::MAX && 0 <= self.limbs[3] + rhs.limbs[3] <= u64::MAX && 0
-            <= self.limbs[4] + rhs.limbs[4] <= u64::MAX
+        forall|i: int| 0 <= i < 5 ==> 0 <= #[trigger] (self.limbs[i] + rhs.limbs[i]) <= u64::MAX
     }
 
     // Postcondition of add

@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full git history needed for temporal charts
 
       - name: Setup Python
         uses: actions/setup-python@v5

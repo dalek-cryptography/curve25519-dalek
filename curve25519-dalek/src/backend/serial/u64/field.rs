@@ -163,6 +163,32 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     }
 }
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
+    // Does the implementation of this trait obey basic addition principles
+    open spec fn obeys_add_spec() -> bool {
+        true
+    }
+
+    // Pre-condition of add
+    open spec fn add_req(self, rhs: &FieldElement51) -> bool {
+        forall|i: int| 0 <= i < 5 ==> #[trigger] (self.limbs[i] + rhs.limbs[i]) <= u64::MAX
+    }
+
+    // Postcondition of add
+    open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
+        FieldElement51 {
+            limbs: [
+                (self.limbs[0] + rhs.limbs[0]) as u64,
+                (self.limbs[1] + rhs.limbs[1]) as u64,
+                (self.limbs[2] + rhs.limbs[2]) as u64,
+                (self.limbs[3] + rhs.limbs[3]) as u64,
+                (self.limbs[4] + rhs.limbs[4]) as u64,
+            ],
+        }
+    }
+}
+
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
@@ -172,16 +198,29 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
         output += _rhs;
         */
         /* MODIFIED CODE */
-        for i in 0..5 {
-            proof {
-                assume(false);
-            }
+        let ghost original_limbs = self.limbs;
+        for i in 0..5
+            invariant
+                forall|j: int|
+                    #![auto]
+                    0 <= j < i ==> output.limbs[j] == original_limbs[j] + _rhs.limbs[j],
+                forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == original_limbs[j],
+                forall|j: int|
+                    0 <= j < 5 ==> #[trigger] original_limbs[j] + _rhs.limbs[j] <= u64::MAX,
+        {
+            // Trigger the forall
+            assert(original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */
-        proof {
-            assume(false);  // BECAUSE OF VERUS TRAIT ISSUES
-        }
+        // Trigger the forall invariant
+        assert(output.limbs == [
+            (original_limbs[0] + _rhs.limbs[0]) as u64,
+            (original_limbs[1] + _rhs.limbs[1]) as u64,
+            (original_limbs[2] + _rhs.limbs[2]) as u64,
+            (original_limbs[3] + _rhs.limbs[3]) as u64,
+            (original_limbs[4] + _rhs.limbs[4]) as u64,
+        ]);
         output
     }
 }

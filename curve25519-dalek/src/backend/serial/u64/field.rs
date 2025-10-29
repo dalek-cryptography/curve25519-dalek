@@ -200,7 +200,7 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
         output += _rhs;
         */
         /* MODIFIED CODE */
-        let ghost v = [self.limbs[0], self.limbs[1], self.limbs[2], self.limbs[3], self.limbs[4]];
+        let ghost v = self.limbs;
         for i in 0..5
             invariant
                 forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == v[j] + _rhs.limbs[j],

@@ -29,35 +29,17 @@ jobs:
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Install Python dependencies for plotting
-        if: steps.check_bot.outputs.previous_was_bot == 'false'
-        run: |
-          pip install matplotlib pandas gitpython beartype
       - name: Run analyze and csv scripts
         if: steps.check_bot.outputs.previous_was_bot == 'false'
         run: |
           scripts/analyze_verus_specs_proofs.py
           scripts/csv_to_markdown.py
-      - name: Generate verification charts
-        if: steps.check_bot.outputs.previous_was_bot == 'false'
-        run: |
-          scripts/plot_progress.py
-          scripts/plot_progress_over_time.py --max-commits 200 --sample 3
-          scripts/plot_csv_preview.py
-          
-          # Copy the 4 charts and CSV to docs directory for the website
-          mkdir -p docs/outputs
-          cp outputs/verification_funnel.png docs/outputs/
-          cp outputs/absolute_counts_over_time.png docs/outputs/
-          cp outputs/module_breakdown.png docs/outputs/
-          cp outputs/csv_preview.png docs/outputs/
-          cp outputs/curve25519_functions.csv docs/outputs/
       - name: Check for changes
         if: steps.check_bot.outputs.previous_was_bot == 'false'
         id: check_changes
         run: |
-          git add -N outputs/ docs/outputs/
-          if git diff --quiet outputs/ docs/outputs/; then
+          git add -N outputs/
+          if git diff --quiet outputs/; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -67,6 +49,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add outputs/ docs/outputs/
-          git commit -m "Bot: Update count of Verus proofs/specs and charts"
+          git add outputs/
+          git commit -m "Bot: Update count of Verus proofs/specs"
           git push

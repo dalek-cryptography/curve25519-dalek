@@ -208,14 +208,11 @@ self.limbs[3],
 self.limbs[4], ];
         for i in 0..5
             invariant
-                // 0 <= g_output.limbs[0] + _rhs.limbs[0] <= 10,
-                // 0 <= g_output.limbs[1] + _rhs.limbs[1] <= 10,
-                // 0 <= g_output.limbs[2] + _rhs.limbs[2] <= 10,
-                // 0 <= g_output.limbs[3] + _rhs.limbs[3] <= 10,
-                // 0 <= g_output.limbs[4] + _rhs.limbs[4] <= 10,
-                0 <= v[i as int] + _rhs.limbs[i as int] <= 10,
+                forall|j: int| #![auto] 0 <= j < i ==> output.limbs[j] == v[j] + _rhs.limbs[j],
+                forall|j: int| #![auto] i <= j < 5 ==> output.limbs[j] == v[j],
         {
-            assume(output.limbs[i as int] + _rhs.limbs[i as int] < 10);
+            assume(v[i as int] + _rhs.limbs[i as int] <= 10);
+            assume(output.limbs[i as int] + _rhs.limbs[i as int] < u64::MAX);
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */

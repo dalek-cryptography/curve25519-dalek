@@ -13,7 +13,7 @@ use super::super::common_verus::shift_lemmas::*;
 use super::super::scalar_specs::*;
 
 // Import helper lemmas from field_lemmas
-use super::super::field_lemmas::field_core::as_nat_32_u8;
+use super::super::field_lemmas::field_core::*;
 use super::super::field_lemmas::limbs_to_bytes_lemmas::*;
 
 verus! {

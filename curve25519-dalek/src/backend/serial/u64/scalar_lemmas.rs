@@ -3,7 +3,7 @@ use super::common_verus::*;
 #[allow(unused_imports)]
 use super::constants;
 #[allow(unused_imports)]
-use super::field_lemmas::field_core::as_nat_32_u8;
+use super::field_lemmas::field_core::*;
 #[allow(unused_imports)]
 use super::scalar::Scalar52;
 #[allow(unused_imports)]

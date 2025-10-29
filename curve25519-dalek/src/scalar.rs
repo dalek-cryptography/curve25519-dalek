@@ -2057,15 +2057,18 @@ pub(crate) fn as_radix_16(&self) -> (result:
 
 /// Returns a size hint indicating how many entries of the return
 /// value of `to_radix_2w` are nonzero.
-#[verifier::external_body]
-pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result:
-    usize)/* VERIFICATION NOTE:
-        We could not get this function in Verus, potentially a bug in Verus.
-        */
+pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize
+    requires
+        4 <= w <= 8,
+    returns
+        if w < 8 {
+            (256 + w - 1) / (w as int)
+        } else {
+            (256 + w - 1) / (w as int) + 1
+        } as usize,
 {
-    assume(false);
     #[cfg(not(verus_keep_ghost))]
-            debug_assert!(w >= 4);
+    debug_assert!(w >= 4);
     #[cfg(not(verus_keep_ghost))]
             debug_assert!(w <= 8);
 
@@ -2073,7 +2076,16 @@ pub(crate) fn to_radix_2w_size_hint(w: usize) -> (result:
         4..=7 => (256 + w - 1) / w,
         // See comment in to_radix_2w on handling the terminal carry.
         8 => (256 + w - 1) / w + 1_usize,
-        _ => panic!("invalid radix parameter"),
+        // VERIFICATION NOTE: Verus doesn't understand `panic!`.
+        // Tell Verus this unreachable branch returns a (wrong) value.
+        // Tell rustc this panics.
+        _ => {
+            #[cfg(not(verus_keep_ghost))]
+            panic!("invalid radix parameter");
+
+            #[cfg(verus_keep_ghost)]
+            42
+        },
     };
 
     #[cfg(not(verus_keep_ghost))]

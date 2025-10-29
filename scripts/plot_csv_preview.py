@@ -59,24 +59,6 @@ def create_csv_preview() -> None:
     ax.axis("tight")
     ax.axis("off")
 
-    # Add title and subtitle
-    fig.text(
-        0.5,
-        0.96,
-        "Function Verification Status Preview",
-        ha="center",
-        fontsize=16,
-        fontweight="bold",
-    )
-    fig.text(
-        0.5,
-        0.93,
-        "Sample of 25 functions from 257 total • Full data: outputs/curve25519_functions.csv",
-        ha="center",
-        fontsize=10,
-        color="#666",
-    )
-
     # Create table
     table = ax.table(
         cellText=display_data,

@@ -1,0 +1,18 @@
+# GitHub Pages Configuration
+title: "Dalek-Lite Verification"
+description: "Formally verifying curve25519-dalek with Verus"
+baseurl: "/dalek-lite"
+url: "https://beneficial-ai-foundation.github.io"
+
+# Theme
+theme: null
+
+# Build settings
+markdown: kramdown
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+

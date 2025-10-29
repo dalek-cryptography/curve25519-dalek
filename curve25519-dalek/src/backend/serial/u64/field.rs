@@ -212,7 +212,6 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
             output.limbs[i] += _rhs.limbs[i];
         }
         /* </MODIFIED CODE> */
-        proof {}
         assert(output.limbs == [
             (original_limbs[0] + _rhs.limbs[0]) as u64,
             (original_limbs[1] + _rhs.limbs[1]) as u64,

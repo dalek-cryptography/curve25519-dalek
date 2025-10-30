@@ -335,7 +335,7 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
 @beartype
 def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     """Create a stacked area chart showing absolute counts over time."""
-    fig, ax = plt.subplots(figsize=(14, 6.7))
+    fig, ax = plt.subplots(figsize=(14, 6.85))
 
     # Create stacked areas for Verus
     ax.fill_between(

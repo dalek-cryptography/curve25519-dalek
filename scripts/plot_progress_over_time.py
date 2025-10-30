@@ -375,6 +375,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
 
     # Set y-axis ticks at intervals of 25
     import numpy as np
+
     max_y = int(np.ceil(df["total"].max() / 25) * 25)
     ax.set_yticks(range(0, max_y + 1, 25))
 
@@ -383,6 +384,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
 
     # Format x-axis dates
     from matplotlib.dates import DateFormatter
+
     ax.xaxis.set_major_formatter(DateFormatter("%b %d"))
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()

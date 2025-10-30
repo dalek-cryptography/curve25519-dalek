@@ -109,8 +109,11 @@ def parse_function_in_file(
         brace_pos = signature_end if signature_end > fn_start else -1
 
         if brace_pos == -1:
-            # Might be a trait definition without body
-            continue
+            # Might be a trait method declaration without body (ends with semicolon)
+            # Calculate line number for trait methods too
+            line_number = content[:fn_start].count("\n") + 1
+            # Trait methods don't have specs/proofs, just return line number
+            return (False, False, False, line_number)
 
         # Look backwards from fn_start to find any attributes
         # Attributes appear before the function definition

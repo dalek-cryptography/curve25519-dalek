@@ -724,7 +724,18 @@ verus! {
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
-        assume(false);
+        // PROOF BYPASS: assume preconditions for field operations
+        // For Add: requires limbs[i] + rhs.limbs[i] <= u64::MAX
+        assume(forall|i: int| 0 <= i < 5 ==> #[trigger] (self.Y.limbs[i] + self.X.limbs[i]) <= u64::MAX);
+        
+        // For Sub: requires limbs < 2^54
+        assume(forall|i: int| 0 <= i < 5 ==> self.Y.limbs[i] < (1u64 << 54));
+        assume(forall|i: int| 0 <= i < 5 ==> self.X.limbs[i] < (1u64 << 54));
+        
+        // For Mul: requires limbs < 2^54
+        assume(forall|i: int| 0 <= i < 5 ==> self.T.limbs[i] < (1u64 << 54));
+        assume(forall|i: int| 0 <= i < 5 ==> constants::EDWARDS_D2.limbs[i] < (1u64 << 54));
+        
         ProjectiveNielsPoint {
             Y_plus_X: &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,

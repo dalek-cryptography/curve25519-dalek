@@ -221,6 +221,37 @@ body {
     max-width: 100%;
 }
 
+/* Two Column Layout */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    align-items: start;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.left-column .chart-card {
+    margin: 0;
+}
+
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    height: 100%;
+}
+
+.right-column .chart-card {
+    margin: 0;
+    height: 100%;
+}
+
 .csv-link {
     color: var(--primary-color);
     text-decoration: none;
@@ -528,6 +559,44 @@ body {
     gap: 1.5rem;
 }
 
+/* Metrics Summary Vertical */
+.metrics-summary-vertical {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+}
+
+.metrics-summary-vertical h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.metrics-vertical-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Metrics Inline (within chart card) */
+.metrics-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border-color);
+}
+
+.verification-metrics-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 .metric-item {
     display: flex;
     flex-direction: column;
@@ -722,6 +791,10 @@ body {
     }
 
     .chart-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .two-column-layout {
         grid-template-columns: 1fr;
     }
 

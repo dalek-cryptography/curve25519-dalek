@@ -354,7 +354,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         df["verus_specs"],
         label="Specs (No Proof)",
         color="#3498db",
-        alpha=0.8,
+        alpha=0.5,
     )
 
     # Plot total as a line
@@ -388,7 +388,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     # Add y-axis labels on the right side as well
     ax.tick_params(axis="y", which="both", labelleft=True, labelright=True, right=True)
 
-    ax.grid(True, alpha=0.3, linestyle="--", axis="y")
+    ax.grid(True, alpha=0.8, linestyle="--", axis="y")
     ax.legend(loc="upper left", fontsize=11, framealpha=0.9)
 
     # Set x-axis limits to actual data range

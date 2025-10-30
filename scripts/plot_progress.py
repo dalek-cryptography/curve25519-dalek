@@ -269,7 +269,7 @@ def plot_comparison_pie(stats: Dict[str, int], output_dir: Path):
 @beartype
 def plot_funnel(stats: Dict[str, int], output_dir: Path):
     """Create a funnel chart showing the verification pipeline."""
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(10, 12))
 
     total = stats["total"]
 
@@ -303,31 +303,31 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
             linewidth=2,
         )
 
-        # Add label inside bar
+        # Add count inside bar
         ax.text(
             width / 2,
             y_positions[i],
-            f"{width} ({pct}%)",
+            f"{width}",
             ha="center",
             va="center",
             fontweight="bold",
-            fontsize=12,
+            fontsize=24,
             color="white",
         )
 
-        # Add stage label on the left
+        # Add stage label above the bar (left-aligned)
         ax.text(
-            -total * 0.02,
-            y_positions[i],
+            0,
+            y_positions[i] + 0.45,
             label,
-            ha="right",
-            va="center",
+            ha="left",
+            va="bottom",
             fontweight="bold",
-            fontsize=11,
+            fontsize=22,
         )
 
-    ax.set_xlim(-total * 0.25, total * 1.05)
-    ax.set_ylim(-0.5, len(stages) - 0.5)
+    ax.set_xlim(-total * 0.15, total * 1.1)
+    ax.set_ylim(-0.7, len(stages) - 0.3)
     ax.set_yticks([])
     ax.set_xlabel("")
     ax.grid(axis="x", alpha=0.3, linestyle="--")

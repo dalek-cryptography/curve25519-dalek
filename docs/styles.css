@@ -224,7 +224,7 @@ body {
 /* Two Column Layout */
 .two-column-layout {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 2fr;
     gap: 2rem;
     margin-bottom: 3rem;
     align-items: start;
@@ -244,12 +244,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2rem;
-    height: 100%;
 }
 
 .right-column .chart-card {
     margin: 0;
-    height: 100%;
 }
 
 .csv-link {

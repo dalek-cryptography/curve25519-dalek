@@ -44,6 +44,7 @@ jobs:
       - name: Generate charts
         run: |
           scripts/plot_progress.py
+          # 2025-10-09: Date when CSV tracking was first introduced to the repository
           scripts/plot_progress_over_time.py --since 2025-10-09 --max-commits 10000 --sample 1
           scripts/plot_csv_preview.py
 

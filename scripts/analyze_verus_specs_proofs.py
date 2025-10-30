@@ -13,6 +13,7 @@ Updates the CSV to mark which functions have Verus specs and/or proofs.
 import argparse
 import csv
 import re
+import subprocess
 from pathlib import Path
 from typing import Dict, Tuple
 from beartype import beartype
@@ -302,12 +303,18 @@ def analyze_functions(
 
 @beartype
 def update_links_to_main_branch(csv_path: Path):
-    """Update all GitHub links in CSV to use 'main' branch instead of specific commit hash."""
+    """Update all GitHub links in CSV to use 'main' branch instead of specific commit hash.
+
+    Only updates links if the file exists on main to avoid 404 errors.
+    """
     try:
         print("Updating links to use 'main' branch...")
 
         # Read the CSV
         rows = []
+        updated_count = 0
+        skipped_count = 0
+
         with open(csv_path, "r") as f:
             reader = csv.DictReader(f)
             fieldnames = reader.fieldnames
@@ -315,10 +322,39 @@ def update_links_to_main_branch(csv_path: Path):
                 # Update the link to use 'main' branch
                 old_link = row["link"]
                 if old_link:
-                    # Replace the commit hash with 'main'
-                    # Pattern: /blob/{HASH}/ -> /blob/main/
-                    new_link = re.sub(r"/blob/[a-f0-9]+/", "/blob/main/", old_link)
-                    row["link"] = new_link
+                    # Extract file path from GitHub link
+                    # Pattern: https://github.com/.../blob/{HASH}/path/to/file.rs#L123
+                    match = re.search(r"/blob/[a-f0-9]+/(.+?)(?:#|$)", old_link)
+                    if match:
+                        file_path = match.group(1)
+                        # Remove line number if present
+                        file_path = file_path.split("#")[0]
+
+                        # Check if file exists on main branch
+                        try:
+                            result = subprocess.run(
+                                ["git", "cat-file", "-e", f"main:{file_path}"],
+                                cwd=csv_path.parent.parent,  # repo root
+                                capture_output=True,
+                                timeout=5,
+                            )
+
+                            if result.returncode == 0:
+                                # File exists on main, safe to update link
+                                new_link = re.sub(
+                                    r"/blob/[a-f0-9]+/", "/blob/main/", old_link
+                                )
+                                row["link"] = new_link
+                                updated_count += 1
+                            else:
+                                # File doesn't exist on main, keep original link
+                                skipped_count += 1
+                        except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                            # If git check fails, keep original link to be safe
+                            skipped_count += 1
+                    else:
+                        # Couldn't parse link, keep original
+                        pass
                 rows.append(row)
 
         # Write back to CSV
@@ -327,7 +363,9 @@ def update_links_to_main_branch(csv_path: Path):
             writer.writeheader()
             writer.writerows(rows)
 
-        print("✓ Updated all links to use 'main' branch")
+        print(f"✓ Updated {updated_count} links to use 'main' branch")
+        if skipped_count > 0:
+            print(f"  Skipped {skipped_count} links (file not on main branch)")
     except Exception as e:
         print(f"Warning: Could not update links: {e}")
         print("Continuing with existing links...")

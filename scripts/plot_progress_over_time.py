@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import pandas as pd
 from beartype import beartype
 from git import Repo
@@ -376,12 +377,24 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         fontweight="bold",
         pad=20,
     )
+    
+    # Set y-axis ticks every 25 functions
+    import numpy as np
+    max_val = int(df["total"].max())
+    y_ticks = np.arange(0, max_val + 50, 25)
+    ax.set_yticks(y_ticks)
+    
+    # Add y-axis labels on the right side as well
+    ax.tick_params(axis='y', which='both', labelleft=True, labelright=True, right=True)
+    
     ax.grid(True, alpha=0.3, linestyle="--", axis="y")
     ax.legend(loc="upper left", fontsize=11, framealpha=0.9)
 
     # Set x-axis limits to actual data range
     ax.set_xlim(df["date"].min(), df["date"].max())
 
+    # Format x-axis dates as "Oct 11", "Oct 13", etc.
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
 

@@ -43,7 +43,7 @@ jobs:
       - name: Generate charts
         run: |
           scripts/plot_progress.py
-          scripts/plot_progress_over_time.py --max-commits 200 --sample 3
+          scripts/plot_progress_over_time.py --since 2025-10-09 --max-commits 10000 --sample 1
           scripts/plot_csv_preview.py
 
       - name: Copy charts and CSV to docs

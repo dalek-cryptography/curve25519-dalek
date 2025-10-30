@@ -13,6 +13,7 @@ Updates the CSV to mark which functions have Verus specs and/or proofs.
 import argparse
 import csv
 import re
+import subprocess
 from pathlib import Path
 from typing import Dict, Tuple
 from beartype import beartype
@@ -21,15 +22,16 @@ from beartype import beartype
 @beartype
 def parse_function_in_file(
     file_path: Path, function_name: str
-) -> Tuple[bool, bool, bool]:
+) -> Tuple[bool, bool, bool, int]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
     Returns:
-        Tuple[bool, bool, bool]: (has_spec, has_proof, is_external_body)
+        Tuple[bool, bool, bool, int]: (has_spec, has_proof, is_external_body, line_number)
         - has_spec: True if function has requires or ensures clauses
         - has_proof: True if has_spec and no assume in body
         - is_external_body: True if function has #[verifier::external_body]
+        - line_number: Line number where the function is defined (1-indexed)
 
     TODO: Uncertain if this does the right thing if there are two functions with
     the same name in the same file
@@ -108,8 +110,11 @@ def parse_function_in_file(
         brace_pos = signature_end if signature_end > fn_start else -1
 
         if brace_pos == -1:
-            # Might be a trait definition without body
-            continue
+            # Might be a trait method declaration without body (ends with semicolon)
+            # Calculate line number for trait methods too
+            line_number = content[:fn_start].count("\n") + 1
+            # Trait methods don't have specs/proofs, just return line number
+            return (False, False, False, line_number)
 
         # Look backwards from fn_start to find any attributes
         # Attributes appear before the function definition
@@ -146,9 +151,13 @@ def parse_function_in_file(
         # Check for verifier::external attributes early (before checking has_spec)
         has_verifier_external = bool(re.search(r"#\[verifier::external", attributes))
 
-        # If neither specs nor external_body, skip this function
+        # Calculate line number for ALL functions (even those without specs)
+        # This ensures CSV links are always up-to-date
+        line_number = content[:fn_start].count("\n") + 1
+
+        # If neither specs nor external_body, return early with just the line number
         if not has_spec and not has_verifier_external:
-            continue  # This isn't a Verus-related function
+            return (False, False, False, line_number)
 
         # Find the matching closing brace for the function body
         brace_count = 1
@@ -206,11 +215,13 @@ def parse_function_in_file(
         # If function has external_body, treat it as having a spec (even if no requires/ensures)
         has_spec_or_external = has_spec or has_verifier_external
 
-        return (has_spec_or_external, has_proof, has_verifier_external)
+        # Line number was already calculated earlier
+        return (has_spec_or_external, has_proof, has_verifier_external, line_number)
 
     # Probably what's happened is that we saw the function, but
     # it doesn't have a spec yet
-    return (False, False, False)
+    # Return line 0 if we couldn't find the function properly
+    return (False, False, False, 0)
 
 
 @beartype
@@ -239,12 +250,12 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 @beartype
 def analyze_functions(
     csv_path: Path, src_dir: Path
-) -> Dict[str, Tuple[bool, bool, bool]]:
+) -> Dict[str, Tuple[bool, bool, bool, int, str]]:
     """
     Analyze all functions in the CSV and check their Verus status.
 
     Returns:
-        Dict mapping link to (has_spec_verus, has_proof_verus, is_external_body)
+        Dict mapping old_link to (has_spec_verus, has_proof_verus, is_external_body, line_number, new_link)
     """
     # Read the CSV to get function names
     with open(csv_path, "r") as f:
@@ -264,18 +275,104 @@ def analyze_functions(
         # Search only in the specific file mentioned in the CSV
         print(f"  Checking specific file: {target_file.name}")
         result = parse_function_in_file(target_file, func_name)
-        has_spec, has_proof, is_external_body = result
-        results[row["link"]] = (has_spec, has_proof, is_external_body)
+        has_spec, has_proof, is_external_body, line_number = result
+
+        # Update the link with the correct line number
+        # Replace the line number in the link: #L123 -> #L{line_number}
+        # Only update if we found the function (line_number > 0)
+        if line_number > 0:
+            new_link = re.sub(r"#L\d+", f"#L{line_number}", github_link)
+        else:
+            # Function not found, keep old link
+            new_link = github_link
+
+        results[github_link] = (
+            has_spec,
+            has_proof,
+            is_external_body,
+            line_number,
+            new_link,
+        )
         ext_marker = " [external_body]" if is_external_body else ""
         print(
-            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}"
+            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}"
         )
 
     return results
 
 
 @beartype
-def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool]]):
+def update_links_to_main_branch(csv_path: Path):
+    """Update all GitHub links in CSV to use 'main' branch instead of specific commit hash.
+
+    Only updates links if the file exists on main to avoid 404 errors.
+    """
+    try:
+        print("Updating links to use 'main' branch...")
+
+        # Read the CSV
+        rows = []
+        updated_count = 0
+        skipped_count = 0
+
+        with open(csv_path, "r") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames
+            for row in reader:
+                # Update the link to use 'main' branch
+                old_link = row["link"]
+                if old_link:
+                    # Extract file path from GitHub link
+                    # Pattern: https://github.com/.../blob/{HASH}/path/to/file.rs#L123
+                    match = re.search(r"/blob/[a-f0-9]+/(.+?)(?:#|$)", old_link)
+                    if match:
+                        file_path = match.group(1)
+                        # Remove line number if present
+                        file_path = file_path.split("#")[0]
+
+                        # Check if file exists on main branch
+                        try:
+                            result = subprocess.run(
+                                ["git", "cat-file", "-e", f"main:{file_path}"],
+                                cwd=csv_path.parent.parent,  # repo root
+                                capture_output=True,
+                                timeout=5,
+                            )
+
+                            if result.returncode == 0:
+                                # File exists on main, safe to update link
+                                new_link = re.sub(
+                                    r"/blob/[a-f0-9]+/", "/blob/main/", old_link
+                                )
+                                row["link"] = new_link
+                                updated_count += 1
+                            else:
+                                # File doesn't exist on main, keep original link
+                                skipped_count += 1
+                        except (subprocess.TimeoutExpired, subprocess.SubprocessError):
+                            # If git check fails, keep original link to be safe
+                            skipped_count += 1
+                    else:
+                        # Couldn't parse link, keep original
+                        pass
+                rows.append(row)
+
+        # Write back to CSV
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+
+        print(f"✓ Updated {updated_count} links to use 'main' branch")
+        if skipped_count > 0:
+            print(f"  Skipped {skipped_count} links (file not on main branch)")
+    except Exception as e:
+        print(f"Warning: Could not update links: {e}")
+        print("Continuing with existing links...")
+
+
+@beartype
+def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str]]):
     """Update the CSV file with Verus analysis results."""
     # Read the CSV
     rows = []
@@ -287,9 +384,13 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool]]):
 
     # Update rows with results
     for row in rows:
-        link = row["link"]
-        if link in results:
-            has_spec, has_proof, is_external_body = results[link]
+        old_link = row["link"]
+        if old_link in results:
+            has_spec, has_proof, is_external_body, line_number, new_link = results[
+                old_link
+            ]
+            # Update link to include correct line number
+            row["link"] = new_link
             # Use "ext" for functions with external_body, "yes" for regular specs
             if has_spec:
                 row["has_spec_verus"] = "ext" if is_external_body else "yes"
@@ -306,10 +407,10 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool]]):
     print(f"\nCSV file updated: {csv_path}")
 
     # Print summary
-    spec_count = sum(1 for _, (has_spec, _, _) in results.items() if has_spec)
-    proof_count = sum(1 for _, (_, has_proof, _) in results.items() if has_proof)
+    spec_count = sum(1 for _, (has_spec, _, _, _, _) in results.items() if has_spec)
+    proof_count = sum(1 for _, (_, has_proof, _, _, _) in results.items() if has_proof)
     external_count = sum(
-        1 for _, (has_spec, _, is_ext) in results.items() if has_spec and is_ext
+        1 for _, (has_spec, _, is_ext, _, _) in results.items() if has_spec and is_ext
     )
     full_spec_count = spec_count - external_count
     total = len(results)
@@ -370,6 +471,10 @@ def main():
 
     print(f"Analyzing functions from: {csv_path}")
     print(f"Searching in: {src_dir}")
+    print()
+
+    # Update links to use 'main' branch
+    update_links_to_main_branch(csv_path)
     print()
 
     # Analyze functions

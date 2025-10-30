@@ -269,15 +269,15 @@ def plot_comparison_pie(stats: Dict[str, int], output_dir: Path):
 @beartype
 def plot_funnel(stats: Dict[str, int], output_dir: Path):
     """Create a funnel chart showing the verification pipeline."""
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(10, 12))
 
     total = stats["total"]
 
     # Funnel stages for Verus
+    # Note: "With Verus Spec" only counts functions with full specs (not external)
     stages = [
         ("Total Functions", total),
-        ("With Verus Spec", stats["verus_specs"]),
-        ("With Full Spec\n(not external)", stats["verus_specs_full"]),
+        ("With Verus Spec", stats["verus_specs_full"]),
         ("Fully Verified", stats["verus_proofs"]),
     ]
 
@@ -286,12 +286,9 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
     widths = [stage[1] for stage in stages]
     labels = [stage[0] for stage in stages]
 
-    colors = ["#95a5a6", "#3498db", "#5dade2", "#2ecc71"]
+    colors = ["#95a5a6", "#3498db", "#2ecc71"]
 
     for i, (width, label, color) in enumerate(zip(widths, labels, colors)):
-        # Calculate percentage
-        pct = round(width * 100 / total, 1) if total > 0 else 0
-
         # Draw bar
         ax.barh(
             y_positions[i],
@@ -303,39 +300,33 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
             linewidth=2,
         )
 
-        # Add label inside bar
+        # Add count inside bar
         ax.text(
             width / 2,
             y_positions[i],
-            f"{width} ({pct}%)",
+            f"{width}",
             ha="center",
             va="center",
             fontweight="bold",
-            fontsize=12,
+            fontsize=24,
             color="white",
         )
 
-        # Add stage label on the left
+        # Add stage label above the bar (left-aligned)
         ax.text(
-            -total * 0.02,
-            y_positions[i],
+            0,
+            y_positions[i] + 0.45,
             label,
-            ha="right",
-            va="center",
+            ha="left",
+            va="bottom",
             fontweight="bold",
-            fontsize=11,
+            fontsize=22,
         )
 
-    ax.set_xlim(-total * 0.25, total * 1.05)
-    ax.set_ylim(-0.5, len(stages) - 0.5)
+    ax.set_xlim(-total * 0.15, total * 1.1)
+    ax.set_ylim(-0.7, len(stages) - 0.3)
     ax.set_yticks([])
-    ax.set_xlabel("Number of Functions", fontsize=12, fontweight="bold")
-    ax.set_title(
-        "Verus Verification Funnel",
-        fontsize=14,
-        fontweight="bold",
-        pad=20,
-    )
+    ax.set_xlabel("")
     ax.grid(axis="x", alpha=0.3, linestyle="--")
     ax.invert_yaxis()
 
@@ -398,7 +389,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     top_modules = module_stats[:15]
 
     # Create grouped bar chart
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(14, 6.85))
 
     x = range(len(top_modules))
     width = 0.35
@@ -424,14 +415,8 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
         alpha=0.8,
     )
 
-    ax.set_xlabel("Module/File", fontsize=12, fontweight="bold")
-    ax.set_ylabel("Number of Functions", fontsize=12, fontweight="bold")
-    ax.set_title(
-        "Top 15 Modules by Function Count - Verus Progress",
-        fontsize=14,
-        fontweight="bold",
-        pad=20,
-    )
+    ax.set_xlabel("")
+    ax.set_ylabel("")
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
     ax.legend()
@@ -491,7 +476,8 @@ def save_stats_json(stats: Dict[str, int], output_dir: Path):
     import json
 
     total = int(stats["total"])  # Convert from numpy.int64 to Python int
-    verus_specs = int(stats["verus_specs"])
+    # Use verus_specs_full (not external) to match funnel definition
+    verus_specs = int(stats["verus_specs_full"])
     verus_proofs = int(stats["verus_proofs"])
     no_specs = int(stats["no_specs"])
 

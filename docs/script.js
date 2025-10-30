@@ -303,10 +303,12 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('fullyVerifiedPct').textContent = `${stats.fully_verified_pct}%`;
             
             // Update metrics section
+            document.getElementById('specCompletionRate').textContent = `${stats.with_specs_pct}%`;
+            document.getElementById('specCompletionDesc').textContent = 
+                `${stats.with_specs} of ${stats.total_functions} functions have specs`;
             document.getElementById('proofCompletionRate').textContent = `${stats.proof_completion_rate}%`;
             document.getElementById('proofCompletionDesc').textContent = 
                 `${stats.fully_verified} of ${stats.with_specs} specs are fully proven`;
-            document.getElementById('functionsRemaining').textContent = stats.no_specs;
         } catch (error) {
             console.error('Error loading stats:', error);
             // Keep fallback values that are hardcoded in HTML

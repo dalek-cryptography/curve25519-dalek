@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - make-csv-links-dynamic-from-main
     paths:
       - 'docs/**'
       - 'outputs/curve25519_functions.csv'

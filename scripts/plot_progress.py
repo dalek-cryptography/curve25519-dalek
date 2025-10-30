@@ -289,9 +289,6 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
     colors = ["#95a5a6", "#3498db", "#2ecc71"]
 
     for i, (width, label, color) in enumerate(zip(widths, labels, colors)):
-        # Calculate percentage
-        pct = round(width * 100 / total, 1) if total > 0 else 0
-
         # Draw bar
         ax.barh(
             y_positions[i],

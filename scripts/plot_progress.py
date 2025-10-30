@@ -392,7 +392,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     top_modules = module_stats[:15]
 
     # Create grouped bar chart
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(14, 6.7))
 
     x = range(len(top_modules))
     width = 0.35

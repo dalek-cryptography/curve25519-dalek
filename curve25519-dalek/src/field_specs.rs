@@ -7,6 +7,50 @@ use vstd::prelude::*;
 
 verus! {
 
+/// Spec function for field addition: (a + b) mod p
+pub open spec fn spec_field_add(a: &FieldElement51, b: &FieldElement51) -> nat {
+    (field_element(a) + field_element(b)) % p()
+}
+
+/// Spec predicate: all limbs are bounded by a given bit limit
+pub open spec fn limbs_bounded(fe: &FieldElement51, bit_limit: u64) -> bool {
+    forall|i: int| 0 <= i < 5 ==> fe.limbs[i] < (1u64 << bit_limit)
+}
+
+/// Spec predicate: addition of limbs will not overflow u64
+pub open spec fn spec_add_no_overflow(a: &FieldElement51, b: &FieldElement51) -> bool {
+    forall|i: int| 0 <= i < 5 ==> #[trigger] (a.limbs[i] + b.limbs[i]) <= u64::MAX
+}
+
+/// Spec function: result of limb-wise addition (what add_spec returns)
+pub open spec fn spec_add_limbs(a: &FieldElement51, b: &FieldElement51) -> FieldElement51 {
+    FieldElement51 {
+        limbs: [
+            (a.limbs[0] + b.limbs[0]) as u64,
+            (a.limbs[1] + b.limbs[1]) as u64,
+            (a.limbs[2] + b.limbs[2]) as u64,
+            (a.limbs[3] + b.limbs[3]) as u64,
+            (a.limbs[4] + b.limbs[4]) as u64,
+        ],
+    }
+}
+
+/// Spec function: result of limb-wise subtraction with reduction (what sub_spec returns)
+/// Adds multiples of p to avoid underflow, then reduces
+pub open spec fn spec_sub_limbs(a: &FieldElement51, b: &FieldElement51) -> FieldElement51 {
+    FieldElement51 {
+        limbs: spec_reduce(
+            [
+                ((a.limbs[0] + 36028797018963664u64) - b.limbs[0]) as u64,
+                ((a.limbs[1] + 36028797018963952u64) - b.limbs[1]) as u64,
+                ((a.limbs[2] + 36028797018963952u64) - b.limbs[2]) as u64,
+                ((a.limbs[3] + 36028797018963952u64) - b.limbs[3]) as u64,
+                ((a.limbs[4] + 36028797018963952u64) - b.limbs[4]) as u64,
+            ],
+        ),
+    }
+}
+
 pub open spec fn field_element_as_nat(fe: &FieldElement51) -> nat {
     as_nat(fe.limbs)
 }

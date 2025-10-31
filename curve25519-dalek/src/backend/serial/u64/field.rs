@@ -160,13 +160,10 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] (old(self).limbs[i] + _rhs.limbs[i]) <= u64::MAX,
+            spec_add_no_overflow(old(self), _rhs),
         ensures
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] self.limbs[i] == old(self).limbs[i] + _rhs.limbs[i],
-            forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] <= u64::MAX,
-            field_element(self) == (field_element(old(self)) + field_element(_rhs)) % p(),
+            *self == spec_add_limbs(old(self), _rhs),
+            field_element(self) == spec_field_add(old(self), _rhs),
     {
         let ghost original_limbs = self.limbs;
         for i in 0..5
@@ -182,6 +179,11 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
             assert(original_limbs[i as int] + _rhs.limbs[i as int] <= u64::MAX);
             self.limbs[i] += _rhs.limbs[i];
         }
+        proof {
+            // After loop, all limbs are the sum: self.limbs[i] == original_limbs[i] + _rhs.limbs[i]
+            // This means self.limbs equals spec_add_limbs(old(self), _rhs).limbs
+            assert(self.limbs =~= spec_add_limbs(old(self), _rhs).limbs);
+        }
         assume(field_element(self) == (field_element(old(self)) + field_element(_rhs)) % p());
     }
 }
@@ -195,20 +197,12 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        forall|i: int| 0 <= i < 5 ==> #[trigger] (self.limbs[i] + rhs.limbs[i]) <= u64::MAX
+        spec_add_no_overflow(self, rhs)
     }
 
-    // Postcondition of add
+    // Postcondition of add - delegates to spec_add_limbs for consistency
     open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
-        FieldElement51 {
-            limbs: [
-                (self.limbs[0] + rhs.limbs[0]) as u64,
-                (self.limbs[1] + rhs.limbs[1]) as u64,
-                (self.limbs[2] + rhs.limbs[2]) as u64,
-                (self.limbs[3] + rhs.limbs[3]) as u64,
-                (self.limbs[4] + rhs.limbs[4]) as u64,
-            ],
-        }
+        spec_add_limbs(self, rhs)
     }
 }
 
@@ -220,11 +214,8 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] output.limbs[i] == self.limbs[i] + _rhs.limbs[i],
-            forall|i: int| 0 <= i < 5 ==> #[trigger] output.limbs[i] <= u64::MAX,
-            // VERIFICATION NOTE: tentative additional spec; is this correct?
-            field_element(&output) == (field_element(self) + field_element(_rhs)) % p(),
+            output == spec_add_limbs(self, _rhs),
+            field_element(&output) == spec_field_add(self, _rhs),
     {
         let mut output = *self;
         /* ORIGINAL CODE
@@ -267,20 +258,10 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            forall|i: int| 0 <= i < 5 ==> #[trigger] old(self).limbs[i] < (1u64 << 54),
-            forall|i: int| 0 <= i < 5 ==> #[trigger] _rhs.limbs[i] < (1u64 << 54),
+            limbs_bounded(old(self), 54) && limbs_bounded(_rhs, 54),
         ensures
             forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] < (1u64 << 52),
-            self.limbs == spec_reduce(
-                [
-                    ((old(self).limbs[0] + 36028797018963664u64) - _rhs.limbs[0]) as u64,
-                    ((old(self).limbs[1] + 36028797018963952u64) - _rhs.limbs[1]) as u64,
-                    ((old(self).limbs[2] + 36028797018963952u64) - _rhs.limbs[2]) as u64,
-                    ((old(self).limbs[3] + 36028797018963952u64) - _rhs.limbs[3]) as u64,
-                    ((old(self).limbs[4] + 36028797018963952u64) - _rhs.limbs[4]) as u64,
-                ],
-            ),
-            // VERIFICATION NOTE: tentative additional spec; is this correct?
+            *self == spec_sub_limbs(old(self), _rhs),
             field_element(self) == field_sub(field_element(old(self)), field_element(_rhs)),
     {
         /* ORIGINAL CODE
@@ -290,6 +271,12 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
         /* MODIFIED CODE */
         let result = &*self - _rhs;
         self.limbs = result.limbs;
+        proof {
+            // result satisfies sub_spec by the postcondition of sub
+            assert(result == spec_sub_limbs(old(self), _rhs));
+            // Therefore self.limbs equals spec_sub_limbs(old(self), _rhs).limbs
+            assert(self.limbs =~= spec_sub_limbs(old(self), _rhs).limbs);
+        }
         assume(field_element(self) == field_sub(field_element(old(self)), field_element(_rhs)));
         assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52))
     }
@@ -302,28 +289,14 @@ impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
         true
     }
 
-    // Pre-condition of sub
+    // Pre-condition of sub - delegates to spec_sub_limbs_bounded for consistency
     open spec fn sub_req(self, rhs: &FieldElement51) -> bool {
-        forall|i: int|
-            0 <= i < 5 ==> self.limbs[i] < (1u64 << 54) && forall|i: int|
-                0 <= i < 5 ==> rhs.limbs[i] < (1u64 << 54)
+        limbs_bounded(self, 54) && limbs_bounded(rhs, 54)
     }
 
-    // Postcondition of sub
+    // Postcondition of sub - delegates to spec_sub_limbs for consistency
     open spec fn sub_spec(self, rhs: &FieldElement51) -> FieldElement51 {
-        // The result is computed by adding 16*p to self, subtracting rhs, and then reducing
-        // We specify this in terms of the spec_reduce function
-        FieldElement51 {
-            limbs: spec_reduce(
-                [
-                    ((self.limbs[0] + 36028797018963664u64) - rhs.limbs[0]) as u64,
-                    ((self.limbs[1] + 36028797018963952u64) - rhs.limbs[1]) as u64,
-                    ((self.limbs[2] + 36028797018963952u64) - rhs.limbs[2]) as u64,
-                    ((self.limbs[3] + 36028797018963952u64) - rhs.limbs[3]) as u64,
-                    ((self.limbs[4] + 36028797018963952u64) - rhs.limbs[4]) as u64,
-                ],
-            ),
-        }
+        spec_sub_limbs(self, rhs)
     }
 }
 
@@ -335,9 +308,7 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            forall|i: int|
-                0 <= i < 5 ==> #[trigger] output.limbs[i] == self.limbs[i] - _rhs.limbs[i],
-            forall|i: int| 0 <= i < 5 ==> #[trigger] output.limbs[i] <= u64::MAX,
+            output == spec_sub_limbs(self, _rhs),
             field_element(&output) == field_sub(field_element(self), field_element(_rhs)),
     {
         // To avoid underflow, first add a multiple of p.

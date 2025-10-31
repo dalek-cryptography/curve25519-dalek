@@ -63,18 +63,19 @@ use subtle::Choice;
 use subtle::ConstantTimeEq;
 use subtle::{ConditionallyNegatable, ConditionallySelectable};
 
+use vstd::prelude::*;
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
-use vstd::prelude::*;
 
 verus! {
+
 /// Holds the \\(u\\)-coordinate of a point on the Montgomery form of
 /// Curve25519 or its twist.
 #[derive(Copy, Clone, Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
-} // verus!
 
+} // verus!
 /// Equality of `MontgomeryPoint`s is defined mod p.
 impl ConstantTimeEq for MontgomeryPoint {
     fn ct_eq(&self, other: &MontgomeryPoint) -> Choice {

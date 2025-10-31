@@ -746,7 +746,7 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     assert(pow2(88) == pow2(11 * 8));
 
     // Final result§
-    assume(bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(
+    assert(bytes[7] as nat * pow2(7 * 8) + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(
         9 * 8,
     ) + bytes[10] as nat * pow2(10 * 8) + bytes[11] as nat * pow2(11 * 8) == middle_value * pow2(
         56,

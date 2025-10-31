@@ -254,6 +254,13 @@ proof fn lemma_limb0_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma2_to64();
     assert(pow2(8) == 256);
 
+    // Stabilization placeholders
+    assert(pow2( 0) == pow2(0 * 8));
+    assert(pow2( 8) == pow2(1 * 8));
+    assert(pow2(16) == pow2(2 * 8));
+    assert(pow2(24) == pow2(3 * 8));
+    assert(pow2(32) == pow2(4 * 8));
+
     // Step 1: Show bytes 0-5 contribute (limbs[0] % 2^48)
     // From bytes_match_limbs_packing, we know:
     // bytes[0] = limbs[0] as u8
@@ -560,6 +567,13 @@ proof fn lemma_limb1_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Total: 5 + 40 + 6 = 51 bits
     lemma2_to64();
     lemma_pow2_adds(48, 3);
+
+    // Stabilization placeholders
+    assert(pow2( 0) == pow2(0 * 8));
+    assert(pow2( 8) == pow2(1 * 8));
+    assert(pow2(16) == pow2(2 * 8));
+    assert(pow2(24) == pow2(3 * 8));
+    assert(pow2(32) == pow2(4 * 8));
 
     // KEY INSIGHT: From bytes_match_limbs_packing, we know:
     // bytes[7] = (limbs[1] >> 5) as u8
@@ -945,6 +959,13 @@ proof fn lemma_limb2_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma_pow2_adds(96, 6);  // 2^102 = 2^96 * 2^6
     assert(pow2(102) == pow2(96) * 64);
 
+    // Stabilization placeholders
+    assert(pow2( 0) == pow2(0 * 8));
+    assert(pow2( 8) == pow2(1 * 8));
+    assert(pow2(16) == pow2(2 * 8));
+    assert(pow2(24) == pow2(3 * 8));
+    assert(pow2(32) == pow2(4 * 8));
+
     // KEY INSIGHT: From bytes_match_limbs_packing:
     // bytes[13] = (limbs[2] >> 2) as u8
     // bytes[14] = (limbs[2] >> 10) as u8
@@ -1315,6 +1336,13 @@ proof fn lemma_limb3_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     lemma2_to64();
     lemma_pow2_adds(152, 1);  // 2^153 = 2^152 * 2
 
+    // Stabilization placeholders
+    assert(pow2( 0) == pow2(0 * 8));
+    assert(pow2( 8) == pow2(1 * 8));
+    assert(pow2(16) == pow2(2 * 8));
+    assert(pow2(24) == pow2(3 * 8));
+    assert(pow2(32) == pow2(4 * 8));
+
     // KEY INSIGHT: From bytes_match_limbs_packing:
     // bytes[20] = (limbs[3] >> 7) as u8
     // bytes[21] = (limbs[3] >> 15) as u8
@@ -1643,6 +1671,13 @@ proof fn lemma_limb4_contribution_correctness(limbs: [u64; 5], bytes: [u8; 32])
     // Total: 4 + 47 = 51 bits (limbs[4] < 2^51)
     lemma2_to64();
     lemma_pow2_adds(200, 4);  // 2^204 = 2^200 * 2^4
+
+    // Stabilization placeholders
+    assert(pow2( 0) == pow2(0 * 8));
+    assert(pow2( 8) == pow2(1 * 8));
+    assert(pow2(16) == pow2(2 * 8));
+    assert(pow2(24) == pow2(3 * 8));
+    assert(pow2(32) == pow2(4 * 8));
 
     // KEY INSIGHT: From bytes_match_limbs_packing:
     // bytes[26] = (limbs[4] >> 4) as u8

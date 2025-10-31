@@ -218,7 +218,7 @@ spec fn limb4_byte_contribution(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
 /// (x / 2^(k*8)) % 256 == ((x % 2^m) / 2^(k*8)) % 256
 ///
 /// This is a specialized version of lemma_chunk_extraction_commutes_with_mod for bytes (b=8).
-proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
+pub proof fn lemma_byte_extraction_commutes_with_mod(x: nat, k: nat, m: nat)
     requires
         k * 8 + 8
             <= m,  // The byte we're extracting is entirely below the modulo boundary
@@ -466,7 +466,7 @@ proof fn lemma_5_bytes_reconstruct(
 
 /// Helper: 6-byte reconstruction lemma
 /// Proves that 6 consecutive bytes reconstruct a 48-bit value
-proof fn lemma_6_bytes_reconstruct(
+pub proof fn lemma_6_bytes_reconstruct(
     value: nat,
     byte0: u8,
     byte1: u8,

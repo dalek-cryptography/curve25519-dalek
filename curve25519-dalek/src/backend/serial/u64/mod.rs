@@ -34,5 +34,7 @@ pub mod scalar_lemmas;
 
 pub mod scalar_specs;
 
+pub mod scalar_byte_lemmas;
+
 // #[cfg(feature = "serde")]
 // pub use crate::serde_assumes;

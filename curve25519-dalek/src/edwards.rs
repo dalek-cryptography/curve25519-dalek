@@ -595,7 +595,7 @@ impl Identity for CompressedEdwardsY {
             // byte 31 is 0, so the sign bit (bit 7 of byte 31) is 0
             assert(result.0[31] == 0);
             let x = result.0[31];
-            assume(x >> 7 == 0);
+            assert(x >> 7 == 0) by (compute);
             // field_element_from_bytes([1, 0, ...]) should equal 1
             // This requires the byte-to-nat conversion to recognize [1,0,0,...] = 1
             assume(field_element_from_bytes(&result.0) == 1);

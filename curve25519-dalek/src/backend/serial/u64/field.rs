@@ -49,11 +49,17 @@ use crate::backend::serial::u64::common_verus::pow_lemmas::*;
 use crate::backend::serial::u64::common_verus::shift_lemmas::*;
 
 #[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::as_bytes_lemmas::*;
+#[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::as_nat_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::compute_q_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::from_bytes_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::limbs_to_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
 #[allow(unused_imports)]
@@ -64,6 +70,8 @@ use crate::backend::serial::u64::field_lemmas::pow2_51_lemmas::*;
 use crate::backend::serial::u64::field_lemmas::pow2k_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::reduce_lemmas::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field_lemmas::to_bytes_reduction_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
@@ -873,16 +881,40 @@ impl FieldElement51 {
     /// encoding is canonical.
     #[rustfmt::skip]  // keep alignment of s[*] calculations
     pub fn as_bytes(self) -> (r: [u8; 32])
-        ensures  // TODO: Update after https:
-    //github.com/Beneficial-AI-Foundation/dalek-lite/pull/63
+        ensures
+    // canonical encoding, i.e. mod p value
 
-            true,
-            // VERIFICATION NOTE: tentative spec function addition
-            r@ == field_element_as_bytes(&self),
+            as_nat_32_u8(&r) == as_nat(self.limbs) % p(),
     {
         proof {
-            // PROOF SKIP
-            assume(false);
+            // No overflows
+            as_bytes_boundaries1(self.limbs);
+            as_bytes_boundaries2(self.limbs);
+
+            // Step 1: Reduce limbs to ensure h < 2*p
+            // The reduce function ensures the limbs are bounded by 2^52
+            lemma_reduce(self.limbs);
+            lemma_reduce_bound_2p(self.limbs);
+            let limbs = spec_reduce(self.limbs);
+
+            let q = compute_q_spec(limbs);
+
+            // Step 2: Prove that q is the correct quotient
+            assert((q == 0 || q == 1) && (as_nat(limbs) >= p() <==> q == 1) && (as_nat(limbs) < p()
+                <==> q == 0)) by {
+                lemma_compute_q(limbs, q);
+            }
+
+            let final_limbs = reduce_with_q_spec(limbs, q);
+
+            // Step 3: Prove that the reduction preserves the value mod p
+            lemma_to_bytes_reduction(limbs, final_limbs, q);
+
+            // Now arrange the bits of the limbs.
+            let s = bit_arrange(final_limbs);
+
+            // Step 4: Prove that packing limbs into bytes preserves the value
+            lemma_limbs_to_bytes(final_limbs, s);
         }
 
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.

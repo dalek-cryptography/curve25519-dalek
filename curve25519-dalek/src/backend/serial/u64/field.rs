@@ -747,10 +747,12 @@ impl FieldElement51 {
             (forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51)) ==> (r.limbs =~= limbs),
             as_nat(r.limbs) == as_nat(limbs) - p() * (limbs[4] >> 51),
             as_nat(r.limbs) % p() == as_nat(limbs) % p(),
+            as_nat(r.limbs) < 2 * p(),
     {
         proof {
             lemma_boundaries(limbs);
             lemma_reduce(limbs);
+            lemma_reduce_bound_2p(limbs);
         }
 
         // Since the input limbs are bounded by 2^64, the biggest

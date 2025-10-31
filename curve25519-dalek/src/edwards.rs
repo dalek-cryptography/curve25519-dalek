@@ -153,6 +153,7 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::backend::serial::u64::subtle_assumes::*;
+use crate::curve_specs::*;
 use crate::field_specs::*;
 use vstd::prelude::*;
 
@@ -214,13 +215,49 @@ impl CompressedEdwardsY {
     ///
     /// Returns `None` if the input is not the \\(y\\)-coordinate of a
     /// curve point.
-    pub fn decompress(&self) -> (result: Option<EdwardsPoint>) {
+    pub fn decompress(&self) -> (result: Option<
+        EdwardsPoint,
+    >)
+    // VERIFICATION NOTE: PROOF BYPASS
+
+        ensures
+            is_valid_y_coordinate(field_element_from_bytes(&self.0))
+                ==> result.is_some()
+            // The Y coordinate matches the one from the compressed representation
+             && field_element(&result.unwrap().Y) == field_element_from_bytes(
+                &self.0,
+            )
+            // The point is valid
+             && is_valid_edwards_point(
+                result.unwrap(),
+            )
+            // The X coordinate sign bit matches the sign bit from the compressed representation
+             && field_element_sign_bit(&result.unwrap().X) == (self.0[31] >> 7),
+            !is_valid_y_coordinate(field_element_from_bytes(&self.0)) <==> result.is_none(),
+    {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
-        if is_valid_y_coord.into() {
-            Some(decompress::step_2(self, X, Y, Z))
+        proof {
+            assert(choice_is_true(is_valid_y_coord) ==> is_valid_y_coordinate(
+                field_element_from_bytes(&self.0),
+            ));
+            assert(choice_is_true(is_valid_y_coord) ==> on_edwards_curve(
+                field_element(&X),
+                field_element(&Y),
+            ));
+        }
+        if choice_into(is_valid_y_coord) {
+            assert(choice_is_true(is_valid_y_coord));
+            assert(field_element(&Y) == field_element_from_bytes(&self.0));
+            let point = decompress::step_2(self, X, Y, Z);
+            let result = Some(point);
+            assume(false);
+            result
         } else {
-            None
+            assert(!choice_is_true(is_valid_y_coord));
+            assert(!is_valid_y_coordinate(field_element_from_bytes(&self.0)));
+            let result = None;
+            result
         }
     }
 }
@@ -229,20 +266,65 @@ mod decompress {
     use super::*;
 
     #[rustfmt::skip]  // keep alignment of explanatory comments
-    pub(super) fn step_1(repr: &CompressedEdwardsY) -> (
+    pub(super) fn step_1(repr: &CompressedEdwardsY) -> (result: (
         Choice,
         FieldElement,
         FieldElement,
         FieldElement,
-    ) {
+    ))  // Result components: (is_valid, X, Y, Z)// VERIFICATION NOTE: PROOF BYPASSFORMATTER_NOT_INLINE_MARKER
+        ensures
+    // The returned Y field element matches the one extracted from the compressed representation
+
+            field_element(&result.2) == field_element_from_bytes(&repr.0),
+            // The returned Z field element is 1
+            field_element(&result.3) == 1,
+            // The choice is true iff the Y is valid and (X, Y) is on the curve
+            choice_is_true(result.0) <==> is_valid_y_coordinate(field_element(&result.2)),
+            choice_is_true(result.0) ==> on_edwards_curve(
+                field_element(&result.1),
+                field_element(&result.2),
+            ),
+    {
         let Y = FieldElement::from_bytes(repr.as_bytes());
+        assert(field_element_from_bytes(&repr.0) == field_element(&Y));
         let Z = FieldElement::ONE;
-        assume(false);
+        proof {
+            assume(forall|i: int| 0 <= i < 5 ==> Y.limbs[i] < 1u64 << 54);
+        }
         let YY = Y.square();
+
+        /* <VERIFICATION NOTE>
+        Assume preconditions for field operations with *SpecImpl traits.
+        </VERIFICATION NOTE> */
+        proof {
+            // For Sub (YY - Z): requires limbs < 2^54
+            assume(forall|i: int| 0 <= i < 5 ==> YY.limbs[i] < (1u64 << 54));
+            assume(forall|i: int| 0 <= i < 5 ==> Z.limbs[i] < (1u64 << 54));
+
+            // For Mul (YY * EDWARDS_D): requires limbs < 2^54
+            assume(forall|i: int| 0 <= i < 5 ==> constants::EDWARDS_D.limbs[i] < (1u64 << 54));
+        }
         let u = &YY - &Z;  // u =  y²-1
-        let v = &(&YY * &constants::EDWARDS_D) + &Z;  // v = dy²+1
+        let yy_times_d = &YY * &constants::EDWARDS_D;
+        proof {
+            // For Add (yy_times_d + Z): requires no overflow
+            assume(forall|i: int|
+                0 <= i < 5 ==> #[trigger] (yy_times_d.limbs[i] + Z.limbs[i]) <= u64::MAX);
+        }
+        let v = &yy_times_d + &Z;  // v = dy²+1
+
         let (is_valid_y_coord, X) = FieldElement::sqrt_ratio_i(&u, &v);
 
+        proof {
+            // Assume postconditions that depend on sqrt_ratio_i behavior
+            assume(field_element(&Z) == 1);
+            // Note: Using <==> (bi-implication) to match the postcondition exactly
+            assume(choice_is_true(is_valid_y_coord) <==> is_valid_y_coordinate(field_element(&Y)));
+            assume(choice_is_true(is_valid_y_coord) ==> on_edwards_curve(
+                field_element(&X),
+                field_element(&Y),
+            ));
+        }
         (is_valid_y_coord, X, Y, Z)
     }
 
@@ -252,14 +334,65 @@ mod decompress {
         mut X: FieldElement,
         Y: FieldElement,
         Z: FieldElement,
-    ) -> EdwardsPoint {
+    ) -> (result: EdwardsPoint)
+    // VERIFICATION NOTE: PROOF BYPASS
+
+        ensures
+            field_element(&result.X)
+                ==
+            // If the sign bit is 1, negate the X field element
+            if (repr.0[31] >> 7) == 1 {
+                field_neg(field_element(&X))
+            } else {
+                field_element(&X)
+            },
+            // Y and Z are unchanged
+            field_element(&result.Y) == field_element(&Y),
+            field_element(&result.Z) == field_element(&Z),
+            // X is conditionally negated based on the sign bit
+            // T = X * Y (after conditional negation)
+            field_element(&result.T) == field_mul(
+                field_element(&result.X),
+                field_element(&result.Y),
+            ),
+    {
         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
         // so we negate according to the supplied sign bit.
         let compressed_sign_bit = Choice::from(repr.as_bytes()[31] >> 7);
-        conditional_negate_field(&mut X, compressed_sign_bit);
-        assume(false);
 
-        EdwardsPoint { X, Y, Z, T: &X * &Y }
+        /* <VERIFICATION NOTE>
+         Using conditional_negate_field wrapper and assuming preconditions for trait operations.
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+        X.conditional_negate(compressed_sign_bit);
+        </ORIGINAL CODE> */
+        let ghost original_X = X;
+        conditional_negate_field(&mut X, compressed_sign_bit);
+
+        proof {
+            // For Mul (X * Y): requires limbs < 2^54
+            assume(forall|i: int| 0 <= i < 5 ==> X.limbs[i] < (1u64 << 54));
+            assume(forall|i: int| 0 <= i < 5 ==> Y.limbs[i] < (1u64 << 54));
+
+            // Assume conditional_negate_field behaves correctly
+            assume(field_element(&X) == if choice_is_true(compressed_sign_bit) {
+                field_neg(field_element(&original_X))
+            } else {
+                field_element(&original_X)
+            });
+        }
+
+        let result = EdwardsPoint { X, Y, Z, T: &X * &Y };
+
+        proof {
+            // Assume multiplication produces correct field_mul result
+            assume(field_element(&result.T) == field_mul(
+                field_element(&result.X),
+                field_element(&result.Y),
+            ));
+        }
+
+        result
     }
 
 }
@@ -413,9 +546,14 @@ pub struct EdwardsPoint {
 // Constructors
 // ------------------------------------------------------------------------
 impl Identity for CompressedEdwardsY {
-    // TODO: add spec
-    fn identity() -> CompressedEdwardsY {
-        CompressedEdwardsY(
+    fn identity() -> (result:
+        CompressedEdwardsY)
+    // VERIFICATION NOTE: PROOF BYPASS
+
+        ensures
+            is_compressed_identity(result),
+    {
+        let result = CompressedEdwardsY(
             [
                 1,
                 0,
@@ -450,14 +588,30 @@ impl Identity for CompressedEdwardsY {
                 0,
                 0,
             ],
-        )
+        );
+
+        proof {
+            // The bytes [1, 0, 0, ..., 0] represent the value 1 in little-endian
+            // byte 31 is 0, so the sign bit (bit 7 of byte 31) is 0
+            assert(result.0[31] == 0);
+            let x = result.0[31];
+            assume(x >> 7 == 0);
+            // field_element_from_bytes([1, 0, ...]) should equal 1
+            // This requires the byte-to-nat conversion to recognize [1,0,0,...] = 1
+            assume(field_element_from_bytes(&result.0) == 1);
+        }
+
+        result
     }
 }
 
 impl Default for CompressedEdwardsY {
-    // TODO: add spec
-    fn default() -> CompressedEdwardsY {
-        CompressedEdwardsY::identity()
+    fn default() -> (result: CompressedEdwardsY)
+        ensures
+            is_compressed_identity(result),
+    {
+        let result = CompressedEdwardsY::identity();
+        result
     }
 }
 
@@ -468,7 +622,12 @@ impl CompressedEdwardsY {
     ///
     /// Returns [`TryFromSliceError`] if the input `bytes` slice does not have
     /// a length of 32.
-    pub fn from_slice(bytes: &[u8]) -> (result: Result<CompressedEdwardsY, TryFromSliceError>)
+    pub fn from_slice(bytes: &[u8]) -> (result: Result<
+        CompressedEdwardsY,
+        TryFromSliceError,
+    >)
+    // VERIFICATION NOTE: PROOF BYPASS
+
         ensures
             bytes@.len() == 32 ==> matches!(result, Ok(_)),
             bytes@.len() != 32 ==> matches!(result, Err(_)),
@@ -493,20 +652,33 @@ impl CompressedEdwardsY {
     }
 }
 
-} // verus!
 impl Identity for EdwardsPoint {
-    fn identity() -> EdwardsPoint {
-        EdwardsPoint {
+    fn identity() -> (result:
+        EdwardsPoint)/* VERIFICATION NOTE:
+    - PROOF BYPASS
+    - is_identity ensures affine point is (0, 1) - more general than the FieldElement defined below
+    */
+
+        ensures
+            is_identity(result),
+    {
+        assume(field_element(&FieldElement::ZERO) == 0);
+        assume(field_element(&FieldElement::ONE) == 1);
+        let result = EdwardsPoint {
             X: FieldElement::ZERO,
             Y: FieldElement::ONE,
             Z: FieldElement::ONE,
             T: FieldElement::ZERO,
-        }
+        };
+        result
     }
 }
 
 impl Default for EdwardsPoint {
-    fn default() -> EdwardsPoint {
+    fn default() -> (result: EdwardsPoint)
+        ensures
+            is_identity(result),
+    {
         EdwardsPoint::identity()
     }
 }
@@ -514,10 +686,10 @@ impl Default for EdwardsPoint {
 // ------------------------------------------------------------------------
 // Zeroize implementations for wiping points from memory
 // ------------------------------------------------------------------------
-
 #[cfg(feature = "zeroize")]
 impl Zeroize for CompressedEdwardsY {
     /// Reset this `CompressedEdwardsY` to the compressed form of the identity element.
+    #[verifier::external_body]
     fn zeroize(&mut self) {
         self.0.zeroize();
         self.0[0] = 1;
@@ -527,6 +699,7 @@ impl Zeroize for CompressedEdwardsY {
 #[cfg(feature = "zeroize")]
 impl Zeroize for EdwardsPoint {
     /// Reset this `CompressedEdwardsPoint` to the identity element.
+    #[verifier::external_body]
     fn zeroize(&mut self) {
         self.X.zeroize();
         self.Y = FieldElement::ONE;
@@ -535,10 +708,10 @@ impl Zeroize for EdwardsPoint {
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
-
 impl ValidityCheck for EdwardsPoint {
     fn is_valid(&self) -> bool {
         let point_on_curve = self.as_projective().is_valid();
@@ -592,9 +765,24 @@ impl Eq for EdwardsPoint {}
 // Point conversions
 // ------------------------------------------------------------------------
 
+verus! {
+
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
+        // PROOF BYPASS: assume preconditions for field operations
+        // For Add: requires limbs[i] + rhs.limbs[i] <= u64::MAX
+        assume(forall|i: int|
+            0 <= i < 5 ==> #[trigger] (self.Y.limbs[i] + self.X.limbs[i]) <= u64::MAX);
+
+        // For Sub: requires limbs < 2^54
+        assume(forall|i: int| 0 <= i < 5 ==> self.Y.limbs[i] < (1u64 << 54));
+        assume(forall|i: int| 0 <= i < 5 ==> self.X.limbs[i] < (1u64 << 54));
+
+        // For Mul: requires limbs < 2^54
+        assume(forall|i: int| 0 <= i < 5 ==> self.T.limbs[i] < (1u64 << 54));
+        assume(forall|i: int| 0 <= i < 5 ==> constants::EDWARDS_D2.limbs[i] < (1u64 << 54));
+
         ProjectiveNielsPoint {
             Y_plus_X: &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
@@ -608,25 +796,18 @@ impl EdwardsPoint {
     ///
     /// Free.
     pub(crate) const fn as_projective(&self) -> ProjectivePoint {
-        ProjectivePoint {
-            X: self.X,
-            Y: self.Y,
-            Z: self.Z,
-        }
+        ProjectivePoint { X: self.X, Y: self.Y, Z: self.Z }
     }
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
     pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
+        assume(false);
         let recip = self.Z.invert();
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
         let xy2d = &(&x * &y) * &constants::EDWARDS_D2;
-        AffineNielsPoint {
-            y_plus_x: &y + &x,
-            y_minus_x: &y - &x,
-            xy2d,
-        }
+        AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d }
     }
 
     /// Convert this `EdwardsPoint` on the Edwards model to the
@@ -644,39 +825,28 @@ impl EdwardsPoint {
         // The denominator is zero only when y=1, the identity point of
         // the Edwards curve.  Since 0.invert() = 0, in this case we
         // compute the 2-torsion point (0,0).
+        assume(false);
         let U = &self.Z + &self.Y;
         let W = &self.Z - &self.Y;
         let u = &U * &W.invert();
         MontgomeryPoint(u.as_bytes())
     }
 
-    verus! {
+    /// Compress this point to `CompressedEdwardsY` format.
+    pub fn compress(&self) -> CompressedEdwardsY {
+        let recip = self.Z.invert();
+        let ghost z_abs = field_element(&self.Z);
+        assert(field_element(&recip) == field_inv(z_abs));
+        assume(false);
+        let x = &self.X * &recip;
+        let y = &self.Y * &recip;
+        let mut s: [u8; 32];
 
-/// Returns the abstract affine coordinates (x, y) of this point.
-pub open spec fn affine_coords(self) -> (res: (nat, nat)) {
-    let x_abs = field_element_abs(&self.X);
-    let y_abs = field_element_abs(&self.Y);
-    let z_abs = field_element_abs(&self.Z);
-    let z_inv = field_inv_abs(z_abs);
-    (field_mul_abs(x_abs, z_inv), field_mul_abs(y_abs, z_inv))
-}
+        s = y.as_bytes();
+        s[31] ^= x.is_negative().unwrap_u8() << 7;
+        CompressedEdwardsY(s)
+    }
 
-/// Compress this point to `CompressedEdwardsY` format.
-pub fn compress(&self) -> CompressedEdwardsY {
-    let recip = self.Z.invert();
-    let ghost z_abs = field_element_abs(&self.Z);
-    assert(field_element_abs(&recip) == field_inv_abs(z_abs));
-    assume(false);
-    let x = &self.X * &recip;
-    let y = &self.Y * &recip;
-    let mut s: [u8; 32];
-
-    s = y.as_bytes();
-    s[31] ^= x.is_negative().unwrap_u8() << 7;
-    CompressedEdwardsY(s)
-}
-
-} // verus!
     #[cfg(feature = "digest")]
     /// Maps the digest of the input bytes to the curve. This is NOT a hash-to-curve function, as
     /// it produces points with a non-uniform distribution. Rather, it performs something that
@@ -687,15 +857,15 @@ pub fn compress(&self) -> CompressedEdwardsY {
         since = "4.0.0",
         note = "previously named `hash_from_bytes`, this is not a secure hash function"
     )]
-    pub fn nonspec_map_to_curve<D>(bytes: &[u8]) -> EdwardsPoint
-    where
+    #[verifier::external_body]
+    pub fn nonspec_map_to_curve<D>(bytes: &[u8]) -> EdwardsPoint where
         D: Digest<OutputSize = U64> + Default,
-    {
+     {
         let mut hash = D::new();
         hash.update(bytes);
         let h = hash.finalize();
-        let mut res = [0u8; 32];
-        res.copy_from_slice(&h[..32]);
+        let mut res = [0u8;32];
+        res.copy_from_slice(&h[0..32]);
 
         let sign_bit = (res[31] & 0x80) >> 7;
 
@@ -704,16 +874,16 @@ pub fn compress(&self) -> CompressedEdwardsY {
         let M1 = crate::montgomery::elligator_encode(&fe);
         let E1_opt = M1.to_edwards(sign_bit);
 
-        E1_opt
-            .expect("Montgomery conversion to Edwards point in Elligator failed")
-            .mul_by_cofactor()
+        E1_opt.expect(
+            "Montgomery conversion to Edwards point in Elligator failed",
+        ).mul_by_cofactor()
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Doubling
 // ------------------------------------------------------------------------
-
 impl EdwardsPoint {
     /// Add this point to itself.
     pub(crate) fn double(&self) -> EdwardsPoint {

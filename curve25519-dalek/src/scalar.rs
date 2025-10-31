@@ -457,14 +457,17 @@ define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &Scalar {
     open spec fn obeys_mul_spec() -> bool {
         false  // Set to false since we use ensures clause instead of concrete spec
+
     }
 
     open spec fn mul_req(self, rhs: &Scalar) -> bool {
-        true  // No preconditions 
+        true  // No preconditions
+
     }
 
     open spec fn mul_spec(self, rhs: &Scalar) -> Scalar {
         arbitrary()  // Placeholder - actual spec is in ensures clause
+
     }
 }
 
@@ -519,14 +522,17 @@ define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 impl vstd::std_specs::ops::AddSpecImpl<&Scalar> for &Scalar {
     open spec fn obeys_add_spec() -> bool {
         false  // Set to false since we use ensures clause instead of concrete spec
+
     }
 
     open spec fn add_req(self, rhs: &Scalar) -> bool {
         true  // No preconditions yet
+
     }
 
     open spec fn add_spec(self, rhs: &Scalar) -> Scalar {
         arbitrary()  // Placeholder - actual spec is in ensures clause
+
     }
 }
 
@@ -601,7 +607,6 @@ impl<'a> AddAssign<&'a Scalar> for Scalar {
                 &_rhs.bytes,
             )) % group_order(),
     {
-        
         *self = &*self + _rhs;
     }
 }
@@ -612,14 +617,16 @@ define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
 impl vstd::std_specs::ops::SubSpecImpl<&Scalar> for &Scalar {
     open spec fn obeys_sub_spec() -> bool {
         false  // Set to false since we use ensures clause instead of concrete spec
+
     }
 
     open spec fn sub_req(self, rhs: &Scalar) -> bool {
-        is_canonical_scalar(self) && is_canonical_scalar(rhs)  
+        is_canonical_scalar(self) && is_canonical_scalar(rhs)
     }
 
     open spec fn sub_spec(self, rhs: &Scalar) -> Scalar {
         arbitrary()  // Placeholder - actual spec is in ensures clause
+
     }
 }
 
@@ -630,8 +637,7 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
     // PRECONDITION is_canonical_scalar(self) && is_canonical_scalar(_rhs)
     #[allow(non_snake_case)]
     fn sub(self, _rhs: &'b Scalar) -> (result:
-        Scalar)
-    /* VERIFICATION NOTE: preconditions are added to the SpecImpl above
+        Scalar)/* VERIFICATION NOTE: preconditions are added to the SpecImpl above
     requires
       is_canonical_scalar(self),
       is_canonical_scalar(_rhs),
@@ -694,7 +700,6 @@ impl<'a> SubAssign<&'a Scalar> for Scalar {
             bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
                 - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
     {
-        
         *self = &*self - _rhs;
     }
 }
@@ -705,14 +710,17 @@ define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
 impl vstd::std_specs::ops::NegSpecImpl for &Scalar {
     open spec fn obeys_neg_spec() -> bool {
         false  // Set to false since we use ensures clause instead of concrete spec
+
     }
 
     open spec fn neg_req(self) -> bool {
         true  // No preconditions - scalars are canonical by invariant
+
     }
 
     open spec fn neg_spec(self) -> Scalar {
         arbitrary()  // Placeholder - actual spec is in ensures clause
+
     }
 }
 
@@ -764,14 +772,17 @@ impl Neg for &Scalar {
 impl vstd::std_specs::ops::NegSpecImpl for Scalar {
     open spec fn obeys_neg_spec() -> bool {
         false  // Set to false since we use ensures clause instead of concrete spec
+
     }
 
     open spec fn neg_req(self) -> bool {
         true  // No specific preconditions - scalars are canonical by invariant
+
     }
 
     open spec fn neg_spec(self) -> Scalar {
         arbitrary()  // Placeholder - actual spec is in ensures clause
+
     }
 }
 
@@ -817,6 +828,7 @@ impl ConditionallySelectable for Scalar {
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus.
 </VERIFICATION NOTE> */
+
 impl<T> Product<T> for Scalar where T: Borrow<Scalar> {
     /* <ORIGINAL CODE>
     fn product<I>(iter: I) -> Self

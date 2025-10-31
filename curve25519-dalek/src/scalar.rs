@@ -453,10 +453,25 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
 define_mul_assign_variants!(LHS = Scalar, RHS = Scalar);
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::MulSpecImpl<&Scalar> for &Scalar {
+    open spec fn obeys_mul_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+    }
+
+    open spec fn mul_req(self, rhs: &Scalar) -> bool {
+        true  // No preconditions 
+    }
+
+    open spec fn mul_spec(self, rhs: &Scalar) -> Scalar {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
+    }
+}
+
 impl<'b> Mul<&'b Scalar> for &Scalar {
     type Output = Scalar;
 
-    // VERIFICATION NOTE: PROOF BYPASS JUST BEFORE RETURN (problem with traits)
+    // VERIFICATION NOTE: VERIFIED
     fn mul(self, _rhs: &'b Scalar) -> (result: Scalar)
         ensures
             bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
@@ -494,23 +509,32 @@ impl<'b> Mul<&'b Scalar> for &Scalar {
          let result = UnpackedScalar::mul(&self.unpack(), &_rhs.unpack()).pack();
          </ORIGINAL CODE> */
 
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        // vstd expects obeys_mul_spec() and mul_spec() from MulSpecImpl trait,
-        // but that trait is not publicly exported, so we bypass with assume(false)
-        // while maintaining our own custom ensures clause above
-        assume(false);
-
         result
     }
 }
 
 define_mul_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::AddSpecImpl<&Scalar> for &Scalar {
+    open spec fn obeys_add_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+    }
+
+    open spec fn add_req(self, rhs: &Scalar) -> bool {
+        true  // No preconditions yet
+    }
+
+    open spec fn add_spec(self, rhs: &Scalar) -> Scalar {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
+    }
+}
+
 impl<'a> Add<&'a Scalar> for &Scalar {
     type Output = Scalar;
 
     /* <VERIFICATION NOTE>
-    TWO PROOF BYPASSES  because of trait issues
+    PROOF BYPASS; may need to add preconditions to spec
     </VERIFICATION NOTE> */
     #[allow(non_snake_case)]
     fn add(self, _rhs: &'a Scalar) -> (result: Scalar)
@@ -562,12 +586,6 @@ impl<'a> Add<&'a Scalar> for &Scalar {
         }
         /* </MODIFIED CODE> */
 
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        // vstd expects obeys_add_spec() and add_spec() from AddSpecImpl trait,
-        // but that trait is not publicly exported, so we bypass with assume(false)
-        // while maintaining our own custom ensures clause above
-        assume(false);
-
         result
     }
 }
@@ -575,8 +593,7 @@ impl<'a> Add<&'a Scalar> for &Scalar {
 define_add_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'a> AddAssign<&'a Scalar> for Scalar {
-    // VERIFICATION NOTE: delegates to verified Add operator
-    // PROOF BYPASS because Add has vstd trait spec issues
+    // VERIFICATION NOTE: VERIFIED
     #[allow(clippy::op_ref)]
     fn add_assign(&mut self, _rhs: &'a Scalar)
         ensures
@@ -584,14 +601,27 @@ impl<'a> AddAssign<&'a Scalar> for Scalar {
                 &_rhs.bytes,
             )) % group_order(),
     {
-        proof {
-            assume(false);
-        }
+        
         *self = &*self + _rhs;
     }
 }
 
 define_add_assign_variants!(LHS = Scalar, RHS = Scalar);
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::SubSpecImpl<&Scalar> for &Scalar {
+    open spec fn obeys_sub_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+    }
+
+    open spec fn sub_req(self, rhs: &Scalar) -> bool {
+        is_canonical_scalar(self) && is_canonical_scalar(rhs)  
+    }
+
+    open spec fn sub_spec(self, rhs: &Scalar) -> Scalar {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
+    }
+}
 
 impl<'b> Sub<&'b Scalar> for &Scalar {
     type Output = Scalar;
@@ -601,10 +631,11 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
     #[allow(non_snake_case)]
     fn sub(self, _rhs: &'b Scalar) -> (result:
         Scalar)
-    // Cannot add preconditions to trait implementations in Verus
-    // requires
-    //     is_canonical_scalar(self),
-    //     is_canonical_scalar(_rhs),
+    /* VERIFICATION NOTE: preconditions are added to the SpecImpl above
+    requires
+      is_canonical_scalar(self),
+      is_canonical_scalar(_rhs),
+    */
 
         ensures
             bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
@@ -646,9 +677,6 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
         }
         /* </MODIFIED CODE> */
 
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        assume(false);
-
         result
     }
 }
@@ -656,22 +684,37 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
 define_sub_variants!(LHS = Scalar, RHS = Scalar, Output = Scalar);
 
 impl<'a> SubAssign<&'a Scalar> for Scalar {
-    // VERIFICATION NOTE: Delegates to verified Sub operator
-    // PROOF BYPASS because Sub has vstd trait spec issues
+    // VERIFICATION NOTE: VERIFIED
     #[allow(clippy::op_ref)]
     fn sub_assign(&mut self, _rhs: &'a Scalar)
+        requires
+            is_canonical_scalar(old(self)),
+            is_canonical_scalar(_rhs),
         ensures
             bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
                 - bytes_to_nat(&_rhs.bytes)) % (group_order() as int),
     {
-        proof {
-            assume(false);
-        }
+        
         *self = &*self - _rhs;
     }
 }
 
 define_sub_assign_variants!(LHS = Scalar, RHS = Scalar);
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::NegSpecImpl for &Scalar {
+    open spec fn obeys_neg_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+    }
+
+    open spec fn neg_req(self) -> bool {
+        true  // No preconditions - scalars are canonical by invariant
+    }
+
+    open spec fn neg_spec(self) -> Scalar {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
+    }
+}
 
 impl Neg for &Scalar {
     type Output = Scalar;
@@ -712,25 +755,33 @@ impl Neg for &Scalar {
             assume((scalar_to_nat(self) + scalar_to_nat(&result)) % group_order() == 0);
         }
 
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        assume(false);
-
         /* </MODIFIED CODE> */
         result
+    }
+}
+
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::ops::NegSpecImpl for Scalar {
+    open spec fn obeys_neg_spec() -> bool {
+        false  // Set to false since we use ensures clause instead of concrete spec
+    }
+
+    open spec fn neg_req(self) -> bool {
+        true  // No specific preconditions - scalars are canonical by invariant
+    }
+
+    open spec fn neg_spec(self) -> Scalar {
+        arbitrary()  // Placeholder - actual spec is in ensures clause
     }
 }
 
 impl Neg for Scalar {
     type Output = Scalar;
 
-    /* <VERIFICATION NOTE>
-         PROOF BYPASS - vstd's Neg trait spec precondition check
-    </VERIFICATION NOTE> */
     fn neg(self) -> (result: Scalar)
         ensures
             (scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0,
     {
-        assume(false);  // PROOF BYPASS because of trait issues
         let result = (&self).neg();
         proof {
             assume((scalar_to_nat(&self) + scalar_to_nat(&result)) % group_order() == 0);
@@ -745,9 +796,7 @@ impl Neg for Scalar {
 }
 
 impl ConditionallySelectable for Scalar {
-    /* <VERIFICATION NOTE>  VERIFIED
-    */
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> (Self) {
         let mut bytes = [0u8;32];
         #[allow(clippy::needless_range_loop)]
         for i in 0..32 {
@@ -764,9 +813,6 @@ impl ConditionallySelectable for Scalar {
         Scalar { bytes }
     }
 }
-
-} // verus!
-verus! {
 
 /* <VERIFICATION NOTE>
  Trait implementations for Product and Sum declared as external_body since they use iterators which are not supported by Verus.

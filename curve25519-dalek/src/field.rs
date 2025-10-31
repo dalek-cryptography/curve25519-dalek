@@ -392,7 +392,7 @@ impl FieldElement {
                 * field_element_as_nat(self)) % p() == 1,
             // If self is zero, result is zero
             field_element_as_nat(self) == 0 ==> field_element_as_nat(&result) == 0,
-            field_element_abs(&result) == field_inv_abs(field_element_abs(self)),
+            field_element(&result) == field_inv(field_element(self)),
     {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
         //

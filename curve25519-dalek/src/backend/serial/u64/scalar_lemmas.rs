@@ -1532,15 +1532,23 @@ pub proof fn lemma_group_order_bound()
     // group_order = 2^252 + 27742317777372353535851937790883648493
     lemma_l_equals_group_order();
     lemma_pow252();
-    
-    // The key insight: group_order < 2^252 + 2^252 = 2^253 < 2^255
-    // We don't need to prove the exact value of the constant,
-    // just that it's positive and less than 2^252
-    
-    // The constant is obviously positive and less than 2^252
-    // (since 2^252 is much larger than the constant 27742317777372353535851937790883648493)
-    assume(27742317777372353535851937790883648493nat < pow2(252));
-    
+
+    // First compare the constant to the concrete numeral for 2^126
+    assert(27742317777372353535851937790883648493nat
+        < 0x40000000000000000000000000000000) by (compute_only);
+
+    // Establish pow2(126) == 0x4000...0000 so we can rewrite the bound
+    assert(pow2(63) == 0x8000000000000000) by {
+        lemma2_to64_rest();
+    };
+    lemma_pow2_adds(63, 63);
+    assert(pow2(126) == 0x40000000000000000000000000000000);
+
+    // Hence the constant < 2^126 < 2^252
+    assert(27742317777372353535851937790883648493nat < pow2(126));
+    lemma_pow2_strictly_increases(126, 252);
+    assert(27742317777372353535851937790883648493nat < pow2(252));
+
     // Therefore group_order < 2^252 + 2^252 = 2^253
     assert(group_order() == pow2(252) + 27742317777372353535851937790883648493nat);
     assert(group_order() < pow2(252) + pow2(252));

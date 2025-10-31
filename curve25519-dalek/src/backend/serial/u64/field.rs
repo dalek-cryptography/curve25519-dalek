@@ -371,8 +371,11 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
     fn mul_assign(&mut self, _rhs: &'a FieldElement51) {
         proof {
-            assume(false);
-        }  // PROOF BYPASS due to vstd trait spec preconditions
+            // PROOF BYPASS: Assume preconditions for Mul
+            // For Mul (self * rhs): requires limbs < 2^54
+            assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 54));
+            assume(forall|i: int| 0 <= i < 5 ==> _rhs.limbs[i] < (1u64 << 54));
+        }
         let result = &*self * _rhs;
         self.limbs = result.limbs;
     }
@@ -382,7 +385,7 @@ impl<'a> MulAssign<&'a FieldElement51> for FieldElement51 {
 impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
     // Does the implementation of this trait obey basic multiplication principles
     open spec fn obeys_mul_spec() -> bool {
-        true
+        false
     }
 
     // Pre-condition of mul
@@ -394,9 +397,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Postcondition of mul
     open spec fn mul_spec(self, rhs: &FieldElement51) -> FieldElement51 {
-        /*  VERIFICATION NOTE:
-         THE ASSUMPTION IS THAT WE CAN WRITE THIS AND REFINE IT IN THE MAIN FUNCTION BODY
-        */
+        // VERIFICATION NOTE: WE DON'T PROVIDE A SPEC EXPRESSION FOR mul RESULT
         arbitrary()
     }
 }
@@ -408,7 +409,7 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     fn mul(self, _rhs: &'a FieldElement51) -> (output:
         FieldElement51)/*  VERIFICATION NOTE:
     - PROOF BYPASS
-    - SPEC IS DRAFT
+    - REVIEW SPEC WHILE DOING THE PROOF
     */
 
         ensures
@@ -554,10 +555,7 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 
     // Postcondition of neg
     open spec fn neg_spec(self) -> FieldElement51 {
-        /*  VERIFICATION NOTE:
-        - THE ASSUMPTION IS THAT WE CAN WRITE THIS AND REFINE IT IN THE MAIN FUNCTION BODY
-        - obeys_neg_spec is false since this returns arbitrary()
-        */
+        // VERIFICATION NOTE: WE DON'T PROVIDE A SPEC EXPRESSION FOR neg RESULT
         arbitrary()
     }
 }
@@ -565,8 +563,14 @@ impl vstd::std_specs::ops::NegSpecImpl for &FieldElement51 {
 impl Neg for &FieldElement51 {
     type Output = FieldElement51;
 
-    fn neg(self) -> (output: FieldElement51)
-    ensures field_element(&output) == field_neg(field_element(self)),
+    fn neg(self) -> (output:
+        FieldElement51)/*  VERIFICATION NOTE:
+    - PROOF BYPASS
+    - REVIEW SPEC WHILE DOING THE PROOF
+    */
+
+        ensures
+            field_element(&output) == field_neg(field_element(self)),
     {
         let mut output = *self;
         assume(forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 51));
@@ -575,9 +579,6 @@ impl Neg for &FieldElement51 {
         output
     }
 }
-
-} // verus!
-verus! {
 
 impl ConditionallySelectable for FieldElement51 {
     fn conditional_select(a: &FieldElement51, b: &FieldElement51, choice: Choice) -> (result:

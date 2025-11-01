@@ -431,6 +431,88 @@ pub proof fn lemma_rr_limbs_bounded()
     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
 
+pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
+    requires
+        #[trigger] ((x * montgomery_radix()) % group_order()) == #[trigger] ((a * rr) % group_order()),
+        #[trigger] (rr % group_order()) == #[trigger] ((montgomery_radix() * montgomery_radix()) % group_order()),
+        group_order() > 0
+    ensures
+        #[trigger] (x % group_order()) == #[trigger] ((a * montgomery_radix()) % group_order())
+{
+
+    // 1. Substitute rr with r*r
+    lemma_mul_mod_noop_right(a as int, rr as int, group_order() as int);
+    lemma_mul_mod_noop_right(a as int, (montgomery_radix() * montgomery_radix()) as int, group_order() as int);
+
+    // let lhs = (x * montgomery_radix()) % group_order();
+    // let step1 = (a * rr) % group_order();
+    // let step2 = (a * (rr % group_order())) % group_order();
+    // let step3 = (a * ((montgomery_radix() * montgomery_radix()) % group_order())) % group_order();
+    // let step4 = (a * (montgomery_radix() * montgomery_radix())) % group_order();
+    // let rhs = (a * montgomery_radix() * montgomery_radix()) % group_order();
+    lemma_mul_is_associative(a as int, montgomery_radix() as int, montgomery_radix() as int);
+    
+    assert((x * montgomery_radix()) % group_order() == (a * montgomery_radix() * montgomery_radix()) % group_order());
+
+    // 2. use the inverse to remove r from both sides
+
+    // Step 1: Multiply both sides by inv_montgomery_radix() using modular properties
+    lemma_mul_mod_noop_right(inv_montgomery_radix() as int, (x * montgomery_radix()) as int, group_order() as int);
+    lemma_mul_mod_noop_right(inv_montgomery_radix() as int, (a * montgomery_radix() * montgomery_radix()) as int, group_order() as int);
+
+    assert((x * montgomery_radix() * inv_montgomery_radix()) % group_order() 
+        == (a * montgomery_radix() * montgomery_radix() * inv_montgomery_radix()) % group_order());
+
+    // Step 2: Group (R * R^-1) together using associativity
+    // x * (R * R^-1) and (a * R) * (R * R^-1)
+    lemma_mul_is_associative(x as int, montgomery_radix() as int, inv_montgomery_radix() as int);
+    lemma_mul_is_associative((a * montgomery_radix()) as int, montgomery_radix() as int, inv_montgomery_radix() as int);
+
+    assert((x * (montgomery_radix() * inv_montgomery_radix())) % group_order() 
+        == ((a * montgomery_radix()) * (montgomery_radix() * inv_montgomery_radix())) % group_order());
+
+    // Step 3: Use lemma_montgomery_inverse to substitute (R * R^-1) % n = 1
+    lemma_montgomery_inverse();
+
+    // Step 4: Substitute and simplify using (R * R^-1) ≡ 1
+    lemma_mul_mod_noop_right(x as int, (montgomery_radix() * inv_montgomery_radix()) as int, group_order() as int);
+    lemma_mul_mod_noop_right((a * montgomery_radix()) as int, (montgomery_radix() * inv_montgomery_radix()) as int, group_order() as int);
+
+}
+
+pub proof fn lemma_montgomery_inverse()
+    ensures
+        // r * r_inv ≡ 1 (mod n)
+        (montgomery_radix()*inv_montgomery_radix()) % group_order() == 1
+{
+    // TODO prove this
+    assume(false);
+}
+
+pub proof fn lemma_mul_both_sides_mod(x: int, y: int, z: int, m: int)
+    requires
+        m > 0,
+        x % m == y % m
+    ensures
+        (x * z) % m == (y * z) % m
+{
+    // Apply lemma_mul_mod_noop_right to both x and y
+    lemma_mul_mod_noop_right(z, x, m);
+    lemma_mul_mod_noop_right(z, y, m);
+    
+    // From lemma: z * (x % m) % m == (z * x) % m
+    //            z * (y % m) % m == (z * y) % m
+    
+    // Since x % m == y % m (from requires), we have:
+    assert(z * (x % m) % m == z * (y % m) % m);
+    
+    // Therefore:
+    assert((z * x) % m == (z * y) % m);
+    
+    // By commutativity of multiplication:
+    assert((x * z) % m == (y * z) % m);
+}
+
 /// Need to use induction because the postcondition expands
 /// seq_u64_to_nat in the opposite way from how it's defined.
 /// The base case is straightforward, but it takes a few steps

@@ -804,9 +804,39 @@ impl Scalar52 {
         ensures
             to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false);  // TODO: Add proofs
+        // assume(false);  // TODO: Add proofs
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
+        
+        assert((to_nat(&aa.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order());
+
+        // square_internal ensures
+        // ensures
+        //     slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
+
+        let result = Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR));
+
+        assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&aa.limbs) * to_nat(&constants::RR.limbs)) % group_order());
+
+        proof{
+            // needed pre-condition for lemma_cancel_mul_montgomery_mod
+
+            // TODO prove this
+            assume(to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix()*montgomery_radix()) % group_order());
+            // allows us to reduce to the first assertion below
+            lemma_cancel_mul_montgomery_mod(to_nat(&result.limbs), to_nat(&aa.limbs), to_nat(&constants::RR.limbs));
+
+            // allows us to assert (to_nat(&result.limbs)) % group_order() == (to_nat(&result.limbs))
+            //  true from montgomery_reduce postcondition
+            lemma_small_mod((to_nat(&result.limbs)), group_order())
+        }
+
+        assert((to_nat(&result.limbs)) % group_order() == (to_nat(&aa.limbs) * montgomery_radix()) % group_order());
+
+        result
     }
 
     /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
@@ -995,7 +1025,7 @@ impl Scalar52 {
 //     };
 //     #[test]
 //     fn mul_max() {
-//         let res = Scalar52::mul(&X, &X);
+//         let l = Scalar52::mul(&X, &X);
 //         for i in 0..5 {
 //             assert!(res[i] == XX[i]);
 //         }

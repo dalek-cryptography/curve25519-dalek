@@ -2600,8 +2600,6 @@ impl UnpackedScalar {
             }
         }
 
-        // assume( to_nat(&self.limbs) < group_order() ==> result.bytes[31] <= 127 );
-        // assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
 
         result
     }

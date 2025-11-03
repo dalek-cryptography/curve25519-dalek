@@ -1493,7 +1493,6 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
-
 /// Proves that bytes_to_nat is at least as large as any individual term in its sum
 pub proof fn lemma_bytes_to_nat_lower_bound(bytes: &[u8; 32], index: usize)
     requires
@@ -1512,7 +1511,9 @@ proof fn lemma_bytes_to_nat_rec_bound(bytes: &[u8; 32], start: usize, target: us
     requires
         start <= target < 32,
     ensures
-        bytes_to_nat_rec(bytes, start as int) >= (bytes[target as int] as nat) * pow2((target * 8) as nat),
+        bytes_to_nat_rec(bytes, start as int) >= (bytes[target as int] as nat) * pow2(
+            (target * 8) as nat,
+        ),
     decreases 32 - start,
 {
     if start == target {
@@ -1534,8 +1535,8 @@ pub proof fn lemma_group_order_bound()
     lemma_pow252();
 
     // First compare the constant to the concrete numeral for 2^126
-    assert(27742317777372353535851937790883648493nat
-        < 0x40000000000000000000000000000000) by (compute_only);
+    assert(27742317777372353535851937790883648493nat < 0x40000000000000000000000000000000)
+        by (compute_only);
 
     // Establish pow2(126) == 0x4000...0000 so we can rewrite the bound
     assert(pow2(63) == 0x8000000000000000) by {
@@ -1552,13 +1553,13 @@ pub proof fn lemma_group_order_bound()
     // Therefore group_order < 2^252 + 2^252 = 2^253
     assert(group_order() == pow2(252) + 27742317777372353535851937790883648493nat);
     assert(group_order() < pow2(252) + pow2(252));
-    
+
     // 2^252 + 2^252 = 2^253
     assert(pow2(252) + pow2(252) == pow2(253)) by {
         lemma_pow2_adds(1, 252);
         lemma2_to64();
     }
-    
+
     // 2^253 < 2^255
     lemma_pow2_strictly_increases(253, 255);
     assert(group_order() < pow2(255));

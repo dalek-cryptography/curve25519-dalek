@@ -65,3 +65,9 @@ warning: `curve25519-dalek` (lib) generated 43 warnings (19 duplicates)
 cargo install --git https://github.com/Beneficial-AI-Foundation/verusfmt --rev 025d10eeb5a98052dcb7f262e5d0102d23996809
 ```
 This is a version of verusfmt patched to support more Rust syntax.
+
+See https://github.com/verus-lang/verusfmt?tab=readme-ov-file#installing-and-using-verusfmt for usage.
+In particular, if you want to format all Rust files, run
+```bash
+find . -name "*.rs" -type f | xargs -P 0 -n 1 verusfmt
+```

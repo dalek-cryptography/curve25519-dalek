@@ -2558,7 +2558,6 @@ impl UnpackedScalar {
                 let v = bytes_to_nat(&result.bytes);
 
                 assert(bytes_to_nat(&result.bytes) == bytes_to_nat_rec(&result.bytes, 0));
-                // assert((bytes[index] as nat) * pow2((index * 8) as nat) > 0);
 
 
                 assert(v == bytes_to_nat(&result.bytes));
@@ -2566,13 +2565,13 @@ impl UnpackedScalar {
                 {
                     use crate::backend::serial::u64::scalar_lemmas::lemma_group_order_bound;
                     lemma_group_order_bound();
-                    assert(group_order() < pow2(255));   // use your crate’s known bound on ℓ, or inline arithmetic if ℓ is defined arithmetically
+                    assert(group_order() < pow2(255));   
 
                     assert(v < pow2(255));               // by transitivity
 
                     let b31: nat = result.bytes[31] as nat;
                     if b31 >= 128 {
-                        // v ≥ b31*2^248 ≥ 128*2^248 = 2^255 (the last step discharged by compute). :contentReference[oaicite:1]{index=1}
+                        // v ≥ b31*2^248 ≥ 2^255 
                         use vstd::arithmetic::power2::{pow2, lemma_pow2_adds, lemma2_to64};
                         use vstd::arithmetic::mul::lemma_mul_inequality;
 
@@ -2599,8 +2598,6 @@ impl UnpackedScalar {
                 }
             }
         }
-
-
         result
     }
 

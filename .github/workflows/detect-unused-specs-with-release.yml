@@ -1,0 +1,77 @@
+name: Detect Unused Specs (Using Release Binary)
+
+on:
+  workflow_call:
+    inputs:
+      project_path:
+        description: 'Path to the project to analyze'
+        required: false
+        default: '.'
+        type: string
+      scip_callgraph_version:
+        description: 'Version of scip-callgraph to use (e.g., v3.0.4 or latest)'
+        required: false
+        default: 'latest'
+        type: string
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download scip-callgraph release
+        run: |
+          if [ "${{ inputs.scip_callgraph_version }}" = "latest" ]; then
+            # Get latest release
+            DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/latest | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
+          else
+            # Get specific version
+            DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/tags/${{ inputs.scip_callgraph_version }} | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
+          fi
+          
+          wget "$DOWNLOAD_URL" -O scip-callgraph.tar.gz
+          tar -xzf scip-callgraph.tar.gz
+          # Find and move the binary from extracted directory
+          find . -name "detect_unused_specs" -type f -executable -exec chmod +x {} \;
+          find . -name "detect_unused_specs" -type f -executable -exec sudo mv {} /usr/local/bin/ \;
+
+      - name: Install dependencies
+        run: |
+          # Install jq for JSON parsing
+          sudo apt-get update && sudo apt-get install -y jq
+          
+          # Install Rust and Cargo (required by verus-analyzer)
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
+          
+          # Install verus-analyzer from latest release
+          VERUS_ANALYZER_VERSION="2025-10-20"
+          wget "https://github.com/verus-lang/verus-analyzer/releases/download/${VERUS_ANALYZER_VERSION}/verus-analyzer-x86_64-unknown-linux-gnu.gz" -O verus-analyzer.gz
+          gunzip verus-analyzer.gz
+          chmod +x verus-analyzer
+          sudo mv verus-analyzer /usr/local/bin/
+          
+          # Install SCIP (download binary directly, cargo package doesn't exist)
+          SCIP_URL=$(curl -s https://api.github.com/repos/sourcegraph/scip/releases/latest | jq -r '.assets[] | select(.name == "scip-linux-amd64.tar.gz") | .browser_download_url')
+          wget "$SCIP_URL" -O scip-linux.tar.gz
+          tar -xzf scip-linux.tar.gz
+          chmod +x scip
+          sudo mv scip /usr/local/bin/
+
+      - name: Run analysis
+        run: |
+          source "$HOME/.cargo/env"
+          cd ${{ inputs.project_path }}
+          detect_unused_specs .
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: unused-specs-report
+          path: |
+            *_unused_specs.json
+            *_atoms.json
+

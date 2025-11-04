@@ -1,7 +1,22 @@
 name: Detect Unused Specs (Using Release Binary)
 
 on:
+  pull_request:
+    branches:
+      - main
   workflow_call:
+    inputs:
+      project_path:
+        description: 'Path to the project to analyze'
+        required: false
+        default: '.'
+        type: string
+      scip_callgraph_version:
+        description: 'Version of scip-callgraph to use (e.g., v3.0.4 or latest)'
+        required: false
+        default: 'latest'
+        type: string
+  workflow_dispatch:
     inputs:
       project_path:
         description: 'Path to the project to analyze'
@@ -24,12 +39,13 @@ jobs:
 
       - name: Download scip-callgraph release
         run: |
-          if [ "${{ inputs.scip_callgraph_version }}" = "latest" ]; then
+          VERSION="${{ inputs.scip_callgraph_version || 'latest' }}"
+          if [ "$VERSION" = "latest" ]; then
             # Get latest release
             DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/latest | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
           else
             # Get specific version
-            DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/tags/${{ inputs.scip_callgraph_version }} | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
+            DOWNLOAD_URL=$(curl -s https://api.github.com/repos/Beneficial-AI-Foundation/scip-callgraph/releases/tags/$VERSION | jq -r '.assets[] | select(.name | contains("linux")) | .browser_download_url')
           fi
           
           wget "$DOWNLOAD_URL" -O scip-callgraph.tar.gz
@@ -64,7 +80,8 @@ jobs:
       - name: Run analysis
         run: |
           source "$HOME/.cargo/env"
-          cd ${{ inputs.project_path }}
+          PROJECT_PATH="${{ inputs.project_path || '.' }}"
+          cd "$PROJECT_PATH"
           detect_unused_specs .
 
       - name: Upload results

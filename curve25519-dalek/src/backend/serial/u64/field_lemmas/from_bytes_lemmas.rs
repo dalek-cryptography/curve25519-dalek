@@ -12,6 +12,7 @@ use super::super::common_verus::mul_lemmas::*;
 use super::super::common_verus::pow_lemmas::*;
 use super::super::common_verus::shift_lemmas::*;
 
+use super::super::backend_64_core::*;
 use super::field_core::*;
 use super::load8_lemmas::*;
 

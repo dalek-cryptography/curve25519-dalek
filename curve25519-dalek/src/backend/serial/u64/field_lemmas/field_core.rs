@@ -1,4 +1,5 @@
 #![allow(unused)]
+use super::super::backend_64_core::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
@@ -39,45 +40,8 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
     limbs[3] as nat) + pow2(204) * (limbs[4] as nat)
 }
 
-// Evaluation function, given a field element as limbs, reconstruct the nat value it represents.
-pub open spec fn as_nat_32_u8(limbs: &[u8; 32]) -> nat {
-    // Verus error: `core::iter::range::impl&%15::fold` is not supported
-    // we write them out manually
-    //
-    // Note: We use byte-first order (limbs[i] * pow2(i*8)) to match
-    // the natural structure of limb contribution functions in limbs_to_bytes_lemmas.rs
-    (limbs[0] as nat) + (limbs[1] as nat) * pow2(1 * 8) + (limbs[2] as nat) * pow2(2 * 8) + (
-    limbs[3] as nat) * pow2(3 * 8) + (limbs[4] as nat) * pow2(4 * 8) + (limbs[5] as nat) * pow2(
-        5 * 8,
-    ) + (limbs[6] as nat) * pow2(6 * 8) + (limbs[7] as nat) * pow2(7 * 8) + (limbs[8] as nat)
-        * pow2(8 * 8) + (limbs[9] as nat) * pow2(9 * 8) + (limbs[10] as nat) * pow2(10 * 8) + (
-    limbs[11] as nat) * pow2(11 * 8) + (limbs[12] as nat) * pow2(12 * 8) + (limbs[13] as nat)
-        * pow2(13 * 8) + (limbs[14] as nat) * pow2(14 * 8) + (limbs[15] as nat) * pow2(15 * 8) + (
-    limbs[16] as nat) * pow2(16 * 8) + (limbs[17] as nat) * pow2(17 * 8) + (limbs[18] as nat)
-        * pow2(18 * 8) + (limbs[19] as nat) * pow2(19 * 8) + (limbs[20] as nat) * pow2(20 * 8) + (
-    limbs[21] as nat) * pow2(21 * 8) + (limbs[22] as nat) * pow2(22 * 8) + (limbs[23] as nat)
-        * pow2(23 * 8) + (limbs[24] as nat) * pow2(24 * 8) + (limbs[25] as nat) * pow2(25 * 8) + (
-    limbs[26] as nat) * pow2(26 * 8) + (limbs[27] as nat) * pow2(27 * 8) + (limbs[28] as nat)
-        * pow2(28 * 8) + (limbs[29] as nat) * pow2(29 * 8) + (limbs[30] as nat) * pow2(30 * 8) + (
-    limbs[31] as nat) * pow2(31 * 8)
-}
-
-pub open spec fn as_nat_32_u8_rec(limbs: &[u8; 32], index: nat) -> nat
-    decreases 32 - index,
-{
-    if index >= 32 {
-        0
-    } else {
-        (limbs[index as int] as nat) * pow2(index * 8) + as_nat_32_u8_rec(limbs, index + 1)
-    }
-}
-
-pub open spec fn load8_at_spec(input: &[u8], i: usize) -> nat {
-    (pow2(0 * 8) * input[i + 0] + pow2(1 * 8) * input[i + 1] + pow2(2 * 8) * input[i + 2] + pow2(
-        3 * 8,
-    ) * input[i + 3] + pow2(4 * 8) * input[i + 4] + pow2(5 * 8) * input[i + 5] + pow2(6 * 8)
-        * input[i + 6] + pow2(7 * 8) * input[i + 7]) as nat
-}
+// Note: as_nat_32_u8, as_nat_32_u8_rec, and load8_at_spec have been moved to backend_64_core
+// They are now shared between field and scalar implementations
 
 pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
     let r = [

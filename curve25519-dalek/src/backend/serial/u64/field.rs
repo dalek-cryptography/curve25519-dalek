@@ -49,6 +49,8 @@ use crate::backend::serial::u64::common_verus::pow_lemmas::*;
 use crate::backend::serial::u64::common_verus::shift_lemmas::*;
 
 #[allow(unused_imports)]
+use crate::backend::serial::u64::backend_64_core::*;
+#[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::backend::serial::u64::field_lemmas::as_nat_lemmas::*;

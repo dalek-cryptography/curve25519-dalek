@@ -1,3 +1,4 @@
+use crate::backend::serial::u64::backend_64_core::*;
 use crate::backend::serial::u64::field::FieldElement51;
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::constants;

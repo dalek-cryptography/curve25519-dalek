@@ -46,7 +46,7 @@ pub open spec fn to_scalar(limbs: &[u64; 5]) -> nat {
 }
 
 /// natural value of a 256 bit bitstring represented as array of 32 bytes
-/// 
+///
 /// Note: This is now an alias for the shared `as_nat_32_u8` function from backend_64_core.
 /// Both field and scalar code use the same underlying byte-to-nat conversion.
 pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {

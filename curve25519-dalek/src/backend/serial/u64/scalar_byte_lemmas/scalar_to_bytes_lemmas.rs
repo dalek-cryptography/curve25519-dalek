@@ -23,22 +23,40 @@ verus! {
 // Helper Lemmas for 52-bit limbs
 // ============================================================================
 /// Predicate: bytes are packed from limbs according to the as_bytes algorithm
+#[verusfmt::skip]
 pub open spec fn bytes_match_limbs_packing_52(limbs: [u64; 5], bytes: [u8; 32]) -> bool {
-    bytes[0] == (limbs[0] >> 0) as u8 && bytes[1] == (limbs[0] >> 8) as u8 && bytes[2] == (limbs[0]
-        >> 16) as u8 && bytes[3] == (limbs[0] >> 24) as u8 && bytes[4] == (limbs[0] >> 32) as u8
-        && bytes[5] == (limbs[0] >> 40) as u8 && bytes[6] == ((limbs[0] >> 48) | (limbs[1]
-        << 4)) as u8 && bytes[7] == (limbs[1] >> 4) as u8 && bytes[8] == (limbs[1] >> 12) as u8
-        && bytes[9] == (limbs[1] >> 20) as u8 && bytes[10] == (limbs[1] >> 28) as u8 && bytes[11]
-        == (limbs[1] >> 36) as u8 && bytes[12] == (limbs[1] >> 44) as u8 && bytes[13] == (limbs[2]
-        >> 0) as u8 && bytes[14] == (limbs[2] >> 8) as u8 && bytes[15] == (limbs[2] >> 16) as u8
-        && bytes[16] == (limbs[2] >> 24) as u8 && bytes[17] == (limbs[2] >> 32) as u8 && bytes[18]
-        == (limbs[2] >> 40) as u8 && bytes[19] == ((limbs[2] >> 48) | (limbs[3] << 4)) as u8
-        && bytes[20] == (limbs[3] >> 4) as u8 && bytes[21] == (limbs[3] >> 12) as u8 && bytes[22]
-        == (limbs[3] >> 20) as u8 && bytes[23] == (limbs[3] >> 28) as u8 && bytes[24] == (limbs[3]
-        >> 36) as u8 && bytes[25] == (limbs[3] >> 44) as u8 && bytes[26] == (limbs[4] >> 0) as u8
-        && bytes[27] == (limbs[4] >> 8) as u8 && bytes[28] == (limbs[4] >> 16) as u8 && bytes[29]
-        == (limbs[4] >> 24) as u8 && bytes[30] == (limbs[4] >> 32) as u8 && bytes[31] == (limbs[4]
-        >> 40) as u8
+    &&& bytes[0] == (limbs[0] >> 0) as u8
+    &&& bytes[1] == (limbs[0] >> 8) as u8
+    &&& bytes[2] == (limbs[0] >> 16) as u8
+    &&& bytes[3] == (limbs[0] >> 24) as u8
+    &&& bytes[4] == (limbs[0] >> 32) as u8
+    &&& bytes[5] == (limbs[0] >> 40) as u8
+    &&& bytes[6] == ((limbs[0] >> 48) | (limbs[1] << 4)) as u8
+    &&& bytes[7] == (limbs[1] >> 4) as u8
+    &&& bytes[8] == (limbs[1] >> 12) as u8
+    &&& bytes[9] == (limbs[1] >> 20) as u8
+    &&& bytes[10] == (limbs[1] >> 28) as u8
+    &&& bytes[11] == (limbs[1] >> 36) as u8
+    &&& bytes[12] == (limbs[1] >> 44) as u8
+    &&& bytes[13] == (limbs[2] >> 0) as u8
+    &&& bytes[14] == (limbs[2] >> 8) as u8
+    &&& bytes[15] == (limbs[2] >> 16) as u8
+    &&& bytes[16] == (limbs[2] >> 24) as u8
+    &&& bytes[17] == (limbs[2] >> 32) as u8
+    &&& bytes[18] == (limbs[2] >> 40) as u8
+    &&& bytes[19] == ((limbs[2] >> 48) | (limbs[3] << 4)) as u8
+    &&& bytes[20] == (limbs[3] >> 4) as u8
+    &&& bytes[21] == (limbs[3] >> 12) as u8
+    &&& bytes[22] == (limbs[3] >> 20) as u8
+    &&& bytes[23] == (limbs[3] >> 28) as u8
+    &&& bytes[24] == (limbs[3] >> 36) as u8
+    &&& bytes[25] == (limbs[3] >> 44) as u8
+    &&& bytes[26] == (limbs[4] >> 0) as u8
+    &&& bytes[27] == (limbs[4] >> 8) as u8
+    &&& bytes[28] == (limbs[4] >> 16) as u8
+    &&& bytes[29] == (limbs[4] >> 24) as u8
+    &&& bytes[30] == (limbs[4] >> 32) as u8
+    &&& bytes[31] == (limbs[4] >> 40) as u8
 }
 
 // ============================================================================
@@ -48,12 +66,14 @@ pub open spec fn bytes_match_limbs_packing_52(limbs: [u64; 5], bytes: [u8; 32]) 
 // matching the structure of Scalar52::as_bytes packing.
 /// Compute limb 0's contribution to the byte sum
 /// Limb 0 contributes to bytes 0-6 (fully to 0-5, partially to 6)
+#[verusfmt::skip]
 pub open spec fn limb0_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[0] as nat * pow2(0 * 8) + bytes[1] as nat * pow2(1 * 8) + bytes[2] as nat * pow2(2 * 8)
-        + bytes[3] as nat * pow2(3 * 8) + bytes[4] as nat * pow2(4 * 8) + bytes[5] as nat * pow2(
-        5 * 8,
-    )
-        +
+    bytes[0] as nat * pow2(0 * 8) +
+    bytes[1] as nat * pow2(1 * 8) +
+    bytes[2] as nat * pow2(2 * 8) +
+    bytes[3] as nat * pow2(3 * 8) +
+    bytes[4] as nat * pow2(4 * 8) +
+    bytes[5] as nat * pow2(5 * 8) +
     // Byte 6 is a boundary byte - limb 0 contributes only the low 4 bits
     // These 4 bits represent limbs[0]'s bits 48-51
     ((limbs[0] as nat / pow2(48)) % 16) * pow2(6 * 8)
@@ -61,44 +81,56 @@ pub open spec fn limb0_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) ->
 
 /// Compute limb 1's contribution to the byte sum
 /// Limb 1 contributes to bytes 6-12 (partially to 6, fully to 7-11, partially to 12)
+#[verusfmt::skip]
 pub open spec fn limb1_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 6 high 4 bits (limbs[1]'s bits 0-3)
-    ((limbs[1] as nat % pow2(4)) * 16) * pow2(6 * 8) + bytes[7] as nat * pow2(7 * 8)
-        + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(9 * 8) + bytes[10] as nat * pow2(
-        10 * 8,
-    ) + bytes[11] as nat * pow2(11 * 8) + bytes[12] as nat * pow2(12 * 8)
+    ((limbs[1] as nat % pow2(4)) * 16) * pow2(6 * 8) +
+    bytes[ 7] as nat * pow2( 7 * 8) +
+    bytes[ 8] as nat * pow2( 8 * 8) +
+    bytes[ 9] as nat * pow2( 9 * 8) +
+    bytes[10] as nat * pow2(10 * 8) +
+    bytes[11] as nat * pow2(11 * 8) +
+    bytes[12] as nat * pow2(12 * 8)
 }
 
 /// Compute limb 2's contribution to the byte sum
 /// Limb 2 contributes to bytes 13-19 (fully to 13-18, partially to 19)
+#[verusfmt::skip]
 pub open spec fn limb2_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[13] as nat * pow2(13 * 8) + bytes[14] as nat * pow2(14 * 8) + bytes[15] as nat * pow2(
-        15 * 8,
-    ) + bytes[16] as nat * pow2(16 * 8) + bytes[17] as nat * pow2(17 * 8) + bytes[18] as nat * pow2(
-        18 * 8,
-    )
-        +
+    bytes[13] as nat * pow2(13 * 8) +
+    bytes[14] as nat * pow2(14 * 8) +
+    bytes[15] as nat * pow2(15 * 8) +
+    bytes[16] as nat * pow2(16 * 8) +
+    bytes[17] as nat * pow2(17 * 8) +
+    bytes[18] as nat * pow2(18 * 8) +
     // Byte 19 is a boundary byte - limb 2 contributes only the low 4 bits
     ((limbs[2] as nat / pow2(48)) % 16) * pow2(19 * 8)
 }
 
 /// Compute limb 3's contribution to the byte sum
 /// Limb 3 contributes to bytes 19-25 (partially to 19, fully to 20-24, partially to 25)
+#[verusfmt::skip]
 pub open spec fn limb3_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 19 high 4 bits (limbs[3]'s bits 0-3)
-    ((limbs[3] as nat % pow2(4)) * 16) * pow2(19 * 8) + bytes[20] as nat * pow2(20 * 8)
-        + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat * pow2(22 * 8) + bytes[23] as nat
-        * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8) + bytes[25] as nat * pow2(25 * 8)
+    ((limbs[3] as nat % pow2(4)) * 16) * pow2(19 * 8) +
+    bytes[20] as nat * pow2(20 * 8) +
+    bytes[21] as nat * pow2(21 * 8) +
+    bytes[22] as nat * pow2(22 * 8) +
+    bytes[23] as nat * pow2(23 * 8) +
+    bytes[24] as nat * pow2(24 * 8) +
+    bytes[25] as nat * pow2(25 * 8)
 }
 
 /// Compute limb 4's contribution to the byte sum
 /// Limb 4 contributes to bytes 26-31
+#[verusfmt::skip]
 pub open spec fn limb4_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[26] as nat * pow2(26 * 8) + bytes[27] as nat * pow2(27 * 8) + bytes[28] as nat * pow2(
-        28 * 8,
-    ) + bytes[29] as nat * pow2(29 * 8) + bytes[30] as nat * pow2(30 * 8) + bytes[31] as nat * pow2(
-        31 * 8,
-    )
+    bytes[26] as nat * pow2(26 * 8) +
+    bytes[27] as nat * pow2(27 * 8) +
+    bytes[28] as nat * pow2(28 * 8) +
+    bytes[29] as nat * pow2(29 * 8) +
+    bytes[30] as nat * pow2(30 * 8) +
+    bytes[31] as nat * pow2(31 * 8)
 }
 
 // ============================================================================

@@ -5,6 +5,7 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
+use super::super::backend_64_core::*;
 use super::super::common_verus::bit_lemmas::*;
 use super::super::common_verus::div_mod_lemmas::*;
 use super::super::common_verus::mul_lemmas::*;

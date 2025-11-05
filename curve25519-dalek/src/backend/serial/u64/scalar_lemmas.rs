@@ -1,4 +1,6 @@
 #[allow(unused_imports)]
+use super::backend_64_core::*;
+#[allow(unused_imports)]
 use super::common_verus::*;
 #[allow(unused_imports)]
 use super::constants;
@@ -228,7 +230,8 @@ pub proof fn lemma_bytes_to_nat_rec_equals_bytes_to_nat(bytes: &[u8; 32])
     // The recursive definition bytes_to_nat_rec(bytes, 0) computes:
     // bytes[0] * 2^0 + bytes[1] * 2^8 + ... + bytes[31] * 2^248
     // First, reveal the recursive structure by showing a few key steps
-    reveal_with_fuel(bytes_to_nat_rec, 33);
+    // Note: bytes_to_nat now directly returns as_nat_32_u8, so we use that for the reveal
+    reveal_with_fuel(as_nat_32_u8_rec, 33);
 
     // Now we need to show that the recursive unfolding equals the explicit sum
     // The key is that pow2(0) == 1, so bytes[0] * pow2(0) == bytes[0]

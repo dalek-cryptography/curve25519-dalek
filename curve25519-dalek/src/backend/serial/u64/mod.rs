@@ -18,6 +18,8 @@
 //! Broadwell and newer, the ADX extension provides `ADCX` and `ADOX`
 //! (allowing the CPU to compute two carry chains in parallel).  These
 //! will be used if available.
+pub mod backend_64_core;
+
 pub mod field;
 
 pub mod scalar;

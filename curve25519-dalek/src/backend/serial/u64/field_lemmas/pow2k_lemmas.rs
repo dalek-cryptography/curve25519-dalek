@@ -107,28 +107,30 @@ pub open spec fn a0_2_val(a: [u64; 5]) -> u64 {
     a0_1_val(a) & mask51
 }
 
-pub open spec fn term_product_bounds_spec(a: [u64; 5], bound: u64) -> bool
-{
+pub open spec fn term_product_bounds_spec(a: [u64; 5], bound: u64) -> bool {
     // c0
-    &&&(a[0] as u128) * (a[0] as u128) < bound * bound
-    &&&(a[1] as u128) * ((19 * a[4]) as u128) < 19 * (bound * bound)
-    &&&(a[2] as u128) * ((19 * a[3]) as u128) < 19 * (bound * bound)
+    &&& (a[0] as u128) * (a[0] as u128) < bound * bound
+    &&& (a[1] as u128) * ((19 * a[4]) as u128) < 19 * (bound * bound)
+    &&& (a[2] as u128) * ((19 * a[3]) as u128) < 19 * (bound
+        * bound)
     // c1
-    &&&(a[3] as u128) * ((19 * a[3]) as u128) < 19 * (bound * bound)
-    &&&(a[0] as u128) * (a[1] as u128) < (bound * bound)
-    &&&(a[2] as u128) * ((19 * a[4]) as u128) < 19 * (bound * bound)
+    &&& (a[3] as u128) * ((19 * a[3]) as u128) < 19 * (bound * bound)
+    &&& (a[0] as u128) * (a[1] as u128) < (bound * bound)
+    &&& (a[2] as u128) * ((19 * a[4]) as u128) < 19 * (bound
+        * bound)
     // c2
-    &&&(a[1] as u128) * (a[1] as u128) < (bound * bound)
-    &&&(a[0] as u128) * (a[2] as u128) < (bound * bound)
-    &&&(a[4] as u128) * ((19 * a[3]) as u128) < 19 * (bound * bound)
+    &&& (a[1] as u128) * (a[1] as u128) < (bound * bound)
+    &&& (a[0] as u128) * (a[2] as u128) < (bound * bound)
+    &&& (a[4] as u128) * ((19 * a[3]) as u128) < 19 * (bound
+        * bound)
     // c3
-    &&&(a[4] as u128) * ((19 * a[4]) as u128) < 19 * (bound * bound)
-    &&&(a[0] as u128) * (a[3] as u128) < (bound * bound)
-    &&&(a[1] as u128) * (a[2] as u128) < (bound * bound)
+    &&& (a[4] as u128) * ((19 * a[4]) as u128) < 19 * (bound * bound)
+    &&& (a[0] as u128) * (a[3] as u128) < (bound * bound)
+    &&& (a[1] as u128) * (a[2] as u128) < (bound * bound)
     // c4
-    &&&(a[2] as u128) * (a[2] as u128) < (bound * bound)
-    &&&(a[0] as u128) * (a[4] as u128) < (bound * bound)
-    &&&(a[1] as u128) * (a[3] as u128) < (bound * bound)
+    &&& (a[2] as u128) * (a[2] as u128) < (bound * bound)
+    &&& (a[0] as u128) * (a[4] as u128) < (bound * bound)
+    &&& (a[1] as u128) * (a[3] as u128) < (bound * bound)
 }
 
 pub proof fn term_product_bounds(a: [u64; 5], bound: u64)
@@ -136,7 +138,7 @@ pub proof fn term_product_bounds(a: [u64; 5], bound: u64)
         19 * bound <= u64::MAX,
         forall|i: int| 0 <= i < 5 ==> a[i] < bound,
     ensures
-        term_product_bounds_spec(a, bound)
+        term_product_bounds_spec(a, bound),
 {
     let bound19 = (19 * bound) as u64;
 
@@ -144,17 +146,14 @@ pub proof fn term_product_bounds(a: [u64; 5], bound: u64)
         lemma_mul_is_associative(19, bound as int, bound as int);
     }
 
-    assert forall |i: int, j: int| 0 <= i <= 4 && 0 <= j <= 4 implies
-        (a[i] as u128) * (a[j] as u128) < bound * bound &&
-        (a[i] as u128) * ((19 * a[j]) as u128) < 19 * (bound * bound)
-        by {
-            lemma_m(a[i], a[j], bound, bound);
-            lemma_m(a[i], (19 * a[j]) as u64, bound, bound19);
-        }
+    assert forall|i: int, j: int| 0 <= i <= 4 && 0 <= j <= 4 implies (a[i] as u128) * (a[j] as u128)
+        < bound * bound && (a[i] as u128) * ((19 * a[j]) as u128) < 19 * (bound * bound) by {
+        lemma_m(a[i], a[j], bound, bound);
+        lemma_m(a[i], (19 * a[j]) as u64, bound, bound19);
+    }
 }
 
-pub open spec fn ci_0_val_boundaries(a: [u64; 5], bound: u64) -> bool
-{
+pub open spec fn ci_0_val_boundaries(a: [u64; 5], bound: u64) -> bool {
     &&& c0_0_val(a) < 77 * (bound * bound)
     &&& c1_0_val(a) < 59 * (bound * bound)
     &&& c2_0_val(a) < 41 * (bound * bound)
@@ -167,13 +166,12 @@ pub proof fn c_i_0_bounded(a: [u64; 5], bound: u64)
         19 * bound <= u64::MAX,
         forall|i: int| 0 <= i < 5 ==> a[i] < bound,
     ensures
-        ci_0_val_boundaries(a, bound)
+        ci_0_val_boundaries(a, bound),
 {
     term_product_bounds(a, bound);
 }
 
-pub open spec fn ci_val_boundaries(a: [u64; 5]) -> bool
-{
+pub open spec fn ci_val_boundaries(a: [u64; 5]) -> bool {
     &&& (c0_val(a) >> 51) <= (u64::MAX as u128)
     &&& (c1_val(a) >> 51) <= (u64::MAX as u128)
     &&& (c2_val(a) >> 51) <= (u64::MAX as u128)
@@ -185,9 +183,9 @@ pub proof fn c_i_shift_bounded(a: [u64; 5], bound: u64)
     requires
         19 * bound <= u64::MAX,
         77 * (bound * bound) + u64::MAX <= ((u64::MAX as u128) << 51),
-        ci_0_val_boundaries(a, bound)
+        ci_0_val_boundaries(a, bound),
     ensures
-        ci_val_boundaries(a)
+        ci_val_boundaries(a),
 {
     lemma_shr_51_fits_u64(c0_val(a));
     lemma_shr_51_fits_u64(c1_val(a));
@@ -196,21 +194,19 @@ pub proof fn c_i_shift_bounded(a: [u64; 5], bound: u64)
     lemma_shr_51_fits_u64(c4_val(a));
 }
 
-pub open spec fn ai_val_boundaries(a: [u64; 5]) -> bool
-{
+pub open spec fn ai_val_boundaries(a: [u64; 5]) -> bool {
     &&& a0_0_val(a) < 1u64 << 51
     &&& a1_0_val(a) < 1u64 << 51
     &&& a2_0_val(a) < 1u64 << 51
     &&& a3_0_val(a) < 1u64 << 51
     &&& a4_0_val(a) < 1u64 << 51
-    &&& carry_val(a) < 724618875532318195u64 // ceil(2^59.33)
+    &&& carry_val(a) < 724618875532318195u64  // ceil(2^59.33)
     &&& a0_0_val(a) + carry_val(a) * 19 < u64::MAX
     &&& a1_0_val(a) + (a0_1_val(a) >> 51) < 1u64 << 52
     &&& a0_2_val(a) < 1u64 << 51
 }
 
-pub open spec fn pow2k_loop_return(a: [u64; 5]) -> [u64; 5]
-{
+pub open spec fn pow2k_loop_return(a: [u64; 5]) -> [u64; 5] {
     let a0 = a0_2_val(a);
     let a1 = a1_1_val(a);
     let a2 = a2_0_val(a);
@@ -221,8 +217,7 @@ pub open spec fn pow2k_loop_return(a: [u64; 5]) -> [u64; 5]
     r
 }
 
-pub open spec fn lemma_pow2k_loop_boundary_spec(a: [u64; 5]) -> bool
-{
+pub open spec fn lemma_pow2k_loop_boundary_spec(a: [u64; 5]) -> bool {
     &&& 19 * (1u64 << 54) <= u64::MAX
     &&& 77 * ((1u64 << 54) * (1u64 << 54)) <= u128::MAX
     &&& term_product_bounds_spec(a, 1u64 << 54)
@@ -233,15 +228,17 @@ pub open spec fn lemma_pow2k_loop_boundary_spec(a: [u64; 5]) -> bool
     &&& pow2k_loop_return(a)[1] < 1u64 << 54
     &&& pow2k_loop_return(a)[2] < 1u64 << 54
     &&& pow2k_loop_return(a)[3] < 1u64 << 54
-    &&& pow2k_loop_return(a)[4] < 1u64 << 54
+    &&& pow2k_loop_return(a)[4] < 1u64
+        << 54
     // &&& forall|j: int| 0 <= j < 5 ==> pow2k_loop_return(a)[j] < 1u64 << 54
+
 }
 
 pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
     requires
         forall|i: int| 0 <= i < 5 ==> a[i] < 1u64 << 54,
     ensures
-        lemma_pow2k_loop_boundary_spec(a)
+        lemma_pow2k_loop_boundary_spec(a),
 {
     let bound = 1u64 << 54;
     let bound19 = (19 * bound) as u64;
@@ -249,13 +246,11 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 
     // // u64 to u128 conversion forces extra assert
     assert(bound * bound == bound_sq) by {
-        assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108))
-        by (bit_vector);
+        assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108)) by (bit_vector);
     }
 
     assert(bound * bound19 == 19 * bound_sq) by {
-        assert((1u64 << 54) * ((19 * (1u64 << 54)) as u64) == 19 * (1u128 << 108))
-        by (bit_vector);
+        assert((1u64 << 54) * ((19 * (1u64 << 54)) as u64) == 19 * (1u128 << 108)) by (bit_vector);
     }
 
     assert(19 * bound <= u64::MAX) by {
@@ -274,8 +269,7 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 
     // precond for c_i_shift_bounded
     assert(77 * bound_sq + u64::MAX <= ((u64::MAX as u128) << 51)) by {
-        assert(77 * (1u128 << 108) + u64::MAX <= ((u64::MAX as u128) << 51))
-            by (compute);
+        assert(77 * (1u128 << 108) + u64::MAX <= ((u64::MAX as u128) << 51)) by (compute);
     }
 
     // ci >> 51 <= u64::MAX
@@ -285,13 +279,8 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 
     assert(ai_val_boundaries(a)) by {
         // a0_0 < (1u64 << 51)
-        assert(
-               a0_0_val(a) < 1u64 << 51
-            && a1_0_val(a) < 1u64 << 51
-            && a2_0_val(a) < 1u64 << 51
-            && a3_0_val(a) < 1u64 << 51
-            && a4_0_val(a) < 1u64 << 51
-        ) by {
+        assert(a0_0_val(a) < 1u64 << 51 && a1_0_val(a) < 1u64 << 51 && a2_0_val(a) < 1u64 << 51
+            && a3_0_val(a) < 1u64 << 51 && a4_0_val(a) < 1u64 << 51) by {
             masked_lt_51(c0_val(a) as u64);
             masked_lt_51(c1_val(a) as u64);
             masked_lt_51(c2_val(a) as u64);
@@ -310,11 +299,8 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
                 lemma_shr_51_le(c4_val(a), (5 * bound_sq + (u64::MAX as u128)) as u128);
             }
 
-            assert(
-                (5 * (1u128 << 108) + (u64::MAX as u128)) as u128 >> 51
-                <
-                (724618875532318195u64 as u128)
-            ) by (compute);
+            assert((5 * (1u128 << 108) + (u64::MAX as u128)) as u128 >> 51 < (
+            724618875532318195u64 as u128)) by (compute);
         }
 
         assert(a0_0_val(a) + carry_val(a) * 19 < u64::MAX) by {
@@ -342,15 +328,11 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
     requires
         lemma_pow2k_loop_boundary_spec(a),
-        as_nat(a) % p()
-        ==
-        pow(as_nat(limbs) as int, pow2(i)) as nat % p()
+        as_nat(a) % p() == pow(as_nat(limbs) as int, pow2(i)) as nat % p(),
     ensures
-        as_nat(pow2k_loop_return(a)) % p()
-        ==
-        pow(as_nat(limbs) as int, pow2(i + 1)) as nat % p()
+        as_nat(pow2k_loop_return(a)) % p() == pow(as_nat(limbs) as int, pow2(i + 1)) as nat % p(),
 {
-    lemma2_to64_rest(); // pow2(51)
+    lemma2_to64_rest();  // pow2(51)
     assert(p() > 0) by {
         pow255_gt_19();
     }
@@ -374,8 +356,8 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         // let s = pow2(51) for brevity
         // By definition, as_nat(a_hat) = a0_2 + s * a1_1 + s^2 * a2 + s^3 * a3 + s^4 * a4
         // a0_2 + s * a1_1 cancel out terms via the div/mod identity:
-        assert(as_nat(a_hat) == a0_1 + pow2(51) * a1_0 + pow2(102) * a2 + pow2(153) * a3
-            + pow2(204) * a4) by {
+        assert(as_nat(a_hat) == a0_1 + pow2(51) * a1_0 + pow2(102) * a2 + pow2(153) * a3 + pow2(204)
+            * a4) by {
             // a0_2 + s * a1_1 =
             // a0_1 % s  + s * (a1_0 + s * (a0_1 / s)) =
             // s * a1_0 + [s * (a0_1 / s) + a0_1 % s] = (by the div-mod identity)
@@ -405,12 +387,10 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         let carry = carry_val(a);
 
         // Next, we replace all _ & LOW_BITS_MASK with (mod s)
-        assert(as_nat(a_hat) == ((c0_0 as u64) % (pow2(51) as u64)) + 19 * carry + pow2(
-            51,
-        ) * ((c1 as u64) % (pow2(51) as u64)) + pow2(102) * ((c2 as u64) % (pow2(
-            51,
-        ) as u64)) + pow2(153) * ((c3 as u64) % (pow2(51) as u64)) + pow2(204) * ((
-        c4 as u64) % (pow2(51) as u64))) by {
+        assert(as_nat(a_hat) == ((c0_0 as u64) % (pow2(51) as u64)) + 19 * carry + pow2(51) * ((
+        c1 as u64) % (pow2(51) as u64)) + pow2(102) * ((c2 as u64) % (pow2(51) as u64)) + pow2(153)
+            * ((c3 as u64) % (pow2(51) as u64)) + pow2(204) * ((c4 as u64) % (pow2(51) as u64)))
+            by {
             l51_bit_mask_lt();
 
             assert((pow2(51) as u64) == (pow2(51) as u128));
@@ -437,9 +417,10 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         }
 
         // We can see all mod operations in u128
-        assert(as_nat(a_hat) == (c0_0 % (pow2(51) as u128)) + 19 * carry + pow2(51) * (
-        c1 % (pow2(51) as u128)) + pow2(102) * (c2 % (pow2(51) as u128)) + pow2(153) * (
-        c3 % (pow2(51) as u128)) + pow2(204) * (c4 % (pow2(51) as u128))) by {
+        assert(as_nat(a_hat) == (c0_0 % (pow2(51) as u128)) + 19 * carry + pow2(51) * (c1 % (pow2(
+            51,
+        ) as u128)) + pow2(102) * (c2 % (pow2(51) as u128)) + pow2(153) * (c3 % (pow2(51) as u128))
+            + pow2(204) * (c4 % (pow2(51) as u128))) by {
             // pow2(51) is the same in u64 and 128
             lemma_cast_then_mod_51(c0_0);
             lemma_cast_then_mod_51(c1);
@@ -449,12 +430,12 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         }
 
         // Next, we categorically replace a % s with a - s * ( a / s )
-        assert(as_nat(a_hat) == (c0_0 - pow2(51) * (c0_0 / (pow2(51) as u128))) + 19
-            * carry + pow2(51) * (c1 - pow2(51) * (c1 / (pow2(51) as u128))) + pow2(102)
-            * (c2 - pow2(51) * (c2 / (pow2(51) as u128))) + pow2(153) * (c3 - pow2(51)
-            * (c3 / (pow2(51) as u128))) + pow2(204) * (c4 - pow2(51) * (c4 / (pow2(
+        assert(as_nat(a_hat) == (c0_0 - pow2(51) * (c0_0 / (pow2(51) as u128))) + 19 * carry + pow2(
             51,
-        ) as u128)))) by {
+        ) * (c1 - pow2(51) * (c1 / (pow2(51) as u128))) + pow2(102) * (c2 - pow2(51) * (c2 / (pow2(
+            51,
+        ) as u128))) + pow2(153) * (c3 - pow2(51) * (c3 / (pow2(51) as u128))) + pow2(204) * (c4
+            - pow2(51) * (c4 / (pow2(51) as u128)))) by {
             lemma_fundamental_div_mod(c0_0 as int, pow2(51) as int);
             lemma_fundamental_div_mod(c1 as int, pow2(51) as int);
             lemma_fundamental_div_mod(c2 as int, pow2(51) as int);
@@ -468,10 +449,9 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         // c3 = c3_0 + c2/s <=> c2/s = c3 - c3_0
         // c2 = c2_0 + c1/s <=> c1/s = c2 - c2_0
         // c1 = c1_0 + c0_0/s <=> c0_0/s = c1 - c1_0
-        assert(as_nat(a_hat) == (c0_0 - pow2(51) * (c1 - c1_0)) + 19 * carry + pow2(51)
-            * (c1 - pow2(51) * (c2 - c2_0)) + pow2(102) * (c2 - pow2(51) * (c3 - c3_0))
-            + pow2(153) * (c3 - pow2(51) * (c4 - c4_0)) + pow2(204) * (c4 - pow2(51)
-            * carry)) by {
+        assert(as_nat(a_hat) == (c0_0 - pow2(51) * (c1 - c1_0)) + 19 * carry + pow2(51) * (c1
+            - pow2(51) * (c2 - c2_0)) + pow2(102) * (c2 - pow2(51) * (c3 - c3_0)) + pow2(153) * (c3
+            - pow2(51) * (c4 - c4_0)) + pow2(204) * (c4 - pow2(51) * carry)) by {
             lemma_u128_shr_is_div(c0_0, 51);
             lemma_u128_shr_is_div(c1, 51);
             lemma_u128_shr_is_div(c2, 51);
@@ -481,62 +461,45 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
 
         // Now we use distributivity and pow exponent sums, which cancels out any ci terms and leaves only ci_0 terms
         // Conveniently, we're left with a difference of c * p
-        assert(as_nat(a_hat) == c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153)
-            * c3_0 + pow2(204) * c4_0 - p() * carry) by {
-            assert(c0_0 - pow2(51) * (c1 - c1_0) == c0_0 - pow2(51) * c1 + pow2(51)
-                * c1_0) by {
+        assert(as_nat(a_hat) == c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153) * c3_0 + pow2(
+            204,
+        ) * c4_0 - p() * carry) by {
+            assert(c0_0 - pow2(51) * (c1 - c1_0) == c0_0 - pow2(51) * c1 + pow2(51) * c1_0) by {
                 lemma_mul_is_distributive_sub(pow2(51) as int, c1 as int, c1_0 as int);
             }
 
-            assert(pow2(51) * (c1 - pow2(51) * (c2 - c2_0)) == pow2(51) * c1 - pow2(102)
-                * c2 + pow2(102) * c2_0) by {
+            assert(pow2(51) * (c1 - pow2(51) * (c2 - c2_0)) == pow2(51) * c1 - pow2(102) * c2
+                + pow2(102) * c2_0) by {
                 lemma_mul_sub(c1 as int, c2 as int, c2_0 as int, 51);
             }
 
-            assert(pow2(102) * (c2 - pow2(51) * (c3 - c3_0)) == pow2(102) * c2 - pow2(
-                153,
-            ) * c3 + pow2(153) * c3_0) by {
+            assert(pow2(102) * (c2 - pow2(51) * (c3 - c3_0)) == pow2(102) * c2 - pow2(153) * c3
+                + pow2(153) * c3_0) by {
                 lemma_mul_sub(c2 as int, c3 as int, c3_0 as int, 102);
             }
 
-            assert(pow2(153) * (c3 - pow2(51) * (c4 - c4_0)) == pow2(153) * c3 - pow2(
-                204,
-            ) * c4 + pow2(204) * c4_0) by {
+            assert(pow2(153) * (c3 - pow2(51) * (c4 - c4_0)) == pow2(153) * c3 - pow2(204) * c4
+                + pow2(204) * c4_0) by {
                 lemma_mul_sub(c3 as int, c4 as int, c4_0 as int, 153);
             }
 
-            assert(pow2(204) * (c4 - pow2(51) * carry) == pow2(204) * c4 - pow2(255)
-                * carry) by {
-                lemma_mul_is_distributive_sub(
-                    pow2(204) as int,
-                    c4 as int,
-                    pow2(51) * carry,
-                );
-                lemma_mul_is_associative(
-                    pow2(204) as int,
-                    pow2(51) as int,
-                    carry as int,
-                );
+            assert(pow2(204) * (c4 - pow2(51) * carry) == pow2(204) * c4 - pow2(255) * carry) by {
+                lemma_mul_is_distributive_sub(pow2(204) as int, c4 as int, pow2(51) * carry);
+                lemma_mul_is_associative(pow2(204) as int, pow2(51) as int, carry as int);
                 lemma_pow2_adds(204, 51);
             }
 
             // carry on the right, get p
-            assert(c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153) * c3_0 + pow2(
-                204,
-            ) * c4_0 + 19 * carry - pow2(255) * carry == c0_0 + pow2(51) * c1_0 + pow2(
-                102,
-            ) * c2_0 + pow2(153) * c3_0 + pow2(204) * c4_0 - p() * carry) by {
+            assert(c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153) * c3_0 + pow2(204) * c4_0
+                + 19 * carry - pow2(255) * carry == c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0
+                + pow2(153) * c3_0 + pow2(204) * c4_0 - p() * carry) by {
                 pow255_gt_19();
-                lemma_mul_is_distributive_sub_other_way(
-                    carry as int,
-                    pow2(255) as int,
-                    19,
-                );
+                lemma_mul_is_distributive_sub_other_way(carry as int, pow2(255) as int, 19);
             }
         }
 
-        let c_arr_as_nat = (c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153) * c3_0
-            + pow2(204) * c4_0);
+        let c_arr_as_nat = (c0_0 + pow2(51) * c1_0 + pow2(102) * c2_0 + pow2(153) * c3_0 + pow2(204)
+            * c4_0);
 
         assert(as_nat(a_hat) % p() == c_arr_as_nat as nat % p()) by {
             lemma_mod_diff_factor(carry as int, c_arr_as_nat as int, p() as int);
@@ -575,8 +538,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         let a4_19 = 19 * a[4];
 
         // let c0_0: u128 = a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19);
-        assert(c0_0 == (a[0] * a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4]))))
-            by {
+        assert(c0_0 == (a[0] * a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])))) by {
             // The solver does distributivity on its own.
             // LHS = a[0] *  a[0] + 2*( a[1] * a4_19 + a[2] * a3_19);
             //     = a[0] *  a[0] + 2*( a[1] * a4_19 ) + 2 * (a[2] * a3_19);
@@ -595,8 +557,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         }
 
         // let c1_0: u128 = a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19);
-        assert(c1_0 == (2 * (a[0] * a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4]))))
-            by {
+        assert(c1_0 == (2 * (a[0] * a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4])))) by {
             // The solver does distributivity on its own.
             // LHS = a[3] * a3_19 + 2*( a[0] *  a[1] + a[2] * a4_19)
             //     = a[3] * a3_19 + 2*( a[0] *  a[1]) + 2 * (a[2] * a4_19)
@@ -614,8 +575,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         }
 
         // let c2_0: u128 = a[1] *  a[1] + 2*( a[0] *  a[2] + a[4] * a3_19);
-        assert(c2_0 == (a[1] * a[1] + 2 * (a[0] * a[2]) + 19 * (2 * (a[3] * a[4]))))
-            by {
+        assert(c2_0 == (a[1] * a[1] + 2 * (a[0] * a[2]) + 19 * (2 * (a[3] * a[4])))) by {
             // The solver does distributivity on its own.
             // LHS = a[1] * a[1] + 2 * (a[0] *  a[2] + a[4] * a3_19)
             //     = a[1] * a[1] + 2 * (a[0] *  a[2]) +  2 * (a[4] * a3_19)
@@ -627,8 +587,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         }
 
         // let c3_0: u128 = a[4] * a4_19 + 2*( a[0] *  a[3] + a[1] *  a[2]);
-        assert(c3_0 == (2 * (a[1] * a[2]) + 2 * (a[0] * a[3]) + 19 * (a[4] * a[4])))
-            by {
+        assert(c3_0 == (2 * (a[1] * a[2]) + 2 * (a[0] * a[3]) + 19 * (a[4] * a[4]))) by {
             // The solver does distributivity on its own.
             // LHS = a[4] * a4_19 + 2 * (a[0] *  a[3] + a[1] *  a[2])
             //     = a[4] * a4_19 + 2 * (a[0] *  a[3]) + 2 * (a[1] *  a[2])
@@ -670,11 +629,10 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
     // as_nat(a_hat) % p  = (as_nat(a) * as_nat(a)) % p = (a_pow_2i ^ 2)) % p
     // It suffices to prove that
     // (v^(2^i))^2 = v^(2^(i + 1))
-    assert(
-        pow(as_nat(limbs) as int, pow2(i)) * pow(as_nat(limbs) as int, pow2(i))
-        ==
-        pow(as_nat(limbs) as int, pow2(i + 1))
-    ) by {
+    assert(pow(as_nat(limbs) as int, pow2(i)) * pow(as_nat(limbs) as int, pow2(i)) == pow(
+        as_nat(limbs) as int,
+        pow2(i + 1),
+    )) by {
         lemma_pow2_square(as_nat(limbs) as int, i);
     }
 }

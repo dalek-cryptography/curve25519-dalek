@@ -3,7 +3,9 @@ from math import gcd
 
 # IMPORTANT: Make sure these match your Verus definitions EXACTLY
 montgomery_radix = 2**260
-group_order = 2**252 + 27742317777372353535851937790883648493 # your group order value here
+group_order = (
+    2**252 + 27742317777372353535851937790883648493
+)  # your group order value here
 
 
 print(f"Montgomery radix: 2^260 = {montgomery_radix}")

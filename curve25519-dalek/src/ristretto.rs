@@ -543,7 +543,7 @@ impl RistrettoPoint {
     #[cfg_attr(feature = "rand_core", doc = "```")]
     #[cfg_attr(not(feature = "rand_core"), doc = "```ignore")]
     /// # use curve25519_dalek::ristretto::RistrettoPoint;
-    /// use rand_core::{OsRng, TryRngCore};
+    /// use rand::{rngs::OsRng, TryRngCore};
     ///
     /// # // Need fn main() here in comment so the doctest compiles
     /// # // See https://doc.rust-lang.org/book/documentation.html#documentation-as-tests
@@ -1278,7 +1278,7 @@ mod test {
     #[cfg(feature = "group")]
     use proptest::prelude::*;
 
-    use rand_core::{OsRng, TryRngCore};
+    use rand::{TryRngCore, rngs::OsRng};
 
     #[test]
     #[cfg(feature = "serde")]

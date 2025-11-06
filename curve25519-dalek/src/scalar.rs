@@ -584,7 +584,7 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::{OsRng, TryRngCore};
+    /// use rand::{rngs::OsRng, TryRngCore};
     ///
     /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);

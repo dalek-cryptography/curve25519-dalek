@@ -187,11 +187,11 @@ pub struct TranscriptRng {
 
 impl rand_core::RngCore for TranscriptRng {
     fn next_u32(&mut self) -> u32 {
-        rand_core::impls::next_u32_via_fill(self)
+        rand_core::le::next_u32_via_fill(self)
     }
 
     fn next_u64(&mut self) -> u64 {
-        rand_core::impls::next_u64_via_fill(self)
+        rand_core::le::next_u64_via_fill(self)
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
@@ -305,8 +305,7 @@ mod tests {
     #[test]
     fn transcript_rng_is_bound_to_transcript_and_witnesses() {
         use curve25519_dalek::scalar::Scalar;
-        use rand_chacha::ChaChaRng;
-        use rand_core::SeedableRng;
+        use rand::{rngs::ChaCha8Rng, SeedableRng};
 
         // Check that the TranscriptRng is bound to the transcript and
         // the witnesses.  This is done by producing a sequence of
@@ -332,22 +331,22 @@ mod tests {
         let mut r1 = t1
             .build_rng()
             .rekey_with_witness_bytes(b"witness", witness1)
-            .finalize(&mut ChaChaRng::from_seed([0; 32]));
+            .finalize(&mut ChaCha8Rng::from_seed([0; 32]));
 
         let mut r2 = t2
             .build_rng()
             .rekey_with_witness_bytes(b"witness", witness1)
-            .finalize(&mut ChaChaRng::from_seed([0; 32]));
+            .finalize(&mut ChaCha8Rng::from_seed([0; 32]));
 
         let mut r3 = t3
             .build_rng()
             .rekey_with_witness_bytes(b"witness", witness2)
-            .finalize(&mut ChaChaRng::from_seed([0; 32]));
+            .finalize(&mut ChaCha8Rng::from_seed([0; 32]));
 
         let mut r4 = t4
             .build_rng()
             .rekey_with_witness_bytes(b"witness", witness2)
-            .finalize(&mut ChaChaRng::from_seed([0; 32]));
+            .finalize(&mut ChaCha8Rng::from_seed([0; 32]));
 
         let s1 = Scalar::random(&mut r1);
         let s2 = Scalar::random(&mut r2);

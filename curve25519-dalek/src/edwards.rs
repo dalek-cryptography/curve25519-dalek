@@ -2068,7 +2068,7 @@ mod test {
     /// Check that mul_base_clamped and mul_clamped agree
     #[test]
     fn mul_base_clamped() {
-        let mut csprng = rand_core::OsRng;
+        let mut csprng = rand::rngs::OsRng;
 
         // Make a random curve point in the curve. Give it torsion to make things interesting.
         #[cfg(feature = "precomputed-tables")]

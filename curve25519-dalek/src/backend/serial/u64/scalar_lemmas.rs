@@ -486,7 +486,30 @@ pub proof fn lemma_montgomery_inverse()
         (montgomery_radix()*inv_montgomery_radix()) % group_order() == 1
 {
     // TODO prove this
-    assume(false);
+    lemma2_to64();
+    lemma2_to64_rest();
+
+    assert(pow2(64) == 18446744073709551616nat);
+
+    lemma_pow2_adds(64, 64);
+    assert(pow2(128) == 340282366920938463463374607431768211456nat);
+
+    lemma_pow2_adds(128, 64);
+    assert(pow2(192) == 6277101735386680763835789423207666416102355444464034512896nat);
+
+    lemma_pow2_adds(192, 60);
+    assert(pow2(252) == 7237005577332262213973186563042994240829374041602535252466099000494570602496nat);
+
+    lemma_pow2_adds(252, 8);
+    assert(pow2(260) == 1852673427797059126777135760139006525652319754650249024631321344126610074238976nat);
+    
+    calc! {
+        (==)
+        (montgomery_radix()*inv_montgomery_radix()) % group_order(); {}
+        (1852673427797059126777135760139006525652319754650249024631321344126610074238976_nat * 5706410653605570882457795059301885719620630590890452783038400561109479083972_nat) %  7237005577332262213973186563042994240857116359379907606001950938285454250989_nat; {}
+        1;
+    }
+
 }
 
 pub proof fn lemma_mul_both_sides_mod(x: int, y: int, z: int, m: int)

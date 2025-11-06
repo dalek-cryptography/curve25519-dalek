@@ -401,6 +401,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
 
     # Draw black outlined rectangles showing total functions for each module
     from matplotlib.patches import Rectangle
+
     for i, total in enumerate(totals):
         # Create a rectangle that spans both bar positions
         rect = Rectangle(
@@ -414,7 +415,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
             alpha=0.8,
         )
         ax.add_patch(rect)
-        
+
         # Add text label showing total count above the rectangle
         ax.text(
             i,  # x position (center of the module)

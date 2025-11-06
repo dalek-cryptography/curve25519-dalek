@@ -371,7 +371,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     # Add horizontal lines for latest values to make them clearly visible
     latest_specs = df["verus_specs"].iloc[-1]
     latest_proofs = df["verus_proofs"].iloc[-1]
-    
+
     ax.axhline(
         y=latest_specs,
         color="#3498db",
@@ -397,12 +397,12 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
 
     max_y = int(np.ceil(df["total"].max() / 25) * 25)
     ax.set_yticks(range(0, max_y + 1, 25))
-    
+
     # Add text labels on the horizontal lines
     # Position them at the left edge of the plot, slightly inset
     date_range = df["date"].max() - df["date"].min()
     x_pos = df["date"].min() + date_range * 0.05  # 5% from left edge
-    
+
     ax.text(
         x_pos,
         latest_specs,
@@ -412,9 +412,11 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         fontsize=11,
         va="center",
         ha="center",
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#3498db", alpha=0.9),
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="#3498db", alpha=0.9
+        ),
     )
-    
+
     ax.text(
         x_pos,
         latest_proofs,
@@ -424,7 +426,9 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         fontsize=11,
         va="center",
         ha="center",
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="#2ecc71", alpha=0.9),
+        bbox=dict(
+            boxstyle="round,pad=0.3", facecolor="white", edgecolor="#2ecc71", alpha=0.9
+        ),
     )
 
     # Set x-axis limits to actual data range

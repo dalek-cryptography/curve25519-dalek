@@ -451,7 +451,7 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
     // let step4 = (a * (montgomery_radix() * montgomery_radix())) % group_order();
     // let rhs = (a * montgomery_radix() * montgomery_radix()) % group_order();
     lemma_mul_is_associative(a as int, montgomery_radix() as int, montgomery_radix() as int);
-    
+
     assert((x * montgomery_radix()) % group_order() == (a * montgomery_radix() * montgomery_radix()) % group_order());
 
     // 2. use the inverse to remove r from both sides
@@ -460,7 +460,7 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
     lemma_mul_mod_noop_right(inv_montgomery_radix() as int, (x * montgomery_radix()) as int, group_order() as int);
     lemma_mul_mod_noop_right(inv_montgomery_radix() as int, (a * montgomery_radix() * montgomery_radix()) as int, group_order() as int);
 
-    assert((x * montgomery_radix() * inv_montgomery_radix()) % group_order() 
+    assert((x * montgomery_radix() * inv_montgomery_radix()) % group_order()
         == (a * montgomery_radix() * montgomery_radix() * inv_montgomery_radix()) % group_order());
 
     // Step 2: Group (R * R^-1) together using associativity
@@ -468,7 +468,7 @@ pub proof fn lemma_cancel_mul_montgomery_mod(x: nat, a: nat, rr: nat)
     lemma_mul_is_associative(x as int, montgomery_radix() as int, inv_montgomery_radix() as int);
     lemma_mul_is_associative((a * montgomery_radix()) as int, montgomery_radix() as int, inv_montgomery_radix() as int);
 
-    assert((x * (montgomery_radix() * inv_montgomery_radix())) % group_order() 
+    assert((x * (montgomery_radix() * inv_montgomery_radix())) % group_order()
         == ((a * montgomery_radix()) * (montgomery_radix() * inv_montgomery_radix())) % group_order());
 
     // Step 3: Use lemma_montgomery_inverse to substitute (R * R^-1) % n = 1
@@ -485,24 +485,14 @@ pub proof fn lemma_montgomery_inverse()
         // r * r_inv ≡ 1 (mod n)
         (montgomery_radix()*inv_montgomery_radix()) % group_order() == 1
 {
-    // TODO prove this
     lemma2_to64();
     lemma2_to64_rest();
 
-    assert(pow2(64) == 18446744073709551616nat);
+    lemma_pow2_adds(64, 64); // prove pow2(128) in nat
+    lemma_pow2_adds(128, 64); // prove pow2(192) in nat
+    lemma_pow2_adds(192, 60); // prove pow2(252) in nat
+    lemma_pow2_adds(252, 8); // prove pow2(260) in nat
 
-    lemma_pow2_adds(64, 64);
-    assert(pow2(128) == 340282366920938463463374607431768211456nat);
-
-    lemma_pow2_adds(128, 64);
-    assert(pow2(192) == 6277101735386680763835789423207666416102355444464034512896nat);
-
-    lemma_pow2_adds(192, 60);
-    assert(pow2(252) == 7237005577332262213973186563042994240829374041602535252466099000494570602496nat);
-
-    lemma_pow2_adds(252, 8);
-    assert(pow2(260) == 1852673427797059126777135760139006525652319754650249024631321344126610074238976nat);
-    
     calc! {
         (==)
         (montgomery_radix()*inv_montgomery_radix()) % group_order(); {}
@@ -522,16 +512,16 @@ pub proof fn lemma_mul_both_sides_mod(x: int, y: int, z: int, m: int)
     // Apply lemma_mul_mod_noop_right to both x and y
     lemma_mul_mod_noop_right(z, x, m);
     lemma_mul_mod_noop_right(z, y, m);
-    
+
     // From lemma: z * (x % m) % m == (z * x) % m
     //            z * (y % m) % m == (z * y) % m
-    
+
     // Since x % m == y % m (from requires), we have:
     assert(z * (x % m) % m == z * (y % m) % m);
-    
+
     // Therefore:
     assert((z * x) % m == (z * y) % m);
-    
+
     // By commutativity of multiplication:
     assert((x * z) % m == (y * z) % m);
 }

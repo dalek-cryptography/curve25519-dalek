@@ -414,7 +414,7 @@ impl TryFrom<&[u8]> for CompressedEdwardsY {
 }
 
 } // verus!
-/* VERIFICATION NOTE: we don't cover serde feature yet */
+  /* VERIFICATION NOTE: we don't cover serde feature yet */
 // ------------------------------------------------------------------------
 // Serde support
 // ------------------------------------------------------------------------
@@ -710,9 +710,9 @@ impl Zeroize for EdwardsPoint {
     }
 }
 
-// ------------------------------------------------------------------------
-// Validity checks (for debugging, not CT)
-// ------------------------------------------------------------------------
+  // ------------------------------------------------------------------------
+  // Validity checks (for debugging, not CT)
+  // ------------------------------------------------------------------------
 impl ValidityCheck for EdwardsPoint {
     fn is_valid(&self) -> (result: bool)
         requires
@@ -955,9 +955,9 @@ impl EdwardsPoint {
 }
 
 } // verus!
-// ------------------------------------------------------------------------
-// Doubling
-// ------------------------------------------------------------------------
+  // ------------------------------------------------------------------------
+  // Doubling
+  // ------------------------------------------------------------------------
 impl EdwardsPoint {
     /// Add this point to itself.
     pub(crate) fn double(&self) -> EdwardsPoint {

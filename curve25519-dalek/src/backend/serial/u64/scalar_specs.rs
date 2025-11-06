@@ -132,7 +132,7 @@ pub open spec fn montgomery_radix() -> nat {
     pow2(260)
 }
 
-// Montgomery radix inverse under L 
+// Montgomery radix inverse under L
 pub open spec fn inv_montgomery_radix() -> nat {
     0x8e84371e098e4fc4_u64 as nat +
     pow2(64) * 0xfb2697cda3adacf5_u64 as nat +

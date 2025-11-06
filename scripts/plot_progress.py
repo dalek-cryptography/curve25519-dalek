@@ -396,7 +396,36 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
 
     specs = [m["verus_specs"] for m in top_modules]
     proofs = [m["verus_proofs"] for m in top_modules]
+    totals = [m["total"] for m in top_modules]
     labels = [m["module"] for m in top_modules]
+
+    # Draw black outlined rectangles showing total functions for each module
+    from matplotlib.patches import Rectangle
+    for i, total in enumerate(totals):
+        # Create a rectangle that spans both bar positions
+        rect = Rectangle(
+            (i - width, 0),  # x, y position (centered, starting from 0)
+            width * 2,  # width (spans both bars)
+            total,  # height (total count)
+            linewidth=2,
+            edgecolor="black",
+            facecolor="none",  # transparent inside
+            linestyle="-",
+            alpha=0.8,
+        )
+        ax.add_patch(rect)
+        
+        # Add text label showing total count above the rectangle
+        ax.text(
+            i,  # x position (center of the module)
+            total,  # y position (top of the rectangle)
+            f"{total}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+            fontweight="bold",
+            color="black",
+        )
 
     ax.bar(
         [i - width / 2 for i in x],

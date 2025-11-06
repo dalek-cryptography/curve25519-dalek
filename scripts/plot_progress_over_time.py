@@ -375,16 +375,16 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     ax.axhline(
         y=latest_specs,
         color="#3498db",
-        linestyle=":",
-        linewidth=2.5,
-        alpha=0.7,
+        linestyle="--",
+        linewidth=3,
+        alpha=0.9,
     )
     ax.axhline(
         y=latest_proofs,
         color="#2ecc71",
-        linestyle=":",
-        linewidth=2.5,
-        alpha=0.7,
+        linestyle="--",
+        linewidth=3,
+        alpha=0.9,
     )
 
     ax.set_xlabel("")
@@ -407,7 +407,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         x_pos,
         latest_specs,
         f"{int(latest_specs)}",
-        color="#3498db",
+        color="black",
         fontweight="bold",
         fontsize=11,
         va="center",
@@ -419,7 +419,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         x_pos,
         latest_proofs,
         f"{int(latest_proofs)}",
-        color="#2ecc71",
+        color="black",
         fontweight="bold",
         fontsize=11,
         va="center",

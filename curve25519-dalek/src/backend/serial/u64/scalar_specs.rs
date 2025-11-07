@@ -134,10 +134,8 @@ pub open spec fn montgomery_radix() -> nat {
 
 // Montgomery radix inverse under L
 pub open spec fn inv_montgomery_radix() -> nat {
-    0x8e84371e098e4fc4_u64 as nat +
-    pow2(64) * 0xfb2697cda3adacf5_u64 as nat +
-    pow2(128) * 0x3614e75438ffa36b_u64 as nat +
-    pow2(192) * 0xc9db6c6f26fe918_u64 as nat
+    0x8e84371e098e4fc4_u64 as nat + pow2(64) * 0xfb2697cda3adacf5_u64 as nat + pow2(128)
+        * 0x3614e75438ffa36b_u64 as nat + pow2(192) * 0xc9db6c6f26fe918_u64 as nat
 }
 
 // Check that all limbs of a Scalar52 are properly bounded (< 2^52)

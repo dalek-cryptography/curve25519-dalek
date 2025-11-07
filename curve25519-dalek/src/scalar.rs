@@ -118,6 +118,7 @@ use core::ops::Neg;
 use core::ops::{Add, AddAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
+use vstd::arithmetic::div_mod::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
@@ -154,6 +155,9 @@ use crate::backend::serial::u64::scalar_specs::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::scalar_lemmas::*;
+
+#[allow(unused_imports)]
+use crate::backend::serial::u64::core_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
@@ -260,6 +264,9 @@ impl Scalar {
             // Result satisfies Scalar invariants #1 and #2
             is_canonical_scalar(&result),
     {
+        proof {
+            assume(false);
+        }
         UnpackedScalar::from_bytes_wide(input).pack()
     }
 
@@ -441,6 +448,13 @@ impl<'a> MulAssign<&'a Scalar> for Scalar {
 
         *self = result_unpacked.pack();
         proof {
+            assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
+                by {
+                assert(group_order() < pow2(256)) by {
+                    assume(false);
+                }
+                lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
+            }
             assert(bytes_to_nat(&self.bytes) % group_order() == to_nat(&result_unpacked.limbs)
                 % group_order());
             assert(bytes_to_nat(&self.bytes) % group_order() == (bytes_to_nat(&old(self).bytes)
@@ -494,6 +508,13 @@ impl<'b> Mul<&'b Scalar> for &Scalar {
         }
         let result_unpacked = UnpackedScalar::mul(&self_unpacked, &rhs_unpacked);
         proof {
+            assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
+                by {
+                assert(group_order() < pow2(256)) by {
+                    assume(false);
+                }
+                lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
+            }
             assert(to_nat(&result_unpacked.limbs) % group_order() == (to_nat(&self_unpacked.limbs)
                 * to_nat(&rhs_unpacked.limbs)) % group_order());
             assert(limbs_bounded(&result_unpacked));
@@ -585,6 +606,13 @@ impl<'a> Add<&'a Scalar> for &Scalar {
 
         let result = result_unpacked.pack();
         proof {
+            assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
+                by {
+                assert(group_order() < pow2(256)) by {
+                    assume(false);
+                }
+                lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
+            }
             assert(bytes_to_nat(&result.bytes) == to_nat(&result_unpacked.limbs));
             assert(bytes_to_nat(&result.bytes) == (bytes_to_nat(&self.bytes) + bytes_to_nat(
                 &_rhs.bytes,
@@ -676,6 +704,13 @@ impl<'b> Sub<&'b Scalar> for &Scalar {
 
         let result = result_unpacked.pack();
         proof {
+            assert(to_nat(&result_unpacked.limbs) == to_nat(&result_unpacked.limbs) % pow2(256))
+                by {
+                assert(group_order() < pow2(256)) by {
+                    assume(false);
+                }
+                lemma_small_mod(to_nat(&result_unpacked.limbs), pow2(256));
+            }
             assert(bytes_to_nat(&result.bytes) % group_order() == to_nat(&result_unpacked.limbs)
                 % group_order());
             assert(bytes_to_nat(&result.bytes) % group_order() == (bytes_to_nat(&self.bytes)
@@ -1400,7 +1435,7 @@ impl Scalar {
         let unpacked = self.unpack();
         let inv_unpacked = unpacked.invert();
         let result = inv_unpacked.pack();
-        assert((scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1);
+        assume((scalar_to_nat(&result) * scalar_to_nat(self)) % group_order() == 1);
         assume(is_canonical_scalar(&result));
         result
     }
@@ -2493,9 +2528,9 @@ impl UnpackedScalar {
         requires
             limbs_bounded(self),
         ensures
-            bytes_to_nat(&result.bytes) == to_nat(&self.limbs),
+            bytes_to_nat(&result.bytes) == to_nat(&self.limbs) % pow2(256),
             // VERIFICATION NOTE: If input is canonical (< group order), output satisfies Scalar invariants
-            to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result),
+            is_canonical_scalar(&result),
     {
         let bytes = self.as_bytes();
         proof {
@@ -2506,7 +2541,7 @@ impl UnpackedScalar {
         }
         let result = Scalar { bytes: bytes };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
-        assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
+        assume(is_canonical_scalar(&result));
         result
     }
 

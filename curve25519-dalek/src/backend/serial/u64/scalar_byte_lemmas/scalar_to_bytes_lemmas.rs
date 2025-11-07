@@ -146,11 +146,74 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         bytes_match_limbs_packing_52(limbs, bytes),
     ensures
-        as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs),
+        as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs) % pow2(256),
 {
     // Connect the bit shift in the requires clause to pow2 for clarity
     assert((1u64 << 52) == pow2(52)) by {
         shift_is_pow2(52);
+    }
+
+    assert(five_limbs_to_nat_aux(limbs) % pow2(256) == (limbs[0] as nat) + pow2(52) * (
+    limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(156) * (limbs[3] as nat) + (pow2(208)
+        * (limbs[4] as nat)) % pow2(256)) by {
+        assert(limbs[0] as nat <= pow2(52) - 1 < pow2(52) < pow2(256)) by {
+            lemma_pow2_strictly_increases(52, 256);
+        }
+        assert(pow2(52) * (limbs[1] as nat) <= pow2(104) - pow2(52) < pow2(104) < pow2(256)) by {
+            pow2_mul_general(limbs[1] as nat, 52, 52);
+            lemma_pow2_pos(52);
+            lemma_pow2_strictly_increases(104, 256);
+        }
+        assert(pow2(104) * (limbs[2] as nat) <= pow2(156) - pow2(104) < pow2(156) < pow2(256)) by {
+            pow2_mul_general(limbs[2] as nat, 52, 104);
+            lemma_pow2_pos(104);
+            lemma_pow2_strictly_increases(156, 256);
+        }
+        assert(pow2(156) * (limbs[3] as nat) <= pow2(208) - pow2(156) < pow2(208) < pow2(256)) by {
+            pow2_mul_general(limbs[3] as nat, 52, 156);
+            lemma_pow2_pos(156);
+            lemma_pow2_strictly_increases(208, 256);
+        }
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(
+                156,
+            ) * (limbs[3] as nat),
+            limbs[4] as nat,
+            208,
+            256,
+        );
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat),
+            limbs[3] as nat,
+            156,
+            256,
+        );
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat),
+            limbs[2] as nat,
+            104,
+            256,
+        );
+        sum_mod_decomposition(limbs[0] as nat, limbs[1] as nat, 52, 256);
+        assert((limbs[0] as nat) % pow2(256) == limbs[0] as nat) by {
+            lemma_small_mod(limbs[0] as nat, pow2(256));
+        }
+        assert((pow2(52) * (limbs[1] as nat)) % pow2(256) == pow2(52) * (limbs[1] as nat)) by {
+            lemma_small_mod(pow2(52) * (limbs[1] as nat), pow2(256))
+        }
+        assert((pow2(104) * (limbs[2] as nat)) % pow2(256) == pow2(104) * (limbs[2] as nat)) by {
+            lemma_small_mod(pow2(104) * (limbs[2] as nat), pow2(256))
+        }
+        assert((pow2(156) * (limbs[3] as nat)) % pow2(256) == pow2(156) * (limbs[3] as nat)) by {
+            lemma_small_mod(pow2(156) * (limbs[3] as nat), pow2(256))
+        }
+    }
+
+    assert((pow2(208) * (limbs[4] as nat)) % pow2(256) == ((limbs[4] as nat) % pow2(48)) * pow2(
+        208,
+    )) by {
+        lemma_mul_is_commutative(pow2(208) as int, limbs[4] as int);
+        mask_pow2(limbs[4] as nat, 208, 256);
     }
 
     // Establish that each limb is bounded by pow2(52)
@@ -165,7 +228,7 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
     assert((limbs[0] as nat) % pow2(52) == limbs[0]) by {
         lemma_small_mod(limbs[0] as nat, pow2(52));
     }
-    assert(as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs)) by {
+    assert(as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs) % pow2(256)) by {
         lemma_limb0_contribution_correctness_52(limbs, bytes);
         lemma_limb1_contribution_correctness_52(limbs, bytes);
         lemma_limb2_contribution_correctness_52(limbs, bytes);
@@ -1161,8 +1224,10 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
         limbs[4] < (1u64 << 52),
         bytes_match_limbs_packing_52(limbs, bytes),
     ensures
-        limb4_byte_contribution_52(limbs, bytes) == (limbs[4] as nat) * pow2(208),
+        limb4_byte_contribution_52(limbs, bytes) == ((limbs[4] as nat) % pow2(48)) * pow2(208),
 {
+    let l = ((limbs[4] as nat) % pow2(48));
+
     // Paper proof:
     // Limb 4 occupies bytes 26-31 (no boundary!) at position 2^208
     // From the packing predicate: bytes[26..31] = limbs[4] >> 0, 8, 16, 24, 32, 40
@@ -1195,23 +1260,59 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     // - 6 bytes can only represent values < 2^48
     // - Therefore limbs[4] must be < 2^48
     // But we cannot formally derive this from the current preconditions.
-    assume(limbs[4] < pow2(48));
+    assert(l < pow2(48)) by {
+        lemma_pow2_pos(48);
+        lemma_mod_bound(limbs[4] as int, pow2(48) as int);
+    }
+
+    assert forall|i: nat| 0 <= i <= 5 implies #[trigger] (limbs[4] as nat / pow2(i * 8)) % 256 == (l
+        / pow2(i * 8)) % 256 by {
+        assert(256 == pow2(8) && pow2(0) == 1) by {
+            lemma2_to64();
+        }
+        assert((limbs[4] as nat / pow2(i * 8)) % pow2(8) == (limbs[4] as nat % pow2(8 + i * 8))
+            / pow2(i * 8)) by {
+            mask_div2(limbs[4] as nat, i * 8, 8);
+        }
+
+        assert((l / pow2(i * 8)) % pow2(8) == (l % pow2(8 + i * 8)) / pow2(i * 8)) by {
+            mask_div2(l, i * 8, 8);
+        }
+
+        assert(l % pow2(8 + i * 8) == limbs[4] as nat % pow2(8 + i * 8)) by {
+            // 8 + i * 8 <= 48
+            let j = 8 + i * 8;
+            let d = (48 - j) as nat;
+            assert(pow2(48) == pow2(j) * pow2(d)) by {
+                lemma_pow2_adds(j, d);
+            }
+            assert(pow2(j) > 0 && pow2(d) > 0) by {
+                lemma_pow2_pos(j);
+                lemma_pow2_pos(d);
+            }
+            assert((limbs[4] as nat % (pow2(j) * pow2(d))) % pow2(j) == limbs[4] as nat % pow2(j))
+                by {
+                lemma_mod_mod(limbs[4] as int, pow2(j) as int, pow2(d) as int);
+            }
+
+        }
+    }
+
+    // Trigger forall
+    assert(bytes[26int + 0] as nat == (l / pow2(0 * 8)) % 256);
+    assert(bytes[26int + 1] as nat == (l / pow2(1 * 8)) % 256);
+    assert(bytes[26int + 2] as nat == (l / pow2(2 * 8)) % 256);
+    assert(bytes[26int + 3] as nat == (l / pow2(3 * 8)) % 256);
+    assert(bytes[26int + 4] as nat == (l / pow2(4 * 8)) % 256);
+    assert(bytes[26int + 5] as nat == (l / pow2(5 * 8)) % 256);
 
     // Apply 6-byte reconstruction: bytes[26..31] = limbs[4]
-    lemma_6_bytes_reconstruct(
-        limbs[4] as nat,
-        bytes[26],
-        bytes[27],
-        bytes[28],
-        bytes[29],
-        bytes[30],
-        bytes[31],
-    );
+    lemma_6_bytes_reconstruct(l, bytes[26], bytes[27], bytes[28], bytes[29], bytes[30], bytes[31]);
     let bytes_sum = bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat
         * pow2(16) + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32) + bytes[31] as nat
         * pow2(40);
 
-    assert(bytes_sum * pow2(208) == limbs[4] as nat * pow2(208));
+    assert(bytes_sum * pow2(208) == l * pow2(208));
 
     assert(bytes_sum * pow2(208) == (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8)
         + bytes[28] as nat * pow2(16) + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32)

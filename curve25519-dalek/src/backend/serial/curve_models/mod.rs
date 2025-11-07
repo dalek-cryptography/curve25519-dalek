@@ -131,6 +131,10 @@ use subtle::ConditionallySelectable;
 use zeroize::Zeroize;
 
 use crate::constants;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::curve_specs::*;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::field_specs::*;
 
 use crate::edwards::EdwardsPoint;
 use crate::field::FieldElement;
@@ -274,20 +278,71 @@ impl Default for AffineNielsPoint {
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
 
+verus! {
 impl ValidityCheck for ProjectivePoint {
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> (result: bool) 
+        requires
+            limbs_bounded(&self.X, 54),
+            limbs_bounded(&self.Y, 54),
+            limbs_bounded(&self.Z, 54),
+        ensures
+            result == is_valid_projective_point(*self)
+    {
         // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
         // homogenized as (-X^2 + Y^2)*Z^2 = Z^4 + d*X^2*Y^2
         let XX = self.X.square();
         let YY = self.Y.square();
         let ZZ = self.Z.square();
+        proof {
+            // TODO: This should be provable from square()'s postcondition
+            assume(limbs_bounded(&XX, 54));
+            assume(limbs_bounded(&YY, 54));
+            assume(limbs_bounded(&ZZ, 54));
+        }
         let ZZZZ = ZZ.square();
+        
+        proof {
+            // TODO: This should be provable from square()'s postcondition
+            assume(limbs_bounded(&ZZZZ, 54));
+        }
+        /* ORIGINAL CODE: refactor for assumptions on intermediate results
         let lhs = &(&YY - &XX) * &ZZ;
         let rhs = &ZZZZ + &(&constants::EDWARDS_D * &(&XX * &YY));
-
         lhs == rhs
+        */
+        
+        let yy_minus_xx = &YY - &XX;
+        proof {
+            assume(limbs_bounded(&yy_minus_xx, 54));
+        }
+        let lhs = &yy_minus_xx * &ZZ;
+        let xx_times_yy = &XX * &YY;
+        proof {
+            // TODO: This should be provable from mul's postcondition
+            assume(limbs_bounded(&xx_times_yy, 54));
+        }
+        proof {
+            // TODO: This should be provable from the definition of EDWARDS_D constant
+            assume(limbs_bounded(&constants::EDWARDS_D, 54));
+        }
+        let d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy;
+        proof {
+            // TODO: This should be provable from mul's postcondition
+            assume(limbs_bounded(&d_times_xxyy, 54));
+        }
+        proof {
+            assume(spec_add_no_overflow(&ZZZZ, &d_times_xxyy));
+        }
+        let rhs = &ZZZZ + &d_times_xxyy;
+
+        let result = lhs == rhs;
+        proof {
+            assume(result == is_valid_projective_point(*self));
+        }
+        result
     }
 }
+} // verus!
 
 // ------------------------------------------------------------------------
 // Constant-time assignment

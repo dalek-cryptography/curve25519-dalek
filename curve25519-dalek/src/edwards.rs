@@ -153,7 +153,9 @@ use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::backend::serial::u64::subtle_assumes::*;
+#[allow(unused_imports)] // Used in verus! blocks
 use crate::curve_specs::*;
+#[allow(unused_imports)] // Used in verus! blocks
 use crate::field_specs::*;
 use vstd::prelude::*;
 
@@ -708,18 +710,40 @@ impl Zeroize for EdwardsPoint {
     }
 }
 
-} // verus!
 // ------------------------------------------------------------------------
 // Validity checks (for debugging, not CT)
 // ------------------------------------------------------------------------
 impl ValidityCheck for EdwardsPoint {
-    fn is_valid(&self) -> bool {
-        let point_on_curve = self.as_projective().is_valid();
+    fn is_valid(&self) -> (result: bool)
+        requires
+            is_well_formed_edwards_point(*self),
+        ensures
+            result == is_valid_edwards_point(*self),
+            true, // VERIFICATION NOTE: SECOND CONDITION MISSING
+    {
+        let proj = self.as_projective();
+        proof {
+            // The limb bounds are preserved by as_projective() (proj.X == self.X, etc.)
+            // and self has limbs_bounded from the preconditions
+            assert(limbs_bounded(&proj.X, 54));
+            assert(limbs_bounded(&proj.Y, 54));
+            assert(limbs_bounded(&proj.Z, 54));
+        }
+        let point_on_curve = proj.is_valid();
+        
         let on_segre_image = (&self.X * &self.Y) == (&self.Z * &self.T);
 
-        point_on_curve && on_segre_image
+        let result = point_on_curve && on_segre_image;
+        proof {
+            // TODO: Prove that the conjunction of these checks matches is_valid_edwards_point
+            assume(result == is_valid_edwards_point(*self));
+        }
+        result
     }
 }
+
+} // verus!
+
 
 // ------------------------------------------------------------------------
 // Constant-time assignment
@@ -769,45 +793,95 @@ verus! {
 
 impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
-    pub(crate) fn as_projective_niels(&self) -> ProjectiveNielsPoint {
-        // PROOF BYPASS: assume preconditions for field operations
-        // For Add: requires limbs[i] + rhs.limbs[i] <= u64::MAX
-        assume(forall|i: int|
-            0 <= i < 5 ==> #[trigger] (self.Y.limbs[i] + self.X.limbs[i]) <= u64::MAX);
-
-        // For Sub: requires limbs < 2^54
-        assume(forall|i: int| 0 <= i < 5 ==> self.Y.limbs[i] < (1u64 << 54));
-        assume(forall|i: int| 0 <= i < 5 ==> self.X.limbs[i] < (1u64 << 54));
-
-        // For Mul: requires limbs < 2^54
-        assume(forall|i: int| 0 <= i < 5 ==> self.T.limbs[i] < (1u64 << 54));
-        assume(forall|i: int| 0 <= i < 5 ==> constants::EDWARDS_D2.limbs[i] < (1u64 << 54));
-
-        ProjectiveNielsPoint {
+    pub(crate) fn as_projective_niels(&self) -> (result: ProjectiveNielsPoint) 
+        requires
+            is_well_formed_edwards_point(*self),
+        ensures
+            projective_niels_corresponds_to_edwards(result, *self)
+    {
+        proof {
+            // This should be provable from 54-bit bounds:
+            // If limbs[i] < 2^54 for both, then limbs[i] + limbs[i] < 2^55 < 2^64 - 1
+            assume(spec_add_no_overflow(&self.Y, &self.X));
+            
+            // This should be provable from constants definition
+            assume(limbs_bounded(&constants::EDWARDS_D2, 54));
+        }
+        
+        let result = ProjectiveNielsPoint {
             Y_plus_X: &self.Y + &self.X,
             Y_minus_X: &self.Y - &self.X,
             Z: self.Z,
             T2d: &self.T * &constants::EDWARDS_D2,
+        };
+        
+        proof {
+            // TODO: Derive that the field operations correctly implement the correspondence
+            // 1. field_element(Y + X) == field_add(field_element(Y), field_element(X))
+            // 2. field_element(Y - X) == field_sub(field_element(Y), field_element(X))
+            // 3. field_element(Z) == field_element(Z) (trivial)
+            // 4. field_element(T * 2d) == field_mul(field_element(2d), field_element(T))
+            assume(projective_niels_corresponds_to_edwards(result, *self));
         }
+        
+        result
     }
 
     /// Convert the representation of this point from extended
     /// coordinates to projective coordinates.
     ///
     /// Free.
-    pub(crate) const fn as_projective(&self) -> ProjectivePoint {
+    pub(crate) const fn as_projective(&self) -> (result: ProjectivePoint)
+        ensures
+            result.X == self.X,
+            result.Y == self.Y,
+            result.Z == self.Z,
+    {
         ProjectivePoint { X: self.X, Y: self.Y, Z: self.Z }
     }
 
     /// Dehomogenize to a AffineNielsPoint.
     /// Mainly for testing.
-    pub(crate) fn as_affine_niels(&self) -> AffineNielsPoint {
-        assume(false);
+    pub(crate) fn as_affine_niels(&self) -> (result: AffineNielsPoint) 
+        requires
+            is_well_formed_edwards_point(*self),
+        ensures
+            affine_niels_corresponds_to_edwards(result, *self)
+    {
         let recip = self.Z.invert();
+        proof {
+            // VERIFICATION NOTE: need to strengthen postcondition for invert()
+            assert(limbs_bounded(&recip, 54));
+        }
+        
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
-        let xy2d = &(&x * &y) * &constants::EDWARDS_D2;
-        AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d }
+        
+        proof {
+            assert(limbs_bounded(&x, 54));
+            assert(limbs_bounded(&y, 54));
+        }
+        
+        let xy = &x * &y;
+        
+        proof {
+            assert(limbs_bounded(&xy, 54));
+            assume(limbs_bounded(&constants::EDWARDS_D2, 54));
+        }
+        
+        let xy2d = &xy * &constants::EDWARDS_D2;
+        proof {
+            assert(limbs_bounded(&xy2d, 54));
+            assume(spec_add_no_overflow(&y, &x));
+        }
+        
+        let result = AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d };
+        
+        proof {
+            assume(affine_niels_corresponds_to_edwards(result, *self));
+        }
+        
+        result
     }
 
     /// Convert this `EdwardsPoint` on the Edwards model to the
@@ -881,6 +955,7 @@ impl EdwardsPoint {
 }
 
 } // verus!
+
 // ------------------------------------------------------------------------
 // Doubling
 // ------------------------------------------------------------------------

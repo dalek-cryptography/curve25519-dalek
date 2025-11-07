@@ -184,7 +184,7 @@ use {
     subtle::CtOption,
 };
 
-#[cfg(any(test, feature = "rand_core"))]
+#[cfg(feature = "rand_core")]
 use {
     core::convert::Infallible,
     rand_core::{CryptoRng, TryCryptoRng},
@@ -656,7 +656,6 @@ impl RistrettoPoint {
         ]
     }
 
-    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -673,13 +672,13 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
+    #[cfg(feature = "rand_core")]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         Self::try_from_rng(rng)
             .map_err(|_: Infallible| {})
             .expect("[bug] unfallible rng failed")
     }
 
-    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `RistrettoPoint` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -696,6 +695,7 @@ impl RistrettoPoint {
     /// discrete log of the output point with respect to any other
     /// point should be unknown.  The map is applied twice and the
     /// results are added, to ensure a uniform distribution.
+    #[cfg(feature = "rand_core")]
     pub fn try_from_rng<R: TryCryptoRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut uniform_bytes = [0u8; 64];
         rng.try_fill_bytes(&mut uniform_bytes)?;
@@ -1277,7 +1277,7 @@ mod test {
     use crate::edwards::CompressedEdwardsY;
     #[cfg(feature = "group")]
     use proptest::prelude::*;
-
+    #[cfg(feature = "rand_core")]
     use rand::{TryRngCore, rngs::OsRng};
 
     #[test]
@@ -1469,6 +1469,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn four_torsion_random() {
         let mut rng = OsRng.unwrap_err();
@@ -1479,6 +1480,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn random_roundtrip() {
         let mut rng = OsRng.unwrap_err();
@@ -1542,7 +1544,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn vartime_precomputed_vs_nonprecomputed_multiscalar() {
         let mut rng = rand::rng();
 
@@ -1593,7 +1595,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn partial_precomputed_mixed_multiscalar_empty() {
         let mut rng = rand::rng();
 
@@ -1636,7 +1638,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn partial_precomputed_mixed_multiscalar() {
         let mut rng = rand::rng();
 
@@ -1681,7 +1683,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn partial_precomputed_multiscalar() {
         let mut rng = rand::rng();
 
@@ -1710,7 +1712,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "alloc")]
+    #[cfg(all(feature = "alloc", feature = "rand_core"))]
     fn partial_precomputed_multiscalar_empty() {
         let mut rng = rand::rng();
 

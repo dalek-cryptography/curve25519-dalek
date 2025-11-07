@@ -181,7 +181,7 @@ fn rfc7748_ladder_test2() {
 mod os_rng {
 
     use super::*;
-    use rand::{rngs::OsRng, TryRngCore};
+    use rand::{TryRngCore, rngs::OsRng};
 
     #[test]
     fn ephemeral_from_rng() {

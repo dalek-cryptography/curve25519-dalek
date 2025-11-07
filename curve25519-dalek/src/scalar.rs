@@ -2530,7 +2530,7 @@ impl UnpackedScalar {
         ensures
             bytes_to_nat(&result.bytes) == to_nat(&self.limbs) % pow2(256),
             // VERIFICATION NOTE: If input is canonical (< group order), output satisfies Scalar invariants
-            is_canonical_scalar(&result),
+            to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result),
     {
         let bytes = self.as_bytes();
         proof {
@@ -2541,7 +2541,7 @@ impl UnpackedScalar {
         }
         let result = Scalar { bytes: bytes };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
-        assume(is_canonical_scalar(&result));
+        assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
         result
     }
 

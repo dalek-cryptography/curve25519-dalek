@@ -279,14 +279,15 @@ impl Default for AffineNielsPoint {
 // ------------------------------------------------------------------------
 
 verus! {
+
 impl ValidityCheck for ProjectivePoint {
-    fn is_valid(&self) -> (result: bool) 
+    fn is_valid(&self) -> (result: bool)
         requires
             limbs_bounded(&self.X, 54),
             limbs_bounded(&self.Y, 54),
             limbs_bounded(&self.Z, 54),
         ensures
-            result == is_valid_projective_point(*self)
+            result == is_valid_projective_point(*self),
     {
         // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
         // homogenized as (-X^2 + Y^2)*Z^2 = Z^4 + d*X^2*Y^2
@@ -300,7 +301,7 @@ impl ValidityCheck for ProjectivePoint {
             assume(limbs_bounded(&ZZ, 54));
         }
         let ZZZZ = ZZ.square();
-        
+
         proof {
             // TODO: This should be provable from square()'s postcondition
             assume(limbs_bounded(&ZZZZ, 54));
@@ -310,7 +311,7 @@ impl ValidityCheck for ProjectivePoint {
         let rhs = &ZZZZ + &(&constants::EDWARDS_D * &(&XX * &YY));
         lhs == rhs
         */
-        
+
         let yy_minus_xx = &YY - &XX;
         proof {
             assume(limbs_bounded(&yy_minus_xx, 54));
@@ -342,12 +343,11 @@ impl ValidityCheck for ProjectivePoint {
         result
     }
 }
-} // verus!
 
+} // verus!
 // ------------------------------------------------------------------------
 // Constant-time assignment
 // ------------------------------------------------------------------------
-
 impl ConditionallySelectable for ProjectiveNielsPoint {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         ProjectiveNielsPoint {

@@ -109,7 +109,6 @@ pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
     z != 0 && x == 0 && y == z
 }
 
-
 /// Check if an EdwardsPoint has well-formed representation
 /// A well-formed point has limbs that are bounded and won't cause overflows in common operations
 pub open spec fn is_well_formed_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {

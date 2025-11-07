@@ -109,18 +109,6 @@ pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
     z != 0 && x == 0 && y == z
 }
 
-/// Check if a ProjectivePoint is valid
-/// A ProjectivePoint (X:Y:Z) is valid if:
-/// 1. It satisfies the homogenized curve equation: (-X² + Y²)·Z² = Z⁴ + d·X²·Y²
-pub open spec fn is_valid_projective_point(
-    point: crate::backend::serial::curve_models::ProjectivePoint,
-) -> bool {
-    let x = field_element(&point.X);
-    let y = field_element(&point.Y);
-    let z = field_element(&point.Z);
-
-    on_edwards_curve_projective(x, y, z)
-}
 
 /// Check if an EdwardsPoint has well-formed representation
 /// A well-formed point has limbs that are bounded and won't cause overflows in common operations

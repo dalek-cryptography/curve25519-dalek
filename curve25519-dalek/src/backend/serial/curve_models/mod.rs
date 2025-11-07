@@ -287,7 +287,7 @@ impl ValidityCheck for ProjectivePoint {
             limbs_bounded(&self.Y, 54),
             limbs_bounded(&self.Z, 54),
         ensures
-            result == is_valid_projective_point(*self),
+            result == on_edwards_curve_projective(field_element(&self.X), field_element(&self.Y), field_element(&self.Z)),
     {
         // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
         // homogenized as (-X^2 + Y^2)*Z^2 = Z^4 + d*X^2*Y^2
@@ -338,7 +338,7 @@ impl ValidityCheck for ProjectivePoint {
 
         let result = lhs == rhs;
         proof {
-            assume(result == is_valid_projective_point(*self));
+            assume(result == on_edwards_curve_projective(field_element(&self.X), field_element(&self.Y), field_element(&self.Z)));
         }
         result
     }

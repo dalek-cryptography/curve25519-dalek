@@ -20,6 +20,8 @@
 //! will be used if available.
 pub mod backend_64_core;
 
+pub mod core_lemmas;
+
 pub mod field;
 
 pub mod scalar;

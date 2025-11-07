@@ -23,22 +23,40 @@ verus! {
 // Helper Lemmas for 52-bit limbs
 // ============================================================================
 /// Predicate: bytes are packed from limbs according to the as_bytes algorithm
+#[verusfmt::skip]
 pub open spec fn bytes_match_limbs_packing_52(limbs: [u64; 5], bytes: [u8; 32]) -> bool {
-    bytes[0] == (limbs[0] >> 0) as u8 && bytes[1] == (limbs[0] >> 8) as u8 && bytes[2] == (limbs[0]
-        >> 16) as u8 && bytes[3] == (limbs[0] >> 24) as u8 && bytes[4] == (limbs[0] >> 32) as u8
-        && bytes[5] == (limbs[0] >> 40) as u8 && bytes[6] == ((limbs[0] >> 48) | (limbs[1]
-        << 4)) as u8 && bytes[7] == (limbs[1] >> 4) as u8 && bytes[8] == (limbs[1] >> 12) as u8
-        && bytes[9] == (limbs[1] >> 20) as u8 && bytes[10] == (limbs[1] >> 28) as u8 && bytes[11]
-        == (limbs[1] >> 36) as u8 && bytes[12] == (limbs[1] >> 44) as u8 && bytes[13] == (limbs[2]
-        >> 0) as u8 && bytes[14] == (limbs[2] >> 8) as u8 && bytes[15] == (limbs[2] >> 16) as u8
-        && bytes[16] == (limbs[2] >> 24) as u8 && bytes[17] == (limbs[2] >> 32) as u8 && bytes[18]
-        == (limbs[2] >> 40) as u8 && bytes[19] == ((limbs[2] >> 48) | (limbs[3] << 4)) as u8
-        && bytes[20] == (limbs[3] >> 4) as u8 && bytes[21] == (limbs[3] >> 12) as u8 && bytes[22]
-        == (limbs[3] >> 20) as u8 && bytes[23] == (limbs[3] >> 28) as u8 && bytes[24] == (limbs[3]
-        >> 36) as u8 && bytes[25] == (limbs[3] >> 44) as u8 && bytes[26] == (limbs[4] >> 0) as u8
-        && bytes[27] == (limbs[4] >> 8) as u8 && bytes[28] == (limbs[4] >> 16) as u8 && bytes[29]
-        == (limbs[4] >> 24) as u8 && bytes[30] == (limbs[4] >> 32) as u8 && bytes[31] == (limbs[4]
-        >> 40) as u8
+    &&& bytes[0] == (limbs[0] >> 0) as u8
+    &&& bytes[1] == (limbs[0] >> 8) as u8
+    &&& bytes[2] == (limbs[0] >> 16) as u8
+    &&& bytes[3] == (limbs[0] >> 24) as u8
+    &&& bytes[4] == (limbs[0] >> 32) as u8
+    &&& bytes[5] == (limbs[0] >> 40) as u8
+    &&& bytes[6] == ((limbs[0] >> 48) | (limbs[1] << 4)) as u8
+    &&& bytes[7] == (limbs[1] >> 4) as u8
+    &&& bytes[8] == (limbs[1] >> 12) as u8
+    &&& bytes[9] == (limbs[1] >> 20) as u8
+    &&& bytes[10] == (limbs[1] >> 28) as u8
+    &&& bytes[11] == (limbs[1] >> 36) as u8
+    &&& bytes[12] == (limbs[1] >> 44) as u8
+    &&& bytes[13] == (limbs[2] >> 0) as u8
+    &&& bytes[14] == (limbs[2] >> 8) as u8
+    &&& bytes[15] == (limbs[2] >> 16) as u8
+    &&& bytes[16] == (limbs[2] >> 24) as u8
+    &&& bytes[17] == (limbs[2] >> 32) as u8
+    &&& bytes[18] == (limbs[2] >> 40) as u8
+    &&& bytes[19] == ((limbs[2] >> 48) | (limbs[3] << 4)) as u8
+    &&& bytes[20] == (limbs[3] >> 4) as u8
+    &&& bytes[21] == (limbs[3] >> 12) as u8
+    &&& bytes[22] == (limbs[3] >> 20) as u8
+    &&& bytes[23] == (limbs[3] >> 28) as u8
+    &&& bytes[24] == (limbs[3] >> 36) as u8
+    &&& bytes[25] == (limbs[3] >> 44) as u8
+    &&& bytes[26] == (limbs[4] >> 0) as u8
+    &&& bytes[27] == (limbs[4] >> 8) as u8
+    &&& bytes[28] == (limbs[4] >> 16) as u8
+    &&& bytes[29] == (limbs[4] >> 24) as u8
+    &&& bytes[30] == (limbs[4] >> 32) as u8
+    &&& bytes[31] == (limbs[4] >> 40) as u8
 }
 
 // ============================================================================
@@ -48,12 +66,14 @@ pub open spec fn bytes_match_limbs_packing_52(limbs: [u64; 5], bytes: [u8; 32]) 
 // matching the structure of Scalar52::as_bytes packing.
 /// Compute limb 0's contribution to the byte sum
 /// Limb 0 contributes to bytes 0-6 (fully to 0-5, partially to 6)
+#[verusfmt::skip]
 pub open spec fn limb0_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[0] as nat * pow2(0 * 8) + bytes[1] as nat * pow2(1 * 8) + bytes[2] as nat * pow2(2 * 8)
-        + bytes[3] as nat * pow2(3 * 8) + bytes[4] as nat * pow2(4 * 8) + bytes[5] as nat * pow2(
-        5 * 8,
-    )
-        +
+    bytes[0] as nat * pow2(0 * 8) +
+    bytes[1] as nat * pow2(1 * 8) +
+    bytes[2] as nat * pow2(2 * 8) +
+    bytes[3] as nat * pow2(3 * 8) +
+    bytes[4] as nat * pow2(4 * 8) +
+    bytes[5] as nat * pow2(5 * 8) +
     // Byte 6 is a boundary byte - limb 0 contributes only the low 4 bits
     // These 4 bits represent limbs[0]'s bits 48-51
     ((limbs[0] as nat / pow2(48)) % 16) * pow2(6 * 8)
@@ -61,44 +81,56 @@ pub open spec fn limb0_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) ->
 
 /// Compute limb 1's contribution to the byte sum
 /// Limb 1 contributes to bytes 6-12 (partially to 6, fully to 7-11, partially to 12)
+#[verusfmt::skip]
 pub open spec fn limb1_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 6 high 4 bits (limbs[1]'s bits 0-3)
-    ((limbs[1] as nat % pow2(4)) * 16) * pow2(6 * 8) + bytes[7] as nat * pow2(7 * 8)
-        + bytes[8] as nat * pow2(8 * 8) + bytes[9] as nat * pow2(9 * 8) + bytes[10] as nat * pow2(
-        10 * 8,
-    ) + bytes[11] as nat * pow2(11 * 8) + bytes[12] as nat * pow2(12 * 8)
+    ((limbs[1] as nat % pow2(4)) * 16) * pow2(6 * 8) +
+    bytes[ 7] as nat * pow2( 7 * 8) +
+    bytes[ 8] as nat * pow2( 8 * 8) +
+    bytes[ 9] as nat * pow2( 9 * 8) +
+    bytes[10] as nat * pow2(10 * 8) +
+    bytes[11] as nat * pow2(11 * 8) +
+    bytes[12] as nat * pow2(12 * 8)
 }
 
 /// Compute limb 2's contribution to the byte sum
 /// Limb 2 contributes to bytes 13-19 (fully to 13-18, partially to 19)
+#[verusfmt::skip]
 pub open spec fn limb2_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[13] as nat * pow2(13 * 8) + bytes[14] as nat * pow2(14 * 8) + bytes[15] as nat * pow2(
-        15 * 8,
-    ) + bytes[16] as nat * pow2(16 * 8) + bytes[17] as nat * pow2(17 * 8) + bytes[18] as nat * pow2(
-        18 * 8,
-    )
-        +
+    bytes[13] as nat * pow2(13 * 8) +
+    bytes[14] as nat * pow2(14 * 8) +
+    bytes[15] as nat * pow2(15 * 8) +
+    bytes[16] as nat * pow2(16 * 8) +
+    bytes[17] as nat * pow2(17 * 8) +
+    bytes[18] as nat * pow2(18 * 8) +
     // Byte 19 is a boundary byte - limb 2 contributes only the low 4 bits
     ((limbs[2] as nat / pow2(48)) % 16) * pow2(19 * 8)
 }
 
 /// Compute limb 3's contribution to the byte sum
 /// Limb 3 contributes to bytes 19-25 (partially to 19, fully to 20-24, partially to 25)
+#[verusfmt::skip]
 pub open spec fn limb3_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
     // Byte 19 high 4 bits (limbs[3]'s bits 0-3)
-    ((limbs[3] as nat % pow2(4)) * 16) * pow2(19 * 8) + bytes[20] as nat * pow2(20 * 8)
-        + bytes[21] as nat * pow2(21 * 8) + bytes[22] as nat * pow2(22 * 8) + bytes[23] as nat
-        * pow2(23 * 8) + bytes[24] as nat * pow2(24 * 8) + bytes[25] as nat * pow2(25 * 8)
+    ((limbs[3] as nat % pow2(4)) * 16) * pow2(19 * 8) +
+    bytes[20] as nat * pow2(20 * 8) +
+    bytes[21] as nat * pow2(21 * 8) +
+    bytes[22] as nat * pow2(22 * 8) +
+    bytes[23] as nat * pow2(23 * 8) +
+    bytes[24] as nat * pow2(24 * 8) +
+    bytes[25] as nat * pow2(25 * 8)
 }
 
 /// Compute limb 4's contribution to the byte sum
 /// Limb 4 contributes to bytes 26-31
+#[verusfmt::skip]
 pub open spec fn limb4_byte_contribution_52(limbs: [u64; 5], bytes: [u8; 32]) -> nat {
-    bytes[26] as nat * pow2(26 * 8) + bytes[27] as nat * pow2(27 * 8) + bytes[28] as nat * pow2(
-        28 * 8,
-    ) + bytes[29] as nat * pow2(29 * 8) + bytes[30] as nat * pow2(30 * 8) + bytes[31] as nat * pow2(
-        31 * 8,
-    )
+    bytes[26] as nat * pow2(26 * 8) +
+    bytes[27] as nat * pow2(27 * 8) +
+    bytes[28] as nat * pow2(28 * 8) +
+    bytes[29] as nat * pow2(29 * 8) +
+    bytes[30] as nat * pow2(30 * 8) +
+    bytes[31] as nat * pow2(31 * 8)
 }
 
 // ============================================================================
@@ -114,11 +146,74 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 52),
         bytes_match_limbs_packing_52(limbs, bytes),
     ensures
-        as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs),
+        as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs) % pow2(256),
 {
     // Connect the bit shift in the requires clause to pow2 for clarity
     assert((1u64 << 52) == pow2(52)) by {
         shift_is_pow2(52);
+    }
+
+    assert(five_limbs_to_nat_aux(limbs) % pow2(256) == (limbs[0] as nat) + pow2(52) * (
+    limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(156) * (limbs[3] as nat) + (pow2(208)
+        * (limbs[4] as nat)) % pow2(256)) by {
+        assert(limbs[0] as nat <= pow2(52) - 1 < pow2(52) < pow2(256)) by {
+            lemma_pow2_strictly_increases(52, 256);
+        }
+        assert(pow2(52) * (limbs[1] as nat) <= pow2(104) - pow2(52) < pow2(104) < pow2(256)) by {
+            pow2_mul_general(limbs[1] as nat, 52, 52);
+            lemma_pow2_pos(52);
+            lemma_pow2_strictly_increases(104, 256);
+        }
+        assert(pow2(104) * (limbs[2] as nat) <= pow2(156) - pow2(104) < pow2(156) < pow2(256)) by {
+            pow2_mul_general(limbs[2] as nat, 52, 104);
+            lemma_pow2_pos(104);
+            lemma_pow2_strictly_increases(156, 256);
+        }
+        assert(pow2(156) * (limbs[3] as nat) <= pow2(208) - pow2(156) < pow2(208) < pow2(256)) by {
+            pow2_mul_general(limbs[3] as nat, 52, 156);
+            lemma_pow2_pos(156);
+            lemma_pow2_strictly_increases(208, 256);
+        }
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(
+                156,
+            ) * (limbs[3] as nat),
+            limbs[4] as nat,
+            208,
+            256,
+        );
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat),
+            limbs[3] as nat,
+            156,
+            256,
+        );
+        sum_mod_decomposition(
+            (limbs[0] as nat) + pow2(52) * (limbs[1] as nat),
+            limbs[2] as nat,
+            104,
+            256,
+        );
+        sum_mod_decomposition(limbs[0] as nat, limbs[1] as nat, 52, 256);
+        assert((limbs[0] as nat) % pow2(256) == limbs[0] as nat) by {
+            lemma_small_mod(limbs[0] as nat, pow2(256));
+        }
+        assert((pow2(52) * (limbs[1] as nat)) % pow2(256) == pow2(52) * (limbs[1] as nat)) by {
+            lemma_small_mod(pow2(52) * (limbs[1] as nat), pow2(256))
+        }
+        assert((pow2(104) * (limbs[2] as nat)) % pow2(256) == pow2(104) * (limbs[2] as nat)) by {
+            lemma_small_mod(pow2(104) * (limbs[2] as nat), pow2(256))
+        }
+        assert((pow2(156) * (limbs[3] as nat)) % pow2(256) == pow2(156) * (limbs[3] as nat)) by {
+            lemma_small_mod(pow2(156) * (limbs[3] as nat), pow2(256))
+        }
+    }
+
+    assert((pow2(208) * (limbs[4] as nat)) % pow2(256) == ((limbs[4] as nat) % pow2(48)) * pow2(
+        208,
+    )) by {
+        lemma_mul_is_commutative(pow2(208) as int, limbs[4] as int);
+        mask_pow2(limbs[4] as nat, 208, 256);
     }
 
     // Establish that each limb is bounded by pow2(52)
@@ -133,7 +228,7 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
     assert((limbs[0] as nat) % pow2(52) == limbs[0]) by {
         lemma_small_mod(limbs[0] as nat, pow2(52));
     }
-    assert(as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs)) by {
+    assert(as_nat_32_u8(&bytes) == five_limbs_to_nat_aux(limbs) % pow2(256)) by {
         lemma_limb0_contribution_correctness_52(limbs, bytes);
         lemma_limb1_contribution_correctness_52(limbs, bytes);
         lemma_limb2_contribution_correctness_52(limbs, bytes);
@@ -1129,8 +1224,10 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
         limbs[4] < (1u64 << 52),
         bytes_match_limbs_packing_52(limbs, bytes),
     ensures
-        limb4_byte_contribution_52(limbs, bytes) == (limbs[4] as nat) * pow2(208),
+        limb4_byte_contribution_52(limbs, bytes) == ((limbs[4] as nat) % pow2(48)) * pow2(208),
 {
+    let l = ((limbs[4] as nat) % pow2(48));
+
     // Paper proof:
     // Limb 4 occupies bytes 26-31 (no boundary!) at position 2^208
     // From the packing predicate: bytes[26..31] = limbs[4] >> 0, 8, 16, 24, 32, 40
@@ -1163,23 +1260,59 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     // - 6 bytes can only represent values < 2^48
     // - Therefore limbs[4] must be < 2^48
     // But we cannot formally derive this from the current preconditions.
-    assume(limbs[4] < pow2(48));
+    assert(l < pow2(48)) by {
+        lemma_pow2_pos(48);
+        lemma_mod_bound(limbs[4] as int, pow2(48) as int);
+    }
+
+    assert forall|i: nat| 0 <= i <= 5 implies #[trigger] (limbs[4] as nat / pow2(i * 8)) % 256 == (l
+        / pow2(i * 8)) % 256 by {
+        assert(256 == pow2(8) && pow2(0) == 1) by {
+            lemma2_to64();
+        }
+        assert((limbs[4] as nat / pow2(i * 8)) % pow2(8) == (limbs[4] as nat % pow2(8 + i * 8))
+            / pow2(i * 8)) by {
+            mask_div2(limbs[4] as nat, i * 8, 8);
+        }
+
+        assert((l / pow2(i * 8)) % pow2(8) == (l % pow2(8 + i * 8)) / pow2(i * 8)) by {
+            mask_div2(l, i * 8, 8);
+        }
+
+        assert(l % pow2(8 + i * 8) == limbs[4] as nat % pow2(8 + i * 8)) by {
+            // 8 + i * 8 <= 48
+            let j = 8 + i * 8;
+            let d = (48 - j) as nat;
+            assert(pow2(48) == pow2(j) * pow2(d)) by {
+                lemma_pow2_adds(j, d);
+            }
+            assert(pow2(j) > 0 && pow2(d) > 0) by {
+                lemma_pow2_pos(j);
+                lemma_pow2_pos(d);
+            }
+            assert((limbs[4] as nat % (pow2(j) * pow2(d))) % pow2(j) == limbs[4] as nat % pow2(j))
+                by {
+                lemma_mod_mod(limbs[4] as int, pow2(j) as int, pow2(d) as int);
+            }
+
+        }
+    }
+
+    // Trigger forall
+    assert(bytes[26int + 0] as nat == (l / pow2(0 * 8)) % 256);
+    assert(bytes[26int + 1] as nat == (l / pow2(1 * 8)) % 256);
+    assert(bytes[26int + 2] as nat == (l / pow2(2 * 8)) % 256);
+    assert(bytes[26int + 3] as nat == (l / pow2(3 * 8)) % 256);
+    assert(bytes[26int + 4] as nat == (l / pow2(4 * 8)) % 256);
+    assert(bytes[26int + 5] as nat == (l / pow2(5 * 8)) % 256);
 
     // Apply 6-byte reconstruction: bytes[26..31] = limbs[4]
-    lemma_6_bytes_reconstruct(
-        limbs[4] as nat,
-        bytes[26],
-        bytes[27],
-        bytes[28],
-        bytes[29],
-        bytes[30],
-        bytes[31],
-    );
+    lemma_6_bytes_reconstruct(l, bytes[26], bytes[27], bytes[28], bytes[29], bytes[30], bytes[31]);
     let bytes_sum = bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8) + bytes[28] as nat
         * pow2(16) + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32) + bytes[31] as nat
         * pow2(40);
 
-    assert(bytes_sum * pow2(208) == limbs[4] as nat * pow2(208));
+    assert(bytes_sum * pow2(208) == l * pow2(208));
 
     assert(bytes_sum * pow2(208) == (bytes[26] as nat * pow2(0) + bytes[27] as nat * pow2(8)
         + bytes[28] as nat * pow2(16) + bytes[29] as nat * pow2(24) + bytes[30] as nat * pow2(32)

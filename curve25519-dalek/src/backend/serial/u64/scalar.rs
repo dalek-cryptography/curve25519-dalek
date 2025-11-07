@@ -197,7 +197,7 @@ impl Scalar52 {
         requires
             limbs_bounded(&self),
         ensures
-            bytes_to_nat(&s) == to_nat(&self.limbs),
+            bytes_to_nat(&s) == to_nat(&self.limbs) % pow2(256),
     {
         let mut s = [0u8;32];
 

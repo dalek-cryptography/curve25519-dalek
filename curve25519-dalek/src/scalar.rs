@@ -148,6 +148,7 @@ use subtle::CtOption;
 use zeroize::Zeroize;
 
 use crate::backend;
+use crate::backend::serial::u64::field_lemmas::field_core::spec_as_bytes;
 use crate::constants;
 
 #[allow(unused_imports)]
@@ -2552,12 +2553,20 @@ impl UnpackedScalar {
         // unfold with fuel 32
         // Another approach is like lemma_nine_limbs_equals_slice128_to_nat,
         // which shows that a recursive defn equals a large polynomial
-        assert(to_nat(&self.limbs) < group_order() ==> bytes_to_nat(&result.bytes) < group_order());
+
         proof {
-            if (bytes_to_nat(&result.bytes) < group_order()) {
+            if to_nat(&self.limbs) < group_order() {
+                use crate::backend::serial::u64::scalar_lemmas::lemma_scalar52_lt_pow2_256_if_canonical;
+
+                lemma_scalar52_lt_pow2_256_if_canonical(self);
+                lemma_small_mod(to_nat(&self.limbs), pow2(256));
+                assert(to_nat(&self.limbs) % pow2(256) == to_nat(&self.limbs));
+                assert(bytes_to_nat(&result.bytes) == to_nat(&self.limbs));
+
                 let v = bytes_to_nat(&result.bytes);
 
-                assert(bytes_to_nat(&result.bytes) == bytes_to_nat_rec(&result.bytes, 0));
+                use crate::backend::serial::u64::backend_64_core::as_nat_32_u8;
+                assert(bytes_to_nat(&result.bytes) == as_nat_32_u8(&result.bytes));
 
                 assert(v == bytes_to_nat(&result.bytes));
                 assert(v < group_order());

@@ -1502,7 +1502,8 @@ pub proof fn lemma_bytes_to_nat_lower_bound(bytes: &[u8; 32], index: usize)
 {
     // bytes_to_nat is defined recursively as a sum of non-negative terms
     // Therefore the sum is >= any individual term
-    assert(bytes_to_nat(bytes) == bytes_to_nat_rec(bytes, 0));
+    use crate::backend::serial::u64::backend_64_core::as_nat_32_u8;
+    assert(bytes_to_nat(bytes) == as_nat_32_u8(bytes));
     lemma_bytes_to_nat_rec_bound(bytes, 0, index);
 }
 
@@ -1563,6 +1564,31 @@ pub proof fn lemma_group_order_bound()
     // 2^253 < 2^255
     lemma_pow2_strictly_increases(253, 255);
     assert(group_order() < pow2(255));
+}
+
+/// If an UnpackedScalar (Scalar52) is canonical (< group_order), then it is < 2^256.
+pub proof fn lemma_scalar52_lt_pow2_256_if_canonical(a: &Scalar52)
+    requires
+        limbs_bounded(a),
+        to_nat(&a.limbs) < group_order(),
+    ensures
+        to_nat(&a.limbs) < pow2(256),
+{
+    // group_order() < 2^255
+    lemma_group_order_bound();
+
+    // Chain: to_nat(a) < group_order() < 2^255 < 2^256
+    calc! {
+        (<)
+        to_nat(&a.limbs); {  /* from precondition */
+        }
+        group_order(); {  /* from lemma_group_order_bound */
+        }
+        pow2(255); {
+            vstd::arithmetic::power2::lemma_pow2_strictly_increases(255, 256);
+        }
+        pow2(256);
+    }
 }
 
 } // verus!

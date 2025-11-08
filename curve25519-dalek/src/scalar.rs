@@ -1820,8 +1820,8 @@ impl Scalar {
 
 /// Get the bits of the scalar as an array, in little-endian order
 /* <VERIFICATION NOTE>
-         This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
-        </VERIFICATION NOTE> */
+                     This is a Verus-compatible version of bits_le from above that returns an array instead of an iterator
+                    </VERIFICATION NOTE> */
 #[allow(dead_code)]
 pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
     ensures
@@ -1970,15 +1970,15 @@ pub(crate) fn non_adjacent_form(&self, w: usize) -> (result:
     // required so that the NAF digits fit in i8
     // VERIFICATION NOTE: we tell verus not to verify debug assertions
     #[cfg(not(verus_keep_ghost))]
-            debug_assert!(w <= 8);
+                        debug_assert!(w <= 8);
 
     let mut naf = [0i8;256];
 
     // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features - IN PROGRESS
     /* <ORIGINAL CODE>
-            let mut x_u64 = [0u64; 5];
-            read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
-             <ORIGINAL CODE> */
+                        let mut x_u64 = [0u64; 5];
+                        read_le_u64_into(&self.bytes, &mut x_u64[0..4]);
+                         <ORIGINAL CODE> */
     // Read 4 u64s from the 32-byte array (self.bytes)
     assume(false);
     let mut x_u64 = [0u64;5];
@@ -2113,21 +2113,21 @@ pub(crate) fn as_radix_16(&self) -> (result:
     // Convert from radix 256 (bytes) to radix 16 (nibbles)
     // VERIFICATION NOTE: Moved helper functions outside for Verus compatibility
     /* <ORIGINAL CODE>
-            #[allow(clippy::identity_op)]
-            #[inline(always)]
-            fn bot_half(x: u8) -> u8 {
-                (x >> 0) & 15
-            }
-            #[inline(always)]
-            fn top_half(x: u8) -> u8 {
-                (x >> 4) & 15
-            }
+                        #[allow(clippy::identity_op)]
+                        #[inline(always)]
+                        fn bot_half(x: u8) -> u8 {
+                            (x >> 0) & 15
+                        }
+                        #[inline(always)]
+                        fn top_half(x: u8) -> u8 {
+                            (x >> 4) & 15
+                        }
 
-            for i in 0..32 {
-                output[2 * i] = bot_half(self[i]) as i8;
-                output[2 * i + 1] = top_half(self[i]) as i8;
-            }
-            </ORIGINAL CODE> */
+                        for i in 0..32 {
+                            output[2 * i] = bot_half(self[i]) as i8;
+                            output[2 * i + 1] = top_half(self[i]) as i8;
+                        }
+                        </ORIGINAL CODE> */
     for i in 0..32 {
         output[2 * i] = bot_half(self.bytes[i]) as i8;
         output[2 * i + 1] = top_half(self.bytes[i]) as i8;
@@ -2140,8 +2140,8 @@ pub(crate) fn as_radix_16(&self) -> (result:
         let carry = (output[i] + 8) >> 4;
         output[i] -= carry << 4;
         /* <ORIGINAL CODE> :
-                output[i + 1] += carry;
-                </ORIGINAL CODE> */
+                            output[i + 1] += carry;
+                            </ORIGINAL CODE> */
         // VERIFICATION NOTE: Changed += to explicit assignment for Verus compatibility
         // Verus doesn't support += on indexed arrays with computed indices
         let next_idx = i + 1;
@@ -2174,7 +2174,7 @@ pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize
     #[cfg(not(verus_keep_ghost))]
     debug_assert!(w >= 4);
     #[cfg(not(verus_keep_ghost))]
-            debug_assert!(w <= 8);
+                        debug_assert!(w <= 8);
 
     let digits_count = match w {
         4..=7 => (256 + w - 1) / w,
@@ -2193,7 +2193,7 @@ pub(crate) fn to_radix_2w_size_hint(w: usize) -> usize
     };
 
     #[cfg(not(verus_keep_ghost))]
-            debug_assert!(digits_count <= 64);
+                        debug_assert!(digits_count <= 64);
 
     digits_count
 }
@@ -2245,7 +2245,7 @@ pub(crate) fn as_radix_2w(&self, w: usize) -> (result:
     #[cfg(not(verus_keep_ghost))]
     debug_assert!(w >= 4);
     #[cfg(not(verus_keep_ghost))]
-        debug_assert!(w <= 8);
+                    debug_assert!(w <= 8);
 
     if w == 4 {
         let result = self.as_radix_16();
@@ -2265,9 +2265,9 @@ pub(crate) fn as_radix_2w(&self, w: usize) -> (result:
     // Scalar formatted as four `u64`s with carry bit packed into the highest bit.
     // VERIFICATION NOTE: Inline the read_le_u64_into logic to avoid Verus unsupported features
     /* <ORIGINAL CODE>
-        let mut scalar64x4 = [0u64; 4];
-        read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
-        </ORIGINAL CODE> */
+                    let mut scalar64x4 = [0u64; 4];
+                    read_le_u64_into(&self.bytes, &mut scalar64x4[0..4]);
+                    </ORIGINAL CODE> */
     // Read 4 u64s from the 32-byte array (self.bytes)
 
     let mut scalar64x4 = [0u64;4];
@@ -2379,11 +2379,11 @@ pub(crate) fn as_radix_2w(&self, w: usize) -> (result:
     // and accumulate the final carry onto another digit.
     // VERIFICATION NOTE: Changed += to regular assignment to avoid Verus limitation
     /* <ORIGINAL CODE>
-        match w {
-            8 => digits[digits_count] += carry as i8,
-            _ => digits[digits_count - 1] += (carry << w) as i8,
-        }
-        </ORIGINAL CODE> */
+                    match w {
+                        8 => digits[digits_count] += carry as i8,
+                        _ => digits[digits_count - 1] += (carry << w) as i8,
+                    }
+                    </ORIGINAL CODE> */
     match w {
         8 => {
             let idx = digits_count;

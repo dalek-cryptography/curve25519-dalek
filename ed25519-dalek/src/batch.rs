@@ -50,11 +50,11 @@ struct ZeroRng;
 
 impl rand_core::RngCore for ZeroRng {
     fn next_u32(&mut self) -> u32 {
-        rand_core::impls::next_u32_via_fill(self)
+        rand_core::le::next_u32_via_fill(self)
     }
 
     fn next_u64(&mut self) -> u64 {
-        rand_core::impls::next_u64_via_fill(self)
+        rand_core::le::next_u64_via_fill(self)
     }
 
     /// A no-op function which leaves the destination bytes for randomness unchanged.

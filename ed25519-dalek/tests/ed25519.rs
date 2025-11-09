@@ -27,7 +27,7 @@ mod vectors {
         scalar::Scalar,
         traits::IsIdentity,
     };
-    use rand_core::TryRngCore;
+    use rand::TryRngCore;
 
     #[cfg(not(feature = "digest"))]
     use sha2::{Sha512, digest::Digest};

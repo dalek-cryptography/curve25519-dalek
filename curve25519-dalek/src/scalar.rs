@@ -130,7 +130,7 @@ use group::ff::{FieldBits, PrimeFieldBits};
 #[cfg(feature = "group")]
 use rand_core::TryRngCore;
 
-#[cfg(any(test, feature = "rand_core"))]
+#[cfg(feature = "rand_core")]
 use rand_core::CryptoRng;
 
 #[cfg(feature = "digest")]
@@ -567,7 +567,6 @@ impl Scalar {
         ],
     };
 
-    #[cfg(any(test, feature = "rand_core"))]
     /// Return a `Scalar` chosen uniformly at random using a user-provided RNG.
     ///
     /// # Inputs
@@ -584,11 +583,12 @@ impl Scalar {
     /// # fn main() {
     /// use curve25519_dalek::scalar::Scalar;
     ///
-    /// use rand_core::{OsRng, TryRngCore};
+    /// use rand::{rngs::OsRng, TryRngCore};
     ///
     /// let mut csprng = OsRng.unwrap_err();
     /// let a: Scalar = Scalar::random(&mut csprng);
     /// # }
+    #[cfg(feature = "rand_core")]
     pub fn random<R: CryptoRng + ?Sized>(rng: &mut R) -> Self {
         let mut scalar_bytes = [0u8; 64];
         rng.fill_bytes(&mut scalar_bytes);
@@ -1430,7 +1430,7 @@ pub const fn clamp_integer(mut bytes: [u8; 32]) -> [u8; 32] {
 #[cfg(test)]
 pub(crate) mod test {
     use super::*;
-    use rand_core::RngCore;
+    use rand::RngCore;
 
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
@@ -1570,6 +1570,7 @@ pub(crate) mod test {
         }
     }
 
+    #[cfg(feature = "rand_core")]
     fn non_adjacent_form_iter(w: usize, x: &Scalar) {
         let naf = x.non_adjacent_form(w);
 
@@ -1588,6 +1589,7 @@ pub(crate) mod test {
         assert_eq!(*x, y);
     }
 
+    #[cfg(feature = "rand_core")]
     #[test]
     fn non_adjacent_form_random() {
         let mut rng = rand::rng();

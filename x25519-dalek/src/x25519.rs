@@ -16,9 +16,7 @@
 
 use curve25519_dalek::{edwards::EdwardsPoint, montgomery::MontgomeryPoint, traits::IsIdentity};
 
-use rand_core::CryptoRng;
-#[cfg(feature = "os_rng")]
-use rand_core::TryRngCore;
+use rand_core::TryCryptoRng;
 
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -87,17 +85,18 @@ impl EphemeralSecret {
     }
 
     /// Generate a new [`EphemeralSecret`] with the supplied RNG.
-    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+    pub fn random_from_rng<R: TryCryptoRng + ?Sized>(csprng: &mut R) -> Result<Self, R::Error> {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-        csprng.fill_bytes(&mut bytes);
-        EphemeralSecret(bytes)
+        csprng.try_fill_bytes(&mut bytes)?;
+
+        Ok(EphemeralSecret(bytes))
     }
 
     /// Generate a new [`EphemeralSecret`].
     #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(&mut rand_core::OsRng.unwrap_err())
+        Self::random_from_rng(&mut rand_core::OsRng).unwrap()
     }
 }
 
@@ -149,17 +148,18 @@ impl ReusableSecret {
     }
 
     /// Generate a new [`ReusableSecret`] with the supplied RNG.
-    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+    pub fn random_from_rng<R: TryCryptoRng + ?Sized>(csprng: &mut R) -> Result<Self, R::Error> {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-        csprng.fill_bytes(&mut bytes);
-        ReusableSecret(bytes)
+        csprng.try_fill_bytes(&mut bytes)?;
+
+        Ok(ReusableSecret(bytes))
     }
 
     /// Generate a new [`ReusableSecret`].
     #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(&mut rand_core::OsRng.unwrap_mut())
+        Self::random_from_rng(&mut rand_core::OsRng).unwrap()
     }
 }
 
@@ -210,17 +210,18 @@ impl StaticSecret {
     }
 
     /// Generate a new [`StaticSecret`] with the supplied RNG.
-    pub fn random_from_rng<R: CryptoRng + ?Sized>(csprng: &mut R) -> Self {
+    pub fn random_from_rng<R: TryCryptoRng + ?Sized>(csprng: &mut R) -> Result<Self, R::Error> {
         // The secret key is random bytes. Clamping is done later.
         let mut bytes = [0u8; 32];
-        csprng.fill_bytes(&mut bytes);
-        StaticSecret(bytes)
+        csprng.try_fill_bytes(&mut bytes)?;
+
+        Ok(StaticSecret(bytes))
     }
 
     /// Generate a new [`StaticSecret`].
     #[cfg(feature = "os_rng")]
     pub fn random() -> Self {
-        Self::random_from_rng(&mut rand_core::OsRng.unwrap_mut())
+        Self::random_from_rng(&mut rand_core::OsRng).unwrap()
     }
 
     /// Extract this key's bytes for serialization.
@@ -358,20 +359,19 @@ impl ZeroizeOnDrop for SharedSecret {}
 #[cfg_attr(not(feature = "static_secrets"), doc = "```ignore")]
 /// use rand_core::OsRng;
 /// use rand_core::RngCore;
-/// use rand_core::TryRngCore;
 ///
 /// use x25519_dalek::x25519;
 /// use x25519_dalek::StaticSecret;
 /// use x25519_dalek::PublicKey;
 ///
-/// let mut rng = OsRng.unwrap_err();
+/// let mut rng = OsRng;
 ///
 /// // Generate Alice's key pair.
-/// let alice_secret = StaticSecret::random_from_rng(&mut rng);
+/// let alice_secret = StaticSecret::random_from_rng(&mut rng).unwrap();
 /// let alice_public = PublicKey::from(&alice_secret);
 ///
 /// // Generate Bob's key pair.
-/// let bob_secret = StaticSecret::random_from_rng(&mut rng);
+/// let bob_secret = StaticSecret::random_from_rng(&mut rng).unwrap();
 /// let bob_public = PublicKey::from(&bob_secret);
 ///
 /// // Alice and Bob should now exchange their public keys.

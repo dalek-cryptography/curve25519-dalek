@@ -34,20 +34,13 @@ def calculate_stats(df: pd.DataFrame) -> Dict[str, int]:
     total = len(df)
 
     # Verus statistics
-    verus_specs = (df["has_spec_verus"].notna() & (df["has_spec_verus"] != "")).sum()
-    verus_specs_full = (df["has_spec_verus"] == "yes").sum()
-    verus_specs_external = (df["has_spec_verus"] == "ext").sum()
-    verus_proofs = (df["has_proof_verus"] == "yes").sum()
-
-    # Lean statistics
-    lean_specs = (df["has_spec_lean"].notna() & (df["has_spec_lean"] != "")).sum()
-    lean_proofs = (df["has_proof_lean"].notna() & (df["has_proof_lean"] != "")).sum()
+    verus_specs = (df["has_spec"].notna() & (df["has_spec"] != "")).sum()
+    verus_specs_full = (df["has_spec"] == "yes").sum()
+    verus_specs_external = (df["has_spec"] == "ext").sum()
+    verus_proofs = (df["has_proof"] == "yes").sum()
 
     # Functions with no specs at all
-    no_specs = (
-        ((df["has_spec_verus"].isna()) | (df["has_spec_verus"] == ""))
-        & ((df["has_spec_lean"].isna()) | (df["has_spec_lean"] == ""))
-    ).sum()
+    no_specs = ((df["has_spec"].isna()) | (df["has_spec"] == "")).sum()
 
     return {
         "total": total,
@@ -55,8 +48,6 @@ def calculate_stats(df: pd.DataFrame) -> Dict[str, int]:
         "verus_specs_full": verus_specs_full,
         "verus_specs_external": verus_specs_external,
         "verus_proofs": verus_proofs,
-        "lean_specs": lean_specs,
-        "lean_proofs": lean_proofs,
         "no_specs": no_specs,
     }
 
@@ -367,9 +358,9 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
         module_df = df[df["module"] == module]
         total = len(module_df)
         verus_specs = (
-            module_df["has_spec_verus"].notna() & (module_df["has_spec_verus"] != "")
+            module_df["has_spec"].notna() & (module_df["has_spec"] != "")
         ).sum()
-        verus_proofs = (module_df["has_proof_verus"] == "yes").sum()
+        verus_proofs = (module_df["has_proof"] == "yes").sum()
 
         module_stats.append(
             {
@@ -483,15 +474,6 @@ def print_summary(stats: Dict[str, int]):
         f"  Fully verified:        {stats['verus_proofs']:4d} ({round(stats['verus_proofs'] * 100 / total, 1):5.1f}%)"
     )
 
-    print(f"\n{'LEAN':^60}")
-    print("-" * 60)
-    print(
-        f"  Total with specs:      {stats['lean_specs']:4d} ({round(stats['lean_specs'] * 100 / total, 1):5.1f}%)"
-    )
-    print(
-        f"  Fully verified:        {stats['lean_proofs']:4d} ({round(stats['lean_proofs'] * 100 / total, 1):5.1f}%)"
-    )
-
     print(f"\n{'OVERALL':^60}")
     print("-" * 60)
     print(
@@ -572,13 +554,10 @@ def main():
     # Print summary
     print_summary(stats)
 
-    # Generate plots
+    # Generate plots (only those used by the website)
     print(f"\nGenerating plots to: {output_dir}")
     print("-" * 60)
 
-    plot_overall_progress(stats, output_dir)
-    plot_verus_breakdown(stats, output_dir)
-    plot_comparison_pie(stats, output_dir)
     plot_funnel(stats, output_dir)
     plot_file_breakdown(df, output_dir)
     save_stats_json(stats, output_dir)
@@ -586,9 +565,6 @@ def main():
     print("-" * 60)
     print(f"\nAll plots saved to: {output_dir}")
     print("\nGenerated files:")
-    print("  - overall_progress.png")
-    print("  - verus_breakdown.png")
-    print("  - comparison_pie.png")
     print("  - verification_funnel.png")
     print("  - module_breakdown.png")
     print("  - stats.json")

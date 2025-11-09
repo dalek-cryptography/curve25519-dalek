@@ -192,11 +192,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getStatus(func) {
-        if (func.has_proof_verus === 'yes') {
+        if (func.has_proof === 'yes') {
             return { class: 'verified', text: '✓ Verified' };
-        } else if (func.has_spec_verus === 'ext') {
+        } else if (func.has_spec === 'ext') {
             return { class: 'external', text: '⊕ External' };
-        } else if (func.has_spec_verus === 'yes') {
+        } else if (func.has_spec === 'yes') {
             return { class: 'spec', text: '○ Spec Only' };
         } else {
             return { class: 'none', text: '· No Spec' };
@@ -211,16 +211,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let filteredFunctions = csvFunctionsData.filter(func => {
             // Apply search filter
             const matchesSearch = !searchTerm || 
-                func.function_name.toLowerCase().includes(searchTerm) ||
-                extractModule(func.link).toLowerCase().includes(searchTerm);
+                func.function.toLowerCase().includes(searchTerm) ||
+                func.module.toLowerCase().includes(searchTerm);
             
             if (!matchesSearch) return false;
             
             // Apply status filter
             if (currentCsvFilter === 'all') return true;
-            if (currentCsvFilter === 'verified') return func.has_proof_verus === 'yes';
-            if (currentCsvFilter === 'spec') return func.has_spec_verus === 'yes' || func.has_spec_verus === 'ext';
-            if (currentCsvFilter === 'none') return !func.has_spec_verus && !func.has_proof_verus;
+            if (currentCsvFilter === 'verified') return func.has_proof === 'yes';
+            if (currentCsvFilter === 'spec') return func.has_spec === 'yes' || func.has_spec === 'ext';
+            if (currentCsvFilter === 'none') return !func.has_spec && !func.has_proof;
             
             return true;
         });
@@ -232,12 +232,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         tbody.innerHTML = filteredFunctions.map(func => {
             const status = getStatus(func);
-            const module = extractModule(func.link);
+            // Use module from CSV, but shorten it for display (last 2 parts)
+            let displayModule = func.module;
+            if (displayModule.includes('::')) {
+                const parts = displayModule.split('::');
+                displayModule = parts.slice(-2).join('::');
+            }
             
             return `
                 <tr>
-                    <td class="function-name">${func.function_name}</td>
-                    <td class="function-module">${module}</td>
+                    <td class="function-name">${func.function}</td>
+                    <td class="function-module">${displayModule}</td>
                     <td><span class="status-badge status-${status.class}">${status.text}</span></td>
                     <td><a href="${func.link}" target="_blank" class="function-link">View Source →</a></td>
                 </tr>

@@ -15,26 +15,104 @@ import csv
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from beartype import beartype
 
 
 @beartype
+def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
+    """
+    Extract the impl block context for a function.
+    
+    For example, if the function is inside:
+        impl Identity for ProjectivePoint {
+    Returns "ProjectivePoint"
+    
+    For trait implementations like:
+        impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
+    Returns "Scalar" (the type being implemented for)
+    """
+    # Look backwards from fn_start to find the impl block
+    look_back = content[:fn_start]
+    lines = look_back.split('\n')
+    
+    # Search backwards for impl block
+    for i in range(len(lines) - 1, -1, -1):
+        line = lines[i].strip()
+        
+        # Stop at verus! blocks or module boundaries
+        if line.startswith('verus!') or line.startswith('mod '):
+            break
+            
+        # Look for impl blocks
+        if line.startswith('impl'):
+            # Try to extract the type being implemented for
+            # Pattern 1: impl TraitName for TypeName {
+            match = re.search(r'impl\s+(?:<[^>]+>)?\s*\w+\s+for\s+([&\']*)([A-Za-z0-9_]+)', line)
+            if match:
+                return match.group(2)
+            
+            # Pattern 2: impl TypeName {  or  impl<...> TypeName {
+            match = re.search(r'impl\s*(?:<[^>]+>)?\s+([A-Za-z0-9_]+)\s*\{', line)
+            if match:
+                return match.group(1)
+    
+    return None
+
+
+@beartype
+def extract_module_from_path(file_path: Path, repo_root: Path) -> str:
+    """
+    Extract module path from file path.
+    
+    Example:
+        curve25519-dalek/src/backend/serial/curve_models/mod.rs
+        -> curve25519_dalek::backend::serial::curve_models
+        
+        curve25519-dalek/src/scalar.rs
+        -> curve25519_dalek::scalar
+    """
+    try:
+        # Get relative path from repo root
+        rel_path = file_path.relative_to(repo_root)
+        
+        # Remove curve25519-dalek/ prefix and src/ prefix
+        parts = list(rel_path.parts)
+        
+        # Skip "curve25519-dalek" and "src"
+        module_parts = []
+        skip_parts = {'curve25519-dalek', 'src'}
+        
+        for part in parts:
+            if part in skip_parts:
+                continue
+            # Remove .rs extension or mod.rs
+            if part.endswith('.rs'):
+                if part == 'mod.rs':
+                    continue
+                part = part[:-3]
+            module_parts.append(part.replace('-', '_'))
+        
+        # Prepend crate name
+        return 'curve25519_dalek::' + '::'.join(module_parts)
+    except:
+        return 'curve25519_dalek'
+
+
+@beartype
 def parse_function_in_file(
-    file_path: Path, function_name: str
-) -> Tuple[bool, bool, bool, int]:
+    file_path: Path, function_name: str, old_link: str = ""
+) -> Tuple[bool, bool, bool, int, str]:
     """
     Parse a Rust file to find a function and check if it has Verus specs and proofs.
 
     Returns:
-        Tuple[bool, bool, bool, int]: (has_spec, has_proof, is_external_body, line_number)
+        Tuple[bool, bool, bool, int, str]: (has_spec, has_proof, is_external_body, line_number, qualified_name)
         - has_spec: True if function has requires or ensures clauses
         - has_proof: True if has_spec and no assume in body
         - is_external_body: True if function has #[verifier::external_body]
         - line_number: Line number where the function is defined (1-indexed)
-
-    TODO: Uncertain if this does the right thing if there are two functions with
-    the same name in the same file
+        - qualified_name: Function name with impl context (e.g., "ProjectivePoint::identity")
     """
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -50,6 +128,23 @@ def parse_function_in_file(
     matches = list(re.finditer(fn_pattern, content))
 
     assert matches
+    
+    # If we have an old link with a line number, use it to find the closest match
+    target_line = None
+    if old_link:
+        line_match = re.search(r"#L(\d+)", old_link)
+        if line_match:
+            target_line = int(line_match.group(1))
+    
+    # If there are multiple matches and we have a target line, sort by proximity to target
+    if target_line and len(matches) > 1:
+        matches_with_lines = []
+        for match in matches:
+            line_num = content[:match.start()].count("\n") + 1
+            distance = abs(line_num - target_line)
+            matches_with_lines.append((distance, match))
+        matches_with_lines.sort(key=lambda x: x[0])
+        matches = [m[1] for m in matches_with_lines]
 
     # For each match, check if it has specs
     for match in matches:
@@ -114,7 +209,10 @@ def parse_function_in_file(
             # Calculate line number for trait methods too
             line_number = content[:fn_start].count("\n") + 1
             # Trait methods don't have specs/proofs, just return line number
-            return (False, False, False, line_number)
+            # Try to extract impl context
+            impl_context = extract_impl_context(content, fn_start)
+            qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
+            return (False, False, False, line_number, qualified_name)
 
         # Look backwards from fn_start to find any attributes
         # Attributes appear before the function definition
@@ -154,10 +252,14 @@ def parse_function_in_file(
         # Calculate line number for ALL functions (even those without specs)
         # This ensures CSV links are always up-to-date
         line_number = content[:fn_start].count("\n") + 1
+        
+        # Extract impl context for qualified name
+        impl_context = extract_impl_context(content, fn_start)
+        qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
 
         # If neither specs nor external_body, return early with just the line number
         if not has_spec and not has_verifier_external:
-            return (False, False, False, line_number)
+            return (False, False, False, line_number, qualified_name)
 
         # Find the matching closing brace for the function body
         brace_count = 1
@@ -215,13 +317,16 @@ def parse_function_in_file(
         # If function has external_body, treat it as having a spec (even if no requires/ensures)
         has_spec_or_external = has_spec or has_verifier_external
 
-        # Line number was already calculated earlier
-        return (has_spec_or_external, has_proof, has_verifier_external, line_number)
+        # Line number and qualified name were already calculated earlier
+        return (has_spec_or_external, has_proof, has_verifier_external, line_number, qualified_name)
 
     # Probably what's happened is that we saw the function, but
     # it doesn't have a spec yet
     # Return line 0 if we couldn't find the function properly
-    return (False, False, False, 0)
+    # Try to get impl context even if function not found
+    impl_context = extract_impl_context(content, 0) if matches else None
+    qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
+    return (False, False, False, 0, qualified_name)
 
 
 @beartype
@@ -250,12 +355,12 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 @beartype
 def analyze_functions(
     csv_path: Path, src_dir: Path
-) -> Dict[str, Tuple[bool, bool, bool, int, str]]:
+) -> Dict[str, Tuple[bool, bool, bool, int, str, str, str]]:
     """
     Analyze all functions in the CSV and check their Verus status.
 
     Returns:
-        Dict mapping old_link to (has_spec_verus, has_proof_verus, is_external_body, line_number, new_link)
+        Dict mapping old_link to (has_spec, has_proof, is_external_body, line_number, new_link, qualified_name, module_name)
     """
     # Read the CSV to get function names
     with open(csv_path, "r") as f:
@@ -263,19 +368,29 @@ def analyze_functions(
         rows = [row for row in reader]
 
     results = {}
+    
+    # Keep track of functions we've seen to detect macro-generated duplicates
+    seen_functions = {}
 
     for row in rows:
-        func_name = row["function_name"]
+        func_name = row["function"]
+        
+        # If the function name is qualified (e.g., "Type::function"), extract just the function part
+        if "::" in func_name:
+            func_name = func_name.split("::")[-1]
 
         # Try to get the specific file from the GitHub link first
         github_link = row["link"]
         target_file = extract_file_path_from_link(github_link, src_dir)
         print(f"Analyzing: {target_file} -> {func_name}")
 
+        # Extract module name from file path
+        module_name = extract_module_from_path(target_file, src_dir)
+
         # Search only in the specific file mentioned in the CSV
         print(f"  Checking specific file: {target_file.name}")
-        result = parse_function_in_file(target_file, func_name)
-        has_spec, has_proof, is_external_body, line_number = result
+        result = parse_function_in_file(target_file, func_name, github_link)
+        has_spec, has_proof, is_external_body, line_number, qualified_name = result
 
         # Update the link with the correct line number
         # Replace the line number in the link: #L123 -> #L{line_number}
@@ -285,6 +400,13 @@ def analyze_functions(
         else:
             # Function not found, keep old link
             new_link = github_link
+        
+        # Check for macro-generated duplicates (same file, same function name, same line)
+        func_key = f"{target_file}::{qualified_name}::{line_number}"
+        if func_key in seen_functions:
+            print(f"  Skipping duplicate (macro-generated): {qualified_name} at line {line_number}")
+            continue
+        seen_functions[func_key] = True
 
         results[github_link] = (
             has_spec,
@@ -292,10 +414,15 @@ def analyze_functions(
             is_external_body,
             line_number,
             new_link,
+            qualified_name,
+            module_name,
         )
         ext_marker = " [external_body]" if is_external_body else ""
         print(
-            f"  Found in {target_file.name}: spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}"
+            f"  Found: {qualified_name} in module {module_name}"
+        )
+        print(
+            f"    spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}"
         )
 
     return results
@@ -372,45 +499,56 @@ def update_links_to_main_branch(csv_path: Path):
 
 
 @beartype
-def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str]]):
-    """Update the CSV file with Verus analysis results."""
+def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str]]):
+    """Update the CSV file with Verus analysis results and new structure."""
     # Read the CSV
     rows = []
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
-        fieldnames = reader.fieldnames
+        old_fieldnames = reader.fieldnames
         for row in reader:
             rows.append(row)
 
-    # Update rows with results
+    # New fieldnames: drop lean columns, add module, rename columns
+    new_fieldnames = ["function", "module", "link", "has_spec", "has_proof"]
+    
+    # Update rows with results and new structure
+    # Use a set to track which results we've already written (avoid duplicates)
+    new_rows = []
+    written_results = set()
+    
     for row in rows:
         old_link = row["link"]
-        if old_link in results:
-            has_spec, has_proof, is_external_body, line_number, new_link = results[
+        if old_link in results and old_link not in written_results:
+            written_results.add(old_link)
+            
+            has_spec, has_proof, is_external_body, line_number, new_link, qualified_name, module_name = results[
                 old_link
             ]
-            # Update link to include correct line number
-            row["link"] = new_link
-            # Use "ext" for functions with external_body, "yes" for regular specs
-            if has_spec:
-                row["has_spec_verus"] = "ext" if is_external_body else "yes"
-            else:
-                row["has_spec_verus"] = ""
-            row["has_proof_verus"] = "yes" if has_proof else ""
+            
+            new_row = {
+                "function": qualified_name,
+                "module": module_name,
+                "link": new_link,
+                # Use "ext" for functions with external_body, "yes" for regular specs
+                "has_spec": "ext" if is_external_body else ("yes" if has_spec else ""),
+                "has_proof": "yes" if has_proof else "",
+            }
+            new_rows.append(new_row)
 
     # Write the updated CSV back to the same file
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=new_fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(new_rows)
 
     print(f"\nCSV file updated: {csv_path}")
 
     # Print summary
-    spec_count = sum(1 for _, (has_spec, _, _, _, _) in results.items() if has_spec)
-    proof_count = sum(1 for _, (_, has_proof, _, _, _) in results.items() if has_proof)
+    spec_count = sum(1 for _, (has_spec, _, _, _, _, _, _) in results.items() if has_spec)
+    proof_count = sum(1 for _, (_, has_proof, _, _, _, _, _) in results.items() if has_proof)
     external_count = sum(
-        1 for _, (has_spec, _, is_ext, _, _) in results.items() if has_spec and is_ext
+        1 for _, (has_spec, _, is_ext, _, _, _, _) in results.items() if has_spec and is_ext
     )
     full_spec_count = spec_count - external_count
     total = len(results)

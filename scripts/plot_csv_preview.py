@@ -13,12 +13,12 @@ def create_csv_preview() -> None:
     df = pd.read_csv(csv_path)
 
     # Sample functions to show - mix of different statuses
-    verified = df[df["has_proof_verus"] == "yes"].head(8)
+    verified = df[df["has_proof"] == "yes"].head(8)
     with_specs = df[
-        (df["has_spec_verus"] == "yes") & (df["has_proof_verus"] != "yes")
+        (df["has_spec"] == "yes") & (df["has_proof"] != "yes")
     ].head(8)
     no_specs = df[
-        (df["has_spec_verus"] != "yes") & (df["has_proof_verus"] != "yes")
+        (df["has_spec"] != "yes") & (df["has_proof"] != "yes")
     ].head(8)
 
     # Combine samples
@@ -27,27 +27,24 @@ def create_csv_preview() -> None:
     # Prepare display data
     display_data = []
     for _, row in sample.iterrows():
-        func_name = row["function_name"]
+        func_name = row["function"]
         # Truncate long function names
         if len(func_name) > 40:
             func_name = func_name[:37] + "..."
 
-        # Extract module from link
-        link = row["link"]
-        module = "unknown"
-        if pd.notna(link) and ".rs#" in link:
-            # Extract filename.rs from GitHub URL
-            # Format: .../path/to/file.rs#L123
-            match = link.split(".rs#")[0]
-            if "/" in match:
-                module = match.split("/")[-1] + ".rs"
+        # Get module (now a column in the CSV)
+        module = row["module"]
+        # Shorten module for display - show last 2 parts
+        if "::" in module:
+            parts = module.split("::")
+            module = "::".join(parts[-2:])
 
         # Determine status
-        if row["has_proof_verus"] == "yes":
+        if row["has_proof"] == "yes":
             status = "✓ Verified"
-        elif row["has_spec_verus"] == "ext":
+        elif row["has_spec"] == "ext":
             status = "⊕ External"
-        elif row["has_spec_verus"] == "yes":
+        elif row["has_spec"] == "yes":
             status = "○ Spec Only"
         else:
             status = "· No Spec"
@@ -102,8 +99,8 @@ def create_csv_preview() -> None:
 
     # Add summary stats at bottom
     total = len(df)
-    verified_count = len(df[df["has_proof_verus"] == "yes"])
-    spec_count = len(df[df["has_spec_verus"] == "yes"])
+    verified_count = len(df[df["has_proof"] == "yes"])
+    spec_count = len(df[df["has_spec"] == "yes"])
 
     summary_text = (
         f"Total Functions: {total}  |  "

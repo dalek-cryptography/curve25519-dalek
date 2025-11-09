@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------
 #![cfg_attr(allow_unused_unsafe, allow(unused_unsafe))]
 #![warn(
+    clippy::mod_module_files,
     clippy::unwrap_used,
     missing_docs,
     rust_2018_idioms,

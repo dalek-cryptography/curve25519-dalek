@@ -7,7 +7,7 @@
 // Authors:
 // - Henry de Valence <hdevalence@hdevalence.ca>
 
-#![doc = include_str!("../../../../docs/ifma-notes.md")]
+#![doc = include_str!("../../../docs/ifma-notes.md")]
 
 #[allow(missing_docs)]
 pub mod field;

@@ -716,7 +716,8 @@ impl Zeroize for EdwardsPoint {
 impl ValidityCheck for EdwardsPoint {
     fn is_valid(&self) -> (result: bool)
         requires
-            is_well_formed_edwards_point(*self),
+            limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+                && limbs_bounded(&self.T, 54),
         ensures
             result == is_valid_edwards_point(*self),
             true,  // VERIFICATION NOTE: SECOND CONDITION MISSING
@@ -792,7 +793,8 @@ impl EdwardsPoint {
     /// Convert to a ProjectiveNielsPoint
     pub(crate) fn as_projective_niels(&self) -> (result: ProjectiveNielsPoint)
         requires
-            is_well_formed_edwards_point(*self),
+            limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+                && limbs_bounded(&self.T, 54),
         ensures
             projective_niels_corresponds_to_edwards(result, *self),
     {
@@ -841,7 +843,8 @@ impl EdwardsPoint {
     /// Mainly for testing.
     pub(crate) fn as_affine_niels(&self) -> (result: AffineNielsPoint)
         requires
-            is_well_formed_edwards_point(*self),
+            limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+                && limbs_bounded(&self.T, 54),
         ensures
             affine_niels_corresponds_to_edwards(result, *self),
     {

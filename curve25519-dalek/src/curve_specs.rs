@@ -109,19 +109,6 @@ pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
     z != 0 && x == 0 && y == z
 }
 
-/// Check if an EdwardsPoint has well-formed representation
-/// A well-formed point has limbs that are bounded and won't cause overflows in common operations
-pub open spec fn is_well_formed_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {
-    limbs_bounded(&point.X, 54) && limbs_bounded(&point.Y, 54) && limbs_bounded(&point.Z, 54)
-        && limbs_bounded(
-        &point.T,
-        54,
-    )
-    // Note: spec_add_no_overflow(&point.Y, &point.X) is implied by 54-bit bounds
-    // since 2^54 + 2^54 = 2^55 << 2^64 - 1
-
-}
-
 /// Check if an EdwardsPoint in projective coordinates is valid
 /// An EdwardsPoint (X:Y:Z:T) is valid if:
 /// 1. The affine point (X/Z, Y/Z) lies on the Edwards curve

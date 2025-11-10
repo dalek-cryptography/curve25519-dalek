@@ -332,25 +332,21 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
 def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     """Create a breakdown by file/module."""
 
-    # Extract module from link
-    def extract_module(link: str) -> str:
-        if pd.isna(link) or not link:
+    # Simplify module names for display
+    def simplify_module(module: str) -> str:
+        if pd.isna(module) or not module:
             return "unknown"
-        # Extract path between /blob/hash/ and file name
-        import re
+        # Remove crate prefix for cleaner display
+        # e.g., "curve25519_dalek::backend::serial::u64::field" -> "u64::field"
+        parts = module.replace("curve25519_dalek::", "").split("::")
+        # Return last 2-3 parts for reasonable display
+        if len(parts) >= 3:
+            return "::".join(parts[-3:])
+        elif len(parts) >= 2:
+            return "::".join(parts[-2:])
+        return parts[-1] if parts else "unknown"
 
-        match = re.search(r"/blob/[^/]+/(.+?)#", link)
-        if match:
-            path = match.group(1)
-            # Get the parent directory
-            parts = path.split("/")
-            if len(parts) > 1:
-                # Return last 2 parts of path (e.g., "u64/field.rs")
-                return "/".join(parts[-2:]) if len(parts) >= 2 else parts[-1]
-            return parts[-1]
-        return "unknown"
-
-    df["module"] = df["link"].apply(extract_module)
+    df["display_module"] = df["module"].apply(simplify_module)
 
     # Count by module
     module_stats = []

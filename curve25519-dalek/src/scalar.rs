@@ -148,6 +148,7 @@ use subtle::CtOption;
 use zeroize::Zeroize;
 
 use crate::backend;
+#[cfg(verus_keep_ghost)]
 use crate::backend::serial::u64::field_lemmas::field_core::spec_as_bytes;
 use crate::constants;
 

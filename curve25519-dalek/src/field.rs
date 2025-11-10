@@ -74,7 +74,7 @@ impl vstd::std_specs::cmp::PartialEqSpecImpl for FieldElement {
     }
 
     open spec fn eq_spec(&self, other: &Self) -> bool {
-        field_element_as_bytes(self) == field_element_as_bytes(other)
+        fe51_to_bytes(self) == fe51_to_bytes(other)
     }
 }
 
@@ -82,12 +82,12 @@ impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> (result:
         bool)/* VERIFICATION NOTE:
      - PROOF BYPASS
-     - DRAFT SPEC: field_element_as_bytes is a complex spec function that should correspond to as_bytes()
+     - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
      - PartialEqSpecImpl trait provides the external specification
      */
 
         ensures
-            result == (field_element_as_bytes(self) == field_element_as_bytes(other)),
+            result == (fe51_to_bytes(self) == fe51_to_bytes(other)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -99,7 +99,7 @@ impl PartialEq for FieldElement {
         let result = choice_into(choice);
 
         // VERIFICATION NOTE: Need to prove the postcondition
-        assume(result == (field_element_as_bytes(self) == field_element_as_bytes(other)));
+        assume(result == (fe51_to_bytes(self) == fe51_to_bytes(other)));
 
         result
     }
@@ -113,13 +113,11 @@ impl ConstantTimeEq for FieldElement {
         Choice)/* <VERIFICATION NOTE>
      - PROOF BYPASS
      - Use wrapper functions for ConstantTimeEq and CtOption
-     - DRAFT SPEC: field_element_as_bytes is a complex spec function that should correspond to as_bytes()
+     - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (field_element_as_bytes(self) == field_element_as_bytes(
-                other,
-            )),
+            choice_is_true(result) == (fe51_to_bytes(self) == fe51_to_bytes(other)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Verus compatibility instead of direct subtle call
@@ -128,9 +126,7 @@ impl ConstantTimeEq for FieldElement {
          self.as_bytes().ct_eq(&other.as_bytes())
          </ORIGINAL CODE> */
         let result = ct_eq_bytes32(&self.as_bytes(), &other.as_bytes());
-        assume(choice_is_true(result) == (field_element_as_bytes(self) == field_element_as_bytes(
-            other,
-        )));
+        assume(choice_is_true(result) == (fe51_to_bytes(self) == fe51_to_bytes(other)));
         result
     }
 }
@@ -145,21 +141,16 @@ impl FieldElement {
     /// If negative, return `Choice(1)`.  Otherwise, return `Choice(0)`.
     pub(crate) fn is_negative(&self) -> (result:
         Choice)/* VERIFICATION NOTE:
-    - PROOF BYPASS AND SPEC BYPASS
-    - we cannot write this directly; need to find a spec function for FieldElement51::as_bytes
-    ensures choice_is_true(result) == (self.as_bytes()[0] & 1 == 1)
-    - (note after slack call: maybe the first bit of as_bytes() is sufficient as a spec)
+    - PROOF BYPASS
+    - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (field_element_as_bytes(self)[0] & 1
-                == 1),
-    // SPEC BYPASS through placeholder field_element_as_bytes
-
+            choice_is_true(result) == (fe51_to_bytes(self)[0] & 1 == 1),
     {
         let bytes = self.as_bytes();
         let result = Choice::from(bytes[0] & 1);
-        assume(choice_is_true(result) == (field_element_as_bytes(self)[0] & 1 == 1));
+        assume(choice_is_true(result) == (fe51_to_bytes(self)[0] & 1 == 1));
         result
     }
 
@@ -177,16 +168,16 @@ impl FieldElement {
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (field_element_as_bytes(self)
+            choice_is_true(result) == (fe51_to_bytes(self)
                 == seq![0u8; 32]),
-    // SPEC BYPASS through placeholder field_element_as_bytes
+    // SPEC BYPASS through placeholder fe51_to_bytes
 
     {
         let zero = [0u8;32];
         let bytes = self.as_bytes();
 
         let result = ct_eq_bytes32(&bytes, &zero);
-        assume(choice_is_true(result) == (field_element_as_bytes(self) == seq![0u8; 32]));
+        assume(choice_is_true(result) == (fe51_to_bytes(self) == seq![0u8; 32]));
         result
     }
 

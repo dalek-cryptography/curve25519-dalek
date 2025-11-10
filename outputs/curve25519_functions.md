@@ -164,44 +164,44 @@
 | [RistrettoPoint::optional_multiscalar_mul](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/ristretto.rs#L996) | curve25519_dalek::ristretto |  |  |
 | [RistrettoPoint::conditional_select](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/ristretto.rs#L1143) | curve25519_dalek::ristretto |  |  |
 | [CompressedRistretto::fmt](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/ristretto.rs#L1157) | curve25519_dalek::ristretto |  |  |
-| [Scalar::from_bytes_mod_order](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L238) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::from_bytes_mod_order_wide](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L261) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::from_canonical_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L285) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::eq](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L349) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::ct_eq](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L376) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::index](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L394) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::mul_assign](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L414) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::mul](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L492) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::add_assign](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L632) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::add](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L567) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::sub](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L667) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::neg](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L767) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::serialize](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1722) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::deserialize](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1736) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::expecting](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1692) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::sum](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L896) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::default](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L918) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::from](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L930) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::hash_from_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1228) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::from_hash](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1304) | curve25519_dalek::scalar | :x: |  |
-| [Scalar::to_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1352) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::as_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1371) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [Scalar::invert](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1419) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [Scalar::bits_le](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1798) | curve25519_dalek::scalar |  |  |
-| [non_adjacent_form](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1946) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [bot_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1752) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [top_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1774) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [as_radix_16](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2084) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [to_radix_2w_size_hint](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2156) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [as_radix_2w](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2215) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [unpack](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2415) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
-| [reduce](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2429) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [is_canonical](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2455) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [square_multiply](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2474) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [UnpackedScalar::pack](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2524) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [UnpackedScalar::montgomery_invert](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2551) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [read_le_u64_into](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2797) | curve25519_dalek::scalar | :heavy_check_mark: |  |
-| [clamp_integer](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2877) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::from_bytes_mod_order](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L240) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::from_bytes_mod_order_wide](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L263) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::from_canonical_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L287) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::eq](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L351) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::ct_eq](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L378) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::index](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L396) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::mul_assign](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L416) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::mul](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L494) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::add_assign](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L634) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::add](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L569) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::sub](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L669) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::neg](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L769) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::serialize](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1724) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::deserialize](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1738) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::expecting](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1694) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::sum](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L898) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::default](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L920) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::from](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L932) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::hash_from_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1230) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::from_hash](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1306) | curve25519_dalek::scalar | :x: |  |
+| [Scalar::to_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1354) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::as_bytes](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1373) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [Scalar::invert](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1421) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [Scalar::bits_le](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1800) | curve25519_dalek::scalar |  |  |
+| [non_adjacent_form](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1948) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [bot_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1754) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [top_half](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L1776) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [as_radix_16](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2086) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [to_radix_2w_size_hint](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2158) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [as_radix_2w](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2217) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [unpack](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2417) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [reduce](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2431) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [is_canonical](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2457) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [square_multiply](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2476) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [UnpackedScalar::pack](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2526) | curve25519_dalek::scalar | :heavy_check_mark: | :heavy_check_mark: |
+| [UnpackedScalar::montgomery_invert](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2616) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [read_le_u64_into](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2862) | curve25519_dalek::scalar | :heavy_check_mark: |  |
+| [clamp_integer](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/scalar.rs#L2942) | curve25519_dalek::scalar | :heavy_check_mark: |  |
 | [identity](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/traits.rs#L27) | curve25519_dalek::traits |  |  |
 | [is_identity](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/traits.rs#L33) | curve25519_dalek::traits |  |  |
 | [create](https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/curve25519-dalek/src/traits.rs#L54) | curve25519_dalek::traits |  |  |

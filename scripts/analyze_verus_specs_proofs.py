@@ -23,40 +23,42 @@ from beartype import beartype
 def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
     """
     Extract the impl block context for a function.
-    
+
     For example, if the function is inside:
         impl Identity for ProjectivePoint {
     Returns "ProjectivePoint"
-    
+
     For trait implementations like:
         impl<'a, 'b> Add<&'b Scalar> for &'a Scalar {
     Returns "Scalar" (the type being implemented for)
     """
     # Look backwards from fn_start to find the impl block
     look_back = content[:fn_start]
-    lines = look_back.split('\n')
-    
+    lines = look_back.split("\n")
+
     # Search backwards for impl block
     for i in range(len(lines) - 1, -1, -1):
         line = lines[i].strip()
-        
+
         # Stop at verus! blocks or module boundaries
-        if line.startswith('verus!') or line.startswith('mod '):
+        if line.startswith("verus!") or line.startswith("mod "):
             break
-            
+
         # Look for impl blocks
-        if line.startswith('impl'):
+        if line.startswith("impl"):
             # Try to extract the type being implemented for
             # Pattern 1: impl TraitName for TypeName {
-            match = re.search(r'impl\s+(?:<[^>]+>)?\s*\w+\s+for\s+([&\']*)([A-Za-z0-9_]+)', line)
+            match = re.search(
+                r"impl\s+(?:<[^>]+>)?\s*\w+\s+for\s+([&\']*)([A-Za-z0-9_]+)", line
+            )
             if match:
                 return match.group(2)
-            
+
             # Pattern 2: impl TypeName {  or  impl<...> TypeName {
-            match = re.search(r'impl\s*(?:<[^>]+>)?\s+([A-Za-z0-9_]+)\s*\{', line)
+            match = re.search(r"impl\s*(?:<[^>]+>)?\s+([A-Za-z0-9_]+)\s*\{", line)
             if match:
                 return match.group(1)
-    
+
     return None
 
 
@@ -64,39 +66,39 @@ def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
 def extract_module_from_path(file_path: Path, repo_root: Path) -> str:
     """
     Extract module path from file path.
-    
+
     Example:
         curve25519-dalek/src/backend/serial/curve_models/mod.rs
         -> curve25519_dalek::backend::serial::curve_models
-        
+
         curve25519-dalek/src/scalar.rs
         -> curve25519_dalek::scalar
     """
     try:
         # Get relative path from repo root
         rel_path = file_path.relative_to(repo_root)
-        
+
         # Remove curve25519-dalek/ prefix and src/ prefix
         parts = list(rel_path.parts)
-        
+
         # Skip "curve25519-dalek" and "src"
         module_parts = []
-        skip_parts = {'curve25519-dalek', 'src'}
-        
+        skip_parts = {"curve25519-dalek", "src"}
+
         for part in parts:
             if part in skip_parts:
                 continue
             # Remove .rs extension or mod.rs
-            if part.endswith('.rs'):
-                if part == 'mod.rs':
+            if part.endswith(".rs"):
+                if part == "mod.rs":
                     continue
                 part = part[:-3]
-            module_parts.append(part.replace('-', '_'))
-        
+            module_parts.append(part.replace("-", "_"))
+
         # Prepend crate name
-        return 'curve25519_dalek::' + '::'.join(module_parts)
+        return "curve25519_dalek::" + "::".join(module_parts)
     except:
-        return 'curve25519_dalek'
+        return "curve25519_dalek"
 
 
 @beartype
@@ -128,19 +130,19 @@ def parse_function_in_file(
     matches = list(re.finditer(fn_pattern, content))
 
     assert matches
-    
+
     # If we have an old link with a line number, use it to find the closest match
     target_line = None
     if old_link:
         line_match = re.search(r"#L(\d+)", old_link)
         if line_match:
             target_line = int(line_match.group(1))
-    
+
     # If there are multiple matches and we have a target line, sort by proximity to target
     if target_line and len(matches) > 1:
         matches_with_lines = []
         for match in matches:
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             distance = abs(line_num - target_line)
             matches_with_lines.append((distance, match))
         matches_with_lines.sort(key=lambda x: x[0])
@@ -211,7 +213,9 @@ def parse_function_in_file(
             # Trait methods don't have specs/proofs, just return line number
             # Try to extract impl context
             impl_context = extract_impl_context(content, fn_start)
-            qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
+            qualified_name = (
+                f"{impl_context}::{function_name}" if impl_context else function_name
+            )
             return (False, False, False, line_number, qualified_name)
 
         # Look backwards from fn_start to find any attributes
@@ -252,10 +256,12 @@ def parse_function_in_file(
         # Calculate line number for ALL functions (even those without specs)
         # This ensures CSV links are always up-to-date
         line_number = content[:fn_start].count("\n") + 1
-        
+
         # Extract impl context for qualified name
         impl_context = extract_impl_context(content, fn_start)
-        qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
+        qualified_name = (
+            f"{impl_context}::{function_name}" if impl_context else function_name
+        )
 
         # If neither specs nor external_body, return early with just the line number
         if not has_spec and not has_verifier_external:
@@ -318,14 +324,22 @@ def parse_function_in_file(
         has_spec_or_external = has_spec or has_verifier_external
 
         # Line number and qualified name were already calculated earlier
-        return (has_spec_or_external, has_proof, has_verifier_external, line_number, qualified_name)
+        return (
+            has_spec_or_external,
+            has_proof,
+            has_verifier_external,
+            line_number,
+            qualified_name,
+        )
 
     # Probably what's happened is that we saw the function, but
     # it doesn't have a spec yet
     # Return line 0 if we couldn't find the function properly
     # Try to get impl context even if function not found
     impl_context = extract_impl_context(content, 0) if matches else None
-    qualified_name = f"{impl_context}::{function_name}" if impl_context else function_name
+    qualified_name = (
+        f"{impl_context}::{function_name}" if impl_context else function_name
+    )
     return (False, False, False, 0, qualified_name)
 
 
@@ -368,13 +382,13 @@ def analyze_functions(
         rows = [row for row in reader]
 
     results = {}
-    
+
     # Keep track of functions we've seen to detect macro-generated duplicates
     seen_functions = {}
 
     for row in rows:
         func_name = row["function"]
-        
+
         # If the function name is qualified (e.g., "Type::function"), extract just the function part
         if "::" in func_name:
             func_name = func_name.split("::")[-1]
@@ -400,11 +414,13 @@ def analyze_functions(
         else:
             # Function not found, keep old link
             new_link = github_link
-        
+
         # Check for macro-generated duplicates (same file, same function name, same line)
         func_key = f"{target_file}::{qualified_name}::{line_number}"
         if func_key in seen_functions:
-            print(f"  Skipping duplicate (macro-generated): {qualified_name} at line {line_number}")
+            print(
+                f"  Skipping duplicate (macro-generated): {qualified_name} at line {line_number}"
+            )
             continue
         seen_functions[func_key] = True
 
@@ -418,12 +434,8 @@ def analyze_functions(
             module_name,
         )
         ext_marker = " [external_body]" if is_external_body else ""
-        print(
-            f"  Found: {qualified_name} in module {module_name}"
-        )
-        print(
-            f"    spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}"
-        )
+        print(f"  Found: {qualified_name} in module {module_name}")
+        print(f"    spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}")
 
     return results
 
@@ -499,7 +511,9 @@ def update_links_to_main_branch(csv_path: Path):
 
 
 @beartype
-def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str]]):
+def update_csv(
+    csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str]]
+):
     """Update the CSV file with Verus analysis results and new structure."""
     # Read the CSV
     rows = []
@@ -511,21 +525,27 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, s
 
     # New fieldnames: drop lean columns, add module, rename columns
     new_fieldnames = ["function", "module", "link", "has_spec", "has_proof"]
-    
+
     # Update rows with results and new structure
     # Use a set to track which results we've already written (avoid duplicates)
     new_rows = []
     written_results = set()
-    
+
     for row in rows:
         old_link = row["link"]
         if old_link in results and old_link not in written_results:
             written_results.add(old_link)
-            
-            has_spec, has_proof, is_external_body, line_number, new_link, qualified_name, module_name = results[
-                old_link
-            ]
-            
+
+            (
+                has_spec,
+                has_proof,
+                is_external_body,
+                line_number,
+                new_link,
+                qualified_name,
+                module_name,
+            ) = results[old_link]
+
             new_row = {
                 "function": qualified_name,
                 "module": module_name,
@@ -545,10 +565,16 @@ def update_csv(csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, s
     print(f"\nCSV file updated: {csv_path}")
 
     # Print summary
-    spec_count = sum(1 for _, (has_spec, _, _, _, _, _, _) in results.items() if has_spec)
-    proof_count = sum(1 for _, (_, has_proof, _, _, _, _, _) in results.items() if has_proof)
+    spec_count = sum(
+        1 for _, (has_spec, _, _, _, _, _, _) in results.items() if has_spec
+    )
+    proof_count = sum(
+        1 for _, (_, has_proof, _, _, _, _, _) in results.items() if has_proof
+    )
     external_count = sum(
-        1 for _, (has_spec, _, is_ext, _, _, _, _) in results.items() if has_spec and is_ext
+        1
+        for _, (has_spec, _, is_ext, _, _, _, _) in results.items()
+        if has_spec and is_ext
     )
     full_spec_count = spec_count - external_count
     total = len(results)

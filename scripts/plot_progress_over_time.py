@@ -112,7 +112,7 @@ def analyze_csv_at_commit(
         # Support both old and new column names
         spec_col = "has_spec" if "has_spec" in rows[0] else "has_spec_verus"
         proof_col = "has_proof" if "has_proof" in rows[0] else "has_proof_verus"
-        
+
         has_verus_spec_col = spec_col in rows[0]
         has_verus_proof_col = proof_col in rows[0]
 

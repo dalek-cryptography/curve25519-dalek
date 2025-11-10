@@ -14,12 +14,8 @@ def create_csv_preview() -> None:
 
     # Sample functions to show - mix of different statuses
     verified = df[df["has_proof"] == "yes"].head(8)
-    with_specs = df[
-        (df["has_spec"] == "yes") & (df["has_proof"] != "yes")
-    ].head(8)
-    no_specs = df[
-        (df["has_spec"] != "yes") & (df["has_proof"] != "yes")
-    ].head(8)
+    with_specs = df[(df["has_spec"] == "yes") & (df["has_proof"] != "yes")].head(8)
+    no_specs = df[(df["has_spec"] != "yes") & (df["has_proof"] != "yes")].head(8)
 
     # Combine samples
     sample = pd.concat([verified, with_specs, no_specs]).head(25)

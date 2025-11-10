@@ -17,12 +17,8 @@ def main():
         # Prepare markdown content
         lines = []
         lines.append("# Curve25519 Functions\n")
-        lines.append(
-            "| Function | Module | Has Spec (Verus) | Has Proof (Verus) |"
-        )
-        lines.append(
-            "|----------|--------|:----------------:|:-----------------:|"
-        )
+        lines.append("| Function | Module | Has Spec (Verus) | Has Proof (Verus) |")
+        lines.append("|----------|--------|:----------------:|:-----------------:|")
 
         for row in reader:
             function_name = row["function"].strip()
@@ -49,9 +45,7 @@ def main():
             spec_cb = to_checkbox(has_spec)
             proof_cb = to_checkbox(has_proof)
 
-            lines.append(
-                f"| {function_cell} | {module} | {spec_cb} | {proof_cb} |"
-            )
+            lines.append(f"| {function_cell} | {module} | {spec_cb} | {proof_cb} |")
 
         # Write to markdown file
         with open(md_path, "w", encoding="utf-8") as mdfile:

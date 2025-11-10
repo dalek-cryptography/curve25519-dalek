@@ -30,6 +30,7 @@ use super::scalar_specs::*;
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+use vstd::calc;
 use vstd::prelude::*;
 
 verus! {
@@ -804,9 +805,44 @@ impl Scalar52 {
         ensures
             to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false);  // TODO: Add proofs
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+
         let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
+
+        assert((to_nat(&aa.limbs) * montgomery_radix()) % group_order() == (to_nat(&self.limbs)
+            * to_nat(&self.limbs)) % group_order());
+
+        // square_internal ensures
+        // ensures
+        //     slice128_to_nat(&z) == to_nat(&a.limbs) * to_nat(&a.limbs),
+
+        let result = Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR));
+
+        assert((to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&aa.limbs)
+            * to_nat(&constants::RR.limbs)) % group_order());
+
+        proof {
+            // 1. prove (to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix()*montgomery_radix()) % group_order()
+            lemma_rr_equals_spec(constants::RR);
+
+            // 2. Reduce to (to_nat(&result.limbs)) % group_order() == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order()
+            lemma_cancel_mul_montgomery_mod(
+                to_nat(&result.limbs),
+                to_nat(&aa.limbs),
+                to_nat(&constants::RR.limbs),
+            );
+
+            // 3. allows us to assert (to_nat(&result.limbs)) % group_order() == (to_nat(&result.limbs))
+            //  true from montgomery_reduce postcondition
+            lemma_small_mod((to_nat(&result.limbs)), group_order())
+        }
+
+        assert((to_nat(&result.limbs)) % group_order() == (to_nat(&aa.limbs) * montgomery_radix())
+            % group_order());
+
+        result
     }
 
     /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260

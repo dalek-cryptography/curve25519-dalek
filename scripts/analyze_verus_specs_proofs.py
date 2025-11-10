@@ -392,14 +392,20 @@ def discover_function_in_module(
         possible_paths.append(src_dir / "curve25519-dalek" / "build.rs")
     else:
         # Try both .rs file and mod.rs
-        possible_paths.extend([
-            src_dir
-            / "curve25519-dalek"
-            / "src"
-            / "/".join(module_parts[:-1])
-            / f"{module_parts[-1]}.rs",
-            src_dir / "curve25519-dalek" / "src" / "/".join(module_parts) / "mod.rs",
-        ])
+        possible_paths.extend(
+            [
+                src_dir
+                / "curve25519-dalek"
+                / "src"
+                / "/".join(module_parts[:-1])
+                / f"{module_parts[-1]}.rs",
+                src_dir
+                / "curve25519-dalek"
+                / "src"
+                / "/".join(module_parts)
+                / "mod.rs",
+            ]
+        )
 
     # Extract just the function name (without Type:: prefix if present)
     func_name = (

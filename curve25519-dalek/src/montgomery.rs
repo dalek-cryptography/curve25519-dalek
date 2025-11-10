@@ -59,6 +59,8 @@ use crate::scalar::{clamp_integer, Scalar};
 
 use crate::traits::Identity;
 
+use crate::backend::serial::u64::subtle_assumes::choice_into;
+
 use subtle::Choice;
 use subtle::ConstantTimeEq;
 use subtle::{ConditionallyNegatable, ConditionallySelectable};
@@ -75,7 +77,6 @@ verus! {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MontgomeryPoint(pub [u8; 32]);
 
-} // verus!
 /// Equality of `MontgomeryPoint`s is defined mod p.
 impl ConstantTimeEq for MontgomeryPoint {
     fn ct_eq(&self, other: &MontgomeryPoint) -> Choice {
@@ -86,14 +87,47 @@ impl ConstantTimeEq for MontgomeryPoint {
     }
 }
 
-impl PartialEq for MontgomeryPoint {
-    fn eq(&self, other: &MontgomeryPoint) -> bool {
-        self.ct_eq(other).into()
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::cmp::PartialEqSpecImpl for MontgomeryPoint {
+    open spec fn obeys_eq_spec() -> bool {
+        false  // Equality is based on constant-time comparison
+
+    }
+
+    open spec fn eq_spec(&self, other: &Self) -> bool {
+        // Two MontgomeryPoints are equal if their byte representations are equal
+        // (after conversion to canonical FieldElement form)
+        self.0@ == other.0@
     }
 }
 
-impl Eq for MontgomeryPoint {}
+impl PartialEq for MontgomeryPoint {
+    // VERIFICATION NOTE: PartialEqSpecImpl trait provides the external specification
+    fn eq(&self, other: &MontgomeryPoint) -> (result: bool)
+        ensures
+            result == (self.0@ == other.0@),
+    {
+        /* <VERIFICATION NOTE>
+         Use wrapper function for Choice::into
+        </VERIFICATION NOTE> */
+        /* <ORIGINAL CODE>
+         self.ct_eq(other).into()
+         </ORIGINAL CODE> */
+        let choice = self.ct_eq(other);
+        let result = choice_into(choice);
 
+        // VERIFICATION NOTE: Need to prove the postcondition
+        assume(result == (self.0@ == other.0@));
+
+        result
+    }
+}
+
+impl Eq for MontgomeryPoint {
+
+}
+
+} // verus!
 // Equal MontgomeryPoints must hash to the same value. So we have to get them into a canonical
 // encoding first
 impl Hash for MontgomeryPoint {

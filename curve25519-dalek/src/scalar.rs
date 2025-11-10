@@ -346,11 +346,23 @@ impl Eq for Scalar {
 
 }
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::cmp::PartialEqSpecImpl for Scalar {
+    open spec fn obeys_eq_spec() -> bool {
+        true  // Scalar equality is straightforward byte comparison
+
+    }
+
+    open spec fn eq_spec(&self, other: &Self) -> bool {
+        self.bytes == other.bytes
+    }
+}
+
 impl PartialEq for Scalar {
-    // VERIFICATION NOTE: PROOF BYPASS (problem with traits)
+    // VERIFICATION NOTE: PartialEqSpecImpl trait provides the external specification
     fn eq(&self, other: &Self) -> (result: bool)
         ensures
-            result == (&self.bytes == &other.bytes),
+            result == (self.bytes == other.bytes),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -363,12 +375,6 @@ impl PartialEq for Scalar {
         let result = choice_into(choice);
         assert(result == choice_is_true(choice));
         assert(result == (self.bytes == other.bytes));
-
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        // vstd expects obeys_eq_spec() and eq_spec() from PartialEqSpecImpl trait,
-        // but that trait is not publicly exported, so we bypass with assume(false)
-        // while maintaining our own custom ensures clause above
-        assume(false);
 
         result
     }

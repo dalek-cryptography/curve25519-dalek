@@ -381,13 +381,19 @@ def analyze_functions(
         reader = csv.DictReader(f)
         rows = [row for row in reader]
 
+    # Detect column names (backward compatibility)
+    if rows:
+        func_col = "function" if "function" in rows[0] else "function_name"
+    else:
+        func_col = "function"
+
     results = {}
 
     # Keep track of functions we've seen to detect macro-generated duplicates
     seen_functions = {}
 
     for row in rows:
-        func_name = row["function"]
+        func_name = row[func_col]
 
         # If the function name is qualified (e.g., "Type::function"), extract just the function part
         if "::" in func_name:
@@ -522,10 +528,10 @@ def update_csv(
         for row in reader:
             rows.append(row)
 
-    # New fieldnames: drop lean columns, add module, rename columns
-    new_fieldnames = ["function", "module", "link", "has_spec", "has_proof"]
+    # Always write in new format
+    fieldnames = ["function", "module", "link", "has_spec", "has_proof"]
 
-    # Update rows with results and new structure
+    # Update rows with results
     # Use a set to track which results we've already written (avoid duplicates)
     new_rows = []
     written_results = set()
@@ -545,6 +551,7 @@ def update_csv(
                 module_name,
             ) = results[old_link]
 
+            # Always write in new format
             new_row = {
                 "function": qualified_name,
                 "module": module_name,
@@ -557,7 +564,7 @@ def update_csv(
 
     # Write the updated CSV back to the same file
     with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=new_fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(new_rows)
 

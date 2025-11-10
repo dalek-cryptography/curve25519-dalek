@@ -121,7 +121,32 @@ pub proof fn field_inv_axiom(a: nat)
     admit();  // This would be proven from field theory or assumed as axiom
 }
 
-pub open spec fn field_element_as_bytes(fe: &FieldElement51) -> Seq<u8> {
+/// Spec function for FieldElement::from_bytes
+/// Takes a 32-byte array and produces a FieldElement51
+/// The high bit of byte[31] is ignored, giving a 255-bit value
+pub open spec fn fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+    // Mimic the implementation in field_verus.rs:from_bytes
+    // Load 8-byte chunks at specified offsets and mask to 51-bit limbs
+    let low_51_bit_mask = mask51;
+
+    FieldElement51 {
+        limbs: [
+        // load bits [  0, 64), mask to 51 bits
+
+            (load8_at_spec(bytes, 0) as u64) & low_51_bit_mask,
+            // load bits [ 48,112), shift right by 3, mask to 51 bits
+            ((load8_at_spec(bytes, 6) as u64) >> 3) & low_51_bit_mask,
+            // load bits [ 96,160), shift right by 6, mask to 51 bits
+            ((load8_at_spec(bytes, 12) as u64) >> 6) & low_51_bit_mask,
+            // load bits [152,216), shift right by 1, mask to 51 bits
+            ((load8_at_spec(bytes, 19) as u64) >> 1) & low_51_bit_mask,
+            // load bits [192,256), shift right by 12, mask to 51 bits (this ignores high bit)
+            ((load8_at_spec(bytes, 24) as u64) >> 12) & low_51_bit_mask,
+        ],
+    }
+}
+
+pub open spec fn fe51_to_bytes(fe: &FieldElement51) -> Seq<u8> {
     // Step 1: Basic reduction to ensure h < 2*p
     let limbs = spec_reduce(fe.limbs);
 

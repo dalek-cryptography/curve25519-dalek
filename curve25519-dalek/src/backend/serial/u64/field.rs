@@ -320,6 +320,7 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
         ensures
             output == spec_sub_limbs(self, _rhs),
             field_element(&output) == field_sub(field_element(self), field_element(_rhs)),
+            limbs_bounded(&output, 54),
     {
         // To avoid underflow, first add a multiple of p.
         // Choose 16*p = p << 4 to be larger than 54-bit _rhs.
@@ -395,6 +396,7 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
 
         ensures
             field_element(&output) == field_mul(field_element(self), field_element(_rhs)),
+            limbs_bounded(&output, 54),
     {
         /// Helper function to multiply two 64-bit integers with 128
         /// bits of output.

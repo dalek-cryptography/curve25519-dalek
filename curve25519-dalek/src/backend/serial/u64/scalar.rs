@@ -31,6 +31,8 @@ use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
+#[allow(unused_imports)]
+use vstd::arithmetic::mul::*;
 
 verus! {
 
@@ -790,9 +792,22 @@ impl Scalar52 {
             // VER NOTE: Result is canonical from montgomery_reduce
             to_nat(&result.limbs) < group_order(),
     {
-        assume(false);  // TODO: Add proofs
-        let ab = Scalar52::montgomery_reduce(&Scalar52::mul_internal(a, b));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&ab, &constants::RR))
+        let product_ab = Scalar52::mul_internal(a, b);
+        let ab = Scalar52::montgomery_reduce(&product_ab);
+        
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+        
+        let product_ab_rr = Scalar52::mul_internal(&ab, &constants::RR);
+        let result = Scalar52::montgomery_reduce(&product_ab_rr);
+        
+        proof {
+            lemma_rr_equals_r_squared();
+            lemma_mul_montgomery_chain(a, b, &ab, &result);
+        }
+        
+        result
     }
 
     /// Compute `a^2` (mod l)
@@ -804,9 +819,23 @@ impl Scalar52 {
         ensures
             to_nat(&result.limbs) == (to_nat(&self.limbs) * to_nat(&self.limbs)) % group_order(),
     {
-        assume(false);  // TODO: Add proofs
-        let aa = Scalar52::montgomery_reduce(&Scalar52::square_internal(self));
-        Scalar52::montgomery_reduce(&Scalar52::mul_internal(&aa, &constants::RR))
+        let product_aa = Scalar52::square_internal(self);
+        let aa = Scalar52::montgomery_reduce(&product_aa);
+        
+        proof {
+            lemma_rr_limbs_bounded();
+        }
+        
+        let product_aa_rr = Scalar52::mul_internal(&aa, &constants::RR);
+        let result = Scalar52::montgomery_reduce(&product_aa_rr);
+        
+        proof {
+            lemma_rr_equals_r_squared();
+            lemma_mul_montgomery_chain(self, self, &aa, &result);
+            lemma_small_mod(to_nat(&result.limbs), group_order());
+        }
+        
+        result
     }
 
     /// Compute `(a * b) / R` (mod l), where R is the Montgomery modulus 2^260
@@ -850,8 +879,29 @@ impl Scalar52 {
             lemma_rr_limbs_bounded();
         }
         let result = Scalar52::montgomery_mul(self, &constants::RR);
-        assume(to_nat(&result.limbs) % group_order() == (to_nat(&self.limbs) * montgomery_radix())
-            % group_order());
+        
+        proof {
+            let r = montgomery_radix();
+            let l = group_order();
+            let self_val = to_nat(&self.limbs);
+            let result_val = to_nat(&result.limbs);
+            let rr_val = to_nat(&constants::RR.limbs);
+            
+            lemma_rr_equals_r_squared();
+            
+            assert((self_val * rr_val) % l == (self_val * (r * r)) % l) by {
+                lemma_mod_mul_exact(self_val, rr_val, r * r, l);
+            };
+            
+            assert((self_val * (r * r)) % l == ((self_val * r) * r) % l) by {
+                lemma_mul_is_associative(self_val as int, r as int, r as int);
+                lemma_mul_mod_noop_general((self_val * r) as int, r as int, l as int);
+            };
+            
+            lemma_l_is_odd();
+            lemma_modular_cancellation_power_of_2(result_val, self_val * r, 260, l);
+        }
+        
         result
     }
 

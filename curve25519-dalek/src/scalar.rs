@@ -148,6 +148,8 @@ use subtle::CtOption;
 use zeroize::Zeroize;
 
 use crate::backend;
+#[cfg(verus_keep_ghost)]
+use crate::backend::serial::u64::field_lemmas::field_core::spec_as_bytes;
 use crate::constants;
 
 #[allow(unused_imports)]
@@ -2541,7 +2543,70 @@ impl UnpackedScalar {
         }
         let result = Scalar { bytes: bytes };
         // VERIFICATION NOTE: TODO: Prove these follow from as_bytes() spec
-        assume(to_nat(&self.limbs) < group_order() ==> is_canonical_scalar(&result));
+        // result.bytes is [u8; 32]
+        // group order is pow2(252) + 27742317777372353535851937790883648493nat
+        // if result.bytes[31] > 127, then when we apply bytes_to_nat, we'll end up with
+        // something large than group_order, contradiction
+        // bytes[31] * 2^(31*8) + ...
+        // 127 * 2^(31*8) == 57443731770074831323412168344153766786583156455220123566449660816425654157312
+        // group order is     7237005577332262213973186563042994240857116359379907606001950938285454250989
+        // which is smaller
+        // unfold with fuel 32
+        // Another approach is like lemma_nine_limbs_equals_slice128_to_nat,
+        // which shows that a recursive defn equals a large polynomial
+
+        proof {
+            if to_nat(&self.limbs) < group_order() {
+                use crate::backend::serial::u64::scalar_lemmas::lemma_scalar52_lt_pow2_256_if_canonical;
+
+                lemma_scalar52_lt_pow2_256_if_canonical(self);
+                lemma_small_mod(to_nat(&self.limbs), pow2(256));
+                assert(to_nat(&self.limbs) % pow2(256) == to_nat(&self.limbs));
+                assert(bytes_to_nat(&result.bytes) == to_nat(&self.limbs));
+
+                let v = bytes_to_nat(&result.bytes);
+
+                use crate::backend::serial::u64::backend_64_core::as_nat_32_u8;
+                assert(bytes_to_nat(&result.bytes) == as_nat_32_u8(&result.bytes));
+
+                assert(v == bytes_to_nat(&result.bytes));
+                assert(v < group_order());
+                {
+                    use crate::backend::serial::u64::scalar_lemmas::lemma_group_order_bound;
+                    lemma_group_order_bound();
+                    assert(group_order() < pow2(255));
+
+                    assert(v < pow2(255));  // by transitivity
+
+                    let b31: nat = result.bytes[31] as nat;
+                    if b31 >= 128 {
+                        // v ≥ b31*2^248 ≥ 2^255
+                        use vstd::arithmetic::power2::{pow2, lemma_pow2_adds, lemma2_to64};
+                        use vstd::arithmetic::mul::lemma_mul_inequality;
+
+                        // Use the lemma
+                        use crate::backend::serial::u64::scalar_lemmas::lemma_bytes_to_nat_lower_bound;
+                        lemma_bytes_to_nat_lower_bound(&result.bytes, 31);
+
+                        lemma_pow2_adds(7, 248);
+
+                        lemma2_to64();
+
+                        // Keep types consistent; either do it in `int`:
+                        assert((pow2(255) as nat) == 128 * (pow2(248) as nat));
+                        assert(v >= b31 * pow2(248));
+                        lemma_mul_inequality(128, b31 as int, pow2(248) as int);
+
+                        assert(b31 >= 128);
+                        assert(v >= pow2(255));
+                        assert(false);  // contradicts v < 2^255
+                    }
+                    assert(result.bytes[31] <= 127);
+
+                    assert(is_canonical_scalar(&result));
+                }
+            }
+        }
         result
     }
 

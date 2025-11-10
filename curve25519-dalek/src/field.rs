@@ -67,17 +67,27 @@ impl Eq for FieldElement {
 
 }
 
+#[cfg(verus_keep_ghost)]
+impl vstd::std_specs::cmp::PartialEqSpecImpl for FieldElement {
+    open spec fn obeys_eq_spec() -> bool {
+        false
+    }
+
+    open spec fn eq_spec(&self, other: &Self) -> bool {
+        field_element_as_bytes(self) == field_element_as_bytes(other)
+    }
+}
+
 impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> (result:
-        bool)
-    // VERIFICATION NOTE: PROOF BYPASS AND SPEC BYPASS
+        bool)/* VERIFICATION NOTE:
+     - PROOF BYPASS
+     - DRAFT SPEC: field_element_as_bytes is a complex spec function that should correspond to as_bytes()
+     - PartialEqSpecImpl trait provides the external specification
+     */
 
         ensures
-            result == (field_element_as_bytes(self) == field_element_as_bytes(
-                other,
-            )),
-    // SPEC BYPASS through placeholder field_element_as_bytes
-
+            result == (field_element_as_bytes(self) == field_element_as_bytes(other)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -88,10 +98,8 @@ impl PartialEq for FieldElement {
         let choice = self.ct_eq(other);
         let result = choice_into(choice);
 
-        // VERIFICATION NOTE: vstd's external trait specification check cannot be satisfied
-        // vstd expects obeys_eq_spec() and eq_spec() from PartialEqSpecImpl trait,
-        // but that trait is not publicly exported, so we bypass with assume(false)
-        assume(false);
+        // VERIFICATION NOTE: Need to prove the postcondition
+        assume(result == (field_element_as_bytes(self) == field_element_as_bytes(other)));
 
         result
     }
@@ -103,16 +111,15 @@ impl ConstantTimeEq for FieldElement {
     /// are normalized to wire format before comparison.
     fn ct_eq(&self, other: &FieldElement) -> (result:
         Choice)/* <VERIFICATION NOTE>
-     - PROOF BYPASS AND SPEC BYPASS
+     - PROOF BYPASS
      - Use wrapper functions for ConstantTimeEq and CtOption
+     - DRAFT SPEC: field_element_as_bytes is a complex spec function that should correspond to as_bytes()
     </VERIFICATION NOTE> */
 
         ensures
             choice_is_true(result) == (field_element_as_bytes(self) == field_element_as_bytes(
                 other,
             )),
-    // SPEC BYPASS through placeholder field_element_as_bytes
-
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Verus compatibility instead of direct subtle call

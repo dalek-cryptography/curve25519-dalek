@@ -18,11 +18,6 @@ pub open spec fn limbs_bounded(fe: &FieldElement51, bit_limit: u64) -> bool {
     forall|i: int| 0 <= i < 5 ==> fe.limbs[i] < (1u64 << bit_limit)
 }
 
-/// Spec predicate: addition of limbs will not overflow u64
-pub open spec fn spec_add_no_overflow(a: &FieldElement51, b: &FieldElement51) -> bool {
-    forall|i: int| 0 <= i < 5 ==> #[trigger] (a.limbs[i] + b.limbs[i]) <= u64::MAX
-}
-
 /// Spec function: result of limb-wise addition (what add_spec returns)
 pub open spec fn spec_add_limbs(a: &FieldElement51, b: &FieldElement51) -> FieldElement51 {
     FieldElement51 {

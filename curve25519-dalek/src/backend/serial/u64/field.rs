@@ -170,7 +170,7 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            spec_add_no_overflow(old(self), _rhs),
+            spec_add_req(old(self), _rhs),
         ensures
             *self == spec_add_limbs(old(self), _rhs),
             field_element(self) == spec_field_add(old(self), _rhs),
@@ -207,13 +207,17 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        spec_add_no_overflow(self, rhs)
+        spec_add_req(self, rhs)
     }
 
     // Postcondition of add - delegates to spec_add_limbs for consistency
     open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
         spec_add_limbs(self, rhs)
     }
+}
+
+pub open spec fn spec_add_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
+    forall|i: int| 0 <= i < 5 ==> #[trigger] (lhs.limbs[i] + rhs.limbs[i]) <= u64::MAX
 }
 
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
@@ -310,6 +314,11 @@ impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
     }
 }
 
+/// Spec function for sub requirement - matches SubSpecImpl::sub_req
+pub open spec fn spec_sub_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
+    limbs_bounded(lhs, 54) && limbs_bounded(rhs, 54)
+}
+
 impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
@@ -372,9 +381,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of mul
     open spec fn mul_req(self, rhs: &FieldElement51) -> bool {
-        forall|i: int|
-            0 <= i < 5 ==> self.limbs[i] < (1u64 << 54) && forall|i: int|
-                0 <= i < 5 ==> rhs.limbs[i] < (1u64 << 54)
+        spec_mul_req(self, rhs)
     }
 
     // Postcondition of mul
@@ -382,6 +389,13 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
         // VERIFICATION NOTE: WE DON'T PROVIDE A SPEC EXPRESSION FOR mul RESULT
         arbitrary()
     }
+}
+
+/// Spec function for mul requirement - matches MulSpecImpl::mul_req
+pub open spec fn spec_mul_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
+    forall|i: int|
+        0 <= i < 5 ==> lhs.limbs[i] < (1u64 << 54) && forall|i: int|
+            0 <= i < 5 ==> rhs.limbs[i] < (1u64 << 54)
 }
 
 impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {

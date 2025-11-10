@@ -129,8 +129,6 @@ def parse_function_in_file(
     # Find all occurrences of the function
     matches = list(re.finditer(fn_pattern, content))
 
-    assert matches
-
     # If we have an old link with a line number, use it to find the closest match
     target_line = None
     if old_link:
@@ -418,8 +416,8 @@ def discover_function_in_module(
 
         # Try to find the function in this file
         result = parse_function_in_file(file_path, func_name, "")
-        if result:
-            has_spec, has_proof, is_external_body, line_number, found_qualified = result
+        has_spec, has_proof, is_external_body, line_number, found_qualified = result
+        if line_number > 0:
             # Generate GitHub link
             relative_path = file_path.relative_to(src_dir)
             github_link = f"https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/{relative_path}#L{line_number}"
@@ -473,11 +471,10 @@ def analyze_functions(
 
         # Re-analyze to get full details (spec, proof, etc.)
         result = parse_function_in_file(target_file, func_name, github_link)
-        if not result:
+        has_spec, has_proof, is_external_body, line_number, found_qualified = result
+        if line_number == 0:
             print("  WARNING: Could not re-analyze function, skipping")
             continue
-
-        has_spec, has_proof, is_external_body, line_number, found_qualified = result
 
         # Check for macro-generated duplicates (same file, same function name, same line)
         func_key = f"{target_file}::{found_qualified}::{line_number}"

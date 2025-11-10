@@ -381,7 +381,8 @@ def discover_function_in_module(
     """
     # Convert module path to file path
     # e.g., "curve25519_dalek::backend::serial::u64::field" -> "curve25519-dalek/src/backend/serial/u64/field.rs"
-    module_parts = module.replace("curve25519_dalek::", "").split("::")
+    module_stripped = module.replace("curve25519_dalek::", "")
+    module_parts = module_stripped.split("::") if module_stripped else []
 
     # Handle special cases
     possible_paths = []

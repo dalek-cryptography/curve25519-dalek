@@ -423,13 +423,23 @@ pub proof fn lemma_from_montgomery_limbs_conversion(limbs: &[u128; 9], self_limb
     ));
 }
 
-pub proof fn lemma_rr_limbs_bounded()
+// =========== workouround visibility issues in Verus ======
+// pub proof fn lemma_rr_limbs_bounded()
+//     ensures
+//         0x000d63c715bea69fu64 < (1u64 << 52),
+// {
+//     // Verus can figure that out the other 4 limbs are bounded
+//     assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
+// }
+
+#[verifier::external_body]
+pub(crate) proof fn lemma_rr_limbs_bounded()
     ensures
-        0x000d63c715bea69fu64 < (1u64 << 52),
+        forall|i: int| 0 <= i < 5 ==> (#[trigger] constants::RR.limbs[i]) < (1u64 << 52),
 {
-    // Verus can figure that out the other 4 limbs are bounded
-    assert(0x000d63c715bea69fu64 < (1u64 << 52)) by (bit_vector);
 }
+// =========== end of workouround visibility issues in Verus ======
+
 
 /// Need to use induction because the postcondition expands
 /// seq_u64_to_nat in the opposite way from how it's defined.

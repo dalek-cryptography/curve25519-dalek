@@ -6,9 +6,13 @@ on:
       - main
     paths:
       - 'docs/**'
-      - 'outputs/curve25519_functions.csv'
+      - 'functions_to_track.csv'
+      - 'scripts/analyze_verus_specs_proofs.py'
       - 'scripts/plot_*.py'
+      - 'scripts/csv_to_markdown.py'
       - '.github/workflows/deploy-pages.yml'
+      - 'curve25519-dalek/src/**/*.rs'
+      - 'curve25519-dalek/build.rs'
   workflow_dispatch:
 
 # Sets permissions for GitHub Pages deployment
@@ -39,6 +43,15 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install matplotlib pandas gitpython beartype
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Generate CSV from seed file
+        run: |
+          scripts/analyze_verus_specs_proofs.py
 
       - name: Generate charts
         run: |

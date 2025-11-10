@@ -4,51 +4,24 @@ on:
   pull_request:
 
 jobs:
-  update-csv:
-    name: Update CSV with Verus specs analysis
+  check-csv:
+    name: Check CSV generation works
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.DALEK_LITE_WRITE_TOKEN }}
           fetch-depth: 0  # Full history for temporal charts
-      - name: Check if previous commit is from bot
-        id: check_bot
-        run: |
-          LAST_COMMIT_MSG=$(git log -1 --format='%s')
-          if [[ "$LAST_COMMIT_MSG" == "Bot: Update count of Verus proofs/specs"* ]]; then
-            echo "previous_was_bot=true" >> $GITHUB_OUTPUT
-          else
-            echo "previous_was_bot=false" >> $GITHUB_OUTPUT
-          fi
       - name: Install uv
-        if: steps.check_bot.outputs.previous_was_bot == 'false'
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Run analyze and csv scripts
-        if: steps.check_bot.outputs.previous_was_bot == 'false'
+      - name: Generate CSV from seed file
         run: |
           scripts/analyze_verus_specs_proofs.py
           scripts/csv_to_markdown.py
-      - name: Check for changes
-        if: steps.check_bot.outputs.previous_was_bot == 'false'
-        id: check_changes
-        run: |
-          git add -N outputs/
-          if git diff --quiet outputs/; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
-      - name: Commit and push if changed
-        if: steps.check_bot.outputs.previous_was_bot == 'false' && steps.check_changes.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add outputs/
-          git commit -m "Bot: Update count of Verus proofs/specs"
-          git push
+      - name: Upload CSV as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: curve25519-functions-csv
+          path: outputs/curve25519_functions.csv
+          retention-days: 30

@@ -18,6 +18,16 @@ from pathlib import Path
 from typing import Dict, Tuple, Optional
 from beartype import beartype
 
+# Constants
+CRATE_NAME = "curve25519_dalek"
+CRATE_DIR = "curve25519-dalek"
+GITHUB_REPO = "Beneficial-AI-Foundation/dalek-lite"
+
+# Special module mappings (modules with non-standard file locations)
+SPECIAL_MODULES = {
+    "build": lambda src_dir: src_dir / CRATE_DIR / "build.rs",
+}
+
 
 @beartype
 def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
@@ -128,8 +138,6 @@ def parse_function_in_file(
 
     # Find all occurrences of the function
     matches = list(re.finditer(fn_pattern, content))
-
-    assert matches
 
     # If we have an old link with a line number, use it to find the closest match
     target_line = None
@@ -367,25 +375,82 @@ def extract_file_path_from_link(link: str, src_dir: Path) -> Path:
 
 
 @beartype
-def analyze_functions(
-    csv_path: Path, src_dir: Path
-) -> Dict[str, Tuple[bool, bool, bool, int, str, str, str]]:
+def discover_function_in_module(
+    qualified_func: str, module: str, src_dir: Path
+) -> Optional[Tuple[Path, int, str]]:
     """
-    Analyze all functions in the CSV and check their Verus status.
+    Discover a function in the codebase given its qualified name and module.
+
+    Args:
+        qualified_func: Function name, possibly qualified (e.g., "FieldElement51::mul" or "mul")
+        module: Module path (e.g., "curve25519_dalek::backend::serial::u64::field")
+        src_dir: Root source directory
 
     Returns:
-        Dict mapping old_link to (has_spec, has_proof, is_external_body, line_number, new_link, qualified_name, module_name)
+        Tuple of (file_path, line_number, github_link) if found, None otherwise
     """
-    # Read the CSV to get function names
-    with open(csv_path, "r") as f:
+    # Convert module path to file path
+    # e.g., "curve25519_dalek::backend::serial::u64::field" -> "curve25519-dalek/src/backend/serial/u64/field.rs"
+    module_stripped = module.replace(f"{CRATE_NAME}::", "")
+    module_parts = module_stripped.split("::") if module_stripped else []
+
+    # Handle special module cases (non-standard file locations)
+    possible_paths = []
+    module_key = module_parts[0] if module_parts else None
+    if module_key in SPECIAL_MODULES:
+        possible_paths.append(SPECIAL_MODULES[module_key](src_dir))
+    else:
+        # Try both .rs file and mod.rs
+        possible_paths.extend(
+            [
+                src_dir
+                / CRATE_DIR
+                / "src"
+                / "/".join(module_parts[:-1])
+                / f"{module_parts[-1]}.rs",
+                src_dir / CRATE_DIR / "src" / "/".join(module_parts) / "mod.rs",
+            ]
+        )
+
+    # Extract just the function name (without Type:: prefix if present)
+    func_name = (
+        qualified_func.split("::")[-1] if "::" in qualified_func else qualified_func
+    )
+
+    for file_path in possible_paths:
+        if not file_path.exists():
+            continue
+
+        # Try to find the function in this file
+        result = parse_function_in_file(file_path, func_name, "")
+        has_spec, has_proof, is_external_body, line_number, found_qualified = result
+        if line_number > 0:
+            # Generate GitHub link
+            relative_path = file_path.relative_to(src_dir)
+            github_link = f"https://github.com/{GITHUB_REPO}/blob/main/{relative_path}#L{line_number}"
+            return (file_path, line_number, github_link)
+
+    return None
+
+
+@beartype
+def analyze_functions(
+    seed_path: Path, src_dir: Path
+) -> Dict[str, Tuple[bool, bool, bool, int, str, str, str]]:
+    """
+    Analyze all functions in the seed file and check their Verus status.
+
+    Args:
+        seed_path: Path to functions_to_track.csv (just function,module columns)
+        src_dir: Root source directory
+
+    Returns:
+        Dict mapping function_module_key to (has_spec, has_proof, is_external_body, line_number, github_link, qualified_name, module_name)
+    """
+    # Read the seed CSV to get function names and modules
+    with open(seed_path, "r") as f:
         reader = csv.DictReader(f)
         rows = [row for row in reader]
-
-    # Detect column names (backward compatibility)
-    if rows:
-        func_col = "function" if "function" in rows[0] else "function_name"
-    else:
-        func_col = "function"
 
     results = {}
 
@@ -393,54 +458,53 @@ def analyze_functions(
     seen_functions = {}
 
     for row in rows:
-        func_name = row[func_col]
+        qualified_func = row["function"]
+        module = row["module"]
 
-        # If the function name is qualified (e.g., "Type::function"), extract just the function part
-        if "::" in func_name:
-            func_name = func_name.split("::")[-1]
+        # Extract just the function name for searching
+        func_name = (
+            qualified_func.split("::")[-1] if "::" in qualified_func else qualified_func
+        )
 
-        # Try to get the specific file from the GitHub link first
-        github_link = row["link"]
-        target_file = extract_file_path_from_link(github_link, src_dir)
-        print(f"Analyzing: {target_file} -> {func_name}")
+        print(f"Discovering: {qualified_func} in {module}")
 
-        # Extract module name from file path
-        module_name = extract_module_from_path(target_file, src_dir)
+        # Discover the function in the codebase
+        discovery = discover_function_in_module(qualified_func, module, src_dir)
+        if not discovery:
+            print("  WARNING: Function not found in codebase, skipping")
+            continue
 
-        # Search only in the specific file mentioned in the CSV
-        print(f"  Checking specific file: {target_file.name}")
+        target_file, line_number, github_link = discovery
+
+        # Re-analyze to get full details (spec, proof, etc.)
         result = parse_function_in_file(target_file, func_name, github_link)
-        has_spec, has_proof, is_external_body, line_number, qualified_name = result
-
-        # Update the link with the correct line number
-        # Replace the line number in the link: #L123 -> #L{line_number}
-        # Only update if we found the function (line_number > 0)
-        if line_number > 0:
-            new_link = re.sub(r"#L\d+", f"#L{line_number}", github_link)
-        else:
-            # Function not found, keep old link
-            new_link = github_link
+        has_spec, has_proof, is_external_body, line_number, found_qualified = result
+        if line_number == 0:
+            print("  WARNING: Could not re-analyze function, skipping")
+            continue
 
         # Check for macro-generated duplicates (same file, same function name, same line)
-        func_key = f"{target_file}::{qualified_name}::{line_number}"
+        func_key = f"{target_file}::{found_qualified}::{line_number}"
         if func_key in seen_functions:
             print(
-                f"  Skipping duplicate (macro-generated): {qualified_name} at line {line_number}"
+                f"  Skipping duplicate (macro-generated): {found_qualified} at line {line_number}"
             )
             continue
         seen_functions[func_key] = True
 
-        results[github_link] = (
+        # Use a unique key for results (function + module)
+        result_key = f"{qualified_func}::{module}"
+        results[result_key] = (
             has_spec,
             has_proof,
             is_external_body,
             line_number,
-            new_link,
-            qualified_name,
-            module_name,
+            github_link,  # Use the link we generated during discovery
+            qualified_func,  # Use the qualified name from seed file
+            module,  # Use the module from seed file
         )
         ext_marker = " [external_body]" if is_external_body else ""
-        print(f"  Found: {qualified_name} in module {module_name}")
+        print(f"  Found: {qualified_func} in module {module}")
         print(f"    spec={has_spec}, proof={has_proof}{ext_marker}, line={line_number}")
 
     return results
@@ -520,49 +584,32 @@ def update_links_to_main_branch(csv_path: Path):
 def update_csv(
     csv_path: Path, results: Dict[str, Tuple[bool, bool, bool, int, str, str, str]]
 ):
-    """Update the CSV file with Verus analysis results and new structure."""
-    # Read the CSV
-    rows = []
-    with open(csv_path, "r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            rows.append(row)
-
-    # Always write in new format
+    """Generate the CSV file with Verus analysis results."""
+    # CSV format
     fieldnames = ["function", "module", "link", "has_spec", "has_proof"]
 
-    # Update rows with results
-    # Use a set to track which results we've already written (avoid duplicates)
+    # Build rows from results
     new_rows = []
-    written_results = set()
+    for result_key, (
+        has_spec,
+        has_proof,
+        is_external_body,
+        line_number,
+        github_link,
+        qualified_name,
+        module_name,
+    ) in results.items():
+        new_row = {
+            "function": qualified_name,
+            "module": module_name,
+            "link": github_link,
+            # Use "ext" for functions with external_body, "yes" for regular specs
+            "has_spec": "ext" if is_external_body else ("yes" if has_spec else ""),
+            "has_proof": "yes" if has_proof else "",
+        }
+        new_rows.append(new_row)
 
-    for row in rows:
-        old_link = row["link"]
-        if old_link in results and old_link not in written_results:
-            written_results.add(old_link)
-
-            (
-                has_spec,
-                has_proof,
-                is_external_body,
-                line_number,
-                new_link,
-                qualified_name,
-                module_name,
-            ) = results[old_link]
-
-            # Always write in new format
-            new_row = {
-                "function": qualified_name,
-                "module": module_name,
-                "link": new_link,
-                # Use "ext" for functions with external_body, "yes" for regular specs
-                "has_spec": "ext" if is_external_body else ("yes" if has_spec else ""),
-                "has_proof": "yes" if has_proof else "",
-            }
-            new_rows.append(new_row)
-
-    # Write the updated CSV back to the same file
+    # Write the CSV
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -601,57 +648,49 @@ def update_csv(
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description="Analyze Verus specs and proofs in curve25519-dalek functions"
+        description="Generate CSV with Verus specs/proofs status from seed file"
     )
     parser.add_argument(
-        "--csv",
+        "--seed",
         type=str,
-        default="curve25519_functions.csv",
-        help="CSV file name (default: curve25519_functions.csv)",
+        default="functions_to_track.csv",
+        help="Seed file name (default: functions_to_track.csv)",
     )
     parser.add_argument(
-        "--csv-path",
+        "--output",
         type=str,
-        help="Full path to CSV file (overrides --csv)",
+        default="outputs/curve25519_functions.csv",
+        help="Output CSV file path (default: outputs/curve25519_functions.csv)",
     )
     args = parser.parse_args()
 
     # Set up paths
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent  # Go up one level from scripts/ to repo root
-    outputs_dir = repo_root / "outputs"
+    seed_path = repo_root / args.seed
+    output_path = repo_root / args.output
     src_dir = repo_root
 
-    # Determine CSV path
-    if args.csv_path:
-        csv_path = Path(args.csv_path)
-        if not csv_path.exists():
-            print(f"Error: CSV file not found at {csv_path}")
-            return
-    else:
-        csv_path = outputs_dir / args.csv
-        if not csv_path.exists():
-            print(f"Error: CSV file not found at {csv_path}")
-            print(f"Looked for: {args.csv} in {outputs_dir}")
-            return
+    # Check seed file exists
+    if not seed_path.exists():
+        print(f"Error: Seed file not found at {seed_path}")
+        return
 
     if not src_dir.exists():
         print(f"Error: Source directory not found at {src_dir}")
         return
 
-    print(f"Analyzing functions from: {csv_path}")
+    print(f"Reading seed file: {seed_path}")
+    print(f"Will generate CSV at: {output_path}")
     print(f"Searching in: {src_dir}")
     print()
 
-    # Update links to use 'main' branch
-    update_links_to_main_branch(csv_path)
-    print()
+    # Analyze functions from seed file
+    results = analyze_functions(seed_path, src_dir)
 
-    # Analyze functions
-    results = analyze_functions(csv_path, src_dir)
-
-    # Update CSV
-    update_csv(csv_path, results)
+    # Generate output CSV
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    update_csv(output_path, results)
 
 
 if __name__ == "__main__":

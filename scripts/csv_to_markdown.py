@@ -17,20 +17,15 @@ def main():
         # Prepare markdown content
         lines = []
         lines.append("# Curve25519 Functions\n")
-        lines.append(
-            "| Function | Has Spec (Verus) | Has Proof (Verus) | Has Spec (Lean) | Has Proof (Lean) |"
-        )
-        lines.append(
-            "|----------|:------------------:|:-------------------:|:----------------:|:-----------------:|"
-        )
+        lines.append("| Function | Module | Has Spec (Verus) | Has Proof (Verus) |")
+        lines.append("|----------|--------|:----------------:|:-----------------:|")
 
         for row in reader:
-            function_name = row["function_name"].strip()
+            function_name = row["function"].strip()
+            module = row["module"].strip()
             link = row["link"].strip()
-            has_spec_verus = row["has_spec_verus"].strip()
-            has_proof_verus = row["has_proof_verus"].strip()
-            has_spec_lean = row["has_spec_lean"].strip()
-            has_proof_lean = row["has_proof_lean"].strip()
+            has_spec = row["has_spec"].strip()
+            has_proof = row["has_proof"].strip()
 
             # Create function link or plain text if no link
             if link:
@@ -40,8 +35,6 @@ def main():
 
             # Convert has_* fields to checkboxes or markers
             def to_checkbox(value):
-                # Debug: print the value to see what we're getting
-                # print(f"Debug: checkbox value = '{value}', type = {type(value)}")
                 if value and value.lower() in ["true", "yes", "x", "1"]:
                     return ":heavy_check_mark:"
                 elif value and value.lower() == "ext":
@@ -49,14 +42,10 @@ def main():
                 else:
                     return ""
 
-            spec_verus_cb = to_checkbox(has_spec_verus)
-            proof_verus_cb = to_checkbox(has_proof_verus)
-            spec_lean_cb = to_checkbox(has_spec_lean)
-            proof_lean_cb = to_checkbox(has_proof_lean)
+            spec_cb = to_checkbox(has_spec)
+            proof_cb = to_checkbox(has_proof)
 
-            lines.append(
-                f"| {function_cell} | {spec_verus_cb} | {proof_verus_cb} | {spec_lean_cb} | {proof_lean_cb} |"
-            )
+            lines.append(f"| {function_cell} | {module} | {spec_cb} | {proof_cb} |")
 
         # Write to markdown file
         with open(md_path, "w", encoding="utf-8") as mdfile:

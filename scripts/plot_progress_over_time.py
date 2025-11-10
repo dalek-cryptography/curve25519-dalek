@@ -109,10 +109,12 @@ def analyze_csv_at_commit(
         total = len(rows)
 
         # Check if columns exist (CSV structure might have changed over time)
-        has_verus_spec_col = "has_spec_verus" in rows[0]
-        has_verus_proof_col = "has_proof_verus" in rows[0]
-        has_lean_spec_col = "has_spec_lean" in rows[0]
-        has_lean_proof_col = "has_proof_lean" in rows[0]
+        # Support both old and new column names
+        spec_col = "has_spec" if "has_spec" in rows[0] else "has_spec_verus"
+        proof_col = "has_proof" if "has_proof" in rows[0] else "has_proof_verus"
+
+        has_verus_spec_col = spec_col in rows[0]
+        has_verus_proof_col = proof_col in rows[0]
 
         # Count Verus stats
         verus_specs = 0
@@ -122,7 +124,7 @@ def analyze_csv_at_commit(
 
         if has_verus_spec_col:
             for row in rows:
-                spec_val = row.get("has_spec_verus", "").strip()
+                spec_val = row.get(spec_col, "").strip()
                 if spec_val:
                     verus_specs += 1
                     if spec_val == "yes":
@@ -132,19 +134,7 @@ def analyze_csv_at_commit(
 
         if has_verus_proof_col:
             verus_proofs = sum(
-                1 for row in rows if row.get("has_proof_verus", "").strip() == "yes"
-            )
-
-        # Count Lean stats
-        lean_specs = 0
-        lean_proofs = 0
-
-        if has_lean_spec_col:
-            lean_specs = sum(1 for row in rows if row.get("has_spec_lean", "").strip())
-
-        if has_lean_proof_col:
-            lean_proofs = sum(
-                1 for row in rows if row.get("has_proof_lean", "").strip()
+                1 for row in rows if row.get(proof_col, "").strip() == "yes"
             )
 
         return {
@@ -153,8 +143,6 @@ def analyze_csv_at_commit(
             "verus_specs_full": verus_specs_full,
             "verus_specs_external": verus_specs_external,
             "verus_proofs": verus_proofs,
-            "lean_specs": lean_specs,
-            "lean_proofs": lean_proofs,
         }
 
     except Exception as e:
@@ -235,8 +223,6 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
     # Convert to percentages
     df["verus_specs_pct"] = (df["verus_specs"] / df["total"]) * 100
     df["verus_proofs_pct"] = (df["verus_proofs"] / df["total"]) * 100
-    df["lean_specs_pct"] = (df["lean_specs"] / df["total"]) * 100
-    df["lean_proofs_pct"] = (df["lean_proofs"] / df["total"]) * 100
 
     # Plot lines
     ax.plot(
@@ -259,31 +245,6 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
         color="#2ecc71",
         alpha=0.9,
     )
-
-    # Only plot Lean if there's data
-    if df["lean_specs_pct"].max() > 0:
-        ax.plot(
-            df["date"],
-            df["lean_specs_pct"],
-            marker="^",
-            linewidth=2.5,
-            markersize=6,
-            label="Lean Specs",
-            color="#9b59b6",
-            alpha=0.9,
-        )
-
-    if df["lean_proofs_pct"].max() > 0:
-        ax.plot(
-            df["date"],
-            df["lean_proofs_pct"],
-            marker="d",
-            linewidth=2.5,
-            markersize=6,
-            label="Lean Proofs",
-            color="#8e44ad",
-            alpha=0.9,
-        )
 
     # Fill areas under curves
     ax.fill_between(

@@ -99,7 +99,7 @@
                     <img src="outputs/csv_preview.png" alt="CSV Preview" class="chart-img csv-preview-trigger" data-title="Function Status Data">
                 </div>
                 <p class="chart-description">
-                    Sample preview of tracked functions. <strong>Click image to browse all 257 functions.</strong>
+                    Sample preview of tracked functions. <strong>Click image to browse all <span id="csvPreviewTotal">215</span> functions.</strong>
                     <a href="https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/outputs/curve25519_functions.csv" target="_blank" class="csv-link">View full CSV on GitHub →</a>
                 </p>
             </div>
@@ -275,7 +275,7 @@ cargo verus verify</code></pre>
     <div id="csvModal" class="modal">
         <span class="modal-close csv-modal-close">&times;</span>
         <div class="csv-modal-content">
-            <h2>Function Verification Status - All 257 Functions</h2>
+            <h2>Function Verification Status - All <span id="csvModalTotal">215</span> Functions</h2>
             <div class="csv-browser-controls">
                 <input type="text" id="csvSearch" placeholder="Search functions or modules..." class="search-box">
                 <div class="filter-buttons">

@@ -18,6 +18,16 @@ from pathlib import Path
 from typing import Dict, Tuple, Optional
 from beartype import beartype
 
+# Constants
+CRATE_NAME = "curve25519_dalek"
+CRATE_DIR = "curve25519-dalek"
+GITHUB_REPO = "Beneficial-AI-Foundation/dalek-lite"
+
+# Special module mappings (modules with non-standard file locations)
+SPECIAL_MODULES = {
+    "build": lambda src_dir: src_dir / CRATE_DIR / "build.rs",
+}
+
 
 @beartype
 def extract_impl_context(content: str, fn_start: int) -> Optional[str]:
@@ -381,28 +391,24 @@ def discover_function_in_module(
     """
     # Convert module path to file path
     # e.g., "curve25519_dalek::backend::serial::u64::field" -> "curve25519-dalek/src/backend/serial/u64/field.rs"
-    module_stripped = module.replace("curve25519_dalek::", "")
+    module_stripped = module.replace(f"{CRATE_NAME}::", "")
     module_parts = module_stripped.split("::") if module_stripped else []
 
-    # Handle special cases
+    # Handle special module cases (non-standard file locations)
     possible_paths = []
-    if module_parts == ["build"]:
-        # build.rs is at the curve25519-dalek root
-        possible_paths.append(src_dir / "curve25519-dalek" / "build.rs")
+    module_key = module_parts[0] if module_parts else None
+    if module_key in SPECIAL_MODULES:
+        possible_paths.append(SPECIAL_MODULES[module_key](src_dir))
     else:
         # Try both .rs file and mod.rs
         possible_paths.extend(
             [
                 src_dir
-                / "curve25519-dalek"
+                / CRATE_DIR
                 / "src"
                 / "/".join(module_parts[:-1])
                 / f"{module_parts[-1]}.rs",
-                src_dir
-                / "curve25519-dalek"
-                / "src"
-                / "/".join(module_parts)
-                / "mod.rs",
+                src_dir / CRATE_DIR / "src" / "/".join(module_parts) / "mod.rs",
             ]
         )
 
@@ -421,7 +427,7 @@ def discover_function_in_module(
         if line_number > 0:
             # Generate GitHub link
             relative_path = file_path.relative_to(src_dir)
-            github_link = f"https://github.com/Beneficial-AI-Foundation/dalek-lite/blob/main/{relative_path}#L{line_number}"
+            github_link = f"https://github.com/{GITHUB_REPO}/blob/main/{relative_path}#L{line_number}"
             return (file_path, line_number, github_link)
 
     return None

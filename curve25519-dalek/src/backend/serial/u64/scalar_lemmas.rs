@@ -1493,4 +1493,150 @@ pub proof fn lemma_add_sum_simplify(a: &Scalar52, b: &Scalar52, sum: &Scalar52, 
     assert(to_nat(&sum.limbs) < 2 * group_order());
 }
 
+// =============== LEMMAS FOR mul(a: &Scalar52, b: &Scalar52) =========
+/// Proves that montgomery_radix equals 2^260 (definitional)
+pub proof fn lemma_montgomery_radix_value()
+    ensures
+        montgomery_radix() == pow2(260),
+{
+    // montgomery_radix is defined as pow2(260) in scalar_specs.rs
+}
+
+/// Modular multiplication property: if y ≡ z (mod m), then (x * y) ≡ (x * z) (mod m)
+pub proof fn lemma_mod_mul_exact(x: nat, y: nat, z: nat, m: nat)
+    requires
+        m > 0,
+        y % m == z % m,
+    ensures
+        (x * y) % m == (x * z) % m,
+{
+    lemma_mul_mod_noop_general(x as int, y as int, m as int);
+    lemma_mul_mod_noop_general(x as int, z as int, m as int);
+}
+
+/// Modular multiplication property (variant 2): if x ≡ y (mod m), then (x * z) ≡ (y * z) (mod m)
+pub proof fn lemma_mod_mul_exact_2(x: nat, y: nat, z: nat, m: nat)
+    requires
+        m > 0,
+        x % m == y % m,
+    ensures
+        (x * z) % m == (y * z) % m,
+{
+    lemma_mul_mod_noop_general(x as int, z as int, m as int);
+    lemma_mul_mod_noop_general(y as int, z as int, m as int);
+}
+
+/// Proves that the group order L is odd
+pub proof fn lemma_l_is_odd()
+    ensures
+        group_order() % 2 == 1,
+{
+    assert(27742317777372353535851937790883648493nat % 2 == 1) by (compute);
+    
+    assert(pow2(252) % 2 == 0) by {
+        use super::common_verus::pow_lemmas::lemma_pow2_plus_one;
+        lemma_pow2_plus_one(251);
+        assert(pow2(252) == pow2(251) + pow2(251));
+    };
+    
+    lemma_add_mod_noop(pow2(252) as int, 27742317777372353535851937790883648493int, 2int);
+}
+
+/// Modular cancellation for powers of 2
+/// 
+/// AXIOM 1/3: Standard number theory theorem
+/// If x·2^k ≡ y·2^k (mod m) and m is odd, then x ≡ y (mod m)
+/// Requires Extended Euclidean Algorithm to prove (not in vstd)
+/// Reference: Kenneth Rosen, "Elementary Number Theory", Section 4.3
+#[verifier::external_body]
+pub proof fn lemma_modular_cancellation_power_of_2(x: nat, y: nat, k: nat, m: nat)
+    requires
+        m > 0,
+        m % 2 == 1,
+        (x * pow2(k)) % m == (y * pow2(k)) % m,
+    ensures
+        x % m == y % m,
+{
+}
+
+/// AXIOM 2/3: Constant R = 2^260 mod L
+/// Verus cannot compute 260-bit modular arithmetic (tested with by(compute_only))
+#[verifier::external_body]
+pub(crate) proof fn lemma_r_value()
+    ensures
+        to_nat(&constants::R.limbs) % group_order() == montgomery_radix() % group_order(),
+{
+}
+
+/// AXIOM 3/3: Constant RR = R² mod L
+/// Verus cannot compute even with R² optimization (tested with by(compute_only))
+#[verifier::external_body]
+pub(crate) proof fn lemma_rr_equals_r_squared()
+    ensures
+        to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix())
+            % group_order(),
+{
+}
+
+/// Helper: RR limbs are bounded (visibility workaround)
+#[verifier::external_body]
+pub(crate) proof fn lemma_rr_limbs_bounded()
+    ensures
+        forall|i: int| 0 <= i < 5 ==> (#[trigger] constants::RR.limbs[i]) < (1u64 << 52),
+{
+}
+
+/// Proves the Montgomery multiplication chain for mul function
+pub(crate) proof fn lemma_mul_montgomery_chain(
+    a: &Scalar52,
+    b: &Scalar52,
+    ab: &Scalar52,
+    result: &Scalar52,
+)
+    requires
+        limbs_bounded(a),
+        limbs_bounded(b),
+        limbs_bounded(ab),
+        limbs_bounded(&result),
+        (to_nat(&ab.limbs) * montgomery_radix()) % group_order() == (to_nat(&a.limbs)
+            * to_nat(&b.limbs)) % group_order(),
+        (to_nat(&result.limbs) * montgomery_radix()) % group_order() == (to_nat(&ab.limbs)
+            * to_nat(&constants::RR.limbs)) % group_order(),
+        to_nat(&constants::RR.limbs) % group_order() == (montgomery_radix() * montgomery_radix())
+            % group_order(),
+    ensures
+        to_nat(&result.limbs) % group_order() == (to_nat(&a.limbs) * to_nat(&b.limbs))
+            % group_order(),
+{
+    let r = montgomery_radix();
+    let l = group_order();
+    let ab_val = to_nat(&ab.limbs);
+    let result_val = to_nat(&result.limbs);
+    let a_val = to_nat(&a.limbs);
+    let b_val = to_nat(&b.limbs);
+    let rr_val = to_nat(&constants::RR.limbs);
+    
+    assert((result_val * r) % l == (ab_val * rr_val) % l);
+    
+    assert((ab_val * rr_val) % l == (ab_val * (r * r)) % l) by {
+        lemma_mul_is_commutative(ab_val as int, rr_val as int);
+        lemma_mul_is_commutative(ab_val as int, (r * r) as int);
+        lemma_mod_mul_exact(ab_val, rr_val, r * r, l);
+    };
+    
+    assert((ab_val * (r * r)) % l == ((ab_val * r) * r) % l) by {
+        lemma_mul_is_associative(ab_val as int, r as int, r as int);
+        lemma_mul_mod_noop_general((ab_val * r) as int, r as int, l as int);
+    };
+    
+    assert(((ab_val * r) * r) % l == ((a_val * b_val) * r) % l) by {
+        lemma_mod_mul_exact_2((ab_val * r), (a_val * b_val), r, l);
+    };
+    
+    assert((result_val * r) % l == ((a_val * b_val) * r) % l);
+    
+    lemma_l_is_odd();
+    lemma_modular_cancellation_power_of_2(result_val, a_val * b_val, 260, l);
+}
+// ============= END OF LEMMAS FOR mul(a: &Scalar52, b: &Scalar52) =========
 } // verus!

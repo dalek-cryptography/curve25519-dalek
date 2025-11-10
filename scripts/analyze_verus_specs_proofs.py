@@ -97,7 +97,7 @@ def extract_module_from_path(file_path: Path, repo_root: Path) -> str:
 
         # Prepend crate name
         return "curve25519_dalek::" + "::".join(module_parts)
-    except:
+    except Exception:
         return "curve25519_dalek"
 
 
@@ -519,7 +519,6 @@ def update_csv(
     rows = []
     with open(csv_path, "r") as f:
         reader = csv.DictReader(f)
-        old_fieldnames = reader.fieldnames
         for row in reader:
             rows.append(row)
 

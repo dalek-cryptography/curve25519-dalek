@@ -5,14 +5,16 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::super::common_verus::div_mod_lemmas::*;
-use super::super::common_verus::mul_lemmas::*;
-use super::super::common_verus::pow_lemmas::*;
-use super::super::common_verus::shift_lemmas::*;
 use super::compute_q_lemmas::*;
-use super::field_core::*;
 use super::load8_lemmas::*;
 use super::pow2_51_lemmas::*;
+
+use super::super::common_lemmas::div_mod_lemmas::*;
+use super::super::common_lemmas::mul_lemmas::*;
+use super::super::common_lemmas::pow_lemmas::*;
+use super::super::common_lemmas::shift_lemmas::*;
+
+use crate::specs::field_specs_u64::*;
 
 verus! {
 
@@ -515,24 +517,47 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
         //
         // Therefore: c4 = 1 = q
         // Invoke the division computation to establish c4 = (as_nat + 19*q) / 2^255
-        lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
+        assert(
+            c4 as int == (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int)
+        ) by {
+            lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
+        }
+        
+        assert(
+            (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int) == 1
+        ) by {
+            // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
+            let val = as_nat(input_limbs) as int + 19 * q as int;
+            assert(19 == 19 * q as int) by {
+                lemma_mul_basics_3(19);
+            }
+            let divisor = pow2(255) as int;
 
-        // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
-        let val = as_nat(input_limbs) as int + 19;
-        let divisor = pow2(255) as int;
+            // From q == 1, we have as_nat(input_limbs) >= p()
+            // So val >= 2^255
+            assert(as_nat(input_limbs) >= p());
+            assert(val >= pow2(255));
 
-        // From q == 1, we have as_nat(input_limbs) >= p()
-        // So val >= 2^255
+            // From as_nat(input_limbs) < 2*p() < 2*2^255
+            // We have val < 2*2^255, so val / divisor < 2
+            assert(val / divisor < 2) by {
+                lemma_div_strictly_bounded(val, divisor, 2);
+            }
 
-        // From as_nat(input_limbs) < 2*p() < 2*2^255
-        // We have val < 2*2^255, so val / divisor < 2
-        lemma_div_strictly_bounded(val, divisor, 2);
-
-        // From val >= divisor, we have val / divisor >= 1
-        lemma_fundamental_div_mod(val, divisor);
-
-        // Therefore: 1 ≤ val / divisor < 2, so val / divisor == 1
-        // Since c4 = val / divisor (with q=1), we have c4 = 1 = q
+            // From val >= divisor, we have val / divisor >= 1
+            assert(
+                val / divisor >= 1
+            ) by {
+                assert(val / divisor >= val / val) by {
+                    lemma_div_is_ordered_by_denominator(val, divisor, val)
+                }
+                assert(val / val == 1) by {
+                    lemma_div_basics_3(val);
+                }
+            }
+            // Therefore: 1 ≤ val / divisor < 2, so val / divisor == 1
+            // Since c4 = val / divisor (with q=1), we have c4 = 1 = q
+        }
     }
 }
 

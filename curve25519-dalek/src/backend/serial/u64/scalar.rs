@@ -21,15 +21,16 @@ use zeroize::Zeroize;
 use crate::constants;
 
 #[allow(unused_imports)]
-use super::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
+use crate::lemmas::scalar_byte_lemmas::scalar_to_bytes_lemmas::*;
 #[allow(unused_imports)]
-use super::scalar_lemmas::*;
+use crate::lemmas::scalar_lemmas::*;
 #[allow(unused_imports)]
-use super::scalar_specs::*;
+use crate::specs::scalar_specs_u64::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
+#[allow(unused_imports)]
 use vstd::calc;
 use vstd::prelude::*;
 

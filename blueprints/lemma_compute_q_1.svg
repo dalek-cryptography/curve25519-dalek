@@ -24,10 +24,10 @@
 <polygon fill="lightgrey" stroke="lightgrey" stroke-dasharray="1,5" points="647,-105.31 647,-180.31 784,-180.31 784,-105.31 647,-105.31"/>
 <text text-anchor="middle" x="715.5" y="-165.11" font-family="Helvetica,sans-Serif" font-size="14.00">scalar_lemmas.rs</text>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p(). -->
 <g id="node1" class="node">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().</title>
-<g id="a_node1"><a xlink:title="use super::field_core::*; &#160;verus! { &#160;// Lemma: If a &gt; b pointwise, then as_nat(a &#45; b) = as_nat(a) &#45; as_nat(b) pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5]) &#160;&#160;&#160;&#160;requires &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;forall |i:int| ...">
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().</title>
+<g id="a_node1"><a xlink:title="use super::field_specs::*; &#160;verus! { &#160;// Lemma: If a &gt; b pointwise, then as_nat(a &#45; b) = as_nat(a) &#45; as_nat(b) pub proof fn lemma_as_nat_sub(a: [u64;5], b: [u64;5]) &#160;&#160;&#160;&#160;requires &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;forall |i:int| ...">
 <polygon fill="lightgray" stroke="black" stroke-dasharray="1,5" points="580,-116.31 526,-116.31 526,-80.31 580,-80.31 580,-116.31"/>
 <text text-anchor="middle" x="553" y="-94.61" font-family="Helvetica,sans-Serif" font-size="14.00">p</text>
 </a>
@@ -39,24 +39,24 @@
 <polygon fill="lightgray" stroke="black" stroke-dasharray="1,5" points="742,-149.31 688,-149.31 688,-113.31 742,-113.31 742,-149.31"/>
 <text text-anchor="middle" x="715" y="-127.61" font-family="Helvetica,sans-Serif" font-size="14.00">pow2</text>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
 <g id="edge1" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M580.06,-103.68C606.68,-109.17 648.2,-117.73 677.96,-123.87"/>
 <polygon fill="gray" stroke="gray" points="677.45,-127.34 687.95,-125.93 678.86,-120.48 677.45,-127.34"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat(). -->
 <g id="node2" class="node">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().</title>
 <g id="a_node2"><a xlink:title=" &#160;&#160;&#160;&#160;&#160;&#160;&#160;pow2(102) * a[2] &#45; pow2(102) * b[2] + &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;pow2(153) * a[3] &#45; pow2(153) * b[3] + &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;pow2(204) * a[4] &#45; pow2(204) * b[4] &#160;&#160;&#160;&#160;) by { &#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;lemma_mul_is_distributive_sub(pow2(1 * 51) as...">
 <polygon fill="lightgray" stroke="black" stroke-dasharray="1,5" points="584,-62.31 522,-62.31 522,-26.31 584,-26.31 584,-62.31"/>
 <text text-anchor="middle" x="553" y="-40.61" font-family="Helvetica,sans-Serif" font-size="14.00">as_nat</text>
 </a>
 </g>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
 <g id="edge6" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M584.2,-53.58C597.64,-58.18 613.45,-64.27 627,-71.31 646.37,-81.37 666.53,-95.03 682.55,-106.78"/>
 <polygon fill="gray" stroke="gray" points="680.89,-109.91 691,-113.08 685.08,-104.3 680.89,-109.91"/>
 </g>
@@ -69,15 +69,15 @@
 </a>
 </g>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p(). -->
 <g id="edge5" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M410.69,-225.41C423.59,-221.42 436.17,-215.9 447,-208.31 471.53,-191.1 462.81,-173.44 483,-151.31 493.16,-140.17 505.88,-129.66 517.62,-120.99"/>
 <polygon fill="gray" stroke="gray" points="519.87,-123.68 525.95,-115.01 515.79,-118 519.87,-123.68"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat(). -->
 <g id="edge3" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_biconditional().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M410.75,-228.88C424.17,-224.53 436.91,-217.99 447,-208.31 492.42,-164.71 441.14,-118.33 483,-71.31 490.66,-62.7 501.41,-56.81 512.15,-52.79"/>
 <polygon fill="gray" stroke="gray" points="513.5,-56.03 521.91,-49.6 511.32,-49.38 513.5,-56.03"/>
 </g>
@@ -111,15 +111,15 @@
 </a>
 </g>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p(). -->
 <g id="edge11" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M159.17,-163.26C172.35,-160.07 186.07,-156.94 199,-154.31 313.91,-130.94 451.53,-111.55 515.71,-103.01"/>
 <polygon fill="gray" stroke="gray" points="516.28,-106.46 525.73,-101.68 515.36,-99.52 516.28,-106.46"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat(). -->
 <g id="edge8" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_compute_q().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M111.81,-163.02C132.65,-146.14 165.98,-121.72 199,-108.31 306.36,-64.7 444.11,-50.67 511.38,-46.26"/>
 <polygon fill="gray" stroke="gray" points="511.79,-49.74 521.56,-45.63 511.36,-42.76 511.79,-49.74"/>
 </g>
@@ -171,15 +171,15 @@
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M99.51,-162.9C115.16,-133.12 150.43,-75.02 199,-48.31 310.39,12.96 356.1,-21.87 483,-14.31 546.89,-10.49 569.82,14.43 627,-14.31 664.02,-32.91 689.27,-75.56 702.67,-103.9"/>
 <polygon fill="gray" stroke="gray" points="699.59,-105.6 706.91,-113.26 705.97,-102.71 699.59,-105.6"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p(). -->
 <g id="edge15" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/p().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/p().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M373.47,-163.3C416.51,-147.63 477.85,-125.3 516.27,-111.31"/>
 <polygon fill="gray" stroke="gray" points="517.79,-114.48 525.99,-107.77 515.39,-107.91 517.79,-114.48"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat(). -->
 <g id="edge17" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_core/field_lemmas/u64/serial/backend/as_nat().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_q_is_binary().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 field_specs/field_lemmas/u64/serial/backend/as_nat().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M346.62,-163.12C376.52,-139.7 431.44,-98.75 483,-71.31 492.2,-66.41 502.48,-61.91 512.25,-58.04"/>
 <polygon fill="gray" stroke="gray" points="513.69,-61.24 521.78,-54.4 511.19,-54.7 513.69,-61.24"/>
 </g>

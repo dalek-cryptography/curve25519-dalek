@@ -150,17 +150,17 @@ use zeroize::Zeroize;
 
 use crate::backend;
 #[cfg(verus_keep_ghost)]
-use crate::backend::serial::u64::field_lemmas::field_core::spec_as_bytes;
+use crate::specs::field_specs_u64::spec_as_bytes;
 use crate::constants;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::scalar_specs::*;
+use crate::specs::scalar_specs_u64::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::scalar_lemmas::*;
+use crate::lemmas::scalar_lemmas::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::core_lemmas::*;
+use crate::lemmas::core_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
@@ -169,7 +169,7 @@ use crate::backend::serial::u64::subtle_assumes::*;
 use crate::core_assumes::*;
 
 #[allow(unused_imports)]
-use crate::scalar_specs::*;
+use crate::specs::scalar_specs::*;
 
 #[cfg(feature = "digest")]
 #[allow(unused_imports)]
@@ -1846,8 +1846,8 @@ pub(crate) fn bits_le_verus(&self) -> (result: [bool; 256])
 
         // Prove bounds using shift and mask lemmas
         proof {
-            use crate::backend::serial::u64::common_verus::shift_lemmas::*;
-            use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+            use crate::lemmas::common_lemmas::shift_lemmas::*;
+            use crate::lemmas::common_lemmas::mask_lemmas::*;
             use vstd::bits::*;
             use vstd::arithmetic::power2::*;
 
@@ -2622,7 +2622,7 @@ impl UnpackedScalar {
 
         proof {
             if to_nat(&self.limbs) < group_order() {
-                use crate::backend::serial::u64::scalar_lemmas::lemma_scalar52_lt_pow2_256_if_canonical;
+                use crate::lemmas::scalar_lemmas::lemma_scalar52_lt_pow2_256_if_canonical;
 
                 lemma_scalar52_lt_pow2_256_if_canonical(self);
                 lemma_small_mod(to_nat(&self.limbs), pow2(256));
@@ -2631,13 +2631,13 @@ impl UnpackedScalar {
 
                 let v = bytes_to_nat(&result.bytes);
 
-                use crate::backend::serial::u64::backend_64_core::as_nat_32_u8;
+                use crate::specs::core_specs::as_nat_32_u8;
                 assert(bytes_to_nat(&result.bytes) == as_nat_32_u8(&result.bytes));
 
                 assert(v == bytes_to_nat(&result.bytes));
                 assert(v < group_order());
                 {
-                    use crate::backend::serial::u64::scalar_lemmas::lemma_group_order_bound;
+                    use crate::lemmas::scalar_lemmas::lemma_group_order_bound;
                     lemma_group_order_bound();
                     assert(group_order() < pow2(255));
 
@@ -2650,7 +2650,7 @@ impl UnpackedScalar {
                         use vstd::arithmetic::mul::lemma_mul_inequality;
 
                         // Use the lemma
-                        use crate::backend::serial::u64::scalar_lemmas::lemma_bytes_to_nat_lower_bound;
+                        use crate::lemmas::scalar_lemmas::lemma_bytes_to_nat_lower_bound;
                         lemma_bytes_to_nat_lower_bound(&result.bytes, 31);
 
                         lemma_pow2_adds(7, 248);

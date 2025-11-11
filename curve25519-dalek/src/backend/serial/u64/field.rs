@@ -36,49 +36,49 @@ use vstd::bits::*;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::bit_lemmas::*;
+use crate::lemmas::common_lemmas::bit_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::div_mod_lemmas::*;
+use crate::lemmas::common_lemmas::div_mod_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::mask_lemmas::*;
+use crate::lemmas::common_lemmas::mask_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::mul_lemmas::*;
+use crate::lemmas::common_lemmas::mul_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::pow_lemmas::*;
+use crate::lemmas::common_lemmas::pow_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::common_verus::shift_lemmas::*;
+use crate::lemmas::common_lemmas::shift_lemmas::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::backend_64_core::*;
+use crate::specs::core_specs::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::as_bytes_lemmas::*;
+use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::as_nat_lemmas::*;
+use crate::lemmas::field_lemmas::as_nat_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::compute_q_lemmas::*;
+use crate::lemmas::field_lemmas::compute_q_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::field_core::*;
+use crate::lemmas::field_lemmas::from_bytes_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::from_bytes_lemmas::*;
+use crate::lemmas::field_lemmas::limbs_to_bytes_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::limbs_to_bytes_lemmas::*;
+use crate::lemmas::field_lemmas::load8_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::load8_lemmas::*;
+use crate::lemmas::field_lemmas::negate_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::negate_lemmas::*;
+use crate::lemmas::field_lemmas::pow2_51_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::pow2_51_lemmas::*;
+use crate::lemmas::field_lemmas::pow2k_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::pow2k_lemmas::*;
+use crate::lemmas::field_lemmas::reduce_lemmas::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::reduce_lemmas::*;
-#[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::to_bytes_reduction_lemmas::*;
+use crate::lemmas::field_lemmas::to_bytes_reduction_lemmas::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;
 #[allow(unused_imports)]
-use crate::field_specs::*;
+use crate::specs::field_specs::*;
+#[allow(unused_imports)]
+use crate::specs::field_specs_u64::*;
 
 verus! {
 

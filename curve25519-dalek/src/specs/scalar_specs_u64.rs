@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
-use super::backend_64_core::*;
-use super::scalar::Scalar52;
+use super::core_specs::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::scalar::Scalar52;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
@@ -47,13 +48,13 @@ pub open spec fn to_scalar(limbs: &[u64; 5]) -> nat {
 
 /// natural value of a 256 bit bitstring represented as array of 32 bytes
 ///
-/// Note: This is now an alias for the shared `as_nat_32_u8` function from backend_64_core.
+/// Note: This is now an alias for the shared `as_nat_32_u8` function from core_specs.
 /// Both field and scalar code use the same underlying byte-to-nat conversion.
 pub open spec fn bytes_to_nat(bytes: &[u8; 32]) -> nat {
     as_nat_32_u8(bytes)
 }
 
-/// Recursive version of bytes_to_nat (now delegating to backend_64_core)
+/// Recursive version of bytes_to_nat (now delegating to core_specs)
 pub open spec fn bytes_to_nat_rec(bytes: &[u8; 32], index: int) -> nat
     decreases 32 - index,
 {

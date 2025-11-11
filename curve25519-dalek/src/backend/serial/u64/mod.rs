@@ -18,27 +18,13 @@
 //! Broadwell and newer, the ADX extension provides `ADCX` and `ADOX`
 //! (allowing the CPU to compute two carry chains in parallel).  These
 //! will be used if available.
-pub mod backend_64_core;
-
-pub mod core_lemmas;
-
 pub mod field;
 
 pub mod scalar;
 
 pub mod constants;
 
-pub mod field_lemmas;
-
-pub mod common_verus;
-
 pub mod subtle_assumes;
-
-pub mod scalar_lemmas;
-
-pub mod scalar_specs;
-
-pub mod scalar_byte_lemmas;
 
 // #[cfg(feature = "serde")]
 // pub use crate::serde_assumes;

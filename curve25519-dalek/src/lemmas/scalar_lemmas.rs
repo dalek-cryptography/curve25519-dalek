@@ -1,15 +1,15 @@
 #[allow(unused_imports)]
-use super::backend_64_core::*;
+use super::super::specs::core_specs::*;
 #[allow(unused_imports)]
-use super::common_verus::*;
+use super::common_lemmas::*;
 #[allow(unused_imports)]
-use super::constants;
+use crate::backend::serial::u64::constants;
 #[allow(unused_imports)]
-use super::field_lemmas::field_core::*;
+use crate::specs::scalar_specs_u64::*;
 #[allow(unused_imports)]
-use super::scalar::Scalar52;
+use crate::backend::serial::u64::scalar::Scalar52;
 #[allow(unused_imports)]
-use super::scalar_specs::*;
+use crate::specs::scalar_specs::*;
 #[allow(unused_imports)]
 use vstd::arithmetic::div_mod::*;
 #[allow(unused_imports)]
@@ -24,7 +24,7 @@ use vstd::calc;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
-use super::common_verus::shift_lemmas::*;
+use super::common_lemmas::shift_lemmas::*;
 
 verus! {
 
@@ -1664,7 +1664,7 @@ pub proof fn lemma_bytes_to_nat_lower_bound(bytes: &[u8; 32], index: usize)
 {
     // bytes_to_nat is defined recursively as a sum of non-negative terms
     // Therefore the sum is >= any individual term
-    use crate::backend::serial::u64::backend_64_core::as_nat_32_u8;
+    use crate::specs::core_specs::as_nat_32_u8;
     assert(bytes_to_nat(bytes) == as_nat_32_u8(bytes));
     lemma_bytes_to_nat_rec_bound(bytes, 0, index);
 }

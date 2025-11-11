@@ -1,10 +1,12 @@
 //! Specification functions for high-level Scalar operations
-use crate::backend::serial::u64::scalar_specs::*;
 #[allow(unused_imports)]
 use crate::scalar::Scalar;
 #[allow(unused_imports)]
 use vstd::arithmetic::power2::*; // Import all power2 functions including pow2
 use vstd::prelude::*;
+
+#[allow(unused_imports)]
+use super::scalar_specs_u64::*;
 
 verus! {
 

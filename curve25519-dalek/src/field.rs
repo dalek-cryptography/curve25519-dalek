@@ -48,10 +48,10 @@ use crate::backend::serial::u64::subtle_assumes::*;
 use crate::core_assumes::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field_lemmas::field_core::*;
+use crate::specs::field_specs::*;
 
 #[allow(unused_imports)]
-use crate::field_specs::*;
+use crate::specs::field_specs_u64::*;
 
 verus! {
 

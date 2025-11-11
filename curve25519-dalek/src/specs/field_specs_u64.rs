@@ -1,8 +1,9 @@
 #![allow(unused)]
-use super::super::backend_64_core::*;
 use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
+
+use super::core_specs::*;
 
 verus! {
 
@@ -40,7 +41,7 @@ pub open spec fn as_nat(limbs: [u64; 5]) -> nat {
     limbs[3] as nat) + pow2(204) * (limbs[4] as nat)
 }
 
-// Note: as_nat_32_u8, as_nat_32_u8_rec, and load8_at_spec have been moved to backend_64_core
+// Note: as_nat_32_u8, as_nat_32_u8_rec, and load8_at_spec have been moved to core_specs
 // They are now shared between field and scalar implementations
 pub open spec fn spec_reduce(limbs: [u64; 5]) -> (r: [u64; 5]) {
     let r = [

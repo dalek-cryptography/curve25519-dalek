@@ -5,10 +5,12 @@ use crate::backend::serial::curve_models::{
 };
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::constants::EDWARDS_D;
-use crate::backend::serial::u64::field_lemmas::field_core::*;
+#[allow(unused_imports)]
+use crate::specs::field_specs_u64::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
-use crate::field_specs::*;
+#[allow(unused_imports)]
+use super::field_specs::*;
 use vstd::prelude::*;
 
 verus! {

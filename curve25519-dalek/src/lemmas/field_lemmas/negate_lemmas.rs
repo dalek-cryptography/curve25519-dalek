@@ -5,11 +5,12 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::super::common_verus::shift_lemmas::*;
-
 use super::as_nat_lemmas::*;
-use super::field_core::*;
 use super::reduce_lemmas::*;
+
+use super::super::common_lemmas::shift_lemmas::*;
+
+use crate::specs::field_specs_u64::*;
 
 verus! {
 

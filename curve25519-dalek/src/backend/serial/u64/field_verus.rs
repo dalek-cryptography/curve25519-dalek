@@ -7,16 +7,16 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::common_verus::bit_lemmas::*;
-use super::common_verus::div_mod_lemmas::*;
-use super::common_verus::mask_lemmas::*;
-use super::common_verus::mul_lemmas::*;
-use super::common_verus::pow_lemmas::*;
-use super::common_verus::shift_lemmas::*;
+use super::common_lemmas::bit_lemmas::*;
+use super::common_lemmas::div_mod_lemmas::*;
+use super::common_lemmas::mask_lemmas::*;
+use super::common_lemmas::mul_lemmas::*;
+use super::common_lemmas::pow_lemmas::*;
+use super::common_lemmas::shift_lemmas::*;
 
 use super::field_lemmas::as_nat_lemmas::*;
 use super::field_lemmas::compute_q_lemmas::*;
-use super::field_lemmas::field_core::*;
+use super::field_lemmas::field_specs::*;
 use super::field_lemmas::from_bytes_lemmas::*;
 use super::field_lemmas::limbs_to_bytes_lemmas::*;
 use super::field_lemmas::load8_lemmas::*;

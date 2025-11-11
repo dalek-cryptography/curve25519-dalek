@@ -132,9 +132,9 @@ use zeroize::Zeroize;
 
 use crate::constants;
 #[allow(unused_imports)] // Used in verus! blocks
-use crate::curve_specs::*;
+use crate::specs::curve_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
-use crate::field_specs::*;
+use crate::specs::field_specs::*;
 
 use crate::edwards::EdwardsPoint;
 use crate::field::FieldElement;

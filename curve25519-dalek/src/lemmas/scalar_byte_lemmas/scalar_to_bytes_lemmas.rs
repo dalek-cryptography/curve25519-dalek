@@ -5,17 +5,17 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::super::common_verus::bit_lemmas::*;
-use super::super::common_verus::div_mod_lemmas::*;
-use super::super::common_verus::mul_lemmas::*;
-use super::super::common_verus::pow_lemmas::*;
-use super::super::common_verus::shift_lemmas::*;
-use super::super::scalar_specs::*;
+use super::super::common_lemmas::bit_lemmas::*;
+use super::super::common_lemmas::div_mod_lemmas::*;
+use super::super::common_lemmas::mul_lemmas::*;
+use super::super::common_lemmas::pow_lemmas::*;
+use super::super::common_lemmas::shift_lemmas::*;
 
 // Import helper lemmas from field_lemmas
-use super::super::backend_64_core::*;
-use super::super::field_lemmas::field_core::*;
 use super::super::field_lemmas::limbs_to_bytes_lemmas::*;
+
+use crate::specs::core_specs::*;
+use crate::specs::scalar_specs_u64::*;
 
 verus! {
 

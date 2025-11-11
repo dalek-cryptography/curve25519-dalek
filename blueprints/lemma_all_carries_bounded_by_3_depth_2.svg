@@ -168,18 +168,18 @@
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M434.63,-460.06C457.56,-428.67 509.3,-364.84 570,-335.24 670.85,-286.07 725,-359.93 820,-300.24 839.89,-287.74 854.11,-264.93 862.94,-246.7"/>
 <polygon fill="gray" stroke="gray" points="866.22,-247.94 867.18,-237.39 859.85,-245.04 866.22,-247.94"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2(). -->
 <g id="node10" class="node">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2().</title>
-<g id="a_node10"><a xlink:title="#[allow(unused_imports)] use vstd::bits::*; #[allow(unused_imports)] use vstd::calc; use vstd::prelude::*; &#160;use super::common_verus::shift_lemmas::*; &#160;verus! { &#160;/// Verification: scalar * scalar.inver...">
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2().</title>
+<g id="a_node10"><a xlink:title="#[allow(unused_imports)] use vstd::bits::*; #[allow(unused_imports)] use vstd::calc; use vstd::prelude::*; &#160;use super::common_lemmas::shift_lemmas::*; &#160;verus! { &#160;/// Verification: scalar * scalar.inver...">
 <polygon fill="lightgray" stroke="black" stroke-dasharray="1,5" points="749.5,-183.24 640.5,-183.24 640.5,-147.24 749.5,-147.24 749.5,-183.24"/>
 <text text-anchor="middle" x="695" y="-161.54" font-family="Helvetica,sans-Serif" font-size="14.00">shift_is_pow2</text>
 </a>
 </g>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_carry_propagation_setup().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_carry_propagation_setup().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2(). -->
 <g id="edge12" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_carry_propagation_setup().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 to_bytes_lemmas/field_lemmas/u64/serial/backend/lemma_carry_propagation_setup().&#45;&gt;rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M432.74,-460.02C454.52,-422.74 504.98,-334.82 542,-258.24 555.87,-229.55 545.47,-212.57 570,-192.24 586.84,-178.28 609.27,-171.09 630.42,-167.52"/>
 <polygon fill="gray" stroke="gray" points="630.95,-170.98 640.34,-166.08 629.94,-164.05 630.95,-170.98"/>
 </g>
@@ -201,9 +201,9 @@
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M432.23,-460.13C453.23,-424.66 504.78,-345.94 570,-305.24 583.59,-296.76 599.35,-290.52 614.99,-285.93"/>
 <polygon fill="gray" stroke="gray" points="615.96,-289.29 624.69,-283.28 614.12,-282.54 615.96,-289.29"/>
 </g>
-<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
+<!-- rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2(). -->
 <g id="edge1" class="edge">
-<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_verus/u64/serial/backend/shift_is_pow2().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
+<title>rust&#45;analyzer cargo curve25519&#45;dalek 5.0.0&#45;pre.0 shift_lemmas/common_lemmas/u64/serial/backend/shift_is_pow2().&#45;&gt;rust&#45;analyzer cargo vstd 0.1.0 power2/arithmetic/pow2().</title>
 <path fill="none" stroke="gray" stroke-dasharray="5,2" d="M749.61,-173.88C771.75,-178.23 797.46,-184.29 820,-192.24 826.16,-194.41 832.53,-197.13 838.63,-200"/>
 <polygon fill="gray" stroke="gray" points="837.41,-203.3 847.93,-204.56 840.5,-197.02 837.41,-203.3"/>
 </g>

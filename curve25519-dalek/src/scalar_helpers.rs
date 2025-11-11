@@ -3,10 +3,10 @@ use crate::scalar::Scalar;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
-use crate::backend::serial::u64::scalar_specs::*;
+use crate::specs::scalar_specs_u64::*;
 
 #[allow(unused_imports)]
-use crate::scalar_specs::*;
+use crate::specs::scalar_specs::*;
 
 verus! {
 

@@ -4,8 +4,9 @@ use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
-use super::backend_64_core::*;
-use super::common_verus::pow_lemmas::*;
+use super::common_lemmas::pow_lemmas::*;
+
+use crate::specs::core_specs::*;
 
 verus! {
 

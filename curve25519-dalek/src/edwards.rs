@@ -151,14 +151,13 @@ use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
-#[cfg(verus_keep_ghost)]
-use crate::backend::serial::u64::field::{spec_add_req, spec_mul_req, spec_sub_req};
-use crate::backend::serial::u64::field_lemmas::field_core::*;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::specs::field_specs::*;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::backend::serial::u64::field::*;
 use crate::backend::serial::u64::subtle_assumes::*;
 #[allow(unused_imports)] // Used in verus! blocks
-use crate::curve_specs::*;
-#[allow(unused_imports)] // Used in verus! blocks
-use crate::field_specs::*;
+use crate::specs::curve_specs::*;
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------

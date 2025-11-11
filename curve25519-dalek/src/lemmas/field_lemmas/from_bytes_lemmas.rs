@@ -5,16 +5,17 @@ use vstd::arithmetic::power2::*;
 use vstd::bits::*;
 use vstd::prelude::*;
 
-use super::super::common_verus::bit_lemmas::*;
-use super::super::common_verus::div_mod_lemmas::*;
-use super::super::common_verus::mask_lemmas::*;
-use super::super::common_verus::mul_lemmas::*;
-use super::super::common_verus::pow_lemmas::*;
-use super::super::common_verus::shift_lemmas::*;
-
-use super::super::backend_64_core::*;
-use super::field_core::*;
 use super::load8_lemmas::*;
+
+use super::super::common_lemmas::bit_lemmas::*;
+use super::super::common_lemmas::div_mod_lemmas::*;
+use super::super::common_lemmas::mask_lemmas::*;
+use super::super::common_lemmas::mul_lemmas::*;
+use super::super::common_lemmas::pow_lemmas::*;
+use super::super::common_lemmas::shift_lemmas::*;
+
+use crate::specs::field_specs_u64::*;
+use crate::specs::core_specs::*;
 
 verus! {
 

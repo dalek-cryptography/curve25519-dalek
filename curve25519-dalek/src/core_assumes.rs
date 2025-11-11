@@ -172,4 +172,12 @@ pub fn sha512_hash_bytes(input: &[u8]) -> (result: [u8; 64])
     hasher.finalize().into()
 }
 
+// Assume specification for array hash implementation
+// This is used when hashing fixed-size arrays like [u8; 32] in Hash implementations
+pub assume_specification<T, const N: usize, H>[ <[T; N] as core::hash::Hash>::hash ](
+    _0: &[T; N],
+    _1: &mut H,
+) where H: core::hash::Hasher, T: core::hash::Hash
+;
+
 } // verus!

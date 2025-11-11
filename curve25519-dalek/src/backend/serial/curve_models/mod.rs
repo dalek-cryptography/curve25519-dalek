@@ -140,6 +140,9 @@ use crate::edwards::EdwardsPoint;
 use crate::field::FieldElement;
 use crate::traits::ValidityCheck;
 
+#[cfg(verus_keep_ghost)]
+use crate::backend::serial::u64::field::{spec_add_req, spec_mul_req, spec_sub_req};
+
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------
@@ -283,9 +286,9 @@ verus! {
 impl ValidityCheck for ProjectivePoint {
     fn is_valid(&self) -> (result: bool)
         requires
-            limbs_bounded(&self.X, 54),
-            limbs_bounded(&self.Y, 54),
-            limbs_bounded(&self.Z, 54),
+            spec_mul_req(&self.X, &self.X),
+            spec_mul_req(&self.Y, &self.Y),
+            spec_mul_req(&self.Z, &self.Z),
         ensures
             result == on_edwards_curve_projective(
                 field_element(&self.X),
@@ -299,17 +302,12 @@ impl ValidityCheck for ProjectivePoint {
         let YY = self.Y.square();
         let ZZ = self.Z.square();
         proof {
-            // TODO: This should be provable from square()'s postcondition
-            assume(limbs_bounded(&XX, 54));
-            assume(limbs_bounded(&YY, 54));
-            assume(limbs_bounded(&ZZ, 54));
+            assume(spec_mul_req(&ZZ, &ZZ));  // for ZZZZ = ZZ.square()
+            assume(spec_sub_req(&YY, &XX));  // for yy_minus_xx = &YY - &XX
+            assume(spec_mul_req(&XX, &YY));  // for xx_times_yy = &XX * &YY
         }
         let ZZZZ = ZZ.square();
 
-        proof {
-            // TODO: This should be provable from square()'s postcondition
-            assume(limbs_bounded(&ZZZZ, 54));
-        }
         /* ORIGINAL CODE: refactor for assumptions on intermediate results
         let lhs = &(&YY - &XX) * &ZZ;
         let rhs = &ZZZZ + &(&constants::EDWARDS_D * &(&XX * &YY));
@@ -318,30 +316,23 @@ impl ValidityCheck for ProjectivePoint {
 
         let yy_minus_xx = &YY - &XX;
         proof {
-            assume(limbs_bounded(&yy_minus_xx, 54));
+            assume(spec_mul_req(&yy_minus_xx, &ZZ));  // for lhs = &yy_minus_xx * &ZZ
         }
         let lhs = &yy_minus_xx * &ZZ;
+
         let xx_times_yy = &XX * &YY;
         proof {
-            // TODO: This should be provable from mul's postcondition
-            assume(limbs_bounded(&xx_times_yy, 54));
-        }
-        proof {
-            // TODO: This should be provable from the definition of EDWARDS_D constant
-            assume(limbs_bounded(&constants::EDWARDS_D, 54));
+            assume(spec_mul_req(&constants::EDWARDS_D, &xx_times_yy));  // for d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy
         }
         let d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy;
         proof {
-            // TODO: This should be provable from mul's postcondition
-            assume(limbs_bounded(&d_times_xxyy, 54));
-        }
-        proof {
-            assume(spec_add_no_overflow(&ZZZZ, &d_times_xxyy));
+            assume(spec_add_req(&ZZZZ, &d_times_xxyy));  // for rhs = &ZZZZ + &d_times_xxyy
         }
         let rhs = &ZZZZ + &d_times_xxyy;
 
         let result = lhs == rhs;
         proof {
+            // postcondition
             assume(result == on_edwards_curve_projective(
                 field_element(&self.X),
                 field_element(&self.Y),

@@ -172,10 +172,10 @@ pub open spec fn projective_niels_corresponds_to_edwards(
 
     // Check the relationships
     // 2d is computed as field_mul(2, d) in field arithmetic
-    y_plus_x == field_add(y, x) && y_minus_x == field_sub(y, x) && niels_z == z && t2d == field_mul(
-        field_mul(2, d),
-        t,
-    )
+    &&& y_plus_x == field_add(y, x)
+    &&& y_minus_x == field_sub(y, x)
+    &&& niels_z == z
+    &&& t2d == field_mul(field_mul(2, d), t)
 }
 
 /// Check if a ProjectiveNielsPoint is valid
@@ -215,8 +215,9 @@ pub open spec fn affine_niels_corresponds_to_edwards(
     let xy2d_niels = field_element(&niels.xy2d);
 
     // Check the relationships
-    y_plus_x_niels == field_add(y, x) && y_minus_x_niels == field_sub(y, x) && xy2d_niels
-        == field_mul(field_mul(field_mul(x, y), 2), d)
+    &&& y_plus_x_niels == field_add(y, x)
+    &&& y_minus_x_niels == field_sub(y, x)
+    &&& xy2d_niels == field_mul(field_mul(field_mul(x, y), 2), d)
 }
 
 /// Check if an AffineNielsPoint is valid

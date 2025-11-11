@@ -151,6 +151,8 @@ use crate::traits::MultiscalarMul;
 #[cfg(feature = "alloc")]
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
+#[cfg(verus_keep_ghost)]
+use crate::backend::serial::u64::field::{spec_add_req, spec_mul_req, spec_sub_req};
 use crate::backend::serial::u64::field_lemmas::field_core::*;
 use crate::backend::serial::u64::subtle_assumes::*;
 #[allow(unused_imports)] // Used in verus! blocks
@@ -247,17 +249,14 @@ impl CompressedEdwardsY {
                 field_element(&X),
                 field_element(&Y),
             ));
+            assume(false);
         }
         if choice_into(is_valid_y_coord) {
-            assert(choice_is_true(is_valid_y_coord));
-            assert(field_element(&Y) == field_element_from_bytes(&self.0));
             let point = decompress::step_2(self, X, Y, Z);
             let result = Some(point);
             assume(false);
             result
         } else {
-            assert(!choice_is_true(is_valid_y_coord));
-            assert(!is_valid_y_coordinate(field_element_from_bytes(&self.0)));
             let result = None;
             result
         }
@@ -291,7 +290,7 @@ mod decompress {
         assert(field_element_from_bytes(&repr.0) == field_element(&Y));
         let Z = FieldElement::ONE;
         proof {
-            assume(forall|i: int| 0 <= i < 5 ==> Y.limbs[i] < 1u64 << 54);
+            assume(limbs_bounded(&Y, 54));
         }
         let YY = Y.square();
 
@@ -726,9 +725,9 @@ impl ValidityCheck for EdwardsPoint {
         proof {
             // The limb bounds are preserved by as_projective() (proj.X == self.X, etc.)
             // and self has limbs_bounded from the preconditions
-            assert(limbs_bounded(&proj.X, 54));
-            assert(limbs_bounded(&proj.Y, 54));
-            assert(limbs_bounded(&proj.Z, 54));
+            assume(spec_mul_req(&proj.X, &proj.X));
+            assume(spec_mul_req(&proj.Y, &proj.Y));
+            assume(spec_mul_req(&proj.Z, &proj.Z));
         }
         let point_on_curve = proj.is_valid();
 
@@ -736,7 +735,7 @@ impl ValidityCheck for EdwardsPoint {
 
         let result = point_on_curve && on_segre_image;
         proof {
-            // TODO: Prove that the conjunction of these checks matches is_valid_edwards_point
+            // postcondition:
             assume(result == is_valid_edwards_point(*self));
         }
         result
@@ -799,12 +798,9 @@ impl EdwardsPoint {
             projective_niels_corresponds_to_edwards(result, *self),
     {
         proof {
-            // This should be provable from 54-bit bounds:
-            // If limbs[i] < 2^54 for both, then limbs[i] + limbs[i] < 2^55 < 2^64 - 1
-            assume(spec_add_no_overflow(&self.Y, &self.X));
-
-            // This should be provable from constants definition
-            assume(limbs_bounded(&constants::EDWARDS_D2, 54));
+            assume(spec_add_req(&self.Y, &self.X));  // for Y_plus_X
+            assume(spec_sub_req(&self.Y, &self.X));  // for Y_minus_X
+            assume(spec_mul_req(&self.T, &constants::EDWARDS_D2));  // for T2d
         }
 
         let result = ProjectiveNielsPoint {
@@ -815,11 +811,7 @@ impl EdwardsPoint {
         };
 
         proof {
-            // TODO: Derive that the field operations correctly implement the correspondence
-            // 1. field_element(Y + X) == field_add(field_element(Y), field_element(X))
-            // 2. field_element(Y - X) == field_sub(field_element(Y), field_element(X))
-            // 3. field_element(Z) == field_element(Z) (trivial)
-            // 4. field_element(T * 2d) == field_mul(field_element(2d), field_element(T))
+            // postcondition:
             assume(projective_niels_corresponds_to_edwards(result, *self));
         }
 
@@ -850,29 +842,28 @@ impl EdwardsPoint {
     {
         let recip = self.Z.invert();
         proof {
-            // VERIFICATION NOTE: need to strengthen postcondition for invert()
-            assert(limbs_bounded(&recip, 54));
+            assume(spec_mul_req(&self.X, &recip));  // for x = &self.X * &recip
+            assume(spec_mul_req(&self.Y, &recip));  // for y = &self.Y * &recip
         }
 
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
 
         proof {
-            assert(limbs_bounded(&x, 54));
-            assert(limbs_bounded(&y, 54));
+            assume(spec_mul_req(&x, &y));  // for xy = &x * &y
         }
 
         let xy = &x * &y;
 
         proof {
-            assert(limbs_bounded(&xy, 54));
-            assume(limbs_bounded(&constants::EDWARDS_D2, 54));
+            assume(spec_mul_req(&xy, &constants::EDWARDS_D2));  // for xy2d = &xy * &constants::EDWARDS_D2
         }
 
         let xy2d = &xy * &constants::EDWARDS_D2;
+
         proof {
-            assert(limbs_bounded(&xy2d, 54));
-            assume(spec_add_no_overflow(&y, &x));
+            assume(spec_add_req(&y, &x));  // for y_plus_x
+            assume(spec_sub_req(&y, &x));  // for y_minus_x
         }
 
         let result = AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d };

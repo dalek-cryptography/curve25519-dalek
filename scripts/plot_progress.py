@@ -332,25 +332,19 @@ def plot_funnel(stats: Dict[str, int], output_dir: Path):
 def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     """Create a breakdown by file/module."""
 
-    # Extract module from link
-    def extract_module(link: str) -> str:
-        if pd.isna(link) or not link:
+    # Simplify module names for display
+    def simplify_module(module: str) -> str:
+        if pd.isna(module) or not module:
             return "unknown"
-        # Extract path between /blob/hash/ and file name
-        import re
-
-        match = re.search(r"/blob/[^/]+/(.+?)#", link)
-        if match:
-            path = match.group(1)
-            # Get the parent directory
-            parts = path.split("/")
-            if len(parts) > 1:
-                # Return last 2 parts of path (e.g., "u64/field.rs")
-                return "/".join(parts[-2:]) if len(parts) >= 2 else parts[-1]
-            return parts[-1]
-        return "unknown"
-
-    df["module"] = df["link"].apply(extract_module)
+        # Remove crate prefix for cleaner display
+        # e.g., "curve25519_dalek::backend::serial::u64::field" -> "serial::u64::field"
+        parts = module.replace("curve25519_dalek::", "").split("::")
+        # Return last 2-3 parts for reasonable display
+        if len(parts) >= 3:
+            return "::".join(parts[-3:])
+        elif len(parts) >= 2:
+            return "::".join(parts[-2:])
+        return parts[-1] if parts else "unknown"
 
     # Count by module
     module_stats = []
@@ -365,6 +359,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
         module_stats.append(
             {
                 "module": module,
+                "display_module": simplify_module(module),
                 "total": total,
                 "verus_specs": verus_specs,
                 "verus_proofs": verus_proofs,
@@ -388,7 +383,7 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
     specs = [m["verus_specs"] for m in top_modules]
     proofs = [m["verus_proofs"] for m in top_modules]
     totals = [m["total"] for m in top_modules]
-    labels = [m["module"] for m in top_modules]
+    labels = [m["display_module"] for m in top_modules]
 
     # Draw black outlined rectangles showing total functions for each module
     from matplotlib.patches import Rectangle

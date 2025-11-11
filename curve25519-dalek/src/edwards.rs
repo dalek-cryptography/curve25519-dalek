@@ -257,8 +257,6 @@ impl CompressedEdwardsY {
             assume(false);
             result
         } else {
-            //   assert(!choice_is_true(is_valid_y_coord));
-            //   assert(!is_valid_y_coordinate(field_element_from_bytes(&self.0)));
             let result = None;
             result
         }

@@ -450,7 +450,7 @@ fn to_pkcs8_der(
     Ok(result)
 }
 
-#[cfg(all(feature = "pkcs8"))]
+#[cfg(feature = "pkcs8")]
 impl TryFrom<PrivateKeyInfoRef<'_>> for EphemeralSecret {
     type Error = pkcs8::Error;
 

@@ -252,8 +252,6 @@ impl CompressedEdwardsY {
             assume(false);
         }
         if choice_into(is_valid_y_coord) {
-            //     assert(choice_is_true(is_valid_y_coord));
-            //     assert(field_element(&Y) == field_element_from_bytes(&self.0));
             let point = decompress::step_2(self, X, Y, Z);
             let result = Some(point);
             assume(false);

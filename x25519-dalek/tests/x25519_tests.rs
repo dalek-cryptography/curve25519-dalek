@@ -223,3 +223,101 @@ mod os_rng {
         StaticSecret::random();
     }
 }
+
+#[cfg(feature = "pkcs8")]
+mod pkcs8 {
+
+    use ::pkcs8::DecodePrivateKey;
+    use ::pkcs8::EncodePrivateKey;
+    use ::pkcs8::LineEnding;
+
+    #[cfg(feature = "pem")]
+    const PEM_DATA: &str = "-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VuBCIEIAgFWQfJv7DnZqs7W/aHM+aa5kXnFTlLQAso2qIAJyVT
+-----END PRIVATE KEY-----
+";
+
+    #[cfg(feature = "pem")]
+    const PEM_DATA_WITH_PUBLIC_KEY: &str = "-----BEGIN PRIVATE KEY-----
+MFECAQEwBQYDK2VuBCIEIAgFWQfJv7DnZqs7W/aHM+aa5kXnFTlLQAso2qIAJyVT
+gSEAtKtoeuz21PdNOS7LH5srafvb2Hio7LaogF8aUZ+yrA4=
+-----END PRIVATE KEY-----
+";
+
+    #[test]
+    #[cfg(feature = "pem")]
+    fn decode_encode_pem() {
+        let private_key = x25519_dalek::EphemeralSecret::from_pkcs8_pem(PEM_DATA).unwrap();
+        assert_eq!(
+            PEM_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_pem(LineEnding::LF).unwrap().as_str()
+        );
+        let private_key =
+            x25519_dalek::EphemeralSecret::from_pkcs8_pem(PEM_DATA_WITH_PUBLIC_KEY).unwrap();
+        assert_eq!(
+            PEM_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_pem(LineEnding::LF).unwrap().as_str()
+        );
+
+        #[cfg(feature = "static_secrets")]
+        let private_key = x25519_dalek::StaticSecret::from_pkcs8_pem(PEM_DATA).unwrap();
+        #[cfg(feature = "static_secrets")]
+        assert_eq!(
+            PEM_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_pem(LineEnding::LF).unwrap().as_str()
+        );
+        #[cfg(feature = "static_secrets")]
+        let private_key =
+            x25519_dalek::StaticSecret::from_pkcs8_pem(PEM_DATA_WITH_PUBLIC_KEY).unwrap();
+        #[cfg(feature = "static_secrets")]
+        assert_eq!(
+            PEM_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_pem(LineEnding::LF).unwrap().as_str()
+        );
+    }
+
+    const DER_DATA: &[u8] = &[
+        0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04,
+        0x20, 0x08, 0x05, 0x59, 0x07, 0xc9, 0xbf, 0xb0, 0xe7, 0x66, 0xab, 0x3b, 0x5b, 0xf6, 0x87,
+        0x33, 0xe6, 0x9a, 0xe6, 0x45, 0xe7, 0x15, 0x39, 0x4b, 0x40, 0x0b, 0x28, 0xda, 0xa2, 0x00,
+        0x27, 0x25, 0x53,
+    ];
+
+    const DER_DATA_WITH_PUBLIC_KEY: &[u8] = &[
+        0x30, 0x51, 0x02, 0x01, 0x01, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04,
+        0x20, 0x08, 0x05, 0x59, 0x07, 0xc9, 0xbf, 0xb0, 0xe7, 0x66, 0xab, 0x3b, 0x5b, 0xf6, 0x87,
+        0x33, 0xe6, 0x9a, 0xe6, 0x45, 0xe7, 0x15, 0x39, 0x4b, 0x40, 0x0b, 0x28, 0xda, 0xa2, 0x00,
+        0x27, 0x25, 0x53, 0x81, 0x21, 0x00, 0xb4, 0xab, 0x68, 0x7a, 0xec, 0xf6, 0xd4, 0xf7, 0x4d,
+        0x39, 0x2e, 0xcb, 0x1f, 0x9b, 0x2b, 0x69, 0xfb, 0xdb, 0xd8, 0x78, 0xa8, 0xec, 0xb6, 0xa8,
+        0x80, 0x5f, 0x1a, 0x51, 0x9f, 0xb2, 0xac, 0x0e,
+    ];
+
+    #[test]
+    fn decode_encode_der() {
+        let private_key = x25519_dalek::EphemeralSecret::from_pkcs8_der(DER_DATA).unwrap();
+        assert_eq!(
+            DER_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_der().unwrap().as_bytes()
+        );
+        let private_key =
+            x25519_dalek::EphemeralSecret::from_pkcs8_der(DER_DATA_WITH_PUBLIC_KEY).unwrap();
+        assert_eq!(
+            DER_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_der().unwrap().as_bytes()
+        );
+
+        #[cfg(feature = "static_secrets")]
+        let private_key = x25519_dalek::StaticSecret::from_pkcs8_der(DER_DATA).unwrap();
+        assert_eq!(
+            DER_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_der().unwrap().as_bytes()
+        );
+        #[cfg(feature = "static_secrets")]
+        let private_key =
+            x25519_dalek::StaticSecret::from_pkcs8_der(DER_DATA_WITH_PUBLIC_KEY).unwrap();
+        assert_eq!(
+            DER_DATA_WITH_PUBLIC_KEY,
+            private_key.to_pkcs8_der().unwrap().as_bytes()
+        );
+    }
+}

@@ -393,9 +393,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
 
 /// Spec function for mul requirement - matches MulSpecImpl::mul_req
 pub open spec fn spec_mul_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
-    forall|i: int|
-        0 <= i < 5 ==> lhs.limbs[i] < (1u64 << 54) && forall|i: int|
-            0 <= i < 5 ==> rhs.limbs[i] < (1u64 << 54)
+    limbs_bounded(lhs, 54) && limbs_bounded(rhs, 54)
 }
 
 impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {

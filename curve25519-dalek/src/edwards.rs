@@ -152,12 +152,12 @@ use crate::traits::MultiscalarMul;
 use crate::traits::{VartimeMultiscalarMul, VartimePrecomputedMultiscalarMul};
 
 #[allow(unused_imports)] // Used in verus! blocks
-use crate::specs::field_specs::*;
-#[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::field::*;
 use crate::backend::serial::u64::subtle_assumes::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::specs::curve_specs::*;
+#[allow(unused_imports)] // Used in verus! blocks
+use crate::specs::field_specs::*;
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------

@@ -517,15 +517,11 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
         //
         // Therefore: c4 = 1 = q
         // Invoke the division computation to establish c4 = (as_nat + 19*q) / 2^255
-        assert(
-            c4 as int == (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int)
-        ) by {
+        assert(c4 as int == (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int)) by {
             lemma_reduction_carry_propagation_is_division(input_limbs, q, c4);
         }
-        
-        assert(
-            (as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int) == 1
-        ) by {
+
+        assert((as_nat(input_limbs) as int + 19 * q as int) / (pow2(255) as int) == 1) by {
             // Prove (as_nat(input_limbs) + 19) / 2^255 = 1 using bounds
             let val = as_nat(input_limbs) as int + 19 * q as int;
             assert(19 == 19 * q as int) by {
@@ -545,9 +541,7 @@ pub proof fn lemma_carry_out_equals_q(input_limbs: [u64; 5], q: u64)
             }
 
             // From val >= divisor, we have val / divisor >= 1
-            assert(
-                val / divisor >= 1
-            ) by {
+            assert(val / divisor >= 1) by {
                 assert(val / divisor >= val / val) by {
                     lemma_div_is_ordered_by_denominator(val, divisor, val)
                 }

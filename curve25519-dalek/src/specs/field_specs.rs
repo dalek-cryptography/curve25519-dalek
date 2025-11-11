@@ -1,9 +1,9 @@
 #[allow(unused_imports)]
 use super::core_specs::*;
 #[allow(unused_imports)]
-use crate::backend::serial::u64::field::FieldElement51;
-#[allow(unused_imports)]
 use super::field_specs_u64::*;
+#[allow(unused_imports)]
+use crate::backend::serial::u64::field::FieldElement51;
 #[allow(unused_imports)]
 use crate::constants;
 #[allow(unused_imports)]

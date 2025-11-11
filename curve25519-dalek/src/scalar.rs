@@ -149,9 +149,9 @@ use subtle::CtOption;
 use zeroize::Zeroize;
 
 use crate::backend;
+use crate::constants;
 #[cfg(verus_keep_ghost)]
 use crate::specs::field_specs_u64::spec_as_bytes;
-use crate::constants;
 
 #[allow(unused_imports)]
 use crate::specs::scalar_specs_u64::*;

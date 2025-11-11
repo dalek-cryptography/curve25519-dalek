@@ -14,8 +14,8 @@ use super::super::common_lemmas::mul_lemmas::*;
 use super::super::common_lemmas::pow_lemmas::*;
 use super::super::common_lemmas::shift_lemmas::*;
 
-use crate::specs::field_specs_u64::*;
 use crate::specs::core_specs::*;
+use crate::specs::field_specs_u64::*;
 
 verus! {
 

@@ -49,8 +49,6 @@ use crate::lemmas::common_lemmas::pow_lemmas::*;
 use crate::lemmas::common_lemmas::shift_lemmas::*;
 
 #[allow(unused_imports)]
-use crate::specs::core_specs::*;
-#[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_bytes_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::as_nat_lemmas::*;
@@ -72,6 +70,8 @@ use crate::lemmas::field_lemmas::pow2k_lemmas::*;
 use crate::lemmas::field_lemmas::reduce_lemmas::*;
 #[allow(unused_imports)]
 use crate::lemmas::field_lemmas::to_bytes_reduction_lemmas::*;
+#[allow(unused_imports)]
+use crate::specs::core_specs::*;
 
 #[allow(unused_imports)]
 use crate::backend::serial::u64::subtle_assumes::*;

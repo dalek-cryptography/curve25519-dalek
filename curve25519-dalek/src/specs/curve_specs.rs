@@ -1,16 +1,16 @@
 // Specifications for mathematical operations on Curve25519
+#[allow(unused_imports)]
+use super::field_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::curve_models::{
     AffineNielsPoint, ProjectiveNielsPoint, ProjectivePoint,
 };
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::constants::EDWARDS_D;
-#[allow(unused_imports)]
-use crate::specs::field_specs_u64::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::edwards::{CompressedEdwardsY, EdwardsPoint};
 #[allow(unused_imports)]
-use super::field_specs::*;
+use crate::specs::field_specs_u64::*;
 use vstd::prelude::*;
 
 verus! {

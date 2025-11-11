@@ -290,7 +290,7 @@ mod decompress {
         assert(field_element_from_bytes(&repr.0) == field_element(&Y));
         let Z = FieldElement::ONE;
         proof {
-            assume(spec_mul_req(&Y, &Y));
+            assume(limbs_bounded(&Y, 54));
         }
         let YY = Y.square();
 

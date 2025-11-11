@@ -188,6 +188,19 @@ verus!{
 
 Otherwise `verusfmt` sometimes unindents functions and causes a larger diff.
 
+## Directory organization
+
+Dalek-lite structure should follow the following principles: top-level, the files are separated into the original Rust executables (`src`), Verus definitions/specifications (`spec`) and lemmas/proofs (`lemmas`). Each of those directories is subdivided thematically but need not exactly follow the `src` directory structure (e.g. `spec/field_specs.rs` contains specifications related to `FieldElement` and `FieldElement51` from the two `field.rs` files at different levels).
+
+## Naming conventions 
+
+We use Rust's preferred snake-case style throughout.
+
+- The `spec` version of an executable function `[fn]` should be named `spec_[fn]` using the `spec_` prefix, e.g. `spec_reduce`
+- Boolean properties  may be named with no prefix if generic or math-based, e.g. `is_positive`, but should prefix the name of the class/trait they describe otherwise (shorthands permitted), e.g. `fe51_is_canonical`
+- Conversions should adopt the convention `[a]_as_[b]`, e.g. `u8_32_as_nat`
+- Lemmas should use the `lemma_` prefix (exceptions below), followed by the name of the function/category they describe, e.g. `lemma_load8_plus_fits_u64` or `lemma_pow2_sum_div_decomposition`
+- Proofs about top-level executable functions should use `proof_[fn]` and `no_overflow_[fn]` as their prefix instead, for functional correctness and overflow freedom respectively
 
 
 

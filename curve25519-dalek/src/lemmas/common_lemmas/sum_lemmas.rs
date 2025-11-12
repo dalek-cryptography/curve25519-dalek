@@ -25,7 +25,7 @@ pub open spec fn seq_sum(coefs: Seq<nat>, k: nat) -> nat
     }
 }
 
-pub proof fn sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
+pub proof fn lemma_sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
     requires
         k <= coefs.len(),
         forall|i: nat|
@@ -44,7 +44,7 @@ pub proof fn sum_bounds(coefs: Seq<nat>, k: nat, s: nat)
         }
 
         assert(seq_sum(coefs, (k - 1) as nat) <= pow2(k * s) - 1) by {
-            sum_bounds(coefs, (k - 1) as nat, s);
+            lemma_sum_bounds(coefs, (k - 1) as nat, s);
         }
 
         // "requires" for i = k

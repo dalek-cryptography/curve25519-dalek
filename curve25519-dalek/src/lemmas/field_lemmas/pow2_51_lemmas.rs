@@ -37,8 +37,8 @@ pub proof fn lemma_add_then_shift(a: u64, b: u64)
     assert(1u64 << 53 == (1u64 << 51) * 4) by (bit_vector);
     // 0 < b  /\ a < b * c => a/b < c
     lemma_multiply_divide_lt((a + b) as int, (1u64 << 51) as int, 4int);
-    shift_is_pow2(51);
-    shift_is_pow2(53);
+    lemma_shift_is_pow2(51);
+    lemma_shift_is_pow2(53);
     assert((a + b) as u64 >> 51 == (a + b) as u64 / (pow2(51) as u64)) by {
         lemma_u64_shr_is_div((a + b) as u64, 51);
     }
@@ -101,12 +101,12 @@ pub proof fn lemma_mul_sub(ci: int, cj: int, cj_0: int, k: nat)
 }
 
 // Masking with low_bits_mask(51) gives a value bounded by 2^51
-pub proof fn masked_lt_51(v: u64)
+pub proof fn lemma_masked_lt_51(v: u64)
     ensures
         v & mask51 < (1u64 << 51),
 {
     l51_bit_mask_lt();  // mask51 == low_bits_mask(51)
-    masked_lt(v, 51);
+    lemma_masked_lt(v, 51);
 }
 
 // lemma_div_and_mod specialization for k = 51, using mask51 == low_bits_mask(51)

@@ -283,11 +283,11 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
         // a0_0 < (1u64 << 51)
         assert(a0_0_val(a) < 1u64 << 51 && a1_0_val(a) < 1u64 << 51 && a2_0_val(a) < 1u64 << 51
             && a3_0_val(a) < 1u64 << 51 && a4_0_val(a) < 1u64 << 51) by {
-            masked_lt_51(c0_val(a) as u64);
-            masked_lt_51(c1_val(a) as u64);
-            masked_lt_51(c2_val(a) as u64);
-            masked_lt_51(c3_val(a) as u64);
-            masked_lt_51(c4_val(a) as u64);
+            lemma_masked_lt_51(c0_val(a) as u64);
+            lemma_masked_lt_51(c1_val(a) as u64);
+            lemma_masked_lt_51(c2_val(a) as u64);
+            lemma_masked_lt_51(c3_val(a) as u64);
+            lemma_masked_lt_51(c4_val(a) as u64);
         }
 
         // ceil(2^59.33)
@@ -318,7 +318,7 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
         }
 
         assert(a0_2_val(a) < 1u64 << 51) by {
-            masked_lt_51(a0_1_val(a) as u64);
+            lemma_masked_lt_51(a0_1_val(a) as u64);
         }
     }
 

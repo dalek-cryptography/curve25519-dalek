@@ -346,7 +346,7 @@ pub proof fn lemma_carry_bounded_after_mask(carry: u64, mask: u64)
     broadcast use lemma_u64_shr_is_div;
 
     lemma_pow2_pos(52);
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
     assert(carry >> 52 == carry / (1u64 << 52));
     lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
     let q = carry / (1u64 << 52);
@@ -383,7 +383,7 @@ pub proof fn lemma_add_carry_and_sum_bounds(carry: u64, mask: u64)
     broadcast use lemma_u64_shr_is_div;
 
     lemma_pow2_pos(52);
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
     assert(carry >> 52 == carry / (1u64 << 52));
     lemma_fundamental_div_mod(carry as int, (1u64 << 52) as int);
     let q = carry / (1u64 << 52);
@@ -836,7 +836,7 @@ pub proof fn lemma_decompose(a: u64, mask: u64)
     broadcast use lemma_u64_shr_is_div;
 
     lemma_pow2_pos(52);
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
     lemma2_to64_rest();  // Establishes pow2(52) == 0x10000000000000
     assert((1u64 << 52) == 0x10000000000000) by (bit_vector);
     assert(pow2(52) == 0x10000000000000);

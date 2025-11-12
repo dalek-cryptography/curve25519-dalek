@@ -31,28 +31,28 @@ pub proof fn lemma_boundaries(limbs: [u64; 5])
         ((limbs[4] & mask51) + (limbs[3] >> 51)) < (1u64 << 52),
 {
     // \A i. limbs[i] < 2^13
-    shifted_lt(limbs[0], 51);
-    shifted_lt(limbs[1], 51);
-    shifted_lt(limbs[2], 51);
-    shifted_lt(limbs[3], 51);
-    shifted_lt(limbs[4], 51);
+    lemma_shifted_lt(limbs[0], 51);
+    lemma_shifted_lt(limbs[1], 51);
+    lemma_shifted_lt(limbs[2], 51);
+    lemma_shifted_lt(limbs[3], 51);
+    lemma_shifted_lt(limbs[4], 51);
 
     // \A i. limbs[i] & mask51 < 2^51
-    masked_lt_51(limbs[0]);
-    masked_lt_51(limbs[1]);
-    masked_lt_51(limbs[2]);
-    masked_lt_51(limbs[3]);
-    masked_lt_51(limbs[4]);
+    lemma_masked_lt_51(limbs[0]);
+    lemma_masked_lt_51(limbs[1]);
+    lemma_masked_lt_51(limbs[2]);
+    lemma_masked_lt_51(limbs[3]);
+    lemma_masked_lt_51(limbs[4]);
 
     // Since 19 < 2^5 and (limbs[4] >> 51) < 2^13, their product is less than 2^18
     assert((limbs[4] >> 51) * 19 < (1u64 << 18) as nat) by {
         assert(19 < (1u64 << 5)) by (bit_vector);
-        shift_is_pow2(5);
-        shift_is_pow2(13);
-        shift_is_pow2(18);
+        lemma_shift_is_pow2(5);
+        lemma_shift_is_pow2(13);
+        lemma_shift_is_pow2(18);
         lemma_pow2_adds(13, 5);
         // If (limbs[4] >> 51) < 2^13 and 19 < 2^5 then their product is less than 2^18
-        mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
+        lemma_mul_lt((limbs[4] >> 51) as nat, (1u64 << 13) as nat, 19nat, (1u64 << 5) as nat);
     }
 
     // The final values (limbs[i] += cX) are all bounded by 2^51 + eps, for eps \in {2^18, 2^13}.
@@ -99,13 +99,13 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
         if (forall|i: int| 0 <= i < 5 ==> #[trigger] limbs[i] < (1u64 << 51)) {
             assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] & mask51 == limbs[i] by {
                 l51_bit_mask_lt();  // mask51 = low_bits_mask(51)
-                shift_is_pow2(51);
+                lemma_shift_is_pow2(51);
                 lemma_u64_low_bits_mask_is_mod(limbs[i], 51);
                 lemma_small_mod(limbs[i] as nat, pow2(51));
             }
             assert forall|i: int| 0 <= i < 5 implies #[trigger] limbs[i] >> 51 == 0 by {
                 l51_bit_mask_lt();  // mask51 = low_bits_mask(51)
-                shift_is_pow2(51);
+                lemma_shift_is_pow2(51);
                 lemma_u64_shr_is_div(limbs[i], 51);
                 lemma_basic_div(limbs[i] as int, pow2(51) as int);
             }
@@ -210,12 +210,12 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
     let r = spec_reduce(limbs);
 
     assert(1u64 << 51 == pow2(51)) by {
-        shift_is_pow2(51);
+        lemma_shift_is_pow2(51);
     }
 
     // For r[i] where i > 0: (limbs[i] & mask51) + (limbs[i-1] >> 51) < 2^51 + 2^13
     assert forall|i: int| 0 <= i <= 4 implies #[trigger] (limbs[i] & mask51) < pow2(51) by {
-        masked_lt_51(limbs[i]);
+        lemma_masked_lt_51(limbs[i]);
     }
     // separate foralls, because they trigger on i and i-1
     assert forall|i: int| 0 <= i <= 4 implies #[trigger] limbs[i] >> 51 < pow2(13) by {
@@ -224,7 +224,7 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
         }
         assert(u64::MAX >> 51 < pow2(13)) by {
             assert(1u64 << 13 == pow2(13)) by {
-                shift_is_pow2(13);
+                lemma_shift_is_pow2(13);
             }
             lemma_u64_max_shifting(51);
         }
@@ -239,7 +239,7 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
         assert(pow2(18) == pow2(13) * pow2(5)) by {
             lemma_pow2_adds(13, 5);
         }
-        mul_lt((limbs[4] >> 51) as nat, pow2(13), 19, pow2(5));
+        lemma_mul_lt((limbs[4] >> 51) as nat, pow2(13), 19, pow2(5));
     }
 
     assert forall|i: nat| 1 <= i <= 4 implies #[trigger] pow2(i * 51) * r[i as int] < pow2(i * 51)

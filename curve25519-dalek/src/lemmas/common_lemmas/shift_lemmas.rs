@@ -11,18 +11,18 @@ use super::pow_lemmas::*;
 verus! {
 
 // Specialization of lemma_u64_shl_is_mul for x = 1
-pub proof fn shift_is_pow2(k: nat)
+pub proof fn lemma_shift_is_pow2(k: nat)
     requires
         k < 64,
     ensures
         (1u64 << k) == pow2(k),
 {
-    pow2_le_max64(k);
+    lemma_pow2_le_max64(k);
     lemma_u64_shl_is_mul(1u64, k as u64);
 }
 
 // v << 0 == v for all v
-pub broadcast proof fn shl_zero_is_id(v: u64)
+pub broadcast proof fn lemma_shl_zero_is_id(v: u64)
     ensures
         #![trigger v << 0]
         v << 0 == v,
@@ -31,7 +31,7 @@ pub broadcast proof fn shl_zero_is_id(v: u64)
 }
 
 // v << (a + b) == (v << a) << b
-pub proof fn shl_decomposition(v: u64, a: nat, b: nat)
+pub proof fn lemma_shl_by_sum(v: u64, a: nat, b: nat)
     requires
         (a + b) < 64,
         v * pow2(a + b) <= u64::MAX,
@@ -39,7 +39,7 @@ pub proof fn shl_decomposition(v: u64, a: nat, b: nat)
         (v << (a + b)) == ((v << a) << b),
 {
     if (a == 0 || b == 0) {
-        broadcast use shl_zero_is_id;
+        broadcast use lemma_shl_zero_is_id;
 
     } else {
         // 2^(a + b) == 2^a * 2^b
@@ -47,7 +47,7 @@ pub proof fn shl_decomposition(v: u64, a: nat, b: nat)
         // 2^a < 2^(a + b) ...
         lemma_pow2_strictly_increases(a, a + b);
         // ..., which implies v * 2^a < v * 2^(a + b) <= u64::MAX
-        mul_le(v as nat, v as nat, pow2(a), pow2(a + b));
+        lemma_mul_le(v as nat, v as nat, pow2(a), pow2(a + b));
         // v << a + b = v * 2^(a+b)
         lemma_u64_shl_is_mul(v, (a + b) as u64);
         // v << a = v * 2^a
@@ -68,13 +68,13 @@ pub proof fn lemma_shl_le_u64(a: u64, b: u64, k: nat)
     ensures
         (a << k) <= (b << k),
 {
-    mul_le(a as nat, b as nat, pow2(k), pow2(k));
+    lemma_mul_le(a as nat, b as nat, pow2(k), pow2(k));
     lemma_u64_shl_is_mul(a, k as u64);
     lemma_u64_shl_is_mul(b, k as u64);
 }
 
 // // If a <= b then v << a <= v << b (up to overflow)
-pub proof fn shl_nondecreasing(v: u64, a: nat, b: nat)
+pub proof fn lemma_shl_nondecreasing(v: u64, a: nat, b: nat)
     requires
         a <= b < 64,
         v * pow2(b) <= u64::MAX,
@@ -90,26 +90,26 @@ pub proof fn shl_nondecreasing(v: u64, a: nat, b: nat)
         lemma_pow2_strictly_increases(0, b);
         lemma_u64_shl_is_mul(v, 0);
         lemma_u64_shl_is_mul(v, b as u64);
-        mul_le(v as nat, v as nat, pow2(0), pow2(b));
+        lemma_mul_le(v as nat, v as nat, pow2(0), pow2(b));
     } else {
         // if a != 0 and a != b then 0 < d < b
         let d = b - a;
 
         // v << b = (v << (b - a)) << a
-        shl_decomposition(v, d as nat, a);
+        lemma_shl_by_sum(v, d as nat, a);
 
         assert(v << d == v * pow2(d as nat)) by {
             // we need the precond v * pow2(d) < M
             lemma_pow2_strictly_increases(d as nat, b);
-            mul_le(v as nat, v as nat, pow2(d as nat), pow2(b));
+            lemma_mul_le(v as nat, v as nat, pow2(d as nat), pow2(b));
             lemma_u64_shl_is_mul(v, d as u64);
         }
 
         assert(v <= v << d) by {
-            shl_zero_is_id(v);
+            lemma_shl_zero_is_id(v);
             lemma_u64_shl_is_mul(v, 0);
             lemma_pow2_strictly_increases(0, d as nat);
-            mul_le(v as nat, v as nat, pow2(0), pow2(d as nat));
+            lemma_mul_le(v as nat, v as nat, pow2(0), pow2(d as nat));
         }
 
         lemma_pow2_adds(a, d as nat);
@@ -124,7 +124,7 @@ pub proof fn shl_nondecreasing(v: u64, a: nat, b: nat)
 }
 
 // v >> 0 == v for all v
-pub broadcast proof fn shr_zero_is_id(v: u64)
+pub broadcast proof fn lemma_shr_zero_is_id(v: u64)
     ensures
         #![trigger v >> 0]
         v >> 0 == v,
@@ -133,14 +133,14 @@ pub broadcast proof fn shr_zero_is_id(v: u64)
 }
 
 // v >> (a + b) == (v >> a) >> b
-pub proof fn shr_decomposition(v: u64, a: nat, b: nat)
+pub proof fn lemma_shr_by_sum(v: u64, a: nat, b: nat)
     requires
         (a + b) < 64,
     ensures
         (v >> (a + b)) == ((v >> a) >> b),
 {
     if (a == 0 || b == 0) {
-        broadcast use shr_zero_is_id;
+        broadcast use lemma_shr_zero_is_id;
 
     } else {
         lemma2_to64_rest();  // pow2(64)
@@ -181,7 +181,7 @@ pub proof fn lemma_shr_le_u64(a: u64, b: u64, k: nat)
 }
 
 // If a <= b then v >> a >= v >> b
-pub proof fn shr_nonincreasing(v: u64, a: nat, b: nat)
+pub proof fn lemma_shr_nonincreasing(v: u64, a: nat, b: nat)
     requires
         a <= b <= 64,
     ensures
@@ -192,7 +192,7 @@ pub proof fn shr_nonincreasing(v: u64, a: nat, b: nat)
     } else {
         let d = (b - a) as u64;
         // v >> b = (v >> (b - a)) >> a
-        shr_decomposition(v, d as nat, a);
+        lemma_shr_by_sum(v, d as nat, a);
         assert(v >> d <= v) by (bit_vector);
         // a <= b => a >> x <= b >> x
         lemma_shr_le_u64(v >> d, v, a);
@@ -219,7 +219,7 @@ pub proof fn lemma_u64_max_shifting(k: nat)
         lemma_u64_max_shifting(k + 1);
 
         // M >> (k + 1) = (M >> k) >> 1
-        shr_decomposition(M, k, 1);
+        lemma_shr_by_sum(M, k, 1);
 
         // precondition
         lemma2_to64_rest();  // pow2(63)
@@ -233,19 +233,19 @@ pub proof fn lemma_u64_max_shifting(k: nat)
                 // 64 - k < 63
                 lemma_pow2_strictly_increases((64 - k) as nat, 63);
             }
-            mul_le(1u64 as nat, 1u64 as nat, pow2((64 - k) as nat), pow2(63));
+            lemma_mul_le(1u64 as nat, 1u64 as nat, pow2((64 - k) as nat), pow2(63));
         }
         assert(1u64 * pow2(63) <= u64::MAX) by (compute);
 
         // 1 << 64 - k = (1 << 63 - k) << 1
-        shl_decomposition(1u64, (63 - k) as nat, 1);
+        lemma_shl_by_sum(1u64, (63 - k) as nat, 1);
 
         // (M >> k) >> 1 = (M >> k) / pow2(1);
         lemma_u64_shr_is_div(M >> k, 1);
 
         // lemma_u64_shl_is_mul(x, n) precondition: x * pow2(n) <= u64::MAX
         assert((1u64 << ((63 - k))) * pow2(1) <= u64::MAX) by {
-            shift_is_pow2((63 - k) as nat);
+            lemma_shift_is_pow2((63 - k) as nat);
             lemma_pow2_adds((63 - k) as nat, 1);
         }
 
@@ -260,7 +260,7 @@ pub proof fn lemma_u64_max_shifting(k: nat)
     }
 }
 
-pub proof fn left_right_shift(v: u64, sl: u64, sr: u64)
+pub proof fn lemma_left_right_shift(v: u64, sl: u64, sr: u64)
     requires
         sr <= sl < 64,
         v * pow2(sl as nat) <= u64::MAX,
@@ -302,7 +302,7 @@ pub proof fn left_right_shift(v: u64, sl: u64, sr: u64)
 
 // Corollary of lemma_u64_max_shifting, since for any
 // v: u64 it holds that v <= u64::MAX and >> preserves [<=]
-pub proof fn shifted_lt(v: u64, k: nat)
+pub proof fn lemma_shifted_lt(v: u64, k: nat)
     requires
         1 <= k <= 64,
     ensures
@@ -310,16 +310,13 @@ pub proof fn shifted_lt(v: u64, k: nat)
 {
     if (k == 64) {
         assert(v >> 64 == 0) by (bit_vector);
-        shl_zero_is_id(1u64);
+        lemma_shl_zero_is_id(1u64);
     } else {
         // (v >> k) <= (u64::MAX >> k)
         lemma_shr_le_u64(v, u64::MAX, k);
         // u64::MAX >> k < 1u64 << (64 - k)
         lemma_u64_max_shifting(k);
     }
-}
-
-fn main() {
 }
 
 } // verus!

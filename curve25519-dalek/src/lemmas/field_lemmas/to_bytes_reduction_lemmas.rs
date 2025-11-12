@@ -398,11 +398,11 @@ pub proof fn lemma_reduction_carry_propagation_is_division(input_limbs: [u64; 5]
 
     // Verify preconditions for telescoping - need to prove the division-modulo relationships
 
-    masked_lt_51(l0);
-    masked_lt_51(l1);
-    masked_lt_51(l2);
-    masked_lt_51(l3);
-    masked_lt_51(l4);
+    lemma_masked_lt_51(l0);
+    lemma_masked_lt_51(l1);
+    lemma_masked_lt_51(l2);
+    lemma_masked_lt_51(l3);
+    lemma_masked_lt_51(l4);
 
     lemma_reduction_telescoping(
         input_limbs,
@@ -582,11 +582,11 @@ pub proof fn lemma_to_bytes_reduction(input_limbs: [u64; 5], final_limbs: [u64; 
 
     // Part 1: Prove that all final limbs are bounded by 2^51
     l51_bit_mask_lt();
-    masked_lt_51(l0);
-    masked_lt_51(l1);
-    masked_lt_51(l2);
-    masked_lt_51(l3);
-    masked_lt_51(l4);
+    lemma_masked_lt_51(l0);
+    lemma_masked_lt_51(l1);
+    lemma_masked_lt_51(l2);
+    lemma_masked_lt_51(l3);
+    lemma_masked_lt_51(l4);
 
     // Part 2: Prove that as_nat(final_limbs) == as_nat(input_limbs) % p()
     // Strategy: Show that the carry propagation computes as_nat(input_limbs) + 19*q - 2^255*q

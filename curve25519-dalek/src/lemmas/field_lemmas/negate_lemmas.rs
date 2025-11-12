@@ -30,7 +30,7 @@ pub proof fn lemma_neg_no_underflow(limbs: [u64; 5])
 {
     lemma2_to64_rest();  // pow2(51)
     assert forall|i: int| 0 <= i < 5 implies limbs[i] < 16 * (pow2(51) - 19) by {
-        shift_is_pow2(51);
+        lemma_shift_is_pow2(51);
     }
 }
 

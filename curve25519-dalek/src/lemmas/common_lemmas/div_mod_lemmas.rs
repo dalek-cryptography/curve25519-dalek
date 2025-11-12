@@ -128,7 +128,4 @@ pub proof fn lemma_u8_cast_is_mod_256(x: u64)
     assert((x as u8) == x % 256) by (bit_vector);
 }
 
-fn main() {
-}
-
 } // verus!

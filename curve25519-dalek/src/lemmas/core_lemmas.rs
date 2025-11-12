@@ -20,9 +20,9 @@ pub proof fn as_nat_32_u8_le_pow2_256(bytes: &[u8; 32])
     ) - pow2(i * 8) by {
         let b = bytes[i as int];
         assert(b < pow2(8)) by {
-            u8_lt_pow2_8(b);
+            lemma_u8_lt_pow2_8(b);
         }
-        pow2_mul_general(b as nat, 8, i * 8);
+        lemma_pow2_mul_bound_general(b as nat, 8, i * 8);
         assert(i * 8 + 8 == (i + 1) * 8) by {
             lemma_mul_is_distributive_add_other_way(i as int, 1, 8);
         }

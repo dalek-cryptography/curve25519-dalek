@@ -109,7 +109,7 @@ pub proof fn from_bytes_as_nat_01(bytes: &[u8; 32])
         51,
     ) * (bytes[10] * pow2((4 * 8 - 3) as nat)) + pow2(51) * (bytes[11] * pow2((5 * 8 - 3) as nat))
         + pow2(51) * ((bytes[12] as nat % pow2(6)) * pow2((6 * 8 - 3) as nat))) by {
-        mul_7_terms(
+        lemma_mul_distributive_7_terms(
             pow2(51) as int,
             (bytes[6] as nat / pow2(3)) as int,
             (bytes[7] * pow2((1 * 8 - 3) as nat)) as int,
@@ -186,7 +186,7 @@ pub proof fn from_bytes_as_nat_012(bytes: &[u8; 32])
     )) + pow2(102) * (bytes[18] * pow2((6 * 8 - 6) as nat)) + pow2(102) * ((bytes[19] as nat % pow2(
         1,
     )) * pow2((7 * 8 - 6) as nat))) by {
-        mul_8_terms(
+        lemma_mul_distributive_8_terms(
             pow2(102) as int,
             (bytes[12] as nat / pow2(6)) as int,
             (bytes[13] * pow2((1 * 8 - 6) as nat)) as int,
@@ -272,7 +272,7 @@ pub proof fn from_bytes_as_nat_0123(bytes: &[u8; 32])
         + pow2(153) * (bytes[23] * pow2((4 * 8 - 1) as nat)) + pow2(153) * (bytes[24] * pow2(
         (5 * 8 - 1) as nat,
     )) + pow2(153) * ((bytes[25] as nat % pow2(4)) * pow2((6 * 8 - 1) as nat))) by {
-        mul_7_terms(
+        lemma_mul_distributive_7_terms(
             pow2(153) as int,
             (bytes[19] as nat / pow2(1)) as int,
             (bytes[20] * pow2((1 * 8 - 1) as nat)) as int,
@@ -357,7 +357,7 @@ pub proof fn from_bytes_as_nat_01234(bytes: &[u8; 32])
     )) + pow2(204) * (bytes[29] * pow2((5 * 8 - 12) as nat)) + pow2(204) * (bytes[30] * pow2(
         (6 * 8 - 12) as nat,
     )) + pow2(204) * ((bytes[31] as nat % pow2(7)) * pow2((7 * 8 - 12) as nat))) by {
-        mul_7_terms(
+        lemma_mul_distributive_7_terms(
             pow2(204) as int,
             (bytes[25] as nat / pow2(4)) as int,
             (bytes[26] * pow2((2 * 8 - 12) as nat)) as int,
@@ -464,15 +464,20 @@ pub proof fn as_nat_32_mod_255(bytes: &[u8; 32])
     ) + (bytes[31] * pow2(31 * 8)) as nat % pow2(255)) by {
         assert(pow2_sum(bytes, 0, 8, 30) < pow2(31 * 8)) by {
             assert forall|i: nat| 0 <= i <= 30 implies bytes[i as int] < pow2(8) by {
-                u8_lt_pow2_8(bytes[i as int]);
+                lemma_u8_lt_pow2_8(bytes[i as int]);
             }
-            pow2_sum_bounds(bytes, 0, 8, 30);
+            lemma_pow2_sum_bounds(bytes, 0, 8, 30);
         }
         assert((pow2_sum(bytes, 0, 8, 30) + bytes[31] * pow2(31 * 8)) as nat % pow2(255)
             == pow2_sum(bytes, 0, 8, 30) % pow2(255) + (bytes[31] * pow2(31 * 8)) as nat % pow2(
             255,
         )) by {
-            sum_mod_decomposition(pow2_sum(bytes, 0, 8, 30), bytes[31] as nat, 31 * 8, 255);
+            lemma_binary_sum_mod_decomposition(
+                pow2_sum(bytes, 0, 8, 30),
+                bytes[31] as nat,
+                31 * 8,
+                255,
+            );
         }
 
         assert(pow2_sum(bytes, 0, 8, 30) % pow2(255) == pow2_sum(bytes, 0, 8, 30)) by {
@@ -486,7 +491,7 @@ pub proof fn as_nat_32_mod_255(bytes: &[u8; 32])
     assert((bytes[31] as nat * pow2(31 * 8)) % pow2(255) == ((bytes[31] as nat % pow2(7)) * pow2(
         31 * 8,
     ))) by {
-        mask_pow2(bytes[31] as nat, 31 * 8, 255);
+        lemma_pow2_mul_mod(bytes[31] as nat, 31 * 8, 255);
     }
 }
 

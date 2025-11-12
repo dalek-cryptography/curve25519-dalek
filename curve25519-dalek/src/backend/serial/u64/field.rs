@@ -157,7 +157,7 @@ fn m(x: u64, y: u64) -> (r: u128)
 {
     proof {
         // if a <= a' and b <= b' then ab <= a'b'
-        mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
+        lemma_mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
     }
     (x as u128) * (y as u128)
 }

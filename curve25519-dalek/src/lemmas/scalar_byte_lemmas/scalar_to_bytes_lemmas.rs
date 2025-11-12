@@ -150,7 +150,7 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
 {
     // Connect the bit shift in the requires clause to pow2 for clarity
     assert((1u64 << 52) == pow2(52)) by {
-        shift_is_pow2(52);
+        lemma_shift_is_pow2(52);
     }
 
     assert(five_limbs_to_nat_aux(limbs) % pow2(256) == (limbs[0] as nat) + pow2(52) * (
@@ -160,21 +160,21 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
             lemma_pow2_strictly_increases(52, 256);
         }
         assert(pow2(52) * (limbs[1] as nat) <= pow2(104) - pow2(52) < pow2(104) < pow2(256)) by {
-            pow2_mul_general(limbs[1] as nat, 52, 52);
+            lemma_pow2_mul_bound_general(limbs[1] as nat, 52, 52);
             lemma_pow2_pos(52);
             lemma_pow2_strictly_increases(104, 256);
         }
         assert(pow2(104) * (limbs[2] as nat) <= pow2(156) - pow2(104) < pow2(156) < pow2(256)) by {
-            pow2_mul_general(limbs[2] as nat, 52, 104);
+            lemma_pow2_mul_bound_general(limbs[2] as nat, 52, 104);
             lemma_pow2_pos(104);
             lemma_pow2_strictly_increases(156, 256);
         }
         assert(pow2(156) * (limbs[3] as nat) <= pow2(208) - pow2(156) < pow2(208) < pow2(256)) by {
-            pow2_mul_general(limbs[3] as nat, 52, 156);
+            lemma_pow2_mul_bound_general(limbs[3] as nat, 52, 156);
             lemma_pow2_pos(156);
             lemma_pow2_strictly_increases(208, 256);
         }
-        sum_mod_decomposition(
+        lemma_binary_sum_mod_decomposition(
             (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(
                 156,
             ) * (limbs[3] as nat),
@@ -182,19 +182,19 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
             208,
             256,
         );
-        sum_mod_decomposition(
+        lemma_binary_sum_mod_decomposition(
             (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat),
             limbs[3] as nat,
             156,
             256,
         );
-        sum_mod_decomposition(
+        lemma_binary_sum_mod_decomposition(
             (limbs[0] as nat) + pow2(52) * (limbs[1] as nat),
             limbs[2] as nat,
             104,
             256,
         );
-        sum_mod_decomposition(limbs[0] as nat, limbs[1] as nat, 52, 256);
+        lemma_binary_sum_mod_decomposition(limbs[0] as nat, limbs[1] as nat, 52, 256);
         assert((limbs[0] as nat) % pow2(256) == limbs[0] as nat) by {
             lemma_small_mod(limbs[0] as nat, pow2(256));
         }
@@ -213,7 +213,7 @@ pub proof fn lemma_as_bytes_52(limbs: [u64; 5], bytes: [u8; 32])
         208,
     )) by {
         lemma_mul_is_commutative(pow2(208) as int, limbs[4] as int);
-        mask_pow2(limbs[4] as nat, 208, 256);
+        lemma_pow2_mul_mod(limbs[4] as nat, 208, 256);
     }
 
     // Establish that each limb is bounded by pow2(52)
@@ -297,12 +297,12 @@ pub proof fn lemma_sum_equals_byte_nat_52(limbs: [u64; 5], bytes: [u8; 32])
     //
     // The proof follows by expanding the definitions and grouping terms.
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
 
     // Prove limbs are bounded by pow2(52)
     assert(forall|i: int| 0 <= i < 5 ==> limbs[i] < pow2(52)) by {
         assert((1u64 << 52) == pow2(52)) by {
-            shift_is_pow2(52);
+            lemma_shift_is_pow2(52);
         }
     }
 
@@ -428,7 +428,7 @@ proof fn lemma_boundary_byte_combines_52(
         if low_bits < 7 {
             lemma_pow2_strictly_increases(low_bits, 7);
         }
-        mul_le(high_limb as nat, (pow2(52) - 1) as nat, pow2(low_bits), pow2(7));
+        lemma_mul_le(high_limb as nat, (pow2(52) - 1) as nat, pow2(low_bits), pow2(7));
     }
 
     assert(high_part == high_limb * (pow2(low_bits) as u64)) by {
@@ -436,7 +436,7 @@ proof fn lemma_boundary_byte_combines_52(
     }
 
     // === STEP 2: Prove OR equals addition ===
-    // Need preconditions for bit_or_is_plus:
+    // Need preconditions for lemma_bit_or_is_plus:
     // 1) low_part < 1u64 << low_bits
     // 2) high_limb <= u64::MAX >> low_bits
 
@@ -461,7 +461,7 @@ proof fn lemma_boundary_byte_combines_52(
 
     assert(low_part < 1u64 << low_bits) by {
         assert(1u64 << low_bits == (pow2(low_bits) as u64)) by {
-            shift_is_pow2(low_bits);
+            lemma_shift_is_pow2(low_bits);
         }
     }
 
@@ -476,9 +476,9 @@ proof fn lemma_boundary_byte_combines_52(
         lemma_u64_shr_is_div(u64::MAX, low_bits as u64);
     }
 
-    // Apply bit_or_is_plus
+    // Apply lemma_bit_or_is_plus
     assert(low_part | high_part == low_part + high_part) by {
-        bit_or_is_plus(low_part, high_limb, low_bits as u64);
+        lemma_bit_or_is_plus(low_part, high_limb, low_bits as u64);
     }
 
     // === STEP 3: Express combined value ===
@@ -560,7 +560,7 @@ pub proof fn lemma_limb0_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     // Strategy: Apply div-mod theorem at the 48-bit boundary
     // limbs[0] = (limbs[0] % 2^48) + (limbs[0] / 2^48) * 2^48
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
     assert(pow2(8) == 256);
 
     // Step 1: Show bytes 0-5 contribute (limbs[0] % 2^48)
@@ -576,7 +576,7 @@ pub proof fn lemma_limb0_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     ) + bytes[5] as nat * pow2(5 * 8);
 
     // Use lemma_byte_from_limb_shift_52 to establish arithmetic value of each byte
-    shr_zero_is_id(limbs[0]);
+    lemma_shr_zero_is_id(limbs[0]);
     assert(bytes[0] == (limbs[0] >> 0) as u8);
     lemma_byte_from_limb_shift_52(limbs[0], 0, bytes[0]);
     assert(bytes[0] as nat == (limbs[0] as nat / pow2(0)) % 256);
@@ -674,7 +674,7 @@ pub proof fn lemma_limb1_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
 {
     // Proof following docs_22_oct/lemma_limb1_contribution_52_proof.md
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
 
     // === STEP 1: Define the Split ===
     let l1_low = limbs[1] as nat % pow2(4);  // Low 4 bits in byte 6
@@ -873,7 +873,7 @@ pub proof fn lemma_limb2_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
 {
     // Proof following docs_22_oct/lemma_limb2_contribution_52_proof.md
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
 
     // === STEP 1: Define the Split ===
     let l2_low = limbs[2] as nat % pow2(48);  // Low 48 bits in bytes 13-18
@@ -894,7 +894,7 @@ pub proof fn lemma_limb2_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     assert(limbs[2] as nat == l2_low + l2_high * pow2(48));
 
     // === STEP 4: Byte Reconstruction for Low 48 Bits ===
-    shr_zero_is_id(limbs[2]);
+    lemma_shr_zero_is_id(limbs[2]);
     lemma_byte_from_limb_shift_52(limbs[2], 0, bytes[13]);
     lemma_byte_from_limb_shift_52(limbs[2], 8, bytes[14]);
     lemma_byte_from_limb_shift_52(limbs[2], 16, bytes[15]);
@@ -1028,7 +1028,7 @@ pub proof fn lemma_limb3_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
 {
     // Proof following docs_22_oct/lemma_limb3_contribution_52_proof.md
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
 
     // === STEP 1: Define the Split ===
     let l3_low = limbs[3] as nat % pow2(4);  // Low 4 bits in byte 19
@@ -1234,10 +1234,10 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
     // Therefore: bytes reconstruct limbs[4]
     // And: limb4_contribution = Σ bytes[i] * 2^(i*8) = limbs[4] * 2^208
     lemma2_to64();
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(52);
 
     // Step 1: Show bytes 26-31 encode limbs[4] using byte-shift arithmetic
-    shr_zero_is_id(limbs[4]);
+    lemma_shr_zero_is_id(limbs[4]);
     lemma_byte_from_limb_shift_52(limbs[4], 0, bytes[26]);
     lemma_byte_from_limb_shift_52(limbs[4], 8, bytes[27]);
     lemma_byte_from_limb_shift_52(limbs[4], 16, bytes[28]);
@@ -1272,11 +1272,11 @@ pub proof fn lemma_limb4_contribution_correctness_52(limbs: [u64; 5], bytes: [u8
         }
         assert((limbs[4] as nat / pow2(i * 8)) % pow2(8) == (limbs[4] as nat % pow2(8 + i * 8))
             / pow2(i * 8)) by {
-            mask_div2(limbs[4] as nat, i * 8, 8);
+            lemma_pow2_div_mod(limbs[4] as nat, i * 8, 8);
         }
 
         assert((l / pow2(i * 8)) % pow2(8) == (l % pow2(8 + i * 8)) / pow2(i * 8)) by {
-            mask_div2(l, i * 8, 8);
+            lemma_pow2_div_mod(l, i * 8, 8);
         }
 
         assert(l % pow2(8 + i * 8) == limbs[4] as nat % pow2(8 + i * 8)) by {

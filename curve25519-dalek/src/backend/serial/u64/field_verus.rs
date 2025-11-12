@@ -73,7 +73,7 @@ fn m(x: u64, y: u64) -> (r: u128)
 {
     proof {
         // if a <= a' and b <= b' then ab <= a'b'
-        mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
+        lemma_mul_le(x as nat, u64::MAX as nat, y as nat, u64::MAX as nat);
     }
     (x as u128) * (y as u128)
 }
@@ -493,7 +493,7 @@ impl FieldElement51 {
             proof {
                 pow255_gt_19();  // p > 0
                 lemma2_to64_rest();  // pow2(51 | 54)
-                shift_is_pow2(54);
+                lemma_shift_is_pow2(54);
 
                 let bound = 1u64 << 54;
                 let bound19 = (19 * bound) as u64;
@@ -572,24 +572,24 @@ impl FieldElement51 {
 
                 let a0_0 = (c0_0 as u64) & LOW_51_BIT_MASK;
                 // a0_0 < (1u64 << 51)
-                masked_lt_51(c0_0 as u64);
+                lemma_masked_lt_51(c0_0 as u64);
 
                 let a1_0 = (c1 as u64) & LOW_51_BIT_MASK;
                 // a1_0 < (1u64 << 51)
-                masked_lt_51(c1 as u64);
+                lemma_masked_lt_51(c1 as u64);
 
                 let a2 = (c2 as u64) & LOW_51_BIT_MASK;
                 // a2 < (1u64 << 51)
-                masked_lt_51(c2 as u64);
+                lemma_masked_lt_51(c2 as u64);
 
                 let a3 = (c3 as u64) & LOW_51_BIT_MASK;
                 // a3 < (1u64 << 51)
-                masked_lt_51(c3 as u64);
+                lemma_masked_lt_51(c3 as u64);
 
                 let carry: u64 = (c4 >> 51) as u64;
                 let a4 = (c4 as u64) & LOW_51_BIT_MASK;
                 // a4 < (1u64 << 51)
-                masked_lt_51(c4 as u64);
+                lemma_masked_lt_51(c4 as u64);
 
                 assert(c4 <= c4_0 + (u64::MAX as u128));
                 lemma_shr_51_le(c4, (5 * bound_sq + (u64::MAX as u128)) as u128);
@@ -625,7 +625,7 @@ impl FieldElement51 {
 
                 let a0_2 = a0_1 & LOW_51_BIT_MASK;
                 // a0_2 < (1u64 << 51)
-                masked_lt_51(a0_1 as u64);
+                lemma_masked_lt_51(a0_1 as u64);
 
                 //---- end of no-overflow proof ----
                 // Loop invariant: after i loops we have as_nat(a) % p = as_nat(self.limbs) ^ (2 ^ i) % p

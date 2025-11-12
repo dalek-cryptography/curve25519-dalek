@@ -11,6 +11,59 @@ use crate::specs::field_specs_u64::*;
 
 verus! {
 
+pub proof fn lemma_mul_v0_and_reorder(
+    v0: int,
+    s1: int,
+    v1: int,
+    s2: int,
+    v2: int,
+    s3: int,
+    v3: int,
+    s4: int,
+    v4: int,
+)
+    ensures
+        v0 * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == s4 * (v0 * v4) + s3 * (v0 * v3) + s2
+            * (v0 * v2) + s1 * (v0 * v1) + (v0 * v0),
+{
+    lemma_mul_distributive_5_terms(v0, v0, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
+
+    lemma_mul_is_associative(v0, v1, s1);
+    lemma_mul_is_associative(v0, v2, s2);
+    lemma_mul_is_associative(v0, v3, s3);
+    lemma_mul_is_associative(v0, v4, s4);
+}
+
+pub proof fn lemma_mul_si_vi_and_reorder(
+    si: int,
+    vi: int,
+    v0: int,
+    s1: int,
+    v1: int,
+    s2: int,
+    v2: int,
+    s3: int,
+    v3: int,
+    s4: int,
+    v4: int,
+)
+    ensures
+        (si * vi) * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == (si) * (vi * v0) + (si * s1) * (
+        vi * v1) + (si * s2) * (vi * v2) + (si * s3) * (vi * v3) + (si * s4) * (vi * v4),
+{
+    // n * (x1 + x2 + x3 + x4 + x5) == n * x1 + n * x2 + n * x3 + n * x4 + n * x5
+    lemma_mul_distributive_5_terms(si * vi, v0, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
+
+    assert((si * vi) * (v0 + s1 * v1 + s2 * v2 + s3 * v3 + s4 * v4) == (si * vi) * v0 + (si * vi)
+        * (s1 * v1) + (si * vi) * (s2 * v2) + (si * vi) * (s3 * v3) + (si * vi) * (s4 * v4));
+
+    lemma_mul_is_associative(si, vi, v0);
+    lemma_mul_quad_prod(si, vi, s1, v1);
+    lemma_mul_quad_prod(si, vi, s2, v2);
+    lemma_mul_quad_prod(si, vi, s3, v3);
+    lemma_mul_quad_prod(si, vi, s4, v4);
+}
+
 // Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)
 pub proof fn lemma_as_nat_sub(a: [u64; 5], b: [u64; 5])
     requires
@@ -97,14 +150,14 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(as_nat(v) * as_nat(v) == v0 * as_nat(v) + (s1 * v1) * as_nat(v) + (s2 * v2) * as_nat(v)
         + (s3 * v3) * as_nat(v) + (s4 * v4) * as_nat(v)) by {
         // (x1 + x2 + x3 + x4 + x5) * n == x1 * n + x2 * n + x3 * n + x4 * n + x5 * n
-        mul_5_terms(as_nat(v) as int, v0 as int, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
+        lemma_mul_distributive_5_terms(as_nat(v) as int, v0 as int, s1 * v1, s2 * v2, s3 * v3, s4 * v4);
     }
 
     // because of the sheer number of possible associativity/distributivity groupings we have
     // to help the solver along by intermittently asserting chunks
     assert(v0 * as_nat(v) == s4 * (v0 * v4) + s3 * (v0 * v3) + s2 * (v0 * v2) + s1 * (v0 * v1) + v0
         * v0) by {
-        mul_v0_and_reorder(
+        lemma_mul_v0_and_reorder(
             v0 as int,
             s1 as int,
             v1 as int,
@@ -119,7 +172,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
 
     assert((s1 * v1) * as_nat(v) == s5 * (v1 * v4) + s4 * (v1 * v3) + s3 * (v1 * v2) + s2 * (v1
         * v1) + s1 * (v0 * v1)) by {
-        mul_si_vi_and_reorder(
+        lemma_mul_si_vi_and_reorder(
             s1 as int,
             v1 as int,
             v0 as int,
@@ -136,7 +189,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
 
     assert((s2 * v2) * as_nat(v) == s6 * (v2 * v4) + s5 * (v2 * v3) + s4 * (v2 * v2) + s3 * (v1
         * v2) + s2 * (v0 * v2)) by {
-        mul_si_vi_and_reorder(
+        lemma_mul_si_vi_and_reorder(
             s2 as int,
             v2 as int,
             v0 as int,
@@ -153,7 +206,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
 
     assert((s3 * v3) * as_nat(v) == s7 * (v3 * v4) + s6 * (v3 * v3) + s5 * (v2 * v3) + s4 * (v1
         * v3) + s3 * (v0 * v3)) by {
-        mul_si_vi_and_reorder(
+        lemma_mul_si_vi_and_reorder(
             s3 as int,
             v3 as int,
             v0 as int,
@@ -170,7 +223,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
 
     assert((s4 * v4) * as_nat(v) == s8 * (v4 * v4) + s7 * (v3 * v4) + s6 * (v2 * v4) + s5 * (v1
         * v4) + s4 * (v0 * v4)) by {
-        mul_si_vi_and_reorder(
+        lemma_mul_si_vi_and_reorder(
             s4 as int,
             v4 as int,
             v0 as int,

@@ -12,7 +12,7 @@ use super::sum_lemmas::*;
 
 verus! {
 
-pub proof fn u8_lt_pow2_8(a: u8)
+pub proof fn lemma_u8_lt_pow2_8(a: u8)
     ensures
         a < pow2(8),
 {
@@ -22,7 +22,7 @@ pub proof fn u8_lt_pow2_8(a: u8)
 }
 
 // Auxiliary lemma for exponentiation
-pub proof fn pow2_le_max64(k: nat)
+pub proof fn lemma_pow2_le_max64(k: nat)
     requires
         k < 64,
     ensures
@@ -98,7 +98,7 @@ pub proof fn lemma_pow_nat_is_nat(v: nat, i: nat)
     }
 }
 
-pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
+pub proof fn lemma_pow2_mul_bound_general(a: nat, s: nat, k: nat)
     requires
         a < pow2(s),
     ensures
@@ -108,7 +108,7 @@ pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
 {
     assert(a <= pow2(s) - 1);  // x < y <=> x <= y - 1
 
-    mul_le(a as nat, (pow2(s) - 1) as nat, pow2(k), pow2(k));
+    lemma_mul_le(a as nat, (pow2(s) - 1) as nat, pow2(k), pow2(k));
     assert((pow2(s) - 1) * pow2(k) == pow2(k + s) - pow2(k)) by {
         lemma_mul_is_distributive_sub(pow2(k) as int, pow2(s) as int, 1);
         lemma_pow2_adds(k, s);
@@ -121,7 +121,7 @@ pub proof fn pow2_mul_general(a: nat, s: nat, k: nat)
     }
 }
 
-pub proof fn pow2_mul_u8(a: u8, k: nat)
+pub proof fn lemma_pow2_mul_bound_u8(a: u8, k: nat)
     ensures
         pow2(k) * a <= pow2(k + 8) - pow2(k),
         a * pow2(k) <= pow2(k + 8) - pow2(k),
@@ -131,10 +131,10 @@ pub proof fn pow2_mul_u8(a: u8, k: nat)
         lemma2_to64();
     }
 
-    pow2_mul_general(a as nat, 8, k);
+    lemma_pow2_mul_bound_general(a as nat, 8, k);
 }
 
-pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
+pub proof fn lemma_bindary_sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
     requires
         a < pow2(s),
     ensures
@@ -159,7 +159,7 @@ pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
     }
 
     assert(z % pk == x % pk + y % pk) by {
-        sum_mod_decomposition(a, b, s, k);
+        lemma_binary_sum_mod_decomposition(a, b, s, k);
     }
 
     assert(z == x + y == pk * (x / pk + y / pk) + z % pk) by {
@@ -175,7 +175,7 @@ pub proof fn sum_div_decomposition(a: nat, b: nat, s: nat, k: nat)
     }
 }
 
-pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
+pub proof fn lemma_binary_sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
     requires
         a < pow2(s),
     ensures
@@ -221,7 +221,7 @@ pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
         let z = b % pow2(d);
 
         assert(y % pk == z * ps) by {
-            mask_pow2(b, s, k);
+            lemma_pow2_mul_mod(b, s, k);
         }
 
         assert(x % pk == x) by {
@@ -237,7 +237,7 @@ pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
                     assert(z < pow2(d)) by {
                         lemma_small_mod(z, pow2(d));
                     }
-                    pow2_mul_general(z, d, s);
+                    lemma_pow2_mul_bound_general(z, d, s);
                 }
             }
 
@@ -246,14 +246,14 @@ pub proof fn sum_mod_decomposition(a: nat, b: nat, s: nat, k: nat)
     }
 }
 
-pub proof fn u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
+pub proof fn lemma_u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
     requires
         k + 8 <= s,
     ensures
         (pow2(k) * a) as nat % pow2(s) == pow2(k) * a,
 {
     assert(pow2(k) * a < pow2(k + 8)) by {
-        pow2_mul_u8(a, k);
+        lemma_pow2_mul_bound_u8(a, k);
     }
     if (k + 8 < s) {
         assert(pow2(k + 8) < pow2(s)) by {
@@ -269,7 +269,7 @@ pub proof fn u8_times_pow2_mod_is_id(a: u8, k: nat, s: nat)
     }
 }
 
-pub proof fn u8_times_pow2_fits_u64(a: u8, k: nat)
+pub proof fn lemma_u8_times_pow2_fits_u64(a: u8, k: nat)
     requires
         k <= 56,
     ensures
@@ -281,17 +281,17 @@ pub proof fn u8_times_pow2_fits_u64(a: u8, k: nat)
                 lemma_pow2_strictly_increases(k, 56);
             }
         }
-        mul_le(a as nat, a as nat, pow2(k), pow2(56));
+        lemma_mul_le(a as nat, a as nat, pow2(k), pow2(56));
     }
 
-    pow2_mul_u8(a, 56);
+    lemma_pow2_mul_bound_u8(a, 56);
     assert(pow2(64) - pow2(56) <= u64::MAX) by {
         lemma2_to64_rest();
     }
 
 }
 
-pub proof fn mask_pow2(x: nat, k: nat, s: nat)
+pub proof fn lemma_pow2_mul_mod(x: nat, k: nat, s: nat)
     requires
         k <= s,
     ensures
@@ -312,7 +312,7 @@ pub proof fn mask_pow2(x: nat, k: nat, s: nat)
     }
 }
 
-pub proof fn mask_div2(x: nat, k: nat, s: nat)
+pub proof fn lemma_pow2_div_mod(x: nat, k: nat, s: nat)
     ensures
         (x / pow2(k)) % pow2(s) == (x % pow2(s + k)) / pow2(k),
 {
@@ -349,7 +349,7 @@ pub proof fn mask_div2(x: nat, k: nat, s: nat)
     assert(x / pk == ps * x_div_pd + x_mod_pd / pk) by {
         assert((pd * x_div_pd + x_mod_pd) / pk == (pd * x_div_pd) / pk + x_mod_pd / pk) by {
             lemma_mul_is_commutative(pd as int, x_div_pd as int);
-            sum_div_decomposition(x_mod_pd, x_div_pd, d, k);
+            lemma_bindary_sum_div_decomposition(x_mod_pd, x_div_pd, d, k);
         }
         assert((pd * x_div_pd) / pk == ps * x_div_pd) by {
             assert(pd * x_div_pd == pk * (ps * x_div_pd)) by {
@@ -382,10 +382,10 @@ pub proof fn mask_div2(x: nat, k: nat, s: nat)
                 pk as int,
             );
         }
-        // satisfies conditions for sum_mod_decomposition
+        // satisfies conditions for lemma_binary_sum_mod_decomposition
         assert((ps * x_div_pd + x_mod_pd / pk) % ps == (ps * x_div_pd) % ps + (x_mod_pd / pk) % ps)
             by {
-            sum_mod_decomposition(x_mod_pd / pk, x_div_pd, s, s);
+            lemma_binary_sum_mod_decomposition(x_mod_pd / pk, x_div_pd, s, s);
         }
         assert((ps * x_div_pd) % ps == 0) by {
             lemma_mul_is_commutative(ps as int, x_div_pd as int);
@@ -420,7 +420,7 @@ pub proof fn pow2_MUL_div(x: nat, k: nat, s: nat)
     }
 }
 
-pub proof fn pow2_mul_DIV(x: nat, k: nat, s: nat)
+pub proof fn lemma_pow2_mul_div(x: nat, k: nat, s: nat)
     requires
         k <= s,
     ensures
@@ -446,7 +446,7 @@ pub proof fn pow2_mul_DIV(x: nat, k: nat, s: nat)
     }
 }
 
-pub proof fn pow2_MUL_div_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_div(x: nat, px: nat, k: nat, s: nat, t: nat)
     requires
         x < pow2(px),
         s <= k,
@@ -463,7 +463,7 @@ pub proof fn pow2_MUL_div_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
     let dd = (t - d) as nat;
 
     assert((x * pow2(d)) % pow2(t) == (x % pow2(dd)) * pow2(d)) by {
-        mask_pow2(x, d, t);
+        lemma_pow2_mul_mod(x, d, t);
     }
 
     assert(x % pow2(dd) == x) by {
@@ -478,7 +478,7 @@ pub proof fn pow2_MUL_div_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
     }
 }
 
-pub proof fn pow2_MUL_div_MOD_u8(x: u8, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_div_u8(x: u8, k: nat, s: nat, t: nat)
     requires
         s <= k,
         8 + k - s <= t,
@@ -488,10 +488,10 @@ pub proof fn pow2_MUL_div_MOD_u8(x: u8, k: nat, s: nat, t: nat)
     assert(x < pow2(8)) by {
         lemma2_to64();  // pow2(8)
     }
-    pow2_MUL_div_MOD(x as nat, 8, k, s, t);
+    lemma_pow2_mul_div_mod_small_div(x as nat, 8, k, s, t);
 }
 
-pub proof fn pow2_mul_DIV_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_mul(x: nat, px: nat, k: nat, s: nat, t: nat)
     requires
         x < pow2(px),
         k <= s,
@@ -502,7 +502,7 @@ pub proof fn pow2_mul_DIV_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
     let d = (s - k) as nat;
 
     assert((x * pow2(k)) / pow2(s) == x / pow2(d)) by {
-        pow2_mul_DIV(x, k, s);
+        lemma_pow2_mul_div(x, k, s);
     }
 
     assert(pow2(d) > 0) by {
@@ -530,7 +530,7 @@ pub proof fn pow2_mul_DIV_MOD(x: nat, px: nat, k: nat, s: nat, t: nat)
     }
 }
 
-pub proof fn pow2_mul_DIV_MOD_u8(x: u8, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_mul_u8(x: u8, k: nat, s: nat, t: nat)
     requires
         k <= s,
         8 <= t + s - k,
@@ -540,10 +540,10 @@ pub proof fn pow2_mul_DIV_MOD_u8(x: u8, k: nat, s: nat, t: nat)
     assert(x < pow2(8)) by {
         lemma2_to64();  // pow2(8)
     }
-    pow2_mul_DIV_MOD(x as nat, 8, k, s, t);
+    lemma_pow2_mul_div_mod_small_mul(x as nat, 8, k, s, t);
 }
 
-pub proof fn pow2_MUL_div_Mod(x: nat, px: nat, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_close_mod(x: nat, px: nat, k: nat, s: nat, t: nat)
     requires
         x < pow2(px),
         s <= k,
@@ -562,11 +562,11 @@ pub proof fn pow2_MUL_div_Mod(x: nat, px: nat, k: nat, s: nat, t: nat)
     let dd = (t - d) as nat;
 
     assert((x * pow2(d)) % pow2(t) == (x % pow2(dd)) * pow2(d)) by {
-        mask_pow2(x, d, t);
+        lemma_pow2_mul_mod(x, d, t);
     }
 }
 
-pub proof fn pow2_MUL_div_Mod_u8(x: u8, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_close_mod_u8(x: u8, k: nat, s: nat, t: nat)
     requires
         s <= k,
         k - s <= t,
@@ -578,10 +578,10 @@ pub proof fn pow2_MUL_div_Mod_u8(x: u8, k: nat, s: nat, t: nat)
     assert(x < pow2(8)) by {
         lemma2_to64();  // pow2(8)
     }
-    pow2_MUL_div_Mod(x as nat, 8, k, s, t);
+    lemma_pow2_mul_div_mod_close_mod(x as nat, 8, k, s, t);
 }
 
-pub proof fn pow2_MUL_div_mod(x: nat, px: nat, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_mod(x: nat, px: nat, k: nat, s: nat, t: nat)
     requires
         x < pow2(px),
         s <= k,
@@ -611,7 +611,7 @@ pub proof fn pow2_MUL_div_mod(x: nat, px: nat, k: nat, s: nat, t: nat)
     }
 }
 
-pub proof fn pow2_MUL_div_mod_u8(x: u8, k: nat, s: nat, t: nat)
+pub proof fn lemma_pow2_mul_div_mod_small_mod_u8(x: u8, k: nat, s: nat, t: nat)
     requires
         s <= k,
         t <= k - s,
@@ -621,10 +621,10 @@ pub proof fn pow2_MUL_div_mod_u8(x: u8, k: nat, s: nat, t: nat)
     assert(x < pow2(8)) by {
         lemma2_to64();  // pow2(8)
     }
-    pow2_MUL_div_mod(x as nat, 8, k, s, t);
+    lemma_pow2_mul_div_mod_small_mod(x as nat, 8, k, s, t);
 }
 
-pub proof fn div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
+pub proof fn lemma_div_pow2_preserves_decomposition(a: u64, b: u64, s: nat, k: nat)
     requires
         a < pow2(s),
         a + b * pow2(s) <= u64::MAX,
@@ -685,13 +685,13 @@ pub proof fn lemma_chunk_extraction_commutes_with_mod(x: nat, k: nat, b: nat, m:
         (x / pow2(k * b)) % pow2(b) == ((x % pow2(m)) / pow2(k * b)) % pow2(b),
 {
     assert((x / pow2(k * b)) % pow2(b) == (x % pow2(k * b + b)) / pow2(k * b)) by {
-        mask_div2(x, k * b, b);
+        lemma_pow2_div_mod(x, k * b, b);
     }
 
     let y = x % pow2(m);
 
     assert((y / pow2(k * b)) % pow2(b) == (y % pow2(k * b + b)) / pow2(k * b)) by {
-        mask_div2(y, k * b, b);
+        lemma_pow2_div_mod(y, k * b, b);
     }
 
     let s = k * b + b;
@@ -725,7 +725,7 @@ pub open spec fn pow2_sum(coefs: &[u8], offset: nat, step: nat, k: nat) -> nat
     }
 }
 
-pub proof fn pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
+pub proof fn lemma_pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
     requires
         offset + k <= coefs.len(),
         forall|i: nat| 0 <= i <= k ==> #[trigger] coefs[(offset + i) as int] < pow2(step),
@@ -747,7 +747,7 @@ pub proof fn pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
         }
 
         assert(pow2_sum(coefs, offset, step, (k - 1) as nat) < pow2(k * step)) by {
-            pow2_sum_bounds(coefs, offset, step, (k - 1) as nat);
+            lemma_pow2_sum_bounds(coefs, offset, step, (k - 1) as nat);
         }
 
         assert(coefs[(offset + k) as int] * pow2(k * step) <= pow2((k + 1) * step) - pow2(k * step))
@@ -758,13 +758,47 @@ pub proof fn pow2_sum_bounds(coefs: &[u8], offset: nat, step: nat, k: nat)
             assert(coefs[(offset + k) as int] * pow2(k * step) <= pow2(k * step + step) - pow2(
                 k * step,
             )) by {
-                pow2_mul_general(coefs[(offset + k) as int] as nat, step, k * step);
+                lemma_pow2_mul_bound_general(coefs[(offset + k) as int] as nat, step, k * step);
             }
         }
     }
 }
 
-fn main() {
+/// Modular Bit Partitioning Theorem
+/// If we add a value 'a' (fitting in k bits) to 'b' shifted left by k positions,
+/// and take the result mod 2^n, we can partition the contributions:
+/// - The low k bits come from 'a' (masked to k bits)
+/// - The high (n-k) bits come from 'b' (masked to n-k bits, then shifted)
+///
+/// This works because:
+/// 1. When a < 2^k, 'a' only affects bits [0, k-1]
+/// 2. When we shift 'b' left by k, it only affects bits [k, n-1]
+/// 3. No carry occurs between the two regions
+/// 4. The sum fits within n bits
+pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
+    requires
+        k <= n,
+        a < pow2(k),
+    ensures
+        (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
+{
+    assert((a + b * pow2(k)) % pow2(n) == a % pow2(n) + (b * pow2(k)) % pow2(n)) by {
+        lemma_binary_sum_mod_decomposition(a, b, k, n);
+    }
+
+    assert((b * pow2(k)) % pow2(n) == (b % pow2((n - k) as nat)) * pow2(k)) by {
+        lemma_pow2_mul_mod(b, k, n);
+    }
+
+    assert(a % pow2(k) == a == a % pow2(n)) by {
+        assert(pow2(k) <= pow2(n)) by {
+            if (k < n) {
+                lemma_pow2_strictly_increases(k, n);
+            }
+        }
+        lemma_small_mod(a, pow2(k));
+        lemma_small_mod(a, pow2(n));
+    }
 }
 
 } // verus!

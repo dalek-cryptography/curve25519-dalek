@@ -243,17 +243,17 @@ pub proof fn load8_at_versions_equivalent(input: &[u8], i: usize, k: nat)
         let prev = load8_at_plus_version_rec(input, i, (k - 1) as nat);
         assert(prev < (1u64 << 8 * k)) by {
             load8_at_plus_version_rec_is_bounded(input, i, (k - 1) as nat);
-            shift_is_pow2(8 * k);
+            lemma_shift_is_pow2(8 * k);
         }
         let v = input[i + k];
         assert(v <= (u64::MAX >> ((k * 8) as u64))) by {
             assert(v <= u8::MAX);
             assert(u64::MAX >> ((k * 8) as u64) >= u64::MAX >> 56) by {
-                shr_nonincreasing(u64::MAX, k * 8, 56);
+                lemma_shr_nonincreasing(u64::MAX, k * 8, 56);
             }
             assert(u8::MAX <= u64::MAX >> 56) by (compute);
         }
-        bit_or_is_plus(prev, input[i + k] as u64, (8 * k) as u64);
+        lemma_bit_or_is_plus(prev, input[i + k] as u64, (8 * k) as u64);
     }
 }
 
@@ -281,7 +281,7 @@ pub proof fn load8_plus_fits_u64(input: &[u8], i: usize, k: nat)
         }
         assert(xk_1 <= 0x100000000000000 - 1);
         assert(pow2(k * 8) * v <= 0x100000000000000 * u8::MAX) by {
-            mul_le(pow2(k * 8), 0x100000000000000, v as nat, u8::MAX as nat);
+            lemma_mul_le(pow2(k * 8), 0x100000000000000, v as nat, u8::MAX as nat);
         }
         assert((0x100000000000000 - 1) + (0x100000000000000) * u8::MAX <= u64::MAX) by (compute);
     }
@@ -315,7 +315,7 @@ pub proof fn load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat)
         ) % (pow2(s) as u64) + (pow2(k * 8) * input[i + k]) as u64 % (pow2(s) as u64),
 {
     assert(pow2(s) <= u64::MAX) by {
-        pow2_le_max64(s);
+        lemma_pow2_le_max64(s);
     }
 
     assert(pow2(s) > 0) by {
@@ -323,7 +323,7 @@ pub proof fn load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat)
     }
 
     assert(pow2(k * 8) <= u64::MAX) by {
-        pow2_le_max64(k * 8);
+        lemma_pow2_le_max64(k * 8);
     }
 
     let p64 = pow2(s) as u64;
@@ -338,7 +338,7 @@ pub proof fn load8_plus_ver_div_mod(input: &[u8], i: usize, k: nat, s: nat)
     }
 
     assert(v * pow2(k * 8) <= u64::MAX) by {
-        u8_times_pow2_fits_u64(v, k * 8);
+        lemma_u8_times_pow2_fits_u64(v, k * 8);
     }
 
     assert(((v as u64) << k * 8) == pow2(k * 8) * v) by {
@@ -409,7 +409,7 @@ pub proof fn load8_shift_mod_lemma(
             assert(s_j / ps64 < pow2(d) && a_jplus1 / ps64 == x * pow2(d) && s_j / ps64 + x * pow2(
                 d,
             ) <= u64::MAX) by {
-                div_pow2_preserves_decomposition(s_j, x as u64, j * 8, s);
+                lemma_div_pow2_preserves_decomposition(s_j, x as u64, j * 8, s);
             }
 
             assert((s_j / ps64 + x * pow2(d)) as u64 % pt64 == (s_j / ps64) % pt64 + (x * pow2(
@@ -456,7 +456,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert(0 < pow2(s) <= u64::MAX) by {
         lemma_pow2_pos(s);
-        pow2_le_max64(s);
+        lemma_pow2_le_max64(s);
     }
 
     assert(x >> s64 == x / ps64) by {
@@ -469,7 +469,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
 
     assert forall|j: nat| j <= 7 implies #[trigger] pow2(j * 8) * input[i + j] <= u64::MAX by {
         assert(pow2(j * 8) * input[i + j] == input[i + j] * pow2(j * 8));
-        u8_times_pow2_fits_u64(input[i + j], j * 8);
+        lemma_u8_times_pow2_fits_u64(input[i + j], j * 8);
     }
 
     assert(y / ps64 == (pow2(0 * 8) * input[i + 0]) as u64 / ps64 + (pow2(1 * 8) * input[i
@@ -500,7 +500,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     let z = y / ps64;
 
     assert(low_bits_mask(t) <= u64::MAX) by {
-        low_bits_masks_fit_u64(t);
+        lemma_low_bits_masks_fit_u64(t);
     }
 
     assert(z & (low_bits_mask(t) as u64) == z % pt64) by {
@@ -517,7 +517,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
         assert(j * 8 + 8 == (j + 1) * 8) by {
             lemma_mul_is_distributive_add_other_way(8, j as int, 1);
         }
-        pow2_mul_u8(input[i + j], j * 8);
+        lemma_pow2_mul_bound_u8(input[i + j], j * 8);
     }
 
     // pow2(_) values;
@@ -525,7 +525,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
     lemma2_to64_rest();
     assert(0 < pow2(t) <= u64::MAX) by {
         lemma_pow2_pos(t);
-        pow2_le_max64(t);
+        lemma_pow2_le_max64(t);
     }
 
     // ---- lemmas about X * pow2
@@ -540,7 +540,7 @@ pub proof fn load8_shift_mod(input: &[u8], i: usize, s64: u64, t: nat)
         assert(j * 8 + 8 == (j + 1) * 8) by {
             lemma_mul_is_distributive_add_other_way(8, j as int, 1);
         }
-        pow2_mul_u8(input[i + j], j * 8);
+        lemma_pow2_mul_bound_u8(input[i + j], j * 8);
         assert(pow2((j + 1) * 8) > pow2(j * 8)) by {
             lemma_pow2_strictly_increases(j * 8, j * 8 + 8);
         }
@@ -678,12 +678,12 @@ pub proof fn load8_limb_base(input: &[u8], i: usize, k: u64)
 {
     assert(0 < pow2(51) <= u64::MAX) by {
         lemma_pow2_pos(51);
-        pow2_le_max64(51);
+        lemma_pow2_le_max64(51);
     }
 
     assert(0 < pow2(k as nat) <= u64::MAX) by {
         lemma_pow2_pos(k as nat);
-        pow2_le_max64(k as nat);
+        lemma_pow2_le_max64(k as nat);
     }
 
     let p51 = pow2(51) as u64;
@@ -709,19 +709,19 @@ pub proof fn load8_limb_base(input: &[u8], i: usize, k: u64)
 
 }
 
-pub open spec fn pow2_mul_DIV_MOD_u8_t51_cond(k: nat, j: nat) -> bool {
+pub open spec fn lemma_pow2_mul_div_mod_small_mul_u8_t51_cond(k: nat, j: nat) -> bool {
     (j * 8 <= k) && (8 <= 51 + k - 8 * j)
 }
 
-pub open spec fn pow2_MUL_div_MOD_u8_t51_cond(k: nat, j: nat) -> bool {
+pub open spec fn lemma_pow2_mul_div_mod_small_div_u8_t51_cond(k: nat, j: nat) -> bool {
     (k <= j * 8) && (8 + j * 8 - k <= 51)
 }
 
-pub open spec fn pow2_MUL_div_Mod_u8_t51_cond(k: nat, j: nat) -> bool {
+pub open spec fn lemma_pow2_mul_div_mod_close_mod_u8_t51_cond(k: nat, j: nat) -> bool {
     (k <= j * 8) && (j * 8 - k <= 51)
 }
 
-pub open spec fn pow2_MUL_div_mod_u8_t51_cond(k: nat, j: nat) -> bool {
+pub open spec fn lemma_pow2_mul_div_mod_small_mod_u8_t51_cond(k: nat, j: nat) -> bool {
     (k <= j * 8) && (51 <= j * 8 - k)
 }
 
@@ -736,10 +736,10 @@ pub proof fn load8_limb_X(input: &[u8], i: usize, k: nat, j_div: nat, j_id: nat,
     requires
         i + 7 < input.len(),
         k <= 12,
-        forall|j: nat| 0 <= j < j_div ==> pow2_mul_DIV_MOD_u8_t51_cond(k, j),
-        forall|j: nat| j_div <= j < j_id ==> pow2_MUL_div_MOD_u8_t51_cond(k, j),
-        forall|j: nat| j_id <= j < j_shift ==> pow2_MUL_div_Mod_u8_t51_cond(k, j),
-        forall|j: nat| j_shift <= j < 8 ==> pow2_MUL_div_mod_u8_t51_cond(k, j),
+        forall|j: nat| 0 <= j < j_div ==> lemma_pow2_mul_div_mod_small_mul_u8_t51_cond(k, j),
+        forall|j: nat| j_div <= j < j_id ==> lemma_pow2_mul_div_mod_small_div_u8_t51_cond(k, j),
+        forall|j: nat| j_id <= j < j_shift ==> lemma_pow2_mul_div_mod_close_mod_u8_t51_cond(k, j),
+        forall|j: nat| j_shift <= j < 8 ==> lemma_pow2_mul_div_mod_small_mod_u8_t51_cond(k, j),
     ensures
         forall|j: nat|
             0 <= j < j_div ==> #[trigger] ((input[(i + j) as int] * pow2(j * 8)) as u64 / (pow2(
@@ -774,7 +774,7 @@ pub proof fn load8_limb_X(input: &[u8], i: usize, k: nat, j_div: nat, j_id: nat,
 
     assert(0 < pow2(k) <= u64::MAX) by {
         lemma_pow2_pos(k);
-        pow2_le_max64(k);
+        lemma_pow2_le_max64(k);
     }
 
     let pk = pow2(k) as u64;
@@ -785,16 +785,16 @@ pub proof fn load8_limb_X(input: &[u8], i: usize, k: nat, j_div: nat, j_id: nat,
     assert forall|j: nat| 0 <= j < j_div implies #[trigger] ((input[(i + j) as int] * pow2(
         j * 8,
     )) as u64 / pk) % p51 == (input[(i + j) as int]) as nat / pow2((k - j * 8) as nat) by {
-        assert(pow2_mul_DIV_MOD_u8_t51_cond(k, j));  // trigger forall
-        pow2_mul_DIV_MOD_u8(input[(i + j) as int], j * 8, k, 51);
+        assert(lemma_pow2_mul_div_mod_small_mul_u8_t51_cond(k, j));  // trigger forall
+        lemma_pow2_mul_div_mod_small_mul_u8(input[(i + j) as int], j * 8, k, 51);
     }
 
     // (product >> k) < 2^51
     assert forall|j: nat| j_div <= j < j_id implies #[trigger] ((input[(i + j) as int] * pow2(
         j * 8,
     )) as u64 / pk) % p51 == (input[(i + j) as int]) * pow2((j * 8 - k) as nat) by {
-        assert(pow2_MUL_div_MOD_u8_t51_cond(k, j));  // trigger forall
-        pow2_MUL_div_MOD_u8(input[(i + j) as int], j * 8, k, 51);
+        assert(lemma_pow2_mul_div_mod_small_div_u8_t51_cond(k, j));  // trigger forall
+        lemma_pow2_mul_div_mod_small_div_u8(input[(i + j) as int], j * 8, k, 51);
     }
 
     // partial shift
@@ -802,16 +802,16 @@ pub proof fn load8_limb_X(input: &[u8], i: usize, k: nat, j_div: nat, j_id: nat,
         j * 8,
     )) as u64 / pk) % p51 == (input[(i + j) as int] as nat % pow2((51 - (j * 8 - k)) as nat))
         * pow2((j * 8 - k) as nat) by {
-        assert(pow2_MUL_div_Mod_u8_t51_cond(k, j));  // trigger forall
-        pow2_MUL_div_Mod_u8(input[(i + j) as int], j * 8, k, 51);
+        assert(lemma_pow2_mul_div_mod_close_mod_u8_t51_cond(k, j));  // trigger forall
+        lemma_pow2_mul_div_mod_close_mod_u8(input[(i + j) as int], j * 8, k, 51);
     }
 
     // zero
     assert forall|j: nat| j_shift <= j < 8 implies #[trigger] ((input[(i + j) as int] * pow2(
         j * 8,
     )) as u64 / pk) % p51 == 0 by {
-        assert(pow2_MUL_div_mod_u8_t51_cond(k, j));  // trigger forall
-        pow2_MUL_div_mod_u8(input[(i + j) as int], j * 8, k, 51);
+        assert(lemma_pow2_mul_div_mod_small_mod_u8_t51_cond(k, j));  // trigger forall
+        lemma_pow2_mul_div_mod_small_mod_u8(input[(i + j) as int], j * 8, k, 51);
     }
 }
 
@@ -832,7 +832,7 @@ pub proof fn load8_limb0(input: &[u8])
     let j_shift = 7;
 
     assert(load8_at_spec(input, 0) as u64 == (load8_at_spec(input, 0) as u64 >> 0)) by {
-        shr_zero_is_id(load8_at_spec(input, 0) as u64);
+        lemma_shr_zero_is_id(load8_at_spec(input, 0) as u64);
     }
 
     load8_limb_X(input, i, k, j_div, j_id, j_shift);
@@ -1013,7 +1013,7 @@ pub proof fn load8_limb4(input: &[u8])
     assert(input[24] as nat / pow2(12) == 0) by {
         assert(input[24] < pow2(8) < pow2(12)) by {
             assert(input[24] < pow2(8)) by {
-                u8_lt_pow2_8(input[24]);
+                lemma_u8_lt_pow2_8(input[24]);
             }
             assert(pow2(8) < pow2(12)) by {
                 lemma_pow2_strictly_increases(8, 12);

@@ -11,21 +11,21 @@ use super::shift_lemmas::*;
 
 verus! {
 
-pub proof fn bitwise_or_r_zero_is_id(a: u64)
+pub proof fn lemma_bitwise_or_r_zero_is_id(a: u64)
     ensures
         a | 0 == a,
 {
     assert(a | 0 == a) by (bit_vector);
 }
 
-pub proof fn bitwise_or_l_zero_is_id(a: u64)
+pub proof fn lemma_bitwise_or_l_zero_is_id(a: u64)
     ensures
         0 | a == a,
 {
     assert(0 | a == a) by (bit_vector);
 }
 
-pub proof fn bit_or_is_plus(a: u64, b: u64, k: u64)
+pub proof fn lemma_bit_or_is_plus(a: u64, b: u64, k: u64)
     by (bit_vector)
     requires
         b <= (u64::MAX >> k),
@@ -44,7 +44,7 @@ pub proof fn lemma_bitops(a: u64, b: u64, c: u64)
             & (low_bits_mask(c as nat) as u64)),
 {
     assert(low_bits_mask(c as nat) <= u64::MAX) by {
-        low_bits_masks_fit_u64(c as nat);
+        lemma_low_bits_masks_fit_u64(c as nat);
     }
     assert((a | b) >> c == (a >> c) | (b >> c)) by (bit_vector);
     let lbm = (low_bits_mask(c as nat) as u64);
@@ -74,7 +74,7 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
 
     assert(0 < pow2(k) <= u64::MAX) by {
         lemma_pow2_pos(k);
-        pow2_le_max64(k);
+        lemma_pow2_le_max64(k);
     }
 
     assert(b * ps == b << s64) by {
@@ -85,17 +85,17 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
         assert(b * ps <= (u64::MAX));  // x + y <= C => y <= C for x,y >= 0
         assert((b << s64) >> s64 <= u64::MAX >> s64) by (bit_vector);
         assert(b == (b << s64) >> s64) by {
-            left_right_shift(b, s64, s64);
-            shl_zero_is_id(b);
+            lemma_left_right_shift(b, s64, s64);
+            lemma_shl_zero_is_id(b);
         }
     }
 
     assert(x < 1u64 << s64) by {
-        shift_is_pow2(s);
+        lemma_shift_is_pow2(s);
     }
 
     assert(x + y == x | y) by {
-        bit_or_is_plus(a, b, s64);
+        lemma_bit_or_is_plus(a, b, s64);
     }
 
     let xory = x | y;
@@ -121,13 +121,13 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                 let d = (s64 - k64) as u64;
                 assert(y / pk64 == (b << s64) >> k64);
                 assert((b << s64) >> k64 == b << d) by {
-                    left_right_shift(b, s64, k64);
+                    lemma_left_right_shift(b, s64, k64);
                 }
 
                 assert(b <= u64::MAX >> d) by {
                     assert(b <= u64::MAX >> s64);  // known
                     assert(u64::MAX >> s64 <= u64::MAX >> d) by {
-                        shr_nonincreasing(u64::MAX, d as nat, s);
+                        lemma_shr_nonincreasing(u64::MAX, d as nat, s);
                     }
                 }
 
@@ -143,12 +143,12 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                     }
 
                     assert(pow2(d as nat) == 1u64 << d) by {
-                        shift_is_pow2(d as nat);
+                        lemma_shift_is_pow2(d as nat);
                     }
                 }
 
                 assert((x / pk64) | (b << d) == (x / pk64) + (b << d)) by {
-                    bit_or_is_plus(x / pk64, b, d);
+                    lemma_bit_or_is_plus(x / pk64, b, d);
                 }
             } else {
                 // s < k
@@ -160,7 +160,7 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                 }
 
                 assert(0 | (y / pk64) == (y / pk64)) by {
-                    bitwise_or_l_zero_is_id(y / pk64);
+                    lemma_bitwise_or_l_zero_is_id(y / pk64);
                 }
             }
 
@@ -192,7 +192,7 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                     }
                 }
                 assert((x % pk64) | 0 == (x % pk64)) by {
-                    bitwise_or_r_zero_is_id(x % pk64);
+                    lemma_bitwise_or_r_zero_is_id(x % pk64);
                 }
             } else {
                 // s < k
@@ -208,7 +208,7 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                 }
 
                 assert(y % pk64 == (b_n % pow2(d)) * pow2(s)) by {
-                    mask_pow2(b_n, s, k);
+                    lemma_pow2_mul_mod(b_n, s, k);
                 }
 
                 assert(b_n % pow2(d) <= b) by {
@@ -221,51 +221,11 @@ pub proof fn lemma_bitops_lifted(a: u64, b: u64, s: nat, k: nat)
                     assert(((b_n % pow2(d)) * pow2(s)) == (((b_n % pow2(d)) as u64) << s64)) by {
                         lemma_u64_shl_is_mul((b_n % pow2(d)) as u64, s64);
                     }
-                    bit_or_is_plus(x & lbm, (b_n % pow2(d)) as u64, s64);
+                    lemma_bit_or_is_plus(x & lbm, (b_n % pow2(d)) as u64, s64);
                 }
             }
         }
     }
-}
-
-/// Modular Bit Partitioning Theorem
-/// If we add a value 'a' (fitting in k bits) to 'b' shifted left by k positions,
-/// and take the result mod 2^n, we can partition the contributions:
-/// - The low k bits come from 'a' (masked to k bits)
-/// - The high (n-k) bits come from 'b' (masked to n-k bits, then shifted)
-///
-/// This works because:
-/// 1. When a < 2^k, 'a' only affects bits [0, k-1]
-/// 2. When we shift 'b' left by k, it only affects bits [k, n-1]
-/// 3. No carry occurs between the two regions
-/// 4. The sum fits within n bits
-pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
-    requires
-        k <= n,
-        a < pow2(k),
-    ensures
-        (a + b * pow2(k)) % pow2(n) == (a % pow2(k)) + ((b % pow2((n - k) as nat)) * pow2(k)),
-{
-    assert((a + b * pow2(k)) % pow2(n) == a % pow2(n) + (b * pow2(k)) % pow2(n)) by {
-        sum_mod_decomposition(a, b, k, n);
-    }
-
-    assert((b * pow2(k)) % pow2(n) == (b % pow2((n - k) as nat)) * pow2(k)) by {
-        mask_pow2(b, k, n);
-    }
-
-    assert(a % pow2(k) == a == a % pow2(n)) by {
-        assert(pow2(k) <= pow2(n)) by {
-            if (k < n) {
-                lemma_pow2_strictly_increases(k, n);
-            }
-        }
-        lemma_small_mod(a, pow2(k));
-        lemma_small_mod(a, pow2(n));
-    }
-}
-
-fn main() {
 }
 
 } // verus!

@@ -269,19 +269,19 @@ pub proof fn lemma_radix51_remainder_bound(r0: int, r1: int, r2: int, r3: int, r
     // Each term r_i * 2^(51*i) < 2^51 * 2^(51*i) = 2^(51*(i+1))
 
     assert(r1 * pow2(51) <= pow2(102) - pow2(51)) by {
-        pow2_mul_general(r1 as nat, 51, 51);
+        lemma_pow2_mul_bound_general(r1 as nat, 51, 51);
     }
 
     assert(r2 * pow2(102) <= pow2(153) - pow2(102)) by {
-        pow2_mul_general(r2 as nat, 51, 102);
+        lemma_pow2_mul_bound_general(r2 as nat, 51, 102);
     }
 
     assert(r3 * pow2(153) <= pow2(204) - pow2(153)) by {
-        pow2_mul_general(r3 as nat, 51, 153);
+        lemma_pow2_mul_bound_general(r3 as nat, 51, 153);
     }
 
     assert(r4 * pow2(204) <= pow2(255) - pow2(204)) by {
-        pow2_mul_general(r4 as nat, 51, 204);
+        lemma_pow2_mul_bound_general(r4 as nat, 51, 204);
     }
 
 }
@@ -296,8 +296,8 @@ pub proof fn lemma_carry_propagation_setup()
         3 * pow2(51) <= u64::MAX,
 {
     lemma2_to64();
-    shift_is_pow2(51);
-    shift_is_pow2(52);
+    lemma_shift_is_pow2(51);
+    lemma_shift_is_pow2(52);
     lemma_pow2_pos(51);
 
     assert(pow2(52) == 2 * pow2(51)) by {

@@ -170,10 +170,14 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         requires
-            spec_add_req(old(self), _rhs),
+            forall|i: int|
+                0 <= i < 5 ==> #[trigger] (old(self).limbs[i] + _rhs.limbs[i]) <= u64::MAX,
         ensures
-            *self == spec_add_limbs(old(self), _rhs),
-            field_element(self) == spec_field_add(old(self), _rhs),
+            *self == spec_add_fe51_limbs(old(self), _rhs),
+            spec_field_element(self) == math_field_add(
+                spec_field_element(old(self)),
+                spec_field_element(_rhs),
+            ),
     {
         let ghost original_limbs = self.limbs;
         for i in 0..5
@@ -191,10 +195,13 @@ impl<'a> AddAssign<&'a FieldElement51> for FieldElement51 {
         }
         proof {
             // After loop, all limbs are the sum: self.limbs[i] == original_limbs[i] + _rhs.limbs[i]
-            // This means self.limbs equals spec_add_limbs(old(self), _rhs).limbs
-            assert(self.limbs =~= spec_add_limbs(old(self), _rhs).limbs);
+            // This means self.limbs equals spec_add_fe51_limbs(old(self), _rhs).limbs
+            assert(self.limbs =~= spec_add_fe51_limbs(old(self), _rhs).limbs);
         }
-        assume(field_element(self) == (field_element(old(self)) + field_element(_rhs)) % p());
+        assume(spec_field_element(self) == math_field_add(
+            spec_field_element(old(self)),
+            spec_field_element(_rhs),
+        ));
     }
 }
 
@@ -207,17 +214,13 @@ impl vstd::std_specs::ops::AddSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of add
     open spec fn add_req(self, rhs: &FieldElement51) -> bool {
-        spec_add_req(self, rhs)
+        forall|i: int| 0 <= i < 5 ==> #[trigger] (self.limbs[i] + rhs.limbs[i]) <= u64::MAX
     }
 
-    // Postcondition of add - delegates to spec_add_limbs for consistency
+    // Postcondition of add - delegates to spec_add_fe51_limbs for consistency
     open spec fn add_spec(self, rhs: &FieldElement51) -> FieldElement51 {
-        spec_add_limbs(self, rhs)
+        spec_add_fe51_limbs(self, rhs)
     }
-}
-
-pub open spec fn spec_add_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
-    forall|i: int| 0 <= i < 5 ==> #[trigger] (lhs.limbs[i] + rhs.limbs[i]) <= u64::MAX
 }
 
 impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
@@ -228,8 +231,11 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            output == spec_add_limbs(self, _rhs),
-            field_element(&output) == spec_field_add(self, _rhs),
+            output == spec_add_fe51_limbs(self, _rhs),
+            spec_field_element(&output) == math_field_add(
+                spec_field_element(self),
+                spec_field_element(_rhs),
+            ),
     {
         let mut output = *self;
         /* ORIGINAL CODE
@@ -259,7 +265,8 @@ impl<'a> Add<&'a FieldElement51> for &FieldElement51 {
             (original_limbs[3] + _rhs.limbs[3]) as u64,
             (original_limbs[4] + _rhs.limbs[4]) as u64,
         ]);
-        assume(field_element(&output) == (field_element(self) + field_element(_rhs)) % p());
+        assume(spec_field_element(&output) == (spec_field_element(self) + spec_field_element(_rhs))
+            % p());
         output
     }
 }
@@ -276,7 +283,10 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
         ensures
             forall|i: int| 0 <= i < 5 ==> #[trigger] self.limbs[i] < (1u64 << 52),
             *self == spec_sub_limbs(old(self), _rhs),
-            field_element(self) == field_sub(field_element(old(self)), field_element(_rhs)),
+            spec_field_element(self) == math_field_sub(
+                spec_field_element(old(self)),
+                spec_field_element(_rhs),
+            ),
     {
         /* ORIGINAL CODE
         let result = (self as &FieldElement51) - _rhs;
@@ -291,7 +301,10 @@ impl<'a> SubAssign<&'a FieldElement51> for FieldElement51 {
             // Therefore self.limbs equals spec_sub_limbs(old(self), _rhs).limbs
             assert(self.limbs =~= spec_sub_limbs(old(self), _rhs).limbs);
         }
-        assume(field_element(self) == field_sub(field_element(old(self)), field_element(_rhs)));
+        assume(spec_field_element(self) == math_field_sub(
+            spec_field_element(old(self)),
+            spec_field_element(_rhs),
+        ));
         assume(forall|i: int| 0 <= i < 5 ==> self.limbs[i] < (1u64 << 52))
     }
 }
@@ -314,11 +327,6 @@ impl vstd::std_specs::ops::SubSpecImpl<&FieldElement51> for &FieldElement51 {
     }
 }
 
-/// Spec function for sub requirement - matches SubSpecImpl::sub_req
-pub open spec fn spec_sub_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
-    limbs_bounded(lhs, 54) && limbs_bounded(rhs, 54)
-}
-
 impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
     type Output = FieldElement51;
 
@@ -328,7 +336,10 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
 
         ensures
             output == spec_sub_limbs(self, _rhs),
-            field_element(&output) == field_sub(field_element(self), field_element(_rhs)),
+            spec_field_element(&output) == math_field_sub(
+                spec_field_element(self),
+                spec_field_element(_rhs),
+            ),
             limbs_bounded(&output, 54),
     {
         // To avoid underflow, first add a multiple of p.
@@ -354,7 +365,10 @@ impl<'a> Sub<&'a FieldElement51> for &FieldElement51 {
                 (self.limbs[4] + 36028797018963952u64) - _rhs.limbs[4],
             ],
         );
-        assume(field_element(&output) == field_sub(field_element(self), field_element(_rhs)));
+        assume(spec_field_element(&output) == math_field_sub(
+            spec_field_element(self),
+            spec_field_element(_rhs),
+        ));
         output
     }
 }
@@ -381,7 +395,7 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
 
     // Pre-condition of mul
     open spec fn mul_req(self, rhs: &FieldElement51) -> bool {
-        spec_mul_req(self, rhs)
+        limbs_bounded(self, 54) && limbs_bounded(rhs, 54)
     }
 
     // Postcondition of mul
@@ -389,11 +403,6 @@ impl vstd::std_specs::ops::MulSpecImpl<&FieldElement51> for &FieldElement51 {
         // VERIFICATION NOTE: WE DON'T PROVIDE A SPEC EXPRESSION FOR mul RESULT
         arbitrary()
     }
-}
-
-/// Spec function for mul requirement - matches MulSpecImpl::mul_req
-pub open spec fn spec_mul_req(lhs: &FieldElement51, rhs: &FieldElement51) -> bool {
-    limbs_bounded(lhs, 54) && limbs_bounded(rhs, 54)
 }
 
 impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
@@ -407,7 +416,10 @@ impl<'a> Mul<&'a FieldElement51> for &FieldElement51 {
     */
 
         ensures
-            field_element(&output) == field_mul(field_element(self), field_element(_rhs)),
+            spec_field_element(&output) == math_field_mul(
+                spec_field_element(self),
+                spec_field_element(_rhs),
+            ),
             limbs_bounded(&output, 54),
     {
         /// Helper function to multiply two 64-bit integers with 128
@@ -565,12 +577,12 @@ impl Neg for &FieldElement51 {
     */
 
         ensures
-            field_element(&output) == field_neg(field_element(self)),
+            spec_field_element(&output) == math_field_neg(spec_field_element(self)),
     {
         let mut output = *self;
         assume(forall|i: int| 0 <= i < 5 ==> output.limbs[i] < (1u64 << 51));
         output.negate();
-        assume(field_element(&output) == field_neg(field_element(self)));
+        assume(spec_field_element(&output) == math_field_neg(spec_field_element(self)));
         output
     }
 }

@@ -224,10 +224,10 @@ impl CompressedEdwardsY {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            is_valid_y_coordinate(field_element_from_bytes(&self.0))
+            is_valid_y_coordinate(spec_field_element_from_bytes(&self.0))
                 ==> result.is_some()
             // The Y coordinate matches the one from the compressed representation
-             && field_element(&result.unwrap().Y) == field_element_from_bytes(
+             && spec_field_element(&result.unwrap().Y) == spec_field_element_from_bytes(
                 &self.0,
             )
             // The point is valid
@@ -235,18 +235,18 @@ impl CompressedEdwardsY {
                 result.unwrap(),
             )
             // The X coordinate sign bit matches the sign bit from the compressed representation
-             && field_element_sign_bit(&result.unwrap().X) == (self.0[31] >> 7),
-            !is_valid_y_coordinate(field_element_from_bytes(&self.0)) <==> result.is_none(),
+             && spec_field_element_sign_bit(&result.unwrap().X) == (self.0[31] >> 7),
+            !is_valid_y_coordinate(spec_field_element_from_bytes(&self.0)) <==> result.is_none(),
     {
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(self);
 
         proof {
             assert(choice_is_true(is_valid_y_coord) ==> is_valid_y_coordinate(
-                field_element_from_bytes(&self.0),
+                spec_field_element_from_bytes(&self.0),
             ));
             assert(choice_is_true(is_valid_y_coord) ==> on_edwards_curve(
-                field_element(&X),
-                field_element(&Y),
+                spec_field_element(&X),
+                spec_field_element(&Y),
             ));
             assume(false);
         }
@@ -275,18 +275,18 @@ mod decompress {
         ensures
     // The returned Y field element matches the one extracted from the compressed representation
 
-            field_element(&result.2) == field_element_from_bytes(&repr.0),
+            spec_field_element(&result.2) == spec_field_element_from_bytes(&repr.0),
             // The returned Z field element is 1
-            field_element(&result.3) == 1,
+            spec_field_element(&result.3) == 1,
             // The choice is true iff the Y is valid and (X, Y) is on the curve
-            choice_is_true(result.0) <==> is_valid_y_coordinate(field_element(&result.2)),
+            choice_is_true(result.0) <==> is_valid_y_coordinate(spec_field_element(&result.2)),
             choice_is_true(result.0) ==> on_edwards_curve(
-                field_element(&result.1),
-                field_element(&result.2),
+                spec_field_element(&result.1),
+                spec_field_element(&result.2),
             ),
     {
         let Y = FieldElement::from_bytes(repr.as_bytes());
-        assert(field_element_from_bytes(&repr.0) == field_element(&Y));
+        assert(spec_field_element_from_bytes(&repr.0) == spec_field_element(&Y));
         let Z = FieldElement::ONE;
         proof {
             assume(limbs_bounded(&Y, 54));
@@ -317,12 +317,14 @@ mod decompress {
 
         proof {
             // Assume postconditions that depend on sqrt_ratio_i behavior
-            assume(field_element(&Z) == 1);
+            assume(spec_field_element(&Z) == 1);
             // Note: Using <==> (bi-implication) to match the postcondition exactly
-            assume(choice_is_true(is_valid_y_coord) <==> is_valid_y_coordinate(field_element(&Y)));
+            assume(choice_is_true(is_valid_y_coord) <==> is_valid_y_coordinate(
+                spec_field_element(&Y),
+            ));
             assume(choice_is_true(is_valid_y_coord) ==> on_edwards_curve(
-                field_element(&X),
-                field_element(&Y),
+                spec_field_element(&X),
+                spec_field_element(&Y),
             ));
         }
         (is_valid_y_coord, X, Y, Z)
@@ -338,22 +340,22 @@ mod decompress {
     // VERIFICATION NOTE: PROOF BYPASS
 
         ensures
-            field_element(&result.X)
+            spec_field_element(&result.X)
                 ==
             // If the sign bit is 1, negate the X field element
             if (repr.0[31] >> 7) == 1 {
-                field_neg(field_element(&X))
+                math_field_neg(spec_field_element(&X))
             } else {
-                field_element(&X)
+                spec_field_element(&X)
             },
             // Y and Z are unchanged
-            field_element(&result.Y) == field_element(&Y),
-            field_element(&result.Z) == field_element(&Z),
+            spec_field_element(&result.Y) == spec_field_element(&Y),
+            spec_field_element(&result.Z) == spec_field_element(&Z),
             // X is conditionally negated based on the sign bit
             // T = X * Y (after conditional negation)
-            field_element(&result.T) == field_mul(
-                field_element(&result.X),
-                field_element(&result.Y),
+            spec_field_element(&result.T) == math_field_mul(
+                spec_field_element(&result.X),
+                spec_field_element(&result.Y),
             ),
     {
         // FieldElement::sqrt_ratio_i always returns the nonnegative square root,
@@ -375,20 +377,20 @@ mod decompress {
             assume(forall|i: int| 0 <= i < 5 ==> Y.limbs[i] < (1u64 << 54));
 
             // Assume conditional_negate_field behaves correctly
-            assume(field_element(&X) == if choice_is_true(compressed_sign_bit) {
-                field_neg(field_element(&original_X))
+            assume(spec_field_element(&X) == if choice_is_true(compressed_sign_bit) {
+                math_field_neg(spec_field_element(&original_X))
             } else {
-                field_element(&original_X)
+                spec_field_element(&original_X)
             });
         }
 
         let result = EdwardsPoint { X, Y, Z, T: &X * &Y };
 
         proof {
-            // Assume multiplication produces correct field_mul result
-            assume(field_element(&result.T) == field_mul(
-                field_element(&result.X),
-                field_element(&result.Y),
+            // Assume multiplication produces correct math_field_mul result
+            assume(spec_field_element(&result.T) == math_field_mul(
+                spec_field_element(&result.X),
+                spec_field_element(&result.Y),
             ));
         }
 
@@ -596,9 +598,9 @@ impl Identity for CompressedEdwardsY {
             assert(result.0[31] == 0);
             let x = result.0[31];
             assume(x >> 7 == 0);
-            // field_element_from_bytes([1, 0, ...]) should equal 1
+            // spec_field_element_from_bytes([1, 0, ...]) should equal 1
             // This requires the byte-to-nat conversion to recognize [1,0,0,...] = 1
-            assume(field_element_from_bytes(&result.0) == 1);
+            assume(spec_field_element_from_bytes(&result.0) == 1);
         }
 
         result
@@ -662,8 +664,8 @@ impl Identity for EdwardsPoint {
         ensures
             is_identity(result),
     {
-        assume(field_element(&FieldElement::ZERO) == 0);
-        assume(field_element(&FieldElement::ONE) == 1);
+        assume(spec_field_element(&FieldElement::ZERO) == 0);
+        assume(spec_field_element(&FieldElement::ONE) == 1);
         let result = EdwardsPoint {
             X: FieldElement::ZERO,
             Y: FieldElement::ONE,
@@ -724,9 +726,9 @@ impl ValidityCheck for EdwardsPoint {
         proof {
             // The limb bounds are preserved by as_projective() (proj.X == self.X, etc.)
             // and self has limbs_bounded from the preconditions
-            assume(spec_mul_req(&proj.X, &proj.X));
-            assume(spec_mul_req(&proj.Y, &proj.Y));
-            assume(spec_mul_req(&proj.Z, &proj.Z));
+            assume(limbs_bounded(&proj.X, 54));
+            assume(limbs_bounded(&proj.Y, 54));
+            assume(limbs_bounded(&proj.Z, 54));
         }
         let point_on_curve = proj.is_valid();
 
@@ -797,9 +799,10 @@ impl EdwardsPoint {
             projective_niels_corresponds_to_edwards(result, *self),
     {
         proof {
-            assume(spec_add_req(&self.Y, &self.X));  // for Y_plus_X
-            assume(spec_sub_req(&self.Y, &self.X));  // for Y_minus_X
-            assume(spec_mul_req(&self.T, &constants::EDWARDS_D2));  // for T2d
+            assume(forall|i: int|
+                0 <= i < 5 ==> #[trigger] (self.Y.limbs[i] + self.X.limbs[i]) <= u64::MAX);  // for Y_plus_X
+            assume(limbs_bounded(&self.Y, 54) && limbs_bounded(&self.X, 54));  // for Y_minus_X
+            assume(limbs_bounded(&self.T, 54) && limbs_bounded(&constants::EDWARDS_D2, 54));  // for T2d
         }
 
         let result = ProjectiveNielsPoint {
@@ -841,28 +844,28 @@ impl EdwardsPoint {
     {
         let recip = self.Z.invert();
         proof {
-            assume(spec_mul_req(&self.X, &recip));  // for x = &self.X * &recip
-            assume(spec_mul_req(&self.Y, &recip));  // for y = &self.Y * &recip
+            assume(limbs_bounded(&self.X, 54) && limbs_bounded(&recip, 54));  // for x = &self.X * &recip
+            assume(limbs_bounded(&self.Y, 54) && limbs_bounded(&recip, 54));  // for y = &self.Y * &recip
         }
 
         let x = &self.X * &recip;
         let y = &self.Y * &recip;
 
         proof {
-            assume(spec_mul_req(&x, &y));  // for xy = &x * &y
+            assume(limbs_bounded(&x, 54) && limbs_bounded(&y, 54));  // for xy = &x * &y
         }
 
         let xy = &x * &y;
 
         proof {
-            assume(spec_mul_req(&xy, &constants::EDWARDS_D2));  // for xy2d = &xy * &constants::EDWARDS_D2
+            assume(limbs_bounded(&xy, 54) && limbs_bounded(&constants::EDWARDS_D2, 54));  // for xy2d = &xy * &constants::EDWARDS_D2
         }
 
         let xy2d = &xy * &constants::EDWARDS_D2;
 
         proof {
-            assume(spec_add_req(&y, &x));  // for y_plus_x
-            assume(spec_sub_req(&y, &x));  // for y_minus_x
+            assume(forall|i: int| 0 <= i < 5 ==> #[trigger] (y.limbs[i] + x.limbs[i]) <= u64::MAX);  // for y_plus_x
+            assume(limbs_bounded(&y, 54) && limbs_bounded(&x, 54));  // for y_minus_x
         }
 
         let result = AffineNielsPoint { y_plus_x: &y + &x, y_minus_x: &y - &x, xy2d };
@@ -899,8 +902,8 @@ impl EdwardsPoint {
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> CompressedEdwardsY {
         let recip = self.Z.invert();
-        let ghost z_abs = field_element(&self.Z);
-        assert(field_element(&recip) == field_inv(z_abs));
+        let ghost z_abs = spec_field_element(&self.Z);
+        assert(spec_field_element(&recip) == math_field_inv(z_abs));
         assume(false);
         let x = &self.X * &recip;
         let y = &self.Y * &recip;

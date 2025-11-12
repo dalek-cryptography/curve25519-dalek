@@ -140,9 +140,6 @@ use crate::edwards::EdwardsPoint;
 use crate::field::FieldElement;
 use crate::traits::ValidityCheck;
 
-#[cfg(verus_keep_ghost)]
-use crate::backend::serial::u64::field::{spec_add_req, spec_mul_req, spec_sub_req};
-
 use vstd::prelude::*;
 
 // ------------------------------------------------------------------------
@@ -286,14 +283,14 @@ verus! {
 impl ValidityCheck for ProjectivePoint {
     fn is_valid(&self) -> (result: bool)
         requires
-            spec_mul_req(&self.X, &self.X),
-            spec_mul_req(&self.Y, &self.Y),
-            spec_mul_req(&self.Z, &self.Z),
+            limbs_bounded(&self.X, 54),
+            limbs_bounded(&self.Y, 54),
+            limbs_bounded(&self.Z, 54),
         ensures
             result == on_edwards_curve_projective(
-                field_element(&self.X),
-                field_element(&self.Y),
-                field_element(&self.Z),
+                spec_field_element(&self.X),
+                spec_field_element(&self.Y),
+                spec_field_element(&self.Z),
             ),
     {
         // Curve equation is    -x^2 + y^2 = 1 + d*x^2*y^2,
@@ -302,9 +299,8 @@ impl ValidityCheck for ProjectivePoint {
         let YY = self.Y.square();
         let ZZ = self.Z.square();
         proof {
-            assume(spec_mul_req(&ZZ, &ZZ));  // for ZZZZ = ZZ.square()
-            assume(spec_sub_req(&YY, &XX));  // for yy_minus_xx = &YY - &XX
-            assume(spec_mul_req(&XX, &YY));  // for xx_times_yy = &XX * &YY
+            assume(limbs_bounded(&ZZ, 54));  // for ZZZZ = ZZ.square()
+            assume(limbs_bounded(&YY, 54) && limbs_bounded(&XX, 54));  // for yy_minus_xx = &YY - &XX and
         }
         let ZZZZ = ZZ.square();
 
@@ -316,17 +312,18 @@ impl ValidityCheck for ProjectivePoint {
 
         let yy_minus_xx = &YY - &XX;
         proof {
-            assume(spec_mul_req(&yy_minus_xx, &ZZ));  // for lhs = &yy_minus_xx * &ZZ
+            assume(limbs_bounded(&yy_minus_xx, 54) && limbs_bounded(&ZZ, 54));  // for lhs = &yy_minus_xx * &ZZ
         }
         let lhs = &yy_minus_xx * &ZZ;
 
         let xx_times_yy = &XX * &YY;
         proof {
-            assume(spec_mul_req(&constants::EDWARDS_D, &xx_times_yy));  // for d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy
+            assume(limbs_bounded(&constants::EDWARDS_D, 54) && limbs_bounded(&xx_times_yy, 54));  // for d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy
         }
         let d_times_xxyy = &constants::EDWARDS_D * &xx_times_yy;
         proof {
-            assume(spec_add_req(&ZZZZ, &d_times_xxyy));  // for rhs = &ZZZZ + &d_times_xxyy
+            assume(forall|i: int|
+                0 <= i < 5 ==> #[trigger] (ZZZZ.limbs[i] + d_times_xxyy.limbs[i]) <= u64::MAX);  // for rhs = &ZZZZ + &d_times_xxyy
         }
         let rhs = &ZZZZ + &d_times_xxyy;
 
@@ -334,9 +331,9 @@ impl ValidityCheck for ProjectivePoint {
         proof {
             // postcondition
             assume(result == on_edwards_curve_projective(
-                field_element(&self.X),
-                field_element(&self.Y),
-                field_element(&self.Z),
+                spec_field_element(&self.X),
+                spec_field_element(&self.Y),
+                spec_field_element(&self.Z),
             ));
         }
         result

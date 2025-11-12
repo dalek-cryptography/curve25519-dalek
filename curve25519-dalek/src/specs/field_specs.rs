@@ -14,8 +14,8 @@ use vstd::prelude::*;
 verus! {
 
 /// Spec function for field addition: (a + b) mod p
-pub open spec fn spec_field_add(a: &FieldElement51, b: &FieldElement51) -> nat {
-    (field_element(a) + field_element(b)) % p()
+pub open spec fn spec_math_field_add(a: &FieldElement51, b: &FieldElement51) -> nat {
+    (spec_field_element(a) + spec_field_element(b)) % p()
 }
 
 /// Spec predicate: all limbs are bounded by a given bit limit
@@ -24,7 +24,7 @@ pub open spec fn limbs_bounded(fe: &FieldElement51, bit_limit: u64) -> bool {
 }
 
 /// Spec function: result of limb-wise addition (what add_spec returns)
-pub open spec fn spec_add_limbs(a: &FieldElement51, b: &FieldElement51) -> FieldElement51 {
+pub open spec fn spec_add_fe51_limbs(a: &FieldElement51, b: &FieldElement51) -> FieldElement51 {
     FieldElement51 {
         limbs: [
             (a.limbs[0] + b.limbs[0]) as u64,
@@ -52,58 +52,58 @@ pub open spec fn spec_sub_limbs(a: &FieldElement51, b: &FieldElement51) -> Field
     }
 }
 
-pub open spec fn field_element_as_nat(fe: &FieldElement51) -> nat {
+pub open spec fn spec_field_element_as_nat(fe: &FieldElement51) -> nat {
     as_nat(fe.limbs)
 }
 
 /// Returns the canonical mathematical value of a field element in [0, p)
 /// where p = 2^255 - 19
-pub open spec fn field_element(fe: &FieldElement51) -> nat {
-    field_element_as_nat(fe) % p()
+pub open spec fn spec_field_element(fe: &FieldElement51) -> nat {
+    spec_field_element_as_nat(fe) % p()
 }
 
 /// Returns the canonical mathematical value when creating a field element from bytes.
 /// The bytes are interpreted as a little-endian integer with the high bit of byte[31] ignored.
 /// The result is the canonical value in [0, p) where p = 2^255 - 19.
-pub open spec fn field_element_from_bytes(bytes: &[u8; 32]) -> nat {
+pub open spec fn spec_field_element_from_bytes(bytes: &[u8; 32]) -> nat {
     (as_nat_32_u8(bytes) % pow2(255)) % p()
 }
 
 /// Spec function: Get the sign bit of a field element
 /// In Curve25519, the sign bit is the least significant bit of the canonical representation
-pub open spec fn field_element_sign_bit(fe: &FieldElement51) -> u8 {
-    ((field_element(fe) % p()) % 2) as u8
+pub open spec fn spec_field_element_sign_bit(fe: &FieldElement51) -> u8 {
+    ((spec_field_element(fe) % p()) % 2) as u8
 }
 
 // Spec-level field operations on natural numbers (mod p)
-/// Spec-level field addition
-pub open spec fn field_add(a: nat, b: nat) -> nat {
+/// Math-level field addition
+pub open spec fn math_field_add(a: nat, b: nat) -> nat {
     (a + b) % p()
 }
 
-/// Spec-level field subtraction
-pub open spec fn field_sub(a: nat, b: nat) -> nat {
+/// Math-level field subtraction
+pub open spec fn math_field_sub(a: nat, b: nat) -> nat {
     (((a % p()) + p()) - (b % p())) as nat % p()
 }
 
-/// Spec-level field multiplication
-pub open spec fn field_mul(a: nat, b: nat) -> nat {
+/// Math-level field multiplication
+pub open spec fn math_field_mul(a: nat, b: nat) -> nat {
     (a * b) % p()
 }
 
-/// Spec-level field negation
-pub open spec fn field_neg(a: nat) -> nat {
+/// Math-level field negation
+pub open spec fn math_field_neg(a: nat) -> nat {
     (p() - (a % p())) as nat % p()
 }
 
-/// Spec-level field squaring
-pub open spec fn field_square(a: nat) -> nat {
+/// Math-level field squaring
+pub open spec fn math_field_square(a: nat) -> nat {
     (a * a) % p()
 }
 
-/// Spec-level field inversion: returns w such that (a * w) % p == 1
+/// Math-level field inversion: returns w such that (a * w) % p == 1
 /// We use `choose` to pick the unique inverse that exists for non-zero field elements
-pub open spec fn field_inv(a: nat) -> nat
+pub open spec fn math_field_inv(a: nat) -> nat
     recommends
         a % p() != 0,
 {
@@ -115,8 +115,8 @@ pub proof fn field_inv_axiom(a: nat)
     requires
         a % p() != 0,
     ensures
-        field_inv(a) < p(),
-        ((a % p()) * field_inv(a)) % p() == 1,
+        math_field_inv(a) < p(),
+        ((a % p()) * math_field_inv(a)) % p() == 1,
 {
     admit();  // This would be proven from field theory or assumed as axiom
 }
@@ -124,7 +124,7 @@ pub proof fn field_inv_axiom(a: nat)
 /// Spec function for FieldElement::from_bytes
 /// Takes a 32-byte array and produces a FieldElement51
 /// The high bit of byte[31] is ignored, giving a 255-bit value
-pub open spec fn fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
+pub open spec fn spec_fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
     // Mimic the implementation in field_verus.rs:from_bytes
     // Load 8-byte chunks at specified offsets and mask to 51-bit limbs
     let low_51_bit_mask = mask51;
@@ -146,7 +146,7 @@ pub open spec fn fe51_from_bytes(bytes: &[u8; 32]) -> FieldElement51 {
     }
 }
 
-pub open spec fn fe51_to_bytes(fe: &FieldElement51) -> Seq<u8> {
+pub open spec fn spec_fe51_to_bytes(fe: &FieldElement51) -> Seq<u8> {
     // Step 1: Basic reduction to ensure h < 2*p
     let limbs = spec_reduce(fe.limbs);
 
@@ -214,35 +214,35 @@ pub open spec fn fe51_to_bytes(fe: &FieldElement51) -> Seq<u8> {
 
 /// Spec function: two field elements are inverses if their product is 1 (mod p)
 pub open spec fn is_inverse_field(a: &FieldElement51, b: &FieldElement51) -> bool {
-    (field_element_as_nat(a) * field_element_as_nat(b)) % p() == 1
+    (spec_field_element(a) * spec_field_element(b)) % p() == 1
 }
 
 /// Spec function: field element is inverse of a natural number (mod p)
 pub open spec fn is_inverse_field_of_nat(fe: &FieldElement51, n: nat) -> bool {
-    (field_element_as_nat(fe) * n) % p() == 1
+    (spec_field_element(fe) * n) % p() == 1
 }
 
 /// Spec function to compute product of all field elements in a sequence (mod p)
 /// Returns the natural number representation
-pub open spec fn product_of_fields(fields: Seq<FieldElement51>) -> nat
+pub open spec fn spec_product_of_field_elems(fields: Seq<FieldElement51>) -> nat
     decreases fields.len(),
 {
     if fields.len() == 0 {
         1
     } else {
-        (product_of_fields(fields.skip(1)) * field_element_as_nat(&fields[0])) % p()
+        (spec_product_of_field_elems(fields.skip(1)) * spec_field_element(&fields[0])) % p()
     }
 }
 
 /// Spec function: b is a square root of a (mod p), i.e., b^2 = a (mod p)
 pub open spec fn is_square_of(a: &FieldElement51, b: &FieldElement51) -> bool {
-    (field_element_as_nat(b) * field_element_as_nat(b)) % p() == field_element_as_nat(a) % p()
+    (spec_field_element(b) * spec_field_element(b)) % p() == spec_field_element(a) % p()
 }
 
 /// Spec function: b^2 * v = u (mod p)
 pub open spec fn is_sqrt_ratio(u: &FieldElement51, v: &FieldElement51, r: &FieldElement51) -> bool {
-    (field_element_as_nat(r) * field_element_as_nat(r) * field_element_as_nat(v)) % p()
-        == field_element_as_nat(u) % p()
+    (spec_field_element(r) * spec_field_element(r) * spec_field_element(v)) % p()
+        == spec_field_element(u)
 }
 
 /// Spec function: r^2 * v = i*u (mod p), where i = sqrt(-1)
@@ -252,8 +252,8 @@ pub open spec fn is_sqrt_ratio_times_i(
     v: &FieldElement51,
     r: &FieldElement51,
 ) -> bool {
-    (field_element_as_nat(r) * field_element_as_nat(r) * field_element_as_nat(v)) % p() == (
-    field_element_as_nat(&constants::SQRT_M1) * field_element_as_nat(u)) % p()
+    (spec_field_element(r) * spec_field_element(r) * spec_field_element(v)) % p() == (
+    spec_field_element(&constants::SQRT_M1) * spec_field_element(u)) % p()
 }
 
 // Square-ness mod p (spec-only).

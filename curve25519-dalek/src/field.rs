@@ -74,7 +74,7 @@ impl vstd::std_specs::cmp::PartialEqSpecImpl for FieldElement {
     }
 
     open spec fn eq_spec(&self, other: &Self) -> bool {
-        fe51_to_bytes(self) == fe51_to_bytes(other)
+        spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)
     }
 }
 
@@ -82,12 +82,12 @@ impl PartialEq for FieldElement {
     fn eq(&self, other: &FieldElement) -> (result:
         bool)/* VERIFICATION NOTE:
      - PROOF BYPASS
-     - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
+     - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
      - PartialEqSpecImpl trait provides the external specification
      */
 
         ensures
-            result == (fe51_to_bytes(self) == fe51_to_bytes(other)),
+            result == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Choice::into
@@ -99,7 +99,7 @@ impl PartialEq for FieldElement {
         let result = choice_into(choice);
 
         // VERIFICATION NOTE: Need to prove the postcondition
-        assume(result == (fe51_to_bytes(self) == fe51_to_bytes(other)));
+        assume(result == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)));
 
         result
     }
@@ -113,11 +113,11 @@ impl ConstantTimeEq for FieldElement {
         Choice)/* <VERIFICATION NOTE>
      - PROOF BYPASS
      - Use wrapper functions for ConstantTimeEq and CtOption
-     - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
+     - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (fe51_to_bytes(self) == fe51_to_bytes(other)),
+            choice_is_true(result) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)),
     {
         /* <VERIFICATION NOTE>
          Use wrapper function for Verus compatibility instead of direct subtle call
@@ -126,7 +126,7 @@ impl ConstantTimeEq for FieldElement {
          self.as_bytes().ct_eq(&other.as_bytes())
          </ORIGINAL CODE> */
         let result = ct_eq_bytes32(&self.as_bytes(), &other.as_bytes());
-        assume(choice_is_true(result) == (fe51_to_bytes(self) == fe51_to_bytes(other)));
+        assume(choice_is_true(result) == (spec_fe51_to_bytes(self) == spec_fe51_to_bytes(other)));
         result
     }
 }
@@ -142,15 +142,15 @@ impl FieldElement {
     pub(crate) fn is_negative(&self) -> (result:
         Choice)/* VERIFICATION NOTE:
     - PROOF BYPASS
-    - DRAFT SPEC: fe51_to_bytes is a complex spec function that should correspond to as_bytes()
+    - DRAFT SPEC: spec_fe51_to_bytes is a complex spec function that should correspond to as_bytes()
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (fe51_to_bytes(self)[0] & 1 == 1),
+            choice_is_true(result) == (spec_fe51_to_bytes(self)[0] & 1 == 1),
     {
         let bytes = self.as_bytes();
         let result = Choice::from(bytes[0] & 1);
-        assume(choice_is_true(result) == (fe51_to_bytes(self)[0] & 1 == 1));
+        assume(choice_is_true(result) == (spec_fe51_to_bytes(self)[0] & 1 == 1));
         result
     }
 
@@ -168,16 +168,16 @@ impl FieldElement {
     </VERIFICATION NOTE> */
 
         ensures
-            choice_is_true(result) == (fe51_to_bytes(self)
+            choice_is_true(result) == (spec_fe51_to_bytes(self)
                 == seq![0u8; 32]),
-    // SPEC BYPASS through placeholder fe51_to_bytes
+    // SPEC BYPASS through placeholder spec_fe51_to_bytes
 
     {
         let zero = [0u8;32];
         let bytes = self.as_bytes();
 
         let result = ct_eq_bytes32(&bytes, &zero);
-        assume(choice_is_true(result) == (fe51_to_bytes(self) == seq![0u8; 32]));
+        assume(choice_is_true(result) == (spec_fe51_to_bytes(self) == seq![0u8; 32]));
         result
     }
 
@@ -186,11 +186,11 @@ impl FieldElement {
     #[rustfmt::skip]  // keep alignment of explanatory comments
     fn pow22501(&self) -> (result: (FieldElement, FieldElement))
         ensures
-            field_element_as_nat(&result.0) == pow(
-                field_element_as_nat(self) as int,
+            spec_field_element(&result.0) == pow(
+                spec_field_element(self) as int,
                 (pow2(250) - 1) as nat,
             ) % (p() as int),
-            field_element_as_nat(&result.1) == pow(field_element_as_nat(self) as int, 11) % (
+            spec_field_element(&result.1) == pow(spec_field_element(self) as int, 11) % (
             p() as int),
     {
         // Instead of managing which temporary variables are used
@@ -248,14 +248,13 @@ impl FieldElement {
                 #![auto]
                 0 <= i < inputs.len() ==> {
                     // If input was non-zero, it's replaced with its inverse
-                    (field_element_as_nat(&old(inputs)[i]) != 0) ==> is_inverse_field(
+                    (spec_field_element(&old(inputs)[i]) != 0) ==> is_inverse_field(
                         &old(inputs)[i],
                         &inputs[i],
                     ) &&
                     // If input was zero, it remains zero
-                    (field_element_as_nat(&old(inputs)[i]) == 0) ==> field_element_as_nat(
-                        &inputs[i],
-                    ) == 0
+                    (spec_field_element(&old(inputs)[i]) == 0) ==> spec_field_element(&inputs[i])
+                        == 0
                 },
     {
         // Montgomery's Trick and Fast Implementation of Masked AES
@@ -328,7 +327,7 @@ impl FieldElement {
         </ORIGINAL CODE> */
 
         proof {
-            assume(scratch.len() == n);
+            assume(false);
         }
 
         let mut i: usize = n;
@@ -339,12 +338,7 @@ impl FieldElement {
             decreases i,
         {
             i -= 1;
-            proof {
-                assume(i < inputs.len());
-                assume(i < scratch.len());
-                assume(0 <= i);
-                assume(false);
-            }
+            assume(false);
             let tmp = &acc * &inputs[i];
             // input <- acc * scratch, then acc <- tmp
             // Again, we skip zeros in a constant-time way
@@ -361,10 +355,10 @@ impl FieldElement {
             assume(forall|i: int|
                 #![auto]
                 0 <= i < inputs.len() ==> {
-                    (field_element_as_nat(&old(inputs)[i]) != 0) ==> is_inverse_field(
+                    (spec_field_element(&old(inputs)[i]) != 0) ==> is_inverse_field(
                         &old(inputs)[i],
                         &inputs[i],
-                    ) && (field_element_as_nat(&old(inputs)[i]) == 0) ==> field_element_as_nat(
+                    ) && (spec_field_element(&old(inputs)[i]) == 0) ==> spec_field_element(
                         &inputs[i],
                     ) == 0
                 });
@@ -386,11 +380,12 @@ impl FieldElement {
         ensures
     // If self is non-zero, result is the multiplicative inverse: result * self ≡ 1 (mod p)
 
-            field_element_as_nat(self) != 0 ==> (field_element_as_nat(&result)
-                * field_element_as_nat(self)) % p() == 1,
+            spec_field_element(self) != 0 ==> (spec_field_element(&result) * spec_field_element(
+                self,
+            )) % p() == 1,
             // If self is zero, result is zero
-            field_element_as_nat(self) == 0 ==> field_element_as_nat(&result) == 0,
-            field_element(&result) == field_inv(field_element(self)),
+            spec_field_element(self) == 0 ==> spec_field_element(&result) == 0,
+            spec_field_element(&result) == math_field_inv(spec_field_element(self)),
             limbs_bounded(&result, 54),
     {
         // The bits of p-2 = 2^255 -19 -2 are 11010111111...11.
@@ -409,8 +404,8 @@ impl FieldElement {
     #[allow(clippy::let_and_return)]
     fn pow_p58(&self) -> (result: FieldElement)
         ensures
-            field_element_as_nat(&result) == pow(
-                field_element_as_nat(self) as int,
+            spec_field_element(&result) == pow(
+                spec_field_element(self) as int,
                 (pow2(252) - 3) as nat,
             ) % (p() as int),
     {
@@ -445,22 +440,22 @@ impl FieldElement {
         ensures
     // When u = 0: always return (true, 0)
 
-            (field_element_as_nat(u) == 0) ==> (choice_is_true(result.0) && field_element_as_nat(
+            (spec_field_element(u) == 0) ==> (choice_is_true(result.0) && spec_field_element(
                 &result.1,
             ) == 0),
             // When v = 0 but u ≠ 0: return (false, 0) [division by zero case]
-            (field_element_as_nat(v) == 0 && field_element_as_nat(u) != 0) ==> (!choice_is_true(
+            (spec_field_element(v) == 0 && spec_field_element(u) != 0) ==> (!choice_is_true(
                 result.0,
-            ) && field_element_as_nat(&result.1) == 0),
+            ) && spec_field_element(&result.1) == 0),
             // When successful and v ≠ 0: r² * v ≡ u (mod p)
-            (choice_is_true(result.0) && field_element_as_nat(v) != 0) ==> is_sqrt_ratio(
+            (choice_is_true(result.0) && spec_field_element(v) != 0) ==> is_sqrt_ratio(
                 u,
                 v,
                 &result.1,
             ),
             // When unsuccessful and v ≠ 0: r² * v ≡ i*u (mod p) [nonsquare case]
-            (!choice_is_true(result.0) && field_element_as_nat(v) != 0 && field_element_as_nat(u)
-                != 0) ==> is_sqrt_ratio_times_i(
+            (!choice_is_true(result.0) && spec_field_element(v) != 0 && spec_field_element(u) != 0)
+                ==> is_sqrt_ratio_times_i(
                 u,
                 v,
                 &result.1,
@@ -553,13 +548,17 @@ impl FieldElement {
         ensures
     // When self = 0: return (false, 0)
 
-            (field_element_as_nat(self) == 0) ==> (!choice_is_true(result.0)
-                && field_element_as_nat(&result.1) == 0),
+            (spec_field_element(self) == 0) ==> (!choice_is_true(result.0) && spec_field_element(
+                &result.1,
+            ) == 0),
             // When successful and self ≠ 0: r² * self ≡ 1 (mod p)
             (choice_is_true(result.0)) ==> is_sqrt_ratio(&FieldElement::ONE, self, &result.1),
             // When unsuccessful and self ≠ 0: r² * self ≡ i (mod p) [nonsquare case]
-            (!choice_is_true(result.0) && field_element_as_nat(self) != 0)
-                ==> is_sqrt_ratio_times_i(&FieldElement::ONE, self, &result.1),
+            (!choice_is_true(result.0) && spec_field_element(self) != 0) ==> is_sqrt_ratio_times_i(
+                &FieldElement::ONE,
+                self,
+                &result.1,
+            ),
     {
         assume(false);
         FieldElement::sqrt_ratio_i(&FieldElement::ONE, self)

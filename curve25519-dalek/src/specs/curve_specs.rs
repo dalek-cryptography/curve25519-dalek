@@ -21,14 +21,14 @@ verus! {
 /// -x² + y² = 1 + d·x²·y²  (mod p)
 pub open spec fn on_edwards_curve(x: nat, y: nat) -> bool {
     let p = p();
-    let d = field_element(&EDWARDS_D);
-    let x2 = field_square(x);
-    let y2 = field_square(y);
-    let x2y2 = field_mul(x2, y2);
+    let d = spec_field_element(&EDWARDS_D);
+    let x2 = math_field_square(x);
+    let y2 = math_field_square(y);
+    let x2y2 = math_field_mul(x2, y2);
 
     // -x² + y² = 1 + d·x²·y²
-    let lhs = field_sub(y2, x2);  // y² - x²
-    let rhs = field_add(1, field_mul(d, x2y2));  // 1 + d·x²·y²
+    let lhs = math_field_sub(y2, x2);  // y² - x²
+    let rhs = math_field_add(1, math_field_mul(d, x2y2));  // 1 + d·x²·y²
 
     lhs == rhs
 }
@@ -38,19 +38,19 @@ pub open spec fn on_edwards_curve(x: nat, y: nat) -> bool {
 /// The homogenized curve equation is: (-X² + Y²)·Z² = Z⁴ + d·X²·Y²
 /// This is equivalent to the affine equation when Z ≠ 0
 pub open spec fn on_edwards_curve_projective(x: nat, y: nat, z: nat) -> bool {
-    let d = field_element(&EDWARDS_D);
+    let d = spec_field_element(&EDWARDS_D);
 
     // Compute X², Y², Z²
-    let x2 = field_square(x);
-    let y2 = field_square(y);
-    let z2 = field_square(z);
-    let z4 = field_square(z2);
+    let x2 = math_field_square(x);
+    let y2 = math_field_square(y);
+    let z2 = math_field_square(z);
+    let z4 = math_field_square(z2);
 
     // LHS: (-X² + Y²)·Z² = (Y² - X²)·Z²
-    let lhs = field_mul(field_sub(y2, x2), z2);
+    let lhs = math_field_mul(math_field_sub(y2, x2), z2);
 
     // RHS: Z⁴ + d·X²·Y²
-    let rhs = field_add(z4, field_mul(d, field_mul(x2, y2)));
+    let rhs = math_field_add(z4, math_field_mul(d, math_field_mul(x2, y2)));
 
     lhs == rhs
 }
@@ -63,14 +63,14 @@ pub open spec fn on_edwards_curve_projective(x: nat, y: nat, z: nat) -> bool {
 ///   v = d·y² + 1
 /// Returns true if u/v is a square (i.e., x can be recovered)
 pub open spec fn is_valid_y_coordinate(y: nat) -> bool {
-    let d = field_element(&EDWARDS_D);
-    let y2 = field_square(y);
+    let d = spec_field_element(&EDWARDS_D);
+    let y2 = math_field_square(y);
 
     // Compute u = y² - 1
-    let u = field_sub(y2, 1);
+    let u = math_field_sub(y2, 1);
 
     // Compute v = d·y² + 1
-    let v = field_add(field_mul(d, y2), 1);
+    let v = math_field_add(math_field_mul(d, y2), 1);
 
     if u % p() == 0 {
         // If u = 0, then y² = 1, so y = ±1, which gives valid points (x=0, y=±1)
@@ -82,10 +82,8 @@ pub open spec fn is_valid_y_coordinate(y: nat) -> bool {
         // Check if there exists r such that r² * v ≡ ±u (mod p)
         // This is what sqrt_ratio_i determines
         exists|r: nat|
-            r < p() && (#[trigger] field_mul(field_square(r), v) == u % p() || #[trigger] field_mul(
-                field_square(r),
-                v,
-            ) == field_neg(u))
+            r < p() && (#[trigger] math_field_mul(math_field_square(r), v) == u % p()
+                || #[trigger] math_field_mul(math_field_square(r), v) == math_field_neg(u))
     }
 }
 
@@ -104,9 +102,9 @@ pub open spec fn is_edwards_identity(x: nat, y: nat) -> bool {
 /// In projective coordinates (X:Y:Z:T), this means X/Z = 0 and Y/Z = 1
 /// Which is equivalent to X ≡ 0 (mod p) and Y ≡ Z (mod p) with Z ≠ 0
 pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
-    let x = field_element(&point.X);
-    let y = field_element(&point.Y);
-    let z = field_element(&point.Z);
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
 
     z != 0 && x == 0 && y == z
 }
@@ -117,27 +115,27 @@ pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
 /// 2. The extended coordinate satisfies T = X*Y/Z
 /// 3. Z ≠ 0
 pub open spec fn is_valid_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {
-    let x = field_element(&point.X);
-    let y = field_element(&point.Y);
-    let z = field_element(&point.Z);
-    let t = field_element(&point.T);
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+    let t = spec_field_element(&point.T);
 
     // Z must be non-zero
     z != 0 &&
     // The affine coordinates (X/Z, Y/Z) must be on the curve
-    on_edwards_curve(field_mul(x, field_inv(z)), field_mul(y, field_inv(z)))
+    on_edwards_curve(math_field_mul(x, math_field_inv(z)), math_field_mul(y, math_field_inv(z)))
         &&
     // Extended coordinate must satisfy T = X*Y/Z
-    t == field_mul(field_mul(x, y), field_inv(z))
+    t == math_field_mul(math_field_mul(x, y), math_field_inv(z))
 }
 
 /// Returns the abstract affine coordinates (x, y) of this point.
 pub open spec fn affine_coords(point: crate::edwards::EdwardsPoint) -> (nat, nat) {
-    let x_abs = field_element(&point.X);
-    let y_abs = field_element(&point.Y);
-    let z_abs = field_element(&point.Z);
-    let z_inv = field_inv(z_abs);
-    (field_mul(x_abs, z_inv), field_mul(y_abs, z_inv))
+    let x_abs = spec_field_element(&point.X);
+    let y_abs = spec_field_element(&point.Y);
+    let z_abs = spec_field_element(&point.Z);
+    let z_inv = math_field_inv(z_abs);
+    (math_field_mul(x_abs, z_inv), math_field_mul(y_abs, z_inv))
 }
 
 /// Check if a CompressedEdwardsY represents the identity point
@@ -145,7 +143,7 @@ pub open spec fn affine_coords(point: crate::edwards::EdwardsPoint) -> (nat, nat
 /// When compressed, this is represented as y=1 with sign bit 0
 pub open spec fn is_compressed_identity(compressed: CompressedEdwardsY) -> bool {
     // Extract the y-coordinate (identity has y = 1)
-    field_element_from_bytes(&compressed.0) == 1
+    spec_field_element_from_bytes(&compressed.0) == 1
         &&
     // Sign bit should be 0 (since x = 0)
     (compressed.0[31] >> 7) == 0
@@ -161,23 +159,23 @@ pub open spec fn projective_niels_corresponds_to_edwards(
     niels: ProjectiveNielsPoint,
     point: EdwardsPoint,
 ) -> bool {
-    let x = field_element(&point.X);
-    let y = field_element(&point.Y);
-    let z = field_element(&point.Z);
-    let t = field_element(&point.T);
-    let d = field_element(&EDWARDS_D);
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+    let t = spec_field_element(&point.T);
+    let d = spec_field_element(&EDWARDS_D);
 
-    let y_plus_x = field_element(&niels.Y_plus_X);
-    let y_minus_x = field_element(&niels.Y_minus_X);
-    let niels_z = field_element(&niels.Z);
-    let t2d = field_element(&niels.T2d);
+    let y_plus_x = spec_field_element(&niels.Y_plus_X);
+    let y_minus_x = spec_field_element(&niels.Y_minus_X);
+    let niels_z = spec_field_element(&niels.Z);
+    let t2d = spec_field_element(&niels.T2d);
 
     // Check the relationships
-    // 2d is computed as field_mul(2, d) in field arithmetic
-    &&& y_plus_x == field_add(y, x)
-    &&& y_minus_x == field_sub(y, x)
+    // 2d is computed as math_field_mul(2, d) in field arithmetic
+    &&& y_plus_x == math_field_add(y, x)
+    &&& y_minus_x == math_field_sub(y, x)
     &&& niels_z == z
-    &&& t2d == field_mul(field_mul(2, d), t)
+    &&& t2d == math_field_mul(math_field_mul(2, d), t)
 }
 
 /// Check if a ProjectiveNielsPoint is valid
@@ -202,24 +200,24 @@ pub open spec fn affine_niels_corresponds_to_edwards(
     niels: AffineNielsPoint,
     point: EdwardsPoint,
 ) -> bool {
-    let x_proj = field_element(&point.X);
-    let y_proj = field_element(&point.Y);
-    let z_proj = field_element(&point.Z);
-    let d = field_element(&EDWARDS_D);
+    let x_proj = spec_field_element(&point.X);
+    let y_proj = spec_field_element(&point.Y);
+    let z_proj = spec_field_element(&point.Z);
+    let d = spec_field_element(&EDWARDS_D);
 
     // Compute affine coordinates x = X/Z, y = Y/Z
-    let z_inv = field_inv(z_proj);
-    let x = field_mul(x_proj, z_inv);
-    let y = field_mul(y_proj, z_inv);
+    let z_inv = math_field_inv(z_proj);
+    let x = math_field_mul(x_proj, z_inv);
+    let y = math_field_mul(y_proj, z_inv);
 
-    let y_plus_x_niels = field_element(&niels.y_plus_x);
-    let y_minus_x_niels = field_element(&niels.y_minus_x);
-    let xy2d_niels = field_element(&niels.xy2d);
+    let y_plus_x_niels = spec_field_element(&niels.y_plus_x);
+    let y_minus_x_niels = spec_field_element(&niels.y_minus_x);
+    let xy2d_niels = spec_field_element(&niels.xy2d);
 
     // Check the relationships
-    &&& y_plus_x_niels == field_add(y, x)
-    &&& y_minus_x_niels == field_sub(y, x)
-    &&& xy2d_niels == field_mul(field_mul(field_mul(x, y), 2), d)
+    &&& y_plus_x_niels == math_field_add(y, x)
+    &&& y_minus_x_niels == math_field_sub(y, x)
+    &&& xy2d_niels == math_field_mul(math_field_mul(math_field_mul(x, y), 2), d)
 }
 
 /// Check if an AffineNielsPoint is valid

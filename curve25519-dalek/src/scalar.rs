@@ -1760,7 +1760,6 @@ Helper inline functions for as_radix_16, moved outside impl Scalar for Verus com
 #[inline(always)]
 fn bot_half(x: u8) -> (result:
     u8)/* <VERIFICATION NOTE>
-- PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
 
@@ -1773,7 +1772,6 @@ fn bot_half(x: u8) -> (result:
 {
     let result = (x >> 0) & 15;
     proof {
-        // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
         assert((x >> 0) & 15 == x % 16) by (bit_vector);
     }
     result
@@ -1782,7 +1780,6 @@ fn bot_half(x: u8) -> (result:
 #[inline(always)]
 fn top_half(x: u8) -> (result:
     u8)/* <VERIFICATION NOTE>
-- PROOF BYPASS
 - Adjust the spec as needed for the proof of as_radix_16
 </VERIFICATION NOTE> */
 
@@ -1795,7 +1792,6 @@ fn top_half(x: u8) -> (result:
 {
     let result = (x >> 4) & 15;
     proof {
-        // VERIFICATION NOTE: PROOF BYPASS - bitvector reasoning for bit masking
         assert((x >> 4) & 15 == x / 16) by (bit_vector);
     }
     result
@@ -2588,10 +2584,7 @@ fn square_multiply(
 
 impl UnpackedScalar {
     /// Pack the limbs of this `UnpackedScalar` into a `Scalar`.
-    fn pack(&self) -> (result: Scalar)/* VERIFICATION NOTE:
-    PROOF BYPASS
-    */
-
+    fn pack(&self) -> (result: Scalar)
         requires
             limbs_bounded(self),
         ensures

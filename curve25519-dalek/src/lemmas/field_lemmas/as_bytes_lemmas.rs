@@ -19,7 +19,7 @@ use crate::specs::field_specs_u64::*;
 
 verus! {
 
-pub proof fn as_bytes_boundaries1(raw_limbs: [u64; 5])
+pub proof fn lemma_as_bytes_boundaries1(raw_limbs: [u64; 5])
     ensures
         spec_reduce(raw_limbs)[0] + 19 < u64::MAX,
         spec_reduce(raw_limbs)[1] + 2 < u64::MAX,
@@ -31,7 +31,7 @@ pub proof fn as_bytes_boundaries1(raw_limbs: [u64; 5])
         ((1u64 << 52) + 19) as u64 >> 51 == 2,
         ((1u64 << 52) + 2) as u64 >> 51 == 2,
 {
-    lemma_reduce(raw_limbs);
+    proof_reduce(raw_limbs);
 
     let limbs = spec_reduce(raw_limbs);
 
@@ -67,7 +67,7 @@ pub proof fn as_bytes_boundaries1(raw_limbs: [u64; 5])
     }
 }
 
-pub proof fn as_bytes_boundaries2(raw_limbs: [u64; 5])
+pub proof fn lemma_as_bytes_boundaries2(raw_limbs: [u64; 5])
     ensures
         mask51 == (1u64 << 51) - 1,
         // no `forall` for pattern match reasons
@@ -82,11 +82,11 @@ pub proof fn as_bytes_boundaries2(raw_limbs: [u64; 5])
         compute_unmasked_limbs(spec_reduce(raw_limbs), compute_q_spec(spec_reduce(raw_limbs)))[4]
             >> 51 <= 2,
 {
-    as_bytes_boundaries1(raw_limbs);
+    lemma_as_bytes_boundaries1(raw_limbs);
     let limbs = spec_reduce(raw_limbs);
     let q = compute_q_spec(limbs);
 
-    lemma_reduce(raw_limbs);
+    proof_reduce(raw_limbs);
     lemma_reduce_bound_2p(raw_limbs);
 
     assert(mask51 == (1u64 << 51) - 1) by (compute);

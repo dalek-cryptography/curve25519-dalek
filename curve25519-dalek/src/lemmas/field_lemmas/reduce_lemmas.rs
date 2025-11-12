@@ -22,7 +22,7 @@ verus! {
 // ensures forall |i: int| 0 <= i < 5 ==> spec_reduce(limbs)[i] < (1u64 << 52)
 // is that the solver treats `spec_reduce`` above as symbolic and does _not_ instantiate e.g.
 // ((limbs[4] & mask51) + (limbs[3] >> 51)) as u64 < (1u64 << 52)
-pub proof fn lemma_boundaries(limbs: [u64; 5])
+pub proof fn lemma_reduce_boundaries(limbs: [u64; 5])
     ensures
         ((limbs[0] & mask51) + (limbs[4] >> 51) * 19) < (1u64 << 52),
         ((limbs[1] & mask51) + (limbs[0] >> 51)) < (1u64 << 52),
@@ -63,7 +63,7 @@ pub proof fn lemma_boundaries(limbs: [u64; 5])
     // The solver can prove this automatically
 }
 
-pub proof fn lemma_reduce(limbs: [u64; 5])
+pub proof fn proof_reduce(limbs: [u64; 5])
     ensures
         forall|i: int| 0 <= i < 5 ==> spec_reduce(limbs)[i] < (1u64 << 52),
         // Suppose l = (l0, l1, l2, l3, l4) are the input limbs.
@@ -128,7 +128,7 @@ pub proof fn lemma_reduce(limbs: [u64; 5])
     let b3 = (limbs[3] & mask51);
     let b4 = (limbs[4] & mask51);
 
-    lemma_boundaries(limbs);
+    lemma_reduce_boundaries(limbs);
 
     // distribute
     assert(as_nat(rr) == 19 * a4 + b0 + pow2(51) * a0 + pow2(51) * b1 + pow2(102) * a1 + pow2(102)
@@ -318,9 +318,6 @@ pub proof fn lemma_reduce_bound_2p(limbs: [u64; 5])
             lemma_pow2_strictly_increases(221, 254);
         }
     }
-}
-
-fn main() {
 }
 
 } // verus!

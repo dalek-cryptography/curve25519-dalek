@@ -34,7 +34,7 @@ pub proof fn lemma_neg_no_underflow(limbs: [u64; 5])
     }
 }
 
-pub proof fn negate_proof(limbs: [u64; 5])
+pub proof fn proof_negate(limbs: [u64; 5])
     requires
         forall|i: int| 0 <= i < 5 ==> limbs[i] < (1u64 << 51),
         all_neg_limbs_positive(limbs),
@@ -59,7 +59,7 @@ pub proof fn negate_proof(limbs: [u64; 5])
             - limbs[4]) as u64 >> 51),
         (as_nat(spec_negate(limbs)) + as_nat(limbs)) % p() == 0,
 {
-    lemma_reduce(pre_reduce_limbs(limbs));
+    proof_reduce(pre_reduce_limbs(limbs));
 
     let c0 = (pow2(51) - 19);
     let c = (pow2(51) - 1);
@@ -123,9 +123,6 @@ pub proof fn negate_proof(limbs: [u64; 5])
         }
         lemma_mod_multiples_basic((16 - k) as int, p() as int);
     }
-}
-
-fn main() {
 }
 
 } // verus!

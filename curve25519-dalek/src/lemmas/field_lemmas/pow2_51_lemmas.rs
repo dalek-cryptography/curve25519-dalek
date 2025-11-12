@@ -131,7 +131,4 @@ pub broadcast proof fn lemma_cast_then_mask_51(x: u128)
     assert((x as u64) & 2251799813685247u64 == x & (2251799813685247u64 as u128)) by (bit_vector);
 }
 
-fn main() {
-}
-
 } // verus!

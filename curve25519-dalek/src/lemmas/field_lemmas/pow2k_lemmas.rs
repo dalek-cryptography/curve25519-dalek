@@ -135,7 +135,7 @@ pub open spec fn term_product_bounds_spec(a: [u64; 5], bound: u64) -> bool {
     &&& (a[1] as u128) * (a[3] as u128) < (bound * bound)
 }
 
-pub proof fn term_product_bounds(a: [u64; 5], bound: u64)
+pub proof fn lemma_term_product_bounds(a: [u64; 5], bound: u64)
     requires
         19 * bound <= u64::MAX,
         forall|i: int| 0 <= i < 5 ==> a[i] < bound,
@@ -163,14 +163,14 @@ pub open spec fn ci_0_val_boundaries(a: [u64; 5], bound: u64) -> bool {
     &&& c4_0_val(a) < 5 * (bound * bound)
 }
 
-pub proof fn c_i_0_bounded(a: [u64; 5], bound: u64)
+pub proof fn lemma_c_i_0_bounded(a: [u64; 5], bound: u64)
     requires
         19 * bound <= u64::MAX,
         forall|i: int| 0 <= i < 5 ==> a[i] < bound,
     ensures
         ci_0_val_boundaries(a, bound),
 {
-    term_product_bounds(a, bound);
+    lemma_term_product_bounds(a, bound);
 }
 
 pub open spec fn ci_val_boundaries(a: [u64; 5]) -> bool {
@@ -181,7 +181,7 @@ pub open spec fn ci_val_boundaries(a: [u64; 5]) -> bool {
     &&& (c4_val(a) >> 51) <= (u64::MAX as u128)
 }
 
-pub proof fn c_i_shift_bounded(a: [u64; 5], bound: u64)
+pub proof fn lemma_c_i_shift_bounded(a: [u64; 5], bound: u64)
     requires
         19 * bound <= u64::MAX,
         77 * (bound * bound) + u64::MAX <= ((u64::MAX as u128) << 51),
@@ -219,7 +219,7 @@ pub open spec fn pow2k_loop_return(a: [u64; 5]) -> [u64; 5] {
     r
 }
 
-pub open spec fn lemma_pow2k_loop_boundary_spec(a: [u64; 5]) -> bool {
+pub open spec fn pow2k_loop_boundary_spec(a: [u64; 5]) -> bool {
     &&& 19 * (1u64 << 54) <= u64::MAX
     &&& 77 * ((1u64 << 54) * (1u64 << 54)) <= u128::MAX
     &&& term_product_bounds_spec(a, 1u64 << 54)
@@ -230,17 +230,14 @@ pub open spec fn lemma_pow2k_loop_boundary_spec(a: [u64; 5]) -> bool {
     &&& pow2k_loop_return(a)[1] < 1u64 << 54
     &&& pow2k_loop_return(a)[2] < 1u64 << 54
     &&& pow2k_loop_return(a)[3] < 1u64 << 54
-    &&& pow2k_loop_return(a)[4] < 1u64
-        << 54
-    // &&& forall|j: int| 0 <= j < 5 ==> pow2k_loop_return(a)[j] < 1u64 << 54
-
+    &&& pow2k_loop_return(a)[4] < 1u64 << 54
 }
 
 pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
     requires
         forall|i: int| 0 <= i < 5 ==> a[i] < 1u64 << 54,
     ensures
-        lemma_pow2k_loop_boundary_spec(a),
+        pow2k_loop_boundary_spec(a),
 {
     let bound = 1u64 << 54;
     let bound19 = (19 * bound) as u64;
@@ -261,22 +258,22 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 
     assert(term_product_bounds_spec(a, bound)) by {
         // If a[i] < 2^54 then a[i] * a[j] < 2^108 and a[i] * (19 * a[j]) < 19 * 2^108
-        term_product_bounds(a, bound);
+        lemma_term_product_bounds(a, bound);
     }
 
     assert(ci_0_val_boundaries(a, bound)) by {
         // ci_0 < 77 * (1u128 << 108)
-        c_i_0_bounded(a, bound);
+        lemma_c_i_0_bounded(a, bound);
     }
 
-    // precond for c_i_shift_bounded
+    // precond for lemma_c_i_shift_bounded
     assert(77 * bound_sq + u64::MAX <= ((u64::MAX as u128) << 51)) by {
         assert(77 * (1u128 << 108) + u64::MAX <= ((u64::MAX as u128) << 51)) by (compute);
     }
 
     // ci >> 51 <= u64::MAX
     assert(ci_val_boundaries(a)) by {
-        c_i_shift_bounded(a, bound);
+        lemma_c_i_shift_bounded(a, bound);
     }
 
     assert(ai_val_boundaries(a)) by {
@@ -329,7 +326,7 @@ pub proof fn lemma_pow2k_loop_boundary(a: [u64; 5])
 
 pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
     requires
-        lemma_pow2k_loop_boundary_spec(a),
+        pow2k_loop_boundary_spec(a),
         as_nat(a) % p() == pow(as_nat(limbs) as int, pow2(i)) as nat % p(),
     ensures
         as_nat(pow2k_loop_return(a)) % p() == pow(as_nat(limbs) as int, pow2(i + 1)) as nat % p(),
@@ -507,7 +504,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
             lemma_mod_diff_factor(carry as int, c_arr_as_nat as int, p() as int);
         }
 
-        // We use the as_nat_squared lemma to see what (as_nat(a)^2) evaluates to (mod p)
+        // We use the lemma_as_nat_squared lemma to see what (as_nat(a)^2) evaluates to (mod p)
 
         // The nat_squared lemma gives us the following:
         // as_nat(a) * as_nat(a) ==
@@ -531,7 +528,7 @@ pub proof fn lemma_pow2k_loop_value(a: [u64; 5], limbs: [u64; 5], i: nat)
         //     pow2(1 * 51) * (2 * (a[0] *  a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4]))) +
         //                    (a[0] *  a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])))
         // ) as nat % p()
-        as_nat_squared(a);
+        lemma_as_nat_squared(a);
 
         // We're basically done, what remains is to prove that the coefficients next to pow2(i * 51)
         // are exactly ci_0s (via distributivity and associativity)

@@ -99,7 +99,7 @@ pub proof fn lemma_as_nat_sub(a: [u64; 5], b: [u64; 5])
 
 // Explicit and mod-p identities for squaring as_nat conversion
 #[verusfmt::skip]
-pub proof fn as_nat_squared(v: [u64; 5])
+pub proof fn lemma_as_nat_squared(v: [u64; 5])
     ensures
         as_nat(v) * as_nat(v) ==
             pow2(8 * 51) * (v[4] * v[4]) +
@@ -429,7 +429,7 @@ pub proof fn as_nat_squared(v: [u64; 5])
     assert(c0 == (v[0] * v[0] + 19 * (2 * (v[2] * v[3]) + 2 * (v[1] * v[4]))));
 }
 
-pub proof fn as_nat_k(a: [u64; 5], k: u64)
+pub proof fn lemma_as_nat_k(a: [u64; 5], k: u64)
     requires
         forall|i: int| 0 <= i < 5 ==> (k * a[i]) <= u64::MAX,
     ensures

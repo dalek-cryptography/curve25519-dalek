@@ -138,9 +138,9 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
         r as nat == load8_at_spec(input, i),
 {
     proof {
-        rec_version_is_exec(input, i);
-        load8_at_versions_equivalent(input, i, 7);
-        plus_version_is_spec(input, i);
+        lemma_load8_at_rec_version_is_exec(input, i);
+        lemma_load8_at_versions_equivalent(input, i, 7);
+        lemma_load8_at_plus_version_is_spec(input, i);
     }
     (input[i] as u64) | ((input[i + 1] as u64) << 8) | ((input[i + 2] as u64) << 16) | ((input[i
         + 3] as u64) << 24) | ((input[i + 4] as u64) << 32) | ((input[i + 5] as u64) << 40) | ((
@@ -739,7 +739,7 @@ impl FieldElement51 {
     {
         proof {
             lemma_neg_no_underflow(self.limbs);
-            negate_proof(self.limbs);
+            proof_negate(self.limbs);
         }
         // See commentary in the Sub impl: (copied below)
         // To avoid underflow, first add a multiple of p.
@@ -778,8 +778,8 @@ impl FieldElement51 {
             as_nat(r.limbs) < 2 * p(),
     {
         proof {
-            lemma_boundaries(limbs);
-            lemma_reduce(limbs);
+            lemma_reduce_boundaries(limbs);
+            proof_reduce(limbs);
             lemma_reduce_bound_2p(limbs);
         }
 
@@ -860,11 +860,11 @@ impl FieldElement51 {
 
             assert(l0 <= u64::MAX && l1 <= u64::MAX && l2 <= u64::MAX && l3 <= u64::MAX && l4
                 <= u64::MAX) by {
-                load8_at_spec_fits_u64(bytes, 0);
-                load8_at_spec_fits_u64(bytes, 6);
-                load8_at_spec_fits_u64(bytes, 12);
-                load8_at_spec_fits_u64(bytes, 19);
-                load8_at_spec_fits_u64(bytes, 24);
+                lemma_load8_at_spec_fits_u64(bytes, 0);
+                lemma_load8_at_spec_fits_u64(bytes, 6);
+                lemma_load8_at_spec_fits_u64(bytes, 12);
+                lemma_load8_at_spec_fits_u64(bytes, 19);
+                lemma_load8_at_spec_fits_u64(bytes, 24);
             }
 
             let rr = [
@@ -876,8 +876,8 @@ impl FieldElement51 {
             ];
 
             assert(as_nat(rr) == as_nat_32_u8(bytes) % pow2(255)) by {
-                from_bytes_as_nat(bytes);
-                as_nat_32_mod_255(bytes);
+                lemma_from_bytes_as_nat(bytes);
+                lemma_as_nat_32_mod_255(bytes);
             }
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
@@ -918,12 +918,12 @@ impl FieldElement51 {
     {
         proof {
             // No overflows
-            as_bytes_boundaries1(self.limbs);
-            as_bytes_boundaries2(self.limbs);
+            lemma_as_bytes_boundaries1(self.limbs);
+            lemma_as_bytes_boundaries2(self.limbs);
 
             // Step 1: Reduce limbs to ensure h < 2*p
             // The reduce function ensures the limbs are bounded by 2^52
-            lemma_reduce(self.limbs);
+            proof_reduce(self.limbs);
             lemma_reduce_bound_2p(self.limbs);
             let limbs = spec_reduce(self.limbs);
 
@@ -1226,7 +1226,7 @@ impl FieldElement51 {
             // as_nat(ka) == 2 * as_nat(square.limbs)
             // and
             // as_nat(ka) % p() == (2 * as_nat(square.limbs)) % p()
-            as_nat_k(square.limbs, 2);
+            lemma_as_nat_k(square.limbs, 2);
 
             // By pow2k ensures:
             // as_nat(square.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(1)) as nat % p()

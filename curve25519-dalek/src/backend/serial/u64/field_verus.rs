@@ -54,9 +54,9 @@ const fn load8_at(input: &[u8], i: usize) -> (r: u64)
         r as nat == load8_at_spec(input, i),
 {
     proof {
-        rec_version_is_exec(input, i);
-        load8_at_versions_equivalent(input, i, 7);
-        plus_version_is_spec(input, i);
+        lemma_load8_at_rec_version_is_exec(input, i);
+        lemma_load8_at_versions_equivalent(input, i, 7);
+        lemma_load8_at_plus_version_is_spec(input, i);
     }
     (input[i] as u64) | ((input[i + 1] as u64) << 8) | ((input[i + 2] as u64) << 16) | ((input[i
         + 3] as u64) << 24) | ((input[i + 4] as u64) << 32) | ((input[i + 5] as u64) << 40) | ((
@@ -131,7 +131,7 @@ impl FieldElement51 {
     {
         proof {
             lemma_neg_no_underflow(self.limbs);
-            negate_proof(self.limbs);
+            proof_negate(self.limbs);
         }
         // See commentary in the Sub impl: (copied below)
         // To avoid underflow, first add a multiple of p.
@@ -170,8 +170,8 @@ impl FieldElement51 {
             as_nat(r.limbs) < 2 * p(),
     {
         proof {
-            lemma_boundaries(limbs);
-            lemma_reduce(limbs);
+            lemma_reduce_boundaries(limbs);
+            proof_reduce(limbs);
             lemma_reduce_bound_2p(limbs);
             pow255_gt_19();
             lemma_mod_multiples_vanish(
@@ -244,11 +244,11 @@ impl FieldElement51 {
 
             assert(l0 <= u64::MAX && l1 <= u64::MAX && l2 <= u64::MAX && l3 <= u64::MAX && l4
                 <= u64::MAX) by {
-                load8_at_spec_fits_u64(bytes, 0);
-                load8_at_spec_fits_u64(bytes, 6);
-                load8_at_spec_fits_u64(bytes, 12);
-                load8_at_spec_fits_u64(bytes, 19);
-                load8_at_spec_fits_u64(bytes, 24);
+                lemma_load8_at_spec_fits_u64(bytes, 0);
+                lemma_load8_at_spec_fits_u64(bytes, 6);
+                lemma_load8_at_spec_fits_u64(bytes, 12);
+                lemma_load8_at_spec_fits_u64(bytes, 19);
+                lemma_load8_at_spec_fits_u64(bytes, 24);
             }
 
             let rr = [
@@ -260,8 +260,8 @@ impl FieldElement51 {
             ];
 
             assert(as_nat(rr) == as_nat_32_u8(bytes) % pow2(255)) by {
-                from_bytes_as_nat(bytes);
-                as_nat_32_mod_255(bytes);
+                lemma_from_bytes_as_nat(bytes);
+                lemma_as_nat_32_mod_255(bytes);
             }
         }
         let low_51_bit_mask = (1u64 << 51) - 1;
@@ -304,7 +304,7 @@ impl FieldElement51 {
         proof {
             // Step 1: Reduce limbs to ensure h < 2*p
             // The reduce function ensures the limbs are bounded by 2^52
-            lemma_reduce(self.limbs);
+            proof_reduce(self.limbs);
         }
         // Let h = limbs[0] + limbs[1]*2^51 + ... + limbs[4]*2^204.
         //
@@ -505,23 +505,23 @@ impl FieldElement51 {
                 assert(((1u64 << 54) as u128) * ((1u64 << 54) as u128) == (1u128 << 108))
                     by (bit_vector);
 
-                // precond for term_product_bounds
+                // precond for lemma_term_product_bounds
                 assert(19 * bound <= u64::MAX) by {
                     assert(19 * (1u64 << 54) <= u64::MAX) by (compute);
                 }
                 // If a[i] < 2^54 then a[i] * a[j] < 2^108 and a[i] * (19 * a[j]) < 19 * 2^108
-                term_product_bounds(a, bound);
+                lemma_term_product_bounds(a, bound);
 
                 // ci_0 < 77 * (1u128 << 108)
-                c_i_0_bounded(a, bound);
+                lemma_c_i_0_bounded(a, bound);
 
-                // precond for c_i_shift_bounded
+                // precond for lemma_c_i_shift_bounded
                 assert(77 * (bound * bound) + u64::MAX <= ((u64::MAX as u128) << 51)) by {
                     assert(77 * (1u128 << 108) + u64::MAX <= ((u64::MAX as u128) << 51))
                         by (compute);
                 }
                 // ci >> 51 <= u64::MAX
-                c_i_shift_bounded(a, bound);
+                lemma_c_i_shift_bounded(a, bound);
 
                 // bv arithmetic
                 assert(19 < (1u64 << 5)) by (bit_vector);
@@ -535,8 +535,8 @@ impl FieldElement51 {
                 let a3_19 = (19 * a[3]) as u64;
                 let a4_19 = (19 * a[4]) as u64;
 
-                // NOTE: we assert the properties derived from c_i_0_bounded
-                // and c_i_shift_bounded after every variable declaration,
+                // NOTE: we assert the properties derived from lemma_c_i_0_bounded
+                // and lemma_c_i_shift_bounded after every variable declaration,
                 // to trigger the solver instantiation
 
                 // ci_0 defs
@@ -784,7 +784,7 @@ impl FieldElement51 {
                         lemma_mod_diff_factor(carry as int, c_arr_as_nat as int, p() as int);
                     }
 
-                    // We use the as_nat_squared lemma to see what (as_nat(a)^2) evaluates to (mod p)
+                    // We use the lemma_as_nat_squared lemma to see what (as_nat(a)^2) evaluates to (mod p)
 
                     // The nat_squared lemma gives us the following:
                     // as_nat(a) * as_nat(a) ==
@@ -808,7 +808,7 @@ impl FieldElement51 {
                     //     pow2(1 * 51) * (2 * (a[0] *  a[1]) + 19 * (a[3] * a[3] + 2 * (a[2] * a[4]))) +
                     //                    (a[0] *  a[0] + 19 * (2 * (a[2] * a[3]) + 2 * (a[1] * a[4])))
                     // ) as nat % p()
-                    as_nat_squared(a);
+                    lemma_as_nat_squared(a);
 
                     // We're basically done, what remains is to prove that the coefficients next to pow2(i * 51)
                     // are exactly ci_0s (via distributivity and associativity)
@@ -1050,7 +1050,7 @@ impl FieldElement51 {
             // as_nat(ka) == 2 * as_nat(square.limbs)
             // and
             // as_nat(ka) % p() == (2 * as_nat(square.limbs)) % p()
-            as_nat_k(square.limbs, 2);
+            lemma_as_nat_k(square.limbs, 2);
 
             // By pow2k ensures:
             // as_nat(square.limbs) % p() == pow(as_nat(self.limbs) as int, pow2(1)) as nat % p()

@@ -15,6 +15,9 @@ Tracks how specs and proofs have evolved across commits on main branch.
 """
 
 import argparse
+import csv
+import io
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -93,9 +96,6 @@ def analyze_csv_at_commit(
             return None
 
         # Parse CSV content
-        import io
-        import csv
-
         lines = csv_content.strip().split("\n")
         if len(lines) < 2:  # No data rows
             return None
@@ -148,6 +148,75 @@ def analyze_csv_at_commit(
     except Exception as e:
         print(f"  Error analyzing commit {commit_hash[:8]}: {e}")
         return None
+
+
+@beartype
+def load_stats_history(history_file: Path) -> pd.DataFrame:
+    """
+    Load verification statistics from stats_history.jsonl file.
+    This is much faster than regenerating from git history.
+    """
+    if not history_file.exists():
+        raise FileNotFoundError(
+            f"Stats history file not found: {history_file}\n"
+            "Run scripts/update_stats_history.py --fill-missing to generate it."
+        )
+
+    print(f"Loading stats history from {history_file}...")
+
+    historical_data = []
+    required_keys = ["commit", "date", "total", "specs", "specs_external", "proofs"]
+
+    with open(history_file, "r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+
+                # Validate required keys are present
+                missing_keys = [key for key in required_keys if key not in entry]
+                if missing_keys:
+                    print(
+                        f"Warning: Skipping line {line_num} - missing required keys: {missing_keys}"
+                    )
+                    continue
+
+                # Parse date and normalize to timezone-naive for consistent comparison
+                date = pd.to_datetime(entry["date"])
+                if date.tz is not None:
+                    date = date.tz_localize(None)  # Remove timezone info
+
+                historical_data.append(
+                    {
+                        "commit": entry[
+                            "commit"
+                        ],  # Store full hash, truncate only for display
+                        "date": date,
+                        "total": entry["total"],
+                        "verus_specs": entry["specs"],
+                        "verus_specs_full": entry["specs"],
+                        "verus_specs_external": entry["specs_external"],
+                        "verus_proofs": entry["proofs"],
+                    }
+                )
+            except json.JSONDecodeError as e:
+                print(f"Warning: Skipping malformed JSON at line {line_num}: {e}")
+                continue
+            except (KeyError, TypeError, ValueError) as e:
+                print(f"Warning: Skipping invalid data at line {line_num}: {e}")
+                continue
+
+    if not historical_data:
+        raise ValueError("No data found in stats history file")
+
+    df = pd.DataFrame(historical_data)
+    print(f"Loaded {len(df)} historical data points")
+    print(f"Date range: {df['date'].min()} to {df['date'].max()}")
+    print()
+
+    return df
 
 
 @beartype
@@ -537,19 +606,13 @@ def print_summary(df: pd.DataFrame) -> dict:
 @beartype
 def main():
     parser = argparse.ArgumentParser(
-        description="Plot verification progress over time from git history"
+        description="Plot verification progress over time from stats history"
     )
     parser.add_argument(
-        "--branch",
+        "--history",
         type=str,
-        default="main",
-        help="Git branch to analyze (default: main)",
-    )
-    parser.add_argument(
-        "--csv-path",
-        type=str,
-        default="outputs/curve25519_functions.csv",
-        help="Relative path to CSV file from repo root (default: outputs/curve25519_functions.csv)",
+        default="outputs/stats_history.jsonl",
+        help="Path to stats history file (default: outputs/stats_history.jsonl)",
     )
     parser.add_argument(
         "--output-dir",
@@ -557,48 +620,23 @@ def main():
         default="outputs",
         help="Output directory for plots (default: outputs)",
     )
-    parser.add_argument(
-        "--since",
-        type=str,
-        help="Only analyze commits since this date (YYYY-MM-DD)",
-    )
-    parser.add_argument(
-        "--max-commits",
-        type=int,
-        default=50,
-        help="Maximum number of commits to analyze (default: 50)",
-    )
-    parser.add_argument(
-        "--sample",
-        type=int,
-        default=1,
-        help="Sample every Nth commit (default: 1 = all commits)",
-    )
     args = parser.parse_args()
 
     # Set up paths
     script_dir = Path(__file__).parent
     repo_root = script_dir.parent
     output_dir = repo_root / args.output_dir
+    history_file = repo_root / args.history
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Collect historical data
-    df = collect_historical_data(
-        repo_path=repo_root,
-        csv_relative_path=args.csv_path,
-        branch=args.branch,
-        since_date=args.since,
-        max_commits=args.max_commits,
-        sample_interval=args.sample,
-    )
+    # Load historical data from JSONL file
+    df = load_stats_history(history_file)
 
     # Print summary and get metadata
     metadata = print_summary(df)
 
     # Write metadata to JSON for website
-    import json
-
     metadata_path = output_dir / "metadata.json"
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)

@@ -337,12 +337,11 @@ def plot_file_breakdown(df: pd.DataFrame, output_dir: Path):
         if pd.isna(module) or not module:
             return "unknown"
         # Remove crate prefix for cleaner display
-        # e.g., "curve25519_dalek::backend::serial::u64::field" -> "serial::u64::field"
+        # e.g., "curve25519_dalek::backend::serial::u64::field" -> "u64::field"
+        # e.g., "curve25519_dalek::scalar" -> "scalar"
         parts = module.replace("curve25519_dalek::", "").split("::")
-        # Return last 2-3 parts for reasonable display
-        if len(parts) >= 3:
-            return "::".join(parts[-3:])
-        elif len(parts) >= 2:
+        # Always show last 2 levels (or fewer if not available)
+        if len(parts) >= 2:
             return "::".join(parts[-2:])
         return parts[-1] if parts else "unknown"
 

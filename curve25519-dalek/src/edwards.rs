@@ -217,10 +217,59 @@ impl CompressedEdwardsY {
             None
         }
     }
+
+    /// Attempt to decompress to an `EdwardsPoint` according to RFC 8032 rules.
+    ///
+    /// Returns `None` if the input overflows the field modulus or is not the
+    /// \\(y\\)-coordinate of a curve point.
+    pub fn decompress_rfc8032(&self) -> Option<EdwardsPoint> {
+        if !bool::from(decompress::check_modulus(self)) {
+            return None;
+        }
+
+        self.decompress()
+    }
+
+    /// Attempt to decompress to an `EdwardsPoint` according to NIST's full
+    /// validation.
+    ///
+    /// Returns `None` if the input overflows the field modulus, is not the
+    /// \\(y\\)-coordinate of a curve point, is the identity point or is not
+    /// contained in the prime-order subgroup.
+    pub fn decompress_nist_full(&self) -> Option<EdwardsPoint> {
+        let point = self.decompress_rfc8032()?;
+
+        if !point.is_identity() && point.is_torsion_free() {
+            Some(point)
+        } else {
+            None
+        }
+    }
 }
 
 mod decompress {
     use super::*;
+    use subtle::ConstantTimeGreater;
+
+    pub(super) fn check_modulus(repr: &CompressedEdwardsY) -> Choice {
+        // The modulus is:
+        // 0xecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f
+
+        // Remove the sign from the MSB.
+        let high_without_sign = repr.as_bytes()[31] & 0x7f;
+
+        // High-byte can never be bigger than 0x7f, point is always valid as
+        // long as its smaller.
+        let high = high_without_sign.ct_eq(&0x7f);
+        // If low-byte is bigger than 0xec and all other bytes are 0xff point
+        // is invalid.
+        let low = repr.as_bytes()[0].ct_gt(&0xec);
+        // If all other bytes are 0xff and the low-byte is bigger than 0xec
+        // point is invalid.
+        let mid = repr.as_bytes()[1..31].ct_eq(&[0xff; 30]);
+
+        !high | (!mid | !low)
+    }
 
     #[rustfmt::skip] // keep alignment of explanatory comments
     pub(super) fn step_1(
@@ -1484,8 +1533,12 @@ impl GroupEncoding for EdwardsPoint {
 
     fn from_bytes(bytes: &Self::Repr) -> CtOption<Self> {
         let repr = CompressedEdwardsY(*bytes);
+        let is_in_modulus = decompress::check_modulus(&repr);
         let (is_valid_y_coord, X, Y, Z) = decompress::step_1(&repr);
-        CtOption::new(decompress::step_2(&repr, X, Y, Z), is_valid_y_coord)
+        CtOption::new(
+            decompress::step_2(&repr, X, Y, Z),
+            is_in_modulus & is_valid_y_coord,
+        )
     }
 
     fn from_bytes_unchecked(bytes: &Self::Repr) -> CtOption<Self> {
@@ -1779,6 +1832,7 @@ impl CofactorGroup for EdwardsPoint {
 mod test {
     use super::*;
 
+    use hex_literal::hex;
     use rand_core::TryRngCore;
 
     #[cfg(feature = "alloc")]
@@ -1870,6 +1924,81 @@ mod test {
         assert_eq!(minus_basepoint.Y, constants::ED25519_BASEPOINT_POINT.Y);
         assert_eq!(minus_basepoint.Z, constants::ED25519_BASEPOINT_POINT.Z);
         assert_eq!(minus_basepoint.T, -(&constants::ED25519_BASEPOINT_POINT.T));
+    }
+
+    /// Test validated decompression
+    #[test]
+    fn validated_decompression() {
+        const VALID_POINTS: [CompressedEdwardsY; 4] = [
+            CompressedEdwardsY(hex!(
+                "ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+            )),
+            CompressedEdwardsY(hex!(
+                "faffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6f"
+            )),
+            CompressedEdwardsY(hex!(
+                "faffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff80"
+            )),
+            CompressedEdwardsY(hex!(
+                "fdfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"
+            )),
+        ];
+
+        for compressed in VALID_POINTS {
+            assert!(compressed.decompress().is_some(), "{:02x?}", compressed.0);
+            assert!(
+                compressed.decompress_rfc8032().is_some(),
+                "{:02x?}",
+                compressed.0
+            );
+        }
+
+        const OVERFLOWING_POINTS: [(CompressedEdwardsY, [u8; 32]); 4] = [
+            (
+                CompressedEdwardsY(hex!(
+                    "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+                )),
+                [0; 32],
+            ),
+            (
+                CompressedEdwardsY(hex!(
+                    "eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+                )),
+                hex!("0100000000000000000000000000000000000000000000000000000000000000"),
+            ),
+            (
+                CompressedEdwardsY(hex!(
+                    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"
+                )),
+                hex!("1200000000000000000000000000000000000000000000000000000000000000"),
+            ),
+            (
+                CompressedEdwardsY(hex!(
+                    "edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+                )),
+                hex!("0000000000000000000000000000000000000000000000000000000000000080"),
+            ),
+        ];
+
+        for (compressed, result) in OVERFLOWING_POINTS {
+            let point = compressed.decompress().unwrap();
+            assert_eq!(point.compress().0, result);
+            assert!(compressed.decompress_rfc8032().is_none());
+        }
+
+        const TORSION_POINT: CompressedEdwardsY = CompressedEdwardsY(hex!(
+            "5d78934d0311e9791fb9577f568a47605f347b367db825c4e27c52eb0cbe944d"
+        ));
+
+        let point = TORSION_POINT.decompress_rfc8032().unwrap();
+        assert!(!point.is_torsion_free());
+        assert!(TORSION_POINT.decompress_nist_full().is_none());
+
+        assert!(
+            CompressedEdwardsY::identity()
+                .decompress_nist_full()
+                .is_none()
+        );
     }
 
     /// Test that computing 1*basepoint gives the correct basepoint.

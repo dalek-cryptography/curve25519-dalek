@@ -1,0 +1,2 @@
+[jobs.verus]
+command = ["cargo", "verus", "verify"]

@@ -71,3 +71,10 @@ In particular, if you want to format all Rust files, run
 ```bash
 find . -name "*.rs" -type f | xargs -P 0 -n 1 verusfmt
 ```
+
+## Using bacon
+
+`bacon verus` will show the live verification status as you make edits and save files,
+and it will put error messages at the top.
+
+Install bacon from https://github.com/Canop/bacon

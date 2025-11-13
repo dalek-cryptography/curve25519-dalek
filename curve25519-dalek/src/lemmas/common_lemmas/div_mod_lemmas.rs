@@ -128,4 +128,16 @@ pub proof fn lemma_u8_cast_is_mod_256(x: u64)
     assert((x as u8) == x % 256) by (bit_vector);
 }
 
+pub proof fn lemma_mul_both_sides_mod(x: int, y: int, z: int, m: int)
+    requires
+        m > 0,
+        x % m == y % m,
+    ensures
+        (x * z) % m == (y * z) % m,
+{
+    // Apply lemma_mul_mod_noop_right to both x and y
+    lemma_mul_mod_noop_right(z, x, m);
+    lemma_mul_mod_noop_right(z, y, m);
+}
+
 } // verus!

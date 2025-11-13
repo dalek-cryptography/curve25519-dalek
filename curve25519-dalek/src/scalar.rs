@@ -2597,9 +2597,6 @@ impl UnpackedScalar {
     {
         let bytes = self.as_bytes();
         proof {
-            // Bridge between recursive and non-recursive representations
-            // as_bytes() uses non-recursive versions, but pack() expects recursive versions
-            lemma_bytes_to_nat_rec_equals_bytes_to_nat(&bytes);
             lemma_five_limbs_equals_to_nat(&self.limbs);
         }
         let result = Scalar { bytes: bytes };

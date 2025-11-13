@@ -801,4 +801,67 @@ pub proof fn lemma_modular_bit_partitioning(a: nat, b: nat, k: nat, n: nat)
     }
 }
 
+// Proof that pow2(n) is even for n >= 1
+pub proof fn lemma_pow2_even(n: nat)
+    requires
+        n >= 1,
+    ensures
+        pow2(n) % 2 == 0,
+    decreases n,
+{
+    if n == 1 {
+        assert(pow2(1) == 2) by {
+            lemma2_to64();
+        };
+        assert(2int % 2int == 0) by { lemma_mod_self_0(2) };
+    } else {
+        let m = (n - 1) as nat;
+        lemma_pow2_adds(1, m);
+        assert(pow2(n) == pow2(1) * pow2(m));
+        assert(pow2(1) == 2) by { lemma2_to64() };
+
+        lemma_mul_mod_noop_right(2 as int, pow2(m) as int, 2 as int);
+
+        lemma_pow2_even(m);
+
+        assert((2 * (pow2(m) as int % 2)) % 2 == 0);
+        assert(pow2(n) as int % 2 == 0);
+    }
+}
+
+// If x ≡ 1 (mod m) then x^n ≡ 1 (mod m)
+pub proof fn lemma_pow_mod_one(x: int, n: nat, m: int)
+    requires
+        m > 1,
+        x % m == 1,
+    ensures
+        pow(x, n) % m == 1,
+    decreases n,
+{
+    if n == 0 {
+        assert(pow(x, 0) == 1) by { lemma_pow0(x) };
+        assert(1int % m == 1) by { lemma_small_mod(1nat, m as nat) };
+        assert(pow(x, n) % m == 1);
+    } else {
+        lemma_pow_mod_one(x, (n - 1) as nat, m);
+        // pow(x,n) == pow(x,n-1) * x
+        assert(pow(x, n) == pow(x, (n - 1) as nat) * x) by {
+            lemma_pow_adds(x, 1, (n - 1) as nat);
+            lemma_pow1(x);
+        };
+
+        // x^n = x^(n - 1) * x (mod m)
+        assert(pow(x, n) % m == (pow(x, (n - 1) as nat) * x) % m);
+        assert(pow(x, n) % m == ((pow(x, (n - 1) as nat) % m) * (x % m)) % m) by {
+            lemma_mul_mod_noop(pow(x, (n - 1) as nat), x, m);
+        };
+
+        assert(pow(x, n) % m == (1int * 1int) % m);
+        assert(pow(x, n) % m == 1int % m);
+        assert(1int % m == 1) by { lemma_small_mod(1nat, m as nat) };
+        assert(pow(x, n) % m == 1);
+
+    }
+}
+
 } // verus!

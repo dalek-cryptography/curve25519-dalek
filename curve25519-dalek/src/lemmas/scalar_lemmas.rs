@@ -24,12 +24,14 @@ use vstd::calc;
 use vstd::prelude::*;
 
 #[allow(unused_imports)]
+use super::common_lemmas::pow_lemmas::*;
+#[allow(unused_imports)]
 use super::common_lemmas::shift_lemmas::*;
 
 verus! {
 
 /// Verification: scalar * scalar.invert() ≡ 1 mod L
-proof fn verify_invert_correct(
+proof fn lemma_verify_invert_correct(
     x: Scalar52,
 )
 //     requires to_scalar(&x.limbs) != 0
@@ -220,70 +222,6 @@ pub proof fn lemma_five_limbs_equals_to_nat(limbs: &[u64; 5])
         (limbs[0] as nat) + pow2(52) * (limbs[1] as nat) + pow2(104) * (limbs[2] as nat) + pow2(156)
             * (limbs[3] as nat) + pow2(208) * (limbs[4] as nat); {}
         five_limbs_to_nat_aux(*limbs);
-    }
-}
-
-pub proof fn lemma_bytes_to_nat_rec_equals_bytes_to_nat(bytes: &[u8; 32])
-    ensures
-        bytes_to_nat(bytes) == as_nat_32_u8(bytes),
-{
-    // Strategy: Unfold the recursive definition and show it matches the explicit sum
-    // The recursive definition bytes_to_nat_rec(bytes, 0) computes:
-    // bytes[0] * 2^0 + bytes[1] * 2^8 + ... + bytes[31] * 2^248
-    // First, reveal the recursive structure by showing a few key steps
-    // Note: bytes_to_nat now directly returns as_nat_32_u8, so we use that for the reveal
-    reveal_with_fuel(as_nat_32_u8_rec, 33);
-
-    // Now we need to show that the recursive unfolding equals the explicit sum
-    // The key is that pow2(0) == 1, so bytes[0] * pow2(0) == bytes[0]
-    assert(pow2(0) == 1) by {
-        lemma2_to64();
-    };
-
-    // Use calc block to show the transformation step by step
-    calc! {
-        (==)
-        bytes_to_nat(bytes); {}
-        bytes_to_nat_rec(bytes, 0); {
-            // Unfold recursively - Verus should be able to see this with fuel
-        }
-        (bytes[0] as nat) * pow2(0) + (bytes[1] as nat) * pow2(8) + (bytes[2] as nat) * pow2(16) + (
-        bytes[3] as nat) * pow2(24) + (bytes[4] as nat) * pow2(32) + (bytes[5] as nat) * pow2(40)
-            + (bytes[6] as nat) * pow2(48) + (bytes[7] as nat) * pow2(56) + (bytes[8] as nat)
-            * pow2(64) + (bytes[9] as nat) * pow2(72) + (bytes[10] as nat) * pow2(80) + (
-        bytes[11] as nat) * pow2(88) + (bytes[12] as nat) * pow2(96) + (bytes[13] as nat) * pow2(
-            104,
-        ) + (bytes[14] as nat) * pow2(112) + (bytes[15] as nat) * pow2(120) + (bytes[16] as nat)
-            * pow2(128) + (bytes[17] as nat) * pow2(136) + (bytes[18] as nat) * pow2(144) + (
-        bytes[19] as nat) * pow2(152) + (bytes[20] as nat) * pow2(160) + (bytes[21] as nat) * pow2(
-            168,
-        ) + (bytes[22] as nat) * pow2(176) + (bytes[23] as nat) * pow2(184) + (bytes[24] as nat)
-            * pow2(192) + (bytes[25] as nat) * pow2(200) + (bytes[26] as nat) * pow2(208) + (
-        bytes[27] as nat) * pow2(216) + (bytes[28] as nat) * pow2(224) + (bytes[29] as nat) * pow2(
-            232,
-        ) + (bytes[30] as nat) * pow2(240) + (bytes[31] as nat) * pow2(248); {
-            // Simplify bytes[0] * pow2(0) to bytes[0]
-            // Since pow2(0) == 1, we have x * 1 == x
-            assert((bytes[0] as nat) * pow2(0) == (bytes[0] as nat)) by {
-                assert(pow2(0) == 1);
-            };
-        }
-        (bytes[0] as nat) + (bytes[1] as nat) * pow2(8) + (bytes[2] as nat) * pow2(16) + (
-        bytes[3] as nat) * pow2(24) + (bytes[4] as nat) * pow2(32) + (bytes[5] as nat) * pow2(40)
-            + (bytes[6] as nat) * pow2(48) + (bytes[7] as nat) * pow2(56) + (bytes[8] as nat)
-            * pow2(64) + (bytes[9] as nat) * pow2(72) + (bytes[10] as nat) * pow2(80) + (
-        bytes[11] as nat) * pow2(88) + (bytes[12] as nat) * pow2(96) + (bytes[13] as nat) * pow2(
-            104,
-        ) + (bytes[14] as nat) * pow2(112) + (bytes[15] as nat) * pow2(120) + (bytes[16] as nat)
-            * pow2(128) + (bytes[17] as nat) * pow2(136) + (bytes[18] as nat) * pow2(144) + (
-        bytes[19] as nat) * pow2(152) + (bytes[20] as nat) * pow2(160) + (bytes[21] as nat) * pow2(
-            168,
-        ) + (bytes[22] as nat) * pow2(176) + (bytes[23] as nat) * pow2(184) + (bytes[24] as nat)
-            * pow2(192) + (bytes[25] as nat) * pow2(200) + (bytes[26] as nat) * pow2(208) + (
-        bytes[27] as nat) * pow2(216) + (bytes[28] as nat) * pow2(224) + (bytes[29] as nat) * pow2(
-            232,
-        ) + (bytes[30] as nat) * pow2(240) + (bytes[31] as nat) * pow2(248); {}
-        as_nat_32_u8(bytes);
     }
 }
 
@@ -569,30 +507,6 @@ pub(crate) proof fn lemma_rr_equals_spec(rr: Scalar52)
 
 }
 
-pub proof fn lemma_mul_both_sides_mod(x: int, y: int, z: int, m: int)
-    requires
-        m > 0,
-        x % m == y % m,
-    ensures
-        (x * z) % m == (y * z) % m,
-{
-    // Apply lemma_mul_mod_noop_right to both x and y
-    lemma_mul_mod_noop_right(z, x, m);
-    lemma_mul_mod_noop_right(z, y, m);
-
-    // From lemma: z * (x % m) % m == (z * x) % m
-    //            z * (y % m) % m == (z * y) % m
-
-    // Since x % m == y % m (from requires), we have:
-    assert(z * (x % m) % m == z * (y % m) % m);
-
-    // Therefore:
-    assert((z * x) % m == (z * y) % m);
-
-    // By commutativity of multiplication:
-    assert((x * z) % m == (y * z) % m);
-}
-
 /// Need to use induction because the postcondition expands
 /// seq_u64_to_nat in the opposite way from how it's defined.
 /// The base case is straightforward, but it takes a few steps
@@ -640,9 +554,7 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
                 assert((seq[0] * pow2(0)) as nat == (seq[0] * 1) as nat);
                 assert((seq[0] * 1) as nat == seq[0] as nat);
             }
-            (seq[0] * pow2(52 * 0 as nat)) as nat; {
-                lemma_empty_seq_as_nat(seq);
-            }
+            (seq[0] * pow2(52 * 0 as nat)) as nat; {}
             (seq_u64_to_nat(seq.subrange(0, 0)) + seq[0] * pow2(52 * 0 as nat)) as nat;
         }
         return ;
@@ -705,15 +617,6 @@ pub proof fn lemma_seq_u64_to_nat_subrange_extend(seq: Seq<u64>, i: int)
             (seq_u64_to_nat(seq.subrange(0, i)) + seq[i] * pow2(52 * i as nat)) as nat;
         }
     }
-}
-
-/// Verus times out when this assertion is inside
-/// lemma_seq_u64_to_nat_subrange_extend
-pub proof fn lemma_empty_seq_as_nat(a: Seq<u64>)
-    ensures
-        seq_u64_to_nat(a.subrange(0, 0)) == 0,
-{
-    assert(seq_u64_to_nat(a.subrange(0, 0)) == 0);
 }
 
 /// Using lemma_mod_add_multiples_vanish in a big proof made the proof hang
@@ -824,49 +727,26 @@ pub proof fn lemma_general_bound(a: Seq<u64>)
     }
 }
 
-/// Claude wrote this proof. Could the proof be shorter?
-/// Moved this to a lemma to get under rlimit.
 pub proof fn lemma_decompose(a: u64, mask: u64)
     requires
         mask == (1u64 << 52) - 1,
     ensures
         a == (a >> 52) * pow2(52) + (a & mask),
 {
-    // First, establish that bit shifting is division by pow2(52)
-    broadcast use lemma_u64_shr_is_div;
+    lemma2_to64_rest();  // pow2(52)
+    assert(a >> 52 == a / (pow2(52) as u64)) by {
+        lemma_u64_shr_is_div(a, 52);
+    }
 
-    lemma_pow2_pos(52);
-    lemma_shift_is_pow2(52);
-    lemma2_to64_rest();  // Establishes pow2(52) == 0x10000000000000
-    assert((1u64 << 52) == 0x10000000000000) by (bit_vector);
-    assert(pow2(52) == 0x10000000000000);
-    assert((1u64 << 52) as nat == pow2(52));
+    assert(mask == low_bits_mask(52)) by {
+        assert((1u64 << 52) - 1 == 4503599627370495) by (compute);
+    }
 
-    assert(a >> 52 == a / (1u64 << 52));
+    assert(a & mask == a % (pow2(52) as u64)) by {
+        lemma_u64_low_bits_mask_is_mod(a, 52);
+    }
 
-    // Apply fundamental division theorem: a = q * d + r
     lemma_fundamental_div_mod(a as int, pow2(52) as int);
-    let q = a as nat / pow2(52);
-    let r = a as nat % pow2(52);
-    assert(a as nat == q * pow2(52) + r);
-    assert(0 <= r < pow2(52));
-
-    // Now prove that (a & mask) == r
-    // mask is all 1s in the lower 52 bits
-    assert(mask == (1u64 << 52) - 1);
-
-    // Key insight: a & mask gives us the lower 52 bits, which is exactly a % pow2(52)
-    lemma_u64_low_bits_mask_is_mod(a, 52);
-    assert(a & mask == a % (1u64 << 52));
-    assert((a % (1u64 << 52)) as nat == a as nat % pow2(52));
-    assert((a & mask) as nat == r);
-
-    // Now show that a >> 52 == q
-    assert((a >> 52) as nat == a as nat / pow2(52));
-    assert((a >> 52) as nat == q);
-
-    // Combine everything
-    assert(a as nat == (a >> 52) as nat * pow2(52) + (a & mask) as nat);
 }
 
 /// The loop invariant says that subtraction is correct if we only subtract
@@ -1306,19 +1186,6 @@ pub(crate) proof fn lemma_sub_correct_after_loops(
     }
 }
 
-/// Moving this out to get under rlimit
-pub proof fn lemma_old_carry(old_carry: u64)
-    requires
-        old_carry < 1u64 << 52,
-    ensures
-        old_carry >> 52 == 0,
-{
-    assert(old_carry >> 52 == 0) by (bit_vector)
-        requires
-            old_carry < 1u64 << 52,
-    ;
-}
-
 /// If borrow >> 63 == 0, we just prove that the loop step has no effect.
 /// If borrow >> 63 == 1, we substitute in the loop's updates
 /// like `difference.limbs[i as int] == carry & mask`.
@@ -1373,7 +1240,10 @@ pub(crate) proof fn lemma_sub_loop2_invariant(
         ) + (carry >> 52) * pow2(52 * (i + 1) as nat),
 {
     if borrow >> 63 == 0 {
-        lemma_old_carry(old_carry);
+        assert(old_carry >> 52 == 0) by (bit_vector)
+            requires
+                old_carry < 1u64 << 52,
+        ;
         assert(addend == 0);
         assert(carry == difference_loop2_start.limbs[i as int]);
         assert(carry & mask == carry) by (bit_vector)
@@ -1753,34 +1623,6 @@ pub proof fn lemma_scalar52_lt_pow2_256_if_canonical(a: &Scalar52)
     }
 }
 
-// Proof that pow2(n) is even for n >= 1
-pub proof fn lemma_pow2_even(n: nat)
-    requires
-        n >= 1,
-    ensures
-        pow2(n) % 2 == 0,
-    decreases n,
-{
-    if n == 1 {
-        assert(pow2(1) == 2) by {
-            lemma2_to64();
-        };
-        assert(2int % 2int == 0) by { lemma_mod_self_0(2) };
-    } else {
-        let m = (n - 1) as nat;
-        lemma_pow2_adds(1, m);
-        assert(pow2(n) == pow2(1) * pow2(m));
-        assert(pow2(1) == 2) by { lemma2_to64() };
-
-        lemma_mul_mod_noop_right(2 as int, pow2(m) as int, 2 as int);
-
-        lemma_pow2_even(m);
-
-        assert((2 * (pow2(m) as int % 2)) % 2 == 0);
-        assert(pow2(n) as int % 2 == 0);
-    }
-}
-
 // Proof that group_order() is odd
 pub proof fn lemma_group_order_is_odd()
     ensures
@@ -1800,66 +1642,6 @@ pub proof fn lemma_group_order_is_odd()
 
     assert((27742317777372353535851937790883648493nat as int) % 2 == 1);
     assert(group_order() % 2 == 1);
-}
-
-// If x ≡ 1 (mod m) then x^n ≡ 1 (mod m)
-pub proof fn lemma_pow_mod_one(x: int, n: nat, m: int)
-    requires
-        m > 1,
-        x % m == 1,
-    ensures
-        pow(x, n) % m == 1,
-    decreases n,
-{
-    if n == 0 {
-        assert(pow(x, 0) == 1) by { lemma_pow0(x) };
-        assert(1int % m == 1) by { lemma_small_mod(1nat, m as nat) };
-        assert(pow(x, n) % m == 1);
-    } else {
-        lemma_pow_mod_one(x, (n - 1) as nat, m);
-        // pow(x,n) == pow(x,n-1) * x
-        assert(pow(x, n) == pow(x, (n - 1) as nat) * x) by {
-            lemma_pow_adds(x, 1, (n - 1) as nat);
-            lemma_pow1(x);
-        };
-
-        // x^n = x^(n - 1) * x (mod m)
-        assert(pow(x, n) % m == (pow(x, (n - 1) as nat) * x) % m);
-        assert(pow(x, n) % m == ((pow(x, (n - 1) as nat) % m) * (x % m)) % m) by {
-            lemma_mul_mod_noop(pow(x, (n - 1) as nat), x, m);
-        };
-
-        assert(pow(x, n) % m == (1int * 1int) % m);
-        assert(pow(x, n) % m == 1int % m);
-        assert(1int % m == 1) by { lemma_small_mod(1nat, m as nat) };
-        assert(pow(x, n) % m == 1);
-
-    }
-}
-
-// Prove pow2(n) == pow(2, n) for all n >= 0
-pub proof fn lemma_pow2_eq_pow(n: nat)
-    ensures
-        pow2(n) == pow(2, n),
-    decreases n,
-{
-    if n == 0 {
-        assert(pow2(0) == 1) by { lemma2_to64() };
-        assert(pow(2, 0) == 1) by { lemma_pow0(2) };
-    } else {
-        let m = (n - 1) as nat;
-        lemma_pow2_eq_pow(m);
-
-        lemma_pow2_adds(1, m);
-        assert(pow2(1) == 2) by { lemma2_to64() };
-        assert(pow2(n) == 2 * pow2(m));
-
-        // pow(2, n) = pow(2, m + 1) == pow(2, m) * 2  (by pow definition)
-        assert(pow(2, n) == pow(2, m) * pow(2, 1)) by { lemma_pow_adds(2, 1, (n - 1) as nat) };
-
-        assert(pow(2, 1) == 2) by { lemma_pow1(2) };
-        assert(pow2(n) == pow(2, n));
-    }
 }
 
 // Proof that (a * R) % group_order() == (b * R) % group_order ==> a % group_order() == b % group_order()
@@ -1953,7 +1735,7 @@ pub proof fn lemma_cancel_mul_pow2_mod(a: nat, b: nat, r_pow: nat)
         // pow(inv2,260) * pow(2,260) is congruent to 1
         assert(pow(inv2 as int, 260) * pow(2 as int, 260) == pow((inv2 * 2) as int, 260));
         assert((pow(inv2 as int, 260) * pow(2 as int, 260)) % (L as int) == 1);
-        assert(pow(2int, 260) == (pow2(260) as int)) by { lemma_pow2_eq_pow(260) };
+        assert(pow(2int, 260) == (pow2(260) as int)) by { lemma_pow2(260) };
     }
 
     assert(1int < L);

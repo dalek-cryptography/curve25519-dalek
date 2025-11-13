@@ -3,7 +3,7 @@
 use super::field_specs::*;
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::curve_models::{
-    AffineNielsPoint, ProjectiveNielsPoint, ProjectivePoint,
+    AffineNielsPoint, CompletedPoint, ProjectiveNielsPoint, ProjectivePoint,
 };
 #[allow(unused_imports)] // Used in verus! blocks
 use crate::backend::serial::u64::constants::EDWARDS_D;
@@ -19,7 +19,7 @@ verus! {
 /// where d = -121665/121666 (mod p)
 /// Check if a point (x, y) satisfies the Edwards curve equation
 /// -x² + y² = 1 + d·x²·y²  (mod p)
-pub open spec fn on_edwards_curve(x: nat, y: nat) -> bool {
+pub open spec fn math_on_edwards_curve(x: nat, y: nat) -> bool {
     let p = p();
     let d = spec_field_element(&EDWARDS_D);
     let x2 = math_field_square(x);
@@ -37,7 +37,7 @@ pub open spec fn on_edwards_curve(x: nat, y: nat) -> bool {
 /// A projective point (X:Y:Z) represents the affine point (X/Z, Y/Z)
 /// The homogenized curve equation is: (-X² + Y²)·Z² = Z⁴ + d·X²·Y²
 /// This is equivalent to the affine equation when Z ≠ 0
-pub open spec fn on_edwards_curve_projective(x: nat, y: nat, z: nat) -> bool {
+pub open spec fn math_on_edwards_curve_projective(x: nat, y: nat, z: nat) -> bool {
     let d = spec_field_element(&EDWARDS_D);
 
     // Compute X², Y², Z²
@@ -62,7 +62,7 @@ pub open spec fn on_edwards_curve_projective(x: nat, y: nat, z: nat) -> bool {
 ///   u = y² - 1
 ///   v = d·y² + 1
 /// Returns true if u/v is a square (i.e., x can be recovered)
-pub open spec fn is_valid_y_coordinate(y: nat) -> bool {
+pub open spec fn math_is_valid_y_coordinate(y: nat) -> bool {
     let d = spec_field_element(&EDWARDS_D);
     let y2 = math_field_square(y);
 
@@ -88,12 +88,12 @@ pub open spec fn is_valid_y_coordinate(y: nat) -> bool {
 }
 
 /// The identity point in affine coordinates (0, 1)
-pub open spec fn edwards_identity_affine() -> (nat, nat) {
+pub open spec fn math_edwards_identity() -> (nat, nat) {
     (0, 1)
 }
 
 /// Check if affine coordinates represent the identity point
-pub open spec fn is_edwards_identity(x: nat, y: nat) -> bool {
+pub open spec fn math_is_edwards_identity(x: nat, y: nat) -> bool {
     x % p() == 0 && y % p() == 1
 }
 
@@ -101,7 +101,7 @@ pub open spec fn is_edwards_identity(x: nat, y: nat) -> bool {
 /// The identity point is (0, 1) in affine coordinates
 /// In projective coordinates (X:Y:Z:T), this means X/Z = 0 and Y/Z = 1
 /// Which is equivalent to X ≡ 0 (mod p) and Y ≡ Z (mod p) with Z ≠ 0
-pub open spec fn is_identity(point: crate::edwards::EdwardsPoint) -> bool {
+pub open spec fn is_identity_edwards_point(point: crate::edwards::EdwardsPoint) -> bool {
     let x = spec_field_element(&point.X);
     let y = spec_field_element(&point.Y);
     let z = spec_field_element(&point.Z);
@@ -123,30 +123,112 @@ pub open spec fn is_valid_edwards_point(point: crate::edwards::EdwardsPoint) -> 
     // Z must be non-zero
     z != 0 &&
     // The affine coordinates (X/Z, Y/Z) must be on the curve
-    on_edwards_curve(math_field_mul(x, math_field_inv(z)), math_field_mul(y, math_field_inv(z)))
-        &&
+    math_on_edwards_curve(
+        math_field_mul(x, math_field_inv(z)),
+        math_field_mul(y, math_field_inv(z)),
+    ) &&
     // Extended coordinate must satisfy T = X*Y/Z
     t == math_field_mul(math_field_mul(x, y), math_field_inv(z))
 }
 
-/// Returns the abstract affine coordinates (x, y) of this point.
-pub open spec fn affine_coords(point: crate::edwards::EdwardsPoint) -> (nat, nat) {
+/// Returns the field element values (X, Y, Z, T) from an EdwardsPoint.
+/// An EdwardsPoint (X:Y:Z:T) is in extended projective coordinates.
+pub open spec fn spec_edwards_point(point: crate::edwards::EdwardsPoint) -> (nat, nat, nat, nat) {
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+    let t = spec_field_element(&point.T);
+    (x, y, z, t)
+}
+
+/// Returns the abstract affine coordinates (x, y) from an EdwardsPoint.
+/// An EdwardsPoint (X:Y:Z:T) represents affine point (X/Z, Y/Z).
+pub open spec fn affine_edwards_point(point: crate::edwards::EdwardsPoint) -> (nat, nat) {
+    let (x, y, z, _t) = spec_edwards_point(point);
+    let z_inv = math_field_inv(z);
+    (math_field_mul(x, z_inv), math_field_mul(y, z_inv))
+}
+
+/// Returns the field element values (X, Y, Z, T) from a CompletedPoint.
+/// A CompletedPoint is ((X:Z), (Y:T)) in P¹ × P¹.
+pub open spec fn spec_completed_point(
+    point: crate::backend::serial::curve_models::CompletedPoint,
+) -> (nat, nat, nat, nat) {
     let x_abs = spec_field_element(&point.X);
     let y_abs = spec_field_element(&point.Y);
     let z_abs = spec_field_element(&point.Z);
+    let t_abs = spec_field_element(&point.T);
+    (x_abs, y_abs, z_abs, t_abs)
+}
+
+/// Returns the abstract affine coordinates (x, y) from a CompletedPoint.
+/// A CompletedPoint ((X:Z), (Y:T)) in P¹ × P¹ represents affine point (X/Z, Y/T).
+pub open spec fn affine_completed_point(
+    point: crate::backend::serial::curve_models::CompletedPoint,
+) -> (nat, nat) {
+    let (x_abs, y_abs, z_abs, t_abs) = spec_completed_point(point);
     let z_inv = math_field_inv(z_abs);
-    (math_field_mul(x_abs, z_inv), math_field_mul(y_abs, z_inv))
+    let t_inv = math_field_inv(t_abs);
+    (math_field_mul(x_abs, z_inv), math_field_mul(y_abs, t_inv))
+}
+
+/// Returns the field element values (X, Y, Z) from a ProjectivePoint.
+/// A ProjectivePoint (X:Y:Z) is in projective coordinates.
+pub open spec fn spec_projective_point(point: ProjectivePoint) -> (nat, nat, nat) {
+    let x = spec_field_element(&point.X);
+    let y = spec_field_element(&point.Y);
+    let z = spec_field_element(&point.Z);
+    (x, y, z)
+}
+
+/// Returns the abstract affine coordinates (x, y) from a ProjectivePoint.
+/// A ProjectivePoint (X:Y:Z) represents affine point (X/Z, Y/Z).
+pub open spec fn affine_projective_point(point: ProjectivePoint) -> (nat, nat) {
+    let (x, y, z) = spec_projective_point(point);
+    let z_inv = math_field_inv(z);
+    (math_field_mul(x, z_inv), math_field_mul(y, z_inv))
+}
+
+/// Returns the field element values (Y+X, Y-X, Z, T2d) from a ProjectiveNielsPoint.
+pub open spec fn spec_projective_niels_point(niels: ProjectiveNielsPoint) -> (nat, nat, nat, nat) {
+    let y_plus_x = spec_field_element(&niels.Y_plus_X);
+    let y_minus_x = spec_field_element(&niels.Y_minus_X);
+    let z = spec_field_element(&niels.Z);
+    let t2d = spec_field_element(&niels.T2d);
+    (y_plus_x, y_minus_x, z, t2d)
+}
+
+/// Returns the field element values (y+x, y-x, xy2d) from an AffineNielsPoint.
+pub open spec fn spec_affine_niels_point(niels: AffineNielsPoint) -> (nat, nat, nat) {
+    let y_plus_x = spec_field_element(&niels.y_plus_x);
+    let y_minus_x = spec_field_element(&niels.y_minus_x);
+    let xy2d = spec_field_element(&niels.xy2d);
+    (y_plus_x, y_minus_x, xy2d)
 }
 
 /// Check if a CompressedEdwardsY represents the identity point
 /// The identity point is (0, 1) in affine coordinates
 /// When compressed, this is represented as y=1 with sign bit 0
-pub open spec fn is_compressed_identity(compressed: CompressedEdwardsY) -> bool {
+pub open spec fn spec_is_compressed_identity(compressed: CompressedEdwardsY) -> bool {
     // Extract the y-coordinate (identity has y = 1)
     spec_field_element_from_bytes(&compressed.0) == 1
         &&
     // Sign bit should be 0 (since x = 0)
     (compressed.0[31] >> 7) == 0
+}
+
+/// Spec function: check if a CompressedEdwardsY corresponds to an EdwardsPoint
+/// The compressed form should match the affine y-coordinate and x sign bit
+pub open spec fn compressed_edwards_y_corresponds_to_edwards(
+    compressed: CompressedEdwardsY,
+    point: EdwardsPoint,
+) -> bool {
+    let (x_affine, y_affine) = affine_edwards_point(point);
+    // The y-coordinate in the compressed form matches the affine y-coordinate
+    spec_field_element_from_bytes(&compressed.0)
+        == y_affine
+    // The sign bit matches the sign of the affine x-coordinate
+     && (compressed.0[31] >> 7) == (((x_affine % crate::specs::field_specs_u64::p()) % 2) as u8)
 }
 
 /// Check if a ProjectiveNielsPoint corresponds to an EdwardsPoint
@@ -228,6 +310,55 @@ pub open spec fn is_valid_affine_niels_point(niels: AffineNielsPoint) -> bool {
             niels,
             point,
         )
+}
+
+/// Montgomery curve equation: B·v² = u³ + A·u² + u
+/// For Curve25519: v² = u³ + 486662·u² + u (with B = 1, A = 486662)
+/// Check if a point (u, v) satisfies the Montgomery curve equation
+pub open spec fn math_on_montgomery_curve(u: nat, v: nat) -> bool {
+    let a = 486662;
+    let u2 = math_field_square(u);
+    let u3 = math_field_mul(u, u2);
+    let v2 = math_field_square(v);
+
+    // v² = u³ + A·u² + u
+    let rhs = math_field_add(math_field_add(u3, math_field_mul(a, u2)), u);
+
+    v2 == rhs
+}
+
+/// Returns the u-coordinate of a Montgomery point as a field element
+/// Montgomery points only store the u-coordinate; sign information is lost
+pub open spec fn spec_montgomery_point(point: crate::montgomery::MontgomeryPoint) -> nat {
+    spec_field_element_from_bytes(&point.0)
+}
+
+/// Check if a MontgomeryPoint corresponds to an EdwardsPoint
+/// via the birational map u = (1+y)/(1-y)
+/// Special case: Edwards identity (y=1) maps to u=0
+pub open spec fn montgomery_corresponds_to_edwards(
+    montgomery: crate::montgomery::MontgomeryPoint,
+    edwards: EdwardsPoint,
+) -> bool {
+    let u = spec_montgomery_point(montgomery);
+    let (x, y) = affine_edwards_point(edwards);
+    let denominator = math_field_sub(1, y);
+
+    if denominator == 0 {
+        // Special case: Edwards identity (x=0, y=1) maps to Montgomery u=0
+        u == 0
+    } else {
+        // General case: u = (1+y)/(1-y)
+        let numerator = math_field_add(1, y);
+        u == math_field_mul(numerator, math_field_inv(denominator))
+    }
+}
+
+/// Check if a Montgomery u-coordinate is invalid for conversion to Edwards
+/// u = -1 is invalid because it corresponds to a point on the twist
+pub open spec fn is_equal_to_minus_one(u: nat) -> bool {
+    u == math_field_sub(0, 1)  // u == -1
+
 }
 
 } // verus!

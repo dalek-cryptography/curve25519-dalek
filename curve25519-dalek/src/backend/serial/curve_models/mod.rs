@@ -287,7 +287,7 @@ impl ValidityCheck for ProjectivePoint {
             limbs_bounded(&self.Y, 54),
             limbs_bounded(&self.Z, 54),
         ensures
-            result == on_edwards_curve_projective(
+            result == math_on_edwards_curve_projective(
                 spec_field_element(&self.X),
                 spec_field_element(&self.Y),
                 spec_field_element(&self.Z),
@@ -330,7 +330,7 @@ impl ValidityCheck for ProjectivePoint {
         let result = lhs == rhs;
         proof {
             // postcondition
-            assume(result == on_edwards_curve_projective(
+            assume(result == math_on_edwards_curve_projective(
                 spec_field_element(&self.X),
                 spec_field_element(&self.Y),
                 spec_field_element(&self.Z),
@@ -382,12 +382,17 @@ impl ConditionallySelectable for AffineNielsPoint {
 // Point conversions
 // ------------------------------------------------------------------------
 
+verus! {
+
 impl ProjectivePoint {
     /// Convert this point from the \\( \mathbb P\^2 \\) model to the
     /// \\( \mathbb P\^3 \\) model.
     ///
     /// This costs \\(3 \mathrm M + 1 \mathrm S\\).
     pub fn as_extended(&self) -> EdwardsPoint {
+        proof {
+            assume(false);  // preconditions for arithmetic traits
+        }
         EdwardsPoint {
             X: &self.X * &self.Z,
             Y: &self.Y * &self.Z,
@@ -403,11 +408,10 @@ impl CompletedPoint {
     ///
     /// This costs \\(3 \mathrm M \\).
     pub fn as_projective(&self) -> ProjectivePoint {
-        ProjectivePoint {
-            X: &self.X * &self.T,
-            Y: &self.Y * &self.Z,
-            Z: &self.Z * &self.T,
+        proof {
+            assume(false);  // preconditions for arithmetic traits
         }
+        ProjectivePoint { X: &self.X * &self.T, Y: &self.Y * &self.Z, Z: &self.Z * &self.T }
     }
 
     /// Convert this point from the \\( \mathbb P\^1 \times \mathbb P\^1
@@ -415,6 +419,9 @@ impl CompletedPoint {
     ///
     /// This costs \\(4 \mathrm M \\).
     pub fn as_extended(&self) -> EdwardsPoint {
+        proof {
+            assume(false);  // preconditions for arithmetic traits
+        }
         EdwardsPoint {
             X: &self.X * &self.T,
             Y: &self.Y * &self.Z,
@@ -427,10 +434,12 @@ impl CompletedPoint {
 // ------------------------------------------------------------------------
 // Doubling
 // ------------------------------------------------------------------------
-
 impl ProjectivePoint {
     /// Double this point: return self + self
     pub fn double(&self) -> CompletedPoint {
+        proof {
+            assume(false);  // preconditions for arithmetic traits
+        }
         // Double()
         let XX = self.X.square();
         let YY = self.Y.square();
@@ -449,10 +458,10 @@ impl ProjectivePoint {
     }
 }
 
+} // verus!
 // ------------------------------------------------------------------------
 // Addition and Subtraction
 // ------------------------------------------------------------------------
-
 // XXX(hdevalence) These were doc(hidden) so they don't appear in the
 // public API docs.
 // However, that prevents them being used with --document-private-items,

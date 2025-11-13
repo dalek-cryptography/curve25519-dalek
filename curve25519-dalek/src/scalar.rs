@@ -1079,11 +1079,14 @@ impl From<u128> for Scalar {
 #[cfg(feature = "zeroize")]
 impl Zeroize for Scalar {
     /* <VERIFICATION NOTE>
-    External body annotation
+    Using wrapper function with postcondition
     </VERIFICATION NOTE> */
-    #[verifier::external_body]
-    fn zeroize(&mut self) {
-        self.bytes.zeroize();
+    fn zeroize(&mut self)
+        ensures
+            forall|i: int| 0 <= i < 32 ==> #[trigger] self.bytes[i] == 0u8,
+    {
+        /* ORIGINAL CODE: self.bytes.zeroize(); */
+        crate::core_assumes::zeroize_bytes32(&mut self.bytes);
     }
 }
 

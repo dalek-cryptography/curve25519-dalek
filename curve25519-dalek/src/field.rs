@@ -70,7 +70,8 @@ impl Eq for FieldElement {
 #[cfg(verus_keep_ghost)]
 impl vstd::std_specs::cmp::PartialEqSpecImpl for FieldElement {
     open spec fn obeys_eq_spec() -> bool {
-        false
+        true  // Equality obeys eq_spec via constant-time comparison
+
     }
 
     open spec fn eq_spec(&self, other: &Self) -> bool {

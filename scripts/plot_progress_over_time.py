@@ -293,7 +293,7 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
     df["verus_specs_pct"] = (df["verus_specs"] / df["total"]) * 100
     df["verus_proofs_pct"] = (df["verus_proofs"] / df["total"]) * 100
 
-    # Plot lines
+    # Plot lines with step function (values stay constant until next commit)
     ax.plot(
         df["date"],
         df["verus_specs_pct"],
@@ -303,6 +303,7 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
         label="Verus Specs",
         color="#3498db",
         alpha=0.9,
+        drawstyle="steps-post",
     )
     ax.plot(
         df["date"],
@@ -313,15 +314,17 @@ def plot_progress_over_time(df: pd.DataFrame, output_dir: Path):
         label="Verus Proofs",
         color="#2ecc71",
         alpha=0.9,
+        drawstyle="steps-post",
     )
 
-    # Fill areas under curves
+    # Fill areas under curves with step function
     ax.fill_between(
         df["date"],
         0,
         df["verus_proofs_pct"],
         alpha=0.2,
         color="#2ecc71",
+        step="post",
     )
 
     ax.set_xlabel("Date", fontsize=12, fontweight="bold")
@@ -367,7 +370,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
     """Create a stacked area chart showing absolute counts over time."""
     fig, ax = plt.subplots(figsize=(14, 6.85))
 
-    # Create stacked areas for Verus
+    # Create stacked areas for Verus with step function
     ax.fill_between(
         df["date"],
         0,
@@ -375,6 +378,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         label="Verified (Proofs)",
         color="#2ecc71",
         alpha=0.8,
+        step="post",
     )
 
     ax.fill_between(
@@ -384,9 +388,10 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         label="Specs (No Proof)",
         color="#3498db",
         alpha=0.5,
+        step="post",
     )
 
-    # Plot total as a line
+    # Plot total as a line with step function
     ax.plot(
         df["date"],
         df["total"],
@@ -396,6 +401,7 @@ def plot_absolute_counts(df: pd.DataFrame, output_dir: Path):
         linestyle="--",
         marker="o",
         markersize=5,
+        drawstyle="steps-post",
     )
 
     # Add horizontal lines for latest values to make them clearly visible

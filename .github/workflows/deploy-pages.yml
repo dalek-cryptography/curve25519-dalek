@@ -8,6 +8,7 @@ on:
       - 'docs/**'
       - 'functions_to_track.csv'
       - 'scripts/analyze_verus_specs_proofs.py'
+      - 'scripts/update_stats_history.py'
       - 'scripts/plot_*.py'
       - 'scripts/csv_to_markdown.py'
       - '.github/workflows/deploy-pages.yml'
@@ -56,15 +57,15 @@ jobs:
       - name: Update stats history
         run: |
           # Try to fetch existing history from deployed site and update
-          # If this fails, regenerate from git history (fallback with more commits)
+          # If this fails, regenerate from git history (fallback with max commits for full history)
           scripts/update_stats_history.py \
             --fetch-url https://beneficial-ai-foundation.github.io/dalek-lite/outputs/stats_history.jsonl \
             --fill-missing \
             --since 2025-10-09 \
-            --max-commits 100 || \
+            --max-commits 10000 || \
           (echo "Warning: Stats history fetch failed, regenerating from git..." && \
            if [ -f outputs/curve25519_functions.csv ]; then \
-             scripts/update_stats_history.py --since 2025-10-09 --max-commits 100 --fill-missing; \
+             scripts/update_stats_history.py --since 2025-10-09 --max-commits 10000 --fill-missing; \
            else \
              echo "Error: CSV file missing, skipping stats history update"; \
              touch outputs/stats_history.jsonl; \

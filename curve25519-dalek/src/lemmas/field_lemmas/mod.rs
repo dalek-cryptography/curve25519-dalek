@@ -25,3 +25,4 @@ pub mod to_bytes_reduction_lemmas;
 pub mod pow22501_t19_lemma;
 pub mod pow22501_t3_lemma;
 pub mod pow_chain_lemmas;
+pub mod pow_p58_lemma;

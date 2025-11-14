@@ -1184,6 +1184,9 @@ impl FieldElement51 {
 
             forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
+    //needed for pow22501
+
+            forall|i: int| 0 <= i < 5 ==> r.limbs[i] < 1u64 << 54,
             as_nat(r.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p(),
     {
         proof {

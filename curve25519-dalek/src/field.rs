@@ -35,6 +35,8 @@ use crate::constants;
 
 use vstd::prelude::*;
 
+use vstd::arithmetic::div_mod::*;
+use vstd::arithmetic::mul::*;
 use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 
@@ -52,6 +54,13 @@ use crate::specs::field_specs::*;
 
 #[allow(unused_imports)]
 use crate::specs::field_specs_u64::*;
+
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::as_nat_lemmas::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::pow22501_t19_lemma::*;
+#[allow(unused_imports)]
+use crate::lemmas::field_lemmas::pow22501_t3_lemma::*;
 
 verus! {
 
@@ -186,13 +195,15 @@ impl FieldElement {
     /// within invert() and pow22523().
     #[rustfmt::skip]  // keep alignment of explanatory comments
     fn pow22501(&self) -> (result: (FieldElement, FieldElement))
+        requires
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
-            spec_field_element(&result.0) == pow(
+            spec_field_element(&result.0) == (pow(
                 spec_field_element(self) as int,
                 (pow2(250) - 1) as nat,
-            ) % (p() as int),
-            spec_field_element(&result.1) == pow(spec_field_element(self) as int, 11) % (
-            p() as int),
+            ) as nat) % p(),
+            spec_field_element(&result.1) == (pow(spec_field_element(self) as int, 11) as nat)
+                % p(),
     {
         // Instead of managing which temporary variables are used
         // for what, we define as many as we need and leave stack
@@ -204,11 +215,17 @@ impl FieldElement {
         // Multiplying t_i and t_j corresponds to adding e_i + e_j.
         //
         // Temporary t_i                      Nonzero bits of e_i
-        //
-        assume(false);
         let t0 = self.square();  // 1         e_0 = 2^1
-        let t1 = t0.square().square();  // 3         e_1 = 2^3
-        let t2 = self * &t1;  // 3,0       e_2 = 2^3 + 2^0
+        // NOTE: Changing the code!!!
+        // NOTE: We are now using the intermediate variable t0_sq to track the postcondition of the first square.
+        // NOTE: This is a workaround to allow us to prove the postcondition of the second square.
+        // NOTE: I'm struggling to prove that t0.square().square() is the same as t0_sq.square().
+        // Break apart chained call to track intermediate postcondition
+        // NOTE: Using intermediate variable t0_sq to track the postcondition
+        let t0_sq = t0.square();  // e = 4 (intermediate step)
+        // let t1 = t0.square().square();  // 3         e_1 = 2^3 = 8
+        let t1 = t0_sq.square();  // 3         e_1 = 2^3 = 8
+        let t2 = self * &t1;  // 3,0       e_2 = 2^3 + 2^0 = 9
         let t3 = &t0 * &t2;  // 3,1,0
         let t4 = t3.square();  // 4,2,1
         let t5 = &t2 * &t4;  // 4,3,2,1,0
@@ -227,6 +244,153 @@ impl FieldElement {
         let t18 = t17.pow2k(50);  // 249..50
         let t19 = &t18 * &t13;  // 249..0
 
+        proof {
+            // Assert the field operation postconditions that the lemma requires
+            pow255_gt_19();  // Prove p() > 0
+
+            // Square operation postconditions (from .square() method ensures clause)
+            assert(as_nat(t0.limbs) % p() == pow(as_nat(self.limbs) as int, 2) as nat % p());
+            assert(as_nat(t0_sq.limbs) % p() == pow(as_nat(t0.limbs) as int, 2) as nat % p());
+            assert(as_nat(t1.limbs) % p() == pow(as_nat(t0_sq.limbs) as int, 2) as nat % p());
+
+            // For mul operations, use lemma to convert from field_mul to direct multiplication
+            assert(as_nat(t2.limbs) % p() == (as_nat(self.limbs) * as_nat(t1.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(self.limbs) as int,
+                    as_nat(t1.limbs) as int,
+                    p() as int,
+                );
+            };
+            assert(as_nat(t3.limbs) % p() == (as_nat(t0.limbs) * as_nat(t2.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t0.limbs) as int,
+                    as_nat(t2.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Use lemma to prove t3 = x^11 and all intermediate steps
+            lemma_pow22501_prove_t3(
+                self.limbs,
+                t0.limbs,
+                t0_sq.limbs,
+                t1.limbs,
+                t2.limbs,
+                t3.limbs,
+            );
+
+            let base = as_nat(self.limbs) as int;
+
+            // Prove t19 = x^(2^250-1) using explicit lemma
+
+            // Multiplication: t5 = t2 * t4
+            assert(as_nat(t5.limbs) % p() == (as_nat(t2.limbs) * as_nat(t4.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t2.limbs) as int,
+                    as_nat(t4.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t7 = t6 * t5
+            assert(as_nat(t7.limbs) % p() == (as_nat(t6.limbs) * as_nat(t5.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t6.limbs) as int,
+                    as_nat(t5.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t9 = t8 * t7
+            assert(as_nat(t9.limbs) % p() == (as_nat(t8.limbs) * as_nat(t7.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t8.limbs) as int,
+                    as_nat(t7.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t11 = t10 * t9
+            assert(as_nat(t11.limbs) % p() == (as_nat(t10.limbs) * as_nat(t9.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t10.limbs) as int,
+                    as_nat(t9.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t13 = t12 * t7
+            assert(as_nat(t13.limbs) % p() == (as_nat(t12.limbs) * as_nat(t7.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t12.limbs) as int,
+                    as_nat(t7.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t15 = t14 * t13
+            assert(as_nat(t15.limbs) % p() == (as_nat(t14.limbs) * as_nat(t13.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t14.limbs) as int,
+                    as_nat(t13.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t17 = t16 * t15
+            assert(as_nat(t17.limbs) % p() == (as_nat(t16.limbs) * as_nat(t15.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t16.limbs) as int,
+                    as_nat(t15.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Multiplication: t19 = t18 * t13
+            assert(as_nat(t19.limbs) % p() == (as_nat(t18.limbs) * as_nat(t13.limbs)) % p()) by {
+                lemma_mul_mod_noop_general(
+                    as_nat(t18.limbs) as int,
+                    as_nat(t13.limbs) as int,
+                    p() as int,
+                );
+            };
+
+            // Use our comprehensive lemma to prove t19 = x^(2^250-1)
+            lemma_pow22501_prove_t19(
+                self.limbs,
+                t0.limbs,
+                t1.limbs,
+                t2.limbs,
+                t3.limbs,
+                t4.limbs,
+                t5.limbs,
+                t6.limbs,
+                t7.limbs,
+                t8.limbs,
+                t9.limbs,
+                t10.limbs,
+                t11.limbs,
+                t12.limbs,
+                t13.limbs,
+                t14.limbs,
+                t15.limbs,
+                t16.limbs,
+                t17.limbs,
+                t18.limbs,
+                t19.limbs,
+            );
+
+            // Bridge from as_nat postconditions to spec_field_element postconditions
+            // The previous proof established:
+            //assert(as_nat(t19.limbs) % p() == (pow(as_nat(self.limbs) as int, (pow2(250) - 1) as nat) as nat) % p());
+            //assert(as_nat(t3.limbs) % p() == (pow(as_nat(self.limbs) as int, 11) as nat) % p());
+
+            // Use bridge lemma to prove the spec_field_element postconditions
+            lemma_bridge_pow_as_nat_to_spec(&t19, self, (pow2(250) - 1) as nat);
+            lemma_bridge_pow_as_nat_to_spec(&t3, self, 11);
+
+        }
+
         (t19, t3)
     }
 
@@ -242,6 +406,11 @@ impl FieldElement {
      - PROOF BYPASSES because of trait issues and proof obligations.
     </VERIFICATION NOTE> */
 
+        requires
+            forall|i: int|
+                #![trigger old(inputs)[i]]
+                0 <= i < old(inputs).len() ==> (forall|j: int|
+                    0 <= j < 5 ==> old(inputs)[i].limbs[j] < 1u64 << 54),
         ensures
     // Each element is replaced appropriately:
 
@@ -307,6 +476,11 @@ impl FieldElement {
         assert!(bool::from(choice_not(acc.is_zero())));
 
         // Compute the inverse of all products
+        proof {
+            // PROOF BYPASS: assume acc limbs are bounded
+            // (This would follow from the loop invariant, but we haven't proven that yet)
+            assume(forall|i: int| 0 <= i < 5 ==> acc.limbs[i] < 1u64 << 54);
+        }
         acc = acc.invert();
 
         // Pass through the vector backwards to compute the inverses
@@ -378,6 +552,8 @@ impl FieldElement {
         FieldElement)
     // VERIFICATION NOTE: PROOF BYPASS
 
+        requires
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
     // If self is non-zero, result is the multiplicative inverse: result * self ≡ 1 (mod p)
 
@@ -404,6 +580,8 @@ impl FieldElement {
     #[rustfmt::skip]  // keep alignment of explanatory comments
     #[allow(clippy::let_and_return)]
     fn pow_p58(&self) -> (result: FieldElement)
+        requires
+            forall|i: int| 0 <= i < 5 ==> self.limbs[i] < 1u64 << 54,
         ensures
             spec_field_element(&result) == pow(
                 spec_field_element(self) as int,

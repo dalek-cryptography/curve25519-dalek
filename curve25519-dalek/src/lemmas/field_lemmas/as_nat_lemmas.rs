@@ -1,5 +1,6 @@
 #![allow(unused)]
 use vstd::arithmetic::mul::*;
+use vstd::arithmetic::power::*;
 use vstd::arithmetic::power2::*;
 use vstd::prelude::*;
 
@@ -7,6 +8,8 @@ use super::super::common_lemmas::div_mod_lemmas::*;
 use super::super::common_lemmas::mul_lemmas::*;
 use super::super::common_lemmas::pow_lemmas::*;
 
+use crate::backend::serial::u64::field::FieldElement51;
+use crate::specs::field_specs::*;
 use crate::specs::field_specs_u64::*;
 
 verus! {
@@ -62,6 +65,54 @@ pub proof fn lemma_mul_si_vi_and_reorder(
     lemma_mul_quad_prod(si, vi, s2, v2);
     lemma_mul_quad_prod(si, vi, s3, v3);
     lemma_mul_quad_prod(si, vi, s4, v4);
+}
+
+// Lemma: Bridges from as_nat postcondition to spec_field_element postcondition for power operations
+pub proof fn lemma_bridge_pow_as_nat_to_spec(
+    result: &FieldElement51,
+    base: &FieldElement51,
+    exp: nat,
+)
+    requires
+        as_nat(result.limbs) % p() == (pow(as_nat(base.limbs) as int, exp) as nat) % p(),
+    ensures
+        spec_field_element(result) == (pow(spec_field_element(base) as int, exp) as nat) % p(),
+{
+    // Prove p() > 0
+    pow255_gt_19();
+
+    // By definition: spec_field_element(result) == as_nat(result.limbs) % p()
+    //                spec_field_element(base) == as_nat(base.limbs) % p()
+    // The solver should unfold these automatically
+
+    // Apply lemma_pow_mod_noop: pow(b, e) % m == pow(b % m, e) % m
+    lemma_pow_mod_noop(as_nat(base.limbs) as int, exp, p() as int);
+
+    // Let's use clear names for the key values
+    let x = as_nat(base.limbs);
+    let y = spec_field_element(base);
+
+    // y == x % p() by definition
+    assert(y == x % p());
+
+    // From lemma_pow_mod_noop, in int arithmetic:
+    // pow(x as int, exp) % (p() as int) == pow((x % p()) as int, exp) % (p() as int)
+    assert(pow(x as int, exp) % (p() as int) == pow((x % p()) as int, exp) % (p() as int));
+
+    // Since y == x % p():
+    assert(pow(x as int, exp) % (p() as int) == pow(y as int, exp) % (p() as int));
+
+    assert(pow(x as int, exp) >= 0) by {
+        lemma_pow_nonnegative(x as int, exp);
+    }
+
+    assert(pow(y as int, exp) >= 0) by {
+        lemma_pow_nonnegative(y as int, exp);
+    }
+
+    // Now we have: pow(x, exp) % p() == pow(y, exp) % p()
+    // With type conversions: (pow(x, exp) as nat) % p() == (pow(y, exp) as nat) % p()
+    assert((pow(x as int, exp) as nat) % p() == (pow(y as int, exp) as nat) % p());
 }
 
 // Lemma: If a > b pointwise, then as_nat(a - b) = as_nat(a) - as_nat(b)

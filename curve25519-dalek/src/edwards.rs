@@ -992,6 +992,9 @@ impl EdwardsPoint {
 
     /// Compress this point to `CompressedEdwardsY` format.
     pub fn compress(&self) -> (result: CompressedEdwardsY)
+        requires
+            limbs_bounded(&self.X, 54) && limbs_bounded(&self.Y, 54) && limbs_bounded(&self.Z, 54)
+                && limbs_bounded(&self.T, 54),
         ensures
             compressed_edwards_y_corresponds_to_edwards(result, *self),
     {

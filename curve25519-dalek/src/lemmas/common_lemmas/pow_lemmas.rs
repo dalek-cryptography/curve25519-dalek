@@ -860,7 +860,101 @@ pub proof fn lemma_pow_mod_one(x: int, n: nat, m: int)
         assert(pow(x, n) % m == 1int % m);
         assert(1int % m == 1) by { lemma_small_mod(1nat, m as nat) };
         assert(pow(x, n) % m == 1);
+    }
+}
 
+// Helper lemmas for pow22501 proof
+// Proves: (2^n - 1) * 2^n + (2^n - 1) = 2^(2n) - 1
+pub proof fn lemma_pow2_geometric_double(n: nat)
+    ensures
+        (pow2(n) - 1) * pow2(n) + (pow2(n) - 1) == pow2(2 * n) - 1,
+{
+    lemma2_to64();
+    lemma_pow2_adds(n, n);
+    assert(pow2(2 * n) == pow2(n) * pow2(n)) by {
+        assert(n + n == 2 * n);
+    }
+    // (2^n - 1) * 2^n + (2^n - 1)
+    // = 2^n * 2^n - 2^n + 2^n - 1
+    // = 2^(2n) - 1
+    lemma_mul_is_distributive_sub(pow2(n) as int, pow2(n) as int, 1);
+}
+
+// Proves: (2^a - 1) * 2^b + (2^b - 1) = 2^(a+b) - 1
+pub proof fn lemma_pow2_geometric(a: nat, b: nat)
+    ensures
+        (pow2(a) - 1) * pow2(b) + (pow2(b) - 1) == pow2(a + b) - 1,
+{
+    lemma2_to64();
+    lemma_pow2_adds(a, b);
+    // (2^a - 1) * 2^b + (2^b - 1)
+    // = 2^a * 2^b - 2^b + 2^b - 1
+    // = 2^(a+b) - 1
+    lemma_mul_is_distributive_sub(pow2(b) as int, pow2(a) as int, 1);
+}
+
+// Modular congruence preserves powers
+pub proof fn lemma_pow_mod_congruent(a: int, b: int, n: nat, m: int)
+    requires
+        m > 0,
+        a % m == b % m,
+    ensures
+        pow(a, n) % m == pow(b, n) % m,
+{
+    lemma_pow_mod_noop(a, n, m);
+    lemma_pow_mod_noop(b, n, m);
+}
+
+/// Lemma: Powers of non-negative integers are always non-negative
+///
+/// For any non-negative integer base and natural number exponent n,
+/// pow(base, n) >= 0.
+///
+/// This is a fundamental property: multiplying non-negative numbers
+/// always yields non-negative results.
+///
+/// This lemma extends vstd's `lemma_pow_positive` to handle the case when base = 0.
+pub proof fn lemma_pow_nonnegative(base: int, n: nat)
+    requires
+        base >= 0,
+    ensures
+        pow(base, n) >= 0,
+{
+    if base > 0 {
+        // Delegate to vstd's lemma_pow_positive for the positive case
+        lemma_pow_positive(base, n);
+    } else {
+        // base == 0 case
+        if n == 0 {
+            // pow(0, 0) == 1 >= 0
+            lemma_pow0(0);
+        } else {
+            // pow(0, n) == 0 >= 0 for n > 0
+            lemma0_pow(n);
+        }
+    }
+}
+
+/// Lemma: Powers with even exponents are always non-negative
+///
+/// For any integer x and natural number k, pow(x, 2*k) >= 0
+/// This is because pow(x, 2*k) = (pow(x, k))^2, and squares are always non-negative.
+///
+/// This is useful for proving non-negativity of powers when you need to convert
+/// between int and nat types in modular arithmetic contexts.
+pub proof fn lemma_pow_even_nonnegative(x: int, k: nat)
+    ensures
+        pow(x, 2 * k) >= 0,
+{
+    assert(pow(x, 2 * k) == pow(x, k) * pow(x, k)) by {
+        lemma_pow_adds(x, k, k);
+    }
+    let y = pow(x, k);
+    if (y >= 0) {
+        lemma_mul_nonnegative(y, y);
+    } else {
+        lemma_mul_nonnegative(-y, -y);
+        lemma_mul_cancels_negatives(y, y)
     }
 }
 

@@ -144,4 +144,32 @@ pub open spec fn limbs_bounded(s: &Scalar52) -> bool {
     forall|i: int| 0 <= i < 5 ==> s.limbs[i] < (1u64 << 52)
 }
 
+pub open spec fn spec_mul_internal(a: &Scalar52, b: &Scalar52) -> [u128; 9]
+    recommends
+        limbs_bounded(a),
+        limbs_bounded(b),
+{
+    [
+        ((a.limbs[0] as u128) * (b.limbs[0] as u128)) as u128,
+        ((a.limbs[0] as u128) * (b.limbs[1] as u128) + (a.limbs[1] as u128) * (
+        b.limbs[0] as u128)) as u128,
+        ((a.limbs[0] as u128) * (b.limbs[2] as u128) + (a.limbs[1] as u128) * (b.limbs[1] as u128)
+            + (a.limbs[2] as u128) * (b.limbs[0] as u128)) as u128,
+        ((a.limbs[0] as u128) * (b.limbs[3] as u128) + (a.limbs[1] as u128) * (b.limbs[2] as u128)
+            + (a.limbs[2] as u128) * (b.limbs[1] as u128) + (a.limbs[3] as u128) * (
+        b.limbs[0] as u128)) as u128,
+        ((a.limbs[0] as u128) * (b.limbs[4] as u128) + (a.limbs[1] as u128) * (b.limbs[3] as u128)
+            + (a.limbs[2] as u128) * (b.limbs[2] as u128) + (a.limbs[3] as u128) * (
+        b.limbs[1] as u128) + (a.limbs[4] as u128) * (b.limbs[0] as u128)) as u128,
+        ((a.limbs[1] as u128) * (b.limbs[4] as u128) + (a.limbs[2] as u128) * (b.limbs[3] as u128)
+            + (a.limbs[3] as u128) * (b.limbs[2] as u128) + (a.limbs[4] as u128) * (
+        b.limbs[1] as u128)) as u128,
+        ((a.limbs[2] as u128) * (b.limbs[4] as u128) + (a.limbs[3] as u128) * (b.limbs[3] as u128)
+            + (a.limbs[4] as u128) * (b.limbs[2] as u128)) as u128,
+        ((a.limbs[3] as u128) * (b.limbs[4] as u128) + (a.limbs[4] as u128) * (
+        b.limbs[3] as u128)) as u128,
+        ((a.limbs[4] as u128) * (b.limbs[4] as u128)) as u128,
+    ]
+}
+
 } // verus!

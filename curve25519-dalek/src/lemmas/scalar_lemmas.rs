@@ -468,6 +468,33 @@ pub proof fn lemma_montgomery_inverse()
 
 }
 
+pub(crate) proof fn lemma_r_le_l(r: Scalar52)
+    requires
+        r == (Scalar52 {
+            limbs: [
+                0x000f48bd6721e6ed,
+                0x0003bab5ac67e45a,
+                0x000fffffeb35e51b,
+                0x000fffffffffffff,
+                0x00000fffffffffff,
+            ],
+        }),
+    ensures
+        to_nat(&r.limbs) < group_order(),
+{
+    lemma_five_limbs_equals_to_nat(&r.limbs);
+
+    lemma2_to64_rest();
+    lemma_pow2_adds(52, 52);  // prove pow2(104)
+    lemma_pow2_adds(104, 52);  // prove pow2(156)
+    lemma_pow2_adds(156, 52);  // prove pow2(208)
+    lemma_pow2_adds(208, 44);  // prove pow2(252)
+    lemma_pow2_adds(208, 52);  // prove pow2(260)
+
+    let r_calc: nat = five_limbs_to_nat_aux(r.limbs);
+
+}
+
 pub(crate) proof fn lemma_rr_equals_spec(rr: Scalar52)
     requires
         rr == (Scalar52 {
@@ -482,10 +509,10 @@ pub(crate) proof fn lemma_rr_equals_spec(rr: Scalar52)
     ensures
         to_nat(&rr.limbs) % group_order() == (montgomery_radix() * montgomery_radix())
             % group_order(),
+        to_nat(&rr.limbs) < group_order(),
 {
     lemma_five_limbs_equals_to_nat(&rr.limbs);
 
-    lemma2_to64();
     lemma2_to64_rest();
     lemma_pow2_adds(52, 52);  // prove pow2(104)
     lemma_pow2_adds(104, 52);  // prove pow2(156)
